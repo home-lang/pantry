@@ -1,0 +1,56 @@
+name: Releaser
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  npm:
+    name: npm
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        # env:
+        #   BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        with:
+          bun-version: latest
+
+      - name: Use cached node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            node-modules-
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Publish to npm
+        run: ./scripts/publish.sh
+        env:
+          BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+
+      - name: Create GitHub release
+        run: bunx changelogithub
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Attach Binaries
+        uses: stacksjs/action-releaser@v1.1.0
+        with:
+          files: |
+            packages/launchpad/bin/launchpad-linux-x64.zip
+            packages/launchpad/bin/launchpad-linux-arm64.zip
+            packages/launchpad/bin/launchpad-windows-x64.zip
+            packages/launchpad/bin/launchpad-darwin-x64.zip
+            packages/launchpad/bin/launchpad-darwin-arm64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
