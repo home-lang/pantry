@@ -164,8 +164,8 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 Made with 💙
 
 <!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/launchpad?style=flat-square
-[npm-version-href]: https://npmjs.com/package/launchpad
+[npm-version-src]: https://img.shields.io/npm/v/@stacksjs/launchpad?style=flat-square
+[npm-version-href]: https://npmjs.com/package/@stacksjs/launchpad
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/launchpad/ci.yml?style=flat-square&branch=main
 [github-actions-href]: https://github.com/stacksjs/launchpad/actions?query=workflow%3Aci
 

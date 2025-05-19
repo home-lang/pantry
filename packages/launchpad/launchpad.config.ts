@@ -1,11 +1,6 @@
 import type { LaunchpadConfig } from './src/types'
 
-/**
- * Launchpad configuration
- *
- * This file configures how launchpad installs and manages packages.
- */
-const config: LaunchpadConfig = {
+export const defaultConfig: LaunchpadConfig = {
   // Set to true for additional log information
   verbose: false,
 
@@ -39,6 +34,16 @@ const config: LaunchpadConfig = {
 
   // Default path for shims
   shimPath: '~/.local/bin',
+
+  // Whether to automatically add shim path to the system PATH
+  autoAddToPath: true,
 }
+
+/**
+ * Launchpad configuration
+ *
+ * This file configures how launchpad installs and manages packages.
+ */
+const config: LaunchpadConfig = defaultConfig
 
 export default config
