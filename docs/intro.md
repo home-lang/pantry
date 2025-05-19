@@ -38,6 +38,8 @@ Traditional package managers often require complex installations, have dependenc
 3. Automatically handling PATH and environment setup
 4. Offering specialized commands for development environments
 
+In addition to those features, Launchpad provides a CLI and a library use to manage packages, shims, and the dev package.
+
 ## How It Works
 
 Launchpad works by managing the installation of pkgx and creating shims (executable scripts) that automatically run the correct versions of your tools. It can:
