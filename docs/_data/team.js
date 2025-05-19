@@ -97,6 +97,23 @@ export const core = [
   },
 ]
 
+export const contributors = [
+  {
+    avatar: 'https://ca.slack-edge.com/TAFCQEYEP-UAFFN6YSE-fb28a6b5d278-512',
+    name: 'Chris Breuer',
+    title: 'Creator',
+    org: 'Stacks',
+    orgLink: 'https://stacksjs.org/',
+    desc: 'Independent open source developer, builder in the Stacks ecosystem.',
+    links: [
+      { icon: 'github', link: 'https://github.com/chrisbbreuer' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/chrisbreuer.dev' },
+      { icon: 'twitter', link: 'https://twitter.com/chrisbbreuer' },
+    ],
+    sponsor: 'https://github.com/sponsors/chrisbbreuer',
+  },
+]
+
 export const emeriti = [
   //
 ]
