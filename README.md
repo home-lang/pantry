@@ -8,24 +8,46 @@
 
 # launchpad
 
-> A lightweight package manager built on top of pkgx to simplify package installation and management. _Similar to Homebrew._
+> A lightweight package manager built on top of pkgx to simplify package installation and management. _Similar to Homebrew, but better._
 
 ## Features
 
-Launchpad offers the following features:
+Launchpad offers a streamlined approach to package management with these key features:
 
-- 📦 **Package Management** _Install and manage packages directly using pkgx_
-- 🔄 **Executable Shims** _Create executable shims for packages automatically_
-- 🛠️ **pkgx Installation** _Install and manage the pkgx utility itself_
-- 💻 **Dev Environment** _Dedicated command for the dev package for development environments_
-- 🔧 **Auto-updates** _Configure automatic updates for pkgx_
-- 🔌 **PATH Integration** _Automatically add installation directories to your PATH_
-- 🪟 **Cross-platform** _Support for macOS, Linux, and Windows systems_
+- 📦 **[Package Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install and manage packages efficiently using pkgx
+- 🔄 **[Executable Shims](https://github.com/stacksjs/launchpad/tree/main/docs/features/shim-creation.md)** — Create executable shims for packages automatically
+- 🛠️ **[pkgx Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/pkgx-management.md)** — Install and manage the pkgx utility itself
+- 💻 **[Dev Environment](https://github.com/stacksjs/launchpad/tree/main/docs/features/dev-package.md)** — Dedicated command for the dev package for development environments
+- 🔧 **Auto-updates** — Configure automatic updates for pkgx
+- 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically add installation directories to your PATH
+- 🪟 **Cross-platform** — Full support for macOS, Linux, and Windows systems
+
+## Why Launchpad?
+
+Traditional package managers like Homebrew have limitations:
+
+- **Slow installations** — Installing or updating can take minutes
+- **Dependency chains** — Updating one package triggers unwanted updates
+- **Environment conflicts** — Different projects need different versions
+- **PATH management** — Manual PATH configuration is error-prone
+- **Platform inconsistency** — Different systems need different approaches
+
+Launchpad solves these by providing:
+
+- **Fast installations** — Leverage pkgx for efficient package management
+- **Isolated packages** — Install only what you need without conflicts
+- **Automatic PATH management** — Tools are available immediately
+- **Consistent interface** — Same commands work everywhere
+- **Dev environments** — Project-specific development environment support
+
+[Read more about why we created Launchpad](https://github.com/stacksjs/launchpad/tree/main/docs/why.md)
 
 ## Installation
 
+Launchpad is available through multiple package managers:
+
 ```bash
-# Install with Bun
+# Install with Bun (recommended)
 bun add -g @stacksjs/launchpad
 
 # Or with npm
@@ -33,9 +55,14 @@ npm install -g @stacksjs/launchpad
 
 # Or with yarn
 yarn global add @stacksjs/launchpad
+
+# Or with pnpm
+pnpm add -g @stacksjs/launchpad
 ```
 
-## Usage
+See [Installation Guide](https://github.com/stacksjs/launchpad/tree/main/docs/install.md) for more options.
+
+## Quick Start
 
 ### Install packages
 
@@ -43,14 +70,14 @@ yarn global add @stacksjs/launchpad
 # Install packages
 launchpad install node python
 
-# Use a shorthand
+# Use the shorthand
 launchpad i node
 ```
 
 ### Create shims
 
 ```bash
-# Create shims for executables from packages
+# Create shims for executables
 launchpad shim node typescript
 
 # Specify custom path
@@ -70,11 +97,11 @@ launchpad pkgx --force
 ### Install dev package
 
 ```bash
-# Install the dev package for development environments
+# Install the dev package
 launchpad dev
 
 # With customization
-launchpad dev --path ~/bin --force
+launchpad dev --path ~/bin
 ```
 
 ### Configure auto-updates
@@ -90,45 +117,93 @@ launchpad autoupdate:enable
 launchpad autoupdate:disable
 ```
 
-### Customize PATH behavior
-
-```bash
-# Prevent automatic PATH modifications
-launchpad shim node --no-auto-path
-launchpad dev --no-auto-path
-```
-
 ### List installed packages
 
 ```bash
 # List all installed packages
 launchpad list
-
-# Or use the shorthand
+# or
 launchpad ls
 ```
 
 ## Configuration
 
-Launchpad uses a configuration file in your home directory at `~/.launchpadrc` or `.launchpad.json` in your project. Example configuration:
+Launchpad can be configured via a config file (`launchpad.config.ts`, `.launchpadrc`, etc.) or through command-line options.
 
-```json
-{
-  "verbose": true,
-  "installationPath": "/usr/local",
-  "autoSudo": true,
-  "maxRetries": 3,
-  "timeout": 60000,
-  "symlinkVersions": true,
-  "forceReinstall": false,
-  "shimPath": "~/.local/bin",
-  "autoAddToPath": true
+Example configuration:
+
+```ts
+import type { LaunchpadConfig } from '@stacksjs/launchpad'
+
+const config: LaunchpadConfig = {
+  // Enable verbose logging
+  verbose: true,
+
+  // Installation path for binaries
+  installationPath: '/usr/local',
+
+  // Auto-elevate with sudo when needed
+  autoSudo: true,
+
+  // Retry settings
+  maxRetries: 3,
+  timeout: 60000,
+
+  // Version handling
+  symlinkVersions: true,
+  forceReinstall: false,
+
+  // PATH management
+  shimPath: '~/.local/bin',
+  autoAddToPath: true,
 }
+
+export default config
 ```
+
+See [Configuration Guide](https://github.com/stacksjs/launchpad/tree/main/docs/config.md) for all options.
+
+## GitHub Action
+
+Launchpad provides a GitHub Action for CI/CD workflows:
+
+```yaml
+- name: Install Dependencies
+  uses: stacksjs/launchpad-installer@v1
+  with:
+    packages: node typescript bun
+```
+
+See [GitHub Action Documentation](https://github.com/stacksjs/launchpad/tree/main/packages/action/README.md) for details.
+
+## Advanced Usage
+
+Explore advanced topics in our documentation:
+
+- [Custom Shims](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/custom-shims.md)
+- [Cross-platform Compatibility](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/cross-platform.md)
+- [Performance Optimization](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/performance.md)
+- [API Reference](https://github.com/stacksjs/launchpad/tree/main/docs/api/reference.md)
+
+## Comparing to Alternatives
+
+### vs Homebrew
+
+- **Speed**: Significantly faster installations
+- **Isolation**: Changes to one package don't affect others
+- **No formulas**: Access thousands of packages without custom formulas
+- **Less disk space**: Only install what you need
+
+### vs Manual Installation
+
+- **Simplicity**: Single command to install complex tools
+- **PATH management**: No need to manually edit shell config files
+- **Version control**: Easily install specific versions
+- **Consistency**: Same experience across all platforms
 
 ## Changelog
 
-Please see our [releases](https://github.com/stackjs/launchpad/releases) page for more information on what has changed recently.
+Please see our [releases](https://github.com/stackjs/launchpad/releases) page for information on changes.
 
 ## Contributing
 
@@ -136,17 +211,14 @@ Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
 
 ## Community
 
-For help, discussion about best practices, or any other conversation that would benefit from being searchable:
+For help or discussion:
 
-[Discussions on GitHub](https://github.com/stacksjs/launchpad/discussions)
-
-For casual chit-chat with others using this package:
-
-[Join the Stacks Discord Server](https://discord.gg/stacksjs)
+- [Discussions on GitHub](https://github.com/stacksjs/launchpad/discussions)
+- [Join the Stacks Discord Server](https://discord.gg/stacksjs)
 
 ## Postcardware
 
-"Software that is free, but hopes for a postcard." We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
+Two things are true: Stacks OSS will always stay open-source, and we do love to receive postcards from wherever Stacks is used! 🌍 _We also publish them on our website. And thank you, Spatie_
 
 Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United States 🌎
 
