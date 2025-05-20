@@ -1,10 +1,8 @@
 <p align="center"><img src="https://github.com/stacksjs/rpx/blob/main/.github/art/cover.jpg?raw=true" alt="Social Card of this repo"></p>
 
-# The Why
+# Introduction
 
-## A Better Developer Experience
-
-# Introduction to Launchpad
+> For a better developer experience.
 
 Launchpad is a lightweight package manager built on top of [pkgx](https://pkgx.sh), designed to simplify package installation and management. It provides a clean, intuitive interface with powerful features that make working with development tools and packages easier.
 
@@ -28,17 +26,6 @@ At its core, Launchpad leverages pkgx, a next-generation package runner that all
 - 🔧 **Auto-updates** _Configure automatic updates for pkgx_
 - 🔌 **PATH Integration** _Automatically add installation directories to your PATH_
 - 🪟 **Cross-platform** _Support for macOS, Linux, and Windows systems_
-
-## Why Launchpad?
-
-Traditional package managers often require complex installations, have dependency conflicts, or don't work across platforms consistently. Launchpad solves these issues by:
-
-1. Using pkgx's isolated package management under the hood
-2. Providing a consistent interface across all platforms
-3. Automatically handling PATH and environment setup
-4. Offering specialized commands for development environments
-
-In addition to those features, Launchpad provides a CLI and a library use to manage packages, shims, and the dev package.
 
 ## How It Works
 

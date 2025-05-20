@@ -26,13 +26,13 @@ Launchpad offers the following features:
 
 ```bash
 # Install with Bun
-bun add -g launchpad
+bun add -g @stacksjs/launchpad
 
 # Or with npm
-npm install -g launchpad
+npm install -g @stacksjs/launchpad
 
 # Or with yarn
-yarn global add launchpad
+yarn global add @stacksjs/launchpad
 ```
 
 ## Usage
