@@ -1,8 +1,8 @@
 <p align="center"><img src="https://github.com/stacksjs/rpx/blob/main/.github/art/cover.jpg?raw=true" alt="Social Card of this repo"></p>
 
-# A Better Developer Experience
+# The Why
 
-> A TypeScript Starter Kit that will help you bootstrap your next project without minimal opinion.
+## A Better Developer Experience
 
 # Introduction to Launchpad
 
