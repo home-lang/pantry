@@ -1,0 +1,30 @@
+name: Project Setup with Config
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  setup:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies from config
+        uses: stacksjs/launchpad-installer@v1
+        with:
+          config-path: launchpad.config.ts
+          use-dev: true
+
+      - name: Verify installation
+        run: |
+          echo "Installed packages from launchpad.config.ts"
+          launchpad list

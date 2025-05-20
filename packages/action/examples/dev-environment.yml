@@ -1,0 +1,38 @@
+name: Development Environment Setup
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to set up
+        required: true
+        default: development
+        type: choice
+        options:
+          - development
+          - testing
+          - production
+
+jobs:
+  setup-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup development environment
+        uses: stacksjs/launchpad-installer@v1
+        with:
+          use-dev: true
+          # No packages specified - will use dev package only
+
+      - name: Activate development environment
+        run: |
+          # Activate the dev environment
+          launchpad dev .
+
+          # Now we can run dev-specific commands
+          # The environment has all tools specified in the project config
+          bun run dev

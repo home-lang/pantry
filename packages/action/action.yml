@@ -1,0 +1,24 @@
+name: Launchpad Installer
+description: Install packages using Launchpad in GitHub Actions
+author: Stacks.js
+branding:
+  icon: package
+  color: blue
+
+inputs:
+  packages:
+    description: Space-separated list of packages to install
+    required: false
+    default: ''
+  config-path:
+    description: Path to launchpad config file
+    required: false
+    default: launchpad.config.ts
+  use-dev:
+    description: Whether to install the dev package
+    required: false
+    default: 'false'
+
+runs:
+  using: node16
+  main: dist/index.js

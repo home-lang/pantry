@@ -1,0 +1,47 @@
+name: Build with Caching
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cache the Bun installation
+      - name: Cache Bun
+        uses: actions/cache@v3
+        with:
+          path: ~/.bun
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      # Cache the pkgx installation
+      - name: Cache pkgx
+        uses: actions/cache@v3
+        with:
+          path: ~/.pkgx
+          key: ${{ runner.os }}-pkgx-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pkgx-
+
+      - name: Install dependencies with Launchpad
+        uses: stacksjs/launchpad-installer@v1
+        with:
+          packages: node typescript go rust
+
+      - name: Run build
+        run: |
+          # Now we have all the tools available
+          node --version
+          go version
+          rustc --version
+
+          # Run our build scripts
+          bun run build

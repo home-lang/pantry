@@ -1,0 +1,27 @@
+name: Custom Config Setup
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies from custom config file
+        uses: stacksjs/launchpad-installer@v1
+        with:
+          config-path: .github/launchpad/production.config.ts
+
+      - name: Deploy application
+        run: |
+          # All packages from the custom config are now available
+          launchpad list
+
+          # Run deployment commands
+          bun run deploy

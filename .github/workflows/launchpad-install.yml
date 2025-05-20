@@ -1,0 +1,88 @@
+name: Launchpad Install
+
+on:
+  workflow_call:
+    inputs:
+      packages:
+        description: Packages to install (space-separated list)
+        required: false
+        type: string
+        default: ''
+      config-path:
+        description: Path to launchpad config file
+        required: false
+        type: string
+        default: launchpad.config.ts
+      use-dev:
+        description: Whether to install the dev package
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install launchpad
+        run: bun install -g launchpad
+
+      - name: Install pkgx
+        run: launchpad pkgx --verbose
+
+      - name: Install dev package (if required)
+        if: ${{ inputs.use-dev }}
+        run: launchpad dev --verbose
+        env:
+          LAUNCHPAD_VERBOSE: true
+          CONTEXT: ${{ github.context }}
+
+      - name: Install dependencies from config (Unix)
+        if: ${{ inputs.packages == '' && runner.os != 'Windows' }}
+        run: |
+          if [ -f "${{ inputs.config-path }}" ]; then
+            PACKAGES=$(grep -o '"[^"]*"' "${{ inputs.config-path }}" | tr -d '"' | tr '\n' ' ')
+            if [ ! -z "$PACKAGES" ]; then
+              launchpad install --verbose $PACKAGES
+            fi
+          fi
+        shell: bash
+        env:
+          LAUNCHPAD_VERBOSE: true
+          CONTEXT: ${{ github.context }}
+
+      - name: Install dependencies from config (Windows)
+        if: ${{ inputs.packages == '' && runner.os == 'Windows' }}
+        run: |
+          if (Test-Path "${{ inputs.config-path }}") {
+            $content = Get-Content "${{ inputs.config-path }}" -Raw
+            $packages = [regex]::Matches($content, '"([^"]*)"') | ForEach-Object { $_.Groups[1].Value }
+            if ($packages) {
+              launchpad install --verbose $packages
+            }
+          }
+        shell: pwsh
+        env:
+          LAUNCHPAD_VERBOSE: true
+          CONTEXT: ${{ github.context }}
+
+      - name: Install specified dependencies
+        if: ${{ inputs.packages != '' }}
+        run: launchpad install --verbose ${{ inputs.packages }}
+        env:
+          LAUNCHPAD_VERBOSE: true
+          CONTEXT: ${{ github.context }}
