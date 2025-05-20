@@ -144,6 +144,39 @@ function addToPath(dir: string): boolean
 function getUserShell(): string
 ```
 
+### Bun Module
+
+```typescript
+/**
+ * Get the latest Bun version from GitHub API
+ * @returns Promise resolving to the version string
+ */
+async function get_latest_bun_version(): Promise<string>
+
+/**
+ * Determine the appropriate Bun download URL
+ * @param version Version string
+ * @returns Object containing filename and URL
+ */
+function get_bun_asset(version: string): BunAsset
+
+/**
+ * Download and install Bun
+ * @param installPath Path where Bun should be installed
+ * @param version Optional specific version to install
+ * @returns Array of installed file paths
+ */
+async function install_bun(installPath: string, version?: string): Promise<string[]>
+
+/**
+ * Asset information for Bun download
+ */
+interface BunAsset {
+  filename: string
+  url: string
+}
+```
+
 ## Configuration Types
 
 ```typescript

@@ -137,4 +137,7 @@ launchpad shim --force node
 
 # Disable auto PATH modification
 launchpad dev --no-auto-path
+
+# Install specific Bun version
+launchpad bun --version 1.0.0
 ```

@@ -21,6 +21,7 @@ At its core, Launchpad leverages pkgx, a next-generation package runner that all
 - 🔄 **Executable Shims** — Create executable shims for packages automatically
 - 🛠️ **pkgx Installation** — Install and manage the pkgx utility itself
 - 💻 **Dev Environment** — Dedicated command for the dev package for development environments
+- 🚀 **Bun Installation** — Install Bun runtime directly from GitHub releases
 - 🔧 **Auto-updates** — Configure automatic updates for pkgx
 - 🔌 **PATH Integration** — Automatically add installation directories to your PATH
 - 🪟 **Cross-platform** — Support for macOS, Linux, and Windows systems

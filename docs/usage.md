@@ -102,6 +102,7 @@ Here are the main commands available in Launchpad:
 | `shim` | Create shims for packages |
 | `pkgx` | Install pkgx itself |
 | `dev` | Install the dev package |
+| `bun` | Install Bun runtime directly |
 | `list` or `ls` | List installed packages |
 | `autoupdate` | Check auto-update status |
 | `autoupdate:enable` | Enable auto-updates |
@@ -169,6 +170,23 @@ launchpad pkgx
 # Force reinstall
 launchpad pkgx --force
 ```
+
+## Installing Bun
+
+Launchpad provides a dedicated command for installing Bun directly from GitHub releases:
+
+```bash
+# Install latest Bun version
+launchpad bun
+
+# Install specific version
+launchpad bun --version 1.0.0
+
+# Specify installation path
+launchpad bun --path ~/bin
+```
+
+The `bun` command automatically detects your platform, downloads the appropriate binary, and adds it to your PATH.
 
 ## Managing Auto-updates
 

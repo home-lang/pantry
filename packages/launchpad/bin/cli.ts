@@ -7,7 +7,7 @@ import process from 'node:process'
 import { promisify } from 'node:util'
 import { CAC } from 'cac'
 import { version } from '../package.json'
-import { create_shim, install, install_prefix, list, shim_dir } from '../src'
+import { create_shim, install, install_bun, install_prefix, list, shim_dir } from '../src'
 import { config } from '../src/config'
 import { Path } from '../src/path'
 import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '../src/pkgx'
@@ -475,6 +475,109 @@ cli
     }
     catch (error) {
       console.error('Failed to disable auto-update:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('bun', 'Install Bun from the official GitHub releases')
+  .option('--path <path>', 'Installation path')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--force', 'Force reinstall even if already installed')
+  .option('--version <version>', 'Specific version to install')
+  .option('--no-auto-path', 'Do not automatically add to PATH')
+  .action(async (options?: CliOption & { 'auto-path'?: boolean, 'version'?: string }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    if (options?.force)
+      config.forceReinstall = true
+
+    if (options?.['auto-path'] === false)
+      config.autoAddToPath = false
+
+    // Determine installation path
+    const installPath = options?.path
+      ? new Path(options.path)
+      : install_prefix()
+
+    try {
+      // Check if bun is already installed and not forced
+      if (!config.forceReinstall) {
+        try {
+          const { stdout } = await execAsync('command -v bun', { encoding: 'utf8' })
+          if (stdout && !options?.force) {
+            console.log(`Bun is already installed at ${stdout.trim()}`)
+            console.log('Use --force to reinstall')
+            return
+          }
+        }
+        catch {
+          // Not installed, continue with installation
+        }
+      }
+
+      console.log('Installing Bun...')
+
+      // Install Bun
+      const createdFiles = await install_bun(installPath.string, options?.version)
+      console.log(`Bun has been installed to ${path.join(installPath.string, 'bin')}`)
+
+      if (config.verbose) {
+        console.log('Created files:')
+        createdFiles.forEach(file => console.log(`  ${file}`))
+      }
+
+      // Check if the bin directory is in PATH and add it if necessary
+      const binDir = path.join(installPath.string, 'bin')
+      if (!isInPath(binDir)) {
+        if (config.autoAddToPath) {
+          console.log(`Adding ${binDir} to your PATH...`)
+
+          const added = addToPath(binDir)
+          if (added) {
+            console.log(`Added ${binDir} to your PATH.`)
+            console.log('You may need to restart your terminal or source your shell configuration.')
+
+            // Provide a specific command to source the configuration file
+            const shell = process.env.SHELL || ''
+            if (shell.includes('zsh')) {
+              console.log('Run this command to update your PATH in the current session:')
+              console.log('  source ~/.zshrc')
+            }
+            else if (shell.includes('bash')) {
+              console.log('Run this command to update your PATH in the current session:')
+              console.log('  source ~/.bashrc  # or ~/.bash_profile')
+            }
+          }
+          else {
+            console.warn(`Could not add ${binDir} to your PATH automatically.`)
+            console.warn(`Please add it manually to your shell configuration file:`)
+            console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
+          }
+        }
+        else {
+          console.warn(`Note: ${binDir} is not in your PATH.`)
+          console.warn(`To use the bun command, add it to your PATH:`)
+          console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
+        }
+      }
+
+      // Verify installation if possible
+      if (isInPath(binDir)) {
+        try {
+          const { stdout } = await execAsync('bun --version', { encoding: 'utf8' })
+          console.log('✅ Bun has been successfully installed!')
+          console.log(`Version: ${stdout.trim()}`)
+        }
+        catch {
+          console.log('✅ Bun has been installed but unable to determine version')
+        }
+      }
+    }
+    catch (error) {
+      console.error('Failed to install Bun:', error instanceof Error ? error.message : error)
       process.exit(1)
     }
   })

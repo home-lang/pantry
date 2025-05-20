@@ -104,6 +104,32 @@ For debugging or to see detailed installation information:
 launchpad install --verbose node
 ```
 
+## Bun Installation
+
+Launchpad provides a dedicated command for installing Bun directly from official GitHub releases:
+
+```bash
+# Install latest version of Bun
+launchpad bun
+
+# Install a specific version
+launchpad bun --version 1.2.3
+
+# Customize installation path
+launchpad bun --path ~/my-bin
+
+# Force reinstallation
+launchpad bun --force
+```
+
+This command:
+1. Automatically detects your platform and architecture
+2. Downloads the appropriate Bun binary from GitHub releases
+3. Installs it to the specified path
+4. Adds the installation directory to your PATH (if needed)
+
+Unlike the general `install` command, `launchpad bun` doesn't require pkgx as it downloads directly from GitHub.
+
 ## Listing Installed Packages
 
 You can see all installed packages:

@@ -28,6 +28,9 @@ features:
   - title: "Dev Environment"
     icon: "💻"
     details: "Dedicated command for the dev package to setup development environments quickly."
+  - title: "Bun Installation"
+    icon: "🚀"
+    details: "Install Bun runtime directly from GitHub releases with automatic platform detection."
 ---
 
 <Home />

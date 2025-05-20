@@ -18,6 +18,7 @@ Launchpad offers a streamlined approach to package management with these key fea
 - 🔄 **[Executable Shims](https://github.com/stacksjs/launchpad/tree/main/docs/features/shim-creation.md)** — Create executable shims for packages automatically
 - 🛠️ **[pkgx Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/pkgx-management.md)** — Install and manage the pkgx utility itself
 - 💻 **[Dev Environment](https://github.com/stacksjs/launchpad/tree/main/docs/features/dev-package.md)** — Dedicated command for the dev package for development environments
+- 🚀 **[Bun Installation](https://github.com/stacksjs/launchpad/tree/main/docs/features/bun-installation.md)** — Install Bun directly from GitHub releases with platform detection
 - 🔧 **Auto-updates** — Configure automatic updates for pkgx
 - 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically add installation directories to your PATH
 - 🪟 **Cross-platform** — Full support for macOS, Linux, and Windows systems
@@ -102,6 +103,16 @@ launchpad dev
 
 # With customization
 launchpad dev --path ~/bin
+```
+
+### Install Bun
+
+```bash
+# Install Bun directly
+launchpad bun
+
+# Install specific version
+launchpad bun --version 1.0.0
 ```
 
 ### Configure auto-updates
