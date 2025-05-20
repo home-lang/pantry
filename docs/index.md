@@ -3,9 +3,9 @@
 layout: home
 
 hero:
-  name: "launchpad"
-  text: "A lightweight package manager"
-  tagline: "Simplify package installation and management, similar to Homebrew. Via pkgx."
+  name: "Launchpad"
+  text: "Modern Package Manager"
+  tagline: "Simplify package installation and management, similar to Homebrew."
   image: /images/logo-white.png
   actions:
     - theme: brand
