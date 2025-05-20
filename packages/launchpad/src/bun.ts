@@ -1,6 +1,7 @@
 import fs, { createWriteStream } from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 import { pipeline } from 'node:stream/promises'
 import { config } from './config'
 
@@ -14,6 +15,11 @@ interface BunAsset {
 interface GithubRelease {
   tag_name: string
 }
+
+// Cache configuration for GitHub API responses
+const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
+const GITHUB_CACHE_FILE = path.join(CACHE_DIR, 'github-bun-releases.json')
+const CACHE_TTL = 60 * 60 * 1000 // 1 hour in milliseconds
 
 /**
  * Check if a path is valid for installation
@@ -30,9 +36,75 @@ function validatePath(installPath: string): boolean {
 }
 
 /**
+ * Check if cache exists and is still valid
+ */
+function isCacheValid(): boolean {
+  if (!fs.existsSync(GITHUB_CACHE_FILE)) {
+    return false
+  }
+
+  try {
+    const stats = fs.statSync(GITHUB_CACHE_FILE)
+    const now = Date.now()
+    const cacheAge = now - stats.mtimeMs
+
+    // Check if cache is expired
+    return cacheAge < CACHE_TTL
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Read cached GitHub response data
+ */
+function readGithubCache(): GithubRelease | null {
+  try {
+    if (isCacheValid()) {
+      const cacheData = fs.readFileSync(GITHUB_CACHE_FILE, 'utf-8')
+      return JSON.parse(cacheData) as GithubRelease
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to read GitHub cache: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  return null
+}
+
+/**
+ * Update the GitHub API response cache
+ */
+function updateGithubCache(data: GithubRelease): void {
+  try {
+    fs.mkdirSync(CACHE_DIR, { recursive: true })
+    fs.writeFileSync(GITHUB_CACHE_FILE, JSON.stringify(data))
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to update GitHub cache: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+}
+
+/**
  * Get the latest Bun version from GitHub API
  */
 export async function get_latest_bun_version(): Promise<string> {
+  // Try to get version from cache first
+  const cachedData = readGithubCache()
+  if (cachedData && cachedData.tag_name) {
+    if (config.verbose) {
+      console.warn('Using cached GitHub release data')
+    }
+
+    return cachedData.tag_name.replace(/^v/, '') // Remove 'v' prefix
+  }
+
+  // Fetch from GitHub API if cache is missing or invalid
   const response = await fetch('https://api.github.com/repos/oven-sh/bun/releases/latest')
 
   if (!response.ok) {
@@ -40,6 +112,10 @@ export async function get_latest_bun_version(): Promise<string> {
   }
 
   const data = await response.json() as GithubRelease
+
+  // Update cache with new data
+  updateGithubCache(data)
+
   return data.tag_name.replace(/^v/, '') // Remove 'v' prefix
 }
 
