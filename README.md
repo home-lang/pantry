@@ -202,7 +202,6 @@ Explore advanced topics in our documentation:
 
 - **Speed**: Significantly faster installations
 - **Isolation**: Changes to one package don't affect others
-- **No formulas**: Access thousands of packages without custom formulas
 - **Less disk space**: Only install what you need
 
 ### vs Manual Installation
