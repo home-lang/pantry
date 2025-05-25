@@ -39,7 +39,7 @@ export function get_pkgx(): string {
       }
     }
   }
-  throw new Error('no `pkgx` found in `$PATH`')
+  throw new Error('no `pkgx` found in `$PATH`. Please install pkgx first by running: ./launchpad pkgx')
 }
 
 /**
@@ -51,7 +51,7 @@ export async function query_pkgx(
   options?: QueryPkgxOptions,
 ): Promise<[JsonResponse, Record<string, string>]> {
   // Ensure args is always an array
-  const pkgArgs = Array.isArray(args) ? args.map(x => `+${x}`) : []
+  const pkgArgs = Array.isArray(args) ? args.map(x => `+${x}`) : [`+${args}`]
 
   const env: Record<string, string> = {
     PATH: standardPath(),
@@ -90,7 +90,10 @@ export async function query_pkgx(
     const timeoutMs = options?.timeout || 0
     let timeoutId: NodeJS.Timeout | undefined
 
-    const proc = spawn(cmd, [...args, '--json=v1'], {
+    const cmdArgs = [...pkgArgs, '--json=v2']
+
+
+    const proc = spawn(cmd, cmdArgs, {
       stdio: ['ignore', 'pipe', 'inherit'],
       env,
     })
@@ -118,7 +121,10 @@ export async function query_pkgx(
 
       try {
         const json = JSON.parse(stdout)
-        const pkgs = (json.pkgs as { path: string, project: string, version: string }[]).map((x) => {
+
+        // Handle JSON v2 format where pkgs is an object, not an array
+        const pkgsData = json.pkgs
+        const pkgs = Object.values(pkgsData).map((x: any) => {
           return {
             path: new Path(x.path),
             pkg: {
@@ -130,11 +136,19 @@ export async function query_pkgx(
 
         const pkg = pkgs.find(x => `+${x.pkg.project}` === pkgArgs[0])!
 
+        // Convert pkgs object to runtime_env format for compatibility
+        const runtime_env: Record<string, Record<string, string>> = {}
+        for (const [project, pkgData] of Object.entries(pkgsData) as [string, any][]) {
+          if (pkgData.env) {
+            runtime_env[project] = pkgData.env
+          }
+        }
+
         resolve([{
           pkg,
           pkgs,
           env: json.env,
-          runtime_env: json.runtime_env,
+          runtime_env,
         }, env])
       }
       catch (err) {

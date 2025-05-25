@@ -4,25 +4,25 @@ import type { Version } from './version'
 export interface LaunchpadConfig {
   /** Enable verbose logging (default: false) */
   verbose: boolean
-  /** Path where binaries should be installed (default: /usr/local if writable, ~/.local otherwise) */
+  /** Path where binaries should be installed _(default: /usr/local if writable, ~/.local otherwise)_ */
   installationPath: string
-  /** Password for sudo operations, loaded from .env SUDO_PASSWORD (default: '') */
+  /** Password for sudo operations, loaded from .env SUDO_PASSWORD _(default: '')_ */
   sudoPassword: string
-  /** Whether to enable dev-aware installations (default: true) */
+  /** Whether to enable dev-aware installations _(default: true)_ */
   devAware: boolean
-  /** Whether to auto-elevate with sudo when needed (default: true) */
+  /** Whether to auto-elevate with sudo when needed _(default: true)_ */
   autoSudo: boolean
-  /** Max installation retries on failure (default: 3) */
+  /** Max installation retries on failure _(default: 3)_ */
   maxRetries: number
-  /** Timeout for pkgx operations in milliseconds (default: 60000) */
+  /** Timeout for pkgx operations in milliseconds _(default: 60000)_ */
   timeout: number
-  /** Whether to symlink versions (default: true) */
+  /** Whether to symlink versions _(default: true)_ */
   symlinkVersions: boolean
-  /** Whether to force reinstall if already installed (default: false) */
+  /** Whether to force reinstall if already installed _(default: false)_ */
   forceReinstall: boolean
   /** Default path for shims (default: ~/.local/bin) */
   shimPath: string
-  /** Whether to automatically add shim path to the system PATH (default: true) */
+  /** Whether to automatically add shim path to the system PATH _(default: true)_ */
   autoAddToPath: boolean
 }
 

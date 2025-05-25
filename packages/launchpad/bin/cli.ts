@@ -23,6 +23,56 @@ interface CliOption {
   force?: boolean
 }
 
+// Helper function to ensure pkgx is installed
+async function ensurePkgxInstalled(installPath: Path): Promise<void> {
+  try {
+    // Check if pkgx is already available
+    const { stdout } = await execAsync('command -v pkgx', { encoding: 'utf8' })
+    if (stdout.trim()) {
+      return // pkgx is already installed
+    }
+  }
+  catch {
+    // pkgx is not installed, proceed with installation
+  }
+
+  console.log('pkgx not found. Installing pkgx first...')
+
+  try {
+    // Create the necessary directories
+    fs.mkdirSync(path.join(installPath.string, 'bin'), { recursive: true })
+
+    // Download and install pkgx using curl
+    const installScript = `curl -fsSL https://pkgx.sh | PKGX_INSTALL_ROOT=${installPath.string} bash`
+
+    if (installPath.string.startsWith('/usr/local') && !isRoot()) {
+      // Need sudo for this path
+      console.log('This installation path requires sudo privileges.')
+      await execAsync(`sudo bash -c '${installScript}'`)
+    }
+    else {
+      // Normal install, no sudo needed
+      await execAsync(installScript)
+    }
+
+    console.log('✅ pkgx has been successfully installed!')
+
+    // Check if pkgx is in PATH after installation
+    try {
+      const { stdout } = await execAsync('command -v pkgx', { encoding: 'utf8' })
+      console.log(`pkgx is now available at: ${stdout.trim()}`)
+    }
+    catch {
+      console.warn('pkgx is installed but not in your PATH.')
+      console.warn(`Make sure ${path.join(installPath.string, 'bin')} is in your PATH.`)
+      console.warn('You may need to restart your shell or run: source ~/.bashrc (or ~/.zshrc)')
+    }
+  }
+  catch (error) {
+    throw new Error(`Failed to install pkgx: ${error instanceof Error ? error.message : error}`)
+  }
+}
+
 // Helper to check if we're running as root/administrator
 function isRoot(): boolean {
   // On Unix-like systems, root user has UID 0
@@ -60,27 +110,37 @@ cli
       ? new Path(options.path)
       : install_prefix()
 
-    const requiresSudo = options?.sudo || installPath.string.startsWith('/usr/local')
-    const shouldAutoSudo = requiresSudo && config.autoSudo
+    // Skip sudo logic for now to avoid issues - let the individual install functions handle permissions
+    // const requiresSudo = options?.sudo || installPath.string.startsWith('/usr/local')
+    // const shouldAutoSudo = requiresSudo && config.autoSudo
 
-    if (requiresSudo && !isRoot() && shouldAutoSudo) {
-      // We need sudo permissions
-      if (config.sudoPassword) {
-        // Use stored sudo password
-        const cmdline = process.argv.slice(1).join(' ')
-        await execAsync(`echo "${config.sudoPassword}" | sudo -S ${process.execPath} ${cmdline}`)
-        process.exit(0)
-      }
-      else {
-        console.error('This operation requires sudo privileges. Please run with sudo.')
-        process.exit(1)
-      }
+    // if (requiresSudo && !isRoot() && shouldAutoSudo) {
+    //   // We need sudo permissions
+    //   if (config.sudoPassword) {
+    //     // Use stored sudo password
+    //     const args = process.argv.slice(1).map(arg => `"${arg}"`).join(' ')
+    //     await execAsync(`echo "${config.sudoPassword}" | sudo -S "${process.execPath}" ${args}`)
+    //     process.exit(0)
+    //   }
+    //   else {
+    //     console.error('This operation requires sudo privileges. Please run with sudo.')
+    //     process.exit(1)
+    //   }
+    // }
+
+    // Ensure pkgx is installed before proceeding
+    try {
+      await ensurePkgxInstalled(installPath)
+    }
+    catch (error) {
+      console.error('Failed to ensure pkgx is installed:', error instanceof Error ? error.message : error)
+      process.exit(1)
     }
 
     // Run the installation
     try {
       const installedFiles = await install(packages, installPath.string)
-      console.log(`Installed ${packages.join(', ')} to ${installPath}`)
+      console.log(`Installed ${Array.isArray(packages) ? packages.join(', ') : packages} to ${installPath.string}`)
       if (config.verbose) {
         console.log('Created files:')
         installedFiles.forEach(file => console.log(`  ${file}`))
@@ -270,58 +330,18 @@ cli
     if (options?.['auto-path'] === false)
       config.autoAddToPath = false
 
-    // Make sure pkgx is installed first
-    let pkgxInstalled = false
+    // Determine installation path
+    const installPath = options?.path
+      ? new Path(options.path)
+      : install_prefix()
+
+    // Ensure pkgx is installed before proceeding
     try {
-      const { stdout } = await execAsync('command -v pkgx', { encoding: 'utf8' })
-      if (stdout.trim()) {
-        pkgxInstalled = true
-      }
+      await ensurePkgxInstalled(installPath)
     }
-    catch {
-      // Not installed
-    }
-
-    // Install pkgx if needed
-    if (!pkgxInstalled) {
-      console.log('pkgx is not installed. Installing pkgx first...')
-
-      // Determine installation path
-      const installPath = options?.path
-        ? new Path(options.path)
-        : install_prefix()
-
-      try {
-        const installScript = `curl -fsSL https://pkgx.sh | PKGX_INSTALL_ROOT=${installPath.string} bash`
-
-        if (installPath.string.startsWith('/usr/local') && !isRoot()) {
-          // Need sudo for this path
-          console.log('This installation path requires sudo privileges.')
-
-          if (config.autoSudo) {
-            if (config.sudoPassword) {
-              await execAsync(`echo "${config.sudoPassword}" | sudo -S bash -c '${installScript}'`)
-            }
-            else {
-              await execAsync(`sudo bash -c '${installScript}'`)
-            }
-          }
-          else {
-            console.error('Please run with sudo or install pkgx first')
-            process.exit(1)
-          }
-        }
-        else {
-          // Normal install, no sudo needed
-          await execAsync(installScript)
-        }
-
-        console.log('✅ pkgx has been successfully installed!')
-      }
-      catch (error) {
-        console.error('Failed to install pkgx:', error instanceof Error ? error.message : error)
-        process.exit(1)
-      }
+    catch (error) {
+      console.error('Failed to ensure pkgx is installed:', error instanceof Error ? error.message : error)
+      process.exit(1)
     }
 
     // Now install the dev package by creating a shim
