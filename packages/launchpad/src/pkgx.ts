@@ -92,7 +92,6 @@ export async function query_pkgx(
 
     const cmdArgs = [...pkgArgs, '--json=v2']
 
-
     const proc = spawn(cmd, cmdArgs, {
       stdio: ['ignore', 'pipe', 'inherit'],
       env,

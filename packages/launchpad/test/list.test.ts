@@ -178,7 +178,7 @@ describe('List', () => {
         // Cleanup
         fs.rmSync(testProjectDir, { recursive: true, force: true })
       }
-      catch (error) {
+      catch {
         // If we can't create directories, skip this test
         console.warn('Skipping ls test: cannot create test directories')
       }
@@ -227,8 +227,10 @@ describe('List', () => {
   describe('outdated', () => {
     it('should execute without errors', async () => {
       // Mock console.log to capture output
+      // eslint-disable-next-line no-console
       const originalLog = console.log
       const logs: string[] = []
+      // eslint-disable-next-line no-console
       console.log = (message: string) => logs.push(message)
 
       try {
@@ -239,6 +241,7 @@ describe('List', () => {
         expect(logs.some(log => log.includes('outdated'))).toBe(true)
       }
       finally {
+        // eslint-disable-next-line no-console
         console.log = originalLog
       }
     })

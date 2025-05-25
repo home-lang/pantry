@@ -1,11 +1,9 @@
 import type { LaunchpadConfig } from './types'
 import fs from 'node:fs'
-import { platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 // @ts-expect-error the library has type issues atm
 import { loadConfig } from 'bunfig'
-import { Path } from './path'
 
 function getDefaultInstallPath(): string {
   // if /usr/local is writable, use that

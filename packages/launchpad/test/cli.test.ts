@@ -63,7 +63,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             // Help should be shown (either in stdout or stderr)
             const output = stdout + stderr
@@ -105,7 +105,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             const output = stdout + stderr
             // Should contain version information
@@ -148,7 +148,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             const output = stdout + stderr
             expect(output.toLowerCase()).toContain('install')
@@ -188,7 +188,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             const output = stdout + stderr
             expect(output.toLowerCase()).toContain('list')
@@ -227,7 +227,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             const output = stdout + stderr
             expect(output.toLowerCase()).toContain('shim')
@@ -305,7 +305,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             const output = stdout + stderr
             expect(output.toLowerCase()).toContain('dev')
@@ -430,7 +430,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             // Should not error on verbose flag
             const output = stdout + stderr
@@ -471,7 +471,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             // Should not error on path flag
             const output = stdout + stderr

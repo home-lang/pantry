@@ -6,7 +6,6 @@ import * as process from 'node:process'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
-import * as io from '@actions/io'
 
 export * from './types'
 

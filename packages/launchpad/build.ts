@@ -9,4 +9,3 @@ await Bun.build({
   minify: true,
   plugins: [dts()],
 })
-

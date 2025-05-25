@@ -298,7 +298,7 @@ describe('Bun', () => {
         // Try to install with an invalid version to trigger an error
         await install_bun(tempDir, 'invalid-version-12345')
       }
-      catch (error) {
+      catch {
         // Error is expected
         const tempDirPath = path.join(tempDir, 'temp')
         expect(fs.existsSync(tempDirPath)).toBe(false)

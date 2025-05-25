@@ -3,7 +3,6 @@ import { homedir, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
-import { Path } from './path'
 
 /**
  * Helper function to get a standard PATH environment variable
