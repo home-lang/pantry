@@ -1,5 +1,8 @@
+import type { Pantry } from 'ts-pkgx'
 import type { Path } from './path'
 import type { Version } from './version'
+
+export type { Pantry }
 
 export interface LaunchpadConfig {
   /** Enable verbose logging (default: false) */

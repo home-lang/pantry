@@ -58,15 +58,13 @@
     "zip:darwin-arm64": "zip -j bin/launchpad-darwin-arm64.zip bin/launchpad-darwin-arm64",
     "lint": "bunx --bun eslint .",
     "lint:fix": "bunx --bun eslint . --fix",
-    "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
-    "changelog": "bunx changelogen --output CHANGELOG.md",
     "prepublishOnly": "bun --bun run build && bun run compile:all && bun run zip",
-    "release": "bun run changelog && bunx bumpp package.json --all",
     "test": "bun test"
   },
   "dependencies": {
     "bunfig": "^0.10.0",
-    "cac": "^6.7.14"
+    "cac": "^6.7.14",
+    "ts-pkgx": "^0.1.4"
   },
   "devDependencies": {
     "bun-plugin-dtsx": "^0.21.12"
