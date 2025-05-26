@@ -266,7 +266,7 @@ describe('CLI', () => {
           stderr += data.toString()
         })
 
-        proc.on('close', (code) => {
+        proc.on('close', (_code) => {
           try {
             const output = stdout + stderr
             expect(output.toLowerCase()).toContain('pkgx')
