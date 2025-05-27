@@ -1,78 +1,60 @@
-import { existsSync } from 'node:fs'
-import { readAll, writeAll } from 'jsr:@std/io'
-import { Path, utils } from 'libpkgx'
-import readLines from 'libpkgx/utils/read-lines.ts'
-
-const { flatmap } = utils
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir, platform } from 'node:os'
+import { join } from 'node:path'
+import process from 'node:process'
 
 export default async function (
   op: 'install' | 'uninstall',
   { dryrun }: { dryrun: boolean },
-) {
+): Promise<void> {
   let opd_at_least_once = false
-  const encode = (e => e.encode.bind(e))(new TextEncoder())
 
-  const fopts = { read: true, ...dryrun ? {} : { write: true, create: true } }
+  const shellFiles = getShellFiles()
 
-  here: for (const [file, line] of shells()) {
-    const fd = await Deno.open(file.string, fopts)
+  for (const [file, line] of shellFiles) {
     try {
-      let pos = 0
-      for await (const readline of readLines(fd)) {
-        if (readline.trim().endsWith('# https://github.com/pkgxdev/dev')) {
-          if (op == 'install') {
-            console.error('hook already integrated:', file)
-            continue here
-          }
-          else if (op == 'uninstall') {
-            // we have to seek because readLines is buffered and thus the seek pos is probs already at the file end
-            await fd.seek(pos + readline.length + 1, Deno.SeekMode.Start)
-            const rest = await readAll(fd)
-
-            if (!dryrun)
-              await fd.truncate(pos) // deno has no way I can find to truncate from the current seek position
-            await fd.seek(pos, Deno.SeekMode.Start)
-            if (!dryrun)
-              await writeAll(fd, rest)
-
-            opd_at_least_once = true
-            console.error('removed hook:', file)
-
-            continue here
-          }
-        }
-
-        pos += readline.length + 1 // the +1 is because readLines() truncates it
+      let content = ''
+      if (existsSync(file)) {
+        content = readFileSync(file, 'utf8')
       }
 
-      if (op == 'install') {
-        const byte = new Uint8Array(1)
-        if (pos) {
-          await fd.seek(0, Deno.SeekMode.End) // potentially the above didn't reach the end
-          while (true && pos > 0) {
-            await fd.seek(-1, Deno.SeekMode.Current)
-            await fd.read(byte)
-            if (byte[0] != 10)
-              break
-            await fd.seek(-1, Deno.SeekMode.Current)
-            pos -= 1
-          }
+      const hasHook = content.includes('# https://github.com/pkgxdev/dev')
 
-          if (!dryrun) {
-            await writeAll(
-              fd,
-              encode(`\n\n${line}  # https://github.com/pkgxdev/dev\n`),
-            )
-          }
+      if (op === 'install') {
+        if (hasHook) {
+          console.error('hook already integrated:', file)
+          continue
         }
+
+        if (!dryrun) {
+          const newContent = content.endsWith('\n') ? content : `${content}\n`
+          writeFileSync(file, `${newContent}\n${line}  # https://github.com/pkgxdev/dev\n`)
+        }
+
         opd_at_least_once = true
         console.error(`${file} << \`${line}\``)
       }
+      else if (op === 'uninstall') {
+        if (!hasHook) {
+          continue
+        }
+
+        const lines = content.split('\n')
+        const filteredLines = lines.filter(line => !line.includes('# https://github.com/pkgxdev/dev'))
+
+        if (!dryrun) {
+          writeFileSync(file, filteredLines.join('\n'))
+        }
+
+        opd_at_least_once = true
+        console.error('removed hook:', file)
+      }
     }
-    finally {
-      fd.close()
+    catch (error) {
+      console.error(`Failed to process ${file}:`, error instanceof Error ? error.message : error)
     }
   }
+
   if (dryrun && opd_at_least_once) {
     console.error(
       '%cthis was a dry-run. %cnothing was changed.',
@@ -89,6 +71,7 @@ export default async function (
         break
       case 'install':
         if (opd_at_least_once) {
+          // eslint-disable-next-line no-console
           console.log(
             'now %crestart your terminal%c for `dev` hooks to take effect',
             'color: #5f5fff',
@@ -99,31 +82,33 @@ export default async function (
   }
 }
 
-function shells(): [Path, string][] {
-  const eval_ln
-    = existsSync('/opt/homebrew/bin/dev') || existsSync('/usr/local/bin/dev')
-      ? 'eval "$(dev --shellcode)"'
+function getShellFiles(): [string, string][] {
+  const eval_ln = existsSync('/opt/homebrew/bin/dev') || existsSync('/usr/local/bin/dev')
+    ? 'eval "$(dev --shellcode)"'
+    : existsSync('/usr/local/bin/launchpad')
+      ? 'eval "$(launchpad dev:shellcode)"'
       : 'eval "$(pkgx --quiet dev --shellcode)"'
 
-  const zdotdir = flatmap(Deno.env.get('ZDOTDIR'), Path.abs) ?? Path.home()
-  const zshpair: [Path, string] = [zdotdir.join('.zshrc'), eval_ln]
+  const home = homedir()
+  const zdotdir = process.env.ZDOTDIR || home
+  const zshpair: [string, string] = [join(zdotdir, '.zshrc'), eval_ln]
 
-  const candidates: [Path, string][] = [
+  const candidates: [string, string][] = [
     zshpair,
-    [Path.home().join('.bashrc'), eval_ln],
-    [Path.home().join('.bash_profile'), eval_ln],
+    [join(home, '.bashrc'), eval_ln],
+    [join(home, '.bash_profile'), eval_ln],
   ]
 
-  const viable_candidates = candidates.filter(([file]) => file.exists())
+  const viable_candidates = candidates.filter(([file]) => existsSync(file))
 
-  if (viable_candidates.length == 0) {
-    if (Deno.build.os == 'darwin') {
-      /// macOS has no .zshrc by default and we want mac users to get a just works experience
+  if (viable_candidates.length === 0) {
+    if (platform() === 'darwin') {
+      // macOS has no .zshrc by default and we want mac users to get a just works experience
       return [zshpair]
     }
     else {
       console.error('no `.shellrc` files found')
-      Deno.exit(1)
+      process.exit(1)
     }
   }
 

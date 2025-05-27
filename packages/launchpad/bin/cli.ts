@@ -9,6 +9,7 @@ import { CAC } from 'cac'
 import { version } from '../package.json'
 import { create_shim, install, install_bun, install_prefix, list, shim_dir } from '../src'
 import { config } from '../src/config'
+import { datadir, dump, integrate, shell_escape, shellcode, sniff } from '../src/dev'
 import { Path } from '../src/path'
 import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '../src/pkgx'
 import { addToPath, isInPath } from '../src/utils'
@@ -720,6 +721,175 @@ cli
     }
   })
 
+// Dev environment commands
+cli
+  .command('dev:integrate', 'Integrate dev hooks into shell configuration')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--dry-run', 'Show what would be done without making changes')
+  .action(async (options?: CliOption & { 'dry-run'?: boolean }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const dryRun = options?.['dry-run'] || false
+
+    try {
+      await integrate('install', { dryrun: dryRun })
+    }
+    catch (error) {
+      console.error('Failed to integrate dev hooks:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:deintegrate', 'Remove dev hooks from shell configuration')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--dry-run', 'Show what would be done without making changes')
+  .action(async (options?: CliOption & { 'dry-run'?: boolean }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const dryRun = options?.['dry-run'] || false
+
+    try {
+      await integrate('uninstall', { dryrun: dryRun })
+    }
+    catch (error) {
+      console.error('Failed to deintegrate dev hooks:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:status', 'Check if dev environment is active in current directory')
+  .option('--verbose', 'Enable verbose logging')
+  .action(async (options?: CliOption) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    try {
+      const isActive = checkDevStatusSimple()
+      if (isActive) {
+        console.log('✅ Dev environment is active')
+        process.exit(0)
+      }
+      else {
+        console.log('❌ Dev environment is not active')
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to check dev status:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:ls', 'List all active dev environments')
+  .option('--verbose', 'Enable verbose logging')
+  .action(async (options?: CliOption) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    try {
+      const activeEnvs = await listActiveDevEnvs()
+      if (activeEnvs.length > 0) {
+        console.log('Active dev environments:')
+        activeEnvs.forEach(env => console.log(`  ${env}`))
+      }
+      else {
+        console.log('No active dev environments found')
+      }
+    }
+    catch (error) {
+      console.error('Failed to list dev environments:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:off', 'Deactivate dev environment in current directory')
+  .option('--verbose', 'Enable verbose logging')
+  .action(async (options?: CliOption) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    try {
+      const deactivated = await deactivateDevEnv()
+      if (deactivated) {
+        console.log('✅ Dev environment deactivated')
+      }
+      else {
+        console.log('❌ No active dev environment found')
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:on [directory]', 'Activate dev environment in directory')
+  .option('--verbose', 'Enable verbose logging')
+  .action(async (directory?: string, options?: CliOption) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const targetDir = directory ? path.resolve(directory) : process.cwd()
+
+    try {
+      const activated = await activateDevEnv(targetDir)
+      if (activated) {
+        console.log(`✅ Dev environment activated in ${targetDir}`)
+      }
+      else {
+        console.log('❌ No development files found in directory')
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to activate dev environment:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:shellcode', 'Output shell integration code')
+  .action(() => {
+    console.log(shellcode())
+  })
+
+cli
+  .command('dev:dump [directory]', 'Output environment setup for dev environment')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--dry-run', 'Show packages without generating environment')
+  .option('--quiet', 'Suppress package output')
+  .action(async (directory?: string, options?: CliOption & { 'dry-run'?: boolean, 'quiet'?: boolean }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const targetDir = directory ? path.resolve(directory) : process.cwd()
+    const dryRun = options?.['dry-run'] || false
+    const quiet = options?.quiet || false
+
+    try {
+      await dump(targetDir, { dryrun: dryRun, quiet })
+    }
+    catch (error) {
+      console.error('Failed to dump dev environment:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
 cli.command('version', 'Show the version of the CLI').action(() => {
   console.log(version)
 })
@@ -727,3 +897,355 @@ cli.command('version', 'Show the version of the CLI').action(() => {
 cli.version(version)
 cli.help()
 cli.parse()
+
+// Simple helper functions for dev commands using imported dev functions
+
+function getDataDir(): string {
+  const xdgDataHome = process.env.XDG_DATA_HOME
+  if (xdgDataHome) {
+    return path.join(xdgDataHome, 'pkgx', 'dev')
+  }
+
+  const home = process.env.HOME || process.env.USERPROFILE
+  if (!home) {
+    throw new Error('Could not determine home directory')
+  }
+
+  switch (platform()) {
+    case 'darwin':
+      return path.join(home, 'Library', 'Application Support', 'pkgx', 'dev')
+    case 'win32': {
+      const localAppData = process.env.LOCALAPPDATA
+      if (localAppData) {
+        return path.join(localAppData, 'pkgx', 'dev')
+      }
+      return path.join(home, 'AppData', 'Local', 'pkgx', 'dev')
+    }
+    default:
+      return path.join(home, '.local', 'share', 'pkgx', 'dev')
+  }
+}
+
+async function integrateDevHooks(op: 'install' | 'uninstall', { dryRun }: { dryRun: boolean }): Promise<void> {
+  const home = process.env.HOME || process.env.USERPROFILE
+  if (!home) {
+    throw new Error('Could not determine home directory')
+  }
+
+  const hookLine = 'eval "$(launchpad dev:shellcode)"  # https://github.com/pkgxdev/dev'
+
+  const shellFiles = [
+    path.join(home, '.zshrc'),
+    path.join(home, '.bashrc'),
+    path.join(home, '.bash_profile'),
+  ].filter(file => fs.existsSync(file))
+
+  // If no shell files exist, create .zshrc on macOS
+  if (shellFiles.length === 0 && platform() === 'darwin') {
+    shellFiles.push(path.join(home, '.zshrc'))
+  }
+
+  if (shellFiles.length === 0) {
+    throw new Error('No shell configuration files found')
+  }
+
+  let operatedAtLeastOnce = false
+
+  for (const shellFile of shellFiles) {
+    try {
+      let content = ''
+      if (fs.existsSync(shellFile)) {
+        content = fs.readFileSync(shellFile, 'utf8')
+      }
+
+      const hasHook = content.includes('# https://github.com/pkgxdev/dev')
+
+      if (op === 'install') {
+        if (hasHook) {
+          console.log(`Hook already integrated: ${shellFile}`)
+          continue
+        }
+
+        if (!dryRun) {
+          const newContent = content.endsWith('\n') ? content : `${content}\n`
+          fs.writeFileSync(shellFile, `${newContent}\n${hookLine}\n`)
+        }
+
+        console.log(`${shellFile} << \`${hookLine}\``)
+        operatedAtLeastOnce = true
+      }
+      else if (op === 'uninstall') {
+        if (!hasHook) {
+          continue
+        }
+
+        const lines = content.split('\n')
+        const filteredLines = lines.filter(line => !line.includes('# https://github.com/pkgxdev/dev'))
+
+        if (!dryRun) {
+          fs.writeFileSync(shellFile, filteredLines.join('\n'))
+        }
+
+        console.log(`Removed hook: ${shellFile}`)
+        operatedAtLeastOnce = true
+      }
+    }
+    catch (error) {
+      console.warn(`Failed to process ${shellFile}:`, error instanceof Error ? error.message : error)
+    }
+  }
+
+  if (dryRun && operatedAtLeastOnce) {
+    console.log('This was a dry-run. Nothing was changed.')
+  }
+  else if (op === 'install' && operatedAtLeastOnce) {
+    console.log('Now restart your terminal for `dev` hooks to take effect')
+  }
+  else if (op === 'uninstall' && !operatedAtLeastOnce) {
+    console.log('Nothing to deintegrate found')
+  }
+}
+
+async function checkDevStatus(): Promise<boolean> {
+  const cwd = process.cwd()
+  const dataDir = getDataDir()
+  const activationFile = path.join(dataDir, cwd.slice(1), 'dev.pkgx.activated')
+
+  return fs.existsSync(activationFile)
+}
+
+async function listActiveDevEnvs(): Promise<string[]> {
+  const dataDir = getDataDir()
+  const activeEnvs: string[] = []
+
+  if (!fs.existsSync(dataDir)) {
+    return activeEnvs
+  }
+
+  function walkDir(dir: string, basePath: string = ''): void {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true })
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name)
+        const relativePath = path.join(basePath, entry.name)
+
+        if (entry.isFile() && entry.name === 'dev.pkgx.activated') {
+          activeEnvs.push(`/${path.dirname(relativePath)}`)
+        }
+        else if (entry.isDirectory()) {
+          walkDir(fullPath, relativePath)
+        }
+      }
+    }
+    catch {
+      // Ignore errors reading directories
+    }
+  }
+
+  walkDir(dataDir)
+  return activeEnvs
+}
+
+async function deactivateDevEnv(): Promise<boolean> {
+  let dir = process.cwd()
+  const dataDir = getDataDir()
+
+  while (dir !== '/' && dir !== '.') {
+    const activationFile = path.join(dataDir, dir.slice(1), 'dev.pkgx.activated')
+
+    if (fs.existsSync(activationFile)) {
+      fs.unlinkSync(activationFile)
+      console.log(`Deactivated dev environment: ${dir}`)
+      return true
+    }
+
+    dir = path.dirname(dir)
+  }
+
+  return false
+}
+
+async function activateDevEnv(targetDir: string): Promise<boolean> {
+  // Import sniff function to detect development files
+  const { default: sniff } = await import('../src/dev/sniff.ts')
+
+  try {
+    const { pkgs } = await sniff({ string: targetDir })
+
+    if (pkgs.length === 0) {
+      return false
+    }
+
+    const dataDir = getDataDir()
+    const activationDir = path.join(dataDir, targetDir.slice(1))
+    const activationFile = path.join(activationDir, 'dev.pkgx.activated')
+
+    // Create directory structure
+    fs.mkdirSync(activationDir, { recursive: true })
+
+    // Create activation file
+    fs.writeFileSync(activationFile, '')
+
+    console.log(`Detected packages: ${pkgs.map(pkg => `${pkg.project}@${pkg.constraint}`).join(' ')}`)
+    return true
+  }
+  catch (error) {
+    console.warn('Failed to sniff directory:', error instanceof Error ? error.message : error)
+    return false
+  }
+}
+
+async function dumpDevEnv(targetDir: string, { dryRun, quiet }: { dryRun: boolean, quiet: boolean }): Promise<void> {
+  // Import sniff function to detect development files
+  const { default: sniff } = await import('../src/dev/sniff.ts')
+
+  try {
+    const { pkgs, env } = await sniff({ string: targetDir })
+
+    if (pkgs.length === 0 && Object.keys(env).length === 0) {
+      console.error('no devenv detected')
+      process.exit(1)
+    }
+
+    if (dryRun) {
+      const pkgspecs = pkgs.map(pkg => `+${pkg.project}@${pkg.constraint}`)
+      console.log(pkgspecs.join(' '))
+      return
+    }
+
+    let envOutput = ''
+
+    if (pkgs.length > 0) {
+      // For now, just output the package names - in a full implementation,
+      // this would call pkgx to get the actual environment variables
+      const pkgspecs = pkgs.map(pkg => `+${pkg.project}@${pkg.constraint}`)
+
+      if (!quiet) {
+        console.error(`%c${pkgspecs.join(' ')}`, 'color: green')
+      }
+
+      // Simulate environment setup - in reality this would call pkgx
+      for (const pkg of pkgs) {
+        envOutput += `# Package: ${pkg.project}@${pkg.constraint}\n`
+      }
+    }
+
+    // Add any additional env that we sniffed
+    for (const [key, value] of Object.entries(env)) {
+      envOutput += `${key}=${shellEscape(value)}\n`
+    }
+
+    envOutput = envOutput.trim()
+
+    let undo = ''
+    for (const envln of envOutput.trim().split('\n')) {
+      if (!envln || envln.startsWith('#'))
+        continue
+
+      const [key] = envln.split('=', 2)
+      undo += `    if [ "$${key}" ]; then
+      export ${key}="$${key}"
+    else
+      unset ${key}
+    fi\n`
+    }
+
+    const byeByeMsg = pkgs.map(pkg => `-${pkg.project}@${pkg.constraint}`).join(' ')
+
+    console.log(`
+  eval "_pkgx_dev_try_bye() {
+    suffix=\"\${PWD#\"${targetDir}\"}\"
+    [ \"\$PWD\" = \"${targetDir}\$suffix\" ] && return 1
+    echo -e \"\\033[31m${byeByeMsg}\\033[0m\" >&2
+    ${undo.trim()}
+    unset -f _pkgx_dev_try_bye
+  }"
+
+  set -a
+  ${envOutput}
+  set +a`)
+  }
+  catch (error) {
+    console.error('Failed to sniff directory:', error instanceof Error ? error.message : error)
+    process.exit(1)
+  }
+}
+
+function shellEscape(str: string): string {
+  // Simple shell escaping - wrap in single quotes and escape any single quotes
+  return `'${str.replace(/'/g, '\'"\'"\'')}'`
+}
+
+function generateShellcode(): string {
+  // Find the launchpad command
+  const launchpadCmd = process.argv[1] || 'launchpad'
+  const dataDir = getDataDir()
+
+  return `
+_pkgx_chpwd_hook() {
+  if ! type _pkgx_dev_try_bye >/dev/null 2>&1 || _pkgx_dev_try_bye; then
+    dir="$PWD"
+    while [ "$dir" != / -a "$dir" != . ]; do
+      if [ -f "${dataDir}/$dir/dev.pkgx.activated" ]; then
+        eval "$(${launchpadCmd} dev:dump)" "$dir"
+        break
+      fi
+      dir="$(dirname "$dir")"
+    done
+  fi
+}
+
+dev() {
+  case "$1" in
+  off)
+    if type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
+      dir="$PWD"
+      while [ "$dir" != / -a "$dir" != . ]; do
+        if [ -f "${dataDir}/$dir/dev.pkgx.activated" ]; then
+          rm "${dataDir}/$dir/dev.pkgx.activated"
+          break
+        fi
+        dir="$(dirname "$dir")"
+      done
+      PWD=/ _pkgx_dev_try_bye
+    else
+      echo "no devenv" >&2
+    fi;;
+  ''|on)
+    if [ "$2" ]; then
+      "${launchpadCmd}" dev:on "$@"
+    elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
+      mkdir -p "${dataDir}$PWD"
+      touch "${dataDir}$PWD/dev.pkgx.activated"
+      eval "$(${launchpadCmd} dev:dump)"
+    else
+      echo "devenv already active" >&2
+    fi;;
+  *)
+    "${launchpadCmd}" dev:"$@";;
+  esac
+}
+
+if [ -n "$ZSH_VERSION" ] && [ $(emulate) = zsh ]; then
+  eval 'typeset -ag chpwd_functions
+
+        if [[ -z "\${chpwd_functions[(r)_pkgx_chpwd_hook]+1}" ]]; then
+          chpwd_functions=( _pkgx_chpwd_hook \${chpwd_functions[@]} )
+        fi
+
+        if [ "$TERM_PROGRAM" != Apple_Terminal ]; then
+          _pkgx_chpwd_hook
+        fi'
+elif [ -n "$BASH_VERSION" ] && [ "$POSIXLY_CORRECT" != y ] ; then
+  eval 'cd() {
+          builtin cd "$@" || return
+          _pkgx_chpwd_hook
+        }
+        _pkgx_chpwd_hook'
+else
+  POSIXLY_CORRECT=y
+  echo "launchpad: dev: warning: unsupported shell" >&2
+fi
+`.trim()
+}

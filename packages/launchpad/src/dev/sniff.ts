@@ -5,12 +5,7 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { createInterface } from 'node:readline'
-import {
-  isArray,
-  isNumber,
-  isPlainObject,
-  isString,
-} from 'is-what'
+import { isArray, isNumber, isPlainObject, isString } from 'is-what'
 
 // Define our own types to replace libpkgx types
 export interface PackageRequirement {

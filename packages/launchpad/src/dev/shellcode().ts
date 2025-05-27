@@ -1,20 +1,28 @@
-import { Path } from 'libpkgx'
+import { existsSync } from 'node:fs'
+import { homedir, platform } from 'node:os'
+import { join } from 'node:path'
+import process from 'node:process'
 
-export default function shellcode() {
+export default function shellcode(): string {
   // find self
-  const dev_cmd = Deno.env.get('PATH')?.split(':').map(path =>
-    Path.abs(path)?.join('dev'),
-  ).filter(x => x?.isExecutableFile())[0]
+  const pathDirs = process.env.PATH?.split(':') || []
+  const dev_cmd = pathDirs
+    .map(dir => join(dir, 'dev'))
+    .find(cmd => existsSync(cmd)) || pathDirs
+    .map(dir => join(dir, 'launchpad'))
+    .find(cmd => existsSync(cmd))
 
   if (!dev_cmd)
-    throw new Error('couldn’t find `dev`')
+    throw new Error('couldn\'t find `dev` or `launchpad`')
+
+  const dataDirPath = datadir()
 
   return `
 _pkgx_chpwd_hook() {
   if ! type _pkgx_dev_try_bye >/dev/null 2>&1 || _pkgx_dev_try_bye; then
     dir="$PWD"
     while [ "$dir" != / -a "$dir" != . ]; do
-      if [ -f "${datadir()}/$dir/dev.pkgx.activated" ]; then
+      if [ -f "${dataDirPath}/$dir/dev.pkgx.activated" ]; then
         eval "$(${dev_cmd})" "$dir"
         break
       fi
@@ -29,8 +37,8 @@ dev() {
     if type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
       dir="$PWD"
       while [ "$dir" != / -a "$dir" != . ]; do
-        if [ -f "${datadir()}/$dir/dev.pkgx.activated" ]; then
-          rm "${datadir()}/$dir/dev.pkgx.activated"
+        if [ -f "${dataDirPath}/$dir/dev.pkgx.activated" ]; then
+          rm "${dataDirPath}/$dir/dev.pkgx.activated"
           break
         fi
         dir="$(dirname "$dir")"
@@ -43,8 +51,8 @@ dev() {
     if [ "$2" ]; then
       "${dev_cmd}" "$@"
     elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
-      mkdir -p "${datadir()}$PWD"
-      touch "${datadir()}$PWD/dev.pkgx.activated"
+      mkdir -p "${dataDirPath}$PWD"
+      touch "${dataDirPath}$PWD/dev.pkgx.activated"
       eval "$(${dev_cmd})"
     else
       echo "devenv already active" >&2
@@ -77,27 +85,30 @@ fi
 `.trim()
 }
 
-export function datadir() {
-  return new Path(
-    Deno.env.get('XDG_DATA_HOME')?.trim() || platform_data_home_default(),
-  ).join('pkgx', 'dev')
+export function datadir(): string {
+  const xdgDataHome = process.env.XDG_DATA_HOME?.trim()
+  if (xdgDataHome) {
+    return join(xdgDataHome, 'pkgx', 'dev')
+  }
+
+  return join(platform_data_home_default(), 'pkgx', 'dev')
 }
 
-function platform_data_home_default() {
-  const home = Path.home()
-  switch (Deno.build.os) {
+function platform_data_home_default(): string {
+  const home = homedir()
+  switch (platform()) {
     case 'darwin':
-      return home.join('Library/Application Support')
-    case 'windows': {
-      const LOCALAPPDATA = Deno.env.get('LOCALAPPDATA')
+      return join(home, 'Library', 'Application Support')
+    case 'win32': {
+      const LOCALAPPDATA = process.env.LOCALAPPDATA
       if (LOCALAPPDATA) {
-        return new Path(LOCALAPPDATA)
+        return LOCALAPPDATA
       }
       else {
-        return home.join('AppData/Local')
+        return join(home, 'AppData', 'Local')
       }
     }
     default:
-      return home.join('.local/share')
+      return join(home, '.local', 'share')
   }
 }

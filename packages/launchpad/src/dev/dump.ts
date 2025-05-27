@@ -1,38 +1,46 @@
-import type { Path } from 'libpkgx'
-import { utils } from 'libpkgx'
+import { exec } from 'node:child_process'
+import process from 'node:process'
+import { promisify } from 'node:util'
 import shell_escape from './shell-escape.ts'
 import sniff from './sniff.ts'
 
+const execAsync = promisify(exec)
+
 export default async function (
-  cwd: Path,
+  cwd: string,
   opts: { dryrun: boolean, quiet: boolean },
-) {
-  const snuff = await sniff(cwd)
+): Promise<void> {
+  const snuff = await sniff({ string: cwd })
 
   if (snuff.pkgs.length === 0 && Object.keys(snuff.env).length === 0) {
     console.error('no devenv detected')
-    Deno.exit(1)
+    process.exit(1)
   }
 
   let env = ''
-  const pkgspecs = snuff.pkgs.map(pkg => `+${utils.pkg.str(pkg)}`)
+  const pkgspecs = snuff.pkgs.map(pkg => `+${pkg.project}@${pkg.constraint}`)
 
   if (opts.dryrun) {
+    // eslint-disable-next-line no-console
     console.log(pkgspecs.join(' '))
     return
   }
 
   if (snuff.pkgs.length > 0) {
-    const cmd = new Deno.Command('pkgx', {
-      args: ['--quiet', ...pkgspecs],
-      stdout: 'piped',
-      env: { CLICOLOR_FORCE: '1' }, // unfortunate
-    }).spawn()
-
-    await cmd.status
-
-    const stdout = (await cmd.output()).stdout
-    env = new TextDecoder().decode(stdout)
+    try {
+      // Try to use pkgx to get environment variables
+      const { stdout } = await execAsync(`pkgx --quiet ${pkgspecs.join(' ')}`, {
+        env: { ...process.env, CLICOLOR_FORCE: '1' },
+        encoding: 'utf8',
+      })
+      env = stdout
+    }
+    catch {
+      // If pkgx is not available, just create basic environment setup
+      for (const pkg of snuff.pkgs) {
+        env += `# Package: ${pkg.project}@${pkg.constraint}\n`
+      }
+    }
   }
 
   // add any additional env that we sniffed
@@ -63,6 +71,7 @@ export default async function (
     console.error('%c%s', 'color: green', pkgspecs.join(' '))
   }
 
+  // eslint-disable-next-line no-console
   console.log(`
   eval "_pkgx_dev_try_bye() {
     suffix=\\"\\\${PWD#\\"${cwd}\\"}\\"
