@@ -1,1 +1,1 @@
-export default "0.0.0+dev";
+export default '0.0.0+dev'

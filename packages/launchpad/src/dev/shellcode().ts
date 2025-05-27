@@ -1,13 +1,13 @@
-import { Path } from "libpkgx";
+import { Path } from 'libpkgx'
 
 export default function shellcode() {
   // find self
-  const dev_cmd = Deno.env.get("PATH")?.split(":").map((path) =>
-    Path.abs(path)?.join("dev")
-  )
-    .filter((x) => x?.isExecutableFile())[0];
+  const dev_cmd = Deno.env.get('PATH')?.split(':').map(path =>
+    Path.abs(path)?.join('dev'),
+  ).filter(x => x?.isExecutableFile())[0]
 
-  if (!dev_cmd) throw new Error("couldn’t find `dev`");
+  if (!dev_cmd)
+    throw new Error('couldn’t find `dev`')
 
   return `
 _pkgx_chpwd_hook() {
@@ -74,29 +74,30 @@ else
   POSIXLY_CORRECT=y
   echo "pkgx: dev: warning: unsupported shell" >&2
 fi
-`.trim();
+`.trim()
 }
 
 export function datadir() {
   return new Path(
-    Deno.env.get("XDG_DATA_HOME")?.trim() || platform_data_home_default(),
-  ).join("pkgx", "dev");
+    Deno.env.get('XDG_DATA_HOME')?.trim() || platform_data_home_default(),
+  ).join('pkgx', 'dev')
 }
 
 function platform_data_home_default() {
-  const home = Path.home();
+  const home = Path.home()
   switch (Deno.build.os) {
-    case "darwin":
-      return home.join("Library/Application Support");
-    case "windows": {
-      const LOCALAPPDATA = Deno.env.get("LOCALAPPDATA");
+    case 'darwin':
+      return home.join('Library/Application Support')
+    case 'windows': {
+      const LOCALAPPDATA = Deno.env.get('LOCALAPPDATA')
       if (LOCALAPPDATA) {
-        return new Path(LOCALAPPDATA);
-      } else {
-        return home.join("AppData/Local");
+        return new Path(LOCALAPPDATA)
+      }
+      else {
+        return home.join('AppData/Local')
       }
     }
     default:
-      return home.join(".local/share");
+      return home.join('.local/share')
   }
 }

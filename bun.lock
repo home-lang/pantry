@@ -3,9 +3,6 @@
   "workspaces": {
     "": {
       "name": "launchpad",
-      "dependencies": {
-        "ts-pkgx": "0.1.4",
-      },
       "devDependencies": {
         "@stacksjs/docs": "^0.70.23",
         "@stacksjs/eslint-config": "^4.14.0-beta.3",

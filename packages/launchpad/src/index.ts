@@ -1,5 +1,6 @@
 export * from './bun'
 export * from './config'
+export * from './dev'
 export * from './install'
 export * from './list'
 export * from './package'
