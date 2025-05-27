@@ -137,4 +137,25 @@ gem 'sqlite3', '~> 1.4'`
     expect(content).toContain('node')
     expect(content).toContain('python')
   })
+
+  it('should detect pkgx.yaml dependencies', () => {
+    const pkgxYaml = `dependencies:
+  - nodejs.org@18
+  - python.org@3.11
+  - go.dev
+  - rust-lang.org@1.70
+
+env:
+  NODE_ENV: development
+  PYTHON_PATH: /usr/local/bin/python`
+
+    fs.writeFileSync('pkgx.yaml', pkgxYaml)
+    expect(fs.existsSync('pkgx.yaml')).toBe(true)
+
+    const content = fs.readFileSync('pkgx.yaml', 'utf8')
+    expect(content).toContain('nodejs.org@18')
+    expect(content).toContain('python.org@3.11')
+    expect(content).toContain('go.dev')
+    expect(content).toContain('rust-lang.org@1.70')
+  })
 })

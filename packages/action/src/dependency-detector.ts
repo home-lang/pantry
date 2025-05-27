@@ -85,6 +85,98 @@ function parseJSONC(content: string): any {
   }
 }
 
+// Simple YAML parser (basic implementation)
+function parseYAML(content: string): any {
+  try {
+    // For JSON-like YAML
+    if (content.trim().startsWith('{')) {
+      return JSON.parse(content)
+    }
+
+    // Basic YAML parsing for simple key-value pairs
+    const lines = content.split('\n')
+    const result: any = {}
+    const currentSection: any = result
+    let currentKey = ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#'))
+        continue
+
+      // Handle arrays (simple case)
+      if (trimmed.startsWith('- ')) {
+        const value = trimmed.substring(2).trim()
+        if (!currentSection[currentKey]) {
+          currentSection[currentKey] = []
+        }
+        if (Array.isArray(currentSection[currentKey])) {
+          currentSection[currentKey].push(value)
+        }
+        continue
+      }
+
+      const colonIndex = trimmed.indexOf(':')
+      if (colonIndex > 0) {
+        const key = trimmed.substring(0, colonIndex).trim()
+        const value = trimmed.substring(colonIndex + 1).trim()
+
+        if (value === '') {
+          // This is a section header
+          currentSection[key] = []
+          currentKey = key
+        }
+        else {
+          // Remove quotes if present
+          const cleanValue = value.replace(/^["']|["']$/g, '')
+          currentSection[key] = cleanValue
+        }
+      }
+    }
+
+    return result
+  }
+  catch {
+    return {}
+  }
+}
+
+// Parse pkgx dependencies from YAML
+function parsePkgxDependencies(deps: any): PackageRequirement[] {
+  const packages: PackageRequirement[] = []
+
+  if (typeof deps === 'string') {
+    // Single dependency as string
+    packages.push(parsePackage(deps))
+  }
+  else if (Array.isArray(deps)) {
+    // Array of dependencies
+    for (const dep of deps) {
+      if (typeof dep === 'string') {
+        packages.push(parsePackage(dep))
+      }
+    }
+  }
+  else if (typeof deps === 'object' && deps !== null) {
+    // Object with package: version pairs
+    for (const [pkg, version] of Object.entries(deps)) {
+      if (typeof version === 'string') {
+        if (version === 'latest' || version === '*') {
+          packages.push({ project: pkg, constraint: new SemverRange('*') })
+        }
+        else {
+          packages.push(parsePackage(`${pkg}@${version}`))
+        }
+      }
+      else {
+        packages.push({ project: pkg, constraint: new SemverRange('*') })
+      }
+    }
+  }
+
+  return packages
+}
+
 // Simplified sniff implementation for GitHub Actions
 function sniffDirectory(dirPath: SimplePath): { pkgs: PackageRequirement[], env: Record<string, string> } {
   const constraint = new SemverRange('*')
@@ -272,6 +364,22 @@ function sniffDirectory(dirPath: SimplePath): { pkgs: PackageRequirement[], env:
           break
         case 'uv.lock':
           pkgs.push({ project: 'astral.sh/uv', constraint })
+          break
+        case 'pkgx.yml':
+        case 'pkgx.yaml':
+        case '.pkgx.yml':
+        case '.pkgx.yaml':
+          try {
+            const content = path.read()
+            const yaml = parseYAML(content)
+            if (yaml?.dependencies) {
+              const deps = parsePkgxDependencies(yaml.dependencies)
+              pkgs.push(...deps)
+            }
+          }
+          catch {
+            // Ignore parsing errors
+          }
           break
       }
     }
