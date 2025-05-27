@@ -31,6 +31,9 @@ features:
   - title: "Bun Installation"
     icon: "🚀"
     details: "Install Bun runtime directly from GitHub releases with automatic platform detection."
+  - title: "Zsh Installation"
+    icon: "🐚"
+    details: "Install the Zsh shell with automatic PATH management and easy default shell configuration."
 ---
 
 <Home />

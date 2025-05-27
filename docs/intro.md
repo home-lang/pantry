@@ -22,6 +22,7 @@ At its core, Launchpad leverages pkgx, a next-generation package runner that all
 - 🛠️ **pkgx Installation** — Install and manage the pkgx utility itself
 - 💻 **Dev Environment** — Dedicated command for the dev package for development environments
 - 🚀 **Bun Installation** — Install Bun runtime directly from GitHub releases
+- 🐚 **Zsh Installation** — Install the Zsh shell with automatic PATH management
 - 🔧 **Auto-updates** — Configure automatic updates for pkgx
 - 🔌 **PATH Integration** — Automatically add installation directories to your PATH
 - 🪟 **Cross-platform** — Support for macOS, Linux, and Windows systems
@@ -48,14 +49,18 @@ bun add -g @stacksjs/launchpad
 # Install Node.js
 launchpad install node
 
+# Install Zsh shell
+launchpad zsh
+
 # Create shims for Node.js
 launchpad shim node
 
-# Now 'node' is available in your PATH
+# Now 'node' and 'zsh' are available in your PATH
 node --version
+zsh --version
 ```
 
-With just a few commands, you've installed Node.js and made it available in your PATH. Launchpad handles all the complexity for you.
+With just a few commands, you've installed Node.js and Zsh, making them available in your PATH. Launchpad handles all the complexity for you.
 
 ## Why Choose Launchpad?
 

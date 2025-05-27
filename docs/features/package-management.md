@@ -130,6 +130,40 @@ This command:
 
 Unlike the general `install` command, `launchpad bun` doesn't require pkgx as it downloads directly from GitHub.
 
+## Zsh Installation
+
+Launchpad provides a dedicated command for installing the Zsh shell:
+
+```bash
+# Install zsh
+launchpad zsh
+
+# Customize installation path
+launchpad zsh --path ~/my-bin
+
+# Force reinstallation
+launchpad zsh --force
+
+# Install without automatically adding to PATH
+launchpad zsh --no-auto-path
+```
+
+This command:
+1. Ensures pkgx is installed first
+2. Uses pkgx to install the latest version of zsh
+3. Adds the installation directory to your PATH (if enabled)
+4. Provides instructions for making zsh your default shell
+
+After installation, you can make zsh your default shell:
+
+```bash
+# Using the installed zsh
+chsh -s /path/to/installed/zsh
+
+# Or using system zsh (if available)
+chsh -s /bin/zsh
+```
+
 ## Listing Installed Packages
 
 You can see all installed packages:

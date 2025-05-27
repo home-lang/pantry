@@ -602,6 +602,124 @@ cli
     }
   })
 
+cli
+  .command('zsh', 'Install zsh shell')
+  .option('--path <path>', 'Installation path')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--force', 'Force reinstall even if already installed')
+  .option('--no-auto-path', 'Do not automatically add to PATH')
+  .action(async (options?: CliOption & { 'auto-path'?: boolean }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    if (options?.force)
+      config.forceReinstall = true
+
+    if (options?.['auto-path'] === false)
+      config.autoAddToPath = false
+
+    // Determine installation path
+    const installPath = options?.path
+      ? new Path(options.path)
+      : install_prefix()
+
+    // Ensure pkgx is installed before proceeding
+    try {
+      await ensurePkgxInstalled(installPath)
+    }
+    catch (error) {
+      console.error('Failed to ensure pkgx is installed:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+
+    try {
+      // Check if zsh is already installed and not forced
+      if (!config.forceReinstall) {
+        try {
+          const { stdout } = await execAsync('command -v zsh', { encoding: 'utf8' })
+          if (stdout && !options?.force) {
+            console.log(`zsh is already installed at ${stdout.trim()}`)
+            console.log('Use --force to reinstall')
+            return
+          }
+        }
+        catch {
+          // Not installed, continue with installation
+        }
+      }
+
+      console.log('Installing zsh...')
+
+      // Install zsh using the existing install function
+      const installedFiles = await install(['zsh'], installPath.string)
+      console.log(`zsh has been installed to ${installPath.string}`)
+
+      if (config.verbose) {
+        console.log('Created files:')
+        installedFiles.forEach(file => console.log(`  ${file}`))
+      }
+
+      // Check if the bin directory is in PATH and add it if necessary
+      const binDir = path.join(installPath.string, 'bin')
+      if (!isInPath(binDir)) {
+        if (config.autoAddToPath) {
+          console.log(`Adding ${binDir} to your PATH...`)
+
+          const added = addToPath(binDir)
+          if (added) {
+            console.log(`Added ${binDir} to your PATH.`)
+            console.log('You may need to restart your terminal or source your shell configuration.')
+
+            // Provide a specific command to source the configuration file
+            const shell = process.env.SHELL || ''
+            if (shell.includes('zsh')) {
+              console.log('Run this command to update your PATH in the current session:')
+              console.log('  source ~/.zshrc')
+            }
+            else if (shell.includes('bash')) {
+              console.log('Run this command to update your PATH in the current session:')
+              console.log('  source ~/.bashrc  # or ~/.bash_profile')
+            }
+          }
+          else {
+            console.warn(`Could not add ${binDir} to your PATH automatically.`)
+            console.warn(`Please add it manually to your shell configuration file:`)
+            console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
+          }
+        }
+        else {
+          console.warn(`Note: ${binDir} is not in your PATH.`)
+          console.warn(`To use the zsh command, add it to your PATH:`)
+          console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
+        }
+      }
+
+      // Verify installation if possible
+      if (isInPath(binDir)) {
+        try {
+          const { stdout } = await execAsync('zsh --version', { encoding: 'utf8' })
+          console.log('✅ zsh has been successfully installed!')
+          console.log(`Version: ${stdout.trim()}`)
+        }
+        catch {
+          console.log('✅ zsh has been installed but unable to determine version')
+        }
+      }
+
+      console.log('')
+      console.log('To make zsh your default shell, run:')
+      console.log(`  chsh -s ${path.join(binDir, 'zsh')}`)
+      console.log('')
+      console.log('Or if you want to use the system zsh:')
+      console.log('  chsh -s /bin/zsh')
+    }
+    catch (error) {
+      console.error('Failed to install zsh:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
 cli.command('version', 'Show the version of the CLI').action(() => {
   console.log(version)
 })

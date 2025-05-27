@@ -338,6 +338,75 @@ catch (error) {
 }
 ```
 
+## CLI Commands
+
+### Package Installation Commands
+
+```bash
+# Install packages using pkgx
+launchpad install [packages...] [options]
+launchpad i [packages...] [options]
+
+# Install Bun from GitHub releases
+launchpad bun [options]
+
+# Install Zsh shell
+launchpad zsh [options]
+
+# Install pkgx itself
+launchpad pkgx [options]
+
+# Install dev package
+launchpad dev [options]
+```
+
+### Shim Management Commands
+
+```bash
+# Create shims for packages
+launchpad shim [packages...] [options]
+```
+
+### Package Listing Commands
+
+```bash
+# List installed packages
+launchpad list [options]
+launchpad ls [options]
+```
+
+### Auto-update Management Commands
+
+```bash
+# Check auto-update status
+launchpad autoupdate [options]
+
+# Enable auto-updates
+launchpad autoupdate:enable [options]
+
+# Disable auto-updates
+launchpad autoupdate:disable [options]
+```
+
+### Utility Commands
+
+```bash
+# Show version
+launchpad version
+
+# Show help
+launchpad help
+```
+
+### Common Options
+
+All commands support these common options:
+
+- `--verbose`: Enable verbose logging
+- `--path <path>`: Specify custom installation/shim path
+- `--force`: Force reinstall even if already installed
+- `--no-auto-path`: Don't automatically add to PATH
+
 ## Environment Variables
 
 Launchpad respects several environment variables:

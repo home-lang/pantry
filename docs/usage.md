@@ -103,6 +103,7 @@ Here are the main commands available in Launchpad:
 | `pkgx` | Install pkgx itself |
 | `dev` | Install the dev package |
 | `bun` | Install Bun runtime directly |
+| `zsh` | Install Zsh shell |
 | `list` or `ls` | List installed packages |
 | `autoupdate` | Check auto-update status |
 | `autoupdate:enable` | Enable auto-updates |
@@ -187,6 +188,28 @@ launchpad bun --path ~/bin
 ```
 
 The `bun` command automatically detects your platform, downloads the appropriate binary, and adds it to your PATH.
+
+## Installing Zsh
+
+Launchpad provides a dedicated command for installing the Zsh shell:
+
+```bash
+# Install zsh
+launchpad zsh
+
+# Force reinstall
+launchpad zsh --force
+
+# Specify installation path
+launchpad zsh --path ~/bin
+```
+
+After installation, Launchpad provides instructions for making zsh your default shell:
+
+```bash
+# Make zsh your default shell
+chsh -s /path/to/installed/zsh
+```
 
 ## Managing Auto-updates
 
