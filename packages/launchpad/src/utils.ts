@@ -40,7 +40,7 @@ export function isInPath(dir: string): boolean {
 /**
  * Check if a directory is a temporary directory that shouldn't be added to shell configuration
  */
-function isTemporaryDirectory(dir: string): boolean {
+export function isTemporaryDirectory(dir: string): boolean {
   const normalizedDir = path.normalize(dir).toLowerCase()
 
   // Common temporary directory patterns

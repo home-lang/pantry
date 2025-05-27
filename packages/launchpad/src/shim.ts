@@ -7,7 +7,7 @@ import process from 'node:process'
 import { config } from './config'
 import { Path } from './path'
 import { get_pkgx, query_pkgx } from './pkgx'
-import { addToPath, getUserShell, isInPath } from './utils'
+import { addToPath, getUserShell, isInPath, isTemporaryDirectory } from './utils'
 
 /**
  * Create a shim for a package
@@ -84,7 +84,10 @@ export async function create_shim(args: string[], basePath: string): Promise<str
 
   // Check if shimDir is in PATH and add it if necessary
   if (createdShims.length > 0 && !isInPath(shimDir)) {
-    if (config.autoAddToPath) {
+    // Check if this is a temporary directory - if so, don't suggest adding to PATH
+    const isTemporary = isTemporaryDirectory(shimDir)
+
+    if (config.autoAddToPath && !isTemporary) {
       const added = addToPath(shimDir)
       if (added) {
         console.warn(`Added ${shimDir} to your PATH. You may need to restart your terminal or source your shell configuration file.`)
@@ -106,11 +109,12 @@ export async function create_shim(args: string[], basePath: string): Promise<str
         console.warn(`  echo 'export PATH="${shimDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
       }
     }
-    else {
+    else if (!isTemporary) {
       console.warn(`Note: ${shimDir} is not in your PATH.`)
       console.warn(`To use the installed shims, add it to your PATH:`)
       console.warn(`  echo 'export PATH="${shimDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
     }
+    // For temporary directories, we don't show any PATH-related messages
   }
 
   return createdShims

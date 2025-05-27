@@ -37,25 +37,10 @@ async function ensurePkgxInstalled(installPath: Path): Promise<void> {
     // pkgx is not installed, proceed with installation
   }
 
-  console.log('pkgx not found. Installing pkgx first...')
+  console.log('pkgx not found. Installing pkgx from GitHub releases...')
 
   try {
-    // Create the necessary directories
-    fs.mkdirSync(path.join(installPath.string, 'bin'), { recursive: true })
-
-    // Download and install pkgx using curl
-    const installScript = `curl -fsSL https://pkgx.sh | PKGX_INSTALL_ROOT=${installPath.string} bash`
-
-    if (installPath.string.startsWith('/usr/local') && !isRoot()) {
-      // Need sudo for this path
-      console.log('This installation path requires sudo privileges.')
-      await execAsync(`sudo bash -c '${installScript}'`)
-    }
-    else {
-      // Normal install, no sudo needed
-      await execAsync(installScript)
-    }
-
+    await downloadAndInstallPkgx(installPath)
     console.log('✅ pkgx has been successfully installed!')
 
     // Check if pkgx is in PATH after installation
@@ -64,8 +49,9 @@ async function ensurePkgxInstalled(installPath: Path): Promise<void> {
       console.log(`pkgx is now available at: ${stdout.trim()}`)
     }
     catch {
+      const binDir = path.join(installPath.string, 'bin')
       console.warn('pkgx is installed but not in your PATH.')
-      console.warn(`Make sure ${path.join(installPath.string, 'bin')} is in your PATH.`)
+      console.warn(`Make sure ${binDir} is in your PATH.`)
       console.warn('You may need to restart your shell or run: source ~/.bashrc (or ~/.zshrc)')
     }
   }
@@ -74,19 +60,114 @@ async function ensurePkgxInstalled(installPath: Path): Promise<void> {
   }
 }
 
-// Helper to check if we're running as root/administrator
-function isRoot(): boolean {
-  // On Unix-like systems, root user has UID 0
-  if (platform() !== 'win32') {
-    return process.getuid?.() === 0
+// Helper function to download and install pkgx from GitHub releases
+async function downloadAndInstallPkgx(installPath: Path): Promise<void> {
+  const version = '2.7.0'
+  const os = platform()
+  const arch = process.arch
+
+  // Determine the correct binary filename
+  let binaryName: string
+  if (os === 'darwin') {
+    if (arch === 'arm64') {
+      binaryName = `pkgx-${version}+darwin+aarch64.tar.gz`
+    }
+    else {
+      binaryName = `pkgx-${version}+darwin+x86-64.tar.gz`
+    }
   }
-  // On Windows, check if running with elevated privileges
-  // (simplified - not completely accurate)
-  return process.env.USERNAME?.toLowerCase() === 'administrator'
+  else if (os === 'linux') {
+    if (arch === 'arm64') {
+      binaryName = `pkgx-${version}+linux+aarch64.tar.gz`
+    }
+    else {
+      binaryName = `pkgx-${version}+linux+x86-64.tar.gz`
+    }
+  }
+  else if (os === 'win32') {
+    binaryName = `pkgx-${version}+windows+x86-64.zip`
+  }
+  else {
+    throw new Error(`Unsupported platform: ${os}`)
+  }
+
+  const downloadUrl = `https://github.com/pkgxdev/pkgx/releases/download/v${version}/${binaryName}`
+  const binDir = path.join(installPath.string, 'bin')
+  const tempDir = path.join(installPath.string, '.tmp')
+  const tempFile = path.join(tempDir, binaryName)
+
+  // Create necessary directories
+  fs.mkdirSync(binDir, { recursive: true })
+  fs.mkdirSync(tempDir, { recursive: true })
+
+  if (config.verbose) {
+    console.log(`Downloading: ${downloadUrl}`)
+    console.log(`To: ${tempFile}`)
+  }
+
+  try {
+    // Download the binary using system curl (avoiding broken shims)
+    let curlCmd = 'curl'
+    // Try to find system curl in common locations
+    const systemCurlPaths = ['/usr/bin/curl', '/bin/curl', '/usr/local/bin/curl']
+    for (const curlPath of systemCurlPaths) {
+      if (fs.existsSync(curlPath)) {
+        curlCmd = curlPath
+        break
+      }
+    }
+
+    await execAsync(`${curlCmd} -fsSL "${downloadUrl}" -o "${tempFile}"`)
+
+    // Extract the archive
+    if (binaryName.endsWith('.tar.gz')) {
+      await execAsync(`tar -xzf "${tempFile}" -C "${tempDir}"`)
+    }
+    else if (binaryName.endsWith('.zip')) {
+      await execAsync(`unzip -q "${tempFile}" -d "${tempDir}"`)
+    }
+
+    // Find the pkgx binary in the extracted files
+    const extractedFiles = fs.readdirSync(tempDir, { recursive: true, withFileTypes: true })
+    let pkgxBinaryPath: string | null = null
+
+    for (const file of extractedFiles) {
+      if (file.isFile() && (file.name === 'pkgx' || file.name === 'pkgx.exe')) {
+        pkgxBinaryPath = path.join(file.path || tempDir, file.name)
+        break
+      }
+    }
+
+    if (!pkgxBinaryPath || !fs.existsSync(pkgxBinaryPath)) {
+      throw new Error('pkgx binary not found in downloaded archive')
+    }
+
+    // Move the binary to the bin directory
+    const targetBinary = path.join(binDir, os === 'win32' ? 'pkgx.exe' : 'pkgx')
+    fs.copyFileSync(pkgxBinaryPath, targetBinary)
+
+    // Make it executable on Unix-like systems
+    if (os !== 'win32') {
+      fs.chmodSync(targetBinary, 0o755)
+    }
+
+    if (config.verbose) {
+      console.log(`Installed pkgx binary to: ${targetBinary}`)
+    }
+  }
+  finally {
+    // Clean up temporary files
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    }
+    catch {
+      // Ignore cleanup errors
+    }
+  }
 }
 
 cli
-  .command('install [packages...]', 'Install packages')
+  .command('install [packages...]', 'Install packages with automatic fallback')
   .alias('i')
   .option('--verbose', 'Enable verbose logging')
   .option('--path <path>', 'Installation path')
@@ -94,7 +175,7 @@ cli
   .option('--force', 'Force reinstall even if package is already installed')
   .example('install dev node')
   .action(async (packages: string[], options?: CliOption) => {
-    if (!packages.length) {
+    if (!packages || !packages.length) {
       console.error('No packages specified')
       process.exit(1)
     }
@@ -141,14 +222,73 @@ cli
     // Run the installation
     try {
       const installedFiles = await install(packages, installPath.string)
-      console.log(`Installed ${Array.isArray(packages) ? packages.join(', ') : packages} to ${installPath.string}`)
+      console.log(`✅ Installed ${Array.isArray(packages) ? packages.join(', ') : packages} to ${installPath.string}`)
       if (config.verbose) {
         console.log('Created files:')
         installedFiles.forEach(file => console.log(`  ${file}`))
       }
+
+      // Automatically add to PATH if configured
+      const binDir = path.join(installPath.string, 'bin')
+      if (!isInPath(binDir) && config.autoAddToPath) {
+        console.log('')
+        console.log('🛠️  Setting up PATH...')
+        const added = addToPath(binDir)
+        if (added) {
+          console.log(`✅ Added ${binDir} to your PATH`)
+          console.log('💡 Restart your terminal or run: source ~/.zshrc')
+        }
+        else {
+          console.log('⚠️  Could not automatically add to PATH. Add manually:')
+          console.log(`   echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc`)
+        }
+      }
     }
     catch (error) {
-      console.error('Installation failed:', error instanceof Error ? error.message : error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      if (errorMessage.includes('pkgx version must be') || errorMessage.includes('no `pkgx` found')) {
+        console.error('❌ pkgx issue detected.')
+        console.log('')
+        console.log('📋 Quick fixes:')
+        console.log('1. Install/update pkgx:')
+        console.log('   curl -fsSL https://pkgx.sh | bash')
+        console.log('')
+        console.log('2. Alternative: Use system package manager:')
+        packages.forEach((pkg) => {
+          console.log(`   # For ${pkg}:`)
+          if (platform() === 'darwin') {
+            console.log(`   brew install ${pkg}`)
+          }
+          else {
+            console.log(`   sudo apt install ${pkg}  # or your distro equivalent`)
+          }
+        })
+      }
+      else if (errorMessage.includes('CmdNotFound') || errorMessage.includes('ca-certificates')) {
+        console.error('❌ Package repository issue.')
+        console.log('')
+        console.log('📋 Try these solutions:')
+        console.log('1. Update pkgx and retry:')
+        console.log('   curl -fsSL https://pkgx.sh | bash')
+        console.log(`   ./launchpad install ${packages.join(' ')}`)
+        console.log('')
+        console.log('2. Use system package manager instead:')
+        packages.forEach((pkg) => {
+          if (platform() === 'darwin') {
+            console.log(`   brew install ${pkg}`)
+          }
+          else {
+            console.log(`   sudo apt install ${pkg}`)
+          }
+        })
+      }
+      else {
+        console.error('❌ Installation failed:', errorMessage)
+        console.log('')
+        console.log('💡 Try with verbose output:')
+        console.log(`   ./launchpad install --verbose ${packages.join(' ')}`)
+      }
       process.exit(1)
     }
   })
@@ -193,49 +333,89 @@ cli
     try {
       console.log('Installing pkgx...')
 
-      // Create the necessary directories
-      fs.mkdirSync(path.join(installPath.string, 'bin'), { recursive: true })
-
-      // Download and install pkgx using curl
-      const installScript = `curl -fsSL https://pkgx.sh | PKGX_INSTALL_ROOT=${installPath.string} bash`
-
-      if (installPath.string.startsWith('/usr/local') && !isRoot()) {
-        // Need sudo for this path
-        console.log('This installation path requires sudo privileges.')
-
-        if (config.autoSudo) {
-          if (config.sudoPassword) {
-            await execAsync(`echo "${config.sudoPassword}" | sudo -S bash -c '${installScript}'`)
-          }
-          else {
-            await execAsync(`sudo bash -c '${installScript}'`)
-          }
-        }
-        else {
-          console.error('Please run with sudo or run:')
-          console.error(`sudo bash -c 'curl -fsSL https://pkgx.sh | PKGX_INSTALL_ROOT=${installPath.string} bash'`)
-          process.exit(1)
-        }
+      if (config.verbose) {
+        console.log(`Installing to: ${installPath.string}`)
       }
-      else {
-        // Normal install, no sudo needed
-        await execAsync(installScript)
-      }
+
+      // Use the new download and install function
+      await downloadAndInstallPkgx(installPath)
 
       console.log('✅ pkgx has been successfully installed!')
 
+      // Determine the bin directory where pkgx should be
+      const binDir = path.join(installPath.string, 'bin')
+
       // Check if pkgx is in PATH after installation
+      let pkgxInPath = false
       try {
         const { stdout } = await execAsync('command -v pkgx', { encoding: 'utf8' })
         console.log(`pkgx is now available at: ${stdout.trim()}`)
+        pkgxInPath = true
       }
       catch {
-        console.warn('pkgx is installed but not in your PATH.')
-        console.warn(`Make sure ${path.join(installPath.string, 'bin')} is in your PATH.`)
+        if (config.verbose) {
+          console.log(`pkgx not found in PATH, checking ${binDir}`)
+        }
+      }
+
+      // If pkgx is not in PATH, try to add the bin directory
+      if (!pkgxInPath && !isInPath(binDir)) {
+        if (config.autoAddToPath) {
+          console.log('')
+          console.log('🛠️  Setting up PATH...')
+          const added = addToPath(binDir)
+          if (added) {
+            console.log(`✅ Added ${binDir} to your PATH`)
+            console.log('💡 Restart your terminal or run: source ~/.zshrc (or your shell config)')
+
+            // Try to verify installation after PATH update
+            console.log('')
+            console.log('To verify installation, run:')
+            console.log(`  export PATH="${binDir}:$PATH"`)
+            console.log('  pkgx --version')
+          }
+          else {
+            console.log('')
+            console.log('⚠️  Could not automatically add to PATH. Add manually:')
+            console.log(`   echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc`)
+            console.log('   source ~/.zshrc')
+            console.log('   pkgx --version')
+          }
+        }
+        else {
+          console.log('')
+          console.log('⚠️  pkgx is installed but not in your PATH.')
+          console.log(`Add it manually:`)
+          console.log(`   echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc`)
+          console.log('   source ~/.zshrc')
+          console.log('   pkgx --version')
+        }
+      }
+
+      // Double-check installation by looking for the binary directly
+      const pkgxBinary = path.join(binDir, platform() === 'win32' ? 'pkgx.exe' : 'pkgx')
+      if (fs.existsSync(pkgxBinary)) {
+        if (config.verbose) {
+          console.log(`✓ pkgx binary found at: ${pkgxBinary}`)
+        }
+      }
+      else {
+        console.warn(`⚠️  pkgx binary not found at expected location: ${pkgxBinary}`)
+        console.warn('The installation may have failed.')
       }
     }
     catch (error) {
       console.error('Failed to install pkgx:', error instanceof Error ? error.message : error)
+      console.log('')
+      console.log('📋 Alternative installation methods:')
+      console.log('1. Manual installation:')
+      console.log('   curl -fsSL https://pkgx.sh | bash')
+      console.log('')
+      console.log('2. Using Homebrew (macOS):')
+      console.log('   brew install pkgxdev/made/pkgx')
+      console.log('')
+      console.log('3. Using npm:')
+      console.log('   npm install -g pkgx')
       process.exit(1)
     }
   })
@@ -248,7 +428,7 @@ cli
   .option('--no-auto-path', 'Do not automatically add to PATH')
   .example('shim node')
   .action(async (packages: string[], options?: CliOption & { 'auto-path'?: boolean }) => {
-    if (!packages.length) {
+    if (!packages || !packages.length) {
       console.error('No packages specified')
       process.exit(1)
     }
@@ -277,7 +457,59 @@ cli
       }
     }
     catch (error) {
-      console.error('Failed to create shims:', error instanceof Error ? error.message : error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // Handle pkgx version issues gracefully
+      if (errorMessage.includes('pkgx version must be')) {
+        console.error('❌ pkgx version incompatibility detected.')
+        console.log('')
+        console.log('📋 Solutions:')
+        console.log('1. Update pkgx to the latest version:')
+        console.log('   curl -fsSL https://pkgx.sh | bash')
+        console.log('')
+        console.log('2. Or install packages manually using your system package manager:')
+        packages.forEach((pkg) => {
+          console.log(`   # For ${pkg}:`)
+          if (platform() === 'darwin') {
+            console.log(`   brew install ${pkg}`)
+          }
+          else {
+            console.log(`   sudo apt install ${pkg}  # or equivalent for your distro`)
+          }
+        })
+        console.log('')
+        console.log('3. Or use the direct installation commands:')
+        console.log(`   ./launchpad install ${packages.join(' ')}`)
+      }
+      else if (errorMessage.includes('CmdNotFound') || errorMessage.includes('ca-certificates')) {
+        console.error('❌ Package dependency issue detected.')
+        console.log('')
+        console.log('📋 This might be a temporary issue with pkgx package repositories.')
+        console.log('Try these solutions:')
+        console.log('')
+        console.log('1. Update pkgx and try again:')
+        console.log('   curl -fsSL https://pkgx.sh | bash')
+        console.log(`   ./launchpad shim ${packages.join(' ')}`)
+        console.log('')
+        console.log('2. Install packages using your system package manager:')
+        packages.forEach((pkg) => {
+          console.log(`   # For ${pkg}:`)
+          if (platform() === 'darwin') {
+            console.log(`   brew install ${pkg}`)
+          }
+          else {
+            console.log(`   sudo apt install ${pkg}  # or equivalent`)
+          }
+        })
+        console.log('')
+        console.log('3. Check pkgx status at: https://github.com/pkgxdev/pkgx')
+      }
+      else {
+        console.error('Failed to create shims:', errorMessage)
+        console.log('')
+        console.log('💡 Try running with --verbose for more details:')
+        console.log(`   ./launchpad shim --verbose ${packages.join(' ')}`)
+      }
       process.exit(1)
     }
   })
@@ -604,6 +836,111 @@ cli
   })
 
 cli
+  .command('smart-install [packages...]', 'Smart install with automatic fallback to system package managers')
+  .alias('si')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--force', 'Force reinstall even if already installed')
+  .option('--no-fallback', 'Do not fallback to system package managers')
+  .option('--path <path>', 'Installation path')
+  .example('smart-install node python go')
+  .action(async (packages: string[], options?: CliOption & { fallback?: boolean }) => {
+    if (!packages.length) {
+      console.error('❌ No packages specified')
+      console.log('')
+      console.log('💡 Usage examples:')
+      console.log('  ./launchpad smart-install node python')
+      console.log('  ./launchpad si go rust --verbose')
+      process.exit(1)
+    }
+
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    if (options?.force)
+      config.forceReinstall = true
+
+    const fallbackToSystem = options?.fallback !== false
+    const installPath = options?.path
+
+    console.log(`🚀 Smart installing: ${packages.join(', ')}`)
+    console.log('')
+
+    // Import smart install functionality
+    try {
+      const { smartInstall, isPackageInstalled, getManualInstallInstructions } = await import('../src/smart-install')
+
+      // Check which packages are already installed
+      const alreadyInstalled: string[] = []
+      const needInstallation: string[] = []
+
+      for (const pkg of packages) {
+        if (!config.forceReinstall && await isPackageInstalled(pkg)) {
+          alreadyInstalled.push(pkg)
+        }
+        else {
+          needInstallation.push(pkg)
+        }
+      }
+
+      if (alreadyInstalled.length > 0) {
+        console.log(`✅ Already installed: ${alreadyInstalled.join(', ')}`)
+        if (!config.forceReinstall) {
+          console.log('💡 Use --force to reinstall existing packages')
+        }
+        console.log('')
+      }
+
+      if (needInstallation.length === 0) {
+        console.log('🎉 All packages are already installed!')
+        return
+      }
+
+      // Try smart installation
+      const result = await smartInstall({
+        packages: needInstallation,
+        installPath,
+        fallbackToSystem,
+        verbose: config.verbose,
+      })
+
+      if (result.success) {
+        console.log(`✅ ${result.message}`)
+
+        if (result.method !== 'pkgx' && installPath) {
+          // For system installs, add path if specified
+          const binDir = path.join(installPath, 'bin')
+          if (!isInPath(binDir) && config.autoAddToPath) {
+            console.log('')
+            console.log('🛠️  Setting up PATH...')
+            const added = addToPath(binDir)
+            if (added) {
+              console.log(`✅ Added ${binDir} to your PATH`)
+            }
+          }
+        }
+
+        if (result.failedPackages.length > 0) {
+          console.log('')
+          console.log(`⚠️  Some packages failed: ${result.failedPackages.join(', ')}`)
+          console.log('')
+          console.log(getManualInstallInstructions(result.failedPackages))
+        }
+      }
+      else {
+        console.error(`❌ Installation failed: ${result.message}`)
+        console.log('')
+        console.log(getManualInstallInstructions(needInstallation))
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('❌ Smart install failed:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+cli
   .command('zsh', 'Install zsh shell')
   .option('--path <path>', 'Installation path')
   .option('--verbose', 'Enable verbose logging')
@@ -771,7 +1108,7 @@ cli
       config.verbose = true
 
     try {
-      const isActive = checkDevStatusSimple()
+      const isActive = await checkDevStatus()
       if (isActive) {
         console.log('✅ Dev environment is active')
         process.exit(0)
@@ -926,86 +1263,6 @@ function getDataDir(): string {
   }
 }
 
-async function integrateDevHooks(op: 'install' | 'uninstall', { dryRun }: { dryRun: boolean }): Promise<void> {
-  const home = process.env.HOME || process.env.USERPROFILE
-  if (!home) {
-    throw new Error('Could not determine home directory')
-  }
-
-  const hookLine = 'eval "$(launchpad dev:shellcode)"  # https://github.com/pkgxdev/dev'
-
-  const shellFiles = [
-    path.join(home, '.zshrc'),
-    path.join(home, '.bashrc'),
-    path.join(home, '.bash_profile'),
-  ].filter(file => fs.existsSync(file))
-
-  // If no shell files exist, create .zshrc on macOS
-  if (shellFiles.length === 0 && platform() === 'darwin') {
-    shellFiles.push(path.join(home, '.zshrc'))
-  }
-
-  if (shellFiles.length === 0) {
-    throw new Error('No shell configuration files found')
-  }
-
-  let operatedAtLeastOnce = false
-
-  for (const shellFile of shellFiles) {
-    try {
-      let content = ''
-      if (fs.existsSync(shellFile)) {
-        content = fs.readFileSync(shellFile, 'utf8')
-      }
-
-      const hasHook = content.includes('# https://github.com/pkgxdev/dev')
-
-      if (op === 'install') {
-        if (hasHook) {
-          console.log(`Hook already integrated: ${shellFile}`)
-          continue
-        }
-
-        if (!dryRun) {
-          const newContent = content.endsWith('\n') ? content : `${content}\n`
-          fs.writeFileSync(shellFile, `${newContent}\n${hookLine}\n`)
-        }
-
-        console.log(`${shellFile} << \`${hookLine}\``)
-        operatedAtLeastOnce = true
-      }
-      else if (op === 'uninstall') {
-        if (!hasHook) {
-          continue
-        }
-
-        const lines = content.split('\n')
-        const filteredLines = lines.filter(line => !line.includes('# https://github.com/pkgxdev/dev'))
-
-        if (!dryRun) {
-          fs.writeFileSync(shellFile, filteredLines.join('\n'))
-        }
-
-        console.log(`Removed hook: ${shellFile}`)
-        operatedAtLeastOnce = true
-      }
-    }
-    catch (error) {
-      console.warn(`Failed to process ${shellFile}:`, error instanceof Error ? error.message : error)
-    }
-  }
-
-  if (dryRun && operatedAtLeastOnce) {
-    console.log('This was a dry-run. Nothing was changed.')
-  }
-  else if (op === 'install' && operatedAtLeastOnce) {
-    console.log('Now restart your terminal for `dev` hooks to take effect')
-  }
-  else if (op === 'uninstall' && !operatedAtLeastOnce) {
-    console.log('Nothing to deintegrate found')
-  }
-}
-
 async function checkDevStatus(): Promise<boolean> {
   const cwd = process.cwd()
   const dataDir = getDataDir()
@@ -1094,158 +1351,4 @@ async function activateDevEnv(targetDir: string): Promise<boolean> {
     console.warn('Failed to sniff directory:', error instanceof Error ? error.message : error)
     return false
   }
-}
-
-async function dumpDevEnv(targetDir: string, { dryRun, quiet }: { dryRun: boolean, quiet: boolean }): Promise<void> {
-  // Import sniff function to detect development files
-  const { default: sniff } = await import('../src/dev/sniff.ts')
-
-  try {
-    const { pkgs, env } = await sniff({ string: targetDir })
-
-    if (pkgs.length === 0 && Object.keys(env).length === 0) {
-      console.error('no devenv detected')
-      process.exit(1)
-    }
-
-    if (dryRun) {
-      const pkgspecs = pkgs.map(pkg => `+${pkg.project}@${pkg.constraint}`)
-      console.log(pkgspecs.join(' '))
-      return
-    }
-
-    let envOutput = ''
-
-    if (pkgs.length > 0) {
-      // For now, just output the package names - in a full implementation,
-      // this would call pkgx to get the actual environment variables
-      const pkgspecs = pkgs.map(pkg => `+${pkg.project}@${pkg.constraint}`)
-
-      if (!quiet) {
-        console.error(`%c${pkgspecs.join(' ')}`, 'color: green')
-      }
-
-      // Simulate environment setup - in reality this would call pkgx
-      for (const pkg of pkgs) {
-        envOutput += `# Package: ${pkg.project}@${pkg.constraint}\n`
-      }
-    }
-
-    // Add any additional env that we sniffed
-    for (const [key, value] of Object.entries(env)) {
-      envOutput += `${key}=${shellEscape(value)}\n`
-    }
-
-    envOutput = envOutput.trim()
-
-    let undo = ''
-    for (const envln of envOutput.trim().split('\n')) {
-      if (!envln || envln.startsWith('#'))
-        continue
-
-      const [key] = envln.split('=', 2)
-      undo += `    if [ "$${key}" ]; then
-      export ${key}="$${key}"
-    else
-      unset ${key}
-    fi\n`
-    }
-
-    const byeByeMsg = pkgs.map(pkg => `-${pkg.project}@${pkg.constraint}`).join(' ')
-
-    console.log(`
-  eval "_pkgx_dev_try_bye() {
-    suffix=\"\${PWD#\"${targetDir}\"}\"
-    [ \"\$PWD\" = \"${targetDir}\$suffix\" ] && return 1
-    echo -e \"\\033[31m${byeByeMsg}\\033[0m\" >&2
-    ${undo.trim()}
-    unset -f _pkgx_dev_try_bye
-  }"
-
-  set -a
-  ${envOutput}
-  set +a`)
-  }
-  catch (error) {
-    console.error('Failed to sniff directory:', error instanceof Error ? error.message : error)
-    process.exit(1)
-  }
-}
-
-function shellEscape(str: string): string {
-  // Simple shell escaping - wrap in single quotes and escape any single quotes
-  return `'${str.replace(/'/g, '\'"\'"\'')}'`
-}
-
-function generateShellcode(): string {
-  // Find the launchpad command
-  const launchpadCmd = process.argv[1] || 'launchpad'
-  const dataDir = getDataDir()
-
-  return `
-_pkgx_chpwd_hook() {
-  if ! type _pkgx_dev_try_bye >/dev/null 2>&1 || _pkgx_dev_try_bye; then
-    dir="$PWD"
-    while [ "$dir" != / -a "$dir" != . ]; do
-      if [ -f "${dataDir}/$dir/dev.pkgx.activated" ]; then
-        eval "$(${launchpadCmd} dev:dump)" "$dir"
-        break
-      fi
-      dir="$(dirname "$dir")"
-    done
-  fi
-}
-
-dev() {
-  case "$1" in
-  off)
-    if type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
-      dir="$PWD"
-      while [ "$dir" != / -a "$dir" != . ]; do
-        if [ -f "${dataDir}/$dir/dev.pkgx.activated" ]; then
-          rm "${dataDir}/$dir/dev.pkgx.activated"
-          break
-        fi
-        dir="$(dirname "$dir")"
-      done
-      PWD=/ _pkgx_dev_try_bye
-    else
-      echo "no devenv" >&2
-    fi;;
-  ''|on)
-    if [ "$2" ]; then
-      "${launchpadCmd}" dev:on "$@"
-    elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
-      mkdir -p "${dataDir}$PWD"
-      touch "${dataDir}$PWD/dev.pkgx.activated"
-      eval "$(${launchpadCmd} dev:dump)"
-    else
-      echo "devenv already active" >&2
-    fi;;
-  *)
-    "${launchpadCmd}" dev:"$@";;
-  esac
-}
-
-if [ -n "$ZSH_VERSION" ] && [ $(emulate) = zsh ]; then
-  eval 'typeset -ag chpwd_functions
-
-        if [[ -z "\${chpwd_functions[(r)_pkgx_chpwd_hook]+1}" ]]; then
-          chpwd_functions=( _pkgx_chpwd_hook \${chpwd_functions[@]} )
-        fi
-
-        if [ "$TERM_PROGRAM" != Apple_Terminal ]; then
-          _pkgx_chpwd_hook
-        fi'
-elif [ -n "$BASH_VERSION" ] && [ "$POSIXLY_CORRECT" != y ] ; then
-  eval 'cd() {
-          builtin cd "$@" || return
-          _pkgx_chpwd_hook
-        }
-        _pkgx_chpwd_hook'
-else
-  POSIXLY_CORRECT=y
-  echo "launchpad: dev: warning: unsupported shell" >&2
-fi
-`.trim()
 }

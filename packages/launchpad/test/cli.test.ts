@@ -22,12 +22,13 @@ describe('CLI', () => {
 
   describe('CLI module structure', () => {
     it('should have a CLI entry point', () => {
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      // Go up from packages/launchpad/test to find the root CLI
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       expect(fs.existsSync(cliPath)).toBe(true)
     })
 
     it('should be executable', () => {
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const stats = fs.statSync(cliPath)
       // Check if file exists and is readable (executable bit may not be set in all environments)
       expect(stats.isFile()).toBe(true)
@@ -35,7 +36,7 @@ describe('CLI', () => {
     })
 
     it('should have proper shebang', () => {
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
       expect(content.startsWith('#!/usr/bin/env bun')).toBe(true)
     })
@@ -44,7 +45,7 @@ describe('CLI', () => {
   describe('CLI help and version', () => {
     it('should show help when no arguments provided', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, '--help'], {
@@ -86,7 +87,7 @@ describe('CLI', () => {
 
     it('should show version information', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, '--version'], {
@@ -129,7 +130,7 @@ describe('CLI', () => {
   describe('CLI commands structure', () => {
     it('should have install command', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'install', '--help'], {
@@ -169,7 +170,7 @@ describe('CLI', () => {
 
     it('should have list command', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'list', '--help'], {
@@ -208,7 +209,7 @@ describe('CLI', () => {
 
     it('should have shim command', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'shim', '--help'], {
@@ -247,7 +248,7 @@ describe('CLI', () => {
 
     it('should have pkgx command', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'pkgx', '--help'], {
@@ -286,7 +287,7 @@ describe('CLI', () => {
 
     it('should have dev command', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'dev', '--help'], {
@@ -327,7 +328,7 @@ describe('CLI', () => {
   describe('CLI error handling', () => {
     it('should handle install command with no packages', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'install'], {
@@ -368,7 +369,7 @@ describe('CLI', () => {
 
     it('should handle shim command with no packages', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'shim'], {
@@ -411,7 +412,7 @@ describe('CLI', () => {
   describe('CLI options', () => {
     it('should accept verbose option', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'list', '--verbose'], {
@@ -452,7 +453,7 @@ describe('CLI', () => {
 
     it('should accept path option', async () => {
       const { spawn } = await import('node:child_process')
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
         const proc = spawn('bun', [cliPath, 'list', '--path', tempDir], {
@@ -494,7 +495,7 @@ describe('CLI', () => {
   describe('CLI integration', () => {
     it('should be importable as a module', async () => {
       // Test that the CLI file can be imported without errors
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       expect(fs.existsSync(cliPath)).toBe(true)
 
       // Read the file to check for basic structure
@@ -507,7 +508,7 @@ describe('CLI', () => {
     })
 
     it('should have proper imports', () => {
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
       // Check for essential imports
@@ -518,7 +519,7 @@ describe('CLI', () => {
     })
 
     it('should have proper command structure', () => {
-      const cliPath = path.join(process.cwd(), 'bin', 'cli.ts')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
       // Check for command definitions
