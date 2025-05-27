@@ -18,7 +18,20 @@ export default async function (
   }
 
   let env = ''
-  const pkgspecs = snuff.pkgs.map(pkg => `+${pkg.project}@${pkg.constraint}`)
+  const pkgspecs = snuff.pkgs.map(pkg => `+${pkg.project}@${convertVersionConstraint(pkg.constraint.toString())}`)
+
+  // Convert version constraints that pkgx doesn't understand
+  function convertVersionConstraint(constraint: string): string {
+    // Remove caret and tilde prefixes that pkgx doesn't support
+    if (constraint.startsWith('^') || constraint.startsWith('~')) {
+      return constraint.slice(1)
+    }
+    // Convert >= constraints to just the version
+    if (constraint.startsWith('>=')) {
+      return constraint.slice(2)
+    }
+    return constraint
+  }
 
   if (opts.dryrun) {
     // eslint-disable-next-line no-console
@@ -33,7 +46,28 @@ export default async function (
         env: { ...process.env, CLICOLOR_FORCE: '1' },
         encoding: 'utf8',
       })
-      env = stdout
+
+      // Parse the environment output and properly escape values
+      const envLines = stdout.trim().split('\n')
+      for (const line of envLines) {
+        if (!line || line.startsWith('#'))
+          continue
+
+        const equalIndex = line.indexOf('=')
+        if (equalIndex === -1)
+          continue
+
+        const key = line.slice(0, equalIndex)
+        const value = line.slice(equalIndex + 1)
+
+        // Skip problematic environment variables that might cause parsing issues
+        if (key === 'LS_COLORS' || key === '_' || key.includes('VSCODE') || key.includes('CURSOR')) {
+          continue
+        }
+
+        // Properly escape the value for shell
+        env += `${key}=${shell_escape(value)}\n`
+      }
     }
     catch {
       // If pkgx is not available, just create basic environment setup

@@ -7,9 +7,9 @@ export default function shellcode(): string {
   // find self
   const pathDirs = process.env.PATH?.split(':') || []
   const dev_cmd = pathDirs
-    .map(dir => join(dir, 'dev'))
-    .find(cmd => existsSync(cmd)) || pathDirs
     .map(dir => join(dir, 'launchpad'))
+    .find(cmd => existsSync(cmd)) || pathDirs
+    .map(dir => join(dir, 'dev'))
     .find(cmd => existsSync(cmd))
 
   if (!dev_cmd)
@@ -23,7 +23,11 @@ _pkgx_chpwd_hook() {
     dir="$PWD"
     while [ "$dir" != / -a "$dir" != . ]; do
       if [ -f "${dataDirPath}/$dir/dev.pkgx.activated" ]; then
-        eval "$(${dev_cmd})" "$dir"
+        if [[ "${dev_cmd}" == *"launchpad"* ]]; then
+          eval "$(${dev_cmd} dev:dump)" "$dir"
+        else
+          eval "$(${dev_cmd})" "$dir"
+        fi
         break
       fi
       dir="$(dirname "$dir")"
@@ -53,7 +57,11 @@ dev() {
     elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
       mkdir -p "${dataDirPath}$PWD"
       touch "${dataDirPath}$PWD/dev.pkgx.activated"
-      eval "$(${dev_cmd})"
+      if [[ "${dev_cmd}" == *"launchpad"* ]]; then
+        eval "$(${dev_cmd} dev:dump)"
+      else
+        eval "$(${dev_cmd})"
+      fi
     else
       echo "devenv already active" >&2
     fi;;
