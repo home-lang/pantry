@@ -215,6 +215,33 @@ describe('Utils', () => {
       // Restore original platform
       Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
+
+    it('should not add temporary directories to shell config', () => {
+      process.env.HOME = tempDir
+      process.env.PATH = '/usr/bin'
+
+      // Create a .zshrc file
+      const zshrcPath = path.join(tempDir, '.zshrc')
+      fs.writeFileSync(zshrcPath, '# existing content\n')
+
+      // Test various temporary directory patterns
+      const tempPaths = [
+        '/tmp/some-temp-dir/bin',
+        '/var/folders/1j/71nnwsn92h19tb_9706k5g1r0000gn/T/launchpad-test-abc123/bin',
+        '/temp/test-dir/bin',
+        'C:\\temp\\test-dir\\bin',
+        '/Users/test/launchpad-test-xyz/bin',
+      ]
+
+      tempPaths.forEach((tempPath) => {
+        const result = addToPath(tempPath)
+        expect(result).toBe(false)
+      })
+
+      // Verify nothing was added to the shell config
+      const content = fs.readFileSync(zshrcPath, 'utf-8')
+      expect(content).toBe('# existing content\n')
+    })
   })
 
   describe('edge cases', () => {

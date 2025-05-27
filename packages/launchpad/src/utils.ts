@@ -38,6 +38,28 @@ export function isInPath(dir: string): boolean {
 }
 
 /**
+ * Check if a directory is a temporary directory that shouldn't be added to shell configuration
+ */
+function isTemporaryDirectory(dir: string): boolean {
+  const normalizedDir = path.normalize(dir).toLowerCase()
+
+  // Common temporary directory patterns
+  const tempPatterns = [
+    '/tmp/',
+    '/temp/',
+    '\\tmp\\',
+    '\\temp\\',
+    'launchpad-test-',
+    '/var/folders/', // macOS temp directories
+    process.env.TMPDIR?.toLowerCase() || '',
+    process.env.TEMP?.toLowerCase() || '',
+    process.env.TMP?.toLowerCase() || '',
+  ].filter(Boolean)
+
+  return tempPatterns.some(pattern => normalizedDir.includes(pattern))
+}
+
+/**
  * Add a directory to the user's PATH in their shell configuration file
  * @param dir Directory to add to PATH
  * @returns Whether the operation was successful
@@ -46,6 +68,14 @@ export function addToPath(dir: string): boolean {
   if (!config.autoAddToPath) {
     if (config.verbose)
       console.warn('Skipping adding to PATH (autoAddToPath is disabled)')
+
+    return false
+  }
+
+  // Don't add temporary directories to shell configuration
+  if (isTemporaryDirectory(dir)) {
+    if (config.verbose)
+      console.warn(`Skipping temporary directory: ${dir}`)
 
     return false
   }
@@ -85,9 +115,17 @@ export function addToPath(dir: string): boolean {
     if (shellConfigFile) {
       // Check if the export line already exists
       const configContent = fs.readFileSync(shellConfigFile, 'utf-8')
-      if (!configContent.includes(exportLine)
-        && !configContent.includes(`PATH="${dir}:`)
-        && !configContent.includes(`PATH=${dir}:`)) {
+
+      // More comprehensive check for existing PATH entries
+      const pathAlreadyExists = configContent.includes(exportLine)
+        || configContent.includes(`PATH="${dir}:`)
+        || configContent.includes(`PATH=${dir}:`)
+        || configContent.includes(`PATH="$PATH:${dir}"`)
+        || configContent.includes(`PATH=$PATH:${dir}`)
+        || configContent.match(new RegExp(`PATH="[^"]*${dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^"]*"`))
+        || configContent.match(new RegExp(`PATH=[^\\s]*${dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\s]*`))
+
+      if (!pathAlreadyExists) {
         fs.appendFileSync(shellConfigFile, `\n# Added by launchpad\n${exportLine}\n`)
 
         if (config.verbose)

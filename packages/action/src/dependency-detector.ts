@@ -2,7 +2,6 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import * as core from '@actions/core'
-// Removed ts-pkgx dependency to avoid playwright issues in GitHub Actions
 
 // Simple semver range implementation for Node.js compatibility
 class SemverRange {
@@ -369,6 +368,18 @@ function sniffDirectory(dirPath: SimplePath): { pkgs: PackageRequirement[], env:
         case 'pkgx.yaml':
         case '.pkgx.yml':
         case '.pkgx.yaml':
+        case 'launchpad.yml':
+        case 'launchpad.yaml':
+        case '.launchpad.yml':
+        case '.launchpad.yaml':
+        case 'dependencies.yml':
+        case 'dependencies.yaml':
+        case '.dependencies.yml':
+        case '.dependencies.yaml':
+        case 'deps.yml':
+        case 'deps.yaml':
+        case '.deps.yml':
+        case '.deps.yaml':
           try {
             const content = path.read()
             const yaml = parseYAML(content)

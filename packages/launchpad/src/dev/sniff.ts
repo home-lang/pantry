@@ -94,14 +94,57 @@ function parseYaml(content: string): any {
       return JSON.parse(content)
     }
 
-    // Basic YAML parsing for simple key-value pairs
+    // Basic YAML parsing for simple key-value pairs, arrays, and nested objects
     const lines = content.split('\n')
     const result: any = {}
+    const stack: Array<{ obj: any, key: string | null, indent: number }> = [{ obj: result, key: null, indent: -1 }]
 
     for (const line of lines) {
       const trimmed = line.trim()
       if (!trimmed || trimmed.startsWith('#'))
         continue
+
+      const indent = line.length - line.trimStart().length
+
+      // Pop stack items with higher or equal indentation
+      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+        stack.pop()
+      }
+
+      const current = stack[stack.length - 1]
+
+      // Handle array items
+      if (trimmed.startsWith('- ')) {
+        const item = trimmed.substring(2).trim()
+
+        // We need to find the key that should contain this array
+        // Look for the most recent key in the stack that has the right indentation
+        let targetKey: string | null = null
+        let targetObj: any = null
+
+        // Go through the stack from most recent to oldest
+        for (let i = stack.length - 1; i >= 0; i--) {
+          const stackItem = stack[i]
+          if (stackItem.indent < indent) {
+            // Find the key in this object that was just created
+            const keys = Object.keys(stackItem.obj)
+            const lastKey = keys[keys.length - 1]
+            if (lastKey) {
+              targetKey = lastKey
+              targetObj = stackItem.obj
+              break
+            }
+          }
+        }
+
+        if (targetKey && targetObj) {
+          if (!Array.isArray(targetObj[targetKey])) {
+            targetObj[targetKey] = []
+          }
+          targetObj[targetKey].push(item)
+        }
+        continue
+      }
 
       const colonIndex = trimmed.indexOf(':')
       if (colonIndex > 0) {
@@ -110,7 +153,15 @@ function parseYaml(content: string): any {
 
         // Remove quotes if present
         const cleanValue = value.replace(/^["']|["']$/g, '')
-        result[key] = cleanValue
+
+        if (cleanValue === '') {
+          // This is the start of a nested object or array - we'll determine which when we see the content
+          current.obj[key] = {}
+          stack.push({ obj: current.obj[key], key: null, indent })
+        }
+        else {
+          current.obj[key] = cleanValue
+        }
       }
     }
 
@@ -263,6 +314,18 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         case 'pkgx.yaml':
         case '.pkgx.yml':
         case '.pkgx.yaml':
+        case 'launchpad.yml':
+        case 'launchpad.yaml':
+        case '.launchpad.yml':
+        case '.launchpad.yaml':
+        case 'dependencies.yml':
+        case 'dependencies.yaml':
+        case '.dependencies.yml':
+        case '.dependencies.yaml':
+        case 'deps.yml':
+        case 'deps.yaml':
+        case '.deps.yml':
+        case '.deps.yaml':
           await parse_well_formatted_node(await path.readYAML())
           break
         case 'cdk.json':
@@ -357,67 +420,76 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   async function package_json(path: SimplePath) {
     const json = JSON.parse(await path.read())
-    let node = json?.pkgx
-    if (isString(node) || isArray(node))
-      node = { dependencies: node }
-    if (!node) {
-      if (json?.engines) {
-        node = {
-          dependencies: {
-            ...(json.engines.node && { 'nodejs.org': json.engines.node }),
-            ...(json.engines.npm && { 'npmjs.com': json.engines.npm }),
-            ...(json.engines.yarn && { 'yarnpkg.com': json.engines.yarn }),
-            ...(json.engines.pnpm && { 'pnpm.io': json.engines.pnpm }),
-          },
-        }
-      }
-      if (json?.packageManager) { // corepack
-        const match = json.packageManager.match(
-          /^(?<pkg>[^@]+)@(?<version>[^+]+)/,
-        )
 
-        if (match) {
-          const { pkg, version } = match.groups as {
-            pkg: string
-            version: string
-          }
+    // Collect all dependencies from different sources
+    const allDependencies: Record<string, string> = {}
 
-          switch (pkg) {
-            case 'npm':
-              node = {
-                dependencies: {
-                  'npmjs.com': version,
-                },
-              }
-              break
-            case 'yarn':
-              node = {
-                dependencies: {
-                  'yarnpkg.com': version,
-                },
-              }
-              break
-            case 'pnpm':
-              node = {
-                dependencies: {
-                  'pnpm.io': version,
-                },
-              }
-              break
-          }
+    // Process engines
+    if (json?.engines) {
+      if (json.engines.node)
+        allDependencies['nodejs.org'] = json.engines.node
+      if (json.engines.npm)
+        allDependencies['npmjs.com'] = json.engines.npm
+      if (json.engines.yarn)
+        allDependencies['yarnpkg.com'] = json.engines.yarn
+      if (json.engines.pnpm)
+        allDependencies['pnpm.io'] = json.engines.pnpm
+    }
+
+    // Process packageManager (corepack)
+    if (json?.packageManager) {
+      const match = json.packageManager.match(
+        /^(?<pkg>[^@]+)@(?<version>[^+]+)/,
+      )
+
+      if (match) {
+        const { pkg, version } = match.groups as {
+          pkg: string
+          version: string
         }
-      }
-      if (json?.volta) {
-        node = {
-          dependencies: {
-            ...(json.volta.node && { 'nodejs.org': json.volta.node }),
-            ...(json.volta.npm && { 'npmjs.com': json.volta.npm }),
-            ...(json.volta.yarn && { 'yarnpkg.com': json.volta.yarn }),
-            ...(json.volta.pnpm && { 'pnpm.io': json.volta.pnpm }),
-          },
+
+        switch (pkg) {
+          case 'npm':
+            allDependencies['npmjs.com'] = version
+            break
+          case 'yarn':
+            allDependencies['yarnpkg.com'] = version
+            break
+          case 'pnpm':
+            allDependencies['pnpm.io'] = version
+            break
         }
       }
     }
+
+    // Process volta
+    if (json?.volta) {
+      if (json.volta.node)
+        allDependencies['nodejs.org'] = json.volta.node
+      if (json.volta.npm)
+        allDependencies['npmjs.com'] = json.volta.npm
+      if (json.volta.yarn)
+        allDependencies['yarnpkg.com'] = json.volta.yarn
+      if (json.volta.pnpm)
+        allDependencies['pnpm.io'] = json.volta.pnpm
+    }
+
+    // Process pkgx section
+    let pkgxNode = json?.pkgx
+    if (isString(pkgxNode) || isArray(pkgxNode))
+      pkgxNode = { dependencies: pkgxNode }
+
+    if (pkgxNode?.dependencies) {
+      if (isPlainObject(pkgxNode.dependencies)) {
+        Object.assign(allDependencies, pkgxNode.dependencies)
+      }
+    }
+
+    // Create the final node with all dependencies
+    const node = Object.keys(allDependencies).length > 0
+      ? { dependencies: allDependencies, ...(pkgxNode?.env && { env: pkgxNode.env }) }
+      : pkgxNode
+
     await parse_well_formatted_node(node)
     has_package_json = true
   }
@@ -493,6 +565,10 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   async function pyproject(path: SimplePath) {
     const content = await path.read()
+    // Always add python.org for pyproject.toml files
+    pkgs.push({ project: 'python.org', constraint })
+
+    // Also add the build system
     if (content.includes('poetry.core.masonry.api')) {
       pkgs.push({ project: 'python-poetry.org', constraint })
     }
