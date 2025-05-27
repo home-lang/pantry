@@ -29,7 +29,7 @@ export default async function (
   if (snuff.pkgs.length > 0) {
     try {
       // Try to use pkgx to get environment variables
-      const { stdout } = await execAsync(`pkgx --quiet ${pkgspecs.join(' ')}`, {
+      const { stdout } = await execAsync(`pkgx --quiet ${pkgspecs.join(' ')} env`, {
         env: { ...process.env, CLICOLOR_FORCE: '1' },
         encoding: 'utf8',
       })
