@@ -117,10 +117,10 @@ Install one or more packages using the `install` or `i` command:
 
 ```bash
 # Install a single package
-launchpad install node
+launchpad install node@22
 
 # Install multiple packages
-launchpad install python ruby
+launchpad install python@3.12 ruby@3.3
 
 # Short form
 launchpad i go

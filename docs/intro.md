@@ -47,7 +47,7 @@ Here's a simple example of how to use Launchpad:
 bun add -g @stacksjs/launchpad
 
 # Install Node.js
-launchpad install node
+launchpad install node@22
 
 # Install Zsh shell
 launchpad zsh

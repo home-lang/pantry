@@ -52,7 +52,7 @@ When you create a shim for a package, Launchpad:
 The generated shim looks like this:
 
 ```sh
-#!/usr/bin/env -S pkgx -q! node@16.14.2
+#!/usr/bin/env -S pkgx -q! node@22.12.0
 ```
 
 This tells your system to use pkgx to run the specific version of the package.

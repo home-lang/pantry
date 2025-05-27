@@ -121,7 +121,7 @@ You can also configure Launchpad using environment variables:
 Example:
 
 ```bash
-LAUNCHPAD_VERBOSE=true LAUNCHPAD_INSTALL_PATH=~/apps launchpad install node
+LAUNCHPAD_VERBOSE=true LAUNCHPAD_INSTALL_PATH=~/apps launchpad install node@22
 ```
 
 ## Command-Line Overrides
@@ -130,7 +130,7 @@ Options specified on the command line take precedence over configuration files:
 
 ```bash
 # Override installation path
-launchpad install --path ~/custom-path node
+launchpad install --path ~/custom-path node@22
 
 # Force reinstallation
 launchpad shim --force node

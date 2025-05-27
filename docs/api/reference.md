@@ -20,6 +20,14 @@ async function install(args: string[], basePath: string): Promise<string[]>
  * @returns Path object representing the installation prefix
  */
 function install_prefix(): Path
+
+/**
+ * Install Bun from official GitHub releases
+ * @param installPath Path where Bun should be installed
+ * @param version Optional specific version to install
+ * @returns Array of installed file paths
+ */
+async function install_bun(installPath: string, version?: string): Promise<string[]>
 ```
 
 ### Shim Module
@@ -85,6 +93,69 @@ async function configure_pkgx_autoupdate(enable: boolean): Promise<boolean>
  * @returns Array of installations
  */
 async function list(basePath: string): Promise<Installation[]>
+
+/**
+ * List package paths as generator
+ * @param installPath Installation directory
+ * @returns Async generator yielding package paths
+ */
+async function* ls(installPath?: string): AsyncGenerator<string>
+
+/**
+ * Check for outdated packages
+ */
+async function outdated(): Promise<void>
+```
+
+### Uninstall Module
+
+```typescript
+/**
+ * Uninstall a package
+ * @param pkg Package name to uninstall
+ * @returns Promise resolving to boolean indicating success
+ */
+async function uninstall(pkg: string): Promise<boolean>
+```
+
+### Smart Install Module
+
+```typescript
+/**
+ * Smart install with automatic fallback to system package managers
+ * @param options Installation options
+ * @returns Promise resolving to installation result
+ */
+async function smartInstall(options: SmartInstallOptions): Promise<InstallResult>
+
+/**
+ * Check if a package is already installed on the system
+ * @param packageName Package name to check
+ * @returns Promise resolving to boolean indicating if installed
+ */
+async function isPackageInstalled(packageName: string): Promise<boolean>
+
+/**
+ * Get installation instructions for manual installation
+ * @param packages Array of package names
+ * @returns String containing installation instructions
+ */
+function getManualInstallInstructions(packages: string[]): string
+
+interface SmartInstallOptions {
+  packages: string[]
+  installPath?: string
+  fallbackToSystem?: boolean
+  verbose?: boolean
+}
+
+interface InstallResult {
+  success: boolean
+  method: 'pkgx' | 'brew' | 'apt' | 'manual'
+  installedPackages: string[]
+  failedPackages: string[]
+  message: string
+}
 ```
 
 ### Path Module
@@ -113,6 +184,43 @@ class Path {
   join(...parts: string[]): Path
 
   /**
+   * Get parent directory
+   * @returns New Path object representing parent
+   */
+  parent(): Path
+
+  /**
+   * Get basename
+   * @returns Basename string
+   */
+  basename(): string
+
+  /**
+   * Check if path exists
+   * @returns Boolean indicating if path exists
+   */
+  exists(): boolean
+
+  /**
+   * Check if path is a directory
+   * @returns Boolean indicating if path is directory
+   */
+  isDirectory(): boolean
+
+  /**
+   * Get relative path from another path
+   * @param from Path to calculate relative from
+   * @returns Relative path string
+   */
+  relative(from: Path): string
+
+  /**
+   * List directory contents
+   * @returns Array of Path objects
+   */
+  ls(): Path[]
+
+  /**
    * Get home directory
    * @returns Path to home directory
    */
@@ -138,10 +246,10 @@ function isInPath(dir: string): boolean
 function addToPath(dir: string): boolean
 
 /**
- * Get the user's current shell
- * @returns Shell name
+ * Get standard PATH directories for the platform
+ * @returns String containing standard PATH
  */
-function getUserShell(): string
+function standardPath(): string
 ```
 
 ### Bun Module
@@ -174,6 +282,83 @@ async function install_bun(installPath: string, version?: string): Promise<strin
 interface BunAsset {
   filename: string
   url: string
+}
+```
+
+### Dev Module
+
+```typescript
+/**
+ * Get dev data directory
+ * @returns String path to dev data directory
+ */
+function datadir(): string
+
+/**
+ * Output environment setup for dev environment
+ * @param directory Target directory
+ * @param options Dump options
+ */
+async function dump(directory: string, options?: { dryrun?: boolean, quiet?: boolean }): Promise<void>
+
+/**
+ * Integrate dev hooks into shell configuration
+ * @param action Action to perform ('install' or 'uninstall')
+ * @param options Integration options
+ */
+async function integrate(action: 'install' | 'uninstall', options?: { dryrun?: boolean }): Promise<void>
+
+/**
+ * Output shell integration code
+ * @returns String containing shell code
+ */
+function shellcode(): string
+
+/**
+ * Escape shell string
+ * @param input String to escape
+ * @returns Escaped string
+ */
+function shell_escape(input: string): string
+
+/**
+ * Sniff directory for development files
+ * @param path Directory path to sniff
+ * @returns Promise resolving to sniff result
+ */
+async function sniff(path: { string: string }): Promise<{ pkgs: Array<{ project: string, constraint: string }> }>
+```
+
+### Version Module
+
+```typescript
+/**
+ * Version class for semantic versioning
+ */
+class Version {
+  /**
+   * Create a new Version
+   * @param version Version string
+   */
+  constructor(version: string)
+
+  /**
+   * Get raw version string
+   */
+  raw: string
+
+  /**
+   * Parse version string
+   * @param version Version string to parse
+   * @returns Parsed version object or null
+   */
+  static parseVersion(version: string): { major: number, minor: number, patch: number } | null
+
+  /**
+   * Convert to string
+   * @returns Version string
+   */
+  toString(): string
 }
 ```
 
@@ -256,49 +441,6 @@ interface QueryPkgxOptions {
 }
 ```
 
-## Version Class
-
-```typescript
-/**
- * Version class for semantic versioning
- */
-class Version {
-  /**
-   * Create a new Version
-   * @param version Version string
-   */
-  constructor(version: string)
-
-  /**
-   * Compare versions
-   * @param other Version to compare against
-   * @returns 0 if equal, negative if less than, positive if greater than
-   */
-  compare(other: Version): number
-
-  /**
-   * Check if version is greater than other
-   * @param other Version to compare against
-   * @returns Boolean indicating if greater
-   */
-  gt(other: Version): boolean
-
-  /**
-   * Check if version is less than other
-   * @param other Version to compare against
-   * @returns Boolean indicating if less
-   */
-  lt(other: Version): boolean
-
-  /**
-   * Check if version is equal to other
-   * @param other Version to compare against
-   * @returns Boolean indicating if equal
-   */
-  eq(other: Version): boolean
-}
-```
-
 ## Global Configuration
 
 ```typescript
@@ -325,19 +467,6 @@ const defaultConfig: LaunchpadConfig = {
 const config: LaunchpadConfig
 ```
 
-## Error Handling
-
-Launchpad functions typically throw errors with descriptive messages:
-
-```typescript
-try {
-  await install(['node'], '/usr/local')
-}
-catch (error) {
-  console.error(`Installation failed: ${error.message}`)
-}
-```
-
 ## CLI Commands
 
 ### Package Installation Commands
@@ -346,6 +475,10 @@ catch (error) {
 # Install packages using pkgx
 launchpad install [packages...] [options]
 launchpad i [packages...] [options]
+
+# Smart install with automatic fallback to system package managers
+launchpad smart-install [packages...] [options]
+launchpad si [packages...] [options]
 
 # Install Bun from GitHub releases
 launchpad bun [options]
@@ -388,6 +521,34 @@ launchpad autoupdate:enable [options]
 launchpad autoupdate:disable [options]
 ```
 
+### Dev Environment Commands
+
+```bash
+# Integrate dev hooks into shell configuration
+launchpad dev:integrate [options]
+
+# Remove dev hooks from shell configuration
+launchpad dev:deintegrate [options]
+
+# Check if dev environment is active in current directory
+launchpad dev:status [options]
+
+# List all active dev environments
+launchpad dev:ls [options]
+
+# Deactivate dev environment in current directory
+launchpad dev:off [options]
+
+# Activate dev environment in directory
+launchpad dev:on [directory] [options]
+
+# Output shell integration code
+launchpad dev:shellcode
+
+# Output environment setup for dev environment
+launchpad dev:dump [directory] [options]
+```
+
 ### Utility Commands
 
 ```bash
@@ -398,14 +559,35 @@ launchpad version
 launchpad help
 ```
 
-### Common Options
+## Error Handling
 
-All commands support these common options:
+Launchpad functions typically throw errors with descriptive messages:
+
+```typescript
+try {
+  await install(['node'], '/usr/local')
+}
+catch (error) {
+  console.error(`Installation failed: ${error.message}`)
+}
+```
+
+## Command Options
+
+Most commands support these common options:
 
 - `--verbose`: Enable verbose logging
-- `--path <path>`: Specify custom installation/shim path
+- `--path <path>`: Specify custom installation path
 - `--force`: Force reinstall even if already installed
-- `--no-auto-path`: Don't automatically add to PATH
+- `--no-auto-path`: Do not automatically add to PATH
+
+Some commands have specific options:
+
+- `--sudo`: Use sudo for installation (install command)
+- `--no-fallback`: Do not fallback to system package managers (smart-install)
+- `--version <version>`: Install specific version (bun command)
+- `--dry-run`: Show what would be done without making changes (dev commands)
+- `--quiet`: Suppress package output (dev:dump command)
 
 ## Environment Variables
 

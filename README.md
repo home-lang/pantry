@@ -72,17 +72,17 @@ See [Installation Guide](https://github.com/stacksjs/launchpad/tree/main/docs/in
 launchpad install node python
 
 # Use the shorthand
-launchpad i node
+launchpad i node@22
 ```
 
 ### Create shims
 
 ```bash
 # Create shims for executables
-launchpad shim node typescript
+launchpad shim node@22 typescript@5.7
 
 # Specify custom path
-launchpad shim --path ~/bin node
+launchpad shim --path ~/bin node@22
 ```
 
 ### Install pkgx
@@ -112,7 +112,7 @@ launchpad dev --path ~/bin
 launchpad bun
 
 # Install specific version
-launchpad bun --version 1.0.0
+launchpad bun --version 1.2.14
 ```
 
 ### Configure auto-updates
@@ -182,7 +182,7 @@ Launchpad provides a GitHub Action for CI/CD workflows:
 - name: Install Dependencies
   uses: stacksjs/launchpad-installer@v1
   with:
-    packages: node typescript bun
+    packages: node@22 typescript@5.7 bun@1.2.14
 ```
 
 See [GitHub Action Documentation](https://github.com/stacksjs/launchpad/tree/main/packages/action/README.md) for details.

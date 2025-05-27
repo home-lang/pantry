@@ -120,7 +120,7 @@ When developing with Launchpad, it's good practice to test on multiple platforms
 
 ```bash
 # Basic testing on Unix-like systems
-launchpad install node
+launchpad install node@22
 node --version
 
 # Verify shim creation
@@ -129,7 +129,7 @@ ls -la ~/.local/bin/node
 
 ```powershell
 # Basic testing on Windows
-launchpad install node
+launchpad install node@22
 node --version
 
 # Verify shim creation
@@ -153,5 +153,5 @@ jobs:
       - name: Install Launchpad
         run: npm install -g launchpad
       - name: Install dependencies with Launchpad
-        run: launchpad install node python
+        run: launchpad install node@22 python@3.12
 ```

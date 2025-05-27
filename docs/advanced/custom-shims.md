@@ -13,7 +13,7 @@ mkdir -p ~/.local/bin
 # Create a custom shim file
 cat > ~/.local/bin/custom-node << EOF
 #!/bin/sh
-exec pkgx -q node@16.14.2 --max-old-space-size=4096 "$@"
+exec pkgx -q node@22.14.2 --max-old-space-size=4096 "$@"
 EOF
 
 # Make it executable
@@ -57,7 +57,7 @@ Lock a shim to a specific package version:
 ```bash
 #!/bin/sh
 # Ensure we always use Node.js 16 for this shim
-exec pkgx -q node@16 "$@"
+exec pkgx -q node@22 "$@"
 ```
 
 ## Environment Variables
@@ -111,7 +111,7 @@ if [ -n "$DEV_PROJECT" ]; then
   exec pkgx -q "$@"
 else
   # Otherwise use a specific version
-  exec pkgx -q node@16 "$@"
+  exec pkgx -q node@22 "$@"
 fi
 ```
 

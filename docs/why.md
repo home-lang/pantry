@@ -49,7 +49,7 @@ Launchpad is built with the developer experience in mind. It provides a clean, i
 
 ```bash
 # Install Node.js in seconds
-launchpad install node
+launchpad install node@22
 
 # Create a dedicated environment for a project
 launchpad dev

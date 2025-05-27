@@ -2,7 +2,6 @@ import type { HeadConfig } from 'vitepress'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { withPwa } from '@vite-pwa/vitepress'
 import { defineConfig } from 'vitepress'
-
 import viteConfig from './vite.config'
 
 // https://vitepress.dev/reference/site-config
@@ -67,7 +66,6 @@ const sidebar = [
       { text: 'Package Management', link: '/features/package-management' },
       { text: 'Shim Creation', link: '/features/shim-creation' },
       { text: 'pkgx Management', link: '/features/pkgx-management' },
-      { text: 'Dev Package', link: '/features/dev-package' },
       { text: 'Bun Installation', link: '/features/bun-installation' },
       { text: 'Zsh Installation', link: '/features/zsh-installation' },
       { text: 'PATH Management', link: '/features/path-management' },
@@ -81,12 +79,7 @@ const sidebar = [
       { text: 'Performance Optimization', link: '/advanced/performance' },
     ],
   },
-  {
-    text: 'API Reference',
-    items: [
-      { text: 'API Reference', link: '/api/reference' },
-    ],
-  },
+  { text: 'API Reference', link: '/api/reference' },
 ]
 const description = 'A lightweight package manager built on top of pkgx to simplify package installation and management.'
 const title = 'Launchpad | A lightweight package manager'
@@ -109,7 +102,7 @@ export default withPwa(
       ['meta', { name: 'author', content: 'Stacks.js, Inc.' }],
       ['meta', {
         name: 'tags',
-        content: 'launchpad, stacksjs, pkgx, package manager, dev, homebrew alternative',
+        content: 'launchpad, stacksjs, pkgx, pkgm, dev, package manager, homebrew alternative',
       }],
 
       ['meta', { property: 'og:type', content: 'website' }],

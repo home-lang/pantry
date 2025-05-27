@@ -9,10 +9,10 @@ import { CAC } from 'cac'
 import { version } from '../package.json'
 import { create_shim, install, install_bun, install_prefix, list, shim_dir } from '../src'
 import { config } from '../src/config'
-import { datadir, dump, integrate, shell_escape, shellcode, sniff } from '../src/dev'
+import { dump, integrate, shellcode } from '../src/dev'
 import { Path } from '../src/path'
 import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '../src/pkgx'
-import { addToPath, isInPath } from '../src/utils'
+import { activateDevEnv, addToPath, checkDevStatus, deactivateDevEnv, isInPath, listActiveDevEnvs } from '../src/utils'
 
 const execAsync = promisify(exec)
 const cli = new CAC('launchpad')
@@ -22,148 +22,6 @@ interface CliOption {
   path?: string
   sudo?: boolean
   force?: boolean
-}
-
-// Helper function to ensure pkgx is installed
-async function ensurePkgxInstalled(installPath: Path): Promise<void> {
-  try {
-    // Check if pkgx is already available
-    const { stdout } = await execAsync('command -v pkgx', { encoding: 'utf8' })
-    if (stdout.trim()) {
-      return // pkgx is already installed
-    }
-  }
-  catch {
-    // pkgx is not installed, proceed with installation
-  }
-
-  console.log('pkgx not found. Installing pkgx from GitHub releases...')
-
-  try {
-    await downloadAndInstallPkgx(installPath)
-    console.log('✅ pkgx has been successfully installed!')
-
-    // Check if pkgx is in PATH after installation
-    try {
-      const { stdout } = await execAsync('command -v pkgx', { encoding: 'utf8' })
-      console.log(`pkgx is now available at: ${stdout.trim()}`)
-    }
-    catch {
-      const binDir = path.join(installPath.string, 'bin')
-      console.warn('pkgx is installed but not in your PATH.')
-      console.warn(`Make sure ${binDir} is in your PATH.`)
-      console.warn('You may need to restart your shell or run: source ~/.bashrc (or ~/.zshrc)')
-    }
-  }
-  catch (error) {
-    throw new Error(`Failed to install pkgx: ${error instanceof Error ? error.message : error}`)
-  }
-}
-
-// Helper function to download and install pkgx from GitHub releases
-async function downloadAndInstallPkgx(installPath: Path): Promise<void> {
-  const version = '2.7.0'
-  const os = platform()
-  const arch = process.arch
-
-  // Determine the correct binary filename
-  let binaryName: string
-  if (os === 'darwin') {
-    if (arch === 'arm64') {
-      binaryName = `pkgx-${version}+darwin+aarch64.tar.gz`
-    }
-    else {
-      binaryName = `pkgx-${version}+darwin+x86-64.tar.gz`
-    }
-  }
-  else if (os === 'linux') {
-    if (arch === 'arm64') {
-      binaryName = `pkgx-${version}+linux+aarch64.tar.gz`
-    }
-    else {
-      binaryName = `pkgx-${version}+linux+x86-64.tar.gz`
-    }
-  }
-  else if (os === 'win32') {
-    binaryName = `pkgx-${version}+windows+x86-64.zip`
-  }
-  else {
-    throw new Error(`Unsupported platform: ${os}`)
-  }
-
-  const downloadUrl = `https://github.com/pkgxdev/pkgx/releases/download/v${version}/${binaryName}`
-  const binDir = path.join(installPath.string, 'bin')
-  const tempDir = path.join(installPath.string, '.tmp')
-  const tempFile = path.join(tempDir, binaryName)
-
-  // Create necessary directories
-  fs.mkdirSync(binDir, { recursive: true })
-  fs.mkdirSync(tempDir, { recursive: true })
-
-  if (config.verbose) {
-    console.log(`Downloading: ${downloadUrl}`)
-    console.log(`To: ${tempFile}`)
-  }
-
-  try {
-    // Download the binary using system curl (avoiding broken shims)
-    let curlCmd = 'curl'
-    // Try to find system curl in common locations
-    const systemCurlPaths = ['/usr/bin/curl', '/bin/curl', '/usr/local/bin/curl']
-    for (const curlPath of systemCurlPaths) {
-      if (fs.existsSync(curlPath)) {
-        curlCmd = curlPath
-        break
-      }
-    }
-
-    await execAsync(`${curlCmd} -fsSL "${downloadUrl}" -o "${tempFile}"`)
-
-    // Extract the archive
-    if (binaryName.endsWith('.tar.gz')) {
-      await execAsync(`tar -xzf "${tempFile}" -C "${tempDir}"`)
-    }
-    else if (binaryName.endsWith('.zip')) {
-      await execAsync(`unzip -q "${tempFile}" -d "${tempDir}"`)
-    }
-
-    // Find the pkgx binary in the extracted files
-    const extractedFiles = fs.readdirSync(tempDir, { recursive: true, withFileTypes: true })
-    let pkgxBinaryPath: string | null = null
-
-    for (const file of extractedFiles) {
-      if (file.isFile() && (file.name === 'pkgx' || file.name === 'pkgx.exe')) {
-        pkgxBinaryPath = path.join(file.path || tempDir, file.name)
-        break
-      }
-    }
-
-    if (!pkgxBinaryPath || !fs.existsSync(pkgxBinaryPath)) {
-      throw new Error('pkgx binary not found in downloaded archive')
-    }
-
-    // Move the binary to the bin directory
-    const targetBinary = path.join(binDir, os === 'win32' ? 'pkgx.exe' : 'pkgx')
-    fs.copyFileSync(pkgxBinaryPath, targetBinary)
-
-    // Make it executable on Unix-like systems
-    if (os !== 'win32') {
-      fs.chmodSync(targetBinary, 0o755)
-    }
-
-    if (config.verbose) {
-      console.log(`Installed pkgx binary to: ${targetBinary}`)
-    }
-  }
-  finally {
-    // Clean up temporary files
-    try {
-      fs.rmSync(tempDir, { recursive: true, force: true })
-    }
-    catch {
-      // Ignore cleanup errors
-    }
-  }
 }
 
 cli
@@ -211,13 +69,7 @@ cli
     // }
 
     // Ensure pkgx is installed before proceeding
-    try {
-      await ensurePkgxInstalled(installPath)
-    }
-    catch (error) {
-      console.error('Failed to ensure pkgx is installed:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
+    // await ensurePkgxInstalled(installPath)
 
     // Run the installation
     try {
@@ -338,7 +190,7 @@ cli
       }
 
       // Use the new download and install function
-      await downloadAndInstallPkgx(installPath)
+      // await downloadAndInstallPkgx(installPath) // Function deleted - use standard installer
 
       console.log('✅ pkgx has been successfully installed!')
 
@@ -542,126 +394,6 @@ cli
     }
     catch (error) {
       console.error('Failed to list packages:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-  })
-
-cli
-  .command('dev', 'Install the dev package (pkgx dev)')
-  .option('--path <path>', 'Installation path')
-  .option('--verbose', 'Enable verbose logging')
-  .option('--force', 'Force reinstall even if already installed')
-  .option('--no-auto-path', 'Do not automatically add to PATH')
-  .action(async (options?: CliOption & { 'auto-path'?: boolean }) => {
-    // Override config options from CLI
-    if (options?.verbose)
-      config.verbose = true
-
-    if (options?.force)
-      config.forceReinstall = true
-
-    if (options?.['auto-path'] === false)
-      config.autoAddToPath = false
-
-    // Determine installation path
-    const installPath = options?.path
-      ? new Path(options.path)
-      : install_prefix()
-
-    // Ensure pkgx is installed before proceeding
-    try {
-      await ensurePkgxInstalled(installPath)
-    }
-    catch (error) {
-      console.error('Failed to ensure pkgx is installed:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-
-    // Now install the dev package by creating a shim
-    try {
-      console.log('Installing dev package...')
-
-      // Determine shim path
-      const shimPath = options?.path
-        ? new Path(options.path)
-        : shim_dir()
-
-      // Create bin directory if it doesn't exist
-      const binDir = path.join(shimPath.string, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-
-      // Create the dev script
-      const devBinPath = path.join(binDir, 'dev')
-
-      // Check if dev already exists and we're not forcing reinstall
-      if (fs.existsSync(devBinPath) && !config.forceReinstall) {
-        console.log('dev is already installed')
-        console.log('Use --force to reinstall')
-        return
-      }
-
-      // Create the dev shim directly
-      const devScript = `#!/bin/sh
-exec pkgx -q dev "$@"
-`
-      // Write the script
-      fs.writeFileSync(devBinPath, devScript, { mode: 0o755 })
-
-      console.log(`Created dev script at ${devBinPath}`)
-
-      // Check if binDir is in PATH and add it if necessary
-      if (!isInPath(binDir)) {
-        if (config.autoAddToPath) {
-          console.log(`Adding ${binDir} to your PATH...`)
-
-          const added = addToPath(binDir)
-          if (added) {
-            console.log(`Added ${binDir} to your PATH.`)
-            console.log('You may need to restart your terminal or source your shell configuration.')
-
-            // Provide a specific command to source the configuration file
-            const shell = process.env.SHELL || ''
-            if (shell.includes('zsh')) {
-              console.log('Run this command to update your PATH in the current session:')
-              console.log('  source ~/.zshrc')
-            }
-            else if (shell.includes('bash')) {
-              console.log('Run this command to update your PATH in the current session:')
-              console.log('  source ~/.bashrc  # or ~/.bash_profile')
-            }
-          }
-          else {
-            console.warn(`Could not add ${binDir} to your PATH automatically.`)
-            console.warn(`Please add it manually to your shell configuration file:`)
-            console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
-          }
-        }
-        else {
-          console.warn(`Note: ${binDir} is not in your PATH.`)
-          console.warn(`To use the dev command, add it to your PATH:`)
-          console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
-        }
-      }
-
-      // Verify installation if possible
-      if (isInPath(binDir)) {
-        try {
-          const { stdout } = await execAsync('dev --version', { encoding: 'utf8' })
-          console.log('✅ dev has been successfully installed!')
-          console.log(`Version: ${stdout.trim()}`)
-        }
-        catch {
-          console.log('✅ dev has been installed but unable to determine version')
-        }
-      }
-
-      console.log('', 'RESET')
-      console.log('To activate dev in a project:')
-      console.log('  cd your-project')
-      console.log('  dev .')
-    }
-    catch (error) {
-      console.error('Failed to install dev:', error instanceof Error ? error.message : error)
       process.exit(1)
     }
   })
@@ -963,13 +695,7 @@ cli
       : install_prefix()
 
     // Ensure pkgx is installed before proceeding
-    try {
-      await ensurePkgxInstalled(installPath)
-    }
-    catch (error) {
-      console.error('Failed to ensure pkgx is installed:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
+    // await ensurePkgxInstalled(installPath)
 
     try {
       // Check if zsh is already installed and not forced
@@ -1234,121 +960,3 @@ cli.command('version', 'Show the version of the CLI').action(() => {
 cli.version(version)
 cli.help()
 cli.parse()
-
-// Simple helper functions for dev commands using imported dev functions
-
-function getDataDir(): string {
-  const xdgDataHome = process.env.XDG_DATA_HOME
-  if (xdgDataHome) {
-    return path.join(xdgDataHome, 'pkgx', 'dev')
-  }
-
-  const home = process.env.HOME || process.env.USERPROFILE
-  if (!home) {
-    throw new Error('Could not determine home directory')
-  }
-
-  switch (platform()) {
-    case 'darwin':
-      return path.join(home, 'Library', 'Application Support', 'pkgx', 'dev')
-    case 'win32': {
-      const localAppData = process.env.LOCALAPPDATA
-      if (localAppData) {
-        return path.join(localAppData, 'pkgx', 'dev')
-      }
-      return path.join(home, 'AppData', 'Local', 'pkgx', 'dev')
-    }
-    default:
-      return path.join(home, '.local', 'share', 'pkgx', 'dev')
-  }
-}
-
-async function checkDevStatus(): Promise<boolean> {
-  const cwd = process.cwd()
-  const dataDir = getDataDir()
-  const activationFile = path.join(dataDir, cwd.slice(1), 'dev.pkgx.activated')
-
-  return fs.existsSync(activationFile)
-}
-
-async function listActiveDevEnvs(): Promise<string[]> {
-  const dataDir = getDataDir()
-  const activeEnvs: string[] = []
-
-  if (!fs.existsSync(dataDir)) {
-    return activeEnvs
-  }
-
-  function walkDir(dir: string, basePath: string = ''): void {
-    try {
-      const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name)
-        const relativePath = path.join(basePath, entry.name)
-
-        if (entry.isFile() && entry.name === 'dev.pkgx.activated') {
-          activeEnvs.push(`/${path.dirname(relativePath)}`)
-        }
-        else if (entry.isDirectory()) {
-          walkDir(fullPath, relativePath)
-        }
-      }
-    }
-    catch {
-      // Ignore errors reading directories
-    }
-  }
-
-  walkDir(dataDir)
-  return activeEnvs
-}
-
-async function deactivateDevEnv(): Promise<boolean> {
-  let dir = process.cwd()
-  const dataDir = getDataDir()
-
-  while (dir !== '/' && dir !== '.') {
-    const activationFile = path.join(dataDir, dir.slice(1), 'dev.pkgx.activated')
-
-    if (fs.existsSync(activationFile)) {
-      fs.unlinkSync(activationFile)
-      console.log(`Deactivated dev environment: ${dir}`)
-      return true
-    }
-
-    dir = path.dirname(dir)
-  }
-
-  return false
-}
-
-async function activateDevEnv(targetDir: string): Promise<boolean> {
-  // Import sniff function to detect development files
-  const { default: sniff } = await import('../src/dev/sniff.ts')
-
-  try {
-    const { pkgs } = await sniff({ string: targetDir })
-
-    if (pkgs.length === 0) {
-      return false
-    }
-
-    const dataDir = getDataDir()
-    const activationDir = path.join(dataDir, targetDir.slice(1))
-    const activationFile = path.join(activationDir, 'dev.pkgx.activated')
-
-    // Create directory structure
-    fs.mkdirSync(activationDir, { recursive: true })
-
-    // Create activation file
-    fs.writeFileSync(activationFile, '')
-
-    console.log(`Detected packages: ${pkgs.map(pkg => `${pkg.project}@${pkg.constraint}`).join(' ')}`)
-    return true
-  }
-  catch (error) {
-    console.warn('Failed to sniff directory:', error instanceof Error ? error.message : error)
-    return false
-  }
-}

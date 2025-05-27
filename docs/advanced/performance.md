@@ -10,11 +10,11 @@ When installing multiple packages, consider splitting them into batches, _when u
 
 ```bash
 # Instead of installing all at once
-launchpad install node python ruby go rust
+launchpad install node@22 python@3.12 ruby@3.3 go@1.23 rust@1.82
 
 # Split into parallel installations
-launchpad install node python &
-launchpad install ruby go rust &
+launchpad install node@22 python@3.12 &
+launchpad install ruby@3.3 go@1.23 rust@1.82 &
 wait
 ```
 
@@ -24,7 +24,7 @@ Installing to a location that doesn't require sudo can be faster:
 
 ```bash
 # Use a user-specific installation location
-launchpad install --path ~/.local node
+launchpad install --path ~/.local node@22
 ```
 
 ### Force Reinstall Wisely
@@ -79,7 +79,7 @@ Preserve downloaded packages to avoid re-downloading:
 ```bash
 # Set environment variable to preserve downloads
 export PKGX_KEEP_DOWNLOADS=1
-launchpad install node
+launchpad install node@22
 ```
 
 ## Configuration Optimization
@@ -138,7 +138,7 @@ On macOS, prefer `/usr/local` for system-wide installations:
 
 ```bash
 # Use /usr/local on macOS
-launchpad install --path /usr/local node
+launchpad install --path /usr/local node@22
 ```
 
 ### Linux
@@ -147,7 +147,7 @@ On Linux, prefer user-specific installations unless you need system-wide access:
 
 ```bash
 # Use ~/.local on Linux for user-specific installations
-launchpad install --path ~/.local node
+launchpad install --path ~/.local node@22
 ```
 
 ### Windows
@@ -156,7 +156,7 @@ On Windows, prefer shorter paths to avoid path length limitations:
 
 ```bash
 # Use a shorter path on Windows
-launchpad install --path C:\pkgs node
+launchpad install --path C:\pkgs node@22
 ```
 
 ## CI/CD Pipeline Optimization
@@ -168,7 +168,7 @@ For continuous integration environments:
 launchpad install node  # Just the specific package
 
 # Use a persistent cache directory
-PKGX_CACHE_DIR=/ci-cache launchpad install node
+PKGX_CACHE_DIR=/ci-cache launchpad install node@22@22
 ```
 
 ## Monitoring Performance
@@ -177,10 +177,10 @@ You can time Launchpad commands to identify bottlenecks:
 
 ```bash
 # Time a command
-time launchpad install node
+time launchpad install node@22@22
 
 # More detailed profiling
-/usr/bin/time -v launchpad install node
+/usr/bin/time -v launchpad install node@22@22
 ```
 
 ## Network Performance
@@ -189,5 +189,5 @@ If you're in an environment with limited bandwidth:
 
 ```bash
 # Set a longer timeout
-launchpad install --timeout 120000 node  # 2 minutes
+launchpad install --timeout 120000 node@22  # 2 minutes
 ```
