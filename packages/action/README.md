@@ -8,7 +8,7 @@
 
 # Launchpad Installer
 
-A GitHub Action to install packages using Launchpad in your CI/CD workflow.
+A GitHub Action to install system dependencies using Launchpad.
 
 ## Usage
 
@@ -17,32 +17,31 @@ This action allows you to easily install dependencies with Launchpad in your Git
 ```yaml
 - name: Install Dependencies with Launchpad
   uses: stacksjs/launchpad-installer@v1
-  with:
-    packages: node python go # optional, space-separated list
-    # Optional parameters:
-    # config-path: launchpad.config.ts
-    # use-dev: false
+  # Automatically detects and installs project dependencies
+  # Optional parameters:
+  # with:
+  #   packages: node python go # override auto-detection
+  #   config-path: launchpad.config.ts
 ```
 
 ## Inputs
 
 | Name       | Description                           | Required | Default              |
 |------------|---------------------------------------|----------|----------------------|
-| packages   | Space-separated list of packages to install | No  | (empty) - will try to extract from config |
+| packages   | Space-separated list of packages to install (overrides auto-detection) | No  | (empty) - auto-detects from project files |
 | config-path | Path to launchpad config file        | No       | `launchpad.config.ts` |
-| use-dev    | Whether to install the dev package    | No       | `false`              |
 
 ## Features
 
 - 🚀 **Cross-platform support**: Works on Linux, macOS, and Windows runners
-- 🔄 **Automatic package detection**: Can extract package list from your config file
-- 💻 **Dev environment support**: Option to install the `dev` package
+- 🔍 **Smart dependency detection**: Automatically detects project dependencies from package.json, requirements.txt, go.mod, and more
+- 🔄 **Config file support**: Can extract package list from your launchpad config file
 - 🌐 **Context-aware**: Provides full GitHub context to commands
 - 🔧 **Bun-powered**: Uses Bun for faster installation
 
 ## Examples
 
-### Basic Usage
+### Basic Usage (Auto-detection)
 
 ```yaml
 name: CI
@@ -61,8 +60,8 @@ jobs:
 
       - name: Install Dependencies
         uses: stacksjs/launchpad-installer@v1
-        with:
-          packages: node typescript
+        # Automatically detects Node.js from package.json
+        # and installs node + any other detected dependencies
 ```
 
 ### Using with Config File
@@ -109,15 +108,13 @@ jobs:
 
       - name: Install Dependencies
         uses: stacksjs/launchpad-installer@v1
-        with:
-          packages: node python go
-          use-dev: true
+        # Auto-detects dependencies across all platforms
 ```
 
-### Setting up Development Environment
+### Manual Package Override
 
 ```yaml
-name: Development Setup
+name: Manual Override
 
 on:
   push:
@@ -129,13 +126,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Development Environment
+      - name: Install Specific Dependencies
         uses: stacksjs/launchpad-installer@v1
         with:
-          use-dev: true
+          packages: node python go rust
+          # Override auto-detection with specific packages
 
-      - name: Run Development Tasks
-        run: launchpad dev . && npm run dev
+      - name: Run Tests
+        run: npm test
+```
+
+### Custom Config Path
+
+```yaml
+name: Custom Config
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies from Custom Config
+        uses: stacksjs/launchpad-installer@v1
+        with:
+          config-path: .github/launchpad.config.ts
+
+      - name: Run Tests
+        run: npm test
 ```
 
 ## Testing

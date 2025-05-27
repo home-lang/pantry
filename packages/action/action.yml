@@ -7,17 +7,13 @@ branding:
 
 inputs:
   packages:
-    description: Space-separated list of packages to install
+    description: Space-separated list of packages to install (overrides auto-detection)
     required: false
     default: ''
   config-path:
     description: Path to launchpad config file
     required: false
     default: launchpad.config.ts
-  use-dev:
-    description: Whether to install the dev package
-    required: false
-    default: 'false'
 
 runs:
   using: node16

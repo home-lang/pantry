@@ -22,17 +22,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup development environment
+      - name: Install development dependencies
         uses: stacksjs/launchpad-installer@v1
-        with:
-          use-dev: true
-          # No packages specified - will use dev package only
+        # Automatically detects project dependencies
+        # from package.json, requirements.txt, etc.
 
-      - name: Activate development environment
+      - name: Run development tasks
         run: |
-          # Activate the dev environment
-          launchpad dev .
-
-          # Now we can run dev-specific commands
-          # The environment has all tools specified in the project config
+          # Now we can run development commands
+          # All required tools are available in PATH
+          node --version
+          bun --version
           bun run dev

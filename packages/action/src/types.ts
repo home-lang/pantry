@@ -11,9 +11,4 @@ export interface ActionInputs {
    * Path to launchpad config file
    */
   configPath: string
-
-  /**
-   * Whether to install the dev package
-   */
-  useDev: string
 }

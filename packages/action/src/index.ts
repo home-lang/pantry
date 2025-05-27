@@ -6,6 +6,7 @@ import * as process from 'node:process'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
+import { detectProjectDependencies } from './dependency-detector'
 
 export * from './types'
 
@@ -18,7 +19,6 @@ export async function run(): Promise<void> {
     const inputs: ActionInputs = {
       packages: core.getInput('packages', { required: false }) || '',
       configPath: core.getInput('config-path', { required: false }) || 'launchpad.config.ts',
-      useDev: core.getInput('use-dev', { required: false }) || 'false',
     }
 
     core.info('Starting Launchpad Installer')
@@ -33,17 +33,12 @@ export async function run(): Promise<void> {
     // Install pkgx
     await installPkgx()
 
-    // Install dev package if requested
-    if (inputs.useDev === 'true') {
-      await installDevPackage()
-    }
-
     // Install dependencies
     if (inputs.packages) {
       await installSpecifiedPackages(inputs.packages)
     }
     else {
-      await installPackagesFromConfig(inputs.configPath)
+      await installProjectDependencies(inputs.configPath)
     }
 
     core.info('Launchpad installation completed successfully')
@@ -118,24 +113,6 @@ async function installPkgx(): Promise<void> {
 }
 
 /**
- * Install the dev package
- */
-async function installDevPackage(): Promise<void> {
-  core.info('Installing dev package...')
-
-  const options = {
-    env: {
-      ...process.env,
-      LAUNCHPAD_VERBOSE: 'true',
-      CONTEXT: JSON.stringify(github.context),
-    },
-  }
-
-  await exec.exec('launchpad', ['dev', '--verbose'], options)
-  core.info('dev package installation completed')
-}
-
-/**
  * Install specified packages
  */
 async function installSpecifiedPackages(packages: string): Promise<void> {
@@ -156,12 +133,11 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
 }
 
 /**
- * Install packages from config file
+ * Install project dependencies by detecting them from various sources
  */
-async function installPackagesFromConfig(configPath: string): Promise<void> {
-  core.info(`Looking for packages in config file: ${configPath}`)
+async function installProjectDependencies(configPath: string): Promise<void> {
+  core.info('Detecting project dependencies...')
 
-  const platform = process.platform
   const options = {
     env: {
       ...process.env,
@@ -170,78 +146,106 @@ async function installPackagesFromConfig(configPath: string): Promise<void> {
     },
   }
 
-  if (!fs.existsSync(configPath)) {
-    core.warning(`Config file not found: ${configPath}`)
-    return
-  }
+  const dependencies = await detectProjectDependencies(configPath)
 
-  if (platform === 'win32') {
-    // Windows
-    await installPackagesFromConfigWindows(configPath, options)
+  if (dependencies.length > 0) {
+    core.info(`Found dependencies: ${dependencies.join(', ')}`)
+    const args = ['install', '--verbose', ...dependencies]
+    await exec.exec('launchpad', args, options)
+    core.info('Project dependencies installation completed')
   }
   else {
-    // Unix-like
-    await installPackagesFromConfigUnix(configPath, options)
+    core.warning('No dependencies detected in project')
   }
 }
 
 /**
- * Install packages from config file (Unix implementation)
+ * Detect project dependencies from various sources
  */
-async function installPackagesFromConfigUnix(configPath: string, options: exec.ExecOptions): Promise<void> {
-  // Extract packages using grep on Unix-like systems
-  let packages = ''
+async function detectProjectDependencies(configPath: string): Promise<string[]> {
+  const dependencies: string[] = []
 
-  try {
-    const output = await exec.getExecOutput('grep', ['-o', '\"[^\"]*\"', configPath], {
-      silent: true,
-    })
+  // 1. Check launchpad config file first
+  if (fs.existsSync(configPath)) {
+    const configDeps = await extractFromLaunchpadConfig(configPath)
+    dependencies.push(...configDeps)
+  }
 
-    if (output.stdout) {
-      packages = output.stdout
-        .split('\n')
-        .map((p: string) => p.trim().replace(/"/g, ''))
-        .filter(Boolean)
-        .join(' ')
+  // 2. Check package.json for Node.js projects
+  if (fs.existsSync('package.json')) {
+    dependencies.push('node')
+
+    const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+
+    // Check for specific tools in scripts or dependencies
+    if (packageJson.scripts) {
+      const scripts = JSON.stringify(packageJson.scripts)
+      if (scripts.includes('bun'))
+        dependencies.push('bun')
+      if (scripts.includes('typescript') || scripts.includes('tsc'))
+        dependencies.push('typescript')
     }
+
+    if (packageJson.devDependencies?.typescript || packageJson.dependencies?.typescript) {
+      dependencies.push('typescript')
+    }
+  }
+
+  // 3. Check for Python projects
+  if (fs.existsSync('requirements.txt') || fs.existsSync('pyproject.toml') || fs.existsSync('setup.py')) {
+    dependencies.push('python')
+  }
+
+  // 4. Check for Go projects
+  if (fs.existsSync('go.mod') || fs.existsSync('go.sum')) {
+    dependencies.push('go')
+  }
+
+  // 5. Check for Rust projects
+  if (fs.existsSync('Cargo.toml')) {
+    dependencies.push('rust')
+  }
+
+  // 6. Check for Ruby projects
+  if (fs.existsSync('Gemfile') || fs.existsSync('Rakefile')) {
+    dependencies.push('ruby')
+  }
+
+  // 7. Check for PHP projects
+  if (fs.existsSync('composer.json')) {
+    dependencies.push('php')
+  }
+
+  // 8. Check for Java projects
+  if (fs.existsSync('pom.xml') || fs.existsSync('build.gradle') || fs.existsSync('build.gradle.kts')) {
+    dependencies.push('java')
+  }
+
+  // Remove duplicates and return
+  return [...new Set(dependencies)]
+}
+
+/**
+ * Extract dependencies from launchpad config file
+ */
+async function extractFromLaunchpadConfig(configPath: string): Promise<string[]> {
+  try {
+    const content = fs.readFileSync(configPath, 'utf8')
+
+    // Simple regex to extract quoted strings that look like package names
+    const packageMatches = content.match(/"([\w\-@.]+)"/g) || []
+    const packages = packageMatches
+      .map((p: string) => p.replace(/"/g, ''))
+      .filter((p: string) => {
+        // Filter out obvious non-package strings
+        return !p.includes('/') && !p.includes('\\') && !p.includes('.') && p.length > 1
+      })
+
+    return packages
   }
   catch (error) {
     core.warning(`Failed to extract packages from config: ${error instanceof Error ? error.message : String(error)}`)
-  }
-
-  if (packages) {
-    core.info(`Found packages: ${packages}`)
-    const args = ['install', '--verbose', ...packages.split(' ')]
-    await exec.exec('launchpad', args, options)
-    core.info('Package installation completed')
-  }
-  else {
-    core.warning('No packages found in config file')
-  }
-}
-
-/**
- * Install packages from config file (Windows implementation)
- */
-async function installPackagesFromConfigWindows(configPath: string, options: exec.ExecOptions): Promise<void> {
-  // Read file content
-  const content = fs.readFileSync(configPath, 'utf8')
-
-  // Extract packages using regex
-  const packageMatches = content.match(/"([^"]*)"/g) || []
-  const packages = packageMatches
-    .map((p: string) => p.replace(/"/g, ''))
-    .filter(Boolean)
-    .join(' ')
-
-  if (packages) {
-    core.info(`Found packages: ${packages}`)
-    const args = ['install', '--verbose', ...packages.split(' ')]
-    await exec.exec('launchpad', args, options)
-    core.info('Package installation completed')
-  }
-  else {
-    core.warning('No packages found in config file')
+    return []
   }
 }
 
