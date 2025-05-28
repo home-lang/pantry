@@ -48,9 +48,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -90,9 +97,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, '--version'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -133,9 +147,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'install', '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -173,9 +194,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'list', '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -212,9 +240,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'shim', '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -251,9 +286,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'pkgx', '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -290,9 +332,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'dev', '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -331,9 +380,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'install'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -372,9 +428,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'shim'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -415,9 +478,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'list', '--verbose'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''
@@ -456,9 +526,16 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
         const proc = spawn('bun', [cliPath, 'list', '--path', tempDir], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' },
+          env: cleanEnv,
         })
 
         let stdout = ''

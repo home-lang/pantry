@@ -14,13 +14,11 @@
 
 Launchpad offers a streamlined approach to package management with these key features:
 
-- 📦 **[Package Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install and manage packages efficiently using pkgx
+- 📦 **[Package Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install and manage packages efficiently
+- 🔧 **Auto-updates** — Configure automatic updates
+- 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically ensures installation directories are maintained in your PATH
 - 🔄 **[Executable Shims](https://github.com/stacksjs/launchpad/tree/main/docs/features/shim-creation.md)** — Create executable shims for packages automatically
-- 🛠️ **[pkgx Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/pkgx-management.md)** — Install and manage the pkgx utility itself
-- 💻 **[Dev Environment](https://github.com/stacksjs/launchpad/tree/main/docs/features/dev-package.md)** — Dedicated command for the dev package for development environments
-- 🚀 **[Bun Installation](https://github.com/stacksjs/launchpad/tree/main/docs/features/bun-installation.md)** — Install Bun directly from GitHub releases with platform detection
-- 🔧 **Auto-updates** — Configure automatic updates for pkgx
-- 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically add installation directories to your PATH
+- 💻 **CLI & Library** — Programmatically or manually manage your dependencies using the CLI or library
 - 🪟 **Cross-platform** — Full support for macOS, Linux, and Windows systems
 
 ## Why Launchpad?

@@ -17,6 +17,124 @@ import { activateDevEnv, addToPath, checkDevStatus, deactivateDevEnv, isInPath, 
 const execAsync = promisify(exec)
 const cli = new CAC('launchpad')
 
+cli.version(version)
+cli.help()
+
+// Bootstrap function to ensure required packages are available
+async function bootstrap() {
+  try {
+    // Check if we're in a dev environment directory
+    const cwd = process.cwd()
+    const devFiles = [
+      'dependencies.yaml',
+      'dependencies.yml',
+      'pkgx.yaml',
+      'pkgx.yml',
+      '.pkgx.yaml',
+      '.pkgx.yml',
+    ]
+
+    const hasDevFile = devFiles.some(file => fs.existsSync(path.join(cwd, file)))
+
+    if (hasDevFile) {
+      // Check if bun is needed and available
+      let fileContent = ''
+      const depsFile = devFiles.find(file => fs.existsSync(path.join(cwd, file)))
+      if (depsFile) {
+        try {
+          fileContent = fs.readFileSync(path.join(cwd, depsFile), 'utf8')
+        }
+        catch {
+          // Ignore read errors
+        }
+      }
+
+      const needsBun = fileContent.includes('bun.sh') || fileContent.includes('bun:') || fileContent.includes('bun@')
+
+      if (needsBun) {
+        // Check if bun is available
+        let bunAvailable = false
+        try {
+          await execAsync('command -v bun', { timeout: 2000 })
+          bunAvailable = true
+        }
+        catch {
+          // Bun not available
+        }
+
+        if (!bunAvailable) {
+          console.log('🔄 Bun is required but not installed. Attempting to install via pkgx...')
+
+          // Try to ensure pkgx is available
+          try {
+            const { stdout } = await execAsync('command -v pkgx', { timeout: 5000 })
+            if (stdout) {
+              // pkgx is available, try to install bun
+              try {
+                console.log('Installing bun via pkgx...')
+                await execAsync('pkgx +bun.sh -- echo "Bun is available via pkgx"', { timeout: 30000 })
+
+                // If this is a CLI command that needs bun, rerun it with pkgx
+                const isBunCommand = process.argv.some(arg => arg === 'bun' || arg === 'install' || arg.includes('bun.sh'))
+                const isDevCommand = process.argv.some(arg => arg.startsWith('dev:'))
+
+                if (isBunCommand || isDevCommand) {
+                  if (process.argv[0].includes('launchpad') || process.argv[0].includes('cli.ts')) {
+                    const args = process.argv.slice(1).map(arg => `"${arg}"`).join(' ')
+                    try {
+                      const { stdout, stderr } = await execAsync(`pkgx +bun.sh -- launchpad ${args}`)
+                      console.log(stdout)
+                      if (stderr)
+                        console.error(stderr)
+                      process.exit(0) // Exit after running the command through pkgx
+                    }
+                    catch {
+                      // Continue with original execution
+                    }
+                  }
+                }
+              }
+              catch {
+                // Failed to install bun via pkgx, continue
+              }
+            }
+          }
+          catch {
+            // pkgx not available, continue
+          }
+        }
+      }
+
+      // Try to ensure packages are available using pkgx directly
+      try {
+        const { stdout } = await execAsync('pkgx --version', { timeout: 5000 })
+        if (stdout) {
+          // pkgx is available, try to install missing packages
+          const dependenciesFile = devFiles.find(file => fs.existsSync(path.join(cwd, file)))
+          if (dependenciesFile) {
+            try {
+              // Use pkgx to install packages from the dependencies file
+              await execAsync(`pkgx install`, { cwd, timeout: 30000 })
+            }
+            catch {
+              // Ignore install errors for now
+            }
+          }
+        }
+      }
+      catch {
+        // pkgx not available, continue without it
+      }
+    }
+  }
+  catch {
+    // Bootstrap failed, continue anyway
+  }
+}
+
+// Run bootstrap before setting up CLI
+await bootstrap()
+
 interface CliOption {
   verbose: boolean
   path?: string
@@ -488,6 +606,9 @@ cli
       : install_prefix()
 
     try {
+      // For the bun command specifically, we want to allow running even without bun installed
+      // We'll try to use the install_bun function directly
+
       // Check if bun is already installed and not forced
       if (!config.forceReinstall) {
         try {
@@ -500,6 +621,7 @@ cli
         }
         catch {
           // Not installed, continue with installation
+          console.log('Bun is not currently installed. Installing...')
         }
       }
 
@@ -550,15 +672,21 @@ cli
       }
 
       // Verify installation if possible
-      if (isInPath(binDir)) {
-        try {
-          const { stdout } = await execAsync('bun --version', { encoding: 'utf8' })
-          console.log('✅ Bun has been successfully installed!')
-          console.log(`Version: ${stdout.trim()}`)
-        }
-        catch {
-          console.log('✅ Bun has been installed but unable to determine version')
-        }
+      try {
+        const { stdout } = await execAsync(`${path.join(binDir, 'bun')} --version`, { encoding: 'utf8' })
+        console.log('✅ Bun has been successfully installed!')
+        console.log(`Version: ${stdout.trim()}`)
+
+        // Provide instructions for using dev features
+        console.log('')
+        console.log('To activate the dev environment and make bun available:')
+        console.log('  launchpad dev:on')
+        console.log('  # or with absolute path')
+        console.log(`  ${path.join(binDir, 'bun')} launchpad dev:on`)
+      }
+      catch {
+        console.log('✅ Bun has been installed but unable to determine version')
+        console.log(`Check installation with: ${path.join(binDir, 'bun')} --version`)
       }
     }
     catch (error) {
@@ -754,7 +882,7 @@ cli
         }
         else {
           console.warn(`Note: ${binDir} is not in your PATH.`)
-          console.warn(`To use the zsh command, add it to your PATH:`)
+          console.warn(`To use the bun command, add it to your PATH:`)
           console.warn(`  echo 'export PATH="${binDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
         }
       }
@@ -762,138 +890,17 @@ cli
       // Verify installation if possible
       if (isInPath(binDir)) {
         try {
-          const { stdout } = await execAsync('zsh --version', { encoding: 'utf8' })
-          console.log('✅ zsh has been successfully installed!')
+          const { stdout } = await execAsync('bun --version', { encoding: 'utf8' })
+          console.log('✅ Bun has been successfully installed!')
           console.log(`Version: ${stdout.trim()}`)
         }
         catch {
-          console.log('✅ zsh has been installed but unable to determine version')
+          console.log('✅ Bun has been installed but unable to determine version')
         }
       }
-
-      console.log('')
-      console.log('To make zsh your default shell, run:')
-      console.log(`  chsh -s ${path.join(binDir, 'zsh')}`)
-      console.log('')
-      console.log('Or if you want to use the system zsh:')
-      console.log('  chsh -s /bin/zsh')
     }
     catch (error) {
-      console.error('Failed to install zsh:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-  })
-
-// Dev environment commands
-cli
-  .command('dev:integrate', 'Integrate dev hooks into shell configuration')
-  .option('--verbose', 'Enable verbose logging')
-  .option('--dry-run', 'Show what would be done without making changes')
-  .action(async (options?: CliOption & { 'dry-run'?: boolean }) => {
-    // Override config options from CLI
-    if (options?.verbose)
-      config.verbose = true
-
-    const dryRun = options?.['dry-run'] || false
-
-    try {
-      await integrate('install', { dryrun: dryRun })
-    }
-    catch (error) {
-      console.error('Failed to integrate dev hooks:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-  })
-
-cli
-  .command('dev:deintegrate', 'Remove dev hooks from shell configuration')
-  .option('--verbose', 'Enable verbose logging')
-  .option('--dry-run', 'Show what would be done without making changes')
-  .action(async (options?: CliOption & { 'dry-run'?: boolean }) => {
-    // Override config options from CLI
-    if (options?.verbose)
-      config.verbose = true
-
-    const dryRun = options?.['dry-run'] || false
-
-    try {
-      await integrate('uninstall', { dryrun: dryRun })
-    }
-    catch (error) {
-      console.error('Failed to deintegrate dev hooks:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-  })
-
-cli
-  .command('dev:status', 'Check if dev environment is active in current directory')
-  .option('--verbose', 'Enable verbose logging')
-  .action(async (options?: CliOption) => {
-    // Override config options from CLI
-    if (options?.verbose)
-      config.verbose = true
-
-    try {
-      const isActive = await checkDevStatus()
-      if (isActive) {
-        console.log('✅ Dev environment is active')
-        process.exit(0)
-      }
-      else {
-        console.log('❌ Dev environment is not active')
-        process.exit(1)
-      }
-    }
-    catch (error) {
-      console.error('Failed to check dev status:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-  })
-
-cli
-  .command('dev:ls', 'List all active dev environments')
-  .option('--verbose', 'Enable verbose logging')
-  .action(async (options?: CliOption) => {
-    // Override config options from CLI
-    if (options?.verbose)
-      config.verbose = true
-
-    try {
-      const activeEnvs = await listActiveDevEnvs()
-      if (activeEnvs.length > 0) {
-        console.log('Active dev environments:')
-        activeEnvs.forEach(env => console.log(`  ${env}`))
-      }
-      else {
-        console.log('No active dev environments found')
-      }
-    }
-    catch (error) {
-      console.error('Failed to list dev environments:', error instanceof Error ? error.message : error)
-      process.exit(1)
-    }
-  })
-
-cli
-  .command('dev:off', 'Deactivate dev environment in current directory')
-  .option('--verbose', 'Enable verbose logging')
-  .action(async (options?: CliOption) => {
-    // Override config options from CLI
-    if (options?.verbose)
-      config.verbose = true
-
-    try {
-      const deactivated = await deactivateDevEnv()
-      if (deactivated) {
-        console.log('✅ Dev environment deactivated')
-      }
-      else {
-        console.log('❌ No active dev environment found')
-        process.exit(1)
-      }
-    }
-    catch (error) {
-      console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : error)
+      console.error('Failed to install Bun:', error instanceof Error ? error.message : error)
       process.exit(1)
     }
   })
@@ -909,54 +916,140 @@ cli
     const targetDir = directory ? path.resolve(directory) : process.cwd()
 
     try {
-      const activated = await activateDevEnv(targetDir)
-      if (activated) {
-        console.log(`✅ Dev environment activated in ${targetDir}`)
+      // First, check for dependency files
+      const depsFiles = [
+        'dependencies.yaml',
+        'dependencies.yml',
+        'pkgx.yaml',
+        'pkgx.yml',
+      ]
+
+      const depsFile = depsFiles.find(file => fs.existsSync(path.join(targetDir, file)))
+
+      if (!depsFile) {
+        console.log('❌ No dependency files found in directory')
+        process.exit(1)
       }
-      else {
-        console.log('❌ No development files found in directory')
+
+      // Check if file contains bun as a dependency
+      let fileContent = ''
+      try {
+        fileContent = fs.readFileSync(path.join(targetDir, depsFile), 'utf8')
+      }
+      catch (err) {
+        console.error(`Failed to read ${depsFile}:`, err instanceof Error ? err.message : String(err))
+        process.exit(1)
+      }
+
+      // Check if the dependency file contains bun
+      const hasBun = fileContent.includes('bun.sh') || fileContent.includes('bun:') || fileContent.includes('bun@')
+
+      // Try to check if bun is already available
+      let bunInstalled = false
+      try {
+        await execAsync('command -v bun', { timeout: 2000 })
+        bunInstalled = true
+      }
+      catch {
+        // Bun not available, we'll need to install it
+      }
+
+      // Use pkgx to activate environment
+      console.log(`Activating dev environment from ${depsFile}...`)
+
+      try {
+        // 1. Make sure the dev environment is set up
+        const activated = await activateDevEnv(targetDir)
+
+        if (!activated) {
+          console.log('❌ Failed to activate dev environment')
+          process.exit(1)
+        }
+
+        // 2. If bun is needed but not installed, install it
+        if (hasBun && !bunInstalled) {
+          console.log('🔄 Installing bun via pkgx...')
+
+          try {
+            const { stdout } = await execAsync('command -v pkgx', { timeout: 2000 })
+            if (stdout) {
+              // Use pkgx to install bun
+              await execAsync('pkgx +bun.sh -- echo "Bun is now available"', {
+                timeout: 30000,
+                cwd: targetDir,
+              })
+
+              // Now also perform an explicit install to make sure binaries are available
+              try {
+                console.log('📦 Installing bun permanently to make it available in PATH...')
+                await install(['bun.sh'], install_prefix().string)
+                console.log('✅ Bun installed successfully')
+              }
+              catch (installErr) {
+                console.warn('⚠️ Could not permanently install bun:', installErr instanceof Error ? installErr.message : String(installErr))
+                console.warn('You may need to use pkgx +bun.sh -- to run bun commands')
+              }
+            }
+          }
+          catch {
+            console.warn('⚠️ pkgx not available, unable to install bun automatically')
+          }
+        }
+
+        console.log(`✅ Dev environment activated in ${targetDir}`)
+        console.log('')
+        console.log('To use this environment, you may need to run:')
+        console.log('  source ~/.zshrc  # or your shell config file')
+        console.log('')
+        console.log('Or restart your terminal')
+      }
+      catch (error) {
+        console.error('Failed to activate dev environment:', error instanceof Error ? error.message : String(error))
         process.exit(1)
       }
     }
     catch (error) {
-      console.error('Failed to activate dev environment:', error instanceof Error ? error.message : error)
+      console.error('Failed to activate dev environment:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })
 
 cli
-  .command('dev:shellcode', 'Output shell integration code')
-  .action(() => {
-    console.log(shellcode())
-  })
-
-cli
-  .command('dev:dump [directory]', 'Output environment setup for dev environment')
+  .command('dev:dump [directory]', 'Generate environment setup script')
   .option('--verbose', 'Enable verbose logging')
-  .option('--dry-run', 'Show packages without generating environment')
-  .option('--quiet', 'Suppress package output')
-  .action(async (directory?: string, options?: CliOption & { 'dry-run'?: boolean, 'quiet'?: boolean }) => {
+  .option('--dryrun', 'Show packages without generating script')
+  .option('--quiet', 'Suppress status messages')
+  .action(async (directory?: string, options?: CliOption & { dryrun?: boolean, quiet?: boolean }) => {
     // Override config options from CLI
     if (options?.verbose)
       config.verbose = true
 
     const targetDir = directory ? path.resolve(directory) : process.cwd()
-    const dryRun = options?.['dry-run'] || false
-    const quiet = options?.quiet || false
 
     try {
-      await dump(targetDir, { dryrun: dryRun, quiet })
+      const { dump } = await import('../src/dev')
+      await dump(targetDir, {
+        dryrun: options?.dryrun || false,
+        quiet: options?.quiet || false,
+      })
     }
     catch (error) {
-      console.error('Failed to dump dev environment:', error instanceof Error ? error.message : error)
+      console.error('Failed to generate environment script:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })
 
-cli.command('version', 'Show the version of the CLI').action(() => {
-  console.log(version)
-})
+cli
+  .command('dev:shellcode', 'Generate shell integration code')
+  .action(async () => {
+    try {
+      const { shellcode } = await import('../src/dev')
+      console.log(shellcode())
+    }
+    catch (error) {
+      console.error('Failed to generate shell code:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
 
-cli.version(version)
-cli.help()
 cli.parse()
