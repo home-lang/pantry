@@ -1,210 +1,323 @@
 # Package Management
 
-One of the core features of Launchpad is its ability to manage packages through multiple installation approaches, with pkgx as the primary engine and automatic fallbacks to system package managers.
+Launchpad provides comprehensive package management capabilities, allowing you to install, manage, and remove packages efficiently. This guide covers all aspects of package management.
 
-## Installation Methods
+## Installation
 
-Launchpad provides several installation approaches:
+### Basic Installation
 
-### Regular Installation
-
-Installing packages with Launchpad using pkgx:
+Install packages using the `install` or `i` command:
 
 ```bash
 # Install a single package
 launchpad install node
 
-# Install multiple packages at once
-launchpad install python@3.12 ruby@3.3 go@1.23
+# Install multiple packages
+launchpad install python ruby go
 
-# Use the shorthand
-launchpad i node@22 python@3.12
+# Install specific versions
+launchpad install node@22 python@3.12
+```
+
+### Installation Options
+
+Customize installation behavior with various options:
+
+```bash
+# Install to custom path
+launchpad install --path ~/my-tools node
+
+# Force reinstall even if already present
+launchpad install --force python
+
+# Verbose output showing detailed progress
+launchpad install --verbose go
+
+# Don't automatically add to PATH
+launchpad install --no-auto-path rust
 ```
 
 ### Smart Installation
 
-Smart installation automatically tries the best method and falls back to system package managers:
+Use smart installation for automatic fallback to system package managers:
 
 ```bash
-# Smart install with automatic fallback
-launchpad smart-install node@22 python@3.12 go@1.23
+# Try pkgx first, fallback to brew/apt if needed
+launchpad smart-install node python
 
-# Use the shorthand
-launchpad si node@22 python@3.12
-
-# Smart install without fallback to system packages
-launchpad smart-install --no-fallback node
-
-# Smart install with verbose output
-launchpad smart-install --verbose node@22 python@3.12
+# Disable fallback behavior
+launchpad smart-install --no-fallback go
 ```
 
-The smart installer:
-1. First tries to install using pkgx
-2. If pkgx fails and fallback is enabled, tries system package managers:
-   - **macOS**: Uses Homebrew (`brew install`)
-   - **Linux**: Uses apt (Ubuntu/Debian) or yum (RHEL/CentOS)
-3. Provides manual installation instructions if all methods fail
-4. Checks if packages are already installed to avoid duplicates
+## Package Removal
 
-### Package-Specific Installation
+### Removing Specific Packages
 
-Launchpad provides dedicated commands for specific tools:
-
-#### Bun Installation
-
-Install Bun directly from official GitHub releases:
+Remove individual packages while keeping your Launchpad setup intact:
 
 ```bash
-# Install latest version of Bun
-launchpad bun
+# Remove a single package
+launchpad remove python
 
-# Install a specific version
-launchpad bun --version 1.2.14
+# Remove multiple packages at once
+launchpad remove node python ruby
 
-# Customize installation path
-launchpad bun --path ~/my-bin
+# Remove specific versions
+launchpad remove node@20
+launchpad remove python.org@3.10.17
 
-# Force reinstallation
-launchpad bun --force
+# Remove with aliases
+launchpad rm node
+launchpad uninstall-package python
 ```
 
-This command:
-1. Automatically detects your platform and architecture
-2. Downloads the appropriate Bun binary from GitHub releases
-3. Installs it to the specified path
-4. Adds the installation directory to your PATH (if needed)
+### Removal Options
 
-Unlike the general `install` command, `launchpad bun` doesn't require pkgx as it downloads directly from GitHub.
-
-#### Zsh Installation
-
-Install the Zsh shell:
+Control removal behavior with various options:
 
 ```bash
-# Install zsh
-launchpad zsh
+# Preview what would be removed (recommended)
+launchpad remove python --dry-run
 
-# Customize installation path
-launchpad zsh --path ~/my-bin
+# Remove without confirmation prompts
+launchpad remove python --force
 
-# Force reinstallation
-launchpad zsh --force
+# Verbose output showing all removed files
+launchpad remove python --verbose
 
-# Install without automatically adding to PATH
-launchpad zsh --no-auto-path
+# Remove from specific installation path
+launchpad remove --path ~/my-tools python
 ```
 
-This command:
-1. Ensures pkgx is installed first
-2. Uses pkgx to install the latest version of zsh
-3. Adds the installation directory to your PATH (if enabled)
-4. Provides instructions for making zsh your default shell
+### What Gets Removed
 
-After installation, you can make zsh your default shell:
+The `remove` command intelligently identifies and removes:
+
+- **Binaries**: Files in `bin/` and `sbin/` directories
+- **Package directories**: Complete package installation directories
+- **Symlinks**: Links pointing to the removed package
+- **Shims**: Executable shims created for the package
+- **Dependencies**: Package-specific files and configurations
+
+### Safe Removal Process
+
+Launchpad ensures safe package removal through:
+
+1. **Package detection**: Finds all versions and files for the specified package
+2. **Confirmation prompts**: Asks for confirmation before removal (unless `--force`)
+3. **Dry-run mode**: Preview changes with `--dry-run` before actual removal
+4. **Detailed reporting**: Shows exactly what was removed, failed, or not found
+5. **Selective matching**: Handles both exact matches and pattern matching
+
+## Complete System Cleanup
+
+### Full Uninstallation
+
+Remove Launchpad entirely with the `uninstall` command:
 
 ```bash
-# Using the installed zsh
-chsh -s /path/to/installed/zsh
+# Remove everything with confirmation
+launchpad uninstall
 
-# Or using system zsh (if available)
-chsh -s /bin/zsh
+# Preview complete removal
+launchpad uninstall --dry-run
+
+# Remove without prompts
+launchpad uninstall --force
 ```
 
-## How Package Installation Works
+### Selective Cleanup
 
-When you run an installation command, Launchpad:
-
-1. Checks if pkgx is installed (and installs it automatically if needed)
-2. Utilizes `ts-pkgx` to match against available packages in the Pantry
-3. Creates the necessary installation directories
-4. Installs the package using pkgx
-5. Creates shims and symlinks for executables
-6. Optionally adds installation paths to your PATH
-
-## Installation Location
-
-By default, packages are installed to:
-- `/usr/local` if it's writable by the current user
-- `~/.local` as a fallback location
-
-You can specify a custom installation path:
+Choose what to remove with selective options:
 
 ```bash
-launchpad install --path ~/my-packages node
-launchpad smart-install --path ~/my-packages node python
+# Remove only packages, keep shell integration
+launchpad uninstall --keep-shell-integration
+
+# Remove only shell integration, keep packages
+launchpad uninstall --keep-packages
+
+# Verbose cleanup showing all operations
+launchpad uninstall --verbose
 ```
 
-## Version Control
+### Complete Cleanup Process
 
-Launchpad can install specific versions of packages:
+The `uninstall` command removes:
+
+- **All packages**: Every package installed by Launchpad
+- **Installation directories**: `bin/`, `sbin/`, `pkgs/` directories
+- **Shell integration**: Removes lines from `.zshrc`, `.bashrc`, etc.
+- **Shim directories**: All created shim directories
+- **Configuration**: Provides guidance for manual PATH cleanup
+
+## Bootstrap Setup
+
+### Quick Setup
+
+Get everything you need with one command:
 
 ```bash
-# Install a specific version
-launchpad install node@22
-launchpad smart-install node@24
+# Install all essential tools
+launchpad bootstrap
+
+# Verbose bootstrap showing all operations
+launchpad bootstrap --verbose
+
+# Force reinstall everything
+launchpad bootstrap --force
 ```
 
-## Force Reinstallation
+### Customized Bootstrap
 
-If a package is already installed, Launchpad will skip it by default. You can force reinstallation:
+Control what gets installed:
 
 ```bash
-launchpad install --force node
-launchpad smart-install --force node
-launchpad bun --force
+# Skip specific components
+launchpad bootstrap --skip-pkgx
+launchpad bootstrap --skip-bun
+launchpad bootstrap --skip-shell-integration
+
+# Custom installation path
+launchpad bootstrap --path ~/.local
+
+# Disable automatic PATH modification
+launchpad bootstrap --no-auto-path
 ```
 
-## Verbose Mode
+### Bootstrap Components
 
-For debugging or to see detailed installation information:
+The bootstrap process installs:
 
-```bash
-launchpad install --verbose node
-launchpad smart-install --verbose node@22 python@3.12
-launchpad bun --verbose
-```
-
-## Configuration Options
-
-Launchpad handles network issues and retries automatically:
-
-- **Default retries**: 3 attempts
-- **Default timeout**: 60 seconds (60000ms)
-- **Auto-sudo**: Enabled by default for system installations
-- **Auto-add to PATH**: Enabled by default
-
-You can customize these in the configuration:
-
-```typescript
-{
-  "maxRetries": 5,
-  "timeout": 120000,
-  "autoSudo": false,
-  "autoAddToPath": false
-}
-```
+- **pkgx**: Core package manager
+- **Bun**: JavaScript runtime
+- **PATH setup**: Configures both `bin/` and `sbin/` directories
+- **Shell integration**: Sets up auto-activation hooks
+- **Progress reporting**: Shows success/failure for each component
 
 ## Package Listing
 
-You can see all installed packages:
+### View Installed Packages
+
+See what's currently installed:
 
 ```bash
+# List all packages
 launchpad list
-# or
+
+# Shorthand
 launchpad ls
+
+# Verbose listing with paths
+launchpad list --verbose
+
+# List from specific path
+launchpad list --path ~/my-tools
 ```
 
-The output shows each package name and its version.
+## Version Management
 
-## Uninstalling Packages
+### Handling Multiple Versions
 
-Remove installed packages:
+Launchpad supports multiple versions of the same package:
 
 ```bash
-launchpad uninstall node
-# or
-launchpad rm node
+# Install multiple versions
+launchpad install node@20 node@22
+
+# List to see all versions
+launchpad list
+
+# Remove specific version
+launchpad remove node@20
+
+# Keep other versions intact
 ```
 
-Note: The `uninstall` command is available in the core module but not exposed in the current CLI. You can access it through the programmatic API.
+### Version Specification
+
+Support for various version formats:
+
+```bash
+# Exact version
+launchpad install node@22.1.0
+
+# Major version
+launchpad install python@3
+
+# Version with package domain
+launchpad install python.org@3.12.0
+```
+
+## Best Practices
+
+### Safe Package Management
+
+1. **Always dry-run first**: Use `--dry-run` for major operations
+2. **List before removing**: Check `launchpad list` to see what's installed
+3. **Use specific versions**: Specify versions to avoid conflicts
+4. **Regular cleanup**: Remove unused packages to save space
+
+### Choosing the Right Command
+
+- **`remove`**: For removing specific packages while keeping Launchpad
+- **`uninstall`**: For complete system cleanup and fresh start
+- **`bootstrap`**: For initial setup or recovering from issues
+- **`list`**: To audit what's currently installed
+
+### Error Recovery
+
+If something goes wrong:
+
+```bash
+# Check what's still installed
+launchpad list
+
+# Try to clean up broken installations
+launchpad uninstall --dry-run
+
+# Fresh start with bootstrap
+launchpad bootstrap --force
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Package not found during removal**:
+```bash
+# Check exact package names
+launchpad list
+
+# Use verbose mode for details
+launchpad remove package-name --verbose
+```
+
+**Permission errors**:
+```bash
+# Use sudo if needed
+sudo launchpad remove package-name
+
+# Or install to user directory
+launchpad install --path ~/.local package-name
+```
+
+**PATH issues after removal**:
+```bash
+# Check PATH in new shell
+echo $PATH
+
+# Restart shell or source config
+source ~/.zshrc
+```
+
+### Getting Help
+
+For detailed help with any command:
+
+```bash
+launchpad help
+launchpad remove --help
+launchpad uninstall --help
+launchpad bootstrap --help
+```

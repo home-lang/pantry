@@ -118,6 +118,63 @@ async function outdated(): Promise<void>
 async function uninstall(pkg: string): Promise<boolean>
 ```
 
+### Package Removal Module
+
+```typescript
+/**
+ * Remove specific packages while keeping Launchpad installation
+ * @param packages Array of package names/specs to remove
+ * @param options Removal options
+ * @returns Promise resolving to removal results
+ */
+async function removePackages(
+  packages: string[],
+  options: RemoveOptions
+): Promise<RemovalResult[]>
+
+/**
+ * Complete system cleanup - remove Launchpad and all packages
+ * @param options Cleanup options
+ * @returns Promise resolving to cleanup results
+ */
+async function completeUninstall(options: UninstallOptions): Promise<UninstallResult>
+
+interface RemoveOptions {
+  installPath?: string
+  dryRun?: boolean
+  force?: boolean
+  verbose?: boolean
+}
+
+interface RemovalResult {
+  package: string
+  action: 'removed' | 'not-found' | 'failed'
+  files?: string[]
+  details?: string
+}
+
+interface UninstallOptions {
+  dryRun?: boolean
+  force?: boolean
+  keepPackages?: boolean
+  keepShellIntegration?: boolean
+  verbose?: boolean
+}
+
+interface UninstallResult {
+  removed: UninstallItem[]
+  kept: UninstallItem[]
+  failed: UninstallItem[]
+  notFound: UninstallItem[]
+}
+
+interface UninstallItem {
+  item: string
+  action: 'removed' | 'kept' | 'not-found' | 'failed'
+  path?: string
+  details?: string
+}
+
 ### Smart Install Module
 
 ```typescript
@@ -491,6 +548,21 @@ launchpad pkgx [options]
 
 # Install dev package
 launchpad dev [options]
+
+# Bootstrap complete setup (install all essential tools)
+launchpad bootstrap [options]
+```
+
+### Package Removal Commands
+
+```bash
+# Remove specific packages
+launchpad remove [packages...] [options]
+launchpad rm [packages...] [options]
+launchpad uninstall-package [packages...] [options]
+
+# Complete system cleanup (remove everything)
+launchpad uninstall [options]
 ```
 
 ### Shim Management Commands
@@ -578,16 +650,29 @@ Most commands support these common options:
 
 - `--verbose`: Enable verbose logging
 - `--path <path>`: Specify custom installation path
-- `--force`: Force reinstall even if already installed
+- `--force`: Force reinstall/removal even if already installed/not found
+- `--dry-run`: Preview changes without actually performing them
 - `--no-auto-path`: Do not automatically add to PATH
 
 Some commands have specific options:
 
+### Installation Commands
 - `--sudo`: Use sudo for installation (install command)
 - `--no-fallback`: Do not fallback to system package managers (smart-install)
 - `--version <version>`: Install specific version (bun command)
-- `--dry-run`: Show what would be done without making changes (dev commands)
+
+### Removal Commands
+- `--keep-packages`: Keep installed packages, only remove shell integration (uninstall)
+- `--keep-shell-integration`: Keep shell integration, only remove packages (uninstall)
+
+### Bootstrap Commands
+- `--skip-pkgx`: Skip pkgx installation
+- `--skip-bun`: Skip bun installation
+- `--skip-shell-integration`: Skip shell integration setup
+
+### Dev Commands
 - `--quiet`: Suppress package output (dev:dump command)
+- `--dryrun`: Show packages without generating script (dev:dump command)
 
 ## Environment Variables
 
@@ -601,3 +686,36 @@ Launchpad respects several environment variables:
 - `LAUNCHPAD_INSTALL_PATH`: Set installation path
 - `LAUNCHPAD_SHIM_PATH`: Set shim path
 - `LAUNCHPAD_AUTO_SUDO`: Enable/disable auto sudo
+
+### Bootstrap Module
+
+```typescript
+/**
+ * Bootstrap complete Launchpad setup
+ * @param options Bootstrap options
+ * @returns Promise resolving to bootstrap results
+ */
+async function runBootstrap(options: BootstrapOptions): Promise<BootstrapResult>
+
+interface BootstrapOptions {
+  verbose?: boolean
+  force?: boolean
+  autoPath?: boolean
+  skipPkgx?: boolean
+  skipBun?: boolean
+  skipShellIntegration?: boolean
+  path?: string
+}
+
+interface BootstrapResult {
+  successful: BootstrapItem[]
+  failed: BootstrapItem[]
+  skipped: BootstrapItem[]
+}
+
+interface BootstrapItem {
+  tool: string
+  status: 'success' | 'failed' | 'skipped' | 'already-installed'
+  message?: string
+}
+```

@@ -20,120 +20,414 @@ const cli = new CAC('launchpad')
 cli.version(version)
 cli.help()
 
-// Bootstrap function to ensure required packages are available
-async function bootstrap() {
+// Check if this is a first-time run and auto-bootstrap if needed
+async function checkFirstTimeRun() {
+  // Only check for first-time run on commands that actually need tools installed
+  const needsToolsCommands = ['install', 'i', 'dev:on', 'shim']
+  const hasToolsCommand = process.argv.some(arg => needsToolsCommands.includes(arg))
+
+  if (!hasToolsCommand) {
+    return false
+  }
+
+  // Check if essential tools are available
+  const checkTool = async (command: string): Promise<boolean> => {
+    try {
+      const { stdout } = await execAsync(`command -v ${command}`, { timeout: 2000 })
+      return stdout.trim().length > 0
+    }
+    catch {
+      return false
+    }
+  }
+
+  const [hasPkgx] = await Promise.all([
+    checkTool('pkgx'),
+  ])
+
+  // Check if shell integration is set up
+  let hasShellIntegration = false
   try {
-    // Check if we're in a dev environment directory
-    const cwd = process.cwd()
-    const devFiles = [
-      'dependencies.yaml',
-      'dependencies.yml',
-      'pkgx.yaml',
-      'pkgx.yml',
-      '.pkgx.yaml',
-      '.pkgx.yml',
-    ]
+    const shell = process.env.SHELL || '/bin/bash'
+    const shellName = path.basename(shell)
 
-    const hasDevFile = devFiles.some(file => fs.existsSync(path.join(cwd, file)))
-
-    if (hasDevFile) {
-      // Check if bun is needed and available
-      let fileContent = ''
-      const depsFile = devFiles.find(file => fs.existsSync(path.join(cwd, file)))
-      if (depsFile) {
-        try {
-          fileContent = fs.readFileSync(path.join(cwd, depsFile), 'utf8')
+    let configFile = ''
+    switch (shellName) {
+      case 'zsh':
+        configFile = path.join(process.env.HOME || '~', '.zshrc')
+        break
+      case 'bash':
+        configFile = path.join(process.env.HOME || '~', '.bashrc')
+        if (!fs.existsSync(configFile)) {
+          configFile = path.join(process.env.HOME || '~', '.bash_profile')
         }
-        catch {
-          // Ignore read errors
-        }
-      }
+        break
+      default:
+        configFile = path.join(process.env.HOME || '~', '.profile')
+    }
 
-      const needsBun = fileContent.includes('bun.sh') || fileContent.includes('bun:') || fileContent.includes('bun@')
-
-      if (needsBun) {
-        // Check if bun is available
-        let bunAvailable = false
-        try {
-          await execAsync('command -v bun', { timeout: 2000 })
-          bunAvailable = true
-        }
-        catch {
-          // Bun not available
-        }
-
-        if (!bunAvailable) {
-          console.log('🔄 Bun is required but not installed. Attempting to install via pkgx...')
-
-          // Try to ensure pkgx is available
-          try {
-            const { stdout } = await execAsync('command -v pkgx', { timeout: 5000 })
-            if (stdout) {
-              // pkgx is available, try to install bun
-              try {
-                console.log('Installing bun via pkgx...')
-                await execAsync('pkgx +bun.sh -- echo "Bun is available via pkgx"', { timeout: 30000 })
-
-                // If this is a CLI command that needs bun, rerun it with pkgx
-                const isBunCommand = process.argv.some(arg => arg === 'bun' || arg === 'install' || arg.includes('bun.sh'))
-                const isDevCommand = process.argv.some(arg => arg.startsWith('dev:'))
-
-                if (isBunCommand || isDevCommand) {
-                  if (process.argv[0].includes('launchpad') || process.argv[0].includes('cli.ts')) {
-                    const args = process.argv.slice(1).map(arg => `"${arg}"`).join(' ')
-                    try {
-                      const { stdout, stderr } = await execAsync(`pkgx +bun.sh -- launchpad ${args}`)
-                      console.log(stdout)
-                      if (stderr)
-                        console.error(stderr)
-                      process.exit(0) // Exit after running the command through pkgx
-                    }
-                    catch {
-                      // Continue with original execution
-                    }
-                  }
-                }
-              }
-              catch {
-                // Failed to install bun via pkgx, continue
-              }
-            }
-          }
-          catch {
-            // pkgx not available, continue
-          }
-        }
-      }
-
-      // Try to ensure packages are available using pkgx directly
-      try {
-        const { stdout } = await execAsync('pkgx --version', { timeout: 5000 })
-        if (stdout) {
-          // pkgx is available, try to install missing packages
-          const dependenciesFile = devFiles.find(file => fs.existsSync(path.join(cwd, file)))
-          if (dependenciesFile) {
-            try {
-              // Use pkgx to install packages from the dependencies file
-              await execAsync(`pkgx install`, { cwd, timeout: 30000 })
-            }
-            catch {
-              // Ignore install errors for now
-            }
-          }
-        }
-      }
-      catch {
-        // pkgx not available, continue without it
-      }
+    if (fs.existsSync(configFile)) {
+      const content = fs.readFileSync(configFile, 'utf8')
+      hasShellIntegration = content.includes('_pkgx_chpwd_hook') || content.includes('launchpad dev:shellcode')
     }
   }
   catch {
-    // Bootstrap failed, continue anyway
+    // Ignore shell integration check errors
+  }
+
+  // If any essential tools are missing, offer to bootstrap
+  // Note: We don't check for bun here since this script is running with bun
+  const missingTools = []
+  if (!hasPkgx)
+    missingTools.push('pkgx')
+  if (!hasShellIntegration)
+    missingTools.push('shell integration')
+
+  if (missingTools.length > 0) {
+    console.log('🚀 Welcome to Launchpad!')
+    console.log('')
+    console.log('It looks like this might be your first time running Launchpad.')
+    console.log(`Missing components: ${missingTools.join(', ')}`)
+    console.log('')
+    console.log('Would you like to automatically set up everything you need?')
+    console.log('This will install: pkgx, configure PATH, and set up shell integration.')
+    console.log('')
+
+    // Check if we're in an interactive terminal
+    const isInteractive = process.stdin.isTTY && process.stdout.isTTY
+
+    if (isInteractive) {
+      // Interactive mode - prompt user
+      const readline = await import('node:readline')
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      })
+
+      const answer = await new Promise<string>((resolve) => {
+        rl.question('🤔 Run bootstrap now? (Y/n): ', (answer) => {
+          rl.close()
+          resolve(answer.toLowerCase().trim())
+        })
+      })
+
+      if (answer === '' || answer === 'y' || answer === 'yes') {
+        console.log('')
+        console.log('🎯 Running bootstrap...')
+        console.log('')
+
+        // Run bootstrap programmatically
+        try {
+          await runBootstrap({ verbose: true, skipBun: true }) // Skip bun since we're already running with it
+          console.log('')
+          console.log('🎉 Bootstrap completed! You can now use Launchpad.')
+          console.log('')
+          return true
+        }
+        catch (error) {
+          console.error('❌ Bootstrap failed:', error instanceof Error ? error.message : String(error))
+          console.log('')
+          console.log('💡 You can run bootstrap manually later with:')
+          console.log('   ./launchpad bootstrap')
+          console.log('')
+        }
+      }
+      else {
+        console.log('')
+        console.log('⏭️  Skipping bootstrap. You can run it later with:')
+        console.log('   ./launchpad bootstrap')
+        console.log('')
+      }
+    }
+    else {
+      // Non-interactive mode - show instructions
+      console.log('💡 To set up Launchpad automatically, run:')
+      console.log('   ./launchpad bootstrap')
+      console.log('')
+      console.log('Or to continue without setup, use specific commands like:')
+      console.log('   ./launchpad install node')
+      console.log('   ./launchpad --help')
+      console.log('')
+    }
+  }
+
+  return false
+}
+
+// Extracted bootstrap logic to be reusable
+async function runBootstrap(options: {
+  verbose?: boolean
+  force?: boolean
+  autoPath?: boolean
+  skipPkgx?: boolean
+  skipBun?: boolean
+  skipShellIntegration?: boolean
+  path?: string
+} = {}) {
+  // Set config from options
+  if (options.verbose)
+    config.verbose = true
+  if (options.force)
+    config.forceReinstall = true
+  if (options.autoPath === false)
+    config.autoAddToPath = false
+
+  // Determine installation path
+  const installPath = options.path ? new Path(options.path) : install_prefix()
+
+  console.log('🚀 Bootstrapping Launchpad - Installing essential tools...')
+  console.log(`📍 Installation prefix: ${installPath.string}`)
+  console.log('')
+
+  const results: { tool: string, status: 'success' | 'failed' | 'skipped' | 'already-installed', message?: string }[] = []
+
+  // Helper function to check if a tool is already installed
+  const isToolInstalled = async (command: string): Promise<boolean> => {
+    try {
+      const { stdout } = await execAsync(`command -v ${command}`, { timeout: 2000 })
+      return stdout.trim().length > 0
+    }
+    catch {
+      return false
+    }
+  }
+
+  // Helper function to add result
+  const addResult = (tool: string, status: typeof results[0]['status'], message?: string) => {
+    results.push({ tool, status, message })
+    const emoji = status === 'success' ? '✅' : status === 'failed' ? '❌' : status === 'skipped' ? '⏭️' : '🔄'
+    console.log(`${emoji} ${tool}: ${message || status}`)
+  }
+
+  // 1. Install pkgx
+  if (!options.skipPkgx) {
+    console.log('📦 Installing pkgx...')
+
+    if (!config.forceReinstall && await isToolInstalled('pkgx')) {
+      addResult('pkgx', 'already-installed', 'already installed')
+    }
+    else {
+      try {
+        // Use the existing pkgx installation logic
+        console.log('Installing pkgx using official installer...')
+
+        // Download and run the official pkgx installer
+        const { stdout, stderr } = await execAsync('curl -fsSL https://pkgx.sh | bash', {
+          timeout: 60000,
+          env: { ...process.env, PKGX_DIR: installPath.string },
+        })
+
+        if (config.verbose) {
+          console.log('pkgx installer output:', stdout)
+          if (stderr)
+            console.log('pkgx installer stderr:', stderr)
+        }
+
+        // Verify installation
+        if (await isToolInstalled('pkgx')) {
+          addResult('pkgx', 'success', 'installed successfully')
+        }
+        else {
+          addResult('pkgx', 'failed', 'installation completed but pkgx not found in PATH')
+        }
+      }
+      catch (error) {
+        addResult('pkgx', 'failed', error instanceof Error ? error.message : String(error))
+      }
+    }
+  }
+  else {
+    addResult('pkgx', 'skipped', 'skipped by user')
+  }
+
+  console.log('')
+
+  // 2. Install bun
+  if (!options.skipBun) {
+    console.log('🐰 Installing Bun...')
+
+    if (!config.forceReinstall && await isToolInstalled('bun')) {
+      addResult('bun', 'already-installed', 'already installed')
+    }
+    else {
+      try {
+        const createdFiles = await install_bun(installPath.string)
+        addResult('bun', 'success', `installed to ${path.join(installPath.string, 'bin')}`)
+
+        if (config.verbose) {
+          console.log('Created files:', createdFiles)
+        }
+      }
+      catch (error) {
+        addResult('bun', 'failed', error instanceof Error ? error.message : String(error))
+      }
+    }
+  }
+  else {
+    addResult('bun', 'skipped', 'skipped by user')
+  }
+
+  console.log('')
+
+  // 3. Setup PATH
+  console.log('🛤️  Setting up PATH...')
+  const binDir = path.join(installPath.string, 'bin')
+  const sbinDir = path.join(installPath.string, 'sbin')
+
+  if (config.autoAddToPath) {
+    let pathUpdated = false
+
+    if (!isInPath(binDir)) {
+      const added = addToPath(binDir)
+      if (added) {
+        console.log(`✅ Added ${binDir} to PATH`)
+        pathUpdated = true
+      }
+      else {
+        console.log(`⚠️  Could not automatically add ${binDir} to PATH`)
+      }
+    }
+    else {
+      console.log(`✅ ${binDir} already in PATH`)
+    }
+
+    if (!isInPath(sbinDir)) {
+      const added = addToPath(sbinDir)
+      if (added) {
+        console.log(`✅ Added ${sbinDir} to PATH`)
+        pathUpdated = true
+      }
+      else {
+        console.log(`⚠️  Could not automatically add ${sbinDir} to PATH`)
+      }
+    }
+    else {
+      console.log(`✅ ${sbinDir} already in PATH`)
+    }
+
+    if (pathUpdated) {
+      addResult('PATH setup', 'success', 'PATH updated successfully')
+    }
+    else {
+      addResult('PATH setup', 'success', 'PATH already configured')
+    }
+  }
+  else {
+    addResult('PATH setup', 'skipped', 'auto PATH setup disabled')
+  }
+
+  console.log('')
+
+  // 4. Shell integration setup
+  if (!options.skipShellIntegration) {
+    console.log('🐚 Setting up shell integration...')
+
+    try {
+      // Detect user's shell
+      const userShell = process.env.SHELL || '/bin/bash'
+      const shellName = path.basename(userShell)
+
+      let configFile = ''
+      switch (shellName) {
+        case 'zsh':
+          configFile = path.join(process.env.HOME || '~', '.zshrc')
+          break
+        case 'bash':
+          configFile = path.join(process.env.HOME || '~', '.bashrc')
+          if (!fs.existsSync(configFile)) {
+            configFile = path.join(process.env.HOME || '~', '.bash_profile')
+          }
+          break
+        case 'fish':
+          configFile = path.join(process.env.HOME || '~', '.config', 'fish', 'config.fish')
+          break
+        default:
+          configFile = path.join(process.env.HOME || '~', '.profile')
+      }
+
+      // Check if integration is already set up
+      let integrationExists = false
+      if (fs.existsSync(configFile)) {
+        const content = fs.readFileSync(configFile, 'utf8')
+        integrationExists = content.includes('_pkgx_chpwd_hook') || content.includes('launchpad dev:shellcode')
+      }
+
+      if (!integrationExists || config.forceReinstall) {
+        // Add shell integration
+        const integrationCommand = `\n# Launchpad dev environment integration\neval "$(launchpad dev:shellcode)"\n`
+
+        // Create config file directory if it doesn't exist
+        await fs.promises.mkdir(path.dirname(configFile), { recursive: true })
+
+        // Append integration to config file
+        await fs.promises.appendFile(configFile, integrationCommand)
+
+        addResult('shell integration', 'success', `added to ${configFile}`)
+        console.log(`📝 Shell integration added to ${configFile}`)
+        console.log(`💡 Restart your terminal or run: source ${configFile}`)
+      }
+      else {
+        addResult('shell integration', 'already-installed', 'already configured')
+      }
+    }
+    catch (error) {
+      addResult('shell integration', 'failed', error instanceof Error ? error.message : String(error))
+    }
+  }
+  else {
+    addResult('shell integration', 'skipped', 'skipped by user')
+  }
+
+  console.log('')
+
+  // 5. Summary
+  console.log('📋 Bootstrap Summary:')
+  console.log('═══════════════════')
+
+  const successful = results.filter(r => r.status === 'success' || r.status === 'already-installed')
+  const failed = results.filter(r => r.status === 'failed')
+  const skipped = results.filter(r => r.status === 'skipped')
+
+  successful.forEach(r => console.log(`✅ ${r.tool}: ${r.message || r.status}`))
+  failed.forEach(r => console.log(`❌ ${r.tool}: ${r.message || r.status}`))
+  skipped.forEach(r => console.log(`⏭️  ${r.tool}: ${r.message || r.status}`))
+
+  console.log('')
+
+  if (failed.length === 0) {
+    console.log('🎉 Bootstrap completed successfully!')
+    console.log('')
+    console.log('🚀 Next steps:')
+    console.log('1. Restart your terminal or run: source ~/.zshrc (or your shell config)')
+    console.log('2. Test the setup: cd to a directory with deps.yml or dependencies.yaml')
+    console.log('3. The environment should auto-activate!')
+    console.log('')
+    console.log('💡 You can also manually activate with: launchpad dev:on')
+  }
+  else {
+    console.log(`⚠️  Bootstrap completed with ${failed.length} failed installation(s)`)
+    console.log('')
+    console.log('🔧 Manual installation options:')
+
+    failed.forEach((r) => {
+      switch (r.tool) {
+        case 'pkgx':
+          console.log('• pkgx: Visit https://pkgx.sh for manual installation')
+          break
+        case 'bun':
+          console.log('• bun: Visit https://bun.sh for manual installation')
+          break
+      }
+    })
+
+    if (failed.length > 0) {
+      throw new Error(`Bootstrap failed: ${failed.map(r => r.tool).join(', ')}`)
+    }
   }
 }
 
-// Run bootstrap before setting up CLI
-await bootstrap()
+// Check for first-time run and offer auto-bootstrap
+await checkFirstTimeRun()
 
 interface CliOption {
   verbose: boolean
@@ -269,7 +563,12 @@ cli
   .option('--verbose', 'Enable verbose logging')
   .option('--force', 'Force reinstall even if already installed')
   .option('--no-auto-path', 'Do not automatically add to PATH')
-  .action(async (options?: CliOption & { 'auto-path'?: boolean }) => {
+  .action(async (options?: CliOption & {
+    autoPath?: boolean
+    skipPkgx?: boolean
+    skipBun?: boolean
+    skipShellIntegration?: boolean
+  }) => {
     // Override config options from CLI
     if (options?.verbose)
       config.verbose = true
@@ -277,7 +576,7 @@ cli
     if (options?.force)
       config.forceReinstall = true
 
-    if (options?.['auto-path'] === false)
+    if (options?.autoPath === false)
       config.autoAddToPath = false
 
     // Determine installation path
@@ -397,7 +696,7 @@ cli
   .option('--force', 'Force creation of shims even if they already exist')
   .option('--no-auto-path', 'Do not automatically add to PATH')
   .example('shim node')
-  .action(async (packages: string[], options?: CliOption & { 'auto-path'?: boolean }) => {
+  .action(async (packages: string[], options?: CliOption & { autoPath?: boolean }) => {
     if (!packages || !packages.length) {
       console.error('No packages specified')
       process.exit(1)
@@ -410,7 +709,7 @@ cli
     if (options?.force)
       config.forceReinstall = true
 
-    if (options?.['auto-path'] === false)
+    if (options?.autoPath === false)
       config.autoAddToPath = false
 
     // Determine shim path
@@ -589,7 +888,7 @@ cli
   .option('--force', 'Force reinstall even if already installed')
   .option('--version <version>', 'Specific version to install')
   .option('--no-auto-path', 'Do not automatically add to PATH')
-  .action(async (options?: CliOption & { 'auto-path'?: boolean, 'version'?: string }) => {
+  .action(async (options?: CliOption & { autoPath?: boolean, version?: string }) => {
     // Override config options from CLI
     if (options?.verbose)
       config.verbose = true
@@ -597,7 +896,7 @@ cli
     if (options?.force)
       config.forceReinstall = true
 
-    if (options?.['auto-path'] === false)
+    if (options?.autoPath === false)
       config.autoAddToPath = false
 
     // Determine installation path
@@ -806,7 +1105,7 @@ cli
   .option('--verbose', 'Enable verbose logging')
   .option('--force', 'Force reinstall even if already installed')
   .option('--no-auto-path', 'Do not automatically add to PATH')
-  .action(async (options?: CliOption & { 'auto-path'?: boolean }) => {
+  .action(async (options?: CliOption & { autoPath?: boolean }) => {
     // Override config options from CLI
     if (options?.verbose)
       config.verbose = true
@@ -814,7 +1113,7 @@ cli
     if (options?.force)
       config.forceReinstall = true
 
-    if (options?.['auto-path'] === false)
+    if (options?.autoPath === false)
       config.autoAddToPath = false
 
     // Determine installation path
@@ -1048,6 +1347,653 @@ cli
     }
     catch (error) {
       console.error('Failed to generate shell code:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('bootstrap', 'Install all essential tools (pkgx, bun, etc.) for a complete Launchpad setup')
+  .option('--path <path>', 'Installation path')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--force', 'Force reinstall even if already installed')
+  .option('--no-auto-path', 'Do not automatically add to PATH')
+  .option('--skip-pkgx', 'Skip pkgx installation')
+  .option('--skip-bun', 'Skip bun installation')
+  .option('--skip-shell-integration', 'Skip shell integration setup')
+  .example('bootstrap')
+  .example('bootstrap --verbose --force')
+  .action(async (options?: CliOption & {
+    autoPath?: boolean
+    skipPkgx?: boolean
+    skipBun?: boolean
+    skipShellIntegration?: boolean
+  }) => {
+    try {
+      await runBootstrap({
+        verbose: options?.verbose,
+        force: options?.force,
+        autoPath: options?.autoPath,
+        skipPkgx: options?.skipPkgx,
+        skipBun: options?.skipBun,
+        skipShellIntegration: options?.skipShellIntegration,
+        path: options?.path,
+      })
+    }
+    catch (error) {
+      console.error('Bootstrap failed:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('uninstall', 'Completely remove Launchpad and all installed packages')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--keep-packages', 'Keep installed packages, only remove shell integration')
+  .option('--keep-shell-integration', 'Keep shell integration, only remove packages')
+  .option('--dry-run', 'Show what would be removed without actually removing it')
+  .example('uninstall')
+  .example('uninstall --force --verbose')
+  .example('uninstall --keep-packages')
+  .action(async (options?: CliOption & {
+    keepPackages?: boolean
+    keepShellIntegration?: boolean
+    dryRun?: boolean
+  }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const isDryRun = options?.dryRun || false
+    const keepPackages = options?.keepPackages || false
+    const keepShellIntegration = options?.keepShellIntegration || false
+
+    console.log('🗑️  Launchpad Uninstaller')
+    console.log('')
+
+    if (isDryRun) {
+      console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
+      console.log('')
+    }
+
+    // Check what's currently installed/configured
+    const installPath = install_prefix()
+    const results: {
+      item: string
+      action: 'removed' | 'kept' | 'not-found' | 'failed'
+      path?: string
+      details?: string
+    }[] = []
+
+    // Helper function to add result
+    const addResult = (item: string, action: typeof results[0]['action'], path?: string, details?: string) => {
+      results.push({ item, action, path, details })
+      const emoji = action === 'removed' ? '🗑️' : action === 'kept' ? '⏭️' : action === 'failed' ? '❌' : '❓'
+      const message = path ? `${item}: ${path}` : item
+      console.log(`${emoji} ${message}${details ? ` (${details})` : ''}`)
+    }
+
+    // 1. Show what will be affected
+    if (!keepPackages) {
+      console.log('📦 Scanning installed packages...')
+
+      try {
+        const packages = await list(installPath.string)
+        if (packages.length > 0) {
+          console.log(`Found ${packages.length} installed packages:`)
+          packages.forEach(pkg => console.log(`  • ${pkg.project}@${pkg.version}`))
+        }
+        else {
+          console.log('No packages found')
+        }
+        console.log('')
+      }
+      catch (error) {
+        console.log('⚠️  Could not scan packages:', error instanceof Error ? error.message : String(error))
+        console.log('')
+      }
+    }
+
+    // 2. Check shell integration
+    if (!keepShellIntegration) {
+      console.log('🐚 Checking shell integration...')
+
+      const shell = process.env.SHELL || '/bin/bash'
+      const shellName = path.basename(shell)
+
+      let configFile = ''
+      switch (shellName) {
+        case 'zsh':
+          configFile = path.join(process.env.HOME || '~', '.zshrc')
+          break
+        case 'bash':
+          configFile = path.join(process.env.HOME || '~', '.bashrc')
+          if (!fs.existsSync(configFile)) {
+            configFile = path.join(process.env.HOME || '~', '.bash_profile')
+          }
+          break
+        case 'fish':
+          configFile = path.join(process.env.HOME || '~', '.config', 'fish', 'config.fish')
+          break
+        default:
+          configFile = path.join(process.env.HOME || '~', '.profile')
+      }
+
+      let hasIntegration = false
+      if (fs.existsSync(configFile)) {
+        const content = fs.readFileSync(configFile, 'utf8')
+        hasIntegration = content.includes('_pkgx_chpwd_hook') || content.includes('launchpad dev:shellcode')
+      }
+
+      if (hasIntegration) {
+        console.log(`Shell integration found in: ${configFile}`)
+      }
+      else {
+        console.log('No shell integration found')
+      }
+      console.log('')
+    }
+
+    // 3. Get confirmation (unless forced or dry run)
+    if (!options?.force && !isDryRun) {
+      const readline = await import('node:readline')
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      })
+
+      const items: string[] = []
+      if (!keepPackages)
+        items.push('all installed packages')
+      if (!keepShellIntegration)
+        items.push('shell integration')
+
+      const answer = await new Promise<string>((resolve) => {
+        rl.question(`⚠️  This will remove: ${items.join(', ')}.\n🤔 Continue? (y/N): `, (answer) => {
+          rl.close()
+          resolve(answer.toLowerCase().trim())
+        })
+      })
+
+      if (answer !== 'y' && answer !== 'yes') {
+        console.log('')
+        console.log('⏭️  Uninstall cancelled')
+        return
+      }
+      console.log('')
+    }
+
+    console.log('🗑️  Starting uninstall process...')
+    console.log('')
+
+    // 4. Remove packages and directories
+    if (!keepPackages) {
+      console.log('📦 Removing installed packages...')
+
+      try {
+        // Remove the entire installation directory
+        const installDir = installPath.string
+        const binDir = path.join(installDir, 'bin')
+        const sbinDir = path.join(installDir, 'sbin')
+        const pkgsDir = path.join(installDir, 'pkgs')
+
+        // Remove individual directories
+        for (const dir of [binDir, sbinDir, pkgsDir]) {
+          if (fs.existsSync(dir)) {
+            if (!isDryRun) {
+              await fs.promises.rm(dir, { recursive: true, force: true })
+            }
+            addResult('directory', 'removed', dir)
+          }
+          else {
+            addResult('directory', 'not-found', dir)
+          }
+        }
+
+        // Clean up any remaining shims
+        const shimDirectory = shim_dir().string
+        if (fs.existsSync(shimDirectory)) {
+          if (!isDryRun) {
+            await fs.promises.rm(shimDirectory, { recursive: true, force: true })
+          }
+          addResult('shim directory', 'removed', shimDirectory)
+        }
+        else {
+          addResult('shim directory', 'not-found', shimDirectory)
+        }
+      }
+      catch (error) {
+        addResult('package removal', 'failed', '', error instanceof Error ? error.message : String(error))
+      }
+    }
+    else {
+      addResult('packages', 'kept', '', 'user requested to keep')
+    }
+
+    console.log('')
+
+    // 5. Remove shell integration
+    if (!keepShellIntegration) {
+      console.log('🐚 Removing shell integration...')
+
+      const shell = process.env.SHELL || '/bin/bash'
+      const shellName = path.basename(shell)
+
+      let configFile = ''
+      switch (shellName) {
+        case 'zsh':
+          configFile = path.join(process.env.HOME || '~', '.zshrc')
+          break
+        case 'bash':
+          configFile = path.join(process.env.HOME || '~', '.bashrc')
+          if (!fs.existsSync(configFile)) {
+            configFile = path.join(process.env.HOME || '~', '.bash_profile')
+          }
+          break
+        case 'fish':
+          configFile = path.join(process.env.HOME || '~', '.config', 'fish', 'config.fish')
+          break
+        default:
+          configFile = path.join(process.env.HOME || '~', '.profile')
+      }
+
+      try {
+        if (fs.existsSync(configFile)) {
+          const content = fs.readFileSync(configFile, 'utf8')
+          const hasIntegration = content.includes('_pkgx_chpwd_hook') || content.includes('launchpad dev:shellcode')
+
+          if (hasIntegration) {
+            if (!isDryRun) {
+              // Remove lines containing launchpad integration
+              const lines = content.split('\n')
+              const filteredLines = lines.filter(line =>
+                !line.includes('launchpad dev:shellcode')
+                && !line.includes('Launchpad dev environment integration'),
+              )
+
+              // Also remove any remaining _pkgx_* function definitions or calls
+              const cleanedLines = filteredLines.filter((line) => {
+                const trimmed = line.trim()
+                return !trimmed.startsWith('_pkgx_')
+                  && !trimmed.includes('_pkgx_chpwd_hook')
+                  && !trimmed.includes('_pkgx_dev_try_bye')
+              })
+
+              await fs.promises.writeFile(configFile, cleanedLines.join('\n'))
+            }
+            addResult('shell integration', 'removed', configFile)
+          }
+          else {
+            addResult('shell integration', 'not-found', configFile)
+          }
+        }
+        else {
+          addResult('shell config', 'not-found', configFile)
+        }
+      }
+      catch (error) {
+        addResult('shell integration', 'failed', configFile, error instanceof Error ? error.message : String(error))
+      }
+    }
+    else {
+      addResult('shell integration', 'kept', '', 'user requested to keep')
+    }
+
+    console.log('')
+
+    // 6. Clean up PATH modifications
+    if (!keepPackages) {
+      console.log('🛤️  Cleaning up PATH modifications...')
+
+      // Note: We can't automatically remove PATH modifications from shell configs
+      // because they might be mixed with user's own PATH modifications
+      console.log('⚠️  Manual PATH cleanup may be required')
+      console.log(`Check your shell config (${path.basename(process.env.SHELL || 'shell')}) for these entries:`)
+      console.log(`  • ${path.join(installPath.string, 'bin')}`)
+      console.log(`  • ${path.join(installPath.string, 'sbin')}`)
+      console.log(`  • ${shim_dir().string}`)
+
+      addResult('PATH cleanup', 'kept', '', 'requires manual review')
+    }
+
+    console.log('')
+
+    // 7. Summary
+    console.log('📋 Uninstall Summary:')
+    console.log('═══════════════════')
+
+    const removed = results.filter(r => r.action === 'removed')
+    const kept = results.filter(r => r.action === 'kept')
+    const failed = results.filter(r => r.action === 'failed')
+    const notFound = results.filter(r => r.action === 'not-found')
+
+    removed.forEach(r => console.log(`🗑️  ${r.item}${r.path ? `: ${r.path}` : ''}${r.details ? ` (${r.details})` : ''}`))
+    kept.forEach(r => console.log(`⏭️  ${r.item}${r.path ? `: ${r.path}` : ''}${r.details ? ` (${r.details})` : ''}`))
+    failed.forEach(r => console.log(`❌ ${r.item}${r.path ? `: ${r.path}` : ''}${r.details ? ` (${r.details})` : ''}`))
+    if (config.verbose) {
+      notFound.forEach(r => console.log(`❓ ${r.item}${r.path ? `: ${r.path}` : ''} (not found)`))
+    }
+
+    console.log('')
+
+    if (isDryRun) {
+      console.log('🔍 DRY RUN COMPLETED - No changes were made')
+      console.log('💡 Run without --dry-run to actually perform the uninstall')
+    }
+    else if (failed.length === 0) {
+      console.log('🎉 Uninstall completed successfully!')
+      console.log('')
+      console.log('🔄 To complete the cleanup:')
+      console.log('1. Restart your terminal or run: source ~/.zshrc (or your shell config)')
+      console.log('2. Manually review and clean up any remaining PATH entries')
+      console.log('3. Remove any remaining pkgx installation if desired')
+    }
+    else {
+      console.log(`⚠️  Uninstall completed with ${failed.length} error(s)`)
+      console.log('💡 Some items may require manual removal')
+    }
+
+    if (!keepPackages && !isDryRun) {
+      console.log('')
+      console.log('👋 Thank you for using Launchpad!')
+    }
+  })
+
+cli
+  .command('remove [packages...]', 'Remove specific installed packages')
+  .alias('rm')
+  .alias('uninstall-package')
+  .option('--verbose', 'Enable verbose logging')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--dry-run', 'Show what would be removed without actually removing it')
+  .option('--path <path>', 'Installation path to remove packages from')
+  .example('remove node python')
+  .example('rm node@22 --force')
+  .example('remove python --dry-run')
+  .action(async (packages: string[], options?: CliOption & {
+    dryRun?: boolean
+  }) => {
+    // Ensure packages is always an array
+    const packageList = Array.isArray(packages) ? packages : (packages ? [packages] : [])
+
+    if (!packageList || !packageList.length) {
+      console.error('❌ No packages specified for removal')
+      console.log('')
+      console.log('💡 Usage examples:')
+      console.log('  ./launchpad remove node python')
+      console.log('  ./launchpad rm node@22 --force')
+      console.log('  ./launchpad remove python --dry-run')
+      process.exit(1)
+      return
+    }
+
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const isDryRun = options?.dryRun || false
+    const installPath = options?.path ? new Path(options.path) : install_prefix()
+
+    console.log(`🗑️  Removing packages: ${packageList.join(', ')}`)
+    if (isDryRun) {
+      console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
+    }
+    console.log('')
+
+    const results: {
+      package: string
+      action: 'removed' | 'not-found' | 'failed'
+      files?: string[]
+      details?: string
+    }[] = []
+
+    try {
+      // Get list of installed packages
+      const installedPackages = await list(installPath.string)
+
+      if (installedPackages.length === 0) {
+        console.log('📦 No packages are currently installed')
+        return
+      }
+
+      console.log('📦 Scanning installed packages...')
+      console.log(`Found ${installedPackages.length} installed packages`)
+
+      if (config.verbose) {
+        installedPackages.forEach(pkg => console.log(`  • ${pkg.project}@${pkg.version}`))
+      }
+      console.log('')
+
+      // Process each package to remove
+      for (const packageSpec of packageList) {
+        console.log(`🔍 Looking for package: ${packageSpec}`)
+
+        // Find matching installed packages
+        // Handle both 'node' and 'node@version' formats
+        const [packageName, requestedVersion] = packageSpec.split('@')
+
+        const matchingPackages = installedPackages.filter((pkg) => {
+          // Check if package name matches (handle various formats)
+          const pkgBaseName = pkg.project.split('.')[0] || pkg.project
+          const nameMatches = pkgBaseName === packageName
+            || pkg.project === packageName
+            || pkg.project.includes(packageName)
+
+          if (!nameMatches)
+            return false
+
+          // If version specified, check version match
+          if (requestedVersion) {
+            return pkg.version.toString() === requestedVersion
+          }
+
+          return true
+        })
+
+        if (matchingPackages.length === 0) {
+          console.log(`❓ Package ${packageSpec} not found in installed packages`)
+          results.push({
+            package: packageSpec,
+            action: 'not-found',
+            details: 'not installed',
+          })
+          continue
+        }
+
+        // Show what will be removed
+        console.log(`Found ${matchingPackages.length} matching package(s):`)
+        matchingPackages.forEach(pkg => console.log(`  • ${pkg.project}@${pkg.version}`))
+
+        // Get confirmation for this package (unless forced or dry run)
+        if (!options?.force && !isDryRun && matchingPackages.length > 0) {
+          const readline = await import('node:readline')
+          const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+          })
+
+          const answer = await new Promise<string>((resolve) => {
+            rl.question(`🤔 Remove ${matchingPackages.length} package(s) for '${packageSpec}'? (y/N): `, (answer) => {
+              rl.close()
+              resolve(answer.toLowerCase().trim())
+            })
+          })
+
+          if (answer !== 'y' && answer !== 'yes') {
+            console.log(`⏭️  Skipping ${packageSpec}`)
+            results.push({
+              package: packageSpec,
+              action: 'not-found',
+              details: 'user cancelled',
+            })
+            continue
+          }
+        }
+
+        // Remove the package files
+        try {
+          const removedFiles: string[] = []
+
+          for (const pkg of matchingPackages) {
+            // Remove from bin directory
+            const binDir = path.join(installPath.string, 'bin')
+            const sbinDir = path.join(installPath.string, 'sbin')
+            const pkgDir = path.join(installPath.string, 'pkgs', pkg.project)
+
+            // Find and remove binary files
+            for (const dir of [binDir, sbinDir]) {
+              if (fs.existsSync(dir)) {
+                const files = await fs.promises.readdir(dir)
+                for (const file of files) {
+                  const filePath = path.join(dir, file)
+                  try {
+                    // Check if this file belongs to the package
+                    const stats = await fs.promises.lstat(filePath)
+
+                    // For symlinks, check if they point to our package
+                    if (stats.isSymbolicLink()) {
+                      const linkTarget = await fs.promises.readlink(filePath)
+                      if (linkTarget.includes(pkg.project)) {
+                        if (!isDryRun) {
+                          await fs.promises.unlink(filePath)
+                        }
+                        removedFiles.push(filePath)
+                      }
+                    }
+                    // For regular files, check if they're in a package-specific directory
+                    else if (filePath.includes(pkg.project)) {
+                      if (!isDryRun) {
+                        await fs.promises.unlink(filePath)
+                      }
+                      removedFiles.push(filePath)
+                    }
+                  }
+                  catch (error) {
+                    if (config.verbose) {
+                      console.log(`⚠️  Could not check/remove ${filePath}:`, error instanceof Error ? error.message : String(error))
+                    }
+                  }
+                }
+              }
+            }
+
+            // Remove package directory if it exists
+            if (fs.existsSync(pkgDir)) {
+              if (!isDryRun) {
+                await fs.promises.rm(pkgDir, { recursive: true, force: true })
+              }
+              removedFiles.push(pkgDir)
+            }
+          }
+
+          // Also remove any shims that might exist
+          const shimDirectory = shim_dir().string
+          if (fs.existsSync(shimDirectory)) {
+            const shimFiles = await fs.promises.readdir(shimDirectory)
+            for (const shimFile of shimFiles) {
+              const shimPath = path.join(shimDirectory, shimFile)
+              try {
+                // Check if shim file relates to our package
+                const content = await fs.promises.readFile(shimPath, 'utf8')
+                const relatedToPackage = matchingPackages.some(pkg =>
+                  content.includes(pkg.project) || shimFile.includes(packageName),
+                )
+
+                if (relatedToPackage) {
+                  if (!isDryRun) {
+                    await fs.promises.unlink(shimPath)
+                  }
+                  removedFiles.push(shimPath)
+                }
+              }
+              catch (error) {
+                // Ignore shim check errors
+              }
+            }
+          }
+
+          if (removedFiles.length > 0) {
+            console.log(`✅ ${isDryRun ? 'Would remove' : 'Removed'} ${removedFiles.length} files for ${packageSpec}`)
+            if (config.verbose) {
+              removedFiles.forEach(file => console.log(`  🗑️  ${file}`))
+            }
+
+            results.push({
+              package: packageSpec,
+              action: 'removed',
+              files: removedFiles,
+            })
+          }
+          else {
+            console.log(`❓ No files found to remove for ${packageSpec}`)
+            results.push({
+              package: packageSpec,
+              action: 'not-found',
+              details: 'no files found',
+            })
+          }
+        }
+        catch (error) {
+          console.error(`❌ Failed to remove ${packageSpec}:`, error instanceof Error ? error.message : String(error))
+          results.push({
+            package: packageSpec,
+            action: 'failed',
+            details: error instanceof Error ? error.message : String(error),
+          })
+        }
+
+        console.log('')
+      }
+
+      // Summary
+      console.log('📋 Removal Summary:')
+      console.log('═══════════════════')
+
+      const removed = results.filter(r => r.action === 'removed')
+      const notFound = results.filter(r => r.action === 'not-found')
+      const failed = results.filter(r => r.action === 'failed')
+
+      removed.forEach((r) => {
+        const fileCount = r.files?.length || 0
+        console.log(`✅ ${r.package}: removed ${fileCount} files`)
+      })
+
+      notFound.forEach(r => console.log(`❓ ${r.package}: ${r.details || 'not found'}`))
+      failed.forEach(r => console.log(`❌ ${r.package}: ${r.details || 'failed'}`))
+
+      console.log('')
+
+      if (isDryRun) {
+        console.log('🔍 DRY RUN COMPLETED - No changes were made')
+        console.log('💡 Run without --dry-run to actually remove the packages')
+      }
+      else if (removed.length > 0) {
+        console.log(`🎉 Successfully removed ${removed.length} package(s)!`)
+
+        if (failed.length > 0) {
+          console.log(`⚠️  ${failed.length} package(s) failed to remove completely`)
+        }
+
+        // Check if any packages are still installed
+        try {
+          const remainingPackages = await list(installPath.string)
+          if (remainingPackages.length > 0) {
+            console.log(`📦 ${remainingPackages.length} packages still installed`)
+          }
+          else {
+            console.log('📦 No packages remaining - consider running `launchpad uninstall` for complete cleanup')
+          }
+        }
+        catch {
+          // Ignore error checking remaining packages
+        }
+      }
+      else {
+        console.log('⚠️  No packages were removed')
+      }
+    }
+    catch (error) {
+      console.error('❌ Failed to remove packages:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })

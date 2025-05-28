@@ -42,6 +42,51 @@ yarn add -D launchpad
 
 :::
 
+## First-Time Setup
+
+Launchpad is designed to "just work" right out of the box! When you run Launchpad for the first time, it will automatically detect what's missing and offer to set everything up.
+
+### Automatic Bootstrap
+
+Just run any launchpad command and it will offer to bootstrap automatically:
+
+```sh
+# Any command will trigger the welcome screen if needed
+./launchpad list
+# → Shows welcome message and offers to install pkgx, configure PATH, and set up shell integration
+
+# Or manually run the complete setup
+./launchpad bootstrap
+```
+
+### Manual Bootstrap
+
+For more control over the setup process:
+
+```sh
+# Install everything you need in one command
+./launchpad bootstrap
+
+# Verbose output showing all operations
+./launchpad bootstrap --verbose
+
+# Skip specific components
+./launchpad bootstrap --skip-bun --skip-shell-integration
+
+# Custom installation path
+./launchpad bootstrap --path ~/.local
+
+# Force reinstall everything
+./launchpad bootstrap --force
+```
+
+The bootstrap command will:
+- ✅ Install pkgx (package manager)
+- ✅ Install Bun (JavaScript runtime)
+- ✅ Configure your PATH
+- ✅ Set up shell integration for auto-activation
+- ✅ Provide clear next steps
+
 ## From Source
 
 To build and install from source:
@@ -78,10 +123,57 @@ launchpad version
 
 You should see the current version of launchpad displayed in your terminal.
 
+## Post-Installation
+
+### Shell Integration
+
+If you didn't use the bootstrap command, you can manually set up shell integration:
+
+```sh
+# Add shell integration to your shell config
+echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+
+# Or for bash
+echo 'eval "$(launchpad dev:shellcode)"' >> ~/.bashrc
+
+# Reload your shell
+source ~/.zshrc  # or ~/.bashrc
+```
+
+### PATH Configuration
+
+Ensure the installation directories are in your PATH:
+
+```sh
+# Check if launchpad directories are in PATH
+echo $PATH | grep -E "(\.local/bin|\.local/sbin)"
+
+# If not, the bootstrap command will add them automatically
+./launchpad bootstrap
+```
+
+## Uninstalling
+
+If you need to completely remove Launchpad:
+
+```sh
+# Remove everything (with confirmation)
+launchpad uninstall
+
+# Preview what would be removed
+launchpad uninstall --dry-run
+
+# Force removal without prompts
+launchpad uninstall --force
+
+# Keep packages but remove shell integration
+launchpad uninstall --keep-packages
+```
+
 ## Next Steps
 
 After installation, you might want to:
 
 - [Configure launchpad](/config) to customize your setup
 - [Learn about basic usage](/usage) to start managing packages
-- [Install pkgx](/features/pkgx-management) if it's not already installed
+- [Set up package management](/features/package-management) for your development workflow

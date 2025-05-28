@@ -99,12 +99,15 @@ Here are the main commands available in Launchpad:
 | Command | Description |
 |---------|-------------|
 | `install` or `i` | Install packages |
+| `remove` or `rm` | Remove specific packages |
 | `shim` | Create shims for packages |
 | `pkgx` | Install pkgx itself |
 | `dev` | Install the dev package |
 | `bun` | Install Bun runtime directly |
 | `zsh` | Install Zsh shell |
+| `bootstrap` | Install all essential tools at once |
 | `list` or `ls` | List installed packages |
+| `uninstall` | Complete removal of Launchpad and all packages |
 | `autoupdate` | Check auto-update status |
 | `autoupdate:enable` | Enable auto-updates |
 | `autoupdate:disable` | Disable auto-updates |
@@ -132,6 +135,82 @@ By default, packages are installed to a system location (typically `/usr/local` 
 # Install to a specific location
 launchpad install --path ~/my-packages node
 ```
+
+## Removing Packages
+
+Remove specific packages while keeping the rest of your Launchpad setup intact:
+
+```bash
+# Remove a single package
+launchpad remove python
+
+# Remove multiple packages
+launchpad rm node python ruby
+
+# Remove a specific version
+launchpad remove node@22
+
+# Preview what would be removed without actually removing it
+launchpad remove python --dry-run
+
+# Remove without confirmation prompts
+launchpad remove python --force
+
+# Remove with verbose output showing all files
+launchpad remove python --verbose
+```
+
+The `remove` command intelligently finds and removes:
+- Binaries from `bin/` and `sbin/` directories
+- Package-specific directories
+- Associated shims
+- Symlinks pointing to the package
+
+## Bootstrap Setup
+
+For first-time setup or fresh installations, use the bootstrap command:
+
+```bash
+# Install all essential tools (pkgx, bun, shell integration)
+launchpad bootstrap
+
+# Bootstrap with verbose output
+launchpad bootstrap --verbose
+
+# Skip specific components
+launchpad bootstrap --skip-bun --skip-shell-integration
+
+# Bootstrap to a custom path
+launchpad bootstrap --path ~/.local
+```
+
+## Complete System Cleanup
+
+For complete removal of Launchpad and all installed packages:
+
+```bash
+# Remove everything with confirmation
+launchpad uninstall
+
+# Preview what would be removed
+launchpad uninstall --dry-run
+
+# Remove everything without prompts
+launchpad uninstall --force
+
+# Remove only packages but keep shell integration
+launchpad uninstall --keep-shell-integration
+
+# Remove only shell integration but keep packages
+launchpad uninstall --keep-packages
+```
+
+The `uninstall` command removes:
+- All installed packages and their files
+- Installation directories (`bin/`, `sbin/`, `pkgs/`)
+- Shell integration from `.zshrc`, `.bashrc`, etc.
+- Shim directories
+- Provides guidance for manual PATH cleanup
 
 ## Creating Shims
 
@@ -246,9 +325,43 @@ Most commands support these options:
 |--------|-------------|
 | `--verbose` | Enable detailed logging |
 | `--path` | Specify installation/shim path |
-| `--force` | Force reinstall even if already installed |
+| `--force` | Force reinstall/removal even if already installed/not found |
+| `--dry-run` | Preview changes without actually performing them |
 | `--no-auto-path` | Don't automatically add to PATH |
 | `--sudo` | Use sudo for installation (if needed) |
+
+## Package Management Best Practices
+
+### Choosing Between Remove and Uninstall
+
+- Use `remove` when you want to uninstall specific packages while keeping your Launchpad setup
+- Use `uninstall` when you want to completely remove Launchpad and start fresh
+
+### Using Dry-Run Mode
+
+Always preview major changes before executing them:
+
+```bash
+# Preview package removal
+launchpad remove python --dry-run
+
+# Preview complete system cleanup
+launchpad uninstall --dry-run
+```
+
+### Version Management
+
+Remove specific versions while keeping others:
+
+```bash
+# List installed packages to see versions
+launchpad list
+
+# Remove only a specific version
+launchpad remove node@20
+
+# Keep node@22 installed
+```
 
 ## Using PATH Integration
 

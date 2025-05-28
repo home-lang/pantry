@@ -280,14 +280,32 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
 
       // Create environment setup
       let stubContent = '#!/bin/sh\n'
+
+      // Add library path fixes for common pkgx issues
+      stubContent += '# Fix common library path issues\n'
+      stubContent += 'export DYLD_FALLBACK_LIBRARY_PATH="/usr/lib:/usr/local/lib:$DYLD_FALLBACK_LIBRARY_PATH"\n'
+
       for (const [key, value] of Object.entries(runtimeEnv)) {
         stubContent += `export ${key}="${value}"\n`
       }
 
       stubContent += '\n'
 
-      // Add the actual binary execution (like pkgm does)
-      stubContent += `exec "${srcBinary}" "$@"\n`
+      // Add the actual binary execution with error handling
+      stubContent += `# Execute the binary with error handling\n`
+      stubContent += `# Try the pkgx-installed binary first\n`
+      stubContent += `"${srcBinary}" "$@" 2>/dev/null\n`
+      stubContent += `exit_code=$?\n`
+      stubContent += `if [ $exit_code -ne 0 ]; then\n`
+      stubContent += `  # If pkgx binary fails, try system fallback\n`
+      stubContent += `  if command -v "${entry}" >/dev/null 2>&1 && [ "$(command -v "${entry}")" != "${stubPath}" ]; then\n`
+      stubContent += `    echo "⚠️  pkgx ${entry} failed, using system version..." >&2\n`
+      stubContent += `    exec "$(command -v "${entry}")" "$@"\n`
+      stubContent += `  else\n`
+      stubContent += `    echo "❌ ${entry} failed and no system fallback available" >&2\n`
+      stubContent += `    exit $exit_code\n`
+      stubContent += `  fi\n`
+      stubContent += `fi\n`
 
       // Remove existing file/symlink (this is crucial to overwrite symlinks from symlinkPackage)
       if (fs.existsSync(stubPath)) {
@@ -369,10 +387,14 @@ export default async function (
     // Install packages like pkgm does
     await installPackagesPkgmStyle(packages, installPrefix)
 
-    // Ensure bin directory is in PATH
+    // Ensure PATH includes both bin and sbin directories
     const binDir = path.join(installPrefix, 'bin')
+    const sbinDir = path.join(installPrefix, 'sbin')
     if (!isInPath(binDir)) {
       console.error(`⚠️  ${binDir} not in $PATH`)
+    }
+    if (!isInPath(sbinDir)) {
+      console.error(`⚠️  ${sbinDir} not in $PATH`)
     }
 
     if (!opts.quiet) {
@@ -392,8 +414,8 @@ export default async function (
     env += `${key}=${shell_escape(value)}\n`
   }
 
-  // Ensure PATH includes the bin directory
-  env += `PATH=${shell_escape(`${path.join(installPrefix, 'bin')}:$PATH`)}\n`
+  // Ensure PATH includes both bin and sbin directories
+  env += `PATH=${shell_escape(`${path.join(installPrefix, 'bin')}:${path.join(installPrefix, 'sbin')}:$PATH`)}\n`
 
   env = env.trim()
 
@@ -401,8 +423,8 @@ export default async function (
   // eslint-disable-next-line no-console
   console.log(`
   # Packages installed pkgm-style to ${installPrefix}
-  # Ensuring PATH includes installation directory
-  export PATH="${path.join(installPrefix, 'bin')}:$PATH"
+  # Ensuring PATH includes installation directories
+  export PATH="${path.join(installPrefix, 'bin')}:${path.join(installPrefix, 'sbin')}:$PATH"
 
   eval "_pkgx_dev_try_bye() {
     suffix=\\"\\\${PWD#\\"${cwd}\\"}\\"

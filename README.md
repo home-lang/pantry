@@ -14,11 +14,11 @@
 
 Launchpad offers a streamlined approach to package management with these key features:
 
-- 📦 **[Package Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install and manage packages efficiently
-- 🔧 **Auto-updates** — Configure automatic updates
-- 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically ensures installation directories are maintained in your PATH
+- 📦 **[Dependency Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install & manage your system & project dependencies efficiently
+- 🔧 **Auto-updates** — Configure automatic updates when needed
+- 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically add installation directories to your PATH
 - 🔄 **[Executable Shims](https://github.com/stacksjs/launchpad/tree/main/docs/features/shim-creation.md)** — Create executable shims for packages automatically
-- 💻 **CLI & Library** — Programmatically or manually manage your dependencies using the CLI or library
+- 💻 **CLI & Library** — Programmatically or manually manage your dependencies, using the CLI or library
 - 🪟 **Cross-platform** — Full support for macOS, Linux, and Windows systems
 
 ## Why Launchpad?
@@ -63,6 +63,43 @@ See [Installation Guide](https://github.com/stacksjs/launchpad/tree/main/docs/in
 
 ## Quick Start
 
+Launchpad is designed to "just work" right out of the box! 🎯
+
+### First Time? No Problem!
+
+When you run Launchpad for the first time, it will automatically detect what's missing and offer to set everything up:
+
+```bash
+# Just run any launchpad command - it will offer to bootstrap automatically!
+./launchpad list
+# → Shows welcome message and offers to install pkgx, configure PATH, and set up shell integration
+
+# Or manually run the complete setup
+./launchpad bootstrap
+```
+
+### Already Set Up?
+
+If you've already bootstrapped or want specific control:
+
+```bash
+# Install everything you need in one command
+./launchpad bootstrap
+
+# Or for a custom installation path
+./launchpad bootstrap --path ~/.local --verbose
+
+# Skip specific components if needed
+./launchpad bootstrap --skip-bun --skip-shell-integration
+```
+
+The bootstrap command will:
+- ✅ Install pkgx (package manager)
+- ✅ Install Bun (JavaScript runtime)
+- ✅ Configure your PATH
+- ✅ Set up shell integration for auto-activation
+- ✅ Provide clear next steps
+
 ### Install packages
 
 ```bash
@@ -71,6 +108,25 @@ launchpad install node python
 
 # Use the shorthand
 launchpad i node@22
+```
+
+### Remove packages
+
+```bash
+# Remove specific packages
+launchpad remove node python
+
+# Remove a specific version
+launchpad rm node@22
+
+# Use the shorthand alias
+launchpad rm python
+
+# See what would be removed without actually removing it
+launchpad remove node --dry-run
+
+# Skip confirmation prompts
+launchpad remove python --force
 ```
 
 ### Create shims
@@ -134,6 +190,27 @@ launchpad list
 # or
 launchpad ls
 ```
+
+### Uninstall and cleanup
+
+```bash
+# Complete removal of Launchpad and all installed packages
+launchpad uninstall
+
+# See what would be removed without actually removing it
+launchpad uninstall --dry-run
+
+# Remove only packages but keep shell integration
+launchpad uninstall --keep-shell-integration
+
+# Remove only shell integration but keep packages
+launchpad uninstall --keep-packages
+
+# Skip confirmation prompts
+launchpad uninstall --force
+```
+
+**Note**: The `uninstall` command removes **everything** Launchpad has installed and configured. Use `remove` (above) to uninstall specific packages while keeping the rest of your setup intact.
 
 ## Configuration
 
@@ -233,7 +310,8 @@ Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United St
 ## Credits
 
 - [Max Howell](https://github.com/mxcl) - for creating [pkgx](https://github.com/pkgxdev/pkgx) and [Homebrew](https://github.com/Homebrew/brew)
-- [pkgm](https://github.com/pkgxdev/pkgm) - for the initial inspiration
+- [pkgm](https://github.com/pkgxdev/pkgm) - install `pkgx` packages to `/usr/local` — thanks for the inspiration
+- [dev](https://github.com/pkgxdev/dev) - isolated `dev` environments
 - [Chris Breuer](https://github.com/chrisbbreuer)
 - [All Contributors](https://github.com/stacksjs/launchpad/graphs/contributors)
 

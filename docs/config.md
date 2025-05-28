@@ -105,6 +105,20 @@ JavaScript format (`.launchpadrc`):
 |--------|------|---------|-------------|
 | `autoAddToPath` | boolean | `true` | Automatically add shim directories to PATH |
 
+### Bootstrap Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `firstTimeSetup` | boolean | `true` | Show first-time setup prompts |
+| `autoBootstrap` | boolean | `true` | Offer automatic bootstrap for missing tools |
+
+### Removal Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `confirmRemoval` | boolean | `true` | Require confirmation before removing packages |
+| `removeOrphans` | boolean | `false` | Automatically remove orphaned dependencies |
+
 ## Environment Variables
 
 You can also configure Launchpad using environment variables:
@@ -117,6 +131,9 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_AUTO_SUDO` | Enable/disable auto sudo |
 | `SUDO_PASSWORD` | Password for sudo operations |
 | `LAUNCHPAD_AUTO_ADD_PATH` | Enable/disable auto PATH modification |
+| `LAUNCHPAD_FIRST_TIME_SETUP` | Enable/disable first-time setup prompts |
+| `LAUNCHPAD_AUTO_BOOTSTRAP` | Enable/disable automatic bootstrap offers |
+| `LAUNCHPAD_CONFIRM_REMOVAL` | Enable/disable removal confirmation prompts |
 
 Example:
 
@@ -140,4 +157,16 @@ launchpad dev --no-auto-path
 
 # Install specific Bun version
 launchpad bun --version 1.0.0
+
+# Bootstrap with custom options
+launchpad bootstrap --skip-bun --verbose
+
+# Remove packages with dry-run preview
+launchpad remove python --dry-run
+
+# Complete removal without confirmation
+launchpad uninstall --force
+
+# Keep specific components during uninstall
+launchpad uninstall --keep-shell-integration
 ```

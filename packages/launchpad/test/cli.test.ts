@@ -372,6 +372,146 @@ describe('CLI', () => {
         }, 10000)
       })
     }, 15000)
+
+    it('should have uninstall command', async () => {
+      const { spawn } = await import('node:child_process')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
+
+      return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
+        const proc = spawn('bun', [cliPath, 'uninstall', '--help'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: cleanEnv,
+        })
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+
+        proc.on('close', (_code) => {
+          try {
+            const output = stdout + stderr
+            expect(output.toLowerCase()).toContain('uninstall')
+            expect(output.toLowerCase()).toContain('remove')
+            resolve()
+          }
+          catch (error) {
+            reject(error)
+          }
+        })
+
+        setTimeout(() => {
+          proc.kill()
+          reject(new Error('Uninstall command help test timed out'))
+        }, 10000)
+      })
+    }, 15000)
+
+    it('should have bootstrap command', async () => {
+      const { spawn } = await import('node:child_process')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
+
+      return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
+        const proc = spawn('bun', [cliPath, 'bootstrap', '--help'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: cleanEnv,
+        })
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+
+        proc.on('close', (_code) => {
+          try {
+            const output = stdout + stderr
+            expect(output.toLowerCase()).toContain('bootstrap')
+            resolve()
+          }
+          catch (error) {
+            reject(error)
+          }
+        })
+
+        setTimeout(() => {
+          proc.kill()
+          reject(new Error('Bootstrap command help test timed out'))
+        }, 10000)
+      })
+    }, 15000)
+
+    it('should have remove command', async () => {
+      const { spawn } = await import('node:child_process')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
+
+      return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
+        const proc = spawn('bun', [cliPath, 'remove', '--help'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: cleanEnv,
+        })
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+
+        proc.on('close', (_code) => {
+          try {
+            const output = stdout + stderr
+            expect(output.toLowerCase()).toContain('remove')
+            expect(output.toLowerCase()).toContain('packages')
+            resolve()
+          }
+          catch (error) {
+            reject(error)
+          }
+        })
+
+        setTimeout(() => {
+          proc.kill()
+          reject(new Error('Remove command help test timed out'))
+        }, 10000)
+      })
+    }, 15000)
   })
 
   describe('CLI error handling', () => {
@@ -467,6 +607,103 @@ describe('CLI', () => {
         setTimeout(() => {
           proc.kill()
           reject(new Error('Shim no packages test timed out'))
+        }, 10000)
+      })
+    }, 15000)
+
+    it('should handle uninstall command with dry-run', async () => {
+      const { spawn } = await import('node:child_process')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
+
+      return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
+        const proc = spawn('bun', [cliPath, 'uninstall', '--dry-run'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: cleanEnv,
+        })
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+
+        proc.on('close', (code) => {
+          try {
+            // Should succeed with exit code 0 for dry run
+            expect(code).toBe(0)
+            const output = stdout + stderr
+            expect(output.toLowerCase()).toContain('dry run')
+            expect(output.toLowerCase()).toContain('uninstall')
+            resolve()
+          }
+          catch (error) {
+            reject(error)
+          }
+        })
+
+        setTimeout(() => {
+          proc.kill()
+          reject(new Error('Uninstall dry-run test timed out'))
+        }, 10000)
+      })
+    }, 15000)
+
+    it('should handle remove command with no packages', async () => {
+      const { spawn } = await import('node:child_process')
+      const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
+
+      return new Promise<void>((resolve, reject) => {
+        // Use clean environment without ~/.local/bin to avoid broken stubs
+        const cleanEnv = {
+          ...process.env,
+          NODE_ENV: 'test',
+          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
+        }
+
+        const proc = spawn('bun', [cliPath, 'remove'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: cleanEnv,
+        })
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+
+        proc.on('close', (code) => {
+          try {
+            // Should exit with error code
+            expect(code).not.toBe(0)
+            const output = stdout + stderr
+            expect(output.toLowerCase()).toContain('no packages')
+            resolve()
+          }
+          catch (error) {
+            reject(error)
+          }
+        })
+
+        setTimeout(() => {
+          proc.kill()
+          reject(new Error('Remove no packages test timed out'))
         }, 10000)
       })
     }, 15000)

@@ -6,14 +6,42 @@ import process from 'node:process'
 export default function shellcode(): string {
   // find self
   const pathDirs = process.env.PATH?.split(':') || []
-  const dev_cmd = pathDirs
+  let dev_cmd = pathDirs
     .map(dir => join(dir, 'launchpad'))
     .find(cmd => existsSync(cmd)) || pathDirs
     .map(dir => join(dir, 'dev'))
     .find(cmd => existsSync(cmd))
 
-  if (!dev_cmd)
-    throw new Error('couldn\'t find `dev` or `launchpad`')
+  // If no global installation found, try to find the local script
+  if (!dev_cmd) {
+    // Check if we're in the launchpad project directory
+    const currentDir = process.cwd()
+    const localLaunchpad = join(currentDir, 'launchpad')
+    const parentLaunchpad = join(currentDir, '..', 'launchpad')
+
+    if (existsSync(localLaunchpad)) {
+      dev_cmd = localLaunchpad
+    }
+    else if (existsSync(parentLaunchpad)) {
+      dev_cmd = parentLaunchpad
+    }
+    else {
+      throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
+    }
+  }
+
+  // Convert relative paths to absolute paths so they work from any directory
+  if (dev_cmd && (dev_cmd.startsWith('./') || dev_cmd === 'launchpad')) {
+    const currentDir = process.cwd()
+    if (dev_cmd === 'launchpad') {
+      // This means it was found in PATH via current directory
+      dev_cmd = join(currentDir, 'launchpad')
+    }
+    else {
+      // Convert relative path to absolute
+      dev_cmd = join(currentDir, dev_cmd.replace('./', ''))
+    }
+  }
 
   const dataDirPath = datadir()
 
@@ -53,7 +81,7 @@ _pkgx_chpwd_hook() {
 
   # Find dependency files in current directory
   local deps_file=""
-  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml; do
+  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml .deps.yml; do
     if [ -f "$PWD/$file" ]; then
       deps_file="$PWD/$file"
       break
@@ -85,9 +113,17 @@ _pkgx_chpwd_hook() {
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
         # Try to run launchpad dev:dump with proper error handling
         local launchpad_output=""
-        if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>/dev/null) && [ -n "$launchpad_output" ]; then
-          # If launchpad succeeds and produces output, use it
-          eval "$launchpad_output"
+        # Capture both stdout and stderr, check exit code
+        if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
+          # If launchpad succeeds, extract just the shell script part using system sed
+          local shell_script=""
+          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Packages installed/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Packages installed/,$p')
+          if [ -n "$shell_script" ]; then
+            eval "$shell_script"
+          else
+            echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
+            eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          fi
         else
           # If launchpad fails or produces no output, use pkgx fallback
           echo "⚠️  Launchpad unavailable, using pkgx fallback..." >&2
@@ -107,8 +143,17 @@ _pkgx_chpwd_hook() {
 _pkgx_activate_with_pkgx() {
   local dir="$1"
 
-  if [ ! -f "$dir/dependencies.yaml" ] || ! command -v pkgx >/dev/null 2>&1; then
-    echo "⚠️  No dependencies.yaml or pkgx not available" >&2
+  # Check for any supported dependency file
+  local deps_file=""
+  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml .deps.yml; do
+    if [ -f "$dir/$file" ]; then
+      deps_file="$dir/$file"
+      break
+    fi
+  done
+
+  if [ -z "$deps_file" ] || ! command -v pkgx >/dev/null 2>&1; then
+    echo "⚠️  No dependency file found or pkgx not available" >&2
     return 1
   fi
 
@@ -125,25 +170,29 @@ _pkgx_activate_with_pkgx() {
   if [ $? -eq 0 ]; then
     # Setup output
     echo "# Environment setup (fallback mode)"
-    echo "eval \"_pkgx_dev_try_bye() {"
+    echo "eval \\"_pkgx_dev_try_bye() {"
     echo "  echo 'dev environment deactivated' >&2"
     echo "  unset -f _pkgx_dev_try_bye"
-    echo "}\""
+    echo "}\\""
     echo ""
 
     # Ensure PATH contains ~/.local/bin
-    echo "if [[ \":\$PATH:\" != *\":\$HOME/.local/bin:\"* ]]; then"
-    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "if [[ \\":\$PATH:\\" != *\\":\$HOME/.local/bin:\\"* ]]; then"
+    echo "  export PATH=\\"\$HOME/.local/bin:\$PATH\\""
     echo "fi"
 
     # Set environment variables
     echo "set -a"
 
-    # Filter environment variables
-    echo "$env_output" | grep -v '^#' | grep -v '^$' | \
-      grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \
-      grep -v 'JetBrains' | grep -v '(Plugin)' | \
-      sed 's/"/\\"/g'
+    # Filter environment variables using system tools when possible
+    echo "$env_output" | /usr/bin/grep -v '^#' 2>/dev/null | /usr/bin/grep -v '^$' 2>/dev/null | \\
+      /usr/bin/grep -v 'LS_COLORS=' 2>/dev/null | /usr/bin/grep -v 'VSCODE' 2>/dev/null | /usr/bin/grep -v 'CURSOR' 2>/dev/null | \\
+      /usr/bin/grep -v 'JetBrains' 2>/dev/null | /usr/bin/grep -v '(Plugin)' 2>/dev/null | \\
+      /usr/bin/sed 's/"/\\\\"/g' 2>/dev/null || \\
+      echo "$env_output" | grep -v '^#' | grep -v '^$' | \\
+      grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \\
+      grep -v 'JetBrains' | grep -v '(Plugin)' | \\
+      sed 's/"/\\\\"/g'
 
     echo "set +a"
     echo "echo '✅ Dev environment activated via pkgx (fallback)' >&2"
@@ -180,9 +229,17 @@ dev() {
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
         # Try to run launchpad dev:dump with proper error handling
         local launchpad_output=""
-        if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>/dev/null) && [ -n "$launchpad_output" ]; then
-          # If launchpad succeeds and produces output, use it
-          eval "$launchpad_output"
+        # Capture both stdout and stderr, check exit code
+        if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
+          # If launchpad succeeds, extract just the shell script part using system sed
+          local shell_script=""
+          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Packages installed/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Packages installed/,$p')
+          if [ -n "$shell_script" ]; then
+            eval "$shell_script"
+          else
+            echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
+            eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          fi
         else
           # If launchpad fails or produces no output, use pkgx fallback
           echo "⚠️  Launchpad unavailable, using pkgx fallback..." >&2
