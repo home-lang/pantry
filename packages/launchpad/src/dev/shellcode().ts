@@ -57,8 +57,11 @@ _pkgx_chpwd_hook() {
 
   # Check if we're currently in an active dev environment
   local was_active=false
+  local current_env_dir=""
   if type _pkgx_dev_try_bye >/dev/null 2>&1; then
     was_active=true
+    # Extract the current environment directory from the function
+    current_env_dir=$(declare -f _pkgx_dev_try_bye | grep -o 'PWD#"[^"]*"' | head -1 | cut -d'"' -f2)
   fi
 
   # Look for activation file in current directory or parent directories
@@ -74,19 +77,26 @@ _pkgx_chpwd_hook() {
     dir="$(dirname "$dir")"
   done
 
-  # If we were active but no longer in an activation directory, deactivate
-  if [ "$was_active" = true ] && [ "$found_activation" = false ]; then
-    _pkgx_dev_try_bye
-  fi
-
   # Find dependency files in current directory
   local deps_file=""
-  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml .deps.yml; do
+  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml deps.yaml .deps.yml .deps.yaml; do
     if [ -f "$PWD/$file" ]; then
       deps_file="$PWD/$file"
       break
     fi
   done
+
+  # If we were active but moved to a different directory with different dependencies, deactivate first
+  if [ "$was_active" = true ] && [ -n "$current_env_dir" ] && [ "$current_env_dir" != "$PWD" ]; then
+    _pkgx_dev_try_bye
+    was_active=false
+  fi
+
+  # If we were active but no longer in an activation directory, deactivate
+  if [ "$was_active" = true ] && [ "$found_activation" = false ]; then
+    _pkgx_dev_try_bye
+    was_active=false
+  fi
 
   # Ensure ~/.local/bin exists and is in PATH
   mkdir -p "$HOME/.local/bin"
@@ -102,10 +112,9 @@ _pkgx_chpwd_hook() {
       touch "${dataDirPath}$PWD/dev.pkgx.activated"
       found_activation=true
       activation_dir="$PWD"
-      echo "🔄 Auto-activating environment for $(basename "$PWD")" >&2
     fi
 
-    # Force activation if we weren't active before
+    # Force activation if we weren't active before or if we switched directories
     if [ "$was_active" = false ]; then
       # Set flag to prevent recursive calls
       export _PKGX_ACTIVATING="$PWD"
@@ -117,7 +126,7 @@ _pkgx_chpwd_hook() {
         if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
           # If launchpad succeeds, extract just the shell script part using system sed
           local shell_script=""
-          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Packages installed/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Packages installed/,$p')
+          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
           if [ -n "$shell_script" ]; then
             eval "$shell_script"
           else
@@ -145,7 +154,7 @@ _pkgx_activate_with_pkgx() {
 
   # Check for any supported dependency file
   local deps_file=""
-  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml .deps.yml; do
+  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml deps.yaml .deps.yml .deps.yaml; do
     if [ -f "$dir/$file" ]; then
       deps_file="$dir/$file"
       break
@@ -233,7 +242,7 @@ dev() {
         if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
           # If launchpad succeeds, extract just the shell script part using system sed
           local shell_script=""
-          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Packages installed/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Packages installed/,$p')
+          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
           if [ -n "$shell_script" ]; then
             eval "$shell_script"
           else

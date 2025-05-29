@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -101,7 +102,7 @@ async function installPackagesPkgmStyle(packages: Array<{ project: string, versi
 
       // Create binary stubs (this is the crucial step - must run even if symlinks fail)
       try {
-        await createBinaryStubs(pkgDir, installPrefix, pkg.project, pkg.command, queryResult.runtime_env[pkg.project] || {})
+        await createBinaryStubs(pkgDir, installPrefix, pkg.project, pkg.command, queryResult.runtime_env[pkg.project] || {}, queryResult.env || {})
       }
       catch (stubError) {
         console.error(`❌ Failed to create binary stubs for ${pkg.project}:`, stubError instanceof Error ? stubError.message : String(stubError))
@@ -119,11 +120,30 @@ async function installPackagesPkgmStyle(packages: Array<{ project: string, versi
 
 async function findPkgx(): Promise<string | null> {
   try {
+    // First try with current environment
     const { stdout } = await execAsync('command -v pkgx')
     return stdout.trim()
   }
   catch {
-    return null
+    // If that fails, try with a more comprehensive PATH
+    try {
+      const comprehensivePath = [
+        '/usr/local/bin',
+        '/opt/homebrew/bin',
+        '/usr/bin',
+        '/bin',
+        process.env.HOME ? `${process.env.HOME}/.local/bin` : '',
+        process.env.HOME ? `${process.env.HOME}/.bun/bin` : '',
+      ].filter(Boolean).join(':')
+
+      const { stdout } = await execAsync('command -v pkgx', {
+        env: { ...process.env, PATH: comprehensivePath },
+      })
+      return stdout.trim()
+    }
+    catch {
+      return null
+    }
   }
 }
 
@@ -238,27 +258,25 @@ async function symlinkContents(src: string, dst: string): Promise<void> {
   await processEntry(src, dst)
 }
 
-async function createBinaryStubs(pkgDir: string, installPrefix: string, project: string, command: string, runtimeEnv: Record<string, string>): Promise<void> {
+async function createBinaryStubs(pkgDir: string, installPrefix: string, project: string, command: string, runtimeEnv: Record<string, string>, env: Record<string, string | string[]>): Promise<void> {
   const binDirs = ['bin', 'sbin']
 
   for (const binDirName of binDirs) {
     const binDir = path.join(pkgDir, binDirName)
-    if (!fs.existsSync(binDir)) {
-      console.error(`⚠️  Binary directory ${binDir} does not exist for ${project}`)
+    if (!fs.existsSync(binDir))
       continue
-    }
 
     const entries = await fs.promises.readdir(binDir)
     for (const entry of entries) {
       const srcBinary = path.join(binDir, entry)
 
-      // Validate that the source binary actually exists and is accessible
+      // Check if the file exists and is executable
       try {
         const stats = await fs.promises.lstat(srcBinary)
-        if (!stats.isFile() && !stats.isSymbolicLink()) {
-          console.error(`⚠️  ${srcBinary} is not a file or symlink, skipping`)
+
+        // Skip directories
+        if (stats.isDirectory())
           continue
-        }
 
         // For symlinks, check if the target exists
         if (stats.isSymbolicLink()) {
@@ -281,10 +299,24 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
       // Create environment setup
       let stubContent = '#!/bin/sh\n'
 
-      // Add library path fixes for common pkgx issues
-      stubContent += '# Fix common library path issues\n'
-      stubContent += 'export DYLD_FALLBACK_LIBRARY_PATH="/usr/lib:/usr/local/lib:$DYLD_FALLBACK_LIBRARY_PATH"\n'
+      // Add pkgx environment variables first
+      for (const [key, value] of Object.entries(env)) {
+        if (Array.isArray(value)) {
+          // Join arrays with colons for PATH-like variables
+          if (key === 'DYLD_FALLBACK_LIBRARY_PATH') {
+            // For DYLD_FALLBACK_LIBRARY_PATH, append the generic fallback paths
+            stubContent += `export ${key}="${value.join(':')}:/usr/lib:/usr/local/lib"\n`
+          }
+          else {
+            stubContent += `export ${key}="${value.join(':')}"\n`
+          }
+        }
+        else {
+          stubContent += `export ${key}="${value}"\n`
+        }
+      }
 
+      // Add runtime environment variables for the specific package
       for (const [key, value] of Object.entries(runtimeEnv)) {
         stubContent += `export ${key}="${value}"\n`
       }
@@ -294,7 +326,7 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
       // Add the actual binary execution with error handling
       stubContent += `# Execute the binary with error handling\n`
       stubContent += `# Try the pkgx-installed binary first\n`
-      stubContent += `"${srcBinary}" "$@" 2>/dev/null\n`
+      stubContent += `"${srcBinary}" "$@"\n`
       stubContent += `exit_code=$?\n`
       stubContent += `if [ $exit_code -ne 0 ]; then\n`
       stubContent += `  # If pkgx binary fails, try system fallback\n`
@@ -368,11 +400,13 @@ export default async function (
     return
   }
 
-  // Determine installation prefix (like pkgm does)
-  const installPrefix = isWritable('/usr/local') ? '/usr/local' : path.join(process.env.HOME || '~', '.local')
+  // Use project-specific installation prefix for proper isolation
+  // Create a hash from the full path to ensure uniqueness
+  const projectHash = Buffer.from(cwd).toString('base64').replace(/[/+=]/g, '_')
+  const installPrefix = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs', projectHash)
 
   if (!opts.quiet) {
-    console.error('🚀 Installing packages pkgm-style...')
+    console.error('🚀 Installing packages for project environment...')
     console.error(`📍 Installation prefix: ${installPrefix}`)
   }
 
@@ -384,18 +418,8 @@ export default async function (
   }))
 
   try {
-    // Install packages like pkgm does
+    // Install packages to project-specific directory
     await installPackagesPkgmStyle(packages, installPrefix)
-
-    // Ensure PATH includes both bin and sbin directories
-    const binDir = path.join(installPrefix, 'bin')
-    const sbinDir = path.join(installPrefix, 'sbin')
-    if (!isInPath(binDir)) {
-      console.error(`⚠️  ${binDir} not in $PATH`)
-    }
-    if (!isInPath(sbinDir)) {
-      console.error(`⚠️  ${sbinDir} not in $PATH`)
-    }
 
     if (!opts.quiet) {
       console.error('✅ Packages installed successfully!')
@@ -406,7 +430,7 @@ export default async function (
     process.exit(1)
   }
 
-  // Generate environment setup for compatibility
+  // Generate environment setup for project-specific activation
   let env = ''
 
   // Add any additional env that we sniffed
@@ -414,22 +438,32 @@ export default async function (
     env += `${key}=${shell_escape(value)}\n`
   }
 
-  // Ensure PATH includes both bin and sbin directories
-  env += `PATH=${shell_escape(`${path.join(installPrefix, 'bin')}:${path.join(installPrefix, 'sbin')}:$PATH`)}\n`
-
-  env = env.trim()
+  // Set up project-specific PATH that includes the project's bin directories
+  const projectBinDir = path.join(installPrefix, 'bin')
+  const projectSbinDir = path.join(installPrefix, 'sbin')
 
   // Generate script output for shell integration
   // eslint-disable-next-line no-console
   console.log(`
-  # Packages installed pkgm-style to ${installPrefix}
-  # Ensuring PATH includes installation directories
-  export PATH="${path.join(installPrefix, 'bin')}:${path.join(installPrefix, 'sbin')}:$PATH"
+  # Project-specific environment for ${cwd}
+  # This creates an isolated environment that gets properly deactivated
+
+  # Clean up PATH by removing any existing launchpad environment paths
+  CLEANED_PATH="$(echo "$PATH" | tr ':' '\\n' | grep -v '/.local/share/launchpad/envs/' | tr '\\n' ':' | sed 's/:$//')"
+
+  # Store the cleaned PATH as original
+  export _LAUNCHPAD_ORIGINAL_PATH="$CLEANED_PATH"
+  export PATH="${projectBinDir}:${projectSbinDir}:$PATH"
 
   eval "_pkgx_dev_try_bye() {
     suffix=\\"\\\${PWD#\\"${cwd}\\"}\\"
     [ \\"\\$PWD\\" = \\"${cwd}\\$suffix\\" ] && return 1
     echo -e \\"\\033[31mdev environment deactivated\\033[0m\\" >&2
+    # Restore original PATH to properly isolate the environment
+    if [ -n \\"\$_LAUNCHPAD_ORIGINAL_PATH\\" ]; then
+      export PATH=\\"\$_LAUNCHPAD_ORIGINAL_PATH\\"
+      unset _LAUNCHPAD_ORIGINAL_PATH
+    fi
     unset -f _pkgx_dev_try_bye
   }"
 
@@ -441,21 +475,4 @@ export default async function (
   if [ "\${PWD}" = "${cwd}" ]; then
     echo "✅ Environment activated for ${cwd}" >&2
   fi`)
-}
-
-function isWritable(dirPath: string): boolean {
-  try {
-    const testDir = path.join(dirPath, '.writable_test')
-    fs.mkdirSync(testDir, { recursive: true })
-    fs.rmSync(testDir, { recursive: true })
-    return true
-  }
-  catch {
-    return false
-  }
-}
-
-function isInPath(dir: string): boolean {
-  const pathDirs = (process.env.PATH || '').split(':')
-  return pathDirs.includes(dir)
 }

@@ -28,12 +28,14 @@ export async function smartInstall(options: SmartInstallOptions): Promise<Instal
   const { packages, installPath, fallbackToSystem = true, verbose = false } = options
 
   if (verbose) {
+    // eslint-disable-next-line no-console
     console.log(`🔍 Smart installing: ${packages.join(', ')}`)
   }
 
   // First try pkgx if available
   try {
     if (verbose)
+      // eslint-disable-next-line no-console
       console.log('📦 Trying pkgx installation...')
 
     await install(packages, installPath || install_prefix().string)
@@ -48,6 +50,7 @@ export async function smartInstall(options: SmartInstallOptions): Promise<Instal
   }
   catch (pkgxError) {
     if (verbose) {
+      // eslint-disable-next-line no-console
       console.log(`⚠️  pkgx failed: ${pkgxError instanceof Error ? pkgxError.message : pkgxError}`)
     }
 
@@ -64,6 +67,7 @@ export async function smartInstall(options: SmartInstallOptions): Promise<Instal
 
   // Fallback to system package managers
   if (verbose)
+    // eslint-disable-next-line no-console
     console.log('🔧 Falling back to system package manager...')
 
   try {
@@ -122,6 +126,7 @@ async function installWithSystemPackageManager(packages: string[], verbose: bool
       if (currentPlatform === 'darwin') {
         // Try Homebrew
         if (verbose)
+          // eslint-disable-next-line no-console
           console.log(`🍺 Installing ${systemPackageName} with Homebrew...`)
 
         // Check if brew is available
@@ -136,11 +141,13 @@ async function installWithSystemPackageManager(packages: string[], verbose: bool
         installedPackages.push(pkg)
 
         if (verbose)
+          // eslint-disable-next-line no-console
           console.log(`✅ Successfully installed ${systemPackageName}`)
       }
       else if (currentPlatform === 'linux') {
         // Try apt (Ubuntu/Debian)
         if (verbose)
+          // eslint-disable-next-line no-console
           console.log(`📦 Installing ${systemPackageName} with apt...`)
 
         try {
@@ -149,6 +156,7 @@ async function installWithSystemPackageManager(packages: string[], verbose: bool
           installedPackages.push(pkg)
 
           if (verbose)
+            // eslint-disable-next-line no-console
             console.log(`✅ Successfully installed ${systemPackageName}`)
         }
         catch {
@@ -159,6 +167,7 @@ async function installWithSystemPackageManager(packages: string[], verbose: bool
             installedPackages.push(pkg)
 
             if (verbose)
+              // eslint-disable-next-line no-console
               console.log(`✅ Successfully installed ${systemPackageName}`)
           }
           catch {
@@ -173,6 +182,7 @@ async function installWithSystemPackageManager(packages: string[], verbose: bool
     catch (error) {
       failedPackages.push(pkg)
       if (verbose) {
+        // eslint-disable-next-line no-console
         console.log(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : error}`)
       }
     }
