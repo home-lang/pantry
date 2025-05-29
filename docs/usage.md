@@ -1,93 +1,3 @@
-# Get Started
-
-There are two ways of using this reverse proxy: _as a library or as a CLI._
-
-## Library
-
-Given the npm package is installed:
-
-```ts
-import type { TlsConfig } from '@stacksjs/rpx'
-import { startProxy } from '@stacksjs/rpx'
-
-export interface CleanupConfig {
-  hosts: boolean // clean up /etc/hosts, defaults to false
-  certs: boolean // clean up certificates, defaults to false
-}
-
-export interface ReverseProxyConfig {
-  from: string // domain to proxy from, defaults to localhost:3000
-  to: string // domain to proxy to, defaults to stacks.localhost
-  cleanUrls?: boolean // removes the .html extension from URLs, defaults to false
-  https: boolean | TlsConfig // automatically uses https, defaults to true, also redirects http to https
-  cleanup?: boolean | CleanupConfig // automatically cleans up /etc/hosts, defaults to false
-  verbose: boolean // log verbose output, defaults to false
-}
-
-const config: ReverseProxyOptions = {
-  from: 'localhost:3000',
-  to: 'my-docs.localhost',
-  cleanUrls: true,
-  https: true,
-  cleanup: false,
-}
-
-startProxy(config)
-```
-
-In case you are trying to start multiple proxies, you may use this configuration:
-
-```ts
-// reverse-proxy.config.{ts,js}
-import type { ReverseProxyOptions } from '@stacksjs/rpx'
-import os from 'node:os'
-import path from 'node:path'
-
-const config: ReverseProxyOptions = {
-  https: { // https: true -> also works with sensible defaults
-    caCertPath: path.join(os.homedir(), '.stacks', 'ssl', `stacks.localhost.ca.crt`),
-    certPath: path.join(os.homedir(), '.stacks', 'ssl', `stacks.localhost.crt`),
-    keyPath: path.join(os.homedir(), '.stacks', 'ssl', `stacks.localhost.crt.key`),
-  },
-
-  cleanup: {
-    hosts: true,
-    certs: false,
-  },
-
-  proxies: [
-    {
-      from: 'localhost:5173',
-      to: 'my-app.localhost',
-      cleanUrls: true,
-    },
-    {
-      from: 'localhost:5174',
-      to: 'my-api.local',
-    },
-  ],
-
-  verbose: true,
-}
-
-export default config
-```
-
-## CLI
-
-```bash
-rpx --from localhost:3000 --to my-project.localhost
-rpx --from localhost:8080 --to my-project.test --keyPath ./key.pem --certPath ./cert.pem
-rpx --help
-rpx --version
-```
-
-## Testing
-
-```bash
-bun test
-```
-
 # Basic Usage
 
 Launchpad provides a simple yet powerful command-line interface for managing packages and development environments. This guide covers the most common operations.
@@ -103,6 +13,8 @@ Here are the main commands available in Launchpad:
 | `shim` | Create shims for packages |
 | `pkgx` | Install pkgx itself |
 | `dev` | Install the dev package |
+| `dev:dump` | Generate environment setup script for a project |
+| `dev:shellcode` | Generate shell integration code |
 | `bun` | Install Bun runtime directly |
 | `zsh` | Install Zsh shell |
 | `bootstrap` | Install all essential tools at once |
@@ -166,6 +78,75 @@ The `remove` command intelligently finds and removes:
 - Associated shims
 - Symlinks pointing to the package
 
+## Development Environment Management
+
+Launchpad provides powerful project-specific environment management:
+
+### Auto-Activation with Shell Integration
+
+Set up shell integration to automatically activate environments when entering project directories:
+
+```bash
+# Add to your shell configuration
+echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+
+# Reload your shell
+source ~/.zshrc
+```
+
+Once set up, environments automatically activate when you enter a directory with dependency files:
+
+```bash
+cd my-project/  # → Automatically activates environment
+# ✅ Environment activated for /path/to/my-project
+cd ../          # → Automatically deactivates
+# 🔄 dev environment deactivated
+```
+
+### Manual Environment Commands
+
+```bash
+# Generate environment script for current directory
+launchpad dev:dump
+
+# Generate environment script for specific directory
+launchpad dev:dump /path/to/project
+
+# Preview packages without generating script
+launchpad dev:dump --dryrun
+
+# Generate script with verbose output
+launchpad dev:dump --verbose
+```
+
+### Project-Specific Dependencies
+
+Create a `dependencies.yaml` file in your project:
+
+```yaml
+dependencies:
+  - node@22
+  - python@3.12
+  - gnu.org/wget@1.21
+
+env:
+  NODE_ENV: development
+  PROJECT_NAME: my-awesome-project
+```
+
+Supported dependency file formats:
+- `dependencies.yaml` / `dependencies.yml`
+- `pkgx.yaml` / `pkgx.yml`
+- `.pkgx.yaml` / `.pkgx.yml`
+
+### Environment Isolation
+
+Each project gets its own isolated environment:
+- Project-specific installation directory: `~/.local/share/launchpad/envs/{project-hash}/`
+- Isolated PATH and environment variables
+- Binary stubs with environment isolation
+- Automatic cleanup when leaving project directory
+
 ## Bootstrap Setup
 
 For first-time setup or fresh installations, use the bootstrap command:
@@ -210,6 +191,7 @@ The `uninstall` command removes:
 - Installation directories (`bin/`, `sbin/`, `pkgs/`)
 - Shell integration from `.zshrc`, `.bashrc`, etc.
 - Shim directories
+- Project-specific environment directories
 - Provides guidance for manual PATH cleanup
 
 ## Creating Shims
@@ -329,8 +311,19 @@ Most commands support these options:
 | `--dry-run` | Preview changes without actually performing them |
 | `--no-auto-path` | Don't automatically add to PATH |
 | `--sudo` | Use sudo for installation (if needed) |
+| `--quiet` | Suppress status messages |
 
 ## Package Management Best Practices
+
+### Using Environment Isolation
+
+Launchpad automatically provides environment isolation for each project:
+
+```bash
+# Each project gets its own environment
+cd project-a/    # → Uses node@20, python@3.11
+cd ../project-b/ # → Uses node@22, python@3.12
+```
 
 ### Choosing Between Remove and Uninstall
 
@@ -347,6 +340,9 @@ launchpad remove python --dry-run
 
 # Preview complete system cleanup
 launchpad uninstall --dry-run
+
+# Preview environment setup
+launchpad dev:dump --dryrun
 ```
 
 ### Version Management
@@ -371,6 +367,52 @@ By default, Launchpad automatically adds shim directories to your PATH. You can 
 launchpad shim node --no-auto-path
 ```
 
+## Working with Dependencies
+
+### Dependency File Formats
+
+Launchpad supports multiple dependency file formats:
+
+```yaml
+# dependencies.yaml
+dependencies:
+  - node@22
+  - python@3.12
+
+env:
+  NODE_ENV: development
+  API_URL: https://api.example.com
+```
+
+### Environment Variables
+
+Set project-specific environment variables:
+
+```yaml
+dependencies:
+  - node@22
+
+env:
+  NODE_ENV: production
+  DATABASE_URL: postgresql://localhost/myapp
+  API_KEY: your-api-key-here
+```
+
+### Complex Dependencies
+
+Handle complex package specifications:
+
+```yaml
+dependencies:
+  - gnu.org/wget@^1.21
+  - curl.se@~8.0
+  - python.org@>=3.11
+
+env:
+  PATH_EXTENSION: /custom/bin
+  PYTHON_PATH: /opt/custom/python
+```
+
 ## Getting Help
 
 For detailed information about any command:
@@ -379,3 +421,44 @@ For detailed information about any command:
 launchpad help
 launchpad <command> --help
 ```
+
+## Troubleshooting
+
+### Environment Not Activating
+
+If automatic environment activation isn't working:
+
+1. Ensure shell integration is set up:
+   ```bash
+   echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+2. Check for dependency files in your project directory
+3. Verify the dependency file syntax is correct
+
+### Package Installation Failures
+
+If packages fail to install:
+
+1. Check your internet connection
+2. Verify the package name and version exist
+3. Try with verbose output: `launchpad install --verbose package-name`
+4. Check if you have write permissions to the installation directory
+
+### Permission Issues
+
+If you encounter permission errors:
+
+1. Use `--sudo` flag for system-wide installations
+2. Install to user directory: `--path ~/.local`
+3. Check directory permissions
+
+### Shell Integration Issues
+
+If shell integration isn't working:
+
+1. Verify your shell is supported (bash or zsh)
+2. Check that the shell integration code was added correctly
+3. Reload your shell configuration
+4. Try generating new shell code: `launchpad dev:shellcode`

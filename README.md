@@ -10,16 +10,30 @@
 
 > A lightweight package manager built on top of pkgx to simplify package installation and management. _Similar to Homebrew, but faster._
 
+## What is Launchpad?
+
+Launchpad serves as an alternative to package managers like Homebrew, focusing on:
+
+- A consistent and simple CLI interface
+- Automatic PATH management
+- Easy installation of development tools
+- Cross-platform support
+
+At its core, Launchpad leverages pkgx, a next-generation package runner that allows you to use packages without installing them. Launchpad extends this functionality with convenient commands, better management of executables, and improved integration with your development workflow.
+
 ## Features
 
 Launchpad offers a streamlined approach to package management with these key features:
 
-- 📦 **[Dependency Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install & manage your system & project dependencies efficiently
-- 🔧 **Auto-updates** — Configure automatic updates when needed
-- 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically add installation directories to your PATH
-- 🔄 **[Executable Shims](https://github.com/stacksjs/launchpad/tree/main/docs/features/shim-creation.md)** — Create executable shims for packages automatically
-- 💻 **CLI & Library** — Programmatically or manually manage your dependencies, using the CLI or library
-- 🪟 **Cross-platform** — Full support for macOS, Linux, and Windows systems
+- 📦 **Package Management** — Install and manage packages directly using pkgx
+- 🗑️ **Package Removal** — Remove specific packages or completely uninstall Launchpad
+- 🔄 **Executable Shims** — Create executable shims for packages automatically
+- 🌍 **Environment Isolation** — Project-specific environments with automatic activation/deactivation
+- 🎯 **Bootstrap Setup** — One-command setup of essential development tooling
+- 🔧 **Auto-updates** — Configure automatic updates for pkgx
+- 🔌 **PATH Integration** — Automatically add installation directories to your PATH
+- 🪟 **Cross-platform** — Support for macOS, Linux, and Windows systems
+- 🔒 **Smart Installation** — Automatic fallback to system package managers when needed
 
 ## Why Launchpad?
 
@@ -33,7 +47,7 @@ Traditional package managers like Homebrew have limitations:
 
 Launchpad solves these by providing:
 
-- **Fast installations** — Leverage pkgx for efficient package management
+- **Fast installations** — Leverage pkgx for efficient package management across all platforms
 - **Isolated packages** — Install only what you need without conflicts
 - **Automatic PATH management** — Tools are available immediately
 - **Consistent interface** — Same commands work everywhere

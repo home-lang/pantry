@@ -48,15 +48,50 @@ async function create_shim(args: string[], basePath: string): Promise<string[]>
 function shim_dir(): Path
 ```
 
-### pkgx Module
+### Development Environment Module
 
 ```typescript
 /**
- * Get the path to the pkgx executable
- * @returns Path to pkgx
+ * Generate shell integration code for automatic environment activation
+ * @returns Shell script code for integration with bash/zsh
  */
-function get_pkgx(): string
+function shellcode(): string
 
+/**
+ * Generate environment setup script for a project directory
+ * @param cwd Project directory path
+ * @param opts Configuration options
+ * @returns Promise that resolves when environment script is generated
+ */
+async function dump(
+  cwd: string,
+  opts: { dryrun: boolean, quiet: boolean }
+): Promise<void>
+
+/**
+ * Integrate shell environment with automatic activation hooks
+ * @param directory Project directory to integrate
+ * @returns Promise that resolves when integration is complete
+ */
+async function integrate(directory: string): Promise<void>
+
+interface EnvironmentIsolationConfig {
+  projectPath: string
+  installPrefix: string
+  packages: PackageSpec[]
+  env: Record<string, string | string[]>
+}
+
+interface PackageSpec {
+  project: string
+  version: string
+  command: string
+}
+```
+
+### pkgx Module
+
+```typescript
 /**
  * Query pkgx for package information
  * @param pkgx Path to pkgx executable
@@ -82,6 +117,21 @@ async function check_pkgx_autoupdate(): Promise<boolean>
  * @returns Promise resolving to boolean indicating success
  */
 async function configure_pkgx_autoupdate(enable: boolean): Promise<boolean>
+
+interface QueryPkgxOptions {
+  env?: Record<string, string>
+  timeout?: number
+}
+
+interface JsonResponse {
+  pkgs: Array<{
+    path: string
+    project: string
+    version: string
+  }>
+  runtime_env: Record<string, string>
+  env: Record<string, string | string[]>
+}
 ```
 
 ### List Module
@@ -101,21 +151,12 @@ async function list(basePath: string): Promise<Installation[]>
  */
 async function* ls(installPath?: string): AsyncGenerator<string>
 
-/**
- * Check for outdated packages
- */
-async function outdated(): Promise<void>
-```
-
-### Uninstall Module
-
-```typescript
-/**
- * Uninstall a package
- * @param pkg Package name to uninstall
- * @returns Promise resolving to boolean indicating success
- */
-async function uninstall(pkg: string): Promise<boolean>
+interface Installation {
+  project: string
+  version: string
+  path: string
+  binaries: string[]
+}
 ```
 
 ### Package Removal Module
@@ -174,548 +215,268 @@ interface UninstallItem {
   path?: string
   details?: string
 }
+```
 
-### Smart Install Module
+### Environment Isolation Module
 
 ```typescript
 /**
- * Smart install with automatic fallback to system package managers
- * @param options Installation options
- * @returns Promise resolving to installation result
+ * Create isolated binary stubs for packages
+ * @param pkgDir Package directory containing binaries
+ * @param installPrefix Project-specific installation prefix
+ * @param project Package project name
+ * @param command Package command name
+ * @param runtimeEnv Runtime environment variables
+ * @param env Additional environment variables
+ * @returns Promise that resolves when stubs are created
  */
-async function smartInstall(options: SmartInstallOptions): Promise<InstallResult>
+async function createBinaryStubs(
+  pkgDir: string,
+  installPrefix: string,
+  project: string,
+  command: string,
+  runtimeEnv: Record<string, string>,
+  env: Record<string, string | string[]>
+): Promise<void>
 
 /**
- * Check if a package is already installed on the system
- * @param packageName Package name to check
- * @returns Promise resolving to boolean indicating if installed
+ * Generate project hash for environment isolation
+ * @param projectPath Full path to project directory
+ * @returns Base64-encoded hash suitable for directory names
  */
-async function isPackageInstalled(packageName: string): Promise<boolean>
+function generateProjectHash(projectPath: string): string
 
 /**
- * Get installation instructions for manual installation
- * @param packages Array of package names
- * @returns String containing installation instructions
+ * Get project-specific environment directory
+ * @param projectPath Full path to project directory
+ * @returns Path to isolated environment directory
  */
-function getManualInstallInstructions(packages: string[]): string
+function getProjectEnvDir(projectPath: string): string
 
-interface SmartInstallOptions {
-  packages: string[]
-  installPath?: string
-  fallbackToSystem?: boolean
+/**
+ * Escape shell strings for safe script generation
+ * @param str String to escape
+ * @returns Shell-escaped string
+ */
+function shell_escape(str: string): string
+```
+
+### Configuration Module
+
+```typescript
+/**
+ * Load Launchpad configuration from various sources
+ * @returns Merged configuration object
+ */
+function loadConfig(): LaunchpadConfig
+
+/**
+ * Validate configuration object
+ * @param config Configuration to validate
+ * @returns Array of validation errors (empty if valid)
+ */
+function validateConfig(config: LaunchpadConfig): string[]
+
+interface LaunchpadConfig {
   verbose?: boolean
-}
-
-interface InstallResult {
-  success: boolean
-  method: 'pkgx' | 'brew' | 'apt' | 'manual'
-  installedPackages: string[]
-  failedPackages: string[]
-  message: string
+  installationPath?: string
+  shimPath?: string
+  autoSudo?: boolean
+  maxRetries?: number
+  timeout?: number
+  symlinkVersions?: boolean
+  forceReinstall?: boolean
+  autoAddToPath?: boolean
+  devAware?: boolean
 }
 ```
 
-### Path Module
+### Path Management Module
 
 ```typescript
 /**
- * Path class for handling file paths
+ * Add directory to system PATH
+ * @param directory Directory to add
+ * @returns Promise that resolves when PATH is updated
  */
-class Path {
-  /**
-   * Create a new Path
-   * @param string Path string
-   */
-  constructor(string: string)
+async function addToPath(directory: string): Promise<void>
 
-  /**
-   * Get the string representation
-   */
-  string: string
-
-  /**
-   * Join paths
-   * @param parts Parts to join
-   * @returns New Path object
-   */
-  join(...parts: string[]): Path
-
-  /**
-   * Get parent directory
-   * @returns New Path object representing parent
-   */
-  parent(): Path
-
-  /**
-   * Get basename
-   * @returns Basename string
-   */
-  basename(): string
-
-  /**
-   * Check if path exists
-   * @returns Boolean indicating if path exists
-   */
-  exists(): boolean
-
-  /**
-   * Check if path is a directory
-   * @returns Boolean indicating if path is directory
-   */
-  isDirectory(): boolean
-
-  /**
-   * Get relative path from another path
-   * @param from Path to calculate relative from
-   * @returns Relative path string
-   */
-  relative(from: Path): string
-
-  /**
-   * List directory contents
-   * @returns Array of Path objects
-   */
-  ls(): Path[]
-
-  /**
-   * Get home directory
-   * @returns Path to home directory
-   */
-  static home(): Path
-}
-```
-
-### Utils Module
-
-```typescript
 /**
- * Check if a path is in the PATH environment variable
- * @param dir Directory to check
+ * Check if directory is in PATH
+ * @param directory Directory to check
  * @returns Boolean indicating if directory is in PATH
  */
-function isInPath(dir: string): boolean
+function isInPath(directory: string): boolean
 
 /**
- * Add a directory to the PATH in shell configuration
- * @param dir Directory to add
- * @returns Boolean indicating success
+ * Get platform-specific data directory
+ * @returns Path to data directory
  */
-function addToPath(dir: string): boolean
+function platform_data_home_default(): string
 
 /**
- * Get standard PATH directories for the platform
- * @returns String containing standard PATH
+ * Find dev command (launchpad or fallback)
+ * @returns Path to dev command executable
  */
-function standardPath(): string
+function findDevCommand(): string
 ```
 
-### Bun Module
+### Dependency Sniffing Module
 
 ```typescript
 /**
- * Get the latest Bun version from GitHub API
- * @returns Promise resolving to the version string
+ * Detect dependencies from project files
+ * @param options Sniffing options
+ * @returns Promise resolving to detected dependencies and environment
  */
-async function get_latest_bun_version(): Promise<string>
+async function sniff(options: SniffOptions): Promise<SniffResult>
 
-/**
- * Determine the appropriate Bun download URL
- * @param version Version string
- * @returns Object containing filename and URL
- */
-function get_bun_asset(version: string): BunAsset
-
-/**
- * Download and install Bun
- * @param installPath Path where Bun should be installed
- * @param version Optional specific version to install
- * @returns Array of installed file paths
- */
-async function install_bun(installPath: string, version?: string): Promise<string[]>
-
-/**
- * Asset information for Bun download
- */
-interface BunAsset {
-  filename: string
-  url: string
-}
-```
-
-### Dev Module
-
-```typescript
-/**
- * Get dev data directory
- * @returns String path to dev data directory
- */
-function datadir(): string
-
-/**
- * Output environment setup for dev environment
- * @param directory Target directory
- * @param options Dump options
- */
-async function dump(directory: string, options?: { dryrun?: boolean, quiet?: boolean }): Promise<void>
-
-/**
- * Integrate dev hooks into shell configuration
- * @param action Action to perform ('install' or 'uninstall')
- * @param options Integration options
- */
-async function integrate(action: 'install' | 'uninstall', options?: { dryrun?: boolean }): Promise<void>
-
-/**
- * Output shell integration code
- * @returns String containing shell code
- */
-function shellcode(): string
-
-/**
- * Escape shell string
- * @param input String to escape
- * @returns Escaped string
- */
-function shell_escape(input: string): string
-
-/**
- * Sniff directory for development files
- * @param path Directory path to sniff
- * @returns Promise resolving to sniff result
- */
-async function sniff(path: { string: string }): Promise<{ pkgs: Array<{ project: string, constraint: string }> }>
-```
-
-### Version Module
-
-```typescript
-/**
- * Version class for semantic versioning
- */
-class Version {
-  /**
-   * Create a new Version
-   * @param version Version string
-   */
-  constructor(version: string)
-
-  /**
-   * Get raw version string
-   */
-  raw: string
-
-  /**
-   * Parse version string
-   * @param version Version string to parse
-   * @returns Parsed version object or null
-   */
-  static parseVersion(version: string): { major: number, minor: number, patch: number } | null
-
-  /**
-   * Convert to string
-   * @returns Version string
-   */
-  toString(): string
-}
-```
-
-## Configuration Types
-
-```typescript
-/**
- * Launchpad configuration interface
- */
-interface LaunchpadConfig {
-  /** Enable verbose logging */
-  verbose: boolean
-
-  /** Path where binaries should be installed */
-  installationPath: string
-
-  /** Password for sudo operations */
-  sudoPassword: string
-
-  /** Whether to enable dev-aware installations */
-  devAware: boolean
-
-  /** Whether to auto-elevate with sudo when needed */
-  autoSudo: boolean
-
-  /** Max installation retries on failure */
-  maxRetries: number
-
-  /** Timeout for pkgx operations in milliseconds */
-  timeout: number
-
-  /** Whether to symlink versions */
-  symlinkVersions: boolean
-
-  /** Whether to force reinstall if already installed */
-  forceReinstall: boolean
-
-  /** Default path for shims */
-  shimPath: string
-
-  /** Whether to automatically add shim path to the system PATH */
-  autoAddToPath: boolean
+interface SniffOptions {
+  string: string // Project directory path
 }
 
-/**
- * Partial configuration (for overrides)
- */
-type LaunchpadOptions = Partial<LaunchpadConfig>
-```
-
-## Data Types
-
-```typescript
-/**
- * Installation information
- */
-interface Installation {
-  path: Path
-  pkg: {
+interface SniffResult {
+  pkgs: Array<{
     project: string
-    version: Version
-  }
+    constraint: {
+      toString: () => string
+    }
+  }>
+  env: Record<string, string>
 }
 
 /**
- * JSON response from pkgx query
+ * List of supported dependency file names
  */
-interface JsonResponse {
-  runtime_env: Record<string, Record<string, string>>
-  pkgs: Installation[]
-  env: Record<string, Record<string, string>>
-  pkg: Installation
-}
-
-/**
- * Options for pkgx query
- */
-interface QueryPkgxOptions {
-  timeout?: number
-}
+const DEPENDENCY_FILES: readonly string[]
 ```
 
-## Global Configuration
+## Usage Examples
+
+### Basic Package Installation
 
 ```typescript
-/**
- * Default configuration
- */
-const defaultConfig: LaunchpadConfig = {
-  verbose: false,
-  installationPath: getDefaultInstallPath(),
-  sudoPassword: process.env.SUDO_PASSWORD || '',
-  devAware: true,
-  autoSudo: true,
-  maxRetries: 3,
-  timeout: 60000,
-  symlinkVersions: true,
-  forceReinstall: false,
-  shimPath: getDefaultShimPath(),
-  autoAddToPath: true,
+import { install, install_prefix } from 'launchpad'
+
+// Install packages to default location
+const installedFiles = await install(['node@22', 'python@3.12'], install_prefix().string)
+console.log('Installed files:', installedFiles)
+```
+
+### Environment Setup
+
+```typescript
+import { dump, shellcode } from 'launchpad/dev'
+
+// Generate shell integration code
+const shellCode = shellcode()
+console.log(shellCode)
+
+// Generate environment for specific project
+await dump('/path/to/project', { dryrun: false, quiet: false })
+```
+
+### Configuration Management
+
+```typescript
+import { loadConfig, validateConfig } from 'launchpad/config'
+
+// Load current configuration
+const config = loadConfig()
+console.log('Current config:', config)
+
+// Validate configuration
+const errors = validateConfig(config)
+if (errors.length > 0) {
+  console.error('Configuration errors:', errors)
 }
-
-/**
- * Current configuration (loaded from files and environment)
- */
-const config: LaunchpadConfig
 ```
 
-## CLI Commands
+### Package Management
 
-### Package Installation Commands
+```typescript
+import { list, removePackages } from 'launchpad'
 
-```bash
-# Install packages using pkgx
-launchpad install [packages...] [options]
-launchpad i [packages...] [options]
+// List installed packages
+const packages = await list('/usr/local')
+console.log('Installed packages:', packages)
 
-# Smart install with automatic fallback to system package managers
-launchpad smart-install [packages...] [options]
-launchpad si [packages...] [options]
-
-# Install Bun from GitHub releases
-launchpad bun [options]
-
-# Install Zsh shell
-launchpad zsh [options]
-
-# Install pkgx itself
-launchpad pkgx [options]
-
-# Install dev package
-launchpad dev [options]
-
-# Bootstrap complete setup (install all essential tools)
-launchpad bootstrap [options]
+// Remove specific packages
+const results = await removePackages(['node', 'python'], {
+  dryRun: true,
+  verbose: true,
+})
+console.log('Removal results:', results)
 ```
 
-### Package Removal Commands
+### Environment Isolation
 
-```bash
-# Remove specific packages
-launchpad remove [packages...] [options]
-launchpad rm [packages...] [options]
-launchpad uninstall-package [packages...] [options]
+```typescript
+import { createBinaryStubs, generateProjectHash, getProjectEnvDir } from 'launchpad/env'
 
-# Complete system cleanup (remove everything)
-launchpad uninstall [options]
-```
+// Generate hash for project
+const projectPath = '/home/user/my-project'
+const hash = generateProjectHash(projectPath)
+console.log('Project hash:', hash)
 
-### Shim Management Commands
+// Get environment directory
+const envDir = getProjectEnvDir(projectPath)
+console.log('Environment directory:', envDir)
 
-```bash
-# Create shims for packages
-launchpad shim [packages...] [options]
-```
-
-### Package Listing Commands
-
-```bash
-# List installed packages
-launchpad list [options]
-launchpad ls [options]
-```
-
-### Auto-update Management Commands
-
-```bash
-# Check auto-update status
-launchpad autoupdate [options]
-
-# Enable auto-updates
-launchpad autoupdate:enable [options]
-
-# Disable auto-updates
-launchpad autoupdate:disable [options]
-```
-
-### Dev Environment Commands
-
-```bash
-# Integrate dev hooks into shell configuration
-launchpad dev:integrate [options]
-
-# Remove dev hooks from shell configuration
-launchpad dev:deintegrate [options]
-
-# Check if dev environment is active in current directory
-launchpad dev:status [options]
-
-# List all active dev environments
-launchpad dev:ls [options]
-
-# Deactivate dev environment in current directory
-launchpad dev:off [options]
-
-# Activate dev environment in directory
-launchpad dev:on [directory] [options]
-
-# Output shell integration code
-launchpad dev:shellcode
-
-# Output environment setup for dev environment
-launchpad dev:dump [directory] [options]
-```
-
-### Utility Commands
-
-```bash
-# Show version
-launchpad version
-
-# Show help
-launchpad help
+// Create isolated stubs
+await createBinaryStubs(
+  '/path/to/package',
+  envDir,
+  'nodejs.org',
+  'node',
+  { NODE_PATH: '/custom/path' },
+  { NODE_ENV: 'development' }
+)
 ```
 
 ## Error Handling
 
-Launchpad functions typically throw errors with descriptive messages:
+All async functions throw errors that should be handled appropriately:
 
 ```typescript
 try {
-  await install(['node'], '/usr/local')
+  await install(['nonexistent-package'], '/usr/local')
 }
 catch (error) {
-  console.error(`Installation failed: ${error.message}`)
+  if (error instanceof PackageNotFoundError) {
+    console.error('Package not found:', error.packageName)
+  }
+  else if (error instanceof PermissionError) {
+    console.error('Permission denied:', error.path)
+  }
+  else {
+    console.error('Unexpected error:', error.message)
+  }
 }
 ```
 
-## Command Options
+## Events and Hooks
 
-Most commands support these common options:
-
-- `--verbose`: Enable verbose logging
-- `--path <path>`: Specify custom installation path
-- `--force`: Force reinstall/removal even if already installed/not found
-- `--dry-run`: Preview changes without actually performing them
-- `--no-auto-path`: Do not automatically add to PATH
-
-Some commands have specific options:
-
-### Installation Commands
-- `--sudo`: Use sudo for installation (install command)
-- `--no-fallback`: Do not fallback to system package managers (smart-install)
-- `--version <version>`: Install specific version (bun command)
-
-### Removal Commands
-- `--keep-packages`: Keep installed packages, only remove shell integration (uninstall)
-- `--keep-shell-integration`: Keep shell integration, only remove packages (uninstall)
-
-### Bootstrap Commands
-- `--skip-pkgx`: Skip pkgx installation
-- `--skip-bun`: Skip bun installation
-- `--skip-shell-integration`: Skip shell integration setup
-
-### Dev Commands
-- `--quiet`: Suppress package output (dev:dump command)
-- `--dryrun`: Show packages without generating script (dev:dump command)
-
-## Environment Variables
-
-Launchpad respects several environment variables:
-
-- `SUDO_PASSWORD`: Password for sudo operations
-- `PKGX_DIR`: Custom pkgx directory
-- `PKGX_PANTRY_DIR`: Custom pkgx pantry directory
-- `PKGX_DIST_URL`: Custom pkgx distribution URL
-- `LAUNCHPAD_VERBOSE`: Enable verbose logging
-- `LAUNCHPAD_INSTALL_PATH`: Set installation path
-- `LAUNCHPAD_SHIM_PATH`: Set shim path
-- `LAUNCHPAD_AUTO_SUDO`: Enable/disable auto sudo
-
-### Bootstrap Module
+Launchpad provides hooks for monitoring operations:
 
 ```typescript
-/**
- * Bootstrap complete Launchpad setup
- * @param options Bootstrap options
- * @returns Promise resolving to bootstrap results
- */
-async function runBootstrap(options: BootstrapOptions): Promise<BootstrapResult>
+import { on } from 'launchpad/events'
 
-interface BootstrapOptions {
-  verbose?: boolean
-  force?: boolean
-  autoPath?: boolean
-  skipPkgx?: boolean
-  skipBun?: boolean
-  skipShellIntegration?: boolean
-  path?: string
-}
+// Listen for package installation events
+on('package:install:start', (packageName) => {
+  console.log(`Installing ${packageName}...`)
+})
 
-interface BootstrapResult {
-  successful: BootstrapItem[]
-  failed: BootstrapItem[]
-  skipped: BootstrapItem[]
-}
+on('package:install:complete', (packageName, files) => {
+  console.log(`Installed ${packageName} with ${files.length} files`)
+})
 
-interface BootstrapItem {
-  tool: string
-  status: 'success' | 'failed' | 'skipped' | 'already-installed'
-  message?: string
-}
+// Listen for environment events
+on('env:activate', (projectPath) => {
+  console.log(`Environment activated for ${projectPath}`)
+})
+
+on('env:deactivate', (projectPath) => {
+  console.log(`Environment deactivated for ${projectPath}`)
+})
 ```

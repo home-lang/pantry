@@ -24,10 +24,6 @@ const config: LaunchpadConfig = {
   // (default: /usr/local if writable, ~/.local otherwise)
   installationPath: '/usr/local',
 
-  // Password for sudo operations, loaded from .env SUDO_PASSWORD
-  // (default: '')
-  sudoPassword: '',
-
   // Whether to enable dev-aware installations (default: true)
   devAware: true,
 
@@ -97,27 +93,12 @@ JavaScript format (`.launchpadrc`):
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `autoSudo` | boolean | `true` | Automatically use sudo when needed |
-| `sudoPassword` | string | `''` | Password for sudo operations |
 
 ### Path Management
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `autoAddToPath` | boolean | `true` | Automatically add shim directories to PATH |
-
-### Bootstrap Configuration
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `firstTimeSetup` | boolean | `true` | Show first-time setup prompts |
-| `autoBootstrap` | boolean | `true` | Offer automatic bootstrap for missing tools |
-
-### Removal Configuration
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `confirmRemoval` | boolean | `true` | Require confirmation before removing packages |
-| `removeOrphans` | boolean | `false` | Automatically remove orphaned dependencies |
 
 ## Environment Variables
 
@@ -129,11 +110,7 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_INSTALL_PATH` | Set installation path |
 | `LAUNCHPAD_SHIM_PATH` | Set shim path |
 | `LAUNCHPAD_AUTO_SUDO` | Enable/disable auto sudo |
-| `SUDO_PASSWORD` | Password for sudo operations |
 | `LAUNCHPAD_AUTO_ADD_PATH` | Enable/disable auto PATH modification |
-| `LAUNCHPAD_FIRST_TIME_SETUP` | Enable/disable first-time setup prompts |
-| `LAUNCHPAD_AUTO_BOOTSTRAP` | Enable/disable automatic bootstrap offers |
-| `LAUNCHPAD_CONFIRM_REMOVAL` | Enable/disable removal confirmation prompts |
 
 Example:
 
@@ -169,4 +146,196 @@ launchpad uninstall --force
 
 # Keep specific components during uninstall
 launchpad uninstall --keep-shell-integration
+
+# Generate environment script with options
+launchpad dev:dump --verbose --dryrun
+
+# Quiet installation
+launchpad install --quiet node@22
+```
+
+## Development Environment Configuration
+
+### Project-Level Configuration
+
+Create a `dependencies.yaml` file in your project root:
+
+```yaml
+dependencies:
+  - node@22
+  - python@3.12
+  - gnu.org/wget@1.21
+
+env:
+  NODE_ENV: development
+  API_URL: https://api.example.com
+  DATABASE_URL: postgresql://localhost/myapp
+```
+
+### Global Environment Configuration
+
+Set global environment defaults in your Launchpad config:
+
+```ts
+const config: LaunchpadConfig = {
+  // Global environment variables for all projects
+  globalEnv: {
+    EDITOR: 'code',
+    BROWSER: 'chrome',
+  },
+
+  // Default packages to include in all environments
+  defaultPackages: [
+    'git',
+    'curl.se',
+  ],
+}
+```
+
+### Environment Isolation Settings
+
+Configure how project environments are isolated:
+
+```ts
+const config: LaunchpadConfig = {
+  // Base directory for project environments
+  envBaseDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs'),
+
+  // Whether to automatically activate environments when entering directories
+  autoActivateEnv: true,
+
+  // Whether to show activation/deactivation messages
+  showEnvMessages: true,
+}
+```
+
+## Advanced Configuration
+
+### Custom Binary Stubs
+
+Configure how binary stubs are created:
+
+```ts
+const config: LaunchpadConfig = {
+  // Template for binary stub scripts
+  stubTemplate: `#!/bin/sh
+# Custom stub template
+export CUSTOM_VAR=value
+exec "{binary}" "$@"
+`,
+
+  // Whether to create isolated stubs (recommended)
+  isolatedStubs: true,
+}
+```
+
+### Package Resolution
+
+Configure package resolution behavior:
+
+```ts
+const config: LaunchpadConfig = {
+  // Custom package registry URLs
+  registries: [
+    'https://pkgx.sh/packages',
+    'https://custom-registry.com',
+  ],
+
+  // Package name aliases
+  aliases: {
+    node: 'nodejs.org',
+    python: 'python.org',
+  },
+}
+```
+
+### Installation Paths
+
+Configure different installation paths for different types of packages:
+
+```ts
+const config: LaunchpadConfig = {
+  // Runtime-specific installation paths
+  runtimePaths: {
+    'nodejs.org': '/opt/node',
+    'python.org': '/opt/python',
+  },
+
+  // System vs user installation preference
+  preferUserInstall: true,
+}
+```
+
+## Platform-Specific Configuration
+
+### macOS Configuration
+
+```ts
+const config: LaunchpadConfig = {
+  // Use Homebrew paths when available
+  useHomebrewPaths: true,
+
+  // macOS-specific binary directories
+  macBinaryPaths: [
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+  ],
+}
+```
+
+### Linux Configuration
+
+```ts
+const config: LaunchpadConfig = {
+  // Linux-specific paths
+  linuxBinaryPaths: [
+    '/usr/local/bin',
+    '/usr/bin',
+    '/opt/bin',
+  ],
+
+  // Whether to use system package manager as fallback
+  useSystemPackageManager: true,
+}
+```
+
+### Windows Configuration
+
+```ts
+const config: LaunchpadConfig = {
+  // Windows-specific paths
+  windowsBinaryPaths: [
+    'C:\\Program Files\\Launchpad\\bin',
+    '%USERPROFILE%\\.local\\bin',
+  ],
+
+  // Whether to add .exe extension automatically
+  autoAddExeExtension: true,
+}
+```
+
+## Troubleshooting Configuration
+
+### Debugging Configuration
+
+Enable configuration debugging:
+
+```bash
+LAUNCHPAD_DEBUG_CONFIG=true launchpad version
+```
+
+### Configuration Validation
+
+Validate your configuration:
+
+```bash
+launchpad config:validate
+```
+
+### Configuration Location
+
+Find where Launchpad is loading configuration from:
+
+```bash
+launchpad config:show
 ```
