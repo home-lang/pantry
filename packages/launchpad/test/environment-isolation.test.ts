@@ -160,8 +160,10 @@ describe('Environment Isolation', () => {
         const hashB = Buffer.from(fs.realpathSync(projectB)).toString('base64').replace(/[/+=]/g, '_')
 
         // Check that environment paths are properly set up and different
-        expect(resultA.stdout).toContain(`/Users/chrisbreuer/.local/share/launchpad/envs/${hashA}/`)
-        expect(resultB.stdout).toContain(`/Users/chrisbreuer/.local/share/launchpad/envs/${hashB}/`)
+        expect(resultA.stdout).toContain(`/Users/chrisbreuer/.local/share/launchpad/envs/${hashA}/bin`)
+        expect(resultA.stdout).toContain(`/Users/chrisbreuer/.local/share/launchpad/envs/${hashA}/sbin`)
+        expect(resultB.stdout).toContain(`/Users/chrisbreuer/.local/share/launchpad/envs/${hashB}/bin`)
+        expect(resultB.stdout).toContain(`/Users/chrisbreuer/.local/share/launchpad/envs/${hashB}/sbin`)
 
         // Each should have different environment paths
         expect(hashA).not.toBe(hashB)
