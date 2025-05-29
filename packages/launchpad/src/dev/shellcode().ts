@@ -3,9 +3,33 @@ import { homedir, platform } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 
-export default function shellcode(): string {
-  // find self
+/**
+ * Supported dependency file names in order of preference
+ */
+const DEPENDENCY_FILES = [
+  'dependencies.yaml',
+  'dependencies.yml',
+  'pkgx.yaml',
+  'pkgx.yml',
+  '.pkgx.yaml',
+  '.pkgx.yml',
+  '.launchpad.yaml',
+  'launchpad.yaml',
+  '.launchpad.yml',
+  'launchpad.yml',
+  'deps.yml',
+  'deps.yaml',
+  '.deps.yml',
+  '.deps.yaml',
+] as const
+
+/**
+ * Find the launchpad/dev command in PATH or local directories
+ */
+function findDevCommand(): string {
   const pathDirs = process.env.PATH?.split(':') || []
+
+  // Try to find launchpad or dev in PATH
   let dev_cmd = pathDirs
     .map(dir => join(dir, 'launchpad'))
     .find(cmd => existsSync(cmd)) || pathDirs
@@ -14,18 +38,16 @@ export default function shellcode(): string {
 
   // If no global installation found, try to find the local script
   if (!dev_cmd) {
-    // Check if we're in the launchpad project directory
     const currentDir = process.cwd()
-    const localLaunchpad = join(currentDir, 'launchpad')
-    const parentLaunchpad = join(currentDir, '..', 'launchpad')
+    const candidates = [
+      join(currentDir, 'launchpad'),
+      join(currentDir, '..', 'launchpad'),
+      join(currentDir, 'packages', 'launchpad', 'bin', 'cli.ts'),
+    ]
 
-    if (existsSync(localLaunchpad)) {
-      dev_cmd = localLaunchpad
-    }
-    else if (existsSync(parentLaunchpad)) {
-      dev_cmd = parentLaunchpad
-    }
-    else {
+    dev_cmd = candidates.find(cmd => existsSync(cmd))
+
+    if (!dev_cmd) {
       throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
     }
   }
@@ -34,16 +56,20 @@ export default function shellcode(): string {
   if (dev_cmd && (dev_cmd.startsWith('./') || dev_cmd === 'launchpad')) {
     const currentDir = process.cwd()
     if (dev_cmd === 'launchpad') {
-      // This means it was found in PATH via current directory
       dev_cmd = join(currentDir, 'launchpad')
     }
     else {
-      // Convert relative path to absolute
       dev_cmd = join(currentDir, dev_cmd.replace('./', ''))
     }
   }
 
+  return dev_cmd
+}
+
+export default function shellcode(): string {
+  const dev_cmd = findDevCommand()
   const dataDirPath = datadir()
+  const dependencyFilesList = DEPENDENCY_FILES.join(' ')
 
   return `
 # Global variable to prevent infinite loops
@@ -66,8 +92,8 @@ _pkgx_chpwd_hook() {
   local current_env_dir=""
   if type _pkgx_dev_try_bye >/dev/null 2>&1; then
     was_active=true
-    # Extract the current environment directory from the function
-    current_env_dir=$(declare -f _pkgx_dev_try_bye | grep -o 'PWD#"[^"]*"' | head -1 | cut -d'"' -f2)
+    # Extract the current environment directory from the function case statement
+    current_env_dir=$(declare -f _pkgx_dev_try_bye | grep -o '"/[^"]*"' | head -1 | sed 's/"//g')
   fi
 
   # Look for activation file in current directory or parent directories
@@ -85,54 +111,53 @@ _pkgx_chpwd_hook() {
 
   # Find dependency files in current directory
   local deps_file=""
-  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml deps.yaml .deps.yml .deps.yaml; do
+  for file in ${dependencyFilesList}; do
     if [ -f "$PWD/$file" ]; then
       deps_file="$PWD/$file"
       break
     fi
   done
 
-  # If we were active but moved to a different directory with different dependencies, deactivate first
-  if [ "$was_active" = true ] && [ -n "$current_env_dir" ] && [ "$current_env_dir" != "$PWD" ]; then
-    _pkgx_dev_try_bye
-    was_active=false
+  # DEACTIVATION LOGIC: Check if we should deactivate the current environment
+  if [ "$was_active" = true ] && [ -n "$current_env_dir" ]; then
+    # Deactivate if we're not in the project directory or any of its subdirectories
+    case "$PWD" in
+      "$current_env_dir"|"$current_env_dir/"*)
+        # Still in the same project directory tree, keep active
+        ;;
+      *)
+        # Outside the project directory tree, deactivate
+        _pkgx_dev_try_bye
+        was_active=false
+        ;;
+    esac
   fi
 
-  # If we were active but no longer in an activation directory, deactivate
-  if [ "$was_active" = true ] && [ "$found_activation" = false ]; then
-    _pkgx_dev_try_bye
-    was_active=false
-  fi
-
-  # Ensure ~/.local/bin exists and is in PATH
-  mkdir -p "$HOME/.local/bin"
-  if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
-
-  # If we found a dependency file, check if activation is needed
-  if [ -n "$deps_file" ]; then
-    # Only create activation if not already found
-    if [ "$found_activation" = false ]; then
-      mkdir -p "${dataDirPath}$PWD"
-      touch "${dataDirPath}$PWD/dev.pkgx.activated"
-      found_activation=true
-      activation_dir="$PWD"
+  # ACTIVATION LOGIC: Only run if we're not already active
+  if [ "$was_active" = false ]; then
+    # Ensure ~/.local/bin exists and is in PATH
+    mkdir -p "$HOME/.local/bin"
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+      export PATH="$HOME/.local/bin:$PATH"
     fi
 
-    # Check if environment is already properly activated for this directory
-    if [ "$was_active" = true ] && [ "$current_env_dir" = "$PWD" ]; then
-      # Already active for the correct directory, nothing to do
-      return 0
-    fi
+    # If we found a dependency file, check if activation is needed
+    if [ -n "$deps_file" ]; then
+      # Only create activation if not already found
+      if [ "$found_activation" = false ]; then
+        mkdir -p "${dataDirPath}$PWD"
+        touch "${dataDirPath}$PWD/dev.pkgx.activated"
+        found_activation=true
+        activation_dir="$PWD"
+      fi
 
-    # Force activation if we weren't active before or if we switched directories
-    if [ "$was_active" = false ]; then
-      # Check if packages are already installed (cache check)
-      # Use a simple hash based on the directory path
+      # Force activation since we weren't active before
+      # Generate project hash more reliably - use full hash to prevent collisions
       local project_hash=""
-      if command -v openssl >/dev/null 2>&1; then
-        project_hash=$(echo -n "$PWD" | openssl base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      if command -v python3 >/dev/null 2>&1; then
+        project_hash=$(echo -n "$PWD" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
+      elif command -v openssl >/dev/null 2>&1; then
+        project_hash=$(echo -n "$PWD" | openssl md5 2>/dev/null | cut -d' ' -f2)
       elif command -v base64 >/dev/null 2>&1; then
         project_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
       fi
@@ -156,8 +181,11 @@ _pkgx_chpwd_hook() {
         if [[ "${dev_cmd}" == *"launchpad"* ]]; then
           # Try to run launchpad dev:dump with proper error handling
           local launchpad_output=""
+          local exit_code=0
           # Capture both stdout and stderr, check exit code
-          if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
+          launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
+
+          if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
             # If launchpad succeeds, extract just the shell script part using system sed
             local shell_script=""
             shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
@@ -169,7 +197,7 @@ _pkgx_chpwd_hook() {
             fi
           else
             # If launchpad fails or produces no output, use pkgx fallback
-            echo "⚠️  Launchpad unavailable, using pkgx fallback..." >&2
+            echo "⚠️  Launchpad unavailable (exit code: $exit_code), using pkgx fallback..." >&2
             eval "$(_pkgx_activate_with_pkgx "$PWD")"
           fi
         else
@@ -188,24 +216,32 @@ _launchpad_fast_activate() {
   local cwd="$1"
   local env_dir="$2"
 
-  # Clean up PATH by removing any existing launchpad environment paths
-  CLEANED_PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/.local/share/launchpad/envs/' | tr '\n' ':' | sed 's/:$//')"
+  # Store original PATH before any modifications (critical for proper restoration)
+  if [ -z "$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+    export _LAUNCHPAD_ORIGINAL_PATH="$PATH"
+  fi
 
-  # Store the cleaned PATH as original
-  export _LAUNCHPAD_ORIGINAL_PATH="$CLEANED_PATH"
-  export PATH="$env_dir/bin:$env_dir/sbin:$PATH"
+  # Set up project-specific PATH
+  export PATH="$env_dir/bin:$env_dir/sbin:$_LAUNCHPAD_ORIGINAL_PATH"
 
-  # Create the deactivation function
+  # Create the deactivation function with proper directory checking
   eval "_pkgx_dev_try_bye() {
-    local suffix=\"\\\${PWD#\\\"$cwd\\\"}\"
-    [ \\\"\\\$PWD\\\" = \\\"$cwd\\\$suffix\\\" ] && return 1
-    echo -e \\\"\\\\x1b[31mdev environment deactivated\\\\x1b[0m\\\" >&2
-    # Restore original PATH to properly isolate the environment
-    if [ -n \\\"\\\$_LAUNCHPAD_ORIGINAL_PATH\\\" ]; then
-      export PATH=\\\"\\\$_LAUNCHPAD_ORIGINAL_PATH\\\"
-      unset _LAUNCHPAD_ORIGINAL_PATH
-    fi
-    unset -f _pkgx_dev_try_bye
+    # Check if we're still in the project directory or a subdirectory
+    case \"\$PWD\" in
+      \"$cwd\"|\"$cwd/\"*)
+        # Still in project directory, don't deactivate
+        return 1
+        ;;
+      *)
+        echo -e \"\\x1b[31mdev environment deactivated\\x1b[0m\" >&2
+        # Restore original PATH to properly isolate the environment
+        if [ -n \"\$_LAUNCHPAD_ORIGINAL_PATH\" ]; then
+          export PATH=\"\$_LAUNCHPAD_ORIGINAL_PATH\"
+          unset _LAUNCHPAD_ORIGINAL_PATH
+        fi
+        unset -f _pkgx_dev_try_bye
+        ;;
+    esac
   }"
 
   echo "✅ Environment activated for $cwd" >&2
@@ -217,7 +253,7 @@ _pkgx_activate_with_pkgx() {
 
   # Check for any supported dependency file
   local deps_file=""
-  for file in dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml .pkgx.yaml .pkgx.yml .launchpad.yaml launchpad.yaml .launchpad.yml launchpad.yml deps.yml deps.yaml .deps.yml .deps.yaml; do
+  for file in ${dependencyFilesList}; do
     if [ -f "$dir/$file" ]; then
       deps_file="$dir/$file"
       break
@@ -237,9 +273,10 @@ _pkgx_activate_with_pkgx() {
   # Call pkgx env to get environment variables for the packages
   # Use a subshell to avoid changing current directory permanently
   local env_output
-  env_output=$(cd "$dir" && pkgx env 2>/dev/null)
+  local exit_code=0
+  env_output=$(cd "$dir" && pkgx env 2>/dev/null) || exit_code=$?
 
-  if [ $? -eq 0 ]; then
+  if [ $exit_code -eq 0 ] && [ -n "$env_output" ]; then
     # Setup output
     echo "# Environment setup (fallback mode)"
     echo "eval \\"_pkgx_dev_try_bye() {"
@@ -257,21 +294,24 @@ _pkgx_activate_with_pkgx() {
     echo "set -a"
 
     # Filter environment variables using system tools when possible
-    echo "$env_output" | /usr/bin/grep -v '^#' 2>/dev/null | /usr/bin/grep -v '^$' 2>/dev/null | \\
-      /usr/bin/grep -v 'LS_COLORS=' 2>/dev/null | /usr/bin/grep -v 'VSCODE' 2>/dev/null | /usr/bin/grep -v 'CURSOR' 2>/dev/null | \\
-      /usr/bin/grep -v 'JetBrains' 2>/dev/null | /usr/bin/grep -v '(Plugin)' 2>/dev/null | \\
-      /usr/bin/sed 's/"/\\\\"/g' 2>/dev/null || \\
+    if command -v /usr/bin/grep >/dev/null 2>&1 && command -v /usr/bin/sed >/dev/null 2>&1; then
+      echo "$env_output" | /usr/bin/grep -v '^#' 2>/dev/null | /usr/bin/grep -v '^$' 2>/dev/null | \\
+        /usr/bin/grep -v 'LS_COLORS=' 2>/dev/null | /usr/bin/grep -v 'VSCODE' 2>/dev/null | /usr/bin/grep -v 'CURSOR' 2>/dev/null | \\
+        /usr/bin/grep -v 'JetBrains' 2>/dev/null | /usr/bin/grep -v '(Plugin)' 2>/dev/null | \\
+        /usr/bin/sed 's/"/\\\\"/g' 2>/dev/null
+    else
       echo "$env_output" | grep -v '^#' | grep -v '^$' | \\
-      grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \\
-      grep -v 'JetBrains' | grep -v '(Plugin)' | \\
-      sed 's/"/\\\\"/g'
+        grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \\
+        grep -v 'JetBrains' | grep -v '(Plugin)' | \\
+        sed 's/"/\\\\"/g'
+    fi
 
     echo "set +a"
     echo "echo '✅ Dev environment activated via pkgx (fallback)' >&2"
 
     return 0
   else
-    echo "⚠️  Failed to activate environment with pkgx" >&2
+    echo "⚠️  Failed to activate environment with pkgx (exit code: $exit_code)" >&2
     return 1
   fi
 }
@@ -280,10 +320,10 @@ dev() {
   case "$1" in
   off)
     if type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
-      dir="$PWD"
+      local dir="$PWD"
       while [ "$dir" != / -a "$dir" != . ]; do
         if [ -f "${dataDirPath}/$dir/dev.pkgx.activated" ]; then
-          rm "${dataDirPath}/$dir/dev.pkgx.activated"
+          rm -f "${dataDirPath}/$dir/dev.pkgx.activated"
           break
         fi
         dir="$(dirname "$dir")"
@@ -301,8 +341,11 @@ dev() {
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
         # Try to run launchpad dev:dump with proper error handling
         local launchpad_output=""
+        local exit_code=0
         # Capture both stdout and stderr, check exit code
-        if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
+        launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
+
+        if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
           # If launchpad succeeds, extract just the shell script part using system sed
           local shell_script=""
           shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
@@ -314,7 +357,7 @@ dev() {
           fi
         else
           # If launchpad fails or produces no output, use pkgx fallback
-          echo "⚠️  Launchpad unavailable, using pkgx fallback..." >&2
+          echo "⚠️  Launchpad unavailable (exit code: $exit_code), using pkgx fallback..." >&2
           eval "$(_pkgx_activate_with_pkgx "$PWD")"
         fi
       else

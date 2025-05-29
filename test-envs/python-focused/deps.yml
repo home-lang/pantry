@@ -1,0 +1,7 @@
+dependencies:
+  # Python with correct version format
+  python.org: ~3.12
+
+  # Database tools with correct names
+  postgresql.org: ~16.1
+  redis.io: ~7.2

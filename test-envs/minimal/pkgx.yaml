@@ -1,0 +1,3 @@
+dependencies:
+  # Simple ripgrep installation
+  ripgrep: ^14.1

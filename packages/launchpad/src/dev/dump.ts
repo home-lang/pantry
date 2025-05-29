@@ -30,7 +30,7 @@ function getPkgCommand(pkgName: string): string {
 }
 
 // Install packages like pkgm does - with hard links and proper directory structure
-async function installPackagesPkgmStyle(packages: Array<{ project: string, version: string, command: string }>, installPrefix: string): Promise<void> {
+async function installPackagesPkgmStyle(packages: Array<{ project: string, version: string, command: string }>, installPrefix: string): Promise<{ successful: string[], failed: Array<{ project: string, error: string, suggestion?: string }> }> {
   const pkgx = await findPkgx()
   if (!pkgx) {
     throw new Error('pkgx not found in PATH')
@@ -42,6 +42,30 @@ async function installPackagesPkgmStyle(packages: Array<{ project: string, versi
   await fs.promises.mkdir(pkgsDir, { recursive: true })
   await fs.promises.mkdir(binDir, { recursive: true })
 
+  const successful: string[] = []
+  const failed: Array<{ project: string, error: string, suggestion?: string }> = []
+
+  // Common package name corrections
+  const packageSuggestions: Record<string, string> = {
+    'wget.com': 'gnu.org/wget',
+    'git.com': 'git-scm.org',
+    'npm.com': 'npmjs.com',
+    'yarn.com': 'yarnpkg.com',
+    'docker.com': 'docker.io',
+    'postgres.org': 'postgresql.org',
+    'mysql.com': 'mysql.org',
+    'redis.com': 'redis.io',
+    'nginx.com': 'nginx.org',
+    'apache.com': 'apache.org',
+    'golang.org': 'go.dev',
+    'rust.org': 'rust-lang.org',
+    'ruby.org': 'ruby-lang.org',
+    'rails.com': 'rubyonrails.org',
+    'vim.com': 'vim.org',
+    'neovim.com': 'neovim.io',
+    'vscode.com': 'code.visualstudio.com',
+  }
+
   for (const pkg of packages) {
     try {
       console.error(`🔄 Installing ${pkg.project}@${pkg.version} (pkgm-style)...`)
@@ -51,13 +75,26 @@ async function installPackagesPkgmStyle(packages: Array<{ project: string, versi
       const queryResult = await queryPkgx(pkgx, [pkgSpec])
 
       if (!queryResult.pkgs || queryResult.pkgs.length === 0) {
-        console.error(`❌ Failed to resolve ${pkg.project}`)
+        const suggestion = packageSuggestions[pkg.project]
+        const errorMsg = `Failed to resolve ${pkg.project}`
+        failed.push({
+          project: pkg.project,
+          error: errorMsg,
+          suggestion,
+        })
+
+        console.error(`❌ ${errorMsg}`)
         continue
       }
 
       const pkgInfo = queryResult.pkgs.find((p: { project: string, version: string, path: string }) => p.project === pkg.project)
       if (!pkgInfo) {
-        console.error(`❌ Package ${pkg.project} not found in query result`)
+        const errorMsg = `Package ${pkg.project} not found in query result`
+        failed.push({
+          project: pkg.project,
+          error: errorMsg,
+        })
+        console.error(`❌ ${errorMsg}`)
         continue
       }
 
@@ -105,17 +142,34 @@ async function installPackagesPkgmStyle(packages: Array<{ project: string, versi
         await createBinaryStubs(pkgDir, installPrefix, pkg.project, pkg.command, queryResult.runtime_env[pkg.project] || {}, queryResult.env || {})
       }
       catch (stubError) {
-        console.error(`❌ Failed to create binary stubs for ${pkg.project}:`, stubError instanceof Error ? stubError.message : String(stubError))
+        const errorMsg = `Failed to create binary stubs for ${pkg.project}: ${stubError instanceof Error ? stubError.message : String(stubError)}`
+        failed.push({
+          project: pkg.project,
+          error: errorMsg,
+        })
+        console.error(`❌ ${errorMsg}`)
         // Don't throw here - continue with other packages
         continue
       }
 
+      successful.push(`${pkg.project}@${pkgInfo.version}`)
       console.error(`✅ Installed ${pkg.project}@${pkgInfo.version}`)
     }
     catch (error) {
-      console.error(`❌ Failed to install ${pkg.project}:`, error instanceof Error ? error.message : String(error))
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      const suggestion = packageSuggestions[pkg.project]
+
+      failed.push({
+        project: pkg.project,
+        error: errorMsg,
+        suggestion,
+      })
+
+      console.error(`❌ Failed to install ${pkg.project}: ${errorMsg}`)
     }
   }
+
+  return { successful, failed }
 }
 
 async function findPkgx(): Promise<string | null> {
@@ -296,10 +350,46 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
 
       const stubPath = path.join(installPrefix, binDirName, entry)
 
-      // Create environment setup
+      // Create isolated environment setup that doesn't pollute global environment
       let stubContent = '#!/bin/sh\n'
+      stubContent += '# Project-specific binary stub - environment is isolated to this execution\n\n'
 
-      // Add pkgx environment variables first
+      // Store current environment variables to restore after execution
+      const envVarsToSet = new Set<string>()
+
+      // Collect all environment variables we'll be setting
+      for (const key of Object.keys(env)) {
+        envVarsToSet.add(key)
+      }
+      for (const key of Object.keys(runtimeEnv)) {
+        envVarsToSet.add(key)
+      }
+
+      // Store original values before setting new ones
+      stubContent += '# Store original environment variables for restoration\n'
+      for (const key of envVarsToSet) {
+        stubContent += `_ORIG_${key}="\$${key}"\n`
+      }
+      stubContent += '\n'
+
+      // Set up cleanup function to restore environment
+      stubContent += '# Cleanup function to restore original environment\n'
+      stubContent += '_cleanup_env() {\n'
+      for (const key of envVarsToSet) {
+        stubContent += `  if [ -n "\$_ORIG_${key}" ]; then\n`
+        stubContent += `    export ${key}="\$_ORIG_${key}"\n`
+        stubContent += `  else\n`
+        stubContent += `    unset ${key}\n`
+        stubContent += `  fi\n`
+      }
+      stubContent += '}\n\n'
+
+      // Set up trap to ensure cleanup happens on exit
+      stubContent += '# Ensure cleanup happens on exit\n'
+      stubContent += 'trap _cleanup_env EXIT\n\n'
+
+      // Add pkgx environment variables
+      stubContent += '# Set pkgx environment variables\n'
       for (const [key, value] of Object.entries(env)) {
         if (Array.isArray(value)) {
           // Join arrays with colons for PATH-like variables
@@ -312,32 +402,21 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
           }
         }
         else {
-          stubContent += `export ${key}="${value}"\n`
+          stubContent += `export ${key}="${shell_escape(value)}"\n`
         }
       }
 
       // Add runtime environment variables for the specific package
+      stubContent += '\n# Set package-specific runtime environment variables\n'
       for (const [key, value] of Object.entries(runtimeEnv)) {
-        stubContent += `export ${key}="${value}"\n`
+        stubContent += `export ${key}="${shell_escape(value)}"\n`
       }
 
       stubContent += '\n'
 
-      // Add the actual binary execution with error handling
-      stubContent += `# Execute the binary with error handling\n`
-      stubContent += `# Try the pkgx-installed binary first\n`
-      stubContent += `"${srcBinary}" "$@"\n`
-      stubContent += `exit_code=$?\n`
-      stubContent += `if [ $exit_code -ne 0 ]; then\n`
-      stubContent += `  # If pkgx binary fails, try system fallback\n`
-      stubContent += `  if command -v "${entry}" >/dev/null 2>&1 && [ "$(command -v "${entry}")" != "${stubPath}" ]; then\n`
-      stubContent += `    echo "⚠️  pkgx ${entry} failed, using system version..." >&2\n`
-      stubContent += `    exec "$(command -v "${entry}")" "$@"\n`
-      stubContent += `  else\n`
-      stubContent += `    echo "❌ ${entry} failed and no system fallback available" >&2\n`
-      stubContent += `    exit $exit_code\n`
-      stubContent += `  fi\n`
-      stubContent += `fi\n`
+      // Add the actual binary execution with proper error handling
+      stubContent += `# Execute the binary with isolated environment\n`
+      stubContent += `exec "${srcBinary}" "$@"\n`
 
       // Remove existing file/symlink (this is crucial to overwrite symlinks from symlinkPackage)
       if (fs.existsSync(stubPath)) {
@@ -360,7 +439,7 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
       try {
         await fs.promises.writeFile(stubPath, stubContent)
         await fs.promises.chmod(stubPath, 0o755)
-        console.error(`✅ Created shell script stub: ${stubPath} -> ${srcBinary}`)
+        console.error(`✅ Created isolated stub: ${stubPath} -> ${srcBinary}`)
       }
       catch (error) {
         console.error(`❌ Failed to create stub at ${stubPath}:`, error instanceof Error ? error.message : String(error))
@@ -401,7 +480,7 @@ export default async function (
   }
 
   // Use project-specific installation prefix for proper isolation
-  // Create a hash from the full path to ensure uniqueness
+  // Create a hash from the full path to ensure uniqueness - use full hash to prevent collisions
   const projectHash = Buffer.from(cwd).toString('base64').replace(/[/+=]/g, '_')
   const installPrefix = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs', projectHash)
 
@@ -419,10 +498,45 @@ export default async function (
 
   try {
     // Install packages to project-specific directory
-    await installPackagesPkgmStyle(packages, installPrefix)
+    const { successful, failed } = await installPackagesPkgmStyle(packages, installPrefix)
 
     if (!opts.quiet) {
-      console.error('✅ Packages installed successfully!')
+      // Report installation results
+      if (successful.length > 0 && failed.length === 0) {
+        console.error('✅ All packages installed successfully!')
+      }
+      else if (successful.length > 0 && failed.length > 0) {
+        console.error(`⚠️  Partial installation: ${successful.length} succeeded, ${failed.length} failed`)
+        console.error('✅ Successfully installed:')
+        for (const pkg of successful) {
+          console.error(`  ✅ ${pkg}`)
+        }
+        console.error('')
+        console.error('❌ Failed to install:')
+        for (const { project, error, suggestion } of failed) {
+          console.error(`  ❌ ${project}: ${error}`)
+          if (suggestion) {
+            console.error(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
+          }
+        }
+      }
+      else if (failed.length > 0) {
+        console.error('❌ All package installations failed!')
+        for (const { project, error, suggestion } of failed) {
+          console.error(`  ❌ ${project}: ${error}`)
+          if (suggestion) {
+            console.error(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
+          }
+        }
+      }
+    }
+
+    // Only proceed with environment setup if at least some packages were installed
+    if (successful.length === 0) {
+      console.error('')
+      console.error('❌ No packages were successfully installed. Environment setup aborted.')
+      console.error('🔧 Please fix the package specifications in your dependencies file and try again.')
+      process.exit(1)
     }
   }
   catch (error) {
@@ -442,37 +556,77 @@ export default async function (
   const projectBinDir = path.join(installPrefix, 'bin')
   const projectSbinDir = path.join(installPrefix, 'sbin')
 
-  // Generate script output for shell integration
+  // Generate script output for shell integration with proper isolation
   // eslint-disable-next-line no-console
   console.log(`
-  # Project-specific environment for ${cwd}
-  # This creates an isolated environment that gets properly deactivated
+# Project-specific environment for ${cwd}
+# This creates an isolated environment that gets properly deactivated
 
-  # Clean up PATH by removing any existing launchpad environment paths
-  CLEANED_PATH="$(echo "$PATH" | tr ':' '\\n' | grep -v '/.local/share/launchpad/envs/' | tr '\\n' ':' | sed 's/:$//')"
+# Store original PATH before any modifications (critical for proper restoration)
+if [ -z "$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+  export _LAUNCHPAD_ORIGINAL_PATH="$PATH"
+fi
 
-  # Store the cleaned PATH as original
-  export _LAUNCHPAD_ORIGINAL_PATH="$CLEANED_PATH"
-  export PATH="${projectBinDir}:${projectSbinDir}:$PATH"
+# Store original environment variables for restoration
+_LAUNCHPAD_ORIGINAL_ENV=""${Object.keys(snuff.env).map(key => `
+if [ -n "$${key}" ]; then
+  _LAUNCHPAD_ORIGINAL_ENV="$_LAUNCHPAD_ORIGINAL_ENV ${key}=$${key}"
+else
+  _LAUNCHPAD_ORIGINAL_ENV="$_LAUNCHPAD_ORIGINAL_ENV ${key}=__UNSET__"
+fi`).join('')}
 
-  eval "_pkgx_dev_try_bye() {
-    suffix=\\"\\\${PWD#\\"${cwd}\\"}\\"
-    [ \\"\\$PWD\\" = \\"${cwd}\\$suffix\\" ] && return 1
-    echo -e \\"\\033[31mdev environment deactivated\\033[0m\\" >&2
-    # Restore original PATH to properly isolate the environment
-    if [ -n \\"\$_LAUNCHPAD_ORIGINAL_PATH\\" ]; then
-      export PATH=\\"\$_LAUNCHPAD_ORIGINAL_PATH\\"
-      unset _LAUNCHPAD_ORIGINAL_PATH
-    fi
-    unset -f _pkgx_dev_try_bye
-  }"
+# Set up project-specific PATH
+export PATH="${projectBinDir}:${projectSbinDir}:$_LAUNCHPAD_ORIGINAL_PATH"
 
-  set -a
-  ${env}
-  set +a
+# Create deactivation function
+_pkgx_dev_try_bye() {
+  # Check if we're still in the project directory or a subdirectory
+  case "$PWD" in
+    "${cwd}"|"${cwd}/"*)
+      # Still in project directory, don't deactivate
+      return 1
+      ;;
+    *)
+      echo -e "\\033[31mdev environment deactivated\\033[0m" >&2
 
-  # If we detect we're in the activated project directory, confirm activation
-  if [ "\${PWD}" = "${cwd}" ]; then
-    echo "✅ Environment activated for ${cwd}" >&2
-  fi`)
+      # Restore original PATH
+      if [ -n "$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+        export PATH="$_LAUNCHPAD_ORIGINAL_PATH"
+        unset _LAUNCHPAD_ORIGINAL_PATH
+      fi
+
+      # Restore original environment variables
+      if [ -n "$_LAUNCHPAD_ORIGINAL_ENV" ]; then
+        for env_var in $_LAUNCHPAD_ORIGINAL_ENV; do
+          if [ -n "$env_var" ]; then
+            key="\${env_var%%=*}"
+            value="\${env_var#*=}"
+            if [ "$value" = "__UNSET__" ]; then
+              unset "$key"
+            else
+              export "$key"="$value"
+            fi
+          fi
+        done
+        unset _LAUNCHPAD_ORIGINAL_ENV
+      fi
+
+      # Clean up project-specific environment variables${Object.keys(snuff.env).length > 0
+        ? `
+${Object.keys(snuff.env).map(key => `      unset ${key}`).join('\n')}`
+        : ''}
+
+      unset -f _pkgx_dev_try_bye
+      ;;
+  esac
+}
+
+set -a
+${env}
+set +a
+
+# If we detect we're in the activated project directory, confirm activation
+if [ "\${PWD}" = "${cwd}" ]; then
+  echo "✅ Environment activated for ${cwd}" >&2
+fi`)
 }
