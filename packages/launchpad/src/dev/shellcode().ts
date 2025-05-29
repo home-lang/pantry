@@ -55,6 +55,12 @@ _pkgx_chpwd_hook() {
     return 0
   fi
 
+  # Skip heavy operations during initial shell startup
+  if [ -n "$_LAUNCHPAD_STARTUP_SKIP" ]; then
+    unset _LAUNCHPAD_STARTUP_SKIP
+    return 0
+  fi
+
   # Check if we're currently in an active dev environment
   local was_active=false
   local current_env_dir=""
@@ -104,7 +110,7 @@ _pkgx_chpwd_hook() {
     export PATH="$HOME/.local/bin:$PATH"
   fi
 
-  # If we found a dependency file, always create activation and activate
+  # If we found a dependency file, check if activation is needed
   if [ -n "$deps_file" ]; then
     # Only create activation if not already found
     if [ "$found_activation" = false ]; then
@@ -114,38 +120,95 @@ _pkgx_chpwd_hook() {
       activation_dir="$PWD"
     fi
 
+    # Check if environment is already properly activated for this directory
+    if [ "$was_active" = true ] && [ "$current_env_dir" = "$PWD" ]; then
+      # Already active for the correct directory, nothing to do
+      return 0
+    fi
+
     # Force activation if we weren't active before or if we switched directories
     if [ "$was_active" = false ]; then
-      # Set flag to prevent recursive calls
-      export _PKGX_ACTIVATING="$PWD"
+      # Check if packages are already installed (cache check)
+      # Use a simple hash based on the directory path
+      local project_hash=""
+      if command -v openssl >/dev/null 2>&1; then
+        project_hash=$(echo -n "$PWD" | openssl base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      elif command -v base64 >/dev/null 2>&1; then
+        project_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      fi
 
-      if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-        # Try to run launchpad dev:dump with proper error handling
-        local launchpad_output=""
-        # Capture both stdout and stderr, check exit code
-        if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
-          # If launchpad succeeds, extract just the shell script part using system sed
-          local shell_script=""
-          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
-          if [ -n "$shell_script" ]; then
-            eval "$shell_script"
+      local env_cache_dir=""
+      if [ -n "$project_hash" ]; then
+        env_cache_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+      fi
+
+      # If packages are already installed, do fast activation
+      if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir/bin" -o -d "$env_cache_dir/sbin" ]; then
+        # Fast path: packages already installed, just set up environment
+        _launchpad_fast_activate "$PWD" "$env_cache_dir"
+      else
+        # Slow path: need to install packages
+        echo "🔄 Setting up development environment..." >&2
+
+        # Set flag to prevent recursive calls
+        export _PKGX_ACTIVATING="$PWD"
+
+        if [[ "${dev_cmd}" == *"launchpad"* ]]; then
+          # Try to run launchpad dev:dump with proper error handling
+          local launchpad_output=""
+          # Capture both stdout and stderr, check exit code
+          if launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) && [ $? -eq 0 ]; then
+            # If launchpad succeeds, extract just the shell script part using system sed
+            local shell_script=""
+            shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
+            if [ -n "$shell_script" ]; then
+              eval "$shell_script"
+            else
+              echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
+              eval "$(_pkgx_activate_with_pkgx "$PWD")"
+            fi
           else
-            echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
+            # If launchpad fails or produces no output, use pkgx fallback
+            echo "⚠️  Launchpad unavailable, using pkgx fallback..." >&2
             eval "$(_pkgx_activate_with_pkgx "$PWD")"
           fi
         else
-          # If launchpad fails or produces no output, use pkgx fallback
-          echo "⚠️  Launchpad unavailable, using pkgx fallback..." >&2
-          eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          eval "$(${dev_cmd} dump)"
         fi
-      else
-        eval "$(${dev_cmd} dump)"
-      fi
 
-      # Clear the flag after activation
-      unset _PKGX_ACTIVATING
+        # Clear the flag after activation
+        unset _PKGX_ACTIVATING
+      fi
     fi
   fi
+}
+
+# Fast activation function for already-installed packages
+_launchpad_fast_activate() {
+  local cwd="$1"
+  local env_dir="$2"
+
+  # Clean up PATH by removing any existing launchpad environment paths
+  CLEANED_PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/.local/share/launchpad/envs/' | tr '\n' ':' | sed 's/:$//')"
+
+  # Store the cleaned PATH as original
+  export _LAUNCHPAD_ORIGINAL_PATH="$CLEANED_PATH"
+  export PATH="$env_dir/bin:$env_dir/sbin:$PATH"
+
+  # Create the deactivation function
+  eval "_pkgx_dev_try_bye() {
+    local suffix=\"\\\${PWD#\\\"$cwd\\\"}\"
+    [ \\\"\\\$PWD\\\" = \\\"$cwd\\\$suffix\\\" ] && return 1
+    echo -e \\\"\\\\x1b[31mdev environment deactivated\\\\x1b[0m\\\" >&2
+    # Restore original PATH to properly isolate the environment
+    if [ -n \\\"\\\$_LAUNCHPAD_ORIGINAL_PATH\\\" ]; then
+      export PATH=\\\"\\\$_LAUNCHPAD_ORIGINAL_PATH\\\"
+      unset _LAUNCHPAD_ORIGINAL_PATH
+    fi
+    unset -f _pkgx_dev_try_bye
+  }"
+
+  echo "✅ Environment activated for $cwd" >&2
 }
 
 # Function to activate environment using pkgx directly
@@ -273,14 +336,18 @@ if [ -n "$ZSH_VERSION" ] && [ "$(emulate)" = "zsh" ]; then
           chpwd_functions=( _pkgx_chpwd_hook \${chpwd_functions[@]} )
         fi
 
-        # Run hook immediately regardless of terminal type
+        # Skip heavy operations on initial startup
+        export _LAUNCHPAD_STARTUP_SKIP=1
+        # Run hook immediately but skip heavy operations
         _pkgx_chpwd_hook'
 elif [ -n "$BASH_VERSION" ] && [ "$POSIXLY_CORRECT" != y ] ; then
   eval 'cd() {
           builtin cd "$@" || return
           _pkgx_chpwd_hook
         }
-        # Run hook immediately
+        # Skip heavy operations on initial startup
+        export _LAUNCHPAD_STARTUP_SKIP=1
+        # Run hook immediately but skip heavy operations
         _pkgx_chpwd_hook'
 else
   POSIXLY_CORRECT=y
