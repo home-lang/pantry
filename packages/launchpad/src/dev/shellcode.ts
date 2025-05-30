@@ -389,7 +389,7 @@ _launchpad_fast_activate() {
     esac
   }
 
-  echo "✅ Environment activated for $cwd" >&2
+  echo "✅ Environment activated for \\033[3m$cwd\\033[0m" >&2
 }
 
 # Function to activate environment using pkgx directly

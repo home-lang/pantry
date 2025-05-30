@@ -625,6 +625,6 @@ set +a
 
 # If we detect we're in the activated project directory, confirm activation
 if [ "\${PWD}" = "${cwd}" ]; then
-  echo "✅ Environment activated for ${cwd}" >&2
+  echo "✅ Environment activated for \\033[3m${cwd}\\033[0m" >&2
 fi`)
 }
