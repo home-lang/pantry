@@ -8,56 +8,76 @@
 
 # launchpad
 
-> A lightweight package manager built on top of pkgx to simplify package installation and management. _Similar to Homebrew, but faster._
+> A modern dependency manager for your system and projects. Effortlessly manage development tools, runtime environments, and project dependencies with automatic environment isolation. _Think Homebrew meets project-aware dependency management._
 
 ## What is Launchpad?
 
-Launchpad serves as an alternative to package managers like Homebrew, focusing on:
+Launchpad is a comprehensive dependency management solution that bridges the gap between system-wide package management and project-specific environments. Whether you're setting up a new development machine, managing system tools, or working on projects with specific dependency requirements, Launchpad provides a unified interface for all your dependency needs.
 
-- A consistent and simple CLI interface
-- Automatic PATH management
-- Easy installation of development tools
-- Cross-platform support
+**System Management:**
+- Install and manage development tools system-wide
+- Automatic PATH configuration and shell integration
+- Cross-platform compatibility _(macOS, Linux, Windows)_
+- Smart permission handling and installation paths
 
-At its core, Launchpad leverages pkgx, a next-generation package runner that allows you to use packages without installing them. Launchpad extends this functionality with convenient commands, better management of executables, and improved integration with your development workflow.
+**Project Management:**
+- Automatic project environment detection and activation
+- Isolated dependency environments per project
+- Version-specific tool installation
+- Seamless switching between project contexts
+
+At its core, Launchpad leverages pkgx's powerful package ecosystem while adding intelligent management, environment isolation, and developer-friendly workflows.
 
 ## Features
 
-Launchpad offers a streamlined approach to package management with these key features:
+Launchpad transforms how you manage dependencies across your entire development workflow:
 
-- 📦 **Package Management** — Install and manage packages directly using pkgx
-- 🗑️ **Package Removal** — Remove specific packages or completely uninstall Launchpad
-- 🔄 **Executable Shims** — Create executable shims for packages automatically
-- 🌍 **Environment Isolation** — Project-specific environments with automatic activation/deactivation
-- 🎯 **Bootstrap Setup** — One-command setup of essential development tooling
-- 🔧 **Auto-updates** — Configure automatic updates for pkgx
-- 🔌 **PATH Integration** — Automatically add installation directories to your PATH
-- 🪟 **Cross-platform** — Support for macOS, Linux, and Windows systems
-- 🔒 **Smart Installation** — Automatic fallback to system package managers when needed
+### System-Wide Dependency Management
+- 📦 **Global Tool Installation** — Install development tools and runtimes system-wide with automatic PATH management
+- 🔧 **Smart Installation Paths** — Automatically chooses `/usr/local` for system-wide access or `~/.local` for user-specific installs
+- 🔌 **Shell Integration** — Seamless integration with your shell for immediate tool availability
+- 🪟 **Cross-Platform Support** — Consistent experience across macOS, Linux, and Windows
+
+### Project-Aware Environment Management
+- 🌍 **Automatic Environment Isolation** — Project-specific environments that activate when you enter a project directory
+- 🎯 **Dependency Detection** — Automatically reads `dependencies.yaml`, `package.json`, and other project files
+- 🔄 **Context Switching** — Seamlessly switch between different project environments
+- 📋 **Version Management** — Install and manage specific versions of tools per project
+
+### Developer Experience
+- ⚡ **Fast Operations** — Leverage pkgx for efficient package management
+- 🗑️ **Clean Removal** — Remove packages or completely uninstall with proper cleanup
+- 🔄 **Auto-Updates** — Configure automatic updates for your dependency management tools
+- 🎛️ **Flexible Configuration** — Customize behavior through config files or command-line options
 
 ## Why Launchpad?
 
-Traditional package managers like Homebrew have limitations:
+Modern development requires managing dependencies at multiple levels - from system tools to project-specific requirements. Traditional approaches fall short:
 
-- **Slow installations** — Installing or updating can take minutes
-- **Dependency chains** — Updating one package triggers unwanted updates
-- **Environment conflicts** — Different projects need different versions
-- **PATH management** — Manual PATH configuration is error-prone
-- **Platform inconsistency** — Different systems need different approaches
+**Traditional Package Managers (Homebrew, apt, etc.):**
+- ❌ **Global conflicts** — Different projects need different versions
+- ❌ **Slow operations** — Installing or updating can take minutes
+- ❌ **Manual environment management** — Switching between project contexts is manual
+- ❌ **PATH pollution** — All tools are globally available, causing conflicts
 
-Launchpad solves these by providing:
+**Manual Dependency Management:**
+- ❌ **Inconsistent setups** — Different team members have different environments
+- ❌ **Complex PATH management** — Manual shell configuration is error-prone
+- ❌ **Version drift** — Hard to maintain consistent tool versions
+- ❌ **Platform differences** — Different setup procedures for each OS
 
-- **Fast installations** — Leverage pkgx for efficient package management across all platforms
-- **Isolated packages** — Install only what you need without conflicts
-- **Automatic PATH management** — Tools are available immediately
-- **Consistent interface** — Same commands work everywhere
-- **Dev environments** — Project-specific development environment support
+**Launchpad's Solution:**
+- ✅ **Unified Management** — Single tool for both system and project dependencies
+- ✅ **Automatic Isolation** — Project environments activate automatically
+- ✅ **Fast Operations** — Efficient package management with intelligent caching
+- ✅ **Consistent Experience** — Same commands and behavior across all platforms
+- ✅ **Smart Defaults** — Sensible installation paths and configuration out of the box
 
 [Read more about why we created Launchpad](https://github.com/stacksjs/launchpad/tree/main/docs/why.md)
 
 ## Installation
 
-Launchpad is available through multiple package managers:
+Get started with Launchpad through your preferred package manager:
 
 ```bash
 # Install with Bun (recommended)
@@ -77,27 +97,14 @@ See [Installation Guide](https://github.com/stacksjs/launchpad/tree/main/docs/in
 
 ## Quick Start
 
-Launchpad is designed to "just work" right out of the box! 🎯
+Launchpad is designed to handle both system setup and project management seamlessly! 🎯
 
-### First Time? No Problem!
+### System Setup (First Time)
 
-When you run Launchpad for the first time, it will automatically detect what's missing and offer to set everything up:
-
-```bash
-# Just run any launchpad command - it will offer to bootstrap automatically!
-./launchpad list
-# → Shows welcome message and offers to install pkgx, configure PATH, and set up shell integration
-
-# Or manually run the complete setup
-./launchpad bootstrap
-```
-
-### Already Set Up?
-
-If you've already bootstrapped or want specific control:
+Bootstrap your development environment with everything you need:
 
 ```bash
-# Install everything you need in one command
+# Complete system setup - installs to /usr/local by default
 ./launchpad bootstrap
 
 # Or for a custom installation path
@@ -107,155 +114,131 @@ If you've already bootstrapped or want specific control:
 ./launchpad bootstrap --skip-bun --skip-shell-integration
 ```
 
-The bootstrap command will:
+The bootstrap command sets up your entire development foundation:
 - ✅ Install pkgx (package manager)
 - ✅ Install Bun (JavaScript runtime)
-- ✅ Configure your PATH
-- ✅ Set up shell integration for auto-activation
+- ✅ Configure your PATH automatically
+- ✅ Set up shell integration for project auto-activation
 - ✅ Provide clear next steps
 
-### Install packages
+### System-Wide Tool Management
+
+Install and manage development tools across your entire system:
 
 ```bash
-# Install packages
-launchpad install node python
+# Install essential development tools system-wide
+launchpad install node python go rust
 
-# Use the shorthand
-launchpad i node@22
+# Install specific versions
+launchpad install node@22 python@3.12
+
+# Install to /usr/local (default system-wide location)
+launchpad install typescript --system
+
+# Or specify any custom path
+launchpad install docker --path /opt/tools
+
+# Use shorthand for quick installs
+launchpad i node@22 typescript@5.7
 ```
 
-### Remove packages
+**Smart Installation Behavior:**
+- **Default**: Installs to `/usr/local` if writable, otherwise `~/.local`
+- **System-wide**: Use `--system` for explicit system installation (same as default)
+- **Custom paths**: Use `--path <directory>` for any location
+- **Automatic PATH**: Tools are immediately available in new shells
+
+### Project Environment Management
+
+Launchpad automatically manages project-specific dependencies:
 
 ```bash
-# Remove specific packages
+# Create a project with dependencies
+echo "dependencies:
+  - node@22
+  - typescript@5.7
+  - bun@1.2" > dependencies.yaml
+
+# Environment activates automatically when you enter the directory
+cd my-project
+# → ✅ Environment activated for /path/to/my-project
+
+# Tools are available in project context
+node --version  # Uses project-specific Node.js
+tsc --version   # Uses project-specific TypeScript
+
+# Leave project - environment deactivates automatically
+cd ..
+# → 🔄 Environment deactivated
+```
+
+**Supported Project Files:**
+- `dependencies.yaml` / `dependencies.yml`
+- `package.json` (Node.js projects)
+- `pyproject.toml` (Python projects)
+- `Cargo.toml` (Rust projects)
+- And more...
+
+### Package Management
+
+Remove packages and manage your installation:
+
+```bash
+# Remove specific system tools
 launchpad remove node python
 
-# Remove a specific version
+# Remove project-specific versions
 launchpad rm node@22
 
-# Use the shorthand alias
-launchpad rm python
+# See what would be removed
+launchpad remove python --dry-run
 
-# See what would be removed without actually removing it
-launchpad remove node --dry-run
-
-# Skip confirmation prompts
-launchpad remove python --force
+# Complete system cleanup
+launchpad uninstall
 ```
 
-### Create shims
+### Advanced Operations
 
 ```bash
-# Create shims for executables
+# Create executable shims
 launchpad shim node@22 typescript@5.7
 
-# Specify custom path
-launchpad shim --path ~/bin node@22
-```
-
-### Install pkgx
-
-```bash
-# Install pkgx itself
-launchpad pkgx
-
-# Force reinstall
-launchpad pkgx --force
-```
-
-### Install dev package
-
-```bash
-# Install the dev package
-launchpad dev
-
-# With customization
-launchpad dev --path ~/bin
-```
-
-### Install Bun
-
-```bash
-# Install Bun directly
-launchpad bun
-
-# Install specific version
-launchpad bun --version 1.2.14
-```
-
-### Configure auto-updates
-
-```bash
-# Check current auto-update status
-launchpad autoupdate
-
-# Enable auto-updates
-launchpad autoupdate:enable
-
-# Disable auto-updates
-launchpad autoupdate:disable
-```
-
-### List installed packages
-
-```bash
 # List all installed packages
 launchpad list
-# or
-launchpad ls
+
+# Configure auto-updates
+launchpad autoupdate:enable
+
+# Install additional tools
+launchpad pkgx    # Install pkgx itself
+launchpad dev     # Install dev environment tools
+launchpad bun     # Install Bun runtime
 ```
-
-### Uninstall and cleanup
-
-```bash
-# Complete removal of Launchpad and all installed packages
-launchpad uninstall
-
-# See what would be removed without actually removing it
-launchpad uninstall --dry-run
-
-# Remove only packages but keep shell integration
-launchpad uninstall --keep-shell-integration
-
-# Remove only shell integration but keep packages
-launchpad uninstall --keep-packages
-
-# Skip confirmation prompts
-launchpad uninstall --force
-```
-
-**Note**: The `uninstall` command removes **everything** Launchpad has installed and configured. Use `remove` (above) to uninstall specific packages while keeping the rest of your setup intact.
 
 ## Configuration
 
-Launchpad can be configured via a config file (`launchpad.config.ts`, `.launchpadrc`, etc.) or through command-line options.
-
-Example configuration:
+Customize Launchpad's behavior for your system and projects:
 
 ```ts
 import type { LaunchpadConfig } from '@stacksjs/launchpad'
 
 const config: LaunchpadConfig = {
-  // Enable verbose logging
-  verbose: true,
+  // System-wide installation preferences
+  installationPath: '/usr/local', // Default system location
+  autoSudo: true, // Auto-elevate when needed
 
-  // Installation path for binaries
-  installationPath: '/usr/local',
+  // Project environment settings
+  autoActivate: true, // Auto-activate project environments
+  symlinkVersions: true, // Create version-specific symlinks
 
-  // Auto-elevate with sudo when needed
-  autoSudo: true,
+  // Development preferences
+  verbose: true, // Detailed logging
+  maxRetries: 3, // Retry failed operations
+  timeout: 60000, // Operation timeout
 
-  // Retry settings
-  maxRetries: 3,
-  timeout: 60000,
-
-  // Version handling
-  symlinkVersions: true,
-  forceReinstall: false,
-
-  // PATH management
-  shimPath: '~/.local/bin',
-  autoAddToPath: true,
+  // PATH and shell integration
+  shimPath: '~/.local/bin', // Custom shim location
+  autoAddToPath: true, // Automatic PATH management
 }
 
 export default config
@@ -265,10 +248,10 @@ See [Configuration Guide](https://github.com/stacksjs/launchpad/tree/main/docs/c
 
 ## GitHub Action
 
-Launchpad provides a GitHub Action for CI/CD workflows:
+Integrate Launchpad into your CI/CD workflows:
 
 ```yaml
-- name: Install Dependencies
+- name: Setup Development Environment
   uses: stacksjs/launchpad-installer@v1
   with:
     packages: node@22 typescript@5.7 bun@1.2.14
@@ -278,27 +261,36 @@ See [GitHub Action Documentation](https://github.com/stacksjs/launchpad/tree/mai
 
 ## Advanced Usage
 
-Explore advanced topics in our documentation:
+Explore advanced dependency management topics:
 
-- [Custom Shims](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/custom-shims.md)
+- [Project Environment Configuration](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)
+- [Custom Shims and Tool Management](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/custom-shims.md)
 - [Cross-platform Compatibility](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/cross-platform.md)
 - [Performance Optimization](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/performance.md)
 - [API Reference](https://github.com/stacksjs/launchpad/tree/main/docs/api/reference.md)
 
 ## Comparing to Alternatives
 
-### vs Homebrew
+### vs Traditional Package Managers (Homebrew, apt, yum)
 
-- **Speed**: Significantly faster installations
-- **Isolation**: Changes to one package don't affect others
-- **Less disk space**: Only install what you need
+- **🎯 Project Awareness**: Automatic project environment management vs manual setup
+- **⚡ Speed**: Faster installations with intelligent caching
+- **🔒 Isolation**: Project-specific versions vs global conflicts
+- **🌍 Cross-Platform**: Consistent experience across all operating systems
 
-### vs Manual Installation
+### vs Language-Specific Managers (nvm, pyenv, rbenv)
 
-- **Simplicity**: Single command to install complex tools
-- **PATH management**: No need to manually edit shell config files
-- **Version control**: Easily install specific versions
-- **Consistency**: Same experience across all platforms
+- **🔄 Unified Interface**: Single tool for all languages vs multiple managers
+- **🤖 Automatic Switching**: Context-aware environment activation
+- **📦 Broader Scope**: Manages system tools beyond just language runtimes
+- **🛠️ Integrated Workflow**: Seamless integration between system and project dependencies
+
+### vs Container-Based Solutions (Docker, devcontainers)
+
+- **🚀 Lightweight**: Native performance without virtualization overhead
+- **💻 System Integration**: Tools available in your native shell and IDE
+- **🔧 Flexible**: Mix system-wide and project-specific tools as needed
+- **⚡ Instant**: No container startup time or resource overhead
 
 ## Changelog
 
@@ -317,7 +309,7 @@ For help or discussion:
 
 ## Postcardware
 
-Two things are true: Stacks OSS will always stay open-source, and we do love to receive postcards from wherever Stacks is used! 🌍 _We also publish them on our website. And thank you, Spatie_
+“Software that is free, but hopes for a postcard.” We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
 
 Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United States 🌎
 

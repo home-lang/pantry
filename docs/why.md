@@ -15,6 +15,7 @@ Package management on modern systems can be frustrating for several reasons:
 Launchpad is a CLI and TypeScript library designed to solve these problems by providing:
 
 - **Fast installations**: Leveraging the power of pkgx for efficient package management
+- **Flexible installation locations**: Support for system-wide (`/usr/local`) and user-local (`~/.local`) installations
 - **Isolated packages**: Install only what you need without affecting other dependencies
 - **Automatic PATH management**: Easily access installed tools from anywhere
 - **Consistent interface**: Same commands work across macOS, Linux, and Windows
@@ -38,7 +39,8 @@ Launchpad is a CLI and TypeScript library designed to solve these problems by pr
 
 ## Real-world Use Cases
 
-- **Developer onboarding**: Quickly set up new development machines
+- **Developer onboarding**: Quickly set up new development machines with system-wide or user-specific tooling
+- **System administration**: Install tools system-wide for all users with `--system` flag
 - **CI/CD pipelines**: Efficiently install required tools in automation environments
 - **Cross-team collaboration**: Ensure everyone has the same development environment
 - **Project isolation**: Use different tool versions for different projects

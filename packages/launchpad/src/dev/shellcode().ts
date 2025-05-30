@@ -1,5 +1,4 @@
-import fs, { existsSync } from 'node:fs'
-import { homedir, platform } from 'node:os'
+import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 
@@ -24,17 +23,26 @@ const DEPENDENCY_FILES = [
 ] as const
 
 /**
- * Find the launchpad/dev command in PATH or local directories
+ * Find the dev command to use in shell integration
+ * Looks for global installations first, then local development setups
  */
 function findDevCommand(): string {
-  const pathDirs = process.env.PATH?.split(':') || []
+  const pathDirs = (process.env.PATH || '').split(':').filter(Boolean)
 
-  // First, try to find global launchpad installation
+  // First, try to find a globally installed dev command
   let dev_cmd = pathDirs
+    .map(dir => join(dir, 'dev'))
+    .find(cmd => existsSync(cmd))
+
+  if (dev_cmd) {
+    return 'dev'
+  }
+
+  // Try to find a globally installed launchpad command
+  dev_cmd = pathDirs
     .map(dir => join(dir, 'launchpad'))
     .find(cmd => existsSync(cmd))
 
-  // If global launchpad found, use it directly (no need for pkgx bun prefix)
   if (dev_cmd) {
     return 'launchpad'
   }
@@ -72,9 +80,39 @@ function findDevCommand(): string {
     }
   }
 
-  // If the command is a local launchpad script, prepend with pkgx bun to solve bootstrap problem
+  // If the command is a local launchpad script, we need to find a way to run it
   if (dev_cmd && (dev_cmd.includes('launchpad') || dev_cmd.endsWith('.ts'))) {
-    dev_cmd = `pkgx bun ${dev_cmd}`
+    // Try to find an existing bun installation in launchpad environments
+    const homeDir = process.env.HOME || '~'
+    const launchpadEnvsDir = join(homeDir, '.local', 'share', 'launchpad', 'envs')
+
+    let bunPath = ''
+
+    // Look for bun in existing environment directories
+    if (existsSync(launchpadEnvsDir)) {
+      try {
+        const envDirs = readdirSync(launchpadEnvsDir)
+        for (const envDir of envDirs) {
+          const bunCandidate = join(launchpadEnvsDir, envDir, 'bin', 'bun')
+          if (existsSync(bunCandidate)) {
+            bunPath = bunCandidate
+            break
+          }
+        }
+      }
+      catch {
+        // Ignore errors reading directory
+      }
+    }
+
+    if (bunPath) {
+      // Use the found bun binary
+      dev_cmd = `${bunPath} ${dev_cmd}`
+    }
+    else {
+      // Fallback to pkgx bun (original behavior)
+      dev_cmd = `pkgx bun ${dev_cmd}`
+    }
   }
 
   return dev_cmd
@@ -404,8 +442,8 @@ export function datadir(): string {
 }
 
 function platform_data_home_default(): string {
-  const home = homedir()
-  switch (platform()) {
+  const home = process.env.HOME || '~'
+  switch (process.platform) {
     case 'darwin':
       return join(home, 'Library', 'Application Support')
     case 'win32': {

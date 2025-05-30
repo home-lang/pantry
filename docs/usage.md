@@ -31,7 +31,7 @@ Here are the main commands available in Launchpad:
 Install one or more packages using the `install` or `i` command:
 
 ```bash
-# Install a single package
+# Install a single package (defaults to /usr/local if writable)
 launchpad install node@22
 
 # Install multiple packages
@@ -39,14 +39,33 @@ launchpad install python@3.12 ruby@3.3
 
 # Short form
 launchpad i go
-```
 
-By default, packages are installed to a system location (typically `/usr/local` if writable, or `~/.local` otherwise). You can specify a custom installation path:
-
-```bash
 # Install to a specific location
 launchpad install --path ~/my-packages node
 ```
+
+### Installation Locations
+
+Launchpad provides flexible installation options:
+
+- **Default behavior**: Installs to `/usr/local` if writable, otherwise to `~/.local`
+- **System-wide installation**: The default behavior already installs system-wide to `/usr/local`
+- **Custom path**: Use `--path <path>` to specify any installation directory
+- **User installation**: Use `--path ~/.local` to force user-local installation
+
+```bash
+# Examples of different installation methods
+launchpad install node                    # Installs to /usr/local (default)
+launchpad install node --system           # Same as above (redundant flag)
+launchpad install node --path /opt/tools  # Custom directory
+launchpad install node --path ~/.local    # Force user directory
+```
+
+**Permission Handling**: When installing to `/usr/local` without sufficient permissions, Launchpad will:
+- Detect the permission issue
+- Prompt you interactively (if in a terminal)
+- Offer to re-run with `sudo` automatically
+- Provide clear alternatives if you decline
 
 ## Removing Packages
 
@@ -151,18 +170,36 @@ Each project gets its own isolated environment:
 
 For first-time setup or fresh installations, use the bootstrap command:
 
+### Quick Setup
+
+Get everything you need with one command:
+
 ```bash
-# Install all essential tools (pkgx, bun, shell integration)
+# Install all essential tools (defaults to /usr/local)
 launchpad bootstrap
 
-# Bootstrap with verbose output
+# Verbose bootstrap showing all operations
 launchpad bootstrap --verbose
 
-# Skip specific components
-launchpad bootstrap --skip-bun --skip-shell-integration
+# Force reinstall everything
+launchpad bootstrap --force
+```
 
-# Bootstrap to a custom path
+### Customized Bootstrap
+
+Control what gets installed:
+
+```bash
+# Skip specific components
+launchpad bootstrap --skip-pkgx
+launchpad bootstrap --skip-bun
+launchpad bootstrap --skip-shell-integration
+
+# Custom installation path (override default /usr/local)
 launchpad bootstrap --path ~/.local
+
+# Disable automatic PATH modification
+launchpad bootstrap --no-auto-path
 ```
 
 ## Complete System Cleanup
@@ -307,6 +344,7 @@ Most commands support these options:
 |--------|-------------|
 | `--verbose` | Enable detailed logging |
 | `--path` | Specify installation/shim path |
+| `--system` | Install to /usr/local (same as default behavior) |
 | `--force` | Force reinstall/removal even if already installed/not found |
 | `--dry-run` | Preview changes without actually performing them |
 | `--no-auto-path` | Don't automatically add to PATH |

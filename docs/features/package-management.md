@@ -1,40 +1,99 @@
 # Package Management
 
-Launchpad provides comprehensive package management capabilities, allowing you to install, manage, and remove packages efficiently. This guide covers all aspects of package management.
+Launchpad provides comprehensive package management capabilities with support for multiple installation strategies and intelligent path handling. This guide covers all aspects of package management.
 
-## Installation
+## Basic Installation
 
-### Basic Installation
-
-Install packages using the `install` or `i` command:
+Install packages using the `install` command:
 
 ```bash
 # Install a single package
-launchpad install node
+launchpad install node@22
 
 # Install multiple packages
-launchpad install python ruby go
+launchpad install python@3.12 go@1.21
 
-# Install specific versions
-launchpad install node@22 python@3.12
+# Short alias
+launchpad i node
 ```
 
-### Installation Options
+## Installation Locations
+
+Launchpad supports flexible installation targeting:
+
+### Automatic Location Detection
+
+By default, Launchpad automatically selects the best installation location:
+
+```bash
+# Installs to /usr/local if writable, ~/.local otherwise
+launchpad install node@22
+```
+
+### System-Wide Installation
+
+The default behavior already installs to `/usr/local` for system-wide availability:
+
+```bash
+# Default installation (already system-wide)
+launchpad install node@22
+
+# Explicit system flag (redundant, same as above)
+launchpad install node@22 --system
+
+# Explicit path (equivalent to default when /usr/local is writable)
+launchpad install node@22 --path /usr/local
+```
+
+**Permission Handling**: When installing to `/usr/local`:
+- Automatically detects permission requirements
+- Prompts for sudo authorization in interactive mode
+- Provides clear alternatives if sudo is declined
+- Handles non-interactive environments gracefully
+
+### User-Local Installation
+
+Install packages to user-specific directories:
+
+```bash
+# Force user-local installation
+launchpad install node@22 --path ~/.local
+
+# Alternative user directory
+launchpad install node@22 --path ~/tools
+```
+
+### Custom Installation Paths
+
+Install to any directory:
+
+```bash
+# Custom installation directory
+launchpad install node@22 --path /opt/development
+
+# Project-specific installation
+launchpad install node@22 --path ./tools
+```
+
+## Installation Options
 
 Customize installation behavior with various options:
 
 ```bash
-# Install to custom path
-launchpad install --path ~/my-tools node
+# Verbose installation with detailed output
+launchpad install --verbose node@22
 
-# Force reinstall even if already present
-launchpad install --force python
+# Default installation (already system-wide to /usr/local)
+launchpad install python@3.12
 
-# Verbose output showing detailed progress
-launchpad install --verbose go
+# Custom installation path
+launchpad install --path ~/tools go@1.21
 
-# Don't automatically add to PATH
-launchpad install --no-auto-path rust
+# Force reinstallation
+launchpad install --force node@22
+
+# Install without automatically adding to PATH
+launchpad install --no-auto-path typescript
 ```
 
 ### Smart Installation

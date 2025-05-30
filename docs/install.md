@@ -64,7 +64,7 @@ Just run any launchpad command and it will offer to bootstrap automatically:
 For more control over the setup process:
 
 ```sh
-# Install everything you need in one command
+# Install everything you need in one command (defaults to /usr/local)
 ./launchpad bootstrap
 
 # Verbose output showing all operations
@@ -73,7 +73,7 @@ For more control over the setup process:
 # Skip specific components
 ./launchpad bootstrap --skip-bun --skip-shell-integration
 
-# Custom installation path
+# Custom installation path (override default /usr/local)
 ./launchpad bootstrap --path ~/.local
 
 # Force reinstall everything

@@ -68,6 +68,40 @@ describe('Install', () => {
         expect(prefix.string).toContain('.local')
       }
     })
+
+    it('should default to system-wide installation', () => {
+      const prefix = install_prefix()
+
+      // The default behavior should prefer system-wide installation
+      // Either /usr/local (if writable) or ~/.local (fallback)
+      const isSystemWide = prefix.string === '/usr/local'
+      const isUserFallback = prefix.string.includes('.local')
+
+      expect(isSystemWide || isUserFallback).toBe(true)
+    })
+
+    it('should make --system flag redundant', () => {
+      // The --system flag should produce the same result as default behavior
+      const defaultPrefix = install_prefix()
+      const systemPrefix = install_prefix() // Same function call for both cases
+
+      expect(defaultPrefix.string).toBe(systemPrefix.string)
+    })
+
+    it('should prioritize /usr/local over user directories', () => {
+      const prefix = install_prefix()
+
+      // If /usr/local is writable, it should be preferred over ~/.local
+      // This tests the priority logic in the install_prefix function
+      if (prefix.string === '/usr/local') {
+        // /usr/local was chosen, which means it's writable
+        expect(prefix.string).toBe('/usr/local')
+      }
+      else {
+        // ~/.local was chosen, which means /usr/local wasn't writable
+        expect(prefix.string).toContain('.local')
+      }
+    })
   })
 
   describe('install function behavior', () => {

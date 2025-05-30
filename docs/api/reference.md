@@ -480,3 +480,41 @@ on('env:deactivate', (projectPath) => {
   console.log(`Environment deactivated for ${projectPath}`)
 })
 ```
+
+### Install Command
+
+Install one or more packages using pkgx with automatic PATH management.
+
+```bash
+launchpad install [packages...] [options]
+```
+
+**Aliases:** `i`
+
+**Arguments:**
+- `packages` - One or more package specifications (e.g., `node@22`, `python@3.12`)
+
+**Options:**
+- `--verbose` - Enable verbose logging
+- `--path <path>` - Installation path (default: auto-detected)
+- `--system` - Install to /usr/local (same as default behavior)
+- `--sudo` - Use sudo for installation
+- `--force` - Force reinstall even if package is already installed
+
+**Examples:**
+```bash
+# Install Node.js (defaults to /usr/local)
+launchpad install node@22
+
+# Install multiple packages
+launchpad install python@3.12 go@1.21
+
+# System-wide installation (same as default)
+launchpad install node@22 --system
+
+# Custom installation path
+launchpad install python@3.12 --path ~/tools
+
+# Force reinstall
+launchpad install --force node@22
+```

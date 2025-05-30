@@ -255,6 +255,9 @@ Configure different installation paths for different types of packages:
 
 ```ts
 const config: LaunchpadConfig = {
+  // Default installation path (can be overridden with --system or --path)
+  installationPath: '/usr/local', // Set to always use /usr/local
+
   // Runtime-specific installation paths
   runtimePaths: {
     'nodejs.org': '/opt/node',
@@ -262,7 +265,10 @@ const config: LaunchpadConfig = {
   },
 
   // System vs user installation preference
-  preferUserInstall: true,
+  preferUserInstall: false, // Set to true to prefer ~/.local over /usr/local
+
+  // Whether to prompt for sudo when installing to system directories
+  promptForSudo: true,
 }
 ```
 

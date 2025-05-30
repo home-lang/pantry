@@ -1,6 +1,6 @@
 # Postcardware
 
-Two things are true: Stacks OSS will always stay open-source, and we do love to receive postcards from wherever Stacks is used! 🌍
+“Software that is free, but hopes for a postcard.” We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
 
 _We also publish them on our website._
 

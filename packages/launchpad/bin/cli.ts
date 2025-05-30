@@ -17,6 +17,23 @@ import { activateDevEnv, addToPath, checkDevStatus, deactivateDevEnv, isInPath, 
 const execAsync = promisify(exec)
 const cli = new CAC('launchpad')
 
+// Helper functions
+function isRoot(): boolean {
+  return process.getuid?.() === 0
+}
+
+function canWriteToUsrLocal(): boolean {
+  try {
+    const testPath = path.join('/usr/local', '.writable_test')
+    fs.mkdirSync(testPath, { recursive: true })
+    fs.rmdirSync(testPath)
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
 cli.version(version)
 cli.help()
 
@@ -440,11 +457,14 @@ cli
   .command('install [packages...]', 'Install packages with automatic fallback')
   .alias('i')
   .option('--verbose', 'Enable verbose logging')
-  .option('--path <path>', 'Installation path')
+  .option('--path <path>', 'Installation path (default: /usr/local if writable, ~/.local otherwise)')
+  .option('--system', 'Install to /usr/local (same as default behavior)')
   .option('--sudo', 'Use sudo for installation')
   .option('--force', 'Force reinstall even if package is already installed')
   .example('install dev node')
-  .action(async (packages: string[], options?: CliOption) => {
+  .example('install node  # Installs to /usr/local by default')
+  .example('install node --system  # Same as above')
+  .action(async (packages: string[], options?: CliOption & { system?: boolean }) => {
     if (!packages || !packages.length) {
       console.error('No packages specified')
       process.exit(1)
@@ -458,9 +478,64 @@ cli
       config.forceReinstall = true
 
     // Determine installation path
-    const installPath = options?.path
-      ? new Path(options.path)
-      : install_prefix()
+    // Note: --system flag is redundant since install_prefix() already defaults to /usr/local
+    let installPath: Path
+    if (options?.path) {
+      installPath = new Path(options.path)
+    }
+    else {
+      // Both `launchpad install node` and `launchpad install node --system`
+      // should behave identically - both use install_prefix() which defaults to /usr/local
+      installPath = install_prefix()
+    }
+
+    // If installing to /usr/local, check if we need sudo
+    if (installPath.string === '/usr/local' && !isRoot() && !canWriteToUsrLocal()) {
+      console.log('🔐 Installing to /usr/local requires administrator privileges.')
+
+      // Check if we're in an interactive environment
+      if (process.stdin.isTTY && process.stdout.isTTY) {
+        const readline = await import('node:readline')
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        })
+
+        const answer = await new Promise<string>((resolve) => {
+          rl.question('Would you like to proceed with sudo? (y/N): ', (answer) => {
+            rl.close()
+            resolve(answer.toLowerCase().trim())
+          })
+        })
+
+        if (answer !== 'y' && answer !== 'yes') {
+          console.log('Installation cancelled. You can also install to ~/.local instead:')
+          console.log(`  ./launchpad install ${packages.join(' ')} --path ~/.local`)
+          process.exit(0)
+        }
+      }
+
+      // Re-run with sudo
+      const args = ['install', ...packages]
+      if (options?.path) {
+        args.push('--path', options.path)
+      }
+      if (options?.verbose)
+        args.push('--verbose')
+      if (options?.force)
+        args.push('--force')
+
+      console.log('🔄 Re-running with sudo...')
+      const { spawn } = await import('node:child_process')
+      const child = spawn('sudo', [process.execPath, process.argv[1], ...args], {
+        stdio: 'inherit',
+      })
+
+      child.on('exit', (code) => {
+        process.exit(code || 0)
+      })
+      return
+    }
 
     // Skip sudo logic for now to avoid issues - let the individual install functions handle permissions
     // const requiresSudo = options?.sudo || installPath.string.startsWith('/usr/local')
@@ -1355,7 +1430,7 @@ cli
 
 cli
   .command('bootstrap', 'Install all essential tools (pkgx, bun, etc.) for a complete Launchpad setup')
-  .option('--path <path>', 'Installation path')
+  .option('--path <path>', 'Installation path (default: /usr/local)')
   .option('--verbose', 'Enable verbose logging')
   .option('--force', 'Force reinstall even if already installed')
   .option('--no-auto-path', 'Do not automatically add to PATH')
@@ -1371,6 +1446,9 @@ cli
     skipShellIntegration?: boolean
   }) => {
     try {
+      // Bootstrap defaults to /usr/local unless a custom path is specified
+      const installPath = options?.path || '/usr/local'
+
       await runBootstrap({
         verbose: options?.verbose,
         force: options?.force,
@@ -1378,7 +1456,7 @@ cli
         skipPkgx: options?.skipPkgx,
         skipBun: options?.skipBun,
         skipShellIntegration: options?.skipShellIntegration,
-        path: options?.path,
+        path: installPath,
       })
     }
     catch (error) {
@@ -1908,7 +1986,7 @@ cli
                   removedFiles.push(shimPath)
                 }
               }
-              catch (error) {
+              catch {
                 // Ignore shim check errors
               }
             }
