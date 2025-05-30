@@ -1,2 +1,2 @@
-#!/usr/bin/env -S pkgx bun
+#!/usr/bin/env bun
 import('./packages/launchpad/bin/cli')

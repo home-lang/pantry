@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import fs, { existsSync } from 'node:fs'
 import { homedir, platform } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -117,6 +117,7 @@ _pkgx_chpwd_hook() {
     # Check if current directory has its own dependency file (nested environment)
     if [ -n "$deps_file" ] && [ "$PWD" != "$current_env_dir" ]; then
       # We're in a subdirectory with its own dependency file, switch environments
+      echo "🔄 Adjusting development environment..." >&2
       _pkgx_dev_try_bye
       was_active=false
     elif [ -z "$deps_file" ]; then
@@ -131,6 +132,10 @@ _pkgx_chpwd_hook() {
           was_active=false
           ;;
       esac
+    else
+      # We have a dependency file and we're in the same directory as the active environment
+      # No need to reactivate - just return early
+      return 0
     fi
   fi
 
