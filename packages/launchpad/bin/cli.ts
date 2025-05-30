@@ -719,7 +719,7 @@ cli
 
     try {
       const createdShims = await create_shim(packages, shimPath.string)
-      console.log(`Created shims for ${packages.join(', ')} in ${shimPath}`)
+      console.log(`Created shims for ${Array.isArray(packages) ? packages.join(', ') : packages} in ${shimPath.string}`)
       if (config.verbose) {
         console.log('Created shims:')
         createdShims.forEach(file => console.log(`  ${file}`))
@@ -748,7 +748,7 @@ cli
         })
         console.log('')
         console.log('3. Or use the direct installation commands:')
-        console.log(`   ./launchpad install ${packages.join(' ')}`)
+        console.log(`   ./launchpad install ${Array.isArray(packages) ? packages.join(' ') : packages}`)
       }
       else if (errorMessage.includes('CmdNotFound') || errorMessage.includes('ca-certificates')) {
         console.error('❌ Package dependency issue detected.')
@@ -758,18 +758,20 @@ cli
         console.log('')
         console.log('1. Update pkgx and try again:')
         console.log('   curl -fsSL https://pkgx.sh | bash')
-        console.log(`   ./launchpad shim ${packages.join(' ')}`)
+        console.log(`   ./launchpad shim ${Array.isArray(packages) ? packages.join(' ') : packages}`)
         console.log('')
         console.log('2. Install packages using your system package manager:')
-        packages.forEach((pkg) => {
-          console.log(`   # For ${pkg}:`)
-          if (platform() === 'darwin') {
-            console.log(`   brew install ${pkg}`)
-          }
-          else {
-            console.log(`   sudo apt install ${pkg}  # or equivalent`)
-          }
-        })
+        if (Array.isArray(packages)) {
+          packages.forEach((pkg) => {
+            console.log(`   # For ${pkg}:`)
+            if (platform() === 'darwin') {
+              console.log(`   brew install ${pkg}`)
+            }
+            else {
+              console.log(`   sudo apt install ${pkg}  # or equivalent`)
+            }
+          })
+        }
         console.log('')
         console.log('3. Check pkgx status at: https://github.com/pkgxdev/pkgx')
       }
@@ -777,7 +779,7 @@ cli
         console.error('Failed to create shims:', errorMessage)
         console.log('')
         console.log('💡 Try running with --verbose for more details:')
-        console.log(`   ./launchpad shim --verbose ${packages.join(' ')}`)
+        console.log(`   ./launchpad shim --verbose ${Array.isArray(packages) ? packages.join(' ') : packages}`)
       }
       process.exit(1)
     }

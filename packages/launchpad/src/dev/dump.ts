@@ -350,72 +350,37 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
 
       const stubPath = path.join(installPrefix, binDirName, entry)
 
-      // Create isolated environment setup that doesn't pollute global environment
+      // Create optimized stub for better performance with prompt tools
       let stubContent = '#!/bin/sh\n'
-      stubContent += '# Project-specific binary stub - environment is isolated to this execution\n\n'
+      stubContent += `# Fast stub for ${entry} - optimized for prompt tools\n\n`
 
-      // Store current environment variables to restore after execution
-      const envVarsToSet = new Set<string>()
+      // Only set essential environment variables (no cleanup overhead)
+      const hasEnvVars = Object.keys(env).length > 0 || Object.keys(runtimeEnv).length > 0
 
-      // Collect all environment variables we'll be setting
-      for (const key of Object.keys(env)) {
-        envVarsToSet.add(key)
-      }
-      for (const key of Object.keys(runtimeEnv)) {
-        envVarsToSet.add(key)
-      }
-
-      // Store original values before setting new ones
-      stubContent += '# Store original environment variables for restoration\n'
-      for (const key of envVarsToSet) {
-        stubContent += `_ORIG_${key}="\$${key}"\n`
-      }
-      stubContent += '\n'
-
-      // Set up cleanup function to restore environment
-      stubContent += '# Cleanup function to restore original environment\n'
-      stubContent += '_cleanup_env() {\n'
-      for (const key of envVarsToSet) {
-        stubContent += `  if [ -n "\$_ORIG_${key}" ]; then\n`
-        stubContent += `    export ${key}="\$_ORIG_${key}"\n`
-        stubContent += `  else\n`
-        stubContent += `    unset ${key}\n`
-        stubContent += `  fi\n`
-      }
-      stubContent += '}\n\n'
-
-      // Set up trap to ensure cleanup happens on exit
-      stubContent += '# Ensure cleanup happens on exit\n'
-      stubContent += 'trap _cleanup_env EXIT\n\n'
-
-      // Add pkgx environment variables
-      stubContent += '# Set pkgx environment variables\n'
-      for (const [key, value] of Object.entries(env)) {
-        if (Array.isArray(value)) {
-          // Join arrays with colons for PATH-like variables
-          if (key === 'DYLD_FALLBACK_LIBRARY_PATH') {
-            // For DYLD_FALLBACK_LIBRARY_PATH, append the generic fallback paths
-            stubContent += `export ${key}="${value.join(':')}:/usr/lib:/usr/local/lib"\n`
+      if (hasEnvVars) {
+        // Set environment variables directly without cleanup overhead
+        for (const [key, value] of Object.entries(env)) {
+          if (Array.isArray(value)) {
+            if (key === 'DYLD_FALLBACK_LIBRARY_PATH') {
+              stubContent += `export ${key}="${value.join(':')}:/usr/lib:/usr/local/lib"\n`
+            }
+            else {
+              stubContent += `export ${key}="${value.join(':')}"\n`
+            }
           }
           else {
-            stubContent += `export ${key}="${value.join(':')}"\n`
+            stubContent += `export ${key}="${shell_escape(value)}"\n`
           }
         }
-        else {
+
+        for (const [key, value] of Object.entries(runtimeEnv)) {
           stubContent += `export ${key}="${shell_escape(value)}"\n`
         }
+
+        stubContent += '\n'
       }
 
-      // Add runtime environment variables for the specific package
-      stubContent += '\n# Set package-specific runtime environment variables\n'
-      for (const [key, value] of Object.entries(runtimeEnv)) {
-        stubContent += `export ${key}="${shell_escape(value)}"\n`
-      }
-
-      stubContent += '\n'
-
-      // Add the actual binary execution with proper error handling
-      stubContent += `# Execute the binary with isolated environment\n`
+      // Direct execution - no traps, no cleanup, maximum performance
       stubContent += `exec "${srcBinary}" "$@"\n`
 
       // Remove existing file/symlink (this is crucial to overwrite symlinks from symlinkPackage)
@@ -435,11 +400,11 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
         }
       }
 
-      // Write shell script stub and make executable
+      // Write optimized shell script stub and make executable
       try {
         await fs.promises.writeFile(stubPath, stubContent)
         await fs.promises.chmod(stubPath, 0o755)
-        console.error(`✅ Created isolated stub: ${stubPath} -> ${srcBinary}`)
+        console.error(`✅ Created fast stub: ${stubPath} -> ${srcBinary}`)
       }
       catch (error) {
         console.error(`❌ Failed to create stub at ${stubPath}:`, error instanceof Error ? error.message : String(error))

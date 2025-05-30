@@ -29,32 +29,41 @@ const DEPENDENCY_FILES = [
 function findDevCommand(): string {
   const pathDirs = process.env.PATH?.split(':') || []
 
-  // Try to find launchpad or dev in PATH
+  // First, try to find global launchpad installation
   let dev_cmd = pathDirs
     .map(dir => join(dir, 'launchpad'))
-    .find(cmd => existsSync(cmd)) || pathDirs
+    .find(cmd => existsSync(cmd))
+
+  // If global launchpad found, use it directly (no need for pkgx bun prefix)
+  if (dev_cmd) {
+    return 'launchpad'
+  }
+
+  // Fallback: try to find dev command
+  dev_cmd = pathDirs
     .map(dir => join(dir, 'dev'))
     .find(cmd => existsSync(cmd))
 
-  // If no global installation found, try to find the local script
+  if (dev_cmd) {
+    return 'dev'
+  }
+
+  // Last resort: try to find the local script (for development)
+  const currentDir = process.cwd()
+  const candidates = [
+    join(currentDir, 'launchpad'),
+    join(currentDir, '..', 'launchpad'),
+    join(currentDir, 'packages', 'launchpad', 'bin', 'cli.ts'),
+  ]
+
+  dev_cmd = candidates.find(cmd => existsSync(cmd))
+
   if (!dev_cmd) {
-    const currentDir = process.cwd()
-    const candidates = [
-      join(currentDir, 'launchpad'),
-      join(currentDir, '..', 'launchpad'),
-      join(currentDir, 'packages', 'launchpad', 'bin', 'cli.ts'),
-    ]
-
-    dev_cmd = candidates.find(cmd => existsSync(cmd))
-
-    if (!dev_cmd) {
-      throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
-    }
+    throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
   }
 
   // Convert relative paths to absolute paths so they work from any directory
   if (dev_cmd && (dev_cmd.startsWith('./') || dev_cmd === 'launchpad')) {
-    const currentDir = process.cwd()
     if (dev_cmd === 'launchpad') {
       dev_cmd = join(currentDir, 'launchpad')
     }
@@ -63,12 +72,16 @@ function findDevCommand(): string {
     }
   }
 
+  // If the command is a local launchpad script, prepend with pkgx bun to solve bootstrap problem
+  if (dev_cmd && (dev_cmd.includes('launchpad') || dev_cmd.endsWith('.ts'))) {
+    dev_cmd = `pkgx bun ${dev_cmd}`
+  }
+
   return dev_cmd
 }
 
 export default function shellcode(): string {
   const dev_cmd = findDevCommand()
-  const dataDirPath = datadir()
   const dependencyFilesList = DEPENDENCY_FILES.join(' ')
 
   return `
@@ -81,12 +94,6 @@ _pkgx_chpwd_hook() {
     return 0
   fi
 
-  # Skip heavy operations during initial shell startup
-  if [ -n "$_LAUNCHPAD_STARTUP_SKIP" ]; then
-    unset _LAUNCHPAD_STARTUP_SKIP
-    return 0
-  fi
-
   # Check if we're currently in an active dev environment
   local was_active=false
   local current_env_dir=""
@@ -95,19 +102,6 @@ _pkgx_chpwd_hook() {
     # Extract the current environment directory from the function case statement
     current_env_dir=$(declare -f _pkgx_dev_try_bye | grep -o '"/[^"]*"' | head -1 | sed 's/"//g')
   fi
-
-  # Look for activation file in current directory or parent directories
-  local found_activation=false
-  local activation_dir=""
-  dir="$PWD"
-  while [ "$dir" != / -a "$dir" != . ]; do
-    if [ -f "${dataDirPath}/$dir/dev.pkgx.activated" ]; then
-      found_activation=true
-      activation_dir="$dir"
-      break
-    fi
-    dir="$(dirname "$dir")"
-  done
 
   # Find dependency files in current directory
   local deps_file=""
@@ -120,93 +114,88 @@ _pkgx_chpwd_hook() {
 
   # DEACTIVATION LOGIC: Check if we should deactivate the current environment
   if [ "$was_active" = true ] && [ -n "$current_env_dir" ]; then
-    # Deactivate if we're not in the project directory or any of its subdirectories
-    case "$PWD" in
-      "$current_env_dir"|"$current_env_dir/"*)
-        # Still in the same project directory tree, keep active
-        ;;
-      *)
-        # Outside the project directory tree, deactivate
-        _pkgx_dev_try_bye
-        was_active=false
-        ;;
-    esac
+    # Check if current directory has its own dependency file (nested environment)
+    if [ -n "$deps_file" ] && [ "$PWD" != "$current_env_dir" ]; then
+      # We're in a subdirectory with its own dependency file, switch environments
+      _pkgx_dev_try_bye
+      was_active=false
+    elif [ -z "$deps_file" ]; then
+      # Check if we're outside the project directory tree
+      case "$PWD" in
+        "$current_env_dir"|"$current_env_dir/"*)
+          # Still in the same project directory tree, keep active
+          ;;
+        *)
+          # Outside the project directory tree, deactivate
+          _pkgx_dev_try_bye
+          was_active=false
+          ;;
+      esac
+    fi
   fi
 
-  # ACTIVATION LOGIC: Only run if we're not already active
-  if [ "$was_active" = false ]; then
+  # ACTIVATION LOGIC: Only run if we're not already active and we found a dependency file
+  if [ "$was_active" = false ] && [ -n "$deps_file" ]; then
     # Ensure ~/.local/bin exists and is in PATH
     mkdir -p "$HOME/.local/bin"
     if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
       export PATH="$HOME/.local/bin:$PATH"
     fi
 
-    # If we found a dependency file, check if activation is needed
-    if [ -n "$deps_file" ]; then
-      # Only create activation if not already found
-      if [ "$found_activation" = false ]; then
-        mkdir -p "${dataDirPath}$PWD"
-        touch "${dataDirPath}$PWD/dev.pkgx.activated"
-        found_activation=true
-        activation_dir="$PWD"
-      fi
+    # Generate project hash more reliably - use full hash to prevent collisions
+    local project_hash=""
+    if command -v python3 >/dev/null 2>&1; then
+      project_hash=$(echo -n "$PWD" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
+    elif command -v openssl >/dev/null 2>&1; then
+      project_hash=$(echo -n "$PWD" | openssl md5 2>/dev/null | cut -d' ' -f2)
+    elif command -v base64 >/dev/null 2>&1; then
+      project_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+    fi
 
-      # Force activation since we weren't active before
-      # Generate project hash more reliably - use full hash to prevent collisions
-      local project_hash=""
-      if command -v python3 >/dev/null 2>&1; then
-        project_hash=$(echo -n "$PWD" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
-      elif command -v openssl >/dev/null 2>&1; then
-        project_hash=$(echo -n "$PWD" | openssl md5 2>/dev/null | cut -d' ' -f2)
-      elif command -v base64 >/dev/null 2>&1; then
-        project_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
-      fi
+    local env_cache_dir=""
+    if [ -n "$project_hash" ]; then
+      env_cache_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+    fi
 
-      local env_cache_dir=""
-      if [ -n "$project_hash" ]; then
-        env_cache_dir="$HOME/.local/share/launchpad/envs/$project_hash"
-      fi
+    # If packages are already installed, do fast activation
+    if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir/bin" -o -d "$env_cache_dir/sbin" ]; then
+      # Fast path: packages already installed, just set up environment
+      _launchpad_fast_activate "$PWD" "$env_cache_dir"
+    else
+      # Slow path: need to install packages
+      echo "🔄 Setting up development environment..." >&2
 
-      # If packages are already installed, do fast activation
-      if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir/bin" -o -d "$env_cache_dir/sbin" ]; then
-        # Fast path: packages already installed, just set up environment
-        _launchpad_fast_activate "$PWD" "$env_cache_dir"
-      else
-        # Slow path: need to install packages
-        echo "🔄 Setting up development environment..." >&2
+      # Set flag to prevent recursive calls
+      export _PKGX_ACTIVATING="$PWD"
 
-        # Set flag to prevent recursive calls
-        export _PKGX_ACTIVATING="$PWD"
+      if [[ "${dev_cmd}" == *"launchpad"* ]]; then
+        # Try to run launchpad dev:dump with proper error handling
+        local launchpad_output=""
+        local exit_code=0
+        # Capture both stdout and stderr, check exit code
+        launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
 
-        if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-          # Try to run launchpad dev:dump with proper error handling
-          local launchpad_output=""
-          local exit_code=0
-          # Capture both stdout and stderr, check exit code
-          launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
-
-          if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
-            # If launchpad succeeds, extract just the shell script part using system sed
-            local shell_script=""
-            shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
-            if [ -n "$shell_script" ]; then
-              eval "$shell_script"
-            else
-              echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
-              eval "$(_pkgx_activate_with_pkgx "$PWD")"
-            fi
+        if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
+          # If launchpad succeeds, extract just the shell script part using system sed
+          local shell_script=""
+          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
+          if [ -n "$shell_script" ]; then
+            eval "$shell_script"
           else
-            # If launchpad fails or produces no output, use pkgx fallback
-            echo "⚠️  Launchpad unavailable (exit code: $exit_code), using pkgx fallback..." >&2
+            echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
             eval "$(_pkgx_activate_with_pkgx "$PWD")"
           fi
         else
-          eval "$(${dev_cmd} dump)"
+          # If launchpad fails or produces no output, use pkgx fallback
+          echo "⚠️  Launchpad unavailable (exit code: $exit_code), using pkgx fallback..." >&2
+          eval "$(_pkgx_activate_with_pkgx "$PWD")"
         fi
-
-        # Clear the flag after activation
-        unset _PKGX_ACTIVATING
+      else
+        eval "$(${dev_cmd} dump)"
       fi
+
+      # Clear the flag after activation
+      unset _PKGX_ACTIVATING
     fi
   fi
 }
@@ -320,14 +309,6 @@ dev() {
   case "$1" in
   off)
     if type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
-      local dir="$PWD"
-      while [ "$dir" != / -a "$dir" != . ]; do
-        if [ -f "${dataDirPath}/$dir/dev.pkgx.activated" ]; then
-          rm -f "${dataDirPath}/$dir/dev.pkgx.activated"
-          break
-        fi
-        dir="$(dirname "$dir")"
-      done
       PWD=/ _pkgx_dev_try_bye
     else
       echo "no devenv" >&2
@@ -336,8 +317,6 @@ dev() {
     if [ "$2" ]; then
       "${dev_cmd}" "$@"
     elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
-      mkdir -p "${dataDirPath}$PWD"
-      touch "${dataDirPath}$PWD/dev.pkgx.activated"
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
         # Try to run launchpad dev:dump with proper error handling
         local launchpad_output=""
@@ -379,19 +358,30 @@ if [ -n "$ZSH_VERSION" ] && [ "$(emulate)" = "zsh" ]; then
           chpwd_functions=( _pkgx_chpwd_hook \${chpwd_functions[@]} )
         fi
 
-        # Skip heavy operations on initial startup
-        export _LAUNCHPAD_STARTUP_SKIP=1
-        # Run hook immediately but skip heavy operations
-        _pkgx_chpwd_hook'
+        # Check for dependency files on shell startup (no background jobs, no delays)
+        if ! type _pkgx_dev_try_bye >/dev/null 2>&1; then
+          for file in ${dependencyFilesList}; do
+            if [ -f "$PWD/$file" ]; then
+              _pkgx_chpwd_hook
+              break
+            fi
+          done
+        fi'
 elif [ -n "$BASH_VERSION" ] && [ "$POSIXLY_CORRECT" != y ] ; then
   eval 'cd() {
           builtin cd "$@" || return
           _pkgx_chpwd_hook
         }
-        # Skip heavy operations on initial startup
-        export _LAUNCHPAD_STARTUP_SKIP=1
-        # Run hook immediately but skip heavy operations
-        _pkgx_chpwd_hook'
+
+        # Check for dependency files on shell startup (no background jobs, no delays)
+        if ! type _pkgx_dev_try_bye >/dev/null 2>&1; then
+          for file in ${dependencyFilesList}; do
+            if [ -f "$PWD/$file" ]; then
+              _pkgx_chpwd_hook
+              break
+            fi
+          done
+        fi'
 else
   POSIXLY_CORRECT=y
   echo "pkgx: dev: warning: unsupported shell" >&2

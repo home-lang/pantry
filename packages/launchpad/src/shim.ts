@@ -72,8 +72,9 @@ export async function create_shim(args: string[], basePath: string): Promise<str
           continue
         }
 
-        // Create the shim content
-        const shimContent = `#!/usr/bin/env -S pkgx -q! ${pkg.project}@${pkg.version}${EOL}`
+        // Create robust shim content with fallback handling
+        const actualBinaryPath = path.join(binDir, entry.name)
+        const shimContent = createRobustShimContent(pkg.project, pkg.version.toString(), entry.name, actualBinaryPath)
 
         // Write the shim
         fs.writeFileSync(shimPath, shimContent, { mode: 0o755 })
@@ -118,6 +119,36 @@ export async function create_shim(args: string[], basePath: string): Promise<str
   }
 
   return createdShims
+}
+
+/**
+ * Create robust shim content with fallback handling
+ */
+function createRobustShimContent(project: string, version: string, commandName: string, actualBinaryPath: string): string {
+  return `#!/bin/sh
+# Shim for ${project}@${version} - ${commandName}
+# Created by Launchpad
+
+# Try the direct binary path first if it exists
+if [ -x "${actualBinaryPath}" ]; then
+  exec "${actualBinaryPath}" "$@"
+fi
+
+# Fallback to pkgx with specific version
+if command -v pkgx >/dev/null 2>&1; then
+  exec pkgx -q ${project}@${version} ${commandName} "$@"
+fi
+
+# Final fallback to system command if available
+if command -v "${commandName}" >/dev/null 2>&1 && [ "$(command -v "${commandName}")" != "$0" ]; then
+  echo "⚠️  pkgx ${project} failed, using system version..." >&2
+  exec "$(command -v "${commandName}")" "$@"
+fi
+
+# If all else fails, provide helpful error message
+echo "❌ ${commandName} not found. Install ${project} with: launchpad install ${project}" >&2
+exit 127
+${EOL}`
 }
 
 /**

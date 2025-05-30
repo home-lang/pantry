@@ -108,7 +108,10 @@ describe('Shim', () => {
 
           // Check shim content
           const content = fs.readFileSync(shimPath, 'utf-8')
-          expect(content).toContain('#!/usr/bin/env -S pkgx')
+          expect(content).toContain('#!/bin/sh')
+          expect(content).toContain('# Shim for')
+          expect(content).toContain('# Created by Launchpad')
+          expect(content).toContain('pkgx -q')
           expect(content).toContain('@') // Should contain version specification
         }
       }

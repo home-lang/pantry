@@ -1,5 +1,7 @@
 dependencies:
   bun.sh: ^1.2.14
+  nodejs.org: ^22.11.0
+  zlib.net: ^1.2.13
   aws.amazon.com/cli: ^2.27.22
   gnu.org/bash: ^5.2.37
   gnu.org/grep: ^3.12.0
