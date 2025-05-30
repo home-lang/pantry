@@ -552,7 +552,10 @@ _pkgx_dev_try_bye() {
       return 1
       ;;
     *)
-      echo -e "\\033[31mdev environment deactivated\\033[0m" >&2
+      # Only show deactivation message if not silent
+      if [ "$1" != "silent" ]; then
+        echo -e "\\033[31mdev environment deactivated\\033[0m" >&2
+      fi
 
       # Restore original PATH
       if [ -n "$_LAUNCHPAD_ORIGINAL_PATH" ]; then

@@ -141,8 +141,19 @@ _pkgx_chpwd_hook() {
   local current_env_dir=""
   if type _pkgx_dev_try_bye >/dev/null 2>&1; then
     was_active=true
-    # Extract the current environment directory from the function case statement
+    # Try to extract the current environment directory from the function
+    # First try launchpad-style function (with case statement and quoted paths)
     current_env_dir=$(declare -f _pkgx_dev_try_bye | grep -o '"/[^"]*"' | head -1 | sed 's/"//g')
+
+    # If that fails, we might have a pkgx fallback function
+    # In this case, we can't reliably determine the original directory,
+    # so we'll treat any directory with deps as a potential switch
+    if [ -z "$current_env_dir" ]; then
+      # For pkgx fallback functions, we'll use a more aggressive approach
+      # and assume the current environment should be deactivated if we find
+      # a different dependency file
+      current_env_dir="__unknown__"
+    fi
   fi
 
   # Find dependency files in current directory
@@ -155,29 +166,43 @@ _pkgx_chpwd_hook() {
   done
 
   # DEACTIVATION LOGIC: Check if we should deactivate the current environment
+  local adjusting_env=false
   if [ "$was_active" = true ] && [ -n "$current_env_dir" ]; then
-    # Check if current directory has its own dependency file (nested environment)
-    if [ -n "$deps_file" ] && [ "$PWD" != "$current_env_dir" ]; then
-      # We're in a subdirectory with its own dependency file, switch environments
-      echo "🔄 Adjusting development environment..." >&2
-      _pkgx_dev_try_bye
-      was_active=false
-    elif [ -z "$deps_file" ]; then
-      # Check if we're outside the project directory tree
-      case "$PWD" in
-        "$current_env_dir"|"$current_env_dir/"*)
-          # Still in the same project directory tree, keep active
-          ;;
-        *)
-          # Outside the project directory tree, deactivate
-          _pkgx_dev_try_bye
-          was_active=false
-          ;;
-      esac
+    if [ "$current_env_dir" = "__unknown__" ]; then
+      # We have an active environment but don't know its directory (pkgx fallback)
+      # If we found a dependency file, assume we need to switch environments
+      if [ -n "$deps_file" ]; then
+        echo "🔄 Adjusting development environment..." >&2
+        adjusting_env=true
+        _pkgx_dev_try_bye silent
+        was_active=false
+      fi
     else
-      # We have a dependency file and we're in the same directory as the active environment
-      # No need to reactivate - just return early
-      return 0
+      # We know the current environment directory (launchpad-created function)
+      # Check if current directory has its own dependency file (nested environment)
+      if [ -n "$deps_file" ] && [ "$PWD" != "$current_env_dir" ]; then
+        # We're in a subdirectory with its own dependency file, switch environments
+        echo "🔄 Adjusting development environment..." >&2
+        adjusting_env=true
+        _pkgx_dev_try_bye silent
+        was_active=false
+      elif [ -z "$deps_file" ]; then
+        # Check if we're outside the project directory tree
+        case "$PWD" in
+          "$current_env_dir"|"$current_env_dir/"*)
+            # Still in the same project directory tree, keep active
+            ;;
+          *)
+            # Outside the project directory tree, deactivate
+            _pkgx_dev_try_bye
+            was_active=false
+            ;;
+        esac
+      else
+        # We have a dependency file and we're in the same directory as the active environment
+        # No need to reactivate - just return early
+        return 0
+      fi
     fi
   fi
 
@@ -191,7 +216,9 @@ _pkgx_chpwd_hook() {
 
     # Generate project hash more reliably - use full hash to prevent collisions
     local project_hash=""
-    if command -v python3 >/dev/null 2>&1; then
+    if command -v /usr/bin/python3 >/dev/null 2>&1; then
+      project_hash=$(echo -n "$PWD" | /usr/bin/python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
+    elif command -v python3 >/dev/null 2>&1; then
       project_hash=$(echo -n "$PWD" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
     elif command -v openssl >/dev/null 2>&1; then
       project_hash=$(echo -n "$PWD" | openssl md5 2>/dev/null | cut -d' ' -f2)
@@ -204,76 +231,111 @@ _pkgx_chpwd_hook() {
       env_cache_dir="$HOME/.local/share/launchpad/envs/$project_hash"
     fi
 
-    # If packages are already installed, do fast activation
-    if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir/bin" -o -d "$env_cache_dir/sbin" ]; then
-      # Fast path: packages already installed, just set up environment
-      _launchpad_fast_activate "$PWD" "$env_cache_dir"
-    else
-      # Slow path: need to install packages
-      echo "🔄 Setting up development environment..." >&2
-
-      # Set flag to prevent recursive calls
-      export _PKGX_ACTIVATING="$PWD"
-
-      if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-        # Try to run launchpad dev:dump with proper error handling
-        local launchpad_output=""
-        local exit_code=0
-        # Capture both stdout and stderr, check exit code
-        launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
-
-        if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
-          # If launchpad succeeds, extract just the shell script part using system sed
-          local shell_script=""
-          shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
-          if [ -n "$shell_script" ]; then
-            eval "$shell_script"
-          else
-            echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
-            eval "$(_pkgx_activate_with_pkgx "$PWD")"
-          fi
-        else
-          # If launchpad fails, show the error but try fallback
-          if [[ "$launchpad_output" == *"bun: No such file or directory"* ]]; then
-            echo "⚠️  Bun not found. Install it with: curl -fsSL https://bun.sh/install | bash" >&2
-            echo "    Or install pkgx: curl -fsSL https://pkgx.sh | bash" >&2
-          elif [[ "$launchpad_output" == *"Neither bun nor pkgx found"* ]]; then
-            echo "$launchpad_output" >&2
-          else
-            echo "⚠️  Launchpad unavailable (exit code: $exit_code), trying pkgx fallback..." >&2
-            if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
-              echo "    Error: $launchpad_output" >&2
-            fi
+    # Also check for base64-encoded directory for backward compatibility
+    local base64_hash=""
+    if [ ! -d "$env_cache_dir/bin" ] && [ ! -d "$env_cache_dir/sbin" ]; then
+      base64_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      if [ -n "$base64_hash" ]; then
+        local base64_cache_dir="$HOME/.local/share/launchpad/envs/$base64_hash"
+        # Check if base64 cache has actual binaries
+        if [ -d "$base64_cache_dir" ]; then
+          local base64_has_binaries=false
+          if [ -d "$base64_cache_dir/bin" ] && [ "$(ls -A "$base64_cache_dir/bin" 2>/dev/null)" ]; then
+            base64_has_binaries=true
+          elif [ -d "$base64_cache_dir/sbin" ] && [ "$(ls -A "$base64_cache_dir/sbin" 2>/dev/null)" ]; then
+            base64_has_binaries=true
           fi
 
-          # Try pkgx fallback
-          if command -v pkgx >/dev/null 2>&1; then
-            eval "$(_pkgx_activate_with_pkgx "$PWD")"
-          else
-            echo "❌ Cannot activate environment: neither launchpad nor pkgx is available" >&2
-            echo "   Install one of the following:" >&2
-            echo "   • Bun: curl -fsSL https://bun.sh/install | bash" >&2
-            echo "   • pkgx: curl -fsSL https://pkgx.sh | bash" >&2
-          fi
-        fi
-      else
-        # For other dev commands, try with basic error handling
-        local dev_output=""
-        local dev_exit_code=0
-        dev_output=$(${dev_cmd} dump 2>&1) || dev_exit_code=$?
-
-        if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
-          eval "$dev_output"
-        else
-          echo "⚠️  Dev command failed (exit code: $dev_exit_code)" >&2
-          if [ -n "$dev_output" ]; then
-            echo "    Error: $dev_output" >&2
+          if [ "$base64_has_binaries" = true ]; then
+            env_cache_dir="$base64_cache_dir"
           fi
         fi
       fi
+    fi
 
-      # Clear the flag after activation
-      unset _PKGX_ACTIVATING
+    # If packages are already installed, do fast activation
+    if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir" ]; then
+      # Check if there are actual binaries installed, not just empty directories
+      local has_binaries=false
+      if [ -d "$env_cache_dir/bin" ] && [ "$(ls -A "$env_cache_dir/bin" 2>/dev/null)" ]; then
+        has_binaries=true
+      elif [ -d "$env_cache_dir/sbin" ] && [ "$(ls -A "$env_cache_dir/sbin" 2>/dev/null)" ]; then
+        has_binaries=true
+      fi
+
+      if [ "$has_binaries" = true ]; then
+        # Fast path: packages already installed, just set up environment
+        _launchpad_fast_activate "$PWD" "$env_cache_dir"
+      else
+        # Cache directory exists but no binaries - treat as slow path
+        # Only show "Setting up development environment..." if we're not adjusting
+        if [ "$adjusting_env" = false ]; then
+          echo "🔄 Setting up development environment..." >&2
+        fi
+
+        # Set flag to prevent recursive calls
+        export _PKGX_ACTIVATING="$PWD"
+
+        if [[ "${dev_cmd}" == *"launchpad"* ]]; then
+          # Try to run launchpad dev:dump with proper error handling
+          local launchpad_output=""
+          local exit_code=0
+          # Capture both stdout and stderr, check exit code
+          launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
+
+          if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
+            # If launchpad succeeds, extract just the shell script part using system sed
+            local shell_script=""
+            shell_script=$(echo "$launchpad_output" | /usr/bin/sed -n '/^[[:space:]]*#.*Project-specific environment/,$p' 2>/dev/null || echo "$launchpad_output" | sed -n '/^[[:space:]]*#.*Project-specific environment/,$p')
+            if [ -n "$shell_script" ]; then
+              eval "$shell_script"
+            else
+              echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
+              eval "$(_pkgx_activate_with_pkgx "$PWD")"
+            fi
+          else
+            # If launchpad fails, show the error but try fallback
+            if [[ "$launchpad_output" == *"bun: No such file or directory"* ]]; then
+              echo "⚠️  Bun not found. Install it with: curl -fsSL https://bun.sh/install | bash" >&2
+              echo "    Or install pkgx: curl -fsSL https://pkgx.sh | bash" >&2
+            elif [[ "$launchpad_output" == *"Neither bun nor pkgx found"* ]]; then
+              echo "$launchpad_output" >&2
+            else
+              echo "⚠️  Launchpad unavailable (exit code: $exit_code), trying pkgx fallback..." >&2
+              if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
+                echo "    Error: $launchpad_output" >&2
+              fi
+            fi
+
+            # Try pkgx fallback
+            if command -v pkgx >/dev/null 2>&1; then
+              eval "$(_pkgx_activate_with_pkgx "$PWD")"
+            else
+              echo "❌ Cannot activate environment: neither launchpad nor pkgx is available" >&2
+              echo "   Install one of the following:" >&2
+              echo "   • Bun: curl -fsSL https://bun.sh/install | bash" >&2
+              echo "   • pkgx: curl -fsSL https://pkgx.sh | bash" >&2
+            fi
+          fi
+        else
+          # For other dev commands, try with basic error handling
+          local dev_output=""
+          local dev_exit_code=0
+          dev_output=$(${dev_cmd} dump 2>&1) || dev_exit_code=$?
+
+          if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
+            eval "$dev_output"
+          else
+            echo "⚠️  Dev command failed (exit code: $dev_exit_code)" >&2
+            if [ -n "$dev_output" ]; then
+              echo "    Error: $dev_output" >&2
+            fi
+          fi
+        fi
+
+        # Clear the flag after activation
+        unset _PKGX_ACTIVATING
+      fi
     fi
   fi
 }
@@ -288,28 +350,44 @@ _launchpad_fast_activate() {
     export _LAUNCHPAD_ORIGINAL_PATH="$PATH"
   fi
 
+  # Build PATH with only existing directories for better performance
+  local new_path=""
+  if [ -d "$env_dir/bin" ]; then
+    new_path="$env_dir/bin"
+  fi
+  if [ -d "$env_dir/sbin" ]; then
+    if [ -n "$new_path" ]; then
+      new_path="$new_path:$env_dir/sbin"
+    else
+      new_path="$env_dir/sbin"
+    fi
+  fi
+
   # Set up project-specific PATH
-  export PATH="$env_dir/bin:$env_dir/sbin:$_LAUNCHPAD_ORIGINAL_PATH"
+  if [ -n "$new_path" ]; then
+    export PATH="$new_path:$_LAUNCHPAD_ORIGINAL_PATH"
+  else
+    export PATH="$_LAUNCHPAD_ORIGINAL_PATH"
+  fi
 
   # Create the deactivation function with proper directory checking
-  eval "_pkgx_dev_try_bye() {
-    # Check if we're still in the project directory or a subdirectory
-    case \"\$PWD\" in
-      \"$cwd\"|\"$cwd/\"*)
-        # Still in project directory, don't deactivate
+  _pkgx_dev_try_bye() {
+    case "$PWD" in
+      "$cwd"|"$cwd/"*)
         return 1
         ;;
       *)
-        echo -e \"\\x1b[31mdev environment deactivated\\x1b[0m\" >&2
-        # Restore original PATH to properly isolate the environment
-        if [ -n \"\$_LAUNCHPAD_ORIGINAL_PATH\" ]; then
-          export PATH=\"\$_LAUNCHPAD_ORIGINAL_PATH\"
+        if [ "$1" != "silent" ]; then
+          echo -e "\\033[31mdev environment deactivated\\033[0m" >&2
+        fi
+        if [ -n "$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+          export PATH="$_LAUNCHPAD_ORIGINAL_PATH"
           unset _LAUNCHPAD_ORIGINAL_PATH
         fi
         unset -f _pkgx_dev_try_bye
         ;;
     esac
-  }"
+  }
 
   echo "✅ Environment activated for $cwd" >&2
 }
@@ -347,14 +425,16 @@ _pkgx_activate_with_pkgx() {
     # Setup output
     echo "# Environment setup (fallback mode)"
     echo "eval \\"_pkgx_dev_try_bye() {"
-    echo "  echo 'dev environment deactivated' >&2"
+    echo "  if [ \\\\\\"\\$1\\\\\\" != \\\\\\"silent\\\\\\" ]; then"
+    echo "    echo 'dev environment deactivated' >&2"
+    echo "  fi"
     echo "  unset -f _pkgx_dev_try_bye"
     echo "}\\""
     echo ""
 
     # Ensure PATH contains ~/.local/bin
-    echo "if [[ \\":\$PATH:\\" != *\\":\$HOME/.local/bin:\\"* ]]; then"
-    echo "  export PATH=\\"\$HOME/.local/bin:\$PATH\\""
+    echo "if [[ :\\$PATH: != *\\":\\$HOME/.local/bin:\\"* ]]; then"
+    echo "  export PATH=\\"\\$HOME/.local/bin:\\$PATH\\""
     echo "fi"
 
     # Set environment variables
@@ -362,14 +442,14 @@ _pkgx_activate_with_pkgx() {
 
     # Filter environment variables using system tools when possible
     if command -v /usr/bin/grep >/dev/null 2>&1 && command -v /usr/bin/sed >/dev/null 2>&1; then
-      echo "$env_output" | /usr/bin/grep -v '^#' 2>/dev/null | /usr/bin/grep -v '^$' 2>/dev/null | \\
-        /usr/bin/grep -v 'LS_COLORS=' 2>/dev/null | /usr/bin/grep -v 'VSCODE' 2>/dev/null | /usr/bin/grep -v 'CURSOR' 2>/dev/null | \\
-        /usr/bin/grep -v 'JetBrains' 2>/dev/null | /usr/bin/grep -v '(Plugin)' 2>/dev/null | \\
+      echo "$env_output" | /usr/bin/grep -v '^#' 2>/dev/null | /usr/bin/grep -v '^$' 2>/dev/null | \
+        /usr/bin/grep -v 'LS_COLORS=' 2>/dev/null | /usr/bin/grep -v 'VSCODE' 2>/dev/null | /usr/bin/grep -v 'CURSOR' 2>/dev/null | \
+        /usr/bin/grep -v 'JetBrains' 2>/dev/null | /usr/bin/grep -v '(Plugin)' 2>/dev/null | \
         /usr/bin/sed 's/"/\\\\"/g' 2>/dev/null
     else
-      echo "$env_output" | grep -v '^#' | grep -v '^$' | \\
-        grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \\
-        grep -v 'JetBrains' | grep -v '(Plugin)' | \\
+      echo "$env_output" | grep -v '^#' | grep -v '^$' | \
+        grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \
+        grep -v 'JetBrains' | grep -v '(Plugin)' | \
         sed 's/"/\\\\"/g'
     fi
 
