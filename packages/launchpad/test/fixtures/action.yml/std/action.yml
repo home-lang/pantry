@@ -1,6 +1,6 @@
 runs:
-  using: "node16"
-  main: "main.js"
+  using: node16
+  main: main.js
 
 pkgx:
   dependencies:

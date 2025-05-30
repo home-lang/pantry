@@ -386,12 +386,22 @@ async function createBinaryStubs(pkgDir: string, installPrefix: string, project:
             if (key === 'DYLD_FALLBACK_LIBRARY_PATH') {
               stubContent += `export ${key}="${value.join(':')}:/usr/lib:/usr/local/lib"\n`
             }
+            else if (key === 'PATH') {
+              // For PATH, preserve the original PATH and prepend the new paths
+              stubContent += `export ${key}="${value.join(':')}:$_ORIG_PATH"\n`
+            }
             else {
               stubContent += `export ${key}="${value.join(':')}"\n`
             }
           }
           else {
-            stubContent += `export ${key}="${shell_escape(value)}"\n`
+            if (key === 'PATH') {
+              // For PATH, preserve the original PATH and prepend the new path
+              stubContent += `export ${key}="${shell_escape(value)}:$_ORIG_PATH"\n`
+            }
+            else {
+              stubContent += `export ${key}="${shell_escape(value)}"\n`
+            }
           }
         }
 

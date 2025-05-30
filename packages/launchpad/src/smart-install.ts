@@ -1,7 +1,6 @@
 import { exec } from 'node:child_process'
 import { platform } from 'node:os'
 import { promisify } from 'node:util'
-import { config } from './config'
 import { install, install_prefix } from './install'
 
 const execAsync = promisify(exec)

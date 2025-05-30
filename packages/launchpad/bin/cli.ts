@@ -9,10 +9,9 @@ import { CAC } from 'cac'
 import { version } from '../package.json'
 import { create_shim, install, install_bun, install_prefix, list, shim_dir } from '../src'
 import { config } from '../src/config'
-import { dump, integrate, shellcode } from '../src/dev'
 import { Path } from '../src/path'
 import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '../src/pkgx'
-import { activateDevEnv, addToPath, checkDevStatus, deactivateDevEnv, isInPath, listActiveDevEnvs } from '../src/utils'
+import { activateDevEnv, addToPath, isInPath } from '../src/utils'
 
 const execAsync = promisify(exec)
 const cli = new CAC('launchpad')
