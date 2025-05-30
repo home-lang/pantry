@@ -7,6 +7,6 @@
 [tool-poetry]
 name = "magicaitrainer"
 version = "0.1.0"
-description =
-authors = ["jlphilli"]
+description = ""
+authors = [ "jlphilli" ]
 readme = "README. md"
