@@ -316,8 +316,7 @@ Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United St
 ## Credits
 
 - [Max Howell](https://github.com/mxcl) - for creating [pkgx](https://github.com/pkgxdev/pkgx) and [Homebrew](https://github.com/Homebrew/brew)
-- [pkgm](https://github.com/pkgxdev/pkgm) - install `pkgx` packages to `/usr/local` — thanks for the inspiration
-- [dev](https://github.com/pkgxdev/dev) - isolated `dev` environments
+- [pkgm](https://github.com/pkgxdev/pkgm) & [dev](https://github.com/pkgxdev/dev) - thanks for the inspiration
 - [Chris Breuer](https://github.com/chrisbbreuer)
 - [All Contributors](https://github.com/stacksjs/launchpad/graphs/contributors)
 

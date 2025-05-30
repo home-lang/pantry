@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import path, { join } from 'node:path'
 import process from 'node:process'
 
 /**
@@ -28,18 +28,80 @@ const DEPENDENCY_FILES = [
  */
 function findDevCommand(): string {
   const pathDirs = (process.env.PATH || '').split(':').filter(Boolean)
+  const currentDir = process.cwd()
 
-  // First, try to find a globally installed dev command
-  let dev_cmd = pathDirs
-    .map(dir => join(dir, 'dev'))
-    .find(cmd => existsSync(cmd))
+  // FIRST: Check if we're in a launchpad development environment
+  // In this case, prefer the local script over any global installations
+  const localCandidates = [
+    join(currentDir, 'launchpad'),
+    join(currentDir, '..', 'launchpad'),
+    join(currentDir, 'packages', 'launchpad', 'bin', 'cli.ts'),
+  ]
 
-  if (dev_cmd) {
-    return 'dev'
+  const localLaunchpadScript = localCandidates.find(cmd => existsSync(cmd))
+
+  if (localLaunchpadScript) {
+    // We found a local launchpad script, prepare it for execution
+    let dev_cmd = localLaunchpadScript
+
+    // Convert relative paths to absolute paths so they work from any directory
+    if (dev_cmd.startsWith('./') || !path.isAbsolute(dev_cmd)) {
+      dev_cmd = path.resolve(dev_cmd)
+    }
+
+    // Since this is a local launchpad script, we need to find a way to run it
+    // Try to find bun in multiple locations
+    const homeDir = process.env.HOME || '~'
+    const possibleBunPaths = [
+      // Check PATH first
+      ...pathDirs.map(dir => join(dir, 'bun')),
+      // Check common installation locations
+      join(homeDir, '.bun', 'bin', 'bun'),
+      join('/usr/local/bin', 'bun'),
+      join('/opt/homebrew/bin', 'bun'),
+      join(homeDir, '.local', 'bin', 'bun'),
+      // Check launchpad environment directories
+      ...(function () {
+        const launchpadEnvsDir = join(homeDir, '.local', 'share', 'launchpad', 'envs')
+        if (existsSync(launchpadEnvsDir)) {
+          try {
+            const envDirs = readdirSync(launchpadEnvsDir)
+            return envDirs.map(envDir => join(launchpadEnvsDir, envDir, 'bin', 'bun'))
+          }
+          catch {
+            return []
+          }
+        }
+        return []
+      })(),
+    ]
+
+    const bunPath = possibleBunPaths.find(path => existsSync(path))
+
+    if (bunPath) {
+      // Use the found bun binary
+      return `${bunPath} ${dev_cmd}`
+    }
+    else {
+      // Check if pkgx is available
+      const pkgxPath = pathDirs
+        .map(dir => join(dir, 'pkgx'))
+        .find(cmd => existsSync(cmd))
+
+      if (pkgxPath) {
+        // Fallback to pkgx bun
+        return `pkgx bun ${dev_cmd}`
+      }
+      else {
+        // If neither bun nor pkgx is available, we can't run the script
+        // Return a command that will provide helpful error message
+        return `echo "❌ Neither bun nor pkgx found. Please install one of them or run: curl -fsSL https://bun.sh/install | bash" >&2; false`
+      }
+    }
   }
 
-  // Try to find a globally installed launchpad command
-  dev_cmd = pathDirs
+  // SECOND: Try to find a globally installed launchpad command
+  let dev_cmd = pathDirs
     .map(dir => join(dir, 'launchpad'))
     .find(cmd => existsSync(cmd))
 
@@ -47,7 +109,7 @@ function findDevCommand(): string {
     return 'launchpad'
   }
 
-  // Fallback: try to find dev command
+  // THIRD: Try to find a globally installed dev command
   dev_cmd = pathDirs
     .map(dir => join(dir, 'dev'))
     .find(cmd => existsSync(cmd))
@@ -56,66 +118,8 @@ function findDevCommand(): string {
     return 'dev'
   }
 
-  // Last resort: try to find the local script (for development)
-  const currentDir = process.cwd()
-  const candidates = [
-    join(currentDir, 'launchpad'),
-    join(currentDir, '..', 'launchpad'),
-    join(currentDir, 'packages', 'launchpad', 'bin', 'cli.ts'),
-  ]
-
-  dev_cmd = candidates.find(cmd => existsSync(cmd))
-
-  if (!dev_cmd) {
-    throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
-  }
-
-  // Convert relative paths to absolute paths so they work from any directory
-  if (dev_cmd && (dev_cmd.startsWith('./') || dev_cmd === 'launchpad')) {
-    if (dev_cmd === 'launchpad') {
-      dev_cmd = join(currentDir, 'launchpad')
-    }
-    else {
-      dev_cmd = join(currentDir, dev_cmd.replace('./', ''))
-    }
-  }
-
-  // If the command is a local launchpad script, we need to find a way to run it
-  if (dev_cmd && (dev_cmd.includes('launchpad') || dev_cmd.endsWith('.ts'))) {
-    // Try to find an existing bun installation in launchpad environments
-    const homeDir = process.env.HOME || '~'
-    const launchpadEnvsDir = join(homeDir, '.local', 'share', 'launchpad', 'envs')
-
-    let bunPath = ''
-
-    // Look for bun in existing environment directories
-    if (existsSync(launchpadEnvsDir)) {
-      try {
-        const envDirs = readdirSync(launchpadEnvsDir)
-        for (const envDir of envDirs) {
-          const bunCandidate = join(launchpadEnvsDir, envDir, 'bin', 'bun')
-          if (existsSync(bunCandidate)) {
-            bunPath = bunCandidate
-            break
-          }
-        }
-      }
-      catch {
-        // Ignore errors reading directory
-      }
-    }
-
-    if (bunPath) {
-      // Use the found bun binary
-      dev_cmd = `${bunPath} ${dev_cmd}`
-    }
-    else {
-      // Fallback to pkgx bun (original behavior)
-      dev_cmd = `pkgx bun ${dev_cmd}`
-    }
-  }
-
-  return dev_cmd
+  // If nothing is found, throw error
+  throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
 }
 
 export default function shellcode(): string {
@@ -229,12 +233,43 @@ _pkgx_chpwd_hook() {
             eval "$(_pkgx_activate_with_pkgx "$PWD")"
           fi
         else
-          # If launchpad fails or produces no output, use pkgx fallback
-          echo "⚠️  Launchpad unavailable (exit code: $exit_code), using pkgx fallback..." >&2
-          eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          # If launchpad fails, show the error but try fallback
+          if [[ "$launchpad_output" == *"bun: No such file or directory"* ]]; then
+            echo "⚠️  Bun not found. Install it with: curl -fsSL https://bun.sh/install | bash" >&2
+            echo "    Or install pkgx: curl -fsSL https://pkgx.sh | bash" >&2
+          elif [[ "$launchpad_output" == *"Neither bun nor pkgx found"* ]]; then
+            echo "$launchpad_output" >&2
+          else
+            echo "⚠️  Launchpad unavailable (exit code: $exit_code), trying pkgx fallback..." >&2
+            if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
+              echo "    Error: $launchpad_output" >&2
+            fi
+          fi
+
+          # Try pkgx fallback
+          if command -v pkgx >/dev/null 2>&1; then
+            eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          else
+            echo "❌ Cannot activate environment: neither launchpad nor pkgx is available" >&2
+            echo "   Install one of the following:" >&2
+            echo "   • Bun: curl -fsSL https://bun.sh/install | bash" >&2
+            echo "   • pkgx: curl -fsSL https://pkgx.sh | bash" >&2
+          fi
         fi
       else
-        eval "$(${dev_cmd} dump)"
+        # For other dev commands, try with basic error handling
+        local dev_output=""
+        local dev_exit_code=0
+        dev_output=$(${dev_cmd} dump 2>&1) || dev_exit_code=$?
+
+        if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
+          eval "$dev_output"
+        else
+          echo "⚠️  Dev command failed (exit code: $dev_exit_code)" >&2
+          if [ -n "$dev_output" ]; then
+            echo "    Error: $dev_output" >&2
+          fi
+        fi
       fi
 
       # Clear the flag after activation
@@ -378,12 +413,43 @@ dev() {
             eval "$(_pkgx_activate_with_pkgx "$PWD")"
           fi
         else
-          # If launchpad fails or produces no output, use pkgx fallback
-          echo "⚠️  Launchpad unavailable (exit code: $exit_code), using pkgx fallback..." >&2
-          eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          # If launchpad fails, show the error but try fallback
+          if [[ "$launchpad_output" == *"bun: No such file or directory"* ]]; then
+            echo "⚠️  Bun not found. Install it with: curl -fsSL https://bun.sh/install | bash" >&2
+            echo "    Or install pkgx: curl -fsSL https://pkgx.sh | bash" >&2
+          elif [[ "$launchpad_output" == *"Neither bun nor pkgx found"* ]]; then
+            echo "$launchpad_output" >&2
+          else
+            echo "⚠️  Launchpad unavailable (exit code: $exit_code), trying pkgx fallback..." >&2
+            if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
+              echo "    Error: $launchpad_output" >&2
+            fi
+          fi
+
+          # Try pkgx fallback
+          if command -v pkgx >/dev/null 2>&1; then
+            eval "$(_pkgx_activate_with_pkgx "$PWD")"
+          else
+            echo "❌ Cannot activate environment: neither launchpad nor pkgx is available" >&2
+            echo "   Install one of the following:" >&2
+            echo "   • Bun: curl -fsSL https://bun.sh/install | bash" >&2
+            echo "   • pkgx: curl -fsSL https://pkgx.sh | bash" >&2
+          fi
         fi
       else
-        eval "$(${dev_cmd} dump)"
+        # For other dev commands, try with basic error handling
+        local dev_output=""
+        local dev_exit_code=0
+        dev_output=$(${dev_cmd} dump 2>&1) || dev_exit_code=$?
+
+        if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
+          eval "$dev_output"
+        else
+          echo "⚠️  Dev command failed (exit code: $dev_exit_code)" >&2
+          if [ -n "$dev_output" ]; then
+            echo "    Error: $dev_output" >&2
+          fi
+        fi
       fi
     else
       echo "devenv already active" >&2
