@@ -215,16 +215,36 @@ _pkgx_chpwd_hook() {
       export PATH="$HOME/.local/bin:$PATH"
     fi
 
-    # Generate project hash more reliably - use full hash to prevent collisions
+    # Generate readable project hash for better user experience
     local project_hash=""
+    local project_name=$(basename "$PWD")
+    local clean_project_name=$(echo "$project_name" | sed 's/[^a-zA-Z0-9._-]/-/g' | tr '[:upper:]' '[:lower:]')
+
+    # Create a simple hash using a shell-compatible method
+    # Use a combination of methods for better uniqueness
+    local hash_input="$PWD"
+    local short_hash=""
+
+    # Try different hash methods in order of preference
     if command -v /usr/bin/python3 >/dev/null 2>&1; then
-      project_hash=$(echo -n "$PWD" | /usr/bin/python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
+      short_hash=$(echo -n "$hash_input" | /usr/bin/python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest()[:8])" 2>/dev/null)
     elif command -v python3 >/dev/null 2>&1; then
-      project_hash=$(echo -n "$PWD" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest())" 2>/dev/null)
+      short_hash=$(echo -n "$hash_input" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest()[:8])" 2>/dev/null)
     elif command -v openssl >/dev/null 2>&1; then
-      project_hash=$(echo -n "$PWD" | openssl md5 2>/dev/null | cut -d' ' -f2)
+      short_hash=$(echo -n "$hash_input" | openssl md5 2>/dev/null | cut -d' ' -f2 | cut -c1-8)
     elif command -v base64 >/dev/null 2>&1; then
-      project_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      # Fallback: use base64 but with better collision avoidance
+      local full_hash=$(echo -n "$hash_input" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      if [ -n "$full_hash" ]; then
+        # Take characters from the middle to avoid suffix collisions
+        local hash_len=\${#full_hash}
+        local start_pos=\$((hash_len / 3))
+        short_hash=$(echo "$full_hash" | cut -c\$((start_pos + 1))-\$((start_pos + 8)))
+      fi
+    fi
+
+    if [ -n "$short_hash" ] && [ -n "$clean_project_name" ]; then
+      project_hash="\${clean_project_name}_\${short_hash}"
     fi
 
     local env_cache_dir=""

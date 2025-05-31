@@ -485,8 +485,31 @@ export default async function (
   }
 
   // Use project-specific installation prefix for proper isolation
-  // Create a hash from the full path to ensure uniqueness - use full hash to prevent collisions
-  const projectHash = Buffer.from(cwd).toString('base64').replace(/[/+=]/g, '_')
+  // Create a readable hash from the project path for better user experience
+  function createReadableHash(projectPath: string): string {
+    // Get the project name (last directory in path)
+    const projectName = path.basename(projectPath)
+
+    // Create a hash using a simple but effective hash function
+    // This avoids collisions that can occur with base64 suffix matching
+    let hash = 0
+    for (let i = 0; i < projectPath.length; i++) {
+      const char = projectPath.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+
+    // Convert to a readable hex string and take 8 characters for uniqueness
+    const shortHash = Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8)
+
+    // Combine project name with short hash for readability
+    // Clean project name to be filesystem-safe
+    const cleanProjectName = projectName.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase()
+
+    return `${cleanProjectName}_${shortHash}`
+  }
+
+  const projectHash = createReadableHash(cwd)
   const installPrefix = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs', projectHash)
 
   if (!opts.quiet) {

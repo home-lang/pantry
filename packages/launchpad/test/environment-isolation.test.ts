@@ -92,26 +92,54 @@ describe('Environment Isolation', () => {
     fs.writeFileSync(path.join(dir, 'deps.yaml'), yamlContent)
   }
 
+  // Helper to create readable hash (matching dump.ts implementation)
+  const createReadableHash = (projectPath: string): string => {
+    const realPath = fs.existsSync(projectPath) ? fs.realpathSync(projectPath) : projectPath
+    const projectName = path.basename(realPath)
+
+    // Create a hash using a simple but effective hash function
+    // This avoids collisions that can occur with base64 suffix matching
+    let hash = 0
+    for (let i = 0; i < realPath.length; i++) {
+      const char = realPath.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+
+    // Convert to a readable hex string and take 8 characters for uniqueness
+    const shortHash = Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8)
+
+    // Clean project name to be filesystem-safe
+    const cleanProjectName = projectName.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase()
+
+    return `${cleanProjectName}_${shortHash}`
+  }
+
   describe('Hash Generation and Uniqueness', () => {
     it('should generate unique hashes for different project directories', () => {
       // Test the same hash generation logic used in dump.ts
-      const hashA = Buffer.from(projectA).toString('base64').replace(/[/+=]/g, '_')
-      const hashB = Buffer.from(projectB).toString('base64').replace(/[/+=]/g, '_')
-      const hashNested = Buffer.from(nestedProject).toString('base64').replace(/[/+=]/g, '_')
+      const hashA = createReadableHash(projectA)
+      const hashB = createReadableHash(projectB)
+      const hashNested = createReadableHash(nestedProject)
 
       expect(hashA).not.toBe(hashB)
       expect(hashA).not.toBe(hashNested)
       expect(hashB).not.toBe(hashNested)
 
-      // Ensure hashes are reasonably long (no truncation)
-      expect(hashA.length).toBeGreaterThan(16)
-      expect(hashB.length).toBeGreaterThan(16)
-      expect(hashNested.length).toBeGreaterThan(16)
+      // Ensure hashes are readable and contain project names
+      expect(hashA).toContain('project-a')
+      expect(hashB).toContain('project-b')
+      expect(hashNested).toContain('nested')
+
+      // Should have reasonable length (project name + underscore + 8 char hash)
+      expect(hashA.length).toBeGreaterThan(12)
+      expect(hashB.length).toBeGreaterThan(12)
+      expect(hashNested.length).toBeGreaterThan(12)
     })
 
     it('should generate consistent hashes for the same directory', () => {
-      const hash1 = Buffer.from(projectA).toString('base64').replace(/[/+=]/g, '_')
-      const hash2 = Buffer.from(projectA).toString('base64').replace(/[/+=]/g, '_')
+      const hash1 = createReadableHash(projectA)
+      const hash2 = createReadableHash(projectA)
 
       expect(hash1).toBe(hash2)
     })
@@ -126,13 +154,13 @@ describe('Environment Isolation', () => {
 
       // Package installation may fail but environment isolation should still work
       // The key test is hash uniqueness, not successful package installation
-      const hashA = Buffer.from(fs.realpathSync(projectA)).toString('base64').replace(/[/+=]/g, '_')
-      const hashB = Buffer.from(fs.realpathSync(projectB)).toString('base64').replace(/[/+=]/g, '_')
+      const hashA = createReadableHash(projectA)
+      const hashB = createReadableHash(projectB)
 
       // Verify hashes are unique (the core isolation principle)
       expect(hashA).not.toBe(hashB)
-      expect(hashA.length).toBeGreaterThan(16)
-      expect(hashB.length).toBeGreaterThan(16)
+      expect(hashA).toContain('project-a')
+      expect(hashB).toContain('project-b')
 
       // Only check environment directories if they were created (successful installs)
       const launchpadEnvsDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')
@@ -156,8 +184,8 @@ describe('Environment Isolation', () => {
       // Some packages might fail to install, but if they succeed, they should be isolated
       if (resultA.exitCode === 0 && resultB.exitCode === 0) {
         // Both succeeded - verify isolation by checking environment structure
-        const hashA = Buffer.from(fs.realpathSync(projectA)).toString('base64').replace(/[/+=]/g, '_')
-        const hashB = Buffer.from(fs.realpathSync(projectB)).toString('base64').replace(/[/+=]/g, '_')
+        const hashA = createReadableHash(projectA)
+        const hashB = createReadableHash(projectB)
 
         // Check that environment paths are properly set up and different
         expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashA}/bin`)
@@ -187,13 +215,13 @@ describe('Environment Isolation', () => {
       const resultB = await runCLI(['dev:dump'], projectB)
 
       // Even if installation fails, isolation should work
-      const hashA = Buffer.from(fs.realpathSync(projectA)).toString('base64').replace(/[/+=]/g, '_')
-      const hashB = Buffer.from(fs.realpathSync(projectB)).toString('base64').replace(/[/+=]/g, '_')
+      const hashA = createReadableHash(projectA)
+      const hashB = createReadableHash(projectB)
 
       // Verify different hashes for isolation
       expect(hashA).not.toBe(hashB)
-      expect(hashA.length).toBeGreaterThan(16)
-      expect(hashB.length).toBeGreaterThan(16)
+      expect(hashA).toContain('project-a')
+      expect(hashB).toContain('project-b')
 
       if (resultA.exitCode === 0 && resultB.exitCode === 0) {
         // If both succeed, check that stubs exist in different locations
@@ -230,8 +258,8 @@ describe('Environment Isolation', () => {
       const resultB = await runCLI(['dev:dump'], projectB)
 
       // Focus on the core isolation logic regardless of installation success
-      const hashA = Buffer.from(fs.realpathSync(projectA)).toString('base64').replace(/[/+=]/g, '_')
-      const hashB = Buffer.from(fs.realpathSync(projectB)).toString('base64').replace(/[/+=]/g, '_')
+      const hashA = createReadableHash(projectA)
+      const hashB = createReadableHash(projectB)
 
       // Verify hash uniqueness
       expect(hashA).not.toBe(hashB)
@@ -304,13 +332,13 @@ describe('Environment Isolation', () => {
       const resultNested = await runCLI(['dev:dump'], nestedProject)
 
       // Core isolation should work regardless of installation success
-      const hashParent = Buffer.from(fs.realpathSync(projectA)).toString('base64').replace(/[/+=]/g, '_')
-      const hashNested = Buffer.from(fs.realpathSync(nestedProject)).toString('base64').replace(/[/+=]/g, '_')
+      const hashParent = createReadableHash(projectA)
+      const hashNested = createReadableHash(nestedProject)
 
       // Verify nested directories get different hashes
       expect(hashParent).not.toBe(hashNested)
-      expect(hashParent.length).toBeGreaterThan(16)
-      expect(hashNested.length).toBeGreaterThan(16)
+      expect(hashParent).toContain('project-a')
+      expect(hashNested).toContain('nested')
 
       if (resultParent.exitCode === 0 && resultNested.exitCode === 0) {
         // If both succeed, check that environments are properly separated
@@ -342,18 +370,21 @@ describe('Environment Isolation', () => {
       fs.mkdirSync(similarB, { recursive: true })
       fs.mkdirSync(similarC, { recursive: true })
 
-      const hashA = Buffer.from(fs.realpathSync(similarA)).toString('base64').replace(/[/+=]/g, '_')
-      const hashB = Buffer.from(fs.realpathSync(similarB)).toString('base64').replace(/[/+=]/g, '_')
-      const hashC = Buffer.from(fs.realpathSync(similarC)).toString('base64').replace(/[/+=]/g, '_')
+      const hashA = createReadableHash(similarA)
+      const hashB = createReadableHash(similarB)
+      const hashC = createReadableHash(similarC)
 
       expect(hashA).not.toBe(hashB)
       expect(hashB).not.toBe(hashC)
       expect(hashA).not.toBe(hashC)
 
-      // All should be of sufficient length
-      expect(hashA.length).toBeGreaterThan(16)
-      expect(hashB.length).toBeGreaterThan(16)
-      expect(hashC.length).toBeGreaterThan(16)
+      // All should contain the project name and be reasonably long
+      expect(hashA).toContain('project')
+      expect(hashB).toContain('project-1')
+      expect(hashC).toContain('project-11')
+      expect(hashA.length).toBeGreaterThan(10)
+      expect(hashB.length).toBeGreaterThan(10)
+      expect(hashC.length).toBeGreaterThan(10)
     })
   })
 
@@ -445,7 +476,7 @@ describe('Environment Isolation', () => {
 
       // Accept either success or failure
       if (result.exitCode === 0) {
-        const hashA = Buffer.from(fs.realpathSync(projectA)).toString('base64').replace(/[/+=]/g, '_')
+        const hashA = createReadableHash(projectA)
         const nginxStub = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', hashA, 'sbin', 'nginx')
 
         if (fs.existsSync(nginxStub)) {
@@ -550,5 +581,125 @@ describe('Environment Isolation', () => {
         }
       }
     }, 90000)
+  })
+
+  describe('Deeply Nested Directory Handling', () => {
+    it('should handle extremely deep directory structures', async () => {
+      // Create a deeply nested directory structure
+      const deepPath = path.join(
+        tempDir,
+        'level1', 'level2', 'level3', 'level4', 'level5',
+        'level6', 'level7', 'level8', 'level9', 'level10',
+        'level11', 'level12', 'level13', 'level14', 'level15',
+        'final-project-with-very-long-name-that-could-cause-issues'
+      )
+
+      fs.mkdirSync(deepPath, { recursive: true })
+      createDepsYaml(deepPath, ['zlib.net@1.2'])
+
+      const result = await runCLI(['dev:dump'], deepPath)
+
+      // Test that the system can handle very long paths
+      const realPath = fs.realpathSync(deepPath)
+      const hash = createReadableHash(realPath)
+
+      // Hash should be generated correctly even for very long paths
+      expect(hash).toContain('final-project-with-very-long-name-that-could-cause-issues')
+      expect(hash.length).toBeGreaterThan(12)
+      expect(hash).not.toContain('/') // Should be properly encoded
+      expect(hash).not.toContain('+') // Should be properly encoded
+      expect(hash).not.toContain('=') // Should be properly encoded
+
+      // Accept either success or failure, but verify proper handling
+      if (result.exitCode === 0) {
+        // Should create environment with correct hash
+        expect(result.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hash}/`)
+        expect(result.stdout).toContain('Project-specific environment')
+
+        // Verify the environment directory was created
+        const envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', hash)
+        expect(fs.existsSync(envDir)).toBe(true)
+      } else {
+        // If installation fails, should still attempt to process the file
+        expect(result.stderr).toContain('Installing packages')
+        expect(result.stderr).not.toContain('no devenv detected')
+      }
+    }, 60000)
+
+    it('should create unique hashes for deeply nested vs shallow directories', async () => {
+      // Create a shallow directory
+      const shallowPath = path.join(tempDir, 'shallow-project')
+      fs.mkdirSync(shallowPath, { recursive: true })
+
+      // Create a deeply nested directory with similar name
+      const deepPath = path.join(
+        tempDir,
+        'deep', 'nested', 'structure', 'with', 'many', 'levels',
+        'shallow-project' // Same final name but different path
+      )
+      fs.mkdirSync(deepPath, { recursive: true })
+
+      // Generate hashes for both
+      const shallowHash = createReadableHash(shallowPath)
+      const deepHash = createReadableHash(deepPath)
+
+      // Should generate completely different hashes
+      expect(shallowHash).not.toBe(deepHash)
+      expect(shallowHash.length).toBeGreaterThan(12)
+      expect(deepHash.length).toBeGreaterThan(12)
+
+      // Verify no hash collisions even with similar final directory names
+      expect(shallowHash).toContain('shallow-project')
+      expect(deepHash).toContain('shallow-project')
+      // The hash parts should be different even though project names are the same
+      const shallowHashPart = shallowHash.split('_')[1]
+      const deepHashPart = deepHash.split('_')[1]
+      expect(shallowHashPart).not.toBe(deepHashPart)
+    })
+
+    it('should handle path length limits gracefully', async () => {
+      // Create an extremely long path that might hit filesystem limits
+      const veryLongSegment = 'a'.repeat(100) // 100 character segment
+      const extremelyDeepPath = path.join(
+        tempDir,
+        veryLongSegment + '1',
+        veryLongSegment + '2',
+        veryLongSegment + '3',
+        veryLongSegment + '4',
+        veryLongSegment + '5',
+        'final-project'
+      )
+
+      try {
+        fs.mkdirSync(extremelyDeepPath, { recursive: true })
+        createDepsYaml(extremelyDeepPath, ['zlib.net@1.2'])
+
+        const result = await runCLI(['dev:dump'], extremelyDeepPath)
+
+        // Should handle the path without crashing
+        const realPath = fs.realpathSync(extremelyDeepPath)
+        const hash = createReadableHash(realPath)
+
+        expect(hash.length).toBeGreaterThan(12)
+
+        // Should either succeed or fail gracefully
+        if (result.exitCode === 0) {
+          expect(result.stdout).toContain('Project-specific environment')
+        } else {
+          expect(result.stderr).toContain('Installing packages')
+        }
+      } catch (error) {
+        // If filesystem doesn't support such long paths, that's acceptable
+        if (error instanceof Error && (
+          error.message.includes('ENAMETOOLONG') ||
+          error.message.includes('path too long') ||
+          error.message.includes('File name too long')
+        )) {
+          console.warn('Skipping extremely long path test: filesystem limitation')
+          return
+        }
+        throw error
+      }
+    }, 60000)
   })
 })
