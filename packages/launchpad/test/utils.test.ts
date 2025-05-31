@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
+import { platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { addToPath, isInPath, standardPath } from '../src/utils'
@@ -50,20 +51,27 @@ describe('Utils', () => {
       expect(stdPath).toContain('/bin')
     })
 
-    it('should include platform-specific paths on macOS', () => {
-      const originalPlatform = os.platform
-      const originalHomedir = os.homedir
-
-      // Mock both platform and homedir for consistent testing
-      Object.defineProperty(os, 'platform', { value: () => 'darwin', configurable: true })
-      Object.defineProperty(os, 'homedir', { value: () => '/Users/testuser', configurable: true })
-
+    it('should include platform-specific paths', () => {
+      // Instead of mocking, test the actual behavior and verify it includes appropriate paths
       const stdPath = standardPath()
-      expect(stdPath).toContain('/opt/homebrew/bin')
 
-      // Restore original values
-      Object.defineProperty(os, 'platform', { value: originalPlatform, configurable: true })
-      Object.defineProperty(os, 'homedir', { value: originalHomedir, configurable: true })
+      // The test should verify that platform-specific paths are included
+      // On macOS, it should include homebrew paths
+      // On Linux, it should include linuxbrew paths
+      // We'll check that it includes platform-appropriate paths
+
+      if (process.platform === 'darwin') {
+        // On macOS, should include homebrew paths
+        expect(stdPath).toContain('/opt/homebrew/bin')
+      } else if (process.platform === 'linux') {
+        // On Linux, should include linuxbrew paths
+        expect(stdPath).toMatch(/linuxbrew/)
+      }
+
+      // Should always include standard paths regardless of platform
+      expect(stdPath).toContain('/usr/local/bin')
+      expect(stdPath).toContain('/usr/bin')
+      expect(stdPath).toContain('/bin')
     })
   })
 

@@ -1,8 +1,33 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+
+// Mock the node:os module before importing the functions
+const mockPlatform = mock(() => 'linux')
+const mockArch = mock(() => 'x64')
+
+// We need to mock the module before importing
+mock.module('node:os', () => ({
+  platform: mockPlatform,
+  arch: mockArch,
+  homedir: os.homedir,
+  tmpdir: os.tmpdir,
+  type: os.type,
+  release: os.release,
+  hostname: os.hostname,
+  userInfo: os.userInfo,
+  loadavg: os.loadavg,
+  uptime: os.uptime,
+  freemem: os.freemem,
+  totalmem: os.totalmem,
+  cpus: os.cpus,
+  networkInterfaces: os.networkInterfaces,
+  endianness: os.endianness,
+  EOL: os.EOL,
+}))
+
 import { get_bun_asset, get_latest_bun_version, install_bun } from '../src/bun'
 
 describe('Bun', () => {
@@ -113,31 +138,43 @@ describe('Bun', () => {
 
     it('should return platform-specific filename', () => {
       const version = '1.0.0'
-      const asset = get_bun_asset(version)
 
-      const platform = os.platform()
-      if (platform === 'darwin') {
-        expect(asset.filename).toContain('darwin')
-      }
-      else if (platform === 'linux') {
-        expect(asset.filename).toContain('linux')
-      }
-      else if (platform === 'win32') {
-        expect(asset.filename).toContain('windows')
-      }
+      // Test darwin
+      mockPlatform.mockReturnValue('darwin')
+      mockArch.mockReturnValue('arm64')
+      let asset = get_bun_asset(version)
+      expect(asset.filename).toContain('darwin')
+      expect(asset.filename).toContain('aarch64')
+
+      // Test linux
+      mockPlatform.mockReturnValue('linux')
+      mockArch.mockReturnValue('x64')
+      asset = get_bun_asset(version)
+      expect(asset.filename).toContain('linux')
+      expect(asset.filename).toContain('x64')
+
+      // Test windows
+      mockPlatform.mockReturnValue('win32')
+      mockArch.mockReturnValue('x64')
+      asset = get_bun_asset(version)
+      expect(asset.filename).toContain('windows')
+      expect(asset.filename).toContain('x64')
     })
 
     it('should return architecture-specific filename', () => {
       const version = '1.0.0'
-      const asset = get_bun_asset(version)
 
-      const arch = os.arch()
-      if (arch === 'arm64') {
-        expect(asset.filename).toContain('aarch64')
-      }
-      else {
-        expect(asset.filename).toContain('x64')
-      }
+      // Test arm64 architecture
+      mockPlatform.mockReturnValue('darwin')
+      mockArch.mockReturnValue('arm64')
+      let asset = get_bun_asset(version)
+      expect(asset.filename).toContain('aarch64')
+
+      // Test x64 architecture
+      mockPlatform.mockReturnValue('linux')
+      mockArch.mockReturnValue('x64')
+      asset = get_bun_asset(version)
+      expect(asset.filename).toContain('x64')
     })
 
     it('should always return zip files', () => {
