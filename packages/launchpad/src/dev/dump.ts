@@ -489,17 +489,11 @@ export default async function (
     // Get the project name (last directory in path)
     const projectName = path.basename(projectPath)
 
-    // Create a hash using a simple but effective hash function
-    // This avoids collisions that can occur with base64 suffix matching
-    let hash = 0
-    for (let i = 0; i < projectPath.length; i++) {
-      const char = projectPath.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32-bit integer
-    }
+    // Use Bun's built-in hash function for consistency and reliability
+    const hash = Bun.hash(projectPath)
 
     // Convert to a readable hex string and take 8 characters for uniqueness
-    const shortHash = Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8)
+    const shortHash = hash.toString(16).padStart(16, '0').slice(0, 8)
 
     // Combine project name with short hash for readability
     // Clean project name to be filesystem-safe

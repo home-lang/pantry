@@ -191,3 +191,66 @@ If you're in an environment with limited bandwidth:
 # Set a longer timeout
 launchpad install --timeout 120000 node@22  # 2 minutes
 ```
+
+## Environment Management Performance
+
+### Environment Cleanup
+
+Regular environment cleanup improves performance and saves disk space:
+
+```bash
+# Clean up old environments regularly
+launchpad env:clean --older-than 7 --force
+
+# Preview cleanup to understand disk usage
+launchpad env:clean --dry-run
+```
+
+### Environment Hash Optimization
+
+The new readable hash format is more efficient than the old base64 format:
+
+- **Faster directory lookups** - Shorter, more predictable names
+- **Better filesystem performance** - Avoids special characters that can slow down some filesystems
+- **Reduced memory usage** - Shorter strings use less memory in directory listings
+
+### Monitoring Environment Disk Usage
+
+Track environment disk usage to identify cleanup opportunities:
+
+```bash
+# List environments sorted by size (requires jq)
+launchpad env:list --format json | jq -r 'sort_by(.size) | reverse | .[] | "\(.projectName): \(.size)"'
+
+# Find large environments
+launchpad env:list --verbose | grep -E '[0-9]+[0-9][0-9]M|[0-9]+G'
+```
+
+### Optimizing Environment Activation
+
+For faster environment activation:
+
+```bash
+# Use the fast activation path when packages are already installed
+# This automatically happens when you re-enter a project directory
+cd my-project  # Fast activation if environment already exists
+```
+
+### Environment Storage Location
+
+Consider the storage location for environments:
+
+```bash
+# Use faster storage for environments if available
+export LAUNCHPAD_ENV_BASE_DIR=/fast-ssd/launchpad/envs
+```
+
+### Batch Environment Operations
+
+When managing multiple environments:
+
+```bash
+# Use JSON output for efficient scripting
+envs=$(launchpad env:list --format json)
+echo "$envs" | jq -r '.[] | select(.packages == 0) | .hash' | xargs -I {} launchpad env:remove {} --force
+```

@@ -203,17 +203,10 @@ interface UninstallOptions {
 }
 
 interface UninstallResult {
-  removed: UninstallItem[]
-  kept: UninstallItem[]
-  failed: UninstallItem[]
-  notFound: UninstallItem[]
-}
-
-interface UninstallItem {
-  item: string
-  action: 'removed' | 'kept' | 'not-found' | 'failed'
-  path?: string
-  details?: string
+  success: boolean
+  removedItems: string[]
+  failedItems: string[]
+  spaceFree: string
 }
 ```
 
@@ -518,3 +511,123 @@ launchpad install python@3.12 --path ~/tools
 # Force reinstall
 launchpad install --force node@22
 ```
+
+### Environment List Command
+
+List all development environments with readable hash identifiers.
+
+```bash
+launchpad env:list [options]
+```
+
+**Aliases:** `env:ls`
+
+**Options:**
+- `--verbose` - Show detailed information including hashes
+- `--format <format>` - Output format: table (default), json, or simple
+
+**Examples:**
+```bash
+# List all environments in table format
+launchpad env:list
+
+# Show detailed information with hashes
+launchpad env:list --verbose
+
+# Output as JSON for scripting
+launchpad env:list --format json
+
+# Simple format for quick overview
+launchpad env:ls --format simple
+```
+
+### Environment Clean Command
+
+Clean up unused development environments automatically.
+
+```bash
+launchpad env:clean [options]
+```
+
+**Options:**
+- `--dry-run` - Show what would be cleaned without removing anything
+- `--force` - Skip confirmation prompts
+- `--verbose` - Show detailed information during cleanup
+- `--older-than <days>` - Only clean environments older than specified days (default: 30)
+
+**Examples:**
+```bash
+# Preview what would be cleaned
+launchpad env:clean --dry-run
+
+# Clean environments older than 7 days
+launchpad env:clean --older-than 7 --force
+
+# Interactive cleanup with details
+launchpad env:clean --verbose
+```
+
+### Environment Inspect Command
+
+Inspect a specific development environment in detail.
+
+```bash
+launchpad env:inspect <hash> [options]
+```
+
+**Arguments:**
+- `hash` - Environment hash identifier (e.g., `project-name_1234abcd`)
+
+**Options:**
+- `--verbose` - Show detailed directory structure
+- `--show-stubs` - Show binary stub contents
+
+**Examples:**
+```bash
+# Basic environment inspection
+launchpad env:inspect working-test_208a31ec
+
+# Detailed inspection with stub contents
+launchpad env:inspect final-project_7db6cf06 --verbose --show-stubs
+```
+
+### Environment Remove Command
+
+Remove a specific development environment.
+
+```bash
+launchpad env:remove <hash> [options]
+```
+
+**Arguments:**
+- `hash` - Environment hash identifier (e.g., `project-name_1234abcd`)
+
+**Options:**
+- `--force` - Skip confirmation prompt
+- `--verbose` - Show detailed information during removal
+
+**Examples:**
+```bash
+# Remove environment with confirmation
+launchpad env:remove dummy_6d7cf1d6
+
+# Force removal without confirmation
+launchpad env:remove minimal_3a5dc15d --force
+```
+
+## Environment Hash Format
+
+Launchpad uses a human-readable hash format for environment directories:
+
+**Format:** `{project-name}_{8-char-hex-hash}`
+
+**Examples:**
+- `final-project_7db6cf06` - For a project named "final-project"
+- `working-test_208a31ec` - For a project named "working-test"
+- `my-app_1a2b3c4d` - For a project named "my-app"
+
+**Benefits:**
+- **Human-readable** - Easy to identify which project an environment belongs to
+- **Unique** - 8-character hex hash prevents collisions
+- **Consistent** - Same project always generates the same hash
+- **Manageable** - Much shorter than previous base64 format

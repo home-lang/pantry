@@ -220,20 +220,45 @@ _pkgx_chpwd_hook() {
     local project_name=$(basename "$PWD")
     local clean_project_name=$(echo "$project_name" | sed 's/[^a-zA-Z0-9._-]/-/g' | tr '[:upper:]' '[:lower:]')
 
-    # Create a simple hash using a shell-compatible method
-    # Use a combination of methods for better uniqueness
+    # Create a simple hash using Bun's hash function for consistency
+    # This ensures perfect consistency between shell and TypeScript hash generation
     local hash_input="$PWD"
     local short_hash=""
 
-    # Try different hash methods in order of preference
-    if command -v /usr/bin/python3 >/dev/null 2>&1; then
-      short_hash=$(echo -n "$hash_input" | /usr/bin/python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest()[:8])" 2>/dev/null)
-    elif command -v python3 >/dev/null 2>&1; then
-      short_hash=$(echo -n "$hash_input" | python3 -c "import sys, hashlib; print(hashlib.md5(sys.stdin.read().encode()).hexdigest()[:8])" 2>/dev/null)
-    elif command -v openssl >/dev/null 2>&1; then
-      short_hash=$(echo -n "$hash_input" | openssl md5 2>/dev/null | cut -d' ' -f2 | cut -c1-8)
-    elif command -v base64 >/dev/null 2>&1; then
-      # Fallback: use base64 but with better collision avoidance
+    # Try to use Bun's hash function for consistency
+    if command -v bun >/dev/null 2>&1; then
+      short_hash=$(echo -n "$hash_input" | bun -e "
+const input = await Bun.stdin.text();
+const hash = Bun.hash(input);
+console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
+" 2>/dev/null)
+    fi
+
+    # Fallback: try to find bun in common locations if not in PATH
+    if [ -z "$short_hash" ]; then
+      local bun_paths=(
+        "$HOME/.bun/bin/bun"
+        "/usr/local/bin/bun"
+        "/opt/homebrew/bin/bun"
+        "$HOME/.local/bin/bun"
+      )
+
+      for bun_path in "\${bun_paths[@]}"; do
+        if [ -x "$bun_path" ]; then
+          short_hash=$(echo -n "$hash_input" | "$bun_path" -e "
+const input = await Bun.stdin.text();
+const hash = Bun.hash(input);
+console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
+" 2>/dev/null)
+          if [ -n "$short_hash" ]; then
+            break
+          fi
+        fi
+      done
+    fi
+
+    # Final fallback: use base64 with better collision avoidance if Bun is not available
+    if [ -z "$short_hash" ]; then
       local full_hash=$(echo -n "$hash_input" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
       if [ -n "$full_hash" ]; then
         # Take characters from the middle to avoid suffix collisions
@@ -392,23 +417,27 @@ _launchpad_fast_activate() {
   fi
 
   # Create the deactivation function with proper directory checking
-  _pkgx_dev_try_bye() {
-    case "$PWD" in
-      "$cwd"|"$cwd/"*)
-        return 1
-        ;;
-      *)
-        if [ "$1" != "silent" ]; then
-          echo -e "\\033[31mdev environment deactivated\\033[0m" >&2
-        fi
-        if [ -n "$_LAUNCHPAD_ORIGINAL_PATH" ]; then
-          export PATH="$_LAUNCHPAD_ORIGINAL_PATH"
-          unset _LAUNCHPAD_ORIGINAL_PATH
-        fi
-        unset -f _pkgx_dev_try_bye
-        ;;
-    esac
-  }
+  # Use a here-document to properly capture the cwd variable
+  eval "$(cat <<EOF
+_pkgx_dev_try_bye() {
+  case "\\\$PWD" in
+    "$cwd"|"$cwd/"*)
+      return 1
+      ;;
+    *)
+      if [ "\\\$1" != "silent" ]; then
+        echo -e "\\\\033[31mdev environment deactivated\\\\033[0m" >&2
+      fi
+      if [ -n "\\\$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+        export PATH="\\\$_LAUNCHPAD_ORIGINAL_PATH"
+        unset _LAUNCHPAD_ORIGINAL_PATH
+      fi
+      unset -f _pkgx_dev_try_bye
+      ;;
+  esac
+}
+EOF
+)"
 
   echo "✅ Environment activated for \\033[3m$cwd\\033[0m" >&2
 }

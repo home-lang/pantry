@@ -111,6 +111,10 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_SHIM_PATH` | Set shim path |
 | `LAUNCHPAD_AUTO_SUDO` | Enable/disable auto sudo |
 | `LAUNCHPAD_AUTO_ADD_PATH` | Enable/disable auto PATH modification |
+| `LAUNCHPAD_ENV_BASE_DIR` | Set base directory for project environments |
+| `LAUNCHPAD_AUTO_ACTIVATE_ENV` | Enable/disable automatic environment activation |
+| `LAUNCHPAD_SHOW_ENV_MESSAGES` | Enable/disable environment activation messages |
+| `LAUNCHPAD_ENV_CLEANUP_DAYS` | Default age threshold for environment cleanup |
 
 Example:
 
@@ -206,6 +210,30 @@ const config: LaunchpadConfig = {
 
   // Whether to show activation/deactivation messages
   showEnvMessages: true,
+
+  // Environment cleanup settings
+  envCleanup: {
+    // Default age threshold for cleaning old environments (in days)
+    defaultOlderThanDays: 30,
+
+    // Whether to automatically clean failed installations
+    autoCleanFailedInstalls: true,
+
+    // Whether to prompt before cleaning environments
+    promptBeforeClean: true,
+  },
+
+  // Environment hash format settings
+  envHash: {
+    // Length of hex hash portion (default: 8)
+    hashLength: 8,
+
+    // Whether to include project name in hash (default: true)
+    includeProjectName: true,
+
+    // Character to separate project name from hash (default: '_')
+    separator: '_',
+  },
 }
 ```
 

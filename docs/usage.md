@@ -20,6 +20,10 @@ Here are the main commands available in Launchpad:
 | `bootstrap` | Install all essential tools at once |
 | `list` or `ls` | List installed packages |
 | `uninstall` | Complete removal of Launchpad and all packages |
+| `env:list` or `env:ls` | List all development environments |
+| `env:clean` | Clean up unused development environments |
+| `env:inspect` | Inspect a specific development environment |
+| `env:remove` | Remove a specific development environment |
 | `autoupdate` | Check auto-update status |
 | `autoupdate:enable` | Enable auto-updates |
 | `autoupdate:disable` | Disable auto-updates |
@@ -165,6 +169,150 @@ Each project gets its own isolated environment:
 - Isolated PATH and environment variables
 - Binary stubs with environment isolation
 - Automatic cleanup when leaving project directory
+
+## Environment Management
+
+Launchpad provides comprehensive tools for managing development environments with human-readable identifiers.
+
+### Listing Environments
+
+View all your development environments:
+
+```bash
+# List all environments in a table format
+launchpad env:list
+
+# Show detailed information including hashes
+launchpad env:list --verbose
+
+# Output as JSON for scripting
+launchpad env:list --format json
+
+# Simple format for quick overview
+launchpad env:ls --format simple
+```
+
+**Example Output:**
+```
+📦 Development Environments:
+
+│ Project         │ Packages │ Binaries │ Size     │ Created      │
+├───────────────────────────────────────────────────────────────┤
+│ final-project   │ 2        │ 2        │ 5.0M     │ 5/30/2025    │
+│ working-test    │ 3        │ 20       │ 324M     │ 5/30/2025    │
+│ dummy           │ 1        │ 1        │ 1.1M     │ 5/30/2025    │
+└───────────────────────────────────────────────────────────────┘
+
+Total: 3 environment(s)
+```
+
+### Inspecting Environments
+
+Get detailed information about a specific environment:
+
+```bash
+# Basic inspection
+launchpad env:inspect working-test_208a31ec
+
+# Detailed inspection with directory structure
+launchpad env:inspect final-project_7db6cf06 --verbose
+
+# Show binary stub contents
+launchpad env:inspect dummy_6d7cf1d6 --show-stubs
+```
+
+**Example Output:**
+```
+🔍 Inspecting environment: working-test_208a31ec
+
+📋 Basic Information:
+  Project Name: working-test
+  Hash: working-test_208a31ec
+  Path: /Users/user/.local/share/launchpad/envs/working-test_208a31ec
+  Size: 324M
+  Created: 5/30/2025, 6:38:08 PM
+
+📦 Installed Packages:
+  python.org@3.12.10
+  curl.se@8.5.0
+  cmake.org@3.28.0
+
+🔧 BIN Binaries:
+  python (file, executable)
+  curl (file, executable)
+  cmake (file, executable)
+  ...
+
+🏥 Health Check:
+  ✅ Binaries present
+  ✅ 3 package(s) installed
+
+Overall Status: ✅ Healthy
+```
+
+### Cleaning Up Environments
+
+Automatically clean up unused or failed environments:
+
+```bash
+# Preview what would be cleaned
+launchpad env:clean --dry-run
+
+# Clean environments older than 30 days (default)
+launchpad env:clean
+
+# Clean environments older than 7 days
+launchpad env:clean --older-than 7
+
+# Force cleanup without confirmation
+launchpad env:clean --force
+
+# Verbose cleanup with details
+launchpad env:clean --verbose
+```
+
+**Cleanup Criteria:**
+- Environments with no binaries (failed installations)
+- Environments older than specified days (default: 30)
+- Empty or corrupted environment directories
+
+### Removing Specific Environments
+
+Remove individual environments by their hash:
+
+```bash
+# Remove with confirmation
+launchpad env:remove dummy_6d7cf1d6
+
+# Force removal without confirmation
+launchpad env:remove minimal_3a5dc15d --force
+
+# Verbose removal showing details
+launchpad env:remove working-test_208a31ec --verbose
+```
+
+### Environment Hash Format
+
+Launchpad uses human-readable hash identifiers for environments:
+
+**Format:** `{project-name}_{8-char-hex-hash}`
+
+**Examples:**
+- `final-project_7db6cf06` - Environment for "final-project"
+- `working-test_208a31ec` - Environment for "working-test"
+- `my-app_1a2b3c4d` - Environment for "my-app"
+
+**Benefits:**
+- **Human-readable** - Easy to identify project ownership
+- **Unique** - Hash prevents collisions between similar project names
+- **Consistent** - Same project always generates the same hash
+- **Manageable** - Much shorter than previous base64 format
+
+**Hash Generation:**
+- Project name extracted from directory basename
+- Cleaned to be filesystem-safe (alphanumeric, hyphens, underscores)
+- 8-character hex hash generated from full project path
+- Collision-resistant across different directory structures
 
 ## Bootstrap Setup
 

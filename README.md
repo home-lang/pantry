@@ -43,6 +43,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🎯 **Dependency Detection** — Automatically reads `dependencies.yaml`, `package.json`, and other project files
 - 🔄 **Context Switching** — Seamlessly switch between different project environments
 - 📋 **Version Management** — Install and manage specific versions of tools per project
+- 🗂️ **Environment Management** — List, inspect, clean, and remove project environments with readable identifiers
 
 ### Developer Experience
 - ⚡ **Fast Operations** — Leverage pkgx for efficient package management
@@ -179,6 +180,29 @@ cd ..
 - `Cargo.toml` (Rust projects)
 - And more...
 
+### Environment Management
+
+Manage your project environments with human-readable identifiers:
+
+```bash
+# List all development environments
+launchpad env:list
+
+# Inspect a specific environment
+launchpad env:inspect my-project_1a2b3c4d
+
+# Clean up old or failed environments
+launchpad env:clean --dry-run
+
+# Remove a specific environment
+launchpad env:remove old-project_5e6f7g8h --force
+```
+
+**Environment Hash Format:** `{project-name}_{8-char-hex}`
+- `final-project_7db6cf06` - Easy to identify and manage
+- `working-test_208a31ec` - Human-readable project identification
+- `my-app_1a2b3c4d` - Collision-resistant unique identifiers
+
 ### Package Management
 
 Remove packages and manage your installation:
@@ -309,7 +333,7 @@ For help or discussion:
 
 ## Postcardware
 
-“Software that is free, but hopes for a postcard.” We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
+"Software that is free, but hopes for a postcard." We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
 
 Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United States 🌎
 

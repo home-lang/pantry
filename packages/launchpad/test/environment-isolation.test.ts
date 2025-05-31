@@ -1,3 +1,4 @@
+import Bun from 'bun'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
@@ -96,17 +97,11 @@ describe('Environment Isolation', () => {
     const realPath = fs.existsSync(projectPath) ? fs.realpathSync(projectPath) : projectPath
     const projectName = path.basename(realPath)
 
-    // Create a hash using a simple but effective hash function
-    // This avoids collisions that can occur with base64 suffix matching
-    let hash = 0
-    for (let i = 0; i < realPath.length; i++) {
-      const char = realPath.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32-bit integer
-    }
+    // Use Bun's built-in hash function for consistency and reliability
+    const hash = Bun.hash(realPath)
 
     // Convert to a readable hex string and take 8 characters for uniqueness
-    const shortHash = Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8)
+    const shortHash = hash.toString(16).padStart(16, '0').slice(0, 8)
 
     // Clean project name to be filesystem-safe
     const cleanProjectName = projectName.replace(/[^\w-.]/g, '-').toLowerCase()

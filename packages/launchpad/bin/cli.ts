@@ -2077,4 +2077,682 @@ cli
     }
   })
 
+cli
+  .command('env:list', 'List all development environments')
+  .alias('env:ls')
+  .option('--verbose', 'Show detailed information about each environment')
+  .option('--format <format>', 'Output format: table, json, or simple (default: table)')
+  .example('env:list')
+  .example('env:list --verbose')
+  .example('env:list --format json')
+  .action(async (options?: CliOption & { format?: string }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const format = options?.format || 'table'
+
+    try {
+      const envsDir = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs')
+
+      if (!fs.existsSync(envsDir)) {
+        console.log('📦 No development environments found')
+        console.log('')
+        console.log('💡 Create an environment by running `launchpad dev:on` in a directory with dependencies.yaml')
+        return
+      }
+
+      const envDirs = fs.readdirSync(envsDir).filter((dir) => {
+        const envPath = path.join(envsDir, dir)
+        return fs.statSync(envPath).isDirectory()
+      })
+
+      if (envDirs.length === 0) {
+        console.log('📦 No development environments found')
+        return
+      }
+
+      const environments: Array<{
+        hash: string
+        projectName: string
+        path?: string
+        packages: number
+        binaries: number
+        size: string
+        created: Date
+        lastUsed?: Date
+      }> = []
+
+      for (const envDir of envDirs) {
+        const envPath = path.join(envsDir, envDir)
+
+        try {
+          // Parse hash to extract project info
+          let projectName = 'unknown'
+          let originalPath: string | undefined
+
+          // Check if it's a new readable hash format (project-name_hash)
+          if (envDir.includes('_') && !envDir.includes('L') && !envDir.includes('=')) {
+            projectName = envDir.split('_')[0]
+          }
+          else {
+            // Try to decode old base64 format
+            try {
+              const decoded = Buffer.from(envDir.replace(/_/g, '/').replace(/=/g, '+'), 'base64').toString('utf8')
+              originalPath = decoded
+              projectName = path.basename(decoded)
+            }
+            catch {
+              projectName = `${envDir.slice(0, 20)}...`
+            }
+          }
+
+          // Count packages and binaries
+          let packages = 0
+          let binaries = 0
+
+          const pkgsDir = path.join(envPath, 'pkgs')
+          if (fs.existsSync(pkgsDir)) {
+            packages = fs.readdirSync(pkgsDir).length
+          }
+
+          const binDir = path.join(envPath, 'bin')
+          const sbinDir = path.join(envPath, 'sbin')
+          if (fs.existsSync(binDir)) {
+            binaries += fs.readdirSync(binDir).length
+          }
+          if (fs.existsSync(sbinDir)) {
+            binaries += fs.readdirSync(sbinDir).length
+          }
+
+          // Calculate size
+          const { stdout: sizeOutput } = await execAsync(`du -sh "${envPath}"`, { encoding: 'utf8' })
+          const size = sizeOutput.split('\t')[0].trim()
+
+          // Get creation time
+          const stats = fs.statSync(envPath)
+          const created = stats.birthtime || stats.ctime
+
+          environments.push({
+            hash: envDir,
+            projectName,
+            path: originalPath,
+            packages,
+            binaries,
+            size,
+            created,
+          })
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`⚠️  Could not analyze environment ${envDir}:`, error instanceof Error ? error.message : String(error))
+          }
+        }
+      }
+
+      // Sort by creation time (newest first)
+      environments.sort((a, b) => b.created.getTime() - a.created.getTime())
+
+      if (format === 'json') {
+        console.log(JSON.stringify(environments, null, 2))
+        return
+      }
+
+      if (format === 'simple') {
+        environments.forEach((env) => {
+          console.log(`${env.projectName} (${env.hash})`)
+        })
+        return
+      }
+
+      // Table format (default)
+      console.log('📦 Development Environments:')
+      console.log('')
+
+      if (environments.length === 0) {
+        console.log('No environments found')
+        return
+      }
+
+      // Header
+      const headers = ['Project', 'Packages', 'Binaries', 'Size', 'Created']
+      if (config.verbose) {
+        headers.push('Hash')
+      }
+
+      const colWidths = [
+        Math.max(15, Math.max(...environments.map(e => e.projectName.length))),
+        8,
+        8,
+        8,
+        12,
+      ]
+      if (config.verbose) {
+        colWidths.push(20)
+      }
+
+      // Print header
+      const headerRow = headers.map((h, i) => h.padEnd(colWidths[i])).join(' │ ')
+      console.log(`│ ${headerRow} │`)
+      console.log(`├${'─'.repeat(headerRow.length)}┤`)
+
+      // Print environments
+      environments.forEach((env) => {
+        const row = [
+          env.projectName.padEnd(colWidths[0]),
+          env.packages.toString().padEnd(colWidths[1]),
+          env.binaries.toString().padEnd(colWidths[2]),
+          env.size.padEnd(colWidths[3]),
+          env.created.toLocaleDateString().padEnd(colWidths[4]),
+        ]
+        if (config.verbose) {
+          row.push(`${env.hash.slice(0, 18)}...`)
+        }
+        console.log(`│ ${row.join(' │ ')} │`)
+      })
+
+      console.log(`└${'─'.repeat(headerRow.length)}┘`)
+      console.log('')
+      console.log(`Total: ${environments.length} environment(s)`)
+
+      if (config.verbose && environments.some(e => e.path)) {
+        console.log('')
+        console.log('📍 Original paths (for old base64 environments):')
+        environments.forEach((env) => {
+          if (env.path) {
+            console.log(`  ${env.projectName}: ${env.path}`)
+          }
+        })
+      }
+    }
+    catch (error) {
+      console.error('❌ Failed to list environments:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('env:clean', 'Clean up unused development environments')
+  .option('--dry-run', 'Show what would be cleaned without actually removing anything')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--verbose', 'Show detailed information during cleanup')
+  .option('--older-than <days>', 'Only clean environments older than specified days (default: 30)')
+  .example('env:clean')
+  .example('env:clean --dry-run')
+  .example('env:clean --older-than 7 --force')
+  .action(async (options?: CliOption & { dryRun?: boolean, olderThan?: string }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const isDryRun = options?.dryRun || false
+    const olderThanDays = Number.parseInt(options?.olderThan || '30', 10)
+
+    console.log('🧹 Cleaning up development environments...')
+    if (isDryRun) {
+      console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
+    }
+    console.log('')
+
+    try {
+      const envsDir = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs')
+
+      if (!fs.existsSync(envsDir)) {
+        console.log('📦 No environments directory found - nothing to clean')
+        return
+      }
+
+      const envDirs = fs.readdirSync(envsDir).filter((dir) => {
+        const envPath = path.join(envsDir, dir)
+        return fs.statSync(envPath).isDirectory()
+      })
+
+      if (envDirs.length === 0) {
+        console.log('📦 No environments found - nothing to clean')
+        return
+      }
+
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays)
+
+      const toClean: Array<{
+        hash: string
+        projectName: string
+        path: string
+        created: Date
+        size: string
+        reason: string
+      }> = []
+
+      for (const envDir of envDirs) {
+        const envPath = path.join(envsDir, envDir)
+
+        try {
+          // Parse project name
+          let projectName = 'unknown'
+          if (envDir.includes('_') && !envDir.includes('L') && !envDir.includes('=')) {
+            projectName = envDir.split('_')[0]
+          }
+          else {
+            try {
+              const decoded = Buffer.from(envDir.replace(/_/g, '/').replace(/=/g, '+'), 'base64').toString('utf8')
+              projectName = path.basename(decoded)
+            }
+            catch {
+              projectName = `${envDir.slice(0, 20)}...`
+            }
+          }
+
+          const stats = fs.statSync(envPath)
+          const created = stats.birthtime || stats.ctime
+
+          // Calculate size
+          const { stdout: sizeOutput } = await execAsync(`du -sh "${envPath}"`, { encoding: 'utf8' })
+          const size = sizeOutput.split('\t')[0].trim()
+
+          let reason = ''
+
+          // Check if environment is old
+          if (created < cutoffDate) {
+            reason = `older than ${olderThanDays} days`
+          }
+
+          // Check if environment has no binaries (failed installation)
+          const binDir = path.join(envPath, 'bin')
+          const sbinDir = path.join(envPath, 'sbin')
+          let hasBinaries = false
+
+          if (fs.existsSync(binDir) && fs.readdirSync(binDir).length > 0) {
+            hasBinaries = true
+          }
+          if (fs.existsSync(sbinDir) && fs.readdirSync(sbinDir).length > 0) {
+            hasBinaries = true
+          }
+
+          if (!hasBinaries) {
+            reason = reason ? `${reason}, no binaries` : 'no binaries (failed installation)'
+          }
+
+          if (reason) {
+            toClean.push({
+              hash: envDir,
+              projectName,
+              path: envPath,
+              created,
+              size,
+              reason,
+            })
+          }
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`⚠️  Could not analyze environment ${envDir}:`, error instanceof Error ? error.message : String(error))
+          }
+        }
+      }
+
+      if (toClean.length === 0) {
+        console.log('✨ No environments need cleaning')
+        return
+      }
+
+      console.log(`Found ${toClean.length} environment(s) to clean:`)
+      console.log('')
+
+      // Show what will be cleaned
+      toClean.forEach((env) => {
+        console.log(`🗑️  ${env.projectName}`)
+        console.log(`    Hash: ${env.hash}`)
+        console.log(`    Size: ${env.size}`)
+        console.log(`    Created: ${env.created.toLocaleDateString()}`)
+        console.log(`    Reason: ${env.reason}`)
+        console.log('')
+      })
+
+      // Calculate total size to be freed
+      const totalSizeOutput = await execAsync(`du -sh ${toClean.map(e => `"${e.path}"`).join(' ')}`, { encoding: 'utf8' })
+      const totalSize = totalSizeOutput.stdout.split('\n').pop()?.split('\t')[0]?.trim() || 'unknown'
+
+      console.log(`💾 Total space to be freed: ${totalSize}`)
+      console.log('')
+
+      // Get confirmation (unless forced or dry run)
+      if (!options?.force && !isDryRun) {
+        const readline = await import('node:readline')
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        })
+
+        const answer = await new Promise<string>((resolve) => {
+          rl.question(`🤔 Clean ${toClean.length} environment(s)? (y/N): `, (answer) => {
+            rl.close()
+            resolve(answer.toLowerCase().trim())
+          })
+        })
+
+        if (answer !== 'y' && answer !== 'yes') {
+          console.log('⏭️  Cleanup cancelled')
+          return
+        }
+        console.log('')
+      }
+
+      // Perform cleanup
+      let cleaned = 0
+      let failed = 0
+
+      for (const env of toClean) {
+        try {
+          if (!isDryRun) {
+            await fs.promises.rm(env.path, { recursive: true, force: true })
+          }
+          console.log(`✅ ${isDryRun ? 'Would clean' : 'Cleaned'}: ${env.projectName}`)
+          cleaned++
+        }
+        catch (error) {
+          console.error(`❌ Failed to clean ${env.projectName}:`, error instanceof Error ? error.message : String(error))
+          failed++
+        }
+      }
+
+      console.log('')
+      console.log('📋 Cleanup Summary:')
+      console.log('═══════════════════')
+      console.log(`✅ ${isDryRun ? 'Would clean' : 'Cleaned'}: ${cleaned} environment(s)`)
+      if (failed > 0) {
+        console.log(`❌ Failed: ${failed} environment(s)`)
+      }
+
+      if (!isDryRun && cleaned > 0) {
+        console.log(`💾 Space freed: ${totalSize}`)
+      }
+
+      if (isDryRun) {
+        console.log('')
+        console.log('🔍 DRY RUN COMPLETED - No changes were made')
+        console.log('💡 Run without --dry-run to actually clean the environments')
+      }
+    }
+    catch (error) {
+      console.error('❌ Failed to clean environments:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('env:inspect <hash>', 'Inspect a specific development environment')
+  .option('--verbose', 'Show detailed information')
+  .option('--show-stubs', 'Show binary stub contents')
+  .example('env:inspect project-a_1234abcd')
+  .example('env:inspect project-a_1234abcd --verbose --show-stubs')
+  .action(async (hash: string, options?: CliOption & { showStubs?: boolean }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    try {
+      const envsDir = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs')
+      const envPath = path.join(envsDir, hash)
+
+      if (!fs.existsSync(envPath)) {
+        console.error(`❌ Environment not found: ${hash}`)
+        console.log('')
+        console.log('💡 Use `launchpad env:list` to see available environments')
+        process.exit(1)
+      }
+
+      console.log(`🔍 Inspecting environment: ${hash}`)
+      console.log('')
+
+      // Parse project info
+      let projectName = 'unknown'
+      let originalPath: string | undefined
+
+      if (hash.includes('_') && !hash.includes('L') && !hash.includes('=')) {
+        projectName = hash.split('_')[0]
+      }
+      else {
+        try {
+          const decoded = Buffer.from(hash.replace(/_/g, '/').replace(/=/g, '+'), 'base64').toString('utf8')
+          originalPath = decoded
+          projectName = path.basename(decoded)
+        }
+        catch {
+          projectName = `${hash.slice(0, 20)}...`
+        }
+      }
+
+      // Basic info
+      console.log('📋 Basic Information:')
+      console.log(`  Project Name: ${projectName}`)
+      console.log(`  Hash: ${hash}`)
+      console.log(`  Path: ${envPath}`)
+      if (originalPath) {
+        console.log(`  Original Path: ${originalPath}`)
+      }
+
+      // Size and dates
+      const stats = fs.statSync(envPath)
+      const { stdout: sizeOutput } = await execAsync(`du -sh "${envPath}"`, { encoding: 'utf8' })
+      const size = sizeOutput.split('\t')[0].trim()
+
+      console.log(`  Size: ${size}`)
+      console.log(`  Created: ${(stats.birthtime || stats.ctime).toLocaleString()}`)
+      console.log(`  Modified: ${stats.mtime.toLocaleString()}`)
+      console.log('')
+
+      // Directory structure
+      console.log('📁 Directory Structure:')
+      const subdirs = ['bin', 'sbin', 'pkgs', 'lib', 'share', 'etc']
+      for (const subdir of subdirs) {
+        const subdirPath = path.join(envPath, subdir)
+        if (fs.existsSync(subdirPath)) {
+          const items = fs.readdirSync(subdirPath)
+          console.log(`  ${subdir}/: ${items.length} item(s)`)
+          if (config.verbose && items.length > 0) {
+            items.slice(0, 10).forEach(item => console.log(`    - ${item}`))
+            if (items.length > 10) {
+              console.log(`    ... and ${items.length - 10} more`)
+            }
+          }
+        }
+      }
+      console.log('')
+
+      // Packages
+      const pkgsDir = path.join(envPath, 'pkgs')
+      if (fs.existsSync(pkgsDir)) {
+        const packages = fs.readdirSync(pkgsDir)
+        console.log('📦 Installed Packages:')
+        if (packages.length === 0) {
+          console.log('  None')
+        }
+        else {
+          packages.forEach((pkg) => {
+            const pkgPath = path.join(pkgsDir, pkg)
+            if (fs.statSync(pkgPath).isDirectory()) {
+              const versions = fs.readdirSync(pkgPath)
+              versions.forEach((version) => {
+                console.log(`  ${pkg}@${version.replace(/^v/, '')}`)
+              })
+            }
+          })
+        }
+        console.log('')
+      }
+
+      // Binaries
+      const binDirs = [
+        { name: 'bin', path: path.join(envPath, 'bin') },
+        { name: 'sbin', path: path.join(envPath, 'sbin') },
+      ]
+
+      for (const { name, path: binPath } of binDirs) {
+        if (fs.existsSync(binPath)) {
+          const binaries = fs.readdirSync(binPath)
+          if (binaries.length > 0) {
+            console.log(`🔧 ${name.toUpperCase()} Binaries:`)
+            binaries.forEach((binary) => {
+              const binaryPath = path.join(binPath, binary)
+              const stats = fs.statSync(binaryPath)
+              const isExecutable = (stats.mode & Number.parseInt('111', 8)) !== 0
+              const type = stats.isSymbolicLink() ? 'symlink' : 'file'
+              console.log(`  ${binary} (${type}${isExecutable ? ', executable' : ''})`)
+
+              if (options?.showStubs && !stats.isSymbolicLink()) {
+                try {
+                  const content = fs.readFileSync(binaryPath, 'utf8')
+                  if (content.includes('Project-specific binary stub')) {
+                    console.log('    📄 Stub content preview:')
+                    const lines = content.split('\n').slice(0, 10)
+                    lines.forEach(line => console.log(`      ${line}`))
+                    if (content.split('\n').length > 10) {
+                      console.log('      ...')
+                    }
+                  }
+                }
+                catch {
+                  // Ignore binary files
+                }
+              }
+            })
+            console.log('')
+          }
+        }
+      }
+
+      // Environment health check
+      console.log('🏥 Health Check:')
+      let healthy = true
+
+      // Check if environment has any binaries
+      let hasBinaries = false
+      for (const { path: binPath } of binDirs) {
+        if (fs.existsSync(binPath) && fs.readdirSync(binPath).length > 0) {
+          hasBinaries = true
+          break
+        }
+      }
+
+      if (!hasBinaries) {
+        console.log('  ❌ No binaries found (possible failed installation)')
+        healthy = false
+      }
+      else {
+        console.log('  ✅ Binaries present')
+      }
+
+      // Check if packages directory exists and has content
+      if (fs.existsSync(pkgsDir)) {
+        const packages = fs.readdirSync(pkgsDir)
+        if (packages.length === 0) {
+          console.log('  ⚠️  No packages installed')
+        }
+        else {
+          console.log(`  ✅ ${packages.length} package(s) installed`)
+        }
+      }
+      else {
+        console.log('  ❌ No packages directory')
+        healthy = false
+      }
+
+      console.log('')
+      console.log(`Overall Status: ${healthy ? '✅ Healthy' : '❌ Issues detected'}`)
+
+      if (!healthy) {
+        console.log('')
+        console.log('💡 Suggestions:')
+        console.log('  • This environment may have failed during installation')
+        console.log('  • Consider cleaning it with: launchpad env:clean')
+        console.log('  • Or recreate it by running: launchpad dev:on in the project directory')
+      }
+    }
+    catch (error) {
+      console.error('❌ Failed to inspect environment:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('env:remove <hash>', 'Remove a specific development environment')
+  .option('--force', 'Skip confirmation prompt')
+  .option('--verbose', 'Show detailed information during removal')
+  .example('env:remove project-a_1234abcd')
+  .example('env:remove project-a_1234abcd --force')
+  .action(async (hash: string, options?: CliOption) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    try {
+      const envsDir = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs')
+      const envPath = path.join(envsDir, hash)
+
+      if (!fs.existsSync(envPath)) {
+        console.error(`❌ Environment not found: ${hash}`)
+        console.log('')
+        console.log('💡 Use `launchpad env:list` to see available environments')
+        process.exit(1)
+      }
+
+      // Parse project info
+      let projectName = 'unknown'
+      if (hash.includes('_') && !hash.includes('L') && !hash.includes('=')) {
+        projectName = hash.split('_')[0]
+      }
+      else {
+        try {
+          const decoded = Buffer.from(hash.replace(/_/g, '/').replace(/=/g, '+'), 'base64').toString('utf8')
+          projectName = path.basename(decoded)
+        }
+        catch {
+          projectName = `${hash.slice(0, 20)}...`
+        }
+      }
+
+      // Get size
+      const { stdout: sizeOutput } = await execAsync(`du -sh "${envPath}"`, { encoding: 'utf8' })
+      const size = sizeOutput.split('\t')[0].trim()
+
+      console.log(`🗑️  Removing environment: ${projectName}`)
+      console.log(`    Hash: ${hash}`)
+      console.log(`    Size: ${size}`)
+      console.log('')
+
+      // Get confirmation (unless forced)
+      if (!options?.force) {
+        const readline = await import('node:readline')
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        })
+
+        const answer = await new Promise<string>((resolve) => {
+          rl.question(`🤔 Remove environment '${projectName}'? (y/N): `, (answer) => {
+            rl.close()
+            resolve(answer.toLowerCase().trim())
+          })
+        })
+
+        if (answer !== 'y' && answer !== 'yes') {
+          console.log('⏭️  Removal cancelled')
+          return
+        }
+        console.log('')
+      }
+
+      // Remove the environment
+      await fs.promises.rm(envPath, { recursive: true, force: true })
+
+      console.log(`✅ Environment '${projectName}' removed successfully`)
+      console.log(`💾 Space freed: ${size}`)
+    }
+    catch (error) {
+      console.error('❌ Failed to remove environment:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 cli.parse()
