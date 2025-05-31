@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
-import { platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { addToPath, isInPath, standardPath } from '../src/utils'
@@ -63,7 +62,8 @@ describe('Utils', () => {
       if (process.platform === 'darwin') {
         // On macOS, should include homebrew paths
         expect(stdPath).toContain('/opt/homebrew/bin')
-      } else if (process.platform === 'linux') {
+      }
+      else if (process.platform === 'linux') {
         // On Linux, should include linuxbrew paths
         expect(stdPath).toMatch(/linuxbrew/)
       }

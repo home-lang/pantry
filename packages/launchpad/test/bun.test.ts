@@ -4,6 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { get_bun_asset, get_latest_bun_version, install_bun } from '../src/bun'
+
 // Mock the node:os module before importing the functions
 const mockPlatform = mock(() => 'linux')
 const mockArch = mock(() => 'x64')
@@ -27,8 +29,6 @@ mock.module('node:os', () => ({
   endianness: os.endianness,
   EOL: os.EOL,
 }))
-
-import { get_bun_asset, get_latest_bun_version, install_bun } from '../src/bun'
 
 describe('Bun', () => {
   let originalEnv: NodeJS.ProcessEnv

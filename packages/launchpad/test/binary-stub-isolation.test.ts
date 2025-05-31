@@ -245,7 +245,8 @@ describe('Binary Stub Isolation', () => {
               // On macOS, expect fallback paths; on Linux, just check it's set
               if (process.platform === 'darwin') {
                 expect(stubContent).toContain(':/usr/lib:/usr/local/lib')
-              } else {
+              }
+              else {
                 // On Linux, DYLD_FALLBACK_LIBRARY_PATH might not have the same fallback paths
                 expect(stubContent).toMatch(/DYLD_FALLBACK_LIBRARY_PATH="[^"]*"/)
               }
