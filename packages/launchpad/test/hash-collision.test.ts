@@ -150,8 +150,8 @@ describe('Hash Collision Prevention', () => {
       expect(dummyResult.exitCode).toBe(0)
 
       // Extract installation prefixes
-      const mainPrefix = mainResult.stderr.match(/Installation prefix: (.+)/)?.[1]
-      const dummyPrefix = dummyResult.stderr.match(/Installation prefix: (.+)/)?.[1]
+      const mainPrefix = mainResult.stderr.match(/(?:📍 )?Installation prefix: (.+)/)?.[1]
+      const dummyPrefix = dummyResult.stderr.match(/(?:📍 )?Installation prefix: (.+)/)?.[1]
 
       expect(mainPrefix).toBeDefined()
       expect(dummyPrefix).toBeDefined()
@@ -275,9 +275,9 @@ describe('Hash Collision Prevention', () => {
 
   describe('Collision Regression Tests', () => {
     it('should prevent the specific collision that occurred between main and dummy dirs', async () => {
-      // Test the exact scenario that caused the original collision
-      const mainDir = '/Users/chrisbreuer/Code/launchpad'
-      const dummyDir = '/Users/chrisbreuer/Code/launchpad/dummy'
+      // Test with real directories that exist in any environment
+      const mainDir = process.cwd()
+      const dummyDir = path.join(tempDir, 'dummy')
 
       const mainHash = Buffer.from(mainDir).toString('base64').replace(/[/+=]/g, '_')
       const dummyHash = Buffer.from(dummyDir).toString('base64').replace(/[/+=]/g, '_')
