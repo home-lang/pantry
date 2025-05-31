@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -504,7 +503,7 @@ export default async function (
 
     // Combine project name with short hash for readability
     // Clean project name to be filesystem-safe
-    const cleanProjectName = projectName.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase()
+    const cleanProjectName = projectName.replace(/[^\w-.]/g, '-').toLowerCase()
 
     return `${cleanProjectName}_${shortHash}`
   }

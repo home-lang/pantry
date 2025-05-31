@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -110,7 +109,7 @@ describe('Environment Isolation', () => {
     const shortHash = Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8)
 
     // Clean project name to be filesystem-safe
-    const cleanProjectName = projectName.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase()
+    const cleanProjectName = projectName.replace(/[^\w-.]/g, '-').toLowerCase()
 
     return `${cleanProjectName}_${shortHash}`
   }
@@ -588,10 +587,22 @@ describe('Environment Isolation', () => {
       // Create a deeply nested directory structure
       const deepPath = path.join(
         tempDir,
-        'level1', 'level2', 'level3', 'level4', 'level5',
-        'level6', 'level7', 'level8', 'level9', 'level10',
-        'level11', 'level12', 'level13', 'level14', 'level15',
-        'final-project-with-very-long-name-that-could-cause-issues'
+        'level1',
+        'level2',
+        'level3',
+        'level4',
+        'level5',
+        'level6',
+        'level7',
+        'level8',
+        'level9',
+        'level10',
+        'level11',
+        'level12',
+        'level13',
+        'level14',
+        'level15',
+        'final-project-with-very-long-name-that-could-cause-issues',
       )
 
       fs.mkdirSync(deepPath, { recursive: true })
@@ -619,7 +630,8 @@ describe('Environment Isolation', () => {
         // Verify the environment directory was created
         const envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', hash)
         expect(fs.existsSync(envDir)).toBe(true)
-      } else {
+      }
+      else {
         // If installation fails, should still attempt to process the file
         expect(result.stderr).toContain('Installing packages')
         expect(result.stderr).not.toContain('no devenv detected')
@@ -634,8 +646,13 @@ describe('Environment Isolation', () => {
       // Create a deeply nested directory with similar name
       const deepPath = path.join(
         tempDir,
-        'deep', 'nested', 'structure', 'with', 'many', 'levels',
-        'shallow-project' // Same final name but different path
+        'deep',
+        'nested',
+        'structure',
+        'with',
+        'many',
+        'levels',
+        'shallow-project', // Same final name but different path
       )
       fs.mkdirSync(deepPath, { recursive: true })
 
@@ -662,12 +679,12 @@ describe('Environment Isolation', () => {
       const veryLongSegment = 'a'.repeat(100) // 100 character segment
       const extremelyDeepPath = path.join(
         tempDir,
-        veryLongSegment + '1',
-        veryLongSegment + '2',
-        veryLongSegment + '3',
-        veryLongSegment + '4',
-        veryLongSegment + '5',
-        'final-project'
+        `${veryLongSegment}1`,
+        `${veryLongSegment}2`,
+        `${veryLongSegment}3`,
+        `${veryLongSegment}4`,
+        `${veryLongSegment}5`,
+        'final-project',
       )
 
       try {
@@ -685,15 +702,17 @@ describe('Environment Isolation', () => {
         // Should either succeed or fail gracefully
         if (result.exitCode === 0) {
           expect(result.stdout).toContain('Project-specific environment')
-        } else {
+        }
+        else {
           expect(result.stderr).toContain('Installing packages')
         }
-      } catch (error) {
+      }
+      catch (error) {
         // If filesystem doesn't support such long paths, that's acceptable
         if (error instanceof Error && (
-          error.message.includes('ENAMETOOLONG') ||
-          error.message.includes('path too long') ||
-          error.message.includes('File name too long')
+          error.message.includes('ENAMETOOLONG')
+          || error.message.includes('path too long')
+          || error.message.includes('File name too long')
         )) {
           console.warn('Skipping extremely long path test: filesystem limitation')
           return
