@@ -138,7 +138,8 @@ describe('Dev Commands', () => {
         expect(result.stdout).toContain('TEST_VAR=test_value')
         expect(result.stdout).toContain('_pkgx_dev_try_bye')
         expect(result.stdout).toContain('export PATH=')
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -165,7 +166,8 @@ describe('Dev Commands', () => {
             expect(stubContent).toContain('exec')
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -262,7 +264,8 @@ describe('Dev Commands', () => {
         // Accept either success or failure
         if (result.exitCode === 0) {
           expect(result.stdout).toContain('PATH=')
-        } else {
+        }
+        else {
           expect(result.stderr).toContain('No packages were successfully installed')
         }
       }
@@ -346,7 +349,8 @@ describe('Dev Commands', () => {
         // Accept either success or failure
         if (result.exitCode === 0) {
           expect(result.stdout).toContain('PATH=')
-        } else {
+        }
+        else {
           expect(result.stderr).toContain('No packages were successfully installed')
         }
       }
@@ -359,7 +363,8 @@ describe('Dev Commands', () => {
         // Accept either success or failure
         if (result.exitCode === 0) {
           expect(result.stdout).toContain('PATH=')
-        } else {
+        }
+        else {
           expect(result.stderr).toContain('No packages were successfully installed')
         }
       }
@@ -447,7 +452,8 @@ describe('Dev Commands', () => {
 
         // Check that deactivation function includes the correct directory
         expect(result.stdout).toContain(tempDir)
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -462,7 +468,7 @@ describe('Dev Commands', () => {
       fs.writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({
         name: 'test-project',
         dependencies: {
-          'node': '^18.0.0',
+          node: '^18.0.0',
         },
       }))
 
@@ -472,7 +478,8 @@ describe('Dev Commands', () => {
       if (result.exitCode === 0) {
         expect(result.stdout).toContain('Project-specific environment')
         expect(result.stdout).toContain('export PATH=')
-      } else {
+      }
+      else {
         expect(result.stderr).toContain('No packages were successfully installed')
       }
     }, 60000)
@@ -491,7 +498,8 @@ describe('Dev Commands', () => {
       if (result.exitCode === 0) {
         expect(result.stdout).toContain('Project-specific environment')
         expect(result.stdout).toContain(nestedDir)
-      } else {
+      }
+      else {
         expect(result.stderr).toContain('No packages were successfully installed')
       }
     }, 60000)

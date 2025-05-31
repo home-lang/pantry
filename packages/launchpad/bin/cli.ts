@@ -11,7 +11,7 @@ import { create_shim, install, install_bun, install_prefix, list, shim_dir } fro
 import { config } from '../src/config'
 import { Path } from '../src/path'
 import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '../src/pkgx'
-import { activateDevEnv, addToPath, isInPath } from '../src/utils'
+import { activateDevEnv, addToPath, downloadAndInstallPkgx, isInPath } from '../src/utils'
 
 const execAsync = promisify(exec)
 const cli = new CAC('launchpad')
@@ -680,8 +680,8 @@ cli
         console.log(`Installing to: ${installPath.string}`)
       }
 
-      // Use the new download and install function
-      // await downloadAndInstallPkgx(installPath) // Function deleted - use standard installer
+      // Use the downloadAndInstallPkgx function from utils
+      await downloadAndInstallPkgx(installPath)
 
       console.log('✅ pkgx has been successfully installed!')
 

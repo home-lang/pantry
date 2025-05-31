@@ -275,12 +275,16 @@ describe('Hash Collision Prevention', () => {
 
   describe('Collision Regression Tests', () => {
     it('should prevent the specific collision that occurred between main and dummy dirs', async () => {
-      // Test with real directories that exist in any environment
-      const mainDir = process.cwd()
-      const dummyDir = path.join(tempDir, 'dummy')
+      // Test with realistic directory paths that would generate meaningful hashes
+      const mainDir = path.join(tempDir, 'launchpad-main-project')
+      const dummyDir = path.join(tempDir, 'launchpad-main-project', 'dummy')
 
-      const mainHash = Buffer.from(mainDir).toString('base64').replace(/[/+=]/g, '_')
-      const dummyHash = Buffer.from(dummyDir).toString('base64').replace(/[/+=]/g, '_')
+      // Create the directories to get realistic paths
+      fs.mkdirSync(mainDir, { recursive: true })
+      fs.mkdirSync(dummyDir, { recursive: true })
+
+      const mainHash = Buffer.from(fs.realpathSync(mainDir)).toString('base64').replace(/[/+=]/g, '_')
+      const dummyHash = Buffer.from(fs.realpathSync(dummyDir)).toString('base64').replace(/[/+=]/g, '_')
 
       // These should be completely different, not just the first 16 characters
       expect(mainHash).not.toBe(dummyHash)

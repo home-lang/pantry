@@ -287,7 +287,8 @@ describe('Environment Isolation', () => {
         expect(result.stdout).toContain('TEST_VAR2=$TEST_VAR2')
         expect(result.stdout).toContain('unset TEST_VAR1')
         expect(result.stdout).toContain('unset TEST_VAR2')
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -461,7 +462,8 @@ describe('Environment Isolation', () => {
           expect(stubContent).toContain('_ORIG_PATH=')
           expect(stubContent).toContain('export PATH=')
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -484,7 +486,8 @@ describe('Environment Isolation', () => {
 
         // Empty variables are filtered out by the system to avoid setting empty env vars
         // This is actually correct behavior - no need to set EMPTY_VAR if it's empty
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -508,7 +511,8 @@ describe('Environment Isolation', () => {
 
         // Should still create environment setup but not reinstall
         expect(secondResult.stdout).toContain('Project-specific environment')
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(firstResult.stderr).toContain('No packages were successfully installed')
       }

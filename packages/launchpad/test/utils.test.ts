@@ -51,19 +51,19 @@ describe('Utils', () => {
     })
 
     it('should include platform-specific paths on macOS', () => {
-      const originalPlatform = process.platform
+      const originalPlatform = os.platform
       const originalHomedir = os.homedir
 
       // Mock both platform and homedir for consistent testing
-      Object.defineProperty(process, 'platform', { value: 'darwin' })
-      Object.defineProperty(os, 'homedir', { value: () => '/Users/testuser' })
+      Object.defineProperty(os, 'platform', { value: () => 'darwin', configurable: true })
+      Object.defineProperty(os, 'homedir', { value: () => '/Users/testuser', configurable: true })
 
       const stdPath = standardPath()
       expect(stdPath).toContain('/opt/homebrew/bin')
 
       // Restore original values
-      Object.defineProperty(process, 'platform', { value: originalPlatform })
-      Object.defineProperty(os, 'homedir', { value: originalHomedir })
+      Object.defineProperty(os, 'platform', { value: originalPlatform, configurable: true })
+      Object.defineProperty(os, 'homedir', { value: originalHomedir, configurable: true })
     })
   })
 

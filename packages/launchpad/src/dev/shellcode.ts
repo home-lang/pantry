@@ -118,8 +118,9 @@ function findDevCommand(): string {
     return 'dev'
   }
 
-  // If nothing is found, throw error
-  throw new Error('couldn\'t find `dev` or `launchpad` - please install launchpad globally or run from the project directory')
+  // If nothing is found, provide a fallback that will work in most environments
+  // This ensures dev:shellcode always works, even if launchpad isn't globally installed
+  return 'echo "❌ Neither bun nor pkgx found. Please install one of them or run: curl -fsSL https://bun.sh/install | bash" >&2; false'
 }
 
 export default function shellcode(): string {

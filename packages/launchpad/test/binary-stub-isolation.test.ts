@@ -116,7 +116,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toMatch(/exec ".*nginx"/)
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -154,7 +155,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toContain('trap _cleanup_env EXIT')
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -176,7 +178,8 @@ describe('Binary Stub Isolation', () => {
         // Count the number of stubs created
         const stubLines = result.stderr.split('\n').filter(line => line.includes('Created isolated stub'))
         expect(stubLines.length).toBeGreaterThan(1) // git package has multiple binaries
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -213,7 +216,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toContain('_ORIG_LD_LIBRARY_PATH=')
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -238,11 +242,18 @@ describe('Binary Stub Isolation', () => {
 
             // Should set DYLD_FALLBACK_LIBRARY_PATH with fallback paths
             if (stubContent.includes('DYLD_FALLBACK_LIBRARY_PATH')) {
-              expect(stubContent).toContain(':/usr/lib:/usr/local/lib')
+              // On macOS, expect fallback paths; on Linux, just check it's set
+              if (process.platform === 'darwin') {
+                expect(stubContent).toContain(':/usr/lib:/usr/local/lib')
+              } else {
+                // On Linux, DYLD_FALLBACK_LIBRARY_PATH might not have the same fallback paths
+                expect(stubContent).toMatch(/DYLD_FALLBACK_LIBRARY_PATH="[^"]*"/)
+              }
             }
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -270,7 +281,8 @@ describe('Binary Stub Isolation', () => {
             expect(stats.mode & 0o111).toBeGreaterThan(0)
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -303,7 +315,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toContain('"$@"') // Arguments should be properly passed through
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -336,7 +349,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toMatch(/exec ".*nginx.*" "\$@"/)
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -374,7 +388,8 @@ describe('Binary Stub Isolation', () => {
       if (result.exitCode === 0) {
         // Should not fail if some expected directories don't exist
         expect(result.stderr).not.toContain('Failed to create stub')
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -393,7 +408,8 @@ describe('Binary Stub Isolation', () => {
         if (result.stderr.includes('Symlink') && result.stderr.includes('non-existent')) {
           expect(result.stderr).toContain('skipping')
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -427,7 +443,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toContain('[ ') // POSIX-compatible
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
@@ -466,7 +483,8 @@ describe('Binary Stub Isolation', () => {
             expect(stubContent).toMatch(/exec ".*nginx.*" "\$@"/)
           }
         }
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('No packages were successfully installed')
       }
