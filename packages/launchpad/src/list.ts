@@ -1,7 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { pantry } from 'ts-pkgx'
 import { Path } from './path'
 import { Version } from './version'
+
+const versions = pantry.bun.versions
+
+// eslint-disable-next-line no-console
+console.log(versions)
 
 /**
  * List installed packages

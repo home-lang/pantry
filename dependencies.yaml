@@ -1,5 +1,5 @@
 dependencies:
-  bun.sh: ^1.2.14
+  bun.sh: ^1.2.15
   nodejs.org: ^22.11.0
   zlib.net: ^1.2.13
   aws.amazon.com/cli: ^2.27.22

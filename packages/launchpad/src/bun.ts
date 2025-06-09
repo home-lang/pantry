@@ -101,7 +101,7 @@ export async function get_latest_bun_version(): Promise<string> {
       console.warn('Using cached GitHub release data')
     }
 
-    return cachedData.tag_name.replace(/^v/, '') // Remove 'v' prefix
+    return cachedData.tag_name.replace(/^bun-v?/, '') // Remove 'bun-v' or 'bun-' or 'v' prefix
   }
 
   // Fetch from GitHub API if cache is missing or invalid
@@ -116,7 +116,7 @@ export async function get_latest_bun_version(): Promise<string> {
   // Update cache with new data
   updateGithubCache(data)
 
-  return data.tag_name.replace(/^v/, '') // Remove 'v' prefix
+  return data.tag_name.replace(/^bun-v?/, '') // Remove 'bun-v' or 'bun-' or 'v' prefix
 }
 
 /**

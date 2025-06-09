@@ -24,6 +24,7 @@ Here are the main commands available in Launchpad:
 | `env:clean` | Clean up unused development environments |
 | `env:inspect` | Inspect a specific development environment |
 | `env:remove` | Remove a specific development environment |
+| `env:update` | Update package versions in dependencies.yaml |
 | `autoupdate` | Check auto-update status |
 | `autoupdate:enable` | Enable auto-updates |
 | `autoupdate:disable` | Disable auto-updates |
@@ -313,6 +314,62 @@ Launchpad uses human-readable hash identifiers for environments:
 - Cleaned to be filesystem-safe (alphanumeric, hyphens, underscores)
 - 8-character hex hash generated from full project path
 - Collision-resistant across different directory structures
+
+## Updating Dependencies
+
+### Automatic Updates
+
+Keep your dependencies up to date with the `env:update` command:
+
+```bash
+# Check for available updates
+launchpad env:update --check-only
+
+# Preview what would be updated
+launchpad env:update --dry-run
+
+# Apply updates interactively
+launchpad env:update
+
+# Apply updates without confirmation
+launchpad env:update --force
+```
+
+The update command:
+- **Checks latest versions** from pkgx and GitHub (for Bun)
+- **Preserves version constraints** (^, ~, >=, etc.)
+- **Shows clear diff** of what will change
+- **Supports dry-run mode** for safe previewing
+- **Updates dependencies.yaml** automatically
+
+**Example output:**
+```
+🔄 Checking for package updates...
+
+📋 Found dependency file: dependencies.yaml
+📦 Found 11 dependencies to check
+
+🔍 Checking bun.sh...
+  ✅ Up to date: 1.2.15
+🔍 Checking nodejs.org...
+  📈 Update available: 22.11.0 → 24.0.1
+🔍 Checking zlib.net...
+  📈 Update available: 1.2.13 → 1.3.1
+
+📋 Found 2 update(s) available:
+
+📦 nodejs.org
+    Current: ^22.11.0
+    Latest:  ^24.0.1
+
+📦 zlib.net
+    Current: ^1.2.13
+    Latest:  ^1.3.1
+
+🤔 Apply 2 update(s)? (y/N):
+```
+
+After updating, run `launchpad dev:on` to activate the updated environment.
 
 ## Bootstrap Setup
 

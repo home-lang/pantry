@@ -2755,4 +2755,256 @@ cli
     }
   })
 
+cli
+  .command('env:update [directory]', 'Update package versions in dependencies.yaml')
+  .option('--dry-run', 'Show what would be updated without making changes')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--verbose', 'Show detailed information during update')
+  .option('--check-only', 'Only check for updates without applying them')
+  .example('env:update')
+  .example('env:update --dry-run')
+  .example('env:update /path/to/project --force')
+  .action(async (directory?: string, options?: CliOption & { dryRun?: boolean, checkOnly?: boolean }) => {
+    // Override config options from CLI
+    if (options?.verbose)
+      config.verbose = true
+
+    const targetDir = directory ? path.resolve(directory) : process.cwd()
+    const isDryRun = options?.dryRun || options?.checkOnly || false
+
+    console.log('🔄 Checking for package updates...')
+    if (isDryRun) {
+      console.log('🔍 DRY RUN MODE - No changes will be made')
+    }
+    console.log('')
+
+    try {
+      // Find dependencies file
+      const depsFiles = [
+        'dependencies.yaml',
+        'dependencies.yml',
+        'pkgx.yaml',
+        'pkgx.yml',
+      ]
+
+      const depsFile = depsFiles.find(file => fs.existsSync(path.join(targetDir, file)))
+
+      if (!depsFile) {
+        console.log('❌ No dependency files found in directory')
+        console.log('')
+        console.log('💡 Create a dependencies.yaml file with your package requirements')
+        process.exit(1)
+      }
+
+      const depsPath = path.join(targetDir, depsFile)
+      console.log(`📋 Found dependency file: ${depsFile}`)
+
+      // Read and parse dependencies file
+      let fileContent = ''
+      try {
+        fileContent = fs.readFileSync(depsPath, 'utf8')
+      }
+      catch (err) {
+        console.error(`Failed to read ${depsFile}:`, err instanceof Error ? err.message : String(err))
+        process.exit(1)
+      }
+
+      // Parse YAML content
+      const lines = fileContent.split('\n')
+      const dependencies: Array<{ name: string, currentVersion: string, lineIndex: number, line: string }> = []
+      let inDependenciesSection = false
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        const trimmed = line.trim()
+
+        if (trimmed === 'dependencies:') {
+          inDependenciesSection = true
+          continue
+        }
+
+        if (inDependenciesSection) {
+          // Check if we've left the dependencies section
+          if (trimmed && !trimmed.startsWith('#') && !line.startsWith('  ') && !line.startsWith('\t')) {
+            inDependenciesSection = false
+            continue
+          }
+
+          // Parse dependency line
+          const match = trimmed.match(/^([^:]+):\s*(.+)$/)
+          if (match) {
+            const [, name, version] = match
+            dependencies.push({
+              name: name.trim(),
+              currentVersion: version.trim(),
+              lineIndex: i,
+              line: line,
+            })
+          }
+        }
+      }
+
+      if (dependencies.length === 0) {
+        console.log('📦 No dependencies found in file')
+        return
+      }
+
+      console.log(`📦 Found ${dependencies.length} dependencies to check`)
+      console.log('')
+
+      // Check for updates
+      const updates: Array<{
+        name: string
+        currentVersion: string
+        latestVersion: string
+        lineIndex: number
+        line: string
+        newLine: string
+      }> = []
+
+      for (const dep of dependencies) {
+        try {
+          console.log(`🔍 Checking ${dep.name}...`)
+
+          let latestVersion = ''
+
+          // Special handling for bun.sh
+          if (dep.name === 'bun.sh') {
+            const { get_latest_bun_version } = await import('../src/bun')
+            latestVersion = await get_latest_bun_version()
+          }
+          else {
+            // For other packages, try to get latest version via pkgx
+            try {
+              const { get_pkgx, query_pkgx } = await import('../src/pkgx')
+              const pkgx = get_pkgx()
+              const [response] = await query_pkgx(pkgx, [dep.name], { timeout: 10000 })
+
+              if (response.pkg?.pkg?.version) {
+                latestVersion = response.pkg.pkg.version.toString()
+              }
+            }
+            catch (pkgxError) {
+              if (config.verbose) {
+                console.warn(`  ⚠️  Could not check ${dep.name} via pkgx:`, pkgxError instanceof Error ? pkgxError.message : String(pkgxError))
+              }
+              console.log(`  ⏭️  Skipping ${dep.name} (unable to check version)`)
+              continue
+            }
+          }
+
+          if (!latestVersion) {
+            console.log(`  ⏭️  Skipping ${dep.name} (no version found)`)
+            continue
+          }
+
+          // Clean current version for comparison (remove ^ ~ >= etc.)
+          const cleanCurrentVersion = dep.currentVersion.replace(/^[\^~>=<]+/, '')
+
+          // Compare versions
+          if (latestVersion !== cleanCurrentVersion) {
+            console.log(`  📈 Update available: ${cleanCurrentVersion} → ${latestVersion}`)
+
+            // Create new line with updated version
+            const versionPrefix = dep.currentVersion.match(/^[\^~>=<]+/)?.[0] || '^'
+            const newVersion = `${versionPrefix}${latestVersion}`
+            const newLine = dep.line.replace(dep.currentVersion, newVersion)
+
+            updates.push({
+              name: dep.name,
+              currentVersion: dep.currentVersion,
+              latestVersion,
+              lineIndex: dep.lineIndex,
+              line: dep.line,
+              newLine,
+            })
+          }
+          else {
+            console.log(`  ✅ Up to date: ${cleanCurrentVersion}`)
+          }
+        }
+        catch (error) {
+          console.log(`  ❌ Error checking ${dep.name}:`, error instanceof Error ? error.message : String(error))
+        }
+      }
+
+      console.log('')
+
+      if (updates.length === 0) {
+        console.log('✨ All dependencies are up to date!')
+        return
+      }
+
+      console.log(`📋 Found ${updates.length} update(s) available:`)
+      console.log('')
+
+      updates.forEach((update) => {
+        console.log(`📦 ${update.name}`)
+        console.log(`    Current: ${update.currentVersion}`)
+        console.log(`    Latest:  ^${update.latestVersion}`)
+        console.log('')
+      })
+
+      if (options?.checkOnly) {
+        console.log('🔍 CHECK ONLY MODE - No changes will be made')
+        return
+      }
+
+      if (isDryRun) {
+        console.log('🔍 DRY RUN COMPLETED - No changes were made')
+        console.log('💡 Run without --dry-run to apply the updates')
+        return
+      }
+
+      // Get confirmation (unless forced)
+      if (!options?.force) {
+        const readline = await import('node:readline')
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        })
+
+        const answer = await new Promise<string>((resolve) => {
+          rl.question(`🤔 Apply ${updates.length} update(s)? (y/N): `, (answer) => {
+            rl.close()
+            resolve(answer.toLowerCase().trim())
+          })
+        })
+
+        if (answer !== 'y' && answer !== 'yes') {
+          console.log('⏭️  Updates cancelled')
+          return
+        }
+        console.log('')
+      }
+
+      // Apply updates
+      console.log('📝 Applying updates...')
+
+      // Create updated content
+      const updatedLines = [...lines]
+      for (const update of updates) {
+        updatedLines[update.lineIndex] = update.newLine
+      }
+
+      // Write updated file
+      const updatedContent = updatedLines.join('\n')
+      fs.writeFileSync(depsPath, updatedContent, 'utf8')
+
+      console.log(`✅ Updated ${updates.length} dependencies in ${depsFile}`)
+
+      // Show what was updated
+      updates.forEach((update) => {
+        console.log(`  📦 ${update.name}: ${update.currentVersion} → ^${update.latestVersion}`)
+      })
+
+      console.log('')
+      console.log('💡 Run `launchpad dev:on` to activate the updated environment')
+    }
+    catch (error) {
+      console.error('❌ Failed to update dependencies:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 cli.parse()
