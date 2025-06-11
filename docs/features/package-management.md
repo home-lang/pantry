@@ -38,9 +38,6 @@ The default behavior already installs to `/usr/local` for system-wide availabili
 # Default installation (already system-wide)
 launchpad install node@22
 
-# Explicit system flag (redundant, same as above)
-launchpad install node@22 --system
-
 # Explicit path (equivalent to default when /usr/local is writable)
 launchpad install node@22 --path /usr/local
 ```
@@ -91,9 +88,6 @@ launchpad install --path ~/tools go@1.21
 
 # Force reinstallation
 launchpad install --force node@22
-
-# Install without automatically adding to PATH
-launchpad install --no-auto-path typescript
 ```
 
 ### Smart Installation
@@ -104,8 +98,8 @@ Use smart installation for automatic fallback to system package managers:
 # Try pkgx first, fallback to brew/apt if needed
 launchpad smart-install node python
 
-# Disable fallback behavior
-launchpad smart-install --no-fallback go
+# Smart install handles multiple package types automatically
+launchpad smart-install git curl wget
 ```
 
 ## Package Removal
@@ -124,10 +118,6 @@ launchpad remove node python ruby
 # Remove specific versions
 launchpad remove node@20
 launchpad remove python.org@3.10.17
-
-# Remove with aliases
-launchpad rm node
-launchpad uninstall-package python
 ```
 
 ### Removal Options
@@ -190,9 +180,6 @@ launchpad uninstall --force
 Choose what to remove with selective options:
 
 ```bash
-# Remove only packages, keep shell integration
-launchpad uninstall --keep-shell-integration
-
 # Remove only shell integration, keep packages
 launchpad uninstall --keep-packages
 
@@ -263,9 +250,6 @@ See what's currently installed:
 ```bash
 # List all packages
 launchpad list
-
-# Shorthand
-launchpad ls
 
 # Verbose listing with paths
 launchpad list --verbose

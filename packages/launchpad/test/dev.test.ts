@@ -182,7 +182,8 @@ describe('Dev Commands', () => {
       expect(result.stdout).not.toContain('[object Object]')
 
       // The word "null" appears in legitimate shell code like >/dev/null, so check more specifically
-      expect(result.stdout).not.toContain('null)')
+      // Check for JavaScript null values that got converted to strings (but exclude dev/null patterns)
+      expect(result.stdout).not.toMatch(/(?<!\/dev\/)null\)/g)
       expect(result.stdout).not.toContain('= null')
 
       // Should contain proper shell constructs for messages

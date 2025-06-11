@@ -2,11 +2,19 @@
 
 This document provides detailed information about Launchpad's API for developers who want to integrate with or extend Launchpad.
 
+## Installation
+
+```bash
+npm install @stacksjs/launchpad
+```
+
 ## Core Modules
 
 ### Installation Module
 
 ```typescript
+import { install, install_prefix, install_bun } from '@stacksjs/launchpad'
+
 /**
  * Install one or more packages
  * @param args Package names to install
@@ -33,6 +41,8 @@ async function install_bun(installPath: string, version?: string): Promise<strin
 ### Shim Module
 
 ```typescript
+import { create_shim, shim_dir } from '@stacksjs/launchpad'
+
 /**
  * Create shims for packages
  * @param args Package names to create shims for
@@ -51,11 +61,19 @@ function shim_dir(): Path
 ### Development Environment Module
 
 ```typescript
+import { dump, integrate, shellcode, datadir } from '@stacksjs/launchpad'
+
 /**
  * Generate shell integration code for automatic environment activation
  * @returns Shell script code for integration with bash/zsh
  */
 function shellcode(): string
+
+/**
+ * Get the data directory for environment storage
+ * @returns Path object representing the data directory
+ */
+function datadir(): Path
 
 /**
  * Generate environment setup script for a project directory
@@ -65,7 +83,7 @@ function shellcode(): string
  */
 async function dump(
   cwd: string,
-  opts: { dryrun: boolean, quiet: boolean }
+  opts: { dryrun?: boolean, quiet?: boolean }
 ): Promise<void>
 
 /**
@@ -74,36 +92,12 @@ async function dump(
  * @returns Promise that resolves when integration is complete
  */
 async function integrate(directory: string): Promise<void>
-
-interface EnvironmentIsolationConfig {
-  projectPath: string
-  installPrefix: string
-  packages: PackageSpec[]
-  env: Record<string, string | string[]>
-}
-
-interface PackageSpec {
-  project: string
-  version: string
-  command: string
-}
 ```
 
 ### pkgx Module
 
 ```typescript
-/**
- * Query pkgx for package information
- * @param pkgx Path to pkgx executable
- * @param args Arguments to pass to pkgx
- * @param options Query options
- * @returns Promise resolving to JSON response and environment
- */
-async function query_pkgx(
-  pkgx: string,
-  args: string[],
-  options?: QueryPkgxOptions
-): Promise<[JsonResponse, Record<string, string>]>
+import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '@stacksjs/launchpad'
 
 /**
  * Check if pkgx auto-updates are enabled
@@ -117,26 +111,13 @@ async function check_pkgx_autoupdate(): Promise<boolean>
  * @returns Promise resolving to boolean indicating success
  */
 async function configure_pkgx_autoupdate(enable: boolean): Promise<boolean>
-
-interface QueryPkgxOptions {
-  env?: Record<string, string>
-  timeout?: number
-}
-
-interface JsonResponse {
-  pkgs: Array<{
-    path: string
-    project: string
-    version: string
-  }>
-  runtime_env: Record<string, string>
-  env: Record<string, string | string[]>
-}
 ```
 
 ### List Module
 
 ```typescript
+import { list } from '@stacksjs/launchpad'
+
 /**
  * List installed packages
  * @param basePath Path to list packages from
@@ -144,204 +125,153 @@ interface JsonResponse {
  */
 async function list(basePath: string): Promise<Installation[]>
 
-/**
- * List package paths as generator
- * @param installPath Installation directory
- * @returns Async generator yielding package paths
- */
-async function* ls(installPath?: string): AsyncGenerator<string>
-
 interface Installation {
-  project: string
-  version: string
-  path: string
-  binaries: string[]
+  path: Path
+  pkg: {
+    project: string
+    version: Version
+  }
 }
-```
-
-### Package Removal Module
-
-```typescript
-/**
- * Remove specific packages while keeping Launchpad installation
- * @param packages Array of package names/specs to remove
- * @param options Removal options
- * @returns Promise resolving to removal results
- */
-async function removePackages(
-  packages: string[],
-  options: RemoveOptions
-): Promise<RemovalResult[]>
-
-/**
- * Complete system cleanup - remove Launchpad and all packages
- * @param options Cleanup options
- * @returns Promise resolving to cleanup results
- */
-async function completeUninstall(options: UninstallOptions): Promise<UninstallResult>
-
-interface RemoveOptions {
-  installPath?: string
-  dryRun?: boolean
-  force?: boolean
-  verbose?: boolean
-}
-
-interface RemovalResult {
-  package: string
-  action: 'removed' | 'not-found' | 'failed'
-  files?: string[]
-  details?: string
-}
-
-interface UninstallOptions {
-  dryRun?: boolean
-  force?: boolean
-  keepPackages?: boolean
-  keepShellIntegration?: boolean
-  verbose?: boolean
-}
-
-interface UninstallResult {
-  success: boolean
-  removedItems: string[]
-  failedItems: string[]
-  spaceFree: string
-}
-```
-
-### Environment Isolation Module
-
-```typescript
-/**
- * Create isolated binary stubs for packages
- * @param pkgDir Package directory containing binaries
- * @param installPrefix Project-specific installation prefix
- * @param project Package project name
- * @param command Package command name
- * @param runtimeEnv Runtime environment variables
- * @param env Additional environment variables
- * @returns Promise that resolves when stubs are created
- */
-async function createBinaryStubs(
-  pkgDir: string,
-  installPrefix: string,
-  project: string,
-  command: string,
-  runtimeEnv: Record<string, string>,
-  env: Record<string, string | string[]>
-): Promise<void>
-
-/**
- * Generate project hash for environment isolation
- * @param projectPath Full path to project directory
- * @returns Base64-encoded hash suitable for directory names
- */
-function generateProjectHash(projectPath: string): string
-
-/**
- * Get project-specific environment directory
- * @param projectPath Full path to project directory
- * @returns Path to isolated environment directory
- */
-function getProjectEnvDir(projectPath: string): string
-
-/**
- * Escape shell strings for safe script generation
- * @param str String to escape
- * @returns Shell-escaped string
- */
-function shell_escape(str: string): string
 ```
 
 ### Configuration Module
 
 ```typescript
-/**
- * Load Launchpad configuration from various sources
- * @returns Merged configuration object
- */
-function loadConfig(): LaunchpadConfig
-
-/**
- * Validate configuration object
- * @param config Configuration to validate
- * @returns Array of validation errors (empty if valid)
- */
-function validateConfig(config: LaunchpadConfig): string[]
+import { config, defaultConfig } from '@stacksjs/launchpad'
+import type { LaunchpadConfig, LaunchpadOptions } from '@stacksjs/launchpad'
 
 interface LaunchpadConfig {
-  verbose?: boolean
-  installationPath?: string
-  shimPath?: string
-  autoSudo?: boolean
-  maxRetries?: number
-  timeout?: number
-  symlinkVersions?: boolean
-  forceReinstall?: boolean
-  autoAddToPath?: boolean
-  devAware?: boolean
+  /** Enable verbose logging (default: false) */
+  verbose: boolean
+  /** Path where binaries should be installed (default: /usr/local if writable, ~/.local otherwise) */
+  installationPath: string
+  /** Password for sudo operations, loaded from .env SUDO_PASSWORD (default: '') */
+  sudoPassword: string
+  /** Whether to enable dev-aware installations (default: true) */
+  devAware: boolean
+  /** Whether to auto-elevate with sudo when needed (default: true) */
+  autoSudo: boolean
+  /** Max installation retries on failure (default: 3) */
+  maxRetries: number
+  /** Timeout for pkgx operations in milliseconds (default: 60000) */
+  timeout: number
+  /** Whether to symlink versions (default: true) */
+  symlinkVersions: boolean
+  /** Whether to force reinstall if already installed (default: false) */
+  forceReinstall: boolean
+  /** Default path for shims (default: ~/.local/bin) */
+  shimPath: string
+  /** Whether to automatically add shim path to the system PATH (default: true) */
+  autoAddToPath: boolean
+  /** Whether to show shell environment activation messages (default: true) */
+  showShellMessages: boolean
+  /** Custom message to show when environment is activated (default: "✅ Environment activated for {path}") */
+  shellActivationMessage: string
+  /** Custom message to show when environment is deactivated (default: "dev environment deactivated") */
+  shellDeactivationMessage: string
+}
+
+type LaunchpadOptions = Partial<LaunchpadConfig>
+
+// The resolved configuration object
+const config: LaunchpadConfig
+
+// The default configuration values
+const defaultConfig: LaunchpadConfig
+```
+
+### Version Module
+
+```typescript
+import { Version, parseVersion } from '@stacksjs/launchpad'
+
+/**
+ * Simple class to represent semantic versions
+ */
+class Version {
+  raw: string
+  major: number
+  minor: number
+  patch: number
+
+  constructor(version: string)
+  toString(): string
+}
+
+/**
+ * Helper to parse a version string into a Version object
+ * @param versionStr Version string to parse
+ * @returns Version object or null if invalid
+ */
+function parseVersion(versionStr: string): Version | null
+```
+
+### Path Module
+
+```typescript
+import { Path } from '@stacksjs/launchpad'
+
+/**
+ * Path utility class for handling file system paths
+ */
+class Path {
+  string: string
+
+  constructor(path: string)
+  // Additional path methods available
 }
 ```
 
-### Path Management Module
+### Utility Functions
 
 ```typescript
+import {
+  activateDevEnv,
+  addToPath,
+  downloadAndInstallPkgx,
+  isInPath
+} from '@stacksjs/launchpad'
+
 /**
- * Add directory to system PATH
- * @param directory Directory to add
- * @returns Promise that resolves when PATH is updated
+ * Activate development environment for a directory
+ */
+async function activateDevEnv(directory: string): Promise<void>
+
+/**
+ * Add a directory to the system PATH
  */
 async function addToPath(directory: string): Promise<void>
 
 /**
- * Check if directory is in PATH
- * @param directory Directory to check
- * @returns Boolean indicating if directory is in PATH
+ * Download and install pkgx
+ */
+async function downloadAndInstallPkgx(installPath: string): Promise<void>
+
+/**
+ * Check if a directory is in the system PATH
  */
 function isInPath(directory: string): boolean
-
-/**
- * Get platform-specific data directory
- * @returns Path to data directory
- */
-function platform_data_home_default(): string
-
-/**
- * Find dev command (launchpad or fallback)
- * @returns Path to dev command executable
- */
-function findDevCommand(): string
 ```
 
-### Dependency Sniffing Module
+## Type Definitions
+
+### Core Types
 
 ```typescript
-/**
- * Detect dependencies from project files
- * @param options Sniffing options
- * @returns Promise resolving to detected dependencies and environment
- */
-async function sniff(options: SniffOptions): Promise<SniffResult>
-
-interface SniffOptions {
-  string: string // Project directory path
+interface JsonResponse {
+  runtime_env: Record<string, Record<string, string>>
+  pkgs: Installation[]
+  env: Record<string, Record<string, string>>
+  pkg: Installation
 }
 
-interface SniffResult {
-  pkgs: Array<{
+interface Installation {
+  path: Path
+  pkg: {
     project: string
-    constraint: {
-      toString: () => string
-    }
-  }>
-  env: Record<string, string>
+    version: Version
+  }
 }
-
-/**
- * List of supported dependency file names
- */
-const DEPENDENCY_FILES: readonly string[]
 ```
 
 ## Usage Examples
@@ -349,285 +279,127 @@ const DEPENDENCY_FILES: readonly string[]
 ### Basic Package Installation
 
 ```typescript
-import { install, install_prefix } from 'launchpad'
+import { install, install_prefix } from '@stacksjs/launchpad'
 
-// Install packages to default location
-const installedFiles = await install(['node@22', 'python@3.12'], install_prefix().string)
+// Install a package
+const installPath = install_prefix()
+const installedFiles = await install(['node@22'], installPath.string)
 console.log('Installed files:', installedFiles)
 ```
 
-### Environment Setup
+### Configuration
 
 ```typescript
-import { dump, shellcode } from 'launchpad/dev'
+import { config } from '@stacksjs/launchpad'
+import type { LaunchpadConfig } from '@stacksjs/launchpad'
 
-// Generate shell integration code
-const shellCode = shellcode()
-console.log(shellCode)
+// Access current configuration
+console.log('Verbose mode:', config.verbose)
+console.log('Install path:', config.installationPath)
 
-// Generate environment for specific project
-await dump('/path/to/project', { dryrun: false, quiet: false })
-```
-
-### Configuration Management
-
-```typescript
-import { loadConfig, validateConfig } from 'launchpad/config'
-
-// Load current configuration
-const config = loadConfig()
-console.log('Current config:', config)
-
-// Validate configuration
-const errors = validateConfig(config)
-if (errors.length > 0) {
-  console.error('Configuration errors:', errors)
+// Create custom configuration
+const customConfig: LaunchpadConfig = {
+  ...config,
+  verbose: true,
+  installationPath: '/custom/path'
 }
 ```
 
-### Package Management
+### Development Environment
 
 ```typescript
-import { list, removePackages } from 'launchpad'
+import { dump, shellcode, integrate } from '@stacksjs/launchpad'
 
-// List installed packages
-const packages = await list('/usr/local')
-console.log('Installed packages:', packages)
+// Generate shell integration code
+const shellIntegration = shellcode()
+console.log(shellIntegration)
 
-// Remove specific packages
-const results = await removePackages(['node', 'python'], {
-  dryRun: true,
-  verbose: true,
-})
-console.log('Removal results:', results)
+// Generate environment for a project
+await dump('/path/to/project', { dryrun: false, quiet: false })
+
+// Integrate shell environment
+await integrate('/path/to/project')
 ```
 
-### Environment Isolation
+### Creating Shims
 
 ```typescript
-import { createBinaryStubs, generateProjectHash, getProjectEnvDir } from 'launchpad/env'
+import { create_shim, shim_dir } from '@stacksjs/launchpad'
 
-// Generate hash for project
-const projectPath = '/home/user/my-project'
-const hash = generateProjectHash(projectPath)
-console.log('Project hash:', hash)
+// Create shims for packages
+const shimPath = shim_dir()
+const createdShims = await create_shim(['node', 'python'], shimPath.string)
+console.log('Created shims:', createdShims)
+```
 
-// Get environment directory
-const envDir = getProjectEnvDir(projectPath)
-console.log('Environment directory:', envDir)
+### Version Handling
 
-// Create isolated stubs
-await createBinaryStubs(
-  '/path/to/package',
-  envDir,
-  'nodejs.org',
-  'node',
-  { NODE_PATH: '/custom/path' },
-  { NODE_ENV: 'development' }
-)
+```typescript
+import { Version, parseVersion } from '@stacksjs/launchpad'
+
+// Parse version string
+const version = parseVersion('1.2.3')
+if (version) {
+  console.log(`Major: ${version.major}, Minor: ${version.minor}, Patch: ${version.patch}`)
+}
+
+// Create version object directly
+const v = new Version('2.0.0')
+console.log(v.toString()) // "2.0.0"
+```
+
+### Auto-update Management
+
+```typescript
+import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '@stacksjs/launchpad'
+
+// Check current auto-update status
+const isEnabled = await check_pkgx_autoupdate()
+console.log('Auto-updates enabled:', isEnabled)
+
+// Enable auto-updates
+await configure_pkgx_autoupdate(true)
+
+// Disable auto-updates
+await configure_pkgx_autoupdate(false)
+```
+
+### Listing Packages
+
+```typescript
+import { list } from '@stacksjs/launchpad'
+
+// List installed packages
+const installations = await list('/usr/local')
+installations.forEach(installation => {
+  console.log(`${installation.pkg.project}@${installation.pkg.version} at ${installation.path.string}`)
+})
 ```
 
 ## Error Handling
 
-All async functions throw errors that should be handled appropriately:
+Most functions in the Launchpad API can throw errors. It's recommended to wrap calls in try-catch blocks:
 
 ```typescript
+import { install } from '@stacksjs/launchpad'
+
 try {
-  await install(['nonexistent-package'], '/usr/local')
-}
-catch (error) {
-  if (error instanceof PackageNotFoundError) {
-    console.error('Package not found:', error.packageName)
-  }
-  else if (error instanceof PermissionError) {
-    console.error('Permission denied:', error.path)
-  }
-  else {
-    console.error('Unexpected error:', error.message)
-  }
+  const result = await install(['node@22'], '/usr/local')
+  console.log('Installation successful:', result)
+} catch (error) {
+  console.error('Installation failed:', error.message)
 }
 ```
 
-## Events and Hooks
+## TypeScript Support
 
-Launchpad provides hooks for monitoring operations:
+Launchpad is written in TypeScript and provides full type definitions. All functions, classes, and interfaces are properly typed for the best development experience.
 
 ```typescript
-import { on } from 'launchpad/events'
-
-// Listen for package installation events
-on('package:install:start', (packageName) => {
-  console.log(`Installing ${packageName}...`)
-})
-
-on('package:install:complete', (packageName, files) => {
-  console.log(`Installed ${packageName} with ${files.length} files`)
-})
-
-// Listen for environment events
-on('env:activate', (projectPath) => {
-  console.log(`Environment activated for ${projectPath}`)
-})
-
-on('env:deactivate', (projectPath) => {
-  console.log(`Environment deactivated for ${projectPath}`)
-})
+import type {
+  LaunchpadConfig,
+  LaunchpadOptions,
+  Installation,
+  JsonResponse
+} from '@stacksjs/launchpad'
 ```
-
-### Install Command
-
-Install one or more packages using pkgx with automatic PATH management.
-
-```bash
-launchpad install [packages...] [options]
-```
-
-**Aliases:** `i`
-
-**Arguments:**
-- `packages` - One or more package specifications (e.g., `node@22`, `python@3.12`)
-
-**Options:**
-- `--verbose` - Enable verbose logging
-- `--path <path>` - Installation path (default: auto-detected)
-- `--system` - Install to /usr/local (same as default behavior)
-- `--sudo` - Use sudo for installation
-- `--force` - Force reinstall even if package is already installed
-
-**Examples:**
-```bash
-# Install Node.js (defaults to /usr/local)
-launchpad install node@22
-
-# Install multiple packages
-launchpad install python@3.12 go@1.21
-
-# System-wide installation (same as default)
-launchpad install node@22 --system
-
-# Custom installation path
-launchpad install python@3.12 --path ~/tools
-
-# Force reinstall
-launchpad install --force node@22
-```
-
-### Environment List Command
-
-List all development environments with readable hash identifiers.
-
-```bash
-launchpad env:list [options]
-```
-
-**Aliases:** `env:ls`
-
-**Options:**
-- `--verbose` - Show detailed information including hashes
-- `--format <format>` - Output format: table (default), json, or simple
-
-**Examples:**
-```bash
-# List all environments in table format
-launchpad env:list
-
-# Show detailed information with hashes
-launchpad env:list --verbose
-
-# Output as JSON for scripting
-launchpad env:list --format json
-
-# Simple format for quick overview
-launchpad env:ls --format simple
-```
-
-### Environment Clean Command
-
-Clean up unused development environments automatically.
-
-```bash
-launchpad env:clean [options]
-```
-
-**Options:**
-- `--dry-run` - Show what would be cleaned without removing anything
-- `--force` - Skip confirmation prompts
-- `--verbose` - Show detailed information during cleanup
-- `--older-than <days>` - Only clean environments older than specified days (default: 30)
-
-**Examples:**
-```bash
-# Preview what would be cleaned
-launchpad env:clean --dry-run
-
-# Clean environments older than 7 days
-launchpad env:clean --older-than 7 --force
-
-# Interactive cleanup with details
-launchpad env:clean --verbose
-```
-
-### Environment Inspect Command
-
-Inspect a specific development environment in detail.
-
-```bash
-launchpad env:inspect <hash> [options]
-```
-
-**Arguments:**
-- `hash` - Environment hash identifier (e.g., `project-name_1234abcd`)
-
-**Options:**
-- `--verbose` - Show detailed directory structure
-- `--show-stubs` - Show binary stub contents
-
-**Examples:**
-```bash
-# Basic environment inspection
-launchpad env:inspect working-test_208a31ec
-
-# Detailed inspection with stub contents
-launchpad env:inspect final-project_7db6cf06 --verbose --show-stubs
-```
-
-### Environment Remove Command
-
-Remove a specific development environment.
-
-```bash
-launchpad env:remove <hash> [options]
-```
-
-**Arguments:**
-- `hash` - Environment hash identifier (e.g., `project-name_1234abcd`)
-
-**Options:**
-- `--force` - Skip confirmation prompt
-- `--verbose` - Show detailed information during removal
-
-**Examples:**
-```bash
-# Remove environment with confirmation
-launchpad env:remove dummy_6d7cf1d6
-
-# Force removal without confirmation
-launchpad env:remove minimal_3a5dc15d --force
-```
-
-## Environment Hash Format
-
-Launchpad uses a human-readable hash format for environment directories:
-
-**Format:** `{project-name}_{8-char-hex-hash}`
-
-**Examples:**
-- `final-project_7db6cf06` - For a project named "final-project"
-- `working-test_208a31ec` - For a project named "working-test"
-- `my-app_1a2b3c4d` - For a project named "my-app"
-
-**Benefits:**
-- **Human-readable** - Easy to identify which project an environment belongs to
-- **Unique** - 8-character hex hash prevents collisions
-- **Consistent** - Same project always generates the same hash
-- **Manageable** - Much shorter than previous base64 format

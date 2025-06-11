@@ -128,6 +128,11 @@ export default function shellcode(): string {
   const dev_cmd = findDevCommand()
   const dependencyFilesList = DEPENDENCY_FILES.join(' ')
 
+  // Evaluate config values once to avoid undefined issues in shell script
+  const showShellMessages = config.showShellMessages ? 'true' : 'false'
+  const shellActivationMessageTemplate = config.shellActivationMessage || 'Environment activated for {path}'
+  const shellDeactivationMessage = config.shellDeactivationMessage || 'dev environment deactivated'
+
   return `
 # Global variable to prevent infinite loops
 _PKGX_ACTIVATING=""
@@ -421,18 +426,18 @@ _launchpad_fast_activate() {
   # Use a here-document to properly capture the cwd variable
   eval "$(cat <<EOF
 _pkgx_dev_try_bye() {
-  case "\\\$PWD" in
+  case "\\$PWD" in
     "$cwd"|"$cwd/"*)
       return 1
       ;;
     *)
-      if [ "\\\$1" != "silent" ]; then
-        if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
-          echo -e "\\\\033[31m${config.shellDeactivationMessage}\\\\033[0m" >&2
+      if [ "\\$1" != "silent" ]; then
+        if [ "${showShellMessages}" = "true" ]; then
+          echo -e "\\\\033[31m${shellDeactivationMessage}\\\\033[0m" >&2
         fi
       fi
-      if [ -n "\\\$_LAUNCHPAD_ORIGINAL_PATH" ]; then
-        export PATH="\\\$_LAUNCHPAD_ORIGINAL_PATH"
+      if [ -n "\\$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+        export PATH="\\$_LAUNCHPAD_ORIGINAL_PATH"
         unset _LAUNCHPAD_ORIGINAL_PATH
       fi
       unset -f _pkgx_dev_try_bye
@@ -443,10 +448,11 @@ EOF
 )"
 
   # Show activation message if enabled
-  if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
-    # Replace {path} placeholder with actual path
-    local message="${config.shellActivationMessage.replace('{path}', '\\033[3m$cwd\\033[0m')}"
-    echo "$message" >&2
+  if [ "${showShellMessages}" = "true" ]; then
+    # Replace {path} placeholder with actual path using sed with | delimiter
+    local message="${shellActivationMessageTemplate}"
+    message=$(echo "$message" | sed "s|{path}|\\\\033[3m$cwd\\\\033[0m|g")
+    echo -e "$message" >&2
   fi
 }
 
@@ -484,8 +490,8 @@ _pkgx_activate_with_pkgx() {
     echo "# Environment setup (fallback mode)"
     echo "eval \\"_pkgx_dev_try_bye() {"
     echo "  if [ \\\\\\"\\$1\\\\\\" != \\\\\\"silent\\\\\\" ]; then"
-    echo "    if [ '${config.showShellMessages ? 'true' : 'false'}' = 'true' ]; then"
-    echo "      echo '${config.shellDeactivationMessage}' >&2"
+    echo "    if [ '${showShellMessages}' = 'true' ]; then"
+    echo "      echo '${shellDeactivationMessage}' >&2"
     echo "    fi"
     echo "  fi"
     echo "  unset -f _pkgx_dev_try_bye"
@@ -514,7 +520,7 @@ _pkgx_activate_with_pkgx() {
     fi
 
     echo "set +a"
-    if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
+    if [ "${showShellMessages}" = "true" ]; then
       echo "echo '✅ Dev environment activated via pkgx (fallback)' >&2"
     fi
 

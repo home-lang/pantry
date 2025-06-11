@@ -6,13 +6,13 @@ Launchpad can be configured using a configuration file or through command-line o
 
 Launchpad looks for configuration in these locations (in order of precedence):
 
-1. `.launchpad.json` or `launchpad.config.ts` in the current directory
+1. `launchpad.config.ts` or `launchpad.config.js` in the current directory
 2. `~/.launchpadrc` or `~/.config/launchpad/config.json` in your home directory
 
 Example configuration file (`launchpad.config.ts`):
 
 ```ts
-import type { LaunchpadConfig } from 'launchpad'
+import type { LaunchpadConfig } from '@stacksjs/launchpad'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -23,6 +23,9 @@ const config: LaunchpadConfig = {
   // Path where binaries should be installed
   // (default: /usr/local if writable, ~/.local otherwise)
   installationPath: '/usr/local',
+
+  // Password for sudo operations, loaded from .env SUDO_PASSWORD (default: '')
+  sudoPassword: '',
 
   // Whether to enable dev-aware installations (default: true)
   devAware: true,
@@ -69,6 +72,8 @@ JavaScript format (`.launchpadrc`):
 {
   "verbose": true,
   "installationPath": "/usr/local",
+  "sudoPassword": "",
+  "devAware": true,
   "autoSudo": true,
   "maxRetries": 3,
   "timeout": 60000,
@@ -102,6 +107,13 @@ JavaScript format (`.launchpadrc`):
 | `symlinkVersions` | boolean | `true` | Whether to symlink versions |
 | `forceReinstall` | boolean | `false` | Force reinstallation even if already installed |
 
+### Authentication & Security
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `sudoPassword` | string | `""` | Password for sudo operations, can be loaded from `SUDO_PASSWORD` environment variable |
+| `autoSudo` | boolean | `true` | Automatically use sudo when needed |
+
 ### Shell Environment Messages
 
 | Option | Type | Default | Description |
@@ -109,12 +121,6 @@ JavaScript format (`.launchpadrc`):
 | `showShellMessages` | boolean | `true` | Whether to display environment activation/deactivation messages |
 | `shellActivationMessage` | string | `"✅ Environment activated for {path}"` | Custom message shown when environment is activated. Use `{path}` placeholder for project path |
 | `shellDeactivationMessage` | string | `"dev environment deactivated"` | Custom message shown when environment is deactivated |
-
-### Permission Management
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `autoSudo` | boolean | `true` | Automatically use sudo when needed |
 
 ### Path Management
 
@@ -133,12 +139,10 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_SHIM_PATH` | Set shim path |
 | `LAUNCHPAD_AUTO_SUDO` | Enable/disable auto sudo |
 | `LAUNCHPAD_AUTO_ADD_PATH` | Enable/disable auto PATH modification |
-| `LAUNCHPAD_ENV_BASE_DIR` | Set base directory for project environments |
-| `LAUNCHPAD_AUTO_ACTIVATE_ENV` | Enable/disable automatic environment activation |
 | `LAUNCHPAD_SHOW_ENV_MESSAGES` | Enable/disable environment activation messages |
-| `LAUNCHPAD_ENV_CLEANUP_DAYS` | Default age threshold for environment cleanup |
 | `LAUNCHPAD_SHELL_ACTIVATION_MESSAGE` | Custom shell activation message |
 | `LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE` | Custom shell deactivation message |
+| `SUDO_PASSWORD` | Password for sudo operations |
 
 Example:
 
@@ -226,7 +230,7 @@ launchpad install --path ~/custom-path node@22
 launchpad shim --force node
 
 # Disable auto PATH modification
-launchpad dev --no-auto-path
+launchpad bootstrap --no-auto-path
 
 # Install specific Bun version
 launchpad bun --version 1.0.0
@@ -240,9 +244,6 @@ launchpad remove python --dry-run
 # Complete removal without confirmation
 launchpad uninstall --force
 
-# Keep specific components during uninstall
-launchpad uninstall --keep-shell-integration
-
 # Generate environment script with options
 launchpad dev:dump --verbose --dryrun
 
@@ -250,218 +251,90 @@ launchpad dev:dump --verbose --dryrun
 launchpad install --quiet node@22
 ```
 
-## Development Environment Configuration
+## Configuration File Locations
 
-### Project-Level Configuration
+Launchpad uses the `bunfig` library to load configuration files in this order:
 
-Create a `dependencies.yaml` file in your project root:
+1. `launchpad.config.ts` in current directory
+2. `launchpad.config.js` in current directory
+3. `launchpad.config.json` in current directory
+4. `.launchpadrc` in home directory
+5. `~/.config/launchpad/config.json`
 
-```yaml
-dependencies:
-  - node@22
-  - python@3.12
-  - gnu.org/wget@1.21
+## TypeScript Integration
 
-env:
-  NODE_ENV: development
-  API_URL: https://api.example.com
-  DATABASE_URL: postgresql://localhost/myapp
-```
-
-### Global Environment Configuration
-
-Set global environment defaults in your Launchpad config:
+When using Launchpad as a library, you can import the types:
 
 ```ts
-const config: LaunchpadConfig = {
-  // Global environment variables for all projects
-  globalEnv: {
-    EDITOR: 'code',
-    BROWSER: 'chrome',
-  },
+import type { LaunchpadConfig, LaunchpadOptions } from '@stacksjs/launchpad'
 
-  // Default packages to include in all environments
-  defaultPackages: [
-    'git',
-    'curl.se',
-  ],
+// Full configuration
+const config: LaunchpadConfig = {
+  verbose: true,
+  installationPath: '/usr/local',
+  // ... all other required properties
+}
+
+// Partial configuration (useful for runtime overrides)
+const options: LaunchpadOptions = {
+  verbose: true,
+  force: true,
 }
 ```
 
-### Environment Isolation Settings
+## Configuration Validation
 
-Configure how project environments are isolated:
+Launchpad validates configuration at runtime and will show helpful error messages for invalid configurations:
 
-```ts
-const config: LaunchpadConfig = {
-  // Base directory for project environments
-  envBaseDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs'),
+```bash
+# Check your current configuration
+launchpad --verbose install --dry-run node
 
-  // Whether to automatically activate environments when entering directories
-  autoActivateEnv: true,
-
-  // Whether to show activation/deactivation messages
-  showEnvMessages: true,
-
-  // Environment cleanup settings
-  envCleanup: {
-    // Default age threshold for cleaning old environments (in days)
-    defaultOlderThanDays: 30,
-
-    // Whether to automatically clean failed installations
-    autoCleanFailedInstalls: true,
-
-    // Whether to prompt before cleaning environments
-    promptBeforeClean: true,
-  },
-
-  // Environment hash format settings
-  envHash: {
-    // Length of hex hash portion (default: 8)
-    hashLength: 8,
-
-    // Whether to include project name in hash (default: true)
-    includeProjectName: true,
-
-    // Character to separate project name from hash (default: '_')
-    separator: '_',
-  },
-}
-```
-
-## Advanced Configuration
-
-### Custom Binary Stubs
-
-Configure how binary stubs are created:
-
-```ts
-const config: LaunchpadConfig = {
-  // Template for binary stub scripts
-  stubTemplate: `#!/bin/sh
-# Custom stub template
-export CUSTOM_VAR=value
-exec "{binary}" "$@"
-`,
-
-  // Whether to create isolated stubs (recommended)
-  isolatedStubs: true,
-}
-```
-
-### Package Resolution
-
-Configure package resolution behavior:
-
-```ts
-const config: LaunchpadConfig = {
-  // Custom package registry URLs
-  registries: [
-    'https://pkgx.sh/packages',
-    'https://custom-registry.com',
-  ],
-
-  // Package name aliases
-  aliases: {
-    node: 'nodejs.org',
-    python: 'python.org',
-  },
-}
-```
-
-### Installation Paths
-
-Configure different installation paths for different types of packages:
-
-```ts
-const config: LaunchpadConfig = {
-  // Default installation path (can be overridden with --system or --path)
-  installationPath: '/usr/local', // Set to always use /usr/local
-
-  // Runtime-specific installation paths
-  runtimePaths: {
-    'nodejs.org': '/opt/node',
-    'python.org': '/opt/python',
-  },
-
-  // System vs user installation preference
-  preferUserInstall: false, // Set to true to prefer ~/.local over /usr/local
-
-  // Whether to prompt for sudo when installing to system directories
-  promptForSudo: true,
-}
-```
-
-## Platform-Specific Configuration
-
-### macOS Configuration
-
-```ts
-const config: LaunchpadConfig = {
-  // Use Homebrew paths when available
-  useHomebrewPaths: true,
-
-  // macOS-specific binary directories
-  macBinaryPaths: [
-    '/usr/local/bin',
-    '/opt/homebrew/bin',
-  ],
-}
-```
-
-### Linux Configuration
-
-```ts
-const config: LaunchpadConfig = {
-  // Linux-specific paths
-  linuxBinaryPaths: [
-    '/usr/local/bin',
-    '/usr/bin',
-    '/opt/bin',
-  ],
-
-  // Whether to use system package manager as fallback
-  useSystemPackageManager: true,
-}
-```
-
-### Windows Configuration
-
-```ts
-const config: LaunchpadConfig = {
-  // Windows-specific paths
-  windowsBinaryPaths: [
-    'C:\\Program Files\\Launchpad\\bin',
-    '%USERPROFILE%\\.local\\bin',
-  ],
-
-  // Whether to add .exe extension automatically
-  autoAddExeExtension: true,
-}
+# This will show the resolved configuration values
 ```
 
 ## Troubleshooting Configuration
 
-### Debugging Configuration
+### Configuration Not Loading
 
-Enable configuration debugging:
+1. Check file syntax:
+   ```bash
+   # For TypeScript files
+   bunx tsc --noEmit launchpad.config.ts
 
-```bash
-LAUNCHPAD_DEBUG_CONFIG=true launchpad version
-```
+   # For JSON files
+   bunx jsonlint .launchpadrc
+   ```
 
-### Configuration Validation
+2. Verify file location:
+   ```bash
+   # Check current directory
+   ls -la launchpad.config.*
 
-Validate your configuration:
+   # Check home directory
+   ls -la ~/.launchpadrc ~/.config/launchpad/
+   ```
 
-```bash
-launchpad config:validate
-```
+3. Test with verbose mode:
+   ```bash
+   launchpad --verbose list
+   ```
 
-### Configuration Location
+### Environment Variables Not Working
 
-Find where Launchpad is loading configuration from:
+1. Check if variables are set:
+   ```bash
+   env | grep LAUNCHPAD
+   ```
 
-```bash
-launchpad config:show
-```
+2. Export variables properly:
+   ```bash
+   export LAUNCHPAD_VERBOSE=true
+   export LAUNCHPAD_INSTALL_PATH=/custom/path
+   ```
+
+3. Verify shell configuration:
+   ```bash
+   echo $SHELL
+   source ~/.zshrc  # or ~/.bashrc
+   ```

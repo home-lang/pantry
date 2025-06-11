@@ -54,6 +54,7 @@ const sidebar = [
     text: 'Get Started',
     items: [
       { text: 'Introduction', link: '/intro' },
+      { text: 'Quick Start', link: '/quickstart' },
       { text: 'The Why', link: '/why' },
       { text: 'Installation', link: '/install' },
       { text: 'Basic Usage', link: '/usage' },
@@ -77,6 +78,15 @@ const sidebar = [
       { text: 'Custom Shims', link: '/advanced/custom-shims' },
       { text: 'Cross-platform Compatibility', link: '/advanced/cross-platform' },
       { text: 'Performance Optimization', link: '/advanced/performance' },
+    ],
+  },
+  {
+    text: 'Guides',
+    items: [
+      { text: 'Examples', link: '/examples' },
+      { text: 'Migration Guide', link: '/migration' },
+      { text: 'Troubleshooting', link: '/troubleshooting' },
+      { text: 'FAQ', link: '/faq' },
     ],
   },
   { text: 'API Reference', link: '/api/reference' },

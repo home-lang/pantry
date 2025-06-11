@@ -382,7 +382,7 @@ env:
    ```
 
 3. Test manual activation:
-   ```bash
+```bash
    eval "$(launchpad dev:shellcode)"
    ```
 
@@ -401,7 +401,7 @@ env:
 3. Monitor activation time:
    ```bash
    time (cd my-project && cd ..)
-   ```
+```
 
 ## Best Practices
 

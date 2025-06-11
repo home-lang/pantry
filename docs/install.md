@@ -1,6 +1,6 @@
 # Installation
 
-Installing `launchpad` is easy. You can install it using your package manager of choice, or build it from source.
+Installing `@stacksjs/launchpad` is easy. You can install it using your package manager of choice, or build it from source.
 
 ## Package Managers
 
@@ -10,34 +10,34 @@ Choose your preferred package manager:
 
 ```sh [npm]
 # Install globally
-npm install -g launchpad
+npm install -g @stacksjs/launchpad
 
 # Or install as a development dependency
-npm install --save-dev launchpad
+npm install --save-dev @stacksjs/launchpad
 ```
 
 ```sh [bun]
 # Install globally
-bun add -g launchpad
+bun add -g @stacksjs/launchpad
 
 # Or install as a development dependency
-bun add -d launchpad
+bun add -d @stacksjs/launchpad
 ```
 
 ```sh [pnpm]
 # Install globally
-pnpm add -g launchpad
+pnpm add -g @stacksjs/launchpad
 
 # Or install as a development dependency
-pnpm add -D launchpad
+pnpm add -D @stacksjs/launchpad
 ```
 
 ```sh [yarn]
 # Install globally
-yarn global add launchpad
+yarn global add @stacksjs/launchpad
 
 # Or install as a development dependency
-yarn add -D launchpad
+yarn add -D @stacksjs/launchpad
 ```
 
 :::
@@ -52,11 +52,11 @@ Just run any launchpad command and it will offer to bootstrap automatically:
 
 ```sh
 # Any command will trigger the welcome screen if needed
-./launchpad list
+launchpad list
 # → Shows welcome message and offers to install pkgx, configure PATH, and set up shell integration
 
 # Or manually run the complete setup
-./launchpad bootstrap
+launchpad bootstrap
 ```
 
 ### Manual Bootstrap
@@ -65,19 +65,19 @@ For more control over the setup process:
 
 ```sh
 # Install everything you need in one command (defaults to /usr/local)
-./launchpad bootstrap
+launchpad bootstrap
 
 # Verbose output showing all operations
-./launchpad bootstrap --verbose
+launchpad bootstrap --verbose
 
 # Skip specific components
-./launchpad bootstrap --skip-bun --skip-shell-integration
+launchpad bootstrap --skip-bun --skip-shell-integration
 
 # Custom installation path (override default /usr/local)
-./launchpad bootstrap --path ~/.local
+launchpad bootstrap --path ~/.local
 
 # Force reinstall everything
-./launchpad bootstrap --force
+launchpad bootstrap --force
 ```
 
 The bootstrap command will:
@@ -104,6 +104,9 @@ bun run build
 
 # Link for global usage
 bun link
+
+# Or use the compiled binary directly
+./packages/launchpad/bin/launchpad
 ```
 
 ## Dependencies
@@ -149,7 +152,7 @@ Ensure the installation directories are in your PATH:
 echo $PATH | grep -E "(\.local/bin|\.local/sbin)"
 
 # If not, the bootstrap command will add them automatically
-./launchpad bootstrap
+launchpad bootstrap
 ```
 
 ## Uninstalling

@@ -40,7 +40,7 @@ Launchpad is a CLI and TypeScript library designed to solve these problems by pr
 ## Real-world Use Cases
 
 - **Developer onboarding**: Quickly set up new development machines with system-wide or user-specific tooling
-- **System administration**: Install tools system-wide for all users with `--system` flag
+- **System administration**: Install tools system-wide for all users (defaults to `/usr/local`)
 - **CI/CD pipelines**: Efficiently install required tools in automation environments
 - **Cross-team collaboration**: Ensure everyone has the same development environment
 - **Project isolation**: Use different tool versions for different projects
@@ -54,7 +54,7 @@ Launchpad is built with the developer experience in mind. It provides a clean, i
 launchpad install node@22
 
 # Create a dedicated environment for a project
-launchpad dev
+launchpad dev:on
 
 # Manage pkgx itself
 launchpad pkgx

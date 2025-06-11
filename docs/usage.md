@@ -9,18 +9,19 @@ Here are the main commands available in Launchpad:
 | Command | Description |
 |---------|-------------|
 | `install` or `i` | Install packages |
-| `remove` or `rm` | Remove specific packages |
+| `remove` | Remove specific packages |
 | `shim` | Create shims for packages |
 | `pkgx` | Install pkgx itself |
-| `dev` | Install the dev package |
+| `dev:on` | Activate dev environment in directory |
 | `dev:dump` | Generate environment setup script for a project |
 | `dev:shellcode` | Generate shell integration code |
 | `bun` | Install Bun runtime directly |
 | `zsh` | Install Zsh shell |
+| `smart-install` | Smart install with automatic fallback to system package managers |
 | `bootstrap` | Install all essential tools at once |
-| `list` or `ls` | List installed packages |
+| `list` | List installed packages |
 | `uninstall` | Complete removal of Launchpad and all packages |
-| `env:list` or `env:ls` | List all development environments |
+| `env:list` | List all development environments |
 | `env:clean` | Clean up unused development environments |
 | `env:inspect` | Inspect a specific development environment |
 | `env:remove` | Remove a specific development environment |
@@ -62,7 +63,6 @@ Launchpad follows the pkgm philosophy for installation paths, **never installing
 ```bash
 # Examples of different installation methods
 launchpad install node                    # Installs to /usr/local (default if writable)
-launchpad install node --system           # Explicitly request system-wide to /usr/local
 launchpad install node --path /opt/tools  # Custom directory
 launchpad install node --path ~/.local    # Force user directory
 ```
@@ -73,6 +73,21 @@ launchpad install node --path ~/.local    # Force user directory
 - Offer to re-run with `sudo` automatically
 - Fall back to `~/.local` if you decline sudo
 
+## Smart Installation
+
+Launchpad provides smart installation that automatically falls back to system package managers when needed:
+
+```bash
+# Smart install with automatic fallback
+launchpad smart-install node python git
+
+# If pkgx fails, automatically tries system package managers:
+# - macOS: Homebrew
+# - Ubuntu/Debian: apt
+# - RHEL/CentOS/Fedora: yum/dnf
+# - Arch: pacman
+```
+
 ## Removing Packages
 
 Remove specific packages while keeping the rest of your Launchpad setup intact:
@@ -82,7 +97,7 @@ Remove specific packages while keeping the rest of your Launchpad setup intact:
 launchpad remove python
 
 # Remove multiple packages
-launchpad rm node python ruby
+launchpad remove node python ruby
 
 # Remove a specific version
 launchpad remove node@22
@@ -128,6 +143,28 @@ cd ../          # → Automatically deactivates
 # dev environment deactivated
 ```
 
+### Manual Environment Commands
+
+```bash
+# Activate dev environment for current directory
+launchpad dev:on
+
+# Activate dev environment for specific directory
+launchpad dev:on /path/to/project
+
+# Generate environment script for current directory
+launchpad dev:dump
+
+# Generate environment script for specific directory
+launchpad dev:dump /path/to/project
+
+# Preview packages without generating script
+launchpad dev:dump --dryrun
+
+# Generate script with verbose output
+launchpad dev:dump --verbose
+```
+
 ### Customizing Shell Messages
 
 You can customize or disable the shell activation/deactivation messages:
@@ -151,22 +188,6 @@ export default {
   shellActivationMessage: '🔧 Environment loaded for {path}',
   shellDeactivationMessage: '🔒 Environment closed'
 }
-```
-
-### Manual Environment Commands
-
-```bash
-# Generate environment script for current directory
-launchpad dev:dump
-
-# Generate environment script for specific directory
-launchpad dev:dump /path/to/project
-
-# Preview packages without generating script
-launchpad dev:dump --dryrun
-
-# Generate script with verbose output
-launchpad dev:dump --verbose
 ```
 
 ### Project-Specific Dependencies
@@ -220,7 +241,7 @@ launchpad env:list --verbose
 launchpad env:list --format json
 
 # Simple format for quick overview
-launchpad env:ls --format simple
+launchpad env:list --format simple
 ```
 
 **Example Output:**
@@ -252,35 +273,6 @@ launchpad env:inspect final-project_7db6cf06 --verbose
 launchpad env:inspect dummy_6d7cf1d6 --show-stubs
 ```
 
-**Example Output:**
-```
-🔍 Inspecting environment: working-test_208a31ec
-
-📋 Basic Information:
-  Project Name: working-test
-  Hash: working-test_208a31ec
-  Path: /Users/user/.local/share/launchpad/envs/working-test_208a31ec
-  Size: 324M
-  Created: 5/30/2025, 6:38:08 PM
-
-📦 Installed Packages:
-  python.org@3.12.10
-  curl.se@8.5.0
-  cmake.org@3.28.0
-
-🔧 BIN Binaries:
-  python (file, executable)
-  curl (file, executable)
-  cmake (file, executable)
-  ...
-
-🏥 Health Check:
-  ✅ Binaries present
-  ✅ 3 package(s) installed
-
-Overall Status: ✅ Healthy
-```
-
 ### Cleaning Up Environments
 
 Automatically clean up unused or failed environments:
@@ -301,11 +293,6 @@ launchpad env:clean --force
 # Verbose cleanup with details
 launchpad env:clean --verbose
 ```
-
-**Cleanup Criteria:**
-- Environments with no binaries (failed installations)
-- Environments older than specified days (default: 30)
-- Empty or corrupted environment directories
 
 ### Removing Specific Environments
 
@@ -333,18 +320,6 @@ Launchpad uses human-readable hash identifiers for environments:
 - `working-test_208a31ec` - Environment for "working-test"
 - `my-app_1a2b3c4d` - Environment for "my-app"
 
-**Benefits:**
-- **Human-readable** - Easy to identify project ownership
-- **Unique** - Hash prevents collisions between similar project names
-- **Consistent** - Same project always generates the same hash
-- **Manageable** - Much shorter than previous base64 format
-
-**Hash Generation:**
-- Project name extracted from directory basename
-- Cleaned to be filesystem-safe (alphanumeric, hyphens, underscores)
-- 8-character hex hash generated from full project path
-- Collision-resistant across different directory structures
-
 ## Updating Dependencies
 
 ### Automatic Updates
@@ -371,35 +346,6 @@ The update command:
 - **Shows clear diff** of what will change
 - **Supports dry-run mode** for safe previewing
 - **Updates dependencies.yaml** automatically
-
-**Example output:**
-```
-🔄 Checking for package updates...
-
-📋 Found dependency file: dependencies.yaml
-📦 Found 11 dependencies to check
-
-🔍 Checking bun.sh...
-  ✅ Up to date: 1.2.15
-🔍 Checking nodejs.org...
-  📈 Update available: 22.11.0 → 24.0.1
-🔍 Checking zlib.net...
-  📈 Update available: 1.2.13 → 1.3.1
-
-📋 Found 2 update(s) available:
-
-📦 nodejs.org
-    Current: ^22.11.0
-    Latest:  ^24.0.1
-
-📦 zlib.net
-    Current: ^1.2.13
-    Latest:  ^1.3.1
-
-🤔 Apply 2 update(s)? (y/N):
-```
-
-After updating, run `launchpad dev:on` to activate the updated environment.
 
 ## Bootstrap Setup
 
@@ -452,9 +398,6 @@ launchpad uninstall --dry-run
 launchpad uninstall --force
 
 # Remove only packages but keep shell integration
-launchpad uninstall --keep-shell-integration
-
-# Remove only shell integration but keep packages
 launchpad uninstall --keep-packages
 ```
 
@@ -479,21 +422,6 @@ launchpad shim --path ~/bin typescript
 
 # Create shims without auto-adding to PATH
 launchpad shim node --no-auto-path
-```
-
-## Installing the Dev Package
-
-The `dev` command provides a convenient way to install the `dev` package, which enables development-aware environments:
-
-```bash
-# Install dev
-launchpad dev
-
-# Force reinstall
-launchpad dev --force
-
-# Specify installation path
-launchpad dev --path ~/bin
 ```
 
 ## Installing pkgx
@@ -572,9 +500,6 @@ View what packages are currently installed:
 ```bash
 # List all installed packages
 launchpad list
-
-# Or use the shorthand
-launchpad ls
 ```
 
 ## Common Options
@@ -585,7 +510,6 @@ Most commands support these options:
 |--------|-------------|
 | `--verbose` | Enable detailed logging |
 | `--path` | Specify installation/shim path |
-| `--system` | Install to /usr/local (same as default behavior) |
 | `--force` | Force reinstall/removal even if already installed/not found |
 | `--dry-run` | Preview changes without actually performing them |
 | `--no-auto-path` | Don't automatically add to PATH |
