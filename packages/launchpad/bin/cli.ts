@@ -22,6 +22,8 @@ cli
   .alias('i')
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
+  .example('launchpad install node python')
+  .example('launchpad install --path ~/.local node python')
   .action(async (packages: string[], options: { verbose?: boolean, path?: string }) => {
     if (options.verbose) {
       config.verbose = true
@@ -61,6 +63,8 @@ cli
 cli
   .command('list', 'List installed packages')
   .alias('ls')
+  .example('launchpad list')
+  .example('launchpad ls')
   .action(async () => {
     try {
       const binDir = path.join(install_prefix().string, 'bin')
@@ -92,15 +96,17 @@ cli
   .command('bootstrap', 'Set up Launchpad environment')
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
+  .example('launchpad bootstrap')
+  .example('launchpad bootstrap --path ~/.local')
   .action(async (options: { verbose?: boolean, path?: string }) => {
     if (options.verbose) {
       config.verbose = true
     }
 
-    console.warn('🚀 Bootstrapping Launchpad...')
+    console.log('🚀 Bootstrapping Launchpad...')
 
     const installPath = options.path ? new Path(options.path) : install_prefix()
-    console.warn(`📍 Installation prefix: ${installPath.string}`)
+    console.log(`📍 Installation prefix: ${installPath.string}`)
 
     // Ensure bin directory exists
     const binDir = path.join(installPath.string, 'bin')
@@ -112,31 +118,24 @@ cli
     if (!isInPath(binDir)) {
       try {
         addToPath(binDir)
-        console.warn(`✅ Added ${binDir} to PATH`)
+        console.log(`✅ Added ${binDir} to PATH`)
       }
       catch (error) {
-        console.warn(`⚠️  Could not automatically add to PATH: ${error}`)
-        console.warn(`Please add this to your shell profile:`)
-        console.warn(`export PATH="${binDir}:$PATH"`)
+        console.log(`⚠️  Could not automatically add to PATH: ${error}`)
+        console.log(`Please add this to your shell profile:`)
+        console.log(`export PATH="${binDir}:$PATH"`)
       }
     }
     else {
-      console.warn(`✅ ${binDir} is already in PATH`)
+      console.log(`✅ ${binDir} is already in PATH`)
     }
 
-    console.warn('🎉 Bootstrap complete!')
-    console.warn('')
-    console.warn('Next steps:')
-    console.warn('  • Install packages: ./launchpad install node python')
-    console.warn('  • List installed: ./launchpad list')
-    console.warn('  • Get help: ./launchpad --help')
-  })
-
-// Version command
-cli
-  .command('version', 'Show version')
-  .action(() => {
-    console.warn(`launchpad ${version}`)
+    console.log('🎉 Bootstrap complete!')
+    console.log('')
+    console.log('Next steps:')
+    console.log('  • Install packages: ./launchpad install node python')
+    console.log('  • List installed: ./launchpad list')
+    console.log('  • Get help: ./launchpad --help')
   })
 
 // Parse CLI arguments
