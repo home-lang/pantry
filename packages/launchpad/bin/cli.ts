@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { Buffer } from 'node:buffer'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { platform } from 'node:os'
@@ -2831,6 +2832,7 @@ cli
           }
 
           // Parse dependency line
+          // eslint-disable-next-line regexp/no-super-linear-backtracking
           const match = trimmed.match(/^([^:]+):\s*(.+)$/)
           if (match) {
             const [, name, version] = match
@@ -2838,7 +2840,7 @@ cli
               name: name.trim(),
               currentVersion: version.trim(),
               lineIndex: i,
-              line: line,
+              line,
             })
           }
         }

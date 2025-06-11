@@ -104,6 +104,7 @@ describe('Environment Isolation', () => {
     const shortHash = hash.toString(16).padStart(16, '0').slice(0, 8)
 
     // Clean project name to be filesystem-safe
+    // eslint-disable-next-line regexp/strict
     const cleanProjectName = projectName.replace(/[^\w-.]/g, '-').toLowerCase()
 
     return `${cleanProjectName}_${shortHash}`

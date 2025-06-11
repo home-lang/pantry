@@ -497,6 +497,7 @@ export default async function (
 
     // Combine project name with short hash for readability
     // Clean project name to be filesystem-safe
+    // eslint-disable-next-line regexp/strict
     const cleanProjectName = projectName.replace(/[^\w-.]/g, '-').toLowerCase()
 
     return `${cleanProjectName}_${shortHash}`
