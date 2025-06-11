@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Launchpad"
   text: "Modern Package Manager"
-  tagline: "Simplify package installation and management, similar to Homebrew."
+  tagline: "Fast, isolated, and clean package management that works alongside your existing tools."
   image: /images/logo-white.png
   actions:
     - theme: brand
@@ -18,22 +18,31 @@ hero:
 features:
   - title: "Package Management"
     icon: "📦"
-    details: "Install and manage packages directly using pkgx with a clean interface."
+    details: "Install and manage packages with automatic environment isolation. Uses /usr/local (never /opt/homebrew) for clean separation from Homebrew."
+  - title: "Environment Isolation"
+    icon: "🌍"
+    details: "Project-specific environments with automatic activation/deactivation. Each project gets its own isolated package installations and PATH management."
   - title: "Executable Shims"
     icon: "🔄"
-    details: "Create executable shims for packages automatically for easier access."
-  - title: "pkgx Installation"
+    details: "Create lightweight executable scripts that automatically run the correct versions of your tools with full environment context."
+  - title: "pkgx Integration"
     icon: "🛠️"
-    details: "Install and manage the pkgx utility itself without needing Homebrew or other tools."
-  - title: "Dev Environment"
-    icon: "💻"
-    details: "Dedicated command for the dev package to setup development environments quickly."
-  - title: "Bun Installation"
+    details: "Built on top of pkgx for fast package resolution and execution. Install and manage pkgx itself without needing other package managers."
+  - title: "Runtime Installation"
     icon: "🚀"
-    details: "Install Bun runtime directly from GitHub releases with automatic platform detection."
-  - title: "Zsh Installation"
+    details: "Direct installation of development runtimes like Bun and Node.js from official sources with automatic platform detection."
+  - title: "Shell Integration"
     icon: "🐚"
-    details: "Install the Zsh shell with automatic PATH management and easy default shell configuration."
+    details: "Seamless shell integration with customizable activation messages. Install shells like Zsh with automatic PATH management."
+  - title: "Cross-Platform"
+    icon: "🌐"
+    details: "Works consistently across macOS, Linux, and Windows with platform-specific optimizations and path handling."
+  - title: "Environment Management"
+    icon: "🔧"
+    details: "Comprehensive tools for listing, inspecting, cleaning, and managing development environments with human-readable identifiers."
+  - title: "Clean Coexistence"
+    icon: "🔗"
+    details: "Peaceful coexistence with Homebrew, system package managers, and other tools. Never conflicts with existing installations."
 ---
 
 <Home />

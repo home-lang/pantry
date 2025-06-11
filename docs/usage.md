@@ -36,7 +36,7 @@ Here are the main commands available in Launchpad:
 Install one or more packages using the `install` or `i` command:
 
 ```bash
-# Install a single package (defaults to /usr/local if writable)
+# Install a single package (defaults to /usr/local for system-wide)
 launchpad install node@22
 
 # Install multiple packages
@@ -51,17 +51,18 @@ launchpad install --path ~/my-packages node
 
 ### Installation Locations
 
-Launchpad provides flexible installation options:
+Launchpad follows the pkgm philosophy for installation paths, **never installing to Homebrew's directories**:
 
-- **Default behavior**: Installs to `/usr/local` if writable, otherwise to `~/.local`
-- **System-wide installation**: The default behavior already installs system-wide to `/usr/local`
+- **System-wide installation** (default): `/usr/local` - Used when you have write permissions
+- **User-specific installation**: `~/.local` - Used automatically when `/usr/local` is not writable
 - **Custom path**: Use `--path <path>` to specify any installation directory
-- **User installation**: Use `--path ~/.local` to force user-local installation
+
+> **Important**: Launchpad follows the pkgm approach and **never installs to `/opt/homebrew`** (Homebrew's directory). This ensures clean separation from Homebrew-managed packages and follows the traditional Unix philosophy of using `/usr/local` for system-wide installations.
 
 ```bash
 # Examples of different installation methods
-launchpad install node                    # Installs to /usr/local (default)
-launchpad install node --system           # Same as above (redundant flag)
+launchpad install node                    # Installs to /usr/local (default if writable)
+launchpad install node --system           # Explicitly request system-wide to /usr/local
 launchpad install node --path /opt/tools  # Custom directory
 launchpad install node --path ~/.local    # Force user directory
 ```
@@ -70,7 +71,7 @@ launchpad install node --path ~/.local    # Force user directory
 - Detect the permission issue
 - Prompt you interactively (if in a terminal)
 - Offer to re-run with `sudo` automatically
-- Provide clear alternatives if you decline
+- Fall back to `~/.local` if you decline sudo
 
 ## Removing Packages
 
@@ -104,7 +105,7 @@ The `remove` command intelligently finds and removes:
 
 ## Development Environment Management
 
-Launchpad provides powerful project-specific environment management:
+Launchpad provides powerful project-specific environment management with automatic activation and comprehensive management tools.
 
 ### Auto-Activation with Shell Integration
 
@@ -124,7 +125,32 @@ Once set up, environments automatically activate when you enter a directory with
 cd my-project/  # → Automatically activates environment
 # ✅ Environment activated for /path/to/my-project
 cd ../          # → Automatically deactivates
-# 🔄 dev environment deactivated
+# dev environment deactivated
+```
+
+### Customizing Shell Messages
+
+You can customize or disable the shell activation/deactivation messages:
+
+```bash
+# Disable all messages
+export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+
+# Custom activation message (use {path} for project path)
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Development environment ready: {path}"
+
+# Custom deactivation message
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Environment deactivated"
+```
+
+Or configure in your `launchpad.config.ts`:
+
+```ts
+export default {
+  showShellMessages: true,
+  shellActivationMessage: '🔧 Environment loaded for {path}',
+  shellDeactivationMessage: '🔒 Environment closed'
+}
 ```
 
 ### Manual Environment Commands
@@ -162,6 +188,10 @@ Supported dependency file formats:
 - `dependencies.yaml` / `dependencies.yml`
 - `pkgx.yaml` / `pkgx.yml`
 - `.pkgx.yaml` / `.pkgx.yml`
+- `.launchpad.yaml` / `launchpad.yaml`
+- `.launchpad.yml` / `launchpad.yml`
+- `deps.yml` / `deps.yaml`
+- `.deps.yml` / `.deps.yaml`
 
 ### Environment Isolation
 
@@ -380,7 +410,7 @@ For first-time setup or fresh installations, use the bootstrap command:
 Get everything you need with one command:
 
 ```bash
-# Install all essential tools (defaults to /usr/local)
+# Install all essential tools (defaults to /usr/local if writable, ~/.local otherwise)
 launchpad bootstrap
 
 # Verbose bootstrap showing all operations
@@ -446,6 +476,9 @@ launchpad shim node
 
 # Create shims with a custom path
 launchpad shim --path ~/bin typescript
+
+# Create shims without auto-adding to PATH
+launchpad shim node --no-auto-path
 ```
 
 ## Installing the Dev Package
@@ -468,11 +501,14 @@ launchpad dev --path ~/bin
 If you don't have pkgx installed, Launchpad can install it for you:
 
 ```bash
-# Install pkgx
+# Install pkgx (to /usr/local if writable, ~/.local otherwise)
 launchpad pkgx
 
 # Force reinstall
 launchpad pkgx --force
+
+# Install to specific path
+launchpad pkgx --path ~/bin
 ```
 
 ## Installing Bun
@@ -557,6 +593,14 @@ Most commands support these options:
 | `--quiet` | Suppress status messages |
 
 ## Package Management Best Practices
+
+### Understanding Installation Philosophy
+
+Launchpad follows the pkgm approach:
+- **Never uses Homebrew directories** (`/opt/homebrew`)
+- **Prefers `/usr/local`** for system-wide installations (traditional Unix approach)
+- **Falls back to `~/.local`** for user-specific installations when needed
+- **Maintains clean separation** from other package managers
 
 ### Using Environment Isolation
 
@@ -693,7 +737,7 @@ If packages fail to install:
 
 If you encounter permission errors:
 
-1. Use `--sudo` flag for system-wide installations
+1. Launchpad will automatically prompt for sudo when installing to `/usr/local`
 2. Install to user directory: `--path ~/.local`
 3. Check directory permissions
 
@@ -705,3 +749,20 @@ If shell integration isn't working:
 2. Check that the shell integration code was added correctly
 3. Reload your shell configuration
 4. Try generating new shell code: `launchpad dev:shellcode`
+5. Check if shell messages are disabled: `echo $LAUNCHPAD_SHOW_ENV_MESSAGES`
+
+### Shell Message Issues
+
+If you're not seeing environment messages:
+
+1. Check if messages are disabled:
+   ```bash
+   echo $LAUNCHPAD_SHOW_ENV_MESSAGES
+   ```
+
+2. Re-enable messages:
+   ```bash
+   export LAUNCHPAD_SHOW_ENV_MESSAGES=true
+   ```
+
+3. Check your configuration file for `showShellMessages: false`

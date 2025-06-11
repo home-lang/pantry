@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { promisify } from 'node:util'
+import { config } from '../config'
 import shell_escape from './shell-escape.ts'
 import sniff from './sniff.ts'
 
@@ -611,7 +612,9 @@ _pkgx_dev_try_bye() {
     *)
       # Only show deactivation message if not silent
       if [ "$1" != "silent" ]; then
-        echo -e "\\033[31mdev environment deactivated\\033[0m" >&2
+        if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
+          echo -e "\\033[31m${config.shellDeactivationMessage}\\033[0m" >&2
+        fi
       fi
 
       # Restore original PATH
@@ -652,6 +655,8 @@ set +a
 
 # If we detect we're in the activated project directory, confirm activation
 if [ "\${PWD}" = "${cwd}" ]; then
-  echo "✅ Environment activated for \\033[3m${cwd}\\033[0m" >&2
+  if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
+    echo "${config.shellActivationMessage.replace('{path}', `\\033[3m${cwd}\\033[0m`)}" >&2
+  fi
 fi`)
 }

@@ -47,6 +47,17 @@ const config: LaunchpadConfig = {
 
   // Whether to automatically add shim path to the system PATH (default: true)
   autoAddToPath: true,
+
+  // Shell Environment Message Configuration
+  // Whether to show shell environment activation messages (default: true)
+  showShellMessages: true,
+
+  // Custom message to show when environment is activated
+  // Use {path} placeholder to include the project path (default: "✅ Environment activated for {path}")
+  shellActivationMessage: '✅ Environment activated for {path}',
+
+  // Custom message to show when environment is deactivated (default: "dev environment deactivated")
+  shellDeactivationMessage: 'dev environment deactivated',
 }
 
 export default config
@@ -64,7 +75,10 @@ JavaScript format (`.launchpadrc`):
   "symlinkVersions": true,
   "forceReinstall": false,
   "shimPath": "~/.local/bin",
-  "autoAddToPath": true
+  "autoAddToPath": true,
+  "showShellMessages": true,
+  "shellActivationMessage": "✅ Environment activated for {path}",
+  "shellDeactivationMessage": "dev environment deactivated"
 }
 ```
 
@@ -87,6 +101,14 @@ JavaScript format (`.launchpadrc`):
 | `timeout` | number | `60000` | Timeout for operations in milliseconds |
 | `symlinkVersions` | boolean | `true` | Whether to symlink versions |
 | `forceReinstall` | boolean | `false` | Force reinstallation even if already installed |
+
+### Shell Environment Messages
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `showShellMessages` | boolean | `true` | Whether to display environment activation/deactivation messages |
+| `shellActivationMessage` | string | `"✅ Environment activated for {path}"` | Custom message shown when environment is activated. Use `{path}` placeholder for project path |
+| `shellDeactivationMessage` | string | `"dev environment deactivated"` | Custom message shown when environment is deactivated |
 
 ### Permission Management
 
@@ -115,11 +137,81 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_AUTO_ACTIVATE_ENV` | Enable/disable automatic environment activation |
 | `LAUNCHPAD_SHOW_ENV_MESSAGES` | Enable/disable environment activation messages |
 | `LAUNCHPAD_ENV_CLEANUP_DAYS` | Default age threshold for environment cleanup |
+| `LAUNCHPAD_SHELL_ACTIVATION_MESSAGE` | Custom shell activation message |
+| `LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE` | Custom shell deactivation message |
 
 Example:
 
 ```bash
 LAUNCHPAD_VERBOSE=true LAUNCHPAD_INSTALL_PATH=~/apps launchpad install node@22
+```
+
+## Shell Message Customization
+
+You can customize the messages shown when environments are activated or deactivated:
+
+### Disabling Shell Messages
+
+```bash
+# Environment variable
+export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+
+# Or in configuration file
+{
+  "showShellMessages": false
+}
+```
+
+### Custom Activation Messages
+
+```bash
+# Environment variable with path placeholder
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
+
+# Or in configuration file
+{
+  "shellActivationMessage": "🚀 Project environment loaded: {path}"
+}
+```
+
+### Custom Deactivation Messages
+
+```bash
+# Environment variable
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🔒 Project environment closed"
+
+# Or in configuration file
+{
+  "shellDeactivationMessage": "🔒 Project environment closed"
+}
+```
+
+### Message Examples
+
+Here are some example message configurations:
+
+```json
+{
+  "showShellMessages": true,
+  "shellActivationMessage": "🔧 Development environment ready for {path}",
+  "shellDeactivationMessage": "👋 Development environment closed"
+}
+```
+
+```json
+{
+  "showShellMessages": true,
+  "shellActivationMessage": "📁 Switched to project: {path}",
+  "shellDeactivationMessage": "🏠 Returned to global environment"
+}
+```
+
+```json
+{
+  "showShellMessages": true,
+  "shellActivationMessage": "[ENV] {path}",
+  "shellDeactivationMessage": "[ENV] deactivated"
+}
 ```
 
 ## Command-Line Overrides

@@ -1,16 +1,9 @@
-import type { LaunchpadOptions } from './packages/launchpad/src/types'
-import process from 'node:process'
+import type { LaunchpadConfig } from './packages/launchpad/src'
 
-const config: LaunchpadOptions = {
+const config: Partial<LaunchpadConfig> = {
   verbose: false,
   // installationPath will be auto-detected based on permissions
-  sudoPassword: process.env.SUDO_PASSWORD || '',
-  devAware: true,
-  autoSudo: true,
-  maxRetries: 3,
-  timeout: 60000,
-  symlinkVersions: true,
-  forceReinstall: false,
+  // forceReinstall: false, // uncomment to force reinstall of packages when installing
   shimPath: '~/.local/bin',
   autoAddToPath: true,
 }

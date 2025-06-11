@@ -36,6 +36,9 @@ export const defaultConfig: LaunchpadConfig = {
   forceReinstall: false,
   shimPath: getDefaultShimPath(),
   autoAddToPath: true, // Whether to automatically add shim path to PATH
+  showShellMessages: true, // Whether to show shell environment messages
+  shellActivationMessage: '✅ Environment activated for {path}', // Message when environment is activated
+  shellDeactivationMessage: 'dev environment deactivated', // Message when environment is deactivated
 }
 
 // eslint-disable-next-line antfu/no-top-level-await

@@ -37,6 +37,16 @@ export const defaultConfig: LaunchpadConfig = {
 
   // Whether to automatically add shim path to the system PATH
   autoAddToPath: true,
+
+  // Whether to show shell environment activation messages
+  showShellMessages: true,
+
+  // Custom message to show when environment is activated
+  // Use {path} placeholder to include the project path
+  shellActivationMessage: '✅ Environment activated for {path}',
+
+  // Custom message to show when environment is deactivated
+  shellDeactivationMessage: 'dev environment deactivated',
 }
 
 /**

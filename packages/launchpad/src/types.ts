@@ -24,6 +24,12 @@ export interface LaunchpadConfig {
   shimPath: string
   /** Whether to automatically add shim path to the system PATH _(default: true)_ */
   autoAddToPath: boolean
+  /** Whether to show shell environment activation messages _(default: true)_ */
+  showShellMessages: boolean
+  /** Custom message to show when environment is activated _(default: "✅ Environment activated for {path}")_ */
+  shellActivationMessage: string
+  /** Custom message to show when environment is deactivated _(default: "dev environment deactivated")_ */
+  shellDeactivationMessage: string
 }
 
 export type LaunchpadOptions = Partial<LaunchpadConfig>

@@ -15,6 +15,23 @@ const isMacOS = platform() === 'darwin'
 const isLinux = platform() === 'linux'
 ```
 
+## Installation Philosophy Across Platforms
+
+Launchpad follows the **pkgm approach** consistently across all platforms:
+
+### Unix-like Systems (macOS, Linux)
+- **Primary**: `/usr/local` for system-wide installations
+- **Fallback**: `~/.local` for user-specific installations
+- **Never uses**: `/opt/homebrew` (Homebrew's directory)
+- **Maintains**: Clean separation from package managers like Homebrew
+
+### Windows
+- **Primary**: `%LOCALAPPDATA%` for user-specific installations
+- **Alternative**: `%PROGRAMFILES%` for system-wide (requires elevation)
+- **Avoids**: Conflicting with Windows package managers
+
+This consistent approach ensures clean coexistence with existing package managers on all platforms.
+
 ## Path Handling
 
 ### Windows Path Differences
@@ -47,6 +64,22 @@ Each platform uses different shells by default:
 - **Linux**: Bash, Zsh, or others
 
 Launchpad adapts its PATH modification strategies accordingly.
+
+### Shell Message Customization by Platform
+
+You can customize shell messages differently on each platform:
+
+```bash
+# macOS/Linux - Using ~/.zshrc or ~/.bashrc
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🍎 macOS environment ready: {path}"
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🍎 macOS environment closed"
+```
+
+```powershell
+# Windows - Using PowerShell profile
+$env:LAUNCHPAD_SHELL_ACTIVATION_MESSAGE = "🪟 Windows environment ready: {path}"
+$env:LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE = "🪟 Windows environment closed"
+```
 
 ## File System Permissions
 
@@ -82,6 +115,9 @@ Launchpad's auto-sudo feature automatically adapts to the platform.
 # Add to PATH on Unix-like systems
 echo 'export PATH="~/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
+
+# Custom shell messages
+echo 'export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 Dev environment: {path}"' >> ~/.zshrc
 ```
 
 ### Windows (PowerShell)
@@ -91,6 +127,9 @@ source ~/.zshrc
 $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 $newPath = "$env:USERPROFILE\.local\bin;" + $currentPath
 [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+
+# Custom shell messages
+[Environment]::SetEnvironmentVariable("LAUNCHPAD_SHELL_ACTIVATION_MESSAGE", "🔧 Dev environment: {path}", "User")
 ```
 
 ## Executable Detection
@@ -104,11 +143,24 @@ Launchpad handles these differences when creating and detecting executables.
 
 ## Platform-specific Installation Paths
 
-Default installation paths vary by platform:
+Default installation paths vary by platform but follow consistent principles:
 
-- **macOS**: `/usr/local` (traditional) or `/opt/homebrew` (newer systems)
-- **Linux**: `/usr/local` (system-wide) or `~/.local` (user-specific)
-- **Windows**: `%LOCALAPPDATA%` or `%PROGRAMFILES%`
+### macOS
+- **System-wide**: `/usr/local` (preferred, like pkgm)
+- **User-specific**: `~/.local` (fallback)
+- **Never uses**: `/opt/homebrew` (Homebrew's directory)
+
+### Linux
+- **System-wide**: `/usr/local` (preferred, like pkgm)
+- **User-specific**: `~/.local` (fallback)
+- **Respects**: Existing system package manager directories
+
+### Windows
+- **User-specific**: `%LOCALAPPDATA%\Programs\Launchpad` (preferred)
+- **System-wide**: `%PROGRAMFILES%\Launchpad` (requires elevation)
+
+> [!NOTE]
+> Launchpad installs packages to `/usr/local` (like pkgm), not to Homebrew's `/opt/homebrew` directory. This ensures clean separation from Homebrew-managed packages and allows peaceful coexistence.
 
 ## Integration with pkgx
 
@@ -125,6 +177,10 @@ node --version
 
 # Verify shim creation
 ls -la ~/.local/bin/node
+
+# Test environment messages
+cd my-project/  # Should show activation message
+cd ../          # Should show deactivation message
 ```
 
 ```powershell
@@ -134,6 +190,10 @@ node --version
 
 # Verify shim creation
 dir $env:USERPROFILE\.local\bin\node.exe
+
+# Test environment messages
+cd my-project  # Should show activation message
+cd ..\         # Should show deactivation message
 ```
 
 ## Cross-platform CI/CD Integration
@@ -149,9 +209,85 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Launchpad
-        run: npm install -g launchpad
+        run: npm install -g @stacksjs/launchpad
       - name: Install dependencies with Launchpad
         run: launchpad install node@22 python@3.12
+      - name: Test environment activation
+        run: |
+          cd test-project
+          # Environment should activate automatically with shell integration
+```
+
+## Platform-specific Configuration
+
+### macOS Configuration
+
+```typescript
+// launchpad.config.ts for macOS
+export default {
+  installationPath: '/usr/local', // Preferred on macOS
+  shellActivationMessage: '🍎 macOS environment ready: {path}',
+  shellDeactivationMessage: '🍎 Environment closed',
+  // Use Homebrew paths for fallback when needed
+  fallbackPaths: ['/opt/homebrew/bin', '/usr/local/bin']
+}
+```
+
+### Linux Configuration
+
+```typescript
+// launchpad.config.ts for Linux
+export default {
+  installationPath: '/usr/local', // Preferred on Linux
+  shellActivationMessage: '🐧 Linux environment ready: {path}',
+  shellDeactivationMessage: '🐧 Environment closed',
+  // Respect system package manager paths
+  fallbackPaths: ['/usr/bin', '/usr/local/bin']
+}
+```
+
+### Windows Configuration
+
+```typescript
+// launchpad.config.ts for Windows
+export default {
+  installationPath: `${process.env.LOCALAPPDATA}\\Programs\\Launchpad`,
+  shellActivationMessage: '🪟 Windows environment ready: {path}',
+  shellDeactivationMessage: '🪟 Environment closed',
+  // Windows-specific paths
+  fallbackPaths: ['C:\\Program Files\\Git\\bin']
+}
+```
+
+## Troubleshooting Cross-platform Issues
+
+### Path Separator Issues
+
+```bash
+# Use path.join() for cross-platform compatibility
+const installPath = path.join(baseDir, 'bin', 'executable')
+```
+
+### Environment Variable Differences
+
+```bash
+# Unix-like systems
+export LAUNCHPAD_PATH=/usr/local
+
+# Windows
+set LAUNCHPAD_PATH=C:\usr\local
+# or in PowerShell
+$env:LAUNCHPAD_PATH = "C:\usr\local"
+```
+
+### Shell Integration Differences
+
+```bash
+# For Bash/Zsh (Unix-like)
+echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+
+# For PowerShell (Windows)
+Add-Content $PROFILE 'Invoke-Expression (& launchpad dev:shellcode)'
 ```

@@ -112,6 +112,83 @@ describe('Dev Commands', () => {
       expect(result.stdout).toContain('ZSH_VERSION')
       expect(result.stdout).toContain('BASH_VERSION')
     }, 30000)
+
+    it('should include shell message configuration', async () => {
+      const result = await runCLI(['dev:shellcode'], process.cwd())
+
+      expect(result.exitCode).toBe(0)
+
+      // Should include conditional logic for showing messages (the values will be interpolated)
+      // Look for the pattern: if [ "true" = "true" ]; then or if [ "false" = "true" ]; then
+      expect(result.stdout).toMatch(/if \[ "(true|false)" = "true" \]; then/)
+
+      // Should include the actual message content or echo statements
+      expect(result.stdout).toContain('Environment activated for')
+      expect(result.stdout).toContain('environment deactivated')
+    }, 30000)
+
+    it('should respect showShellMessages configuration', async () => {
+      const result = await runCLI(['dev:shellcode'], process.cwd())
+
+      expect(result.exitCode).toBe(0)
+
+      // The generated shell code should have conditional statements for messages
+      // Look for the pattern: if [ "true/false" = "true" ]; then
+      expect(result.stdout).toMatch(/if \[ "(?:true|false)" = "true" \]; then/)
+    }, 30000)
+
+    it('should include custom activation message', async () => {
+      const result = await runCLI(['dev:shellcode'], process.cwd())
+
+      expect(result.exitCode).toBe(0)
+
+      // Should include the default activation message or a custom one
+      const output = result.stdout
+      const hasDefaultMessage = output.includes('Environment activated for')
+      const hasCustomMessage = output.includes('shellActivationMessage')
+
+      expect(hasDefaultMessage || hasCustomMessage).toBe(true)
+    }, 30000)
+
+    it('should include custom deactivation message', async () => {
+      const result = await runCLI(['dev:shellcode'], process.cwd())
+
+      expect(result.exitCode).toBe(0)
+
+      // Should include the default deactivation message or a custom one
+      const output = result.stdout
+      const hasDefaultMessage = output.includes('dev environment deactivated')
+      const hasCustomMessage = output.includes('shellDeactivationMessage')
+
+      expect(hasDefaultMessage || hasCustomMessage).toBe(true)
+    }, 30000)
+
+    it('should handle path placeholder in activation message', async () => {
+      const result = await runCLI(['dev:shellcode'], process.cwd())
+
+      expect(result.exitCode).toBe(0)
+
+      // Should contain logic for path substitution
+      expect(result.stdout).toContain('{path}')
+    }, 30000)
+
+    it('should generate shell-safe message code', async () => {
+      const result = await runCLI(['dev:shellcode'], process.cwd())
+
+      expect(result.exitCode).toBe(0)
+
+      // Basic shell syntax validation - should not contain problematic strings
+      expect(result.stdout).not.toContain('undefined')
+      expect(result.stdout).not.toContain('[object Object]')
+
+      // The word "null" appears in legitimate shell code like >/dev/null, so check more specifically
+      expect(result.stdout).not.toContain('null)')
+      expect(result.stdout).not.toContain('= null')
+
+      // Should contain proper shell constructs for messages
+      expect(result.stdout).toContain('echo')
+      expect(result.stdout).toContain('>&2') // stderr redirection for messages
+    }, 30000)
   })
 
   describe('dev:dump', () => {

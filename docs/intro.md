@@ -12,8 +12,20 @@ Launchpad serves as an alternative to package managers like Homebrew, focusing o
 - Automatic PATH management
 - Easy installation of development tools
 - Cross-platform support
+- Clean separation from other package managers
 
 At its core, Launchpad leverages pkgx, a next-generation package runner that allows you to use packages without installing them. Launchpad extends this functionality with convenient commands, better management of executables, and improved integration with your development workflow.
+
+## Installation Philosophy
+
+Launchpad follows the **pkgm approach** to package management:
+
+- **Never installs to Homebrew directories** (`/opt/homebrew`) - maintains clean separation
+- **Prefers `/usr/local`** for system-wide installations (traditional Unix philosophy)
+- **Falls back to `~/.local`** for user-specific installations when needed
+- **Respects existing system conventions** while avoiding conflicts with other package managers
+
+This approach ensures that Launchpad can coexist peacefully with Homebrew, system package managers, and other tools without interfering with their operation.
 
 ## Key Features
 
@@ -26,6 +38,8 @@ At its core, Launchpad leverages pkgx, a next-generation package runner that all
 - 🔌 **PATH Integration** — Automatically add installation directories to your PATH
 - 🪟 **Cross-platform** — Support for macOS, Linux, and Windows systems
 - 🔒 **Smart Installation** — Automatic fallback to system package managers when needed
+- 💬 **Customizable Messages** — Configure or disable shell environment messages
+- 🔗 **Clean Integration** — Works alongside Homebrew and other package managers
 
 ## How It Works
 
@@ -45,7 +59,7 @@ Here's a simple example of how to use Launchpad:
 # Install Launchpad
 bun add -g @stacksjs/launchpad
 
-# Bootstrap everything you need at once
+# Bootstrap everything you need at once (installs to /usr/local if writable)
 launchpad bootstrap
 
 # Or install individual packages
@@ -69,6 +83,10 @@ EOF
 # Environment automatically activates when you enter the directory
 # ✅ Environment activated for /path/to/my-project
 
+# Customize environment messages (optional)
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Project environment ready: {path}"
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Environment closed"
+
 # Install Zsh shell
 launchpad zsh
 
@@ -81,7 +99,7 @@ zsh --version
 
 # Environment automatically deactivates when you leave
 cd ..
-# 🔄 dev environment deactivated
+# 👋 Environment closed
 
 # Remove specific packages when no longer needed
 launchpad remove node
@@ -101,6 +119,54 @@ Launchpad offers several advantages over traditional package managers:
 - **Simplicity**: Clean, consistent interface across platforms
 - **Integration**: Automatic PATH management and environment configuration
 - **Flexibility**: Works with project-specific development environments
+- **Coexistence**: Peaceful coexistence with Homebrew and other package managers
+- **Customization**: Configurable shell messages and behavior
+- **Philosophy**: Follows traditional Unix conventions while avoiding conflicts
+
+## Package Manager Coexistence
+
+Launchpad is designed to work alongside other package managers:
+
+```bash
+# Launchpad installs to /usr/local (or ~/.local)
+launchpad install node@22
+
+# Homebrew manages its own directory
+brew install git
+
+# System package manager handles OS packages
+apt install curl  # or yum, dnf, etc.
+
+# All can coexist without conflicts
+```
+
+This clean separation means you can:
+- Use Homebrew for GUI applications and system tools
+- Use Launchpad for development environments and project-specific tools
+- Use system package managers for OS-level dependencies
+- Switch between them without conflicts or interference
+
+## Shell Message Customization
+
+Launchpad provides flexible shell message customization:
+
+```bash
+# Disable all environment messages
+export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+
+# Customize activation messages with project path
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 Development environment: {path}"
+
+# Customize deactivation messages
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🔒 Environment closed"
+
+# Or configure in launchpad.config.ts
+echo 'export default {
+  showShellMessages: true,
+  shellActivationMessage: "📁 Project: {path}",
+  shellDeactivationMessage: "🏠 Global environment"
+}' > launchpad.config.ts
+```
 
 ## Next Steps
 
@@ -123,7 +189,7 @@ For casual chit-chat with others using this package:
 
 ## Postcardware
 
-“Software that is free, but hopes for a postcard.” We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
+"Software that is free, but hopes for a postcard." We love receiving postcards from around the world showing where Stacks is being used! We showcase them on our website too.
 
 Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094
 

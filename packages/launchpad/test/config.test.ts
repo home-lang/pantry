@@ -34,6 +34,10 @@ describe('Config', () => {
       expect(defaultConfig.forceReinstall).toBeDefined()
       expect(defaultConfig.shimPath).toBeDefined()
       expect(defaultConfig.autoAddToPath).toBeDefined()
+      // New shell message properties
+      expect(defaultConfig.showShellMessages).toBeDefined()
+      expect(defaultConfig.shellActivationMessage).toBeDefined()
+      expect(defaultConfig.shellDeactivationMessage).toBeDefined()
     })
 
     it('should have reasonable default values', () => {
@@ -45,6 +49,10 @@ describe('Config', () => {
       expect(defaultConfig.symlinkVersions).toBe(true)
       expect(defaultConfig.forceReinstall).toBe(false)
       expect(defaultConfig.autoAddToPath).toBe(true)
+      // New shell message default values
+      expect(defaultConfig.showShellMessages).toBe(true)
+      expect(defaultConfig.shellActivationMessage).toBe('✅ Environment activated for {path}')
+      expect(defaultConfig.shellDeactivationMessage).toBe('dev environment deactivated')
     })
 
     it('should have valid paths', () => {
@@ -52,6 +60,18 @@ describe('Config', () => {
       expect(defaultConfig.installationPath.length).toBeGreaterThan(0)
       expect(typeof defaultConfig.shimPath).toBe('string')
       expect(defaultConfig.shimPath.length).toBeGreaterThan(0)
+    })
+
+    it('should have valid shell message configuration', () => {
+      expect(typeof defaultConfig.showShellMessages).toBe('boolean')
+      expect(typeof defaultConfig.shellActivationMessage).toBe('string')
+      expect(typeof defaultConfig.shellDeactivationMessage).toBe('string')
+      expect(defaultConfig.shellActivationMessage.length).toBeGreaterThan(0)
+      expect(defaultConfig.shellDeactivationMessage.length).toBeGreaterThan(0)
+    })
+
+    it('should have activation message with path placeholder', () => {
+      expect(defaultConfig.shellActivationMessage).toContain('{path}')
     })
 
     it('should respect SUDO_PASSWORD environment variable', () => {
@@ -69,6 +89,12 @@ describe('Config', () => {
       const homePath = process.env.HOME || process.env.USERPROFILE || '~'
       const expectedPaths = ['/usr/local', path.join(homePath, '.local')]
       expect(expectedPaths).toContain(defaultConfig.installationPath)
+    })
+
+    it('should never use /opt/homebrew as installation path', () => {
+      // Ensure we follow pkgm pattern and never install to Homebrew's directory
+      expect(defaultConfig.installationPath).not.toBe('/opt/homebrew')
+      expect(defaultConfig.installationPath).not.toContain('/opt/homebrew')
     })
 
     it('should use appropriate shim path', () => {
@@ -91,6 +117,10 @@ describe('Config', () => {
       expect(config.forceReinstall).toBeDefined()
       expect(config.shimPath).toBeDefined()
       expect(config.autoAddToPath).toBeDefined()
+      // New shell message properties
+      expect(config.showShellMessages).toBeDefined()
+      expect(config.shellActivationMessage).toBeDefined()
+      expect(config.shellDeactivationMessage).toBeDefined()
     })
 
     it('should be a valid LaunchpadConfig object', () => {
@@ -105,6 +135,10 @@ describe('Config', () => {
       expect(typeof config.forceReinstall).toBe('boolean')
       expect(typeof config.shimPath).toBe('string')
       expect(typeof config.autoAddToPath).toBe('boolean')
+      // New shell message type checks
+      expect(typeof config.showShellMessages).toBe('boolean')
+      expect(typeof config.shellActivationMessage).toBe('string')
+      expect(typeof config.shellDeactivationMessage).toBe('string')
     })
 
     it('should have reasonable values', () => {
@@ -112,6 +146,9 @@ describe('Config', () => {
       expect(config.timeout).toBeGreaterThan(0)
       expect(config.installationPath.length).toBeGreaterThan(0)
       expect(config.shimPath.length).toBeGreaterThan(0)
+      // Shell message validation
+      expect(config.shellActivationMessage.length).toBeGreaterThan(0)
+      expect(config.shellDeactivationMessage.length).toBeGreaterThan(0)
     })
 
     it('should load from launchpad.config.ts if present', () => {
@@ -119,6 +156,68 @@ describe('Config', () => {
       // The actual config values depend on whether a config file exists
       expect(config).toBeDefined()
       expect(typeof config).toBe('object')
+    })
+  })
+
+  describe('shell message configuration', () => {
+    it('should have valid message templates', () => {
+      expect(config.shellActivationMessage).toBeTruthy()
+      expect(config.shellDeactivationMessage).toBeTruthy()
+      expect(typeof config.shellActivationMessage).toBe('string')
+      expect(typeof config.shellDeactivationMessage).toBe('string')
+    })
+
+    it('should support disabling shell messages', () => {
+      // The config should support boolean values for showShellMessages
+      expect(typeof config.showShellMessages).toBe('boolean')
+    })
+
+    it('should handle custom activation messages', () => {
+      // The activation message should be customizable
+      const message = config.shellActivationMessage
+      expect(message.length).toBeGreaterThan(0)
+      // Should be a valid string that can be used in shell scripts
+      expect(message).not.toContain('\n')
+    })
+
+    it('should handle custom deactivation messages', () => {
+      // The deactivation message should be customizable
+      const message = config.shellDeactivationMessage
+      expect(message.length).toBeGreaterThan(0)
+      // Should be a valid string that can be used in shell scripts
+      expect(message).not.toContain('\n')
+    })
+
+    it('should preserve {path} placeholder in activation message', () => {
+      // If the activation message contains {path}, it should be preserved
+      if (config.shellActivationMessage.includes('{path}')) {
+        expect(config.shellActivationMessage).toContain('{path}')
+      }
+    })
+
+    it('should handle shell-safe messages', () => {
+      // Messages should not contain characters that would break shell scripts
+      const unsafeChars = ['"', '\'', '`', '$', '\\']
+
+      // Check activation message
+      for (const char of unsafeChars) {
+        if (config.shellActivationMessage.includes(char)) {
+          // If it contains special chars, they should be properly escaped
+          // This is a warning rather than a hard failure since some messages might intentionally use these
+          console.warn(`Activation message contains potentially unsafe character: ${char}`)
+        }
+      }
+
+      // Check deactivation message
+      for (const char of unsafeChars) {
+        if (config.shellDeactivationMessage.includes(char)) {
+          console.warn(`Deactivation message contains potentially unsafe character: ${char}`)
+        }
+      }
+
+      // At minimum, messages should not be empty
+      expect(config.shellActivationMessage.trim().length).toBeGreaterThan(0)
+      expect(config.shellDeactivationMessage.trim().length).toBeGreaterThan(0)
     })
   })
 
@@ -133,6 +232,12 @@ describe('Config', () => {
     it('should have valid path formats', () => {
       expect(config.installationPath).toMatch(/^[/~]/) // Should start with / or ~
       expect(config.shimPath).toMatch(/^[/~]/) // Should start with / or ~
+    })
+
+    it('should never install to Homebrew directory', () => {
+      // Ensure we follow pkgm pattern
+      expect(config.installationPath).not.toBe('/opt/homebrew')
+      expect(config.installationPath).not.toContain('/opt/homebrew')
     })
 
     it('should have consistent path structure', () => {

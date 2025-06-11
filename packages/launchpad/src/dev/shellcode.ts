@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import path, { join } from 'node:path'
 import process from 'node:process'
+import { config } from '../config'
 
 /**
  * Supported dependency file names in order of preference
@@ -426,7 +427,9 @@ _pkgx_dev_try_bye() {
       ;;
     *)
       if [ "\\\$1" != "silent" ]; then
-        echo -e "\\\\033[31mdev environment deactivated\\\\033[0m" >&2
+        if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
+          echo -e "\\\\033[31m${config.shellDeactivationMessage}\\\\033[0m" >&2
+        fi
       fi
       if [ -n "\\\$_LAUNCHPAD_ORIGINAL_PATH" ]; then
         export PATH="\\\$_LAUNCHPAD_ORIGINAL_PATH"
@@ -439,7 +442,12 @@ _pkgx_dev_try_bye() {
 EOF
 )"
 
-  echo "✅ Environment activated for \\033[3m$cwd\\033[0m" >&2
+  # Show activation message if enabled
+  if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
+    # Replace {path} placeholder with actual path
+    local message="${config.shellActivationMessage.replace('{path}', '\\033[3m$cwd\\033[0m')}"
+    echo "$message" >&2
+  fi
 }
 
 # Function to activate environment using pkgx directly
@@ -476,7 +484,9 @@ _pkgx_activate_with_pkgx() {
     echo "# Environment setup (fallback mode)"
     echo "eval \\"_pkgx_dev_try_bye() {"
     echo "  if [ \\\\\\"\\$1\\\\\\" != \\\\\\"silent\\\\\\" ]; then"
-    echo "    echo 'dev environment deactivated' >&2"
+    echo "    if [ '${config.showShellMessages ? 'true' : 'false'}' = 'true' ]; then"
+    echo "      echo '${config.shellDeactivationMessage}' >&2"
+    echo "    fi"
     echo "  fi"
     echo "  unset -f _pkgx_dev_try_bye"
     echo "}\\""
@@ -504,7 +514,9 @@ _pkgx_activate_with_pkgx() {
     fi
 
     echo "set +a"
-    echo "echo '✅ Dev environment activated via pkgx (fallback)' >&2"
+    if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
+      echo "echo '✅ Dev environment activated via pkgx (fallback)' >&2"
+    fi
 
     return 0
   else

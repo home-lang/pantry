@@ -8,6 +8,7 @@ Environment management in Launchpad consists of two main components:
 
 1. **Automatic Environment Isolation** - Project-specific environments that activate when you enter a directory
 2. **Environment Management Tools** - CLI commands for listing, inspecting, cleaning, and removing environments
+3. **Shell Message Customization** - Configurable activation and deactivation messages
 
 ## Automatic Environment Isolation
 
@@ -21,6 +22,7 @@ When you enter a directory containing dependency files (like `dependencies.yaml`
 4. **Modifies PATH** to prioritize the project's binaries
 5. **Sets up environment variables** as specified in the dependency file
 6. **Creates deactivation hooks** to restore the original environment when leaving
+7. **Displays customizable messages** for activation and deactivation
 
 ### Environment Hash Format
 
@@ -44,6 +46,12 @@ Launchpad uses a human-readable hash format for environment directories:
 Launchpad automatically detects these dependency files:
 
 - `dependencies.yaml` / `dependencies.yml`
+- `.launchpad.yaml` / `launchpad.yaml`
+- `.launchpad.yml` / `launchpad.yml`
+- `deps.yml` / `deps.yaml`
+- `.deps.yml` / `.deps.yaml`
+
+For pkgx compatibility, Launchpad also supports:
 - `pkgx.yaml` / `pkgx.yml`
 - `.pkgx.yaml` / `.pkgx.yml`
 
@@ -76,7 +84,63 @@ Once set up, environments automatically activate:
 
 ```bash
 cd my-project/  # → ✅ Environment activated for /path/to/my-project
-cd ../          # → 🔄 dev environment deactivated
+cd ../          # → dev environment deactivated
+```
+
+### Customizing Shell Messages
+
+You can customize or disable environment activation/deactivation messages:
+
+#### Disabling Messages
+
+```bash
+# Disable all environment messages
+export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+
+# Or in configuration file
+echo 'export default { showShellMessages: false }' > launchpad.config.ts
+```
+
+#### Custom Activation Messages
+
+```bash
+# Environment variable (use {path} placeholder for project path)
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
+
+# Or in configuration file
+echo 'export default {
+  shellActivationMessage: "🔧 Development environment ready: {path}"
+}' > launchpad.config.ts
+```
+
+#### Custom Deactivation Messages
+
+```bash
+# Environment variable
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Project environment closed"
+
+# Or in configuration file
+echo 'export default {
+  shellDeactivationMessage: "🔒 Environment closed"
+}' > launchpad.config.ts
+```
+
+#### Message Examples
+
+Different styles you can use:
+
+```bash
+# Minimal style
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="[ENV] {path}"
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="[ENV] closed"
+
+# Detailed style
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 Development environment ready for {path}"
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Development environment deactivated"
+
+# Emoji style
+export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="📁 {path} 🚀"
+export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🏠 Back to global environment"
 ```
 
 ## Environment Management Commands
@@ -201,7 +265,7 @@ The `env:clean` command automatically removes unused or problematic environments
 # Preview what would be cleaned
 launchpad env:clean --dry-run
 
-# Clean with default settings (30 days old)
+# Clean environments older than 30 days (default)
 launchpad env:clean
 
 # Clean environments older than 7 days
@@ -214,37 +278,14 @@ launchpad env:clean --force
 launchpad env:clean --verbose
 ```
 
-**Cleanup criteria:**
-- **Failed installations** - Environments with no binaries
-- **Age-based cleanup** - Environments older than specified days (default: 30)
-- **Empty directories** - Environments with no packages or binaries
-
-**Example output:**
-```
-🧹 Cleaning up development environments...
-
-Found 3 environment(s) to clean:
-
-🗑️  old-project
-    Hash: old-project_1a2b3c4d
-    Size: 1.2M
-    Created: 4/15/2025
-    Reason: older than 30 days
-
-🗑️  failed-install
-    Hash: failed-install_5e6f7g8h
-    Size: 0B
-    Created: 5/29/2025
-    Reason: no binaries (failed installation)
-
-💾 Total space to be freed: 1.2M
-
-🤔 Clean 3 environment(s)? (y/N):
-```
+**Cleanup Criteria:**
+- Environments with no binaries (failed installations)
+- Environments older than specified days (default: 30)
+- Empty or corrupted environment directories
 
 ### Removing Specific Environments
 
-The `env:remove` command removes individual environments:
+Remove individual environments by their hash:
 
 ```bash
 # Remove with confirmation
@@ -257,61 +298,110 @@ launchpad env:remove minimal_3a5dc15d --force
 launchpad env:remove working-test_208a31ec --verbose
 ```
 
-**Example output:**
-```
-🗑️  Removing environment: dummy
-    Hash: dummy_6d7cf1d6
-    Size: 1.1M
+## Advanced Environment Features
 
-🤔 Remove environment 'dummy'? (y/N): y
+### Environment Variables and Context
 
-✅ Environment 'dummy' removed successfully
-💾 Space freed: 1.1M
-```
+Each environment can export specific variables:
 
-## Environment Directory Structure
-
-Each environment has a standardized directory structure:
-
-```
-~/.local/share/launchpad/envs/{project-name}_{hash}/
-├── bin/           # Executable binaries and stubs
-├── sbin/          # System binaries
-├── pkgs/          # Package installations
-│   └── {package}/
-│       └── v{version}/
-├── lib/           # Libraries
-├── share/         # Shared data
-└── etc/           # Configuration files
-```
-
-### Binary Stubs
-
-Launchpad creates isolated binary stubs that:
-
-- **Set up environment variables** before executing the real binary
-- **Restore original environment** after execution
-- **Provide isolation** between different project environments
-- **Handle complex PATH scenarios** with multiple package versions
-
-**Example stub structure:**
 ```bash
-#!/bin/sh
-# Project-specific binary stub - environment is isolated
-# Created for python from python.org
+# Check current environment context
+echo $LAUNCHPAD_ENV_HASH
+echo $LAUNCHPAD_PROJECT_NAME
 
-# Store original environment variables for restoration
-_ORIG_PATH="$PATH"
-_ORIG_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-# ... more environment setup
-
-# Set project-specific environment
-export PATH="/path/to/project/env/bin:$_ORIG_PATH"
-export PYTHONPATH="/path/to/project/env/lib/python"
-
-# Execute the real binary
-exec "/path/to/real/python" "$@"
+# Use in scripts
+if [ -n "$LAUNCHPAD_ENV_HASH" ]; then
+  echo "Running in Launchpad environment: $LAUNCHPAD_PROJECT_NAME"
+fi
 ```
+
+### Environment Performance
+
+- **Fast activation** - Subsequent entries to the same project use cached installations
+- **Isolated PATH** - Each environment has its own binary resolution
+- **Memory efficient** - Environments share common dependencies when possible
+- **Disk optimization** - Human-readable hashes improve filesystem performance
+
+### Integration with Development Tools
+
+Environments work seamlessly with development tools:
+
+**Node.js project example:**
+```yaml
+dependencies:
+  - node@22
+  - typescript@5.0
+  - yarn@1.22
+
+env:
+  NODE_ENV: development
+  TYPESCRIPT_CONFIG: ./tsconfig.dev.json
+```
+
+**Python project example:**
+```yaml
+dependencies:
+  - python@3.12
+  - pip
+  - poetry@1.5
+
+env:
+  PYTHONPATH: ./src
+  VIRTUAL_ENV: ./.venv
+```
+
+### Troubleshooting Environment Issues
+
+#### Environment Not Activating
+
+1. Check shell integration:
+   ```bash
+   type _pkgx_chpwd_hook
+   ```
+
+2. Verify dependency file:
+   ```bash
+   launchpad dev:dump --dryrun
+   ```
+
+3. Check file detection:
+   ```bash
+   ls -la dependencies.yaml
+   ```
+
+#### Environment Messages Not Showing
+
+1. Check message settings:
+   ```bash
+   echo $LAUNCHPAD_SHOW_ENV_MESSAGES
+   ```
+
+2. Verify shell integration:
+   ```bash
+   grep "launchpad dev:shellcode" ~/.zshrc
+   ```
+
+3. Test manual activation:
+   ```bash
+   eval "$(launchpad dev:shellcode)"
+   ```
+
+#### Performance Issues
+
+1. Clean old environments:
+   ```bash
+   launchpad env:clean --older-than 7
+   ```
+
+2. Check disk usage:
+   ```bash
+   du -sh ~/.local/share/launchpad/envs/*
+   ```
+
+3. Monitor activation time:
+   ```bash
+   time (cd my-project && cd ..)
+   ```
 
 ## Best Practices
 

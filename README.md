@@ -34,7 +34,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 
 ### System-Wide Dependency Management
 - 📦 **Global Tool Installation** — Install development tools and runtimes system-wide with automatic PATH management
-- 🔧 **Smart Installation Paths** — Automatically chooses `/usr/local` for system-wide access or `~/.local` for user-specific installs
+- 🔧 **Smart Installation Paths** — Automatically chooses `/usr/local` for system-wide access or `~/.local` for user-specific installs (pkgm compatible)
 - 🔌 **Shell Integration** — Seamless integration with your shell for immediate tool availability
 - 🪟 **Cross-Platform Support** — Consistent experience across macOS, Linux, and Windows
 
@@ -263,6 +263,11 @@ const config: LaunchpadConfig = {
   // PATH and shell integration
   shimPath: '~/.local/bin', // Custom shim location
   autoAddToPath: true, // Automatic PATH management
+
+  // Shell message configuration
+  showShellMessages: true,
+  shellActivationMessage: '🚀 Dev environment ready for {path}',
+  shellDeactivationMessage: '👋 Dev environment deactivated',
 }
 
 export default config
