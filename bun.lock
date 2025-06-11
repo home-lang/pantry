@@ -41,7 +41,7 @@
       "dependencies": {
         "bunfig": "^0.10.0",
         "cac": "^6.7.14",
-        "ts-pkgx": "^0.2.18",
+        "ts-pkgx": "^0.2.20",
       },
       "devDependencies": {
         "bun-plugin-dtsx": "^0.21.12",
@@ -1846,7 +1846,7 @@
 
     "ts-api-utils": ["ts-api-utils@2.1.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ=="],
 
-    "ts-pkgx": ["ts-pkgx@0.2.18", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.0" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-nbs50Xdg2A09IeJPHuNzjL9Hkch1KIqdvVxnRxGv1gkqiH9f/Mf5iYZdQVS7QyjNDZtC3B1MMJD6YtlYCKDtMQ=="],
+    "ts-pkgx": ["ts-pkgx@0.2.20", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.0" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-B4scNhtrKekhPX3uIz6i9IA4ZOuHrQ3CrM3Z4FHE9W+ZrMF5rknfjquWXH+IyD4+97NoOxK+7KrgtcU21v4GoA=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 

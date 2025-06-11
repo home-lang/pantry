@@ -235,7 +235,6 @@ launchpad autoupdate:enable
 
 # Install additional tools
 launchpad pkgx    # Install pkgx itself
-launchpad dev     # Install dev environment tools
 launchpad bun     # Install Bun runtime
 ```
 
@@ -250,15 +249,17 @@ const config: LaunchpadConfig = {
   // System-wide installation preferences
   installationPath: '/usr/local', // Default system location
   autoSudo: true, // Auto-elevate when needed
+  sudoPassword: '', // Password for sudo operations
 
-  // Project environment settings
-  autoActivate: true, // Auto-activate project environments
+  // Development environment settings
+  devAware: true, // Enable dev-aware installations
   symlinkVersions: true, // Create version-specific symlinks
+  forceReinstall: false, // Force reinstall if already installed
 
-  // Development preferences
+  // Operation settings
   verbose: true, // Detailed logging
   maxRetries: 3, // Retry failed operations
-  timeout: 60000, // Operation timeout
+  timeout: 60000, // Operation timeout in milliseconds
 
   // PATH and shell integration
   shimPath: '~/.local/bin', // Custom shim location
@@ -266,8 +267,8 @@ const config: LaunchpadConfig = {
 
   // Shell message configuration
   showShellMessages: true,
-  shellActivationMessage: '🚀 Dev environment ready for {path}',
-  shellDeactivationMessage: '👋 Dev environment deactivated',
+  shellActivationMessage: '✅ Environment activated for {path}',
+  shellDeactivationMessage: 'dev environment deactivated',
 }
 
 export default config
@@ -323,7 +324,7 @@ Explore advanced dependency management topics:
 
 ## Changelog
 
-Please see our [releases](https://github.com/stackjs/launchpad/releases) page for information on changes.
+Please see our [releases](https://github.com/stacksjs/launchpad/releases) page for information on changes.
 
 ## Contributing
 

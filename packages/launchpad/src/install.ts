@@ -1,276 +1,24 @@
-import type { QueryPkgxOptions } from './pkgx'
-import type { JsonResponse } from './types'
+import type { PkgxPackage } from 'ts-pkgx'
+import { Buffer } from 'node:buffer'
+import { exec } from 'node:child_process'
 import fs from 'node:fs'
-import { EOL, platform } from 'node:os'
+import { arch, EOL, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { promisify } from 'node:util'
 import { config } from './config'
 import { Path } from './path'
-import { get_pkgx, query_pkgx } from './pkgx'
 import { create_v_symlinks, symlink, symlink_with_overwrite } from './symlink'
 
-/**
- * Install packages
- */
-export async function install(args: string[], basePath: string): Promise<string[]> {
-  if (args.length === 0) {
-    console.error('no packages specified')
-    process.exit(1)
-  }
-
-  const pkgx = get_pkgx()
-  let retries = 0
-  let json: JsonResponse
-
-  while (true) {
-    try {
-      const queryOptions: QueryPkgxOptions = {
-        timeout: config.timeout,
-      }
-      const [jsonResult] = await query_pkgx(pkgx, args, queryOptions)
-      json = jsonResult
-      break
-    }
-    catch (error) {
-      retries++
-      if (retries >= config.maxRetries) {
-        throw new Error(`Failed to query pkgx after ${config.maxRetries} attempts: ${error instanceof Error ? error.message : String(error)}`)
-      }
-      console.warn(`Retrying pkgx query (attempt ${retries}/${config.maxRetries})...`)
-      // Wait a bit before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-  }
-
-  const pkg_prefixes = json.pkgs.map(x => `${x.pkg.project}/v${x.pkg.version}`)
-
-  // Get the pkgx_dir this way as it is a) more reliable and b) the only way if
-  // we are running as sudo on linux since it doesn't give us a good way to get
-  // the home directory of the pre-sudo user
-  const pkgx_dir = (() => {
-    const { path, pkg } = json.pkgs[0]!
-    const remove = `${pkg.project}/v${pkg.version}`
-    return path.string.slice(0, -remove.length - 1)
-  })()
-
-  const runtime_env = expand_runtime_env(json, basePath)
-
-  const dst = basePath
-  for (const pkg_prefix of pkg_prefixes) {
-    // Check if package is already installed and skip if not forcing reinstall
-    const pkgDstPath = path.join(dst, 'pkgs', pkg_prefix)
-    if (fs.existsSync(pkgDstPath) && !config.forceReinstall) {
-      if (config.verbose) {
-        console.warn(`Package ${pkg_prefix} is already installed at ${pkgDstPath}. Skipping.`)
-      }
-      continue
-    }
-
-    // create ${dst}/pkgs/${prefix}
-    await mirror_directory(path.join(dst, 'pkgs'), pkgx_dir, pkg_prefix)
-    // symlink ${dst}/pkgs/${prefix} to ${dst}
-    if (!pkg_prefix.startsWith('pkgx.sh/v')) {
-      // ^^ don't overwrite ourselves
-      // ^^ * https://github.com/pkgxdev/pkgm/issues/14
-      // ^^ * https://github.com/pkgxdev/pkgm/issues/17
-      await symlink(path.join(dst, 'pkgs', pkg_prefix), dst)
-    }
-
-    // create v1, etc. symlinks if enabled
-    if (config.symlinkVersions) {
-      await create_v_symlinks(path.join(dst, 'pkgs', pkg_prefix))
-    }
-  }
-
-  const rv: string[] = []
-
-  for (const [project, env] of Object.entries(runtime_env)) {
-    if (project === 'pkgx.sh')
-      continue
-
-    const pkg_prefix = pkg_prefixes.find(x => x.startsWith(project))!
-
-    if (!pkg_prefix)
-      continue // FIXME wtf?
-
-    for (const bin of ['bin', 'sbin']) {
-      const bin_prefix = path.join(`${dst}/pkgs`, pkg_prefix, bin)
-
-      if (!fs.existsSync(bin_prefix))
-        continue
-
-      for (const entry of fs.readdirSync(bin_prefix, { withFileTypes: true })) {
-        if (!entry.isFile())
-          continue
-
-        const to_stub = path.join(dst, bin, entry.name)
-
-        let sh = `#!/bin/sh${EOL}`
-        for (const [key, value] of Object.entries(env)) {
-          sh += `export ${key}="${value}"${EOL}`
-        }
-
-        sh += EOL
-
-        // Determine if this is a dev-aware installation
-        const isDevAware = config.devAware
-          && isDevPackagePresent(pkg_prefixes)
-          && to_stub.startsWith('/usr/local')
-          && entry.name !== 'dev' // Don't make dev itself dev-aware
-
-        // Use the appropriate stub text
-        sh += isDevAware
-          ? dev_stub_text(to_stub, bin_prefix, entry.name)
-          : regular_stub_text(bin_prefix, entry.name)
-
-        if (fs.existsSync(to_stub)) {
-          fs.unlinkSync(to_stub) // FIXME inefficient to symlink for no reason
-        }
-
-        fs.writeFileSync(to_stub, sh.trim() + EOL, { mode: 0o755 })
-        rv.push(to_stub)
-      }
-    }
-  }
-
-  if (!process.env.PATH?.split(':')?.includes(path.join(basePath, 'bin'))) {
-    console.warn('\x1B[33m! warning:\x1B[0m', `${path.join(basePath, 'bin')} not in $PATH`)
-  }
-
-  return rv
-}
+const execAsync = promisify(exec)
 
 /**
- * Check if the dev package is present in the installation list
+ * Distribution configuration
  */
-function isDevPackagePresent(pkg_prefixes: string[]): boolean {
-  return pkg_prefixes.some(prefix => prefix.startsWith('dev.pkgx.sh/v'))
-}
-
-/**
- * Mirror a directory
- */
-async function mirror_directory(dst: string, src: string, prefix: string): Promise<void> {
-  await processEntry(path.join(src, prefix), path.join(dst, prefix))
-
-  async function processEntry(sourcePath: string, targetPath: string): Promise<void> {
-    const fileInfo = fs.statSync(sourcePath, { throwIfNoEntry: false })
-    if (!fileInfo)
-      return
-
-    if (fileInfo.isDirectory()) {
-      // Create the target directory
-      fs.mkdirSync(targetPath, { recursive: true })
-
-      // Recursively process the contents of the directory
-      for (const entry of fs.readdirSync(sourcePath)) {
-        const entrySourcePath = path.join(sourcePath, entry)
-        const entryTargetPath = path.join(targetPath, entry)
-        await processEntry(entrySourcePath, entryTargetPath)
-      }
-    }
-    else if (fileInfo.isFile()) {
-      // Remove the target file if it exists
-      if (fs.existsSync(targetPath)) {
-        fs.unlinkSync(targetPath)
-      }
-      // Create a hard link for files
-      try {
-        fs.linkSync(sourcePath, targetPath)
-      }
-      catch {
-        // Fall back to copying if hard linking fails
-        fs.copyFileSync(sourcePath, targetPath)
-      }
-    }
-    else if (fs.lstatSync(sourcePath).isSymbolicLink()) {
-      // Recreate symlink in the target directory
-      const linkTarget = fs.readlinkSync(sourcePath)
-      symlink_with_overwrite(linkTarget, targetPath)
-    }
-  }
-}
-
-/**
- * Expand the runtime environment variables
- */
-function expand_runtime_env(
-  json: JsonResponse,
-  basePath: string,
-): Record<string, Record<string, string>> {
-  const { runtime_env } = json
-
-  const expanded: Record<string, Set<string>> = {}
-  for (const [_project, env] of Object.entries(runtime_env)) {
-    for (const [key, value] of Object.entries(env)) {
-      // Simplified version without the moustaches processing
-      expanded[key] ??= new Set<string>()
-      expanded[key].add(value)
-    }
-  }
-
-  // fix https://github.com/pkgxdev/pkgm/pull/30#issuecomment-2678957666
-  if (platform() === 'linux') {
-    expanded.LD_LIBRARY_PATH ??= new Set<string>()
-    expanded.LD_LIBRARY_PATH.add(`${basePath}/lib`)
-  }
-
-  const rv: Record<string, string> = {}
-  for (const [key, set] of Object.entries(expanded)) {
-    rv[key] = [...set].join(':')
-  }
-
-  // DUMB but easiest way to fix a bug
-  const rv2: Record<string, Record<string, string>> = {}
-  for (const { pkg: { project } } of json.pkgs) {
-    rv2[project] = rv
-  }
-
-  return rv2
-}
-
-/**
- * Generate the text for a regular executable stub
- */
-function regular_stub_text(bin_prefix: string, name: string): string {
-  return `exec ${bin_prefix}/${name} "$@"`
-}
-
-/**
- * Generate the text for a development stub
- */
-function dev_stub_text(selfpath: string, bin_prefix: string, name: string): string {
-  return `
-dev_check() {
-  [ -x /usr/local/bin/dev ] || return 1
-  local d="$PWD"
-  until [ "$d" = / ]; do
-    if [ -f "${datadir()}/pkgx/dev/$d/dev.pkgx.activated" ]; then
-      echo $d
-      return 0
-    fi
-    d="$(dirname "$d")"
-  done
-  return 1
-}
-
-if d="$(dev_check)"; then
-  eval "$(/usr/local/bin/dev "$d" 2>/dev/null)"
-  [ "$(command -v ${name} 2>/dev/null)" != "${selfpath}" ] && exec ${name} "$@"
-fi
-
-exec ${bin_prefix}/${name} "$@"
-`.trim()
-}
-
-/**
- * Get the data directory
- */
-function datadir(): string {
-  const default_data_home = platform() === 'darwin'
-    ? '/Library/Application Support'
-    : '/.local/share'
-  return `\${XDG_DATA_HOME:-$HOME${default_data_home}}`
+export const DISTRIBUTION_CONFIG = {
+  baseUrl: 'https://dist.pkgx.dev',
+  // Future: we can switch this to our own endpoint
+  // baseUrl: 'https://dist.launchpad.dev',
 }
 
 /**
@@ -278,8 +26,8 @@ function datadir(): string {
  */
 export function install_prefix(): Path {
   // Check if there's a configured installation path
-  if (config.installationPath)
-    return new Path(config.installationPath)
+  if (config.installPath)
+    return new Path(config.installPath)
 
   // if /usr/local is writable, use that
   if (writable('/usr/local')) {
@@ -294,13 +42,296 @@ export function install_prefix(): Path {
  */
 function writable(dirPath: string): boolean {
   try {
-    // This is pretty gross
-    const testPath = path.join(dirPath, '.writable_test')
-    fs.mkdirSync(testPath, { recursive: true })
-    fs.rmdirSync(testPath)
+    fs.accessSync(dirPath, fs.constants.W_OK)
     return true
   }
   catch {
     return false
   }
+}
+
+/**
+ * Get platform string for distribution
+ */
+function getPlatform(): string {
+  const os = platform()
+  switch (os) {
+    case 'darwin': return 'darwin'
+    case 'linux': return 'linux'
+    case 'win32': return 'windows'
+    default: throw new Error(`Unsupported platform: ${os}`)
+  }
+}
+
+/**
+ * Get architecture string for distribution
+ */
+function getArchitecture(): string {
+  const nodeArch = arch()
+  switch (nodeArch) {
+    case 'x64': return 'x86_64'
+    case 'arm64': return 'aarch64'
+    case 'arm': return 'armv7l'
+    default: throw new Error(`Unsupported architecture: ${nodeArch}`)
+  }
+}
+
+/**
+ * Resolve package name to domain format
+ */
+function resolvePackageDomain(packageName: string): string {
+  // Handle version specifications
+  const [name] = packageName.split('@')
+
+  // TODO: Re-enable ts-pkgx integration once type issues are resolved
+  // For now, use simple fallback resolution
+
+  // Fallback resolution
+  const commonPackages: Record<string, string> = {
+    node: 'nodejs.org',
+    nodejs: 'nodejs.org',
+    python: 'python.org',
+    python3: 'python.org',
+    go: 'go.dev',
+    rust: 'rust-lang.org',
+    cargo: 'rust-lang.org',
+    git: 'git-scm.org',
+    curl: 'curl.se',
+    wget: 'gnu.org/wget',
+    bun: 'bun.sh',
+    deno: 'deno.land',
+  }
+
+  return commonPackages[name] || (name.includes('.') ? name : `${name}.org`)
+}
+
+/**
+ * Get latest version for a package from distribution server
+ */
+async function getLatestVersion(domain: string, _os: string, _arch: string): Promise<string | null> {
+  // For now, use known working versions since HTML parsing is complex
+  // TODO: Implement proper version discovery once we have our own registry
+  const knownVersions: Record<string, string> = {
+    'bun.sh': '0.5.9',
+    'nodejs.org': '18.17.0',
+    'python.org': '3.11.4',
+    'go.dev': '1.20.6',
+    'rust-lang.org': '1.71.0',
+    'git-scm.org': '2.41.0',
+    'curl.se': '8.1.2',
+    'deno.land': '1.35.0',
+  }
+
+  const version = knownVersions[domain]
+  if (version) {
+    if (config.verbose) {
+      console.warn(`Using known version ${version} for ${domain}`)
+    }
+    return version
+  }
+
+  if (config.verbose) {
+    console.warn(`No known version for ${domain}, this package may not be available`)
+  }
+
+  return null
+}
+
+/**
+ * Download and extract package
+ */
+async function downloadPackage(
+  domain: string,
+  version: string,
+  os: string,
+  arch: string,
+  installPath: string,
+): Promise<string[]> {
+  const tempDir = path.join(installPath, '.tmp', `${domain}-${version}`)
+
+  try {
+    // Create temp directory
+    await fs.promises.mkdir(tempDir, { recursive: true })
+
+    // Try different archive formats
+    const formats = ['tar.xz', 'tar.gz']
+    let downloadUrl: string | null = null
+    let archiveFile: string | null = null
+
+    for (const format of formats) {
+      const url = `${DISTRIBUTION_CONFIG.baseUrl}/${domain}/${os}/${arch}/v${version}.${format}`
+      const file = path.join(tempDir, `package.${format}`)
+
+      try {
+        if (config.verbose) {
+          console.warn(`Trying to download: ${url}`)
+        }
+
+        const response = await fetch(url)
+        if (response.ok) {
+          const buffer = await response.arrayBuffer()
+          await fs.promises.writeFile(file, Buffer.from(buffer))
+          downloadUrl = url
+          archiveFile = file
+          break
+        }
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`Failed to download ${format} format:`, error)
+        }
+      }
+    }
+
+    if (!downloadUrl || !archiveFile) {
+      throw new Error(`Failed to download package ${domain} v${version}`)
+    }
+
+    if (config.verbose) {
+      console.warn(`Downloaded: ${downloadUrl}`)
+    }
+
+    // Extract archive
+    const extractDir = path.join(tempDir, 'extracted')
+    await fs.promises.mkdir(extractDir, { recursive: true })
+
+    const isXz = archiveFile.endsWith('.tar.xz')
+    const extractCmd = isXz
+      ? `tar -xf "${archiveFile}" -C "${extractDir}"`
+      : `tar -xzf "${archiveFile}" -C "${extractDir}"`
+
+    await execAsync(extractCmd)
+
+    if (config.verbose) {
+      console.warn(`Extracted to: ${extractDir}`)
+    }
+
+    // Find and copy binaries
+    const installedFiles: string[] = []
+    const binDir = path.join(installPath, 'bin')
+    await fs.promises.mkdir(binDir, { recursive: true })
+
+    // Look for executables in common locations
+    const searchDirs = [
+      extractDir,
+      path.join(extractDir, 'bin'),
+      path.join(extractDir, 'usr', 'bin'),
+      path.join(extractDir, 'usr', 'local', 'bin'),
+      // pkgx-specific structure: {domain}/v{version}/bin/
+      path.join(extractDir, domain, `v${version}`, 'bin'),
+    ]
+
+    for (const searchDir of searchDirs) {
+      if (!fs.existsSync(searchDir))
+        continue
+
+      try {
+        const files = await fs.promises.readdir(searchDir)
+
+        for (const file of files) {
+          const filePath = path.join(searchDir, file)
+          const stat = await fs.promises.stat(filePath)
+
+          // Check if it's an executable file
+          if (stat.isFile() && (stat.mode & 0o111)) {
+            const targetPath = path.join(binDir, file)
+            await fs.promises.copyFile(filePath, targetPath)
+            await fs.promises.chmod(targetPath, 0o755)
+            installedFiles.push(targetPath)
+
+            if (config.verbose) {
+              console.warn(`Installed binary: ${file}`)
+            }
+          }
+        }
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`Error processing directory ${searchDir}:`, error)
+        }
+      }
+    }
+
+    // Clean up temp directory
+    await fs.promises.rm(tempDir, { recursive: true, force: true })
+
+    return installedFiles
+  }
+  catch (error) {
+    // Clean up on error
+    if (fs.existsSync(tempDir)) {
+      await fs.promises.rm(tempDir, { recursive: true, force: true })
+    }
+    throw error
+  }
+}
+
+/**
+ * Main installation function
+ */
+export async function install(packages: string | string[], basePath?: string): Promise<string[]> {
+  const packageList = Array.isArray(packages) ? packages : [packages]
+  const installPath = basePath || install_prefix().string
+
+  if (config.verbose) {
+    console.warn(`Installing packages: ${packageList.join(', ')}`)
+    console.warn(`Install path: ${installPath}`)
+  }
+
+  const os = getPlatform()
+  const architecture = getArchitecture()
+
+  if (config.verbose) {
+    console.warn(`Platform: ${os}/${architecture}`)
+  }
+
+  const allInstalledFiles: string[] = []
+
+  for (const pkg of packageList) {
+    try {
+      if (config.verbose) {
+        console.warn(`Processing package: ${pkg}`)
+      }
+
+      // Parse package name and version
+      const [packageName, requestedVersion] = pkg.split('@')
+      const domain = resolvePackageDomain(packageName)
+
+      if (config.verbose) {
+        console.warn(`Resolved ${packageName} to domain: ${domain}`)
+      }
+
+      // Get version to install
+      let version = requestedVersion
+      if (!version) {
+        const latestVersion = await getLatestVersion(domain, os, architecture)
+        if (!latestVersion) {
+          throw new Error(`No versions found for ${domain} on ${os}/${architecture}`)
+        }
+        version = latestVersion
+      }
+
+      if (config.verbose) {
+        console.warn(`Installing version: ${version}`)
+      }
+
+      // Download and install
+      const installedFiles = await downloadPackage(domain, version, os, architecture, installPath)
+      allInstalledFiles.push(...installedFiles)
+
+      if (config.verbose) {
+        console.warn(`Successfully installed ${domain} v${version}`)
+      }
+    }
+    catch (error) {
+      console.error(`Failed to install ${pkg}:`, error)
+      throw error
+    }
+  }
+
+  if (config.verbose) {
+    console.warn(`Installation complete. Installed ${allInstalledFiles.length} files.`)
+  }
+
+  return allInstalledFiles
 }

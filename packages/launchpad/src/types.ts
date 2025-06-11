@@ -7,7 +7,7 @@ export interface LaunchpadConfig {
   /** Path where binaries should be installed _(default: /usr/local if writable, ~/.local otherwise)_ */
   installationPath: string
   /** Password for sudo operations, loaded from .env SUDO_PASSWORD _(default: '')_ */
-  sudoPassword: string
+  sudoPassword?: string
   /** Whether to enable dev-aware installations _(default: true)_ */
   devAware: boolean
   /** Whether to auto-elevate with sudo when needed _(default: true)_ */
@@ -30,6 +30,12 @@ export interface LaunchpadConfig {
   shellActivationMessage: string
   /** Custom message to show when environment is deactivated _(default: "dev environment deactivated")_ */
   shellDeactivationMessage: string
+  /** Whether to use a package registry _(default: true)_ */
+  useRegistry: boolean
+  /** Installation method _(default: 'curl')_ */
+  installMethod: 'curl' | 'wget'
+  /** Installation path _(default: '')_ */
+  installPath: string
 }
 
 export type LaunchpadOptions = Partial<LaunchpadConfig>

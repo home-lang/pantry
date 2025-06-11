@@ -8,7 +8,6 @@ import { parseArgs } from 'node:util'
 import { install, install_prefix } from './install'
 import { ls, outdated } from './list'
 import { Path } from './path'
-import { get_pkgx, query_pkgx } from './pkgx'
 import { uninstall } from './uninstall'
 
 /**
@@ -130,44 +129,13 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
  * Create shims (stubs) for packages
  */
 export async function shim(args: string[], basePath: string): Promise<void> {
-  const pkgx = get_pkgx()
+  // Install the packages first using our new installation system
+  await install(args, basePath)
 
-  fs.mkdirSync(path.join(basePath, 'bin'), { recursive: true })
+  // The install function already creates the binaries in the bin directory
+  // so we don't need to create additional shims
 
-  const json = (await query_pkgx(pkgx, args))[0]
-
-  // This is simplified from the original implementation as we're missing some functions
-  for (const pkg of json.pkgs) {
-    for (const bin of ['bin', 'sbin']) {
-      const bin_prefix = pkg.path.join(bin)
-      if (!bin_prefix.exists())
-        continue
-
-      for (const entry of fs.readdirSync(bin_prefix.string, { withFileTypes: true })) {
-        if (!entry.isFile() && !entry.isSymbolicLink())
-          continue
-
-        const name = entry.name
-        const quick_shim = platform() === 'darwin' && pkgx === '/usr/local/bin/pkgx'
-        const interpreter = quick_shim
-          ? '/usr/local/bin/pkgx'
-          : '/usr/bin/env -S pkgx'
-
-        const pkgArg = `${pkg.pkg.project}`
-        const shim = `#!${interpreter} --shebang --quiet +${pkgArg} -- ${name}`
-
-        const binPath = path.join(basePath, 'bin', name)
-        if (fs.existsSync(binPath)) {
-          fs.unlinkSync(binPath)
-        }
-
-        // Without the newline zsh on macOS fails to invoke the interpreter with a bad interpreter error
-        fs.writeFileSync(binPath, shim + EOL, { mode: 0o755 })
-        // eslint-disable-next-line no-console
-        console.log(binPath)
-      }
-    }
-  }
+  console.warn(`Shims created for packages: ${args.join(', ')}`)
 }
 
 /**

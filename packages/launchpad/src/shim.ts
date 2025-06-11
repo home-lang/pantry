@@ -1,12 +1,11 @@
-import type { QueryPkgxOptions } from './pkgx'
-import type { JsonResponse } from './types'
+/* eslint-disable no-console */
 import fs from 'node:fs'
 import { EOL } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
+import { install } from './install'
 import { Path } from './path'
-import { get_pkgx, query_pkgx } from './pkgx'
 import { addToPath, getUserShell, isInPath, isTemporaryDirectory } from './utils'
 
 /**
@@ -17,116 +16,142 @@ export async function create_shim(args: string[], basePath: string): Promise<str
     throw new Error('No packages specified')
   }
 
-  const pkgx = get_pkgx()
-  let retries = 0
-  let json: JsonResponse
+  try {
+    // Install packages using our own system
+    await install(args, basePath)
 
-  // Try to query pkgx with retries
-  while (true) {
-    try {
-      const queryOptions: QueryPkgxOptions = {
-        timeout: config.timeout,
-      }
-      const [jsonResult] = await query_pkgx(pkgx, args, queryOptions)
-      json = jsonResult
-      break
+    if (config.verbose) {
+      console.warn(`Installed packages: ${args.join(', ')}`)
     }
-    catch (error) {
-      retries++
-      if (retries >= config.maxRetries) {
-        throw new Error(`Failed to query pkgx after ${config.maxRetries} attempts: ${error instanceof Error ? error.message : String(error)}`)
+
+    const shimDir = path.join(basePath, 'bin')
+    // Ensure the shim directory exists
+    fs.mkdirSync(shimDir, { recursive: true })
+
+    const createdShims: string[] = []
+
+    // Create shims for the installed packages
+    for (const packageSpec of args) {
+      const [packageName] = packageSpec.split('@')
+
+      // Find the package installation directory
+      const pkgsDir = path.join(basePath, 'pkgs')
+      if (!fs.existsSync(pkgsDir)) {
+        continue
       }
-      console.warn(`Retrying pkgx query (attempt ${retries}/${config.maxRetries})...`)
-      // Wait a bit before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-  }
 
-  const shimDir = path.join(basePath, 'bin')
-  // Ensure the shim directory exists
-  fs.mkdirSync(shimDir, { recursive: true })
+      // Look for the package directory (could be domain-based)
+      let packageDir: string | null = null
 
-  const createdShims: string[] = []
+      // Try common domain patterns
+      const possibleNames = [
+        packageName,
+        packageName.replace(/\./g, '_'),
+        packageName.replace(/\//g, '_'),
+      ]
 
-  for (const installation of json.pkgs) {
-    const { pkg } = installation
-    const binDir = path.join(installation.path.string, 'bin')
+      for (const name of possibleNames) {
+        const searchDir = path.join(pkgsDir, name)
+        if (fs.existsSync(searchDir)) {
+          // Find the version directory (look for v* directories)
+          const versionDirs = fs.readdirSync(searchDir, { withFileTypes: true })
+            .filter(entry => entry.isDirectory() && entry.name.startsWith('v'))
+            .sort((a, b) => b.name.localeCompare(a.name)) // Sort newest first
 
-    if (fs.existsSync(binDir)) {
-      const binEntries = fs.readdirSync(binDir, { withFileTypes: true })
-
-      for (const entry of binEntries) {
-        if (!entry.isFile())
-          continue
-
-        if (!isExecutable(path.join(binDir, entry.name)))
-          continue
-
-        const shimPath = path.join(shimDir, entry.name)
-
-        // Check if shim already exists and we're not forcing reinstall
-        if (fs.existsSync(shimPath) && !config.forceReinstall) {
-          if (config.verbose) {
-            console.warn(`Shim for ${entry.name} already exists at ${shimPath}. Skipping.`)
+          if (versionDirs.length > 0) {
+            packageDir = path.join(searchDir, versionDirs[0].name)
+            break
           }
-          continue
         }
+      }
 
-        // Create robust shim content with fallback handling
-        const actualBinaryPath = path.join(binDir, entry.name)
-        const shimContent = createRobustShimContent(pkg.project, pkg.version.toString(), entry.name, actualBinaryPath)
+      if (!packageDir) {
+        if (config.verbose) {
+          console.warn(`Could not find installation directory for ${packageName}`)
+        }
+        continue
+      }
 
-        // Write the shim
-        fs.writeFileSync(shimPath, shimContent, { mode: 0o755 })
-        createdShims.push(shimPath)
+      const binDir = path.join(packageDir, 'bin')
+      if (fs.existsSync(binDir)) {
+        const binEntries = fs.readdirSync(binDir, { withFileTypes: true })
+
+        for (const entry of binEntries) {
+          if (!entry.isFile())
+            continue
+
+          if (!isExecutable(path.join(binDir, entry.name)))
+            continue
+
+          const shimPath = path.join(shimDir, entry.name)
+
+          // Check if shim already exists and we're not forcing reinstall
+          if (fs.existsSync(shimPath) && !config.forceReinstall) {
+            if (config.verbose) {
+              console.warn(`Shim for ${entry.name} already exists at ${shimPath}. Skipping.`)
+            }
+            continue
+          }
+
+          // Create robust shim content with fallback handling
+          const actualBinaryPath = path.join(binDir, entry.name)
+          const shimContent = createRobustShimContent(packageName, entry.name, actualBinaryPath)
+
+          // Write the shim
+          fs.writeFileSync(shimPath, shimContent, { mode: 0o755 })
+          createdShims.push(shimPath)
+        }
       }
     }
+
+    // Check if shimDir is in PATH and add it if necessary
+    if (createdShims.length > 0 && !isInPath(shimDir)) {
+      // Check if this is a temporary directory - if so, don't suggest adding to PATH
+      const isTemporary = isTemporaryDirectory(shimDir)
+
+      if (config.autoAddToPath && !isTemporary) {
+        const added = addToPath(shimDir)
+        if (added) {
+          console.log(`Added ${shimDir} to your PATH. You may need to restart your terminal or source your shell configuration file.`)
+
+          // Provide a specific command to source the configuration file
+          const shell = getUserShell()
+          if (shell.includes('zsh')) {
+            console.log('Run this command to update your PATH in the current session:')
+            console.log('  source ~/.zshrc')
+          }
+          else if (shell.includes('bash')) {
+            console.log('Run this command to update your PATH in the current session:')
+            console.log('  source ~/.bashrc  # or ~/.bash_profile')
+          }
+        }
+        else {
+          console.log(`Could not add ${shimDir} to your PATH automatically.`)
+          console.log(`Please add it manually to your shell configuration file:`)
+          console.log(`  echo 'export PATH="${shimDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
+        }
+      }
+      else if (!isTemporary) {
+        console.log(`Note: ${shimDir} is not in your PATH.`)
+        console.log(`To use the installed shims, add it to your PATH:`)
+        console.log(`  echo 'export PATH="${shimDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
+      }
+      // For temporary directories, we don't show any PATH-related messages
+    }
+
+    return createdShims
   }
-
-  // Check if shimDir is in PATH and add it if necessary
-  if (createdShims.length > 0 && !isInPath(shimDir)) {
-    // Check if this is a temporary directory - if so, don't suggest adding to PATH
-    const isTemporary = isTemporaryDirectory(shimDir)
-
-    if (config.autoAddToPath && !isTemporary) {
-      const added = addToPath(shimDir)
-      if (added) {
-        console.warn(`Added ${shimDir} to your PATH. You may need to restart your terminal or source your shell configuration file.`)
-
-        // Provide a specific command to source the configuration file
-        const shell = getUserShell()
-        if (shell.includes('zsh')) {
-          console.warn('Run this command to update your PATH in the current session:')
-          console.warn('  source ~/.zshrc')
-        }
-        else if (shell.includes('bash')) {
-          console.warn('Run this command to update your PATH in the current session:')
-          console.warn('  source ~/.bashrc  # or ~/.bash_profile')
-        }
-      }
-      else {
-        console.warn(`Could not add ${shimDir} to your PATH automatically.`)
-        console.warn(`Please add it manually to your shell configuration file:`)
-        console.warn(`  echo 'export PATH="${shimDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
-      }
-    }
-    else if (!isTemporary) {
-      console.warn(`Note: ${shimDir} is not in your PATH.`)
-      console.warn(`To use the installed shims, add it to your PATH:`)
-      console.warn(`  echo 'export PATH="${shimDir}:$PATH"' >> ~/.zshrc  # or your shell config file`)
-    }
-    // For temporary directories, we don't show any PATH-related messages
+  catch (error) {
+    throw new Error(`Failed to create shims: ${error instanceof Error ? error.message : String(error)}`)
   }
-
-  return createdShims
 }
 
 /**
  * Create robust shim content with fallback handling
  */
-function createRobustShimContent(project: string, version: string, commandName: string, actualBinaryPath: string): string {
+function createRobustShimContent(packageName: string, commandName: string, actualBinaryPath: string): string {
   return `#!/bin/sh
-# Shim for ${project}@${version} - ${commandName}
+# Shim for ${packageName} - ${commandName}
 # Created by Launchpad
 
 # Try the direct binary path first if it exists
@@ -134,19 +159,14 @@ if [ -x "${actualBinaryPath}" ]; then
   exec "${actualBinaryPath}" "$@"
 fi
 
-# Fallback to pkgx with specific version
-if command -v pkgx >/dev/null 2>&1; then
-  exec pkgx -q ${project}@${version} ${commandName} "$@"
-fi
-
 # Final fallback to system command if available
 if command -v "${commandName}" >/dev/null 2>&1 && [ "$(command -v "${commandName}")" != "$0" ]; then
-  echo "⚠️  pkgx ${project} failed, using system version..." >&2
+  echo "⚠️  Launchpad binary failed, using system version..." >&2
   exec "$(command -v "${commandName}")" "$@"
 fi
 
 # If all else fails, provide helpful error message
-echo "❌ ${commandName} not found. Install ${project} with: launchpad install ${project}" >&2
+echo "❌ ${commandName} not found. Install ${packageName} with: launchpad install ${packageName}" >&2
 exit 127
 ${EOL}`
 }
