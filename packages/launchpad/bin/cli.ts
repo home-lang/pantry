@@ -1,16 +1,13 @@
 #!/usr/bin/env bun
-import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { promisify } from 'node:util'
 import { CAC } from 'cac'
 import { version } from '../package.json'
 import { install, install_prefix } from '../src'
 import { config } from '../src/config'
 import { Path } from '../src/path'
 
-const _execAsync = promisify(exec)
 const cli = new CAC('launchpad')
 
 cli.version(version)
@@ -44,13 +41,13 @@ cli
       const results = await install(packageList, installPath)
 
       if (results.length > 0) {
-        console.warn(`Successfully installed ${results.length} binaries:`)
+        console.log(`Successfully installed ${results.length} binaries:`)
         results.forEach((file) => {
-          console.warn(`  ${file}`)
+          console.log(`  ${file}`)
         })
       }
       else {
-        console.warn('No binaries were installed')
+        console.log('No binaries were installed')
       }
     }
     catch (error) {
@@ -70,18 +67,18 @@ cli
       const binDir = path.join(install_prefix().string, 'bin')
 
       if (!fs.existsSync(binDir)) {
-        console.warn('No packages installed')
+        console.log('No packages installed')
         return
       }
 
       const files = fs.readdirSync(binDir)
       if (files.length === 0) {
-        console.warn('No packages installed')
+        console.log('No packages installed')
       }
       else {
-        console.warn('Installed packages:')
+        console.log('Installed packages:')
         files.forEach((file) => {
-          console.warn(`  ${file}`)
+          console.log(`  ${file}`)
         })
       }
     }
@@ -140,6 +137,8 @@ cli
 
 // Parse CLI arguments
 try {
+  cli.version(version)
+  cli.help()
   cli.parse()
 }
 catch (error) {
