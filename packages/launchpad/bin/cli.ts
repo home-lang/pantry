@@ -6,6 +6,7 @@ import { CAC } from 'cac'
 import { version } from '../package.json'
 import { install, install_prefix } from '../src'
 import { config } from '../src/config'
+import { integrate, shellcode } from '../src/dev'
 import { Path } from '../src/path'
 
 const cli = new CAC('launchpad')
@@ -133,6 +134,78 @@ cli
     console.log('  • Install packages: ./launchpad install node python')
     console.log('  • List installed: ./launchpad list')
     console.log('  • Get help: ./launchpad --help')
+  })
+
+// Dev commands for shell integration
+cli
+  .command('dev:shellcode', 'Generate shell integration code')
+  .action(() => {
+    console.log(shellcode())
+  })
+
+cli
+  .command('dev:integrate', 'Install shell integration hooks')
+  .option('--uninstall', 'Remove shell integration hooks')
+  .option('--dry-run', 'Show what would be changed without making changes')
+  .action(async (options?: { uninstall?: boolean, dryRun?: boolean }) => {
+    try {
+      const operation = options?.uninstall ? 'uninstall' : 'install'
+      const dryrun = options?.dryRun || false
+
+      await integrate(operation, { dryrun })
+    }
+    catch (error) {
+      console.error('Failed to integrate shell hooks:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:on [dir]', 'Activate development environment')
+  .option('--silent', 'Suppress output messages')
+  .action(async (dir?: string, options?: { silent?: boolean }) => {
+    try {
+      const targetDir = dir ? path.resolve(dir) : process.cwd()
+
+      // For now, just show the activation message
+      // The actual environment activation is handled by shell hooks
+      if (!options?.silent) {
+        // Show activation message if configured
+        if (config.showShellMessages && config.shellActivationMessage) {
+          const message = config.shellActivationMessage.replace('{path}', targetDir)
+          console.warn(message)
+        }
+      }
+    }
+    catch (error) {
+      if (!options?.silent) {
+        console.error('Failed to activate dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:off', 'Deactivate development environment')
+  .option('--silent', 'Suppress output messages')
+  .action(async (options?: { silent?: boolean }) => {
+    try {
+      // The actual deactivation is handled by shell functions
+      // This command exists for consistency and potential future use
+
+      if (!options?.silent) {
+        // Show deactivation message if configured
+        if (config.showShellMessages && config.shellDeactivationMessage) {
+          console.warn(config.shellDeactivationMessage)
+        }
+      }
+    }
+    catch (error) {
+      if (!options?.silent) {
+        console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      process.exit(1)
+    }
   })
 
 // Parse CLI arguments

@@ -3,12 +3,8 @@ import { homedir, platform } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 
-export default async function (
-  op: 'install' | 'uninstall',
-  { dryrun }: { dryrun: boolean },
-): Promise<void> {
+export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun: boolean }): Promise<void> {
   let opd_at_least_once = false
-
   const shellFiles = getShellFiles()
 
   for (const [file, line] of shellFiles) {
@@ -106,10 +102,9 @@ function getShellFiles(): [string, string][] {
       // macOS has no .zshrc by default and we want mac users to get a just works experience
       return [zshpair]
     }
-    else {
-      console.error('no `.shellrc` files found')
-      process.exit(1)
-    }
+
+    console.error('no `.shellrc` files found')
+    process.exit(1)
   }
 
   return viable_candidates
