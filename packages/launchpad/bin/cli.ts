@@ -3,11 +3,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
-import { version } from '../package.json'
-import { install, install_prefix } from '../src'
+import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { integrate, shellcode } from '../src/dev'
 import { Path } from '../src/path'
+import { create_shim, shim_dir } from '../src/shim'
+import { addToPath, isInPath } from '../src/utils'
+// Import package.json for version
+const packageJson = await import('../package.json')
+const version = packageJson.default?.version || packageJson.version || '0.0.0'
 
 const cli = new CAC('launchpad')
 
@@ -61,25 +65,26 @@ cli
 cli
   .command('list', 'List installed packages')
   .alias('ls')
+  .option('--path <path>', 'Installation path to list packages from')
+  .option('--verbose', 'Enable verbose output')
   .example('launchpad list')
   .example('launchpad ls')
-  .action(async () => {
+  .action(async (options?: { path?: string, verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
     try {
-      const binDir = path.join(install_prefix().string, 'bin')
+      const basePath = options?.path || install_prefix().string
+      const packages = await list(basePath)
 
-      if (!fs.existsSync(binDir)) {
-        console.log('No packages installed')
-        return
-      }
-
-      const files = fs.readdirSync(binDir)
-      if (files.length === 0) {
+      if (packages.length === 0) {
         console.log('No packages installed')
       }
       else {
         console.log('Installed packages:')
-        files.forEach((file) => {
-          console.log(`  ${file}`)
+        packages.forEach((pkg) => {
+          console.log(`  ${pkg.project}@${pkg.version}`)
         })
       }
     }
@@ -89,51 +94,207 @@ cli
     }
   })
 
-// Bootstrap command - simplified
+// Bootstrap command
 cli
-  .command('bootstrap', 'Set up Launchpad environment')
+  .command('bootstrap', 'Install essential tools for a complete Launchpad setup')
   .option('--verbose', 'Enable verbose output')
-  .option('--path <path>', 'Custom installation path')
+  .option('--path <path>', 'Custom installation path (default: auto-detected)')
+  .option('--force', 'Force reinstall even if already installed')
+  .option('--no-auto-path', 'Do not automatically add to PATH')
+  .option('--skip-shell-integration', 'Skip shell integration setup')
   .example('launchpad bootstrap')
+  .example('launchpad bootstrap --verbose --force')
   .example('launchpad bootstrap --path ~/.local')
-  .action(async (options: { verbose?: boolean, path?: string }) => {
-    if (options.verbose) {
+  .action(async (options?: { verbose?: boolean, path?: string, force?: boolean, autoPath?: boolean, skipShellIntegration?: boolean }) => {
+    if (options?.verbose) {
       config.verbose = true
     }
 
-    console.log('🚀 Bootstrapping Launchpad...')
+    if (options?.force) {
+      config.forceReinstall = true
+    }
 
-    const installPath = options.path ? new Path(options.path) : install_prefix()
+    if (options?.autoPath === false) {
+      config.autoAddToPath = false
+    }
+
+    console.log('🚀 Bootstrapping Launchpad - Installing essential tools...')
+
+    const installPath = options?.path ? new Path(options.path) : install_prefix()
     console.log(`📍 Installation prefix: ${installPath.string}`)
+    console.log('')
 
-    // Ensure bin directory exists
+    const results: { tool: string, status: 'success' | 'failed' | 'skipped' | 'already-installed', message?: string }[] = []
+
+    // Helper function to add result
+    const addResult = (tool: string, status: typeof results[0]['status'], message?: string) => {
+      results.push({ tool, status, message })
+      const emoji = status === 'success' ? '✅' : status === 'failed' ? '❌' : status === 'skipped' ? '⏭️' : '🔄'
+      console.log(`${emoji} ${tool}: ${message || status}`)
+    }
+
+    // 1. Ensure directories exist
+    console.log('📁 Setting up directories...')
     const binDir = path.join(installPath.string, 'bin')
-    fs.mkdirSync(binDir, { recursive: true })
+    const sbinDir = path.join(installPath.string, 'sbin')
 
-    // Add to PATH if not already there
-    const { addToPath, isInPath } = await import('../src/utils')
+    try {
+      fs.mkdirSync(binDir, { recursive: true })
+      fs.mkdirSync(sbinDir, { recursive: true })
+      addResult('directories', 'success', 'created bin/ and sbin/')
+    }
+    catch (error) {
+      addResult('directories', 'failed', error instanceof Error ? error.message : String(error))
+    }
 
-    if (!isInPath(binDir)) {
-      try {
-        addToPath(binDir)
-        console.log(`✅ Added ${binDir} to PATH`)
+    console.log('')
+
+    // 2. Setup PATH
+    console.log('🛤️  Setting up PATH...')
+
+    if (config.autoAddToPath) {
+      let pathUpdated = false
+
+      if (!isInPath(binDir)) {
+        const added = addToPath(binDir)
+        if (added) {
+          console.log(`✅ Added ${binDir} to PATH`)
+          pathUpdated = true
+        }
+        else {
+          console.log(`⚠️  Could not automatically add ${binDir} to PATH`)
+        }
       }
-      catch (error) {
-        console.log(`⚠️  Could not automatically add to PATH: ${error}`)
-        console.log(`Please add this to your shell profile:`)
-        console.log(`export PATH="${binDir}:$PATH"`)
+      else {
+        console.log(`✅ ${binDir} already in PATH`)
+      }
+
+      if (!isInPath(sbinDir)) {
+        const added = addToPath(sbinDir)
+        if (added) {
+          console.log(`✅ Added ${sbinDir} to PATH`)
+          pathUpdated = true
+        }
+        else {
+          console.log(`⚠️  Could not automatically add ${sbinDir} to PATH`)
+        }
+      }
+      else {
+        console.log(`✅ ${sbinDir} already in PATH`)
+      }
+
+      if (pathUpdated) {
+        addResult('PATH setup', 'success', 'PATH updated successfully')
+      }
+      else {
+        addResult('PATH setup', 'success', 'PATH already configured')
       }
     }
     else {
-      console.log(`✅ ${binDir} is already in PATH`)
+      addResult('PATH setup', 'skipped', 'auto PATH setup disabled')
     }
 
-    console.log('🎉 Bootstrap complete!')
     console.log('')
-    console.log('Next steps:')
-    console.log('  • Install packages: ./launchpad install node python')
-    console.log('  • List installed: ./launchpad list')
-    console.log('  • Get help: ./launchpad --help')
+
+    // 3. Shell integration setup
+    if (!options?.skipShellIntegration) {
+      console.log('🐚 Setting up shell integration...')
+
+      try {
+        await integrate('install', { dryrun: false })
+        addResult('shell integration', 'success', 'hooks installed')
+      }
+      catch (error) {
+        addResult('shell integration', 'failed', error instanceof Error ? error.message : String(error))
+      }
+    }
+    else {
+      addResult('shell integration', 'skipped', 'skipped by user')
+    }
+
+    console.log('')
+
+    // 4. Summary
+    console.log('📋 Bootstrap Summary:')
+    console.log('═══════════════════')
+
+    const successful = results.filter(r => r.status === 'success' || r.status === 'already-installed')
+    const failed = results.filter(r => r.status === 'failed')
+    const skipped = results.filter(r => r.status === 'skipped')
+
+    successful.forEach(r => console.log(`✅ ${r.tool}: ${r.message || r.status}`))
+    failed.forEach(r => console.log(`❌ ${r.tool}: ${r.message || r.status}`))
+    skipped.forEach(r => console.log(`⏭️  ${r.tool}: ${r.message || r.status}`))
+
+    console.log('')
+
+    if (failed.length === 0) {
+      console.log('🎉 Bootstrap completed successfully!')
+      console.log('')
+      console.log('🚀 Next steps:')
+      console.log('1. Restart your terminal or run: source ~/.zshrc (or your shell config)')
+      console.log('2. Install packages: launchpad install node python')
+      console.log('3. Create shims: launchpad shim node')
+      console.log('4. List installed: launchpad list')
+    }
+    else {
+      console.log(`⚠️  Bootstrap completed with ${failed.length} failed component(s)`)
+      console.log('')
+      console.log('🔧 You can continue using Launchpad, but some features may not work optimally')
+    }
+  })
+
+// Shim command
+cli
+  .command('shim [packages...]', 'Create shims for packages')
+  .alias('stub')
+  .option('--verbose', 'Enable verbose output')
+  .option('--path <path>', 'Custom shim installation path')
+  .option('--force', 'Force creation of shims even if they already exist')
+  .option('--no-auto-path', 'Do not automatically add shim directory to PATH')
+  .example('launchpad shim node')
+  .example('launchpad shim node python --path ~/bin')
+  .action(async (packages: string[], options?: { verbose?: boolean, path?: string, force?: boolean, autoPath?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    if (options?.force) {
+      config.forceReinstall = true
+    }
+
+    if (options?.autoPath === false) {
+      config.autoAddToPath = false
+    }
+
+    // Ensure packages is an array
+    const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
+
+    if (packageList.length === 0) {
+      console.error('No packages specified')
+      process.exit(1)
+    }
+
+    try {
+      const shimPath = options?.path || shim_dir().string
+      console.log(`Creating shims for: ${packageList.join(', ')}`)
+
+      const createdShims = await create_shim(packageList, shimPath)
+
+      if (createdShims.length > 0) {
+        console.log(`Successfully created ${createdShims.length} shims:`)
+        createdShims.forEach((file) => {
+          console.log(`  ${file}`)
+        })
+      }
+      else {
+        console.log('No shims were created')
+      }
+    }
+    catch (error) {
+      console.error('Failed to create shims:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
   })
 
 // Dev commands for shell integration
@@ -204,6 +365,129 @@ cli
       if (!options?.silent) {
         console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : String(error))
       }
+      process.exit(1)
+    }
+  })
+
+// Uninstall/Remove command
+cli
+  .command('uninstall [packages...]', 'Remove installed packages')
+  .alias('remove')
+  .alias('rm')
+  .option('--verbose', 'Enable verbose output')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--dry-run', 'Show what would be removed without actually removing it')
+  .example('launchpad uninstall node python')
+  .example('launchpad remove node@18 --force')
+  .action(async (packages: string[], options?: { verbose?: boolean, force?: boolean, dryRun?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    // Ensure packages is an array
+    const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
+
+    if (packageList.length === 0) {
+      console.error('No packages specified for removal')
+      console.log('')
+      console.log('Usage examples:')
+      console.log('  launchpad uninstall node python')
+      console.log('  launchpad remove node@18 --force')
+      process.exit(1)
+    }
+
+    const isDryRun = options?.dryRun || false
+
+    if (isDryRun) {
+      console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
+    }
+
+    console.log(`${isDryRun ? 'Would remove' : 'Removing'} packages: ${packageList.join(', ')}`)
+
+    if (!options?.force && !isDryRun) {
+      // In a real implementation, we'd prompt for confirmation here
+      console.log('Use --force to skip confirmation or --dry-run to preview')
+    }
+
+    let allSuccess = true
+    const results: { package: string, success: boolean, message?: string }[] = []
+
+    for (const pkg of packageList) {
+      try {
+        if (isDryRun) {
+          console.log(`Would uninstall: ${pkg}`)
+          results.push({ package: pkg, success: true, message: 'dry run' })
+        }
+        else {
+          const success = await uninstall(pkg)
+          results.push({ package: pkg, success })
+          if (!success) {
+            allSuccess = false
+          }
+        }
+      }
+      catch (error) {
+        console.error(`Failed to uninstall ${pkg}:`, error instanceof Error ? error.message : String(error))
+        results.push({ package: pkg, success: false, message: error instanceof Error ? error.message : String(error) })
+        allSuccess = false
+      }
+    }
+
+    // Summary
+    console.log('')
+    console.log('Uninstall Summary:')
+    const successful = results.filter(r => r.success)
+    const failed = results.filter(r => !r.success)
+
+    if (successful.length > 0) {
+      console.log(`✅ ${isDryRun ? 'Would remove' : 'Successfully removed'}: ${successful.map(r => r.package).join(', ')}`)
+    }
+
+    if (failed.length > 0) {
+      console.log(`❌ Failed: ${failed.map(r => r.package).join(', ')}`)
+    }
+
+    if (!allSuccess) {
+      process.exit(1)
+    }
+  })
+
+// Outdated command
+cli
+  .command('outdated', 'Check for outdated packages')
+  .option('--verbose', 'Enable verbose output')
+  .action(async (options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { outdated } = await import('../src/list')
+      await outdated()
+    }
+    catch (error) {
+      console.error('Failed to check for outdated packages:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Update command
+cli
+  .command('update', 'Update packages')
+  .alias('upgrade')
+  .alias('up')
+  .option('--verbose', 'Enable verbose output')
+  .action(async (options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { update } = await import('../src/package')
+      await update()
+    }
+    catch (error) {
+      console.error('Failed to update packages:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })

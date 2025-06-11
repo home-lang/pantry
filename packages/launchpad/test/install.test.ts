@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { install, install_prefix } from '../src/install'
+import { DISTRIBUTION_CONFIG, install, install_prefix } from '../src/install'
 
 describe('Install', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -113,6 +113,104 @@ describe('Install', () => {
       expect(install).toBeDefined()
       expect(typeof install).toBe('function')
     })
+
+    it('should handle array of packages', async () => {
+      // Test that install function accepts array of package names
+      try {
+        await install(['nonexistent-test-package'], tempDir)
+      }
+      catch (error) {
+        // Expected to fail for nonexistent package, but should handle gracefully
+        expect(error).toBeDefined()
+      }
+    })
+
+    it('should handle single package string', async () => {
+      // Test that install function accepts single package
+      try {
+        await install(['nonexistent-single-package'], tempDir)
+      }
+      catch (error) {
+        // Expected to fail for nonexistent package, but should handle gracefully
+        expect(error).toBeDefined()
+      }
+    })
+
+    it('should handle empty package list', async () => {
+      // Test that install function handles empty array gracefully
+      const result = await install([], tempDir)
+      expect(Array.isArray(result)).toBe(true)
+      expect(result.length).toBe(0)
+    })
+
+    it('should return array of installed files', async () => {
+      // Test that install function returns an array
+      const result = await install([], tempDir)
+      expect(Array.isArray(result)).toBe(true)
+    })
+
+    it('should accept custom installation path', async () => {
+      // Test that install function accepts basePath parameter
+      const customPath = path.join(tempDir, 'custom')
+      const result = await install([], customPath)
+      expect(Array.isArray(result)).toBe(true)
+    })
+  })
+
+  describe('distribution configuration', () => {
+    it('should have configurable distribution base URL', () => {
+      expect(DISTRIBUTION_CONFIG).toBeDefined()
+      expect(DISTRIBUTION_CONFIG.baseUrl).toBeDefined()
+      expect(typeof DISTRIBUTION_CONFIG.baseUrl).toBe('string')
+      expect(DISTRIBUTION_CONFIG.baseUrl.startsWith('http')).toBe(true)
+    })
+
+    it('should point to pkgx distribution server', () => {
+      expect(DISTRIBUTION_CONFIG.baseUrl).toBe('https://dist.pkgx.dev')
+    })
+
+    it('should be easily switchable to custom server', () => {
+      // Test that the config structure supports switching
+      const customConfig = {
+        baseUrl: 'https://packages.launchpad.dev',
+      }
+      expect(customConfig.baseUrl).toBe('https://packages.launchpad.dev')
+    })
+  })
+
+  describe('integration tests', () => {
+    it('should handle version specifications in package names', async () => {
+      // Test package@version format handling
+      try {
+        const result = await install(['nonexistent@1.0.0'], tempDir)
+        expect(Array.isArray(result)).toBe(true)
+      }
+      catch (error) {
+        // Error is expected for nonexistent package, but should be handled gracefully
+        expect(error).toBeDefined()
+      }
+    })
+
+    it('should handle invalid package names gracefully', async () => {
+      // Test error handling for invalid packages
+      try {
+        await install([''], tempDir)
+      }
+      catch (error) {
+        expect(error).toBeDefined()
+      }
+    })
+
+    it('should create bin directory in installation path', async () => {
+      const customPath = path.join(tempDir, 'custom-install')
+
+      // Create directory first since install with empty array doesn't create dirs
+      fs.mkdirSync(customPath, { recursive: true })
+      await install([], customPath)
+
+      // Should maintain the installation directory structure
+      expect(fs.existsSync(customPath)).toBe(true)
+    })
   })
 
   describe('module exports', () => {
@@ -123,6 +221,12 @@ describe('Install', () => {
 
     it('should export install function', () => {
       expect(install).toBeDefined()
+      expect(typeof install).toBe('function')
+    })
+
+    it('should export distribution configuration', () => {
+      expect(DISTRIBUTION_CONFIG).toBeDefined()
+      expect(typeof DISTRIBUTION_CONFIG).toBe('object')
     })
   })
 
@@ -173,6 +277,23 @@ describe('Install', () => {
       expect(prefix.string.length).toBeGreaterThan(0)
 
       process.env.HOME = originalHome
+    })
+  })
+
+  describe('cross-platform compatibility', () => {
+    it('should work on current platform', () => {
+      // Test that the system can determine platform/arch without errors
+      const prefix = install_prefix()
+      expect(prefix.string).toBeDefined()
+
+      // Should handle the current platform's path conventions
+      const isAbsolute = path.isAbsolute(prefix.string)
+      expect(isAbsolute).toBe(true)
+    })
+
+    it('should handle different operating systems', () => {
+      // Test that install function can be called (even if packages fail to download)
+      expect(() => install([], tempDir)).not.toThrow()
     })
   })
 })

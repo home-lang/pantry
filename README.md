@@ -8,7 +8,7 @@
 
 # launchpad
 
-> A modern dependency manager for your system and projects. Effortlessly manage development tools, runtime environments, and project dependencies with automatic environment isolation. _Think Homebrew meets project-aware dependency management._
+> A modern dependency manager for your system and your projects. Effortlessly manage development tools, runtime environments, and project dependencies with automatic environment isolation. _Think Homebrew meets project-aware dependency management._
 
 ## What is Launchpad?
 

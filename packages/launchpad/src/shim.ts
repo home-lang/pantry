@@ -16,6 +16,10 @@ export async function create_shim(args: string[], basePath: string): Promise<str
     throw new Error('No packages specified')
   }
 
+  const shimDir = path.join(basePath, 'bin')
+  // Ensure the shim directory exists upfront
+  fs.mkdirSync(shimDir, { recursive: true })
+
   try {
     // Install packages using our own system
     await install(args, basePath)
@@ -24,84 +28,54 @@ export async function create_shim(args: string[], basePath: string): Promise<str
       console.warn(`Installed packages: ${args.join(', ')}`)
     }
 
-    const shimDir = path.join(basePath, 'bin')
-    // Ensure the shim directory exists
-    fs.mkdirSync(shimDir, { recursive: true })
-
     const createdShims: string[] = []
 
     // Create shims for the installed packages
-    for (const packageSpec of args) {
-      const [packageName] = packageSpec.split('@')
+    // Our new installation system puts binaries directly in basePath/bin
+    const installBinDir = path.join(basePath, 'bin')
 
-      // Find the package installation directory
-      const pkgsDir = path.join(basePath, 'pkgs')
-      if (!fs.existsSync(pkgsDir)) {
-        continue
-      }
+    if (fs.existsSync(installBinDir)) {
+      // Get all executable files in the installation bin directory
+      const binEntries = fs.readdirSync(installBinDir, { withFileTypes: true })
 
-      // Look for the package directory (could be domain-based)
-      let packageDir: string | null = null
+      for (const entry of binEntries) {
+        if (!entry.isFile())
+          continue
 
-      // Try common domain patterns
-      const possibleNames = [
-        packageName,
-        packageName.replace(/\./g, '_'),
-        packageName.replace(/\//g, '_'),
-      ]
+        const actualBinaryPath = path.join(installBinDir, entry.name)
+        if (!isExecutable(actualBinaryPath))
+          continue
 
-      for (const name of possibleNames) {
-        const searchDir = path.join(pkgsDir, name)
-        if (fs.existsSync(searchDir)) {
-          // Find the version directory (look for v* directories)
-          const versionDirs = fs.readdirSync(searchDir, { withFileTypes: true })
-            .filter(entry => entry.isDirectory() && entry.name.startsWith('v'))
-            .sort((a, b) => b.name.localeCompare(a.name)) // Sort newest first
+        const shimPath = path.join(shimDir, entry.name)
 
-          if (versionDirs.length > 0) {
-            packageDir = path.join(searchDir, versionDirs[0].name)
-            break
+        // Check if shim already exists and we're not forcing reinstall
+        if (fs.existsSync(shimPath) && !config.forceReinstall) {
+          if (config.verbose) {
+            console.warn(`Shim for ${entry.name} already exists at ${shimPath}. Skipping.`)
           }
+          continue
         }
-      }
 
-      if (!packageDir) {
+        // Determine which package this binary belongs to (best guess)
+        const packageName = args.find((pkg) => {
+          const [name] = pkg.split('@')
+          return entry.name.includes(name) || name.includes(entry.name)
+        }) || args[0] // fallback to first package
+
+        // Create robust shim content with fallback handling
+        const shimContent = createRobustShimContent(packageName, entry.name, actualBinaryPath)
+
+        // Write the shim
+        fs.writeFileSync(shimPath, shimContent, { mode: 0o755 })
+        createdShims.push(shimPath)
+
         if (config.verbose) {
-          console.warn(`Could not find installation directory for ${packageName}`)
-        }
-        continue
-      }
-
-      const binDir = path.join(packageDir, 'bin')
-      if (fs.existsSync(binDir)) {
-        const binEntries = fs.readdirSync(binDir, { withFileTypes: true })
-
-        for (const entry of binEntries) {
-          if (!entry.isFile())
-            continue
-
-          if (!isExecutable(path.join(binDir, entry.name)))
-            continue
-
-          const shimPath = path.join(shimDir, entry.name)
-
-          // Check if shim already exists and we're not forcing reinstall
-          if (fs.existsSync(shimPath) && !config.forceReinstall) {
-            if (config.verbose) {
-              console.warn(`Shim for ${entry.name} already exists at ${shimPath}. Skipping.`)
-            }
-            continue
-          }
-
-          // Create robust shim content with fallback handling
-          const actualBinaryPath = path.join(binDir, entry.name)
-          const shimContent = createRobustShimContent(packageName, entry.name, actualBinaryPath)
-
-          // Write the shim
-          fs.writeFileSync(shimPath, shimContent, { mode: 0o755 })
-          createdShims.push(shimPath)
+          console.warn(`Created shim for ${entry.name} at ${shimPath}`)
         }
       }
+    }
+    else if (config.verbose) {
+      console.warn(`No binaries found in ${installBinDir}`)
     }
 
     // Check if shimDir is in PATH and add it if necessary

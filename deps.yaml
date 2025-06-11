@@ -1,0 +1,5 @@
+dependencies:
+  bun.sh: ^1.2.15
+  gnu.org/tar: ^1.35.0
+  curl.se: ^8.1.0
+  gnu.org/wget: ^1.21.0
