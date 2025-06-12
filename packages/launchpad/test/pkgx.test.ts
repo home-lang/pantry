@@ -31,7 +31,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
     it('should support switching to custom distribution server', () => {
       // Test configuration flexibility for future migration
       const customConfig = {
-        baseUrl: 'https://packages.launchpad.dev'
+        baseUrl: 'https://packages.launchpad.dev',
       }
       expect(customConfig.baseUrl).toBe('https://packages.launchpad.dev')
     })
@@ -62,9 +62,9 @@ describe('Direct Installation System (replaces pkgx)', () => {
     it('should map platform to distribution format', () => {
       // Test platform mapping logic
       const platformMap = {
-        'darwin': 'darwin',
-        'linux': 'linux',
-        'win32': 'windows'
+        darwin: 'darwin',
+        linux: 'linux',
+        win32: 'windows',
       }
       expect(platformMap[process.platform as keyof typeof platformMap]).toBeDefined()
     })
@@ -72,9 +72,9 @@ describe('Direct Installation System (replaces pkgx)', () => {
     it('should map architecture to distribution format', () => {
       // Test architecture mapping logic
       const archMap = {
-        'x64': 'x86_64',
-        'arm64': 'aarch64',
-        'arm': 'armv7l'
+        x64: 'x86_64',
+        arm64: 'aarch64',
+        arm: 'armv7l',
       }
       expect(archMap[process.arch as keyof typeof archMap]).toBeDefined()
     })
@@ -87,7 +87,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
       expect(commonPackages.length).toBeGreaterThan(0)
 
       // Each package should be resolvable to a domain
-      commonPackages.forEach(pkg => {
+      commonPackages.forEach((pkg) => {
         expect(pkg).toBeTruthy()
       })
     })
@@ -145,7 +145,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
         path.join(extractDir, 'bin'),
         path.join(extractDir, 'usr', 'bin'),
         path.join(extractDir, 'usr', 'local', 'bin'),
-        path.join(extractDir, domain, `v${version}`, 'bin')
+        path.join(extractDir, domain, `v${version}`, 'bin'),
       ]
 
       expect(searchPaths.length).toBe(5)
@@ -165,7 +165,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
       try {
         const result = await install(['nonexistent-test-package'], tempDir)
         expect(Array.isArray(result)).toBe(true)
-      } catch (error) {
+      }
+      catch (error) {
         // Expected to fail for nonexistent package
         expect(error).toBeDefined()
       }
@@ -176,7 +177,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
       try {
         const result = await install(['package1', 'package2'], tempDir)
         expect(Array.isArray(result)).toBe(true)
-      } catch (error) {
+      }
+      catch (error) {
         // Expected to fail for nonexistent packages
         expect(error).toBeDefined()
       }
@@ -200,7 +202,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
         await fs.promises.writeFile(testFile, 'test')
         expect(fs.existsSync(testFile)).toBe(true)
         await fs.promises.unlink(testFile)
-      } catch (error) {
+      }
+      catch (error) {
         // Permission error is expected in some cases
         expect(error).toBeDefined()
       }
@@ -212,7 +215,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
       // Test network error handling
       try {
         await install(['nonexistent-package'], tempDir)
-      } catch (error) {
+      }
+      catch (error) {
         expect(error).toBeDefined()
         expect(error instanceof Error).toBe(true)
       }
@@ -222,7 +226,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
       // Test invalid package name handling
       try {
         await install([''], tempDir)
-      } catch (error) {
+      }
+      catch (error) {
         expect(error).toBeDefined()
       }
     })
@@ -239,7 +244,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
       // Test cleanup on installation failure
       try {
         await install(['nonexistent-package'], tempDir)
-      } catch (error) {
+      }
+      catch {
         // Temp directories should be cleaned up
         const tempDirs = await fs.promises.readdir(tempDir).catch(() => [])
         const tempInstallDirs = tempDirs.filter(dir => dir.startsWith('.tmp'))
@@ -254,7 +260,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
       const pkgxStructure = {
         domain: 'bun.sh',
         version: '0.5.9',
-        binPath: 'bun.sh/v0.5.9/bin/'
+        binPath: 'bun.sh/v0.5.9/bin/',
       }
 
       expect(pkgxStructure.binPath).toContain(pkgxStructure.domain)
@@ -264,7 +270,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
     it('should support pkgx version naming convention', () => {
       // Test version format compatibility
       const versions = ['0.5.9', '1.0.0', '2.1.3', '18.17.0']
-      versions.forEach(version => {
+      versions.forEach((version) => {
         const versionedName = `v${version}`
         expect(versionedName).toMatch(/^v\d+\.\d+\.\d+$/)
       })
@@ -273,7 +279,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
     it('should handle pkgx domain format', () => {
       // Test domain format compatibility
       const domains = ['bun.sh', 'nodejs.org', 'python.org', 'gnu.org/wget']
-      domains.forEach(domain => {
+      domains.forEach((domain) => {
         expect(domain).toBeTruthy()
         expect(domain.length).toBeGreaterThan(0)
       })
@@ -289,7 +295,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
       try {
         // Should work without pkgx in PATH
         expect(() => install([], tempDir)).not.toThrow()
-      } finally {
+      }
+      finally {
         process.env.PATH = originalPath
       }
     })
@@ -301,7 +308,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
         'version resolution',
         'platform detection',
         'archive extraction',
-        'binary installation'
+        'binary installation',
       ]
 
       expect(coreFeatures.length).toBe(5)
@@ -313,7 +320,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
       const futureConfig = {
         baseUrl: 'https://registry.launchpad.dev',
         // Same API structure as pkgx
-        pathFormat: '{domain}/{os}/{arch}/v{version}.tar.xz'
+        pathFormat: '{domain}/{os}/{arch}/v{version}.tar.xz',
       }
 
       expect(futureConfig.baseUrl).not.toBe(DISTRIBUTION_CONFIG.baseUrl)
@@ -326,7 +333,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
       // Test concurrent installation handling
       const packages = ['package1', 'package2', 'package3']
       const promises = packages.map(pkg =>
-        install([pkg], tempDir).catch(() => []) // Ignore errors for nonexistent packages
+        install([pkg], tempDir).catch(() => []), // Ignore errors for nonexistent packages
       )
 
       const results = await Promise.all(promises)
@@ -339,7 +346,8 @@ describe('Direct Installation System (replaces pkgx)', () => {
 
       try {
         await install(['nonexistent-package'], tempDir)
-      } catch {
+      }
+      catch {
         // Ignore installation errors
       }
 
@@ -352,7 +360,7 @@ describe('Direct Installation System (replaces pkgx)', () => {
       const knownVersions = {
         'bun.sh': '0.5.9',
         'nodejs.org': '18.17.0',
-        'python.org': '3.11.4'
+        'python.org': '3.11.4',
       }
 
       Object.entries(knownVersions).forEach(([domain, version]) => {

@@ -181,7 +181,7 @@ env:
   PATH_EXTENSION: ./node_modules/.bin:./scripts
 
   # Conditional variables
-  DEBUG: ${{ env.NODE_ENV == 'development' ? 'app:*' : '' }}
+  DEBUG: ${{ env.NODE_ENV == 'development' && 'app:*' || '' }}
 ```
 
 ## Scripting Examples
@@ -289,7 +289,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         node-version: [18, 20, 22]
-
     runs-on: ${{ matrix.os }}
 
     steps:

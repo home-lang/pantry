@@ -247,8 +247,12 @@ describe('CLI', () => {
           })
 
           let output = ''
-          proc.stdout.on('data', (data) => { output += data.toString() })
-          proc.stderr.on('data', (data) => { output += data.toString() })
+          proc.stdout.on('data', (data) => {
+            output += data.toString()
+          })
+          proc.stderr.on('data', (data) => {
+            output += data.toString()
+          })
 
           proc.on('close', () => {
             try {
@@ -278,8 +282,12 @@ describe('CLI', () => {
           })
 
           let output = ''
-          proc.stdout.on('data', (data) => { output += data.toString() })
-          proc.stderr.on('data', (data) => { output += data.toString() })
+          proc.stdout.on('data', (data) => {
+            output += data.toString()
+          })
+          proc.stderr.on('data', (data) => {
+            output += data.toString()
+          })
 
           proc.on('close', () => {
             try {
@@ -308,8 +316,12 @@ describe('CLI', () => {
           })
 
           let output = ''
-          proc.stdout.on('data', (data) => { output += data.toString() })
-          proc.stderr.on('data', (data) => { output += data.toString() })
+          proc.stdout.on('data', (data) => {
+            output += data.toString()
+          })
+          proc.stderr.on('data', (data) => {
+            output += data.toString()
+          })
 
           proc.on('close', () => {
             try {
@@ -340,8 +352,12 @@ describe('CLI', () => {
           })
 
           let output = ''
-          proc.stdout.on('data', (data) => { output += data.toString() })
-          proc.stderr.on('data', (data) => { output += data.toString() })
+          proc.stdout.on('data', (data) => {
+            output += data.toString()
+          })
+          proc.stderr.on('data', (data) => {
+            output += data.toString()
+          })
 
           proc.on('close', () => {
             try {
@@ -378,8 +394,12 @@ describe('CLI', () => {
           })
 
           let output = ''
-          proc.stdout.on('data', (data) => { output += data.toString() })
-          proc.stderr.on('data', (data) => { output += data.toString() })
+          proc.stdout.on('data', (data) => {
+            output += data.toString()
+          })
+          proc.stderr.on('data', (data) => {
+            output += data.toString()
+          })
 
           proc.on('close', () => {
             try {

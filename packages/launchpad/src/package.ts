@@ -1,8 +1,5 @@
 #!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
-import fs from 'node:fs'
-import { EOL, platform } from 'node:os'
-import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
 import { install, install_prefix } from './install'

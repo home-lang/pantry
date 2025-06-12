@@ -1,10 +1,9 @@
 import type { PlainObject } from 'is-what'
 import { semver } from 'bun'
-import { createReadStream, readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
-import { createInterface } from 'node:readline'
 import { isArray, isNumber, isPlainObject, isString } from 'is-what'
 
 // Define our own types to replace libpkgx types
@@ -215,7 +214,7 @@ async function* readLines(filePath: string): AsyncGenerator<string> {
       yield line
     }
   }
-  catch (error) {
+  catch {
     // If file can't be read, yield nothing
 
   }

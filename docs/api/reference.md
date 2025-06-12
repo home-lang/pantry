@@ -13,7 +13,7 @@ npm install @stacksjs/launchpad
 ### Installation Module
 
 ```typescript
-import { install, install_prefix, install_bun } from '@stacksjs/launchpad'
+import { install, install_bun, install_prefix } from '@stacksjs/launchpad'
 
 /**
  * Install one or more packages
@@ -61,7 +61,7 @@ function shim_dir(): Path
 ### Development Environment Module
 
 ```typescript
-import { dump, integrate, shellcode, datadir } from '@stacksjs/launchpad'
+import { datadir, dump, integrate, shellcode } from '@stacksjs/launchpad'
 
 /**
  * Generate shell integration code for automatic environment activation
@@ -137,8 +137,8 @@ interface Installation {
 ### Configuration Module
 
 ```typescript
-import { config, defaultConfig } from '@stacksjs/launchpad'
 import type { LaunchpadConfig, LaunchpadOptions } from '@stacksjs/launchpad'
+import { config, defaultConfig } from '@stacksjs/launchpad'
 
 interface LaunchpadConfig {
   /** Enable verbose logging (default: false) */
@@ -183,7 +183,7 @@ const defaultConfig: LaunchpadConfig
 ### Version Module
 
 ```typescript
-import { Version, parseVersion } from '@stacksjs/launchpad'
+import { parseVersion, Version } from '@stacksjs/launchpad'
 
 /**
  * Simple class to represent semantic versions
@@ -290,8 +290,8 @@ console.log('Installed files:', installedFiles)
 ### Configuration
 
 ```typescript
-import { config } from '@stacksjs/launchpad'
 import type { LaunchpadConfig } from '@stacksjs/launchpad'
+import { config } from '@stacksjs/launchpad'
 
 // Access current configuration
 console.log('Verbose mode:', config.verbose)
@@ -308,7 +308,7 @@ const customConfig: LaunchpadConfig = {
 ### Development Environment
 
 ```typescript
-import { dump, shellcode, integrate } from '@stacksjs/launchpad'
+import { dump, integrate, shellcode } from '@stacksjs/launchpad'
 
 // Generate shell integration code
 const shellIntegration = shellcode()
@@ -335,7 +335,7 @@ console.log('Created shims:', createdShims)
 ### Version Handling
 
 ```typescript
-import { Version, parseVersion } from '@stacksjs/launchpad'
+import { parseVersion, Version } from '@stacksjs/launchpad'
 
 // Parse version string
 const version = parseVersion('1.2.3')
@@ -371,7 +371,7 @@ import { list } from '@stacksjs/launchpad'
 
 // List installed packages
 const installations = await list('/usr/local')
-installations.forEach(installation => {
+installations.forEach((installation) => {
   console.log(`${installation.pkg.project}@${installation.pkg.version} at ${installation.path.string}`)
 })
 ```
@@ -386,7 +386,8 @@ import { install } from '@stacksjs/launchpad'
 try {
   const result = await install(['node@22'], '/usr/local')
   console.log('Installation successful:', result)
-} catch (error) {
+}
+catch (error) {
   console.error('Installation failed:', error.message)
 }
 ```
@@ -397,9 +398,9 @@ Launchpad is written in TypeScript and provides full type definitions. All funct
 
 ```typescript
 import type {
-  LaunchpadConfig,
-  LaunchpadOptions,
   Installation,
-  JsonResponse
+  JsonResponse,
+  LaunchpadConfig,
+  LaunchpadOptions
 } from '@stacksjs/launchpad'
 ```

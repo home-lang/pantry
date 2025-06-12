@@ -1,4 +1,3 @@
-import type { Path } from '../src/path'
 import fs from 'node:fs'
 import { homedir, platform } from 'node:os'
 import path from 'node:path'

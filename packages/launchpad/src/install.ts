@@ -1,12 +1,10 @@
-import type { PkgxPackage } from 'ts-pkgx'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
-import { arch, EOL, platform } from 'node:os'
+import { arch, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
 import { Path } from './path'
-import { create_v_symlinks, symlink, symlink_with_overwrite } from './symlink'
 
 /**
  * Distribution configuration
