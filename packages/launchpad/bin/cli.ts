@@ -5,7 +5,7 @@ import process from 'node:process'
 import { CAC } from 'cac'
 import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
-import { integrate, shellcode } from '../src/dev'
+import { dump, integrate, shellcode } from '../src/dev'
 import { Path } from '../src/path'
 import { create_shim, shim_dir } from '../src/shim'
 import { addToPath, isInPath } from '../src/utils'
@@ -302,6 +302,24 @@ cli
   .command('dev:shellcode', 'Generate shell integration code')
   .action(() => {
     console.log(shellcode())
+  })
+
+cli
+  .command('dev:dump [dir]', 'Set up development environment for project dependencies')
+  .option('--dry-run', 'Show packages that would be installed without installing them')
+  .option('--quiet', 'Suppress non-error output')
+  .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean }) => {
+    try {
+      const targetDir = dir ? path.resolve(dir) : process.cwd()
+      await dump(targetDir, {
+        dryrun: options?.dryRun || false,
+        quiet: options?.quiet || false,
+      })
+    }
+    catch (error) {
+      console.error('Failed to dump dev environment:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
   })
 
 cli

@@ -253,7 +253,14 @@ describe('List', () => {
 
     it('should complete successfully', async () => {
       // Should not throw any errors
-      await expect(outdated()).resolves.toBeUndefined()
+      try {
+        const result = await outdated()
+        expect(result).toBeUndefined()
+      }
+      catch (error) {
+        // Should not throw
+        expect(error).toBeUndefined()
+      }
     })
   })
 

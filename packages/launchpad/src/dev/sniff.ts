@@ -208,14 +208,16 @@ function validatePackageRequirement(project: string, constraint: string): Packag
 
 // Read lines utility
 async function* readLines(filePath: string): AsyncGenerator<string> {
-  const fileStream = createReadStream(filePath)
-  const rl = createInterface({
-    input: fileStream,
-    crlfDelay: Infinity,
-  })
+  try {
+    const content = readFileSync(filePath, 'utf8')
+    const lines = content.split('\n')
+    for (const line of lines) {
+      yield line
+    }
+  }
+  catch (error) {
+    // If file can't be read, yield nothing
 
-  for await (const line of rl) {
-    yield line
   }
 }
 

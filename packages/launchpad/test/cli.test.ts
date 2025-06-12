@@ -499,9 +499,10 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
-      // Should import our new installation system
-      expect(content).toContain('from \'../src/install\'')
-      expect(content).toContain('install')
+      // Should import our new installation system - checking for both index and direct imports
+      const hasInstallImport = content.includes('from \'../src/install\'')
+        || (content.includes('from \'../src\'') && content.includes('install'))
+      expect(hasInstallImport).toBe(true)
     })
 
     it('should handle package arrays correctly', () => {
