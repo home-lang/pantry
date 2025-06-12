@@ -8,6 +8,15 @@ export const defaultConfig: LaunchpadConfig = {
   // Defaults to /usr/local if writable, otherwise ~/.local
   installationPath: '/usr/local',
 
+  // Installation path (alias for installationPath for backward compatibility)
+  installPath: '/usr/local',
+
+  // Installation method - 'direct' for direct downloads, 'registry' for package registry
+  installMethod: 'curl',
+
+  // Whether to use package registry instead of direct downloads
+  useRegistry: false,
+
   // Sudo password for installations requiring sudo
   // Can also be specified in .env file as SUDO_PASSWORD
   sudoPassword: '',
