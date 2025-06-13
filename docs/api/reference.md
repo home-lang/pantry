@@ -79,6 +79,8 @@ function datadir(): Path
  * Generate environment setup script for a project directory
  * @param cwd Project directory path
  * @param opts Configuration options
+ * @param opts.dryrun Whether to dry run the environment script generation
+ * @param opts.quiet Whether to suppress output
  * @returns Promise that resolves when environment script is generated
  */
 async function dump(

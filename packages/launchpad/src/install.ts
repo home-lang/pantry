@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { aliases, packages } from 'ts-pkgx'
 import { config } from './config'
 import { Path } from './path'
 
@@ -71,66 +72,143 @@ function getArchitecture(): string {
 }
 
 /**
- * Resolve package name to domain format
+ * Resolves a package name to its canonical domain using ts-pkgx aliases
  */
-function resolvePackageDomain(packageName: string): string {
-  // Handle version specifications
-  const [name] = packageName.split('@')
-
-  // TODO: Re-enable ts-pkgx integration once type issues are resolved
-  // For now, use simple fallback resolution
-
-  // Fallback resolution
-  const commonPackages: Record<string, string> = {
-    node: 'nodejs.org',
-    nodejs: 'nodejs.org',
-    python: 'python.org',
-    python3: 'python.org',
-    go: 'go.dev',
-    rust: 'rust-lang.org',
-    cargo: 'rust-lang.org',
-    git: 'git-scm.org',
-    curl: 'curl.se',
-    wget: 'gnu.org/wget',
-    bun: 'bun.sh',
-    deno: 'deno.land',
-  }
-
-  return commonPackages[name] || (name.includes('.') ? name : `${name}.org`)
+export function resolvePackageName(packageName: string): string {
+  const alias = aliases.find(a => a.name === packageName)
+  return alias ? alias.domain : packageName
 }
 
 /**
- * Get latest version for a package from distribution server
+ * Gets the latest version for a package
  */
-async function getLatestVersion(domain: string, _os: string, _arch: string): Promise<string | null> {
-  // For now, use known working versions since HTML parsing is complex
-  // TODO: Implement proper version discovery once we have our own registry
-  const knownVersions: Record<string, string> = {
-    'bun.sh': '0.5.9',
-    'nodejs.org': '18.17.0',
-    'python.org': '3.11.4',
-    'go.dev': '1.20.6',
-    'rust-lang.org': '1.71.0',
-    'git-scm.org': '2.41.0',
-    'curl.se': '8.1.2',
-    'deno.land': '1.35.0',
-    'gnu.org/wget': '1.21.0', // Add wget for tests
-    'gnu.org/tar': '1.35.0', // Add tar for tests
-  }
+export function getLatestVersion(packageName: string): string | null {
+  const domain = resolvePackageName(packageName)
+  const domainKey = domain.replace(/[.-]/g, '_') as keyof typeof packages
+  const pkg = packages[domainKey]
 
-  const version = knownVersions[domain]
-  if (version) {
-    if (config.verbose) {
-      console.warn(`Using known version ${version} for ${domain}`)
-    }
-    return version
-  }
-
-  if (config.verbose) {
-    console.warn(`No known version for ${domain}, this package may not be available`)
+  if (pkg && 'versions' in pkg && Array.isArray(pkg.versions) && pkg.versions.length > 0) {
+    return pkg.versions[0] // versions[0] is always the latest
   }
 
   return null
+}
+
+/**
+ * Gets all available versions for a package
+ */
+export function getAvailableVersions(packageName: string): string[] {
+  const domain = resolvePackageName(packageName)
+  const domainKey = domain.replace(/[.-]/g, '_') as keyof typeof packages
+  const pkg = packages[domainKey]
+
+  if (pkg && 'versions' in pkg && Array.isArray(pkg.versions)) {
+    return pkg.versions
+  }
+
+  return []
+}
+
+/**
+ * Checks if a specific version exists for a package
+ */
+export function isVersionAvailable(packageName: string, version: string): boolean {
+  const versions = getAvailableVersions(packageName)
+  return versions.includes(version)
+}
+
+/**
+ * Resolves a version specification to an actual version
+ * @param packageName - The package name or alias
+ * @param versionSpec - Version specification (e.g., "latest", "^20", "20.1.0", etc.)
+ * @returns The resolved version or null if not found
+ */
+export function resolveVersion(packageName: string, versionSpec?: string): string | null {
+  const versions = getAvailableVersions(packageName)
+
+  if (!versions.length) {
+    return null
+  }
+
+  // If no version specified or "latest", return the latest version
+  if (!versionSpec || versionSpec === 'latest') {
+    return versions[0] // versions[0] is always the latest
+  }
+
+  // If exact version specified, check if it exists
+  if (versions.includes(versionSpec)) {
+    return versionSpec
+  }
+
+  // Handle semver ranges (basic implementation)
+  if (versionSpec.startsWith('^')) {
+    const majorVersion = versionSpec.slice(1)
+    const matchingVersion = versions.find(v => v.startsWith(majorVersion))
+    return matchingVersion || null
+  }
+
+  if (versionSpec.startsWith('~')) {
+    const baseVersion = versionSpec.slice(1)
+    const [major, minor] = baseVersion.split('.')
+    const matchingVersion = versions.find((v) => {
+      const [vMajor, vMinor] = v.split('.')
+      return vMajor === major && vMinor === minor
+    })
+    return matchingVersion || null
+  }
+
+  // Try to find a version that starts with the spec (for partial matches)
+  const matchingVersion = versions.find(v => v.startsWith(versionSpec))
+  return matchingVersion || null
+}
+
+/**
+ * Returns all available package aliases from ts-pkgx
+ */
+export function listAvailablePackages(): Array<{ name: string, domain: string }> {
+  return aliases
+}
+
+/**
+ * Checks if a package name is a known alias
+ */
+export function isPackageAlias(packageName: string): boolean {
+  return aliases.some(alias => alias.name === packageName)
+}
+
+/**
+ * Gets package information including description and available versions
+ */
+export function getPackageInfo(packageName: string): {
+  name: string
+  domain: string
+  description?: string
+  latestVersion?: string
+  totalVersions: number
+  programs?: readonly string[]
+  dependencies?: readonly string[]
+  companions?: readonly string[]
+} | null {
+  const domain = resolvePackageName(packageName)
+  const domainKey = domain.replace(/[.-]/g, '_') as keyof typeof packages
+  const pkg = packages[domainKey]
+
+  if (!pkg) {
+    return null
+  }
+
+  const versions = 'versions' in pkg && Array.isArray(pkg.versions) ? pkg.versions : []
+
+  return {
+    name: 'name' in pkg ? pkg.name : packageName,
+    domain,
+    description: 'description' in pkg ? pkg.description : undefined,
+    latestVersion: versions[0] || undefined,
+    totalVersions: versions.length,
+    programs: 'programs' in pkg ? pkg.programs : undefined,
+    dependencies: 'dependencies' in pkg ? pkg.dependencies : undefined,
+    companions: 'companions' in pkg ? pkg.companions : undefined,
+  }
 }
 
 /**
@@ -319,7 +397,7 @@ export async function install(packages: string | string[], basePath?: string): P
 
       // Parse package name and version
       const [packageName, requestedVersion] = pkg.split('@')
-      const domain = resolvePackageDomain(packageName)
+      const domain = resolvePackageName(packageName)
 
       if (config.verbose) {
         console.warn(`Resolved ${packageName} to domain: ${domain}`)
@@ -328,9 +406,9 @@ export async function install(packages: string | string[], basePath?: string): P
       // Get version to install
       let version = requestedVersion
       if (!version) {
-        const latestVersion = await getLatestVersion(domain, os, architecture)
+        const latestVersion = await getLatestVersion(packageName)
         if (!latestVersion) {
-          throw new Error(`No versions found for ${domain} on ${os}/${architecture}`)
+          throw new Error(`No versions found for ${packageName} on ${os}/${architecture}`)
         }
         version = latestVersion
       }
