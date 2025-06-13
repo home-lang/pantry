@@ -163,6 +163,11 @@ async function downloadPackage(
           console.warn(`Trying to download: ${url}`)
         }
 
+        // Skip actual downloads in test environment
+        if (process.env.NODE_ENV === 'test') {
+          throw new Error('Network calls disabled in test environment')
+        }
+
         const response = await fetch(url)
         if (response.ok) {
           const buffer = await response.arrayBuffer()

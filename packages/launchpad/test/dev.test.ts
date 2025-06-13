@@ -6,6 +6,37 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+// Mock fetch to prevent real network calls in tests
+const originalFetch = globalThis.fetch
+async function mockFetch(url: string | URL | Request, _init?: RequestInit): Promise<Response> {
+  const urlString = url.toString()
+
+  // Mock successful responses for known test packages
+  if (urlString.includes('dist.pkgx.dev') && urlString.includes('gnu.org/wget')) {
+    // Create a minimal tar.gz file for testing
+    const tarContent = Buffer.from('fake tar content for testing')
+    return new Response(tarContent, {
+      status: 200,
+      statusText: 'OK',
+      headers: { 'content-type': 'application/gzip' },
+    })
+  }
+
+  // Mock 404 for nonexistent packages
+  if (urlString.includes('nonexistent-package') || urlString.includes('testing.org')) {
+    return new Response('Not Found', {
+      status: 404,
+      statusText: 'Not Found',
+    })
+  }
+
+  // For any other URLs, return 404 to simulate package not available
+  return new Response('Package not available in test environment', {
+    status: 404,
+    statusText: 'Not Found',
+  })
+}
+
 describe('Dev Commands', () => {
   let originalEnv: NodeJS.ProcessEnv
   let tempDir: string
@@ -17,6 +48,9 @@ describe('Dev Commands', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-dev-test-'))
     cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
     fixturesDir = path.join(__dirname, 'fixtures')
+
+    // Enable fetch mocking for tests
+    globalThis.fetch = mockFetch as typeof fetch
   })
 
   afterEach(() => {
@@ -24,6 +58,9 @@ describe('Dev Commands', () => {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
     }
+
+    // Restore original fetch
+    globalThis.fetch = originalFetch
   })
 
   // Helper function to run CLI commands
