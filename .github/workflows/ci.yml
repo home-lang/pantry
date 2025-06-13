@@ -80,9 +80,6 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Install Playwright
-        run: bunx playwright install
-
       - name: Unit Test
         run: bun test
 
@@ -105,9 +102,6 @@ jobs:
 
       - name: Install Dependencies
         run: bun install
-
-      - name: Install Playwright
-        run: bunx playwright install
 
       - name: Build
         run: bun run build
