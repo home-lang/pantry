@@ -295,7 +295,7 @@ export function searchPackagesByTag(searchTerm: string): TaggedPackage[] {
  * Get category for a specific package
  */
 export function getPackageCategory(packageName: string): string | null {
-  for (const [categoryName, categoryInfo] of Object.entries(PACKAGE_CATEGORIES)) {
+  for (const [categoryName, categoryInfo] of Object.entries(PACKAGE_CATEGORIES) as Array<[string, { domains: readonly string[], description: string }]>) {
     if (categoryInfo.domains.includes(packageName)) {
       return categoryName
     }
