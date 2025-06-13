@@ -7,6 +7,7 @@ import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
 import { Path } from '../src/path'
+import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
 import { create_shim, shim_dir } from '../src/shim'
 import { addToPath, isInPath } from '../src/utils'
 // Import package.json for version
@@ -61,6 +62,62 @@ cli
     }
   })
 
+// Search command
+cli
+  .command('search [term]', 'Search for available packages')
+  .alias('find')
+  .option('--limit <number>', 'Maximum number of results to show')
+  .option('--compact', 'Show compact output format')
+  .option('--no-programs', 'Exclude program names from search')
+  .option('--case-sensitive', 'Case sensitive search')
+  .example('launchpad search node')
+  .example('launchpad search "web server" --limit 10')
+  .example('launchpad search python --compact')
+  .action(async (term?: string, options?: {
+    limit?: string
+    compact?: boolean
+    programs?: boolean
+    caseSensitive?: boolean
+  }) => {
+    try {
+      const limit = options?.limit ? Number.parseInt(options.limit, 10) : 20
+
+      if (!term || term.trim().length === 0) {
+        // Show popular packages when no search term provided
+        console.log('🌟 Popular Packages:\n')
+        const popular = getPopularPackages(limit)
+        console.log(formatSearchResults(popular, {
+          compact: options?.compact,
+          showPrograms: options?.programs !== false,
+        }))
+        return
+      }
+
+      const results = searchPackages(term, {
+        limit,
+        includePrograms: options?.programs !== false,
+        caseSensitive: options?.caseSensitive || false,
+      })
+
+      if (results.length === 0) {
+        console.log(`No packages found matching "${term}".`)
+        console.log('\nTry:')
+        console.log('  • Using different keywords')
+        console.log('  • Checking spelling')
+        console.log('  • Using "launchpad search" without arguments to see popular packages')
+      }
+      else {
+        console.log(formatSearchResults(results, {
+          compact: options?.compact,
+          showPrograms: options?.programs !== false,
+        }))
+      }
+    }
+    catch (error) {
+      console.error('Search failed:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
 // List command
 cli
   .command('list', 'List installed packages')
