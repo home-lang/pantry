@@ -1,4 +1,16 @@
 
+## v0.1.1...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.1.1...main)
+
+### 🏡 Chore
+
+- Make file executable ([4454ae7](https://github.com/stacksjs/launchpad/commit/4454ae7))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## ...main
 
 
