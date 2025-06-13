@@ -41,7 +41,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun --bun build.ts && bun run compile",
+    "build": "bun build.ts && bun run compile",
     "compile": "bun build ./bin/cli.ts --compile --minify --outfile bin/launchpad",
     "compile:all": "bun run compile:linux-x64 && bun run compile:linux-arm64 && bun run compile:windows-x64 && bun run compile:darwin-x64 && bun run compile:darwin-arm64",
     "compile:linux-x64": "bun build ./bin/cli.ts --compile --minify --target=bun-linux-x64 --outfile bin/launchpad-linux-x64",
@@ -58,7 +58,7 @@
     "zip:darwin-arm64": "zip -j bin/launchpad-darwin-arm64.zip bin/launchpad-darwin-arm64",
     "lint": "bunx --bun eslint .",
     "lint:fix": "bunx --bun eslint . --fix",
-    "prepublishOnly": "bun --bun run build && bun run compile:all && bun run zip",
+    "prepublishOnly": "bun run build && bun run compile:all && bun run zip",
     "test": "bun test"
   },
   "dependencies": {

@@ -58,7 +58,7 @@ jobs:
         run: bun install
 
       - name: Typecheck
-        run: bun --bun run typecheck
+        run: bun run typecheck
 
   test:
     runs-on: ubuntu-latest
@@ -84,6 +84,9 @@ jobs:
         run: |
           ./launchpad pkgx --verbose
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Build before test
+        run: bun run build
 
       - name: Unit Test
         run: bun test
