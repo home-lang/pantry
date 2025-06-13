@@ -29,14 +29,14 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "ts-pkgx": "^0.2.40"
+    "ts-pkgx": "^0.2.41"
   },
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
     "@types/bun": "^1.2.16",
     "bumpp": "^10.1.1",
-    "bun-plugin-dtsx": "^0.21.12",
+    "bun-plugin-dtsx": "0.9.5",
     "changelogen": "^0.6.1",
     "lint-staged": "^15.5.2",
     "simple-git-hooks": "^2.13.0",
