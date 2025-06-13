@@ -46,7 +46,7 @@
       "dependencies": {
         "bunfig": "^0.10.0",
         "cac": "^6.7.14",
-        "ts-pkgx": "^0.2.40",
+        "ts-pkgx": "^0.2.41",
       },
       "devDependencies": {
         "bun-plugin-dtsx": "^0.9.5",
