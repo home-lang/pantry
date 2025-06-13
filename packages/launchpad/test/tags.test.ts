@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { describe, expect, test } from 'bun:test'
 import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, PACKAGE_CATEGORIES, searchPackagesByTag } from '../src/tags'
 

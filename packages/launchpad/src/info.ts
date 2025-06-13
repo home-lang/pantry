@@ -1,4 +1,4 @@
-import { getAvailableVersions, getPackageInfo, resolvePackageName } from './install'
+import { getAvailableVersions, getPackageInfo } from './install'
 
 export interface PackageInfoDisplay {
   name: string

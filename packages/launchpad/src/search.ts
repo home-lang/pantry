@@ -1,4 +1,3 @@
-import type { PackageAlias, PackageDomain } from './install'
 import { aliases, packages } from 'ts-pkgx'
 import { getPackageInfo } from './install'
 
