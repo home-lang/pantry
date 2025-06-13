@@ -52,7 +52,10 @@ describe('Config', () => {
       // New shell message default values
       expect(defaultConfig.showShellMessages).toBe(true)
       // Check that activation message contains expected text (may have ANSI codes)
-      expect(defaultConfig.shellActivationMessage).toContain('Environment activated for {path}')
+      // Strip ANSI escape sequences for testing
+      const ansiEscapeRegex = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g')
+      const cleanMessage = defaultConfig.shellActivationMessage.replace(ansiEscapeRegex, '')
+      expect(cleanMessage).toContain('Environment activated for {path}')
       expect(defaultConfig.shellDeactivationMessage).toBe('dev environment deactivated')
     })
 
