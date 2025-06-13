@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "launchpad",
+      "dependencies": {
+        "ts-pkgx": "^0.2.40",
+      },
       "devDependencies": {
         "@stacksjs/docs": "^0.70.23",
         "@stacksjs/eslint-config": "^4.14.0-beta.3",
@@ -49,6 +52,7 @@
     },
   },
   "overrides": {
+    "@stacksjs/dtsx": "0.9.5",
     "unconfig": "0.3.10",
   },
   "packages": {
@@ -546,7 +550,7 @@
 
     "@stacksjs/docs": ["@stacksjs/docs@0.70.23", "", { "dependencies": { "@iconify-json/carbon": "^1.2.8", "@shikijs/vitepress-twoslash": "^3.2.1", "@vite-pwa/assets-generator": "^1.0.0", "@vite-pwa/vitepress": "^1.0.0", "unocss": "^66.0.0", "unplugin-icons": "^22.1.0", "unplugin-vue-components": "^28.4.1", "vite-plugin-pwa": "^1.0.0", "vitepress": "1.6.3" } }, "sha512-kRk/aza/wQAAgF0fhUhG8bUHhqk3RnjBkZyoRW0fvYs3dLaAArJYX/uVquZixlQnqgizGeGZT986tEFjs5Ly+A=="],
 
-    "@stacksjs/dtsx": ["@stacksjs/dtsx@0.8.3", "", { "bin": { "dtsx": "dist/cli.js" } }, "sha512-+u/PEp478qHM8s7xT0AOZowd93mZ/5ptHFyiz0B/gcxmdrdNdM6bLIK5si5Uzy1cR5TOVN4oAB3+WMKDnJ3n1w=="],
+    "@stacksjs/dtsx": ["@stacksjs/dtsx@0.9.5", "", { "bin": { "dtsx": "dist/bin/cli.js" } }, "sha512-QEi8TdKzqXKbxFnOsMIz453elkM34CjSPIHZ8PlA2GJUgnqdCdmq5pNGtISV/U1tdYasAdhlfeXHdrGdqZl0Gw=="],
 
     "@stacksjs/error-handling": ["@stacksjs/error-handling@0.70.23", "", {}, "sha512-rQcgyum8eZnVjaF+eb6ip/IHK4GuOidwy1GcbAOqXeDwbc7oUxWFlpT7pKMeYbYa+DWZjV1WdolLxSL/orQeCw=="],
 

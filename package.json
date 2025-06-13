@@ -28,6 +28,9 @@
     "preview:docs": "bun vitepress preview docs",
     "typecheck": "bun tsc --noEmit"
   },
+  "dependencies": {
+    "ts-pkgx": "^0.2.40"
+  },
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
@@ -40,6 +43,7 @@
     "typescript": "^5.8.3"
   },
   "overrides": {
+    "@stacksjs/dtsx": "0.9.5",
     "unconfig": "0.3.10"
   },
   "lint-staged": {
