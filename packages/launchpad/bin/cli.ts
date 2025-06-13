@@ -6,6 +6,7 @@ import { CAC } from 'cac'
 import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
+import { formatDoctorReport, runDoctorChecks } from '../src/doctor'
 import { formatPackageInfo, formatPackageNotFound, getDetailedPackageInfo, packageExists } from '../src/info'
 import { Path } from '../src/path'
 import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
@@ -172,6 +173,40 @@ cli
     }
   })
 
+// Doctor command
+cli
+  .command('doctor', 'Run health checks and diagnose installation issues')
+  .alias('health')
+  .alias('check')
+  .option('--verbose', 'Show detailed diagnostic information')
+  .example('launchpad doctor')
+  .example('launchpad health')
+  .action(async (options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      console.log('🔍 Running health checks...\n')
+
+      const report = await runDoctorChecks()
+      const formatted = formatDoctorReport(report)
+
+      console.log(formatted)
+
+      // Exit with appropriate code
+      if (report.overall === 'critical') {
+        process.exit(1)
+      }
+      else if (report.overall === 'issues') {
+        process.exit(2)
+      }
+    }
+    catch (error) {
+      console.error('Health check failed:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
 // List command
 cli
   .command('list', 'List installed packages')
