@@ -6,6 +6,7 @@ import { CAC } from 'cac'
 import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
+import { formatPackageInfo, formatPackageNotFound, getDetailedPackageInfo, packageExists } from '../src/info'
 import { Path } from '../src/path'
 import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
 import { create_shim, shim_dir } from '../src/shim'
@@ -118,6 +119,59 @@ cli
       process.exit(1)
     }
   })
+
+// Info command
+cli
+  .command('info <package>', 'Show detailed information about a package')
+  .alias('show')
+  .option('--versions', 'Show available versions')
+  .option('--no-programs', 'Hide program list')
+  .option('--no-dependencies', 'Hide dependencies')
+  .option('--no-companions', 'Hide companion packages')
+  .option('--compact', 'Show compact output format')
+  .example('launchpad info node')
+  .example('launchpad info python --versions')
+  .example('launchpad show rust --compact')
+  .action(async (packageName: string, options?: {
+    versions?: boolean
+    programs?: boolean
+    dependencies?: boolean
+    companions?: boolean
+    compact?: boolean
+  }) => {
+    try {
+      if (!packageExists(packageName)) {
+        const errorMessage = await formatPackageNotFound(packageName)
+        console.error(errorMessage)
+        process.exit(1)
+      }
+
+      const info = getDetailedPackageInfo(packageName, {
+        includeVersions: options?.versions || false,
+        maxVersions: 15,
+      })
+
+      if (!info) {
+        console.error(`❌ Failed to get information for package '${packageName}'`)
+        process.exit(1)
+      }
+
+      const formatted = formatPackageInfo(info, {
+        showVersions: options?.versions || false,
+        showPrograms: options?.programs !== false,
+        showDependencies: options?.dependencies !== false,
+        showCompanions: options?.companions !== false,
+        compact: options?.compact || false,
+      })
+
+      console.log(formatted)
+    }
+    catch (error) {
+      console.error('Failed to get package info:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // List command
 cli
   .command('list', 'List installed packages')
