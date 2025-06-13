@@ -80,14 +80,6 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Install pkgx
-        run: |
-          ./launchpad pkgx --verbose
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Build before test
-        run: bun run build
-
       - name: Unit Test
         run: bun test
 
