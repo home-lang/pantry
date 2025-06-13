@@ -7,6 +7,23 @@ import { aliases, packages } from 'ts-pkgx'
 import { config } from './config'
 import { Path } from './path'
 
+// Extract all package alias names from ts-pkgx
+export type PackageAlias = keyof typeof aliases
+
+// Extract all package domain names from ts-pkgx packages
+export type PackageDomain = keyof typeof packages
+
+// Union type of all valid package identifiers (aliases + domains)
+export type PackageName = PackageAlias | PackageDomain
+
+// Type for package with optional version (allowing string for flexibility)
+export type PackageSpec = string
+
+// Supported distribution formats
+export type SupportedFormat = 'tar.xz' | 'tar.gz'
+export type SupportedPlatform = 'darwin' | 'linux' | 'windows'
+export type SupportedArchitecture = 'x86_64' | 'aarch64' | 'armv7l'
+
 /**
  * Distribution configuration
  */
@@ -48,7 +65,7 @@ function writable(dirPath: string): boolean {
 /**
  * Get platform string for distribution
  */
-function getPlatform(): string {
+function getPlatform(): SupportedPlatform {
   const os = platform()
   switch (os) {
     case 'darwin': return 'darwin'
@@ -61,7 +78,7 @@ function getPlatform(): string {
 /**
  * Get architecture string for distribution
  */
-function getArchitecture(): string {
+function getArchitecture(): SupportedArchitecture {
   const nodeArch = arch()
   switch (nodeArch) {
     case 'x64': return 'x86_64'
@@ -75,8 +92,7 @@ function getArchitecture(): string {
  * Resolves a package name to its canonical domain using ts-pkgx aliases
  */
 export function resolvePackageName(packageName: string): string {
-  const alias = aliases.find(a => a.name === packageName)
-  return alias ? alias.domain : packageName
+  return (aliases as Record<string, string>)[packageName] || packageName
 }
 
 /**
@@ -165,15 +181,70 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
 /**
  * Returns all available package aliases from ts-pkgx
  */
-export function listAvailablePackages(): Array<{ name: string, domain: string }> {
-  return aliases
+export function listAvailablePackages(): Array<{ name: PackageAlias, domain: string }> {
+  const aliasRecord = aliases as Record<string, string>
+  return Object.entries(aliasRecord).map(([name, domain]) => ({
+    name: name as PackageAlias,
+    domain,
+  }))
 }
 
 /**
  * Checks if a package name is a known alias
  */
-export function isPackageAlias(packageName: string): boolean {
-  return aliases.some(alias => alias.name === packageName)
+export function isPackageAlias(packageName: string): packageName is PackageAlias {
+  return packageName in (aliases as Record<string, string>)
+}
+
+/**
+ * Type guard to check if a string is a valid package domain
+ */
+export function isPackageDomain(domain: string): domain is PackageDomain {
+  const domainKey = domain.replace(/[.-]/g, '_')
+  return domainKey in packages
+}
+
+/**
+ * Type guard to check if a string is a valid package name (alias or domain)
+ */
+export function isValidPackageName(name: string): name is PackageName {
+  return isPackageAlias(name) || isPackageDomain(name)
+}
+
+/**
+ * Type-safe function to get all available package aliases
+ */
+export function getAllPackageAliases(): PackageAlias[] {
+  return Object.keys(aliases) as PackageAlias[]
+}
+
+/**
+ * Type-safe function to get all available package domains
+ */
+export function getAllPackageDomains(): PackageDomain[] {
+  return Object.keys(packages) as PackageDomain[]
+}
+
+/**
+ * Type-safe function to get all available package names (aliases + domains)
+ */
+export function getAllPackageNames(): PackageName[] {
+  return [...getAllPackageAliases(), ...getAllPackageDomains()]
+}
+
+/**
+ * Parse a package specification into name and version
+ */
+export function parsePackageSpec(spec: string): { name: string, version?: string } {
+  const atIndex = spec.lastIndexOf('@')
+  if (atIndex === -1 || atIndex === 0) {
+    return { name: spec }
+  }
+
+  const name = spec.slice(0, atIndex)
+  const version = spec.slice(atIndex + 1)
+
+  return { name, version: version || undefined }
 }
 
 /**
@@ -200,14 +271,14 @@ export function getPackageInfo(packageName: string): {
   const versions = 'versions' in pkg && Array.isArray(pkg.versions) ? pkg.versions : []
 
   return {
-    name: 'name' in pkg ? pkg.name : packageName,
+    name: 'name' in pkg ? (pkg.name as string) : packageName,
     domain,
-    description: 'description' in pkg ? pkg.description : undefined,
+    description: 'description' in pkg ? (pkg.description as string) : undefined,
     latestVersion: versions[0] || undefined,
     totalVersions: versions.length,
-    programs: 'programs' in pkg ? pkg.programs : undefined,
-    dependencies: 'dependencies' in pkg ? pkg.dependencies : undefined,
-    companions: 'companions' in pkg ? pkg.companions : undefined,
+    programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
+    dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
+    companions: 'companions' in pkg ? (pkg.companions as readonly string[]) : undefined,
   }
 }
 
@@ -217,8 +288,8 @@ export function getPackageInfo(packageName: string): {
 async function downloadPackage(
   domain: string,
   version: string,
-  os: string,
-  arch: string,
+  os: SupportedPlatform,
+  arch: SupportedArchitecture,
   installPath: string,
 ): Promise<string[]> {
   const tempDir = path.join(installPath, '.tmp', `${domain}-${version}`)
@@ -358,9 +429,9 @@ async function downloadPackage(
 }
 
 /**
- * Main installation function
+ * Main installation function with type-safe package specifications
  */
-export async function install(packages: string | string[], basePath?: string): Promise<string[]> {
+export async function install(packages: PackageSpec | PackageSpec[], basePath?: string): Promise<string[]> {
   const packageList = Array.isArray(packages) ? packages : [packages]
   const installPath = basePath || install_prefix().string
 
@@ -368,7 +439,7 @@ export async function install(packages: string | string[], basePath?: string): P
   await fs.promises.mkdir(installPath, { recursive: true })
 
   // If no packages specified, just ensure directory exists and return
-  if (packageList.length === 0 || (packageList.length === 1 && packageList[0] === '')) {
+  if (packageList.length === 0 || (packageList.length === 1 && !packageList[0])) {
     if (config.verbose) {
       console.warn(`No packages to install, created directory: ${installPath}`)
     }
@@ -396,7 +467,7 @@ export async function install(packages: string | string[], basePath?: string): P
       }
 
       // Parse package name and version
-      const [packageName, requestedVersion] = pkg.split('@')
+      const { name: packageName, version: requestedVersion } = parsePackageSpec(pkg)
       const domain = resolvePackageName(packageName)
 
       if (config.verbose) {
