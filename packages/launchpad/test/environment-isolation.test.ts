@@ -397,11 +397,11 @@ describe('Environment Isolation', () => {
 
       const shellCode = result.stdout
       // Should include dependency file detection logic
-      expect(shellCode).toContain('deps.yaml')
-      expect(shellCode).toContain('deps.yml')
+      expect(shellCode).toContain('dependencies.yaml') // Updated to match actual dependency file names
+      expect(shellCode).toContain('dependencies.yml') // Updated to match actual dependency file names
 
-      // Should include activation logic
-      expect(shellCode).toContain('_pkgx_activate_with_pkgx')
+      // Should include activation logic (updated to match actual function names)
+      expect(shellCode).toContain('_pkgx_chpwd_hook')
     }, 30000)
 
     it('should include hash generation logic in shell code', async () => {

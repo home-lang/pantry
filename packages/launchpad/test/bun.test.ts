@@ -119,8 +119,10 @@ describe('Bun', () => {
       // The function returns the current platform, so we test that it contains valid platform info
       expect(asset.filename).toMatch(/bun-(darwin|linux|windows)-(aarch64|x64)\.zip/)
 
-      // On macOS (which this test is running on), it should contain darwin
-      expect(asset.filename).toContain('darwin')
+      // Should contain the actual current platform (darwin on macOS, linux on Linux, etc.)
+      const currentPlatform = os.platform()
+      const expectedPlatform = currentPlatform === 'darwin' ? 'darwin' : currentPlatform === 'win32' ? 'windows' : 'linux'
+      expect(asset.filename).toContain(expectedPlatform)
     })
 
     it('should return architecture-specific filename', () => {
@@ -130,8 +132,10 @@ describe('Bun', () => {
       // The function returns the current architecture, so we test that it contains valid arch info
       expect(asset.filename).toMatch(/(aarch64|x64)/)
 
-      // On Apple Silicon (which this test is running on), it should contain aarch64
-      expect(asset.filename).toContain('aarch64')
+      // Should contain the actual current architecture
+      const currentArch = os.arch()
+      const expectedArch = currentArch === 'arm64' ? 'aarch64' : 'x64'
+      expect(asset.filename).toContain(expectedArch)
     })
 
     it('should always return zip files', () => {

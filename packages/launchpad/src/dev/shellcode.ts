@@ -39,7 +39,14 @@ function findDevCommand(): string {
     join(currentDir, 'packages', 'launchpad', 'bin', 'cli.ts'),
   ]
 
-  const localLaunchpadScript = localCandidates.find(cmd => existsSync(cmd))
+  const localLaunchpadScript = localCandidates.find((cmd) => {
+    try {
+      return existsSync(cmd)
+    }
+    catch {
+      return false
+    }
+  })
 
   if (localLaunchpadScript) {
     // We found a local launchpad script, prepare it for execution
@@ -52,7 +59,7 @@ function findDevCommand(): string {
 
     // Since this is a local launchpad script, we need to find a stable way to run it
     // First, try to find bun in stable locations, avoiding temporary pkgx paths
-    const homeDir = process.env.HOME || '~'
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '~'
     const stableBunPaths = [
       // Check common user installation locations (stable paths) first
       join(homeDir, '.bun', 'bin', 'bun'),
@@ -65,22 +72,36 @@ function findDevCommand(): string {
         .filter(path => !path.includes('.pkgx') && !path.includes('/tmp/')),
     ]
 
-    const bunPath = stableBunPaths.find(path => existsSync(path))
+    const bunPath = stableBunPaths.find((path) => {
+      try {
+        return existsSync(path)
+      }
+      catch {
+        return false
+      }
+    })
 
     if (bunPath) {
       // Use the found stable bun binary
       return `"${bunPath}" "${dev_cmd}"`
     }
     else {
-      // If bun is not available in stable paths, provide helpful guidance
-      return `echo "❌ Bun not found. Install bun: curl -fsSL https://bun.sh/install | bash" >&2 && false`
+      // Check if bun is available globally via command -v
+      return `if command -v bun >/dev/null 2>&1; then bun "${dev_cmd}"; else echo "❌ Bun not found. Install bun: curl -fsSL https://bun.sh/install | bash" >&2 && false; fi`
     }
   }
 
   // SECOND: Try to find a globally installed launchpad command
   let dev_cmd = pathDirs
     .map(dir => join(dir, 'launchpad'))
-    .find(cmd => existsSync(cmd))
+    .find((cmd) => {
+      try {
+        return existsSync(cmd)
+      }
+      catch {
+        return false
+      }
+    })
 
   if (dev_cmd) {
     return 'launchpad'
@@ -89,7 +110,14 @@ function findDevCommand(): string {
   // THIRD: Try to find a globally installed dev command
   dev_cmd = pathDirs
     .map(dir => join(dir, 'dev'))
-    .find(cmd => existsSync(cmd))
+    .find((cmd) => {
+      try {
+        return existsSync(cmd)
+      }
+      catch {
+        return false
+      }
+    })
 
   if (dev_cmd) {
     return 'dev'

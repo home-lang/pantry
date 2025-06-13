@@ -51,7 +51,8 @@ describe('Config', () => {
       expect(defaultConfig.autoAddToPath).toBe(true)
       // New shell message default values
       expect(defaultConfig.showShellMessages).toBe(true)
-      expect(defaultConfig.shellActivationMessage).toBe('✅ Environment activated for {path}')
+      // Check that activation message contains expected text (may have ANSI codes)
+      expect(defaultConfig.shellActivationMessage).toContain('Environment activated for {path}')
       expect(defaultConfig.shellDeactivationMessage).toBe('dev environment deactivated')
     })
 

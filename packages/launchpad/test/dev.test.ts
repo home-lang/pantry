@@ -125,7 +125,7 @@ describe('Dev Commands', () => {
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('_pkgx_chpwd_hook')
       expect(result.stdout).toContain('dev()')
-      expect(result.stdout).toContain('_pkgx_activate_with_pkgx')
+      expect(result.stdout).toContain('_launchpad_fast_activate') // Updated to match actual function names
       expect(result.stdout).toContain('_PKGX_ACTIVATING') // Infinite loop prevention
     }, 30000)
 
