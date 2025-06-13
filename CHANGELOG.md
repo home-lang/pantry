@@ -1,151 +1,99 @@
 
-## v0.3.1...main
+## ...main
 
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.3.1...main)
-
-### 🚀 Enhancements
-
-- Add `bun-plugin-dts-auto` ([c0c487b](https://github.com/stacksjs/ts-starter/commit/c0c487b))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.3.0...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.3.0...main)
 
 ### 🏡 Chore
 
-- Fix isolatedDeclarations setting ([b87b6b1](https://github.com/stacksjs/ts-starter/commit/b87b6b1))
-- Adjust urls ([0a40b72](https://github.com/stacksjs/ts-starter/commit/0a40b72))
+- Initial commit ([2454942](https://github.com/stacksjs/launchpad/commit/2454942))
+- Wip ([2672e50](https://github.com/stacksjs/launchpad/commit/2672e50))
+- Wip ([ee1a903](https://github.com/stacksjs/launchpad/commit/ee1a903))
+- Wip ([eafa093](https://github.com/stacksjs/launchpad/commit/eafa093))
+- Wip ([6f8481e](https://github.com/stacksjs/launchpad/commit/6f8481e))
+- Wip ([9ae4101](https://github.com/stacksjs/launchpad/commit/9ae4101))
+- Wip ([739a132](https://github.com/stacksjs/launchpad/commit/739a132))
+- Wip ([6cd4562](https://github.com/stacksjs/launchpad/commit/6cd4562))
+- Wip ([3aa13ce](https://github.com/stacksjs/launchpad/commit/3aa13ce))
+- Wip ([3489037](https://github.com/stacksjs/launchpad/commit/3489037))
+- Wip ([2cb614e](https://github.com/stacksjs/launchpad/commit/2cb614e))
+- Wip ([cb97f38](https://github.com/stacksjs/launchpad/commit/cb97f38))
+- Wip ([a2acc78](https://github.com/stacksjs/launchpad/commit/a2acc78))
+- Wip ([e468832](https://github.com/stacksjs/launchpad/commit/e468832))
+- Wip ([9f5f949](https://github.com/stacksjs/launchpad/commit/9f5f949))
+- Wip ([f007bcc](https://github.com/stacksjs/launchpad/commit/f007bcc))
+- Wip ([215bdc2](https://github.com/stacksjs/launchpad/commit/215bdc2))
+- Wip ([472db36](https://github.com/stacksjs/launchpad/commit/472db36))
+- Wip ([93bd561](https://github.com/stacksjs/launchpad/commit/93bd561))
+- Wip ([c35a57a](https://github.com/stacksjs/launchpad/commit/c35a57a))
+- Wip ([d41169b](https://github.com/stacksjs/launchpad/commit/d41169b))
+- Wip ([ab78d52](https://github.com/stacksjs/launchpad/commit/ab78d52))
+- Wip ([446075d](https://github.com/stacksjs/launchpad/commit/446075d))
+- Wip ([64c274e](https://github.com/stacksjs/launchpad/commit/64c274e))
+- Wip ([676acc5](https://github.com/stacksjs/launchpad/commit/676acc5))
+- Wip ([0650add](https://github.com/stacksjs/launchpad/commit/0650add))
+- Wip ([8236d54](https://github.com/stacksjs/launchpad/commit/8236d54))
+- Wip ([5dae479](https://github.com/stacksjs/launchpad/commit/5dae479))
+- Wip ([c817c31](https://github.com/stacksjs/launchpad/commit/c817c31))
+- Wip ([ceb6e27](https://github.com/stacksjs/launchpad/commit/ceb6e27))
+- Wip ([accac5b](https://github.com/stacksjs/launchpad/commit/accac5b))
+- Wip ([2854042](https://github.com/stacksjs/launchpad/commit/2854042))
+- Wip ([228bf73](https://github.com/stacksjs/launchpad/commit/228bf73))
+- Wip ([2e58f31](https://github.com/stacksjs/launchpad/commit/2e58f31))
+- Wip ([c4de3ca](https://github.com/stacksjs/launchpad/commit/c4de3ca))
+- Wip ([329a189](https://github.com/stacksjs/launchpad/commit/329a189))
+- Wip ([b8cc5d0](https://github.com/stacksjs/launchpad/commit/b8cc5d0))
+- Wip ([0295984](https://github.com/stacksjs/launchpad/commit/0295984))
+- Wip ([a59a143](https://github.com/stacksjs/launchpad/commit/a59a143))
+- Wip ([d131620](https://github.com/stacksjs/launchpad/commit/d131620))
+- Wip ([2d9f2a6](https://github.com/stacksjs/launchpad/commit/2d9f2a6))
+- Wip ([67e60a9](https://github.com/stacksjs/launchpad/commit/67e60a9))
+- Wip ([7d8c1ec](https://github.com/stacksjs/launchpad/commit/7d8c1ec))
+- Wip ([16454de](https://github.com/stacksjs/launchpad/commit/16454de))
+- Wip ([a0da66e](https://github.com/stacksjs/launchpad/commit/a0da66e))
+- Wip ([4d1a2f2](https://github.com/stacksjs/launchpad/commit/4d1a2f2))
+- Wip ([4465e4e](https://github.com/stacksjs/launchpad/commit/4465e4e))
+- Wip ([21e9650](https://github.com/stacksjs/launchpad/commit/21e9650))
+- Wip ([be93cc0](https://github.com/stacksjs/launchpad/commit/be93cc0))
+- Wip ([a5f856e](https://github.com/stacksjs/launchpad/commit/a5f856e))
+- Wip ([95e51b9](https://github.com/stacksjs/launchpad/commit/95e51b9))
+- Wip ([d1da0b3](https://github.com/stacksjs/launchpad/commit/d1da0b3))
+- Wip ([882f80d](https://github.com/stacksjs/launchpad/commit/882f80d))
+- Wip ([5a17972](https://github.com/stacksjs/launchpad/commit/5a17972))
+- Wip ([0fcc868](https://github.com/stacksjs/launchpad/commit/0fcc868))
+- Wip ([ada1bb8](https://github.com/stacksjs/launchpad/commit/ada1bb8))
+- Wip ([a1f68a0](https://github.com/stacksjs/launchpad/commit/a1f68a0))
+- Wip ([c66fc9f](https://github.com/stacksjs/launchpad/commit/c66fc9f))
+- Wip ([409be99](https://github.com/stacksjs/launchpad/commit/409be99))
+- Wip ([90c8be1](https://github.com/stacksjs/launchpad/commit/90c8be1))
+- Wip ([09133e6](https://github.com/stacksjs/launchpad/commit/09133e6))
+- Wip ([6cf71a8](https://github.com/stacksjs/launchpad/commit/6cf71a8))
+- Wip ([2b0edeb](https://github.com/stacksjs/launchpad/commit/2b0edeb))
+- Wip ([5a467fd](https://github.com/stacksjs/launchpad/commit/5a467fd))
+- Wip ([55b5f5f](https://github.com/stacksjs/launchpad/commit/55b5f5f))
+- Wip ([d4c0b9d](https://github.com/stacksjs/launchpad/commit/d4c0b9d))
+- Wip ([787e77d](https://github.com/stacksjs/launchpad/commit/787e77d))
+- Wip ([08d9066](https://github.com/stacksjs/launchpad/commit/08d9066))
+- Wip ([2f9debf](https://github.com/stacksjs/launchpad/commit/2f9debf))
+- Wip ([c6fb084](https://github.com/stacksjs/launchpad/commit/c6fb084))
+- Wip ([8788fbf](https://github.com/stacksjs/launchpad/commit/8788fbf))
+- Wip ([dafd112](https://github.com/stacksjs/launchpad/commit/dafd112))
+- Wip ([ba8156d](https://github.com/stacksjs/launchpad/commit/ba8156d))
+- Wip ([9dc0184](https://github.com/stacksjs/launchpad/commit/9dc0184))
+- Wip ([40b724e](https://github.com/stacksjs/launchpad/commit/40b724e))
+- Wip ([70fc7da](https://github.com/stacksjs/launchpad/commit/70fc7da))
+- Wip ([24a0046](https://github.com/stacksjs/launchpad/commit/24a0046))
+- Wip ([dd16800](https://github.com/stacksjs/launchpad/commit/dd16800))
+- Wip ([f288102](https://github.com/stacksjs/launchpad/commit/f288102))
+- Wip ([06b765f](https://github.com/stacksjs/launchpad/commit/06b765f))
+- Wip ([c8d456b](https://github.com/stacksjs/launchpad/commit/c8d456b))
+- Wip ([26ca9a3](https://github.com/stacksjs/launchpad/commit/26ca9a3))
+- Wip ([90fdbe0](https://github.com/stacksjs/launchpad/commit/90fdbe0))
+- Wip ([a9d29c9](https://github.com/stacksjs/launchpad/commit/a9d29c9))
+- Wip ([eb2ff2c](https://github.com/stacksjs/launchpad/commit/eb2ff2c))
+- Wip ([6cc0555](https://github.com/stacksjs/launchpad/commit/6cc0555))
+- Wip ([355f702](https://github.com/stacksjs/launchpad/commit/355f702))
+- Wip ([e3f0f10](https://github.com/stacksjs/launchpad/commit/e3f0f10))
+- Wip ([dd218df](https://github.com/stacksjs/launchpad/commit/dd218df))
 
 ### ❤️ Contributors
 
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.2.1...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.2.1...main)
-
-### 🚀 Enhancements
-
-- Add `noFallthroughCasesInSwitch` ([b9cfa30](https://github.com/stacksjs/ts-starter/commit/b9cfa30))
-- Add `verbatimModuleSyntax` ([c495d17](https://github.com/stacksjs/ts-starter/commit/c495d17))
-- Several updates ([f703179](https://github.com/stacksjs/ts-starter/commit/f703179))
-
-### 🩹 Fixes
-
-- Properly use bun types ([7144221](https://github.com/stacksjs/ts-starter/commit/7144221))
-
-### 🏡 Chore
-
-- Adjust badge links ([432aff7](https://github.com/stacksjs/ts-starter/commit/432aff7))
-- Add `runs-on` options ([9a5b97f](https://github.com/stacksjs/ts-starter/commit/9a5b97f))
-- Cache node_modules ([ba2f6ce](https://github.com/stacksjs/ts-starter/commit/ba2f6ce))
-- Use `ubuntu-latest` for now ([1add684](https://github.com/stacksjs/ts-starter/commit/1add684))
-- Minor updates ([1007cff](https://github.com/stacksjs/ts-starter/commit/1007cff))
-- Lint ([d531bdc](https://github.com/stacksjs/ts-starter/commit/d531bdc))
-- Remove bunx usage ([e1a5575](https://github.com/stacksjs/ts-starter/commit/e1a5575))
-- Pass bun flag ([960976f](https://github.com/stacksjs/ts-starter/commit/960976f))
-- Use defaults ([157455b](https://github.com/stacksjs/ts-starter/commit/157455b))
-- Run typecheck using bun flag ([f22f3b1](https://github.com/stacksjs/ts-starter/commit/f22f3b1))
-- Test ([0b3c3a1](https://github.com/stacksjs/ts-starter/commit/0b3c3a1))
-- Use modern js for commitlint ([4bd6978](https://github.com/stacksjs/ts-starter/commit/4bd6978))
-- Update worklows readme ([f54aae9](https://github.com/stacksjs/ts-starter/commit/f54aae9))
-- Adjust readme ([92d7ff1](https://github.com/stacksjs/ts-starter/commit/92d7ff1))
-- More updates ([0225587](https://github.com/stacksjs/ts-starter/commit/0225587))
-- Add .zed settings for biome ([1688024](https://github.com/stacksjs/ts-starter/commit/1688024))
-- Extend via alias ([b108d30](https://github.com/stacksjs/ts-starter/commit/b108d30))
-- Lint ([d961b2a](https://github.com/stacksjs/ts-starter/commit/d961b2a))
-- Minor updates ([e66d44a](https://github.com/stacksjs/ts-starter/commit/e66d44a))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.2.0...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.2.0...main)
-
-### 🏡 Chore
-
-- Remove unused action ([066f85a](https://github.com/stacksjs/ts-starter/commit/066f85a))
-- Housekeeping ([fc4e24d](https://github.com/stacksjs/ts-starter/commit/fc4e24d))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.1.1...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.1.1...main)
-
-### 🏡 Chore
-
-- Adjust eslint config name ([53c2aa6](https://github.com/stacksjs/ts-starter/commit/53c2aa6))
-- Set type module ([22dde14](https://github.com/stacksjs/ts-starter/commit/22dde14))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.1.0...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.1.0...main)
-
-### 🏡 Chore
-
-- Use correct cover image ([75bd3ae](https://github.com/stacksjs/ts-starter/commit/75bd3ae))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.0.5...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.0.5...main)
-
-### 🚀 Enhancements
-
-- Add pkgx deps ([319c066](https://github.com/stacksjs/ts-starter/commit/319c066))
-- Use flat eslint config ([cdb0093](https://github.com/stacksjs/ts-starter/commit/cdb0093))
-
-### 🏡 Chore
-
-- Fix badge ([bc3b000](https://github.com/stacksjs/ts-starter/commit/bc3b000))
-- Minor updates ([78dc522](https://github.com/stacksjs/ts-starter/commit/78dc522))
-- Housekeeping ([e1cba3b](https://github.com/stacksjs/ts-starter/commit/e1cba3b))
-- Additional housekeeping ([f5dc625](https://github.com/stacksjs/ts-starter/commit/f5dc625))
-- Add `.gitattributes` ([7080f8c](https://github.com/stacksjs/ts-starter/commit/7080f8c))
-- Adjust deps ([cc71b42](https://github.com/stacksjs/ts-starter/commit/cc71b42))
-- Adjust wording ([3bc54b3](https://github.com/stacksjs/ts-starter/commit/3bc54b3))
-- Adjust readme cover ([e6acbb2](https://github.com/stacksjs/ts-starter/commit/e6acbb2))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
-
-## v0.0.5...main
-
-[compare changes](https://github.com/stacksjs/ts-starter/compare/v0.0.5...main)
-
-### 🚀 Enhancements
-
-- Add pkgx deps ([319c066](https://github.com/stacksjs/ts-starter/commit/319c066))
-- Use flat eslint config ([cdb0093](https://github.com/stacksjs/ts-starter/commit/cdb0093))
-
-### 🏡 Chore
-
-- Fix badge ([bc3b000](https://github.com/stacksjs/ts-starter/commit/bc3b000))
-- Minor updates ([78dc522](https://github.com/stacksjs/ts-starter/commit/78dc522))
-- Housekeeping ([e1cba3b](https://github.com/stacksjs/ts-starter/commit/e1cba3b))
-- Additional housekeeping ([f5dc625](https://github.com/stacksjs/ts-starter/commit/f5dc625))
-- Add `.gitattributes` ([7080f8c](https://github.com/stacksjs/ts-starter/commit/7080f8c))
-- Adjust deps ([cc71b42](https://github.com/stacksjs/ts-starter/commit/cc71b42))
-- Adjust wording ([3bc54b3](https://github.com/stacksjs/ts-starter/commit/3bc54b3))
-- Adjust readme cover ([e6acbb2](https://github.com/stacksjs/ts-starter/commit/e6acbb2))
-
-### ❤️ Contributors
-
-- Chris <chrisbreuer93@gmail.com>
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
