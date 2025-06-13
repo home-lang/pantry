@@ -37,7 +37,7 @@ export const defaultConfig: LaunchpadConfig = {
   shimPath: getDefaultShimPath(),
   autoAddToPath: true,
   showShellMessages: true,
-  shellActivationMessage: '✅ Environment activated for {path}',
+  shellActivationMessage: '✅ Environment activated for \x1B[3m{path}\x1B[0m',
   shellDeactivationMessage: 'dev environment deactivated',
   useRegistry: true,
   installMethod: 'curl',

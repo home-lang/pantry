@@ -328,7 +328,7 @@ Please see our [releases](https://github.com/stacksjs/launchpad/releases) page f
 
 ## Contributing
 
-Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING](https://github.com/stacksjs/contributing) for details.
 
 ## Community
 

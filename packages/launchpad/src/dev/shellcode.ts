@@ -50,54 +50,30 @@ function findDevCommand(): string {
       dev_cmd = path.resolve(dev_cmd)
     }
 
-    // Since this is a local launchpad script, we need to find a way to run it
-    // Try to find bun in multiple locations
+    // Since this is a local launchpad script, we need to find a stable way to run it
+    // First, try to find bun in stable locations, avoiding temporary pkgx paths
     const homeDir = process.env.HOME || '~'
-    const possibleBunPaths = [
-      // Check PATH first
-      ...pathDirs.map(dir => join(dir, 'bun')),
-      // Check common installation locations
+    const stableBunPaths = [
+      // Check common user installation locations (stable paths) first
       join(homeDir, '.bun', 'bin', 'bun'),
       join('/usr/local/bin', 'bun'),
       join('/opt/homebrew/bin', 'bun'),
       join(homeDir, '.local', 'bin', 'bun'),
-      // Check launchpad environment directories
-      ...(function () {
-        const launchpadEnvsDir = join(homeDir, '.local', 'share', 'launchpad', 'envs')
-        if (existsSync(launchpadEnvsDir)) {
-          try {
-            const envDirs = readdirSync(launchpadEnvsDir)
-            return envDirs.map(envDir => join(launchpadEnvsDir, envDir, 'bin', 'bun'))
-          }
-          catch {
-            return []
-          }
-        }
-        return []
-      })(),
+      // Check PATH but filter out temporary pkgx paths
+      ...pathDirs
+        .map(dir => join(dir, 'bun'))
+        .filter(path => !path.includes('.pkgx') && !path.includes('/tmp/')),
     ]
 
-    const bunPath = possibleBunPaths.find(path => existsSync(path))
+    const bunPath = stableBunPaths.find(path => existsSync(path))
 
     if (bunPath) {
-      // Use the found bun binary
-      return `${bunPath} ${dev_cmd}`
+      // Use the found stable bun binary
+      return `"${bunPath}" "${dev_cmd}"`
     }
     else {
-      // Check if pkgx is available
-      const pkgxPath = pathDirs
-        .map(dir => join(dir, 'pkgx'))
-        .find(cmd => existsSync(cmd))
-
-      if (pkgxPath) {
-        // Fallback to pkgx bun
-        return `pkgx bun ${dev_cmd}`
-      }
-      else {
-        // If neither bun nor pkgx is available, we can't run the script
-        // Return a command that will provide helpful error message
-        return `echo "❌ Neither bun nor pkgx found. Please install one of them or run: curl -fsSL https://bun.sh/install | bash" >&2; false`
-      }
+      // If bun is not available in stable paths, provide helpful guidance
+      return `echo "❌ Bun not found. Install bun: curl -fsSL https://bun.sh/install | bash" >&2 && false`
     }
   }
 
@@ -121,7 +97,7 @@ function findDevCommand(): string {
 
   // If nothing is found, provide a fallback that will work in most environments
   // This ensures dev:shellcode always works, even if launchpad isn't globally installed
-  return 'echo "❌ Neither bun nor pkgx found. Please install one of them or run: curl -fsSL https://bun.sh/install | bash" >&2; false'
+  return `echo "❌ Launchpad not found. Install bun to use local development: curl -fsSL https://bun.sh/install | bash" >&2 && false`
 }
 
 export default function shellcode(): string {
@@ -342,32 +318,34 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
             if [ -n "$shell_script" ]; then
               eval "$shell_script"
             else
-              echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
-              eval "$(_pkgx_activate_with_pkgx "$PWD")"
+                        echo "⚠️  Launchpad succeeded but no shell script found" >&2
+          echo "    Try running: launchpad dev:dump" >&2
             fi
           else
-            # If launchpad fails, show the error but try fallback
-            if [[ "$launchpad_output" == *"bun: No such file or directory"* ]]; then
-              echo "⚠️  Bun not found. Install it with: curl -fsSL https://bun.sh/install | bash" >&2
-              echo "    Or install pkgx: curl -fsSL https://pkgx.sh | bash" >&2
-            elif [[ "$launchpad_output" == *"Neither bun nor pkgx found"* ]]; then
+            # If launchpad fails, show cleaner error messages
+            local project_name=$(basename "$PWD")
+            if [[ "$launchpad_output" == *"No such file or directory"* ]]; then
+              echo "⚠️  Development tools not available for $project_name" >&2
+              echo "    Install bun: curl -fsSL https://bun.sh/install | bash" >&2
+            elif [[ "$launchpad_output" == *"Bun not found"* ]] || [[ "$launchpad_output" == *"No launchpad or dev command found"* ]]; then
+              # Extract the actual error message
               echo "$launchpad_output" >&2
             else
-              echo "⚠️  Launchpad unavailable (exit code: $exit_code), trying pkgx fallback..." >&2
+              echo "⚠️  Cannot set up development environment for $project_name" >&2
               if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
-                echo "    Error: $launchpad_output" >&2
+                # Only show error details if they're not too verbose
+                local error_lines=$(echo "$launchpad_output" | wc -l | tr -d ' ')
+                if [ "$error_lines" -le 3 ]; then
+                  echo "    $launchpad_output" >&2
+                else
+                  echo "    (Run 'launchpad dev:dump' for details)" >&2
+                fi
               fi
             fi
 
-            # Try pkgx fallback
-            if command -v pkgx >/dev/null 2>&1; then
-              eval "$(_pkgx_activate_with_pkgx "$PWD")"
-            else
-              echo "❌ Cannot activate environment: neither launchpad nor pkgx is available" >&2
-              echo "   Install one of the following:" >&2
-              echo "   • Bun: curl -fsSL https://bun.sh/install | bash" >&2
-              echo "   • pkgx: curl -fsSL https://pkgx.sh | bash" >&2
-            fi
+            echo "💡 To fix this:" >&2
+            echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
+            echo "   • Or compile launchpad globally: bun run compile" >&2
           fi
         else
           # For other dev commands, try with basic error handling
@@ -450,85 +428,22 @@ EOF
   # Show activation message if enabled
   if [ "${showShellMessages}" = "true" ]; then
     # Replace {path} placeholder with actual path using sed with | delimiter
+    # Use basename for cleaner display and add color coding
+    local project_name=$(basename "$cwd")
     local message="${shellActivationMessageTemplate}"
-    message=$(echo "$message" | sed "s|{path}|\\\\033[3m$cwd\\\\033[0m|g")
-    echo -e "$message" >&2
+    message=$(echo "$message" | sed "s|{path}|$project_name|g")
+    printf "\\033[32m%s\\033[0m\\n" "$message" >&2
   fi
 }
 
-# Function to activate environment using pkgx directly
-_pkgx_activate_with_pkgx() {
-  local dir="$1"
-
-  # Check for any supported dependency file
-  local deps_file=""
-  for file in ${dependencyFilesList}; do
-    if [ -f "$dir/$file" ]; then
-      deps_file="$dir/$file"
-      break
-    fi
-  done
-
-  if [ -z "$deps_file" ] || ! command -v pkgx >/dev/null 2>&1; then
-    echo "⚠️  No dependency file found or pkgx not available" >&2
-    return 1
-  fi
-
-  echo "🔄 Activating environment with pkgx (fallback mode)..." >&2
-
-  # Create ~/.local/bin directory
-  mkdir -p "$HOME/.local/bin"
-
-  # Call pkgx env to get environment variables for the packages
-  # Use a subshell to avoid changing current directory permanently
-  local env_output
-  local exit_code=0
-  env_output=$(cd "$dir" && pkgx env 2>/dev/null) || exit_code=$?
-
-  if [ $exit_code -eq 0 ] && [ -n "$env_output" ]; then
-    # Setup output
-    echo "# Environment setup (fallback mode)"
-    echo "eval \\"_pkgx_dev_try_bye() {"
-    echo "  if [ \\\\\\"\\$1\\\\\\" != \\\\\\"silent\\\\\\" ]; then"
-    echo "    if [ '${showShellMessages}' = 'true' ]; then"
-    echo "      echo '${shellDeactivationMessage}' >&2"
-    echo "    fi"
-    echo "  fi"
-    echo "  unset -f _pkgx_dev_try_bye"
-    echo "}\\""
-    echo ""
-
-    # Ensure PATH contains ~/.local/bin
-    echo "if [[ :\\$PATH: != *\\":\\$HOME/.local/bin:\\"* ]]; then"
-    echo "  export PATH=\\"\\$HOME/.local/bin:\\$PATH\\""
-    echo "fi"
-
-    # Set environment variables
-    echo "set -a"
-
-    # Filter environment variables using system tools when possible
-    if command -v /usr/bin/grep >/dev/null 2>&1 && command -v /usr/bin/sed >/dev/null 2>&1; then
-      echo "$env_output" | /usr/bin/grep -v '^#' 2>/dev/null | /usr/bin/grep -v '^$' 2>/dev/null | \
-        /usr/bin/grep -v 'LS_COLORS=' 2>/dev/null | /usr/bin/grep -v 'VSCODE' 2>/dev/null | /usr/bin/grep -v 'CURSOR' 2>/dev/null | \
-        /usr/bin/grep -v 'JetBrains' 2>/dev/null | /usr/bin/grep -v '(Plugin)' 2>/dev/null | \
-        /usr/bin/sed 's/"/\\\\"/g' 2>/dev/null
-    else
-      echo "$env_output" | grep -v '^#' | grep -v '^$' | \
-        grep -v 'LS_COLORS=' | grep -v 'VSCODE' | grep -v 'CURSOR' | \
-        grep -v 'JetBrains' | grep -v '(Plugin)' | \
-        sed 's/"/\\\\"/g'
-    fi
-
-    echo "set +a"
-    if [ "${showShellMessages}" = "true" ]; then
-      echo "echo '✅ Dev environment activated via pkgx (fallback)' >&2"
-    fi
-
-    return 0
-  else
-    echo "⚠️  Failed to activate environment with pkgx (exit code: $exit_code)" >&2
-    return 1
-  fi
+# Function for better error messaging when launchpad fails
+_launchpad_show_help() {
+  local project_name=$(basename "$PWD")
+  echo "⚠️  Cannot set up development environment for $project_name" >&2
+  echo "💡 To fix this:" >&2
+  echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
+  echo "   • Or compile launchpad globally: bun run compile" >&2
+  echo "   • Or run manually: launchpad dev:dump" >&2
 }
 
 dev() {
@@ -557,32 +472,34 @@ dev() {
           if [ -n "$shell_script" ]; then
             eval "$shell_script"
           else
-            echo "⚠️  Launchpad succeeded but no shell script found, using pkgx fallback..." >&2
-            eval "$(_pkgx_activate_with_pkgx "$PWD")"
+            echo "⚠️  Launchpad succeeded but no shell script found" >&2
+            echo "    Try running: launchpad dev:dump" >&2
           fi
         else
-          # If launchpad fails, show the error but try fallback
-          if [[ "$launchpad_output" == *"bun: No such file or directory"* ]]; then
-            echo "⚠️  Bun not found. Install it with: curl -fsSL https://bun.sh/install | bash" >&2
-            echo "    Or install pkgx: curl -fsSL https://pkgx.sh | bash" >&2
-          elif [[ "$launchpad_output" == *"Neither bun nor pkgx found"* ]]; then
+          # If launchpad fails, show cleaner error messages
+          local project_name=$(basename "$PWD")
+          if [[ "$launchpad_output" == *"No such file or directory"* ]]; then
+            echo "⚠️  Development tools not available for $project_name" >&2
+            echo "    Install bun: curl -fsSL https://bun.sh/install | bash" >&2
+          elif [[ "$launchpad_output" == *"Bun not found"* ]] || [[ "$launchpad_output" == *"No launchpad or dev command found"* ]]; then
+            # Extract the actual error message
             echo "$launchpad_output" >&2
           else
-            echo "⚠️  Launchpad unavailable (exit code: $exit_code), trying pkgx fallback..." >&2
+            echo "⚠️  Cannot set up development environment for $project_name" >&2
             if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
-              echo "    Error: $launchpad_output" >&2
+              # Only show error details if they're not too verbose
+              local error_lines=$(echo "$launchpad_output" | wc -l | tr -d ' ')
+              if [ "$error_lines" -le 3 ]; then
+                echo "    $launchpad_output" >&2
+              else
+                echo "    (Run 'launchpad dev:dump' for details)" >&2
+              fi
             fi
           fi
 
-          # Try pkgx fallback
-          if command -v pkgx >/dev/null 2>&1; then
-            eval "$(_pkgx_activate_with_pkgx "$PWD")"
-          else
-            echo "❌ Cannot activate environment: neither launchpad nor pkgx is available" >&2
-            echo "   Install one of the following:" >&2
-            echo "   • Bun: curl -fsSL https://bun.sh/install | bash" >&2
-            echo "   • pkgx: curl -fsSL https://pkgx.sh | bash" >&2
-          fi
+          echo "💡 To fix this:" >&2
+          echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
+          echo "   • Or compile launchpad globally: bun run compile" >&2
         fi
       else
         # For other dev commands, try with basic error handling
@@ -641,7 +558,7 @@ elif [ -n "$BASH_VERSION" ] && [ "$POSIXLY_CORRECT" != y ] ; then
         fi'
 else
   POSIXLY_CORRECT=y
-  echo "pkgx: dev: warning: unsupported shell" >&2
+  echo "launchpad: dev: warning: unsupported shell" >&2
 fi
 `.trim()
 }
@@ -649,10 +566,10 @@ fi
 export function datadir(): string {
   const xdgDataHome = process.env.XDG_DATA_HOME?.trim()
   if (xdgDataHome) {
-    return join(xdgDataHome, 'pkgx', 'dev')
+    return join(xdgDataHome, 'launchpad', 'dev')
   }
 
-  return join(platform_data_home_default(), 'pkgx', 'dev')
+  return join(platform_data_home_default(), 'launchpad', 'dev')
 }
 
 function platform_data_home_default(): string {

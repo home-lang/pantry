@@ -498,5 +498,5 @@ When reporting issues, include:
 
 **Yes!** Launchpad is open source under the MIT license:
 - **GitHub**: [https://github.com/stacksjs/launchpad](https://github.com/stacksjs/launchpad)
-- **License**: [MIT License](https://github.com/stacksjs/launchpad/blob/main/LICENSE)
-- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/launchpad/blob/main/.github/CONTRIBUTING.md)
+- **License**: [MIT License](https://github.com/stacksjs/launchpad/blob/main/LICENSE.md)
+- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/launchpad/blob/main/https://github.com/stacksjs/contributing)

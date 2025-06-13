@@ -41,7 +41,7 @@ const nav = [
           },
           {
             text: 'Contributing',
-            link: 'https://github.com/stacksjs/stacks/blob/main/.github/CONTRIBUTING.md',
+            link: 'https://github.com/stacksjs/stacks/blob/main/https://github.com/stacksjs/contributing',
           },
         ],
       },
