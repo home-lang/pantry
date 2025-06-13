@@ -11,6 +11,7 @@ import { formatPackageInfo, formatPackageNotFound, getDetailedPackageInfo, packa
 import { Path } from '../src/path'
 import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
 import { create_shim, shim_dir } from '../src/shim'
+import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, searchPackagesByTag } from '../src/tags'
 import { addToPath, isInPath } from '../src/utils'
 // Import package.json for version
 const packageJson = await import('../package.json')
@@ -207,6 +208,73 @@ cli
       process.exit(1)
     }
   })
+
+// Tags command
+cli
+  .command('tags', 'Browse packages by category and tags')
+  .alias('categories')
+  .alias('browse')
+  .option('--list', 'List all available categories')
+  .option('--category <name>', 'Show packages in a specific category')
+  .option('--search <term>', 'Search packages by tag or category')
+  .option('--compact', 'Use compact display format')
+  .option('--no-programs', 'Hide program listings')
+  .option('--no-versions', 'Hide version information')
+  .example('launchpad tags --list')
+  .example('launchpad tags --category "Programming Languages"')
+  .example('launchpad tags --search database')
+  .example('launchpad categories')
+  .action(async (options?: {
+    list?: boolean
+    category?: string
+    search?: string
+    compact?: boolean
+    programs?: boolean
+    versions?: boolean
+  }) => {
+    try {
+      if (options?.list) {
+        // List all categories
+        const categories = getAvailableCategories()
+        const formatted = formatCategoriesList(categories)
+        console.log(formatted)
+        return
+      }
+
+      if (options?.category) {
+        // Show packages in specific category
+        const packages = getPackagesByCategory(options.category)
+        const formatted = formatPackagesByCategory(options.category, packages, {
+          compact: options.compact,
+          showPrograms: options.programs !== false,
+          showVersions: options.versions !== false,
+        })
+        console.log(formatted)
+        return
+      }
+
+      if (options?.search) {
+        // Search packages by tag
+        const packages = searchPackagesByTag(options.search)
+        const formatted = formatTagSearchResults(options.search, packages, {
+          compact: options.compact,
+          groupByCategory: true,
+        })
+        console.log(formatted)
+        return
+      }
+
+      // Default: show categories list
+      const categories = getAvailableCategories()
+      const formatted = formatCategoriesList(categories)
+      console.log(formatted)
+    }
+    catch (error) {
+      console.error('Tags command failed:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // List command
 cli
   .command('list', 'List installed packages')
