@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { arch, platform } from 'node:os'
@@ -6,6 +7,7 @@ import process from 'node:process'
 import { aliases, packages } from 'ts-pkgx'
 import { config } from './config'
 import { Path } from './path'
+import { ProgressBar, Spinner } from './progress'
 
 // Extract all package alias names from ts-pkgx
 export type PackageAlias = keyof typeof aliases
@@ -319,8 +321,61 @@ async function downloadPackage(
 
         const response = await fetch(url)
         if (response.ok) {
-          const buffer = await response.arrayBuffer()
-          await fs.promises.writeFile(file, Buffer.from(buffer))
+          const contentLength = response.headers.get('content-length')
+          const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
+
+          if (!config.verbose && totalBytes > 0) {
+            // Show progress bar for downloads
+            const progressBar = new ProgressBar(totalBytes, {
+              showBytes: true,
+              showSpeed: true,
+              showETA: true,
+            })
+
+            console.log(`📦 Downloading ${domain} v${version}...`)
+
+            const reader = response.body?.getReader()
+            if (reader) {
+              const chunks: Uint8Array[] = []
+              let receivedBytes = 0
+
+              while (true) {
+                const { done, value } = await reader.read()
+                if (done)
+                  break
+
+                if (value) {
+                  chunks.push(value)
+                  receivedBytes += value.length
+                  progressBar.update(receivedBytes, totalBytes)
+                }
+              }
+
+              progressBar.complete()
+
+              // Combine all chunks into a single buffer
+              const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+              const buffer = new Uint8Array(totalLength)
+              let offset = 0
+              for (const chunk of chunks) {
+                buffer.set(chunk, offset)
+                offset += chunk.length
+              }
+
+              await fs.promises.writeFile(file, buffer)
+            }
+            else {
+              // Fallback for when reader is not available
+              const buffer = await response.arrayBuffer()
+              await fs.promises.writeFile(file, Buffer.from(buffer))
+            }
+          }
+          else {
+            // Fallback for when content-length is not available or verbose mode
+            const buffer = await response.arrayBuffer()
+            await fs.promises.writeFile(file, Buffer.from(buffer))
+          }
+
           downloadUrl = url
           archiveFile = file
           break
@@ -347,6 +402,12 @@ async function downloadPackage(
 
     const isXz = archiveFile.endsWith('.tar.xz')
 
+    // Show spinner during extraction
+    const extractSpinner = new Spinner()
+    if (!config.verbose) {
+      extractSpinner.start(`🔧 Extracting ${domain} v${version}...`)
+    }
+
     // Use Bun's spawn directly to avoid shell dependency issues
     const tarPath = process.platform === 'win32' ? 'tar' : '/usr/bin/tar'
     const tarArgs = isXz
@@ -359,6 +420,11 @@ async function downloadPackage(
     })
 
     const result = await proc.exited
+
+    if (!config.verbose) {
+      extractSpinner.stop()
+    }
+
     if (result !== 0) {
       const stderr = await new Response(proc.stderr).text()
       throw new Error(`Failed to extract archive: ${stderr}`)
@@ -372,6 +438,12 @@ async function downloadPackage(
     const installedFiles: string[] = []
     const binDir = path.join(installPath, 'bin')
     await fs.promises.mkdir(binDir, { recursive: true })
+
+    // Show spinner during installation
+    const installSpinner = new Spinner()
+    if (!config.verbose) {
+      installSpinner.start(`⚡ Installing ${domain} v${version}...`)
+    }
 
     // Look for executables in common locations
     const searchDirs = [
@@ -414,6 +486,10 @@ async function downloadPackage(
       }
     }
 
+    if (!config.verbose) {
+      installSpinner.stop(`✅ Successfully installed ${domain} v${version}`)
+    }
+
     // Clean up temp directory
     await fs.promises.rm(tempDir, { recursive: true, force: true })
 
@@ -450,6 +526,9 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     console.warn(`Installing packages: ${packageList.join(', ')}`)
     console.warn(`Install path: ${installPath}`)
   }
+  else if (packageList.length > 1) {
+    console.log(`🚀 Installing ${packageList.length} packages...`)
+  }
 
   const os = getPlatform()
   const architecture = getArchitecture()
@@ -460,10 +539,14 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
 
   const allInstalledFiles: string[] = []
 
-  for (const pkg of packageList) {
+  for (let i = 0; i < packageList.length; i++) {
+    const pkg = packageList[i]
     try {
       if (config.verbose) {
         console.warn(`Processing package: ${pkg}`)
+      }
+      else if (packageList.length > 1) {
+        console.log(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
       }
 
       // Parse package name and version
@@ -504,6 +587,16 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
 
   if (config.verbose) {
     console.warn(`Installation complete. Installed ${allInstalledFiles.length} files.`)
+  }
+  else if (packageList.length > 0) {
+    const packageCount = packageList.length
+    const fileCount = allInstalledFiles.length
+    if (packageCount === 1) {
+      console.log(`🎉 Installation complete!`)
+    }
+    else {
+      console.log(`🎉 Successfully installed ${packageCount} packages (${fileCount} files)`)
+    }
   }
 
   return allInstalledFiles
