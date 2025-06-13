@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path, { join } from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
