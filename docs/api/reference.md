@@ -10,6 +10,53 @@ npm install @stacksjs/launchpad
 
 ## Core Modules
 
+### Cache Management Module
+
+```typescript
+import { cleanSystem, clearCache } from '@stacksjs/launchpad'
+
+/**
+ * Clear all cached packages and downloads
+ * @param options Configuration options for cache clearing
+ * @param options.dryRun Whether to preview what would be cleared without actually clearing
+ * @param options.force Skip confirmation prompts
+ * @param options.verbose Enable verbose output
+ * @returns Promise resolving to cache clearing results
+ */
+async function clearCache(options?: {
+  dryRun?: boolean
+  force?: boolean
+  verbose?: boolean
+}): Promise<{
+  success: boolean
+  freedSpace: number
+  removedFiles: number
+  errors?: string[]
+}>
+
+/**
+ * Perform comprehensive cleanup of all Launchpad-managed resources
+ * @param options Configuration options for system cleanup
+ * @param options.dryRun Whether to preview what would be removed without actually removing
+ * @param options.force Skip confirmation prompts
+ * @param options.keepCache Keep cached downloads (only remove installed packages)
+ * @param options.verbose Enable verbose output during cleanup
+ * @returns Promise resolving to cleanup results
+ */
+async function cleanSystem(options?: {
+  dryRun?: boolean
+  force?: boolean
+  keepCache?: boolean
+  verbose?: boolean
+}): Promise<{
+  success: boolean
+  freedSpace: number
+  removedFiles: number
+  removedPackages: string[]
+  errors?: string[]
+}>
+```
+
 ### Installation Module
 
 ```typescript
@@ -278,6 +325,32 @@ interface Installation {
 
 ## Usage Examples
 
+### Cache Management
+
+```typescript
+import { cleanSystem, clearCache } from '@stacksjs/launchpad'
+
+// Clear cache with preview
+const cacheResult = await clearCache({ dryRun: true })
+console.log(`Would free ${cacheResult.freedSpace} bytes and remove ${cacheResult.removedFiles} files`)
+
+// Clear cache without confirmation
+await clearCache({ force: true, verbose: true })
+
+// Complete system cleanup with cache preservation
+const cleanResult = await cleanSystem({
+  force: true,
+  keepCache: true,
+  verbose: true
+})
+console.log(`Removed ${cleanResult.removedPackages.length} packages`)
+console.log(`Freed ${cleanResult.freedSpace} bytes`)
+
+// Preview complete cleanup
+const previewResult = await cleanSystem({ dryRun: true })
+console.log('Would remove packages:', previewResult.removedPackages)
+```
+
 ### Basic Package Installation
 
 ```typescript
@@ -393,6 +466,53 @@ catch (error) {
   console.error('Installation failed:', error.message)
 }
 ```
+
+## CLI Commands
+
+Launchpad provides several CLI commands for cache and system management:
+
+### Cache Management Commands
+
+```bash
+# Clear all cached packages and downloads
+launchpad cache:clear [options]
+launchpad cache:clean [options]  # Alias for cache:clear
+
+# Options:
+#   --dry-run    Show what would be cleared without actually clearing
+#   --force      Skip confirmation prompts
+#   --verbose    Enable verbose output
+
+# Examples:
+launchpad cache:clear --dry-run     # Preview cache cleanup
+launchpad cache:clear --force       # Clear without confirmation
+launchpad cache:clean --verbose     # Clear with detailed output
+```
+
+### System Cleanup Commands
+
+```bash
+# Remove all Launchpad-installed packages and environments
+launchpad clean [options]
+
+# Options:
+#   --dry-run      Show what would be removed without actually removing
+#   --force        Skip confirmation prompts
+#   --keep-cache   Keep cached downloads (only remove installed packages)
+#   --verbose      Enable verbose output during cleanup
+
+# Examples:
+launchpad clean --dry-run           # Preview complete cleanup
+launchpad clean --force             # Complete system reset
+launchpad clean --keep-cache        # Remove packages but preserve cache
+```
+
+### Command Safety Features
+
+- **Confirmation Required:** Both commands require `--force` for actual operations
+- **Dry-Run Mode:** Preview exactly what will be affected with `--dry-run`
+- **Targeted Cleanup:** Only removes Launchpad-specific directories
+- **Graceful Error Handling:** Continues operation even if some files can't be removed
 
 ## TypeScript Support
 

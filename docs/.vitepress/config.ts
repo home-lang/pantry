@@ -65,6 +65,8 @@ const sidebar = [
     text: 'Features',
     items: [
       { text: 'Package Management', link: '/features/package-management' },
+      { text: 'Environment Management', link: '/features/environment-management' },
+      { text: 'Cache Management', link: '/features/cache-management' },
       { text: 'Shim Creation', link: '/features/shim-creation' },
       { text: 'Bun Installation', link: '/features/bun-installation' },
       { text: 'Zsh Installation', link: '/features/zsh-installation' },
@@ -77,6 +79,7 @@ const sidebar = [
       { text: 'Custom Shims', link: '/advanced/custom-shims' },
       { text: 'Cross-platform Compatibility', link: '/advanced/cross-platform' },
       { text: 'Performance Optimization', link: '/advanced/performance' },
+      { text: 'Cache Optimization', link: '/advanced/cache-optimization' },
     ],
   },
   {

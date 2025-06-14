@@ -684,6 +684,304 @@ cli
     }
   })
 
+// Cache management command
+cli
+  .command('cache:clear', 'Clear all cached packages and downloads')
+  .alias('cache:clean')
+  .option('--verbose', 'Enable verbose output')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--dry-run', 'Show what would be cleared without actually clearing it')
+  .example('launchpad cache:clear')
+  .example('launchpad cache:clean --force')
+  .action(async (options?: { verbose?: boolean, force?: boolean, dryRun?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    const isDryRun = options?.dryRun || false
+
+    try {
+      const os = await import('node:os')
+      const homeDir = os.homedir()
+      const cacheDir = path.join(homeDir, '.cache', 'launchpad')
+      const bunCacheDir = path.join(homeDir, '.cache', 'launchpad', 'binaries', 'bun')
+      const packageCacheDir = path.join(homeDir, '.cache', 'launchpad', 'binaries', 'packages')
+
+      if (isDryRun) {
+        console.log('🔍 DRY RUN MODE - Nothing will actually be cleared')
+      }
+
+      console.log(`${isDryRun ? 'Would clear' : 'Clearing'} Launchpad cache...`)
+
+      if (!options?.force && !isDryRun) {
+        console.log('⚠️  This will remove all cached packages and downloads')
+        console.log('Use --force to skip confirmation or --dry-run to preview')
+        process.exit(0)
+      }
+
+      let totalSize = 0
+      let fileCount = 0
+
+      // Calculate cache size and file count
+      const calculateCacheStats = (dir: string) => {
+        if (!fs.existsSync(dir))
+          return
+
+        const files = fs.readdirSync(dir, { recursive: true, withFileTypes: true })
+        for (const file of files) {
+          if (file.isFile()) {
+            const filePath = path.join(file.path || dir, file.name)
+            try {
+              const stats = fs.statSync(filePath)
+              totalSize += stats.size
+              fileCount++
+            }
+            catch {
+              // Ignore files we can't stat
+            }
+          }
+        }
+      }
+
+      if (fs.existsSync(cacheDir)) {
+        calculateCacheStats(cacheDir)
+      }
+
+      const formatSize = (bytes: number): string => {
+        const units = ['B', 'KB', 'MB', 'GB']
+        let size = bytes
+        let unitIndex = 0
+        while (size >= 1024 && unitIndex < units.length - 1) {
+          size /= 1024
+          unitIndex++
+        }
+        return `${size.toFixed(1)} ${units[unitIndex]}`
+      }
+
+      if (isDryRun) {
+        if (fs.existsSync(cacheDir)) {
+          console.log(`📊 Cache statistics:`)
+          console.log(`   • Total size: ${formatSize(totalSize)}`)
+          console.log(`   • File count: ${fileCount}`)
+          console.log(`   • Cache directory: ${cacheDir}`)
+          console.log('')
+          console.log('Would remove:')
+          if (fs.existsSync(bunCacheDir)) {
+            console.log(`   • Bun cache: ${bunCacheDir}`)
+          }
+          if (fs.existsSync(packageCacheDir)) {
+            console.log(`   • Package cache: ${packageCacheDir}`)
+          }
+        }
+        else {
+          console.log('📭 No cache found - nothing to clear')
+        }
+        return
+      }
+
+      // Actually clear the cache
+      if (fs.existsSync(cacheDir)) {
+        console.log(`📊 Clearing ${formatSize(totalSize)} of cached data (${fileCount} files)...`)
+
+        fs.rmSync(cacheDir, { recursive: true, force: true })
+
+        console.log('✅ Cache cleared successfully!')
+        console.log(`   • Freed ${formatSize(totalSize)} of disk space`)
+        console.log(`   • Removed ${fileCount} cached files`)
+      }
+      else {
+        console.log('📭 No cache found - nothing to clear')
+      }
+    }
+    catch (error) {
+      console.error('Failed to clear cache:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Clean command - remove all Launchpad-installed packages
+cli
+  .command('clean', 'Remove all Launchpad-installed packages and environments')
+  .option('--verbose', 'Enable verbose output')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--dry-run', 'Show what would be removed without actually removing it')
+  .option('--keep-cache', 'Keep cached downloads (only remove installed packages)')
+  .example('launchpad clean --dry-run')
+  .example('launchpad clean --force')
+  .example('launchpad clean --keep-cache')
+  .action(async (options?: { verbose?: boolean, force?: boolean, dryRun?: boolean, keepCache?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    const isDryRun = options?.dryRun || false
+
+    try {
+      if (isDryRun) {
+        console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
+      }
+
+      console.log(`${isDryRun ? 'Would perform' : 'Performing'} complete cleanup...`)
+
+      if (!options?.force && !isDryRun) {
+        console.log('⚠️  This will remove ALL Launchpad-installed packages and environments')
+        console.log('⚠️  Only removes packages from the Launchpad-specific directories:')
+        console.log(`   • ${path.join(install_prefix().string, 'pkgs')} (Launchpad packages only)`)
+        console.log(`   • ~/.local/share/launchpad/ (project environments)`)
+        if (!options?.keepCache) {
+          console.log(`   • ~/.cache/launchpad/ (cached downloads)`)
+        }
+        console.log('')
+        console.log('⚠️  This action cannot be undone!')
+        console.log('')
+        console.log('Use --force to skip confirmation or --dry-run to preview')
+        process.exit(0)
+      }
+
+      const os = await import('node:os')
+      const homeDir = os.homedir()
+
+      // Directories to clean - ONLY Launchpad-specific directories
+      const installPrefix = install_prefix().string
+      const localShareDir = path.join(homeDir, '.local', 'share', 'launchpad')
+      const cacheDir = path.join(homeDir, '.cache', 'launchpad')
+
+      // Only clean the 'pkgs' subdirectory within install prefix to avoid removing other tools
+      const dirsToCheck = [
+        { path: path.join(installPrefix, 'pkgs'), name: 'Launchpad packages' },
+        { path: localShareDir, name: 'Launchpad environments' },
+      ]
+
+      if (!options?.keepCache) {
+        dirsToCheck.push({ path: cacheDir, name: 'Cache directory' })
+      }
+
+      let totalSize = 0
+      let totalFiles = 0
+      const existingDirs: { path: string, name: string, size: number, files: number }[] = []
+
+      // Calculate what would be removed
+      for (const dir of dirsToCheck) {
+        if (fs.existsSync(dir.path)) {
+          let dirSize = 0
+          let dirFiles = 0
+
+          try {
+            const files = fs.readdirSync(dir.path, { recursive: true, withFileTypes: true })
+            for (const file of files) {
+              if (file.isFile()) {
+                const filePath = path.join(file.path || dir.path, file.name)
+                try {
+                  const stats = fs.statSync(filePath)
+                  dirSize += stats.size
+                  dirFiles++
+                }
+                catch {
+                  // Ignore files we can't stat
+                }
+              }
+            }
+          }
+          catch {
+            // Ignore directories we can't read
+          }
+
+          existingDirs.push({ path: dir.path, name: dir.name, size: dirSize, files: dirFiles })
+          totalSize += dirSize
+          totalFiles += dirFiles
+        }
+      }
+
+      const formatSize = (bytes: number): string => {
+        const units = ['B', 'KB', 'MB', 'GB']
+        let size = bytes
+        let unitIndex = 0
+        while (size >= 1024 && unitIndex < units.length - 1) {
+          size /= 1024
+          unitIndex++
+        }
+        return `${size.toFixed(1)} ${units[unitIndex]}`
+      }
+
+      if (isDryRun) {
+        if (existingDirs.length > 0) {
+          console.log(`📊 Cleanup statistics:`)
+          console.log(`   • Total size: ${formatSize(totalSize)}`)
+          console.log(`   • Total files: ${totalFiles}`)
+          console.log('')
+          console.log('Would remove:')
+          existingDirs.forEach((dir) => {
+            console.log(`   • ${dir.name}: ${dir.path} (${formatSize(dir.size)}, ${dir.files} files)`)
+          })
+
+          // Show specific packages that would be removed
+          const pkgsDir = path.join(install_prefix().string, 'pkgs')
+          if (fs.existsSync(pkgsDir)) {
+            try {
+              const packages = fs.readdirSync(pkgsDir, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
+                .map(dirent => dirent.name)
+
+              if (packages.length > 0) {
+                console.log('')
+                console.log('📦 Launchpad-installed packages that would be removed:')
+                packages.forEach((pkg) => {
+                  console.log(`   • ${pkg}`)
+                })
+              }
+            }
+            catch {
+              // Ignore errors reading packages directory
+            }
+          }
+        }
+        else {
+          console.log('📭 Nothing found to clean')
+        }
+        return
+      }
+
+      // Actually perform cleanup
+      if (existingDirs.length > 0) {
+        console.log(`📊 Cleaning ${formatSize(totalSize)} of data (${totalFiles} files)...`)
+        console.log('')
+
+        let removedDirs = 0
+        for (const dir of existingDirs) {
+          try {
+            console.log(`🗑️  Removing ${dir.name}...`)
+            fs.rmSync(dir.path, { recursive: true, force: true })
+            removedDirs++
+            if (options?.verbose) {
+              console.log(`   ✅ Removed ${dir.path} (${formatSize(dir.size)}, ${dir.files} files)`)
+            }
+          }
+          catch (error) {
+            console.error(`   ❌ Failed to remove ${dir.path}:`, error instanceof Error ? error.message : String(error))
+          }
+        }
+
+        console.log('')
+        console.log('✅ Cleanup completed!')
+        console.log(`   • Removed ${removedDirs}/${existingDirs.length} directories`)
+        console.log(`   • Freed ${formatSize(totalSize)} of disk space`)
+        console.log(`   • Removed ${totalFiles} files`)
+
+        if (options?.keepCache) {
+          console.log('')
+          console.log('💡 Cache was preserved. Use `launchpad cache:clear` to remove cached downloads.')
+        }
+      }
+      else {
+        console.log('📭 Nothing found to clean')
+      }
+    }
+    catch (error) {
+      console.error('Failed to perform cleanup:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // Outdated command
 cli
   .command('outdated', 'Check for outdated packages')
