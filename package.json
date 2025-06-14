@@ -29,7 +29,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "ts-pkgx": "^0.2.41"
+    "ts-pkgx": "^0.2.50"
   },
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
