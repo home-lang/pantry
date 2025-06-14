@@ -66,7 +66,6 @@ const sidebar = [
     items: [
       { text: 'Package Management', link: '/features/package-management' },
       { text: 'Shim Creation', link: '/features/shim-creation' },
-      { text: 'pkgx Management', link: '/features/pkgx-management' },
       { text: 'Bun Installation', link: '/features/bun-installation' },
       { text: 'Zsh Installation', link: '/features/zsh-installation' },
       { text: 'PATH Management', link: '/features/path-management' },
