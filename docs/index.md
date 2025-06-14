@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "Launchpad"
-  text: "Modern Package Manager"
+  text: "Modern Package Management"
   tagline: "Fast, isolated, and clean package management that works alongside your existing tools."
   image: /images/logo-white.png
   actions:
@@ -25,9 +25,9 @@ features:
   - title: "Executable Shims"
     icon: "🔄"
     details: "Create lightweight executable scripts that automatically run the correct versions of your tools with full environment context."
-  - title: "pkgx Integration"
+  - title: "Pantry-Powered"
     icon: "🛠️"
-    details: "Built on top of pkgx for fast package resolution and execution. Install and manage pkgx itself without needing other package managers."
+    details: "Built on top of pkgx's Pantry for fast package installations."
   - title: "Runtime Installation"
     icon: "🚀"
     details: "Direct installation of development runtimes like Bun and Node.js from official sources with automatic platform detection."

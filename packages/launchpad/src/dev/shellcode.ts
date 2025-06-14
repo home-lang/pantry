@@ -82,7 +82,7 @@ function findDevCommand(): string {
     })
 
     if (bunPath) {
-      // Use the found stable bun binary
+      // Use the found stable bun binary - ensure proper quoting for shell execution
       return `"${bunPath}" "${dev_cmd}"`
     }
     else {
@@ -309,7 +309,7 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
       fi
     fi
 
-    # If packages are already installed, do fast activation
+    # If packages are already installed, check if they match current dependencies
     if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir" ]; then
       # Check if there are actual binaries installed, not just empty directories
       local has_binaries=false
@@ -319,8 +319,39 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
         has_binaries=true
       fi
 
-      if [ "$has_binaries" = true ]; then
-        # Fast path: packages already installed, just set up environment
+      # Check if cached environment matches current dependencies
+      local deps_match=true
+      if [ "$has_binaries" = true ] && [ -f "$deps_file" ]; then
+        # Create a simple hash of the dependency file content for comparison
+        local current_deps_hash=""
+        if command -v bun >/dev/null 2>&1; then
+          current_deps_hash=$(cat "$deps_file" | bun -e "
+const input = await Bun.stdin.text();
+const hash = Bun.hash(input);
+console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
+" 2>/dev/null)
+        fi
+
+        # Fallback hash method if bun is not available
+        if [ -z "$current_deps_hash" ]; then
+          current_deps_hash=$(cat "$deps_file" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___' | cut -c1-8)
+        fi
+
+        # Check if we have a stored hash for this environment
+        local stored_hash=""
+        if [ -f "$env_cache_dir/.deps_hash" ]; then
+          stored_hash=$(cat "$env_cache_dir/.deps_hash" 2>/dev/null)
+        fi
+
+        # If hashes don't match, we need to regenerate
+        if [ "$current_deps_hash" != "$stored_hash" ]; then
+          deps_match=false
+          echo "🔄 Dependencies changed, updating environment..." >&2
+        fi
+      fi
+
+      if [ "$has_binaries" = true ] && [ "$deps_match" = true ]; then
+        # Fast path: packages already installed and match current dependencies
         _launchpad_fast_activate "$PWD" "$env_cache_dir"
       else
         # Cache directory exists but no binaries - treat as slow path
@@ -336,8 +367,8 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
           # Try to run launchpad dev:dump with proper error handling
           local launchpad_output=""
           local exit_code=0
-          # Capture both stdout and stderr, check exit code
-          launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
+          # Capture only stdout, let stderr (progress bars) pass through to user
+          launchpad_output=$(eval "${dev_cmd} dev:dump \\"$PWD\\"") || exit_code=$?
 
           if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
             # If launchpad succeeds, extract just the shell script part using system sed
@@ -350,36 +381,19 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
           echo "    Try running: launchpad dev:dump" >&2
             fi
           else
-            # If launchpad fails, show cleaner error messages
+            # If launchpad fails, show generic error message
             local project_name=$(basename "$PWD")
-            if [[ "$launchpad_output" == *"No such file or directory"* ]]; then
-              echo "⚠️  Development tools not available for $project_name" >&2
-              echo "    Install bun: curl -fsSL https://bun.sh/install | bash" >&2
-            elif [[ "$launchpad_output" == *"Bun not found"* ]] || [[ "$launchpad_output" == *"No launchpad or dev command found"* ]]; then
-              # Extract the actual error message
-              echo "$launchpad_output" >&2
-            else
-              echo "⚠️  Cannot set up development environment for $project_name" >&2
-              if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
-                # Only show error details if they're not too verbose
-                local error_lines=$(echo "$launchpad_output" | wc -l | tr -d ' ')
-                if [ "$error_lines" -le 3 ]; then
-                  echo "    $launchpad_output" >&2
-                else
-                  echo "    (Run 'launchpad dev:dump' for details)" >&2
-                fi
-              fi
-            fi
-
+            echo "⚠️  Cannot set up development environment for $project_name" >&2
             echo "💡 To fix this:" >&2
             echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
             echo "   • Or compile launchpad globally: bun run compile" >&2
+            echo "   • Or run manually: launchpad dev:dump" >&2
           fi
         else
           # For other dev commands, try with basic error handling
           local dev_output=""
           local dev_exit_code=0
-          dev_output=$(${dev_cmd} dump 2>&1) || dev_exit_code=$?
+          dev_output=$(eval "${dev_cmd} dump" 2>&1) || dev_exit_code=$?
 
           if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
             eval "$dev_output"
@@ -484,14 +498,14 @@ dev() {
     fi;;
   ''|on)
     if [ "$2" ]; then
-      "${dev_cmd}" "$@"
+      eval "${dev_cmd} \\"$@\\""
     elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
         # Try to run launchpad dev:dump with proper error handling
         local launchpad_output=""
         local exit_code=0
-        # Capture both stdout and stderr, check exit code
-        launchpad_output=$(${dev_cmd} dev:dump "$PWD" 2>&1) || exit_code=$?
+        # Capture only stdout, let stderr (progress bars) pass through to user
+        launchpad_output=$(eval "${dev_cmd} dev:dump \\"$PWD\\"") || exit_code=$?
 
         if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
           # If launchpad succeeds, extract just the shell script part using system sed
@@ -504,36 +518,19 @@ dev() {
             echo "    Try running: launchpad dev:dump" >&2
           fi
         else
-          # If launchpad fails, show cleaner error messages
+          # If launchpad fails, show generic error message
           local project_name=$(basename "$PWD")
-          if [[ "$launchpad_output" == *"No such file or directory"* ]]; then
-            echo "⚠️  Development tools not available for $project_name" >&2
-            echo "    Install bun: curl -fsSL https://bun.sh/install | bash" >&2
-          elif [[ "$launchpad_output" == *"Bun not found"* ]] || [[ "$launchpad_output" == *"No launchpad or dev command found"* ]]; then
-            # Extract the actual error message
-            echo "$launchpad_output" >&2
-          else
-            echo "⚠️  Cannot set up development environment for $project_name" >&2
-            if [ "$exit_code" -ne 0 ] && [ -n "$launchpad_output" ]; then
-              # Only show error details if they're not too verbose
-              local error_lines=$(echo "$launchpad_output" | wc -l | tr -d ' ')
-              if [ "$error_lines" -le 3 ]; then
-                echo "    $launchpad_output" >&2
-              else
-                echo "    (Run 'launchpad dev:dump' for details)" >&2
-              fi
-            fi
-          fi
-
+          echo "⚠️  Cannot set up development environment for $project_name" >&2
           echo "💡 To fix this:" >&2
           echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
           echo "   • Or compile launchpad globally: bun run compile" >&2
+          echo "   • Or run manually: launchpad dev:dump" >&2
         fi
       else
         # For other dev commands, try with basic error handling
         local dev_output=""
         local dev_exit_code=0
-        dev_output=$(${dev_cmd} dump 2>&1) || dev_exit_code=$?
+        dev_output=$(eval "${dev_cmd} dump" 2>&1) || dev_exit_code=$?
 
         if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
           eval "$dev_output"
@@ -549,8 +546,8 @@ dev() {
     fi;;
   *)
     # Pass all other commands directly to dev/launchpad
-    "${dev_cmd}" "$@";;
-  esac
+        eval "${dev_cmd} \\"$@\\"";;
+    esac
 }
 
 if [ -n "$ZSH_VERSION" ] && [ "$(emulate)" = "zsh" ]; then

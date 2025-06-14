@@ -35,6 +35,10 @@ export const DISTRIBUTION_CONFIG = {
   // baseUrl: 'https://dist.launchpad.dev',
 }
 
+// Binary cache configuration
+const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
+const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'packages')
+
 /**
  * Get the installation prefix
  */
@@ -285,6 +289,53 @@ export function getPackageInfo(packageName: string): {
 }
 
 /**
+ * Get cached package archive path for a specific domain and version
+ */
+function getCachedPackagePath(domain: string, version: string, format: string): string | null {
+  const cacheKey = `${domain}-${version}`
+  const cachedArchivePath = path.join(BINARY_CACHE_DIR, cacheKey, `package.${format}`)
+
+  if (fs.existsSync(cachedArchivePath)) {
+    if (config.verbose) {
+      console.warn(`Found cached package: ${cachedArchivePath}`)
+    }
+    return cachedArchivePath
+  }
+
+  return null
+}
+
+/**
+ * Save package archive to cache
+ */
+function savePackageToCache(domain: string, version: string, format: string, sourcePath: string): string {
+  const cacheKey = `${domain}-${version}`
+  const cachePackageDir = path.join(BINARY_CACHE_DIR, cacheKey)
+  const cachedArchivePath = path.join(cachePackageDir, `package.${format}`)
+
+  try {
+    // Create cache directory
+    fs.mkdirSync(cachePackageDir, { recursive: true })
+
+    // Copy the downloaded file to cache
+    fs.copyFileSync(sourcePath, cachedArchivePath)
+
+    if (config.verbose) {
+      console.warn(`Cached package to: ${cachedArchivePath}`)
+    }
+
+    return cachedArchivePath
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to cache package: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    // Return original path if caching fails
+    return sourcePath
+  }
+}
+
+/**
  * Download and extract package
  */
 async function downloadPackage(
@@ -300,12 +351,34 @@ async function downloadPackage(
     // Create temp directory
     await fs.promises.mkdir(tempDir, { recursive: true })
 
-    // Try different archive formats
+    // Try different archive formats, checking cache first
     const formats = ['tar.xz', 'tar.gz']
     let downloadUrl: string | null = null
     let archiveFile: string | null = null
+    let usedCache = false
 
     for (const format of formats) {
+      // Check if we have a cached version first
+      const cachedArchivePath = getCachedPackagePath(domain, version, format)
+
+      if (cachedArchivePath) {
+        // Use cached version
+        if (config.verbose) {
+          console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
+        }
+        else {
+          console.log(`📦 Using cached ${domain} v${version}...`)
+        }
+
+        // Copy cached file to temp directory
+        archiveFile = path.join(tempDir, `package.${format}`)
+        fs.copyFileSync(cachedArchivePath, archiveFile)
+        downloadUrl = `cached:${cachedArchivePath}` // Mark as cached
+        usedCache = true
+        break
+      }
+
+      // If not cached, try to download
       const url = `${DISTRIBUTION_CONFIG.baseUrl}/${domain}/${os}/${arch}/v${version}.${format}`
       const file = path.join(tempDir, `package.${format}`)
 
@@ -376,6 +449,9 @@ async function downloadPackage(
             await fs.promises.writeFile(file, Buffer.from(buffer))
           }
 
+          // Cache the downloaded file for future use
+          savePackageToCache(domain, version, format, file)
+
           downloadUrl = url
           archiveFile = file
           break
@@ -392,7 +468,7 @@ async function downloadPackage(
       throw new Error(`Failed to download package ${domain} v${version}`)
     }
 
-    if (config.verbose) {
+    if (config.verbose && !usedCache) {
       console.warn(`Downloaded: ${downloadUrl}`)
     }
 

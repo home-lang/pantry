@@ -369,7 +369,38 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     pkgs.push({ project: 'nodejs.org', constraint })
   }
 
-  return { pkgs, env }
+  // Deduplicate packages, preferring explicit constraints over inferred ones
+  const packageMap = new Map<string, PackageRequirement>()
+
+  for (const pkg of pkgs) {
+    const existing = packageMap.get(pkg.project)
+    if (!existing) {
+      packageMap.set(pkg.project, pkg)
+    }
+    else {
+      // Prefer more specific constraints over generic ones
+      // Priority: explicit version > range constraints > wildcard
+      const existingConstraint = existing.constraint.toString()
+      const newConstraint = pkg.constraint.toString()
+
+      // If new constraint is a specific version (no wildcards or ranges), prefer it
+      if (/^\d+\.\d+(?:\.\d+)?$/.test(newConstraint) && !/^\d+\.\d+(?:\.\d+)?$/.test(existingConstraint)) {
+        packageMap.set(pkg.project, pkg)
+      }
+      // If existing is wildcard and new is not, prefer new
+      else if (existingConstraint === '*' && newConstraint !== '*') {
+        packageMap.set(pkg.project, pkg)
+      }
+      // If existing is a range (>=, ^, ~) and new is specific version, prefer new
+      else if (/^[><=^~]/.test(existingConstraint) && /^\d+\.\d+(?:\.\d+)?$/.test(newConstraint)) {
+        packageMap.set(pkg.project, pkg)
+      }
+    }
+  }
+
+  const deduplicatedPkgs = Array.from(packageMap.values())
+
+  return { pkgs: deduplicatedPkgs, env }
 
   // ---------------------------------------------- parsers
   async function deno(path: SimplePath) {

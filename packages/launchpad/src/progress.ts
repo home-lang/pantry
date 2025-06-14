@@ -78,55 +78,66 @@ export class ProgressBar {
   complete(): void {
     this.state.current = this.state.total
     this.render()
-    process.stdout.write('\n')
+    // Add extra newline to separate from next output
+    process.stderr.write('\n')
   }
 
   private render(): void {
     const { current, total } = this.state
-    const { width, showPercentage, showSpeed, showETA, showBytes } = this.options
+    const { showPercentage, showSpeed, showETA, showBytes } = this.options
 
     // Calculate percentage
     const percentage = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0
-    const completed = Math.max(0, Math.min(width, Math.floor((percentage / 100) * width)))
-    const remaining = Math.max(0, width - completed)
 
-    // Create progress bar
-    const bar = '█'.repeat(completed) + '░'.repeat(remaining)
+    // Get terminal width, fallback to 80 if not available
+    const terminalWidth = process.stderr.columns || 80
 
-    // Format components
-    const parts: string[] = []
-
-    // Add progress bar with brackets
-    parts.push(`[${bar}]`)
+    // Format stats components
+    const statsParts: string[] = []
 
     // Add percentage
     if (showPercentage) {
-      parts.push(`${percentage.toFixed(1)}%`)
+      statsParts.push(`${percentage.toFixed(1)}%`)
     }
 
     // Add bytes information
     if (showBytes && total > 0) {
-      parts.push(`${formatBytes(current)}/${formatBytes(total)}`)
+      statsParts.push(`${formatBytes(current)}/${formatBytes(total)}`)
     }
 
     // Add speed
     if (showSpeed && this.state.speed > 0) {
-      parts.push(`${formatBytes(this.state.speed)}/s`)
+      statsParts.push(`${formatBytes(this.state.speed)}/s`)
     }
 
     // Add ETA
     if (showETA && this.state.eta > 0 && this.state.eta < Infinity) {
-      parts.push(`ETA: ${formatTime(this.state.eta)}`)
+      statsParts.push(`ETA: ${formatTime(this.state.eta)}`)
     }
 
-    const line = parts.join(' ')
+    const statsText = statsParts.length > 0 ? ` ${statsParts.join(' ')}` : ''
+
+    // Calculate available width for progress bar
+    // Reserve space for brackets [  ] and stats text
+    const reservedWidth = 2 + statsText.length
+    const barWidth = Math.max(10, terminalWidth - reservedWidth)
+
+    const completed = Math.max(0, Math.min(barWidth, Math.floor((percentage / 100) * barWidth)))
+    const remaining = Math.max(0, barWidth - completed)
+
+    // Create progress bar
+    const bar = '█'.repeat(completed) + '░'.repeat(remaining)
+
+    // Combine everything on one line
+    const fullDisplay = `[${bar}]${statsText}`
 
     // Clear previous line and write new one
     if (this.lastLine) {
-      process.stdout.write(`\r${' '.repeat(this.lastLine.length)}\r`)
+      process.stderr.write(`\r${' '.repeat(this.lastLine.length)}\r`)
     }
-    process.stdout.write(line)
-    this.lastLine = line
+
+    process.stderr.write(fullDisplay)
+    this.lastLine = fullDisplay
   }
 }
 
@@ -175,7 +186,7 @@ export class Spinner {
   start(message = 'Loading...'): void {
     this.message = message
     this.interval = setInterval(() => {
-      process.stdout.write(`\r${this.frames[this.currentFrame]} ${this.message}`)
+      process.stderr.write(`\r${this.frames[this.currentFrame]} ${this.message}`)
       this.currentFrame = (this.currentFrame + 1) % this.frames.length
     }, 100)
   }
@@ -187,7 +198,7 @@ export class Spinner {
     }
 
     // Clear the line
-    process.stdout.write(`\r${' '.repeat(this.message.length + 2)}\r`)
+    process.stderr.write(`\r${' '.repeat(this.message.length + 2)}\r`)
 
     if (finalMessage) {
       console.log(finalMessage)

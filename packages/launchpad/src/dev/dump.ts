@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -58,7 +59,9 @@ async function installPackagesDirectly(packages: Array<{ project: string, versio
 
   for (const pkg of packages) {
     try {
-      console.error(`🔄 Installing ${pkg.project}@${pkg.version} (direct installation)...`)
+      if (config.verbose) {
+        console.log(`🔄 Installing ${pkg.project}@${pkg.version} (direct installation)...`)
+      }
 
       // Use our new direct installation system
       const packageSpec = pkg.version ? `${pkg.project}@${pkg.version}` : pkg.project
@@ -66,7 +69,34 @@ async function installPackagesDirectly(packages: Array<{ project: string, versio
 
       if (installedFiles.length > 0) {
         successful.push(`${pkg.project}@${pkg.version}`)
-        console.error(`✅ Installed ${pkg.project}@${pkg.version}`)
+
+        // Verify the binary is working (especially important for bun)
+        if (pkg.project === 'bun.sh' && installedFiles.length > 0) {
+          try {
+            // Give the binary a moment to be fully ready
+            await new Promise(resolve => setTimeout(resolve, 25))
+
+            // Test that the binary is executable and responds
+            const bunPath = installedFiles[0]
+            const proc = Bun.spawn([bunPath, '--version'], {
+              stdio: ['ignore', 'pipe', 'pipe'],
+            })
+
+            const result = await proc.exited
+            if (result === 0) {
+              if (config.verbose) {
+                console.log(`✅ Verified ${pkg.project}@${pkg.version} is working`)
+              }
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.log(`⚠️  Warning: Could not verify ${pkg.project} binary: ${error}`)
+            }
+          }
+        }
+
+        console.log(`✅ Installed ${pkg.project}@${pkg.version}`)
       }
       else {
         const suggestion = packageSuggestions[pkg.project]
@@ -121,7 +151,6 @@ export default async function (
   const pkgspecs = snuff.pkgs.map(pkg => `+${pkg.project}@${convertVersionConstraint(pkg.constraint.toString())}`)
 
   if (opts.dryrun) {
-    // eslint-disable-next-line no-console
     console.log(pkgspecs.join(' '))
     return
   }
@@ -149,9 +178,9 @@ export default async function (
   const projectHash = createReadableHash(cwd)
   const installPrefix = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs', projectHash)
 
-  if (!opts.quiet) {
-    console.error('🚀 Installing packages for project environment...')
-    console.error(`📍 Installation prefix: ${installPrefix}`)
+  if (!opts.quiet && config.verbose) {
+    console.log('🚀 Installing packages for project environment...')
+    console.log(`📍 Installation prefix: ${installPrefix}`)
   }
 
   // Prepare packages for installation
@@ -165,32 +194,32 @@ export default async function (
     // Install packages to project-specific directory using our new system
     const { successful, failed } = await installPackagesDirectly(packages, installPrefix)
 
-    if (!opts.quiet) {
+    if (!opts.quiet && config.verbose) {
       // Report installation results
       if (successful.length > 0 && failed.length === 0) {
-        console.error('✅ All packages installed successfully!')
+        console.log('✅ All packages installed successfully!')
       }
       else if (successful.length > 0 && failed.length > 0) {
-        console.error(`⚠️  Partial installation: ${successful.length} succeeded, ${failed.length} failed`)
-        console.error('✅ Successfully installed:')
+        console.log(`⚠️  Partial installation: ${successful.length} succeeded, ${failed.length} failed`)
+        console.log('✅ Successfully installed:')
         for (const pkg of successful) {
-          console.error(`  ✅ ${pkg}`)
+          console.log(`  ✅ ${pkg}`)
         }
-        console.error('')
-        console.error('❌ Failed to install:')
+        console.log('')
+        console.log('❌ Failed to install:')
         for (const { project, error, suggestion } of failed) {
-          console.error(`  ❌ ${project}: ${error}`)
+          console.log(`  ❌ ${project}: ${error}`)
           if (suggestion) {
-            console.error(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
+            console.log(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
           }
         }
       }
       else if (failed.length > 0) {
-        console.error('❌ All package installations failed!')
+        console.log('❌ All package installations failed!')
         for (const { project, error, suggestion } of failed) {
-          console.error(`  ❌ ${project}: ${error}`)
+          console.log(`  ❌ ${project}: ${error}`)
           if (suggestion) {
-            console.error(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
+            console.log(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
           }
         }
       }
@@ -203,9 +232,61 @@ export default async function (
       console.error('🔧 Please fix the package specifications in your dependencies file and try again.')
       process.exit(1)
     }
+
+    // Store dependency hash for smart cache invalidation
+    // Find the dependency file in the current directory
+    const dependencyFiles = [
+      'dependencies.yaml',
+      'dependencies.yml',
+      'pkgx.yaml',
+      'pkgx.yml',
+      '.pkgx.yaml',
+      '.pkgx.yml',
+      '.launchpad.yaml',
+      'launchpad.yaml',
+      '.launchpad.yml',
+      'launchpad.yml',
+      'deps.yml',
+      'deps.yaml',
+      '.deps.yml',
+      '.deps.yaml',
+    ]
+
+    let depsFile: string | undefined
+    for (const fileName of dependencyFiles) {
+      const filePath = path.join(cwd, fileName)
+      if (fs.existsSync(filePath)) {
+        depsFile = filePath
+        break
+      }
+    }
+
+    if (depsFile) {
+      try {
+        const depsContent = fs.readFileSync(depsFile, 'utf-8')
+        const depsHash = Bun.hash(depsContent).toString(16).padStart(16, '0').slice(0, 8)
+        const hashFile = path.join(installPrefix, '.deps_hash')
+
+        // Ensure the directory exists
+        fs.mkdirSync(installPrefix, { recursive: true })
+        fs.writeFileSync(hashFile, depsHash)
+
+        if (!opts.quiet && config.verbose) {
+          console.log(`📝 Stored dependency hash: ${depsHash}`)
+        }
+      }
+      catch {
+        // Don't fail the entire process if hash storage fails
+        if (!opts.quiet && config.verbose) {
+          console.log('⚠️  Warning: Could not store dependency hash for smart caching')
+        }
+      }
+    }
   }
   catch (error) {
     console.error('❌ Installation failed:', error instanceof Error ? error.message : String(error))
+    console.error('')
+    console.error('🔧 Please fix the package specifications in your dependencies file and try again.')
     process.exit(1)
   }
 
@@ -222,7 +303,7 @@ export default async function (
   const projectSbinDir = path.join(installPrefix, 'sbin')
 
   // Generate script output for shell integration with proper isolation
-  // eslint-disable-next-line no-console
+
   console.log(`
 # Project-specific environment for ${cwd}
 # This creates an isolated environment that gets properly deactivated
@@ -300,5 +381,9 @@ if [ "\${PWD}" = "${cwd}" ]; then
   if [ "${config.showShellMessages ? 'true' : 'false'}" = "true" ]; then
     echo "${config.shellActivationMessage.replace('{path}', `\\033[3m${cwd}\\033[0m`)}" >&2
   fi
+
+  # Give the shell a moment to recognize the new PATH before prompt detection
+  # This helps prevent Starship timeout warnings when detecting tool versions
+  sleep 0.1
 fi`)
 }

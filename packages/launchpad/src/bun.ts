@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs, { createWriteStream } from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
@@ -20,6 +21,9 @@ interface GithubRelease {
 const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
 const GITHUB_CACHE_FILE = path.join(CACHE_DIR, 'github-bun-releases.json')
 const CACHE_TTL = 60 * 60 * 1000 // 1 hour in milliseconds
+
+// Binary cache configuration
+const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'bun')
 
 /**
  * Check if a path is valid for installation
@@ -87,6 +91,51 @@ function updateGithubCache(data: GithubRelease): void {
     if (config.verbose) {
       console.warn(`Failed to update GitHub cache: ${error instanceof Error ? error.message : String(error)}`)
     }
+  }
+}
+
+/**
+ * Get cached binary path for a specific version
+ */
+function getCachedBinaryPath(version: string, filename: string): string | null {
+  const cachedArchivePath = path.join(BINARY_CACHE_DIR, version, filename)
+
+  if (fs.existsSync(cachedArchivePath)) {
+    if (config.verbose) {
+      console.warn(`Found cached binary: ${cachedArchivePath}`)
+    }
+    return cachedArchivePath
+  }
+
+  return null
+}
+
+/**
+ * Save binary to cache
+ */
+function saveBinaryToCache(version: string, filename: string, sourcePath: string): string {
+  const cacheVersionDir = path.join(BINARY_CACHE_DIR, version)
+  const cachedArchivePath = path.join(cacheVersionDir, filename)
+
+  try {
+    // Create cache directory
+    fs.mkdirSync(cacheVersionDir, { recursive: true })
+
+    // Copy the downloaded file to cache
+    fs.copyFileSync(sourcePath, cachedArchivePath)
+
+    if (config.verbose) {
+      console.warn(`Cached binary to: ${cachedArchivePath}`)
+    }
+
+    return cachedArchivePath
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to cache binary: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    // Return original path if caching fails
+    return sourcePath
   }
 }
 
@@ -165,33 +214,62 @@ export async function install_bun(installPath: string, version?: string): Promis
 
   // Get the appropriate download URL
   const { filename, url } = get_bun_asset(bunVersion)
-  if (config.verbose)
-    console.warn(`Downloading from: ${url}`)
+
+  // Check if we have a cached version first
+  const cachedArchivePath = getCachedBinaryPath(bunVersion, filename)
 
   // Create installation directory if it doesn't exist
   const binDir = path.join(installPath, 'bin')
   fs.mkdirSync(binDir, { recursive: true })
 
-  // Create a temporary directory for the download
+  // Create a temporary directory for the download/extraction
   const tempDir = path.join(installPath, 'temp')
   fs.mkdirSync(tempDir, { recursive: true })
 
-  const zipPath = path.join(tempDir, filename)
+  let zipPath: string
 
   try {
-    // Download the Bun archive
-    const response = await fetch(url)
+    if (cachedArchivePath) {
+      // Use cached version
+      if (config.verbose) {
+        console.warn(`Using cached Bun v${bunVersion} from: ${cachedArchivePath}`)
+      }
+      else {
+        console.log(`📦 Using cached Bun v${bunVersion}...`)
+      }
 
-    if (!response.ok) {
-      throw new Error(`Failed to download Bun: ${response.statusText}`)
+      // Copy cached file to temp directory for extraction
+      zipPath = path.join(tempDir, filename)
+      fs.copyFileSync(cachedArchivePath, zipPath)
     }
+    else {
+      // Download new version
+      if (config.verbose) {
+        console.warn(`Downloading from: ${url}`)
+      }
+      else {
+        console.log(`📦 Downloading Bun v${bunVersion}...`)
+      }
 
-    // Save the downloaded file
-    const fileStream = createWriteStream(zipPath)
-    await pipeline(response.body as any, fileStream)
+      zipPath = path.join(tempDir, filename)
 
-    if (config.verbose)
-      console.warn(`Downloaded to ${zipPath}`)
+      // Download the Bun archive
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        throw new Error(`Failed to download Bun: ${response.statusText}`)
+      }
+
+      // Save the downloaded file
+      const fileStream = createWriteStream(zipPath)
+      await pipeline(response.body as any, fileStream)
+
+      if (config.verbose)
+        console.warn(`Downloaded to ${zipPath}`)
+
+      // Cache the downloaded file for future use
+      saveBinaryToCache(bunVersion, filename, zipPath)
+    }
 
     // Extract the archive
     if (filename.endsWith('.zip')) {
