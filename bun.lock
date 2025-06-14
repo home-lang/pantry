@@ -4,7 +4,7 @@
     "": {
       "name": "launchpad",
       "dependencies": {
-        "ts-pkgx": "^0.2.41",
+        "ts-pkgx": "^0.2.50",
       },
       "devDependencies": {
         "@stacksjs/docs": "^0.70.23",
@@ -22,7 +22,7 @@
     },
     "packages/action": {
       "name": "launchpad-installer",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
         "launchpad-installer": "dist/index.js",
       },
@@ -39,14 +39,14 @@
     },
     "packages/launchpad": {
       "name": "@stacksjs/launchpad",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
         "launchpad": "./dist/bin/cli.js",
       },
       "dependencies": {
         "bunfig": "^0.10.0",
         "cac": "^6.7.14",
-        "ts-pkgx": "^0.2.41",
+        "ts-pkgx": "^0.2.50",
       },
       "devDependencies": {
         "bun-plugin-dtsx": "^0.9.5",
@@ -1934,7 +1934,7 @@
 
     "ts-api-utils": ["ts-api-utils@2.1.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ=="],
 
-    "ts-pkgx": ["ts-pkgx@0.2.41", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.0" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-4dvRhQcezHYr8El5h5eTpaX006MdfFK8K1A9BxHseAINJ4bQ4wK6qVRsZq0mKU9BF1H+SpXFhZhZo55yIIIzLw=="],
+    "ts-pkgx": ["ts-pkgx@0.2.50", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.0" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-3+aPHeYT82mDbvsApsW1piG6JOPCfN3THBdUlLqkuwt4pmWc7D4we71ZoR+jQ8vNm0VxKO6xLLlzcCICNK5y7w=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
