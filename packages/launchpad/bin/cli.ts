@@ -722,24 +722,48 @@ cli
       let totalSize = 0
       let fileCount = 0
 
-      // Calculate cache size and file count
+      // Calculate cache size and file count (optimized for performance)
       const calculateCacheStats = (dir: string) => {
         if (!fs.existsSync(dir))
           return
 
-        const files = fs.readdirSync(dir, { recursive: true, withFileTypes: true })
-        for (const file of files) {
-          if (file.isFile()) {
-            const filePath = path.join(file.path || dir, file.name)
+        try {
+          // Use a more efficient approach - avoid recursive directory scanning
+          // when possible and batch filesystem operations
+          const stack = [dir]
+
+          while (stack.length > 0) {
+            const currentDir = stack.pop()!
+
             try {
-              const stats = fs.statSync(filePath)
-              totalSize += stats.size
-              fileCount++
+              const entries = fs.readdirSync(currentDir, { withFileTypes: true })
+
+              for (const entry of entries) {
+                const fullPath = path.join(currentDir, entry.name)
+
+                if (entry.isFile()) {
+                  try {
+                    const stats = fs.statSync(fullPath)
+                    totalSize += stats.size
+                    fileCount++
+                  }
+                  catch {
+                    // Ignore files we can't stat
+                  }
+                }
+                else if (entry.isDirectory()) {
+                  stack.push(fullPath)
+                }
+              }
             }
             catch {
-              // Ignore files we can't stat
+              // Skip directories we can't read
+              continue
             }
           }
+        }
+        catch {
+          // Ignore any errors during calculation
         }
       }
 
@@ -867,18 +891,36 @@ cli
           let dirFiles = 0
 
           try {
-            const files = fs.readdirSync(dir.path, { recursive: true, withFileTypes: true })
-            for (const file of files) {
-              if (file.isFile()) {
-                const filePath = path.join(file.path || dir.path, file.name)
-                try {
-                  const stats = fs.statSync(filePath)
-                  dirSize += stats.size
-                  dirFiles++
+            // Use optimized directory traversal instead of recursive readdirSync
+            const stack = [dir.path]
+
+            while (stack.length > 0) {
+              const currentDir = stack.pop()!
+
+              try {
+                const entries = fs.readdirSync(currentDir, { withFileTypes: true })
+
+                for (const entry of entries) {
+                  const fullPath = path.join(currentDir, entry.name)
+
+                  if (entry.isFile()) {
+                    try {
+                      const stats = fs.statSync(fullPath)
+                      dirSize += stats.size
+                      dirFiles++
+                    }
+                    catch {
+                      // Ignore files we can't stat
+                    }
+                  }
+                  else if (entry.isDirectory()) {
+                    stack.push(fullPath)
+                  }
                 }
-                catch {
-                  // Ignore files we can't stat
-                }
+              }
+              catch {
+                // Skip directories we can't read
+                continue
               }
             }
           }

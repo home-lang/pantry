@@ -53,34 +53,45 @@ export class TestUtils {
    */
   static cleanupEnvironmentDirs(): void {
     const envBaseDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')
-    if (fs.existsSync(envBaseDir)) {
-      try {
-        // Only clean up test-related environment directories
-        const envDirs = fs.readdirSync(envBaseDir)
-        for (const dir of envDirs) {
-          const envPath = path.join(envBaseDir, dir)
-          if (fs.statSync(envPath).isDirectory()) {
-            // Decode the base64 hash to check if it's a test directory
-            try {
-              const decodedPath = Buffer.from(dir.replace(/_/g, '/')).toString('base64')
-              const realPath = Buffer.from(decodedPath, 'base64').toString()
-              if (realPath.includes('launchpad-isolation-test-') || realPath.includes('launchpad-hash-test-') || realPath.includes('launchpad-stub-test-')) {
-                fs.rmSync(envPath, { recursive: true, force: true })
-              }
-            }
-            catch {
-              // If we can't decode it, it might be from an old test format
-              // Only remove if the directory name looks like a test hash
-              if (dir.length > 50 && dir.includes('_')) {
-                fs.rmSync(envPath, { recursive: true, force: true })
-              }
-            }
+    if (!fs.existsSync(envBaseDir)) {
+      return
+    }
+
+    try {
+      // Get all environment directories
+      const envDirs = fs.readdirSync(envBaseDir)
+
+      // Use a more efficient approach - just check for test-related patterns
+      // without expensive base64 decoding
+      for (const dir of envDirs) {
+        const envPath = path.join(envBaseDir, dir)
+
+        try {
+          if (!fs.statSync(envPath).isDirectory()) {
+            continue
+          }
+
+          // Quick pattern matching for test directories without base64 decoding
+          // Test directories typically have long base64-like names with underscores
+          const isTestDir = (
+            dir.length > 50 // Test hashes are typically long
+            && dir.includes('_') // Base64 replacement character
+            && /^\w+$/.test(dir) // Only base64-safe characters
+          )
+
+          if (isTestDir) {
+            fs.rmSync(envPath, { recursive: true, force: true })
           }
         }
+        catch {
+          // Skip individual directory errors but continue cleanup
+          continue
+        }
       }
-      catch (error) {
-        console.warn('Failed to clean up environment directories:', error instanceof Error ? error.message : String(error))
-      }
+    }
+    catch {
+      // Silently ignore cleanup errors to avoid test noise
+      // Tests should still pass even if cleanup fails
     }
   }
 
