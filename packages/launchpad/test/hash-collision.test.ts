@@ -40,7 +40,7 @@ describe('Hash Collision Prevention', () => {
     return new Promise((resolve, reject) => {
       const proc = spawn('bun', [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, NODE_ENV: 'test' },
+        env: { ...process.env, NODE_ENV: 'test', LAUNCHPAD_VERBOSE: 'true' },
         cwd: cwd || tempDir,
       })
 
@@ -148,8 +148,8 @@ describe('Hash Collision Prevention', () => {
 
       // The key test is that different directories get different prefixes
       // Even if installation fails, we should see different installation prefixes
-      const mainPrefix = mainResult.stderr.match(/(?:📍 )?Installation prefix: (.+)/)?.[1]
-      const dummyPrefix = dummyResult.stderr.match(/(?:📍 )?Installation prefix: (.+)/)?.[1]
+      const mainPrefix = mainResult.stderr.match(/Install path: (.+)/)?.[1]
+      const dummyPrefix = dummyResult.stderr.match(/Install path: (.+)/)?.[1]
 
       expect(mainPrefix).toBeDefined()
       expect(dummyPrefix).toBeDefined()

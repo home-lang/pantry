@@ -3,21 +3,21 @@ import process from 'node:process'
 import { formatBytes, formatTime, ProgressBar, Spinner } from '../src/progress'
 
 describe('Install Progress Integration', () => {
-  let originalStdout: typeof process.stdout.write
-  let stdoutOutput: string[]
+  let originalStderr: typeof process.stderr.write
+  let stderrOutput: string[]
 
   beforeEach(() => {
-    stdoutOutput = []
-    originalStdout = process.stdout.write
-    // Mock stdout.write to capture output
-    process.stdout.write = mock((chunk: any) => {
-      stdoutOutput.push(chunk.toString())
+    stderrOutput = []
+    originalStderr = process.stderr.write
+    // Mock stderr.write to capture output (progress utilities write to stderr)
+    process.stderr.write = mock((chunk: any) => {
+      stderrOutput.push(chunk.toString())
       return true
     })
   })
 
   afterEach(() => {
-    process.stdout.write = originalStdout
+    process.stderr.write = originalStderr
   })
 
   describe('Progress Integration Scenarios', () => {
@@ -44,7 +44,7 @@ describe('Install Progress Integration', () => {
 
       bar.complete()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('100.0%')
       expect(output).toContain('1.0 MB/1.0 MB')
       expect(output).toContain('\n') // Final newline
@@ -59,7 +59,7 @@ describe('Install Progress Integration', () => {
 
       spinner.stop('✅ Extraction complete')
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('🔧 Extracting package...')
       expect(output).toContain('\r') // Carriage return for clearing
     })
@@ -74,7 +74,7 @@ describe('Install Progress Integration', () => {
       spinner.stop('✅ Installation complete')
 
       // Spinner should have been active (check for spinner characters or clearing)
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       const hasSpinnerActivity = output.includes('⚡') || output.includes('\r') || output.includes('⠋')
       expect(hasSpinnerActivity).toBe(true)
     })
@@ -97,7 +97,7 @@ describe('Install Progress Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       installSpinner.stop()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('100.0%')
       // Check for spinner activity (characters or clearing)
       const hasSpinnerActivity = output.includes('🔧') || output.includes('⚡') || output.includes('\r')
@@ -130,7 +130,7 @@ describe('Install Progress Integration', () => {
       // Should complete quickly
       expect(end - start).toBeLessThan(500)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('100.0%')
     })
 
@@ -141,7 +141,7 @@ describe('Install Progress Integration', () => {
       // Update total size (content-length discovered)
       bar.update(50, 200)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('25.0%') // 50/200 = 25%
     })
 
@@ -158,7 +158,7 @@ describe('Install Progress Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 50))
       spinner.stop()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       // Check for spinner activity and clearing
       const hasSpinnerActivity = output.includes('\r') || output.includes('⠋') || output.includes('⠙')
       expect(hasSpinnerActivity).toBe(true)
@@ -177,7 +177,7 @@ describe('Install Progress Integration', () => {
       const exceedBar = new ProgressBar(100)
       exceedBar.update(150)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('0.0%')
       expect(output).toContain('100.0%')
     })
@@ -189,7 +189,7 @@ describe('Install Progress Integration', () => {
       bar.update(75)
       bar.complete()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       // Should contain carriage returns for clearing previous lines
       expect(output).toContain('\r')
       // Should end with newline
@@ -222,7 +222,7 @@ describe('Install Progress Integration', () => {
 
       bar.complete()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('25.0 MB/25.0 MB')
       expect(output).toContain('100.0%')
     })
@@ -258,7 +258,7 @@ describe('Install Progress Integration', () => {
         installSpinner.stop(`✅ Successfully installed ${pkg}`)
       }
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       // Check for progress bars and spinner activity
       expect(output).toContain('100.0%') // Progress bars completed
       expect(output).toContain('5.0 MB/5.0 MB') // File size indicators
@@ -288,7 +288,7 @@ describe('Install Progress Integration', () => {
 
       bar.complete()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('/s') // Speed indicator
       expect(output).toContain('ETA:') // Time estimate
     })

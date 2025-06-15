@@ -1,23 +1,35 @@
-/* eslint-disable no-console */
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { formatBytes, formatTime, MultiProgress, ProgressBar, Spinner } from '../src/progress'
 
 describe('Progress Utilities', () => {
-  let originalStdout: typeof process.stdout.write
-  let stdoutOutput: string[]
+  let originalStderr: typeof process.stderr.write
+  let stderrOutput: string[]
+  let activeSpinners: Spinner[] = []
 
   beforeEach(() => {
-    stdoutOutput = []
-    originalStdout = process.stdout.write
-    // Mock stdout.write to capture output
-    process.stdout.write = mock((chunk: any) => {
-      stdoutOutput.push(chunk.toString())
+    stderrOutput = []
+    activeSpinners = []
+    originalStderr = process.stderr.write
+    // Mock stderr.write to capture output (progress utilities write to stderr)
+    process.stderr.write = mock((chunk: any) => {
+      stderrOutput.push(chunk.toString())
       return true
     })
   })
 
   afterEach(() => {
-    process.stdout.write = originalStdout
+    // Clean up any active spinners to prevent hanging tests
+    activeSpinners.forEach((spinner) => {
+      try {
+        spinner.stop()
+      }
+      catch {
+        // Ignore errors during cleanup
+      }
+    })
+    activeSpinners = []
+
+    process.stderr.write = originalStderr
   })
 
   describe('formatBytes', () => {
@@ -90,9 +102,9 @@ describe('Progress Utilities', () => {
       const bar = new ProgressBar(100)
       bar.update(50)
 
-      // Should have written progress to stdout
-      expect(stdoutOutput.length).toBeGreaterThan(0)
-      const output = stdoutOutput.join('')
+      // Should have written progress to stderr
+      expect(stderrOutput.length).toBeGreaterThan(0)
+      const output = stderrOutput.join('')
       expect(output).toContain('[')
       expect(output).toContain(']')
       expect(output).toContain('50.0%')
@@ -102,7 +114,7 @@ describe('Progress Utilities', () => {
       const bar = new ProgressBar(100, { width: 10 })
       bar.update(50)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       // Should have 5 filled blocks and 5 empty blocks for 50%
       expect(output).toContain('█████░░░░░')
     })
@@ -111,7 +123,7 @@ describe('Progress Utilities', () => {
       const bar = new ProgressBar(1024, { showBytes: true })
       bar.update(512)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('512.0 B/1.0 KB')
     })
 
@@ -123,7 +135,7 @@ describe('Progress Utilities', () => {
       await new Promise(resolve => setTimeout(resolve, 100))
       bar.update(200)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('/s')
     })
 
@@ -132,7 +144,7 @@ describe('Progress Utilities', () => {
       bar.update(50)
       bar.complete()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('100.0%')
       expect(output).toContain('\n')
     })
@@ -141,7 +153,7 @@ describe('Progress Utilities', () => {
       const bar = new ProgressBar(0)
       bar.update(0)
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('0.0%')
     })
 
@@ -149,7 +161,7 @@ describe('Progress Utilities', () => {
       const bar = new ProgressBar(100)
       bar.update(50, 200) // Update current to 50 and total to 200
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('25.0%') // 50/200 = 25%
     })
 
@@ -157,7 +169,7 @@ describe('Progress Utilities', () => {
       const bar = new ProgressBar(100)
       bar.update(150) // More than total
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('100.0%')
     })
 
@@ -167,7 +179,7 @@ describe('Progress Utilities', () => {
       bar.update(50)
 
       // Should contain carriage return and spaces for clearing
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('\r')
     })
   })
@@ -175,87 +187,85 @@ describe('Progress Utilities', () => {
   describe('Spinner', () => {
     it('should initialize correctly', () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       expect(spinner).toBeDefined()
     })
 
-    it('should start with default message', () => {
+    it('should start with default message', async () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start()
 
       // Wait a bit for the spinner to output
-      setTimeout(() => {
-        spinner.stop()
-        const output = stdoutOutput.join('')
-        expect(output).toContain('Loading...')
-      }, 150)
+      await new Promise(resolve => setTimeout(resolve, 150))
+      spinner.stop()
+      const output = stderrOutput.join('')
+      expect(output).toContain('Loading...')
     })
 
-    it('should start with custom message', () => {
+    it('should start with custom message', async () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start('Custom loading message')
 
-      setTimeout(() => {
-        spinner.stop()
-        const output = stdoutOutput.join('')
-        expect(output).toContain('Custom loading message')
-      }, 150)
+      await new Promise(resolve => setTimeout(resolve, 150))
+      spinner.stop()
+      const output = stderrOutput.join('')
+      expect(output).toContain('Custom loading message')
     })
 
-    it('should stop and clear output', () => {
+    it('should stop and clear output', async () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start('Test message')
 
-      setTimeout(() => {
-        spinner.stop()
-        const output = stdoutOutput.join('')
-        expect(output).toContain('\r')
-      }, 150)
+      await new Promise(resolve => setTimeout(resolve, 150))
+      spinner.stop()
+      const output = stderrOutput.join('')
+      expect(output).toContain('\r')
     })
 
     it('should stop with final message', () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start('Loading...')
+      spinner.stop('✅ Complete')
 
-      setTimeout(() => {
-        const consoleSpy = mock(() => {})
-        const originalLog = console.log
-        console.log = consoleSpy
-
-        spinner.stop('Done!')
-
-        expect(consoleSpy).toHaveBeenCalledWith('Done!')
-        console.log = originalLog
-      }, 150)
+      const output = stderrOutput.join('')
+      expect(output).toContain('✅ Complete')
     })
 
-    it('should update message while running', () => {
+    it('should update message while running', async () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start('Initial message')
+
+      await new Promise(resolve => setTimeout(resolve, 50))
       spinner.update('Updated message')
 
-      setTimeout(() => {
-        spinner.stop()
-        const output = stdoutOutput.join('')
-        expect(output).toContain('Updated message')
-      }, 150)
+      await new Promise(resolve => setTimeout(resolve, 100))
+      spinner.stop()
+      const output = stderrOutput.join('')
+      expect(output).toContain('Updated message')
     })
 
-    it('should use spinner frames', () => {
+    it('should use spinner frames', async () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start('Test')
 
-      setTimeout(() => {
-        spinner.stop()
-        const output = stdoutOutput.join('')
-        // Should contain at least one spinner character
-        const spinnerChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-        const hasSpinnerChar = spinnerChars.some(char => output.includes(char))
-        expect(hasSpinnerChar).toBe(true)
-      }, 150)
+      await new Promise(resolve => setTimeout(resolve, 150))
+      spinner.stop()
+      const output = stderrOutput.join('')
+      // Should contain at least one spinner character
+      const spinnerChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+      const hasSpinnerChar = spinnerChars.some(char => output.includes(char))
+      expect(hasSpinnerChar).toBe(true)
     })
 
     it('should handle multiple start/stop cycles', () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
 
       spinner.start('First')
       spinner.stop()
@@ -268,6 +278,7 @@ describe('Progress Utilities', () => {
 
     it('should handle stop without start', () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
 
       // Should not throw error
       expect(() => spinner.stop()).not.toThrow()
@@ -338,7 +349,7 @@ describe('Progress Utilities', () => {
 
       bar.complete()
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('100.0%')
       expect(output).toContain('1.0 MB/1.0 MB')
       expect(output).toContain('\n')
@@ -346,6 +357,7 @@ describe('Progress Utilities', () => {
 
     it('should handle extraction with spinner', async () => {
       const spinner = new Spinner()
+      activeSpinners.push(spinner)
       spinner.start('Extracting package...')
 
       // Simulate extraction time
@@ -353,7 +365,7 @@ describe('Progress Utilities', () => {
 
       spinner.stop('✅ Extraction complete')
 
-      const output = stdoutOutput.join('')
+      const output = stderrOutput.join('')
       expect(output).toContain('Extracting package...')
     })
 

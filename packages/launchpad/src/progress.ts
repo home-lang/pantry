@@ -201,7 +201,7 @@ export class Spinner {
     process.stderr.write(`\r${' '.repeat(this.message.length + 2)}\r`)
 
     if (finalMessage) {
-      console.log(finalMessage)
+      process.stderr.write(`${finalMessage}\n`)
     }
   }
 

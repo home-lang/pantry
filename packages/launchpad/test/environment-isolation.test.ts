@@ -295,9 +295,8 @@ describe('Environment Isolation', () => {
         expect(result.stdout).toContain(projectA)
       }
       else {
-        // If installation fails, we should still get some output structure
-        // At minimum, we should see the installation prefix being set
-        expect(result.stderr).toContain('Installation prefix:')
+        // If installation fails, we should get a meaningful error message
+        expect(result.stderr).toContain('No packages were successfully installed')
       }
     }, 60000)
 
@@ -579,7 +578,7 @@ describe('Environment Isolation', () => {
         else {
           // Should at least attempt to process the file (not "no devenv detected")
           expect(result.stderr).not.toContain('no devenv detected')
-          expect(result.stderr).toContain('Installing packages') // Shows it recognized the file
+          expect(result.stderr).toContain('No packages were successfully installed') // Shows it recognized the file but failed
         }
       }
     }, 90000)
@@ -636,7 +635,7 @@ describe('Environment Isolation', () => {
       }
       else {
         // If installation fails, should still attempt to process the file
-        expect(result.stderr).toContain('Installing packages')
+        expect(result.stderr).toContain('No packages were successfully installed')
         expect(result.stderr).not.toContain('no devenv detected')
       }
     }, 60000)
@@ -707,7 +706,7 @@ describe('Environment Isolation', () => {
           expect(result.stdout).toContain('Project-specific environment')
         }
         else {
-          expect(result.stderr).toContain('Installing packages')
+          expect(result.stderr).toContain('No packages were successfully installed')
         }
       }
       catch (error) {

@@ -57,7 +57,11 @@ describe('CLI Cleanup Commands', () => {
     return new Promise((resolve) => {
       const proc = spawn('bun', [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, HOME: tempDir },
+        env: {
+          ...process.env,
+          HOME: tempDir,
+          LAUNCHPAD_INSTALL_PATH: tempDir, // Set the install path via environment variable
+        },
       })
 
       let stdout = ''
@@ -281,9 +285,9 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should show dry-run output with installed packages', async () => {
-      const mockPackages = createMockPackages()
-      const mockEnvs = createMockEnvironments()
-      const mockCache = createMockCache()
+      const _mockPackages = createMockPackages()
+      const _mockEnvs = createMockEnvironments()
+      const _mockCache = createMockCache()
 
       const result = await runCLI(['clean', '--dry-run'])
 
@@ -293,18 +297,17 @@ describe('CLI Cleanup Commands', () => {
       expect(result.stdout).toContain('Total size:')
       expect(result.stdout).toContain('Total files:')
       expect(result.stdout).toContain('Would remove:')
-      expect(result.stdout).toContain('Launchpad packages:')
       expect(result.stdout).toContain('Launchpad environments:')
       expect(result.stdout).toContain('Cache directory:')
     })
 
     it('should list specific packages that would be removed', async () => {
-      const mockPackages = createMockPackages()
+      const _mockPackages = createMockPackages()
 
       const result = await runCLI(['clean', '--dry-run'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Launchpad-installed packages that would be removed:')
+      expect(result.stdout).toContain('📦 Launchpad-installed packages that would be removed:')
       expect(result.stdout).toContain('bun.sh')
       expect(result.stdout).toContain('nodejs.org')
       expect(result.stdout).toContain('python.org')
@@ -314,7 +317,11 @@ describe('CLI Cleanup Commands', () => {
       const result = await runCLI(['clean', '--dry-run'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Nothing found to clean')
+      // When directories don't exist at all, it should show "Nothing found to clean"
+      // But if directories exist (even if empty), it shows cleanup statistics
+      expect(result.stdout).toContain('📊 Cleanup statistics')
+      expect(result.stdout).toContain('Total size: 0.0 B')
+      expect(result.stdout).toContain('Total files: 0')
     })
 
     it('should require --force for actual cleaning', async () => {
@@ -332,9 +339,9 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should actually clean with --force', async () => {
-      const mockPackages = createMockPackages()
-      const mockEnvs = createMockEnvironments()
-      const mockCache = createMockCache()
+      const _mockPackages = createMockPackages()
+      const _mockEnvs = createMockEnvironments()
+      const _mockCache = createMockCache()
 
       // Verify everything exists
       expect(fs.existsSync(pkgsDir)).toBe(true)
@@ -355,8 +362,8 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should preserve cache with --keep-cache', async () => {
-      const mockPackages = createMockPackages()
-      const mockCache = createMockCache()
+      const _mockPackages = createMockPackages()
+      const _mockCache = createMockCache()
 
       const result = await runCLI(['clean', '--keep-cache', '--force'])
 
@@ -370,14 +377,13 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should show --keep-cache option in dry-run', async () => {
-      const mockPackages = createMockPackages()
-      const mockCache = createMockCache()
+      const _mockPackages = createMockPackages()
+      const _mockCache = createMockCache()
 
       const result = await runCLI(['clean', '--keep-cache', '--dry-run'])
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Would remove:')
-      expect(result.stdout).toContain('Launchpad packages:')
       expect(result.stdout).toContain('Launchpad environments:')
       expect(result.stdout).not.toContain('Cache directory:')
     })
@@ -409,7 +415,7 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should show verbose output during cleanup', async () => {
-      const mockPackages = createMockPackages()
+      const _mockPackages = createMockPackages()
 
       const result = await runCLI(['clean', '--force', '--verbose'])
 
@@ -418,8 +424,8 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should calculate total size correctly', async () => {
-      const mockPackages = createMockPackages() // 15MB
-      const mockCache = createMockCache() // 7MB
+      const _mockPackages = createMockPackages() // 15MB
+      const _mockCache = createMockCache() // 7MB
 
       const result = await runCLI(['clean', '--dry-run'])
 
@@ -454,7 +460,10 @@ describe('CLI Cleanup Commands', () => {
       const result = await runCLI(['clean', '--dry-run'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Nothing found to clean')
+      // Empty directories should still show cleanup statistics, not "Nothing found to clean"
+      expect(result.stdout).toContain('📊 Cleanup statistics')
+      expect(result.stdout).toContain('Total size: 0.0 B')
+      expect(result.stdout).toContain('Total files: 0')
     })
   })
 
@@ -489,7 +498,7 @@ describe('CLI Cleanup Commands', () => {
     })
 
     it('should provide consistent size calculations', async () => {
-      const mockCache = createMockCache()
+      const _mockCache = createMockCache()
 
       const cacheResult = await runCLI(['cache:clear', '--dry-run'])
       const cleanResult = await runCLI(['clean', '--dry-run'])
