@@ -45,18 +45,17 @@ cli
 
     try {
       const installPath = options.path || install_prefix().string
-      console.warn(`Installing packages: ${packageList.join(', ')}`)
 
       const results = await install(packageList, installPath)
 
       if (results.length > 0) {
-        console.log(`Successfully installed ${results.length} binaries:`)
+        console.log(`🎉 Successfully installed ${packageList.join(', ')} (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
         results.forEach((file) => {
           console.log(`  ${file}`)
         })
       }
       else {
-        console.log('No binaries were installed')
+        console.log('⚠️  No binaries were installed')
       }
     }
     catch (error) {

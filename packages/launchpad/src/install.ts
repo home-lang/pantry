@@ -563,7 +563,7 @@ async function downloadPackage(
     }
 
     if (!config.verbose) {
-      installSpinner.stop(`✅ Successfully installed ${domain} v${version}`)
+      installSpinner.stop()
     }
 
     // Clean up temp directory
@@ -663,16 +663,6 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
 
   if (config.verbose) {
     console.warn(`Installation complete. Installed ${allInstalledFiles.length} files.`)
-  }
-  else if (packageList.length > 0) {
-    const packageCount = packageList.length
-    const fileCount = allInstalledFiles.length
-    if (packageCount === 1) {
-      console.log(`🎉 Installation complete!`)
-    }
-    else {
-      console.log(`🎉 Successfully installed ${packageCount} packages (${fileCount} files)`)
-    }
   }
 
   return allInstalledFiles
