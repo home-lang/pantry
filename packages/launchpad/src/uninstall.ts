@@ -34,7 +34,7 @@ export async function uninstall(arg: string): Promise<boolean> {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`🗑️  Uninstalling ${packageName} (${resolvedDomain})...`)
+  console.log(`🗑️  Uninstalling ${packageName} (\x1B[3m${resolvedDomain}\x1B[0m)...`)
 
   const removedFiles: string[] = []
   const missingFiles: string[] = []
@@ -63,7 +63,7 @@ export async function uninstall(arg: string): Promise<boolean> {
   // Report results with smart grammar
   if (removedFiles.length > 0) {
     const binaryWord = removedFiles.length === 1 ? 'binary' : 'binaries'
-    const packageDisplay = packageName !== resolvedDomain ? `${packageName} (${resolvedDomain})` : packageName
+    const packageDisplay = packageName !== resolvedDomain ? `${packageName} (\x1B[3m${resolvedDomain}\x1B[0m)` : packageName
 
     // eslint-disable-next-line no-console
     console.log(`✅ Successfully uninstalled ${packageDisplay}`)
