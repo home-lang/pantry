@@ -26,10 +26,12 @@ cli.help()
 cli
   .command('install [packages...]', 'Install packages')
   .alias('i')
+  .alias('add')
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
   .example('launchpad install node python')
   .example('launchpad install --path ~/.local node python')
+  .example('launchpad add node python')
   .action(async (packages: string[], options: { verbose?: boolean, path?: string }) => {
     if (options.verbose) {
       config.verbose = true
