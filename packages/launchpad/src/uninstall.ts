@@ -1,6 +1,28 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { getPackageInfo, install_prefix, resolvePackageName } from './install'
+import { getPackageInfo, resolvePackageName } from './install'
+import { Path } from './path'
+
+/**
+ * Get all possible binary directories where packages might be installed
+ */
+function getPossibleBinaryDirectories(): Path[] {
+  const directories: Path[] = []
+
+  // Add /usr/local/bin if it exists
+  const usrLocalBin = new Path('/usr/local/bin')
+  if (usrLocalBin.isDirectory()) {
+    directories.push(usrLocalBin)
+  }
+
+  // Add ~/.local/bin if it exists
+  const localBin = Path.home().join('.local', 'bin')
+  if (localBin.isDirectory()) {
+    directories.push(localBin)
+  }
+
+  return directories
+}
 
 /**
  * Uninstall a package by name (supports aliases like 'node' -> 'nodejs.org')
@@ -25,37 +47,53 @@ export async function uninstall(arg: string): Promise<boolean> {
     return false
   }
 
-  const root = install_prefix()
-  const binDir = root.join('bin')
+  // Get all possible binary directories
+  const binDirectories = getPossibleBinaryDirectories()
 
-  if (!binDir.isDirectory()) {
-    console.error(`❌ Binary directory ${binDir.string} does not exist`)
+  if (binDirectories.length === 0) {
+    console.error(`❌ No binary directories found (checked /usr/local/bin and ~/.local/bin)`)
     return false
   }
 
   // eslint-disable-next-line no-console
   console.log(`🗑️  Uninstalling ${packageName} (\x1B[3m${resolvedDomain}\x1B[0m)...`)
 
-  const removedFiles: string[] = []
+  const removedFiles: Array<{ program: string, location: string }> = []
   const missingFiles: string[] = []
+  let foundAnyBinary = false
 
-  // Remove each program/binary provided by this package
+  // Check each program/binary provided by this package in all possible locations
   for (const program of packageInfo.programs) {
-    const binaryPath = binDir.join(program)
+    let foundInAnyLocation = false
 
-    if (binaryPath.exists() && !binaryPath.isDirectory()) {
-      try {
-        await fs.promises.unlink(binaryPath.string)
-        removedFiles.push(program)
-        // eslint-disable-next-line no-console
-        console.log(`  🗑️  Removed ${program}`)
-      }
-      catch (error) {
-        console.error(`  ❌ Failed to remove ${program}: ${error}`)
-        return false
+    for (const binDir of binDirectories) {
+      const binaryPath = binDir.join(program)
+
+      if (binaryPath.exists() && !binaryPath.isDirectory()) {
+        foundInAnyLocation = true
+        foundAnyBinary = true
+
+        try {
+          await fs.promises.unlink(binaryPath.string)
+          removedFiles.push({ program, location: binDir.string })
+          // eslint-disable-next-line no-console
+          console.log(`  🗑️  Removed ${program} from ${binDir.string}`)
+        }
+        catch (error) {
+          // Check if it's a permission error
+          if (error instanceof Error && 'code' in error && error.code === 'EACCES') {
+            // eslint-disable-next-line no-console
+            console.log(`  ⚠️  Permission denied: ${program} in ${binDir.string} (try with sudo)`)
+          }
+          else {
+            console.error(`  ❌ Failed to remove ${program} from ${binDir.string}: ${error}`)
+            return false
+          }
+        }
       }
     }
-    else {
+
+    if (!foundInAnyLocation) {
       missingFiles.push(program)
     }
   }
@@ -68,7 +106,21 @@ export async function uninstall(arg: string): Promise<boolean> {
     // eslint-disable-next-line no-console
     console.log(`✅ Successfully uninstalled ${packageDisplay}`)
     // eslint-disable-next-line no-console
-    console.log(`   Removed ${removedFiles.length} ${binaryWord}: ${removedFiles.join(', ')}`)
+    console.log(`   Removed ${removedFiles.length} ${binaryWord}:`)
+
+    // Group by location for cleaner output
+    const locationGroups = removedFiles.reduce((groups, file) => {
+      if (!groups[file.location]) {
+        groups[file.location] = []
+      }
+      groups[file.location].push(file.program)
+      return groups
+    }, {} as Record<string, string[]>)
+
+    for (const [location, programs] of Object.entries(locationGroups)) {
+      // eslint-disable-next-line no-console
+      console.log(`     • ${location}: ${programs.join(', ')}`)
+    }
   }
 
   if (missingFiles.length > 0) {
@@ -79,9 +131,11 @@ export async function uninstall(arg: string): Promise<boolean> {
     console.log(`   (May have been previously removed or installed elsewhere)`)
   }
 
-  if (removedFiles.length === 0) {
+  if (!foundAnyBinary) {
     // eslint-disable-next-line no-console
-    console.log(`ℹ️  No binaries were removed for ${packageName} - package may not be installed`)
+    console.log(`ℹ️  No binaries were found for ${packageName} - package may not be installed`)
+    // eslint-disable-next-line no-console
+    console.log(`   (Checked: ${binDirectories.map(d => d.string).join(', ')})`)
     return false
   }
 
@@ -92,33 +146,51 @@ export async function uninstall(arg: string): Promise<boolean> {
  * Uninstall all packages and remove the entire installation
  */
 export async function uninstall_all(): Promise<void> {
-  const root = install_prefix()
-
   // eslint-disable-next-line no-console
   console.log('🗑️  Uninstalling all Launchpad packages and data...')
 
   try {
-    // Remove the entire .local directory structure
-    const dirsToRemove = [
-      root.join('bin'),
-      root.join('lib'),
-      root.join('share'),
-      root.join('pkgs'),
+    // Check both possible installation locations
+    const possibleRoots = [
+      new Path('/usr/local'),
+      Path.home().join('.local'),
     ]
 
     let removedCount = 0
-    for (const dir of dirsToRemove) {
-      if (dir.isDirectory()) {
-        await fs.promises.rm(dir.string, { recursive: true, force: true })
-        removedCount++
-        // eslint-disable-next-line no-console
-        console.log(`  🗑️  Removed ${path.basename(dir.string)} directory`)
+    const removedLocations: string[] = []
+
+    for (const root of possibleRoots) {
+      if (!root.isDirectory())
+        continue
+
+      const dirsToRemove = [
+        root.join('bin'),
+        root.join('lib'),
+        root.join('share'),
+        root.join('pkgs'),
+      ]
+
+      let locationRemovedCount = 0
+      for (const dir of dirsToRemove) {
+        if (dir.isDirectory()) {
+          await fs.promises.rm(dir.string, { recursive: true, force: true })
+          locationRemovedCount++
+          removedCount++
+          // eslint-disable-next-line no-console
+          console.log(`  🗑️  Removed ${path.basename(dir.string)} directory from ${root.string}`)
+        }
+      }
+
+      if (locationRemovedCount > 0) {
+        removedLocations.push(root.string)
       }
     }
 
     if (removedCount > 0) {
       // eslint-disable-next-line no-console
       console.log(`✅ Successfully uninstalled all Launchpad data (${removedCount} directories removed)`)
+      // eslint-disable-next-line no-console
+      console.log(`   Cleaned locations: ${removedLocations.join(', ')}`)
     }
     else {
       // eslint-disable-next-line no-console
