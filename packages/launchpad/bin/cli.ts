@@ -850,8 +850,10 @@ cli
 
       if (!options?.force && !isDryRun) {
         console.log('⚠️  This will remove ALL Launchpad-installed packages and environments')
-        console.log('⚠️  Only removes packages from the Launchpad-specific directories:')
-        console.log(`   • ${path.join(install_prefix().string, 'pkgs')} (Launchpad packages only)`)
+        console.log('⚠️  This includes package metadata, binaries, and libraries:')
+        console.log(`   • ${path.join(install_prefix().string, 'pkgs')} (package metadata)`)
+        console.log(`   • ${path.join(install_prefix().string, 'bin')} (Launchpad-installed binaries only)`)
+        console.log(`   • ${install_prefix().string}/{domain}/v{version}/ (package files and libraries)`)
         console.log(`   • ~/.local/share/launchpad/ (project environments)`)
         if (!options?.keepCache) {
           console.log(`   • ~/.cache/launchpad/ (cached downloads)`)
@@ -865,34 +867,103 @@ cli
 
       const os = await import('node:os')
       const homeDir = os.homedir()
-
-      // Directories to clean - ONLY Launchpad-specific directories
       const installPrefix = install_prefix().string
+
+      // Helper function to get all Launchpad-managed binaries from package metadata
+      const getLaunchpadBinaries = (): Array<{ binary: string, package: string, fullPath: string }> => {
+        const binaries: Array<{ binary: string, package: string, fullPath: string }> = []
+        const pkgsDir = path.join(installPrefix, 'pkgs')
+        const binDir = path.join(installPrefix, 'bin')
+
+        if (!fs.existsSync(pkgsDir))
+          return binaries
+
+        try {
+          const domains = fs.readdirSync(pkgsDir, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+
+          for (const domain of domains) {
+            const domainPath = path.join(pkgsDir, domain.name)
+            const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+              .filter(dirent => dirent.isDirectory())
+
+            for (const version of versions) {
+              const versionPath = path.join(domainPath, version.name)
+              const metadataPath = path.join(versionPath, 'metadata.json')
+
+              if (fs.existsSync(metadataPath)) {
+                try {
+                  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
+                  if (metadata.binaries && Array.isArray(metadata.binaries)) {
+                    for (const binary of metadata.binaries) {
+                      const binaryPath = path.join(binDir, binary)
+                      if (fs.existsSync(binaryPath)) {
+                        binaries.push({
+                          binary,
+                          package: `${domain.name}@${version.name.slice(1)}`, // Remove 'v' prefix
+                          fullPath: binaryPath,
+                        })
+                      }
+                    }
+                  }
+                }
+                catch {
+                  // Ignore invalid metadata files
+                }
+              }
+            }
+          }
+        }
+        catch {
+          // Ignore errors reading package directory
+        }
+
+        return binaries
+      }
+
+      // Get all directories and files to clean
       const localShareDir = path.join(homeDir, '.local', 'share', 'launchpad')
       const cacheDir = path.join(homeDir, '.cache', 'launchpad')
+      const pkgsDir = path.join(installPrefix, 'pkgs')
 
-      // Only clean the 'pkgs' subdirectory within install prefix to avoid removing other tools
       const dirsToCheck = [
-        { path: path.join(installPrefix, 'pkgs'), name: 'Launchpad packages' },
-        { path: localShareDir, name: 'Launchpad environments' },
+        { path: pkgsDir, name: 'Package metadata' },
+        { path: localShareDir, name: 'Project environments' },
       ]
 
       if (!options?.keepCache) {
         dirsToCheck.push({ path: cacheDir, name: 'Cache directory' })
       }
 
+      // Also clean package directories (the new pkgx-compatible structure)
+      try {
+        const domains = fs.readdirSync(installPrefix, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory() && dirent.name !== 'bin' && dirent.name !== 'pkgs' && dirent.name !== '.tmp')
+
+        for (const domain of domains) {
+          const domainPath = path.join(installPrefix, domain.name)
+          dirsToCheck.push({ path: domainPath, name: `Package files (${domain.name})` })
+        }
+      }
+      catch {
+        // Ignore errors reading install prefix
+      }
+
+      // Get Launchpad-managed binaries
+      const launchpadBinaries = getLaunchpadBinaries()
+
+      // Calculate total size and file count
       let totalSize = 0
       let totalFiles = 0
       const existingDirs: { path: string, name: string, size: number, files: number }[] = []
 
-      // Calculate what would be removed
+      // Calculate directory sizes
       for (const dir of dirsToCheck) {
         if (fs.existsSync(dir.path)) {
           let dirSize = 0
           let dirFiles = 0
 
           try {
-            // Use optimized directory traversal instead of recursive readdirSync
             const stack = [dir.path]
 
             while (stack.length > 0) {
@@ -920,7 +991,6 @@ cli
                 }
               }
               catch {
-                // Skip directories we can't read
                 continue
               }
             }
@@ -932,6 +1002,18 @@ cli
           existingDirs.push({ path: dir.path, name: dir.name, size: dirSize, files: dirFiles })
           totalSize += dirSize
           totalFiles += dirFiles
+        }
+      }
+
+      // Add binary sizes
+      for (const binary of launchpadBinaries) {
+        try {
+          const stats = fs.statSync(binary.fullPath)
+          totalSize += stats.size
+          totalFiles++
+        }
+        catch {
+          // Ignore files we can't stat
         }
       }
 
@@ -947,18 +1029,22 @@ cli
       }
 
       if (isDryRun) {
-        if (existingDirs.length > 0) {
+        if (existingDirs.length > 0 || launchpadBinaries.length > 0) {
           console.log(`📊 Cleanup statistics:`)
           console.log(`   • Total size: ${formatSize(totalSize)}`)
           console.log(`   • Total files: ${totalFiles}`)
           console.log('')
           console.log('Would remove:')
+
           existingDirs.forEach((dir) => {
             console.log(`   • ${dir.name}: ${dir.path} (${formatSize(dir.size)}, ${dir.files} files)`)
           })
 
-          // Show specific packages that would be removed
-          const pkgsDir = path.join(install_prefix().string, 'pkgs')
+          if (launchpadBinaries.length > 0) {
+            console.log(`   • Launchpad binaries: ${launchpadBinaries.length} files`)
+          }
+
+          // Show specific packages and binaries that would be removed
           if (fs.existsSync(pkgsDir)) {
             try {
               const packages = fs.readdirSync(pkgsDir, { withFileTypes: true })
@@ -967,7 +1053,7 @@ cli
 
               if (packages.length > 0) {
                 console.log('')
-                console.log('📦 Launchpad-installed packages that would be removed:')
+                console.log('📦 Packages that would be removed:')
                 packages.forEach((pkg) => {
                   console.log(`   • ${pkg}`)
                 })
@@ -977,6 +1063,21 @@ cli
               // Ignore errors reading packages directory
             }
           }
+
+          if (launchpadBinaries.length > 0) {
+            console.log('')
+            console.log('🔧 Binaries that would be removed:')
+            const binariesByPackage = launchpadBinaries.reduce((acc, { binary, package: pkg }) => {
+              if (!acc[pkg])
+                acc[pkg] = []
+              acc[pkg].push(binary)
+              return acc
+            }, {} as Record<string, string[]>)
+
+            Object.entries(binariesByPackage).forEach(([pkg, binaries]) => {
+              console.log(`   • ${pkg}: ${binaries.join(', ')}`)
+            })
+          }
         }
         else {
           console.log('📭 Nothing found to clean')
@@ -985,11 +1086,14 @@ cli
       }
 
       // Actually perform cleanup
-      if (existingDirs.length > 0) {
+      if (existingDirs.length > 0 || launchpadBinaries.length > 0) {
         console.log(`📊 Cleaning ${formatSize(totalSize)} of data (${totalFiles} files)...`)
         console.log('')
 
         let removedDirs = 0
+        let removedBinaries = 0
+
+        // Remove directories
         for (const dir of existingDirs) {
           try {
             console.log(`🗑️  Removing ${dir.name}...`)
@@ -1004,11 +1108,32 @@ cli
           }
         }
 
+        // Remove Launchpad-managed binaries
+        if (launchpadBinaries.length > 0) {
+          console.log(`🗑️  Removing Launchpad-installed binaries...`)
+          for (const { binary, fullPath } of launchpadBinaries) {
+            try {
+              fs.unlinkSync(fullPath)
+              removedBinaries++
+              if (options?.verbose) {
+                console.log(`   ✅ Removed binary: ${binary}`)
+              }
+            }
+            catch (error) {
+              if (options?.verbose) {
+                console.error(`   ❌ Failed to remove ${binary}:`, error instanceof Error ? error.message : String(error))
+              }
+            }
+          }
+        }
+
         console.log('')
         console.log('✅ Cleanup completed!')
         console.log(`   • Removed ${removedDirs}/${existingDirs.length} directories`)
+        if (launchpadBinaries.length > 0) {
+          console.log(`   • Removed ${removedBinaries}/${launchpadBinaries.length} binaries`)
+        }
         console.log(`   • Freed ${formatSize(totalSize)} of disk space`)
-        console.log(`   • Removed ${totalFiles} files`)
 
         if (options?.keepCache) {
           console.log('')

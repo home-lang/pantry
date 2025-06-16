@@ -43,6 +43,11 @@ const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'packages')
  * Get the installation prefix
  */
 export function install_prefix(): Path {
+  // Check for test environment override first
+  if (process.env.LAUNCHPAD_PREFIX) {
+    return new Path(process.env.LAUNCHPAD_PREFIX)
+  }
+
   // Check if there's a configured installation path
   if (config.installPath)
     return new Path(config.installPath)
@@ -510,10 +515,49 @@ async function downloadPackage(
       console.warn(`Extracted to: ${extractDir}`)
     }
 
-    // Find and copy binaries
-    const installedFiles: string[] = []
-    const binDir = path.join(installPath, 'bin')
-    await fs.promises.mkdir(binDir, { recursive: true })
+    // Find the actual package root in the extracted directory
+    async function findPackageRoot(extractDir: string, domain: string, version: string): Promise<string> {
+      // Common package layouts to try:
+      const candidates = [
+        // Direct pkgx format: {domain}/v{version}/
+        path.join(extractDir, domain, `v${version}`),
+        // Direct extracted content
+        extractDir,
+        // Sometimes there's a single subdirectory
+        ...(await fs.promises.readdir(extractDir)).map(dir => path.join(extractDir, dir)),
+      ]
+
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+          // Check if this looks like a package root (has bin, lib, or similar)
+          const entries = await fs.promises.readdir(candidate, { withFileTypes: true })
+          const hasPackageStructure = entries.some(entry =>
+            entry.isDirectory() && ['bin', 'lib', 'include', 'share', 'sbin'].includes(entry.name),
+          )
+
+          if (hasPackageStructure) {
+            if (config.verbose) {
+              console.warn(`Found package root at: ${candidate}`)
+            }
+            return candidate
+          }
+        }
+      }
+
+      // Fallback to the extract directory
+      if (config.verbose) {
+        console.warn(`Using fallback package root: ${extractDir}`)
+      }
+      return extractDir
+    }
+
+    // Create pkgx-compatible directory structure: {installPath}/{domain}/v{version}/
+    const packageDir = path.join(installPath, domain, `v${version}`)
+    await fs.promises.mkdir(packageDir, { recursive: true })
+
+    // Create metadata tracking directory
+    const metadataDir = path.join(installPath, 'pkgs', domain, `v${version}`)
+    await fs.promises.mkdir(metadataDir, { recursive: true })
 
     // Show spinner during installation
     const installSpinner = new Spinner()
@@ -521,46 +565,97 @@ async function downloadPackage(
       installSpinner.start(`⚡ Installing ${domain} v${version}...`)
     }
 
-    // Look for executables in common locations
-    const searchDirs = [
-      extractDir,
-      path.join(extractDir, 'bin'),
-      path.join(extractDir, 'usr', 'bin'),
-      path.join(extractDir, 'usr', 'local', 'bin'),
-      // pkgx-specific structure: {domain}/v{version}/bin/
-      path.join(extractDir, domain, `v${version}`, 'bin'),
-    ]
+    // Find the actual package root in the extracted directory
+    const packageSource = await findPackageRoot(extractDir, domain, version)
 
-    for (const searchDir of searchDirs) {
-      if (!fs.existsSync(searchDir))
-        continue
+    // Copy the entire package structure (bin, lib, include, share, etc.)
+    await copyDirectoryStructure(packageSource, packageDir)
+
+    // Create missing library symlinks for dynamic linking
+    async function createLibrarySymlinks(packageDir: string): Promise<void> {
+      const libDir = path.join(packageDir, 'lib')
+
+      if (!fs.existsSync(libDir)) {
+        return
+      }
 
       try {
-        const files = await fs.promises.readdir(searchDir)
+        const files = await fs.promises.readdir(libDir)
 
         for (const file of files) {
-          const filePath = path.join(searchDir, file)
-          const stat = await fs.promises.stat(filePath)
+          // Look for versioned libraries like libssl.1.1.dylib, libz.1.3.1.dylib
+          const versionedMatch = file.match(/^(lib\w+)\.(\d+(?:\.\d+)*)\.dylib$/)
+          if (versionedMatch) {
+            const [, baseName, version] = versionedMatch
+            const majorVersion = version.split('.')[0]
 
-          // Check if it's an executable file
-          if (stat.isFile() && (stat.mode & 0o111)) {
-            const targetPath = path.join(binDir, file)
-            await fs.promises.copyFile(filePath, targetPath)
-            await fs.promises.chmod(targetPath, 0o755)
-            installedFiles.push(targetPath)
+            // Create symlinks: libssl.dylib -> libssl.1.1.dylib
+            const genericLink = `${baseName}.dylib`
+            const majorLink = `${baseName}.${majorVersion}.dylib`
 
-            if (config.verbose) {
-              console.warn(`Installed binary: ${file}`)
+            const genericPath = path.join(libDir, genericLink)
+            const majorPath = path.join(libDir, majorLink)
+
+            // Create generic symlink if it doesn't exist
+            if (!fs.existsSync(genericPath)) {
+              try {
+                await fs.promises.symlink(file, genericPath)
+                if (config.verbose) {
+                  console.warn(`Created library symlink: ${genericLink} -> ${file}`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create symlink ${genericLink}:`, error)
+                }
+              }
+            }
+
+            // Create major version symlink if it doesn't exist and is different from generic
+            if (majorLink !== genericLink && !fs.existsSync(majorPath)) {
+              try {
+                await fs.promises.symlink(file, majorPath)
+                if (config.verbose) {
+                  console.warn(`Created library symlink: ${majorLink} -> ${file}`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create symlink ${majorLink}:`, error)
+                }
+              }
             }
           }
         }
       }
       catch (error) {
         if (config.verbose) {
-          console.warn(`Error processing directory ${searchDir}:`, error)
+          console.warn(`Error creating library symlinks in ${libDir}:`, error)
         }
       }
     }
+
+    await createLibrarySymlinks(packageDir)
+
+    // Create version symlinks like pkgx does
+    await createVersionSymlinks(installPath, domain, version)
+
+    // Find binaries and create shims
+    const installedBinaries = await createShims(packageDir, installPath, domain, version)
+
+    // Create package metadata for tracking
+    const metadata = {
+      domain,
+      version,
+      installedAt: new Date().toISOString(),
+      binaries: installedBinaries,
+      installPath: packageDir,
+    }
+
+    await fs.promises.writeFile(
+      path.join(metadataDir, 'metadata.json'),
+      JSON.stringify(metadata, null, 2),
+    )
 
     if (!config.verbose) {
       installSpinner.stop()
@@ -569,7 +664,7 @@ async function downloadPackage(
     // Clean up temp directory
     await fs.promises.rm(tempDir, { recursive: true, force: true })
 
-    return installedFiles
+    return installedBinaries.map(binary => path.join(installPath, 'bin', binary))
   }
   catch (error) {
     // Clean up on error
@@ -578,6 +673,255 @@ async function downloadPackage(
     }
     throw error
   }
+}
+
+/**
+ * Copy directory structure preserving the layout
+ */
+async function copyDirectoryStructure(source: string, target: string): Promise<void> {
+  await fs.promises.mkdir(target, { recursive: true })
+
+  const entries = await fs.promises.readdir(source, { withFileTypes: true })
+
+  for (const entry of entries) {
+    const sourcePath = path.join(source, entry.name)
+    const targetPath = path.join(target, entry.name)
+
+    if (entry.isDirectory()) {
+      await copyDirectoryStructure(sourcePath, targetPath)
+    }
+    else if (entry.isFile()) {
+      await fs.promises.copyFile(sourcePath, targetPath)
+
+      // Preserve executable permissions
+      const stat = await fs.promises.stat(sourcePath)
+      await fs.promises.chmod(targetPath, stat.mode)
+    }
+  }
+}
+
+/**
+ * Create version symlinks like pkgx: v1 -> v1.3.1, v* -> v1.3.1
+ */
+async function createVersionSymlinks(installPath: string, domain: string, version: string): Promise<void> {
+  const domainDir = path.join(installPath, domain)
+  const versionDir = `v${version}`
+
+  // Parse semantic version for creating major/minor symlinks
+  const versionParts = version.split('.')
+  const major = versionParts[0]
+  const minor = `${major}.${versionParts[1] || '0'}`
+
+  const symlinks = [
+    { link: 'v*', target: versionDir },
+    { link: `v${major}`, target: versionDir },
+  ]
+
+  // Add minor version symlink if it's different from major
+  if (minor !== major) {
+    symlinks.push({ link: `v${minor}`, target: versionDir })
+  }
+
+  for (const { link, target } of symlinks) {
+    const linkPath = path.join(domainDir, link)
+
+    try {
+      // Remove existing symlink if it exists
+      if (fs.existsSync(linkPath)) {
+        await fs.promises.unlink(linkPath)
+      }
+
+      await fs.promises.symlink(target, linkPath)
+
+      if (config.verbose) {
+        console.warn(`Created symlink: ${link} -> ${target}`)
+      }
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`Failed to create symlink ${link} -> ${target}:`, error)
+      }
+    }
+  }
+}
+
+/**
+ * Create shims in bin directory that point to the actual binaries
+ */
+async function createShims(packageDir: string, installPath: string, domain: string, version: string): Promise<string[]> {
+  const binDir = path.join(packageDir, 'bin')
+  const shimDir = path.join(installPath, 'bin')
+  await fs.promises.mkdir(shimDir, { recursive: true })
+
+  const installedBinaries: string[] = []
+
+  if (!fs.existsSync(binDir)) {
+    return installedBinaries
+  }
+
+  const binaries = await fs.promises.readdir(binDir)
+
+  for (const binary of binaries) {
+    const binaryPath = path.join(binDir, binary)
+    const stat = await fs.promises.stat(binaryPath)
+
+    // Check if it's an executable file
+    if (stat.isFile() && (stat.mode & 0o111)) {
+      const shimPath = path.join(shimDir, binary)
+
+      // Create a shell script shim that sets up the environment
+      const shimContent = `#!/bin/sh
+# Launchpad shim for ${binary} (${domain} v${version})
+exec "${binaryPath}" "$@"
+`
+
+      await fs.promises.writeFile(shimPath, shimContent)
+      await fs.promises.chmod(shimPath, 0o755)
+
+      installedBinaries.push(binary)
+
+      if (config.verbose) {
+        console.warn(`Created shim: ${binary} -> ${binaryPath}`)
+      }
+    }
+  }
+
+  return installedBinaries
+}
+
+/**
+ * Resolves and installs package dependencies recursively
+ */
+async function installDependencies(
+  packageName: string,
+  installPath: string,
+  installedPackages: Set<string> = new Set(),
+): Promise<string[]> {
+  const allInstalledFiles: string[] = []
+  const packageInfo = getPackageInfo(packageName)
+
+  if (!packageInfo || !packageInfo.dependencies) {
+    return allInstalledFiles
+  }
+
+  if (config.verbose) {
+    console.warn(`Resolving dependencies for ${packageName}: ${packageInfo.dependencies.join(', ')}`)
+  }
+
+  for (const dep of packageInfo.dependencies) {
+    const { name: depName, version: depVersion } = parsePackageSpec(dep)
+    const depDomain = resolvePackageName(depName)
+
+    // Skip if already installed to avoid circular dependencies
+    if (installedPackages.has(depDomain)) {
+      if (config.verbose) {
+        console.warn(`Skipping ${depDomain} - already installed`)
+      }
+      continue
+    }
+
+    // Mark as installed to prevent cycles
+    installedPackages.add(depDomain)
+
+    try {
+      if (config.verbose) {
+        console.warn(`Installing dependency: ${dep}`)
+      }
+      else {
+        console.log(`📦 Installing dependency: ${depName}`)
+      }
+
+      // Try to resolve a suitable version for the dependency
+      let versionToInstall = depVersion
+      if (!versionToInstall) {
+        // Try to get the latest version if no version specified
+        versionToInstall = getLatestVersion(depName)
+      }
+      else {
+        // Try to resolve the version constraint to an actual version
+        const resolvedVersion = resolveVersion(depName, depVersion)
+        if (resolvedVersion) {
+          versionToInstall = resolvedVersion
+        }
+        else {
+          // Fall back to latest if constraint cannot be resolved
+          if (config.verbose) {
+            console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying latest`)
+          }
+          versionToInstall = getLatestVersion(depName)
+        }
+      }
+
+      if (!versionToInstall) {
+        if (config.verbose) {
+          console.warn(`Warning: No suitable version found for dependency ${depName}`)
+        }
+        else {
+          console.log(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
+        }
+        continue
+      }
+
+      // Recursively install dependencies of this dependency
+      const nestedFiles = await installDependencies(depName, installPath, installedPackages)
+      allInstalledFiles.push(...nestedFiles)
+
+      // Install the dependency itself with the resolved version
+      const depSpec = versionToInstall ? `${depName}@${versionToInstall}` : depName
+      const depFiles = await installPackage(depName, depSpec, installPath)
+      allInstalledFiles.push(...depFiles)
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`Warning: Failed to install dependency ${dep}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      else {
+        console.log(`⚠️  Warning: Failed to install dependency ${depName}, but continuing...`)
+      }
+      // Continue with other dependencies even if one fails
+    }
+  }
+
+  return allInstalledFiles
+}
+
+/**
+ * Install a single package without dependencies (extracted from main install function)
+ */
+async function installPackage(packageName: string, packageSpec: string, installPath: string): Promise<string[]> {
+  const os = getPlatform()
+  const architecture = getArchitecture()
+
+  // Parse package name and version
+  const { name, version: requestedVersion } = parsePackageSpec(packageSpec)
+  const domain = resolvePackageName(name)
+
+  if (config.verbose) {
+    console.warn(`Resolved ${name} to domain: ${domain}`)
+  }
+
+  // Get version to install
+  let version = requestedVersion
+  if (!version) {
+    const latestVersion = getLatestVersion(name)
+    if (!latestVersion) {
+      throw new Error(`No versions found for ${name} on ${os}/${architecture}`)
+    }
+    version = latestVersion
+  }
+
+  if (config.verbose) {
+    console.warn(`Installing ${domain} version: ${version}`)
+  }
+
+  // Download and install
+  const installedFiles = await downloadPackage(domain, version, os, architecture, installPath)
+
+  if (config.verbose) {
+    console.warn(`Successfully installed ${domain} v${version}`)
+  }
+
+  return installedFiles
 }
 
 /**
@@ -606,14 +950,8 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     console.log(`🚀 Installing ${packageList.length} packages...`)
   }
 
-  const os = getPlatform()
-  const architecture = getArchitecture()
-
-  if (config.verbose) {
-    console.warn(`Platform: ${os}/${architecture}`)
-  }
-
   const allInstalledFiles: string[] = []
+  const installedPackages = new Set<string>()
 
   for (let i = 0; i < packageList.length; i++) {
     const pkg = packageList[i]
@@ -625,34 +963,33 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         console.log(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
       }
 
-      // Parse package name and version
-      const { name: packageName, version: requestedVersion } = parsePackageSpec(pkg)
+      const { name: packageName } = parsePackageSpec(pkg)
       const domain = resolvePackageName(packageName)
 
-      if (config.verbose) {
-        console.warn(`Resolved ${packageName} to domain: ${domain}`)
-      }
-
-      // Get version to install
-      let version = requestedVersion
-      if (!version) {
-        const latestVersion = await getLatestVersion(packageName)
-        if (!latestVersion) {
-          throw new Error(`No versions found for ${packageName} on ${os}/${architecture}`)
+      // Skip if already installed
+      if (installedPackages.has(domain)) {
+        if (config.verbose) {
+          console.warn(`Skipping ${domain} - already installed`)
         }
-        version = latestVersion
+        continue
       }
 
+      // Mark as installed
+      installedPackages.add(domain)
+
+      // Install dependencies first
       if (config.verbose) {
-        console.warn(`Installing version: ${version}`)
+        console.warn(`Installing dependencies for ${packageName}...`)
       }
+      const depFiles = await installDependencies(packageName, installPath, installedPackages)
+      allInstalledFiles.push(...depFiles)
 
-      // Download and install
-      const installedFiles = await downloadPackage(domain, version, os, architecture, installPath)
-      allInstalledFiles.push(...installedFiles)
+      // Install the main package
+      const mainFiles = await installPackage(packageName, pkg, installPath)
+      allInstalledFiles.push(...mainFiles)
 
       if (config.verbose) {
-        console.warn(`Successfully installed ${domain} v${version}`)
+        console.warn(`Successfully processed ${pkg}`)
       }
     }
     catch (error) {
