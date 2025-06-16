@@ -379,6 +379,65 @@ interface Installation {
     version: Version
   }
 }
+
+interface PackageRequirement {
+  project: string
+  constraint: SemverRange
+  global?: boolean
+}
+
+interface DependencyConfiguration {
+  /** Top-level global flag - applies to all dependencies unless overridden */
+  global?: boolean
+  /** Package dependencies with optional individual global flags */
+  dependencies: DependencySpec[]
+  /** Environment variables */
+  env?: Record<string, string>
+}
+
+type DependencySpec =
+  | string // Simple format: "node@22" (defaults to global: false)
+  | { // Object format with options
+    version?: string
+    global?: boolean // Individual package global flag (overrides top-level)
+  }
+```
+
+### Global Flag Types
+
+```typescript
+interface GlobalDependencyOptions {
+  /** Individual package global configuration */
+  packageGlobal?: boolean
+  /** Top-level global configuration (applies to all packages) */
+  topLevelGlobal?: boolean
+  /** Resolved global setting (considering precedence) */
+  resolvedGlobal: boolean
+}
+
+// Example dependency configurations
+interface DependencyExamples {
+  // String format (defaults to local installation)
+  simple: 'node@22'
+
+  // Object format with individual global flag
+  individual: {
+    version: '22.1.0'
+    global: true
+  }
+
+  // Top-level global with selective overrides
+  topLevel: {
+    global: true
+    dependencies: {
+      'node@22': string
+      'typescript@5.0': {
+        version: '5.0.4'
+        global: false // Override top-level global
+      }
+    }
+  }
+}
 ```
 
 ## Usage Examples
@@ -452,6 +511,85 @@ await dump('/path/to/project', { dryrun: false, quiet: false })
 
 // Integrate shell environment
 await integrate('/path/to/project')
+```
+
+### Dependency Management with Global Flags
+
+```typescript
+import { dump } from '@stacksjs/launchpad'
+
+// Example: dependencies.yaml with global flag configurations
+const dependencyConfig = `
+# Top-level global flag (applies to all packages)
+global: true
+dependencies:
+  # Uses top-level global: true
+  - node@22
+  - python@3.12
+
+  # Individual override to local installation
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+
+  # Individual global configuration
+  git@2.42:
+    version: 2.42.0
+    global: true
+
+env:
+  NODE_ENV: development
+`
+
+// Generate environment with global flag support
+await dump('/path/to/project', { dryrun: false, quiet: false })
+
+// The dump function will:
+// - Install node@22 and python@3.12 globally (to /usr/local)
+// - Install typescript@5.0 locally (to project directory)
+// - Install git@2.42 globally (individual flag)
+```
+
+### Global Flag Resolution Examples
+
+```typescript
+// Example dependency configurations and their resolved global settings
+
+// 1. String format (defaults to local)
+const stringFormat = {
+  dependencies: ['node@22', 'python@3.12'],
+  resolved: [
+    { package: 'node@22', global: false }, // default
+    { package: 'python@3.12', global: false } // default
+  ]
+}
+
+// 2. Individual global flags
+const individualFlags = {
+  dependencies: {
+    'node@22': { version: '22.1.0', global: true },
+    'python@3.12': { version: '3.12.1', global: false }
+  },
+  resolved: [
+    { package: 'node@22', global: true }, // individual flag
+    { package: 'python@3.12', global: false } // individual flag
+  ]
+}
+
+// 3. Top-level global with overrides
+const topLevelWithOverrides = {
+  global: true, // Top-level flag
+  dependencies: {
+    'node@22': '22.1.0', // string format
+    'python@3.12': { version: '3.12.1' }, // object without global
+    'typescript@5.0': { version: '5.0.4', global: false } // override to local
+  },
+  resolved: [
+    { package: 'node@22', global: true }, // uses top-level
+    { package: 'python@3.12', global: true }, // uses top-level
+    { package: 'typescript@5.0', global: false } // individual override
+  ]
+}
 ```
 
 ### Creating Shims

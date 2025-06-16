@@ -68,6 +68,58 @@ env:
   DATABASE_URL: postgresql://localhost/myapp
 ```
 
+#### Global Installation Control
+
+Control where packages are installed using the `global` flag:
+
+**Individual Package Control:**
+```yaml
+# dependencies.yaml
+dependencies:
+  # Global packages (installed to /usr/local)
+  node@22:
+    version: 22.1.0
+    global: true
+  python@3.12:
+    version: 3.12.1
+    global: true
+
+  # Local packages (project-specific installation)
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+
+  # String format defaults to local
+  - eslint@8.50
+
+env:
+  NODE_ENV: development
+```
+
+**Top-Level Global Flag:**
+```yaml
+# dependencies.yaml
+global: true  # Install all packages globally by default
+dependencies:
+  - node@22
+  - python@3.12
+  - git@2.42
+
+  # Override specific packages to be local
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+
+env:
+  NODE_ENV: development
+```
+
+**Global Installation Behavior:**
+- **Global packages** (`global: true`): Installed system-wide, available in all environments
+- **Local packages** (`global: false` or default): Installed per-project, isolated from other environments
+- **Mixed approach**: Combine global tools with project-specific dependencies
+- **Precedence**: Individual package `global` flags override top-level `global` setting
+
 ### Shell Integration
 
 To enable automatic environment activation, add shell integration:

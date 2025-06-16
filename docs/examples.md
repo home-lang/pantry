@@ -85,6 +85,81 @@ env:
   MODEL_DIR: ./models
 ```
 
+### Global Tool Installation
+
+Use the `global` flag to install development tools system-wide:
+
+```yaml
+# dependencies.yaml - Global development tools
+global: true
+dependencies:
+  - node@22
+  - python@3.12
+  - go@1.21
+  - bun@1.2.3
+
+env:
+  # Global environment variables
+  EDITOR: code
+  PAGER: less
+```
+
+### Mixed Global and Local Packages
+
+Combine global tools with project-specific dependencies:
+
+```yaml
+# dependencies.yaml - Mixed installation
+global: true  # Default to global installation
+dependencies:
+  # Global development tools
+  - node@22
+  - python@3.12
+  - git@2.42
+
+  # Project-specific overrides
+  typescript@5.0:
+    version: 5.0.4
+    global: false     # Install locally for this project
+
+  eslint@8.50:
+    version: 8.50.0
+    global: false     # Project-specific linting config
+
+env:
+  NODE_ENV: development
+  PROJECT_NAME: my-mixed-project
+```
+
+### Team Development Environment
+
+Configure a standardized team environment with global shared tools:
+
+```yaml
+# dependencies.yaml - Team standard
+dependencies:
+  # Global shared tools (available system-wide)
+  node@22:
+    version: 22.1.0
+    global: true
+  python@3.12:
+    version: 3.12.1
+    global: true
+  docker@24:
+    version: 24.0.0
+    global: true
+
+  # Project-specific tools (isolated per project)
+  - typescript@5.0
+  - jest@29.0
+  - eslint@8.50
+
+env:
+  NODE_ENV: development
+  TEAM_CONFIG: standard-v2
+  CI_ENVIRONMENT: local
+```
+
 ### Full-Stack Development
 
 ```yaml
@@ -246,6 +321,70 @@ env:
 
   # Conditional variables
   DEBUG: ${{ env.NODE_ENV == 'development' && 'app:*' || '' }}
+```
+
+### Individual Package Global Configuration
+
+Fine-grained control over which packages are global vs local:
+
+```yaml
+# dependencies.yaml
+dependencies:
+  # Core development tools - install globally
+  node@22:
+    version: 22.1.0
+    global: true
+  python@3.12:
+    version: 3.12.1
+    global: true
+  git@2.42:
+    version: 2.42.0
+    global: true
+
+  # Project-specific tools - install locally
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+  jest@29.0:
+    version: 29.7.0
+    global: false
+
+  # String format - defaults to local
+  - eslint@8.50
+  - prettier@3.0
+
+env:
+  NODE_ENV: development
+  PROJECT_TYPE: mixed-environment
+```
+
+### Global Tools for Development Machine Setup
+
+Use global flag to set up a development machine with system-wide tools:
+
+```yaml
+# dependencies.yaml - Development machine setup
+global: true
+dependencies:
+  # Core runtimes
+  - node@22
+  - python@3.12
+  - go@1.21
+  - bun@1.2.3
+
+  # Development tools
+  - git@2.42
+  - curl@8.4
+  - wget@1.21
+
+  # Container tools
+  - docker@24.0
+  - kubectl@1.28
+
+env:
+  # Global development settings
+  DOCKER_DEFAULT_PLATFORM: linux/amd64
+  KUBECTL_EXTERNAL_DIFF: code --wait --diff
 ```
 
 ## Scripting Examples

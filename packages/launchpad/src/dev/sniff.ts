@@ -6,10 +6,10 @@ import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { isArray, isNumber, isPlainObject, isString } from 'is-what'
 
-// Define our own types to replace libpkgx types
 export interface PackageRequirement {
   project: string
   constraint: SemverRange
+  global?: boolean
 }
 
 export class SemverRange {
@@ -698,12 +698,14 @@ function validateDollarSignUsage(str: string): void {
 function extract_well_formatted_entries(
   yaml: PlainObject,
 ): { deps: PackageRequirement[], env: Record<string, unknown> } {
-  const deps = parse_deps(yaml.dependencies)
+  // Extract top-level global flag
+  const topLevelGlobal = yaml.global === true || yaml.global === 'true'
+  const deps = parse_deps(yaml.dependencies, topLevelGlobal)
   const env = isPlainObject(yaml.env) ? yaml.env : {}
   return { deps, env }
 }
 
-function parse_deps(node: unknown) {
+function parse_deps(node: unknown, topLevelGlobal = false) {
   if (isString(node))
     node = node.split(/\s+/).filter(x => x)
 
@@ -727,9 +729,32 @@ function parse_deps(node: unknown) {
 
   return Object.entries(node)
     .map(([project, constraint]) => {
+      // Handle object format: { version: "1.0.0", global: true }
+      if (isPlainObject(constraint)) {
+        const constraintObj = constraint as { version?: string, global?: boolean | string }
+        const version = constraintObj.version || '*'
+        // Handle both boolean and string values for global flag
+        // Individual global flag overrides top-level global flag
+        const hasIndividualGlobal = constraintObj.global === true || constraintObj.global === 'true' || constraintObj.global === false || constraintObj.global === 'false'
+        const global = hasIndividualGlobal
+          ? (constraintObj.global === true || constraintObj.global === 'true')
+          : topLevelGlobal
+
+        if (/^@?latest$/.test(version)) {
+          const versionConstraint = '*'
+          const requirement = validatePackageRequirement(project, versionConstraint)
+          return requirement ? { ...requirement, global } : null
+        }
+
+        const requirement = validatePackageRequirement(project, version)
+        return requirement ? { ...requirement, global } : null
+      }
+
+      // Handle string format: "1.0.0" (uses top-level global flag)
       if (/^@?latest$/.test(constraint))
         constraint = '*'
-      return validatePackageRequirement(project, constraint)
+      const requirement = validatePackageRequirement(project, constraint)
+      return requirement && topLevelGlobal ? { ...requirement, global: topLevelGlobal } : requirement
     })
     .filter(Boolean) as PackageRequirement[]
 }

@@ -266,6 +266,55 @@ env:
   PROJECT_NAME: my-awesome-project
 ```
 
+#### Global Installation Flag
+
+Control where packages are installed with the `global` flag:
+
+**Individual Package Global Flags:**
+```yaml
+# dependencies.yaml
+dependencies:
+  # Install globally (system-wide)
+  node@22:
+    version: 22.1.0
+    global: true
+
+  # Install locally (project-specific)
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+
+  # String format defaults to local installation
+  - eslint@8.50
+
+env:
+  NODE_ENV: development
+```
+
+**Top-Level Global Flag:**
+```yaml
+# dependencies.yaml
+global: true  # Apply to all dependencies
+dependencies:
+  - node@22
+  - python@3.12
+  - git@2.42
+
+  # Override for specific packages
+  typescript@5.0:
+    version: 5.0.4
+    global: false  # Install locally despite top-level global: true
+
+env:
+  NODE_ENV: development
+```
+
+**Global Flag Behavior:**
+- `global: true` - Installs to `/usr/local` (or configured global path)
+- `global: false` - Installs to project-specific directories (default)
+- Individual package flags override top-level `global` setting
+- String format dependencies default to local installation
+
 Supported dependency file formats:
 - `dependencies.yaml` / `dependencies.yml`
 - `pkgx.yaml` / `pkgx.yml`

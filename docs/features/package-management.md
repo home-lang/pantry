@@ -30,6 +30,72 @@ By default, Launchpad automatically selects the best installation location:
 launchpad install node@22
 ```
 
+### Global vs Local Installation via Dependencies
+
+Control installation location using the `global` flag in dependency files:
+
+#### Individual Package Global Flags
+
+```yaml
+# dependencies.yaml
+dependencies:
+  # Global installation (system-wide, available everywhere)
+  node@22:
+    version: 22.1.0
+    global: true
+
+  # Local installation (project-specific, isolated)
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+
+  # String format defaults to local installation
+  - eslint@8.50
+
+env:
+  NODE_ENV: development
+```
+
+#### Top-Level Global Flag
+
+Apply global installation to all dependencies by default:
+
+```yaml
+# dependencies.yaml
+global: true  # Install all packages globally unless overridden
+dependencies:
+  - node@22
+  - python@3.12
+  - git@2.42
+
+  # Selective override to local installation
+  typescript@5.0:
+    version: 5.0.4
+    global: false
+
+env:
+  NODE_ENV: development
+```
+
+#### Global Flag Benefits
+
+**Global Installation** (`global: true`):
+- Packages available system-wide across all projects
+- Installed to `/usr/local` (or configured global path)
+- Shared dependencies reduce disk usage
+- Consistent tool versions across projects
+
+**Local Installation** (`global: false` or default):
+- Perfect project isolation
+- No version conflicts between projects
+- Project-specific configurations
+- Easy cleanup when project is removed
+
+**Mixed Approach** (recommended):
+- Core development tools global (node, python, git)
+- Project-specific tools local (linters, test frameworks)
+- Best of both worlds: convenience + isolation
+
 ### System-Wide Installation
 
 The default behavior already installs to `/usr/local` for system-wide availability:

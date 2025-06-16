@@ -231,6 +231,40 @@ env:
 
 This provides better isolation and avoids version conflicts.
 
+**However, if you need global installations**, you can use the `global` flag in your dependencies:
+
+```yaml
+# dependencies.yaml - Global installation with Launchpad
+dependencies:
+  node@22:
+    version: 22.1.0
+    global: true # Install globally to /usr/local
+  typescript@5.0:
+    version: 5.0.4
+    global: true # Available system-wide
+
+env:
+  NODE_ENV: development
+```
+
+**Or apply global installation to all packages:**
+```yaml
+# dependencies.yaml - All packages global
+global: true
+dependencies:
+  - node@22
+  - typescript@5.0
+  - bun@1.2.3
+
+env:
+  NODE_ENV: development
+```
+
+**Global vs Project-Local Benefits:**
+- **Global installation** (`global: true`): Tools available system-wide, shared across projects
+- **Project-local installation** (default): Perfect isolation, no version conflicts between projects
+- **Mixed approach**: Core tools global, project-specific tools local
+
 ## Configuration & Customization
 
 ### Where should I put my configuration file?

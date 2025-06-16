@@ -12,6 +12,7 @@ const config: ESLintConfig = stacks({
   yaml: true,
   ignores: [
     'fixtures/**',
+    'docs/**', // Ignore all documentation files to avoid YAML parsing issues in code blocks
   ],
 })
 

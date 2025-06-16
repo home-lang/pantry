@@ -96,6 +96,84 @@ JavaScript format (`.launchpadrc`):
 }
 ```
 
+## Dependency File Configuration
+
+Launchpad supports flexible dependency configuration with global installation options:
+
+### Basic Dependency Format
+
+```yaml
+# dependencies.yaml
+dependencies:
+  - node@22
+  - python@3.12
+
+env:
+  NODE_ENV: development
+```
+
+### Global Installation Configuration
+
+Control whether packages are installed globally or locally with the `global` flag:
+
+#### Individual Package Global Flags
+
+```yaml
+# dependencies.yaml
+dependencies:
+  node@22:
+    version: 22.1.0
+    global: true # Install to /usr/local
+  python@3.12:
+    version: 3.12.1
+    global: false # Install to project directory
+  # String format defaults to local installation
+  - typescript@5.0
+```
+
+#### Top-Level Global Flag
+
+Apply global installation to all dependencies:
+
+```yaml
+# dependencies.yaml
+global: true # All packages install globally unless overridden
+dependencies:
+  - node@22
+  - python@3.12
+  - bun@1.2.3
+  typescript@5.0:
+    version: 5.0.4
+    global: false # Override: install locally for this project
+```
+
+#### Global Flag Precedence
+
+The precedence order for global installation flags:
+
+1. **Individual package `global` flag** (highest priority)
+2. **Top-level `global` flag**
+3. **Default behavior** (project-local installation)
+
+```yaml
+# Example showing precedence
+global: true # Top-level: install globally
+dependencies:
+  - node@22 # Uses top-level: global=true
+  - python@3.12 # Uses top-level: global=true
+  bun@1.2.3:
+    version: 1.2.3
+    global: false # Override: local installation
+  typescript@5.0:
+    version: 5.0.4 # Uses top-level: global=true
+```
+
+### Installation Behavior
+
+- **Global packages** (`global: true`): Installed to `/usr/local` (or user-configured global path)
+- **Local packages** (`global: false` or default): Installed to project-specific directories
+- **Mixed installations**: You can have both global and local packages in the same project
+
 ## Configuration Options
 
 ### General Options

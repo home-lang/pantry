@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
-import { install } from '../install'
+import { install, install_prefix } from '../install'
 import shell_escape from './shell-escape.ts'
 import sniff from './sniff.ts'
 
@@ -28,10 +28,16 @@ function getPkgCommand(pkgName: string): string {
 }
 
 // Install packages using our new direct installation system
-async function installPackagesDirectly(packages: Array<{ project: string, version: string, command: string }>, installPrefix: string): Promise<{ successful: string[], failed: Array<{ project: string, error: string, suggestion?: string }> }> {
+async function installPackagesDirectly(
+  packages: Array<{ project: string, version: string, command: string, global?: boolean }>,
+  installPrefix: string,
+  globalInstallPrefix: string,
+): Promise<{ successful: string[], failed: Array<{ project: string, error: string, suggestion?: string }> }> {
   // Create necessary directories
   const binDir = path.join(installPrefix, 'bin')
+  const globalBinDir = path.join(globalInstallPrefix, 'bin')
   await fs.promises.mkdir(binDir, { recursive: true })
+  await fs.promises.mkdir(globalBinDir, { recursive: true })
 
   const successful: string[] = []
   const failed: Array<{ project: string, error: string, suggestion?: string }> = []
@@ -59,16 +65,19 @@ async function installPackagesDirectly(packages: Array<{ project: string, versio
 
   for (const pkg of packages) {
     try {
+      const targetInstallPrefix = pkg.global ? globalInstallPrefix : installPrefix
+      const installType = pkg.global ? 'global' : 'project-local'
+
       if (config.verbose) {
-        console.log(`🔄 Installing ${pkg.project}@${pkg.version} (direct installation)...`)
+        console.log(`🔄 Installing ${pkg.project}@${pkg.version} (${installType} installation)...`)
       }
 
       // Use our new direct installation system
       const packageSpec = pkg.version ? `${pkg.project}@${pkg.version}` : pkg.project
-      const installedFiles = await install([packageSpec], installPrefix)
+      const installedFiles = await install([packageSpec], targetInstallPrefix)
 
       if (installedFiles.length > 0) {
-        successful.push(`${pkg.project}@${pkg.version}`)
+        successful.push(`${pkg.project}@${pkg.version}${pkg.global ? ' (global)' : ''}`)
 
         // Verify the binary is working (especially important for bun)
         if (pkg.project === 'bun.sh' && installedFiles.length > 0) {
@@ -96,7 +105,7 @@ async function installPackagesDirectly(packages: Array<{ project: string, versio
           }
         }
 
-        console.log(`✅ Installed ${pkg.project}@${pkg.version}`)
+        console.log(`✅ Installed ${pkg.project}@${pkg.version}${pkg.global ? ' (global)' : ''}`)
       }
       else {
         const suggestion = packageSuggestions[pkg.project]
@@ -188,11 +197,15 @@ export default async function (
     project: pkg.project,
     version: convertVersionConstraint(pkg.constraint.toString()),
     command: getPkgCommand(pkg.project),
+    global: pkg.global,
   }))
 
+  // Define install prefixes
+  const globalInstallPrefix = install_prefix().string
+
   try {
-    // Install packages to project-specific directory using our new system
-    const { successful, failed } = await installPackagesDirectly(packages, installPrefix)
+    // Install packages using our new system (global and project-specific)
+    const { successful, failed } = await installPackagesDirectly(packages, installPrefix, globalInstallPrefix)
 
     if (!opts.quiet && config.verbose) {
       // Report installation results
@@ -298,9 +311,11 @@ export default async function (
     env += `${key}=${shell_escape(value)}\n`
   }
 
-  // Set up project-specific PATH that includes the project's bin directories
+  // Set up project-specific PATH that includes both global and project's bin directories
   const projectBinDir = path.join(installPrefix, 'bin')
   const projectSbinDir = path.join(installPrefix, 'sbin')
+  const globalBinDir = path.join(globalInstallPrefix, 'bin')
+  const globalSbinDir = path.join(globalInstallPrefix, 'sbin')
 
   // Generate script output for shell integration with proper isolation
 
@@ -321,8 +336,8 @@ else
   _LAUNCHPAD_ORIGINAL_ENV="$_LAUNCHPAD_ORIGINAL_ENV ${key}=__UNSET__"
 fi`).join('')}
 
-# Set up project-specific PATH
-export PATH="${projectBinDir}:${projectSbinDir}:$_LAUNCHPAD_ORIGINAL_PATH"
+# Set up project-specific PATH (project-local first, then global, then original)
+export PATH="${projectBinDir}:${projectSbinDir}:${globalBinDir}:${globalSbinDir}:$_LAUNCHPAD_ORIGINAL_PATH"
 
 # Create deactivation function
 _pkgx_dev_try_bye() {
