@@ -3,9 +3,6 @@
   "workspaces": {
     "": {
       "name": "launchpad",
-      "dependencies": {
-        "ts-pkgx": "^0.2.52",
-      },
       "devDependencies": {
         "@stacksjs/docs": "^0.70.23",
         "@stacksjs/eslint-config": "^4.14.0-beta.3",
@@ -46,7 +43,7 @@
       "dependencies": {
         "bunfig": "^0.10.0",
         "cac": "^6.7.14",
-        "ts-pkgx": "^0.2.52",
+        "ts-pkgx": "^0.2.56",
       },
       "devDependencies": {
         "bun-plugin-dtsx": "^0.9.5",
@@ -1934,7 +1931,7 @@
 
     "ts-api-utils": ["ts-api-utils@2.1.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ=="],
 
-    "ts-pkgx": ["ts-pkgx@0.2.52", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.0" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-ki0EKJXj6lUjZvmv6APNK9M3UTLc1Sf+PglNdc6wKdnri6S3N3+iVrUk1a4SeH+TUGmDbAd67NUTRVJL6x1vMw=="],
+    "ts-pkgx": ["ts-pkgx@0.2.56", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.0" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-8AcVcefwC44ESYvGDWC1v99I5QP4i/OzjetxxricOgPh3LGbHSLzX5AvEa1QwvJem7T8waCFth4BYCdpDFvROg=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 

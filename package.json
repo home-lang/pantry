@@ -28,9 +28,6 @@
     "preview:docs": "bun vitepress preview docs",
     "typecheck": "bun tsc --noEmit"
   },
-  "dependencies": {
-    "ts-pkgx": "^0.2.52"
-  },
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
