@@ -2,7 +2,7 @@
 
 # Introduction
 
-> A lightweight package manager built on top of pkgx to simplify package installation and management.
+> A lightweight package manager built on top of the pkgx Pantry to simplify package installation and management.
 
 ## What is Launchpad?
 

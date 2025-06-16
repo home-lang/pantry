@@ -8,7 +8,7 @@
 
 # launchpad
 
-> A lightweight package manager built on top of pkgx to simplify package installation and management. _Similar to Homebrew, but faster._
+> A lightweight package manager built on top of the pkgx Pantry to simplify package installation and management. _Similar to Homebrew, but faster._
 
 ## Features
 

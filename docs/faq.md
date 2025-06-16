@@ -6,7 +6,7 @@ This page answers the most commonly asked questions about Launchpad. If you don'
 
 ### What is Launchpad?
 
-Launchpad is a modern package manager built on top of pkgx that provides fast, isolated package management with automatic environment activation. It's designed to work alongside existing package managers like Homebrew without conflicts.
+Launchpad is a modern package manager built on top of the pkgx Pantry that provides fast, isolated package management with automatic environment activation. _If needed, it's designed to work alongside existing package managers like Homebrew without conflicts._
 
 ### How is Launchpad different from Homebrew?
 

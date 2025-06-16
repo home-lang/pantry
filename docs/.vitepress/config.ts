@@ -93,7 +93,7 @@ const sidebar = [
   },
   { text: 'API Reference', link: '/api/reference' },
 ]
-const description = 'A lightweight package manager built on top of pkgx to simplify package installation and management.'
+const description = 'A lightweight package manager built on top of the pkgx Pantry to simplify package installation and management.'
 const title = 'Launchpad | A lightweight package manager'
 
 export default withPwa(
