@@ -1,4 +1,31 @@
 
+## v0.1.2...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.1.2...main)
+
+### 🚀 Enhancements
+
+- Add ux for installation process ([a9f5623](https://github.com/stacksjs/launchpad/commit/a9f5623))
+- Add search logic ([e1b8bca](https://github.com/stacksjs/launchpad/commit/e1b8bca))
+- Add info logic ([3e30296](https://github.com/stacksjs/launchpad/commit/3e30296))
+- Add doctor command ([15520aa](https://github.com/stacksjs/launchpad/commit/15520aa))
+- Add tags logic ([6a0f65c](https://github.com/stacksjs/launchpad/commit/6a0f65c))
+- Add `cache:clear` and `clean` commands ([547ecba](https://github.com/stacksjs/launchpad/commit/547ecba))
+
+### 🏡 Chore
+
+- Wip ([0cc99f3](https://github.com/stacksjs/launchpad/commit/0cc99f3))
+- Improve type ([9165be5](https://github.com/stacksjs/launchpad/commit/9165be5))
+- Several improvements ([0e16b79](https://github.com/stacksjs/launchpad/commit/0e16b79))
+- Adjust readme ([db0da37](https://github.com/stacksjs/launchpad/commit/db0da37))
+- Minor updates ([b1ff26b](https://github.com/stacksjs/launchpad/commit/b1ff26b))
+- Improve cleanup performance ([2ff1034](https://github.com/stacksjs/launchpad/commit/2ff1034))
+- Update pantry ([84f99bd](https://github.com/stacksjs/launchpad/commit/84f99bd))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.1.1...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.1.1...main)
