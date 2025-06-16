@@ -143,8 +143,8 @@ describe('Hash Collision Prevention', () => {
       // Dummy directory dependencies - use bun.sh which exists
       createDepsFile(dummyDir, ['bun.sh@0.5.9'])
 
-      const mainResult = await runCLI(['dev:dump'], mainDir)
-      const dummyResult = await runCLI(['dev:dump'], dummyDir)
+      const mainResult = await runCLI(['dev'], mainDir)
+      const dummyResult = await runCLI(['dev'], dummyDir)
 
       // The key test is that different directories get different prefixes
       // Even if installation fails, we should see different installation prefixes
@@ -174,8 +174,8 @@ describe('Hash Collision Prevention', () => {
       createDepsFile(projectB, ['gnu.org/wget@1.21.0'])
 
       // Try to install packages (may fail but that's OK, we're testing isolation)
-      await runCLI(['dev:dump'], projectA)
-      await runCLI(['dev:dump'], projectB)
+      await runCLI(['dev'], projectA)
+      await runCLI(['dev'], projectB)
 
       // Check that environment directories exist and are unique
       const envBaseDir = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs')
@@ -245,7 +245,7 @@ describe('Hash Collision Prevention', () => {
         fs.mkdirSync(projectDir, { recursive: true })
         createDepsFile(projectDir, ['gnu.org/wget@1.21.0']) // Use valid package
 
-        const _result = await runCLI(['dev:dump'], projectDir)
+        const _result = await runCLI(['dev'], projectDir)
         // Some packages might still fail, focus on hash uniqueness not installation success
         // The key test is that hashes are unique, not that packages install
       }

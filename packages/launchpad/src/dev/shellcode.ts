@@ -364,11 +364,11 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
         export _PKGX_ACTIVATING="$PWD"
 
         if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-          # Try to run launchpad dev:dump with proper error handling
+          # Try to run launchpad dev with proper error handling
           local launchpad_output=""
           local exit_code=0
           # Capture only stdout, let stderr (progress bars) pass through to user
-          launchpad_output=$(eval "${dev_cmd} dev:dump \\"$PWD\\"") || exit_code=$?
+          launchpad_output=$(eval "${dev_cmd} dev \\"$PWD\\"") || exit_code=$?
 
           if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
             # If launchpad succeeds, extract just the shell script part using system sed
@@ -387,7 +387,7 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
             echo "💡 To fix this:" >&2
             echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
             echo "   • Or compile launchpad globally: bun run compile" >&2
-            echo "   • Or run manually: launchpad dev:dump" >&2
+            echo "   • Or run manually: launchpad dev" >&2
           fi
         else
           # For other dev commands, try with basic error handling
@@ -485,7 +485,7 @@ _launchpad_show_help() {
   echo "💡 To fix this:" >&2
   echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
   echo "   • Or compile launchpad globally: bun run compile" >&2
-  echo "   • Or run manually: launchpad dev:dump" >&2
+  echo "   • Or run manually: launchpad dev" >&2
 }
 
 dev() {
@@ -501,11 +501,11 @@ dev() {
       eval "${dev_cmd} \\"$@\\""
     elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-        # Try to run launchpad dev:dump with proper error handling
+        # Try to run launchpad dev with proper error handling
         local launchpad_output=""
         local exit_code=0
         # Capture only stdout, let stderr (progress bars) pass through to user
-        launchpad_output=$(eval "${dev_cmd} dev:dump \\"$PWD\\"") || exit_code=$?
+        launchpad_output=$(eval "${dev_cmd} dev \\"$PWD\\"") || exit_code=$?
 
         if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
           # If launchpad succeeds, extract just the shell script part using system sed
@@ -515,7 +515,7 @@ dev() {
             eval "$shell_script"
           else
             echo "⚠️  Launchpad succeeded but no shell script found" >&2
-            echo "    Try running: launchpad dev:dump" >&2
+            echo "    Try running: launchpad dev" >&2
           fi
         else
           # If launchpad fails, show generic error message
@@ -524,7 +524,7 @@ dev() {
           echo "💡 To fix this:" >&2
           echo "   • Install bun: curl -fsSL https://bun.sh/install | bash" >&2
           echo "   • Or compile launchpad globally: bun run compile" >&2
-          echo "   • Or run manually: launchpad dev:dump" >&2
+          echo "   • Or run manually: launchpad dev" >&2
         fi
       else
         # For other dev commands, try with basic error handling

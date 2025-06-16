@@ -255,7 +255,7 @@ export default {
   })
 
   describe('Integration with Dev Environment', () => {
-    it('should work with dev:dump command', async () => {
+    it('should work with dev command', async () => {
       // Create a test project
       const projectDir = path.join(tempDir, 'test-project')
       fs.mkdirSync(projectDir, { recursive: true })

@@ -82,7 +82,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -108,7 +108,7 @@ describe('Binary Stub Isolation', () => {
         // Binary stubs only include pkgx environment variables, not custom project ones
       })
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -144,7 +144,7 @@ describe('Binary Stub Isolation', () => {
       // Use a package that has multiple binaries
       createDepsFile(projectDir, ['git-scm.org@2.40.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -167,7 +167,7 @@ describe('Binary Stub Isolation', () => {
         LD_LIBRARY_PATH: '/custom/lib:/another/lib',
       })
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -200,7 +200,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -239,7 +239,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -269,7 +269,7 @@ describe('Binary Stub Isolation', () => {
         // Don't expect SPECIAL_VAR in binary stubs - they only contain pkgx environment variables
       })
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -302,7 +302,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -335,7 +335,7 @@ describe('Binary Stub Isolation', () => {
       // Use a library-only package that doesn't provide binaries
       createDepsFile(projectDir, ['zlib.net@1.3.1']) // This is a library-only package
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
       // The package should install but no binary stubs will be created
       // This might fail if the package version doesn't exist, which is expected
       if (result.exitCode === 0) {
@@ -355,7 +355,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -373,7 +373,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -395,7 +395,7 @@ describe('Binary Stub Isolation', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -433,7 +433,7 @@ describe('Binary Stub Isolation', () => {
         BUILD_ENV: 'production',
       })
 
-      const result = await runCLI(['dev:dump'], projectDir)
+      const result = await runCLI(['dev'], projectDir)
 
       // Accept either success or failure
       if (result.exitCode === 0) {

@@ -520,7 +520,7 @@ cli
   })
 
 cli
-  .command('dev:dump [dir]', 'Set up development environment for project dependencies')
+  .command('dev [dir]', 'Set up development environment for project dependencies')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')
   .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean }) => {
@@ -532,7 +532,7 @@ cli
       })
     }
     catch (error) {
-      console.error('Failed to dump dev environment:', error instanceof Error ? error.message : String(error))
+      console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })
@@ -555,7 +555,7 @@ cli
   })
 
 cli
-  .command('dev:on [dir]', 'Activate development environment')
+  .command('dev:on [dir]', 'Activate development environment (use `launchpad dev` instead)')
   .option('--silent', 'Suppress output messages')
   .action(async (dir?: string, options?: { silent?: boolean }) => {
     try {

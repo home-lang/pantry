@@ -144,8 +144,8 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['gnu.org/wget@1.21.0']) // Use valid package
       createDepsYaml(projectB, ['gnu.org/wget@1.21.0']) // Use valid package
 
-      const _resultA = await runCLI(['dev:dump'], projectA)
-      const _resultB = await runCLI(['dev:dump'], projectB)
+      const _resultA = await runCLI(['dev'], projectA)
+      const _resultB = await runCLI(['dev'], projectB)
 
       // Package installation may fail but environment isolation should still work
       // The key test is hash uniqueness, not successful package installation
@@ -173,8 +173,8 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
       createDepsYaml(projectB, ['gnu.org/wget@1.21.4'])
 
-      const resultA = await runCLI(['dev:dump'], projectA)
-      const resultB = await runCLI(['dev:dump'], projectB)
+      const resultA = await runCLI(['dev'], projectA)
+      const resultB = await runCLI(['dev'], projectB)
 
       // Some packages might fail to install, but if they succeed, they should be isolated
       if (resultA.exitCode === 0 && resultB.exitCode === 0) {
@@ -206,8 +206,8 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
       createDepsYaml(projectB, ['nginx.org@1.28.0']) // Same package, different isolation
 
-      const resultA = await runCLI(['dev:dump'], projectA)
-      const resultB = await runCLI(['dev:dump'], projectB)
+      const resultA = await runCLI(['dev'], projectA)
+      const resultB = await runCLI(['dev'], projectB)
 
       // Even if installation fails, isolation should work
       const hashA = createReadableHash(projectA)
@@ -249,8 +249,8 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
       createDepsYaml(projectB, ['gnu.org/wget@1.21.4'])
 
-      const resultA = await runCLI(['dev:dump'], projectA)
-      const resultB = await runCLI(['dev:dump'], projectB)
+      const resultA = await runCLI(['dev'], projectA)
+      const resultB = await runCLI(['dev'], projectB)
 
       // Focus on the core isolation logic regardless of installation success
       const hashA = createReadableHash(projectA)
@@ -282,7 +282,7 @@ describe('Environment Isolation', () => {
     it('should create proper deactivation functions with directory checking', async () => {
       createDepsYaml(projectA, ['bun.sh@0.5.9'])
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
 
       // Accept either success or failure - the key test is that we get proper output structure
       if (result.exitCode === 0) {
@@ -306,7 +306,7 @@ describe('Environment Isolation', () => {
         TEST_VAR2: 'value2',
       })
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -329,8 +329,8 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
       createDepsYaml(nestedProject, ['nginx.org@1.28.0'])
 
-      const resultParent = await runCLI(['dev:dump'], projectA)
-      const resultNested = await runCLI(['dev:dump'], nestedProject)
+      const resultParent = await runCLI(['dev'], projectA)
+      const resultNested = await runCLI(['dev'], nestedProject)
 
       // Core isolation should work regardless of installation success
       const hashParent = createReadableHash(projectA)
@@ -429,7 +429,7 @@ describe('Environment Isolation', () => {
     it('should handle invalid package names with suggestions', async () => {
       createDepsYaml(projectA, ['wget.com@1.0.0']) // Should suggest gnu.org/wget
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
 
       // Should fail when all packages are invalid
       expect(result.exitCode).toBe(1)
@@ -445,7 +445,7 @@ describe('Environment Isolation', () => {
     it('should handle empty dependency files gracefully', async () => {
       fs.writeFileSync(path.join(projectA, 'deps.yaml'), '')
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain('no devenv detected')
     }, 30000)
@@ -453,7 +453,7 @@ describe('Environment Isolation', () => {
     it('should handle malformed dependency files', async () => {
       fs.writeFileSync(path.join(projectA, 'deps.yaml'), 'invalid: yaml: content: [')
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain('no devenv detected')
     }, 30000)
@@ -461,7 +461,7 @@ describe('Environment Isolation', () => {
     it('should not create environment directories for failed installations', async () => {
       createDepsYaml(projectA, ['completely-nonexistent-package-12345@1.0.0'])
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
 
       // Should exit with error when no packages are successfully installed
       expect(result.exitCode).toBe(1)
@@ -473,7 +473,7 @@ describe('Environment Isolation', () => {
     it('should create isolated binary stubs with proper environment setup', async () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -508,7 +508,7 @@ describe('Environment Isolation', () => {
         EMPTY_VAR: '',
       })
 
-      const result = await runCLI(['dev:dump'], projectA)
+      const result = await runCLI(['dev'], projectA)
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -531,14 +531,14 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
 
       // First installation - should be slow path
-      const firstResult = await runCLI(['dev:dump'], projectA)
+      const firstResult = await runCLI(['dev'], projectA)
 
       // Accept either success or failure for first run
       if (firstResult.exitCode === 0) {
         expect(firstResult.stderr).toContain('Installing packages')
 
         // Second run - should detect existing installation
-        const secondResult = await runCLI(['dev:dump'], projectA)
+        const secondResult = await runCLI(['dev'], projectA)
         expect(secondResult.exitCode).toBe(0)
 
         // Should still create environment setup but not reinstall
@@ -569,7 +569,7 @@ describe('Environment Isolation', () => {
         const depsContent = `dependencies:\n  - nginx.org@1.28.0`
         fs.writeFileSync(path.join(testDir, fileName), depsContent)
 
-        const result = await runCLI(['dev:dump'], testDir)
+        const result = await runCLI(['dev'], testDir)
 
         // Package installation may fail, but file format should be recognized
         if (result.exitCode === 0) {
@@ -610,7 +610,7 @@ describe('Environment Isolation', () => {
       fs.mkdirSync(deepPath, { recursive: true })
       createDepsYaml(deepPath, ['zlib.net@1.2'])
 
-      const result = await runCLI(['dev:dump'], deepPath)
+      const result = await runCLI(['dev'], deepPath)
 
       // Test that the system can handle very long paths
       const realPath = fs.realpathSync(deepPath)
@@ -693,7 +693,7 @@ describe('Environment Isolation', () => {
         fs.mkdirSync(extremelyDeepPath, { recursive: true })
         createDepsYaml(extremelyDeepPath, ['zlib.net@1.2'])
 
-        const result = await runCLI(['dev:dump'], extremelyDeepPath)
+        const result = await runCLI(['dev'], extremelyDeepPath)
 
         // Should handle the path without crashing
         const realPath = fs.realpathSync(extremelyDeepPath)

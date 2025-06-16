@@ -235,9 +235,9 @@ describe('Dev Commands', () => {
     }, 30000)
   })
 
-  describe('dev:dump', () => {
+  describe('dev', () => {
     it('should report no devenv when no dependency files exist', async () => {
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
 
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain('no devenv detected')
@@ -250,7 +250,7 @@ describe('Dev Commands', () => {
         TEST_VAR: 'test_value',
       })
 
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
 
       // Accept either successful installation or graceful failure
       if (result.exitCode === 0) {
@@ -271,7 +271,7 @@ describe('Dev Commands', () => {
         'gnu.org/wget': '^1.21',
       })
 
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
 
       // Accept either successful installation or graceful failure
       if (result.exitCode === 0) {
@@ -299,7 +299,7 @@ describe('Dev Commands', () => {
         'nonexistent-package-12345': '^1.0',
       })
 
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
 
       // Should fail with exit code 1 when all packages fail to install
       expect(result.exitCode).toBe(1)
@@ -333,7 +333,7 @@ describe('Dev Commands', () => {
         fs.copyFileSync(fixturePath, path.join(testDir, path.basename(fixturePath)))
       }
 
-      const result = await runCLI(['dev:dump', testDir])
+      const result = await runCLI(['dev', testDir])
       return result
     }
 
@@ -591,7 +591,7 @@ describe('Dev Commands', () => {
         TEST_VAR: 'integration_test',
       })
 
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -622,7 +622,7 @@ describe('Dev Commands', () => {
         },
       }))
 
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -642,7 +642,7 @@ describe('Dev Commands', () => {
         'gnu.org/wget': '^1.21',
       })
 
-      const result = await runCLI(['dev:dump', nestedDir])
+      const result = await runCLI(['dev', nestedDir])
 
       // Accept either success or failure
       if (result.exitCode === 0) {
@@ -657,7 +657,7 @@ describe('Dev Commands', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid directory paths', async () => {
-      const result = await runCLI(['dev:dump', '/nonexistent/path'])
+      const result = await runCLI(['dev', '/nonexistent/path'])
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain('not a directory')
     }, 30000)
@@ -665,7 +665,7 @@ describe('Dev Commands', () => {
     it('should handle malformed dependencies.yaml', async () => {
       fs.writeFileSync(path.join(tempDir, 'dependencies.yaml'), 'invalid: yaml: content: [')
 
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
       expect(result.exitCode).toBe(1)
     }, 30000)
 
@@ -676,7 +676,7 @@ describe('Dev Commands', () => {
       fs.chmodSync(tempDir, 0o444)
 
       try {
-        const result = await runCLI(['dev:dump', tempDir])
+        const result = await runCLI(['dev', tempDir])
         // Should handle permission errors gracefully
         expect(result.exitCode).toBe(1)
       }
@@ -715,7 +715,7 @@ describe('Dev Commands', () => {
       createDependenciesYaml(tempDir, largeDeps)
 
       const start = Date.now()
-      const result = await runCLI(['dev:dump', tempDir])
+      const result = await runCLI(['dev', tempDir])
       const duration = Date.now() - start
 
       // Should complete even with many packages (though some may fail)
