@@ -112,6 +112,9 @@ async function update(
  * Update specific packages by name
  * @param packages Array of package names to update
  * @param options Update configuration options
+ * @param options.latest Force update to latest versions, ignoring constraints
+ * @param options.dryRun Preview what would be updated without actually updating
+ * @param options.verbose Enable verbose output during updates
  * @returns Promise that resolves when updates are complete
  */
 async function updateSpecificPackages(
@@ -126,6 +129,9 @@ async function updateSpecificPackages(
 /**
  * Update all installed packages
  * @param options Update configuration options
+ * @param options.latest Force update to latest versions, ignoring constraints
+ * @param options.dryRun Preview what would be updated without actually updating
+ * @param options.verbose Enable verbose output during updates
  * @returns Promise that resolves when updates are complete
  */
 async function updateAllPackages(
