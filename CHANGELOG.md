@@ -1,4 +1,17 @@
 
+## v0.2.2...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.2...main)
+
+### 🏡 Chore
+
+- Lint ([2205912](https://github.com/stacksjs/launchpad/commit/2205912))
+- Adjust test cases ([3a327bc](https://github.com/stacksjs/launchpad/commit/3a327bc))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.2.1...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.1...main)
