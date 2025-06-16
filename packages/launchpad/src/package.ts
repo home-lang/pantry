@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+/* eslint-disable no-console */
 import { spawnSync } from 'node:child_process'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
@@ -41,7 +42,6 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
     process.exit(command.status ?? 0)
   }
   else if (parsedArgs.values.version) {
-    // eslint-disable-next-line no-console
     console.log('launchpad 0.0.0+dev')
     return
   }
@@ -55,7 +55,7 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
       {
         const installDir = install_prefix().string
         const results = await install(subCommandArgs, installDir)
-        // eslint-disable-next-line no-console
+
         console.log(results.join('\n'))
       }
       break
@@ -91,7 +91,6 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
     case 'list':
     case 'ls':
       for await (const path of ls()) {
-        // eslint-disable-next-line no-console
         console.log(path)
       }
       break
@@ -99,7 +98,7 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
     case 'update':
     case 'up':
     case 'upgrade':
-      await update()
+      await update(subCommandArgs)
       break
 
     case 'pin':
@@ -138,11 +137,164 @@ export async function shim(args: string[], basePath: string): Promise<void> {
 /**
  * Update packages
  */
-export async function update(): Promise<void> {
-  // eslint-disable-next-line no-console
-  console.log('Updating packages...')
-  // eslint-disable-next-line no-console
-  console.log('This feature is simplified in the current implementation.')
+export async function update(packages?: string[], options?: { latest?: boolean, dryRun?: boolean }): Promise<void> {
+  if (packages && packages.length > 0) {
+    // Update specific packages
+    await updateSpecificPackages(packages, options)
+  }
+  else {
+    // Update all packages
+    await updateAllPackages(options)
+  }
+}
 
-  // A simplified implementation since we're missing some of the original functions
+/**
+ * Update specific packages
+ */
+async function updateSpecificPackages(packages: string[], options?: { latest?: boolean, dryRun?: boolean }): Promise<void> {
+  const { getLatestVersion, getPackageInfo } = await import('./install')
+  const { list } = await import('./list')
+
+  const installPath = install_prefix().string
+  const installedPackages = await list(installPath)
+
+  console.log(`🔍 Checking for updates to ${packages.join(', ')}...`)
+
+  const packagesToUpdate: { name: string, currentVersion: string, latestVersion: string }[] = []
+
+  for (const packageName of packages) {
+    const packageInfo = getPackageInfo(packageName)
+
+    if (!packageInfo) {
+      console.warn(`⚠️  Package '${packageName}' not found in registry`)
+      continue
+    }
+
+    const installedPackage = installedPackages.find(p =>
+      p.project === packageInfo.domain || p.project === packageName,
+    )
+
+    if (!installedPackage) {
+      console.log(`📦 ${packageName} is not installed - use 'launchpad install ${packageName}' instead`)
+      continue
+    }
+
+    const latestVersion = getLatestVersion(packageName)
+
+    if (!latestVersion) {
+      console.warn(`⚠️  Could not determine latest version for ${packageName}`)
+      continue
+    }
+
+    const currentVersion = installedPackage.version.string
+
+    if (options?.latest || currentVersion !== latestVersion) {
+      packagesToUpdate.push({
+        name: packageName,
+        currentVersion,
+        latestVersion,
+      })
+    }
+    else {
+      console.log(`✅ ${packageName} is already up to date (${currentVersion})`)
+    }
+  }
+
+  if (packagesToUpdate.length === 0) {
+    console.log('🎉 All specified packages are up to date!')
+    return
+  }
+
+  if (options?.dryRun) {
+    console.log('\n🔍 Packages that would be updated:')
+    packagesToUpdate.forEach((pkg) => {
+      console.log(`  • ${pkg.name}: ${pkg.currentVersion} → ${pkg.latestVersion}`)
+    })
+    return
+  }
+
+  console.log(`\n🚀 Updating ${packagesToUpdate.length} package(s)...`)
+
+  const packagesToInstall = packagesToUpdate.map(pkg =>
+    options?.latest ? pkg.name : `${pkg.name}@${pkg.latestVersion}`,
+  )
+
+  const results = await install(packagesToInstall, installPath)
+
+  if (results.length > 0) {
+    console.log(`\n🎉 Successfully updated ${packagesToUpdate.length} package(s):`)
+    packagesToUpdate.forEach((pkg) => {
+      console.log(`  ✅ ${pkg.name}: ${pkg.currentVersion} → ${pkg.latestVersion}`)
+    })
+  }
+  else {
+    console.log('⚠️  No packages were updated')
+  }
+}
+
+/**
+ * Update all installed packages
+ */
+async function updateAllPackages(options?: { latest?: boolean, dryRun?: boolean }): Promise<void> {
+  const { getLatestVersion } = await import('./install')
+  const { list } = await import('./list')
+
+  const installPath = install_prefix().string
+  const installedPackages = await list(installPath)
+
+  if (installedPackages.length === 0) {
+    console.log('📭 No packages installed')
+    return
+  }
+
+  console.log(`🔍 Checking ${installedPackages.length} installed packages for updates...`)
+
+  const packagesToUpdate: { name: string, currentVersion: string, latestVersion: string }[] = []
+
+  for (const pkg of installedPackages) {
+    const latestVersion = getLatestVersion(pkg.project)
+
+    if (!latestVersion) {
+      console.warn(`⚠️  Could not determine latest version for ${pkg.project}`)
+      continue
+    }
+
+    const currentVersion = pkg.version.string
+
+    if (options?.latest || currentVersion !== latestVersion) {
+      packagesToUpdate.push({
+        name: pkg.project,
+        currentVersion,
+        latestVersion,
+      })
+    }
+  }
+
+  if (packagesToUpdate.length === 0) {
+    console.log('🎉 All packages are up to date!')
+    return
+  }
+
+  if (options?.dryRun) {
+    console.log(`\n🔍 ${packagesToUpdate.length} package(s) would be updated:`)
+    packagesToUpdate.forEach((pkg) => {
+      console.log(`  • ${pkg.name}: ${pkg.currentVersion} → ${pkg.latestVersion}`)
+    })
+    return
+  }
+
+  console.log(`\n🚀 Updating ${packagesToUpdate.length} package(s)...`)
+
+  const packagesToInstall = packagesToUpdate.map(pkg =>
+    options?.latest ? pkg.name : `${pkg.name}@${pkg.latestVersion}`,
+  )
+
+  const results = await install(packagesToInstall, installPath)
+
+  if (results.length > 0) {
+    console.log(`\n🎉 Successfully updated ${packagesToUpdate.length} package(s)`)
+  }
+  else {
+    console.log('⚠️  No packages were updated')
+  }
 }

@@ -19,6 +19,9 @@ source ~/.zshrc
 
 # 4. Install common development tools
 launchpad install node@22 python@3.12 go@1.21
+
+# 5. Keep packages updated
+launchpad update
 ```
 
 ### Setting Up a New Project
@@ -115,6 +118,67 @@ env:
   AWS_REGION: us-west-2
   KUBE_CONFIG_PATH: ./kubeconfig
   TF_VAR_environment: development
+```
+
+## Package Update Examples
+
+### Basic Update Operations
+
+```bash
+# Update all installed packages
+launchpad update
+
+# Update specific packages
+launchpad update node python go
+
+# Use aliases for convenience
+launchpad upgrade bun
+launchpad up typescript
+```
+
+### Update with Options
+
+```bash
+# Preview what would be updated
+launchpad update --dry-run
+
+# Force update to latest versions
+launchpad upgrade node --latest
+
+# Verbose updates for debugging
+launchpad up --verbose python
+
+# Update multiple packages to latest
+launchpad update node bun python --latest
+```
+
+### Development Workflow Updates
+
+```bash
+# Morning routine: check for updates
+launchpad update --dry-run
+launchpad update
+
+# Update development tools before starting work
+launchpad upgrade typescript eslint prettier --latest
+
+# Update runtime dependencies
+launchpad up node@22 bun --latest
+```
+
+### Project-Specific Updates
+
+```bash
+# Update packages for a Node.js project
+cd my-node-project
+launchpad update node typescript
+
+# Update packages for a Python project
+cd my-python-project
+launchpad upgrade python pip
+
+# Update all tools for full-stack development
+launchpad up node python postgresql redis --latest
 ```
 
 ## Advanced Configuration Examples
@@ -271,6 +335,35 @@ launchpad env:list --format json | \
   done
 
 echo "✅ Cleanup complete"
+```
+
+### Package Update Script
+
+```bash
+#!/bin/bash
+# update-packages.sh
+
+echo "🔄 Checking for package updates..."
+
+# Preview all available updates
+echo "📋 Available updates:"
+launchpad update --dry-run
+
+# Ask for confirmation
+read -p "Do you want to proceed with updates? (y/N): " confirm
+
+if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
+  # Update all packages
+  launchpad update
+
+  # Update critical tools to latest
+  echo "🚀 Updating critical tools to latest versions..."
+  launchpad upgrade node bun typescript --latest
+
+  echo "✅ Package updates complete"
+else
+  echo "ℹ️ Updates skipped"
+fi
 ```
 
 ## CI/CD Integration Examples

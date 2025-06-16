@@ -9,6 +9,7 @@ Here are the main commands available in Launchpad:
 | Command | Description |
 |---------|-------------|
 | `install` or `i` | Install packages |
+| `update`, `upgrade`, `up` | Update packages to newer versions |
 | `remove` | Remove specific packages |
 | `shim` | Create shims for packages |
 | `pkgx` | Install pkgx itself |
@@ -86,6 +87,66 @@ launchpad smart-install node python git
 # - Ubuntu/Debian: apt
 # - RHEL/CentOS/Fedora: yum/dnf
 # - Arch: pacman
+```
+
+## Updating Packages
+
+Keep your packages up-to-date with Launchpad's intelligent update system:
+
+```bash
+# Update all installed packages
+launchpad update
+
+# Update specific packages
+launchpad update node python
+
+# Use aliases for convenience
+launchpad upgrade bun
+launchpad up node python
+```
+
+### Update Options
+
+Control update behavior with various options:
+
+```bash
+# Preview what would be updated
+launchpad update --dry-run
+
+# Force update to latest versions (ignore constraints)
+launchpad upgrade bun --latest
+
+# Verbose output showing update details
+launchpad update --verbose node
+
+# Update multiple packages with latest flag
+launchpad up node python --latest
+```
+
+### Update Behavior
+
+Launchpad's update system provides:
+
+- **Smart version checking**: Only updates when newer versions are available
+- **Helpful messages**: Provides installation instructions for uninstalled packages
+- **Safe previews**: Use `--dry-run` to see what would be updated
+- **Latest flag**: Force updates to latest versions with `--latest`
+- **Multiple aliases**: Use `update`, `upgrade`, or `up` commands interchangeably
+
+### Update Examples
+
+```bash
+# Check and update all packages
+launchpad update
+
+# Update Node.js to latest version
+launchpad upgrade node --latest
+
+# Preview updates for specific packages
+launchpad up bun python --dry-run
+
+# Update with verbose output for debugging
+launchpad update --verbose --latest node
 ```
 
 ## Removing Packages

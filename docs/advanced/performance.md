@@ -140,6 +140,53 @@ Some packages can consume significant memory during installation:
 launchpad env:clean --older-than 1 --force
 ```
 
+## Update Performance Optimization
+
+### Efficient Update Strategies
+
+Optimize update operations for better performance:
+
+```bash
+# Preview updates first to avoid unnecessary work
+launchpad update --dry-run
+
+# Update only specific packages that need updates
+launchpad update node python  # Instead of updating everything
+
+# Use latest flag strategically
+launchpad upgrade critical-package --latest  # Only for packages that need latest
+```
+
+### Batch Update Operations
+
+When updating multiple packages, consider timing and grouping:
+
+```bash
+# Update development tools together
+launchpad update node typescript eslint prettier
+
+# Update runtime environments separately
+launchpad upgrade python bun --latest
+
+# Schedule regular updates during low-usage periods
+launchpad update --verbose  # For monitoring purposes
+```
+
+### Update Frequency Optimization
+
+Balance update frequency with performance needs:
+
+```bash
+# For development: Update frequently but selectively
+launchpad update node bun  # Core tools daily
+
+# For production: Use explicit versions and update cautiously
+launchpad upgrade --dry-run  # Always preview first
+
+# For CI/CD: Pin versions in dependencies files
+echo "node@22.1.0" > dependencies.yaml  # Specific version for reproducibility
+```
+
 ## Auto-update Configuration
 
 Disable auto-updates if you prefer manual control:

@@ -15,6 +15,7 @@
 Launchpad offers a streamlined approach to package management with these key features:
 
 - 📦 **[Package Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)** — Install and manage packages efficiently
+- 🔄 **Package Updates** — Keep packages up-to-date with intelligent version management
 - 🔧 **Auto-updates** — Configure automatic updates
 - 🔌 **[PATH Integration](https://github.com/stacksjs/launchpad/tree/main/docs/features/path-management.md)** — Automatically ensures installation directories are maintained in your PATH
 - 🔄 **[Executable Shims](https://github.com/stacksjs/launchpad/tree/main/docs/features/shim-creation.md)** — Create executable shims for packages automatically
@@ -124,6 +125,22 @@ launchpad autoupdate:enable
 
 # Disable auto-updates
 launchpad autoupdate:disable
+```
+
+### Update packages
+
+```bash
+# Update all packages
+launchpad update
+
+# Update specific packages
+launchpad update node python
+
+# Update with latest versions (ignore constraints)
+launchpad upgrade bun --latest
+
+# Preview what would be updated
+launchpad up --dry-run
 ```
 
 ### List installed packages

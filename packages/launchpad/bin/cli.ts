@@ -1044,18 +1044,44 @@ cli
 
 // Update command
 cli
-  .command('update', 'Update packages')
+  .command('update [packages...]', 'Update packages to newer versions')
   .alias('upgrade')
   .alias('up')
   .option('--verbose', 'Enable verbose output')
-  .action(async (options?: { verbose?: boolean }) => {
+  .option('--latest', 'Update to the latest version (ignoring current constraints)')
+  .option('--dry-run', 'Show what would be updated without actually updating')
+  .example('launchpad update')
+  .example('launchpad upgrade bun --latest')
+  .example('launchpad up node python --latest')
+  .example('launchpad update --dry-run')
+  .action(async (packages: string[], options?: { verbose?: boolean, latest?: boolean, dryRun?: boolean }) => {
     if (options?.verbose) {
       config.verbose = true
     }
 
+    // Ensure packages is an array
+    const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
+
     try {
-      const { update } = await import('../src/package')
-      await update()
+      if (packageList.length === 0) {
+        // Update all packages
+        const { update } = await import('../src/package')
+        await update(undefined, { latest: options?.latest, dryRun: options?.dryRun })
+      }
+      else {
+        // Update specific packages
+        if (options?.dryRun) {
+          console.log('🔍 DRY RUN MODE - Would update the following packages:')
+          packageList.forEach(pkg => console.log(`  • ${pkg}${options?.latest ? ' (to latest)' : ''}`))
+          return
+        }
+
+        console.log(`🔄 Updating ${packageList.join(', ')}${options?.latest ? ' to latest versions' : ''}...`)
+
+        // Use the enhanced update function from package.ts
+        const { update } = await import('../src/package')
+        await update(packageList, { latest: options?.latest, dryRun: options?.dryRun })
+      }
     }
     catch (error) {
       console.error('Failed to update packages:', error instanceof Error ? error.message : String(error))

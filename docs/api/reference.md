@@ -85,6 +85,58 @@ function install_prefix(): Path
 async function install_bun(installPath: string, version?: string): Promise<string[]>
 ```
 
+### Package Management Module
+
+```typescript
+import { update, updateAllPackages, updateSpecificPackages } from '@stacksjs/launchpad'
+
+/**
+ * Update packages to newer versions
+ * @param packages Array of package names to update (empty array for all packages)
+ * @param options Update configuration options
+ * @param options.latest Force update to latest versions, ignoring constraints
+ * @param options.dryRun Preview what would be updated without actually updating
+ * @param options.verbose Enable verbose output during updates
+ * @returns Promise that resolves when updates are complete
+ */
+async function update(
+  packages: string[],
+  options?: {
+    latest?: boolean
+    dryRun?: boolean
+    verbose?: boolean
+  }
+): Promise<void>
+
+/**
+ * Update specific packages by name
+ * @param packages Array of package names to update
+ * @param options Update configuration options
+ * @returns Promise that resolves when updates are complete
+ */
+async function updateSpecificPackages(
+  packages: string[],
+  options?: {
+    latest?: boolean
+    dryRun?: boolean
+    verbose?: boolean
+  }
+): Promise<void>
+
+/**
+ * Update all installed packages
+ * @param options Update configuration options
+ * @returns Promise that resolves when updates are complete
+ */
+async function updateAllPackages(
+  options?: {
+    latest?: boolean
+    dryRun?: boolean
+    verbose?: boolean
+  }
+): Promise<void>
+```
+
 ### Shim Module
 
 ```typescript

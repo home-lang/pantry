@@ -18,7 +18,7 @@ hero:
 features:
   - title: "Package Management"
     icon: "📦"
-    details: "Install and manage packages with automatic environment isolation. Uses /usr/local (never /opt/homebrew) for clean separation from Homebrew."
+    details: "Install, update, and manage packages with automatic environment isolation. Smart update system keeps packages current while respecting version constraints."
   - title: "Environment Isolation"
     icon: "🌍"
     details: "Project-specific environments with automatic activation/deactivation. Each project gets its own isolated package installations and PATH management."

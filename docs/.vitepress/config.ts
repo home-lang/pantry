@@ -179,6 +179,7 @@ export default withPwa(
       },
 
       codeTransformers: [
+        // @ts-expect-error - transformerTwoslash has type compatibility issues
         transformerTwoslash(),
       ],
     },

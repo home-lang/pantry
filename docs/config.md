@@ -45,6 +45,13 @@ const config: LaunchpadConfig = {
   // Whether to force reinstall if already installed (default: false)
   forceReinstall: false,
 
+  // Update behavior configuration
+  // Whether to check for updates on package operations (default: true)
+  checkUpdates: true,
+
+  // Whether to prompt before updating packages (default: true)
+  promptBeforeUpdate: true,
+
   // Default path for shims (default: ~/.local/bin)
   shimPath: path.join(os.homedir(), '.local', 'bin'),
 
@@ -79,6 +86,8 @@ JavaScript format (`.launchpadrc`):
   "timeout": 60000,
   "symlinkVersions": true,
   "forceReinstall": false,
+  "checkUpdates": true,
+  "promptBeforeUpdate": true,
   "shimPath": "~/.local/bin",
   "autoAddToPath": true,
   "showShellMessages": true,
@@ -106,6 +115,8 @@ JavaScript format (`.launchpadrc`):
 | `timeout` | number | `60000` | Timeout for operations in milliseconds |
 | `symlinkVersions` | boolean | `true` | Whether to symlink versions |
 | `forceReinstall` | boolean | `false` | Force reinstallation even if already installed |
+| `checkUpdates` | boolean | `true` | Whether to check for updates on package operations |
+| `promptBeforeUpdate` | boolean | `true` | Whether to prompt before updating packages |
 
 ### Authentication & Security
 
@@ -142,6 +153,8 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_SHOW_ENV_MESSAGES` | Enable/disable environment activation messages |
 | `LAUNCHPAD_SHELL_ACTIVATION_MESSAGE` | Custom shell activation message |
 | `LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE` | Custom shell deactivation message |
+| `LAUNCHPAD_CHECK_UPDATES` | Enable/disable update checking |
+| `LAUNCHPAD_PROMPT_BEFORE_UPDATE` | Enable/disable update prompts |
 | `SUDO_PASSWORD` | Password for sudo operations |
 
 Example:
@@ -243,6 +256,10 @@ launchpad remove python --dry-run
 
 # Complete removal without confirmation
 launchpad uninstall --force
+
+# Update packages with options
+launchpad update --dry-run
+launchpad upgrade bun --latest
 
 # Generate environment script with options
 launchpad dev:dump --verbose --dryrun

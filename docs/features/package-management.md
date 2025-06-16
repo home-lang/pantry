@@ -158,6 +158,68 @@ Launchpad ensures safe package removal through:
 4. **Detailed reporting**: Shows exactly what was removed, failed, or not found
 5. **Selective matching**: Handles both exact matches and pattern matching
 
+## Package Updates
+
+Keep your packages up-to-date with Launchpad's intelligent update system:
+
+### Basic Updates
+
+```bash
+# Update all installed packages
+launchpad update
+
+# Update specific packages
+launchpad update node python
+
+# Use aliases for convenience
+launchpad upgrade bun
+launchpad up node python
+```
+
+### Update Options
+
+Control update behavior with various options:
+
+```bash
+# Preview what would be updated
+launchpad update --dry-run
+
+# Force update to latest versions (ignore constraints)
+launchpad upgrade bun --latest
+
+# Verbose output showing update details
+launchpad update --verbose node
+
+# Update multiple packages with latest flag
+launchpad up node python --latest
+```
+
+### Update Process
+
+Launchpad's update system provides:
+
+1. **Version checking**: Compares installed versions with latest available
+2. **Smart updates**: Only updates when newer versions are available
+3. **Constraint respect**: Honors version constraints unless `--latest` is used
+4. **Helpful messages**: Provides installation instructions for uninstalled packages
+5. **Dry-run mode**: Preview updates safely before applying changes
+
+### Update Examples
+
+```bash
+# Check and update all packages
+launchpad update
+
+# Update Node.js to latest version
+launchpad upgrade node --latest
+
+# Preview updates for specific packages
+launchpad up bun python --dry-run
+
+# Update with verbose output
+launchpad update --verbose --latest node
+```
+
 ## Complete System Cleanup
 
 ### Full Uninstallation
