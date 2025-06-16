@@ -71,7 +71,7 @@ describe('Uninstall', () => {
         const result = await uninstall('nonexistent-package')
         expect(result).toBe(false)
         expect(errors.length).toBeGreaterThan(0)
-        expect(errors.some(err => err.includes('not installed'))).toBe(true)
+        expect(errors.some(err => err.includes('not found in registry'))).toBe(true)
       }
       finally {
         console.error = originalError

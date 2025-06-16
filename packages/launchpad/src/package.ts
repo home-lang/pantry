@@ -186,7 +186,7 @@ async function updateSpecificPackages(packages: string[], options?: { latest?: b
       continue
     }
 
-    const currentVersion = installedPackage.version.string
+    const currentVersion = installedPackage.version.toString()
 
     if (options?.latest || currentVersion !== latestVersion) {
       packagesToUpdate.push({
@@ -259,7 +259,7 @@ async function updateAllPackages(options?: { latest?: boolean, dryRun?: boolean 
       continue
     }
 
-    const currentVersion = pkg.version.string
+    const currentVersion = pkg.version.toString()
 
     if (options?.latest || currentVersion !== latestVersion) {
       packagesToUpdate.push({

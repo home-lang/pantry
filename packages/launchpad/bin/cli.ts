@@ -1072,15 +1072,6 @@ cli
       }
       else {
         // Update specific packages
-        if (options?.dryRun) {
-          console.log('🔍 DRY RUN MODE - Would update the following packages:')
-          packageList.forEach(pkg => console.log(`  • ${pkg}${options?.latest ? ' (to latest)' : ''}`))
-          return
-        }
-
-        console.log(`🔄 Updating ${packageList.join(', ')}${options?.latest ? ' to latest versions' : ''}...`)
-
-        // Use the enhanced update function from package.ts
         const { update } = await import('../src/package')
         await update(packageList, { latest: options?.latest, dryRun: options?.dryRun })
       }

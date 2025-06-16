@@ -9,6 +9,38 @@ import { update } from '../src/package'
 let consoleOutput: string[] = []
 let consoleWarnOutput: string[] = []
 
+// Helper function to find CLI path
+function findCliPath(): string {
+  const possiblePaths = [
+    path.resolve(process.cwd(), 'packages/launchpad/bin/cli.ts'),
+    path.resolve(process.cwd(), 'launchpad/packages/launchpad/bin/cli.ts'),
+    path.resolve(__dirname, '../bin/cli.ts'),
+    path.resolve('/home/runner/work/launchpad/launchpad/packages/launchpad/bin/cli.ts'),
+    path.resolve('/tmp', 'launchpad/packages/launchpad/bin/cli.ts'),
+  ]
+
+  let cliPath = ''
+  for (const p of possiblePaths) {
+    console.error('Debug: Checking path:', p, '- exists:', fs.existsSync(p))
+    if (fs.existsSync(p)) {
+      cliPath = p
+      break
+    }
+  }
+
+  if (!cliPath) {
+    console.error('Debug: No CLI found, using fallback')
+    cliPath = possiblePaths[0] // Use first path as fallback
+  }
+
+  console.error('Debug: Using CLI at path:', cliPath)
+  console.error('Debug: Current working directory:', process.cwd())
+  console.error('Debug: __dirname:', __dirname)
+  console.error('Debug: Directory contents:', fs.readdirSync(process.cwd()).join(', '))
+
+  return cliPath
+}
+
 const mockConsole = {
   log: mock((message: string) => {
     consoleOutput.push(message.toString())
@@ -91,44 +123,135 @@ describe('Update Module', () => {
   describe('CLI integration tests', () => {
     it('should handle update command with specific packages', async () => {
       const { spawn } = Bun
-      const proc = spawn(['bun', 'run', './packages/launchpad/bin/cli.ts', 'update', 'bun', '--dry-run'], {
+
+      const cliPath = findCliPath()
+      console.error('Debug: Environment LAUNCHPAD_PREFIX:', process.env.LAUNCHPAD_PREFIX)
+
+      const proc = spawn(['bun', 'run', cliPath, 'update', 'bun', '--dry-run'], {
         cwd: process.cwd(),
         stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
       })
 
-      const output = await new Response(proc.stdout).text()
-      const exitCode = await proc.exited
+      // Add timeout to prevent hanging in CI
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('CLI command timed out after 10 seconds')), 10000)
+      })
 
-      expect(exitCode).toBe(0)
-      expect(output).toContain('bun')
+      try {
+        const [output, stderr, exitCode] = await Promise.race([
+          Promise.all([
+            new Response(proc.stdout).text(),
+            new Response(proc.stderr).text(),
+            proc.exited,
+          ]),
+          timeoutPromise,
+        ]) as [string, string, number]
+
+        // Always log output for debugging in CI
+        console.error('CLI stdout:', output)
+        console.error('CLI stderr:', stderr)
+        console.error('Exit code:', exitCode)
+
+        if (exitCode !== 0) {
+          throw new Error(`CLI failed with exit code ${exitCode}. Stdout: ${output}. Stderr: ${stderr}`)
+        }
+
+        expect(exitCode).toBe(0)
+        expect(output).toContain('bun')
+      }
+      catch (error) {
+        console.error('CLI test failed:', error)
+        throw error
+      }
     })
 
     it('should handle upgrade alias', async () => {
       const { spawn } = Bun
-      const proc = spawn(['bun', 'run', './packages/launchpad/bin/cli.ts', 'upgrade', 'bun', '--latest', '--dry-run'], {
+
+      const cliPath = findCliPath()
+
+      const proc = spawn(['bun', 'run', cliPath, 'upgrade', 'bun', '--latest', '--dry-run'], {
         cwd: process.cwd(),
         stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
       })
 
-      const output = await new Response(proc.stdout).text()
-      const exitCode = await proc.exited
+      // Add timeout to prevent hanging in CI
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('CLI command timed out after 10 seconds')), 10000)
+      })
 
-      expect(exitCode).toBe(0)
-      expect(output).toContain('bun')
+      try {
+        const [output, stderr, exitCode] = await Promise.race([
+          Promise.all([
+            new Response(proc.stdout).text(),
+            new Response(proc.stderr).text(),
+            proc.exited,
+          ]),
+          timeoutPromise,
+        ]) as [string, string, number]
+
+        // Always log output for debugging in CI
+        console.error('CLI stdout:', output)
+        console.error('CLI stderr:', stderr)
+        console.error('Exit code:', exitCode)
+
+        if (exitCode !== 0) {
+          throw new Error(`CLI failed with exit code ${exitCode}. Stdout: ${output}. Stderr: ${stderr}`)
+        }
+
+        expect(exitCode).toBe(0)
+        expect(output).toContain('bun')
+      }
+      catch (error) {
+        console.error('CLI test failed:', error)
+        throw error
+      }
     })
 
     it('should handle up alias', async () => {
       const { spawn } = Bun
-      const proc = spawn(['bun', 'run', './packages/launchpad/bin/cli.ts', 'up', 'node', '--dry-run'], {
+
+      const cliPath = findCliPath()
+
+      const proc = spawn(['bun', 'run', cliPath, 'up', 'node', '--dry-run'], {
         cwd: process.cwd(),
         stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
       })
 
-      const output = await new Response(proc.stdout).text()
-      const exitCode = await proc.exited
+      // Add timeout to prevent hanging in CI
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('CLI command timed out after 10 seconds')), 10000)
+      })
 
-      expect(exitCode).toBe(0)
-      expect(output).toContain('node')
+      try {
+        const [output, stderr, exitCode] = await Promise.race([
+          Promise.all([
+            new Response(proc.stdout).text(),
+            new Response(proc.stderr).text(),
+            proc.exited,
+          ]),
+          timeoutPromise,
+        ]) as [string, string, number]
+
+        // Always log output for debugging in CI
+        console.error('CLI stdout:', output)
+        console.error('CLI stderr:', stderr)
+        console.error('Exit code:', exitCode)
+
+        if (exitCode !== 0) {
+          throw new Error(`CLI failed with exit code ${exitCode}. Stdout: ${output}. Stderr: ${stderr}`)
+        }
+
+        expect(exitCode).toBe(0)
+        expect(output).toContain('node')
+      }
+      catch (error) {
+        console.error('CLI test failed:', error)
+        throw error
+      }
     })
   })
 
