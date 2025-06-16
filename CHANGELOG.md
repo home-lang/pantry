@@ -1,4 +1,21 @@
 
+## v0.2.1...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.1...main)
+
+### 🏡 Chore
+
+- Add `add` alias ([2e300cb](https://github.com/stacksjs/launchpad/commit/2e300cb))
+- Improve `uninstall` logic ([798bc06](https://github.com/stacksjs/launchpad/commit/798bc06))
+- Italicize domain name ([484775f](https://github.com/stacksjs/launchpad/commit/484775f))
+- Improve cleanup logic ([7a47e04](https://github.com/stacksjs/launchpad/commit/7a47e04))
+- Minor updates ([bd9e6b2](https://github.com/stacksjs/launchpad/commit/bd9e6b2))
+- Adjust install process ([857c14e](https://github.com/stacksjs/launchpad/commit/857c14e))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.2.0...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.0...main)
