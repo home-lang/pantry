@@ -938,7 +938,12 @@ cli
       // Also clean package directories (the new pkgx-compatible structure)
       try {
         const domains = fs.readdirSync(installPrefix, { withFileTypes: true })
-          .filter(dirent => dirent.isDirectory() && dirent.name !== 'bin' && dirent.name !== 'pkgs' && dirent.name !== '.tmp')
+          .filter(dirent => dirent.isDirectory()
+            && dirent.name !== 'bin'
+            && dirent.name !== 'pkgs'
+            && dirent.name !== '.tmp'
+            && dirent.name !== '.cache'
+            && dirent.name !== '.local')
 
         for (const domain of domains) {
           const domainPath = path.join(installPrefix, domain.name)

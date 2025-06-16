@@ -226,7 +226,7 @@ describe('CLI Cleanup Commands - Functional Tests', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('This will remove ALL Launchpad-installed packages and environments')
-      expect(result.stdout).toContain('Only removes packages from the Launchpad-specific directories')
+      expect(result.stdout).toContain('This includes package metadata, binaries, and libraries:')
       expect(result.stdout).toContain('Use --force to skip confirmation')
     })
 
@@ -251,11 +251,11 @@ describe('CLI Cleanup Commands - Functional Tests', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Would remove:')
-      // Check for either "Launchpad packages:" in the main list or the package list section
-      const hasPackagesList = result.stdout.includes('Launchpad packages:') || result.stdout.includes('Launchpad-installed packages that would be removed:')
+      // Check for either "Package files" in the main list or the package list section
+      const hasPackagesList = result.stdout.includes('Package files') || result.stdout.includes('Packages that would be removed:')
       if (!hasPackagesList) {
         // If no packages are shown, at least verify the environment directory is shown
-        expect(result.stdout).toContain('Launchpad environments:')
+        expect(result.stdout).toContain('Project environments:')
       }
       // Should NOT contain cache directory when --keep-cache is used
       expect(result.stdout).not.toContain('Cache directory:')

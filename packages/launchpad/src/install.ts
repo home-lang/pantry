@@ -835,7 +835,7 @@ async function installDependencies(
       let versionToInstall = depVersion
       if (!versionToInstall) {
         // Try to get the latest version if no version specified
-        versionToInstall = getLatestVersion(depName)
+        versionToInstall = getLatestVersion(depName) || undefined
       }
       else {
         // Try to resolve the version constraint to an actual version
@@ -848,7 +848,7 @@ async function installDependencies(
           if (config.verbose) {
             console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying latest`)
           }
-          versionToInstall = getLatestVersion(depName)
+          versionToInstall = getLatestVersion(depName) || undefined
         }
       }
 
