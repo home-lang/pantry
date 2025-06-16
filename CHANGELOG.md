@@ -1,4 +1,18 @@
 
+## v0.2.0...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.0...main)
+
+### 🏡 Chore
+
+- Slightly improve install output ([9c9ef25](https://github.com/stacksjs/launchpad/commit/9c9ef25))
+- Improve `update` command ([1656f62](https://github.com/stacksjs/launchpad/commit/1656f62))
+- Improve jsdocs ([b7cbaf4](https://github.com/stacksjs/launchpad/commit/b7cbaf4))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.1.2...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.1.2...main)
