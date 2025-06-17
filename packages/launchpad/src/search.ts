@@ -232,14 +232,27 @@ export function getPopularPackages(limit = 20): SearchResult[] {
 }
 
 /**
+ * Highlight search term in text
+ */
+function highlightSearchTerm(text: string, searchTerm: string): string {
+  if (!searchTerm || searchTerm.trim().length === 0) {
+    return text
+  }
+
+  const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+  return text.replace(regex, '\x1B[43m\x1B[30m$1\x1B[0m')
+}
+
+/**
  * Format search results for CLI display
  */
 export function formatSearchResults(results: SearchResult[], options: {
   showPrograms?: boolean
   showVersions?: boolean
   compact?: boolean
+  searchTerm?: string
 } = {}): string {
-  const { showPrograms = true, showVersions = true, compact = false } = options
+  const { showPrograms = true, showVersions = true, compact = false, searchTerm = '' } = options
 
   if (results.length === 0) {
     return 'No packages found matching your search.'
@@ -254,33 +267,34 @@ export function formatSearchResults(results: SearchResult[], options: {
   for (const result of results) {
     if (compact) {
       // Compact format: name (domain) - description
-      const desc = result.description ? ` - ${result.description}` : ''
-      lines.push(`${result.name} (${result.domain})${desc}`)
+      const desc = result.description ? ` - ${highlightSearchTerm(result.description, searchTerm)}` : ''
+      lines.push(`${highlightSearchTerm(result.name, searchTerm)} (${highlightSearchTerm(result.domain, searchTerm)})${desc}`)
     }
     else {
       // Full format with details
-      lines.push(`📦 ${result.name} (${result.domain})`)
+      lines.push(`📦 \x1B[1m${highlightSearchTerm(result.name, searchTerm)}\x1B[0m (\x1B[3m${highlightSearchTerm(result.domain, searchTerm)}\x1B[0m)`)
 
       if (result.description) {
-        lines.push(`   ${result.description}`)
+        lines.push(`   ${highlightSearchTerm(result.description, searchTerm)}`)
       }
 
       const details: string[] = []
 
       if (showVersions && result.latestVersion) {
-        details.push(`Latest: ${result.latestVersion}`)
+        details.push(`\x1B[2mLatest:\x1B[0m ${result.latestVersion}`)
       }
 
       if (showVersions && result.totalVersions > 0) {
         details.push(`${result.totalVersions} versions available`)
       }
 
-      if (showPrograms && result.programs && result.programs.length > 0) {
-        details.push(`Programs: ${result.programs.join(', ')}`)
-      }
-
       if (details.length > 0) {
         lines.push(`   ${details.join(' • ')}`)
+      }
+
+      if (showPrograms && result.programs && result.programs.length > 0) {
+        const highlightedPrograms = result.programs.map(prog => highlightSearchTerm(prog, searchTerm)).join(', ')
+        lines.push(`   \x1B[2mPrograms:\x1B[0m ${highlightedPrograms}`)
       }
 
       lines.push('')

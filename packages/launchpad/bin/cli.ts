@@ -114,6 +114,7 @@ cli
         console.log(formatSearchResults(results, {
           compact: options?.compact,
           showPrograms: options?.programs !== false,
+          searchTerm: term,
         }))
       }
     }
