@@ -368,7 +368,7 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
           local launchpad_output=""
           local exit_code=0
           # Capture only stdout, let stderr (progress bars) pass through to user
-          launchpad_output=$(eval "${dev_cmd} dev \\"$PWD\\"") || exit_code=$?
+          launchpad_output=$(eval "${dev_cmd} dev --shell \\"$PWD\\"") || exit_code=$?
 
           if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
             # If launchpad succeeds, extract just the shell script part using system sed
@@ -505,7 +505,7 @@ dev() {
         local launchpad_output=""
         local exit_code=0
         # Capture only stdout, let stderr (progress bars) pass through to user
-        launchpad_output=$(eval "${dev_cmd} dev \\"$PWD\\"") || exit_code=$?
+        launchpad_output=$(eval "${dev_cmd} dev --shell \\"$PWD\\"") || exit_code=$?
 
         if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
           # If launchpad succeeds, extract just the shell script part using system sed

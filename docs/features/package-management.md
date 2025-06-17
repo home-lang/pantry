@@ -156,16 +156,17 @@ launchpad install --path ~/tools go@1.21
 launchpad install --force node@22
 ```
 
-### Smart Installation
+### Package Registry
 
-Use smart installation for automatic fallback to system package managers:
+Launchpad uses the pkgx registry through ts-pkgx for package installation:
 
 ```bash
-# Try pkgx first, fallback to brew/apt if needed
-launchpad smart-install node python
+# Install from the pkgx registry
+launchpad install node@22 python@3.12
 
-# Smart install handles multiple package types automatically
-launchpad smart-install git curl wget
+# Search for available packages
+launchpad search node
+launchpad info python
 ```
 
 ## Package Removal
@@ -348,8 +349,6 @@ Control what gets installed:
 
 ```bash
 # Skip specific components
-launchpad bootstrap --skip-pkgx
-launchpad bootstrap --skip-bun
 launchpad bootstrap --skip-shell-integration
 
 # Custom installation path
@@ -363,7 +362,7 @@ launchpad bootstrap --no-auto-path
 
 The bootstrap process installs:
 
-- **pkgx**: Core package manager
+- **ts-pkgx**: Core package registry integration
 - **Bun**: JavaScript runtime
 - **PATH setup**: Configures both `bin/` and `sbin/` directories
 - **Shell integration**: Sets up auto-activation hooks

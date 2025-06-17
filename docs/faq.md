@@ -176,22 +176,24 @@ This ensures:
 ### How do I find available package versions?
 
 ```bash
-# Search with pkgx directly
-pkgx --search node
+# Search with Launchpad's built-in search
+launchpad search node
 
-# Check what versions are available
-pkgx node@  # Shows available versions
+# Get detailed package information including versions
+launchpad info node --versions
 ```
 
 ### Can I install packages not available in pkgx?
 
-**Yes!** Use the smart-install feature:
+Currently, Launchpad uses the pkgx registry through ts-pkgx. If a package isn't available, you can:
 
 ```bash
-# Automatically falls back to system package managers
-launchpad smart-install some-package
+# Check what packages are available
+launchpad search package-name
 
-# Falls back to: Homebrew, apt, yum, pacman, etc.
+# Or install manually with your system package manager
+brew install some-package  # macOS
+apt install some-package   # Ubuntu/Debian
 ```
 
 ### How do I update packages?

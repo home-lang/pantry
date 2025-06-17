@@ -14,7 +14,7 @@ Launchpad serves as an alternative to package managers like Homebrew, focusing o
 - Cross-platform support
 - Clean separation from other package managers
 
-At its core, Launchpad leverages pkgx, a next-generation package runner that allows you to use packages without installing them. Launchpad extends this functionality with convenient commands, better management of executables, and improved integration with your development workflow.
+At its core, Launchpad leverages the pkgx package registry through ts-pkgx, providing access to thousands of packages with convenient commands, better management of executables, and improved integration with your development workflow.
 
 ## Installation Philosophy
 
@@ -29,12 +29,12 @@ This approach ensures that Launchpad can coexist peacefully with Homebrew, syste
 
 ## Key Features
 
-- 📦 **Package Management** — Install and manage packages directly using pkgx
+- 📦 **Package Management** — Install and manage packages from the pkgx registry via ts-pkgx
 - 🗑️ **Package Removal** — Remove specific packages or completely uninstall Launchpad
 - 🔄 **Executable Shims** — Create executable shims for packages automatically
 - 🌍 **Environment Isolation** — Project-specific environments with automatic activation/deactivation
 - 🎯 **Bootstrap Setup** — One-command setup of essential development tooling
-- 🔧 **Auto-updates** — Configure automatic updates for pkgx
+- 🔧 **Updates** — Keep packages up-to-date with built-in update commands
 - 🔌 **PATH Integration** — Automatically add installation directories to your PATH
 - 🪟 **Cross-platform** — Support for macOS, Linux, and Windows systems
 - 🔒 **Smart Installation** — Automatic fallback to system package managers when needed
@@ -43,11 +43,11 @@ This approach ensures that Launchpad can coexist peacefully with Homebrew, syste
 
 ## How It Works
 
-Launchpad works by managing the installation of pkgx and creating shims (executable scripts) that automatically run the correct versions of your tools. It can:
+Launchpad works by utilizing the pkgx package registry through ts-pkgx and creating shims (executable scripts) that automatically run the correct versions of your tools. It can:
 
 - Figure out required system or project dependencies and install them
 - Provide project-specific environment isolation with automatic dependency activation/deactiviation
-- Configure automatic updates and PATH modifications
+- Configure PATH modifications and manage package updates
 
 Whether you're setting up a new development machine, working on multiple projects with different tooling requirements, or just want a cleaner way to manage your packages, Launchpad offers a streamlined experience for modern developers with complete environment isolation.
 

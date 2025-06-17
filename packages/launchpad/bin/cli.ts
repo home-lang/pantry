@@ -523,12 +523,14 @@ cli
   .command('dev [dir]', 'Set up development environment for project dependencies')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')
-  .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean }) => {
+  .option('--shell', 'Output shell code for evaluation (use with eval)')
+  .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean, shell?: boolean }) => {
     try {
       const targetDir = dir ? path.resolve(dir) : process.cwd()
       await dump(targetDir, {
         dryrun: options?.dryRun || false,
         quiet: options?.quiet || false,
+        shellOutput: options?.shell || false,
       })
     }
     catch (error) {
@@ -598,6 +600,99 @@ cli
       if (!options?.silent) {
         console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : String(error))
       }
+      process.exit(1)
+    }
+  })
+
+// Environment management commands
+
+// List environments command
+cli
+  .command('env:list', 'List all development environments')
+  .alias('env:ls')
+  .option('--verbose', 'Show detailed information including hashes')
+  .option('--format <type>', 'Output format: table (default), json, simple')
+  .example('launchpad env:list')
+  .example('launchpad env:list --verbose')
+  .example('launchpad env:list --format json')
+  .action(async (options?: { verbose?: boolean, format?: string }) => {
+    try {
+      const { listEnvironments } = await import('../src/env')
+      await listEnvironments({
+        verbose: options?.verbose || false,
+        format: options?.format || 'table',
+      })
+    }
+    catch (error) {
+      console.error('Failed to list environments:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Inspect environment command
+cli
+  .command('env:inspect <hash>', 'Inspect a specific development environment')
+  .option('--verbose', 'Show detailed directory structure')
+  .option('--show-stubs', 'Show binary stub contents')
+  .example('launchpad env:inspect working-test_208a31ec')
+  .example('launchpad env:inspect dummy_6d7cf1d6 --verbose')
+  .action(async (hash: string, options?: { verbose?: boolean, showStubs?: boolean }) => {
+    try {
+      const { inspectEnvironment } = await import('../src/env')
+      await inspectEnvironment(hash, {
+        verbose: options?.verbose || false,
+        showStubs: options?.showStubs || false,
+      })
+    }
+    catch (error) {
+      console.error('Failed to inspect environment:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Clean environments command
+cli
+  .command('env:clean', 'Clean up old or unused development environments')
+  .option('--dry-run', 'Show what would be cleaned without actually cleaning')
+  .option('--older-than <days>', 'Clean environments older than specified days')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--verbose', 'Show detailed cleanup information')
+  .example('launchpad env:clean --dry-run')
+  .example('launchpad env:clean --older-than 7')
+  .example('launchpad env:clean --force')
+  .action(async (options?: { dryRun?: boolean, olderThan?: string, force?: boolean, verbose?: boolean }) => {
+    try {
+      const { cleanEnvironments } = await import('../src/env')
+      await cleanEnvironments({
+        dryRun: options?.dryRun || false,
+        olderThanDays: Number.parseInt(options?.olderThan || '30', 10),
+        force: options?.force || false,
+        verbose: options?.verbose || false,
+      })
+    }
+    catch (error) {
+      console.error('Failed to clean environments:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Remove specific environment command
+cli
+  .command('env:remove <hash>', 'Remove a specific development environment')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--verbose', 'Show detailed removal information')
+  .example('launchpad env:remove dummy_6d7cf1d6')
+  .example('launchpad env:remove working-test_208a31ec --force')
+  .action(async (hash: string, options?: { force?: boolean, verbose?: boolean }) => {
+    try {
+      const { removeEnvironment } = await import('../src/env')
+      await removeEnvironment(hash, {
+        force: options?.force || false,
+        verbose: options?.verbose || false,
+      })
+    }
+    catch (error) {
+      console.error('Failed to remove environment:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })

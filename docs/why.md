@@ -56,8 +56,8 @@ launchpad install node@22
 # Create a dedicated environment for a project
 launchpad dev:on
 
-# Manage pkgx itself
-launchpad pkgx
+# Bootstrap development environment
+launchpad bootstrap
 ```
 
 ## Why Now?

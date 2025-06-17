@@ -41,8 +41,8 @@ jobs:
       - name: Install launchpad
         run: bun install -g launchpad
 
-      - name: Install pkgx
-        run: launchpad pkgx --verbose
+      - name: Launchpad Bootstrap
+        run: launchpad bootstrap --verbose
 
       - name: Install dev package (if required)
         if: ${{ inputs.use-dev }}

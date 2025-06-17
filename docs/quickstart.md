@@ -33,7 +33,7 @@ launchpad bootstrap --verbose
 ```
 
 This command will:
-- ✅ Install pkgx (the underlying package manager)
+
 - ✅ Install Bun (JavaScript runtime)
 - ✅ Configure your PATH automatically
 - ✅ Set up shell integration for automatic environment activation

@@ -201,23 +201,18 @@ async function dump(
 async function integrate(directory: string): Promise<void>
 ```
 
-### pkgx Module
+### Package Management Module
 
 ```typescript
-import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '@stacksjs/launchpad'
+import { update } from '@stacksjs/launchpad'
 
 /**
- * Check if pkgx auto-updates are enabled
- * @returns Promise resolving to boolean indicating if auto-updates are enabled
+ * Update packages to newer versions
+ * @param packages Array of package names to update (or undefined for all)
+ * @param options Update options
+ * @returns Promise resolving when update completes
  */
-async function check_pkgx_autoupdate(): Promise<boolean>
-
-/**
- * Configure pkgx auto-update setting
- * @param enable Whether to enable auto-updates
- * @returns Promise resolving to boolean indicating success
- */
-async function configure_pkgx_autoupdate(enable: boolean): Promise<boolean>
+async function update(packages?: string[], options?: { latest?: boolean, dryRun?: boolean }): Promise<void>
 ```
 
 ### List Module
@@ -350,9 +345,9 @@ async function activateDevEnv(directory: string): Promise<void>
 async function addToPath(directory: string): Promise<void>
 
 /**
- * Download and install pkgx
+ * Bootstrap Launchpad installation with essential tools
  */
-async function downloadAndInstallPkgx(installPath: string): Promise<void>
+async function bootstrap(options?: { path?: string, verbose?: boolean, force?: boolean }): Promise<void>
 
 /**
  * Check if a directory is in the system PATH
@@ -619,20 +614,22 @@ const v = new Version('2.0.0')
 console.log(v.toString()) // "2.0.0"
 ```
 
-### Auto-update Management
+### Package Updates
 
 ```typescript
-import { check_pkgx_autoupdate, configure_pkgx_autoupdate } from '@stacksjs/launchpad'
+import { update } from '@stacksjs/launchpad'
 
-// Check current auto-update status
-const isEnabled = await check_pkgx_autoupdate()
-console.log('Auto-updates enabled:', isEnabled)
+// Update all packages
+await update()
 
-// Enable auto-updates
-await configure_pkgx_autoupdate(true)
+// Update specific packages
+await update(['node', 'python'])
 
-// Disable auto-updates
-await configure_pkgx_autoupdate(false)
+// Preview updates without applying them
+await update(['bun'], { dryRun: true })
+
+// Update to latest versions
+await update(['node'], { latest: true })
 ```
 
 ### Listing Packages

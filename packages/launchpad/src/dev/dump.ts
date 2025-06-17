@@ -32,6 +32,7 @@ async function installPackagesDirectly(
   packages: Array<{ project: string, version: string, command: string, global?: boolean }>,
   installPrefix: string,
   globalInstallPrefix: string,
+  opts: { shellOutput?: boolean },
 ): Promise<{ successful: string[], failed: Array<{ project: string, error: string, suggestion?: string }> }> {
   // Create necessary directories
   const binDir = path.join(installPrefix, 'bin')
@@ -105,7 +106,9 @@ async function installPackagesDirectly(
           }
         }
 
-        console.log(`✅ Installed ${pkg.project}@${pkg.version}${pkg.global ? ' (global)' : ''}`)
+        if (!opts.shellOutput) {
+          console.log(`✅ Installed ${pkg.project}@${pkg.version}${pkg.global ? ' (global)' : ''}`)
+        }
       }
       else {
         const suggestion = packageSuggestions[pkg.project]
@@ -137,7 +140,7 @@ async function installPackagesDirectly(
 
 export default async function (
   cwd: string,
-  opts: { dryrun: boolean, quiet: boolean },
+  opts: { dryrun: boolean, quiet: boolean, shellOutput?: boolean },
 ): Promise<void> {
   const snuff = await sniff({ string: cwd })
 
@@ -203,14 +206,30 @@ export default async function (
   // Define install prefixes
   const globalInstallPrefix = install_prefix().string
 
+  // Temporarily silence console output in shell mode
+  const originalConsoleLog = console.log
+  if (opts.shellOutput) {
+    console.log = () => {} // Suppress all console.log during installation
+  }
+
   try {
     // Install packages using our new system (global and project-specific)
-    const { successful, failed } = await installPackagesDirectly(packages, installPrefix, globalInstallPrefix)
+    const { successful, failed } = await installPackagesDirectly(packages, installPrefix, globalInstallPrefix, { shellOutput: opts.shellOutput })
 
-    if (!opts.quiet && config.verbose) {
+    // Always show installation results unless in shell output mode
+    if (!opts.shellOutput && !opts.quiet) {
       // Report installation results
       if (successful.length > 0 && failed.length === 0) {
-        console.log('✅ All packages installed successfully!')
+        console.log(`✅ Successfully installed ${successful.length} ${successful.length === 1 ? 'package' : 'packages'} and set up development environment!`)
+        if (config.verbose) {
+          console.log('📦 Installed packages:')
+          for (const pkg of successful) {
+            console.log(`  • ${pkg}`)
+          }
+        }
+        console.log('')
+        console.log('🚀 To activate the environment, run:')
+        console.log(`   eval "$(launchpad dev --shell)"`)
       }
       else if (successful.length > 0 && failed.length > 0) {
         console.log(`⚠️  Partial installation: ${successful.length} succeeded, ${failed.length} failed`)
@@ -226,6 +245,9 @@ export default async function (
             console.log(`     💡 Did you mean '${suggestion}'? Update your dependencies file.`)
           }
         }
+        console.log('')
+        console.log('🚀 To activate the environment with successfully installed packages:')
+        console.log(`   eval "$(launchpad dev --shell)"`)
       }
       else if (failed.length > 0) {
         console.log('❌ All package installations failed!')
@@ -302,24 +324,31 @@ export default async function (
     console.error('🔧 Please fix the package specifications in your dependencies file and try again.')
     process.exit(1)
   }
-
-  // Generate environment setup for project-specific activation
-  let env = ''
-
-  // Add any additional env that we sniffed
-  for (const [key, value] of Object.entries(snuff.env)) {
-    env += `${key}=${shell_escape(value)}\n`
+  finally {
+    // Restore console.log
+    if (opts.shellOutput) {
+      console.log = originalConsoleLog
+    }
   }
 
-  // Set up project-specific PATH that includes both global and project's bin directories
-  const projectBinDir = path.join(installPrefix, 'bin')
-  const projectSbinDir = path.join(installPrefix, 'sbin')
-  const globalBinDir = path.join(globalInstallPrefix, 'bin')
-  const globalSbinDir = path.join(globalInstallPrefix, 'sbin')
+  // Only output shell code if specifically requested
+  if (opts.shellOutput) {
+    // Generate environment setup for project-specific activation
+    let env = ''
 
-  // Generate script output for shell integration with proper isolation
+    // Add any additional env that we sniffed
+    for (const [key, value] of Object.entries(snuff.env)) {
+      env += `${key}=${shell_escape(value)}\n`
+    }
 
-  console.log(`
+    // Set up project-specific PATH that includes both global and project's bin directories
+    const projectBinDir = path.join(installPrefix, 'bin')
+    const projectSbinDir = path.join(installPrefix, 'sbin')
+    const globalBinDir = path.join(globalInstallPrefix, 'bin')
+    const globalSbinDir = path.join(globalInstallPrefix, 'sbin')
+
+    // Generate script output for shell integration with proper isolation
+    console.log(`
 # Project-specific environment for ${cwd}
 # This creates an isolated environment that gets properly deactivated
 
@@ -401,4 +430,5 @@ if [ "\${PWD}" = "${cwd}" ]; then
   # This helps prevent Starship timeout warnings when detecting tool versions
   sleep 0.1
 fi`)
+  }
 }

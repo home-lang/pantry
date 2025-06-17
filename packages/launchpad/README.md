@@ -84,16 +84,6 @@ launchpad shim node@22 typescript@5.7
 launchpad shim --path ~/bin node@22
 ```
 
-### Install pkgx
-
-```bash
-# Install pkgx itself
-launchpad pkgx
-
-# Force reinstall
-launchpad pkgx --force
-```
-
 ### Install dev package
 
 ```bash

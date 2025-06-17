@@ -12,13 +12,11 @@ Here are the main commands available in Launchpad:
 | `update`, `upgrade`, `up` | Update packages to newer versions |
 | `remove` | Remove specific packages |
 | `shim` | Create shims for packages |
-| `pkgx` | Install pkgx itself |
 | `dev:on` | Activate dev environment in directory |
 | `dev:dump` | Generate environment setup script for a project |
 | `dev:shellcode` | Generate shell integration code |
 | `bun` | Install Bun runtime directly |
 | `zsh` | Install Zsh shell |
-| `smart-install` | Smart install with automatic fallback to system package managers |
 | `bootstrap` | Install all essential tools at once |
 | `list` | List installed packages |
 | `uninstall` | Complete removal of Launchpad and all packages |
@@ -26,10 +24,6 @@ Here are the main commands available in Launchpad:
 | `env:clean` | Clean up unused development environments |
 | `env:inspect` | Inspect a specific development environment |
 | `env:remove` | Remove a specific development environment |
-| `env:update` | Update package versions in dependencies.yaml |
-| `autoupdate` | Check auto-update status |
-| `autoupdate:enable` | Enable auto-updates |
-| `autoupdate:disable` | Disable auto-updates |
 | `version` | Show version information |
 | `help` | Display help information |
 
@@ -74,19 +68,15 @@ launchpad install node --path ~/.local    # Force user directory
 - Offer to re-run with `sudo` automatically
 - Fall back to `~/.local` if you decline sudo
 
-## Smart Installation
+## Package Installation
 
-Launchpad provides smart installation that automatically falls back to system package managers when needed:
+Install packages using the standard install command:
 
 ```bash
-# Smart install with automatic fallback
-launchpad smart-install node python git
+# Install packages
+launchpad install node@22 python@3.12 git
 
-# If pkgx fails, automatically tries system package managers:
-# - macOS: Homebrew
-# - Ubuntu/Debian: apt
-# - RHEL/CentOS/Fedora: yum/dnf
-# - Arch: pacman
+# Launchpad uses the pkgx registry through ts-pkgx for package installation
 ```
 
 ## Updating Packages
@@ -432,30 +422,16 @@ Launchpad uses human-readable hash identifiers for environments:
 
 ## Updating Dependencies
 
-### Automatic Updates
+### Updating Dependencies
 
-Keep your dependencies up to date with the `env:update` command:
+To update dependencies in your project, you'll need to manually edit your `dependencies.yaml` file and then reactivate the environment:
 
 ```bash
-# Check for available updates
-launchpad env:update --check-only
-
-# Preview what would be updated
-launchpad env:update --dry-run
-
-# Apply updates interactively
-launchpad env:update
-
-# Apply updates without confirmation
-launchpad env:update --force
+# Edit your dependencies.yaml file
+# Change: node@22 to node@23
+# Then reactivate the environment
+cd . # This triggers environment reactivation with new dependencies
 ```
-
-The update command:
-- **Checks latest versions** from pkgx and GitHub (for Bun)
-- **Preserves version constraints** (^, ~, >=, etc.)
-- **Shows clear diff** of what will change
-- **Supports dry-run mode** for safe previewing
-- **Updates dependencies.yaml** automatically
 
 ## Bootstrap Setup
 
@@ -482,8 +458,6 @@ Control what gets installed:
 
 ```bash
 # Skip specific components
-launchpad bootstrap --skip-pkgx
-launchpad bootstrap --skip-bun
 launchpad bootstrap --skip-shell-integration
 
 # Custom installation path (override default /usr/local)
@@ -534,19 +508,19 @@ launchpad shim --path ~/bin typescript
 launchpad shim node --no-auto-path
 ```
 
-## Installing pkgx
+## Bootstrap Setup
 
-If you don't have pkgx installed, Launchpad can install it for you:
+Bootstrap your development environment with everything you need:
 
 ```bash
-# Install pkgx (to /usr/local if writable, ~/.local otherwise)
-launchpad pkgx
+# Bootstrap essential tools and environment
+launchpad bootstrap
 
-# Force reinstall
-launchpad pkgx --force
+# Force reinstall components
+launchpad bootstrap --force
 
 # Install to specific path
-launchpad pkgx --path ~/bin
+launchpad bootstrap --path ~/bin
 ```
 
 ## Installing Bun
@@ -588,19 +562,19 @@ After installation, Launchpad provides instructions for making zsh your default 
 chsh -s /path/to/installed/zsh
 ```
 
-## Managing Auto-updates
+## Checking for Updates
 
-Control how pkgx handles updates:
+Keep your packages up-to-date:
 
 ```bash
-# Check current auto-update status
-launchpad autoupdate
+# Check for outdated packages
+launchpad outdated
 
-# Enable auto-updates
-launchpad autoupdate:enable
+# Update all packages to latest versions
+launchpad update
 
-# Disable auto-updates
-launchpad autoupdate:disable
+# Update specific packages
+launchpad update node python
 ```
 
 ## Listing Installed Packages
@@ -630,10 +604,11 @@ Most commands support these options:
 
 ### Understanding Installation Philosophy
 
-Launchpad follows the pkgm approach:
+Launchpad follows a clean package management approach _(similar to pkgm)_:
+
 - **Never uses Homebrew directories** (`/opt/homebrew`)
-- **Prefers `/usr/local`** for system-wide installations (traditional Unix approach)
-- **Falls back to `~/.local`** for user-specific installations when needed
+- **Prefers `~/.local`** for user-specific installations (safest approach)
+- **Falls back to `/usr/local`** for system-wide installations when explicitly requested
 - **Maintains clean separation** from other package managers
 
 ### Using Environment Isolation

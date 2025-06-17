@@ -421,12 +421,12 @@ grep -E "(nvm|rbenv|pyenv|rvm)" ~/.zshrc ~/.bashrc
 ### Package Compatibility
 
 ```bash
-# Some packages might not be available in pkgx
+# Some packages might not be available
 # Check availability first
-pkgx --search package-name
+launchpad search package-name
 
-# Use smart-install for automatic fallback
-launchpad smart-install package-name
+# Get detailed package information
+launchpad info package-name
 ```
 
 ## Rollback Plan

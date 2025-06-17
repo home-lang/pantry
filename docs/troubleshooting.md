@@ -49,10 +49,10 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
    launchpad install node         # Latest version
    ```
 
-2. **Verify with pkgx directly:**
+2. **Verify with Launchpad's search:**
    ```bash
-   pkgx --sync
-   pkgx --search node
+   launchpad search node
+   launchpad info node
    ```
 
 3. **Use verbose mode for details:**
@@ -447,7 +447,6 @@ echo "Shell: $SHELL ($($SHELL --version))"
 echo "Launchpad: $(launchpad --version)"
 echo "Node: $(node --version 2>/dev/null || echo 'not installed')"
 echo "Bun: $(bun --version 2>/dev/null || echo 'not installed')"
-echo "pkgx: $(pkgx --version 2>/dev/null || echo 'not installed')"
 
 # Environment info
 echo "PATH: $PATH"

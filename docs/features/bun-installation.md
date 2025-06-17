@@ -1,6 +1,6 @@
 # Bun Installation
 
-Launchpad provides a dedicated command to install Bun directly from the official GitHub releases. This feature allows you to easily set up Bun in your environment without requiring pkgx or other package managers.
+Launchpad provides a dedicated command to install Bun directly from the official GitHub releases. This feature allows you to easily set up Bun in your environment independently of other package managers.
 
 ## Basic Usage
 

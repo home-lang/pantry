@@ -11,10 +11,9 @@ launchpad zsh
 ```
 
 This will:
-1. Ensure pkgx is installed (installing it if necessary)
-2. Install the latest version of zsh through pkgx
-3. Add the installation directory to your PATH
-4. Provide instructions for making zsh your default shell
+1. Install the latest version of zsh through Launchpad's package registry
+2. Add the installation directory to your PATH
+3. Provide instructions for making zsh your default shell
 
 ## Installation Options
 
@@ -153,7 +152,7 @@ If `chsh` doesn't work:
 
 | Method | Pros | Cons |
 |--------|------|------|
-| **Launchpad** | Simple, cross-platform, automatic PATH management | Requires pkgx |
+| **Launchpad** | Simple, cross-platform, automatic PATH management | Uses ts-pkgx registry |
 | **Package Manager** | System integration | Platform-specific, may need sudo |
 | **From Source** | Latest features | Complex, time-consuming |
 

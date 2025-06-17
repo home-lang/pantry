@@ -29,9 +29,6 @@ export async function run(): Promise<void> {
     // Install launchpad
     await installLaunchpad()
 
-    // Install pkgx
-    await installPkgx()
-
     // Install dependencies
     if (inputs.packages) {
       await installSpecifiedPackages(inputs.packages)
@@ -91,24 +88,6 @@ async function installLaunchpad(): Promise<void> {
   core.info('Installing launchpad...')
   await exec.exec('bun', ['install', '-g', 'launchpad'])
   core.info('launchpad installation completed')
-}
-
-/**
- * Install pkgx using launchpad
- */
-async function installPkgx(): Promise<void> {
-  core.info('Installing pkgx...')
-
-  const options = {
-    env: {
-      ...process.env,
-      LAUNCHPAD_VERBOSE: 'true',
-      CONTEXT: JSON.stringify(github.context),
-    },
-  }
-
-  await exec.exec('launchpad', ['pkgx', '--verbose'], options)
-  core.info('pkgx installation completed')
 }
 
 /**

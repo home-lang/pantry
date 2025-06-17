@@ -81,7 +81,7 @@ launchpad bootstrap --force
 ```
 
 The bootstrap command will:
-- ✅ Install pkgx (package manager)
+
 - ✅ Install Bun (JavaScript runtime)
 - ✅ Configure your PATH
 - ✅ Set up shell integration for auto-activation
