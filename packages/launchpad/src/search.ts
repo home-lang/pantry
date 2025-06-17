@@ -261,7 +261,8 @@ export function formatSearchResults(results: SearchResult[], options: {
   const lines: string[] = []
 
   if (!compact) {
-    lines.push(`Found ${results.length} package(s):\n`)
+    const packageWord = results.length === 1 ? 'package' : 'packages'
+    lines.push(`Found ${results.length} ${packageWord}:\n`)
   }
 
   for (const result of results) {
