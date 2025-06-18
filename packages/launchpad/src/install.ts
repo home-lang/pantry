@@ -691,11 +691,23 @@ async function copyDirectoryStructure(source: string, target: string): Promise<v
       await copyDirectoryStructure(sourcePath, targetPath)
     }
     else if (entry.isFile()) {
-      await fs.promises.copyFile(sourcePath, targetPath)
+      try {
+        await fs.promises.copyFile(sourcePath, targetPath)
 
-      // Preserve executable permissions
-      const stat = await fs.promises.stat(sourcePath)
-      await fs.promises.chmod(targetPath, stat.mode)
+        // Preserve executable permissions
+        const stat = await fs.promises.stat(sourcePath)
+        await fs.promises.chmod(targetPath, stat.mode)
+      }
+      catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === 'EACCES') {
+          // Permission denied - try to continue with other files
+          if (config.verbose) {
+            console.warn(`Permission denied copying ${entry.name}, skipping...`)
+          }
+          continue
+        }
+        throw error
+      }
     }
   }
 }
@@ -804,6 +816,13 @@ async function installDependencies(
     return allInstalledFiles
   }
 
+  // Known problematic packages where version resolution often fails
+  const knownProblematicPackages = new Set([
+    'videolan.org/x264', // Often has no matching version constraints
+    'videolan.org/x265', // Often has no matching version constraints
+    'webmproject.org/libvpx', // Often has no matching version constraints
+  ])
+
   if (config.verbose) {
     console.warn(`Resolving dependencies for ${packageName}: ${packageInfo.dependencies.join(', ')}`)
   }
@@ -811,6 +830,14 @@ async function installDependencies(
   for (const dep of packageInfo.dependencies) {
     const { name: depName, version: depVersion } = parsePackageSpec(dep)
     const depDomain = resolvePackageName(depName)
+
+    // Skip known problematic packages silently to reduce noise
+    if (knownProblematicPackages.has(depDomain) || knownProblematicPackages.has(depName)) {
+      if (config.verbose) {
+        console.warn(`Skipping known problematic dependency: ${depName}`)
+      }
+      continue
+    }
 
     // Skip if already installed to avoid circular dependencies
     if (installedPackages.has(depDomain)) {
@@ -857,7 +884,11 @@ async function installDependencies(
           console.warn(`Warning: No suitable version found for dependency ${depName}`)
         }
         else {
-          console.log(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
+          // Only show warning for direct dependencies, not nested ones
+          const isDirectDependency = packageInfo.dependencies.includes(dep)
+          if (isDirectDependency) {
+            console.log(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
+          }
         }
         continue
       }
@@ -876,7 +907,13 @@ async function installDependencies(
         console.warn(`Warning: Failed to install dependency ${dep}: ${error instanceof Error ? error.message : String(error)}`)
       }
       else {
-        console.log(`⚠️  Warning: Failed to install dependency ${depName}, but continuing...`)
+        // Only show warning for permission errors or direct dependencies
+        const isPermissionError = error instanceof Error && error.message.includes('EACCES')
+        const isDirectDependency = packageInfo.dependencies.includes(dep)
+
+        if (isPermissionError || isDirectDependency) {
+          console.log(`⚠️  Warning: Failed to install dependency ${depName}, but continuing...`)
+        }
       }
       // Continue with other dependencies even if one fails
     }
@@ -993,7 +1030,18 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       }
     }
     catch (error) {
-      console.error(`Failed to install ${pkg}:`, error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // Check if it's a permission error
+      if (error instanceof Error && (errorMessage.includes('EACCES') || errorMessage.includes('permission denied'))) {
+        console.error(`❌ Permission denied installing ${pkg}. Try:`)
+        console.error(`   • Run with sudo: sudo launchpad install ${pkg}`)
+        console.error(`   • Or install to user directory: launchpad install --path ~/.local ${pkg}`)
+        console.error(`   • Or fix permissions: sudo chown -R $(whoami) ${installPath}`)
+      }
+      else {
+        console.error(`❌ Failed to install ${pkg}: ${errorMessage}`)
+      }
       throw error
     }
   }
