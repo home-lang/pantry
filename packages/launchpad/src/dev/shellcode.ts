@@ -147,6 +147,24 @@ _pkgx_chpwd_hook() {
     return 0
   fi
 
+  # Skip during shell completion or other sensitive operations
+  if [ -n "$ZSH_VERSION" ] && [ -n "$COMP_WORDS" ]; then
+    return 0
+  fi
+  if [ -n "$BASH_VERSION" ] && [ -n "$COMP_LINE" ]; then
+    return 0
+  fi
+
+  # Skip if running in a restricted environment or during completion
+  if [ "$SHLVL" -gt 3 ] || [ -n "$_LAUNCHPAD_SKIP_HOOK" ] || [ -n "$_COMP_DUMP_LIST" ]; then
+    return 0
+  fi
+
+  # Skip during zsh completion dump operations to prevent abort errors
+  if [ -n "$ZSH_VERSION" ] && [ -n "$ZSH_COMPDUMP" ]; then
+    return 0
+  fi
+
   # Check if we're currently in an active dev environment
   local was_active=false
   local current_env_dir=""
@@ -154,7 +172,7 @@ _pkgx_chpwd_hook() {
     was_active=true
     # Try to extract the current environment directory from the function
     # First try launchpad-style function (with case statement and quoted paths)
-    current_env_dir=$(declare -f _pkgx_dev_try_bye | grep -o '"/[^"]*"' | head -1 | sed 's/"//g')
+    current_env_dir=$(declare -f _pkgx_dev_try_bye | /usr/bin/grep -o '"/[^"]*"' | head -1 | sed 's/"//g' 2>/dev/null)
 
     # If that fails, we might have a pkgx fallback function
     # In this case, we can't reliably determine the original directory,
@@ -195,7 +213,12 @@ _pkgx_chpwd_hook() {
         # We're in a subdirectory with its own dependency file, switch environments
         echo "🔄 Adjusting development environment..." >&2
         adjusting_env=true
-        _pkgx_dev_try_bye silent
+        # Force deactivation by undefining the function and cleaning up
+        if [ -n "$_LAUNCHPAD_ORIGINAL_PATH" ]; then
+          export PATH="$_LAUNCHPAD_ORIGINAL_PATH"
+          unset _LAUNCHPAD_ORIGINAL_PATH
+        fi
+        unset -f _pkgx_dev_try_bye
         was_active=false
       elif [ -z "$deps_file" ]; then
         # Check if we're outside the project directory tree
@@ -235,16 +258,16 @@ _pkgx_chpwd_hook() {
     local hash_input="$PWD"
     local short_hash=""
 
-    # Try to use Bun's hash function for consistency
+    # Try to use Bun's hash function for consistency, but with timeout to prevent Starship issues
     if command -v bun >/dev/null 2>&1; then
-      short_hash=$(echo -n "$hash_input" | bun -e "
+      short_hash=$(echo -n "$hash_input" | timeout 2s bun -e "
 const input = await Bun.stdin.text();
 const hash = Bun.hash(input);
 console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
 " 2>/dev/null)
     fi
 
-    # Fallback: try to find bun in common locations if not in PATH
+    # Fallback: try to find bun in common locations if not in PATH, but with timeout
     if [ -z "$short_hash" ]; then
       local bun_paths=(
         "$HOME/.bun/bin/bun"
@@ -255,7 +278,7 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
 
       for bun_path in "\${bun_paths[@]}"; do
         if [ -x "$bun_path" ]; then
-          short_hash=$(echo -n "$hash_input" | "$bun_path" -e "
+          short_hash=$(echo -n "$hash_input" | timeout 2s "$bun_path" -e "
 const input = await Bun.stdin.text();
 const hash = Bun.hash(input);
 console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
@@ -269,7 +292,7 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
 
     # Final fallback: use base64 with better collision avoidance if Bun is not available
     if [ -z "$short_hash" ]; then
-      local full_hash=$(echo -n "$hash_input" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      local full_hash=$(echo -n "$hash_input" | timeout 1s base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
       if [ -n "$full_hash" ]; then
         # Take characters from the middle to avoid suffix collisions
         local hash_len=\${#full_hash}
@@ -290,7 +313,7 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
     # Also check for base64-encoded directory for backward compatibility
     local base64_hash=""
     if [ ! -d "$env_cache_dir/bin" ] && [ ! -d "$env_cache_dir/sbin" ]; then
-      base64_hash=$(echo -n "$PWD" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
+      base64_hash=$(echo -n "$PWD" | timeout 1s base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___')
       if [ -n "$base64_hash" ]; then
         local base64_cache_dir="$HOME/.local/share/launchpad/envs/$base64_hash"
         # Check if base64 cache has actual binaries
@@ -309,6 +332,23 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
       fi
     fi
 
+    # Also check for project-name with alternative hash for backward compatibility
+    if [ ! -d "$env_cache_dir/bin" ] && [ ! -d "$env_cache_dir/sbin" ] && [ -n "$clean_project_name" ]; then
+      # Try different hash formats that might have been used previously
+      for existing_env in "$HOME/.local/share/launchpad/envs/$clean_project_name"_*; do
+        if [ -d "$existing_env" ]; then
+          # Check if this environment has actual binaries
+          if [ -d "$existing_env/bin" ] && [ "$(ls -A "$existing_env/bin" 2>/dev/null)" ]; then
+            env_cache_dir="$existing_env"
+            break
+          elif [ -d "$existing_env/sbin" ] && [ "$(ls -A "$existing_env/sbin" 2>/dev/null)" ]; then
+            env_cache_dir="$existing_env"
+            break
+          fi
+        fi
+      done
+    fi
+
     # If packages are already installed, check if they match current dependencies
     if [ -n "$env_cache_dir" ] && [ -d "$env_cache_dir" ]; then
       # Check if there are actual binaries installed, not just empty directories
@@ -325,16 +365,16 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
         # Create a simple hash of the dependency file content for comparison
         local current_deps_hash=""
         if command -v bun >/dev/null 2>&1; then
-          current_deps_hash=$(cat "$deps_file" | bun -e "
+          current_deps_hash=$(cat "$deps_file" | timeout 2s bun -e "
 const input = await Bun.stdin.text();
 const hash = Bun.hash(input);
 console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
 " 2>/dev/null)
         fi
 
-        # Fallback hash method if bun is not available
+        # Fallback hash method if bun is not available or timed out
         if [ -z "$current_deps_hash" ]; then
-          current_deps_hash=$(cat "$deps_file" | base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___' | cut -c1-8)
+          current_deps_hash=$(cat "$deps_file" | timeout 1s base64 2>/dev/null | tr -d '\\n' | tr '/+=' '___' | cut -c1-8)
         fi
 
         # Check if we have a stored hash for this environment
@@ -364,11 +404,11 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
         export _PKGX_ACTIVATING="$PWD"
 
         if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-          # Try to run launchpad dev with proper error handling
+          # Try to run launchpad dev with proper error handling and timeout
           local launchpad_output=""
           local exit_code=0
           # Capture only stdout, let stderr (progress bars) pass through to user
-          launchpad_output=$(eval "${dev_cmd} dev --shell \\"$PWD\\"") || exit_code=$?
+          launchpad_output=$(timeout 10s eval "${dev_cmd} dev --shell \\"$PWD\\"" 2>/dev/null) || exit_code=$?
 
           if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
             # If launchpad succeeds, extract just the shell script part using system sed
@@ -390,10 +430,10 @@ console.log(hash.toString(16).padStart(16, '0').slice(0, 8));
             echo "   • Or run manually: launchpad dev" >&2
           fi
         else
-          # For other dev commands, try with basic error handling
+          # For other dev commands, try with basic error handling and timeout
           local dev_output=""
           local dev_exit_code=0
-          dev_output=$(eval "${dev_cmd} dump" 2>&1) || dev_exit_code=$?
+          dev_output=$(timeout 10s eval "${dev_cmd} dump" 2>/dev/null) || dev_exit_code=$?
 
           if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
             eval "$dev_output"
@@ -501,11 +541,11 @@ dev() {
       eval "${dev_cmd} \\"$@\\""
     elif ! type -f _pkgx_dev_try_bye >/dev/null 2>&1; then
       if [[ "${dev_cmd}" == *"launchpad"* ]]; then
-        # Try to run launchpad dev with proper error handling
+        # Try to run launchpad dev with proper error handling and timeout
         local launchpad_output=""
         local exit_code=0
         # Capture only stdout, let stderr (progress bars) pass through to user
-        launchpad_output=$(eval "${dev_cmd} dev --shell \\"$PWD\\"") || exit_code=$?
+        launchpad_output=$(timeout 10s eval "${dev_cmd} dev --shell \\"$PWD\\"" 2>/dev/null) || exit_code=$?
 
         if [ $exit_code -eq 0 ] && [ -n "$launchpad_output" ]; then
           # If launchpad succeeds, extract just the shell script part using system sed
@@ -514,8 +554,8 @@ dev() {
           if [ -n "$shell_script" ]; then
             eval "$shell_script"
           else
-            echo "⚠️  Launchpad succeeded but no shell script found" >&2
-            echo "    Try running: launchpad dev" >&2
+                        echo "⚠️  Launchpad succeeded but no shell script found" >&2
+          echo "    Try running: launchpad dev:dump" >&2
           fi
         else
           # If launchpad fails, show generic error message
@@ -527,10 +567,10 @@ dev() {
           echo "   • Or run manually: launchpad dev" >&2
         fi
       else
-        # For other dev commands, try with basic error handling
+        # For other dev commands, try with basic error handling and timeout
         local dev_output=""
         local dev_exit_code=0
-        dev_output=$(eval "${dev_cmd} dump" 2>&1) || dev_exit_code=$?
+        dev_output=$(timeout 10s eval "${dev_cmd} dump" 2>/dev/null) || dev_exit_code=$?
 
         if [ $dev_exit_code -eq 0 ] && [ -n "$dev_output" ]; then
           eval "$dev_output"
@@ -551,36 +591,37 @@ dev() {
 }
 
 if [ -n "$ZSH_VERSION" ] && [ "$(emulate)" = "zsh" ]; then
-  eval 'typeset -ag chpwd_functions
+  eval 'typeset -ag chpwd_functions 2>/dev/null
 
         if [[ -z "\${chpwd_functions[(r)_pkgx_chpwd_hook]+1}" ]]; then
           chpwd_functions=( _pkgx_chpwd_hook \${chpwd_functions[@]} )
         fi
 
         # Check for dependency files on shell startup (no background jobs, no delays)
+        # Suppress errors to prevent interference with zsh completion system
         if ! type _pkgx_dev_try_bye >/dev/null 2>&1; then
           for file in ${dependencyFilesList}; do
             if [ -f "$PWD/$file" ]; then
-              _pkgx_chpwd_hook
+              _pkgx_chpwd_hook 2>/dev/null
               break
             fi
           done
-        fi'
+        fi' 2>/dev/null
 elif [ -n "$BASH_VERSION" ] && [ "$POSIXLY_CORRECT" != y ] ; then
   eval 'cd() {
           builtin cd "$@" || return
-          _pkgx_chpwd_hook
+          _pkgx_chpwd_hook 2>/dev/null
         }
 
         # Check for dependency files on shell startup (no background jobs, no delays)
         if ! type _pkgx_dev_try_bye >/dev/null 2>&1; then
           for file in ${dependencyFilesList}; do
             if [ -f "$PWD/$file" ]; then
-              _pkgx_chpwd_hook
+              _pkgx_chpwd_hook 2>/dev/null
               break
             fi
           done
-        fi'
+        fi' 2>/dev/null
 else
   POSIXLY_CORRECT=y
   echo "launchpad: dev: warning: unsupported shell" >&2
