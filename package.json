@@ -35,7 +35,7 @@
     "bumpp": "^10.1.1",
     "bun-plugin-dtsx": "0.9.5",
     "changelogen": "^0.6.1",
-    "chromium-bidi": "^5.3.1",
+    "chromium-bidi": "^6.1.0",
     "electron": "^36.4.0",
     "lint-staged": "^15.5.2",
     "simple-git-hooks": "^2.13.0",
