@@ -211,14 +211,14 @@ Remove packages and manage your installation:
 # Remove specific system tools
 launchpad remove node python
 
-# Remove project-specific versions
-launchpad rm node@22
+# Remove project-specific versions (using uninstall command)
+launchpad uninstall node@22
 
 # See what would be removed
-launchpad remove python --dry-run
+launchpad uninstall python --dry-run
 
 # Complete system cleanup
-launchpad uninstall
+launchpad clean --force
 ```
 
 ### Advanced Operations
@@ -230,8 +230,13 @@ launchpad shim node@22 typescript@5.7
 # List all installed packages
 launchpad list
 
-# Configure auto-updates
-launchpad autoupdate:enable
+# Update packages
+launchpad update node python --latest
+
+# Cache management
+launchpad cache:stats     # Show cache statistics
+launchpad cache:clean     # Clean old cached packages
+launchpad cache:clear     # Clear all cache
 
 # Install additional tools
 launchpad bootstrap  # Bootstrap essential tools
@@ -268,7 +273,12 @@ const config: LaunchpadConfig = {
   // Shell message configuration
   showShellMessages: true,
   shellActivationMessage: '✅ Environment activated for {path}',
-  shellDeactivationMessage: 'dev environment deactivated',
+  shellDeactivationMessage: 'Environment deactivated',
+
+  // Registry and installation method
+  useRegistry: true, // Use package registry
+  installMethod: 'curl', // Installation method
+  installPath: '/usr/local', // Installation path (same as installationPath)
 }
 
 export default config
