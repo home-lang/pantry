@@ -24,6 +24,10 @@ Here are the main commands available in Launchpad:
 | `env:clean` | Clean up unused development environments |
 | `env:inspect` | Inspect a specific development environment |
 | `env:remove` | Remove a specific development environment |
+| `cache:stats` | Show cache statistics and usage information |
+| `cache:clean` | Clean up old cached packages |
+| `cache:clear` | Clear all cached packages and downloads |
+| `clean` | Remove all Launchpad-installed packages and environments |
 | `version` | Show version information |
 | `help` | Display help information |
 
@@ -466,6 +470,92 @@ launchpad bootstrap --path ~/.local
 # Disable automatic PATH modification
 launchpad bootstrap --no-auto-path
 ```
+
+## Cache Management
+
+Launchpad caches downloaded packages to improve performance. Use these commands to manage cache storage:
+
+### View Cache Statistics
+
+Check cache size and usage information:
+
+```bash
+# Show cache statistics
+launchpad cache:stats
+
+# Example output:
+# 📊 Cache Statistics
+#
+# 📦 Cached Packages: 5
+# 💾 Total Size: 142.3 MB
+# 📅 Oldest Access: 12/15/2024
+# 📅 Newest Access: 12/28/2024
+```
+
+### Clean Old Cache Entries
+
+Remove old cached packages based on age or size:
+
+```bash
+# Clean packages older than 30 days (default)
+launchpad cache:clean
+
+# Clean packages older than 7 days
+launchpad cache:clean --max-age 7
+
+# Clean if cache exceeds 2GB
+launchpad cache:clean --max-size 2
+
+# Preview what would be cleaned
+launchpad cache:clean --dry-run
+
+# Clean with custom criteria
+launchpad cache:clean --max-age 14 --max-size 1
+```
+
+### Clear All Cache
+
+Remove all cached packages and downloads:
+
+```bash
+# Preview what would be cleared
+launchpad cache:clear --dry-run
+
+# Clear cache with confirmation
+launchpad cache:clear
+
+# Clear cache without confirmation
+launchpad cache:clear --force
+
+# Clear with verbose output
+launchpad cache:clear --verbose --force
+```
+
+**Note:** You can also use `cache:clean` as an alias for `cache:clear`.
+
+### Complete System Cleanup
+
+Remove all Launchpad-installed packages, environments, and optionally cache:
+
+```bash
+# Preview complete cleanup
+launchpad clean --dry-run
+
+# Complete cleanup (removes everything)
+launchpad clean --force
+
+# Clean packages but keep cache for faster reinstalls
+launchpad clean --keep-cache --force
+
+# Clean with verbose output
+launchpad clean --verbose --force
+```
+
+The `clean` command removes:
+- All installed packages and their metadata
+- Project-specific environments
+- Cache directory (unless `--keep-cache` is used)
+- Binary stubs and symlinks
 
 ## Complete System Cleanup
 

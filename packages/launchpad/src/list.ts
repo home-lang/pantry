@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { Path } from './path'
 import { Version } from '../test/version'
+import { Path } from './path'
 
 /**
  * List installed packages

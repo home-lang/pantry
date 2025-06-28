@@ -10,10 +10,9 @@ import { formatDoctorReport, runDoctorChecks } from '../src/doctor'
 import { formatPackageInfo, formatPackageNotFound, getDetailedPackageInfo, packageExists } from '../src/info'
 import { cleanupCache, getCacheStats } from '../src/install'
 import { Path } from '../src/path'
-import { formatSearchResults, getPopularPackages, search, searchPackages } from '../src/search'
-import { create_shim, shim, shim_dir } from '../src/shim'
-import { symlink } from '../src/symlink'
-import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, getTags, searchPackagesByTag } from '../src/tags'
+import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
+import { create_shim, shim_dir } from '../src/shim'
+import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, searchPackagesByTag } from '../src/tags'
 import { addToPath, isInPath } from '../src/utils'
 // Import package.json for version
 const packageJson = await import('../package.json')

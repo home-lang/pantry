@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -101,6 +101,7 @@ export default {
       const code = shellcode()
 
       // Should contain shell variable substitution
+      // eslint-disable-next-line no-template-curly-in-string
       const hasShellVar = code.includes('$PWD') || code.includes('${PWD}')
       expect(hasShellVar).toBe(true)
     })

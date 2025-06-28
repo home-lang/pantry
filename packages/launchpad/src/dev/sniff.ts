@@ -1,7 +1,7 @@
 import type { PlainObject } from 'is-what'
 
 import { semver } from 'bun'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'

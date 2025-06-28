@@ -1,8 +1,8 @@
 import type { Version } from '../test/version'
 import fs from 'node:fs'
 import path from 'node:path'
-import { config } from './config'
 import { parseVersion } from '../test/version'
+import { config } from './config'
 
 // Use Bun's semver with proper error handling and pre-release aware fallback
 const semver = {
