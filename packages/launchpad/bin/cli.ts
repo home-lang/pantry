@@ -1309,51 +1309,6 @@ cli
     }
   })
 
-// Update registry command
-cli
-  .command('update-registry', 'Update the package registry with latest packages from S3')
-  .option('--verbose', 'Enable verbose output with detailed progress')
-  .option('--dry-run', 'Show what would be updated without actually updating')
-  .option('--ts-pkgx-path <path>', 'Path to ts-pkgx project (default: auto-detect)')
-  .option('--output <file>', 'Output file for package list (default: scraped-packages-complete.txt)')
-  .example('launchpad update-registry')
-  .example('launchpad update-registry --dry-run')
-  .example('launchpad update-registry --ts-pkgx-path ../ts-pkgx')
-  .action(async (options?: {
-    verbose?: boolean
-    dryRun?: boolean
-    tsPkgxPath?: string
-    output?: string
-  }) => {
-    if (options?.verbose) {
-      config.verbose = true
-    }
-
-    const isDryRun = options?.dryRun || false
-
-    try {
-      console.log('🔍 Updating package registry from S3...')
-
-      if (isDryRun) {
-        console.log('🔍 DRY RUN MODE - No files will be modified')
-      }
-
-      // Import the registry update functionality
-      const { updateRegistry } = await import('../src/registry')
-
-      await updateRegistry({
-        verbose: options?.verbose || false,
-        dryRun: isDryRun,
-        tsPkgxPath: options?.tsPkgxPath,
-        outputFile: options?.output || 'scraped-packages-complete.txt',
-      })
-    }
-    catch (error) {
-      console.error('Failed to update registry:', error instanceof Error ? error.message : String(error))
-      process.exit(1)
-    }
-  })
-
 // Cache management commands
 cli
   .command('cache:stats', 'Show cache statistics and usage information')
