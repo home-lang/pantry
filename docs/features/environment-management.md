@@ -451,9 +451,9 @@ env:
    ```
 
 3. Monitor activation time:
-   ```bash
-   time (cd my-project && cd ..)
-```
+  ```bash
+  time (cd my-project && cd ..)
+  ```
 
 ## Best Practices
 
