@@ -1,4 +1,20 @@
 
+## v0.3.0...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.0...main)
+
+### 🏡 Chore
+
+- Wip ([bccbb31](https://github.com/stacksjs/launchpad/commit/bccbb31))
+- Wip ([d4d2c02](https://github.com/stacksjs/launchpad/commit/d4d2c02))
+- Add env tests ([91c7034](https://github.com/stacksjs/launchpad/commit/91c7034))
+- Ensure tests pass ([f054881](https://github.com/stacksjs/launchpad/commit/f054881))
+- Wip ([529cf14](https://github.com/stacksjs/launchpad/commit/529cf14))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.2.3...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.3...main)
