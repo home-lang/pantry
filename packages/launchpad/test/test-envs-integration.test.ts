@@ -19,7 +19,9 @@ describe('Test Environments Integration', () => {
 
   // Helper function to copy test environment
   const copyTestEnv = (envName: string): string => {
-    const sourceDir = path.join(process.cwd(), '../../test-envs', envName)
+    // Use __dirname to get the directory of this test file, then navigate to test-envs
+    const testFileDir = path.dirname(import.meta.url.replace('file://', ''))
+    const sourceDir = path.join(testFileDir, '../../../test-envs', envName)
     const targetDir = path.join(tempDir, envName)
 
     if (!fs.existsSync(sourceDir)) {
