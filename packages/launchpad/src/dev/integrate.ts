@@ -15,6 +15,8 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
       }
 
       const hasHook = content.includes('# https://github.com/stacksjs/launchpad')
+        || content.includes('# Added by launchpad')
+        || content.includes('eval "$(launchpad dev:shellcode)"')
 
       if (op === 'install') {
         if (hasHook) {
@@ -23,8 +25,9 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
         }
 
         if (!dryrun) {
-          const newContent = content.endsWith('\n') ? content : `${content}\n`
-          writeFileSync(file, `${newContent}\n${line}  # https://github.com/stacksjs/launchpad\n`)
+          // Ensure content ends with exactly one newline
+          const cleanContent = content.replace(/\n+$/, '\n')
+          writeFileSync(file, `${cleanContent}\n# Added by launchpad\n${line}  # https://github.com/stacksjs/launchpad\n`)
         }
 
         opd_at_least_once = true
@@ -36,7 +39,11 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
         }
 
         const lines = content.split('\n')
-        const filteredLines = lines.filter(line => !line.includes('# https://github.com/stacksjs/launchpad'))
+        const filteredLines = lines.filter(line =>
+          !line.includes('# https://github.com/stacksjs/launchpad')
+          && !line.includes('# Added by launchpad')
+          && line.trim() !== 'eval "$(launchpad dev:shellcode)"',
+        )
 
         if (!dryrun) {
           writeFileSync(file, filteredLines.join('\n'))

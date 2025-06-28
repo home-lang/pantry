@@ -31,9 +31,14 @@ __launchpad_chpwd() {
         if [[ "$LAUNCHPAD_CURRENT_PROJECT" != "$project_dir" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
 
+            # Ensure we have a valid original PATH before activation
+            if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then
+                export LAUNCHPAD_ORIGINAL_PATH="$PATH"
+            fi
+
             # Set up the environment and get the bin path
             local env_output
-            env_output=$(/usr/local/bin/launchpad dev:dump "$project_dir" --shell 2>/dev/null | /usr/bin/grep -E '^(export|if|fi|#)')
+            env_output=$(LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" /usr/local/bin/launchpad dev "$project_dir" --shell 2>/dev/null | /usr/bin/grep -E '^(export|if|fi|#)')
 
             if [[ $? -eq 0 && -n "$env_output" ]]; then
                 # Execute the environment setup
@@ -72,6 +77,12 @@ if [[ -n "$ZSH_VERSION" ]]; then
     add-zsh-hook chpwd __launchpad_chpwd
 elif [[ -n "$BASH_VERSION" ]]; then
     PROMPT_COMMAND="__launchpad_chpwd; $PROMPT_COMMAND"
+fi
+
+# Initialize LAUNCHPAD_ORIGINAL_PATH if not set and PATH looks corrupted
+if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" && ! "$PATH" =~ "/usr/local/bin" ]]; then
+    export LAUNCHPAD_ORIGINAL_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    export PATH="$LAUNCHPAD_ORIGINAL_PATH"
 fi
 
 # Run on initial load
