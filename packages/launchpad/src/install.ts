@@ -35,9 +35,325 @@ export const DISTRIBUTION_CONFIG = {
   // baseUrl: 'https://dist.launchpad.dev',
 }
 
-// Binary cache configuration
+// Cache configuration for packages
 const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
 const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'packages')
+const CACHE_METADATA_FILE = path.join(CACHE_DIR, 'cache-metadata.json')
+
+/**
+ * Cache metadata structure
+ */
+interface CacheMetadata {
+  version: string
+  packages: Record<string, {
+    domain: string
+    version: string
+    format: string
+    downloadedAt: string
+    size: number
+    checksum?: string
+    lastAccessed: string
+  }>
+}
+
+/**
+ * Load cache metadata
+ */
+function loadCacheMetadata(): CacheMetadata {
+  try {
+    if (fs.existsSync(CACHE_METADATA_FILE)) {
+      const content = fs.readFileSync(CACHE_METADATA_FILE, 'utf-8')
+      return JSON.parse(content)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn('Failed to load cache metadata:', error)
+    }
+  }
+
+  return { version: '1.0', packages: {} }
+}
+
+/**
+ * Save cache metadata
+ */
+function saveCacheMetadata(metadata: CacheMetadata): void {
+  try {
+    fs.mkdirSync(path.dirname(CACHE_METADATA_FILE), { recursive: true })
+    fs.writeFileSync(CACHE_METADATA_FILE, JSON.stringify(metadata, null, 2))
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn('Failed to save cache metadata:', error)
+    }
+  }
+}
+
+/**
+ * Get cached package archive path for a specific domain and version with validation
+ */
+function getCachedPackagePath(domain: string, version: string, format: string): string | null {
+  const cacheKey = `${domain}-${version}`
+  const cachedArchivePath = path.join(BINARY_CACHE_DIR, cacheKey, `package.${format}`)
+
+  if (fs.existsSync(cachedArchivePath)) {
+    // Validate cache integrity
+    const metadata = loadCacheMetadata()
+    const packageMeta = metadata.packages[cacheKey]
+
+    if (packageMeta) {
+      // Update last accessed time
+      packageMeta.lastAccessed = new Date().toISOString()
+      saveCacheMetadata(metadata)
+
+      // Validate file size matches metadata
+      const stats = fs.statSync(cachedArchivePath)
+      if (stats.size === packageMeta.size) {
+        if (config.verbose) {
+          console.warn(`Found cached package: ${cachedArchivePath}`)
+        }
+        return cachedArchivePath
+      }
+      else {
+        if (config.verbose) {
+          console.warn(`Cache file corrupted (size mismatch): ${cachedArchivePath}`)
+        }
+        // Remove corrupted cache
+        fs.unlinkSync(cachedArchivePath)
+        delete metadata.packages[cacheKey]
+        saveCacheMetadata(metadata)
+      }
+    }
+    else {
+      // Cache file exists but no metadata - validate basic integrity
+      const stats = fs.statSync(cachedArchivePath)
+      if (stats.size > 100) { // Basic size check
+        if (config.verbose) {
+          console.warn(`Found cached package (no metadata): ${cachedArchivePath}`)
+        }
+        return cachedArchivePath
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Save package archive to cache with metadata
+ */
+function savePackageToCache(domain: string, version: string, format: string, sourcePath: string): string {
+  const cacheKey = `${domain}-${version}`
+  const cachePackageDir = path.join(BINARY_CACHE_DIR, cacheKey)
+  const cachedArchivePath = path.join(cachePackageDir, `package.${format}`)
+
+  try {
+    // Create cache directory
+    fs.mkdirSync(cachePackageDir, { recursive: true })
+
+    // Copy the downloaded file to cache
+    fs.copyFileSync(sourcePath, cachedArchivePath)
+
+    // Update metadata
+    const metadata = loadCacheMetadata()
+    const stats = fs.statSync(cachedArchivePath)
+
+    metadata.packages[cacheKey] = {
+      domain,
+      version,
+      format,
+      downloadedAt: new Date().toISOString(),
+      lastAccessed: new Date().toISOString(),
+      size: stats.size,
+    }
+
+    saveCacheMetadata(metadata)
+
+    if (config.verbose) {
+      console.warn(`Cached package to: ${cachedArchivePath}`)
+    }
+
+    return cachedArchivePath
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to cache package: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    // Return original path if caching fails
+    return sourcePath
+  }
+}
+
+/**
+ * Clean up old cache entries to free disk space
+ */
+export function cleanupCache(maxAgeDays: number = 30, maxSizeGB: number = 5): void {
+  try {
+    const metadata = loadCacheMetadata()
+    const now = new Date()
+    const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000
+    const maxSizeBytes = maxSizeGB * 1024 * 1024 * 1024
+
+    let totalSize = 0
+    const packages = Object.entries(metadata.packages)
+      .map(([key, pkg]) => ({
+        key,
+        ...pkg,
+        lastAccessedDate: new Date(pkg.lastAccessed),
+      }))
+      .sort((a, b) => a.lastAccessedDate.getTime() - b.lastAccessedDate.getTime()) // Oldest first
+
+    // Calculate total cache size
+    packages.forEach(pkg => totalSize += pkg.size)
+
+    const toDelete: string[] = []
+
+    // Remove packages older than maxAge
+    packages.forEach((pkg) => {
+      const age = now.getTime() - pkg.lastAccessedDate.getTime()
+      if (age > maxAgeMs) {
+        toDelete.push(pkg.key)
+      }
+    })
+
+    // If still over size limit, remove oldest packages
+    let currentSize = totalSize
+    packages.forEach((pkg) => {
+      if (currentSize > maxSizeBytes && !toDelete.includes(pkg.key)) {
+        toDelete.push(pkg.key)
+        currentSize -= pkg.size
+      }
+    })
+
+    // Delete marked packages
+    toDelete.forEach((key) => {
+      const cacheDir = path.join(BINARY_CACHE_DIR, key)
+      if (fs.existsSync(cacheDir)) {
+        fs.rmSync(cacheDir, { recursive: true, force: true })
+        delete metadata.packages[key]
+        if (config.verbose) {
+          console.warn(`Cleaned up cached package: ${key}`)
+        }
+      }
+    })
+
+    if (toDelete.length > 0) {
+      saveCacheMetadata(metadata)
+      console.log(`🧹 Cleaned up ${toDelete.length} cached packages`)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn('Cache cleanup failed:', error)
+    }
+  }
+}
+
+/**
+ * Get cache statistics
+ */
+export function getCacheStats(): { packages: number, size: string, oldestAccess: string, newestAccess: string } {
+  try {
+    const metadata = loadCacheMetadata()
+    const packages = Object.values(metadata.packages)
+
+    // If we have metadata, use it
+    if (packages.length > 0) {
+      const totalSize = packages.reduce((sum, pkg) => sum + pkg.size, 0)
+      const accessTimes = packages.map(pkg => new Date(pkg.lastAccessed).getTime()).sort()
+
+      const formatSize = (bytes: number): string => {
+        if (bytes < 1024)
+          return `${bytes} B`
+        if (bytes < 1024 * 1024)
+          return `${(bytes / 1024).toFixed(1)} KB`
+        if (bytes < 1024 * 1024 * 1024)
+          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+      }
+
+      return {
+        packages: packages.length,
+        size: formatSize(totalSize),
+        oldestAccess: new Date(accessTimes[0]).toLocaleDateString(),
+        newestAccess: new Date(accessTimes[accessTimes.length - 1]).toLocaleDateString(),
+      }
+    }
+
+    // Fallback: scan actual cache directories for files
+    const packageCacheDir = path.join(CACHE_DIR, 'binaries', 'packages')
+    const bunCacheDir = path.join(CACHE_DIR, 'binaries', 'bun')
+
+    let totalFiles = 0
+    let totalSize = 0
+    let oldestTime = Date.now()
+    let newestTime = 0
+
+    const formatSize = (bytes: number): string => {
+      if (bytes < 1024)
+        return `${bytes} B`
+      if (bytes < 1024 * 1024)
+        return `${(bytes / 1024).toFixed(1)} KB`
+      if (bytes < 1024 * 1024 * 1024)
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+    }
+
+    // Scan package cache
+    if (fs.existsSync(packageCacheDir)) {
+      const packageDirs = fs.readdirSync(packageCacheDir)
+      for (const dir of packageDirs) {
+        const dirPath = path.join(packageCacheDir, dir)
+        if (fs.statSync(dirPath).isDirectory()) {
+          const files = fs.readdirSync(dirPath)
+          totalFiles += files.length
+
+          for (const file of files) {
+            const filePath = path.join(dirPath, file)
+            const stats = fs.statSync(filePath)
+            totalSize += stats.size
+
+            const mtime = stats.mtime.getTime()
+            if (mtime < oldestTime)
+              oldestTime = mtime
+            if (mtime > newestTime)
+              newestTime = mtime
+          }
+        }
+      }
+    }
+
+    // Scan bun cache
+    if (fs.existsSync(bunCacheDir)) {
+      const bunFiles = fs.readdirSync(bunCacheDir)
+      for (const file of bunFiles) {
+        const filePath = path.join(bunCacheDir, file)
+        if (fs.statSync(filePath).isFile()) {
+          totalFiles++
+          const stats = fs.statSync(filePath)
+          totalSize += stats.size
+
+          const mtime = stats.mtime.getTime()
+          if (mtime < oldestTime)
+            oldestTime = mtime
+          if (mtime > newestTime)
+            newestTime = mtime
+        }
+      }
+    }
+
+    return {
+      packages: totalFiles,
+      size: formatSize(totalSize),
+      oldestAccess: totalFiles > 0 ? new Date(oldestTime).toLocaleDateString() : 'N/A',
+      newestAccess: totalFiles > 0 ? new Date(newestTime).toLocaleDateString() : 'N/A',
+    }
+  }
+  catch {
+    return { packages: 0, size: 'Error', oldestAccess: 'Error', newestAccess: 'Error' }
+  }
+}
 
 /**
  * Get the installation prefix
@@ -290,53 +606,6 @@ export function getPackageInfo(packageName: string): {
     programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
     dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
     companions: 'companions' in pkg ? (pkg.companions as readonly string[]) : undefined,
-  }
-}
-
-/**
- * Get cached package archive path for a specific domain and version
- */
-function getCachedPackagePath(domain: string, version: string, format: string): string | null {
-  const cacheKey = `${domain}-${version}`
-  const cachedArchivePath = path.join(BINARY_CACHE_DIR, cacheKey, `package.${format}`)
-
-  if (fs.existsSync(cachedArchivePath)) {
-    if (config.verbose) {
-      console.warn(`Found cached package: ${cachedArchivePath}`)
-    }
-    return cachedArchivePath
-  }
-
-  return null
-}
-
-/**
- * Save package archive to cache
- */
-function savePackageToCache(domain: string, version: string, format: string, sourcePath: string): string {
-  const cacheKey = `${domain}-${version}`
-  const cachePackageDir = path.join(BINARY_CACHE_DIR, cacheKey)
-  const cachedArchivePath = path.join(cachePackageDir, `package.${format}`)
-
-  try {
-    // Create cache directory
-    fs.mkdirSync(cachePackageDir, { recursive: true })
-
-    // Copy the downloaded file to cache
-    fs.copyFileSync(sourcePath, cachedArchivePath)
-
-    if (config.verbose) {
-      console.warn(`Cached package to: ${cachedArchivePath}`)
-    }
-
-    return cachedArchivePath
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`Failed to cache package: ${error instanceof Error ? error.message : String(error)}`)
-    }
-    // Return original path if caching fails
-    return sourcePath
   }
 }
 
@@ -990,59 +1259,77 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   const allInstalledFiles: string[] = []
   const installedPackages = new Set<string>()
 
-  for (let i = 0; i < packageList.length; i++) {
-    const pkg = packageList[i]
-    try {
-      if (config.verbose) {
-        console.warn(`Processing package: ${pkg}`)
-      }
-      else if (packageList.length > 1) {
-        console.log(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
-      }
+  // For multiple packages, use parallel installation with controlled concurrency
+  if (packageList.length > 1) {
+    const maxConcurrency = Math.min(packageList.length, 3) // Limit to 3 concurrent downloads
+    const results = await installPackagesInParallel(packageList, installPath, maxConcurrency)
 
-      const { name: packageName } = parsePackageSpec(pkg)
-      const domain = resolvePackageName(packageName)
-
-      // Skip if already installed
-      if (installedPackages.has(domain)) {
-        if (config.verbose) {
-          console.warn(`Skipping ${domain} - already installed`)
-        }
-        continue
-      }
-
-      // Mark as installed
-      installedPackages.add(domain)
-
-      // Install dependencies first
-      if (config.verbose) {
-        console.warn(`Installing dependencies for ${packageName}...`)
-      }
-      const depFiles = await installDependencies(packageName, installPath, installedPackages)
-      allInstalledFiles.push(...depFiles)
-
-      // Install the main package
-      const mainFiles = await installPackage(packageName, pkg, installPath)
-      allInstalledFiles.push(...mainFiles)
-
-      if (config.verbose) {
-        console.warn(`Successfully processed ${pkg}`)
-      }
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-
-      // Check if it's a permission error
-      if (error instanceof Error && (errorMessage.includes('EACCES') || errorMessage.includes('permission denied'))) {
-        console.error(`❌ Permission denied installing ${pkg}. Try:`)
-        console.error(`   • Run with sudo: sudo launchpad install ${pkg}`)
-        console.error(`   • Or install to user directory: launchpad install --path ~/.local ${pkg}`)
-        console.error(`   • Or fix permissions: sudo chown -R $(whoami) ${installPath}`)
+    results.forEach((result) => {
+      if (result.success) {
+        allInstalledFiles.push(...result.files)
       }
       else {
-        console.error(`❌ Failed to install ${pkg}: ${errorMessage}`)
+        console.error(`❌ Failed to install ${result.package}: ${result.error}`)
+        throw new Error(`Installation failed for ${result.package}: ${result.error}`)
       }
-      throw error
+    })
+  }
+  else {
+    // Single package installation (existing logic)
+    for (let i = 0; i < packageList.length; i++) {
+      const pkg = packageList[i]
+      try {
+        if (config.verbose) {
+          console.warn(`Processing package: ${pkg}`)
+        }
+        else if (packageList.length > 1) {
+          console.log(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
+        }
+
+        const { name: packageName } = parsePackageSpec(pkg)
+        const domain = resolvePackageName(packageName)
+
+        // Skip if already installed
+        if (installedPackages.has(domain)) {
+          if (config.verbose) {
+            console.warn(`Skipping ${domain} - already installed`)
+          }
+          continue
+        }
+
+        // Mark as installed
+        installedPackages.add(domain)
+
+        // Install dependencies first
+        if (config.verbose) {
+          console.warn(`Installing dependencies for ${packageName}...`)
+        }
+        const depFiles = await installDependencies(packageName, installPath, installedPackages)
+        allInstalledFiles.push(...depFiles)
+
+        // Install the main package
+        const mainFiles = await installPackage(packageName, pkg, installPath)
+        allInstalledFiles.push(...mainFiles)
+
+        if (config.verbose) {
+          console.warn(`Successfully processed ${pkg}`)
+        }
+      }
+      catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+
+        // Check if it's a permission error
+        if (error instanceof Error && (errorMessage.includes('EACCES') || errorMessage.includes('permission denied'))) {
+          console.error(`❌ Permission denied installing ${pkg}. Try:`)
+          console.error(`   • Run with sudo: sudo launchpad install ${pkg}`)
+          console.error(`   • Or install to user directory: launchpad install --path ~/.local ${pkg}`)
+          console.error(`   • Or fix permissions: sudo chown -R $(whoami) ${installPath}`)
+        }
+        else {
+          console.error(`❌ Failed to install ${pkg}: ${errorMessage}`)
+        }
+        throw error
+      }
     }
   }
 
@@ -1051,4 +1338,160 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }
 
   return allInstalledFiles
+}
+
+/**
+ * Install multiple packages in parallel with controlled concurrency
+ */
+async function installPackagesInParallel(
+  packages: string[],
+  installPath: string,
+  maxConcurrency: number,
+): Promise<Array<{ package: string, success: boolean, files: string[], error?: string }>> {
+  const results: Array<{ package: string, success: boolean, files: string[], error?: string }> = []
+  const installedPackages = new Set<string>()
+
+  // Process packages in batches to control concurrency
+  for (let i = 0; i < packages.length; i += maxConcurrency) {
+    const batch = packages.slice(i, i + maxConcurrency)
+
+    const batchPromises = batch.map(async (pkg, batchIndex) => {
+      const globalIndex = i + batchIndex
+      try {
+        if (!config.verbose) {
+          console.log(`📦 [${globalIndex + 1}/${packages.length}] ${pkg}`)
+        }
+
+        const { name: packageName } = parsePackageSpec(pkg)
+        const domain = resolvePackageName(packageName)
+
+        // Skip if already installed
+        if (installedPackages.has(domain)) {
+          if (config.verbose) {
+            console.warn(`Skipping ${domain} - already installed`)
+          }
+          return { package: pkg, success: true, files: [] }
+        }
+
+        // Mark as installed
+        installedPackages.add(domain)
+
+        // Install dependencies first
+        const depFiles = await installDependencies(packageName, installPath, installedPackages)
+
+        // Install the main package
+        const mainFiles = await installPackage(packageName, pkg, installPath)
+
+        const allFiles = [...depFiles, ...mainFiles]
+
+        if (config.verbose) {
+          console.warn(`Successfully processed ${pkg}`)
+        }
+
+        return { package: pkg, success: true, files: allFiles }
+      }
+      catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        return { package: pkg, success: false, files: [], error: errorMessage }
+      }
+    })
+
+    const batchResults = await Promise.all(batchPromises)
+    results.push(...batchResults)
+  }
+
+  return results
+}
+
+/**
+ * Download with resumption support for interrupted downloads
+ */
+async function _downloadWithResumption(
+  url: string,
+  destination: string,
+  expectedSize?: number,
+): Promise<void> {
+  const maxRetries = 3
+  let attempt = 0
+
+  while (attempt < maxRetries) {
+    try {
+      // Check if partial file exists
+      let startByte = 0
+      if (fs.existsSync(destination)) {
+        const stats = fs.statSync(destination)
+        startByte = stats.size
+
+        // If file is complete, skip download
+        if (expectedSize && startByte >= expectedSize) {
+          if (config.verbose) {
+            console.warn(`File already complete: ${destination}`)
+          }
+          return
+        }
+      }
+
+      const headers: Record<string, string> = {
+        'User-Agent': 'launchpad/1.0.0',
+      }
+
+      // Add range header for resumption
+      if (startByte > 0) {
+        headers.Range = `bytes=${startByte}-`
+        if (config.verbose) {
+          console.warn(`Resuming download from byte ${startByte}`)
+        }
+      }
+
+      const response = await fetch(url, { headers })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      // Handle partial content response
+      if (response.status === 206 && startByte > 0) {
+        // Append to existing file
+        const buffer = await response.arrayBuffer()
+        fs.appendFileSync(destination, new Uint8Array(buffer))
+      }
+      else {
+        // Write new file
+        const buffer = await response.arrayBuffer()
+        fs.writeFileSync(destination, new Uint8Array(buffer))
+      }
+
+      // Verify download if expected size is known
+      if (expectedSize) {
+        const actualSize = fs.statSync(destination).size
+        if (actualSize !== expectedSize) {
+          throw new Error(`Download size mismatch: expected ${expectedSize}, got ${actualSize}`)
+        }
+      }
+
+      if (config.verbose) {
+        console.warn(`Download completed: ${destination}`)
+      }
+
+      return
+    }
+    catch (error) {
+      attempt++
+
+      if (attempt >= maxRetries) {
+        // Clean up partial file on final failure
+        if (fs.existsSync(destination)) {
+          fs.unlinkSync(destination)
+        }
+        throw new Error(`Download failed after ${maxRetries} attempts: ${error instanceof Error ? error.message : String(error)}`)
+      }
+
+      if (config.verbose) {
+        console.warn(`Download attempt ${attempt} failed, retrying: ${error instanceof Error ? error.message : String(error)}`)
+      }
+
+      // Wait before retry with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 1000))
+    }
+  }
 }

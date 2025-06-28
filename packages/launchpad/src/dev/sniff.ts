@@ -1,6 +1,7 @@
 import type { PlainObject } from 'is-what'
+
 import { semver } from 'bun'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -220,11 +221,55 @@ async function* readLines(filePath: string): AsyncGenerator<string> {
   }
 }
 
+// Memoization cache for dependency detection
+const dependencyCache = new Map<string, string | null>()
+const cacheTimestamps = new Map<string, number>()
+const CACHE_TTL = 5000 // 5 seconds cache TTL
+
+/**
+ * Clear stale cache entries
+ */
+function clearStaleCache(): void {
+  const now = Date.now()
+  for (const [key, timestamp] of cacheTimestamps) {
+    if (now - timestamp > CACHE_TTL) {
+      dependencyCache.delete(key)
+      cacheTimestamps.delete(key)
+    }
+  }
+}
+
+/**
+ * Check if we have a valid cached result
+ */
+function getCachedResult(dir: string): string | null | undefined {
+  clearStaleCache()
+  const cached = dependencyCache.get(dir)
+  if (cached !== undefined) {
+    return cached
+  }
+  return undefined
+}
+
+/**
+ * Cache a result
+ */
+function setCachedResult(dir: string, result: string | null): void {
+  dependencyCache.set(dir, result)
+  cacheTimestamps.set(dir, Date.now())
+}
+
 export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string> }> {
   const dirPath = dir instanceof SimplePath ? dir : new SimplePath(dir.string)
 
   if (!dirPath.isDirectory()) {
     throw new Error(`not a directory: ${dirPath.string}`)
+  }
+
+  // Check cache first
+  const cachedResult = getCachedResult(dirPath.string)
+  if (cachedResult !== undefined) {
+    return cachedResult ? JSON.parse(cachedResult) : { pkgs: [], env: {} }
   }
 
   const constraint = new SemverRange('*')
@@ -400,7 +445,12 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const deduplicatedPkgs = Array.from(packageMap.values())
 
-  return { pkgs: deduplicatedPkgs, env }
+  const result = { pkgs: deduplicatedPkgs, env }
+
+  // Cache the result
+  setCachedResult(dirPath.string, JSON.stringify(result))
+
+  return result
 
   // ---------------------------------------------- parsers
   async function deno(path: SimplePath) {

@@ -8,10 +8,12 @@ import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
 import { formatDoctorReport, runDoctorChecks } from '../src/doctor'
 import { formatPackageInfo, formatPackageNotFound, getDetailedPackageInfo, packageExists } from '../src/info'
+import { cleanupCache, getCacheStats } from '../src/install'
 import { Path } from '../src/path'
-import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
-import { create_shim, shim_dir } from '../src/shim'
-import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, searchPackagesByTag } from '../src/tags'
+import { formatSearchResults, getPopularPackages, search, searchPackages } from '../src/search'
+import { create_shim, shim, shim_dir } from '../src/shim'
+import { symlink } from '../src/symlink'
+import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, getTags, searchPackagesByTag } from '../src/tags'
 import { addToPath, isInPath } from '../src/utils'
 // Import package.json for version
 const packageJson = await import('../package.json')
@@ -1349,6 +1351,143 @@ cli
     }
     catch (error) {
       console.error('Failed to update registry:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Cache management commands
+cli
+  .command('cache:stats', 'Show cache statistics and usage information')
+  .alias('cache:info')
+  .example('launchpad cache:stats')
+  .action(async () => {
+    try {
+      console.log('📊 Cache Statistics\n')
+
+      const stats = getCacheStats()
+
+      console.log(`📦 Cached Packages: ${stats.packages}`)
+      console.log(`💾 Total Size: ${stats.size}`)
+      console.log(`📅 Oldest Access: ${stats.oldestAccess}`)
+      console.log(`📅 Newest Access: ${stats.newestAccess}`)
+
+      if (stats.packages > 0) {
+        console.log('\n💡 Use `launchpad cache:clean` to free up disk space')
+      }
+    }
+    catch (error) {
+      console.error('Failed to get cache stats:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('cache:clean', 'Clean up old cached packages')
+  .alias('cache:cleanup')
+  .option('--max-age <days>', 'Maximum age in days for cached packages (default: 30)')
+  .option('--max-size <gb>', 'Maximum cache size in GB (default: 5)')
+  .option('--dry-run', 'Show what would be cleaned without actually removing files')
+  .example('launchpad cache:clean')
+  .example('launchpad cache:clean --max-age 7 --max-size 2')
+  .example('launchpad cache:clean --dry-run')
+  .action(async (options?: { maxAge?: string, maxSize?: string, dryRun?: boolean }) => {
+    try {
+      const maxAgeDays = options?.maxAge ? Number.parseInt(options.maxAge, 10) : 30
+      const maxSizeGB = options?.maxSize ? Number.parseFloat(options.maxSize) : 5
+
+      if (options?.dryRun) {
+        console.log('🔍 DRY RUN - Showing what would be cleaned:\n')
+
+        const stats = getCacheStats()
+        console.log(`Current cache: ${stats.packages} packages, ${stats.size}`)
+        console.log(`Cleanup criteria: older than ${maxAgeDays} days OR total size > ${maxSizeGB} GB`)
+        console.log('\n💡 Run without --dry-run to actually clean the cache')
+      }
+      else {
+        console.log('🧹 Cleaning cache...\n')
+        cleanupCache(maxAgeDays, maxSizeGB)
+
+        const newStats = getCacheStats()
+        console.log(`\n✅ Cache cleanup completed`)
+        console.log(`📦 Remaining packages: ${newStats.packages}`)
+        console.log(`💾 Current size: ${newStats.size}`)
+      }
+    }
+    catch (error) {
+      console.error('Failed to clean cache:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('cache:clear', 'Clear all cached packages and downloads')
+  .alias('cache:clean')
+  .option('--force', 'Skip confirmation prompt')
+  .option('--dry-run', 'Show what would be removed without actually removing files')
+  .option('--verbose', 'Show detailed information')
+  .example('launchpad cache:clear')
+  .example('launchpad cache:clear --force')
+  .example('launchpad cache:clear --dry-run')
+  .action(async (options?: { force?: boolean, dryRun?: boolean, verbose?: boolean }) => {
+    try {
+      // Import modules at the top to avoid redeclaration issues
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+      const cacheDir = path.join(process.env.HOME || '.', '.cache', 'launchpad')
+
+      const stats = getCacheStats()
+
+      if (options?.dryRun) {
+        console.log('DRY RUN MODE - Cache statistics\n')
+        console.log(`Total size: ${stats.size}`)
+        console.log(`File count: ${stats.packages}`)
+
+        if (stats.packages > 0) {
+          console.log('\nWould remove:')
+          console.log(`Package cache: ${stats.size}`)
+        }
+        else {
+          console.log('Total size: 0.0 B')
+          console.log('File count: 0')
+        }
+        return
+      }
+
+      // Check if cache directory exists, even if stats show 0 packages
+      // (stats might be 0 due to permission errors reading the directory)
+      if (stats.packages === 0 && !fs.existsSync(cacheDir)) {
+        console.log('📭 Cache is already empty')
+        return
+      }
+
+      if (!options?.force) {
+        console.log('This will remove all cached packages and downloads')
+        console.log('Use --force to skip confirmation')
+        return
+      }
+
+      console.log('🗑️  Clearing cache...')
+      const sizeBefore = stats.size
+      const filesBefore = stats.packages
+
+      // Remove the entire cache directory
+
+      try {
+        if (fs.existsSync(cacheDir)) {
+          fs.rmSync(cacheDir, { recursive: true, force: true })
+        }
+
+        console.log('Cache cleared successfully!')
+        console.log(`Freed ${sizeBefore}`)
+        console.log(`Removed ${filesBefore} files`)
+      }
+      catch (error) {
+        console.error('Failed to clear cache:', error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to clear cache:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })

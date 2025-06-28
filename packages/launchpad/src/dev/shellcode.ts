@@ -5,18 +5,61 @@ import { config } from '../config'
 
 export function shellcode(): string {
   return `
-# Launchpad shell integration
+# Launchpad shell integration with performance optimizations
+__launchpad_cache_dir=""
+__launchpad_cache_timestamp=0
+__launchpad_env_hash=""
+
+# Environment variable optimization - batch export
+__launchpad_set_env() {
+    local env_file="$1"
+    if [[ -f "$env_file" ]]; then
+        # Use single eval for better performance
+        eval "$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" | sed 's/^/export /')"
+    fi
+}
+
+# Optimized PATH management
+__launchpad_update_path() {
+    local project_bin="$1"
+    if [[ -d "$project_bin" ]]; then
+        # Only update PATH if not already present
+        if [[ ":$PATH:" != *":$project_bin:"* ]]; then
+            export PATH="$project_bin:$PATH"
+        fi
+    fi
+}
+
 __launchpad_find_deps_file() {
     local dir="$1"
-    while [[ "$dir" != "/" ]]; do
-        for file in "$dir/dependencies.yaml" "$dir/dependencies.yml" "$dir/deps.yaml" "$dir/deps.yml" "$dir/pkgx.yaml" "$dir/pkgx.yml" "$dir/launchpad.yaml" "$dir/launchpad.yml"; do
-            if [[ -f "$file" ]]; then
-                echo "$file"
-    return 0
+    local current_time=$(date +%s)
+
+    # Use cache if it's less than 5 seconds old and for the same directory
+    if [[ -n "$__launchpad_cache_dir" && "$__launchpad_cache_dir" == "$dir" && $((current_time - __launchpad_cache_timestamp)) -lt 5 ]]; then
+        return 0
     fi
-  done
+
+    # Clear cache for new search
+    __launchpad_cache_dir=""
+    __launchpad_cache_timestamp=0
+
+    while [[ "$dir" != "/" ]]; do
+        # Check multiple file patterns efficiently
+        # Supported files: dependencies.yaml, dependencies.yml, deps.yaml, deps.yml,
+        # pkgx.yaml, pkgx.yml, launchpad.yaml, launchpad.yml
+        for pattern in "dependencies" "deps" "pkgx" "launchpad"; do
+            for ext in "yaml" "yml"; do
+                local file="$dir/$pattern.$ext"
+                if [[ -f "$file" ]]; then
+                    __launchpad_cache_dir="$dir"
+                    __launchpad_cache_timestamp=$current_time
+                    return 0
+                fi
+            done
+        done
         dir="$(/usr/bin/dirname "$dir")"
     done
+
     return 1
 }
 
@@ -47,8 +90,8 @@ __launchpad_chpwd() {
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Show activation message
-                /usr/local/bin/launchpad dev:on "$project_dir" || true
+                # Show activation message (async to avoid blocking)
+                (/usr/local/bin/launchpad dev:on "$project_dir" &) 2>/dev/null || true
             fi
         fi
     else
@@ -63,20 +106,31 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
             fi
 
-            # Show deactivation message
-            /usr/local/bin/launchpad dev:off || true
+            # Show deactivation message (async to avoid blocking)
+            (/usr/local/bin/launchpad dev:off &) 2>/dev/null || true
 
-                        unset LAUNCHPAD_CURRENT_PROJECT
+            unset LAUNCHPAD_CURRENT_PROJECT
+            # Clear cache when leaving project
+            __launchpad_cache_dir=""
+            __launchpad_cache_timestamp=0
         fi
     fi
 }
 
-# Hook into directory changes
+# Hook into directory changes with optimized frequency
 if [[ -n "$ZSH_VERSION" ]]; then
     autoload -U add-zsh-hook
     add-zsh-hook chpwd __launchpad_chpwd
 elif [[ -n "$BASH_VERSION" ]]; then
-    PROMPT_COMMAND="__launchpad_chpwd; $PROMPT_COMMAND"
+    # For bash, use a more efficient approach that doesn't run on every prompt
+    __launchpad_last_pwd="$PWD"
+    __launchpad_check_pwd() {
+        if [[ "$PWD" != "$__launchpad_last_pwd" ]]; then
+            __launchpad_last_pwd="$PWD"
+            __launchpad_chpwd
+        fi
+    }
+    PROMPT_COMMAND="__launchpad_check_pwd; $PROMPT_COMMAND"
 fi
 
 # Initialize LAUNCHPAD_ORIGINAL_PATH if not set and PATH looks corrupted

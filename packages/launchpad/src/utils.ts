@@ -1,6 +1,6 @@
-import fs from 'node:fs'
+import fs, { existsSync } from 'node:fs'
 import { homedir, platform } from 'node:os'
-import path from 'node:path'
+import path, { join } from 'node:path'
 import process from 'node:process'
 import { config } from './config'
 
@@ -295,4 +295,70 @@ export async function activateDevEnv(targetDir: string): Promise<boolean> {
   catch {
     return false
   }
+}
+
+// Binary path cache for performance optimization
+const binaryPathCache = new Map<string, string | null>()
+const cacheTimestamps = new Map<string, number>()
+const BINARY_CACHE_TTL = 30000 // 30 seconds cache TTL
+
+/**
+ * Clear stale binary path cache entries
+ */
+function clearStaleBinaryCache(): void {
+  const now = Date.now()
+  for (const [key, timestamp] of cacheTimestamps) {
+    if (now - timestamp > BINARY_CACHE_TTL) {
+      binaryPathCache.delete(key)
+      cacheTimestamps.delete(key)
+    }
+  }
+}
+
+/**
+ * Find binary in PATH with caching for performance
+ */
+export function findBinaryInPath(binaryName: string): string | null {
+  clearStaleBinaryCache()
+
+  // Check cache first
+  const cached = binaryPathCache.get(binaryName)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  const pathEnv = process.env.PATH || ''
+  const pathSeparator = process.platform === 'win32' ? ';' : ':'
+  const pathDirs = pathEnv.split(pathSeparator)
+
+  // Common binary extensions on Windows
+  const extensions = process.platform === 'win32' ? ['.exe', '.cmd', '.bat', ''] : ['']
+
+  for (const dir of pathDirs) {
+    if (!dir)
+      continue
+
+    for (const ext of extensions) {
+      const fullPath = join(dir, binaryName + ext)
+      if (existsSync(fullPath)) {
+        // Cache the result
+        binaryPathCache.set(binaryName, fullPath)
+        cacheTimestamps.set(binaryName, Date.now())
+        return fullPath
+      }
+    }
+  }
+
+  // Cache the null result to avoid repeated lookups
+  binaryPathCache.set(binaryName, null)
+  cacheTimestamps.set(binaryName, Date.now())
+  return null
+}
+
+/**
+ * Clear binary path cache (useful for testing or when PATH changes)
+ */
+export function clearBinaryPathCache(): void {
+  binaryPathCache.clear()
+  cacheTimestamps.clear()
 }
