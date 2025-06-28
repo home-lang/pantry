@@ -293,4 +293,3 @@ launchpad dev
 - [`launchpad list`](/features/package-management#listing-packages) - See what's installed
 - [`launchpad install`](/features/package-management#installation) - Reinstall packages after cleaning
 - [`launchpad dev`](/features/environment-management) - Recreate project environments
-```
