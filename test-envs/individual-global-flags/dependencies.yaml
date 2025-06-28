@@ -1,0 +1,22 @@
+dependencies:
+  # Individual global flags (no top-level global)
+  node@22:
+    version: 22.1.0
+    global: true # Install globally
+
+  python@3.12:
+    version: 3.12.1
+    global: true # Install globally
+
+  typescript@5.0:
+    version: 5.0.4
+    global: false # Install locally
+
+  # String format defaults to local
+  eslint@8.50: 8.50.0
+  jest@29.0: 29.7.0
+
+env:
+  NODE_ENV: development
+  PROJECT_TYPE: individual-flags
+  DESCRIPTION: Individual package global flags without top-level global

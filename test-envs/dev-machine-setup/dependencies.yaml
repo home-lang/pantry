@@ -1,0 +1,23 @@
+global: true
+dependencies:
+  # Core development runtimes - all global
+  - node@22
+  - python@3.12
+  - go@1.21
+  - bun@1.2.3
+
+  # Development tools - all global
+  - git@2.42
+  - curl@8.4
+  - wget@1.21
+
+  # Container tools - all global
+  - docker@24.0
+  - kubectl@1.28
+
+env:
+  # Global development settings
+  DOCKER_DEFAULT_PLATFORM: linux/amd64
+  KUBECTL_EXTERNAL_DIFF: code --wait --diff
+  PROJECT_TYPE: dev-machine
+  DESCRIPTION: Development machine setup with all global tools

@@ -1,0 +1,10 @@
+global: true
+dependencies:
+  - node@22
+  - python@3.12
+  - git@2.42
+
+env:
+  NODE_ENV: development
+  PROJECT_TYPE: simple-global-string
+  DESCRIPTION: Simple global installation with array format

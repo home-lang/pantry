@@ -149,7 +149,13 @@ function parseYaml(content: string): any {
       const colonIndex = trimmed.indexOf(':')
       if (colonIndex > 0) {
         const key = trimmed.substring(0, colonIndex).trim()
-        const value = trimmed.substring(colonIndex + 1).trim()
+        let value = trimmed.substring(colonIndex + 1).trim()
+
+        // Remove inline comments
+        const commentIndex = value.indexOf('#')
+        if (commentIndex >= 0) {
+          value = value.substring(0, commentIndex).trim()
+        }
 
         // Remove quotes if present
         const cleanValue = value.replace(/^["']|["']$/g, '')
@@ -160,7 +166,24 @@ function parseYaml(content: string): any {
           stack.push({ obj: current.obj[key], key: null, indent })
         }
         else {
-          current.obj[key] = cleanValue
+          // Convert boolean and numeric values
+          let parsedValue: any = cleanValue
+          if (cleanValue === 'true') {
+            parsedValue = true
+          }
+          else if (cleanValue === 'false') {
+            parsedValue = false
+          }
+          else if (cleanValue === 'null') {
+            parsedValue = null
+          }
+          else if (/^\d+$/.test(cleanValue)) {
+            parsedValue = Number.parseInt(cleanValue, 10)
+          }
+          else if (/^\d+\.\d+$/.test(cleanValue)) {
+            parsedValue = Number.parseFloat(cleanValue)
+          }
+          current.obj[key] = parsedValue
         }
       }
     }
