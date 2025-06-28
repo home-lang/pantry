@@ -1,4 +1,34 @@
 
+## v0.2.3...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.3...main)
+
+### 🚀 Enhancements
+
+- Add `global` support ([e92e28d](https://github.com/stacksjs/launchpad/commit/e92e28d))
+- Add registry update command and improve install error handling - Added update-registry CLI command for updating package registry from S3 - Enhanced install error handling with better permission error messages - Added known problematic packages filtering to reduce noise - Improved dependency installation with better error recovery - Added dry-run support for registry updates ([30342d4](https://github.com/stacksjs/launchpad/commit/30342d4))
+
+### 🏡 Chore
+
+- Use `dev` command ([81403bb](https://github.com/stacksjs/launchpad/commit/81403bb))
+- Adjust wording ([ffbdd1b](https://github.com/stacksjs/launchpad/commit/ffbdd1b))
+- Housekeeping ([7edc2b6](https://github.com/stacksjs/launchpad/commit/7edc2b6))
+- Improve the search output ([d8a42a3](https://github.com/stacksjs/launchpad/commit/d8a42a3))
+- Improve output message ([b3ff5a5](https://github.com/stacksjs/launchpad/commit/b3ff5a5))
+- Wip ([6491d67](https://github.com/stacksjs/launchpad/commit/6491d67))
+- Wip ([1d44e7b](https://github.com/stacksjs/launchpad/commit/1d44e7b))
+- Wip ([38d130f](https://github.com/stacksjs/launchpad/commit/38d130f))
+- Wip ([c08667c](https://github.com/stacksjs/launchpad/commit/c08667c))
+- Wip ([183bff9](https://github.com/stacksjs/launchpad/commit/183bff9))
+- Wip ([10b72f6](https://github.com/stacksjs/launchpad/commit/10b72f6))
+- Wip ([9208285](https://github.com/stacksjs/launchpad/commit/9208285))
+- Wip ([9248c83](https://github.com/stacksjs/launchpad/commit/9248c83))
+- Wip ([7632558](https://github.com/stacksjs/launchpad/commit/7632558))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.2.2...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.2.2...main)
