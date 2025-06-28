@@ -31,8 +31,8 @@
   "devDependencies": {
     "@stacksjs/docs": "^0.70.23",
     "@stacksjs/eslint-config": "^4.14.0-beta.3",
-    "@types/bun": "^1.2.16",
-    "bumpp": "^10.1.1",
+    "@types/bun": "^1.2.17",
+    "bumpp": "^10.2.0",
     "bun-plugin-dtsx": "0.9.5",
     "changelogen": "^0.6.1",
     "chromium-bidi": "^7.0.0",
