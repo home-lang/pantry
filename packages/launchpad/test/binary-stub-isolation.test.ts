@@ -35,11 +35,22 @@ describe('Binary Stub Isolation', () => {
     }
   })
 
+  const getTestEnv = (extraEnv: Record<string, string> = {}) => {
+    return {
+      ...process.env,
+      PATH: process.env.PATH?.includes('/usr/local/bin')
+        ? process.env.PATH
+        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+      NODE_ENV: 'test',
+      ...extraEnv,
+    }
+  }
+
   const runCLI = (args: string[], cwd?: string): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
     return new Promise((resolve, reject) => {
       const proc = spawn('bun', [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, NODE_ENV: 'test' },
+        env: getTestEnv(),
         cwd: cwd || tempDir,
       })
 
@@ -134,7 +145,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
 
@@ -153,7 +164,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('❌ Failed to install')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })
@@ -191,7 +202,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
 
@@ -228,7 +239,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })
@@ -257,7 +268,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
 
@@ -291,7 +302,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })
@@ -325,7 +336,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
 
@@ -344,7 +355,7 @@ describe('Binary Stub Isolation', () => {
       else {
         // If the specific version fails, check we get proper error handling
         expect(result.exitCode).toBe(1)
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })
@@ -364,7 +375,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
 
@@ -384,7 +395,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })
@@ -419,7 +430,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })
@@ -459,7 +470,7 @@ describe('Binary Stub Isolation', () => {
       }
       else {
         // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('No packages were successfully installed')
+        expect(result.stderr).toContain('Failed to install')
       }
     }, 60000)
   })

@@ -1,5 +1,5 @@
 import type { Path } from './path'
-import type { Version } from './version'
+import type { Version } from '../test/version'
 
 export interface LaunchpadConfig {
   /** Enable verbose logging (default: false) */

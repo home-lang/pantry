@@ -5,7 +5,7 @@
   },
   "include": [
     "src/**/*.ts"
-  ],
+, "test/version.ts"  ],
   "exclude": [
     "node_modules",
     "dist"

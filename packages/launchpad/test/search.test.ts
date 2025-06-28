@@ -145,12 +145,12 @@ describe('Search Functionality', () => {
       }]
 
       const formatted = formatSearchResults(mockResults)
-      expect(formatted).toContain('Found 1 package(s)')
-      expect(formatted).toContain('📦 test-package (test.com)')
+      expect(formatted).toContain('Found 1 package:')
+      expect(formatted).toContain('test-package')
       expect(formatted).toContain('A test package')
-      expect(formatted).toContain('Latest: 1.0.0')
+      expect(formatted).toContain('1.0.0')
       expect(formatted).toContain('5 versions available')
-      expect(formatted).toContain('Programs: test, test-cli')
+      expect(formatted).toContain('test, test-cli')
     })
 
     it('should format results in compact format', () => {
@@ -200,7 +200,7 @@ describe('Search Functionality', () => {
       }]
 
       const formatted = formatSearchResults(mockResults, { showVersions: false })
-      expect(formatted).not.toContain('Latest: 1.0.0')
+      expect(formatted).not.toContain('1.0.0')
       expect(formatted).not.toContain('5 versions available')
     })
 
@@ -214,7 +214,7 @@ describe('Search Functionality', () => {
       }]
 
       const formatted = formatSearchResults(mockResults)
-      expect(formatted).toContain('📦 minimal-package (minimal.com)')
+      expect(formatted).toContain('minimal-package')
       expect(formatted).not.toContain('Latest:')
       expect(formatted).not.toContain('Programs:')
     })

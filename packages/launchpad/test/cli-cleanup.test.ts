@@ -43,12 +43,50 @@ describe('CLI Cleanup Commands', () => {
     // Restore original config
     config.installPath = originalEnv.HOME ? path.join(originalEnv.HOME, '.local') : '/usr/local'
     if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true })
+      try {
+        // Try to fix permissions before removing
+        const fixPermissions = (dir: string) => {
+          try {
+            const stats = fs.statSync(dir)
+            if (stats.isDirectory()) {
+              fs.chmodSync(dir, 0o755)
+              const files = fs.readdirSync(dir)
+              for (const file of files) {
+                const filePath = path.join(dir, file)
+                fixPermissions(filePath)
+              }
+            }
+            else {
+              fs.chmodSync(dir, 0o644)
+            }
+          }
+          catch {
+            // Ignore permission errors during cleanup
+          }
+        }
+        fixPermissions(tempDir)
+        fs.rmSync(tempDir, { recursive: true, force: true })
+      }
+      catch {
+        // Ignore cleanup errors - they shouldn't fail the tests
+      }
     }
     TestUtils.cleanupEnvironmentDirs()
   })
 
   // Helper function to run CLI commands
+  const getTestEnv = (extraEnv: Record<string, string> = {}) => {
+    return {
+      ...process.env,
+      PATH: process.env.PATH?.includes('/usr/local/bin')
+        ? process.env.PATH
+        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+      HOME: tempDir,
+      LAUNCHPAD_PREFIX: tempDir, // Set the install path via environment variable
+      ...extraEnv,
+    }
+  }
+
   const runCLI = (args: string[], options: { timeout?: number } = {}): Promise<{
     exitCode: number
     stdout: string
@@ -57,11 +95,7 @@ describe('CLI Cleanup Commands', () => {
     return new Promise((resolve) => {
       const proc = spawn('bun', [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          HOME: tempDir,
-          LAUNCHPAD_PREFIX: tempDir, // Set the install path via environment variable
-        },
+        env: getTestEnv(),
       })
 
       let stdout = ''

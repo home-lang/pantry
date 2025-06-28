@@ -25,6 +25,17 @@ describe('Performance Benchmarks', () => {
     TestUtils.cleanupEnvironmentDirs()
   })
 
+  const getTestEnv = (extraEnv: Record<string, string> = {}) => {
+    return {
+      ...process.env,
+      PATH: process.env.PATH?.includes('/usr/local/bin')
+        ? process.env.PATH
+        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+      NODE_ENV: 'test',
+      ...extraEnv,
+    }
+  }
+
   // Helper function to run CLI commands with timing
   const runCLIWithTiming = (args: string[], cwd?: string): Promise<{
     stdout: string
@@ -36,7 +47,7 @@ describe('Performance Benchmarks', () => {
       const startTime = Date.now()
       const proc = spawn('bun', [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, NODE_ENV: 'test' },
+        env: getTestEnv(),
         cwd: cwd || tempDir,
       })
 
@@ -71,7 +82,7 @@ describe('Performance Benchmarks', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.duration).toBeLessThan(2000) // 2 seconds
-      expect(result.stdout).toContain('_pkgx_chpwd_hook')
+      expect(result.stdout).toContain('__launchpad_chpwd')
 
       console.warn(`📊 Shell code generation took ${result.duration}ms`)
     }, TEST_CONFIG.DEFAULT_TIMEOUT)

@@ -20,6 +20,17 @@ describe('Clean Command Integration Test', () => {
     }
   })
 
+  // Helper to ensure proper PATH for tests
+  function getTestEnv(extraEnv: Record<string, string> = {}) {
+    return {
+      ...process.env,
+      ...extraEnv,
+      PATH: process.env.PATH?.includes('/usr/local/bin')
+        ? process.env.PATH
+        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+    }
+  }
+
   afterEach(() => {
     // Clean up temporary directory
     if (fs.existsSync(tempDir)) {
@@ -93,7 +104,7 @@ describe('Clean Command Integration Test', () => {
     const proc = spawn(['bun', 'run', cliPath, 'clean', '--force'], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
+      env: getTestEnv({ LAUNCHPAD_PREFIX: tempDir }),
     })
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -158,7 +169,7 @@ describe('Clean Command Integration Test', () => {
     const proc = spawn(['bun', 'run', cliPath, 'clean', '--force'], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
+      env: getTestEnv({ LAUNCHPAD_PREFIX: tempDir }),
     })
 
     const [output, stderr, exitCode] = await Promise.race([
@@ -204,7 +215,7 @@ describe('Clean Command Integration Test', () => {
     const proc = spawn(['bun', 'run', cliPath, 'clean', '--dry-run'], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
+      env: getTestEnv({ LAUNCHPAD_PREFIX: tempDir }),
     })
 
     const [output, stderr, exitCode] = await Promise.race([
@@ -252,7 +263,7 @@ describe('Clean Command Integration Test', () => {
     const proc = spawn(['bun', 'run', cliPath, 'clean', '--force'], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },
+      env: getTestEnv({ LAUNCHPAD_PREFIX: tempDir }),
     })
 
     const [output, stderr, exitCode] = await Promise.race([

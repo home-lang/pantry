@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { list, ls, outdated } from '../src/list'
-import { Version } from '../src/version'
+import { Version } from './version'
 
 describe('List', () => {
   let originalEnv: NodeJS.ProcessEnv

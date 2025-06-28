@@ -38,10 +38,19 @@ describe('Environment Management Commands', () => {
   // Helper function to run CLI commands
   async function runCLI(args: string[], cwd?: string): Promise<{ exitCode: number, stdout: string, stderr: string }> {
     return new Promise((resolve) => {
+      // Ensure we have a proper PATH that includes system directories
+      const testEnv = {
+        ...process.env,
+        NODE_ENV: 'test',
+        PATH: process.env.PATH?.includes('/usr/local/bin')
+          ? process.env.PATH
+          : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+      }
+
       const proc = spawn('bun', ['run', cliPath, ...args], {
         cwd: cwd || process.cwd(),
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, NODE_ENV: 'test' },
+        env: testEnv,
       })
 
       let stdout = ''

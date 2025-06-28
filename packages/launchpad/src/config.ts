@@ -48,7 +48,7 @@ export const defaultConfig: LaunchpadConfig = {
   autoAddToPath: process.env.LAUNCHPAD_AUTO_ADD_PATH !== 'false',
   showShellMessages: process.env.LAUNCHPAD_SHOW_ENV_MESSAGES !== 'false',
   shellActivationMessage: process.env.LAUNCHPAD_SHELL_ACTIVATION_MESSAGE || '✅ Environment activated for \x1B[3m{path}\x1B[0m',
-  shellDeactivationMessage: process.env.LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE || 'dev environment deactivated',
+  shellDeactivationMessage: process.env.LAUNCHPAD_SHELL_ACTIVATION_MESSAGE || 'Environment deactivated',
   useRegistry: true,
   installMethod: 'curl',
   installPath: getDefaultInstallPath(),

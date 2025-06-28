@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { parseVersion, Version } from '../src/version'
+import { parseVersion, Version } from './version'
 
 describe('Version', () => {
   describe('constructor', () => {

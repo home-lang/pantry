@@ -37,6 +37,17 @@ describe('CLI Cleanup Commands - Functional Tests', () => {
   })
 
   // Helper function to run CLI commands
+  const getTestEnv = (extraEnv: Record<string, string> = {}) => {
+    return {
+      ...process.env,
+      PATH: process.env.PATH?.includes('/usr/local/bin')
+        ? process.env.PATH
+        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+      HOME: tempDir,
+      ...extraEnv,
+    }
+  }
+
   const runCLI = (args: string[], options: { timeout?: number } = {}): Promise<{
     exitCode: number
     stdout: string
@@ -45,7 +56,7 @@ describe('CLI Cleanup Commands - Functional Tests', () => {
     return new Promise((resolve) => {
       const proc = spawn('bun', [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, HOME: tempDir },
+        env: getTestEnv(),
       })
 
       let stdout = ''

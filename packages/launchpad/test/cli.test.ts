@@ -4,6 +4,16 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+function getTestEnv() {
+  return {
+    ...process.env,
+    NODE_ENV: 'test',
+    PATH: process.env.PATH?.includes('/usr/local/bin')
+      ? process.env.PATH
+      : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+  }
+}
+
 describe('CLI', () => {
   let originalEnv: NodeJS.ProcessEnv
   let tempDir: string
@@ -142,16 +152,9 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
-        // Use clean environment without ~/.local/bin to avoid broken stubs
-        const cleanEnv = {
-          ...process.env,
-          NODE_ENV: 'test',
-          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
-        }
-
         const proc = spawn('bun', [cliPath, '--help'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: cleanEnv,
+          env: getTestEnv(),
         })
 
         let stdout = ''
@@ -191,16 +194,9 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
       return new Promise<void>((resolve, reject) => {
-        // Use clean environment without ~/.local/bin to avoid broken stubs
-        const cleanEnv = {
-          ...process.env,
-          NODE_ENV: 'test',
-          PATH: process.env.PATH?.split(':').filter(p => !p.includes('/.local/bin')).join(':') || '/usr/local/bin:/usr/bin:/bin',
-        }
-
         const proc = spawn('bun', [cliPath, '--version'], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: cleanEnv,
+          env: getTestEnv(),
         })
 
         let stdout = ''
@@ -244,6 +240,7 @@ describe('CLI', () => {
         return new Promise<void>((resolve, reject) => {
           const proc = spawn('bun', [cliPath, 'install', '--help'], {
             stdio: ['ignore', 'pipe', 'pipe'],
+            env: getTestEnv(),
           })
 
           let output = ''
@@ -279,6 +276,7 @@ describe('CLI', () => {
         return new Promise<void>((resolve, reject) => {
           const proc = spawn('bun', [cliPath, 'install', '--help'], {
             stdio: ['ignore', 'pipe', 'pipe'],
+            env: getTestEnv(),
           })
 
           let output = ''
@@ -313,6 +311,7 @@ describe('CLI', () => {
         return new Promise<void>((resolve, reject) => {
           const proc = spawn('bun', [cliPath, 'install', '--help'], {
             stdio: ['ignore', 'pipe', 'pipe'],
+            env: getTestEnv(),
           })
 
           let output = ''
@@ -349,6 +348,7 @@ describe('CLI', () => {
         return new Promise<void>((resolve, reject) => {
           const proc = spawn('bun', [cliPath, 'list', '--help'], {
             stdio: ['ignore', 'pipe', 'pipe'],
+            env: getTestEnv(),
           })
 
           let output = ''
@@ -391,6 +391,7 @@ describe('CLI', () => {
         return new Promise<void>((resolve, reject) => {
           const proc = spawn('bun', [cliPath, 'bootstrap', '--help'], {
             stdio: ['ignore', 'pipe', 'pipe'],
+            env: getTestEnv(),
           })
 
           let output = ''
