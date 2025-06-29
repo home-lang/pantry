@@ -599,7 +599,7 @@ export function getPackageInfo(packageName: string): {
 
   return {
     name: 'name' in pkg ? (pkg.name as string) : packageName,
-    domain,
+    domain: 'domain' in pkg ? (pkg.domain as string) : domain,
     description: 'description' in pkg ? (pkg.description as string) : undefined,
     latestVersion: versions[0] || undefined,
     totalVersions: versions.length,

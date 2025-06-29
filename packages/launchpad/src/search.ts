@@ -93,10 +93,10 @@ export function searchPackages(searchTerm: string, options: {
     const domain = domainKey.replace(/_/g, '.')
     const normalizedDomain = caseSensitive ? domain : domain.toLowerCase()
 
-    if (normalizedDomain.includes(normalizedSearch) && !seen.has(domain)) {
+    if (normalizedDomain.includes(normalizedSearch)) {
       const info = getPackageInfo(domain)
-      if (info) {
-        seen.add(domain)
+      if (info && !seen.has(info.domain)) {
+        seen.add(info.domain)
 
         const matchType: SearchResult['matchType'] = normalizedDomain === normalizedSearch ? 'exact' : 'domain'
         const relevanceScore = calculateScore(domain, matchType)
@@ -119,13 +119,13 @@ export function searchPackages(searchTerm: string, options: {
   for (const [domainKey, pkg] of Object.entries(packages)) {
     const domain = domainKey.replace(/_/g, '.')
 
-    if (!seen.has(domain) && 'description' in pkg && pkg.description) {
+    if ('description' in pkg && pkg.description) {
       const normalizedDesc = caseSensitive ? pkg.description as string : (pkg.description as string).toLowerCase()
 
       if (normalizedDesc.includes(normalizedSearch)) {
         const info = getPackageInfo(domain)
-        if (info) {
-          seen.add(domain)
+        if (info && !seen.has(info.domain)) {
+          seen.add(info.domain)
 
           const relevanceScore = calculateScore(pkg.description as string, 'description')
 
@@ -149,7 +149,7 @@ export function searchPackages(searchTerm: string, options: {
     for (const [domainKey, pkg] of Object.entries(packages)) {
       const domain = domainKey.replace(/_/g, '.')
 
-      if (!seen.has(domain) && 'programs' in pkg && Array.isArray(pkg.programs)) {
+      if ('programs' in pkg && Array.isArray(pkg.programs)) {
         const programs = pkg.programs as string[]
         const matchingProgram = programs.find((program) => {
           const normalizedProgram = caseSensitive ? program : program.toLowerCase()
@@ -158,8 +158,8 @@ export function searchPackages(searchTerm: string, options: {
 
         if (matchingProgram) {
           const info = getPackageInfo(domain)
-          if (info) {
-            seen.add(domain)
+          if (info && !seen.has(info.domain)) {
+            seen.add(info.domain)
 
             const relevanceScore = calculateScore(matchingProgram, 'program')
 
