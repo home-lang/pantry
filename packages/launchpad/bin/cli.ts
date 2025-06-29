@@ -571,7 +571,7 @@ cli
         // Show activation message if configured
         if (config.showShellMessages && config.shellActivationMessage) {
           const message = config.shellActivationMessage.replace('{path}', targetDir)
-          console.warn(message)
+          console.log(message)
         }
       }
     }
@@ -594,7 +594,7 @@ cli
       if (!options?.silent) {
         // Show deactivation message if configured
         if (config.showShellMessages && config.shellDeactivationMessage) {
-          console.warn(config.shellDeactivationMessage)
+          console.log(config.shellDeactivationMessage)
         }
       }
     }

@@ -34,6 +34,7 @@ __launchpad_find_deps_file() {
 
     # Use cache if it's less than 5 seconds old and for the same directory
     if [[ -n "$__launchpad_cache_dir" && "$__launchpad_cache_dir" == "$dir" && $((current_time - __launchpad_cache_timestamp)) -lt 5 ]]; then
+        echo "$__launchpad_cache_dir"
         return 0
     fi
 
@@ -51,6 +52,7 @@ __launchpad_find_deps_file() {
                 if [[ -f "$file" ]]; then
                     __launchpad_cache_dir="$dir"
                     __launchpad_cache_timestamp=$current_time
+                    echo "$dir"
                     return 0
                 fi
             done
@@ -62,12 +64,10 @@ __launchpad_find_deps_file() {
 }
 
 __launchpad_chpwd() {
-    local deps_file
-    deps_file=$(__launchpad_find_deps_file "$PWD")
+    local project_dir
+    project_dir=$(__launchpad_find_deps_file "$PWD")
 
-    if [[ -n "$deps_file" ]]; then
-        local project_dir="$(/usr/bin/dirname "$deps_file")"
-
+    if [[ -n "$project_dir" ]]; then
         # Check if we're entering a new project or if this is the first time
         if [[ "$LAUNCHPAD_CURRENT_PROJECT" != "$project_dir" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
@@ -88,8 +88,8 @@ __launchpad_chpwd() {
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Show activation message (async to avoid blocking)
-                (/usr/local/bin/launchpad dev:on "$project_dir" &) 2>/dev/null || true
+                # Show activation message
+                /usr/local/bin/launchpad dev:on "$project_dir" || true
             fi
         fi
     else
@@ -104,8 +104,8 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
             fi
 
-            # Show deactivation message (async to avoid blocking)
-            (/usr/local/bin/launchpad dev:off &) 2>/dev/null || true
+            # Show deactivation message
+            /usr/local/bin/launchpad dev:off || true
 
             unset LAUNCHPAD_CURRENT_PROJECT
             # Clear cache when leaving project
