@@ -99,8 +99,22 @@ function parseYAML(content: string): any {
     let currentKey = ''
 
     for (const line of lines) {
-      const trimmed = line.trim()
+      let trimmed = line.trim()
       if (!trimmed || trimmed.startsWith('#'))
+        continue
+
+      // Strip inline comments (but preserve quoted strings)
+      const commentIndex = trimmed.indexOf('#')
+      if (commentIndex > -1) {
+        // Simple check: if we're not inside quotes, strip the comment
+        const beforeComment = trimmed.substring(0, commentIndex)
+        const quoteCount = (beforeComment.match(/"/g) || []).length
+        if (quoteCount % 2 === 0) { // Even number of quotes means we're not inside a quoted string
+          trimmed = beforeComment.trim()
+        }
+      }
+
+      if (!trimmed)
         continue
 
       // Handle arrays (simple case)
@@ -118,7 +132,7 @@ function parseYAML(content: string): any {
       const colonIndex = trimmed.indexOf(':')
       if (colonIndex > 0) {
         const key = trimmed.substring(0, colonIndex).trim()
-        const value = trimmed.substring(colonIndex + 1).trim()
+        let value = trimmed.substring(colonIndex + 1).trim()
 
         if (value === '') {
           // This is a section header
@@ -127,8 +141,18 @@ function parseYAML(content: string): any {
         }
         else {
           // Remove quotes if present
-          const cleanValue = value.replace(/^["']|["']$/g, '')
-          currentSection[key] = cleanValue
+          value = value.replace(/^["']|["']$/g, '')
+
+          // Handle boolean values
+          if (value === 'true') {
+            currentSection[key] = true
+          }
+          else if (value === 'false') {
+            currentSection[key] = false
+          }
+          else {
+            currentSection[key] = value
+          }
         }
       }
     }
@@ -157,15 +181,26 @@ function parsePkgxDependencies(deps: any): PackageRequirement[] {
     }
   }
   else if (typeof deps === 'object' && deps !== null) {
-    // Object with package: version pairs
-    for (const [pkg, version] of Object.entries(deps)) {
-      if (typeof version === 'string') {
-        if (version === 'latest' || version === '*') {
+    // Object with package: version pairs or complex objects
+    for (const [pkg, versionOrConfig] of Object.entries(deps)) {
+      if (typeof versionOrConfig === 'string') {
+        if (versionOrConfig === 'latest' || versionOrConfig === '*') {
           packages.push({ project: pkg, constraint: new SemverRange('*') })
         }
         else {
-          packages.push(parsePackage(`${pkg}@${version}`))
+          packages.push(parsePackage(`${pkg}@${versionOrConfig}`))
         }
+      }
+      else if (typeof versionOrConfig === 'object' && versionOrConfig !== null) {
+        // Handle complex dependency objects with version and global flags
+        const config = versionOrConfig as any
+        const version = config.version || '*'
+        const constraint = version === 'latest' || version === '*'
+          ? new SemverRange('*')
+          : new SemverRange(version)
+
+        packages.push({ project: pkg, constraint })
+        // Note: global flag is handled at the environment level, not per package in GitHub Actions
       }
       else {
         packages.push({ project: pkg, constraint: new SemverRange('*') })

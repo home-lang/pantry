@@ -38,6 +38,71 @@ This action allows you to easily install dependencies with Launchpad in your Git
 - 🔄 **Config file support**: Can extract package list from your launchpad config file
 - 🌐 **Context-aware**: Provides full GitHub context to commands
 - 🔧 **Bun-powered**: Uses Bun for faster installation
+- 📦 **Global flag support**: Handles global installation flags in dependency files
+- 💬 **Comment-aware**: Properly parses YAML files with inline comments
+
+## Supported Dependency Files
+
+The action automatically detects dependencies from these file types:
+
+### Runtime Version Files
+- `.nvmrc`, `.node-version` → Node.js
+- `.ruby-version` → Ruby
+- `.python-version` → Python
+- `.terraform-version` → Terraform
+
+### Package Manager Files
+- `package.json` → Node.js (with engines, packageManager, volta support)
+- `requirements.txt`, `pipfile`, `setup.py`, `pyproject.toml` → Python
+- `Gemfile` → Ruby
+- `Cargo.toml` → Rust
+- `go.mod`, `go.sum` → Go
+- `composer.json` → PHP
+- `pom.xml`, `build.gradle` → Java
+
+### Lock Files
+- `yarn.lock`, `.yarnrc`, `.yarnrc.yml` → Yarn
+- `bun.lock`, `bun.lockb` → Bun
+- `pnpm-lock.yaml` → PNPM
+- `uv.lock` → UV Python package manager
+
+### Configuration Files
+- `deno.json`, `deno.jsonc` → Deno
+- `cdk.json` → AWS CDK
+- `skaffold.yaml` → Kubernetes/Skaffold
+- `justfile`, `Justfile` → Just task runner
+- `Taskfile.yml` → Task runner
+- `pixi.toml` → Pixi
+
+### Launchpad/pkgx Dependency Files
+- `dependencies.yaml`, `dependencies.yml`
+- `deps.yaml`, `deps.yml`
+- `pkgx.yaml`, `pkgx.yml`
+- `launchpad.yaml`, `launchpad.yml`
+- `.dependencies.yaml`, `.dependencies.yml`
+- `.deps.yaml`, `.deps.yml`
+- `.pkgx.yaml`, `.pkgx.yml`
+- `.launchpad.yaml`, `.launchpad.yml`
+
+### Global Flag Support
+
+The action supports global installation flags in dependency files:
+
+```yaml
+# dependencies.yaml
+global: true  # Install all packages globally
+dependencies:
+  - node@22
+  - python@3.12
+
+  # Override specific packages
+  typescript@5.0:
+    version: 5.0.4
+    global: false  # Install locally
+
+env:
+  NODE_ENV: development
+```
 
 ## Examples
 

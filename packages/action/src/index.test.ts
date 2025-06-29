@@ -624,5 +624,31 @@ env:
       expect(content).toContain('NODE_ENV: development')
       expect(content).toContain('PYTHON_PATH: /usr/local/bin/python')
     })
+
+    it('should handle global flags and inline comments in dependencies', () => {
+      const depsYaml = `global: true # Install all packages globally
+dependencies:
+  node@22:
+    version: 22.1.0
+    global: true # System-wide installation
+  python@3.12:
+    version: 3.12.1
+    global: false # Override to local installation
+  - typescript@5.0 # String format defaults to local
+
+env:
+  NODE_ENV: development # Development environment`
+
+      fs.writeFileSync('dependencies.yaml', depsYaml)
+      expect(fs.existsSync('dependencies.yaml')).toBe(true)
+
+      const content = fs.readFileSync('dependencies.yaml', 'utf8')
+      expect(content).toContain('global: true')
+      expect(content).toContain('node@22')
+      expect(content).toContain('version: 22.1.0')
+      expect(content).toContain('global: false')
+      expect(content).toContain('typescript@5.0')
+      expect(content).toContain('NODE_ENV: development')
+    })
   })
 })
