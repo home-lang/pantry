@@ -90,7 +90,8 @@ export function searchPackages(searchTerm: string, options: {
 
   // Search through package domains
   for (const [domainKey, pkg] of Object.entries(packages)) {
-    const domain = domainKey.replace(/_/g, '.')
+    // Use the actual domain from the package data instead of trying to reconstruct it
+    const domain = 'domain' in pkg ? (pkg.domain as string) : domainKey
     const normalizedDomain = caseSensitive ? domain : domain.toLowerCase()
 
     if (normalizedDomain.includes(normalizedSearch)) {
@@ -117,7 +118,8 @@ export function searchPackages(searchTerm: string, options: {
 
   // Search through descriptions
   for (const [domainKey, pkg] of Object.entries(packages)) {
-    const domain = domainKey.replace(/_/g, '.')
+    // Use the actual domain from the package data instead of trying to reconstruct it
+    const domain = 'domain' in pkg ? (pkg.domain as string) : domainKey
 
     if ('description' in pkg && pkg.description) {
       const normalizedDesc = caseSensitive ? pkg.description as string : (pkg.description as string).toLowerCase()
@@ -147,7 +149,8 @@ export function searchPackages(searchTerm: string, options: {
   // Search through programs if enabled
   if (includePrograms) {
     for (const [domainKey, pkg] of Object.entries(packages)) {
-      const domain = domainKey.replace(/_/g, '.')
+      // Use the actual domain from the package data instead of trying to reconstruct it
+      const domain = 'domain' in pkg ? (pkg.domain as string) : domainKey
 
       if ('programs' in pkg && Array.isArray(pkg.programs)) {
         const programs = pkg.programs as string[]
