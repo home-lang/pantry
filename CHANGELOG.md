@@ -1,4 +1,16 @@
 
+## v0.3.2...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.2...main)
+
+### 🏡 Chore
+
+- Wip ([1dc4482](https://github.com/stacksjs/launchpad/commit/1dc4482))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.1...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.1...main)
