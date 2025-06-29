@@ -427,7 +427,7 @@ export function resolvePackageName(packageName: string): string {
  */
 export function getLatestVersion(packageName: string): string | null {
   const domain = resolvePackageName(packageName)
-  const domainKey = domain.replace(/[.-]/g, '_') as keyof typeof packages
+  const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
   if (pkg && 'versions' in pkg && Array.isArray(pkg.versions) && pkg.versions.length > 0) {
@@ -442,7 +442,7 @@ export function getLatestVersion(packageName: string): string | null {
  */
 export function getAvailableVersions(packageName: string): string[] {
   const domain = resolvePackageName(packageName)
-  const domainKey = domain.replace(/[.-]/g, '_') as keyof typeof packages
+  const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
   if (pkg && 'versions' in pkg && Array.isArray(pkg.versions)) {
@@ -527,7 +527,7 @@ export function isPackageAlias(packageName: string): packageName is PackageAlias
  * Type guard to check if a string is a valid package domain
  */
 export function isPackageDomain(domain: string): domain is PackageDomain {
-  const domainKey = domain.replace(/[.-]/g, '_')
+  const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase()
   return domainKey in packages
 }
 
@@ -588,7 +588,8 @@ export function getPackageInfo(packageName: string): {
   companions?: readonly string[]
 } | null {
   const domain = resolvePackageName(packageName)
-  const domainKey = domain.replace(/[.-]/g, '_') as keyof typeof packages
+  // Use the same domain key conversion logic as ts-pkgx
+  const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
   if (!pkg) {
