@@ -18,6 +18,9 @@ import { addToPath, isInPath } from '../src/utils'
 const packageJson = await import('../package.json')
 const version = packageJson.default?.version || packageJson.version || '0.0.0'
 
+// Default version for setup command (derived from package.json version)
+const DEFAULT_SETUP_VERSION = `v${version}`
+
 const cli = new CAC('launchpad')
 
 cli.version(version)
@@ -466,7 +469,7 @@ cli
   .command('setup', 'Download and install Launchpad binary to /usr/local/bin')
   .option('--force', 'Force download even if binary already exists')
   .option('--verbose', 'Enable verbose output')
-  .option('--release <version>', 'Specific version to download (default: v0.3.10)')
+  .option('--release <version>', `Specific version to download (default: ${DEFAULT_SETUP_VERSION})`)
   .option('--target <path>', 'Target installation path (default: /usr/local/bin/launchpad)')
   .example('launchpad setup')
   .example('launchpad setup --force --verbose')
@@ -477,7 +480,7 @@ cli
       config.verbose = true
     }
 
-    const targetVersion = options?.release || 'v0.3.10'
+    const targetVersion = options?.release || DEFAULT_SETUP_VERSION
     const targetPath = options?.target || '/usr/local/bin/launchpad'
 
     // Validate version format
