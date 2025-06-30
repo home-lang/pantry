@@ -461,6 +461,327 @@ cli
     }
   })
 
+// Setup command - download and install launchpad binary
+cli
+  .command('setup', 'Download and install Launchpad binary to /usr/local/bin')
+  .option('--force', 'Force download even if binary already exists')
+  .option('--verbose', 'Enable verbose output')
+  .option('--release <version>', 'Specific version to download (default: v0.3.6)')
+  .option('--target <path>', 'Target installation path (default: /usr/local/bin/launchpad)')
+  .example('launchpad setup')
+  .example('launchpad setup --force --verbose')
+  .example('launchpad setup --release v0.3.5')
+  .example('launchpad setup --target ~/bin/launchpad')
+  .action(async (options?: { force?: boolean, verbose?: boolean, release?: string, target?: string }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    const targetVersion = options?.release || 'v0.3.6'
+    const targetPath = options?.target || '/usr/local/bin/launchpad'
+
+    // Validate version format
+    if (targetVersion && !targetVersion.match(/^v?\d+\.\d+\.\d+$/)) {
+      console.error(`❌ Invalid version format: ${targetVersion}`)
+      console.log('Expected format: v0.3.6 or 0.3.6')
+      process.exit(1)
+    }
+
+    console.log('🚀 Setting up Launchpad binary...')
+    console.log('')
+
+    try {
+      // Detect platform and architecture
+      const os = await import('node:os')
+      const platform = os.platform()
+      const arch = os.arch()
+
+      let binaryName: string
+      if (platform === 'darwin') {
+        binaryName = arch === 'arm64' ? 'launchpad-darwin-arm64.zip' : 'launchpad-darwin-x64.zip'
+      }
+      else if (platform === 'linux') {
+        binaryName = arch === 'arm64' ? 'launchpad-linux-arm64.zip' : 'launchpad-linux-x64.zip'
+      }
+      else if (platform === 'win32') {
+        binaryName = 'launchpad-windows-x64.zip'
+      }
+      else {
+        console.error(`❌ Unsupported platform: ${platform}-${arch}`)
+        console.log('Supported platforms:')
+        console.log('  • macOS (arm64, x64)')
+        console.log('  • Linux (arm64, x64)')
+        console.log('  • Windows (x64)')
+        process.exit(1)
+      }
+
+      console.log(`📋 Platform: ${platform}-${arch}`)
+      console.log(`📦 Binary: ${binaryName}`)
+      console.log(`🎯 Target: ${targetPath}`)
+      console.log(`📌 Version: ${targetVersion}`)
+      console.log('')
+
+      // Check if target already exists
+      if (fs.existsSync(targetPath) && !options?.force) {
+        try {
+          const stats = fs.lstatSync(targetPath)
+          if (stats.isSymbolicLink()) {
+            const linkTarget = fs.readlinkSync(targetPath)
+            console.log(`🔗 Symlink already exists at ${targetPath}`)
+            console.log(`   → Points to: ${linkTarget}`)
+
+            // Check if the symlink target exists
+            try {
+              fs.accessSync(targetPath, fs.constants.F_OK)
+              console.log(`   ✅ Target is accessible`)
+            }
+            catch {
+              console.log(`   ❌ Target is broken/inaccessible`)
+            }
+          }
+          else if (stats.isFile()) {
+            console.log(`📄 File already exists at ${targetPath}`)
+            // Try to check if it's a launchpad binary
+            try {
+              const { execSync } = await import('node:child_process')
+              const result = execSync(`"${targetPath}" --version`, { encoding: 'utf8', stdio: 'pipe' })
+              if (result.includes('launchpad')) {
+                console.log(`   ℹ️  Current version: ${result.trim()}`)
+              }
+            }
+            catch {
+              console.log(`   ⚠️  Cannot determine if this is a launchpad binary`)
+            }
+          }
+          else if (stats.isDirectory()) {
+            console.log(`📁 Directory already exists at ${targetPath}`)
+          }
+          else {
+            console.log(`⚠️  Something already exists at ${targetPath}`)
+          }
+        }
+        catch {
+          console.log(`⚠️  Something already exists at ${targetPath}`)
+        }
+
+        console.log('')
+        console.log('Options:')
+        console.log('  • Use --force to overwrite')
+        console.log('  • Choose a different --target path')
+        console.log('  • Remove the existing file/symlink manually')
+        process.exit(0)
+      }
+
+      // Download URL
+      const downloadUrl = `https://github.com/stacksjs/launchpad/releases/download/${targetVersion}/${binaryName}`
+
+      console.log(`📥 Downloading from: ${downloadUrl}`)
+
+      // Create temporary directory for download
+      const tmpDir = path.join(os.tmpdir(), `launchpad-setup-${Date.now()}`)
+      fs.mkdirSync(tmpDir, { recursive: true })
+
+      const zipPath = path.join(tmpDir, binaryName)
+
+      try {
+        // Download the file
+        console.log('⬇️  Downloading...')
+
+        const response = await globalThis.fetch(downloadUrl)
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error(`Version ${targetVersion} not found. Please check available releases at: https://github.com/stacksjs/launchpad/releases`)
+          }
+          throw new Error(`Failed to download: ${response.status} ${response.statusText}`)
+        }
+
+        const buffer = await response.arrayBuffer()
+        fs.writeFileSync(zipPath, new Uint8Array(buffer))
+
+        console.log(`✅ Downloaded ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
+
+        // Extract the zip file
+        console.log('📂 Extracting...')
+
+        // For this we'll use a simple unzip approach
+        // First, let's check if we can use the system's unzip command
+        const { execSync } = await import('node:child_process')
+
+        try {
+          execSync(`cd "${tmpDir}" && unzip -q "${binaryName}"`, { stdio: 'pipe' })
+        }
+        catch {
+          // Fallback: try to find the binary in the zip manually
+          // This is a simple implementation - in production you might want a proper zip library
+          throw new Error('Failed to extract zip file. Please ensure unzip is installed on your system.')
+        }
+
+        // Find the extracted binary
+        const extractedFiles = fs.readdirSync(tmpDir).filter(f => f !== binaryName)
+        let binaryFile = extractedFiles.find(f => f === 'launchpad' || f.startsWith('launchpad'))
+
+        if (!binaryFile) {
+          // Look in subdirectories
+          for (const file of extractedFiles) {
+            const filePath = path.join(tmpDir, file)
+            if (fs.statSync(filePath).isDirectory()) {
+              const subFiles = fs.readdirSync(filePath)
+              const subBinary = subFiles.find(f => f === 'launchpad' || f.startsWith('launchpad'))
+              if (subBinary) {
+                binaryFile = path.join(file, subBinary)
+                break
+              }
+            }
+          }
+        }
+
+        if (!binaryFile) {
+          throw new Error('Could not find launchpad binary in extracted files')
+        }
+
+        const sourcePath = path.join(tmpDir, binaryFile)
+
+        console.log(`📋 Found binary: ${binaryFile}`)
+
+        // Ensure target directory exists
+        const targetDir = path.dirname(targetPath)
+        if (!fs.existsSync(targetDir)) {
+          console.log(`📁 Creating directory: ${targetDir}`)
+          fs.mkdirSync(targetDir, { recursive: true })
+        }
+
+        // Check if we need sudo for the target path
+        const needsSudo = targetPath.startsWith('/usr/') || targetPath.startsWith('/opt/') || targetPath.startsWith('/bin/') || targetPath.startsWith('/sbin/')
+
+        if (needsSudo && platform !== 'win32') {
+          console.log('🔒 Installing to system directory (may require sudo)...')
+
+          try {
+            // Try to copy with sudo
+            execSync(`sudo cp "${sourcePath}" "${targetPath}"`, { stdio: 'inherit' })
+            execSync(`sudo chmod +x "${targetPath}"`, { stdio: 'inherit' })
+
+            // Use appropriate group for the platform
+            const group = platform === 'darwin' ? 'wheel' : 'root'
+            execSync(`sudo chown root:${group} "${targetPath}"`, { stdio: 'inherit' })
+          }
+          catch {
+            console.error('❌ Failed to install with sudo. You may need to run this command with elevated privileges.')
+            console.log('')
+            console.log('Alternative: Try installing to a user directory:')
+            console.log(`  launchpad setup --target ~/bin/launchpad`)
+            console.log('')
+            console.log('💡 Tip: You can also try copying the binary manually:')
+            console.log(`  sudo cp "${sourcePath}" "${targetPath}"`)
+            console.log(`  sudo chmod +x "${targetPath}"`)
+            process.exit(1)
+          }
+        }
+        else {
+          // Regular copy
+          console.log('📋 Installing binary...')
+          fs.copyFileSync(sourcePath, targetPath)
+
+          // Make executable (Unix-like systems)
+          if (platform !== 'win32') {
+            fs.chmodSync(targetPath, 0o755)
+          }
+        }
+
+        console.log(`✅ Binary installed to: ${targetPath}`)
+
+        // Verify installation
+        try {
+          const testResult = execSync(`"${targetPath}" --version`, { encoding: 'utf8', stdio: 'pipe' })
+          console.log(`🎉 Installation verified: ${testResult.trim()}`)
+
+          // Additional verification: check if it's executable
+          try {
+            fs.accessSync(targetPath, fs.constants.X_OK)
+            console.log(`✅ Binary is executable`)
+          }
+          catch {
+            console.log(`⚠️  Binary may not be executable`)
+          }
+        }
+        catch (error) {
+          console.log('⚠️  Installation completed but verification failed')
+
+          // Check if it's a dependency issue
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          if (errorMessage.includes('Cannot find module')) {
+            console.log('⚠️  The binary appears to have dependency issues')
+            console.log('This may be due to an issue with the pre-built binary')
+            console.log('')
+            console.log('💡 Alternative solutions:')
+            console.log('1. Try a different version with --release')
+            console.log('2. Build from source instead:')
+            console.log('   git clone https://github.com/stacksjs/launchpad.git')
+            console.log('   cd launchpad && bun install && bun run build')
+          }
+          else {
+            console.log('The binary may still work correctly')
+          }
+
+          // Basic file existence check
+          if (fs.existsSync(targetPath)) {
+            const stats = fs.statSync(targetPath)
+            console.log(`ℹ️  File exists (${(stats.size / 1024 / 1024).toFixed(1)} MB)`)
+          }
+        }
+
+        // Add to PATH if needed
+        if (!targetPath.includes('/usr/local/bin') && !targetPath.includes('/usr/bin')) {
+          const binDir = path.dirname(targetPath)
+          if (!isInPath(binDir)) {
+            console.log('')
+            console.log('💡 Tip: Add the binary directory to your PATH:')
+            console.log(`   export PATH="${binDir}:$PATH"`)
+            console.log('')
+            console.log('Or add this line to your shell configuration (~/.zshrc, ~/.bashrc, etc.)')
+          }
+        }
+
+        console.log('')
+        console.log('🎉 Setup completed successfully!')
+        console.log('')
+        console.log('🚀 Next steps:')
+        console.log('1. Restart your terminal or reload your shell configuration')
+        console.log('2. Run: launchpad --version')
+        console.log('3. Get started: launchpad bootstrap')
+      }
+      finally {
+        // Cleanup temporary directory
+        try {
+          fs.rmSync(tmpDir, { recursive: true, force: true })
+          if (options?.verbose) {
+            console.log(`🧹 Cleaned up temporary files: ${tmpDir}`)
+          }
+        }
+        catch {
+          if (options?.verbose) {
+            console.log(`⚠️  Could not clean up temporary files: ${tmpDir}`)
+          }
+        }
+      }
+    }
+    catch (error) {
+      console.error('Setup failed:', error instanceof Error ? error.message : String(error))
+      console.log('')
+      console.log('🔧 Troubleshooting:')
+      console.log('• Check your internet connection')
+      console.log('• Verify the version exists on GitHub releases: https://github.com/stacksjs/launchpad/releases')
+      console.log('• Try a different version with --release (e.g., --release v0.3.5)')
+      console.log('• Try a different target path with --target')
+      console.log('• Use --verbose for more detailed output')
+      console.log('')
+      console.log('💡 Alternative: Build from source:')
+      console.log('  git clone https://github.com/stacksjs/launchpad.git')
+      console.log('  cd launchpad && bun install && bun run build')
+      process.exit(1)
+    }
+  })
+
 // Shim command
 cli
   .command('shim [packages...]', 'Create shims for packages')
