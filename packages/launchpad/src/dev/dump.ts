@@ -247,8 +247,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     if (!quiet && !shellOutput) {
       console.error('Failed to set up environment:', error instanceof Error ? error.message : String(error))
     }
-    if (!shellOutput) {
+    // Don't call process.exit in test environments - just throw the error instead
+    const isTestEnvironment = process.env.NODE_ENV === 'test' || process.argv.some(arg => arg.includes('test'))
+    if (!shellOutput && !isTestEnvironment) {
       process.exit(1)
+    }
+    // In test environments, throw the error so tests can handle it
+    if (isTestEnvironment) {
+      throw error
     }
   }
 }
