@@ -785,6 +785,134 @@ cli
     }
   })
 
+// Upgrade command - upgrade Launchpad itself to the latest version
+cli
+  .command('upgrade', 'Upgrade Launchpad to the latest version')
+  .alias('self-update')
+  .option('--force', 'Force upgrade even if already on latest version')
+  .option('--verbose', 'Enable verbose output')
+  .option('--target <path>', 'Target installation path (default: current binary location)')
+  .option('--release <version>', 'Upgrade to specific version (default: latest)')
+  .example('launchpad upgrade')
+  .example('launchpad upgrade --force')
+  .example('launchpad upgrade --release v0.3.5')
+  .action(async (options?: { force?: boolean, verbose?: boolean, target?: string, release?: string }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    console.log('🚀 Upgrading Launchpad...')
+    console.log('')
+
+    try {
+      // Get current binary location
+      const currentBinaryPath = process.argv[1] || process.execPath
+      const targetPath = options?.target || currentBinaryPath
+
+      console.log(`📍 Current binary: ${currentBinaryPath}`)
+      console.log(`🎯 Target path: ${targetPath}`)
+
+      // Check current version
+      console.log(`📋 Current version: launchpad/${version}`)
+
+      // If version is specified, use it; otherwise get latest from GitHub
+      let targetVersion = options?.release
+
+      if (!targetVersion) {
+        console.log('🔍 Checking for latest version...')
+
+        try {
+          const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
+          if (!response.ok) {
+            throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`)
+          }
+
+          const release = await response.json() as { tag_name: string }
+          targetVersion = release.tag_name
+
+          console.log(`📦 Latest version: ${targetVersion}`)
+        }
+        catch (error) {
+          console.error('❌ Failed to check latest version:', error instanceof Error ? error.message : String(error))
+          console.log('💡 You can specify a version manually with --version')
+          process.exit(1)
+        }
+      }
+
+      // Check if already on target version
+      if (!options?.force && targetVersion === `v${version}`) {
+        console.log('✅ Already on the latest version!')
+        console.log('')
+        console.log('💡 Use --force to reinstall the current version')
+        return
+      }
+
+      console.log(`⬆️  Upgrading from v${version} to ${targetVersion}`)
+      console.log('')
+
+      // Use the setup command logic to download and install
+      // We'll delegate to the setup command with the appropriate options
+      const setupOptions: string[] = ['setup']
+
+      if (targetVersion) {
+        setupOptions.push('--release', targetVersion)
+      }
+
+      if (targetPath !== currentBinaryPath) {
+        setupOptions.push('--target', targetPath)
+      }
+
+      setupOptions.push('--force') // Always force during upgrade
+
+      if (options?.verbose) {
+        setupOptions.push('--verbose')
+      }
+
+      console.log(`🔄 Running: launchpad ${setupOptions.join(' ')}`)
+      console.log('')
+
+      // Execute the setup command internally
+      const { execSync } = await import('node:child_process')
+
+      try {
+        // Build the command to run setup
+        const launchpadCmd = process.argv[0] // Get the node/bun executable
+        const cliPath = process.argv[1] // Get the current CLI script path
+
+        execSync(`"${launchpadCmd}" "${cliPath}" ${setupOptions.join(' ')}`, {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+        })
+
+        console.log('')
+        console.log('🎉 Upgrade completed successfully!')
+        console.log('')
+        console.log('🚀 Next steps:')
+        console.log('1. Restart your terminal or reload your shell')
+        console.log('2. Run: launchpad --version')
+        console.log('3. Verify the upgrade worked correctly')
+      }
+      catch (error) {
+        console.error('❌ Upgrade failed:', error instanceof Error ? error.message : String(error))
+        console.log('')
+        console.log('🔧 Troubleshooting:')
+        console.log('• Try running the setup command manually:')
+        console.log(`  launchpad ${setupOptions.join(' ')}`)
+        console.log('• Check your internet connection')
+        console.log('• Verify you have permission to write to the target location')
+        console.log('• Use --verbose for more detailed output')
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Upgrade failed:', error instanceof Error ? error.message : String(error))
+      console.log('')
+      console.log('💡 Alternative: Use the setup command directly:')
+      console.log('  launchpad setup --force')
+      process.exit(1)
+    }
+  })
+
 // Shim command
 cli
   .command('shim [packages...]', 'Create shims for packages')
@@ -1598,13 +1726,12 @@ cli
 // Update command
 cli
   .command('update [packages...]', 'Update packages to newer versions')
-  .alias('upgrade')
   .alias('up')
   .option('--verbose', 'Enable verbose output')
   .option('--latest', 'Update to the latest version (ignoring current constraints)')
   .option('--dry-run', 'Show what would be updated without actually updating')
   .example('launchpad update')
-  .example('launchpad upgrade bun --latest')
+  .example('launchpad update bun --latest')
   .example('launchpad up node python --latest')
   .example('launchpad update --dry-run')
   .action(async (packages: string[], options?: { verbose?: boolean, latest?: boolean, dryRun?: boolean }) => {

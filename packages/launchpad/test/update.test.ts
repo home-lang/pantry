@@ -205,7 +205,7 @@ describe('Update Module', () => {
       }
     })
 
-    it('should handle upgrade alias', async () => {
+    it('should handle update command with packages and --latest flag', async () => {
       const { spawn } = Bun
       const cliPath = findCliPath()
 
@@ -234,9 +234,9 @@ describe('Update Module', () => {
       console.log('Install stderr:', installStderr)
       console.log('Install exit code:', installExitCode)
 
-      // Now test the upgrade command
-      console.log('Debug: Testing upgrade command...')
-      const proc = spawn(['bun', 'run', cliPath, 'upgrade', 'bun', '--latest', '--dry-run'], {
+      // Now test the update command with upgrade alias
+      console.log('Debug: Testing update command with upgrade alias...')
+      const proc = spawn(['bun', 'run', cliPath, 'update', 'bun', '--latest', '--dry-run'], {
         cwd: process.cwd(),
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env, LAUNCHPAD_PREFIX: tempDir },

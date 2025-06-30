@@ -489,11 +489,12 @@ describe('CLI', () => {
         expect(content).toContain('update')
       })
 
-      it('should support upgrade and up aliases', async () => {
+      it('should support up alias (upgrade is now a separate command)', async () => {
         const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
         const content = fs.readFileSync(cliPath, 'utf-8')
-        expect(content).toContain('.alias(\'upgrade\')')
         expect(content).toContain('.alias(\'up\')')
+        // Note: upgrade is now a separate command for upgrading Launchpad itself
+        expect(content).toContain('.command(\'upgrade\', \'Upgrade Launchpad to the latest version\')')
       })
     })
 
