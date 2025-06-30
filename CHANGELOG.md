@@ -1,4 +1,20 @@
 
+## v0.3.3...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.3...main)
+
+### 🏡 Chore
+
+- Wip ([b12c84a](https://github.com/stacksjs/launchpad/commit/b12c84a))
+- Stabilize installs ([ea1d639](https://github.com/stacksjs/launchpad/commit/ea1d639))
+- Get tests to pass ([881eb0d](https://github.com/stacksjs/launchpad/commit/881eb0d))
+- Lint ([97f0dd5](https://github.com/stacksjs/launchpad/commit/97f0dd5))
+- Test updates ([fa7070d](https://github.com/stacksjs/launchpad/commit/fa7070d))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.2...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.2...main)
