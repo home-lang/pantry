@@ -7,5 +7,6 @@ await Bun.build({
   format: 'esm',
   splitting: true,
   minify: true,
+  external: ['playwright-core', 'playwright'],
   plugins: [dts()],
 })

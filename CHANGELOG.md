@@ -1,4 +1,16 @@
 
+## v0.3.7...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.7...main)
+
+### 🏡 Chore
+
+- Minor adjustments ([cadb40d](https://github.com/stacksjs/launchpad/commit/cadb40d))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.6...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.6...main)
