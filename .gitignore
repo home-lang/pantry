@@ -12,3 +12,4 @@ temp
 docs/.vitepress/cache
 .env
 packages/launchpad/bin/launchpad
+packages/launchpad/bin/launchpad*
