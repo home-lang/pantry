@@ -1,4 +1,16 @@
 
+## v0.3.10...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.10...main)
+
+### 🚀 Enhancements
+
+- Update setup command default version to v0.3.10 ([f22062e](https://github.com/stacksjs/launchpad/commit/f22062e))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.9...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.9...main)
