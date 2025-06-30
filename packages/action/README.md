@@ -90,15 +90,14 @@ The action supports global installation flags in dependency files:
 
 ```yaml
 # dependencies.yaml
-global: true  # Install all packages globally
+global: true # Install all packages globally
 dependencies:
   - node@22
   - python@3.12
-
   # Override specific packages
-  typescript@5.0:
-    version: 5.0.4
-    global: false  # Install locally
+  - typescript@5.0:
+      version: 5.0.4
+      global: false # Install locally
 
 env:
   NODE_ENV: development
