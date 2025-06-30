@@ -1,4 +1,20 @@
 
+## v0.3.6...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.6...main)
+
+### 🚀 Enhancements
+
+- Add `setup` command ([b9791ad](https://github.com/stacksjs/launchpad/commit/b9791ad))
+
+### 🏡 Chore
+
+- Adjust build ([fb5895c](https://github.com/stacksjs/launchpad/commit/fb5895c))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.5...v0.3.5
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.5...v0.3.5)
