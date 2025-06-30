@@ -1,4 +1,16 @@
 
+## v0.3.11...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.11...main)
+
+### 🏡 Chore
+
+- Add dynamic version ([28894cd](https://github.com/stacksjs/launchpad/commit/28894cd))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.10...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.10...main)
