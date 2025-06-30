@@ -466,7 +466,7 @@ cli
   .command('setup', 'Download and install Launchpad binary to /usr/local/bin')
   .option('--force', 'Force download even if binary already exists')
   .option('--verbose', 'Enable verbose output')
-  .option('--release <version>', 'Specific version to download (default: v0.3.6)')
+  .option('--release <version>', 'Specific version to download (default: v0.3.7)')
   .option('--target <path>', 'Target installation path (default: /usr/local/bin/launchpad)')
   .example('launchpad setup')
   .example('launchpad setup --force --verbose')
@@ -477,7 +477,7 @@ cli
       config.verbose = true
     }
 
-    const targetVersion = options?.release || 'v0.3.6'
+    const targetVersion = options?.release || 'v0.3.7'
     const targetPath = options?.target || '/usr/local/bin/launchpad'
 
     // Validate version format
