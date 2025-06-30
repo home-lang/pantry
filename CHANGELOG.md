@@ -1,4 +1,16 @@
 
+## v0.3.9...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.9...main)
+
+### 🩹 Fixes
+
+- Update ts-pkgx to v0.3.63 with dynamic playwright imports ([ce1866b](https://github.com/stacksjs/launchpad/commit/ce1866b))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.9...v0.3.9
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.9...v0.3.9)
