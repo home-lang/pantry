@@ -934,7 +934,29 @@ async function downloadPackage(
     // Clean up temp directory
     await fs.promises.rm(tempDir, { recursive: true, force: true })
 
-    return installedBinaries.map(binary => path.join(installPath, 'bin', binary))
+    // Return paths for both bin and sbin binaries
+    const binaryPaths: string[] = []
+
+    // Check for binaries in both bin and sbin directories
+    const binDir = path.join(packageDir, 'bin')
+    const sbinDir = path.join(packageDir, 'sbin')
+
+    for (const binary of installedBinaries) {
+      // Check if binary exists in bin directory
+      if (fs.existsSync(path.join(binDir, binary))) {
+        binaryPaths.push(path.join(installPath, 'bin', binary))
+      }
+      // Check if binary exists in sbin directory
+      else if (fs.existsSync(path.join(sbinDir, binary))) {
+        binaryPaths.push(path.join(installPath, 'sbin', binary))
+      }
+      else {
+        // Default to bin if we can't determine location
+        binaryPaths.push(path.join(installPath, 'bin', binary))
+      }
+    }
+
+    return binaryPaths
   }
   catch (error) {
     // Clean up on error
@@ -1031,39 +1053,50 @@ async function createVersionSymlinks(installPath: string, domain: string, versio
  * Create shims in bin directory that point to the actual binaries
  */
 async function createShims(packageDir: string, installPath: string, domain: string, version: string): Promise<string[]> {
-  const binDir = path.join(packageDir, 'bin')
   const shimDir = path.join(installPath, 'bin')
   await fs.promises.mkdir(shimDir, { recursive: true })
 
+  // Also create sbin directory for system binaries
+  const sbinShimDir = path.join(installPath, 'sbin')
+  await fs.promises.mkdir(sbinShimDir, { recursive: true })
+
   const installedBinaries: string[] = []
 
-  if (!fs.existsSync(binDir)) {
-    return installedBinaries
-  }
+  // Check both bin and sbin directories for binaries
+  const binaryDirs = [
+    { sourceDir: path.join(packageDir, 'bin'), shimDir },
+    { sourceDir: path.join(packageDir, 'sbin'), shimDir: sbinShimDir },
+  ]
 
-  const binaries = await fs.promises.readdir(binDir)
+  for (const { sourceDir, shimDir: targetShimDir } of binaryDirs) {
+    if (!fs.existsSync(sourceDir)) {
+      continue
+    }
 
-  for (const binary of binaries) {
-    const binaryPath = path.join(binDir, binary)
-    const stat = await fs.promises.stat(binaryPath)
+    const binaries = await fs.promises.readdir(sourceDir)
 
-    // Check if it's an executable file
-    if (stat.isFile() && (stat.mode & 0o111)) {
-      const shimPath = path.join(shimDir, binary)
+    for (const binary of binaries) {
+      const binaryPath = path.join(sourceDir, binary)
+      const stat = await fs.promises.stat(binaryPath)
 
-      // Create a shell script shim that sets up the environment
-      const shimContent = `#!/bin/sh
+      // Check if it's an executable file
+      if (stat.isFile() && (stat.mode & 0o111)) {
+        const shimPath = path.join(targetShimDir, binary)
+
+        // Create a shell script shim that sets up the environment
+        const shimContent = `#!/bin/sh
 # Launchpad shim for ${binary} (${domain} v${version})
 exec "${binaryPath}" "$@"
 `
 
-      await fs.promises.writeFile(shimPath, shimContent)
-      await fs.promises.chmod(shimPath, 0o755)
+        await fs.promises.writeFile(shimPath, shimContent)
+        await fs.promises.chmod(shimPath, 0o755)
 
-      installedBinaries.push(binary)
+        installedBinaries.push(binary)
 
-      if (config.verbose) {
-        console.warn(`Created shim: ${binary} -> ${binaryPath}`)
+        if (config.verbose) {
+          console.warn(`Created shim: ${binary} -> ${binaryPath}`)
+        }
       }
     }
   }
