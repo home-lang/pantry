@@ -1,4 +1,16 @@
 
+## v0.3.12...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.12...main)
+
+### 🚀 Enhancements
+
+- Add `upgrade` command ([793ee1c](https://github.com/stacksjs/launchpad/commit/793ee1c))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.11...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.11...main)

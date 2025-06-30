@@ -1,6 +1,6 @@
 {
   "name": "launchpad-installer",
-  "version": "0.3.12",
+  "version": "0.4.0",
   "description": "GitHub Action to install packages using Launchpad.",
   "author": "Stacks.js <hello@stacks.js.org>",
   "license": "MIT",
