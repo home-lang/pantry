@@ -150,7 +150,8 @@ export async function get_latest_bun_version(): Promise<string> {
       console.warn('Using cached GitHub release data')
     }
 
-    return cachedData.tag_name.replace(/^bun-v?/, '') // Remove 'bun-v' or 'bun-' or 'v' prefix
+    // Remove 'bun-v', 'bun-', or standalone 'v' prefix
+    return cachedData.tag_name.replace(/^(bun-v?|v)/, '')
   }
 
   // Fetch from GitHub API if cache is missing or invalid
@@ -165,7 +166,8 @@ export async function get_latest_bun_version(): Promise<string> {
   // Update cache with new data
   updateGithubCache(data)
 
-  return data.tag_name.replace(/^bun-v?/, '') // Remove 'bun-v' or 'bun-' or 'v' prefix
+  // Remove 'bun-v', 'bun-', or standalone 'v' prefix
+  return data.tag_name.replace(/^(bun-v?|v)/, '')
 }
 
 /**
@@ -260,9 +262,21 @@ export async function install_bun(installPath: string, version?: string): Promis
         throw new Error(`Failed to download Bun: ${response.statusText}`)
       }
 
-      // Save the downloaded file
-      const fileStream = createWriteStream(zipPath)
-      await pipeline(response.body as any, fileStream)
+      // Check if response body exists
+      if (!response.body) {
+        throw new Error('Failed to download Bun: No response body')
+      }
+
+      // Save the downloaded file using arrayBuffer approach for better compatibility
+      try {
+        const arrayBuffer = await response.arrayBuffer()
+        fs.writeFileSync(zipPath, new Uint8Array(arrayBuffer))
+      }
+      catch {
+        // Fallback: try using stream pipeline
+        const fileStream = createWriteStream(zipPath)
+        await pipeline(response.body as any, fileStream)
+      }
 
       if (config.verbose)
         console.warn(`Downloaded to ${zipPath}`)

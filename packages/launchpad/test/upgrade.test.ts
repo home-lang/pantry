@@ -168,7 +168,7 @@ describe('Upgrade Command', () => {
       }
 
       const mockFetch = mock(() => Promise.resolve(mockResponse))
-      globalThis.fetch = mockFetch
+      globalThis.fetch = mockFetch as any
 
       // Simulate the API call
       const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
@@ -187,7 +187,7 @@ describe('Upgrade Command', () => {
       }
 
       const mockFetch = mock(() => Promise.resolve(mockResponse))
-      globalThis.fetch = mockFetch
+      globalThis.fetch = mockFetch as any
 
       const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
       expect(response.ok).toBe(false)
@@ -196,7 +196,7 @@ describe('Upgrade Command', () => {
 
     it('should handle network errors', async () => {
       const mockFetch = mock(() => Promise.reject(new Error('Network error')))
-      globalThis.fetch = mockFetch
+      globalThis.fetch = mockFetch as any
 
       try {
         await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
@@ -224,7 +224,7 @@ describe('Upgrade Command', () => {
         }
 
         const mockFetch = mock(() => Promise.resolve(mockResponse))
-        globalThis.fetch = mockFetch
+        globalThis.fetch = mockFetch as any
 
         const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
         const release = await response.json() as { tag_name: string }
@@ -253,8 +253,8 @@ describe('Upgrade Command', () => {
     })
 
     it('should proceed with upgrade when versions differ', () => {
-      const currentVersion = 'v0.3.11'
-      const latestVersion = 'v0.3.12'
+      const currentVersion = 'v0.3.11' as string
+      const latestVersion = 'v0.3.12' as string
       const force = false
 
       const shouldUpgrade = force || latestVersion !== currentVersion
@@ -279,8 +279,8 @@ describe('Upgrade Command', () => {
   describe('Setup Command Integration', () => {
     it('should build correct setup command arguments', () => {
       const targetVersion = 'v0.3.12'
-      const targetPath = '/usr/local/bin/launchpad'
-      const currentBinaryPath = '/current/bin/launchpad'
+      const targetPath = '/usr/local/bin/launchpad' as string
+      const currentBinaryPath = '/current/bin/launchpad' as string
       const verbose = true
 
       const setupOptions: string[] = ['setup']
@@ -340,8 +340,8 @@ describe('Upgrade Command', () => {
 
     it('should handle missing version gracefully', () => {
       const targetVersion: string | undefined = undefined
-      const targetPath = '/usr/local/bin/launchpad'
-      const currentBinaryPath = '/current/bin/launchpad'
+      const targetPath = '/usr/local/bin/launchpad' as string
+      const currentBinaryPath = '/current/bin/launchpad' as string
 
       const setupOptions: string[] = ['setup']
 
