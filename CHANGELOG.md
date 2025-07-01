@@ -1,4 +1,16 @@
 
+## v0.4.5...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.5...main)
+
+### 🏡 Chore
+
+- Resolve tests ([d03fbcc](https://github.com/stacksjs/launchpad/commit/d03fbcc))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.4...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.4...main)
