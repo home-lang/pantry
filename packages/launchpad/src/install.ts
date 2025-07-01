@@ -483,10 +483,66 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     return versionSpec
   }
 
-  // Handle semver ranges (basic implementation)
+  // Use Bun's semver for fast and accurate version resolution
+  if (typeof Bun !== 'undefined' && Bun.semver) {
+    try {
+      // Find the best matching version using Bun's semver.satisfies
+      // Sort versions in descending order to get the latest compatible version first
+      const sortedVersions = [...versions].sort((a, b) => Bun.semver.order(b, a))
+
+      for (const version of sortedVersions) {
+        if (Bun.semver.satisfies(version, versionSpec)) {
+          return version
+        }
+      }
+
+      // No version satisfies the range
+      return null
+    }
+    catch (error) {
+      // Fallback to manual parsing if Bun.semver fails
+      if (config.verbose) {
+        console.warn(`Bun.semver failed for ${versionSpec}, falling back to manual parsing: ${error}`)
+      }
+    }
+  }
+
+  // Fallback: Manual semver-like parsing for non-Bun environments or if Bun.semver fails
   if (versionSpec.startsWith('^')) {
-    const majorVersion = versionSpec.slice(1)
-    const matchingVersion = versions.find(v => v.startsWith(majorVersion))
+    const baseVersion = versionSpec.slice(1)
+    const [major, minor, patch] = baseVersion.split('.')
+
+    // For caret ranges, find the latest version compatible with the major version
+    // ^1.21 means >=1.21.0 <2.0.0
+    // ^1.21.3 means >=1.21.3 <2.0.0
+    const matchingVersion = versions.find((v) => {
+      const [vMajor, vMinor, vPatch] = v.split('.')
+
+      // Must have same major version
+      if (vMajor !== major)
+        return false
+
+      // If only major specified (e.g., ^1), any version with same major works
+      if (!minor)
+        return true
+
+      // If minor specified, check minor version constraint
+      const vMinorNum = Number.parseInt(vMinor || '0', 10)
+      const minorNum = Number.parseInt(minor, 10)
+
+      // Minor version must be >= specified minor
+      if (vMinorNum < minorNum)
+        return false
+
+      // If patch specified, check patch version constraint when minor versions are equal
+      if (patch && vMinorNum === minorNum) {
+        const vPatchNum = Number.parseInt(vPatch || '0', 10)
+        const patchNum = Number.parseInt(patch, 10)
+        return vPatchNum >= patchNum
+      }
+
+      return true
+    })
     return matchingVersion || null
   }
 
@@ -497,6 +553,38 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
       const [vMajor, vMinor] = v.split('.')
       return vMajor === major && vMinor === minor
     })
+    return matchingVersion || null
+  }
+
+  // Handle range specifications like "1.0.0 - 2.0.0"
+  if (versionSpec.includes(' - ')) {
+    if (typeof Bun !== 'undefined' && Bun.semver) {
+      try {
+        const sortedVersions = [...versions].sort((a, b) => Bun.semver.order(b, a))
+        for (const version of sortedVersions) {
+          if (Bun.semver.satisfies(version, versionSpec)) {
+            return version
+          }
+        }
+      }
+      catch {
+        // Fallback to simple string comparison
+      }
+    }
+
+    const [minVersion, maxVersion] = versionSpec.split(' - ')
+    const matchingVersion = versions.find((v) => {
+      // Simple string comparison - for proper semver, this would need more logic
+      return v >= minVersion && v <= maxVersion
+    })
+    return matchingVersion || null
+  }
+
+  // Handle x.x.x patterns
+  if (versionSpec.includes('x') || versionSpec.includes('X')) {
+    const pattern = versionSpec.toLowerCase().replace(/x/g, '\\d+')
+    const regex = new RegExp(`^${pattern}$`)
+    const matchingVersion = versions.find(v => regex.test(v))
     return matchingVersion || null
   }
 
@@ -1248,6 +1336,14 @@ async function installPackage(packageName: string, packageSpec: string, installP
       throw new Error(`No versions found for ${name} on ${os}/${architecture}`)
     }
     version = latestVersion
+  }
+  else {
+    // Resolve version constraints (e.g., ^1.21, ~2.0, latest) to actual versions
+    const resolvedVersion = resolveVersion(name, version)
+    if (!resolvedVersion) {
+      throw new Error(`No suitable version found for ${name}@${version}`)
+    }
+    version = resolvedVersion
   }
 
   if (config.verbose) {

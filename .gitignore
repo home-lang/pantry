@@ -13,3 +13,4 @@ docs/.vitepress/cache
 .env
 packages/launchpad/bin/launchpad
 packages/launchpad/bin/launchpad*
+packages/launchpad/test/clean-integration-*

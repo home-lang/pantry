@@ -79,7 +79,7 @@ __launchpad_chpwd() {
 
             # Set up the environment and get the bin path
             local env_output
-            env_output=$(LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" /usr/local/bin/launchpad dev "$project_dir" --shell 2>/dev/null | /usr/bin/grep -E '^(export|if|fi|#)')
+            env_output=$(LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" launchpad dev "$project_dir" --shell 2>/dev/null | /usr/bin/grep -E '^(export|if|fi|#)')
 
             if [[ $? -eq 0 && -n "$env_output" ]]; then
                 # Execute the environment setup
@@ -89,7 +89,7 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
 
                 # Show activation message
-                /usr/local/bin/launchpad dev:on "$project_dir" || true
+                launchpad dev:on "$project_dir" || true
             fi
         fi
     else
@@ -105,7 +105,7 @@ __launchpad_chpwd() {
             fi
 
             # Show deactivation message
-            /usr/local/bin/launchpad dev:off || true
+            launchpad dev:off || true
 
             unset LAUNCHPAD_CURRENT_PROJECT
             # Clear cache when leaving project

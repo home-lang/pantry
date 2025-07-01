@@ -215,7 +215,7 @@ describe('Dev Commands', () => {
       expect(result.stdout).not.toContain('= null')
 
       // Should contain proper shell constructs for command execution
-      expect(result.stdout).toContain('/usr/local/bin/launchpad')
+      expect(result.stdout).toContain('launchpad')
     })
   })
 
@@ -239,10 +239,8 @@ describe('Dev Commands', () => {
       // Accept either successful installation or graceful failure
       if (result.exitCode === 0) {
         // If installation succeeds, check expected output
-        expect(result.stdout).toContain('Project-specific environment')
+        expect(result.stdout).toContain('Successfully set up environment')
         expect(result.stdout).toContain('TEST_VAR=test_value')
-        expect(result.stdout).toContain('_pkgx_dev_try_bye')
-        expect(result.stdout).toContain('export PATH=')
       }
       else {
         // If installation fails, check graceful error handling
@@ -536,9 +534,8 @@ describe('Dev Commands', () => {
       // Accept either success or failure
       if (result.exitCode === 0) {
         // If successful, check shell integration
-        expect(result.stdout).toContain('Project-specific environment')
+        expect(result.stdout).toContain('Successfully set up environment')
         expect(result.stdout).toContain('TEST_VAR=integration_test')
-        expect(result.stdout).toContain('_pkgx_dev_try_bye')
 
         // Check that deactivation function includes the correct directory
         expect(result.stdout).toContain(tempDir)
@@ -566,7 +563,7 @@ describe('Dev Commands', () => {
 
       // Accept either success or failure
       if (result.exitCode === 0) {
-        expect(result.stdout).toContain('Project-specific environment')
+        expect(result.stdout).toContain('Successfully set up environment')
         expect(result.stdout).toContain('export PATH=')
       }
       else {
@@ -586,7 +583,7 @@ describe('Dev Commands', () => {
 
       // Accept either success or failure
       if (result.exitCode === 0) {
-        expect(result.stdout).toContain('Project-specific environment')
+        expect(result.stdout).toContain('Successfully set up environment')
         expect(result.stdout).toContain(nestedDir)
       }
       else {

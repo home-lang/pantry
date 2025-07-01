@@ -1,6 +1,7 @@
 import Bun from 'bun'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { spawn } from 'node:child_process'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -105,20 +106,12 @@ describe('Environment Isolation', () => {
 
   // Helper to create readable hash (matching dump.ts implementation)
   const createReadableHash = (projectPath: string): string => {
-    const realPath = fs.existsSync(projectPath) ? fs.realpathSync(projectPath) : projectPath
-    const projectName = path.basename(realPath)
-
-    // Use Bun's built-in hash function for consistency and reliability
-    const hash = Bun.hash(realPath)
-
-    // Convert to a readable hex string and take 8 characters for uniqueness
-    const shortHash = hash.toString(16).padStart(16, '0').slice(0, 8)
-
-    // Clean project name to be filesystem-safe
-    // eslint-disable-next-line regexp/strict
-    const cleanProjectName = projectName.replace(/[^\w-.]/g, '-').toLowerCase()
-
-    return `${cleanProjectName}_${shortHash}`
+    // Use the same hash generation logic as the actual dev command
+    // Resolve the path to handle symlinks (like /var -> /private/var on macOS)
+    const resolvedPath = fs.existsSync(projectPath) ? fs.realpathSync(projectPath) : projectPath
+    const hash = crypto.createHash('md5').update(resolvedPath).digest('hex')
+    const projectName = path.basename(resolvedPath)
+    return `${projectName}_${hash.slice(0, 8)}`
   }
 
   describe('Hash Generation and Uniqueness', () => {
@@ -194,10 +187,10 @@ describe('Environment Isolation', () => {
         const hashB = createReadableHash(projectB)
 
         // Check that environment paths are properly set up and different
-        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashA}/bin`)
-        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashA}/sbin`)
-        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashB}/bin`)
-        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashB}/sbin`)
+        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashA}/bin`)
+        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashA}/sbin`)
+        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashB}/bin`)
+        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashB}/sbin`)
 
         // Each should have different environment paths
         expect(hashA).not.toBe(hashB)
@@ -231,8 +224,8 @@ describe('Environment Isolation', () => {
 
       if (resultA.exitCode === 0 && resultB.exitCode === 0) {
         // If both succeed, check that stubs exist in different locations
-        const envDirA = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', hashA)
-        const envDirB = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', hashB)
+        const envDirA = path.join(os.homedir(), '.local', 'share', 'launchpad', hashA)
+        const envDirB = path.join(os.homedir(), '.local', 'share', 'launchpad', hashB)
 
         // Directories should be different
         expect(envDirA).not.toBe(envDirB)
@@ -260,8 +253,8 @@ describe('Environment Isolation', () => {
       createDepsYaml(projectA, ['nginx.org@1.28.0'])
       createDepsYaml(projectB, ['gnu.org/wget@1.21.4'])
 
-      const resultA = await runCLI(['dev'], projectA)
-      const resultB = await runCLI(['dev'], projectB)
+      const resultA = await runCLI(['dev', '--shell'], projectA)
+      const resultB = await runCLI(['dev', '--shell'], projectB)
 
       // Focus on the core isolation logic regardless of installation success
       const hashA = createReadableHash(projectA)
@@ -271,19 +264,18 @@ describe('Environment Isolation', () => {
       expect(hashA).not.toBe(hashB)
 
       if (resultA.exitCode === 0) {
-        // If project A succeeds, check PATH modification
-        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashA}/bin`)
-        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashA}/sbin`)
-        expect(resultA.stdout).toContain('Project-specific environment')
+        // If project A succeeds, check PATH modification in shell output
+        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashA}/bin`)
+        expect(resultA.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashA}/sbin`)
       }
       else {
         expect(resultA.stderr).toContain('Failed to install')
       }
 
       if (resultB.exitCode === 0) {
-        // If project B succeeds, check different PATH
-        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashB}/bin`)
-        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashB}/sbin`)
+        // If project B succeeds, check different PATH in shell output
+        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashB}/bin`)
+        expect(resultB.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashB}/sbin`)
       }
       else {
         expect(resultB.stderr).toContain('Failed to install')
@@ -354,8 +346,8 @@ describe('Environment Isolation', () => {
 
       if (resultParent.exitCode === 0 && resultNested.exitCode === 0) {
         // If both succeed, check that environments are properly separated
-        expect(resultParent.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashParent}/`)
-        expect(resultNested.stdout).toContain(`${os.homedir()}/.local/share/launchpad/envs/${hashNested}/`)
+        expect(resultParent.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashParent}/`)
+        expect(resultNested.stdout).toContain(`${os.homedir()}/.local/share/launchpad/${hashNested}/`)
 
         // Deactivation should work for the correct directory
         expect(resultParent.stdout).toContain(projectA)

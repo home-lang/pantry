@@ -226,6 +226,11 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       console.log(`export LAUNCHPAD_ENV_BIN_PATH="${envBinPath}"`)
       console.log(`export LAUNCHPAD_PROJECT_DIR="${dir}"`)
       console.log(`export LAUNCHPAD_PROJECT_HASH="${projectHash}"`)
+
+      // Export environment variables from the dependency file
+      for (const [key, value] of Object.entries(sniffResult.env)) {
+        console.log(`export ${key}=${value}`)
+      }
     }
     else {
       if (!quiet) {
@@ -239,6 +244,15 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
         else {
           console.log('⚠️  No binaries were installed')
+        }
+
+        // Show environment variables that were set
+        const envVars = Object.entries(sniffResult.env)
+        if (envVars.length > 0) {
+          console.log(`Environment variables:`)
+          envVars.forEach(([key, value]) => {
+            console.log(`  ${key}=${value}`)
+          })
         }
       }
     }
