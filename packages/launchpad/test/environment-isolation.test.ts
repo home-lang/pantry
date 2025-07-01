@@ -1,4 +1,3 @@
-import Bun from 'bun'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { spawn } from 'node:child_process'
 import crypto from 'node:crypto'
