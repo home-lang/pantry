@@ -1,4 +1,18 @@
 
+## v0.4.4...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.4...main)
+
+### 🏡 Chore
+
+- Minor updates ([1d1e671](https://github.com/stacksjs/launchpad/commit/1d1e671))
+- Lint ([2a3fc10](https://github.com/stacksjs/launchpad/commit/2a3fc10))
+- Improve stability ([b54f645](https://github.com/stacksjs/launchpad/commit/b54f645))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.3...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.3...main)
