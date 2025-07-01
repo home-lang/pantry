@@ -984,8 +984,12 @@ cli
       })
     }
     catch (error) {
-      console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
-      process.exit(1)
+      if (!options?.quiet) {
+        console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      if (!options?.shell) {
+        process.exit(1)
+      }
     }
   })
 
