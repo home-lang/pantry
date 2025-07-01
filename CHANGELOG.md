@@ -1,4 +1,16 @@
 
+## v0.4.3...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.3...main)
+
+### 🏡 Chore
+
+- Refactor upgrade/setup logic ([c3da1ee](https://github.com/stacksjs/launchpad/commit/c3da1ee))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.2...v0.4.2
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.2...v0.4.2)
