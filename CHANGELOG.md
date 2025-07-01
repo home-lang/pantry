@@ -1,4 +1,8 @@
 
+## v0.4.1...v0.4.1
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.1...v0.4.1)
+
 ## v0.4.0...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.0...main)
