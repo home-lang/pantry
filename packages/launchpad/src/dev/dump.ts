@@ -5,7 +5,6 @@ import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
 import { install, install_prefix } from '../install'
-import sniff from './sniff'
 
 export interface DumpOptions {
   dryrun?: boolean
@@ -14,17 +13,17 @@ export interface DumpOptions {
 }
 
 // Cache for environment readiness to avoid repeated filesystem calls
-const envReadinessCache = new Map<string, { ready: boolean, timestamp: number, envDir?: string }>()
+const envReadinessCache = new Map<string, { ready: boolean, timestamp: number, envDir?: string, sniffResult?: any }>()
 const CACHE_TTL = 30000 // 30 seconds
 
-function isEnvironmentReady(projectHash: string, envDir: string): boolean {
+function isEnvironmentReady(projectHash: string, envDir: string): { ready: boolean, sniffResult?: any } {
   const cacheKey = projectHash
   const cached = envReadinessCache.get(cacheKey)
   const now = Date.now()
 
   // Return cached result if still valid
   if (cached && (now - cached.timestamp) < CACHE_TTL) {
-    return cached.ready
+    return { ready: cached.ready, sniffResult: cached.sniffResult }
   }
 
   // Check if environment has binaries
@@ -34,14 +33,22 @@ function isEnvironmentReady(projectHash: string, envDir: string): boolean {
   const hasBinaries = (fs.existsSync(envBinPath) && fs.readdirSync(envBinPath).length > 0)
     || (fs.existsSync(envSbinPath) && fs.readdirSync(envSbinPath).length > 0)
 
-  // Cache the result
+  // Cache the result (sniffResult will be added later when first computed)
   envReadinessCache.set(cacheKey, {
     ready: hasBinaries,
     timestamp: now,
     envDir: hasBinaries ? envDir : undefined,
   })
 
-  return hasBinaries
+  return { ready: hasBinaries }
+}
+
+function cacheSniffResult(projectHash: string, sniffResult: any): void {
+  const cached = envReadinessCache.get(projectHash)
+  if (cached) {
+    cached.sniffResult = sniffResult
+    cached.timestamp = Date.now() // Refresh timestamp
+  }
 }
 
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
@@ -64,21 +71,25 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     const envSbinPath = path.join(envDir, 'sbin')
 
     // Fast environment readiness check using cache
-    const isReady = isEnvironmentReady(projectHash, envDir)
+    const { ready: isReady } = isEnvironmentReady(projectHash, envDir)
 
-    // For shell output mode with ready environment, output immediately
+    // For shell output mode with ready environment, output immediately without sniff
     if (shellOutput && isReady) {
-      // Get the sniff result for environment variables
-      const projectDir = path.dirname(dependencyFile)
-      const sniffResult = await sniff({ string: projectDir })
-      outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult)
+      // For shell mode with ready environments, skip sniff entirely for maximum speed
+      // The environment is already set up, we just need to output the shell code
+      outputShellCode(dir, envBinPath, envSbinPath, projectHash, null)
       return
     }
 
     // Continue with normal flow for non-shell mode or when environment isn't ready
     const projectDir = path.dirname(dependencyFile)
+    const { default: sniff } = await import('./sniff')
     const sniffResult = await sniff({ string: projectDir })
-    const packages = sniffResult.pkgs.map(pkg => `${pkg.project}@${pkg.constraint.toString()}`)
+
+    // Cache the sniff result for future fast-path usage
+    cacheSniffResult(projectHash, sniffResult)
+
+    const packages = sniffResult.pkgs.map((pkg: any) => `${pkg.project}@${pkg.constraint.toString()}`)
 
     if (packages.length === 0) {
       if (!quiet && !shellOutput) {

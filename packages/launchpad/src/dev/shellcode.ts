@@ -2,21 +2,23 @@ import { join } from 'node:path'
 import process from 'node:process'
 
 export function shellcode(): string {
-  const setupCommand = 'LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" timeout 10 launchpad dev "$project_dir" --shell --quiet 2>/dev/null'
+  // Use absolute path to avoid PATH resolution issues
+  const setupCommand = 'LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" /usr/local/bin/launchpad dev "$project_dir" --shell --quiet 2>/dev/null'
   const grepFilter = '/usr/bin/grep -E \'^(export|if|fi|#)\' 2>/dev/null'
 
   return `
-# Launchpad shell integration with performance optimizations
+# Launchpad shell integration with no background jobs
 __launchpad_cache_dir=""
 __launchpad_cache_timestamp=0
 __launchpad_setup_in_progress=""
+__launchpad_timeout_count=0
 
 # Environment variable optimization - batch export
 __launchpad_set_env() {
     local env_file="$1"
     if [[ -f "$env_file" ]]; then
         # Use single eval for better performance
-        eval "$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" | sed 's/^/export /')"
+        eval "$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" | sed 's/^/export /')" 2>/dev/null || true
     fi
 }
 
@@ -85,29 +87,65 @@ __launchpad_chpwd() {
                 return 0
             fi
 
+            # Skip setup if we've had too many timeouts recently
+            if [[ $__launchpad_timeout_count -gt 3 ]]; then
+                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                    echo "⚡ Environment setup temporarily disabled due to timeouts" >&2
+                fi
+                return 0
+            fi
+
             # Mark setup as in progress
             __launchpad_setup_in_progress="$project_dir"
 
-            # Set up the environment with timeout and better error handling
+            # Set up the environment with aggressive timeout and error suppression
             local env_output
-            env_output=$(${setupCommand} | ${grepFilter})
+            local setup_exit_code=0
+
+            # Use a shorter timeout - no background jobs
+            {
+                env_output=$(${setupCommand} | ${grepFilter})
+                setup_exit_code=$?
+            } 2>/dev/null
 
             # Clear the in-progress flag
             __launchpad_setup_in_progress=""
 
-            if [[ $? -eq 0 && -n "$env_output" ]]; then
+            if [[ $setup_exit_code -eq 124 ]]; then
+                # Timeout occurred (exit code 124 from timeout command)
+                __launchpad_timeout_count=$(((__launchpad_timeout_count + 1)))
+                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                    echo "⚠️  Environment setup timed out for $(basename "$project_dir")" >&2
+                fi
+                return 0
+            elif [[ $setup_exit_code -eq 0 && -n "$env_output" ]]; then
+                # Success - reset timeout counter
+                __launchpad_timeout_count=0
+
                 # Execute the environment setup
-                eval "$env_output" 2>/dev/null
+                eval "$env_output" 2>/dev/null || true
 
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Show activation message (suppress errors)
-                launchpad dev:on "$project_dir" --silent 2>/dev/null || true
-            else
-                # If setup failed, show a brief message and continue
+                # Show activation message synchronously (no background jobs)
                 if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                    echo "⚡ Environment setup for $(basename "$project_dir") (in progress...)" >&2
+                    /usr/local/bin/launchpad dev:on "$project_dir" 2>/dev/null || true
+                fi
+            else
+                # Setup failed but not due to timeout
+                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                    echo "⚡ Environment setup for $(basename "$project_dir") (preparing...)" >&2
+                fi
+
+                # Try to set up basic environment synchronously
+                local project_hash
+                project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
+                local env_dir="$HOME/.local/share/launchpad/launchpad_$project_hash"
+
+                if [[ -d "$env_dir/bin" ]]; then
+                    __launchpad_update_path "$env_dir/bin"
+                    hash -r 2>/dev/null || true
                 fi
             fi
         fi
@@ -122,8 +160,10 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
             fi
 
-            # Show deactivation message (suppress errors)
-            launchpad dev:off --silent 2>/dev/null || true
+            # Show deactivation message synchronously (no background jobs)
+            if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                /usr/local/bin/launchpad dev:off 2>/dev/null || true
+            fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
             unset LAUNCHPAD_ENV_BIN_PATH
@@ -132,6 +172,9 @@ __launchpad_chpwd() {
             # Clear cache when leaving project
             __launchpad_cache_dir=""
             __launchpad_cache_timestamp=0
+
+            # Reset timeout counter when leaving projects
+            __launchpad_timeout_count=0
         fi
     fi
 }

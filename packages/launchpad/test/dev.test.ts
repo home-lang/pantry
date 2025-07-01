@@ -564,7 +564,8 @@ describe('Dev Commands', () => {
       // Accept either success or failure
       if (result.exitCode === 0) {
         expect(result.stdout).toContain('Successfully set up environment')
-        expect(result.stdout).toContain('export PATH=')
+        // For regular dev command, check for environment setup rather than shell code
+        expect(result.stdout).toContain('Environment directory:')
       }
       else {
         expect(result.stderr).toContain('Failed to install')

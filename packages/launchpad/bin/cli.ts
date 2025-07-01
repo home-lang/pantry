@@ -23,13 +23,14 @@ const DEFAULT_SETUP_VERSION = `v${version}`
 
 /**
  * Core setup logic that can be called from both setup and upgrade commands
+ * Returns true if verification succeeded, false if it failed
  */
 async function performSetup(options: {
   targetVersion: string
   targetPath: string
   force?: boolean
   verbose?: boolean
-}): Promise<void> {
+}): Promise<boolean> {
   const { targetVersion, targetPath, force, verbose } = options
 
   // Validate version format
@@ -197,9 +198,11 @@ async function performSetup(options: {
     console.log(`✅ Binary installed to: ${targetPath}`)
 
     // Verify installation
+    let verificationSucceeded = false
     try {
       const testResult = execSync(`"${targetPath}" --version`, { encoding: 'utf8', stdio: 'pipe' })
       console.log(`🎉 Installation verified: ${testResult.trim()}`)
+      verificationSucceeded = true
 
       // Additional verification: check if it's executable
       try {
@@ -249,6 +252,8 @@ async function performSetup(options: {
         console.log('Or add this line to your shell configuration (~/.zshrc, ~/.bashrc, etc.)')
       }
     }
+    // Return verification result
+    return verificationSucceeded
   }
   finally {
     // Cleanup temporary directory
@@ -732,7 +737,7 @@ cli
     console.log('')
 
     try {
-      await performSetup({
+      const verificationSucceeded = await performSetup({
         targetVersion,
         targetPath,
         force: options?.force || false,
@@ -740,12 +745,29 @@ cli
       })
 
       console.log('')
-      console.log('🎉 Setup completed successfully!')
-      console.log('')
-      console.log('🚀 Next steps:')
-      console.log('1. Restart your terminal or reload your shell configuration')
-      console.log('2. Run: launchpad --version')
-      console.log('3. Get started: launchpad bootstrap')
+      if (verificationSucceeded) {
+        console.log('🎉 Setup completed successfully!')
+        console.log('')
+        console.log('🚀 Next steps:')
+        console.log('1. Restart your terminal or reload your shell configuration')
+        console.log('2. Run: launchpad --version')
+        console.log('3. Get started: launchpad bootstrap')
+      }
+      else {
+        console.log('⚠️  Setup completed with verification issues')
+        console.log('')
+        console.log('⚠️  The binary was installed but failed verification.')
+        console.log('It may still work, but there could be compatibility issues.')
+        console.log('')
+        console.log('🔧 Recommended actions:')
+        console.log('1. Try running: launchpad --version')
+        console.log('2. If it hangs, try a different version with --release')
+        console.log('3. Consider building from source if issues persist')
+        console.log('')
+        console.log('💡 Alternative: Build from source:')
+        console.log('  git clone https://github.com/stacksjs/launchpad.git')
+        console.log('  cd launchpad && bun install && bun run build')
+      }
     }
     catch (error) {
       console.error('Setup failed:', error instanceof Error ? error.message : String(error))
@@ -873,7 +895,7 @@ cli
 
       // Use the same setup logic directly
       try {
-        await performSetup({
+        const verificationSucceeded = await performSetup({
           targetVersion,
           targetPath,
           force: true, // Always force during upgrade
@@ -881,12 +903,25 @@ cli
         })
 
         console.log('')
-        console.log('🎉 Upgrade completed successfully!')
-        console.log('')
-        console.log('🚀 Next steps:')
-        console.log('1. Restart your terminal or reload your shell')
-        console.log('2. Run: launchpad --version')
-        console.log('3. Verify the upgrade worked correctly')
+        if (verificationSucceeded) {
+          console.log('🎉 Upgrade completed successfully!')
+          console.log('')
+          console.log('🚀 Next steps:')
+          console.log('1. Restart your terminal or reload your shell')
+          console.log('2. Run: launchpad --version')
+          console.log('3. Verify the upgrade worked correctly')
+        }
+        else {
+          console.log('⚠️  Upgrade completed with verification issues')
+          console.log('')
+          console.log('⚠️  The binary was upgraded but failed verification.')
+          console.log('It may still work, but there could be compatibility issues.')
+          console.log('')
+          console.log('🔧 Recommended actions:')
+          console.log('1. Try running: launchpad --version')
+          console.log('2. If it hangs, try a different version with --release')
+          console.log('3. Consider building from source if issues persist')
+        }
       }
       catch (error) {
         console.error('❌ Upgrade failed:', error instanceof Error ? error.message : String(error))
@@ -984,8 +1019,14 @@ cli
       })
     }
     catch (error) {
-      if (!options?.quiet) {
+      if (!options?.quiet && !options?.shell) {
         console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      else if (options?.shell) {
+        // For shell mode, output minimal fallback and don't exit with error
+        // This prevents shell integration from hanging or failing
+        console.log('# Environment setup failed, using fallback')
+        return
       }
       if (!options?.shell) {
         process.exit(1)
