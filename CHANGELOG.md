@@ -1,4 +1,16 @@
 
+## v0.4.6...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.6...main)
+
+### 🏡 Chore
+
+- Perf improvements ([0a40465](https://github.com/stacksjs/launchpad/commit/0a40465))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.5...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.5...main)
