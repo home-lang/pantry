@@ -66,32 +66,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Fast environment readiness check using cache
     const isReady = isEnvironmentReady(projectHash, envDir)
 
-    // For shell output mode, prioritize speed and cached environments
-    if (shellOutput) {
-      if (isReady) {
-        // Fast path: environment already exists, output shell code immediately
-        outputShellCode(dir, envBinPath, envSbinPath, projectHash)
-        return
-      }
-
-      // Environment not ready but we're in shell mode - return basic shell setup
-      // and let the installation happen asynchronously in the background
-      outputBasicShellCode(dir, envBinPath, envSbinPath, projectHash)
-
-      // Start async installation in background (fire and forget)
-      setImmediate(async () => {
-        try {
-          await setupEnvironmentAsync(dir, dependencyFile, envDir, projectHash, quiet)
-        }
-        catch {
-          // Silently fail for background installation
-        }
-      })
-
+    // For shell output mode with ready environment, output immediately
+    if (shellOutput && isReady) {
+      // Get the sniff result for environment variables
+      const projectDir = path.dirname(dependencyFile)
+      const sniffResult = await sniff({ string: projectDir })
+      outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult)
       return
     }
 
-    // Non-shell mode: continue with normal flow
+    // Continue with normal flow for non-shell mode or when environment isn't ready
     const projectDir = path.dirname(dependencyFile)
     const sniffResult = await sniff({ string: projectDir })
     const packages = sniffResult.pkgs.map(pkg => `${pkg.project}@${pkg.constraint.toString()}`)
@@ -117,6 +101,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     const installPath = install_prefix().string
     let results: string[] = []
+    let installationSucceeded = false
 
     if (!isReady) {
       // Install packages to the main installation directory
@@ -137,6 +122,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         try {
           results = await install(packages, installPath)
+          installationSucceeded = true
+        }
+        catch (error) {
+          installationSucceeded = false
+          // For shell mode, output error to stderr and don't throw
+          process.stderr.write(`Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
         }
         finally {
           console.log = originalConsoleLog
@@ -144,7 +135,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
       }
       else {
-        results = await install(packages, installPath)
+        try {
+          results = await install(packages, installPath)
+          installationSucceeded = true
+        }
+        catch (error) {
+          installationSucceeded = false
+          throw error // Re-throw for non-shell mode
+        }
       }
 
       config.verbose = originalVerbose
@@ -152,13 +150,18 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
     else if (!quiet && !shellOutput) {
       console.log('📦 Using cached environment...')
+      installationSucceeded = true
     }
 
-    // Set up environment directories and symlinks
-    await setupEnvironmentDirectories(envDir, envBinPath, envSbinPath, packages, installPath)
+    // Set up environment directories and symlinks only if installation succeeded
+    if (installationSucceeded || isReady) {
+      await setupEnvironmentDirectories(envDir, envBinPath, envSbinPath, packages, installPath)
+    }
 
     // Output results
     if (shellOutput) {
+      // For shell mode, always output shell code (even if installation failed)
+      // This ensures the shell gets proper environment setup
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult)
     }
     else {
@@ -175,50 +178,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
     if (isTestEnvironment) {
       throw error
-    }
-  }
-}
-
-async function setupEnvironmentAsync(dir: string, dependencyFile: string, envDir: string, projectHash: string, quiet: boolean): Promise<void> {
-  try {
-    const projectDir = path.dirname(dependencyFile)
-    const sniffResult = await sniff({ string: projectDir })
-    const packages = sniffResult.pkgs.map(pkg => `${pkg.project}@${pkg.constraint.toString()}`)
-
-    if (packages.length === 0)
-      return
-
-    const installPath = install_prefix().string
-    const envBinPath = path.join(envDir, 'bin')
-    const envSbinPath = path.join(envDir, 'sbin')
-
-    // Install packages
-    const originalVerbose = config.verbose
-    const originalShowShellMessages = config.showShellMessages
-
-    config.verbose = false // Reduce noise for background installation
-    config.showShellMessages = false
-
-    try {
-      await install(packages, installPath)
-      await setupEnvironmentDirectories(envDir, envBinPath, envSbinPath, packages, installPath)
-
-      // Update cache to mark environment as ready
-      envReadinessCache.set(projectHash, {
-        ready: true,
-        timestamp: Date.now(),
-        envDir,
-      })
-    }
-    finally {
-      config.verbose = originalVerbose
-      config.showShellMessages = originalShowShellMessages
-    }
-  }
-  catch (error) {
-    // Silent failure for background operations
-    if (!quiet) {
-      console.error('Background environment setup failed:', error instanceof Error ? error.message : String(error))
     }
   }
 }
@@ -319,17 +278,6 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
       console.log(`export ${key}=${value}`)
     }
   }
-}
-
-function outputBasicShellCode(dir: string, envBinPath: string, envSbinPath: string, projectHash: string): void {
-  // Output minimal shell code when environment isn't ready yet
-  console.log(`# Launchpad environment setup for ${dir} (preparing...)`)
-  console.log(`if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then`)
-  console.log(`  export LAUNCHPAD_ORIGINAL_PATH="$PATH"`)
-  console.log(`fi`)
-  console.log(`export LAUNCHPAD_PROJECT_DIR="${dir}"`)
-  console.log(`export LAUNCHPAD_PROJECT_HASH="${projectHash}"`)
-  console.log(`# Environment is being prepared in the background`)
 }
 
 function outputNormalResults(results: string[], packages: string[], envDir: string, sniffResult: any, quiet: boolean): void {
