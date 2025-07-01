@@ -1,4 +1,16 @@
 
+## v0.4.0...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.0...main)
+
+### 🏡 Chore
+
+- Resolve type issues ([30c54e4](https://github.com/stacksjs/launchpad/commit/30c54e4))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.3.12...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.3.12...main)
