@@ -1,4 +1,16 @@
 
+## v0.4.1...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.1...main)
+
+### 🏡 Chore
+
+- Update lockfile ([d6ad925](https://github.com/stacksjs/launchpad/commit/d6ad925))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.1...v0.4.1
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.1...v0.4.1)
