@@ -36,7 +36,7 @@
     "bun-plugin-dtsx": "0.9.5",
     "changelogen": "^0.6.1",
     "chromium-bidi": "^7.0.0",
-    "electron": "^37.1.0",
+    "electron": "^37.2.0",
     "lint-staged": "^15.5.2",
     "simple-git-hooks": "^2.13.0",
     "typescript": "^5.8.3"
