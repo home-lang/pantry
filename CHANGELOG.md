@@ -1,4 +1,16 @@
 
+## v0.4.9...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.9...main)
+
+### 🏡 Chore
+
+- Improve upgrade command ([c996b62](https://github.com/stacksjs/launchpad/commit/c996b62))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.8...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.8...main)
