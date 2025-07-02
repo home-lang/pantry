@@ -444,6 +444,32 @@ env:
 EOF
 ```
 
+### Does Launchpad work with Starship prompt?
+
+**Yes!** Launchpad is fully compatible with Starship. However, you might see timeout warnings when Starship tries to detect tool versions:
+
+```
+[WARN] - (starship::utils): Executing command "/path/to/bin/bun" timed out.
+```
+
+**Quick fix** - Increase Starship's timeout in `~/.config/starship.toml`:
+
+```toml
+# Add this at the top of your starship.toml
+command_timeout = 5000
+
+# Rest of your configuration...
+[git_branch]
+symbol = "🌱 "
+
+[bun]
+symbol = "🐰 "
+```
+
+This gives Starship 5 seconds (instead of the default) to execute commands, which eliminates timeout warnings while keeping your prompt responsive.
+
+**Why this happens:** When you enter a Launchpad-managed project, the environment activation process temporarily affects how quickly binaries respond, causing Starship's version detection to timeout with its default settings.
+
 ## Advanced Usage
 
 ### Can I create custom package templates?

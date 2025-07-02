@@ -391,6 +391,57 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
    done
    ```
 
+### Starship Prompt Timeout Warnings
+
+**Symptoms:**
+- Warning messages like: `[WARN] - (starship::utils): Executing command "/.../bin/bun" timed out`
+- Starship suggests: `You can set command_timeout in your config to a higher value`
+- Timeout warnings when changing directories in projects
+
+**Cause:**
+Starship tries to execute Launchpad-managed binaries (like `bun`, `node`, etc.) to detect tool versions for the prompt. When Launchpad's environment is activating, these binaries might take longer to respond than Starship's default timeout allows.
+
+**Solutions:**
+
+1. **Increase Starship's command timeout (Recommended):**
+
+   Add or update the `command_timeout` setting in your Starship configuration file (`~/.config/starship.toml`):
+
+   ```toml
+   # Timeout for commands executed by starship (ms)
+   command_timeout = 5000
+
+   # Rest of your Starship configuration...
+   [git_branch]
+   symbol = "🌱 "
+
+   [bun]
+   symbol = "🐰 "
+   ```
+
+2. **Test the fix:**
+   ```bash
+   # Restart your shell or source your config
+   source ~/.zshrc
+
+   # Change directories to trigger environment activation
+   cd ~/my-project
+   ```
+
+3. **Alternative: Disable specific modules:**
+
+   If you don't need version detection for certain tools, you can disable them:
+
+   ```toml
+   [bun]
+   disabled = true
+
+   [nodejs]
+   disabled = true
+   ```
+
+**Note:** A 5000ms (5-second) timeout is generous and should eliminate timeout warnings while still keeping your prompt responsive. The actual execution time is typically under 1 second.
+
 ## Uninstall/Cleanup Issues
 
 ### Complete Removal

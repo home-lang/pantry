@@ -198,6 +198,10 @@ cd ../          # → Automatically deactivates
 # dev environment deactivated
 ```
 
+::: tip Prompt Compatibility
+If you use **Starship prompt** and see timeout warnings like `[WARN] - (starship::utils): Executing command timed out`, add `command_timeout = 5000` to the top of your `~/.config/starship.toml` file. This gives Starship enough time to detect tool versions from Launchpad-managed binaries. See [Troubleshooting](./troubleshooting.md#starship-prompt-timeout-warnings) for details.
+:::
+
 ### Manual Environment Commands
 
 ```bash
