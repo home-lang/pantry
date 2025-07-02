@@ -97,7 +97,7 @@ describe('Dependency Resolution', () => {
       expect(wgetVersion).toContain('GNU Wget')
       expect(wgetVersion).toContain('+ssl/openssl') // Should have SSL support
     }
-    catch (error) {
+    catch {
       // If installation fails, at least verify that dependency resolution would work
       const wgetInfo = getPackageInfo('gnu.org/wget')
       expect(wgetInfo?.dependencies).toContain('openssl.org^1.1')
@@ -132,7 +132,7 @@ describe('Dependency Resolution', () => {
       expect(results.length).toBeGreaterThanOrEqual(3)
 
       // Check for ca-certs (transitive dependency)
-      const caCertsExists = results.some(result =>
+      const _caCertsExists = results.some(result =>
         result.includes('ca-certs')
         || fs.existsSync(path.join(testDir, 'curl.se')),
       )
@@ -141,7 +141,7 @@ describe('Dependency Resolution', () => {
       // The important thing is that the installation doesn't fail
       expect(results.length).toBeGreaterThan(1)
     }
-    catch (error) {
+    catch {
       // If installation fails, verify dependency chain
       const wgetInfo = getPackageInfo('gnu.org/wget')
       expect(wgetInfo?.dependencies).toContain('openssl.org^1.1')
@@ -212,7 +212,7 @@ describe('Project Environment Dependencies', () => {
       const opensslBinary = path.join(testDir, 'bin', 'openssl')
       expect(fs.existsSync(opensslBinary)).toBe(true)
     }
-    catch (error) {
+    catch {
       // At minimum, dependency resolution should work
       const wgetInfo = getPackageInfo('gnu.org/wget')
       expect(wgetInfo?.dependencies).toContain('openssl.org^1.1')
