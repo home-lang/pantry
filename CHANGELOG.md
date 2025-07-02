@@ -1,4 +1,17 @@
 
+## v0.4.7...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.7...main)
+
+### 🏡 Chore
+
+- Minor adjustments ([c2dd216](https://github.com/stacksjs/launchpad/commit/c2dd216))
+- Test updates ([af71d3c](https://github.com/stacksjs/launchpad/commit/af71d3c))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.6...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.6...main)
