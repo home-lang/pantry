@@ -491,13 +491,20 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
       const sortedVersions = [...versions].sort((a, b) => Bun.semver.order(b, a))
 
       for (const version of sortedVersions) {
-        if (Bun.semver.satisfies(version, versionSpec)) {
-          return version
+        try {
+          if (Bun.semver.satisfies(version, versionSpec)) {
+            return version
+          }
+        }
+        catch {
+          // Skip individual version if it can't be parsed by Bun.semver
+          // This handles cases like "1.1.1w" that aren't standard semver
+          continue
         }
       }
 
-      // No version satisfies the range
-      return null
+      // If Bun.semver didn't find a match, fall through to manual parsing
+      // This is important for non-standard version formats
     }
     catch (error) {
       // Fallback to manual parsing if Bun.semver fails
@@ -507,7 +514,7 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     }
   }
 
-  // Fallback: Manual semver-like parsing for non-Bun environments or if Bun.semver fails
+  // Enhanced manual semver-like parsing for non-Bun environments or when Bun.semver fails
   if (versionSpec.startsWith('^')) {
     const baseVersion = versionSpec.slice(1)
     const [major, minor, patch] = baseVersion.split('.')
@@ -516,7 +523,14 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     // ^1.21 means >=1.21.0 <2.0.0
     // ^1.21.3 means >=1.21.3 <2.0.0
     const matchingVersion = versions.find((v) => {
-      const [vMajor, vMinor, vPatch] = v.split('.')
+      // Handle non-standard version formats by extracting numeric parts
+      const versionParts = v.split('.')
+      if (versionParts.length < 2)
+        return false
+
+      const vMajor = versionParts[0]
+      const vMinor = versionParts[1]
+      const vPatch = versionParts[2] || '0'
 
       // Must have same major version
       if (vMajor !== major)
@@ -527,8 +541,13 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
         return true
 
       // If minor specified, check minor version constraint
+      // Extract numeric part from version components to handle suffixes like "1w"
       const vMinorNum = Number.parseInt(vMinor || '0', 10)
       const minorNum = Number.parseInt(minor, 10)
+
+      // Skip if we can't parse the version numbers
+      if (Number.isNaN(vMinorNum) || Number.isNaN(minorNum))
+        return false
 
       // Minor version must be >= specified minor
       if (vMinorNum < minorNum)
@@ -536,8 +555,14 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
 
       // If patch specified, check patch version constraint when minor versions are equal
       if (patch && vMinorNum === minorNum) {
+        // Extract numeric part from patch version to handle suffixes
         const vPatchNum = Number.parseInt(vPatch || '0', 10)
         const patchNum = Number.parseInt(patch, 10)
+
+        // Skip if we can't parse the patch numbers
+        if (Number.isNaN(vPatchNum) || Number.isNaN(patchNum))
+          return false
+
         return vPatchNum >= patchNum
       }
 
@@ -562,8 +587,14 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
       try {
         const sortedVersions = [...versions].sort((a, b) => Bun.semver.order(b, a))
         for (const version of sortedVersions) {
-          if (Bun.semver.satisfies(version, versionSpec)) {
-            return version
+          try {
+            if (Bun.semver.satisfies(version, versionSpec)) {
+              return version
+            }
+          }
+          catch {
+            // Skip versions that can't be parsed
+            continue
           }
         }
       }
@@ -649,17 +680,35 @@ export function getAllPackageNames(): PackageName[] {
 
 /**
  * Parse a package specification into name and version
+ * Handles both standard format (package@version) and dependency format (domain^version)
  */
 export function parsePackageSpec(spec: string): { name: string, version?: string } {
+  // First try standard format with @ separator
   const atIndex = spec.lastIndexOf('@')
-  if (atIndex === -1 || atIndex === 0) {
-    return { name: spec }
+  if (atIndex !== -1 && atIndex !== 0) {
+    const name = spec.slice(0, atIndex)
+    const version = spec.slice(atIndex + 1)
+    return { name, version: version || undefined }
   }
 
-  const name = spec.slice(0, atIndex)
-  const version = spec.slice(atIndex + 1)
+  // Then try dependency format with ^ separator (e.g., openssl.org^1.1)
+  const caretIndex = spec.indexOf('^')
+  if (caretIndex !== -1 && caretIndex !== 0) {
+    const name = spec.slice(0, caretIndex)
+    const version = spec.slice(caretIndex) // Include the ^ in the version
+    return { name, version: version || undefined }
+  }
 
-  return { name, version: version || undefined }
+  // Then try dependency format with ~ separator (e.g., package~1.0)
+  const tildeIndex = spec.indexOf('~')
+  if (tildeIndex !== -1 && tildeIndex !== 0) {
+    const name = spec.slice(0, tildeIndex)
+    const version = spec.slice(tildeIndex) // Include the ~ in the version
+    return { name, version: version || undefined }
+  }
+
+  // No version separator found, treat as package name only
+  return { name: spec }
 }
 
 /**
@@ -1295,34 +1344,92 @@ async function installDependencies(
         console.log(`📦 Installing dependency: ${depName}`)
       }
 
-      // Try to resolve a suitable version for the dependency
+      // Enhanced version resolution with multiple fallback strategies
       let versionToInstall = depVersion
       if (!versionToInstall) {
-        // Try to get the latest version if no version specified
+        // Strategy: Get latest version if no version specified
         versionToInstall = getLatestVersion(depName) || undefined
       }
       else {
-        // Try to resolve the version constraint to an actual version
+        // Strategy 1: Try to resolve the version constraint to an actual version
         const resolvedVersion = resolveVersion(depName, depVersion)
         if (resolvedVersion) {
           versionToInstall = resolvedVersion
         }
         else {
-          // More aggressive fallback: try different strategies
+          // Enhanced fallback strategies for version mismatch scenarios
           if (config.verbose) {
-            console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying fallback strategies`)
+            console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying enhanced fallback strategies`)
           }
 
-          // Strategy 1: Try without the constraint (get latest)
-          const latestVersion = getLatestVersion(depName)
-          if (latestVersion) {
-            if (config.verbose) {
-              console.warn(`Using latest version ${latestVersion} for ${depName} instead of ${depVersion}`)
+          // Strategy 2: For caret constraints (^1.1), try to find any compatible major version
+          if (depVersion && depVersion.startsWith('^')) {
+            const requestedMajor = depVersion.slice(1).split('.')[0]
+            const availableVersions = getAvailableVersions(depName)
+
+            if (availableVersions.length > 0) {
+              // Check if any version has the same major version
+              const sameMajorVersion = availableVersions.find((v: string) => v.startsWith(`${requestedMajor}.`))
+
+              if (sameMajorVersion) {
+                versionToInstall = sameMajorVersion
+                if (config.verbose) {
+                  console.warn(`Found compatible major version ${sameMajorVersion} for ${depName}@${depVersion}`)
+                }
+              }
+              else {
+                // Strategy 3: Check for well-known version compatibility mappings
+                const versionCompatibilityMap: Record<string, Record<string, string[]>> = {
+                  'openssl.org': {
+                    '^1.1': ['3.5.0', '3.4.0', '3.3.2'], // OpenSSL 3.x is backward compatible with 1.x APIs
+                    '^1.0': ['3.5.0', '3.4.0', '3.3.2'],
+                  },
+                  'zlib.net': {
+                    '^1.2': ['1.3.1', '1.3.0'], // zlib 1.3.x is compatible with 1.2.x
+                  },
+                }
+
+                const compatibleVersions = versionCompatibilityMap[depDomain]?.[depVersion]
+                if (compatibleVersions) {
+                  // Find the first available compatible version
+                  const compatibleVersion = compatibleVersions.find((v: string) => availableVersions.includes(v))
+                  if (compatibleVersion) {
+                    versionToInstall = compatibleVersion
+                    if (config.verbose) {
+                      console.warn(`Using compatible version ${compatibleVersion} for ${depName}@${depVersion} (known compatibility mapping)`)
+                    }
+                  }
+                  else {
+                    // Strategy 4: Use latest available version as last resort
+                    versionToInstall = availableVersions[0] // First version is always the latest
+                    if (config.verbose) {
+                      console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (fallback compatibility)`)
+                    }
+                  }
+                }
+                else {
+                  // Strategy 4: Use latest available version as last resort
+                  versionToInstall = availableVersions[0] // First version is always the latest
+                  if (config.verbose) {
+                    console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (no compatible major version found)`)
+                  }
+                }
+              }
             }
-            versionToInstall = latestVersion
           }
           else {
-            // Strategy 2: Try the package name as an alias or domain directly
+            // Strategy 5: For non-caret constraints, try to get latest version
+            const latestVersion = getLatestVersion(depName)
+            if (latestVersion) {
+              if (config.verbose) {
+                console.warn(`Using latest version ${latestVersion} for ${depName} instead of ${depVersion}`)
+              }
+              versionToInstall = latestVersion
+            }
+          }
+
+          // Strategy 6: Try the package name as an alias or domain directly
+          if (!versionToInstall) {
             const resolvedDomain = resolvePackageName(depName)
             if (resolvedDomain !== depName) {
               const aliasLatest = getLatestVersion(resolvedDomain)
