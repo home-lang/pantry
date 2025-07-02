@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
-import { install, install_prefix } from '../install'
+import { install } from '../install'
 
 export interface DumpOptions {
   dryrun?: boolean
@@ -110,12 +110,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       return
     }
 
-    const installPath = install_prefix().string
+    // Install packages directly to the project-specific environment directory
+    const installPath = envDir
     let results: string[] = []
-    let installationSucceeded = false
 
     if (!isReady) {
-      // Install packages to the main installation directory
+      // Install packages to the project environment directory
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
 
@@ -133,10 +133,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         try {
           results = await install(packages, installPath)
-          installationSucceeded = true
         }
         catch (error) {
-          installationSucceeded = false
           // For shell mode, output error to stderr and don't throw
           process.stderr.write(`Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
         }
@@ -146,14 +144,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
       }
       else {
-        try {
-          results = await install(packages, installPath)
-          installationSucceeded = true
-        }
-        catch (error) {
-          installationSucceeded = false
-          throw error // Re-throw for non-shell mode
-        }
+        results = await install(packages, installPath)
       }
 
       config.verbose = originalVerbose
@@ -161,12 +152,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
     else if (!quiet && !shellOutput) {
       console.log('📦 Using cached environment...')
-      installationSucceeded = true
-    }
-
-    // Set up environment directories and symlinks only if installation succeeded
-    if (installationSucceeded || isReady) {
-      await setupEnvironmentDirectories(envDir, envBinPath, envSbinPath, packages, installPath)
     }
 
     // Output results
@@ -189,82 +174,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
     if (isTestEnvironment) {
       throw error
-    }
-  }
-}
-
-async function setupEnvironmentDirectories(envDir: string, envBinPath: string, envSbinPath: string, packages: string[], installPath: string): Promise<void> {
-  // Ensure the environment directories exist
-  if (!fs.existsSync(envBinPath)) {
-    fs.mkdirSync(envBinPath, { recursive: true })
-  }
-  if (!fs.existsSync(envSbinPath)) {
-    fs.mkdirSync(envSbinPath, { recursive: true })
-  }
-
-  // Create symlinks for installed binaries in the project environment
-  const mainBinPath = path.join(installPath, 'bin')
-  const mainSbinPath = path.join(installPath, 'sbin')
-
-  const binaryDirs = [
-    { sourcePath: mainBinPath, targetPath: envBinPath },
-    { sourcePath: mainSbinPath, targetPath: envSbinPath },
-  ]
-
-  for (const { sourcePath: mainPath, targetPath: envPath } of binaryDirs) {
-    if (fs.existsSync(mainPath)) {
-      for (const _packageSpec of packages) {
-        const pkgDir = path.join(installPath, 'pkgs')
-
-        try {
-          const domains = fs.readdirSync(pkgDir, { withFileTypes: true })
-            .filter(dirent => dirent.isDirectory())
-
-          for (const domain of domains) {
-            const domainPath = path.join(pkgDir, domain.name)
-            const versions = fs.readdirSync(domainPath, { withFileTypes: true })
-              .filter(dirent => dirent.isDirectory())
-
-            for (const version of versions) {
-              const versionPath = path.join(domainPath, version.name)
-              const metadataPath = path.join(versionPath, 'metadata.json')
-
-              if (fs.existsSync(metadataPath)) {
-                try {
-                  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
-                  const packageName = `${domain.name}@${version.name.slice(1)}`
-
-                  const isRequestedPackage = packages.some((reqPkg: string) => {
-                    const [reqName] = reqPkg.split('@')
-                    const [metaName] = packageName.split('@')
-                    return reqName === metaName || reqPkg === packageName
-                  })
-
-                  if (isRequestedPackage && metadata.binaries && Array.isArray(metadata.binaries)) {
-                    for (const binary of metadata.binaries) {
-                      const sourcePath = path.join(mainPath, binary)
-                      const targetPath = path.join(envPath, binary)
-
-                      if (fs.existsSync(sourcePath)) {
-                        if (fs.existsSync(targetPath)) {
-                          fs.unlinkSync(targetPath)
-                        }
-                        fs.symlinkSync(sourcePath, targetPath)
-                      }
-                    }
-                  }
-                }
-                catch {
-                  // Ignore invalid metadata files
-                }
-              }
-            }
-          }
-        }
-        catch {
-          // Ignore errors reading package directory
-        }
-      }
     }
   }
 }

@@ -1,3 +1,5 @@
 dependencies:
   # Simple wget installation
   gnu.org/wget: ^1.21
+  # Required dependency for wget
+  openssl.org: ^3.0

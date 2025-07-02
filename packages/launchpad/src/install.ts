@@ -998,6 +998,10 @@ async function downloadPackage(
     // Create version symlinks like pkgx does
     await createVersionSymlinks(installPath, domain, version)
 
+    // Create version compatibility symlinks for packages that expect different version paths
+    // This handles cases where a package built for openssl.org/v1 needs to work with openssl.org/v3
+    await createVersionCompatibilitySymlinks(installPath, domain, version)
+
     // Find binaries and create shims
     const installedBinaries = await createShims(packageDir, installPath, domain, version)
 
@@ -1193,6 +1197,48 @@ exec "${binaryPath}" "$@"
 }
 
 /**
+ * Create version compatibility symlinks for packages that expect different version paths
+ * This handles cases where a package built for openssl.org/v1 needs to work with openssl.org/v3
+ */
+async function createVersionCompatibilitySymlinks(installPath: string, domain: string, version: string): Promise<void> {
+  const packageDir = path.join(installPath, domain)
+  const versionDir = path.join(packageDir, `v${version}`)
+
+  if (!fs.existsSync(versionDir)) {
+    return
+  }
+
+  // Define compatibility mappings for common version mismatches
+  const versionCompatibility: Record<string, string[]> = {
+    'openssl.org': ['v1', 'v1.1', 'v1.0'], // OpenSSL v3 should be compatible with v1.x expectations
+    'libssl': ['v1', 'v1.1'],
+    'libcrypto': ['v1', 'v1.1'],
+  }
+
+  const compatVersions = versionCompatibility[domain] || []
+
+  for (const compatVersion of compatVersions) {
+    const compatDir = path.join(packageDir, compatVersion)
+
+    // Only create symlink if the compat version doesn't already exist
+    if (!fs.existsSync(compatDir)) {
+      try {
+        // Create symlink from compat version to actual version
+        await fs.promises.symlink(`v${version}`, compatDir)
+        if (config.verbose) {
+          console.warn(`Created compatibility symlink: ${compatVersion} -> v${version} for ${domain}`)
+        }
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`Failed to create compatibility symlink for ${domain}: ${error}`)
+        }
+      }
+    }
+  }
+}
+
+/**
  * Resolves and installs package dependencies recursively
  */
 async function installDependencies(
@@ -1262,11 +1308,32 @@ async function installDependencies(
           versionToInstall = resolvedVersion
         }
         else {
-          // Fall back to latest if constraint cannot be resolved
+          // More aggressive fallback: try different strategies
           if (config.verbose) {
-            console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying latest`)
+            console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying fallback strategies`)
           }
-          versionToInstall = getLatestVersion(depName) || undefined
+
+          // Strategy 1: Try without the constraint (get latest)
+          const latestVersion = getLatestVersion(depName)
+          if (latestVersion) {
+            if (config.verbose) {
+              console.warn(`Using latest version ${latestVersion} for ${depName} instead of ${depVersion}`)
+            }
+            versionToInstall = latestVersion
+          }
+          else {
+            // Strategy 2: Try the package name as an alias or domain directly
+            const resolvedDomain = resolvePackageName(depName)
+            if (resolvedDomain !== depName) {
+              const aliasLatest = getLatestVersion(resolvedDomain)
+              if (aliasLatest) {
+                if (config.verbose) {
+                  console.warn(`Using latest version ${aliasLatest} for resolved domain ${resolvedDomain} instead of ${depName}@${depVersion}`)
+                }
+                versionToInstall = aliasLatest
+              }
+            }
+          }
         }
       }
 
