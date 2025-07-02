@@ -1,4 +1,20 @@
 
+## v0.4.8...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.8...main)
+
+### 🏡 Chore
+
+- Add starship compatibility notice ([07d6622](https://github.com/stacksjs/launchpad/commit/07d6622))
+- Wip ([c216123](https://github.com/stacksjs/launchpad/commit/c216123))
+- Improve transient dependency installs ([1c7d916](https://github.com/stacksjs/launchpad/commit/1c7d916))
+- Lint ([4a1eaeb](https://github.com/stacksjs/launchpad/commit/4a1eaeb))
+- Get test to pass ([d2358d1](https://github.com/stacksjs/launchpad/commit/d2358d1))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.7...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.7...main)
