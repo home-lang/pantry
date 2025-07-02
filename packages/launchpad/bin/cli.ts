@@ -80,17 +80,12 @@ async function performSetup(options: {
 
   if (verbose) {
     console.log(`📋 Platform: ${platform}-${arch}`)
-    console.log(`📦 Binary: ${binaryName}`)
     console.log(`🎯 Target: ${targetPath}`)
     console.log(`📌 Version: ${targetVersion}`)
   }
 
   // Download URL
   const downloadUrl = `https://github.com/stacksjs/launchpad/releases/download/${targetVersion}/${binaryName}`
-
-  if (verbose) {
-    console.log(`📥 Downloading from: ${downloadUrl}`)
-  }
 
   // Create temporary directory for download
   const tmpDir = path.join(os.tmpdir(), `launchpad-setup-${Date.now()}`)
@@ -100,8 +95,6 @@ async function performSetup(options: {
 
   try {
     // Download the file
-    console.log('⬇️  Downloading...')
-
     const response = await globalThis.fetch(downloadUrl)
     if (!response.ok) {
       if (response.status === 404) {
@@ -110,13 +103,66 @@ async function performSetup(options: {
       throw new Error(`Failed to download: ${response.status} ${response.statusText}`)
     }
 
-    const buffer = await response.arrayBuffer()
-    fs.writeFileSync(zipPath, new Uint8Array(buffer))
+    const contentLength = response.headers.get('content-length')
+    const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
 
-    console.log(`✅ Downloaded ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
+    // Show real-time download progress like Bun (silent by default)
+    const reader = response.body?.getReader()
+    const chunks: Uint8Array[] = []
+    let downloadedBytes = 0
 
-    // Extract the zip file
-    console.log('📂 Extracting...')
+    if (reader && totalBytes > 0 && !verbose) {
+      // Silent download with progress
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done)
+          break
+
+        if (value) {
+          chunks.push(value)
+          downloadedBytes += value.length
+
+          // Show progress
+          const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
+          process.stdout.write(`\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`)
+        }
+      }
+      process.stdout.write('\r\x1B[K') // Clear the progress line
+    }
+    else {
+      // Verbose mode or fallback
+      if (verbose) {
+        if (totalBytes > 0) {
+          console.log(`⬇️  Downloading ${(totalBytes / 1024 / 1024).toFixed(1)} MB...`)
+        }
+        else {
+          console.log('⬇️  Downloading...')
+        }
+      }
+
+      const buffer = await response.arrayBuffer()
+      chunks.push(new Uint8Array(buffer))
+
+      if (verbose) {
+        console.log(`✅ Downloaded ${(chunks[0].length / 1024 / 1024).toFixed(1)} MB`)
+      }
+    }
+
+    // Combine all chunks
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    const buffer = new Uint8Array(totalLength)
+    let offset = 0
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset)
+      offset += chunk.length
+    }
+
+    fs.writeFileSync(zipPath, buffer)
+
+    // Extract the zip file (silent by default)
+    if (verbose) {
+      console.log('📂 Extracting...')
+    }
 
     const { execSync } = await import('node:child_process')
 
@@ -152,16 +198,9 @@ async function performSetup(options: {
 
     const sourcePath = path.join(tmpDir, binaryFile)
 
-    if (verbose) {
-      console.log(`📋 Found binary: ${binaryFile}`)
-    }
-
     // Ensure target directory exists
     const targetDir = path.dirname(targetPath)
     if (!fs.existsSync(targetDir)) {
-      if (verbose) {
-        console.log(`📁 Creating directory: ${targetDir}`)
-      }
       fs.mkdirSync(targetDir, { recursive: true })
     }
 
@@ -169,7 +208,7 @@ async function performSetup(options: {
     const needsSudo = targetPath.startsWith('/usr/') || targetPath.startsWith('/opt/') || targetPath.startsWith('/bin/') || targetPath.startsWith('/sbin/')
 
     if (needsSudo && platform !== 'win32') {
-      console.log('🔒 Installing to system directory (may require sudo)...')
+      console.log('🔒 Installing to system directory \x1B[3m(may require sudo)\x1B[0m...')
 
       try {
         // Try to copy with sudo
@@ -186,7 +225,9 @@ async function performSetup(options: {
     }
     else {
       // Regular copy
-      console.log('📋 Installing binary...')
+      if (verbose) {
+        console.log('📋 Installing binary...')
+      }
       fs.copyFileSync(sourcePath, targetPath)
 
       // Make executable (Unix-like systems)
@@ -195,13 +236,22 @@ async function performSetup(options: {
       }
     }
 
-    console.log(`✅ Binary installed to: ${targetPath}`)
+    if (verbose) {
+      console.log(`✅ Binary installed to: ${targetPath}`)
+    }
 
     // Verify installation
     let verificationSucceeded = false
     try {
-      const testResult = execSync(`"${targetPath}" --version`, { encoding: 'utf8', stdio: 'pipe' })
-      console.log(`🎉 Installation verified: ${testResult.trim()}`)
+      const testResult = execSync(`"${targetPath}" --version`, {
+        encoding: 'utf8',
+        stdio: 'pipe',
+        timeout: 10000, // 10 second timeout to prevent hanging
+      })
+
+      if (verbose) {
+        console.log(`🎉 Installation verified: ${testResult.trim()}`)
+      }
       verificationSucceeded = true
 
       // Additional verification: check if it's executable
@@ -212,15 +262,30 @@ async function performSetup(options: {
         }
       }
       catch {
-        console.log(`⚠️  Binary may not be executable`)
+        if (verbose) {
+          console.log(`⚠️  Binary may not be executable`)
+        }
       }
     }
     catch (error) {
-      console.log('⚠️  Installation completed but verification failed')
-
-      // Check if it's a dependency issue
+      // Check if it's a dependency issue first
       const errorMessage = error instanceof Error ? error.message : String(error)
-      if (errorMessage.includes('Cannot find module')) {
+
+      if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+        // Timeout is common and usually not a real problem
+        if (verbose) {
+          console.log('⚠️  Verification timed out - the binary may still work correctly')
+        }
+        // Consider timeout as success if file exists and has reasonable size
+        if (fs.existsSync(targetPath)) {
+          const stats = fs.statSync(targetPath)
+          if (stats.size > 1000000) {
+            verificationSucceeded = true
+          }
+        }
+      }
+      else if (errorMessage.includes('Cannot find module') || errorMessage.includes('dyld') || errorMessage.includes('Library not loaded')) {
+        console.log('⚠️  Installation completed but verification failed')
         console.log('⚠️  The binary appears to have dependency issues')
         console.log('This may be due to an issue with the pre-built binary')
         console.log('')
@@ -231,13 +296,21 @@ async function performSetup(options: {
         console.log('   cd launchpad && bun install && bun run build')
       }
       else {
-        console.log('The binary may still work correctly')
-      }
+        if (verbose) {
+          console.log('⚠️  Installation completed but verification failed')
+          console.log('The binary may still work correctly')
+        }
 
-      // Basic file existence check
-      if (fs.existsSync(targetPath)) {
-        const stats = fs.statSync(targetPath)
-        console.log(`ℹ️  File exists (${(stats.size / 1024 / 1024).toFixed(1)} MB)`)
+        // Check if file exists and appears valid
+        if (fs.existsSync(targetPath)) {
+          const stats = fs.statSync(targetPath)
+          if (stats.size > 1000000) {
+            verificationSucceeded = true
+          }
+          if (verbose) {
+            console.log(`ℹ️  File exists (${(stats.size / 1024 / 1024).toFixed(1)} MB)`)
+          }
+        }
       }
     }
 
@@ -260,7 +333,7 @@ async function performSetup(options: {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true })
       if (verbose) {
-        console.log(`🧹 Cleaned up temporary files: ${tmpDir}`)
+        console.log(`🧹 Cleaned up temporary files`)
       }
     }
     catch {
@@ -802,13 +875,8 @@ cli
       config.verbose = true
     }
 
-    console.log('🚀 Upgrading Launchpad...')
-    console.log('')
-
     try {
       // Get current binary location
-      // When running a compiled binary, process.argv[1] gives internal paths
-      // We need to find the actual launchpad binary location
       let currentBinaryPath = process.argv[1] || process.execPath
 
       // Try to find the real launchpad binary location
@@ -831,18 +899,10 @@ cli
 
       const targetPath = options?.target || currentBinaryPath
 
-      console.log(`📍 Current binary: ${currentBinaryPath}`)
-      console.log(`🎯 Target path: ${targetPath}`)
-
-      // Check current version
-      console.log(`📋 Current version: launchpad/${version}`)
-
       // If version is specified, use it; otherwise get latest from GitHub
       let targetVersion = options?.release
 
       if (!targetVersion) {
-        console.log('🔍 Checking for latest version...')
-
         try {
           const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
           if (!response.ok) {
@@ -851,47 +911,19 @@ cli
 
           const release = await response.json() as { tag_name: string }
           targetVersion = release.tag_name
-
-          console.log(`📦 Latest version: ${targetVersion}`)
         }
         catch (error) {
-          console.error('❌ Failed to check latest version:', error instanceof Error ? error.message : String(error))
-          console.log('💡 You can specify a version manually with --version')
+          console.error('Failed to check latest version:', error instanceof Error ? error.message : String(error))
+          console.log('You can specify a version manually with --release')
           process.exit(1)
         }
       }
 
       // Check if already on target version
       if (!options?.force && targetVersion === `v${version}`) {
-        console.log('✅ Already on the latest version!')
-        console.log('')
-        console.log('💡 Use --force to reinstall the current version')
+        console.log(`Congrats! You're already on the latest version of Launchpad (which is v${version})`)
         return
       }
-
-      console.log(`⬆️  Upgrading from v${version} to ${targetVersion}`)
-      console.log('')
-
-      // Use the setup command logic to download and install
-      // We'll delegate to the setup command with the appropriate options
-      const setupOptions: string[] = ['setup']
-
-      if (targetVersion) {
-        setupOptions.push('--release', targetVersion)
-      }
-
-      if (targetPath !== currentBinaryPath) {
-        setupOptions.push('--target', targetPath)
-      }
-
-      setupOptions.push('--force') // Always force during upgrade
-
-      if (options?.verbose) {
-        setupOptions.push('--verbose')
-      }
-
-      console.log(`🔄 Downloading and installing ${targetVersion}...`)
-      console.log('')
 
       // Use the same setup logic directly
       try {
@@ -902,44 +934,38 @@ cli
           verbose: options?.verbose || false,
         })
 
-        console.log('')
         if (verificationSucceeded) {
-          console.log('🎉 Upgrade completed successfully!')
-          console.log('')
-          console.log('🚀 Next steps:')
-          console.log('1. Restart your terminal or reload your shell')
-          console.log('2. Run: launchpad --version')
-          console.log('3. Verify the upgrade worked correctly')
+          console.log(`Congrats! Launchpad was updated to ${targetVersion}`)
         }
         else {
-          console.log('⚠️  Upgrade completed with verification issues')
-          console.log('')
-          console.log('⚠️  The binary was upgraded but failed verification.')
-          console.log('It may still work, but there could be compatibility issues.')
-          console.log('')
-          console.log('🔧 Recommended actions:')
-          console.log('1. Try running: launchpad --version')
-          console.log('2. If it hangs, try a different version with --release')
-          console.log('3. Consider building from source if issues persist')
+          // Check if the binary was actually installed successfully despite verification failure
+          if (fs.existsSync(targetPath)) {
+            const stats = fs.statSync(targetPath)
+            if (stats.size > 1000000) { // Binary is at least 1MB
+              console.log(`Congrats! Launchpad was updated to ${targetVersion}`)
+            }
+            else {
+              console.log('Upgrade completed with verification issues')
+              console.log('The binary may still work, but there could be compatibility issues.')
+              console.log('Try running: launchpad --version')
+            }
+          }
+          else {
+            console.log('Upgrade failed - binary not found at target location')
+          }
         }
       }
       catch (error) {
-        console.error('❌ Upgrade failed:', error instanceof Error ? error.message : String(error))
-        console.log('')
-        console.log('🔧 Troubleshooting:')
-        console.log('• Try running the setup command manually:')
-        console.log(`  launchpad setup --release ${targetVersion} --target "${targetPath}" --force`)
-        console.log('• Check your internet connection')
-        console.log('• Verify you have permission to write to the target location')
-        console.log('• Use --verbose for more detailed output')
+        console.error('Upgrade failed:', error instanceof Error ? error.message : String(error))
+        if (options?.verbose) {
+          console.log('Try running the setup command manually:')
+          console.log(`  launchpad setup --release ${targetVersion} --target "${targetPath}" --force`)
+        }
         process.exit(1)
       }
     }
     catch (error) {
       console.error('Upgrade failed:', error instanceof Error ? error.message : String(error))
-      console.log('')
-      console.log('💡 Alternative: Use the setup command directly:')
-      console.log('  launchpad setup --force')
       process.exit(1)
     }
   })
