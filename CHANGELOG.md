@@ -1,4 +1,16 @@
 
+## v0.4.10...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.10...main)
+
+### 🏡 Chore
+
+- Adjust shellcode ([b715e55](https://github.com/stacksjs/launchpad/commit/b715e55))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.9...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.9...main)
