@@ -7,7 +7,7 @@ import process from 'node:process'
 import { aliases, packages } from 'ts-pkgx'
 import { config } from './config'
 import { Path } from './path'
-import { ProgressBar, Spinner } from './progress'
+import { Spinner } from './progress'
 
 // Extract all package alias names from ts-pkgx
 export type PackageAlias = keyof typeof aliases
@@ -810,19 +810,13 @@ async function downloadPackage(
           const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
 
           if (!config.verbose && totalBytes > 0) {
-            // Show progress bar for downloads
-            const progressBar = new ProgressBar(totalBytes, {
-              showBytes: true,
-              showSpeed: true,
-              showETA: true,
-            })
-
-            console.log(`📦 Downloading ${domain} v${version}...`)
-
+            // Show real-time download progress like the CLI upgrade command
             const reader = response.body?.getReader()
             if (reader) {
               const chunks: Uint8Array[] = []
-              let receivedBytes = 0
+              let downloadedBytes = 0
+
+              console.log(`📦 Downloading ${domain} v${version}...`)
 
               while (true) {
                 const { done, value } = await reader.read()
@@ -831,12 +825,15 @@ async function downloadPackage(
 
                 if (value) {
                   chunks.push(value)
-                  receivedBytes += value.length
-                  progressBar.update(receivedBytes, totalBytes)
+                  downloadedBytes += value.length
+
+                  // Show progress - same format as CLI upgrade
+                  const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
+                  process.stdout.write(`\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`)
                 }
               }
 
-              progressBar.complete()
+              process.stdout.write('\r\x1B[K') // Clear the progress line
 
               // Combine all chunks into a single buffer
               const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
@@ -855,8 +852,22 @@ async function downloadPackage(
               await fs.promises.writeFile(file, Buffer.from(buffer))
             }
           }
+          else if (config.verbose) {
+            // Verbose mode - show size info like CLI upgrade
+            if (totalBytes > 0) {
+              console.warn(`⬇️  Downloading ${(totalBytes / 1024 / 1024).toFixed(1)} MB...`)
+            }
+            else {
+              console.warn('⬇️  Downloading...')
+            }
+
+            const buffer = await response.arrayBuffer()
+            await fs.promises.writeFile(file, Buffer.from(buffer))
+
+            console.warn(`✅ Downloaded ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
+          }
           else {
-            // Fallback for when content-length is not available or verbose mode
+            // Fallback for when content-length is not available
             const buffer = await response.arrayBuffer()
             await fs.promises.writeFile(file, Buffer.from(buffer))
           }

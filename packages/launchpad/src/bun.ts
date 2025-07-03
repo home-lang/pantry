@@ -1,9 +1,8 @@
 /* eslint-disable no-console */
-import fs, { createWriteStream } from 'node:fs'
+import fs from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { pipeline } from 'node:stream/promises'
 import { config } from './config'
 
 type Platform = 'darwin' | 'linux' | 'win32'
@@ -267,15 +266,61 @@ export async function install_bun(installPath: string, version?: string): Promis
         throw new Error('Failed to download Bun: No response body')
       }
 
-      // Save the downloaded file using arrayBuffer approach for better compatibility
-      try {
+      const contentLength = response.headers.get('content-length')
+      const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
+
+      // Show real-time download progress like the CLI upgrade command
+      if (!config.verbose && totalBytes > 0) {
+        const reader = response.body.getReader()
+        const chunks: Uint8Array[] = []
+        let downloadedBytes = 0
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done)
+            break
+
+          if (value) {
+            chunks.push(value)
+            downloadedBytes += value.length
+
+            // Show progress - same format as CLI upgrade
+            const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
+            process.stdout.write(`\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`)
+          }
+        }
+
+        process.stdout.write('\r\x1B[K') // Clear the progress line
+
+        // Combine all chunks
+        const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+        const buffer = new Uint8Array(totalLength)
+        let offset = 0
+        for (const chunk of chunks) {
+          buffer.set(chunk, offset)
+          offset += chunk.length
+        }
+
+        fs.writeFileSync(zipPath, buffer)
+      }
+      else if (config.verbose) {
+        // Verbose mode - show size info like CLI upgrade
+        if (totalBytes > 0) {
+          console.log(`⬇️  Downloading ${(totalBytes / 1024 / 1024).toFixed(1)} MB...`)
+        }
+        else {
+          console.log('⬇️  Downloading...')
+        }
+
         const arrayBuffer = await response.arrayBuffer()
         fs.writeFileSync(zipPath, new Uint8Array(arrayBuffer))
+
+        console.warn(`✅ Downloaded ${(arrayBuffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
       }
-      catch {
-        // Fallback: try using stream pipeline
-        const fileStream = createWriteStream(zipPath)
-        await pipeline(response.body as any, fileStream)
+      else {
+        // Fallback: use arrayBuffer approach for compatibility
+        const arrayBuffer = await response.arrayBuffer()
+        fs.writeFileSync(zipPath, new Uint8Array(arrayBuffer))
       }
 
       if (config.verbose)
