@@ -133,12 +133,7 @@ __launchpad_chpwd() {
                     /usr/local/bin/launchpad dev:on "$project_dir" 2>/dev/null || true
                 fi
             else
-                # Setup failed but not due to timeout
-                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                    echo "⚡ Environment setup for $(basename "$project_dir") (preparing...)" >&2
-                fi
-
-                # Try to set up basic environment synchronously
+                # Setup failed but not due to timeout - try to set up basic environment silently
                 local project_hash
                 project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
                 local env_dir="$HOME/.local/share/launchpad/launchpad_$project_hash"
@@ -146,7 +141,13 @@ __launchpad_chpwd() {
                 if [[ -d "$env_dir/bin" ]]; then
                     __launchpad_update_path "$env_dir/bin"
                     hash -r 2>/dev/null || true
+
+                    # Show activation message only if environment already exists
+                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                        /usr/local/bin/launchpad dev:on "$project_dir" 2>/dev/null || true
+                    fi
                 fi
+                # If no environment exists, be completely silent
             fi
         fi
     else
