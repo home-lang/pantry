@@ -1,4 +1,16 @@
 
+## v0.4.11...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.11...main)
+
+### 🏡 Chore
+
+- Adjust download progress ([a611f36](https://github.com/stacksjs/launchpad/commit/a611f36))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.10...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.10...main)
