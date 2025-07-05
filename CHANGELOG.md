@@ -1,4 +1,17 @@
 
+## v0.4.13...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.13...main)
+
+### 🏡 Chore
+
+- Update bunfig ([e05e157](https://github.com/stacksjs/launchpad/commit/e05e157))
+- Update lockfile ([c73f6a9](https://github.com/stacksjs/launchpad/commit/c73f6a9))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.12...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.12...main)
