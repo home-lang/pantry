@@ -1080,7 +1080,8 @@ cli
 cli
   .command('dev:on [dir]', 'Activate development environment (use `launchpad dev` instead)')
   .option('--silent', 'Suppress output messages')
-  .action(async (dir?: string, options?: { silent?: boolean }) => {
+  .option('--shell-safe', 'Output shell-safe message without ANSI escape sequences')
+  .action(async (dir?: string, options?: { silent?: boolean, shellSafe?: boolean }) => {
     try {
       const targetDir = dir ? path.resolve(dir) : process.cwd()
 
@@ -1089,7 +1090,14 @@ cli
       if (!options?.silent) {
         // Show activation message if configured
         if (config.showShellMessages && config.shellActivationMessage) {
-          const message = config.shellActivationMessage.replace('{path}', targetDir)
+          let message = config.shellActivationMessage.replace('{path}', targetDir)
+
+          // If called from shell integration, strip ANSI escape sequences to prevent shell parsing issues
+          if (options?.shellSafe) {
+            // eslint-disable-next-line no-control-regex
+            message = message.replace(/\u001B\[[0-9;]*m/g, '')
+          }
+
           console.log(message)
         }
       }

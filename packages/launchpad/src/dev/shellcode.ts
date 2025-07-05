@@ -130,7 +130,7 @@ __launchpad_chpwd() {
 
                 # Show activation message synchronously (no background jobs)
                 if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                    /usr/local/bin/launchpad dev:on "$project_dir" 2>/dev/null || true
+                    /usr/local/bin/launchpad dev:on "$project_dir" --shell-safe 2>/dev/null || true
                 fi
             else
                 # Setup failed but not due to timeout - try to set up basic environment silently
@@ -144,7 +144,7 @@ __launchpad_chpwd() {
 
                     # Show activation message only if environment already exists
                     if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                        /usr/local/bin/launchpad dev:on "$project_dir" 2>/dev/null || true
+                        /usr/local/bin/launchpad dev:on "$project_dir" --shell-safe 2>/dev/null || true
                     fi
                 fi
                 # If no environment exists, be completely silent
