@@ -1,4 +1,16 @@
 
+## v0.4.12...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.12...main)
+
+### 🏡 Chore
+
+- Add shell-safe option ([70ef1d1](https://github.com/stacksjs/launchpad/commit/70ef1d1))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.11...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.11...main)
