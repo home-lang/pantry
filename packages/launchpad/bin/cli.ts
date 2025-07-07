@@ -284,6 +284,42 @@ async function performSetup(options: {
           }
         }
       }
+      else if (errorMessage.includes('killed') || errorMessage.includes('SIGKILL') || errorMessage.includes('signal')) {
+        console.log('⚠️  Installation completed but verification failed due to code signing issues')
+        console.log('⚠️  This is a known issue with downloaded pre-built binaries on macOS')
+        console.log('')
+        console.log('🔧 To fix this issue:')
+        console.log(`1. Remove the quarantine attribute: sudo xattr -d com.apple.quarantine "${targetPath}"`)
+        console.log('2. Or build from source instead:')
+        console.log('   git clone https://github.com/stacksjs/launchpad.git')
+        console.log('   cd launchpad/packages/launchpad && bun install && bun run build')
+        console.log(`   sudo cp bin/launchpad "${targetPath}"`)
+        console.log('')
+        console.log('💡 The binary was installed but may not work due to macOS security restrictions')
+
+        // Try to remove quarantine attribute automatically
+        try {
+          execSync(`sudo xattr -d com.apple.quarantine "${targetPath}"`, { stdio: 'pipe' })
+          console.log('✅ Attempted to remove quarantine attribute')
+
+          // Try verification again
+          try {
+            execSync(`"${targetPath}" --version`, {
+              encoding: 'utf8',
+              stdio: 'pipe',
+              timeout: 5000,
+            })
+            console.log('✅ Binary verification succeeded after removing quarantine attribute')
+            verificationSucceeded = true
+          }
+          catch {
+            console.log('⚠️  Binary still fails verification - code signing issues persist')
+          }
+        }
+        catch {
+          console.log('⚠️  Could not automatically remove quarantine attribute (no sudo access)')
+        }
+      }
       else if (errorMessage.includes('Cannot find module') || errorMessage.includes('dyld') || errorMessage.includes('Library not loaded')) {
         console.log('⚠️  Installation completed but verification failed')
         console.log('⚠️  The binary appears to have dependency issues')
@@ -293,7 +329,8 @@ async function performSetup(options: {
         console.log('1. Try a different version with --release')
         console.log('2. Build from source instead:')
         console.log('   git clone https://github.com/stacksjs/launchpad.git')
-        console.log('   cd launchpad && bun install && bun run build')
+        console.log('   cd launchpad/packages/launchpad && bun install && bun run build')
+        console.log(`   sudo cp bin/launchpad "${targetPath}"`)
       }
       else {
         if (verbose) {
@@ -879,22 +916,38 @@ cli
       // Get current binary location
       let currentBinaryPath = process.argv[1] || process.execPath
 
-      // Try to find the real launchpad binary location
+      // Try to find the real launchpad binary location, preferring system paths
       try {
-        const { execSync } = await import('node:child_process')
-        const whichResult = execSync('which launchpad', { encoding: 'utf8', stdio: 'pipe' })
-        currentBinaryPath = whichResult.trim()
-      }
-      catch {
-        // Fallback to common locations if 'which' fails
         const fs = await import('node:fs')
-        const commonPaths = ['/usr/local/bin/launchpad', '/usr/bin/launchpad', '~/.local/bin/launchpad']
-        for (const commonPath of commonPaths) {
-          if (fs.existsSync(commonPath)) {
-            currentBinaryPath = commonPath
+        const systemPaths = ['/usr/local/bin/launchpad', '/usr/bin/launchpad', '~/.local/bin/launchpad']
+
+        // First check system paths
+        for (const systemPath of systemPaths) {
+          if (fs.existsSync(systemPath)) {
+            currentBinaryPath = systemPath
             break
           }
         }
+
+        // If no system path found, try 'which' as fallback
+        if (!systemPaths.includes(currentBinaryPath)) {
+          try {
+            const { execSync } = await import('node:child_process')
+            const whichResult = execSync('which launchpad', { encoding: 'utf8', stdio: 'pipe' })
+            const whichPath = whichResult.trim()
+
+            // Only use 'which' result if it's not in node_modules or a dev path
+            if (!whichPath.includes('node_modules') && !whichPath.includes('/packages/')) {
+              currentBinaryPath = whichPath
+            }
+          }
+          catch {
+            // Keep the original path if which fails
+          }
+        }
+      }
+      catch {
+        // Keep the original path if detection fails
       }
 
       const targetPath = options?.target || currentBinaryPath

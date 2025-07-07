@@ -1,9 +1,37 @@
 import { join } from 'node:path'
 import process from 'node:process'
 
+// Helper function to find the correct launchpad binary
+function getLaunchpadBinary(): string {
+  // Check if we're running from a test environment
+  if (process.argv[1] && (process.argv[1].includes('.test.') || process.argv[1].includes('/test/'))) {
+    return 'launchpad'
+  }
+
+  // Check if we're running from CLI script in development (bin/cli.ts)
+  if (process.argv[1] && process.argv[1].includes('/bin/cli.ts')) {
+    return 'launchpad'
+  }
+
+  // Check if we're running from a compiled binary
+  if (process.argv[1] && process.argv[1].includes('launchpad') && !process.argv[1].includes('.test.') && !process.argv[1].includes('.ts')) {
+    return process.argv[1]
+  }
+
+  // Check if we have the executable path
+  if (process.argv0 && process.argv0.includes('launchpad')) {
+    return process.argv0
+  }
+
+  // Fall back to finding launchpad in PATH
+  // This will use the first launchpad found in PATH
+  return 'launchpad'
+}
+
 export function shellcode(): string {
-  // Use absolute path to avoid PATH resolution issues
-  const setupCommand = 'LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" /usr/local/bin/launchpad dev "$project_dir" --shell --quiet 2>/dev/null'
+  // Use the same launchpad binary that's currently running
+  const launchpadBinary = getLaunchpadBinary()
+  const setupCommand = `LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell --quiet 2>/dev/null`
   const grepFilter = '/usr/bin/grep -E \'^(export|if|fi|#)\' 2>/dev/null'
 
   return `
@@ -89,7 +117,7 @@ __launchpad_chpwd() {
 
             # Skip setup if we've had too many timeouts recently
             if [[ $__launchpad_timeout_count -gt 3 ]]; then
-                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
                     echo "⚡ Environment setup temporarily disabled due to timeouts" >&2
                 fi
                 return 0
@@ -114,7 +142,7 @@ __launchpad_chpwd() {
             if [[ $setup_exit_code -eq 124 ]]; then
                 # Timeout occurred (exit code 124 from timeout command)
                 __launchpad_timeout_count=$(((__launchpad_timeout_count + 1)))
-                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
                     echo "⚠️  Environment setup timed out for $(basename "$project_dir")" >&2
                 fi
                 return 0
@@ -129,8 +157,8 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
 
                 # Show activation message synchronously (no background jobs)
-                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                    /usr/local/bin/launchpad dev:on "$project_dir" --shell-safe 2>/dev/null || true
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                    LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe 2>/dev/null || true
                 fi
             else
                 # Setup failed but not due to timeout - try to set up basic environment silently
@@ -143,8 +171,8 @@ __launchpad_chpwd() {
                     hash -r 2>/dev/null || true
 
                     # Show activation message only if environment already exists
-                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                        /usr/local/bin/launchpad dev:on "$project_dir" --shell-safe 2>/dev/null || true
+                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                        LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe 2>/dev/null || true
                     fi
                 fi
                 # If no environment exists, be completely silent
@@ -162,8 +190,8 @@ __launchpad_chpwd() {
             fi
 
             # Show deactivation message synchronously (no background jobs)
-            if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-true}" != "false" ]]; then
-                /usr/local/bin/launchpad dev:off 2>/dev/null || true
+            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:off 2>/dev/null || true
             fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
@@ -221,6 +249,5 @@ export function datadir(): string {
 }
 
 function platform_data_home_default(): string {
-  const homeDir = process.env.HOME || process.env.USERPROFILE || '~'
-  return join(homeDir, '.local', 'share', 'launchpad')
+  return join(process.env.HOME || '~', '.local', 'share', 'launchpad')
 }

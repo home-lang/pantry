@@ -121,13 +121,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       if (shellOutput) {
         config.showShellMessages = false
-        const originalConsoleLog = console.log
-        const originalConsoleWarn = console.warn
+        // Redirect all stdout to stderr during installation to keep stdout clean for shell code
+        const originalStdoutWrite = process.stdout.write.bind(process.stdout)
+        const originalConsoleLog = console.log.bind(console)
 
-        console.log = (...args) => {
-          process.stderr.write(`${args.join(' ')}\n`)
+        process.stdout.write = (chunk: any, encoding?: any, cb?: any) => {
+          return process.stderr.write(chunk, encoding, cb)
         }
-        console.warn = (...args) => {
+        console.log = (...args: any[]) => {
           process.stderr.write(`${args.join(' ')}\n`)
         }
 
@@ -139,8 +140,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           process.stderr.write(`Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
         }
         finally {
+          // Restore original stdout and console.log
+          process.stdout.write = originalStdoutWrite
           console.log = originalConsoleLog
-          console.warn = originalConsoleWarn
         }
       }
       else {

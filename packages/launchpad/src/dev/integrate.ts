@@ -17,6 +17,7 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
       const hasHook = content.includes('# https://github.com/stacksjs/launchpad')
         || content.includes('# Added by launchpad')
         || content.includes('eval "$(launchpad dev:shellcode)"')
+        || content.includes('LAUNCHPAD_SHELL_INTEGRATION=1')
 
       if (op === 'install') {
         if (hasHook) {
@@ -42,6 +43,7 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
         const filteredLines = lines.filter(line =>
           !line.includes('# https://github.com/stacksjs/launchpad')
           && !line.includes('# Added by launchpad')
+          && !line.trim().startsWith('LAUNCHPAD_SHELL_INTEGRATION=1 eval')
           && line.trim() !== 'eval "$(launchpad dev:shellcode)"',
         )
 
@@ -86,7 +88,8 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
 }
 
 function getShellFiles(): [string, string][] {
-  const eval_ln = 'eval "$(launchpad dev:shellcode)"'
+  // Use environment variable to suppress dotenvx and include comprehensive filtering
+  const eval_ln = 'LAUNCHPAD_SHELL_INTEGRATION=1 eval "$(launchpad dev:shellcode 2>/dev/null | sed $\'s/\\x1b\\[[0-9;]*m//g\' | grep -v \'^\\[dotenvx@\' | grep -v \'^[[:space:]]*$\')"'
 
   const home = homedir()
   const zdotdir = process.env.ZDOTDIR || home

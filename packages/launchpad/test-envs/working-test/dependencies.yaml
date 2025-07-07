@@ -3,4 +3,4 @@ dependencies:
   python.org: ~3.12
   curl.se: ^8.5
   cmake.org: ^3.28
-  jq.com: ^1.7
+  stedolan.github.io/jq: ^1.7

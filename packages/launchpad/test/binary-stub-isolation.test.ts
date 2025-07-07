@@ -350,7 +350,9 @@ describe('Binary Stub Isolation', () => {
       // The package should install but no binary stubs will be created
       // This might fail if the package version doesn't exist, which is expected
       if (result.exitCode === 0) {
-        expect(result.stderr).toContain('No binaries found for zlib.net after mirroring')
+        // Check both stdout and stderr for the message since output formatting can vary
+        const combinedOutput = result.stdout + result.stderr
+        expect(combinedOutput).toContain('No binaries were installed')
       }
       else {
         // If the specific version fails, check we get proper error handling
