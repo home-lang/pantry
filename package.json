@@ -34,7 +34,7 @@
     "@types/bun": "^1.2.18",
     "bumpp": "^10.2.0",
     "bun-plugin-dtsx": "0.9.5",
-    "changelogen": "^0.6.1",
+    "changelogen": "^0.6.2",
     "chromium-bidi": "^7.0.0",
     "electron": "^37.2.0",
     "lint-staged": "^15.5.2",
