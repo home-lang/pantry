@@ -132,9 +132,10 @@ describe('Upgrade Binary Detection Logic', () => {
     }, 15000)
 
     it('should indicate no upgrade needed in dry-run mode when versions match', async () => {
+      const { version } = await import(path.join(__dirname, '..', 'package.json'))
       return new Promise<void>((resolve, reject) => {
         // Use current version to ensure versions match
-        const proc = spawn('bun', [cliPath, 'upgrade', '--dry-run', '--release', 'v0.4.15'], {
+        const proc = spawn('bun', [cliPath, 'upgrade', '--dry-run', '--release', `v${version}`], {
           stdio: ['ignore', 'pipe', 'pipe'],
           env: getTestEnv(),
         })
