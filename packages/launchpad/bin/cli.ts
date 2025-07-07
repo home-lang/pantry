@@ -904,53 +904,100 @@ cli
   .option('--verbose', 'Enable verbose output')
   .option('--target <path>', 'Target installation path (default: current binary location)')
   .option('--release <version>', 'Upgrade to specific version (default: latest)')
+  .option('--dry-run', 'Show what would be upgraded without actually upgrading')
   .example('launchpad upgrade')
   .example('launchpad upgrade --force')
   .example('launchpad upgrade --release v0.3.5')
-  .action(async (options?: { force?: boolean, verbose?: boolean, target?: string, release?: string }) => {
+  .example('launchpad upgrade --dry-run --verbose')
+  .action(async (options?: { force?: boolean, verbose?: boolean, target?: string, release?: string, dryRun?: boolean }) => {
     if (options?.verbose) {
       config.verbose = true
     }
 
     try {
-      // Get current binary location
-      let currentBinaryPath = process.argv[1] || process.execPath
+      // Get current binary location - prioritize the installed binary over dev environment
+      let currentBinaryPath: string
 
-      // Try to find the real launchpad binary location, preferring system paths
+      // Method 1: Try 'which launchpad' first to find the actual installed binary
       try {
-        const fs = await import('node:fs')
-        const systemPaths = ['/usr/local/bin/launchpad', '/usr/bin/launchpad', '~/.local/bin/launchpad']
+        const { execSync } = await import('node:child_process')
+        const whichResult = execSync('which launchpad', { encoding: 'utf8', stdio: 'pipe' })
+        const whichPath = whichResult.trim()
 
-        // First check system paths
-        for (const systemPath of systemPaths) {
-          if (fs.existsSync(systemPath)) {
-            currentBinaryPath = systemPath
-            break
-          }
+        // Use 'which' result unless it points to a development environment
+        if (!whichPath.includes('/packages/') && !whichPath.includes('/dist/') && !whichPath.includes('/src/')) {
+          currentBinaryPath = whichPath
         }
+        else {
+          // Development environment detected, look for actual installed binary
+          const fs = await import('node:fs')
+          const realBinaryPaths = [
+            '/usr/local/bin/launchpad',
+            '/usr/bin/launchpad',
+            path.join(process.env.HOME || '~', '.local/bin/launchpad'),
+            path.join(process.env.HOME || '~', '.bun/bin/launchpad'),
+            path.join(process.env.HOME || '~', 'bin/launchpad'),
+          ]
 
-        // If no system path found, try 'which' as fallback
-        if (!systemPaths.includes(currentBinaryPath)) {
-          try {
-            const { execSync } = await import('node:child_process')
-            const whichResult = execSync('which launchpad', { encoding: 'utf8', stdio: 'pipe' })
-            const whichPath = whichResult.trim()
-
-            // Only use 'which' result if it's not in node_modules or a dev path
-            if (!whichPath.includes('node_modules') && !whichPath.includes('/packages/')) {
-              currentBinaryPath = whichPath
+          currentBinaryPath = whichPath // fallback to 'which' result
+          for (const realPath of realBinaryPaths) {
+            if (fs.existsSync(realPath)) {
+              // Verify it's not a symlink to development environment
+              try {
+                const stats = fs.lstatSync(realPath)
+                if (stats.isSymbolicLink()) {
+                  const linkTarget = fs.readlinkSync(realPath)
+                  if (!linkTarget.includes('/packages/') && !linkTarget.includes('/dist/')) {
+                    currentBinaryPath = realPath
+                    break
+                  }
+                }
+                else {
+                  currentBinaryPath = realPath
+                  break
+                }
+              }
+              catch {
+                // If we can't check, use it anyway
+                currentBinaryPath = realPath
+                break
+              }
             }
-          }
-          catch {
-            // Keep the original path if which fails
           }
         }
       }
       catch {
-        // Keep the original path if detection fails
+        // Method 2: Use process.argv[1] if it points to a launchpad binary (not a test file or dev environment)
+        if (process.argv[1] && process.argv[1].includes('launchpad') && !process.argv[1].includes('.test.') && !process.argv[1].includes('/test/') && !process.argv[1].includes('/packages/') && !process.argv[1].includes('/dist/')) {
+          currentBinaryPath = process.argv[1]
+        }
+        else {
+          // Method 3: Check common installation paths as fallback
+          const fs = await import('node:fs')
+          const commonPaths = [
+            '/usr/local/bin/launchpad',
+            '/usr/bin/launchpad',
+            path.join(process.env.HOME || '~', '.local/bin/launchpad'),
+            path.join(process.env.HOME || '~', '.bun/bin/launchpad'),
+            path.join(process.env.HOME || '~', 'bin/launchpad'),
+          ]
+
+          currentBinaryPath = '/usr/local/bin/launchpad' // default fallback
+          for (const commonPath of commonPaths) {
+            if (fs.existsSync(commonPath)) {
+              currentBinaryPath = commonPath
+              break
+            }
+          }
+        }
       }
 
       const targetPath = options?.target || currentBinaryPath
+
+      if (options?.verbose) {
+        console.log(`🔍 Detected current binary: ${currentBinaryPath}`)
+        console.log(`🎯 Upgrade target: ${targetPath}`)
+      }
 
       // If version is specified, use it; otherwise get latest from GitHub
       let targetVersion = options?.release
@@ -972,9 +1019,42 @@ cli
         }
       }
 
+      if (options?.verbose) {
+        console.log(`📋 Current version: v${version}`)
+        console.log(`📋 Target version: ${targetVersion}`)
+      }
+
       // Check if already on target version
       if (!options?.force && targetVersion === `v${version}`) {
-        console.log(`Congrats! You're already on the latest version of Launchpad (which is v${version})`)
+        console.log(`✅ You're already on the latest version of Launchpad (v${version})`)
+        if (options?.verbose) {
+          console.log('💡 Use --force to reinstall the same version')
+        }
+        return
+      }
+
+      if (options?.verbose && targetVersion !== `v${version}`) {
+        console.log(`🚀 Upgrading from v${version} to ${targetVersion}`)
+      }
+
+      // Handle dry-run mode
+      if (options?.dryRun) {
+        console.log('\n🔍 DRY RUN MODE - Showing what would be upgraded:\n')
+        console.log(`📋 Current binary: ${currentBinaryPath}`)
+        console.log(`📋 Current version: v${version}`)
+        console.log(`📋 Target version: ${targetVersion}`)
+        console.log(`📋 Target path: ${targetPath}`)
+
+        if (targetVersion === `v${version}`) {
+          console.log('\n✅ Already on target version - no upgrade needed')
+          console.log('💡 Use --force to reinstall the same version')
+        }
+        else {
+          console.log(`\n🚀 Would upgrade from v${version} to ${targetVersion}`)
+          console.log(`📥 Would download: ${targetVersion} binary`)
+          console.log(`📍 Would install to: ${targetPath}`)
+          console.log('\n💡 Run without --dry-run to perform the actual upgrade')
+        }
         return
       }
 

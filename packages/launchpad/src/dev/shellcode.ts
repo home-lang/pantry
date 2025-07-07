@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 
@@ -13,18 +15,47 @@ function getLaunchpadBinary(): string {
     return 'launchpad'
   }
 
-  // Check if we're running from a compiled binary
-  if (process.argv[1] && process.argv[1].includes('launchpad') && !process.argv[1].includes('.test.') && !process.argv[1].includes('.ts')) {
-    return process.argv[1]
+  // Check if we're running from a compiled binary or Bun's internal filesystem
+  if (process.argv[1] && (process.argv[1].includes('launchpad') || process.argv[1].includes('$bunfs')) && !process.argv[1].includes('.test.') && !process.argv[1].includes('.ts')) {
+    // When running from Bun's compiled binary, argv[1] might be internal like /$bunfs/root/launchpad
+    // In this case, we should try to find the actual binary path
+
+    // First, try to use environment variables or find the binary in PATH
+    try {
+      const whichResult = spawnSync('which', ['launchpad'], { encoding: 'utf8', timeout: 1000 })
+      if (whichResult.status === 0 && whichResult.stdout.trim()) {
+        return whichResult.stdout.trim()
+      }
+    }
+    catch {
+      // Ignore errors from which command
+    }
+
+    // If argv[1] looks like a real path (not internal Bun filesystem), use it
+    if (process.argv[1] && !process.argv[1].includes('$bunfs') && !process.argv[1].includes('/$bunfs')) {
+      return process.argv[1]
+    }
   }
 
-  // Check if we have the executable path
+  // Check if we have the executable path from argv0
   if (process.argv0 && process.argv0.includes('launchpad')) {
     return process.argv0
   }
 
+  // Last resort: try to find launchpad in common installation paths
+  const commonPaths = [
+    '/usr/local/bin/launchpad',
+    `${process.env.HOME}/.bun/bin/launchpad`,
+    `${process.env.HOME}/.local/bin/launchpad`,
+  ]
+
+  for (const path of commonPaths) {
+    if (existsSync(path)) {
+      return path
+    }
+  }
+
   // Fall back to finding launchpad in PATH
-  // This will use the first launchpad found in PATH
   return 'launchpad'
 }
 
