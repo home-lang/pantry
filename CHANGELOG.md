@@ -1,4 +1,17 @@
 
+## v0.4.14...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.14...main)
+
+### 🏡 Chore
+
+- Update cover image ([ee04a19](https://github.com/stacksjs/launchpad/commit/ee04a19))
+- Stability improvements ([81452a2](https://github.com/stacksjs/launchpad/commit/81452a2))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.13...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.13...main)
