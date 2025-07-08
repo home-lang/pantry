@@ -88,8 +88,9 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
 }
 
 function getShellFiles(): [string, string][] {
-  // Use environment variable to suppress dotenvx and include comprehensive filtering
-  const eval_ln = 'LAUNCHPAD_SHELL_INTEGRATION=1 eval "$(launchpad dev:shellcode 2>/dev/null | sed $\'s/\\x1b\\[[0-9;]*m//g\' | grep -v \'^\\[dotenvx@\' | grep -v \'^[[:space:]]*$\')"'
+  // Modified to allow stderr (progress indicators) to pass through while suppressing stdout noise
+  // Remove 2>/dev/null from dev:shellcode to allow progress indicators, but keep filtering for clean shell code
+  const eval_ln = 'LAUNCHPAD_SHELL_INTEGRATION=1 eval "$(launchpad dev:shellcode | sed $\'s/\\x1b\\[[0-9;]*m//g\' | grep -v \'^\\[dotenvx@\' | grep -v \'^[[:space:]]*$\')"'
 
   const home = homedir()
   const zdotdir = process.env.ZDOTDIR || home

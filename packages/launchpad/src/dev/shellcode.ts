@@ -165,9 +165,16 @@ __launchpad_chpwd() {
                 # Create a temp file for stdout only
                 local temp_file=$(mktemp)
 
-                # Run setup command: stdout goes to temp file, stderr passes through for progress
-                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file"; then
-                    env_output=$(cat "$temp_file" | ${grepFilter})
+                # Run setup command: stdout goes to temp file, stderr goes to controlling terminal for progress display
+                # Use exec to ensure stderr shows in the current terminal session
+                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file" 2>&1; then
+                    # Filter progress messages from temp file and show them on stderr while extracting shell code
+                    if [[ -s "$temp_file" ]]; then
+                        # Show progress lines (stderr content) to terminal
+                        grep -E '(🔧|📦|⬇️|✅|⚡|⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏)' "$temp_file" >&2 2>/dev/null || true
+                        # Extract shell code for evaluation
+                        env_output=$(cat "$temp_file" | ${grepFilter})
+                    fi
                     setup_exit_code=0
                 else
                     setup_exit_code=$?
