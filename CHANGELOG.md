@@ -1,4 +1,20 @@
 
+## v0.4.17...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.17...main)
+
+### 🚀 Enhancements
+
+- Add remove `all` option ([11c877d](https://github.com/stacksjs/launchpad/commit/11c877d))
+
+### 🏡 Chore
+
+- Improve install output ([3b8c194](https://github.com/stacksjs/launchpad/commit/3b8c194))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.16...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.16...main)
