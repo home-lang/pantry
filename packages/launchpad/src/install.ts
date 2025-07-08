@@ -779,7 +779,7 @@ async function downloadPackage(
           console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
         }
         else {
-          console.log(`📦 Using cached ${domain} v${version}...`)
+          console.log(`⚡ Found cached ${domain} v${version}`)
         }
 
         // Copy cached file to temp directory
@@ -827,13 +827,16 @@ async function downloadPackage(
                   chunks.push(value)
                   downloadedBytes += value.length
 
-                  // Show progress - same format as CLI upgrade
+                  // Show progress - same format as CLI upgrade command
                   const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
-                  process.stdout.write(`\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`)
+                  const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(1)
+                  const totalMB = (totalBytes / 1024 / 1024).toFixed(1)
+                  process.stdout.write(`\r⬇️  ${downloadedMB}/${totalMB} MB (${progress}%)`)
                 }
               }
 
               process.stdout.write('\r\x1B[K') // Clear the progress line
+              console.log(`✅ Downloaded ${domain} v${version} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`)
 
               // Combine all chunks into a single buffer
               const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
@@ -905,6 +908,9 @@ async function downloadPackage(
     const extractSpinner = new Spinner()
     if (!config.verbose) {
       extractSpinner.start(`🔧 Extracting ${domain} v${version}...`)
+    }
+    else {
+      console.warn(`Extracting ${domain} v${version}...`)
     }
 
     // Use Bun's spawn directly to avoid shell dependency issues
@@ -981,6 +987,9 @@ async function downloadPackage(
     const installSpinner = new Spinner()
     if (!config.verbose) {
       installSpinner.start(`⚡ Installing ${domain} v${version}...`)
+    }
+    else {
+      console.warn(`Installing ${domain} v${version}...`)
     }
 
     // Find the actual package root in the extracted directory
@@ -1080,7 +1089,10 @@ async function downloadPackage(
     )
 
     if (!config.verbose) {
-      installSpinner.stop()
+      installSpinner.stop(`✅ Installed ${domain} v${version}`)
+    }
+    else {
+      console.warn(`✅ Successfully installed ${domain} v${version}`)
     }
 
     // Clean up temp directory
@@ -1569,6 +1581,9 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }
   else if (packageList.length > 1) {
     console.log(`🚀 Installing ${packageList.length} packages...`)
+  }
+  else if (packageList.length === 1) {
+    console.log(`📦 Installing ${packageList[0]}...`)
   }
 
   const allInstalledFiles: string[] = []

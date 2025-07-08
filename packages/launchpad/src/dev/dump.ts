@@ -121,6 +121,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       if (shellOutput) {
         config.showShellMessages = false
+        // Show progress to stderr for shell mode
+        process.stderr.write(`🔧 Setting up environment for ${packages.length} packages...\n`)
+
         // Redirect all stdout to stderr during installation to keep stdout clean for shell code
         const originalStdoutWrite = process.stdout.write.bind(process.stdout)
         const originalConsoleLog = console.log.bind(console)
@@ -134,6 +137,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         try {
           results = await install(packages, installPath)
+          process.stderr.write(`✅ Environment ready!\n`)
         }
         catch (error) {
           // For shell mode, output error to stderr and don't throw
@@ -146,14 +150,23 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
       }
       else {
+        if (!quiet) {
+          console.log(`🔧 Setting up environment for ${packages.length} packages...`)
+        }
         results = await install(packages, installPath)
       }
 
       config.verbose = originalVerbose
       config.showShellMessages = originalShowShellMessages
     }
-    else if (!quiet && !shellOutput) {
-      console.log('📦 Using cached environment...')
+    else {
+      if (!quiet && !shellOutput) {
+        console.log('📦 Using cached environment...')
+      }
+      else if (shellOutput) {
+        // Even for cached environments, show quick progress in shell mode
+        process.stderr.write(`⚡ Activating cached environment...\n`)
+      }
     }
 
     // Output results

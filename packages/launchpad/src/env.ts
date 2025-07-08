@@ -39,7 +39,7 @@ interface RemoveEnvironmentOptions {
 }
 
 function getEnvironmentsBaseDir(): string {
-  return path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')
+  return path.join(os.homedir(), '.local', 'share', 'launchpad')
 }
 
 function formatSize(bytes: number): string {
@@ -120,6 +120,11 @@ function getAllEnvironments(): EnvironmentInfo[] {
 
     for (const entry of entries) {
       if (!entry.isDirectory()) {
+        continue
+      }
+
+      // Skip directories that don't look like environment hashes (should contain an underscore)
+      if (!entry.name.includes('_')) {
         continue
       }
 
