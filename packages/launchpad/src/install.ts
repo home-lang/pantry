@@ -458,6 +458,18 @@ export function resolvePackageName(packageName: string): string {
  */
 export function getLatestVersion(packageName: string): string | null {
   const domain = resolvePackageName(packageName)
+
+  // First, try to find the package by iterating through all packages and matching the domain
+  for (const [_, pkg] of Object.entries(packages)) {
+    if ('domain' in pkg && pkg.domain === domain) {
+      if ('versions' in pkg && Array.isArray(pkg.versions) && pkg.versions.length > 0) {
+        return pkg.versions[0] // versions[0] is always the latest
+      }
+      break
+    }
+  }
+
+  // Fallback to the old logic for packages that might not have explicit domains
   const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
@@ -473,6 +485,18 @@ export function getLatestVersion(packageName: string): string | null {
  */
 export function getAvailableVersions(packageName: string): string[] {
   const domain = resolvePackageName(packageName)
+
+  // First, try to find the package by iterating through all packages and matching the domain
+  for (const [_, pkg] of Object.entries(packages)) {
+    if ('domain' in pkg && pkg.domain === domain) {
+      if ('versions' in pkg && Array.isArray(pkg.versions)) {
+        return pkg.versions
+      }
+      break
+    }
+  }
+
+  // Fallback to the old logic for packages that might not have explicit domains
   const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
