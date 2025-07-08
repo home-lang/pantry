@@ -1,4 +1,16 @@
 
+## v0.4.21...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.21...main)
+
+### 🏡 Chore
+
+- Resolution updates ([f106890](https://github.com/stacksjs/launchpad/commit/f106890))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.20...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.20...main)
