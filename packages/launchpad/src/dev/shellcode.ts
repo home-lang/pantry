@@ -62,11 +62,10 @@ function getLaunchpadBinary(): string {
 export function shellcode(): string {
   // Use the same launchpad binary that's currently running
   const launchpadBinary = getLaunchpadBinary()
-  const setupCommand = `LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell --quiet 2>/dev/null`
   const grepFilter = '/usr/bin/grep -E \'^(export|if|fi|#)\' 2>/dev/null'
 
   return `
-# Launchpad shell integration with no background jobs
+# Launchpad shell integration with progress indicators
 __launchpad_cache_dir=""
 __launchpad_cache_timestamp=0
 __launchpad_setup_in_progress=""
@@ -157,15 +156,24 @@ __launchpad_chpwd() {
             # Mark setup as in progress
             __launchpad_setup_in_progress="$project_dir"
 
-            # Set up the environment with aggressive timeout and error suppression
+            # Set up the environment with progress indicators
             local env_output
             local setup_exit_code=0
 
-            # Use a shorter timeout - no background jobs
+            # Allow stderr to show progress in real-time while capturing stdout for shell evaluation
             {
-                env_output=$(${setupCommand} | ${grepFilter})
-                setup_exit_code=$?
-            } 2>/dev/null
+                # Create a temp file for stdout only
+                local temp_file=$(mktemp)
+
+                # Run setup command: stdout goes to temp file, stderr passes through for progress
+                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file"; then
+                    env_output=$(cat "$temp_file" | ${grepFilter})
+                    setup_exit_code=0
+                else
+                    setup_exit_code=$?
+                fi
+                rm -f "$temp_file" 2>/dev/null || true
+            }
 
             # Clear the in-progress flag
             __launchpad_setup_in_progress=""

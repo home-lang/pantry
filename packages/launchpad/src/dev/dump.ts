@@ -5,6 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
 import { install } from '../install'
+import { ProgressBar, Spinner } from '../progress'
 
 export interface DumpOptions {
   dryrun?: boolean
@@ -121,32 +122,72 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       if (shellOutput) {
         config.showShellMessages = false
-        // Show progress to stderr for shell mode
-        process.stderr.write(`🔧 Setting up environment for ${packages.length} packages...\n`)
 
-        // Redirect all stdout to stderr during installation to keep stdout clean for shell code
+        // Show installation progress to stderr for shell mode - like upgrade command
+        const projectName = path.basename(dir)
+        const startTime = Date.now()
+
+        process.stderr.write(`🔧 Setting up environment for ${projectName}...\n`)
+
+        // Create a progress spinner for overall installation progress
+        const installSpinner = new Spinner()
+        installSpinner.start(`📦 Installing ${packages.length} packages`)
+
+        // Set up progress tracking that will be used by the install function
         const originalStdoutWrite = process.stdout.write.bind(process.stdout)
         const originalConsoleLog = console.log.bind(console)
+        const originalConsoleWarn = console.warn.bind(console)
 
+        // Redirect stdout to stderr for shell mode but preserve progress indicators
         process.stdout.write = (chunk: any, encoding?: any, cb?: any) => {
+          const chunkStr = chunk.toString()
+
+          // Allow progress indicators (containing download progress or specific patterns) to show
+          if (chunkStr.includes('⬇️') || chunkStr.includes('%') || chunkStr.includes('MB')
+            || chunkStr.includes('📦') || chunkStr.includes('✅') || chunkStr.includes('\r')) {
+            return process.stderr.write(chunk, encoding, cb)
+          }
+
+          // Redirect other output to stderr
           return process.stderr.write(chunk, encoding, cb)
         }
+
+        // Redirect console.log to stderr but allow progress messages
         console.log = (...args: any[]) => {
+          const message = args.join(' ')
+          if (message.includes('📦') || message.includes('⬇️') || message.includes('✅')
+            || message.includes('Installing') || message.includes('Downloaded') || message.includes('%')) {
+            process.stderr.write(`${message}\n`)
+          }
+          else {
+            // Suppress other console.log in shell mode unless it's progress-related
+            process.stderr.write(`${message}\n`)
+          }
+        }
+
+        // Keep console.warn as is for important messages
+        console.warn = (...args: any[]) => {
           process.stderr.write(`${args.join(' ')}\n`)
         }
 
         try {
           results = await install(packages, installPath)
-          process.stderr.write(`✅ Environment ready!\n`)
+
+          installSpinner.stop()
+
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+          process.stderr.write(`✅ Environment activated for ${projectName} (${elapsed}s)\n`)
         }
         catch (error) {
+          installSpinner.stop()
           // For shell mode, output error to stderr and don't throw
-          process.stderr.write(`Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
+          process.stderr.write(`❌ Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
         }
         finally {
-          // Restore original stdout and console.log
+          // Restore original stdout and console methods
           process.stdout.write = originalStdoutWrite
           console.log = originalConsoleLog
+          console.warn = originalConsoleWarn
         }
       }
       else {
@@ -165,7 +206,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       }
       else if (shellOutput) {
         // Even for cached environments, show quick progress in shell mode
-        process.stderr.write(`⚡ Activating cached environment...\n`)
+        const projectName = path.basename(dir)
+        process.stderr.write(`⚡ Activating cached environment for ${projectName}...\n`)
       }
     }
 
