@@ -1,4 +1,16 @@
 
+## v0.4.20...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.20...main)
+
+### 🏡 Chore
+
+- More log output adjustments ([d0f0a1d](https://github.com/stacksjs/launchpad/commit/d0f0a1d))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.19...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.19...main)
