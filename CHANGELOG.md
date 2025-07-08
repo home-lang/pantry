@@ -1,4 +1,16 @@
 
+## v0.4.19...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.19...main)
+
+### 🏡 Chore
+
+- Minor updates ([8de52ff](https://github.com/stacksjs/launchpad/commit/8de52ff))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.18...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.18...main)

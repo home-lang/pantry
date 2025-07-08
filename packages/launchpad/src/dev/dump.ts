@@ -5,7 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
 import { install } from '../install'
-import { ProgressBar, Spinner } from '../progress'
+import { Spinner } from '../progress'
 
 export interface DumpOptions {
   dryrun?: boolean
