@@ -1,4 +1,17 @@
 
+## v0.4.16...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.16...main)
+
+### 🏡 Chore
+
+- Adjust test ([6e9f599](https://github.com/stacksjs/launchpad/commit/6e9f599))
+- Adjust progress visual ([c48bdf6](https://github.com/stacksjs/launchpad/commit/c48bdf6))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.15...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.15...main)
