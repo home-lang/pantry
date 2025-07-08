@@ -9,6 +9,25 @@ import { config } from './config'
 import { Path } from './path'
 import { Spinner } from './progress'
 
+// Global message deduplication for shell mode
+const shellModeMessageCache = new Set<string>()
+
+function logUniqueMessage(message: string, forceLog = false): void {
+  // In shell mode, deduplicate messages to avoid spam
+  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1' && !forceLog) {
+    const messageKey = message.replace(/\r.*/, '').trim() // Remove progress overwrite chars
+    if (shellModeMessageCache.has(messageKey)) {
+      return // Skip duplicate message
+    }
+    shellModeMessageCache.add(messageKey)
+  }
+  console.log(message)
+}
+
+function clearMessageCache(): void {
+  shellModeMessageCache.clear()
+}
+
 // Extract all package alias names from ts-pkgx
 export type PackageAlias = keyof typeof aliases
 
@@ -27,7 +46,7 @@ export type SupportedPlatform = 'darwin' | 'linux' | 'windows'
 export type SupportedArchitecture = 'x86_64' | 'aarch64' | 'armv7l'
 
 /**
- * Distribution configuration
+ * Configuration for the package manager
  */
 export const DISTRIBUTION_CONFIG = {
   baseUrl: 'https://dist.pkgx.dev',
@@ -725,7 +744,26 @@ export function getPackageInfo(packageName: string): {
   companions?: readonly string[]
 } | null {
   const domain = resolvePackageName(packageName)
-  // Use the same domain key conversion logic as ts-pkgx
+
+  // First, try to find the package by iterating through all packages and matching the domain
+  for (const [_, pkg] of Object.entries(packages)) {
+    if ('domain' in pkg && pkg.domain === domain) {
+      const versions = 'versions' in pkg && Array.isArray(pkg.versions) ? pkg.versions : []
+
+      return {
+        name: 'name' in pkg ? (pkg.name as string) : packageName,
+        domain: pkg.domain as string,
+        description: 'description' in pkg ? (pkg.description as string) : undefined,
+        latestVersion: versions[0] || undefined,
+        totalVersions: versions.length,
+        programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
+        dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
+        companions: 'companions' in pkg ? (pkg.companions as readonly string[]) : undefined,
+      }
+    }
+  }
+
+  // Fallback to the old logic for packages that might not have explicit domains
   const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
@@ -779,7 +817,7 @@ async function downloadPackage(
           console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
         }
         else {
-          console.log(`⚡ Found cached ${domain} v${version}`)
+          logUniqueMessage(`⚡ Found cached ${domain} v${version}`)
         }
 
         // Copy cached file to temp directory
@@ -816,7 +854,7 @@ async function downloadPackage(
               const chunks: Uint8Array[] = []
               let downloadedBytes = 0
 
-              console.log(`📦 Downloading ${domain} v${version}...`)
+              logUniqueMessage(`📦 Downloading ${domain} v${version}...`)
 
               while (true) {
                 const { done, value } = await reader.read()
@@ -836,7 +874,7 @@ async function downloadPackage(
               }
 
               process.stdout.write('\r\x1B[K') // Clear the progress line
-              console.log(`✅ Downloaded ${domain} v${version} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`)
+              logUniqueMessage(`✅ Downloaded ${domain} v${version} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`)
 
               // Combine all chunks into a single buffer
               const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
@@ -1089,7 +1127,8 @@ async function downloadPackage(
     )
 
     if (!config.verbose) {
-      installSpinner.stop(`✅ Installed ${domain} v${version}`)
+      installSpinner.stop()
+      logUniqueMessage(`✅ Installed ${domain} v${version}`)
     }
     else {
       console.warn(`✅ Successfully installed ${domain} v${version}`)
@@ -1364,7 +1403,7 @@ async function installDependencies(
         console.warn(`Installing dependency: ${dep}`)
       }
       else {
-        console.log(`📦 Installing dependency: ${depName}`)
+        logUniqueMessage(`📦 Installing dependency: ${depName}`)
       }
 
       // Enhanced version resolution with multiple fallback strategies
@@ -1475,7 +1514,7 @@ async function installDependencies(
           // Only show warning for direct dependencies, not nested ones
           const isDirectDependency = packageInfo.dependencies.includes(dep)
           if (isDirectDependency) {
-            console.log(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
+            logUniqueMessage(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
           }
         }
         continue
@@ -1500,7 +1539,7 @@ async function installDependencies(
         const isDirectDependency = packageInfo.dependencies.includes(dep)
 
         if (isPermissionError || isDirectDependency) {
-          console.log(`⚠️  Warning: Failed to install dependency ${depName}, but continuing...`)
+          logUniqueMessage(`⚠️  Warning: Failed to install dependency ${depName}, but continuing...`)
         }
       }
       // Continue with other dependencies even if one fails
@@ -1564,6 +1603,9 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   const packageList = Array.isArray(packages) ? packages : [packages]
   const installPath = basePath || install_prefix().string
 
+  // Clear message cache at start of installation to avoid stale duplicates
+  clearMessageCache()
+
   // Create installation directory even if no packages to install
   await fs.promises.mkdir(installPath, { recursive: true })
 
@@ -1580,10 +1622,10 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     console.warn(`Install path: ${installPath}`)
   }
   else if (packageList.length > 1) {
-    console.log(`🚀 Installing ${packageList.length} packages...`)
+    logUniqueMessage(`🚀 Installing ${packageList.length} packages...`)
   }
   else if (packageList.length === 1) {
-    console.log(`📦 Installing ${packageList[0]}...`)
+    logUniqueMessage(`📦 Installing ${packageList[0]}...`)
   }
 
   const allInstalledFiles: string[] = []
@@ -1613,7 +1655,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
           console.warn(`Processing package: ${pkg}`)
         }
         else if (packageList.length > 1) {
-          console.log(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
+          logUniqueMessage(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
         }
 
         const { name: packageName } = parsePackageSpec(pkg)
@@ -1689,7 +1731,7 @@ async function installPackagesInParallel(
       const globalIndex = i + batchIndex
       try {
         if (!config.verbose) {
-          console.log(`📦 [${globalIndex + 1}/${packages.length}] ${pkg}`)
+          logUniqueMessage(`📦 [${globalIndex + 1}/${packages.length}] ${pkg}`)
         }
 
         const { name: packageName } = parsePackageSpec(pkg)
