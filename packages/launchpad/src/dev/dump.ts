@@ -129,27 +129,30 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         process.stderr.write(`🔧 Setting up environment for ${projectName}...\n`)
 
-        // Create a progress spinner for overall installation progress
-        const installSpinner = new Spinner()
-        installSpinner.start(`📦 Installing ${packages.length} packages`)
+        // Don't use spinner in shell mode since we have real-time progress indicators
+        process.stderr.write(`📦 Installing ${packages.length} packages...\n`)
 
         // Set up progress tracking that will be used by the install function
         const originalStdoutWrite = process.stdout.write.bind(process.stdout)
         const originalConsoleLog = console.log.bind(console)
         const originalConsoleWarn = console.warn.bind(console)
 
-        // Redirect stdout to stderr for shell mode but preserve progress indicators
+        // In shell mode, redirect all stdout to stderr for progress indicators
         process.stdout.write = (chunk: any, encoding?: any, cb?: any) => {
-          const chunkStr = chunk.toString()
+          // All output goes to stderr in shell mode for real-time display
+          const result = process.stderr.write(chunk, encoding, cb)
 
-          // Allow progress indicators (containing download progress or specific patterns) to show
-          if (chunkStr.includes('⬇️') || chunkStr.includes('%') || chunkStr.includes('MB')
-            || chunkStr.includes('📦') || chunkStr.includes('✅') || chunkStr.includes('\r')) {
-            return process.stderr.write(chunk, encoding, cb)
+          // Force flush for progress indicators
+          if (process.stderr.isTTY) {
+            try {
+              fs.writeSync(process.stderr.fd, '')
+            }
+            catch {
+              // Ignore flush errors
+            }
           }
 
-          // Redirect other output to stderr
-          return process.stderr.write(chunk, encoding, cb)
+          return result
         }
 
         // Redirect console.log to stderr but allow progress messages
@@ -173,13 +176,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         try {
           results = await install(packages, installPath)
 
-          installSpinner.stop()
-
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
           process.stderr.write(`✅ Environment activated for ${projectName} (${elapsed}s)\n`)
         }
         catch (error) {
-          installSpinner.stop()
           // For shell mode, output error to stderr and don't throw
           process.stderr.write(`❌ Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
         }

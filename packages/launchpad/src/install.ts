@@ -21,7 +21,19 @@ function logUniqueMessage(message: string, forceLog = false): void {
     }
     shellModeMessageCache.add(messageKey)
   }
-  console.log(message)
+
+  // In shell mode, always use stderr for progress indicators and force flush
+  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+    process.stderr.write(`${message}\n`)
+    // Force flush to ensure real-time display
+    if (process.stderr.isTTY) {
+      // Use sync write for TTY to avoid buffering
+      fs.writeSync(process.stderr.fd, '')
+    }
+  }
+  else {
+    console.log(message)
+  }
 }
 
 function clearMessageCache(): void {
@@ -869,11 +881,29 @@ async function downloadPackage(
                   const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
                   const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(1)
                   const totalMB = (totalBytes / 1024 / 1024).toFixed(1)
-                  process.stdout.write(`\r⬇️  ${downloadedMB}/${totalMB} MB (${progress}%)`)
+
+                  // Use stderr in shell mode for real-time display, stdout otherwise
+                  const progressMsg = `\r⬇️  ${downloadedMB}/${totalMB} MB (${progress}%)`
+                  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+                    process.stderr.write(progressMsg)
+                    // Force flush to ensure real-time display in shell mode
+                    if (process.stderr.isTTY) {
+                      fs.writeSync(process.stderr.fd, '')
+                    }
+                  }
+                  else {
+                    process.stdout.write(progressMsg)
+                  }
                 }
               }
 
-              process.stdout.write('\r\x1B[K') // Clear the progress line
+              // Clear the progress line using the same stream
+              if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+                process.stderr.write('\r\x1B[K')
+              }
+              else {
+                process.stdout.write('\r\x1B[K')
+              }
               logUniqueMessage(`✅ Downloaded ${domain} v${version} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`)
 
               // Combine all chunks into a single buffer
