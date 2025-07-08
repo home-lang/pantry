@@ -17,7 +17,7 @@ describe('Environment Management Commands', () => {
     originalEnv = { ...process.env }
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-env-mgmt-'))
     cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
-    envBaseDir = path.join(tempDir, '.local', 'share', 'launchpad', 'envs')
+    envBaseDir = path.join(tempDir, '.local', 'share', 'launchpad')
 
     // Set up test environment
     process.env.HOME = tempDir
@@ -474,6 +474,180 @@ describe('Environment Management Commands', () => {
           // Ignore cleanup errors
         }
       }
+    })
+
+    describe('--all option', () => {
+      it('should require either hash or --all option', async () => {
+        const result = await runCLI(['env:remove'])
+
+        expect(result.exitCode).toBe(1)
+        expect(result.stderr).toContain('Either provide a hash or use --all to remove all environments')
+        expect(result.stdout).toContain('Usage:')
+        expect(result.stdout).toContain('launchpad env:remove <hash>')
+        expect(result.stdout).toContain('launchpad env:remove --all')
+      })
+
+      it('should show message when no environments exist with --all', async () => {
+        const result = await runCLI(['env:remove', '--all', '--force'])
+
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('📭 No development environments found')
+      })
+
+      it('should require --force for --all removal', async () => {
+        createMockEnvironment('all-test-1_12345678', {
+          packages: ['test1@1.0.0'],
+          binaries: ['test1'],
+        })
+        createMockEnvironment('all-test-2_87654321', {
+          packages: ['test2@2.0.0'],
+          binaries: ['test2'],
+        })
+
+        const result = await runCLI(['env:remove', '--all'])
+
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('🗑️  Removing all 2 development environments')
+        expect(result.stdout).toContain('⚠️  This will permanently delete ALL development environments!')
+        expect(result.stdout).toContain('Use --force to skip this confirmation')
+      })
+
+      it('should remove all environments with --all --force', async () => {
+        const env1Path = createMockEnvironment('all-remove-1_aaaaaaaa', {
+          packages: ['pkg1@1.0.0'],
+          binaries: ['bin1'],
+          size: 1024, // 1KB
+        })
+        const env2Path = createMockEnvironment('all-remove-2_bbbbbbbb', {
+          packages: ['pkg2@2.0.0', 'pkg3@3.0.0'],
+          binaries: ['bin2', 'bin3'],
+          size: 2048, // 2KB
+        })
+        const env3Path = createMockEnvironment('all-remove-3_cccccccc', {
+          packages: [],
+          binaries: [],
+          size: 512, // 0.5KB
+        })
+
+        // Verify all environments exist
+        expect(fs.existsSync(env1Path)).toBe(true)
+        expect(fs.existsSync(env2Path)).toBe(true)
+        expect(fs.existsSync(env3Path)).toBe(true)
+
+        const result = await runCLI(['env:remove', '--all', '--force'])
+
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('🗑️  Removing all 3 development environments')
+        expect(result.stdout).toContain('✅ All environments removal completed!')
+        expect(result.stdout).toContain('Removed: 3/3 environment(s)')
+        expect(result.stdout).toContain('Freed:')
+
+        // Verify all environments were removed
+        expect(fs.existsSync(env1Path)).toBe(false)
+        expect(fs.existsSync(env2Path)).toBe(false)
+        expect(fs.existsSync(env3Path)).toBe(false)
+      })
+
+      it('should show verbose details with --all --verbose', async () => {
+        createMockEnvironment('verbose-all-1_11111111', {
+          packages: ['verbose-pkg1@1.0.0'],
+          binaries: ['verbose-bin1'],
+          size: 1024,
+        })
+        createMockEnvironment('verbose-all-2_22222222', {
+          packages: ['verbose-pkg2@2.0.0'],
+          binaries: ['verbose-bin2', 'verbose-bin3'],
+          size: 2048,
+        })
+
+        const result = await runCLI(['env:remove', '--all', '--verbose'])
+
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('Environments to remove:')
+        expect(result.stdout).toContain('verbose-all-1_11111111 (verbose-all-1)')
+        expect(result.stdout).toContain('verbose-all-2_22222222 (verbose-all-2)')
+        expect(result.stdout).toContain('Path:')
+        expect(result.stdout).toContain('Packages:')
+        expect(result.stdout).toContain('Binaries:')
+      })
+
+      it('should handle partial failures gracefully with --all', async () => {
+        const goodEnvPath = createMockEnvironment('good-env_12345678', {
+          packages: ['good@1.0.0'],
+          binaries: ['good'],
+          size: 1024,
+        })
+        const badEnvPath = createMockEnvironment('bad-env_87654321', {
+          packages: ['bad@1.0.0'],
+          binaries: ['bad'],
+          size: 1024,
+        })
+
+        // Make one environment read-only to cause removal error
+        try {
+          fs.chmodSync(badEnvPath, 0o444)
+
+          const result = await runCLI(['env:remove', '--all', '--force'])
+
+          expect(result.exitCode).toBe(0)
+          expect(result.stdout).toContain('✅ All environments removal completed!')
+          expect(result.stdout).toContain('Removed: 1/2 environment(s)')
+          expect(result.stdout).toContain('Failed: 1 environment(s)')
+
+          // Verify good environment was removed, bad one still exists
+          expect(fs.existsSync(goodEnvPath)).toBe(false)
+          expect(fs.existsSync(badEnvPath)).toBe(true)
+        }
+        finally {
+          // Restore permissions for cleanup
+          try {
+            fs.chmodSync(badEnvPath, 0o755)
+          }
+          catch {
+            // Ignore cleanup errors
+          }
+        }
+      })
+
+      it('should show verbose progress during --all removal', async () => {
+        createMockEnvironment('progress-1_aaaaaaaa', {
+          packages: ['progress-pkg1@1.0.0'],
+          binaries: ['progress-bin1'],
+        })
+        createMockEnvironment('progress-2_bbbbbbbb', {
+          packages: ['progress-pkg2@2.0.0'],
+          binaries: ['progress-bin2'],
+        })
+
+        const result = await runCLI(['env:remove', '--all', '--force', '--verbose'])
+
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('Removing progress-1_aaaaaaaa (progress-1)...')
+        expect(result.stdout).toContain('Removing progress-2_bbbbbbbb (progress-2)...')
+        expect(result.stdout).toContain('✅ Removed progress-1_aaaaaaaa')
+        expect(result.stdout).toContain('✅ Removed progress-2_bbbbbbbb')
+      })
+
+      it('should calculate total size correctly for --all removal', async () => {
+        createMockEnvironment('size-test-1_11111111', {
+          packages: ['size-pkg1@1.0.0'],
+          binaries: ['size-bin1'],
+          size: 1024 * 1024, // 1MB
+        })
+        createMockEnvironment('size-test-2_22222222', {
+          packages: ['size-pkg2@2.0.0'],
+          binaries: ['size-bin2'],
+          size: 2 * 1024 * 1024, // 2MB
+        })
+
+        const result = await runCLI(['env:remove', '--all', '--force'])
+
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('🗑️  Removing all 2 development environments')
+        expect(result.stdout).toContain('Total size:')
+        expect(result.stdout).toContain('✅ All environments removal completed!')
+        expect(result.stdout).toContain('Freed:')
+      })
     })
   })
 

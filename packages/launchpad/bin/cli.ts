@@ -1340,18 +1340,36 @@ cli
 
 // Remove specific environment command
 cli
-  .command('env:remove <hash>', 'Remove a specific development environment')
+  .command('env:remove [hash]', 'Remove a specific development environment or all environments')
   .option('--force', 'Skip confirmation prompts')
   .option('--verbose', 'Show detailed removal information')
+  .option('--all', 'Remove all development environments')
   .example('launchpad env:remove dummy_6d7cf1d6')
   .example('launchpad env:remove working-test_208a31ec --force')
-  .action(async (hash: string, options?: { force?: boolean, verbose?: boolean }) => {
+  .example('launchpad env:remove --all --force')
+  .action(async (hash?: string, options?: { force?: boolean, verbose?: boolean, all?: boolean }) => {
     try {
-      const { removeEnvironment } = await import('../src/env')
-      await removeEnvironment(hash, {
-        force: options?.force || false,
-        verbose: options?.verbose || false,
-      })
+      const { removeEnvironment, removeAllEnvironments } = await import('../src/env')
+
+      if (options?.all) {
+        await removeAllEnvironments({
+          force: options?.force || false,
+          verbose: options?.verbose || false,
+        })
+      }
+      else if (hash) {
+        await removeEnvironment(hash, {
+          force: options?.force || false,
+          verbose: options?.verbose || false,
+        })
+      }
+      else {
+        console.error('Either provide a hash or use --all to remove all environments')
+        console.log('\nUsage:')
+        console.log('  launchpad env:remove <hash>')
+        console.log('  launchpad env:remove --all')
+        process.exit(1)
+      }
     }
     catch (error) {
       console.error('Failed to remove environment:', error instanceof Error ? error.message : String(error))

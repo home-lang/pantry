@@ -545,3 +545,65 @@ export async function removeEnvironment(hash: string, options: RemoveEnvironment
     process.exit(1)
   }
 }
+
+export async function removeAllEnvironments(options: RemoveEnvironmentOptions): Promise<void> {
+  const environments = getAllEnvironments()
+
+  if (environments.length === 0) {
+    console.log('📭 No development environments found')
+    return
+  }
+
+  const totalSize = environments.reduce((sum, env) => sum + env.sizeBytes, 0)
+
+  console.log(`🗑️  Removing all ${environments.length} development environments`)
+  console.log(`  Total size: ${formatSize(totalSize)}`)
+
+  if (options.verbose) {
+    console.log('\nEnvironments to remove:')
+    environments.forEach((env) => {
+      console.log(`  • ${env.hash} (${env.projectName}) - ${env.size}`)
+      console.log(`    Path: ${env.path}`)
+      console.log(`    Packages: ${env.packages}, Binaries: ${env.binaries}`)
+    })
+  }
+
+  if (!options.force) {
+    console.log('\n⚠️  This will permanently delete ALL development environments!')
+    console.log('Use --force to skip this confirmation')
+    process.exit(0)
+  }
+
+  let removed = 0
+  let failed = 0
+  let freedBytes = 0
+
+  console.log('\n🗑️  Removing environments...')
+
+  for (const env of environments) {
+    try {
+      if (options.verbose) {
+        console.log(`  Removing ${env.hash} (${env.projectName})...`)
+      }
+
+      freedBytes += env.sizeBytes
+      fs.rmSync(env.path, { recursive: true, force: true })
+      removed++
+
+      if (options.verbose) {
+        console.log(`    ✅ Removed ${env.hash} (${env.size})`)
+      }
+    }
+    catch (error) {
+      failed++
+      console.error(`    ❌ Failed to remove ${env.hash}:`, error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  console.log('\n✅ All environments removal completed!')
+  console.log(`  • Removed: ${removed}/${environments.length} environment(s)`)
+  if (failed > 0) {
+    console.log(`  • Failed: ${failed} environment(s)`)
+  }
+  console.log(`  • Freed: ${formatSize(freedBytes)} of disk space`)
+}
