@@ -1,4 +1,16 @@
 
+## v0.4.24...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.24...main)
+
+### 🏡 Chore
+
+- Polish the output ([abf7fb6](https://github.com/stacksjs/launchpad/commit/abf7fb6))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.23...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.23...main)
