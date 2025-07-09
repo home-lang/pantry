@@ -1,4 +1,16 @@
 
+## v0.4.23...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.23...main)
+
+### 🩹 Fixes
+
+- Install platform specific deps correctly ([03926ba](https://github.com/stacksjs/launchpad/commit/03926ba))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.22...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.22...main)
