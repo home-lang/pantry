@@ -1433,6 +1433,35 @@ async function installDependencies(
     const { name: depName, version: depVersion } = parsePackageSpec(dep)
     const depDomain = resolvePackageName(depName)
 
+    // Skip platform-specific dependencies that don't match the current platform
+    if (depName.includes(':')) {
+      const [platformPrefix] = depName.split(':', 2)
+      const currentPlatform = getPlatform()
+
+      // Skip if the platform prefix doesn't match the current platform
+      if (platformPrefix === 'linux' && currentPlatform !== 'linux') {
+        if (config.verbose) {
+          console.warn(`Skipping Linux-specific dependency: ${depName} (current platform: ${currentPlatform})`)
+        }
+        continue
+      }
+      if (platformPrefix === 'darwin' && currentPlatform !== 'darwin') {
+        if (config.verbose) {
+          console.warn(`Skipping macOS-specific dependency: ${depName} (current platform: ${currentPlatform})`)
+        }
+        continue
+      }
+      if (platformPrefix === 'windows' && currentPlatform !== 'windows') {
+        if (config.verbose) {
+          console.warn(`Skipping Windows-specific dependency: ${depName} (current platform: ${currentPlatform})`)
+        }
+        continue
+      }
+
+      // If we get here, the platform matches or it's an unknown prefix
+      // For unknown prefixes, we'll continue processing (could be a namespace)
+    }
+
     // Skip known problematic packages silently to reduce noise
     if (knownProblematicPackages.has(depDomain) || knownProblematicPackages.has(depName)) {
       if (config.verbose) {
