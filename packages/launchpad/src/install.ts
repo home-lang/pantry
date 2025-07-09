@@ -11,8 +11,21 @@ import { Spinner } from './progress'
 
 // Global message deduplication for shell mode
 const shellModeMessageCache = new Set<string>()
+let hasTemporaryProcessingMessage = false
 
+// Show success messages and temporary processing messages immediately after
 function logUniqueMessage(message: string, forceLog = false): void {
+  // Clear any temporary processing message before showing new message
+  if (hasTemporaryProcessingMessage && message.startsWith('✅')) {
+    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+      process.stderr.write('\x1B[1A\x1B[K') // Move up one line and clear it
+    }
+    else {
+      process.stdout.write('\x1B[1A\x1B[K') // Move up one line and clear it
+    }
+    hasTemporaryProcessingMessage = false
+  }
+
   // In shell mode, deduplicate messages to avoid spam
   if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1' && !forceLog) {
     const messageKey = message.replace(/\r.*/, '').trim() // Remove progress overwrite chars
@@ -33,6 +46,22 @@ function logUniqueMessage(message: string, forceLog = false): void {
   }
   else {
     console.log(message)
+  }
+
+  // Show temporary processing message immediately after success messages (except final environment message)
+  if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated')) {
+    const processingMsg = `🔄 Processing next dependency...`
+
+    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+      process.stderr.write(`${processingMsg}\n`)
+      if (process.stderr.isTTY) {
+        fs.writeSync(process.stderr.fd, '')
+      }
+    }
+    else {
+      process.stdout.write(`${processingMsg}\n`)
+    }
+    hasTemporaryProcessingMessage = true
   }
 }
 
@@ -889,6 +918,7 @@ async function downloadPackage(
             if (reader) {
               const chunks: Uint8Array[] = []
               let downloadedBytes = 0
+              let lastProgressUpdate = 0
 
               while (true) {
                 const { done, value } = await reader.read()
@@ -899,18 +929,25 @@ async function downloadPackage(
                   chunks.push(value)
                   downloadedBytes += value.length
 
-                  // Show progress - same format as CLI upgrade command
-                  const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
-                  const progressMsg = `\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`
-                  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-                    process.stderr.write(progressMsg)
-                    // Force flush to ensure real-time display in shell mode
-                    if (process.stderr.isTTY) {
-                      fs.writeSync(process.stderr.fd, '')
+                  // Throttle progress updates to every 50ms or 5% progress to make them visible
+                  const now = Date.now()
+                  const progress = (downloadedBytes / totalBytes * 100)
+                  const progressPercent = Math.floor(progress / 5) * 5 // Round to nearest 5%
+
+                  // Always show initial progress and 100% to ensure visibility
+                  if (now - lastProgressUpdate > 50 || progress >= 100 || downloadedBytes === value.length) {
+                    const progressMsg = `\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%)`
+                    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+                      process.stderr.write(progressMsg)
+                      // Force flush to ensure real-time display in shell mode
+                      if (process.stderr.isTTY) {
+                        fs.writeSync(process.stderr.fd, '')
+                      }
                     }
-                  }
-                  else {
-                    process.stdout.write(progressMsg)
+                    else {
+                      process.stdout.write(progressMsg)
+                    }
+                    lastProgressUpdate = now
                   }
                 }
               }
@@ -956,9 +993,33 @@ async function downloadPackage(
             console.warn(`✅ Downloaded ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
           }
           else {
-            // Fallback for when content-length is not available
+            // Fallback for when content-length is not available - show simple download indicator
+            if (!config.verbose) {
+              const downloadMsg = `⬇️  Downloading ${domain} v${version}...`
+              if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+                process.stderr.write(`\r${downloadMsg}`)
+                if (process.stderr.isTTY) {
+                  fs.writeSync(process.stderr.fd, '')
+                }
+              }
+              else {
+                process.stdout.write(`\r${downloadMsg}`)
+              }
+            }
+
             const buffer = await response.arrayBuffer()
             await fs.promises.writeFile(file, Buffer.from(buffer))
+
+            if (!config.verbose) {
+              // Clear the download message
+              if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+                process.stderr.write('\r\x1B[K')
+              }
+              else {
+                process.stdout.write('\r\x1B[K')
+              }
+              logUniqueMessage(`✅ ${domain} v${version}`)
+            }
           }
 
           // Cache the downloaded file for future use
@@ -993,6 +1054,22 @@ async function downloadPackage(
     if (config.verbose) {
       console.warn(`Extracting ${domain} v${version}...`)
     }
+    else {
+      // Only show extraction for very large packages (>20MB) to keep output clean
+      const archiveStats = fs.statSync(archiveFile)
+      if (archiveStats.size > 20 * 1024 * 1024) {
+        const extractMsg = `🔧 Extracting ${domain} v${version}...`
+        if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+          process.stderr.write(`\r${extractMsg}`)
+          if (process.stderr.isTTY) {
+            fs.writeSync(process.stderr.fd, '')
+          }
+        }
+        else {
+          process.stdout.write(`\r${extractMsg}`)
+        }
+      }
+    }
 
     // Use Bun's spawn directly to avoid shell dependency issues
     const tarPath = process.platform === 'win32' ? 'tar' : '/usr/bin/tar'
@@ -1014,6 +1091,18 @@ async function downloadPackage(
 
     if (config.verbose) {
       console.warn(`Extracted to: ${extractDir}`)
+    }
+    else {
+      // Clear the extraction progress message if we showed one
+      const archiveStats = fs.statSync(archiveFile)
+      if (archiveStats.size > 20 * 1024 * 1024) {
+        if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+          process.stderr.write('\r\x1B[K')
+        }
+        else {
+          process.stdout.write('\r\x1B[K')
+        }
+      }
     }
 
     // Find the actual package root in the extracted directory
@@ -1405,7 +1494,8 @@ async function installDependencies(
     console.warn(`Resolving dependencies for ${packageName}: ${packageInfo.dependencies.join(', ')}`)
   }
 
-  for (const dep of packageInfo.dependencies) {
+  for (let depIndex = 0; depIndex < packageInfo.dependencies.length; depIndex++) {
+    const dep = packageInfo.dependencies[depIndex]
     const { name: depName, version: depVersion } = parsePackageSpec(dep)
     const depDomain = resolvePackageName(depName)
 
@@ -1461,6 +1551,7 @@ async function installDependencies(
       if (config.verbose) {
         console.warn(`Installing dependency: ${dep}`)
       }
+      // Remove dependency resolution messages - they're too verbose
 
       // Enhanced version resolution with multiple fallback strategies
       let versionToInstall = depVersion
@@ -1584,6 +1675,8 @@ async function installDependencies(
       const depSpec = versionToInstall ? `${depName}@${versionToInstall}` : depName
       const depFiles = await installPackage(depName, depSpec, installPath)
       allInstalledFiles.push(...depFiles)
+
+      // Processing message now handled automatically by logUniqueMessage
     }
     catch (error) {
       if (config.verbose) {
@@ -1681,8 +1774,9 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   const allInstalledFiles: string[] = []
   const installedPackages = new Set<string>()
 
-  // For multiple packages, use parallel installation with controlled concurrency
-  if (packageList.length > 1) {
+  // For shell integration, use sequential installation for better progress visualization
+  // For direct commands, we can still use parallel
+  if (packageList.length > 1 && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
     const maxConcurrency = Math.min(packageList.length, 3) // Limit to 3 concurrent downloads
     const results = await installPackagesInParallel(packageList, installPath, maxConcurrency)
 
@@ -1697,16 +1791,14 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     })
   }
   else {
-    // Single package installation (existing logic)
+    // Sequential package installation (for shell integration or single packages)
     for (let i = 0; i < packageList.length; i++) {
       const pkg = packageList[i]
       try {
-        if (!config.verbose) {
-          logUniqueMessage(`📦 ${pkg}`)
-        }
-        else {
+        if (config.verbose) {
           console.warn(`Processing package: ${pkg}`)
         }
+        // Remove 📦 package messages - they're redundant with completion messages
 
         const { name: packageName } = parsePackageSpec(pkg)
         const domain = resolvePackageName(packageName)
@@ -1722,8 +1814,22 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         // Mark as installed
         installedPackages.add(domain)
 
+        const packageInfo = getPackageInfo(packageName)
+
         // Install dependencies first
-        // Install dependencies first
+        if (packageInfo?.dependencies && packageInfo.dependencies.length > 0) {
+          // Clear the resolving message immediately when we start processing dependencies
+          // if (!config.verbose && hasTemporaryResolvingMessage) { // Removed as per edit hint
+          //   if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+          //     process.stderr.write('\r\x1B[K')
+          //   }
+          //   else {
+          //     process.stdout.write('\r\x1B[K')
+          //   }
+          //   hasTemporaryResolvingMessage = false
+          // }
+        }
+
         const depFiles = await installDependencies(packageName, installPath, installedPackages)
         allInstalledFiles.push(...depFiles)
 
@@ -1794,9 +1900,7 @@ async function installPackagesInParallel(
 
     const batchPromises = batch.map(async (pkg) => {
       try {
-        if (!config.verbose) {
-          logUniqueMessage(`📦 ${pkg}`)
-        }
+        // Remove 📦 package messages for cleaner output
 
         const { name: packageName } = parsePackageSpec(pkg)
         const domain = resolvePackageName(packageName)

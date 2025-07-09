@@ -128,9 +128,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         process.stderr.write(`🔧 Setting up environment for ${projectName}...\n`)
 
-        // Don't use spinner in shell mode since we have real-time progress indicators
-        process.stderr.write(`📦 Installing ${packages.length} packages...\n`)
-
         // Set up progress tracking that will be used by the install function
         const originalStdoutWrite = process.stdout.write.bind(process.stdout)
         const originalConsoleLog = console.log.bind(console)
@@ -154,17 +151,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           return result
         }
 
-        // Redirect console.log to stderr but allow progress messages
+        // Redirect console.log to stderr but allow download progress and completion messages
         console.log = (...args: any[]) => {
           const message = args.join(' ')
-          if (message.includes('📦') || message.includes('⬇️') || message.includes('✅')
-            || message.includes('Installing') || message.includes('Downloaded') || message.includes('%')) {
+          // Show download progress, completion messages, and resolving messages
+          if (message.includes('✅') || message.includes('⬇️') || message.includes(' bytes ') || message.includes('%') || message.includes('🔍')) {
             process.stderr.write(`${message}\n`)
           }
-          else {
-            // Suppress other console.log in shell mode unless it's progress-related
-            process.stderr.write(`${message}\n`)
-          }
+          // Suppress all other messages for cleaner output
         }
 
         // Keep console.warn as is for important messages
@@ -177,6 +171,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
           process.stderr.write(`✅ Environment activated for ${projectName} \x1B[3m(${elapsed}s)\x1B[0m\n`)
+
+          // Force immediate flush for shell mode to ensure message appears instantly
+          if (process.stderr.isTTY) {
+            try {
+              fs.writeSync(process.stderr.fd, '')
+            }
+            catch {
+              // Ignore flush errors
+            }
+          }
         }
         catch (error) {
           // For shell mode, output error to stderr and don't throw
@@ -215,6 +219,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       // For shell mode, always output shell code (even if installation failed)
       // This ensures the shell gets proper environment setup
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult)
+
+      // Exit immediately after outputting shell code to prevent delays
+      if (process.stdout.isTTY) {
+        try {
+          fs.writeSync(process.stdout.fd, '')
+        }
+        catch {
+          // Ignore flush errors
+        }
+      }
     }
     else {
       outputNormalResults(results, packages, envDir, sniffResult, quiet)
