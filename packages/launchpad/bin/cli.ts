@@ -1218,10 +1218,9 @@ cli
     try {
       const targetDir = dir ? path.resolve(dir) : process.cwd()
 
-      // For now, just show the activation message
-      // The actual environment activation is handled by shell hooks
-      if (!options?.silent) {
-        // Show activation message if configured
+      // Skip activation message when called from shell integration since dev command handles its own completion
+      if (!options?.silent && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
+        // Show activation message if configured and not called from shell integration
         if (config.showShellMessages && config.shellActivationMessage) {
           let message = config.shellActivationMessage.replace('{path}', targetDir)
 

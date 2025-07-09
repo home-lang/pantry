@@ -176,7 +176,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           results = await install(packages, installPath)
 
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-          process.stderr.write(`✅ Environment activated for ${projectName} (${elapsed}s)\n`)
+          process.stderr.write(`✅ Environment activated for ${projectName} \x1B[3m(${elapsed}s)\x1B[0m\n`)
         }
         catch (error) {
           // For shell mode, output error to stderr and don't throw
@@ -204,9 +204,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         console.log('📦 Using cached environment...')
       }
       else if (shellOutput) {
-        // Even for cached environments, show quick progress in shell mode
+        // For cached environments, show completion directly
         const projectName = path.basename(dir)
-        process.stderr.write(`⚡ Activating cached environment for ${projectName}...\n`)
+        process.stderr.write(`✅ Environment activated for ${projectName}\n`)
       }
     }
 

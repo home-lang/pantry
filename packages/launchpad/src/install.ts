@@ -853,7 +853,7 @@ async function downloadPackage(
           console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
         }
         else {
-          logUniqueMessage(`⚡ Found cached ${domain} v${version}`)
+          logUniqueMessage(`✅ ${domain} v${version}`)
         }
 
         // Copy cached file to temp directory
@@ -890,8 +890,6 @@ async function downloadPackage(
               const chunks: Uint8Array[] = []
               let downloadedBytes = 0
 
-              logUniqueMessage(`📦 Downloading ${domain} v${version}...`)
-
               while (true) {
                 const { done, value } = await reader.read()
                 if (done)
@@ -903,11 +901,7 @@ async function downloadPackage(
 
                   // Show progress - same format as CLI upgrade command
                   const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
-                  const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(1)
-                  const totalMB = (totalBytes / 1024 / 1024).toFixed(1)
-
-                  // Use stderr in shell mode for real-time display, stdout otherwise
-                  const progressMsg = `\r⬇️  ${downloadedMB}/${totalMB} MB (${progress}%)`
+                  const progressMsg = `\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`
                   if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
                     process.stderr.write(progressMsg)
                     // Force flush to ensure real-time display in shell mode
@@ -928,7 +922,7 @@ async function downloadPackage(
               else {
                 process.stdout.write('\r\x1B[K')
               }
-              logUniqueMessage(`✅ Downloaded ${domain} v${version} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`)
+              logUniqueMessage(`✅ ${domain} v${version}`)
 
               // Combine all chunks into a single buffer
               const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
@@ -996,12 +990,7 @@ async function downloadPackage(
 
     const isXz = archiveFile.endsWith('.tar.xz')
 
-    // Show spinner during extraction
-    const extractSpinner = new Spinner()
-    if (!config.verbose) {
-      extractSpinner.start(`🔧 Extracting ${domain} v${version}...`)
-    }
-    else {
+    if (config.verbose) {
       console.warn(`Extracting ${domain} v${version}...`)
     }
 
@@ -1017,10 +1006,6 @@ async function downloadPackage(
     })
 
     const result = await proc.exited
-
-    if (!config.verbose) {
-      extractSpinner.stop()
-    }
 
     if (result !== 0) {
       const stderr = await new Response(proc.stderr).text()
@@ -1075,12 +1060,7 @@ async function downloadPackage(
     const metadataDir = path.join(installPath, 'pkgs', domain, `v${version}`)
     await fs.promises.mkdir(metadataDir, { recursive: true })
 
-    // Show spinner during installation
-    const installSpinner = new Spinner()
-    if (!config.verbose) {
-      installSpinner.start(`⚡ Installing ${domain} v${version}...`)
-    }
-    else {
+    if (config.verbose) {
       console.warn(`Installing ${domain} v${version}...`)
     }
 
@@ -1180,11 +1160,7 @@ async function downloadPackage(
       JSON.stringify(metadata, null, 2),
     )
 
-    if (!config.verbose) {
-      installSpinner.stop()
-      logUniqueMessage(`✅ Installed ${domain} v${version}`)
-    }
-    else {
+    if (config.verbose) {
       console.warn(`✅ Successfully installed ${domain} v${version}`)
     }
 
@@ -1485,9 +1461,6 @@ async function installDependencies(
       if (config.verbose) {
         console.warn(`Installing dependency: ${dep}`)
       }
-      else {
-        logUniqueMessage(`📦 Installing dependency: ${depName}`)
-      }
 
       // Enhanced version resolution with multiple fallback strategies
       let versionToInstall = depVersion
@@ -1704,12 +1677,6 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     console.warn(`Installing packages: ${packageList.join(', ')}`)
     console.warn(`Install path: ${installPath}`)
   }
-  else if (packageList.length > 1) {
-    logUniqueMessage(`🚀 Installing ${packageList.length} packages...`)
-  }
-  else if (packageList.length === 1) {
-    logUniqueMessage(`📦 Installing ${packageList[0]}...`)
-  }
 
   const allInstalledFiles: string[] = []
   const installedPackages = new Set<string>()
@@ -1734,11 +1701,11 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     for (let i = 0; i < packageList.length; i++) {
       const pkg = packageList[i]
       try {
-        if (config.verbose) {
-          console.warn(`Processing package: ${pkg}`)
+        if (!config.verbose) {
+          logUniqueMessage(`📦 ${pkg}`)
         }
-        else if (packageList.length > 1) {
-          logUniqueMessage(`📦 [${i + 1}/${packageList.length}] ${pkg}`)
+        else {
+          console.warn(`Processing package: ${pkg}`)
         }
 
         const { name: packageName } = parsePackageSpec(pkg)
@@ -1756,9 +1723,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         installedPackages.add(domain)
 
         // Install dependencies first
-        if (config.verbose) {
-          console.warn(`Installing dependencies for ${packageName}...`)
-        }
+        // Install dependencies first
         const depFiles = await installDependencies(packageName, installPath, installedPackages)
         allInstalledFiles.push(...depFiles)
 
@@ -1791,6 +1756,23 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   if (config.verbose) {
     console.warn(`Installation complete. Installed ${allInstalledFiles.length} files.`)
   }
+  else if (process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
+    // Only show completion summary if not called from shell integration
+    // Shell integration handles its own completion messages
+    const uniquePackages = new Set<string>()
+    packageList.forEach((pkg) => {
+      const { name } = parsePackageSpec(pkg)
+      const domain = resolvePackageName(name)
+      uniquePackages.add(domain)
+    })
+
+    if (packageList.length === 1) {
+      logUniqueMessage(`✅ Environment activated for ${path.basename(process.cwd())}`)
+    }
+    else {
+      logUniqueMessage(`✅ Installed ${uniquePackages.size} packages`)
+    }
+  }
 
   return allInstalledFiles
 }
@@ -1810,11 +1792,10 @@ async function installPackagesInParallel(
   for (let i = 0; i < packages.length; i += maxConcurrency) {
     const batch = packages.slice(i, i + maxConcurrency)
 
-    const batchPromises = batch.map(async (pkg, batchIndex) => {
-      const globalIndex = i + batchIndex
+    const batchPromises = batch.map(async (pkg) => {
       try {
         if (!config.verbose) {
-          logUniqueMessage(`📦 [${globalIndex + 1}/${packages.length}] ${pkg}`)
+          logUniqueMessage(`📦 ${pkg}`)
         }
 
         const { name: packageName } = parsePackageSpec(pkg)
