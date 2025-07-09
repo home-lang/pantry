@@ -1,4 +1,16 @@
 
+## v0.4.22...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.22...main)
+
+### 🏡 Chore
+
+- Update deps ([0cfa3d0](https://github.com/stacksjs/launchpad/commit/0cfa3d0))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.21...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.21...main)
