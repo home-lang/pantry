@@ -12,8 +12,6 @@ import { Path } from './path'
 const shellModeMessageCache = new Set<string>()
 let hasTemporaryProcessingMessage = false
 let spinnerInterval: Timer | null = null
-const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-let spinnerIndex = 0
 
 // Centralized cleanup function for spinner and processing messages
 function cleanupSpinner(): void {
@@ -24,10 +22,10 @@ function cleanupSpinner(): void {
   // Clear any spinner line
   if (hasTemporaryProcessingMessage) {
     if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-      process.stderr.write('\r\x1B[K')
+      process.stderr.write('\x1B[1A\r\x1B[K')
     }
     else {
-      process.stdout.write('\r\x1B[K')
+      process.stdout.write('\x1B[1A\r\x1B[K')
     }
     hasTemporaryProcessingMessage = false
   }
@@ -67,12 +65,12 @@ function logUniqueMessage(message: string, forceLog = false): void {
       spinnerInterval = null
     }
 
-    // Clear the current spinner line without moving cursor up - just overwrite it
+    // Clear the current spinner line by moving cursor up and clearing the line
     if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-      process.stderr.write('\r\x1B[K') // Clear current line
+      process.stderr.write('\x1B[1A\r\x1B[K') // Move up and clear line
     }
     else {
-      process.stdout.write('\r\x1B[K') // Clear current line
+      process.stdout.write('\x1B[1A\r\x1B[K') // Move up and clear line
     }
     hasTemporaryProcessingMessage = false
   }
@@ -100,39 +98,24 @@ function logUniqueMessage(message: string, forceLog = false): void {
   }
 
   // Show temporary processing message immediately after package success messages (not the final environment message)
-  // But only if we're not already showing a spinner (to avoid conflicts with download progress)
-  if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated') && !spinnerInterval) {
-    // Start with first spinner frame
-    spinnerIndex = 0
-    const processingMsg = `${spinnerFrames[spinnerIndex]} Processing next dependency...`
-
-    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-      process.stderr.write(`${processingMsg}`)
-      if (process.stderr.isTTY) {
-        fs.writeSync(process.stderr.fd, '')
-      }
-    }
-    else {
-      process.stdout.write(`${processingMsg}`)
-    }
-
-    // Start spinner animation
-    spinnerInterval = setInterval(() => {
-      spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length
-      const updatedMsg = `${spinnerFrames[spinnerIndex]} Processing next dependency...`
+  // Use a simple static message instead of animated spinner to avoid conflicts with download progress
+  if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated')) {
+    // Add a small delay to make the success message visible before showing processing message
+    setTimeout(() => {
+      const processingMsg = `🔄 Processing next dependency...`
 
       if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-        process.stderr.write(`\r\x1B[K${updatedMsg}`)
+        process.stderr.write(`${processingMsg}\n`)
         if (process.stderr.isTTY) {
           fs.writeSync(process.stderr.fd, '')
         }
       }
       else {
-        process.stdout.write(`\r\x1B[K${updatedMsg}`)
+        process.stdout.write(`${processingMsg}\n`)
       }
-    }, 80) // 80ms for smooth animation
 
-    hasTemporaryProcessingMessage = true
+      hasTemporaryProcessingMessage = true
+    }, 50) // Small delay to ensure success message is visible
   }
 }
 
@@ -1037,7 +1020,7 @@ export function getPackageInfo(packageName: string): {
 /**
  * Download and extract package
  */
-async function downloadPackage(
+export async function downloadPackage(
   domain: string,
   version: string,
   os: SupportedPlatform,
@@ -1066,6 +1049,39 @@ async function downloadPackage(
           console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
         }
         else {
+          // Show a brief processing message for cached packages to provide feedback
+          if (!config.verbose) {
+            const processingMsg = `🔄 Loading ${domain} v${version} from cache...`
+            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+              process.stderr.write(`${processingMsg}\n`)
+              if (process.stderr.isTTY) {
+                fs.writeSync(process.stderr.fd, '')
+              }
+            }
+            else {
+              process.stdout.write(`${processingMsg}\n`)
+            }
+
+            // Brief delay to make the message visible
+            await new Promise(resolve => setTimeout(resolve, 100))
+
+            // Clear the processing message by moving cursor up and clearing the line
+            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+              process.stderr.write('\x1B[1A\r\x1B[K')
+              if (process.stderr.isTTY) {
+                try {
+                  fs.writeSync(process.stderr.fd, '')
+                }
+                catch {
+                  // Ignore flush errors
+                }
+              }
+            }
+            else {
+              process.stdout.write('\x1B[1A\r\x1B[K')
+            }
+          }
+
           logUniqueMessage(`✅ ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
         }
 
@@ -1096,7 +1112,8 @@ async function downloadPackage(
           const contentLength = response.headers.get('content-length')
           const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
 
-          if (!config.verbose && totalBytes > 0) {
+          // Show download progress for all downloads (both verbose and non-verbose)
+          if (totalBytes > 0) {
             // Clear any existing spinner before starting download progress
             if (hasTemporaryProcessingMessage) {
               cleanupSpinner()
@@ -1118,23 +1135,26 @@ async function downloadPackage(
                   chunks.push(value)
                   downloadedBytes += value.length
 
-                  // Throttle progress updates to every 50ms or 5% progress to make them visible
+                  // Throttle progress updates to every 100ms to make them visible but not too frequent
                   const now = Date.now()
                   const progress = (downloadedBytes / totalBytes * 100)
                   const progressPercent = Math.floor(progress / 5) * 5 // Round to nearest 5%
 
                   // Always show initial progress and 100% to ensure visibility
-                  if (now - lastProgressUpdate > 50 || progress >= 100 || downloadedBytes === value.length) {
-                    const progressMsg = `\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%)`
+                  if (now - lastProgressUpdate > 100 || progress >= 100 || downloadedBytes === value.length) {
+                    const progressMsg = config.verbose
+                      ? `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%) - ${domain} v${version}`
+                      : `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%)`
+
                     if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-                      process.stderr.write(progressMsg)
+                      process.stderr.write(`\r${progressMsg}`)
                       // Force flush to ensure real-time display in shell mode
                       if (process.stderr.isTTY) {
                         fs.writeSync(process.stderr.fd, '')
                       }
                     }
                     else {
-                      process.stdout.write(progressMsg)
+                      process.stdout.write(`\r${progressMsg}`)
                     }
                     lastProgressUpdate = now
                   }
@@ -1201,51 +1221,60 @@ async function downloadPackage(
           }
           else {
             // Fallback for when content-length is not available - show simple download indicator
-            if (!config.verbose) {
-              // Clear any existing spinner before starting download
-              if (hasTemporaryProcessingMessage) {
-                cleanupSpinner()
-              }
+            // Clear any existing spinner before starting download
+            if (hasTemporaryProcessingMessage) {
+              cleanupSpinner()
+            }
 
-              const downloadMsg = `⬇️  Downloading ${domain} v${version}...`
-              if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-                process.stderr.write(`\r${downloadMsg}`)
-                if (process.stderr.isTTY) {
-                  fs.writeSync(process.stderr.fd, '')
-                }
+            const downloadMsg = config.verbose
+              ? `⬇️  Downloading ${domain} v${version} (size unknown)...`
+              : `⬇️  Downloading ${domain} v${version}...`
+
+            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+              process.stderr.write(`\r${downloadMsg}`)
+              if (process.stderr.isTTY) {
+                fs.writeSync(process.stderr.fd, '')
               }
-              else {
-                process.stdout.write(`\r${downloadMsg}`)
-              }
+            }
+            else {
+              process.stdout.write(`\r${downloadMsg}`)
             }
 
             const buffer = await response.arrayBuffer()
             await fs.promises.writeFile(file, Buffer.from(buffer))
 
-            if (!config.verbose) {
-              // Clear the download message and ensure flush
-              if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-                process.stderr.write('\r\x1B[K')
-                if (process.stderr.isTTY) {
-                  try {
-                    fs.writeSync(process.stderr.fd, '')
-                  }
-                  catch {
-                    // Ignore flush errors
-                  }
+            // Clear the download message and show completion with size
+            const sizeKB = (buffer.byteLength / 1024).toFixed(1)
+            const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(1)
+            const sizeText = buffer.byteLength > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`
+
+            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+              process.stderr.write('\r\x1B[K')
+              if (process.stderr.isTTY) {
+                try {
+                  fs.writeSync(process.stderr.fd, '')
+                }
+                catch {
+                  // Ignore flush errors
                 }
               }
-              else {
-                process.stdout.write('\r\x1B[K')
-                if (process.stdout.isTTY) {
-                  try {
-                    fs.writeSync(process.stdout.fd, '')
-                  }
-                  catch {
-                    // Ignore flush errors
-                  }
+            }
+            else {
+              process.stdout.write('\r\x1B[K')
+              if (process.stdout.isTTY) {
+                try {
+                  fs.writeSync(process.stdout.fd, '')
+                }
+                catch {
+                  // Ignore flush errors
                 }
               }
+            }
+
+            if (config.verbose) {
+              logUniqueMessage(`✅ Downloaded ${sizeText} - ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+            }
+            else {
               logUniqueMessage(`✅ ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
             }
           }
@@ -1293,13 +1322,13 @@ async function downloadPackage(
 
         const extractMsg = `🔧 Extracting ${domain} v${version}...`
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-          process.stderr.write(`\r${extractMsg}`)
+          process.stderr.write(`${extractMsg}\n`)
           if (process.stderr.isTTY) {
             fs.writeSync(process.stderr.fd, '')
           }
         }
         else {
-          process.stdout.write(`\r${extractMsg}`)
+          process.stdout.write(`${extractMsg}\n`)
         }
       }
     }
@@ -1330,7 +1359,7 @@ async function downloadPackage(
       const archiveStats = fs.statSync(archiveFile)
       if (archiveStats.size > 20 * 1024 * 1024) {
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-          process.stderr.write('\r\x1B[K')
+          process.stderr.write('\x1B[1A\r\x1B[K')
           if (process.stderr.isTTY) {
             try {
               fs.writeSync(process.stderr.fd, '')
@@ -1341,7 +1370,7 @@ async function downloadPackage(
           }
         }
         else {
-          process.stdout.write('\r\x1B[K')
+          process.stdout.write('\x1B[1A\r\x1B[K')
           if (process.stdout.isTTY) {
             try {
               fs.writeSync(process.stdout.fd, '')
@@ -1914,10 +1943,10 @@ async function installDependencies(
               spinnerInterval = null
             }
             if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-              process.stderr.write('\r\x1B[K')
+              process.stderr.write('\x1B[1A\r\x1B[K')
             }
             else {
-              process.stdout.write('\r\x1B[K')
+              process.stdout.write('\x1B[1A\r\x1B[K')
             }
             hasTemporaryProcessingMessage = false
           }
@@ -1954,10 +1983,10 @@ async function installDependencies(
             spinnerInterval = null
           }
           if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-            process.stderr.write('\r\x1B[K')
+            process.stderr.write('\x1B[1A\r\x1B[K')
           }
           else {
-            process.stdout.write('\r\x1B[K')
+            process.stdout.write('\x1B[1A\r\x1B[K')
           }
           hasTemporaryProcessingMessage = false
         }
@@ -2138,10 +2167,10 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
             spinnerInterval = null
           }
           if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-            process.stderr.write('\r\x1B[K')
+            process.stderr.write('\x1B[1A\r\x1B[K')
           }
           else {
-            process.stdout.write('\r\x1B[K')
+            process.stdout.write('\x1B[1A\r\x1B[K')
           }
           hasTemporaryProcessingMessage = false
         }

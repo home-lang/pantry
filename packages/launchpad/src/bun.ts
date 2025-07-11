@@ -270,10 +270,11 @@ export async function install_bun(installPath: string, version?: string): Promis
       const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
 
       // Show real-time download progress like the CLI upgrade command
-      if (!config.verbose && totalBytes > 0) {
+      if (totalBytes > 0) {
         const reader = response.body.getReader()
         const chunks: Uint8Array[] = []
         let downloadedBytes = 0
+        let lastProgressUpdate = 0
 
         while (true) {
           const { done, value } = await reader.read()
@@ -284,9 +285,20 @@ export async function install_bun(installPath: string, version?: string): Promis
             chunks.push(value)
             downloadedBytes += value.length
 
-            // Show progress - same format as CLI upgrade
-            const progress = (downloadedBytes / totalBytes * 100).toFixed(0)
-            process.stdout.write(`\r⬇️  ${downloadedBytes}/${totalBytes} bytes (${progress}%)`)
+            // Throttle progress updates to every 100ms to make them visible but not too frequent
+            const now = Date.now()
+            const progress = (downloadedBytes / totalBytes * 100)
+            const progressPercent = Math.floor(progress / 5) * 5 // Round to nearest 5%
+
+            // Always show initial progress and 100% to ensure visibility
+            if (now - lastProgressUpdate > 100 || progress >= 100 || downloadedBytes === value.length) {
+              const progressMsg = config.verbose
+                ? `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%) - Bun v${bunVersion}`
+                : `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%)`
+
+              process.stdout.write(`\r${progressMsg}`)
+              lastProgressUpdate = now
+            }
           }
         }
 
