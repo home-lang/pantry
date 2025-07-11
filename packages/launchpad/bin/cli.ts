@@ -1026,7 +1026,7 @@ cli
 
       // Check if already on target version
       if (!options?.force && targetVersion === `v${version}`) {
-        console.log(`✅ You're already on the latest version of Launchpad (v${version})`)
+        console.log(`✅ You're already on the latest version of Launchpad \x1B[2m\x1B[3m(v${version})\x1B[0m`)
         if (options?.verbose) {
           console.log('💡 Use --force to reinstall the same version')
         }

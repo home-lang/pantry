@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
-import { install } from '../install'
+import { cleanupSpinner, install } from '../install'
 
 export interface DumpOptions {
   dryrun?: boolean
@@ -169,8 +169,11 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         try {
           results = await install(packages, installPath)
 
+          // Clean up any active spinner before final message
+          cleanupSpinner()
+
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-          process.stderr.write(`✅ Environment activated for ${projectName} \x1B[3m(${elapsed}s)\x1B[0m\n`)
+          process.stderr.write(`✅ Environment activated for ${projectName} \x1B[2m\x1B[3m(${elapsed}s)\x1B[0m\n`)
 
           // Force immediate flush for shell mode to ensure message appears instantly
           if (process.stderr.isTTY) {

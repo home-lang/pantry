@@ -7,21 +7,72 @@ import process from 'node:process'
 import { aliases, packages } from 'ts-pkgx'
 import { config } from './config'
 import { Path } from './path'
-import { Spinner } from './progress'
 
 // Global message deduplication for shell mode
 const shellModeMessageCache = new Set<string>()
 let hasTemporaryProcessingMessage = false
+let spinnerInterval: Timer | null = null
+const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+let spinnerIndex = 0
+
+// Centralized cleanup function for spinner and processing messages
+function cleanupSpinner(): void {
+  if (spinnerInterval) {
+    clearInterval(spinnerInterval)
+    spinnerInterval = null
+  }
+  // Clear any spinner line
+  if (hasTemporaryProcessingMessage) {
+    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+      process.stderr.write('\r\x1B[K')
+    }
+    else {
+      process.stdout.write('\r\x1B[K')
+    }
+    hasTemporaryProcessingMessage = false
+  }
+}
+
+// Setup signal handlers for clean exit
+function setupSignalHandlers(): void {
+  process.on('SIGINT', () => {
+    cleanupSpinner()
+    process.exit(130) // Standard exit code for SIGINT
+  })
+
+  process.on('SIGTERM', () => {
+    cleanupSpinner()
+    process.exit(143) // Standard exit code for SIGTERM
+  })
+
+  process.on('beforeExit', () => {
+    cleanupSpinner()
+  })
+
+  process.on('exit', () => {
+    cleanupSpinner()
+  })
+}
+
+// Initialize signal handlers
+setupSignalHandlers()
 
 // Show success messages and temporary processing messages immediately after
 function logUniqueMessage(message: string, forceLog = false): void {
-  // Clear any temporary processing message before showing new message
-  if (hasTemporaryProcessingMessage && message.startsWith('✅')) {
+  // Clear any temporary processing message before showing any new message
+  if (hasTemporaryProcessingMessage && (message.startsWith('✅') || message.startsWith('⚠️') || message.startsWith('❌'))) {
+    // Stop spinner
+    if (spinnerInterval) {
+      clearInterval(spinnerInterval)
+      spinnerInterval = null
+    }
+
+    // Clear the current spinner line without moving cursor up - just overwrite it
     if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-      process.stderr.write('\x1B[1A\x1B[K') // Move up one line and clear it
+      process.stderr.write('\r\x1B[K') // Clear current line
     }
     else {
-      process.stdout.write('\x1B[1A\x1B[K') // Move up one line and clear it
+      process.stdout.write('\r\x1B[K') // Clear current line
     }
     hasTemporaryProcessingMessage = false
   }
@@ -48,19 +99,39 @@ function logUniqueMessage(message: string, forceLog = false): void {
     console.log(message)
   }
 
-  // Show temporary processing message immediately after success messages (except final environment message)
-  if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated')) {
-    const processingMsg = `🔄 Processing next dependency...`
+  // Show temporary processing message immediately after package success messages (not the final environment message)
+  // But only if we're not already showing a spinner (to avoid conflicts with download progress)
+  if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated') && !spinnerInterval) {
+    // Start with first spinner frame
+    spinnerIndex = 0
+    const processingMsg = `${spinnerFrames[spinnerIndex]} Processing next dependency...`
 
     if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-      process.stderr.write(`${processingMsg}\n`)
+      process.stderr.write(`${processingMsg}`)
       if (process.stderr.isTTY) {
         fs.writeSync(process.stderr.fd, '')
       }
     }
     else {
-      process.stdout.write(`${processingMsg}\n`)
+      process.stdout.write(`${processingMsg}`)
     }
+
+    // Start spinner animation
+    spinnerInterval = setInterval(() => {
+      spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length
+      const updatedMsg = `${spinnerFrames[spinnerIndex]} Processing next dependency...`
+
+      if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+        process.stderr.write(`\r\x1B[K${updatedMsg}`)
+        if (process.stderr.isTTY) {
+          fs.writeSync(process.stderr.fd, '')
+        }
+      }
+      else {
+        process.stdout.write(`\r\x1B[K${updatedMsg}`)
+      }
+    }, 80) // 80ms for smooth animation
+
     hasTemporaryProcessingMessage = true
   }
 }
@@ -68,6 +139,9 @@ function logUniqueMessage(message: string, forceLog = false): void {
 function clearMessageCache(): void {
   shellModeMessageCache.clear()
 }
+
+// Export cleanup function for external use
+export { cleanupSpinner }
 
 // Extract all package alias names from ts-pkgx
 export type PackageAlias = keyof typeof aliases
@@ -477,9 +551,119 @@ function getArchitecture(): SupportedArchitecture {
 
 /**
  * Resolves a package name to its canonical domain using ts-pkgx aliases
+ * with fallback support for common package names
  */
 export function resolvePackageName(packageName: string): string {
-  return (aliases as Record<string, string>)[packageName] || packageName
+  // First try the official ts-pkgx aliases
+  const aliasResult = (aliases as Record<string, string>)[packageName]
+  if (aliasResult) {
+    return aliasResult
+  }
+
+  // Fallback mapping for common packages that don't have official aliases
+  const commonAliases: Record<string, string> = {
+    // Database systems
+    mysql: 'mysql.com',
+    mariadb: 'mariadb.com/server',
+    postgresql: 'postgresql.org',
+    postgres: 'postgresql.org',
+    redis: 'redis.io',
+    mongodb: 'mongodb.com',
+    sqlite: 'sqlite.org',
+    cassandra: 'cassandra.apache.org',
+    influxdb: 'influxdata.com',
+    couchdb: 'couchdb.apache.org',
+    neo4j: 'neo4j.com',
+    clickhouse: 'clickhouse.com',
+    duckdb: 'duckdb.org',
+    valkey: 'valkey.io',
+
+    // Programming languages and runtimes
+    node: 'nodejs.org',
+    nodejs: 'nodejs.org',
+    python: 'python.org',
+    python3: 'python.org',
+    php: 'php.net',
+    ruby: 'ruby-lang.org',
+    rust: 'rust-lang.org',
+    go: 'go.dev',
+    golang: 'go.dev',
+    java: 'openjdk.org',
+    openjdk: 'openjdk.org',
+    deno: 'deno.land',
+    bun: 'bun.sh',
+
+    // Package managers
+    npm: 'npmjs.com',
+    yarn: 'yarnpkg.com',
+    pnpm: 'pnpm.io',
+    pip: 'pip.pypa.io',
+    composer: 'getcomposer.org',
+    poetry: 'python-poetry.org',
+    pipenv: 'pipenv.pypa.io',
+    gem: 'rubygems.org',
+    cargo: 'crates.io',
+    maven: 'maven.apache.org',
+    gradle: 'gradle.org',
+
+    // Development tools
+    git: 'git-scm.org',
+    docker: 'docker.com',
+    kubectl: 'kubernetes.io/kubectl',
+    helm: 'helm.sh',
+    terraform: 'terraform.io',
+    ansible: 'ansible.com',
+    curl: 'curl.se',
+    wget: 'gnu.org/wget',
+    nginx: 'nginx.org',
+    apache: 'apache.org',
+    vim: 'vim.org',
+    neovim: 'neovim.io',
+    nvim: 'neovim.io',
+    code: 'code.visualstudio.com',
+    vscode: 'code.visualstudio.com',
+
+    // Cloud and deployment
+    aws: 'aws.amazon.com',
+    gcloud: 'cloud.google.com',
+    azure: 'azure.microsoft.com',
+    heroku: 'heroku.com',
+    vercel: 'vercel.com',
+    netlify: 'netlify.com',
+
+    // Build tools and compilers
+    cmake: 'cmake.org',
+    make: 'gnu.org/make',
+    gcc: 'gnu.org/gcc',
+    clang: 'llvm.org',
+    llvm: 'llvm.org',
+
+    // Web servers and proxies
+    traefik: 'traefik.io',
+    caddy: 'caddy.dev',
+    haproxy: 'haproxy.org',
+
+    // CLI utilities
+    jq: 'jqlang.github.io',
+    yq: 'mikefarah.gitbook.io/yq',
+    htop: 'htop.dev',
+    tree: 'tree.dev',
+    ripgrep: 'github.com/BurntSushi/ripgrep',
+    rg: 'github.com/BurntSushi/ripgrep',
+    fd: 'github.com/sharkdp/fd',
+    bat: 'github.com/sharkdp/bat',
+    exa: 'the.exa.website',
+    fzf: 'github.com/junegunn/fzf',
+  }
+
+  // Check fallback aliases
+  const fallbackResult = commonAliases[packageName.toLowerCase()]
+  if (fallbackResult) {
+    return fallbackResult
+  }
+
+  // If no alias found, return the original package name
+  return packageName
 }
 
 /**
@@ -882,7 +1066,7 @@ async function downloadPackage(
           console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
         }
         else {
-          logUniqueMessage(`✅ ${domain} v${version}`)
+          logUniqueMessage(`✅ ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
         }
 
         // Copy cached file to temp directory
@@ -913,6 +1097,11 @@ async function downloadPackage(
           const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
 
           if (!config.verbose && totalBytes > 0) {
+            // Clear any existing spinner before starting download progress
+            if (hasTemporaryProcessingMessage) {
+              cleanupSpinner()
+            }
+
             // Show real-time download progress like the CLI upgrade command
             const reader = response.body?.getReader()
             if (reader) {
@@ -952,14 +1141,32 @@ async function downloadPackage(
                 }
               }
 
-              // Clear the progress line using the same stream
+              // Clear the progress line using the same stream and ensure flush
               if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
                 process.stderr.write('\r\x1B[K')
+                // Force flush to ensure clear is visible
+                if (process.stderr.isTTY) {
+                  try {
+                    fs.writeSync(process.stderr.fd, '')
+                  }
+                  catch {
+                    // Ignore flush errors
+                  }
+                }
               }
               else {
                 process.stdout.write('\r\x1B[K')
+                // Force flush for stdout too
+                if (process.stdout.isTTY) {
+                  try {
+                    fs.writeSync(process.stdout.fd, '')
+                  }
+                  catch {
+                    // Ignore flush errors
+                  }
+                }
               }
-              logUniqueMessage(`✅ ${domain} v${version}`)
+              logUniqueMessage(`✅ ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
 
               // Combine all chunks into a single buffer
               const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
@@ -995,6 +1202,11 @@ async function downloadPackage(
           else {
             // Fallback for when content-length is not available - show simple download indicator
             if (!config.verbose) {
+              // Clear any existing spinner before starting download
+              if (hasTemporaryProcessingMessage) {
+                cleanupSpinner()
+              }
+
               const downloadMsg = `⬇️  Downloading ${domain} v${version}...`
               if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
                 process.stderr.write(`\r${downloadMsg}`)
@@ -1011,14 +1223,30 @@ async function downloadPackage(
             await fs.promises.writeFile(file, Buffer.from(buffer))
 
             if (!config.verbose) {
-              // Clear the download message
+              // Clear the download message and ensure flush
               if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
                 process.stderr.write('\r\x1B[K')
+                if (process.stderr.isTTY) {
+                  try {
+                    fs.writeSync(process.stderr.fd, '')
+                  }
+                  catch {
+                    // Ignore flush errors
+                  }
+                }
               }
               else {
                 process.stdout.write('\r\x1B[K')
+                if (process.stdout.isTTY) {
+                  try {
+                    fs.writeSync(process.stdout.fd, '')
+                  }
+                  catch {
+                    // Ignore flush errors
+                  }
+                }
               }
-              logUniqueMessage(`✅ ${domain} v${version}`)
+              logUniqueMessage(`✅ ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
             }
           }
 
@@ -1058,6 +1286,11 @@ async function downloadPackage(
       // Only show extraction for very large packages (>20MB) to keep output clean
       const archiveStats = fs.statSync(archiveFile)
       if (archiveStats.size > 20 * 1024 * 1024) {
+        // Clear any existing spinner before starting extraction
+        if (hasTemporaryProcessingMessage) {
+          cleanupSpinner()
+        }
+
         const extractMsg = `🔧 Extracting ${domain} v${version}...`
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
           process.stderr.write(`\r${extractMsg}`)
@@ -1098,9 +1331,25 @@ async function downloadPackage(
       if (archiveStats.size > 20 * 1024 * 1024) {
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
           process.stderr.write('\r\x1B[K')
+          if (process.stderr.isTTY) {
+            try {
+              fs.writeSync(process.stderr.fd, '')
+            }
+            catch {
+              // Ignore flush errors
+            }
+          }
         }
         else {
           process.stdout.write('\r\x1B[K')
+          if (process.stdout.isTTY) {
+            try {
+              fs.writeSync(process.stdout.fd, '')
+            }
+            catch {
+              // Ignore flush errors
+            }
+          }
         }
       }
     }
@@ -1250,7 +1499,7 @@ async function downloadPackage(
     )
 
     if (config.verbose) {
-      console.warn(`✅ Successfully installed ${domain} v${version}`)
+      console.warn(`✅ Successfully installed ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
     }
 
     // Clean up temp directory
@@ -1658,6 +1907,21 @@ async function installDependencies(
           console.warn(`Warning: No suitable version found for dependency ${depName}`)
         }
         else {
+          // Clear any temporary processing message before showing warning
+          if (hasTemporaryProcessingMessage) {
+            if (spinnerInterval) {
+              clearInterval(spinnerInterval)
+              spinnerInterval = null
+            }
+            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+              process.stderr.write('\r\x1B[K')
+            }
+            else {
+              process.stdout.write('\r\x1B[K')
+            }
+            hasTemporaryProcessingMessage = false
+          }
+
           // Only show warning for direct dependencies, not nested ones
           const isDirectDependency = packageInfo.dependencies.includes(dep)
           if (isDirectDependency) {
@@ -1683,6 +1947,21 @@ async function installDependencies(
         console.warn(`Warning: Failed to install dependency ${dep}: ${error instanceof Error ? error.message : String(error)}`)
       }
       else {
+        // Clear any temporary processing message before showing warning
+        if (hasTemporaryProcessingMessage) {
+          if (spinnerInterval) {
+            clearInterval(spinnerInterval)
+            spinnerInterval = null
+          }
+          if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+            process.stderr.write('\r\x1B[K')
+          }
+          else {
+            process.stdout.write('\r\x1B[K')
+          }
+          hasTemporaryProcessingMessage = false
+        }
+
         // Only show warning for permission errors or direct dependencies
         const isPermissionError = error instanceof Error && error.message.includes('EACCES')
         const isDirectDependency = packageInfo.dependencies.includes(dep)
@@ -1718,6 +1997,11 @@ async function installPackage(packageName: string, packageSpec: string, installP
   if (!version) {
     const latestVersion = getLatestVersion(name)
     if (!latestVersion) {
+      // Check if it's a fallback alias that might not be available
+      const originalDomain = resolvePackageName(name)
+      if (originalDomain !== name) {
+        throw new Error(`No versions found for ${name} (resolved to ${originalDomain}) on ${os}/${architecture}. Package may not be available for this platform.`)
+      }
       throw new Error(`No versions found for ${name} on ${os}/${architecture}`)
     }
     version = latestVersion
@@ -1726,6 +2010,11 @@ async function installPackage(packageName: string, packageSpec: string, installP
     // Resolve version constraints (e.g., ^1.21, ~2.0, latest) to actual versions
     const resolvedVersion = resolveVersion(name, version)
     if (!resolvedVersion) {
+      // Check if it's a fallback alias that might not be available
+      const originalDomain = resolvePackageName(name)
+      if (originalDomain !== name) {
+        throw new Error(`No suitable version found for ${name}@${version} (resolved to ${originalDomain}). Package may not be available for this platform or version constraint.`)
+      }
       throw new Error(`No suitable version found for ${name}@${version}`)
     }
     version = resolvedVersion
@@ -1842,6 +2131,21 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         }
       }
       catch (error) {
+        // Clear any temporary processing message before showing error
+        if (hasTemporaryProcessingMessage) {
+          if (spinnerInterval) {
+            clearInterval(spinnerInterval)
+            spinnerInterval = null
+          }
+          if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+            process.stderr.write('\r\x1B[K')
+          }
+          else {
+            process.stdout.write('\r\x1B[K')
+          }
+          hasTemporaryProcessingMessage = false
+        }
+
         const errorMessage = error instanceof Error ? error.message : String(error)
 
         // Check if it's a permission error
