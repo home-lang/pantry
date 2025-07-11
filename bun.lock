@@ -10,8 +10,8 @@
         "bumpp": "^10.2.0",
         "bun-plugin-dtsx": "0.9.5",
         "changelogen": "^0.6.2",
-        "chromium-bidi": "^7.0.0",
-        "electron": "^37.2.0",
+        "chromium-bidi": "^7.1.0",
+        "electron": "^37.2.1",
         "lint-staged": "^15.5.2",
         "simple-git-hooks": "^2.13.0",
         "typescript": "^5.8.3",
@@ -19,7 +19,7 @@
     },
     "packages/action": {
       "name": "launchpad-installer",
-      "version": "0.4.23",
+      "version": "0.4.26",
       "bin": {
         "launchpad-installer": "dist/index.js",
       },
@@ -36,14 +36,14 @@
     },
     "packages/launchpad": {
       "name": "@stacksjs/launchpad",
-      "version": "0.4.23",
+      "version": "0.4.26",
       "bin": {
         "launchpad": "./dist/bin/cli.js",
       },
       "dependencies": {
         "bunfig": "^0.10.1",
         "cac": "^6.7.14",
-        "ts-pkgx": "0.3.102",
+        "ts-pkgx": "0.3.113",
       },
       "devDependencies": {
         "bun-plugin-dtsx": "^0.9.5",
@@ -899,7 +899,7 @@
 
     "chokidar": ["chokidar@3.6.0", "", { "dependencies": { "anymatch": "~3.1.2", "braces": "~3.0.2", "glob-parent": "~5.1.2", "is-binary-path": "~2.1.0", "is-glob": "~4.0.1", "normalize-path": "~3.0.0", "readdirp": "~3.6.0" }, "optionalDependencies": { "fsevents": "~2.3.2" } }, "sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw=="],
 
-    "chromium-bidi": ["chromium-bidi@7.0.0", "", { "dependencies": { "mitt": "^3.0.1", "zod": "^3.24.1" }, "peerDependencies": { "devtools-protocol": "*" } }, "sha512-TClgAwvbQp+VdxgYPT9uQ1rMuo1nMNhpCxB1CempdPpKb88At3jiqvjvAzPXWg1uHFgsbEMN6sTqGWOk2Nl6wA=="],
+    "chromium-bidi": ["chromium-bidi@7.1.0", "", { "dependencies": { "mitt": "^3.0.1", "zod": "^3.24.1" }, "peerDependencies": { "devtools-protocol": "*" } }, "sha512-UVYuuZfwi7AIiV+OWIRePZD6kX1bSNxoWjEsYG+Xkb97hzQIt9qnV662I5A6BAcdKO4bcZQVrkK/VhNHzFjNDg=="],
 
     "ci-info": ["ci-info@4.3.0", "", {}, "sha512-l+2bNRMiQgcfILUi33labAZYIWlH1kWDp+ecNo5iisRKrbm0xcRyCww71/YU0Fkw0mAFpz9bJayXPjey6vkmaQ=="],
 
@@ -1013,7 +1013,7 @@
 
     "ejs": ["ejs@3.1.10", "", { "dependencies": { "jake": "^10.8.5" }, "bin": { "ejs": "bin/cli.js" } }, "sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA=="],
 
-    "electron": ["electron@37.2.0", "", { "dependencies": { "@electron/get": "^2.0.0", "@types/node": "^22.7.7", "extract-zip": "^2.0.1" }, "bin": { "electron": "cli.js" } }, "sha512-dE6+qeg6SBUVd5d8CD2+GH82kh+gF1v40+hs+U+UOno681NMSGmBtgqwldQRpbvtnQDD7V2M9Cpfr3+Abw7aBg=="],
+    "electron": ["electron@37.2.1", "", { "dependencies": { "@electron/get": "^2.0.0", "@types/node": "^22.7.7", "extract-zip": "^2.0.1" }, "bin": { "electron": "cli.js" } }, "sha512-ae2EbzRNqIAHlftfCHtbbt6EgJUW8+zxWLONqNnn2iSrLF0O/pbxbff3xcpZYPpmFBs4uqjoi+s4QS7DQ+zZ/w=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.180", "", {}, "sha512-ED+GEyEh3kYMwt2faNmgMB0b8O5qtATGgR4RmRsIp4T6p7B8vdMbIedYndnvZfsaXvSzegtpfqRMDNCjjiSduA=="],
 
@@ -1881,7 +1881,7 @@
 
     "ts-declaration-location": ["ts-declaration-location@1.0.7", "", { "dependencies": { "picomatch": "^4.0.2" }, "peerDependencies": { "typescript": ">=4.0.0" } }, "sha512-EDyGAwH1gO0Ausm9gV6T2nUvBgXT5kGoCMJPllOaooZ+4VvJiKBdZE7wK18N1deEowhcUptS+5GXZK8U/fvpwA=="],
 
-    "ts-pkgx": ["ts-pkgx@0.3.102", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.2" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-Mufg+duAiSHO7+ZElELcNVOmX5EOBYgwNFvT+CMMFZgWhelA1b1igHgHVHBu7uw7+QZoF46XCEPqGUBt8oh+0Q=="],
+    "ts-pkgx": ["ts-pkgx@0.3.113", "", { "dependencies": { "js-yaml": "^4.1.0", "playwright": "^1.53.2" }, "bin": { "pkgx-tools": "dist/bin/cli.js" } }, "sha512-UghHq66y9KG+n2nObUuodFE5pxp81cUAaGVQ5WgqzH/HAFy9H3ghixBZTZ6FGB86aIwbOsELbsXyTMcv9xandw=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
