@@ -1,4 +1,17 @@
 
+## v0.4.25...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.25...main)
+
+### 🏡 Chore
+
+- Wip ([49aff28](https://github.com/stacksjs/launchpad/commit/49aff28))
+- Wip ([eba410a](https://github.com/stacksjs/launchpad/commit/eba410a))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.24...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.24...main)
