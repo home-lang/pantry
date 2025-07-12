@@ -14,9 +14,33 @@ describe('clean --keep-global', () => {
     testDir = fs.mkdtempSync(path.join(tmpdir(), 'launchpad-clean-global-test-'))
     cliPath = path.join(process.cwd(), 'bin', 'launchpad')
 
-    // Ensure CLI is built
+    // Ensure CLI is built - build it if it doesn't exist
     if (!fs.existsSync(cliPath)) {
-      throw new Error('CLI binary not found. Run `bun run build` first.')
+      const { execSync } = await import('node:child_process')
+      try {
+        execSync('bun run build', {
+          stdio: 'pipe',
+          cwd: process.cwd(),
+          encoding: 'utf8',
+        })
+      }
+      catch (error) {
+        console.error('Failed to build CLI binary:', error)
+        throw new Error('CLI binary build failed. Tests cannot proceed.')
+      }
+    }
+
+    // Verify the binary exists and is executable
+    if (!fs.existsSync(cliPath)) {
+      throw new Error(`CLI binary not found at ${cliPath} even after build attempt.`)
+    }
+
+    // Make sure the binary is executable
+    try {
+      fs.chmodSync(cliPath, 0o755)
+    }
+    catch (error) {
+      console.warn('Could not set executable permissions on CLI binary:', error)
     }
   })
 
@@ -31,20 +55,31 @@ describe('clean --keep-global', () => {
     const proc = spawn(cliPath, ['clean', '--help'], {
       stdio: 'pipe',
       cwd: testDir,
+      timeout: 10000, // 10 second timeout
     })
 
     let stdout = ''
+    let stderr = ''
     proc.stdout?.on('data', (data) => {
       stdout += data.toString()
     })
+    proc.stderr?.on('data', (data) => {
+      stderr += data.toString()
+    })
 
     await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        proc.kill()
+        reject(new Error('Command timed out after 10 seconds'))
+      }, 10000)
+
       proc.on('close', (code) => {
+        clearTimeout(timeoutId)
         if (code === 0) {
           resolve()
         }
         else {
-          reject(new Error(`Process exited with code ${code}`))
+          reject(new Error(`Process exited with code ${code}. stderr: ${stderr}, stdout: ${stdout}`))
         }
       })
     })
