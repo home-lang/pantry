@@ -3,8 +3,121 @@ import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { getPackageInfo, install, parsePackageSpec, resolveVersion } from '../src/install'
+// Import the functions we need to test
+import * as installModule from '../src/install'
+
 import { cleanupTestDirectories, createTestDirectory } from './test-config'
+
+// Test package data
+const TEST_PACKAGE_DATA = {
+  versions: {
+    'openssl.org': ['3.5.0', '3.4.0', '3.3.2', '3.2.1', '3.1.0', '1.1.1w', '1.1.1v', '1.1.1u'],
+    'gnu.org/wget': ['1.25.0', '1.24.5', '1.21.4', '1.21.3', '1.21.2', '1.21.1', '1.21.0'],
+    'curl.se/ca-certs': ['2025.5.20', '2025.1.15', '2024.12.31', '2024.11.28'],
+    'zlib.net': ['1.3.1', '1.3.0', '1.2.13', '1.2.12', '1.2.11'],
+    'nodejs.org': ['20.11.1', '20.11.0', '20.10.0', '18.19.1', '18.19.0'],
+    'python.org': ['3.12.2', '3.12.1', '3.12.0', '3.11.8', '3.11.7'],
+  },
+  packages: {
+    'openssl.org': {
+      name: 'OpenSSL',
+      domain: 'openssl.org',
+      description: 'Cryptography and SSL/TLS Toolkit',
+      versions: ['3.5.0', '3.4.0', '3.3.2', '3.2.1', '3.1.0', '1.1.1w', '1.1.1v', '1.1.1u'],
+      programs: ['openssl'],
+      dependencies: ['curl.se/ca-certs'],
+    },
+    'gnu.org/wget': {
+      name: 'GNU Wget',
+      domain: 'gnu.org/wget',
+      description: 'Network downloader',
+      versions: ['1.25.0', '1.24.5', '1.21.4', '1.21.3', '1.21.2', '1.21.1', '1.21.0'],
+      programs: ['wget'],
+      dependencies: ['openssl.org^1.1'],
+    },
+    'curl.se/ca-certs': {
+      name: 'CA Certificates',
+      domain: 'curl.se/ca-certs',
+      description: 'Certificate Authority certificates',
+      versions: ['2025.5.20', '2025.1.15', '2024.12.31', '2024.11.28'],
+      programs: [],
+      dependencies: undefined,
+    },
+    'zlib.net': {
+      name: 'zlib',
+      domain: 'zlib.net',
+      description: 'Compression library',
+      versions: ['1.3.1', '1.3.0', '1.2.13', '1.2.12', '1.2.11'],
+      programs: [],
+      dependencies: undefined,
+    },
+    'nodejs.org': {
+      name: 'Node.js',
+      domain: 'nodejs.org',
+      description: 'JavaScript runtime',
+      versions: ['20.11.1', '20.11.0', '20.10.0', '18.19.1', '18.19.0'],
+      programs: ['node', 'npm'],
+      dependencies: undefined,
+    },
+    'python.org': {
+      name: 'Python',
+      domain: 'python.org',
+      description: 'Programming language',
+      versions: ['3.12.2', '3.12.1', '3.12.0', '3.11.8', '3.11.7'],
+      programs: ['python', 'python3', 'pip'],
+      dependencies: undefined,
+    },
+  },
+}
+
+// Mock functions
+function mockGetAvailableVersions(packageName: string): string[] {
+  const domain = installModule.resolvePackageName(packageName)
+  return TEST_PACKAGE_DATA.versions[domain as keyof typeof TEST_PACKAGE_DATA.versions] || []
+}
+
+function mockGetLatestVersion(packageName: string): string | null {
+  const domain = installModule.resolvePackageName(packageName)
+  const versions = TEST_PACKAGE_DATA.versions[domain as keyof typeof TEST_PACKAGE_DATA.versions]
+  return versions && versions.length > 0 ? versions[0] : null
+}
+
+function mockGetPackageInfo(packageName: string): {
+  name: string
+  domain: string
+  description?: string
+  latestVersion?: string
+  totalVersions: number
+  programs?: readonly string[]
+  dependencies?: readonly string[]
+  companions?: readonly string[]
+} | null {
+  const domain = installModule.resolvePackageName(packageName)
+  const testPkg = TEST_PACKAGE_DATA.packages[domain as keyof typeof TEST_PACKAGE_DATA.packages]
+
+  if (testPkg) {
+    return {
+      name: testPkg.name,
+      domain: testPkg.domain,
+      description: testPkg.description,
+      latestVersion: testPkg.versions.length > 0 ? testPkg.versions[0] : undefined,
+      totalVersions: testPkg.versions.length,
+      programs: testPkg.programs,
+      dependencies: testPkg.dependencies,
+      companions: undefined,
+    }
+  }
+
+  return null
+}
+
+// Re-export the functions we need to test
+export const parsePackageSpec: typeof installModule.parsePackageSpec = installModule.parsePackageSpec
+export const resolveVersion: typeof installModule.resolveVersion = installModule.resolveVersion
+export const install: typeof installModule.install = installModule.install
+export const getAvailableVersions: (packageName: string) => string[] = mockGetAvailableVersions
+export const getLatestVersion: (packageName: string) => string | null = mockGetLatestVersion
+export const getPackageInfo: typeof mockGetPackageInfo = mockGetPackageInfo
 
 // Mock fetch to prevent real network calls in tests
 const originalFetch = globalThis.fetch

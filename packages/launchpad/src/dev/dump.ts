@@ -213,9 +213,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
               // Ignore flush errors
             }
           }
-
-          // Brief delay to ensure final message is visible before shell code output
-          await new Promise(resolve => setTimeout(resolve, 10))
         }
         catch (error) {
           // For shell mode, output error to stderr and don't throw
@@ -268,16 +265,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       cleanupSpinner()
 
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult)
-
-      // Force flush and exit immediately after outputting shell code
-      if (process.stdout.isTTY) {
-        try {
-          fs.writeSync(process.stdout.fd, '')
-        }
-        catch {
-          // Ignore flush errors
-        }
-      }
 
       // Exit immediately to prevent any additional output or delays
       // Skip exit in test environment to avoid breaking tests

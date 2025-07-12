@@ -1605,10 +1605,12 @@ cli
   .option('--force', 'Skip confirmation prompts')
   .option('--dry-run', 'Show what would be removed without actually removing it')
   .option('--keep-cache', 'Keep cached downloads (only remove installed packages)')
+  .option('--keep-global', 'Keep global dependencies (preserve packages from global deps.yaml files)')
   .example('launchpad clean --dry-run')
   .example('launchpad clean --force')
   .example('launchpad clean --keep-cache')
-  .action(async (options?: { verbose?: boolean, force?: boolean, dryRun?: boolean, keepCache?: boolean }) => {
+  .example('launchpad clean --keep-global')
+  .action(async (options?: { verbose?: boolean, force?: boolean, dryRun?: boolean, keepCache?: boolean, keepGlobal?: boolean }) => {
     if (options?.verbose) {
       config.verbose = true
     }
@@ -1632,6 +1634,10 @@ cli
         if (!options?.keepCache) {
           console.log(`   • ~/.cache/launchpad/ (cached downloads)`)
         }
+        if (options?.keepGlobal) {
+          console.log('')
+          console.log('✅ Global dependencies will be preserved (--keep-global)')
+        }
         console.log('')
         console.log('⚠️  This action cannot be undone!')
         console.log('')
@@ -1642,6 +1648,69 @@ cli
       const os = await import('node:os')
       const homeDir = os.homedir()
       const installPrefix = install_prefix().string
+
+      // Helper function to get global dependencies from deps.yaml files
+      const getGlobalDependencies = async (): Promise<Set<string>> => {
+        const globalDeps = new Set<string>()
+
+        if (!options?.keepGlobal) {
+          return globalDeps
+        }
+
+        // Common locations for global deps.yaml files
+        const globalDepFiles = [
+          path.join(homeDir, '.dotfiles', 'deps.yaml'),
+          path.join(homeDir, '.dotfiles', 'deps.yml'),
+          path.join(homeDir, '.dotfiles', 'dependencies.yaml'),
+          path.join(homeDir, '.dotfiles', 'dependencies.yml'),
+          path.join(homeDir, 'deps.yaml'),
+          path.join(homeDir, 'deps.yml'),
+          path.join(homeDir, 'dependencies.yaml'),
+          path.join(homeDir, 'dependencies.yml'),
+        ]
+
+        for (const depFile of globalDepFiles) {
+          if (fs.existsSync(depFile)) {
+            try {
+              // Simple YAML parsing for basic deps.yaml files
+              const content = fs.readFileSync(depFile, 'utf8')
+              const lines = content.split('\n')
+              let inDependencies = false
+              let isGlobal = false
+
+              for (const line of lines) {
+                const trimmed = line.trim()
+                if (trimmed.startsWith('global:') && (trimmed.includes('true') || trimmed.includes('yes'))) {
+                  isGlobal = true
+                }
+                if (trimmed.startsWith('dependencies:')) {
+                  inDependencies = true
+                  continue
+                }
+                if (inDependencies && trimmed.startsWith('  ') && trimmed.includes(':')) {
+                  const depName = trimmed.split(':')[0].trim()
+                  if (depName && !depName.startsWith('#')) {
+                    if (isGlobal) {
+                      globalDeps.add(depName)
+                    }
+                  }
+                }
+                if (inDependencies && !trimmed.startsWith('  ') && trimmed.length > 0 && !trimmed.startsWith('#')) {
+                  inDependencies = false
+                }
+              }
+            }
+            catch {
+              // Ignore invalid files
+            }
+          }
+        }
+
+        return globalDeps
+      }
+
+      // Get global dependencies
+      const globalDeps = await getGlobalDependencies()
 
       // Helper function to get all Launchpad-managed binaries from package metadata
       const getLaunchpadBinaries = (): Array<{ binary: string, package: string, fullPath: string }> => {
@@ -1672,6 +1741,11 @@ cli
                     for (const binary of metadata.binaries) {
                       const binaryPath = path.join(binDir, binary)
                       if (fs.existsSync(binaryPath)) {
+                        // Skip global dependencies if --keep-global is enabled
+                        if (options?.keepGlobal && globalDeps.has(domain.name)) {
+                          continue
+                        }
+
                         binaries.push({
                           binary,
                           package: `${domain.name}@${version.name.slice(1)}`, // Remove 'v' prefix
@@ -1720,6 +1794,14 @@ cli
             && dirent.name !== '.local')
 
         for (const domain of domains) {
+          // Skip global dependencies if --keep-global is enabled
+          if (options?.keepGlobal && globalDeps.has(domain.name)) {
+            if (options?.verbose) {
+              console.log(`Skipping global dependency: ${domain.name}`)
+            }
+            continue
+          }
+
           const domainPath = path.join(installPrefix, domain.name)
           dirsToCheck.push({ path: domainPath, name: `Package files (${domain.name})` })
         }
@@ -1857,6 +1939,15 @@ cli
               console.log(`   • ${pkg}: ${binaries.join(', ')}`)
             })
           }
+
+          // Show preserved global dependencies
+          if (options?.keepGlobal && globalDeps.size > 0) {
+            console.log('')
+            console.log('✅ Global dependencies that would be preserved:')
+            Array.from(globalDeps).sort().forEach((dep) => {
+              console.log(`   • ${dep}`)
+            })
+          }
         }
         else {
           console.log('📭 Nothing found to clean')
@@ -1917,6 +2008,14 @@ cli
         if (options?.keepCache) {
           console.log('')
           console.log('💡 Cache was preserved. Use `launchpad cache:clear` to remove cached downloads.')
+        }
+
+        if (options?.keepGlobal && globalDeps.size > 0) {
+          console.log('')
+          console.log('✅ Global dependencies were preserved:')
+          Array.from(globalDeps).sort().forEach((dep) => {
+            console.log(`   • ${dep}`)
+          })
         }
       }
       else {

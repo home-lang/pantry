@@ -27,7 +27,7 @@ Here are the main commands available in Launchpad:
 | `cache:stats` | Show cache statistics and usage information |
 | `cache:clean` | Clean up old cached packages |
 | `cache:clear` | Clear all cached packages and downloads |
-| `clean` | Remove all Launchpad-installed packages and environments |
+| `clean` | Remove all Launchpad-installed packages and environments (use `--keep-global` to preserve global dependencies) |
 | `version` | Show version information |
 | `help` | Display help information |
 
@@ -551,8 +551,14 @@ launchpad clean --force
 # Clean packages but keep cache for faster reinstalls
 launchpad clean --keep-cache --force
 
+# Clean but preserve global dependencies
+launchpad clean --keep-global --force
+
 # Clean with verbose output
 launchpad clean --verbose --force
+
+# Combine options for selective cleanup
+launchpad clean --keep-global --keep-cache --force
 ```
 
 The `clean` command removes:
@@ -560,6 +566,41 @@ The `clean` command removes:
 - Project-specific environments
 - Cache directory (unless `--keep-cache` is used)
 - Binary stubs and symlinks
+
+#### Preserving Global Dependencies
+
+Use the `--keep-global` option to preserve essential global dependencies defined in your global `deps.yaml` files:
+
+```bash
+# Safe cleanup that preserves global tools
+launchpad clean --keep-global --force
+
+# Preview what would be preserved
+launchpad clean --keep-global --dry-run
+```
+
+**Global dependency detection**: Launchpad automatically detects any dependency file (`deps.yaml`, `dependencies.yaml`, etc.) with `global: true`
+
+**Global dependency formats**:
+```yaml
+# Top-level global flag (all dependencies are global)
+global: true
+dependencies:
+  bun.sh: ^1.2.16
+  gnu.org/bash: ^5.2.37
+  starship.rs: ^1.23.0
+
+# Individual package global flags
+dependencies:
+  bun.sh:
+    version: ^1.2.16
+    global: true
+  python.org:
+    version: ^3.11.0
+    global: false  # Will be removed during cleanup
+```
+
+This prevents accidental removal of essential system tools like shells, package managers, and other critical utilities that you rely on globally.
 
 ## Complete System Cleanup
 
@@ -690,6 +731,8 @@ Most commands support these options:
 | `--path` | Specify installation/shim path |
 | `--force` | Force reinstall/removal even if already installed/not found |
 | `--dry-run` | Preview changes without actually performing them |
+| `--keep-global` | Preserve global dependencies during cleanup operations |
+| `--keep-cache` | Keep cached downloads during cleanup operations |
 | `--no-auto-path` | Don't automatically add to PATH |
 | `--sudo` | Use sudo for installation (if needed) |
 | `--quiet` | Suppress status messages |

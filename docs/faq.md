@@ -145,6 +145,41 @@ launchpad env:clean --force
 launchpad env:remove environment_hash_here
 ```
 
+### How do I safely clean up without removing essential tools?
+
+Use the `--keep-global` option to preserve global dependencies during cleanup:
+
+```bash
+# Safe cleanup that preserves global dependencies
+launchpad clean --keep-global --force
+
+# Preview what would be preserved
+launchpad clean --keep-global --dry-run
+
+# Combine with other options
+launchpad clean --keep-global --keep-cache --force
+```
+
+**What gets preserved?**
+- Any package marked with `global: true` in dependency files
+
+**Example global dependency file** (`~/.dotfiles/deps.yaml`):
+```yaml
+global: true
+dependencies:
+  bun.sh: ^1.2.16
+  gnu.org/bash: ^5.2.37
+  gnu.org/grep: ^3.12.0
+  starship.rs: ^1.23.0
+  cli.github.com: ^2.73.0
+```
+
+**Why use `--keep-global`?**
+- Prevents accidental removal of essential tools
+- Avoids breaking your development environment
+- Maintains system stability during cleanup
+- Preserves tools you rely on globally across projects
+
 ### Can multiple projects share the same environment?
 
 Currently, each project gets its own isolated environment based on its path. This ensures complete isolation but means:

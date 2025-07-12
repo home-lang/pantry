@@ -1107,22 +1107,22 @@ export function getPackageInfo(packageName: string): {
   const domainKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase() as keyof typeof packages
   const pkg = packages[domainKey]
 
-  if (!pkg) {
-    return null
+  if (pkg) {
+    const versions = 'versions' in pkg && Array.isArray(pkg.versions) ? pkg.versions : []
+
+    return {
+      name: 'name' in pkg ? (pkg.name as string) : packageName,
+      domain: 'domain' in pkg ? (pkg.domain as string) : domain,
+      description: 'description' in pkg ? (pkg.description as string) : undefined,
+      latestVersion: versions.length > 0 ? (typeof versions[0] === 'string' ? versions[0] : String(versions[0])) : undefined,
+      totalVersions: versions.length,
+      programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
+      dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
+      companions: 'companions' in pkg ? (pkg.companions as readonly string[]) : undefined,
+    }
   }
 
-  const versions = 'versions' in pkg && Array.isArray(pkg.versions) ? pkg.versions : []
-
-  return {
-    name: 'name' in pkg ? (pkg.name as string) : packageName,
-    domain: 'domain' in pkg ? (pkg.domain as string) : domain,
-    description: 'description' in pkg ? (pkg.description as string) : undefined,
-    latestVersion: versions.length > 0 ? (typeof versions[0] === 'string' ? versions[0] : String(versions[0])) : undefined,
-    totalVersions: versions.length,
-    programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
-    dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
-    companions: 'companions' in pkg ? (pkg.companions as readonly string[]) : undefined,
-  }
+  return null
 }
 
 /**

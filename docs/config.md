@@ -174,6 +174,34 @@ dependencies:
 - **Local packages** (`global: false` or default): Installed to project-specific directories
 - **Mixed installations**: You can have both global and local packages in the same project
 
+### Global Dependencies and Cleanup
+
+When using the `launchpad clean` command, you can preserve global dependencies to avoid accidentally removing essential system tools:
+
+```bash
+# Safe cleanup that preserves global dependencies
+launchpad clean --keep-global --force
+
+# Preview what would be preserved
+launchpad clean --keep-global --dry-run
+```
+
+**Global dependency detection**:
+- Any dependency file (`deps.yaml`, `dependencies.yaml`, etc.) with `global: true`
+
+**Example global dependency file** (`~/.dotfiles/deps.yaml`):
+```yaml
+global: true
+dependencies:
+  bun.sh: ^1.2.16
+  gnu.org/bash: ^5.2.37
+  gnu.org/grep: ^3.12.0
+  starship.rs: ^1.23.0
+  cli.github.com: ^2.73.0
+```
+
+This ensures that essential tools like shells, package managers, and system utilities are preserved during cleanup operations, preventing system breakage.
+
 ## Configuration Options
 
 ### General Options
