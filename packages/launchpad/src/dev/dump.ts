@@ -90,10 +90,29 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     cacheSniffResult(projectHash, sniffResult)
 
     const packages = sniffResult.pkgs.map((pkg: any) => {
-      // Ensure constraint is properly converted to string
-      const constraintStr = pkg.constraint && typeof pkg.constraint.toString === 'function'
-        ? pkg.constraint.toString()
-        : (typeof pkg.constraint === 'string' ? pkg.constraint : String(pkg.constraint))
+      // Enhanced constraint handling to prevent [object Object] errors
+      let constraintStr = ''
+
+      if (pkg.constraint) {
+        if (typeof pkg.constraint === 'string') {
+          constraintStr = pkg.constraint
+        } else if (pkg.constraint && typeof pkg.constraint.toString === 'function') {
+          constraintStr = pkg.constraint.toString()
+        } else if (pkg.constraint && typeof pkg.constraint === 'object') {
+          // Handle SemverRange objects specifically
+          constraintStr = pkg.constraint.raw || pkg.constraint.range || String(pkg.constraint)
+        } else {
+          constraintStr = String(pkg.constraint)
+        }
+      } else {
+        constraintStr = '*'
+      }
+
+      // Ensure we never have [object Object] in the constraint
+      if (constraintStr === '[object Object]') {
+        constraintStr = '*'
+      }
+
       return `${pkg.project}@${constraintStr}`
     })
 
