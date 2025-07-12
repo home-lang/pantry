@@ -659,7 +659,9 @@ export function getLatestVersion(packageName: string): string | null {
   for (const [_, pkg] of Object.entries(packages)) {
     if ('domain' in pkg && pkg.domain === domain) {
       if ('versions' in pkg && Array.isArray(pkg.versions) && pkg.versions.length > 0) {
-        return pkg.versions[0] // versions[0] is always the latest
+        const version = pkg.versions[0] // versions[0] is always the latest
+        // Ensure version is a string to prevent [object Object] errors
+        return typeof version === 'string' ? version : String(version)
       }
       break
     }
@@ -670,7 +672,9 @@ export function getLatestVersion(packageName: string): string | null {
   const pkg = packages[domainKey]
 
   if (pkg && 'versions' in pkg && Array.isArray(pkg.versions) && pkg.versions.length > 0) {
-    return pkg.versions[0] // versions[0] is always the latest
+    const version = pkg.versions[0] // versions[0] is always the latest
+    // Ensure version is a string to prevent [object Object] errors
+    return typeof version === 'string' ? version : String(version)
   }
 
   return null
@@ -686,7 +690,8 @@ export function getAvailableVersions(packageName: string): string[] {
   for (const [_, pkg] of Object.entries(packages)) {
     if ('domain' in pkg && pkg.domain === domain) {
       if ('versions' in pkg && Array.isArray(pkg.versions)) {
-        return pkg.versions
+        // Ensure all versions are strings to prevent [object Object] errors
+        return pkg.versions.map((v: any) => typeof v === 'string' ? v : String(v))
       }
       break
     }
@@ -697,7 +702,8 @@ export function getAvailableVersions(packageName: string): string[] {
   const pkg = packages[domainKey]
 
   if (pkg && 'versions' in pkg && Array.isArray(pkg.versions)) {
-    return pkg.versions
+    // Ensure all versions are strings to prevent [object Object] errors
+    return pkg.versions.map((v: any) => typeof v === 'string' ? v : String(v))
   }
 
   return []
@@ -824,10 +830,42 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
 
   if (versionSpec.startsWith('~')) {
     const baseVersion = versionSpec.slice(1)
-    const [major, minor] = baseVersion.split('.')
+    const [major, minor, patch] = baseVersion.split('.')
+
+    // Tilde constraint: ~1.2.3 means >=1.2.3 <1.3.0, ~1.2 means >=1.2.0 <1.3.0
     const matchingVersion = versions.find((v) => {
-      const [vMajor, vMinor] = v.split('.')
-      return vMajor === major && vMinor === minor
+      const versionParts = v.split('.')
+      if (versionParts.length < 2)
+        return false
+
+      const vMajor = versionParts[0]
+      const vMinor = versionParts[1]
+      const vPatch = versionParts[2] || '0'
+
+      // Must have same major version
+      if (vMajor !== major)
+        return false
+
+      // Must have same minor version
+      if (vMinor !== minor)
+        return false
+
+      // If patch is specified, check patch version constraint
+      if (patch) {
+        // Extract numeric part from patch version to handle suffixes
+        const vPatchNum = Number.parseInt(vPatch || '0', 10)
+        const patchNum = Number.parseInt(patch, 10)
+
+        // Skip if we can't parse the patch numbers
+        if (Number.isNaN(vPatchNum) || Number.isNaN(patchNum))
+          return false
+
+        // Patch version must be >= specified patch
+        return vPatchNum >= patchNum
+      }
+
+      // If no patch specified, any patch version is acceptable
+      return true
     })
     return matchingVersion || null
   }
@@ -986,7 +1024,7 @@ export function getPackageInfo(packageName: string): {
         name: 'name' in pkg ? (pkg.name as string) : packageName,
         domain: pkg.domain as string,
         description: 'description' in pkg ? (pkg.description as string) : undefined,
-        latestVersion: versions[0] || undefined,
+        latestVersion: versions.length > 0 ? (typeof versions[0] === 'string' ? versions[0] : String(versions[0])) : undefined,
         totalVersions: versions.length,
         programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
         dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
@@ -1009,7 +1047,7 @@ export function getPackageInfo(packageName: string): {
     name: 'name' in pkg ? (pkg.name as string) : packageName,
     domain: 'domain' in pkg ? (pkg.domain as string) : domain,
     description: 'description' in pkg ? (pkg.description as string) : undefined,
-    latestVersion: versions[0] || undefined,
+    latestVersion: versions.length > 0 ? (typeof versions[0] === 'string' ? versions[0] : String(versions[0])) : undefined,
     totalVersions: versions.length,
     programs: 'programs' in pkg ? (pkg.programs as readonly string[]) : undefined,
     dependencies: 'dependencies' in pkg ? (pkg.dependencies as readonly string[]) : undefined,
@@ -1848,8 +1886,10 @@ async function installDependencies(
           if (config.verbose) {
             console.warn(`Warning: getLatestVersion returned non-string for ${depName}: ${JSON.stringify(latestVersion)}`)
           }
+          versionToInstall = String(latestVersion)
+        } else {
+          versionToInstall = latestVersion || undefined
         }
-        versionToInstall = latestVersion || undefined
       }
       else {
         // Strategy 1: Try to resolve the version constraint to an actual version
@@ -1910,7 +1950,7 @@ async function installDependencies(
                       versionToInstall = String(latestAvailable)
                     }
                     else {
-                      versionToInstall = latestAvailable
+                      versionToInstall = typeof latestAvailable === 'string' ? latestAvailable : String(latestAvailable)
                     }
                     if (config.verbose) {
                       console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (fallback compatibility)`)
@@ -1927,7 +1967,7 @@ async function installDependencies(
                     versionToInstall = String(latestAvailable)
                   }
                   else {
-                    versionToInstall = latestAvailable
+                    versionToInstall = typeof latestAvailable === 'string' ? latestAvailable : String(latestAvailable)
                   }
                   if (config.verbose) {
                     console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (no compatible major version found)`)
@@ -1937,14 +1977,14 @@ async function installDependencies(
             }
           }
           else {
-            // Strategy 5: For non-caret constraints, try to get latest version
-            const latestVersion = getLatestVersion(depName)
-            if (latestVersion) {
-              if (config.verbose) {
-                console.warn(`Using latest version ${latestVersion} for ${depName} instead of ${depVersion}`)
-              }
-              versionToInstall = latestVersion
+                      // Strategy 5: For non-caret constraints, try to get latest version
+          const latestVersion = getLatestVersion(depName)
+          if (latestVersion) {
+            if (config.verbose) {
+              console.warn(`Using latest version ${latestVersion} for ${depName} instead of ${depVersion}`)
             }
+            versionToInstall = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+          }
           }
 
           // Strategy 6: Try the package name as an alias or domain directly
@@ -1956,7 +1996,7 @@ async function installDependencies(
                 if (config.verbose) {
                   console.warn(`Using latest version ${aliasLatest} for resolved domain ${resolvedDomain} instead of ${depName}@${depVersion}`)
                 }
-                versionToInstall = aliasLatest
+                versionToInstall = typeof aliasLatest === 'string' ? aliasLatest : String(aliasLatest)
               }
             }
           }
@@ -2072,7 +2112,7 @@ async function installPackage(packageName: string, packageSpec: string, installP
       }
       throw new Error(`No versions found for ${name} on ${os}/${architecture}`)
     }
-    version = latestVersion
+    version = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
   }
   else {
     // Resolve version constraints (e.g., ^1.21, ~2.0, latest) to actual versions

@@ -89,7 +89,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Cache the sniff result for future fast-path usage
     cacheSniffResult(projectHash, sniffResult)
 
-    const packages = sniffResult.pkgs.map((pkg: any) => `${pkg.project}@${pkg.constraint.toString()}`)
+    const packages = sniffResult.pkgs.map((pkg: any) => {
+      // Ensure constraint is properly converted to string
+      const constraintStr = pkg.constraint && typeof pkg.constraint.toString === 'function'
+        ? pkg.constraint.toString()
+        : (typeof pkg.constraint === 'string' ? pkg.constraint : String(pkg.constraint))
+      return `${pkg.project}@${constraintStr}`
+    })
 
     if (packages.length === 0) {
       if (!quiet && !shellOutput) {
