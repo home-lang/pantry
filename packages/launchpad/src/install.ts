@@ -1835,7 +1835,13 @@ async function installDependencies(
       let versionToInstall = depVersion
       if (!versionToInstall) {
         // Strategy: Get latest version if no version specified
-        versionToInstall = getLatestVersion(depName) || undefined
+        const latestVersion = getLatestVersion(depName)
+        if (latestVersion && typeof latestVersion !== 'string') {
+          if (config.verbose) {
+            console.warn(`Warning: getLatestVersion returned non-string for ${depName}: ${JSON.stringify(latestVersion)}`)
+          }
+        }
+        versionToInstall = latestVersion || undefined
       }
       else {
         // Strategy 1: Try to resolve the version constraint to an actual version
@@ -1888,7 +1894,15 @@ async function installDependencies(
                   }
                   else {
                     // Strategy 4: Use latest available version as last resort
-                    versionToInstall = availableVersions[0] // First version is always the latest
+                    const latestAvailable = availableVersions[0] // First version is always the latest
+                    if (latestAvailable && typeof latestAvailable !== 'string') {
+                      if (config.verbose) {
+                        console.warn(`Warning: availableVersions[0] is not a string for ${depName}: ${JSON.stringify(latestAvailable)}`)
+                      }
+                      versionToInstall = String(latestAvailable)
+                    } else {
+                      versionToInstall = latestAvailable
+                    }
                     if (config.verbose) {
                       console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (fallback compatibility)`)
                     }
@@ -1896,7 +1910,15 @@ async function installDependencies(
                 }
                 else {
                   // Strategy 4: Use latest available version as last resort
-                  versionToInstall = availableVersions[0] // First version is always the latest
+                  const latestAvailable = availableVersions[0] // First version is always the latest
+                  if (latestAvailable && typeof latestAvailable !== 'string') {
+                    if (config.verbose) {
+                      console.warn(`Warning: availableVersions[0] is not a string for ${depName}: ${JSON.stringify(latestAvailable)}`)
+                    }
+                    versionToInstall = String(latestAvailable)
+                  } else {
+                    versionToInstall = latestAvailable
+                  }
                   if (config.verbose) {
                     console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (no compatible major version found)`)
                   }
@@ -1965,6 +1987,13 @@ async function installDependencies(
       allInstalledFiles.push(...nestedFiles)
 
       // Install the dependency itself with the resolved version
+      // Add type checking to prevent [object Object] errors
+      if (versionToInstall && typeof versionToInstall !== 'string') {
+        if (config.verbose) {
+          console.warn(`Warning: versionToInstall is not a string for ${depName}: ${JSON.stringify(versionToInstall)}`)
+        }
+        versionToInstall = String(versionToInstall)
+      }
       const depSpec = versionToInstall ? `${depName}@${versionToInstall}` : depName
       const depFiles = await installPackage(depName, depSpec, installPath)
       allInstalledFiles.push(...depFiles)

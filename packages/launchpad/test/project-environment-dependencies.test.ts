@@ -17,6 +17,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { dump } from '../src/dev/dump'
 
+// Set test environment to disable network calls
+process.env.NODE_ENV = 'test'
+
 // Test environment setup
 const testProjectRoot = join(tmpdir(), 'launchpad-test-project-env')
 
