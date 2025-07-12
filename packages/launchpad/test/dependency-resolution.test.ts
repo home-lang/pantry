@@ -1,9 +1,41 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { getPackageInfo, install, parsePackageSpec, resolveVersion } from '../src/install'
 import { cleanupTestDirectories, createTestDirectory } from './test-config'
+
+// Mock fetch to prevent real network calls in tests
+const originalFetch = globalThis.fetch
+async function mockFetch(url: string | URL | Request, _init?: RequestInit): Promise<Response> {
+  const urlString = url.toString()
+
+  // Mock successful responses for known test packages
+  if (urlString.includes('dist.pkgx.dev')) {
+    // Create a minimal tar.gz file for testing
+    const tarContent = Buffer.from('fake tar content for testing')
+    return new Response(tarContent, {
+      status: 200,
+      statusText: 'OK',
+      headers: { 'content-type': 'application/gzip', 'content-length': tarContent.length.toString() },
+    })
+  }
+
+  // Mock 404 for nonexistent packages
+  if (urlString.includes('nonexistent-package') || urlString.includes('testing.org')) {
+    return new Response('Not Found', {
+      status: 404,
+      statusText: 'Not Found',
+    })
+  }
+
+  // For any other URLs, return 404 to simulate package not available
+  return new Response('Package not available in test environment', {
+    status: 404,
+    statusText: 'Not Found',
+  })
+}
 
 // Track test directories for cleanup
 const testDirectories: string[] = []
@@ -11,11 +43,20 @@ const testDirectories: string[] = []
 beforeEach(() => {
   // Clear any cached environment variables
   delete process.env.LAUNCHPAD_TEST_MODE
+
+  // Enable fetch mocking for tests
+  globalThis.fetch = mockFetch as typeof fetch
+
+  // Set test environment
+  process.env.NODE_ENV = 'test'
 })
 
 afterEach(() => {
   cleanupTestDirectories(testDirectories)
   testDirectories.length = 0
+
+  // Restore original fetch
+  globalThis.fetch = originalFetch
 })
 
 describe('Dependency Resolution', () => {
