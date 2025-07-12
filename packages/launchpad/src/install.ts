@@ -730,8 +730,8 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     return null
   }
 
-  // If no version specified or "latest", return the latest version
-  if (!versionSpec || versionSpec === 'latest') {
+  // If no version specified, "latest", or "*", return the latest version
+  if (!versionSpec || versionSpec === 'latest' || versionSpec === '*') {
     return versions[0] // versions[0] is always the latest
   }
 
@@ -788,6 +788,7 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     // For caret ranges, find the latest version compatible with the major version
     // ^1.21 means >=1.21.0 <2.0.0
     // ^1.21.3 means >=1.21.3 <2.0.0
+    // ^3.0 means >=3.0.0 <4.0.0
 
     // Sort versions to get the latest compatible one first
     const sortedVersions = [...versions].sort((a, b) => {
@@ -815,20 +816,21 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     manualResult = sortedVersions.find((v) => {
       // Handle non-standard version formats by extracting numeric parts
       const versionParts = v.split('.')
-      if (versionParts.length < 2)
+      if (versionParts.length < 1)
         return false
 
       const vMajor = versionParts[0]
-      const vMinor = versionParts[1]
+      const vMinor = versionParts[1] || '0'
       const vPatch = versionParts[2] || '0'
 
       // Must have same major version
       if (vMajor !== major)
         return false
 
-      // If only major specified (e.g., ^1), any version with same major works
-      if (!minor)
+      // If only major specified (e.g., ^3), any version with same major works
+      if (!minor || minor === '0') {
         return true
+      }
 
       // If minor specified, check minor version constraint
       // Extract numeric part from version components to handle suffixes like "1w"
