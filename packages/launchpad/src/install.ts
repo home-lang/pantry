@@ -1027,6 +1027,14 @@ export async function downloadPackage(
   arch: SupportedArchitecture,
   installPath: string,
 ): Promise<string[]> {
+  // Add type checking to prevent [object Object] errors in error messages
+  if (version && typeof version !== 'string') {
+    if (config.verbose) {
+      console.warn(`Warning: version parameter is not a string for ${domain}: ${JSON.stringify(version)}`)
+    }
+    version = String(version)
+  }
+
   const tempDir = path.join(installPath, '.tmp', `${domain}-${version}`)
 
   try {
@@ -1900,7 +1908,8 @@ async function installDependencies(
                         console.warn(`Warning: availableVersions[0] is not a string for ${depName}: ${JSON.stringify(latestAvailable)}`)
                       }
                       versionToInstall = String(latestAvailable)
-                    } else {
+                    }
+                    else {
                       versionToInstall = latestAvailable
                     }
                     if (config.verbose) {
@@ -1916,7 +1925,8 @@ async function installDependencies(
                       console.warn(`Warning: availableVersions[0] is not a string for ${depName}: ${JSON.stringify(latestAvailable)}`)
                     }
                     versionToInstall = String(latestAvailable)
-                  } else {
+                  }
+                  else {
                     versionToInstall = latestAvailable
                   }
                   if (config.verbose) {
@@ -2076,6 +2086,14 @@ async function installPackage(packageName: string, packageSpec: string, installP
       throw new Error(`No suitable version found for ${name}@${version}`)
     }
     version = resolvedVersion
+  }
+
+  // Add type checking to prevent [object Object] errors in error messages
+  if (version && typeof version !== 'string') {
+    if (config.verbose) {
+      console.warn(`Warning: version is not a string for ${name}: ${JSON.stringify(version)}`)
+    }
+    version = String(version)
   }
 
   if (config.verbose) {
