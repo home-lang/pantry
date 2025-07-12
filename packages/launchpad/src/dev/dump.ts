@@ -96,15 +96,19 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       if (pkg.constraint) {
         if (typeof pkg.constraint === 'string') {
           constraintStr = pkg.constraint
-        } else if (pkg.constraint && typeof pkg.constraint.toString === 'function') {
+        }
+        else if (pkg.constraint && typeof pkg.constraint.toString === 'function') {
           constraintStr = pkg.constraint.toString()
-        } else if (pkg.constraint && typeof pkg.constraint === 'object') {
+        }
+        else if (pkg.constraint && typeof pkg.constraint === 'object') {
           // Handle SemverRange objects specifically
           constraintStr = pkg.constraint.raw || pkg.constraint.range || String(pkg.constraint)
-        } else {
+        }
+        else {
           constraintStr = String(pkg.constraint)
         }
-      } else {
+      }
+      else {
         constraintStr = '*'
       }
 
