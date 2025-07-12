@@ -1672,36 +1672,104 @@ cli
         for (const depFile of globalDepFiles) {
           if (fs.existsSync(depFile)) {
             try {
-              // Simple YAML parsing for basic deps.yaml files
               const content = fs.readFileSync(depFile, 'utf8')
-              const lines = content.split('\n')
-              let inDependencies = false
-              let isGlobal = false
 
-              for (const line of lines) {
-                const trimmed = line.trim()
-                if (trimmed.startsWith('global:') && (trimmed.includes('true') || trimmed.includes('yes'))) {
-                  isGlobal = true
-                }
-                if (trimmed.startsWith('dependencies:')) {
-                  inDependencies = true
-                  continue
-                }
-                if (inDependencies && trimmed.startsWith('  ') && trimmed.includes(':')) {
-                  const depName = trimmed.split(':')[0].trim()
-                  if (depName && !depName.startsWith('#')) {
-                    if (isGlobal) {
-                      globalDeps.add(depName)
+              // Try to parse as YAML using a simple parser
+              const parseSimpleYaml = (content: string) => {
+                const lines = content.split('\n')
+                let topLevelGlobal = false
+                let inDependencies = false
+                let currentIndent = 0
+
+                for (const line of lines) {
+                  const trimmed = line.trim()
+
+                  // Skip empty lines and comments
+                  if (!trimmed || trimmed.startsWith('#')) {
+                    continue
+                  }
+
+                  // Check for top-level global flag
+                  if (trimmed.startsWith('global:')) {
+                    const value = trimmed.split(':')[1]?.trim()
+                    topLevelGlobal = value === 'true' || value === 'yes'
+                    continue
+                  }
+
+                  // Check for dependencies section
+                  if (trimmed.startsWith('dependencies:')) {
+                    inDependencies = true
+                    currentIndent = line.length - line.trimStart().length
+                    continue
+                  }
+
+                  // If we're in dependencies section
+                  if (inDependencies) {
+                    const lineIndent = line.length - line.trimStart().length
+
+                    // If we're back to the same or less indentation, we're out of dependencies
+                    if (lineIndent <= currentIndent && trimmed.length > 0) {
+                      inDependencies = false
+                      continue
+                    }
+
+                    // Parse dependency entry
+                    if (lineIndent > currentIndent && trimmed.includes(':')) {
+                      const depName = trimmed.split(':')[0].trim()
+
+                      if (depName && !depName.startsWith('#')) {
+                        // Check if this is a simple string value or object
+                        const colonIndex = trimmed.indexOf(':')
+                        const afterColon = trimmed.substring(colonIndex + 1).trim()
+
+                        if (afterColon && !afterColon.startsWith('{') && afterColon !== '') {
+                          // Simple string format - use top-level global flag
+                          if (topLevelGlobal) {
+                            globalDeps.add(depName)
+                          }
+                        }
+                        else {
+                          // Object format - need to check for individual global flag
+                          // Look for the global flag in subsequent lines
+                          let checkingForGlobal = true
+                          let foundGlobal = false
+
+                          for (let i = lines.indexOf(line) + 1; i < lines.length && checkingForGlobal; i++) {
+                            const nextLine = lines[i]
+                            const nextTrimmed = nextLine.trim()
+                            const nextIndent = nextLine.length - nextLine.trimStart().length
+
+                            // If we're back to same or less indentation, stop looking
+                            if (nextIndent <= lineIndent && nextTrimmed.length > 0) {
+                              checkingForGlobal = false
+                              break
+                            }
+
+                            // Check for global flag
+                            if (nextTrimmed.startsWith('global:')) {
+                              const globalValue = nextTrimmed.split(':')[1]?.trim()
+                              foundGlobal = globalValue === 'true' || globalValue === 'yes'
+                              checkingForGlobal = false
+                            }
+                          }
+
+                          // If we found an explicit global flag, use it; otherwise use top-level
+                          if (foundGlobal || (topLevelGlobal && !foundGlobal)) {
+                            globalDeps.add(depName)
+                          }
+                        }
+                      }
                     }
                   }
                 }
-                if (inDependencies && !trimmed.startsWith('  ') && trimmed.length > 0 && !trimmed.startsWith('#')) {
-                  inDependencies = false
-                }
               }
+
+              parseSimpleYaml(content)
             }
-            catch {
-              // Ignore invalid files
+            catch (error) {
+              if (options?.verbose) {
+                console.log(`⚠️  Could not parse ${depFile}: ${error instanceof Error ? error.message : String(error)}`)
+              }
             }
           }
         }

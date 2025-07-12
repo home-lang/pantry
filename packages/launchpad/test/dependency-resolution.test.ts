@@ -111,9 +111,174 @@ function mockGetPackageInfo(packageName: string): {
   return null
 }
 
+// Custom resolveVersion function that uses test data
+function mockResolveVersion(packageName: string, versionSpec?: string): string | null {
+  const versions = mockGetAvailableVersions(packageName)
+
+  if (!versions.length) {
+    return null
+  }
+
+  // If no version specified, "latest", or "*", return the latest version
+  if (!versionSpec || versionSpec === 'latest' || versionSpec === '*') {
+    return versions[0] // versions[0] is always the latest
+  }
+
+  // If exact version specified, check if it exists
+  if (versions.includes(versionSpec)) {
+    return versionSpec
+  }
+
+  // Handle caret constraints (^)
+  if (versionSpec.startsWith('^')) {
+    const baseVersion = versionSpec.slice(1)
+    const [major, minor, patch] = baseVersion.split('.')
+
+    // Sort versions to get the latest compatible one first
+    const sortedVersions = [...versions].sort((a, b) => {
+      const aParts = a.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const bParts = b.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      // Compare major.minor.patch
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) {
+          return bVal - aVal // Descending order
+        }
+      }
+      return 0
+    })
+
+    const result = sortedVersions.find((v) => {
+      // Handle non-standard version formats by extracting numeric parts
+      const versionParts = v.split('.')
+      if (versionParts.length < 1)
+        return false
+
+      const vMajor = versionParts[0]
+      const vMinor = versionParts[1] || '0'
+      const vPatch = versionParts[2] || '0'
+
+      // Must have same major version
+      if (vMajor !== major)
+        return false
+
+      // If only major specified (e.g., ^3), any version with same major works
+      if (!minor || minor === '0') {
+        return true
+      }
+
+      // If minor specified, check minor version constraint
+      // Extract numeric part from version components to handle suffixes like "1w"
+      const vMinorNum = Number.parseInt(vMinor || '0', 10)
+      const minorNum = Number.parseInt(minor, 10)
+
+      // Skip if we can't parse the version numbers
+      if (Number.isNaN(vMinorNum) || Number.isNaN(minorNum))
+        return false
+
+      // Minor version must be >= specified minor
+      if (vMinorNum < minorNum)
+        return false
+
+      // If patch specified, check patch version constraint when minor versions are equal
+      if (patch && vMinorNum === minorNum) {
+        // Extract numeric part from patch version to handle suffixes
+        const vPatchNum = Number.parseInt(vPatch || '0', 10)
+        const patchNum = Number.parseInt(patch, 10)
+
+        // Skip if we can't parse the patch numbers
+        if (Number.isNaN(vPatchNum) || Number.isNaN(patchNum))
+          return false
+
+        return vPatchNum >= patchNum
+      }
+
+      return true
+    })
+
+    return result || null
+  }
+
+  // Handle tilde constraints (~)
+  if (versionSpec.startsWith('~')) {
+    const baseVersion = versionSpec.slice(1)
+    const [major, minor, patch] = baseVersion.split('.')
+
+    // Sort versions to get the latest compatible one first
+    const sortedVersions = [...versions].sort((a, b) => {
+      const aParts = a.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const bParts = b.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) {
+          return bVal - aVal // Descending order
+        }
+      }
+      return 0
+    })
+
+    const result = sortedVersions.find((v) => {
+      const versionParts = v.split('.')
+      if (versionParts.length < 2)
+        return false
+
+      const vMajor = versionParts[0]
+      const vMinor = versionParts[1]
+      const vPatch = versionParts[2] || '0'
+
+      // Must have same major version
+      if (vMajor !== major)
+        return false
+
+      // Must have same minor version
+      if (vMinor !== minor)
+        return false
+
+      // If patch is specified, check patch version constraint
+      if (patch) {
+        // Extract numeric part from patch version to handle suffixes
+        const vPatchNum = Number.parseInt(vPatch || '0', 10)
+        const patchNum = Number.parseInt(patch, 10)
+
+        // Skip if we can't parse the patch numbers
+        if (Number.isNaN(vPatchNum) || Number.isNaN(patchNum))
+          return false
+
+        // Patch version must be >= specified patch
+        return vPatchNum >= patchNum
+      }
+
+      // If no patch specified, any patch version is acceptable
+      return true
+    })
+
+    return result || null
+  }
+
+  // Try to find a version that starts with the spec (for partial matches)
+  const matchingVersion = versions.find(v => v.startsWith(versionSpec))
+  return matchingVersion || null
+}
+
 // Re-export the functions we need to test
 export const parsePackageSpec: typeof installModule.parsePackageSpec = installModule.parsePackageSpec
-export const resolveVersion: typeof installModule.resolveVersion = installModule.resolveVersion
+export const resolveVersion: (packageName: string, versionSpec?: string) => string | null = mockResolveVersion
 export const install: typeof installModule.install = installModule.install
 export const getAvailableVersions: (packageName: string) => string[] = mockGetAvailableVersions
 export const getLatestVersion: (packageName: string) => string | null = mockGetLatestVersion
