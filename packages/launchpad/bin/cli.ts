@@ -1218,13 +1218,13 @@ cli
     try {
       const targetDir = dir ? path.resolve(dir) : process.cwd()
 
-      // Skip activation message when called from shell integration since dev command handles its own completion
-      if (!options?.silent && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
-        // Show activation message if configured and not called from shell integration
+      // Show activation message if not explicitly silenced
+      if (!options?.silent) {
+        // Show activation message if configured
         if (config.showShellMessages && config.shellActivationMessage) {
-          let message = config.shellActivationMessage.replace('{path}', targetDir)
+          let message = config.shellActivationMessage.replace('{path}', path.basename(targetDir))
 
-          // If called from shell integration, strip ANSI escape sequences to prevent shell parsing issues
+          // If called with shell-safe option, strip ANSI escape sequences to prevent shell parsing issues
           if (options?.shellSafe) {
             // eslint-disable-next-line no-control-regex
             message = message.replace(/\u001B\[[0-9;]*m/g, '')

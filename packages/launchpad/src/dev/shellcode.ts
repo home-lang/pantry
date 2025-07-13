@@ -159,6 +159,7 @@ __launchpad_chpwd() {
             # Set up the environment with progress indicators
             local env_output
             local setup_exit_code=0
+            local activation_needed=false
 
             # Allow stderr to show progress in real-time while capturing stdout for shell evaluation
             {
@@ -171,6 +172,9 @@ __launchpad_chpwd() {
                     # Extract shell code from stdout for evaluation
                     if [[ -s "$temp_file" ]]; then
                         env_output=$(cat "$temp_file" | ${grepFilter})
+                        if [[ -n "$env_output" ]]; then
+                            activation_needed=true
+                        fi
                     fi
                     setup_exit_code=0
                 else
@@ -189,19 +193,21 @@ __launchpad_chpwd() {
                     echo "⚠️  Environment setup timed out for $(basename "$project_dir")" >&2
                 fi
                 return 0
-            elif [[ $setup_exit_code -eq 0 && -n "$env_output" ]]; then
+            elif [[ $setup_exit_code -eq 0 ]]; then
                 # Success - reset timeout counter
                 __launchpad_timeout_count=0
 
-                # Execute the environment setup
-                eval "$env_output" 2>/dev/null || true
+                # Execute the environment setup if we have output
+                if [[ -n "$env_output" ]]; then
+                    eval "$env_output" 2>/dev/null || true
+                fi
 
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Show activation message synchronously (no background jobs)
+                # Always show activation message for successful project entry
                 if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe 2>/dev/null || true
+                    LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe || true
                 fi
             else
                 # Setup failed but not due to timeout - try to set up basic environment silently
@@ -215,7 +221,7 @@ __launchpad_chpwd() {
 
                     # Show activation message only if environment already exists
                     if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                        LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe 2>/dev/null || true
+                        LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe || true
                     fi
                 fi
                 # If no environment exists, be completely silent
