@@ -284,7 +284,7 @@ describe('Environment Isolation', () => {
     it('should create proper deactivation functions with directory checking', async () => {
       createDepsYaml(projectA, ['bun.sh@0.5.9'])
 
-      const result = await runCLI(['dev'], projectA)
+      const result = await runCLI(['dev', '--shell'], projectA)
 
       // Accept either success or failure - the key test is that we get proper output structure
       if (result.exitCode === 0) {

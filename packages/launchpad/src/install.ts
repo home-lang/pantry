@@ -5,6 +5,7 @@ import { arch, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { aliases, packages } from 'ts-pkgx'
+import { install_bun } from './bun'
 import { config } from './config'
 import { Path } from './path'
 
@@ -537,7 +538,16 @@ function getArchitecture(): SupportedArchitecture {
  * with fallback support for common package names
  */
 export function resolvePackageName(packageName: string): string {
-  // First try the official ts-pkgx aliases
+  // First check for known incorrect aliases that need to be overridden
+  const overrideAliases: Record<string, string> = {
+    // ts-pkgx correctly maps git to git-scm.com, so no override needed
+  }
+
+  if (overrideAliases[packageName]) {
+    return overrideAliases[packageName]
+  }
+
+  // Then try the official ts-pkgx aliases
   const aliasResult = (aliases as Record<string, string>)[packageName]
   if (aliasResult) {
     return aliasResult
@@ -590,7 +600,6 @@ export function resolvePackageName(packageName: string): string {
     gradle: 'gradle.org',
 
     // Development tools
-    git: 'git-scm.org',
     docker: 'docker.com',
     kubectl: 'kubernetes.io/kubectl',
     helm: 'helm.sh',
@@ -970,6 +979,198 @@ export function resolveVersion(packageName: string, versionSpec?: string): strin
     return matchingVersion || null
   }
 
+  // Handle >= constraints (e.g., >=10.30)
+  if (versionSpec.startsWith('>=')) {
+    const minVersion = versionSpec.slice(2)
+    // Sort versions to get the latest compatible one first
+    const sortedVersions = [...versions].sort((a, b) => {
+      const aParts = a.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const bParts = b.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) {
+          return bVal - aVal // Descending order
+        }
+      }
+      return 0
+    })
+
+    const matchingVersion = sortedVersions.find((v) => {
+      // Compare versions numerically
+      const vParts = v.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const minParts = minVersion.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      // Compare major.minor.patch
+      for (let i = 0; i < Math.max(vParts.length, minParts.length); i++) {
+        const vVal = vParts[i] || 0
+        const minVal = minParts[i] || 0
+        if (vVal !== minVal) {
+          return vVal >= minVal
+        }
+      }
+      return true // Equal versions satisfy >=
+    })
+    return matchingVersion || null
+  }
+
+  // Handle <= constraints (e.g., <=10.30)
+  if (versionSpec.startsWith('<=')) {
+    const maxVersion = versionSpec.slice(2)
+    // Sort versions to get the latest compatible one first
+    const sortedVersions = [...versions].sort((a, b) => {
+      const aParts = a.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const bParts = b.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) {
+          return bVal - aVal // Descending order
+        }
+      }
+      return 0
+    })
+
+    const matchingVersion = sortedVersions.find((v) => {
+      // Compare versions numerically
+      const vParts = v.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const maxParts = maxVersion.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      // Compare major.minor.patch
+      for (let i = 0; i < Math.max(vParts.length, maxParts.length); i++) {
+        const vVal = vParts[i] || 0
+        const maxVal = maxParts[i] || 0
+        if (vVal !== maxVal) {
+          return vVal <= maxVal
+        }
+      }
+      return true // Equal versions satisfy <=
+    })
+    return matchingVersion || null
+  }
+
+  // Handle > constraints (e.g., >10.30)
+  if (versionSpec.startsWith('>') && !versionSpec.startsWith('>=')) {
+    const minVersion = versionSpec.slice(1)
+    // Sort versions to get the latest compatible one first
+    const sortedVersions = [...versions].sort((a, b) => {
+      const aParts = a.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const bParts = b.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) {
+          return bVal - aVal // Descending order
+        }
+      }
+      return 0
+    })
+
+    const matchingVersion = sortedVersions.find((v) => {
+      // Compare versions numerically
+      const vParts = v.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const minParts = minVersion.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      // Compare major.minor.patch
+      for (let i = 0; i < Math.max(vParts.length, minParts.length); i++) {
+        const vVal = vParts[i] || 0
+        const minVal = minParts[i] || 0
+        if (vVal !== minVal) {
+          return vVal > minVal
+        }
+      }
+      return false // Equal versions do not satisfy >
+    })
+    return matchingVersion || null
+  }
+
+  // Handle < constraints (e.g., <10.30)
+  if (versionSpec.startsWith('<') && !versionSpec.startsWith('<=')) {
+    const maxVersion = versionSpec.slice(1)
+    // Sort versions to get the latest compatible one first
+    const sortedVersions = [...versions].sort((a, b) => {
+      const aParts = a.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const bParts = b.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) {
+          return bVal - aVal // Descending order
+        }
+      }
+      return 0
+    })
+
+    const matchingVersion = sortedVersions.find((v) => {
+      // Compare versions numerically
+      const vParts = v.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+      const maxParts = maxVersion.split('.').map((part) => {
+        const num = Number.parseInt(part, 10)
+        return Number.isNaN(num) ? 0 : num
+      })
+
+      // Compare major.minor.patch
+      for (let i = 0; i < Math.max(vParts.length, maxParts.length); i++) {
+        const vVal = vParts[i] || 0
+        const maxVal = maxParts[i] || 0
+        if (vVal !== maxVal) {
+          return vVal < maxVal
+        }
+      }
+      return false // Equal versions do not satisfy <
+    })
+    return matchingVersion || null
+  }
+
   // Handle x.x.x patterns
   if (versionSpec.includes('x') || versionSpec.includes('X')) {
     const pattern = versionSpec.toLowerCase().replace(/x/g, '\\d+')
@@ -1050,6 +1251,38 @@ export function parsePackageSpec(spec: string): { name: string, version?: string
     return { name, version: version || undefined }
   }
 
+  // Then try dependency format with >= separator (e.g., pcre.org/v2>=10.30)
+  const gteIndex = spec.indexOf('>=')
+  if (gteIndex !== -1 && gteIndex !== 0) {
+    const name = spec.slice(0, gteIndex)
+    const version = spec.slice(gteIndex) // Include the >= in the version
+    return { name, version: version || undefined }
+  }
+
+  // Then try dependency format with <= separator (e.g., package<=1.0)
+  const lteIndex = spec.indexOf('<=')
+  if (lteIndex !== -1 && lteIndex !== 0) {
+    const name = spec.slice(0, lteIndex)
+    const version = spec.slice(lteIndex) // Include the <= in the version
+    return { name, version: version || undefined }
+  }
+
+  // Then try dependency format with > separator (e.g., package>1.0)
+  const gtIndex = spec.indexOf('>')
+  if (gtIndex !== -1 && gtIndex !== 0) {
+    const name = spec.slice(0, gtIndex)
+    const version = spec.slice(gtIndex) // Include the > in the version
+    return { name, version: version || undefined }
+  }
+
+  // Then try dependency format with < separator (e.g., package<1.0)
+  const ltIndex = spec.indexOf('<')
+  if (ltIndex !== -1 && ltIndex !== 0) {
+    const name = spec.slice(0, ltIndex)
+    const version = spec.slice(ltIndex) // Include the < in the version
+    return { name, version: version || undefined }
+  }
+
   // Then try dependency format with ^ separator (e.g., openssl.org^1.1)
   const caretIndex = spec.indexOf('^')
   if (caretIndex !== -1 && caretIndex !== 0) {
@@ -1063,6 +1296,14 @@ export function parsePackageSpec(spec: string): { name: string, version?: string
   if (tildeIndex !== -1 && tildeIndex !== 0) {
     const name = spec.slice(0, tildeIndex)
     const version = spec.slice(tildeIndex) // Include the ~ in the version
+    return { name, version: version || undefined }
+  }
+
+  // Then try dependency format with = separator (e.g., package=1.0)
+  const equalIndex = spec.indexOf('=')
+  if (equalIndex !== -1 && equalIndex !== 0) {
+    const name = spec.slice(0, equalIndex)
+    const version = spec.slice(equalIndex + 1) // Don't include the = in the version
     return { name, version: version || undefined }
   }
 
@@ -1672,6 +1913,100 @@ export async function downloadPackage(
               }
             }
           }
+
+          // Handle ncurses compatibility - create libncurses.dylib -> libncursesw.dylib
+          if (file === 'libncursesw.dylib') {
+            const ncursesPath = path.join(libDir, 'libncurses.dylib')
+            if (!fs.existsSync(ncursesPath)) {
+              try {
+                await fs.promises.symlink(file, ncursesPath)
+                if (config.verbose) {
+                  console.warn(`Created ncurses compatibility symlink: libncurses.dylib -> ${file}`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create ncurses compatibility symlink:`, error)
+                }
+              }
+            }
+          }
+
+          // Handle versioned ncurses compatibility - create libncurses.6.dylib -> libncursesw.6.dylib
+          if (file === 'libncursesw.6.dylib') {
+            const ncursesVersionedPath = path.join(libDir, 'libncurses.6.dylib')
+            if (!fs.existsSync(ncursesVersionedPath)) {
+              try {
+                await fs.promises.symlink(file, ncursesVersionedPath)
+                if (config.verbose) {
+                  console.warn(`Created versioned ncurses compatibility symlink: libncurses.6.dylib -> ${file}`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create versioned ncurses compatibility symlink:`, error)
+                }
+              }
+            }
+          }
+
+          // Handle base ncurses compatibility - create libncurses.dylib -> libncursesw.dylib
+          if (file === 'libncursesw.dylib') {
+            const ncursesBasePath = path.join(libDir, 'libncurses.dylib')
+            if (!fs.existsSync(ncursesBasePath)) {
+              try {
+                await fs.promises.symlink(file, ncursesBasePath)
+                if (config.verbose) {
+                  console.warn(`Created base ncurses compatibility symlink: libncurses.dylib -> ${file}`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create base ncurses compatibility symlink:`, error)
+                }
+              }
+            }
+          }
+
+          // Handle PCRE2 library compatibility - create version-less library names
+          if (file.startsWith('libpcre2-') && file.endsWith('.dylib')) {
+            const match = file.match(/^(libpcre2-(?:8|16|32))\.(\d+)\.dylib$/)
+            if (match) {
+              const [, baseName] = match
+              const versionlessPath = path.join(libDir, `${baseName}.dylib`)
+              if (!fs.existsSync(versionlessPath)) {
+                try {
+                  await fs.promises.symlink(file, versionlessPath)
+                  if (config.verbose) {
+                    console.warn(`Created PCRE2 compatibility symlink: ${baseName}.dylib -> ${file}`)
+                  }
+                }
+                catch (error) {
+                  if (config.verbose) {
+                    console.warn(`Failed to create PCRE2 compatibility symlink:`, error)
+                  }
+                }
+              }
+            }
+          }
+
+          // Handle libpng compatibility - create libpng.dylib -> libpng16.dylib
+          if (file === 'libpng16.dylib') {
+            const libpngPath = path.join(libDir, 'libpng.dylib')
+            if (!fs.existsSync(libpngPath)) {
+              try {
+                await fs.promises.symlink(file, libpngPath)
+                if (config.verbose) {
+                  console.warn(`Created libpng compatibility symlink: libpng.dylib -> ${file}`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create libpng compatibility symlink:`, error)
+                }
+              }
+            }
+          }
         }
       }
       catch (error) {
@@ -1994,178 +2329,177 @@ async function installDependencies(
       continue
     }
 
-    // Skip if already installed to avoid circular dependencies
-    if (installedPackages.has(depDomain)) {
+    // Enhanced version resolution with multiple fallback strategies
+    let versionToInstall = depVersion
+    if (!versionToInstall) {
+      // Strategy: Get latest version if no version specified
+      const latestVersion = getLatestVersion(depDomain)
+      if (latestVersion && typeof latestVersion !== 'string') {
+        if (config.verbose) {
+          console.warn(`Warning: getLatestVersion returned non-string for ${depDomain}: ${JSON.stringify(latestVersion)}`)
+        }
+        versionToInstall = String(latestVersion)
+      }
+      else {
+        versionToInstall = latestVersion || undefined
+      }
+    }
+    else {
+      // Strategy 1: Try to resolve the version constraint to an actual version
+      const resolvedVersion = resolveVersion(depDomain, depVersion)
+      if (resolvedVersion) {
+        versionToInstall = resolvedVersion
+      }
+      else {
+        // Enhanced fallback strategies for version mismatch scenarios
+        if (config.verbose) {
+          console.warn(`Cannot resolve version constraint ${depVersion} for ${depName} (domain: ${depDomain}), trying enhanced fallback strategies`)
+        }
+
+        // Strategy 2: For caret constraints (^1.1), try to find any compatible major version
+        if (depVersion && depVersion.startsWith('^')) {
+          const requestedMajor = depVersion.slice(1).split('.')[0]
+          const availableVersions = getAvailableVersions(depDomain)
+
+          if (availableVersions.length > 0) {
+            // Check if any version has the same major version
+            const sameMajorVersion = availableVersions.find((v: string) => v.startsWith(`${requestedMajor}.`))
+
+            if (sameMajorVersion) {
+              versionToInstall = sameMajorVersion
+              if (config.verbose) {
+                console.warn(`Found compatible major version ${sameMajorVersion} for ${depName}@${depVersion}`)
+              }
+            }
+            else {
+              // Strategy 3: Check for well-known version compatibility mappings
+              const versionCompatibilityMap: Record<string, Record<string, string[]>> = {
+                'openssl.org': {
+                  '^1.1': ['3.5.0', '3.4.0', '3.3.2'], // OpenSSL 3.x is backward compatible with 1.x APIs
+                  '^1.0': ['3.5.0', '3.4.0', '3.3.2'],
+                },
+                'zlib.net': {
+                  '^1.2': ['1.3.1', '1.3.0'], // zlib 1.3.x is compatible with 1.2.x
+                },
+              }
+
+              const compatibleVersions = versionCompatibilityMap[depDomain]?.[depVersion]
+              if (compatibleVersions) {
+                // Find the first compatible version that exists
+                const compatibleVersion = compatibleVersions.find(v => availableVersions.includes(v))
+                if (compatibleVersion) {
+                  versionToInstall = compatibleVersion
+                  if (config.verbose) {
+                    console.warn(`Using compatible version ${compatibleVersion} for ${depName}@${depVersion}`)
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Strategy 4: For tilde constraints (~1.2), try to find any compatible minor version
+        if (!versionToInstall && depVersion && depVersion.startsWith('~')) {
+          const requestedVersion = depVersion.slice(1)
+          const [requestedMajor, requestedMinor] = requestedVersion.split('.')
+          const availableVersions = getAvailableVersions(depDomain)
+
+          if (availableVersions.length > 0) {
+            // Check if any version has the same major.minor version
+            const sameMinorVersion = availableVersions.find((v: string) => v.startsWith(`${requestedMajor}.${requestedMinor}.`))
+
+            if (sameMinorVersion) {
+              versionToInstall = sameMinorVersion
+              if (config.verbose) {
+                console.warn(`Found compatible minor version ${sameMinorVersion} for ${depName}@${depVersion}`)
+              }
+            }
+          }
+        }
+
+        // Strategy 5: For exact version constraints, try to find the closest available version
+        if (!versionToInstall && depVersion && !depVersion.startsWith('^') && !depVersion.startsWith('~')) {
+          const availableVersions = getAvailableVersions(depDomain)
+          if (availableVersions.length > 0) {
+            // Try to find an exact match first
+            const exactMatch = availableVersions.find(v => v === depVersion)
+            if (exactMatch) {
+              versionToInstall = exactMatch
+            }
+            else {
+              // Fall back to latest available version
+              versionToInstall = availableVersions[0]
+              if (config.verbose) {
+                console.warn(`Using latest version ${versionToInstall} instead of requested ${depVersion} for ${depName}`)
+              }
+            }
+          }
+        }
+
+        // Strategy 6: Try the package name as an alias or domain directly
+        if (!versionToInstall) {
+          const resolvedDomain = resolvePackageName(depName)
+          if (resolvedDomain !== depName) {
+            const aliasLatest = getLatestVersion(resolvedDomain)
+            if (aliasLatest) {
+              if (config.verbose) {
+                console.warn(`Using latest version ${aliasLatest} for resolved domain ${resolvedDomain} instead of ${depName}@${depVersion}`)
+              }
+              versionToInstall = typeof aliasLatest === 'string' ? aliasLatest : String(aliasLatest)
+            }
+          }
+        }
+      }
+    }
+
+    if (!versionToInstall) {
       if (config.verbose) {
-        console.warn(`Skipping ${depDomain} - already installed`)
+        console.warn(`Warning: No suitable version found for dependency ${depName}`)
+      }
+      else {
+        // Clear any temporary processing message before showing warning
+        if (hasTemporaryProcessingMessage) {
+          if (spinnerInterval) {
+            clearInterval(spinnerInterval)
+            spinnerInterval = null
+          }
+          if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+            process.stderr.write('\x1B[1A\r\x1B[K')
+          }
+          else {
+            process.stdout.write('\x1B[1A\r\x1B[K')
+          }
+          hasTemporaryProcessingMessage = false
+        }
+
+        // Only show warning for direct dependencies, not nested ones
+        const isDirectDependency = packageInfo.dependencies.includes(dep)
+        if (isDirectDependency) {
+          logUniqueMessage(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
+        }
       }
       continue
     }
 
-    // Mark as installed to prevent cycles
-    installedPackages.add(depDomain)
+    // Create a unique key for this specific package@version combination
+    const packageVersionKey = `${depDomain}@${versionToInstall}`
+
+    // Skip if this exact package@version is already installed to avoid circular dependencies
+    if (installedPackages.has(packageVersionKey)) {
+      if (config.verbose) {
+        console.warn(`Skipping ${packageVersionKey} - already installed`)
+      }
+      continue
+    }
+
+    // Mark this specific package@version as installed to prevent cycles
+    installedPackages.add(packageVersionKey)
 
     try {
       if (config.verbose) {
-        console.warn(`Installing dependency: ${dep}`)
+        console.warn(`Installing dependency: ${dep} -> ${depDomain}@${versionToInstall}`)
       }
       // Remove dependency resolution messages - they're too verbose
-
-      // Enhanced version resolution with multiple fallback strategies
-      let versionToInstall = depVersion
-      if (!versionToInstall) {
-        // Strategy: Get latest version if no version specified
-        const latestVersion = getLatestVersion(depName)
-        if (latestVersion && typeof latestVersion !== 'string') {
-          if (config.verbose) {
-            console.warn(`Warning: getLatestVersion returned non-string for ${depName}: ${JSON.stringify(latestVersion)}`)
-          }
-          versionToInstall = String(latestVersion)
-        }
-        else {
-          versionToInstall = latestVersion || undefined
-        }
-      }
-      else {
-        // Strategy 1: Try to resolve the version constraint to an actual version
-        const resolvedVersion = resolveVersion(depName, depVersion)
-        if (resolvedVersion) {
-          versionToInstall = resolvedVersion
-        }
-        else {
-          // Enhanced fallback strategies for version mismatch scenarios
-          if (config.verbose) {
-            console.warn(`Cannot resolve version constraint ${depVersion} for ${depName}, trying enhanced fallback strategies`)
-          }
-
-          // Strategy 2: For caret constraints (^1.1), try to find any compatible major version
-          if (depVersion && depVersion.startsWith('^')) {
-            const requestedMajor = depVersion.slice(1).split('.')[0]
-            const availableVersions = getAvailableVersions(depName)
-
-            if (availableVersions.length > 0) {
-              // Check if any version has the same major version
-              const sameMajorVersion = availableVersions.find((v: string) => v.startsWith(`${requestedMajor}.`))
-
-              if (sameMajorVersion) {
-                versionToInstall = sameMajorVersion
-                if (config.verbose) {
-                  console.warn(`Found compatible major version ${sameMajorVersion} for ${depName}@${depVersion}`)
-                }
-              }
-              else {
-                // Strategy 3: Check for well-known version compatibility mappings
-                const versionCompatibilityMap: Record<string, Record<string, string[]>> = {
-                  'openssl.org': {
-                    '^1.1': ['3.5.0', '3.4.0', '3.3.2'], // OpenSSL 3.x is backward compatible with 1.x APIs
-                    '^1.0': ['3.5.0', '3.4.0', '3.3.2'],
-                  },
-                  'zlib.net': {
-                    '^1.2': ['1.3.1', '1.3.0'], // zlib 1.3.x is compatible with 1.2.x
-                  },
-                }
-
-                const compatibleVersions = versionCompatibilityMap[depDomain]?.[depVersion]
-                if (compatibleVersions) {
-                  // Find the first available compatible version
-                  const compatibleVersion = compatibleVersions.find((v: string) => availableVersions.includes(v))
-                  if (compatibleVersion) {
-                    versionToInstall = compatibleVersion
-                    if (config.verbose) {
-                      console.warn(`Using compatible version ${compatibleVersion} for ${depName}@${depVersion} (known compatibility mapping)`)
-                    }
-                  }
-                  else {
-                    // Strategy 4: Use latest available version as last resort
-                    const latestAvailable = availableVersions[0] // First version is always the latest
-                    if (latestAvailable && typeof latestAvailable !== 'string') {
-                      if (config.verbose) {
-                        console.warn(`Warning: availableVersions[0] is not a string for ${depName}: ${JSON.stringify(latestAvailable)}`)
-                      }
-                      versionToInstall = String(latestAvailable)
-                    }
-                    else {
-                      versionToInstall = typeof latestAvailable === 'string' ? latestAvailable : String(latestAvailable)
-                    }
-                    if (config.verbose) {
-                      console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (fallback compatibility)`)
-                    }
-                  }
-                }
-                else {
-                  // Strategy 4: Use latest available version as last resort
-                  const latestAvailable = availableVersions[0] // First version is always the latest
-                  if (latestAvailable && typeof latestAvailable !== 'string') {
-                    if (config.verbose) {
-                      console.warn(`Warning: availableVersions[0] is not a string for ${depName}: ${JSON.stringify(latestAvailable)}`)
-                    }
-                    versionToInstall = String(latestAvailable)
-                  }
-                  else {
-                    versionToInstall = typeof latestAvailable === 'string' ? latestAvailable : String(latestAvailable)
-                  }
-                  if (config.verbose) {
-                    console.warn(`Using latest available version ${versionToInstall} for ${depName}@${depVersion} (no compatible major version found)`)
-                  }
-                }
-              }
-            }
-          }
-          else {
-            // Strategy 5: For non-caret constraints, try to get latest version
-            const latestVersion = getLatestVersion(depName)
-            if (latestVersion) {
-              if (config.verbose) {
-                console.warn(`Using latest version ${latestVersion} for ${depName} instead of ${depVersion}`)
-              }
-              versionToInstall = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
-            }
-          }
-
-          // Strategy 6: Try the package name as an alias or domain directly
-          if (!versionToInstall) {
-            const resolvedDomain = resolvePackageName(depName)
-            if (resolvedDomain !== depName) {
-              const aliasLatest = getLatestVersion(resolvedDomain)
-              if (aliasLatest) {
-                if (config.verbose) {
-                  console.warn(`Using latest version ${aliasLatest} for resolved domain ${resolvedDomain} instead of ${depName}@${depVersion}`)
-                }
-                versionToInstall = typeof aliasLatest === 'string' ? aliasLatest : String(aliasLatest)
-              }
-            }
-          }
-        }
-      }
-
-      if (!versionToInstall) {
-        if (config.verbose) {
-          console.warn(`Warning: No suitable version found for dependency ${depName}`)
-        }
-        else {
-          // Clear any temporary processing message before showing warning
-          if (hasTemporaryProcessingMessage) {
-            if (spinnerInterval) {
-              clearInterval(spinnerInterval)
-              spinnerInterval = null
-            }
-            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-              process.stderr.write('\x1B[1A\r\x1B[K')
-            }
-            else {
-              process.stdout.write('\x1B[1A\r\x1B[K')
-            }
-            hasTemporaryProcessingMessage = false
-          }
-
-          // Only show warning for direct dependencies, not nested ones
-          const isDirectDependency = packageInfo.dependencies.includes(dep)
-          if (isDirectDependency) {
-            logUniqueMessage(`⚠️  Warning: No suitable version found for dependency ${depName}, skipping...`)
-          }
-        }
-        continue
-      }
 
       // Recursively install dependencies of this dependency
       const nestedFiles = await installDependencies(depName, installPath, installedPackages)
@@ -2231,6 +2565,14 @@ async function installPackage(packageName: string, packageSpec: string, installP
   const { name, version: requestedVersion } = parsePackageSpec(packageSpec)
   const domain = resolvePackageName(name)
 
+  // Special handling for bun - use dedicated bun installation function
+  if (name === 'bun' || domain === 'bun.sh') {
+    if (config.verbose) {
+      console.warn(`Using dedicated bun installation for ${name}`)
+    }
+    return await install_bun(installPath, requestedVersion)
+  }
+
   if (config.verbose) {
     console.warn(`Resolved ${name} to domain: ${domain}`)
   }
@@ -2238,12 +2580,11 @@ async function installPackage(packageName: string, packageSpec: string, installP
   // Get version to install
   let version = requestedVersion
   if (!version) {
-    const latestVersion = getLatestVersion(name)
+    const latestVersion = getLatestVersion(domain)
     if (!latestVersion) {
       // Check if it's a fallback alias that might not be available
-      const originalDomain = resolvePackageName(name)
-      if (originalDomain !== name) {
-        throw new Error(`No versions found for ${name} (resolved to ${originalDomain}) on ${os}/${architecture}. Package may not be available for this platform.`)
+      if (domain !== name) {
+        throw new Error(`No versions found for ${name} (resolved to ${domain}) on ${os}/${architecture}. Package may not be available for this platform.`)
       }
       throw new Error(`No versions found for ${name} on ${os}/${architecture}`)
     }
@@ -2251,12 +2592,11 @@ async function installPackage(packageName: string, packageSpec: string, installP
   }
   else {
     // Resolve version constraints (e.g., ^1.21, ~2.0, latest) to actual versions
-    const resolvedVersion = resolveVersion(name, version)
+    const resolvedVersion = resolveVersion(domain, version)
     if (!resolvedVersion) {
       // Check if it's a fallback alias that might not be available
-      const originalDomain = resolvePackageName(name)
-      if (originalDomain !== name) {
-        throw new Error(`No suitable version found for ${name}@${version} (resolved to ${originalDomain}). Package may not be available for this platform or version constraint.`)
+      if (domain !== name) {
+        throw new Error(`No suitable version found for ${name}@${version} (resolved to ${domain}). Package may not be available for this platform or version constraint.`)
       }
       throw new Error(`No suitable version found for ${name}@${version}`)
     }

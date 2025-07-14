@@ -196,7 +196,7 @@ export function get_bun_asset(version: string): BunAsset {
       throw new Error(`Unsupported platform: ${currentPlatform}`)
   }
 
-  const url = `https://github.com/oven-sh/bun/releases/download/v${version}/${filename}`
+  const url = `https://github.com/oven-sh/bun/releases/download/bun-v${version}/${filename}`
 
   return { filename, url }
 }
@@ -367,7 +367,6 @@ export async function install_bun(installPath: string, version?: string): Promis
         await execAsync(`unzip -o "${zipPath}" -d "${tempDir}"`)
 
         // Move the bun executable to the bin directory
-        const bundleName = platform() === 'win32' ? 'bun-*.exe' : 'bun-*'
         const bunExeName = platform() === 'win32' ? 'bun.exe' : 'bun'
 
         // Find the extracted executable
@@ -376,7 +375,7 @@ export async function install_bun(installPath: string, version?: string): Promis
         const bunDir = extractedDirs.trim().split('\n')[0]
 
         // Move the executable to bin directory
-        const sourcePath = path.join(bunDir, bundleName)
+        const sourcePath = path.join(bunDir, bunExeName)
         const destPath = path.join(binDir, bunExeName)
 
         if (fs.existsSync(destPath))

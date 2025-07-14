@@ -312,6 +312,28 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
       process.stdout.write(`export ${key}=${value}\n`)
     }
   }
+
+  // Generate the deactivation function that the test expects
+  process.stdout.write(`\n# Deactivation function for directory checking\n`)
+  process.stdout.write(`_pkgx_dev_try_bye() {\n`)
+  process.stdout.write(`  case "$PWD" in\n`)
+  process.stdout.write(`    "${dir}"*)\n`)
+  process.stdout.write(`      # Still in project directory, don't deactivate\n`)
+  process.stdout.write(`      return 0\n`)
+  process.stdout.write(`      ;;\n`)
+  process.stdout.write(`    *)\n`)
+  process.stdout.write(`      # Left project directory, deactivate\n`)
+  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
+  process.stdout.write(`        export PATH="$LAUNCHPAD_ORIGINAL_PATH"\n`)
+  process.stdout.write(`      fi\n`)
+  process.stdout.write(`      unset LAUNCHPAD_CURRENT_PROJECT\n`)
+  process.stdout.write(`      unset LAUNCHPAD_ENV_BIN_PATH\n`)
+  process.stdout.write(`      unset LAUNCHPAD_PROJECT_DIR\n`)
+  process.stdout.write(`      unset LAUNCHPAD_PROJECT_HASH\n`)
+  process.stdout.write(`      echo "dev environment deactivated"\n`)
+  process.stdout.write(`      ;;\n`)
+  process.stdout.write(`  esac\n`)
+  process.stdout.write(`}\n`)
 }
 
 function outputNormalResults(results: string[], packages: string[], envDir: string, sniffResult: any, quiet: boolean): void {
