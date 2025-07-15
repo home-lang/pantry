@@ -56,6 +56,17 @@ export const defaultConfig: LaunchpadConfig = {
 
   // Custom message to show when environment is deactivated
   shellDeactivationMessage: 'dev environment deactivated',
+
+  // Service management configuration
+  services: {
+    enabled: true,
+    dataDir: '~/.local/share/launchpad/services',
+    logDir: '~/.local/share/launchpad/logs',
+    configDir: '~/.local/share/launchpad/services/config',
+    autoRestart: true,
+    startupTimeout: 30,
+    shutdownTimeout: 10,
+  },
 }
 
 /**

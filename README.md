@@ -38,6 +38,13 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🔌 **Shell Integration** — Seamless integration with your shell for immediate tool availability
 - 🪟 **Cross-Platform Support** — Consistent experience across macOS, Linux, and Windows
 
+### Service Management
+- ⚡ **19+ Pre-configured Services** — PostgreSQL, Redis, Kafka, Prometheus, Grafana, Vault, and more
+- 🚀 **One-Command Service Control** — Start, stop, restart services with automatic configuration
+- 🏥 **Health Monitoring** — Built-in health checks with automatic status detection
+- 🔧 **Auto-Configuration** — Default configuration files generated for each service
+- 🖥️ **Cross-Platform Service Management** — Uses launchd on macOS, systemd on Linux
+
 ### Project-Aware Environment Management
 - 🌍 **Automatic Environment Isolation** — Project-specific environments that activate when you enter a project directory
 - 🎯 **Dependency Detection** — Automatically reads `dependencies.yaml`, `package.json`, and other project files
@@ -221,6 +228,38 @@ launchpad uninstall python --dry-run
 launchpad clean --force
 ```
 
+### Service Management
+
+Manage development services with ease:
+
+```bash
+# Start essential development services
+launchpad service start postgres redis
+
+# Start multiple services at once
+launchpad service start postgres redis nginx prometheus
+
+# Check service status
+launchpad service status postgres
+launchpad service list
+
+# Stop services when done
+launchpad service stop postgres redis
+
+# Enable auto-start for essential services
+launchpad service enable postgres redis
+```
+
+**Available Services (31+):**
+- **Databases**: PostgreSQL, MySQL, MongoDB, Redis, InfluxDB, CockroachDB, Neo4j, ClickHouse
+- **Web Servers**: Nginx, Caddy
+- **Message Queues**: Kafka, RabbitMQ, Apache Pulsar, NATS
+- **Monitoring**: Prometheus, Grafana, Jaeger
+- **Infrastructure**: Vault, Consul, etcd, MinIO, SonarQube, Temporal
+- **Development & CI/CD**: Jenkins, LocalStack, Verdaccio
+- **API & Backend**: Hasura, Keycloak
+- **Caching**: Memcached, Elasticsearch
+
 ### Advanced Operations
 
 ```bash
@@ -275,6 +314,16 @@ const config: LaunchpadConfig = {
   shellActivationMessage: '✅ Environment activated for {path}',
   shellDeactivationMessage: 'Environment deactivated',
 
+  // Service management configuration
+  services: {
+    enabled: true, // Enable service management
+    dataDir: '~/.local/share/launchpad/services', // Services data directory
+    logDir: '~/.local/share/launchpad/logs', // Services log directory
+    autoRestart: true, // Auto-restart failed services
+    startupTimeout: 30, // Service startup timeout
+    shutdownTimeout: 10, // Service shutdown timeout
+  },
+
   // Registry and installation method
   useRegistry: true, // Use package registry
   installMethod: 'curl', // Installation method
@@ -303,6 +352,7 @@ See [GitHub Action Documentation](https://github.com/stacksjs/launchpad/tree/mai
 
 Explore advanced dependency management topics:
 
+- [Service Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/service-management.md)
 - [Project Environment Configuration](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)
 - [Custom Shims and Tool Management](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/custom-shims.md)
 - [Cross-platform Compatibility](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/cross-platform.md)
@@ -317,6 +367,7 @@ Explore advanced dependency management topics:
 - **⚡ Speed**: Faster installations with intelligent caching
 - **🔒 Isolation**: Project-specific versions vs global conflicts
 - **🌍 Cross-Platform**: Consistent experience across all operating systems
+- **⚙️ Service Management**: Built-in service management vs manual configuration
 
 ### vs Language-Specific Managers (nvm, pyenv, rbenv)
 
@@ -331,6 +382,7 @@ Explore advanced dependency management topics:
 - **💻 System Integration**: Tools available in your native shell and IDE
 - **🔧 Flexible**: Mix system-wide and project-specific tools as needed
 - **⚡ Instant**: No container startup time or resource overhead
+- **🎛️ Service Management**: Native service management without containers
 
 ## Changelog
 

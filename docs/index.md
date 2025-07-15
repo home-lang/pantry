@@ -19,6 +19,9 @@ features:
   - title: "Package Management"
     icon: "📦"
     details: "Install, update, and manage packages with automatic environment isolation. Smart update system keeps packages current while respecting version constraints."
+  - title: "Service Management"
+    icon: "⚡"
+    details: "Start, stop, and manage 19+ development services like PostgreSQL, Redis, Kafka, Prometheus, and more. Automatic configuration, health monitoring, and cross-platform support."
   - title: "Environment Isolation"
     icon: "🌍"
     details: "Project-specific environments with automatic activation/deactivation. Each project gets its own isolated package installations and PATH management."
@@ -40,9 +43,6 @@ features:
   - title: "Environment Management"
     icon: "🔧"
     details: "Comprehensive tools for listing, inspecting, cleaning, and managing development environments with human-readable identifiers."
-  - title: "Clean Coexistence"
-    icon: "🔗"
-    details: "Peaceful coexistence with Homebrew, system package managers, and other tools. Never conflicts with existing installations."
 ---
 
 <Home />

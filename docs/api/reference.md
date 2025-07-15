@@ -707,6 +707,280 @@ launchpad clean --keep-cache        # Remove packages but preserve cache
 - **Targeted Cleanup:** Only removes Launchpad-specific directories
 - **Graceful Error Handling:** Continues operation even if some files can't be removed
 
+## Service Management API
+
+Launchpad provides comprehensive service management capabilities with a robust TypeScript API.
+
+### Service Operations
+
+```typescript
+import {
+  startService,
+  stopService,
+  restartService,
+  enableService,
+  disableService,
+  getServiceStatus,
+  listServices,
+  initializeServiceManager
+} from '@stacksjs/launchpad'
+
+// Start a service
+const success = await startService('postgres')
+
+// Stop a service
+await stopService('redis')
+
+// Restart a service
+await restartService('nginx')
+
+// Enable auto-start
+await enableService('postgres')
+
+// Disable auto-start
+await disableService('postgres')
+
+// Get service status
+const status = await getServiceStatus('postgres') // 'stopped' | 'starting' | 'running' | 'stopping' | 'failed' | 'unknown'
+
+// List all services and their status
+const services = await listServices()
+
+// Initialize service manager
+const manager = await initializeServiceManager()
+```
+
+### Service Definitions
+
+```typescript
+import {
+  getServiceDefinition,
+  getAllServiceDefinitions,
+  isServiceSupported,
+  createDefaultServiceConfig
+} from '@stacksjs/launchpad'
+
+// Get specific service definition
+const postgres = getServiceDefinition('postgres')
+
+// Get all available services
+const allServices = getAllServiceDefinitions()
+
+// Check if service is supported
+const isSupported = isServiceSupported('postgres')
+
+// Generate default configuration
+const config = createDefaultServiceConfig('redis')
+```
+
+### Service Types
+
+```typescript
+// Service status enumeration
+type ServiceStatus =
+  | 'stopped'    // Service is not running
+  | 'starting'   // Service is in the process of starting
+  | 'running'    // Service is running and healthy
+  | 'stopping'   // Service is in the process of stopping
+  | 'failed'     // Service failed to start or crashed
+  | 'unknown'    // Service status cannot be determined
+
+// Service definition interface
+interface ServiceDefinition {
+  name: string                      // Service name (e.g., 'postgres', 'redis')
+  displayName: string               // Display name for the service
+  description: string               // Service description
+  packageDomain: string             // Package domain that provides this service
+  executable: string                // Executable name or path
+  args: string[]                    // Default command line arguments
+  env: Record<string, string>       // Environment variables to set
+  workingDirectory?: string         // Working directory for the service
+  dataDirectory?: string            // Default data directory
+  configFile?: string               // Default configuration file path
+  logFile?: string                  // Default log file path
+  pidFile?: string                  // Default PID file path
+  port?: number                     // Port the service listens on (if applicable)
+  dependencies: string[]            // Dependencies (other services that must be running)
+  healthCheck?: ServiceHealthCheck  // Health check configuration
+  initCommand?: string[]            // Service initialization command (runs once before first start)
+  supportsGracefulShutdown: boolean // Whether this service supports graceful shutdown
+  custom?: Record<string, unknown>  // Custom service configuration
+}
+
+// Health check configuration
+interface ServiceHealthCheck {
+  command: string[]         // Health check command to run
+  expectedExitCode: number  // Expected exit code for healthy service
+  timeout: number          // Timeout for health check in seconds
+  interval: number         // Interval between health checks in seconds
+  retries: number          // Number of consecutive failures before marking unhealthy
+}
+
+// Service instance (runtime state)
+interface ServiceInstance {
+  definition: ServiceDefinition  // Service definition
+  status: ServiceStatus         // Current service status
+  pid?: number                 // Process ID (if running)
+  startedAt?: Date            // Service startup time
+  lastCheckedAt: Date         // Last status check time
+  enabled: boolean            // Whether service is enabled for auto-start
+  config: Record<string, unknown> // Service-specific configuration overrides
+  dataDir?: string            // Custom data directory for this instance
+  logFile?: string            // Custom log file for this instance
+  configFile?: string         // Custom configuration file for this instance
+}
+
+// Service operation record
+interface ServiceOperation {
+  action: 'start' | 'stop' | 'restart' | 'reload' | 'enable' | 'disable' // Operation type
+  serviceName: string         // Service name
+  timestamp: Date            // Timestamp when operation was initiated
+  result?: 'success' | 'failure' | 'timeout' // Operation result
+  error?: string             // Error message if operation failed
+  duration?: number          // Duration of operation in milliseconds
+}
+
+// Service manager state
+interface ServiceManagerState {
+  services: Map<string, ServiceInstance> // Map of service name to service instance
+  operations: ServiceOperation[]         // Recent operations log
+  config: ServiceConfig                  // Global service manager configuration
+  lastScanTime: Date                    // Last time services were scanned/updated
+}
+
+// Service configuration
+interface ServiceConfig {
+  enabled: boolean        // Enable service management functionality
+  dataDir: string        // Default services data directory
+  logDir: string         // Default services log directory
+  configDir: string      // Default services configuration directory
+  autoRestart: boolean   // Auto-restart failed services
+  startupTimeout: number // Service startup timeout in seconds
+  shutdownTimeout: number // Service shutdown timeout in seconds
+}
+```
+
+### Platform-Specific Types
+
+```typescript
+// macOS launchd plist configuration
+interface LaunchdPlist {
+  Label: string
+  ProgramArguments: string[]
+  WorkingDirectory?: string
+  EnvironmentVariables?: Record<string, string>
+  StandardOutPath?: string
+  StandardErrorPath?: string
+  RunAtLoad?: boolean
+  KeepAlive?: boolean | { SuccessfulExit?: boolean, NetworkState?: boolean }
+  StartInterval?: number
+  UserName?: string
+  GroupName?: string
+}
+
+// Linux systemd service configuration
+interface SystemdService {
+  Unit: {
+    Description: string
+    After?: string[]
+    Requires?: string[]
+    Wants?: string[]
+  }
+  Service: {
+    Type: 'simple' | 'forking' | 'oneshot' | 'notify' | 'exec'
+    ExecStart: string
+    ExecStop?: string
+    ExecReload?: string
+    WorkingDirectory?: string
+    Environment?: string[]
+    User?: string
+    Group?: string
+    Restart?: 'no' | 'always' | 'on-success' | 'on-failure' | 'on-abnormal' | 'on-abort' | 'on-watchdog'
+    RestartSec?: number
+    TimeoutStartSec?: number
+    TimeoutStopSec?: number
+    PIDFile?: string
+  }
+  Install?: {
+    WantedBy?: string[]
+    RequiredBy?: string[]
+  }
+}
+```
+
+### Service Platform Support
+
+```typescript
+import {
+  isPlatformSupported,
+  getServiceManagerName,
+  generateLaunchdPlist,
+  generateSystemdService
+} from '@stacksjs/launchpad'
+
+// Check if current platform supports service management
+const supported = isPlatformSupported() // true on macOS/Linux
+
+// Get platform service manager name
+const manager = getServiceManagerName() // 'launchd' | 'systemd' | 'unknown'
+
+// Generate platform-specific service files
+const plist = generateLaunchdPlist(serviceInstance)      // macOS
+const systemdUnit = generateSystemdService(serviceInstance) // Linux
+```
+
+### Available Services
+
+Launchpad includes these pre-configured services:
+
+```typescript
+// Database services
+'postgres'     // PostgreSQL (port 5432)
+'mysql'        // MySQL (port 3306)
+'mongodb'      // MongoDB (port 27017)
+'redis'        // Redis (port 6379)
+'influxdb'     // InfluxDB (port 8086)
+'cockroachdb'  // CockroachDB (port 26257)
+'neo4j'        // Neo4j (port 7474)
+'clickhouse'   // ClickHouse (port 8123)
+
+// Web servers
+'nginx'        // Nginx (port 8080)
+'caddy'        // Caddy (port 2015)
+
+// Message queues & streaming
+'kafka'        // Apache Kafka (port 9092)
+'rabbitmq'     // RabbitMQ (port 5672)
+'pulsar'       // Apache Pulsar (port 6650)
+'nats'         // NATS (port 4222)
+
+// Monitoring & observability
+'prometheus'   // Prometheus (port 9090)
+'grafana'      // Grafana (port 3000)
+'jaeger'       // Jaeger (port 16686)
+
+// Infrastructure & tools
+'vault'        // HashiCorp Vault (port 8200)
+'consul'       // HashiCorp Consul (port 8500)
+'etcd'         // etcd (port 2379)
+'minio'        // MinIO (port 9000)
+'sonarqube'    // SonarQube (port 9001)
+'temporal'     // Temporal (port 7233)
+
+// Development & CI/CD
+'jenkins'      // Jenkins (port 8090)
+'localstack'   // LocalStack (port 4566)
+'verdaccio'    // Verdaccio (port 4873)
+
+// API & backend services
+'hasura'       // Hasura (port 8085)
+'keycloak'     // Keycloak (port 8088)
+
+// Caching & storage
+'memcached'    // Memcached (port 11211)
+'elasticsearch' // Elasticsearch (port 9200)
+```
+
 ## TypeScript Support
 
 Launchpad is written in TypeScript and provides full type definitions. All functions, classes, and interfaces are properly typed for the best development experience.
@@ -716,6 +990,15 @@ import type {
   Installation,
   JsonResponse,
   LaunchpadConfig,
-  LaunchpadOptions
+  LaunchpadOptions,
+  ServiceDefinition,
+  ServiceInstance,
+  ServiceStatus,
+  ServiceHealthCheck,
+  ServiceOperation,
+  ServiceManagerState,
+  ServiceConfig,
+  LaunchdPlist,
+  SystemdService
 } from '@stacksjs/launchpad'
 ```

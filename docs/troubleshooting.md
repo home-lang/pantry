@@ -532,9 +532,252 @@ When reporting issues, include:
 4. **Expected vs actual behavior**
 5. **Configuration files** (sanitized)
 
+## Service Management Issues
+
+### Service Won't Start
+
+**Symptoms**: Service fails to start or immediately stops
+**Diagnosis**:
+
+```bash
+# Check if service binary is available
+which postgres
+which redis-server
+
+# Check service logs
+tail -f ~/.local/share/launchpad/logs/postgres.log
+
+# Check port availability
+lsof -i :5432  # Check if PostgreSQL port is in use
+```
+
+**Common Causes**:
+1. **Missing binary**: Install the service package first
+2. **Port conflict**: Another service is using the same port
+3. **Permission issues**: Data directory not writable
+4. **Configuration errors**: Invalid service configuration
+
+**Solutions**:
+
+```bash
+# Install missing service packages
+launchpad install postgresql@15
+
+# Kill conflicting processes
+sudo lsof -ti:5432 | xargs kill -9
+
+# Fix data directory permissions
+chown -R $USER ~/.local/share/launchpad/services/
+
+# Reset service configuration
+rm ~/.local/share/launchpad/services/config/postgres.conf
+launchpad service start postgres  # Regenerates default config
+```
+
+### Service Health Check Failures
+
+**Symptoms**: Service shows as "failed" or "unknown" status
+**Diagnosis**:
+
+```bash
+# Test health check manually
+pg_isready -p 5432
+redis-cli ping
+
+# Check if health check tools are installed
+which pg_isready
+which redis-cli
+```
+
+**Solutions**:
+
+```bash
+# Install missing health check tools
+launchpad install postgresql@15  # Includes pg_isready
+launchpad install redis@7        # Includes redis-cli
+
+# Test service manually
+telnet localhost 5432  # Test basic connectivity
+```
+
+### Service Auto-Start Issues
+
+**Symptoms**: Services don't start automatically
+**Platform-Specific Diagnosis**:
+
+#### macOS (launchd)
+```bash
+# Check launchd status
+launchctl list | grep com.launchpad
+
+# Check plist file
+cat ~/Library/LaunchAgents/com.launchpad.postgres.plist
+
+# Manual launchd operations
+launchctl load ~/Library/LaunchAgents/com.launchpad.postgres.plist
+launchctl start com.launchpad.postgres
+```
+
+#### Linux (systemd)
+```bash
+# Check systemd status
+systemctl --user status launchpad-postgres
+
+# Check service logs
+journalctl --user -u launchpad-postgres
+
+# Manual systemd operations
+systemctl --user enable launchpad-postgres
+systemctl --user start launchpad-postgres
+```
+
+### Service Configuration Issues
+
+**Symptoms**: Service starts but behaves incorrectly
+**Diagnosis**:
+
+```bash
+# Check generated configuration
+cat ~/.local/share/launchpad/services/config/redis.conf
+cat ~/.local/share/launchpad/services/config/nginx.conf
+
+# Validate configuration syntax
+nginx -t -c ~/.local/share/launchpad/services/config/nginx.conf
+```
+
+**Solutions**:
+
+```bash
+# Regenerate default configuration
+rm ~/.local/share/launchpad/services/config/redis.conf
+launchpad service restart redis
+
+# Edit configuration manually
+nano ~/.local/share/launchpad/services/config/redis.conf
+launchpad service restart redis
+```
+
+### Platform-Specific Service Issues
+
+#### Windows
+Service management is not supported on Windows. Services must be run manually:
+
+```bash
+# Run services manually on Windows
+postgres -D data/
+redis-server redis.conf
+```
+
+#### macOS Permission Issues
+```bash
+# Grant full disk access to Terminal.app
+# System Preferences > Security & Privacy > Privacy > Full Disk Access
+
+# Check Console.app for launchd errors
+# Applications > Utilities > Console.app
+```
+
+#### Linux systemd Issues
+```bash
+# Enable systemd user services
+sudo systemctl enable systemd-logind
+loginctl enable-linger $USER
+
+# Reload systemd configuration
+systemctl --user daemon-reload
+```
+
+### Service Data and Log Issues
+
+**Symptoms**: Services lose data or logs are missing
+**Diagnosis**:
+
+```bash
+# Check data directories
+ls -la ~/.local/share/launchpad/services/
+du -sh ~/.local/share/launchpad/services/*/
+
+# Check log files
+ls -la ~/.local/share/launchpad/logs/
+tail -f ~/.local/share/launchpad/logs/*.log
+```
+
+**Solutions**:
+
+```bash
+# Create missing directories
+mkdir -p ~/.local/share/launchpad/services/postgres/data
+mkdir -p ~/.local/share/launchpad/logs
+
+# Fix permissions
+chown -R $USER ~/.local/share/launchpad/
+chmod -R 755 ~/.local/share/launchpad/
+
+# Backup data before troubleshooting
+tar -czf services-backup.tar.gz ~/.local/share/launchpad/services/
+```
+
+### Service Network and Port Issues
+
+**Symptoms**: Can't connect to service ports
+**Diagnosis**:
+
+```bash
+# Check if ports are listening
+netstat -an | grep 5432
+lsof -i :5432
+
+# Check firewall rules (Linux)
+sudo ufw status
+sudo iptables -L
+
+# Test connectivity
+telnet localhost 5432
+curl http://localhost:8080/health
+```
+
+**Solutions**:
+
+```bash
+# Kill processes using conflicting ports
+sudo lsof -ti:5432 | xargs kill -9
+
+# Configure firewall (if needed)
+sudo ufw allow 5432/tcp
+
+# Change service port in configuration
+nano ~/.local/share/launchpad/services/config/postgres.conf
+# Change: port = 5433
+launchpad service restart postgres
+```
+
+### Service Management Commands Not Working
+
+**Symptoms**: `launchpad service` commands fail
+**Diagnosis**:
+
+```bash
+# Check if service management is enabled
+echo $LAUNCHPAD_SERVICES_ENABLED
+
+# Check platform support
+launchpad service list  # Should show available services
+```
+
+**Solutions**:
+
+```bash
+# Enable service management
+export LAUNCHPAD_SERVICES_ENABLED=true
+
+# On unsupported platforms, services must be run manually
+# Use Docker or other container solutions for service management
+```
+
 ### Self-Help Resources
 
 - **Built-in help**: `launchpad help`, `launchpad <command> --help`
+- **Service documentation**: [Service Management](./features/service-management.md)
 - **Configuration reference**: [Configuration Guide](./config.md)
 - **Usage examples**: [Examples](./examples.md)
 - **API documentation**: [API Reference](./api/reference.md)

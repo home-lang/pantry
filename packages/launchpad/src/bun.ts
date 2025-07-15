@@ -202,14 +202,112 @@ export function get_bun_asset(version: string): BunAsset {
 }
 
 /**
+ * Resolve bun version constraints using GitHub releases
+ */
+async function resolveBunVersionConstraint(versionSpec: string): Promise<string> {
+  // For exact versions, return as-is
+  if (/^\d+\.\d+\.\d+$/.test(versionSpec)) {
+    return versionSpec
+  }
+
+  // For latest or *, get the latest version
+  if (versionSpec === 'latest' || versionSpec === '*') {
+    return await get_latest_bun_version()
+  }
+
+  // Get available versions from GitHub (we'll need to implement this)
+  const availableVersions = await getBunVersionsFromGitHub()
+
+  // Use Bun's built-in semver if available
+  if (typeof Bun !== 'undefined' && Bun.semver) {
+    try {
+      // Sort versions in descending order to get the latest compatible version first
+      const sortedVersions = [...availableVersions].sort((a, b) => {
+        try {
+          return Bun.semver.order(b, a)
+        }
+        catch {
+          return b.localeCompare(a, undefined, { numeric: true })
+        }
+      })
+
+      for (const version of sortedVersions) {
+        try {
+          if (Bun.semver.satisfies(version, versionSpec)) {
+            return version
+          }
+        }
+        catch {
+          continue
+        }
+      }
+    }
+    catch {
+      // Fall through to manual parsing
+    }
+  }
+
+  // Manual constraint parsing for caret (^) constraints
+  if (versionSpec.startsWith('^')) {
+    const baseVersion = versionSpec.slice(1)
+    const [major, minor] = baseVersion.split('.')
+
+    // Find the latest version with the same major version
+    const compatibleVersions = availableVersions.filter((v) => {
+      const vParts = v.split('.')
+      return vParts[0] === major
+        && (minor ? Number.parseInt(vParts[1] || '0') >= Number.parseInt(minor) : true)
+    })
+
+    if (compatibleVersions.length > 0) {
+      // Return the latest compatible version
+      return compatibleVersions.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0]
+    }
+  }
+
+  // If constraint resolution fails, try the version as-is
+  return versionSpec
+}
+
+/**
+ * Get available bun versions from GitHub releases (cached)
+ */
+async function getBunVersionsFromGitHub(): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.github.com/repos/oven-sh/bun/releases?per_page=50')
+    if (!response.ok) {
+      // Fallback to known versions if GitHub API fails
+      return ['1.2.19', '1.2.18', '1.2.17', '1.2.16', '1.2.15']
+    }
+
+    const releases = await response.json() as Array<{ tag_name: string }>
+    return releases
+      .map(release => release.tag_name.replace(/^(bun-v?|v)/, ''))
+      .filter(version => /^\d+\.\d+\.\d+$/.test(version))
+  }
+  catch {
+    // Fallback to known versions if fetch fails
+    return ['1.2.19', '1.2.18', '1.2.17', '1.2.16', '1.2.15']
+  }
+}
+
+/**
  * Download and install Bun
  */
 export async function install_bun(installPath: string, version?: string): Promise<string[]> {
   if (!validatePath(installPath))
     throw new Error(`Invalid installation path: ${installPath}`)
 
-  // Determine the version to install
-  const bunVersion = version || await get_latest_bun_version()
+  // Determine the version to install, resolving constraints like ^1.2.19
+  let bunVersion: string
+  if (!version) {
+    bunVersion = await get_latest_bun_version()
+  }
+  else {
+    // Handle constraints for bun (^1.2.19, ~1.2.0, etc.)
+    bunVersion = await resolveBunVersionConstraint(version)
+  }
+
   if (config.verbose)
     console.warn(`Installing Bun version ${bunVersion}`)
 

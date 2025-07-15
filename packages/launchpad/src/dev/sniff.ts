@@ -11,6 +11,7 @@ export interface PackageRequirement {
   project: string
   constraint: SemverRange
   global?: boolean
+  source?: 'explicit' | 'inferred' // Track where this requirement came from
 }
 
 export class SemverRange {
@@ -208,21 +209,21 @@ function parseJSONC(content: string): any {
 }
 
 // Package parsing utility
-function parsePackage(input: string): PackageRequirement {
+function parsePackage(input: string, source: 'explicit' | 'inferred' = 'explicit'): PackageRequirement {
   // Simple package parsing logic
   const atIndex = input.lastIndexOf('@')
   if (atIndex > 0) {
     const project = input.substring(0, atIndex)
     const constraint = input.substring(atIndex + 1)
-    return { project, constraint: new SemverRange(constraint) }
+    return { project, constraint: new SemverRange(constraint), source }
   }
-  return { project: input, constraint: new SemverRange('*') }
+  return { project: input, constraint: new SemverRange('*'), source }
 }
 
 // Package validation
-function validatePackageRequirement(project: string, constraint: string): PackageRequirement | undefined {
+function validatePackageRequirement(project: string, constraint: string, source: 'explicit' | 'inferred' = 'explicit'): PackageRequirement | undefined {
   try {
-    return { project, constraint: new SemverRange(constraint) }
+    return { project, constraint: new SemverRange(constraint), source }
   }
   catch {
     return undefined
@@ -331,52 +332,52 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           await github_actions(path)
           break
         case 'Cargo.toml':
-          pkgs.push({ project: 'rust-lang.org', constraint })
+          pkgs.push({ project: 'rust-lang.org', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case 'skaffold.yaml':
-          pkgs.push({ project: 'skaffold.dev', constraint })
+          pkgs.push({ project: 'skaffold.dev', constraint, source: 'inferred' })
           await skaffold_yaml(path)
           break
         case 'go.mod':
         case 'go.sum':
-          pkgs.push({ project: 'go.dev', constraint })
+          pkgs.push({ project: 'go.dev', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case 'requirements.txt':
         case 'pipfile':
         case 'pipfile.lock':
         case 'setup.py':
-          pkgs.push({ project: 'pip.pypa.io', constraint })
+          pkgs.push({ project: 'pip.pypa.io', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case 'pyproject.toml':
           await pyproject(path)
           break
         case 'Gemfile':
-          pkgs.push({ project: 'ruby-lang.org', constraint })
+          pkgs.push({ project: 'ruby-lang.org', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case '.yarnrc':
-          pkgs.push({ project: 'classic.yarnpkg.com', constraint })
+          pkgs.push({ project: 'classic.yarnpkg.com', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case 'yarn.lock':
-          pkgs.push({ project: 'yarnpkg.com', constraint })
+          pkgs.push({ project: 'yarnpkg.com', constraint, source: 'inferred' })
           break
         case '.yarnrc.yml':
-          pkgs.push({ project: 'yarnpkg.com', constraint })
+          pkgs.push({ project: 'yarnpkg.com', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case 'bun.lock':
         case 'bun.lockb':
-          pkgs.push({ project: 'bun.sh', constraint: new SemverRange('>=1') })
+          pkgs.push({ project: 'bun.sh', constraint: new SemverRange('>=1'), source: 'inferred' })
           break
         case 'pnpm-lock.yaml':
-          pkgs.push({ project: 'pnpm.io', constraint })
+          pkgs.push({ project: 'pnpm.io', constraint, source: 'inferred' })
           break
         case 'pixi.toml':
-          pkgs.push({ project: 'prefix.dev', constraint })
+          pkgs.push({ project: 'prefix.dev', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
         case 'pkgx.yml':
@@ -398,17 +399,17 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           await parse_well_formatted_node(await path.readYAML())
           break
         case 'cdk.json':
-          pkgs.push({ project: 'aws.amazon.com/cdk', constraint })
+          pkgs.push({ project: 'aws.amazon.com/cdk', constraint, source: 'inferred' })
           break
         case 'justfile':
         case 'Justfile':
-          pkgs.push({ project: 'just.systems', constraint })
+          pkgs.push({ project: 'just.systems', constraint, source: 'inferred' })
           break
         case 'Taskfile.yml':
-          pkgs.push({ project: 'taskfile.dev', constraint })
+          pkgs.push({ project: 'taskfile.dev', constraint, source: 'inferred' })
           break
         case 'uv.lock':
-          pkgs.push({ project: 'astral.sh/uv', constraint })
+          pkgs.push({ project: 'astral.sh/uv', constraint, source: 'inferred' })
           break
       }
     }
@@ -417,14 +418,14 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         case '.git':
           // Only add git on non-macOS platforms (macOS has git built-in)
           if (process.platform !== 'darwin') {
-            pkgs.push({ project: 'git-scm.org', constraint })
+            pkgs.push({ project: 'git-scm.org', constraint, source: 'inferred' })
           }
           break
         case '.hg':
-          pkgs.push({ project: 'mercurial-scm.org', constraint })
+          pkgs.push({ project: 'mercurial-scm.org', constraint, source: 'inferred' })
           break
         case '.svn':
-          pkgs.push({ project: 'apache.org/subversion', constraint })
+          pkgs.push({ project: 'apache.org/subversion', constraint, source: 'inferred' })
           break
       }
     }
@@ -434,36 +435,80 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     has_package_json && !pkgs.some(pkg => pkg.project === 'bun.sh')
     && !pkgs.some(pkg => pkg.project === 'nodejs.org')
   ) {
-    pkgs.push({ project: 'nodejs.org', constraint })
+    pkgs.push({ project: 'nodejs.org', constraint, source: 'inferred' })
   }
 
-  // Deduplicate packages, preferring explicit constraints over inferred ones
+  // Optimized deduplication with source-aware priority
+  // Priority: explicit > inferred, then by constraint specificity
   const packageMap = new Map<string, PackageRequirement>()
 
+  // First pass: collect all packages by project
+  const packagesByProject = new Map<string, PackageRequirement[]>()
   for (const pkg of pkgs) {
-    const existing = packageMap.get(pkg.project)
-    if (!existing) {
-      packageMap.set(pkg.project, pkg)
+    const existing = packagesByProject.get(pkg.project) || []
+    existing.push(pkg)
+    packagesByProject.set(pkg.project, existing)
+  }
+
+  // Second pass: apply prioritization logic for each project
+  for (const [project, projectPkgs] of packagesByProject) {
+    // Separate explicit and inferred packages
+    const explicitPkgs = projectPkgs.filter(pkg => pkg.source === 'explicit')
+    const inferredPkgs = projectPkgs.filter(pkg => pkg.source === 'inferred')
+
+    let selectedPkg: PackageRequirement
+
+    // ALWAYS prefer explicit sources over inferred sources
+    if (explicitPkgs.length > 0) {
+      // If we have explicit packages, use the most specific one
+      selectedPkg = explicitPkgs.reduce((best, current) => {
+        const bestConstraint = best.constraint.toString()
+        const currentConstraint = current.constraint.toString()
+
+        // Prefer specific versions over ranges
+        const isBestSpecific = /^\d+\.\d+(?:\.\d+)?$/.test(bestConstraint)
+        const isCurrentSpecific = /^\d+\.\d+(?:\.\d+)?$/.test(currentConstraint)
+
+        if (isCurrentSpecific && !isBestSpecific) {
+          return current
+        }
+
+        // Prefer non-wildcard over wildcard
+        if (bestConstraint === '*' && currentConstraint !== '*') {
+          return current
+        }
+
+        return best
+      })
+    }
+    else if (inferredPkgs.length > 0) {
+      // If we only have inferred packages, use the most specific one
+      selectedPkg = inferredPkgs.reduce((best, current) => {
+        const bestConstraint = best.constraint.toString()
+        const currentConstraint = current.constraint.toString()
+
+        // Prefer specific versions over ranges
+        const isBestSpecific = /^\d+\.\d+(?:\.\d+)?$/.test(bestConstraint)
+        const isCurrentSpecific = /^\d+\.\d+(?:\.\d+)?$/.test(currentConstraint)
+
+        if (isCurrentSpecific && !isBestSpecific) {
+          return current
+        }
+
+        // Prefer non-wildcard over wildcard
+        if (bestConstraint === '*' && currentConstraint !== '*') {
+          return current
+        }
+
+        return best
+      })
     }
     else {
-      // Prefer more specific constraints over generic ones
-      // Priority: explicit version > range constraints > wildcard
-      const existingConstraint = existing.constraint.toString()
-      const newConstraint = pkg.constraint.toString()
-
-      // If new constraint is a specific version (no wildcards or ranges), prefer it
-      if (/^\d+\.\d+(?:\.\d+)?$/.test(newConstraint) && !/^\d+\.\d+(?:\.\d+)?$/.test(existingConstraint)) {
-        packageMap.set(pkg.project, pkg)
-      }
-      // If existing is wildcard and new is not, prefer new
-      else if (existingConstraint === '*' && newConstraint !== '*') {
-        packageMap.set(pkg.project, pkg)
-      }
-      // If existing is a range (>=, ^, ~) and new is specific version, prefer new
-      else if (/^[><=^~]/.test(existingConstraint) && /^\d+\.\d+(?:\.\d+)?$/.test(newConstraint)) {
-        packageMap.set(pkg.project, pkg)
-      }
+      // This shouldn't happen, but use the first package as fallback
+      selectedPkg = projectPkgs[0]
     }
+
+    packageMap.set(project, selectedPkg)
   }
 
   const deduplicatedPkgs = Array.from(packageMap.values())
@@ -477,7 +522,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   // ---------------------------------------------- parsers
   async function deno(path: SimplePath) {
-    pkgs.push({ project: 'deno.land', constraint })
+    pkgs.push({ project: 'deno.land', constraint, source: 'inferred' })
     const json = parseJSONC(await path.read())
     if (isPlainObject(json) && (json as any).pkgx) {
       let node = (json as any).pkgx
@@ -494,7 +539,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     if (s.match(/^\d/))
       s = `@${s}` // bare versions are `@`ed
     s = `${project}${s}`
-    pkgs.push(parsePackage(s))
+    pkgs.push(parsePackage(s, 'inferred'))
   }
 
   async function python_version(path: SimplePath) {
@@ -508,7 +553,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         continue // skip commented lines
       l = `python.org@${l}`
       try {
-        pkgs.push(parsePackage(l))
+        pkgs.push(parsePackage(l, 'inferred'))
         break // only one thanks
       }
       catch {
@@ -520,7 +565,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
   async function terraform_version(path: SimplePath) {
     const terraform_version = (await path.read()).trim()
     const package_descriptor = `terraform.io@${terraform_version}`
-    pkgs.push(parsePackage(package_descriptor))
+    pkgs.push(parsePackage(package_descriptor, 'inferred'))
   }
 
   async function package_json(path: SimplePath) {
@@ -590,12 +635,34 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
       }
     }
 
-    // Create the final node with all dependencies
-    const node = Object.keys(allDependencies).length > 0
-      ? { dependencies: allDependencies, ...(pkgxNode?.env && { env: pkgxNode.env }) }
-      : pkgxNode
+    // Process package.json dependencies as inferred (not explicit)
+    if (Object.keys(allDependencies).length > 0) {
+      for (const [project, constraint] of Object.entries(allDependencies)) {
+        try {
+          let processedConstraint = constraint
+          if (processedConstraint.endsWith('@latest')) {
+            processedConstraint = processedConstraint.slice(0, -6)
+          }
+          if (/^@?latest$/.test(processedConstraint)) {
+            processedConstraint = '*'
+          }
 
-    await parse_well_formatted_node(node)
+          const requirement = validatePackageRequirement(project, processedConstraint, 'inferred')
+          if (requirement) {
+            pkgs.push(requirement)
+          }
+        }
+        catch {
+          // Skip invalid package specifications
+        }
+      }
+    }
+
+    // Process pkgx section if it exists (this should be explicit)
+    if (pkgxNode && (pkgxNode.dependencies || pkgxNode.env)) {
+      await parse_well_formatted_node(pkgxNode)
+    }
+
     has_package_json = true
   }
 
@@ -614,36 +681,42 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         lpkgs.push({
           project: 'docker.com/cli',
           constraint: new SemverRange(`*`),
+          source: 'inferred',
         })
       }
       if (yaml.deploy?.kubectl) {
         lpkgs.push({
           project: 'kubernetes.io/kubectl',
           constraint: new SemverRange(`*`),
+          source: 'inferred',
         })
       }
       if (yaml.deploy?.kubeContext?.match('minikube')) {
         lpkgs.push({
           project: 'kubernetes.io/minikube',
           constraint: new SemverRange(`*`),
+          source: 'inferred',
         })
       }
       if (yaml.deploy?.helm || yaml.manifests?.helm) {
         lpkgs.push({
           project: 'helm.sh',
           constraint: new SemverRange(`*`),
+          source: 'inferred',
         })
       }
       if (yaml.deploy?.kpt || yaml.manifests?.kpt) {
         lpkgs.push({
           project: 'kpt.dev',
           constraint: new SemverRange(`*`),
+          source: 'inferred',
         })
       }
       if (yaml.manifests?.kustomize) {
         lpkgs.push({
           project: 'kubernetes.io/kustomize',
           constraint: new SemverRange(`*`),
+          source: 'inferred',
         })
       }
     }
@@ -663,6 +736,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
       pkgs.push({
         project: 'nodejs.org',
         constraint: new SemverRange(`^${rv?.[1]}`),
+        source: 'inferred',
       })
     }
     await parse_well_formatted_node(yaml.pkgx)
@@ -671,14 +745,14 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
   async function pyproject(path: SimplePath) {
     const content = await path.read()
     // Always add python.org for pyproject.toml files
-    pkgs.push({ project: 'python.org', constraint })
+    pkgs.push({ project: 'python.org', constraint, source: 'inferred' })
 
     // Also add the build system
     if (content.includes('poetry.core.masonry.api')) {
-      pkgs.push({ project: 'python-poetry.org', constraint })
+      pkgs.push({ project: 'python-poetry.org', constraint, source: 'inferred' })
     }
     else {
-      pkgs.push({ project: 'pip.pypa.io', constraint })
+      pkgs.push({ project: 'pip.pypa.io', constraint, source: 'inferred' })
     }
     await read_YAML_FM(path)
   }
@@ -786,11 +860,11 @@ function parse_deps(node: unknown, topLevelGlobal = false) {
     if (input.endsWith('@latest'))
       input = input.slice(0, -6)
 
-    return parsePackage(input)
+    return parsePackage(input, 'explicit')
   }
 
   if (isArray(node)) {
-    node = node.map(parse).reduce((acc, curr) => {
+    node = node.map(input => parse(input)).reduce((acc, curr) => {
       acc[curr.project] = curr.constraint.toString()
       return acc
     }, {} as Record<string, string>)
@@ -815,18 +889,18 @@ function parse_deps(node: unknown, topLevelGlobal = false) {
 
         if (/^@?latest$/.test(version)) {
           const versionConstraint = '*'
-          const requirement = validatePackageRequirement(project, versionConstraint)
+          const requirement = validatePackageRequirement(project, versionConstraint, 'explicit')
           return requirement ? { ...requirement, global } : null
         }
 
-        const requirement = validatePackageRequirement(project, version)
+        const requirement = validatePackageRequirement(project, version, 'explicit')
         return requirement ? { ...requirement, global } : null
       }
 
       // Handle string format: "1.0.0" (uses top-level global flag)
       if (/^@?latest$/.test(constraint))
         constraint = '*'
-      const requirement = validatePackageRequirement(project, constraint)
+      const requirement = validatePackageRequirement(project, constraint, 'explicit')
       return requirement && topLevelGlobal ? { ...requirement, global: topLevelGlobal } : requirement
     })
     .filter(Boolean) as PackageRequirement[]

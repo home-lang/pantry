@@ -2289,6 +2289,355 @@ cli
     }
   })
 
+// Service management commands
+
+// Start service command
+cli
+  .command('start <service>', 'Start a service')
+  .option('--verbose', 'Enable verbose output')
+  .example('launchpad start postgres')
+  .example('launchpad start redis')
+  .example('launchpad start nginx')
+  .action(async (serviceName: string, options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { startService } = await import('../src/services')
+      const success = await startService(serviceName)
+
+      if (!success) {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to start service:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Stop service command
+cli
+  .command('stop <service>', 'Stop a service')
+  .option('--verbose', 'Enable verbose output')
+  .example('launchpad stop postgres')
+  .example('launchpad stop redis')
+  .example('launchpad stop nginx')
+  .action(async (serviceName: string, options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { stopService } = await import('../src/services')
+      const success = await stopService(serviceName)
+
+      if (!success) {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to stop service:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Restart service command
+cli
+  .command('restart <service>', 'Restart a service')
+  .option('--verbose', 'Enable verbose output')
+  .example('launchpad restart postgres')
+  .example('launchpad restart redis')
+  .example('launchpad restart nginx')
+  .action(async (serviceName: string, options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { restartService } = await import('../src/services')
+      const success = await restartService(serviceName)
+
+      if (!success) {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to restart service:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Enable service command
+cli
+  .command('enable <service>', 'Enable a service for auto-start on boot')
+  .option('--verbose', 'Enable verbose output')
+  .example('launchpad enable postgres')
+  .example('launchpad enable redis')
+  .example('launchpad enable nginx')
+  .action(async (serviceName: string, options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { enableService } = await import('../src/services')
+      const success = await enableService(serviceName)
+
+      if (!success) {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to enable service:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Disable service command
+cli
+  .command('disable <service>', 'Disable a service from auto-starting on boot')
+  .option('--verbose', 'Enable verbose output')
+  .example('launchpad disable postgres')
+  .example('launchpad disable redis')
+  .example('launchpad disable nginx')
+  .action(async (serviceName: string, options?: { verbose?: boolean }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { disableService } = await import('../src/services')
+      const success = await disableService(serviceName)
+
+      if (!success) {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      console.error('Failed to disable service:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Status command - show status of a specific service or all services
+cli
+  .command('status [service]', 'Show service status')
+  .option('--verbose', 'Enable verbose output')
+  .option('--format <type>', 'Output format: table (default), json, simple')
+  .example('launchpad status')
+  .example('launchpad status postgres')
+  .example('launchpad status --format json')
+  .action(async (serviceName?: string, options?: { verbose?: boolean, format?: string }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { getServiceStatus, listServices, getAllServiceDefinitions } = await import('../src/services')
+
+      if (serviceName) {
+        // Show status for specific service
+        const status = await getServiceStatus(serviceName)
+        const format = options?.format || 'simple'
+
+        if (format === 'json') {
+          console.log(JSON.stringify({ service: serviceName, status }, null, 2))
+        }
+        else {
+          const statusEmoji = {
+            running: '🟢',
+            stopped: '🔴',
+            starting: '🟡',
+            stopping: '🟡',
+            failed: '🔴',
+            unknown: '⚪',
+          }[status]
+
+          console.log(`${statusEmoji} ${serviceName}: ${status}`)
+        }
+      }
+      else {
+        // Show status for all services
+        const services = await listServices()
+        const format = options?.format || 'table'
+
+        if (format === 'json') {
+          const result = services.map(service => ({
+            name: service.definition.name,
+            displayName: service.definition.displayName,
+            status: service.status,
+            enabled: service.enabled,
+            pid: service.pid,
+            startedAt: service.startedAt,
+            port: service.definition.port,
+          }))
+          console.log(JSON.stringify(result, null, 2))
+        }
+        else if (format === 'simple') {
+          if (services.length === 0) {
+            console.log('No services found')
+          }
+          else {
+            services.forEach((service) => {
+              const statusEmoji = {
+                running: '🟢',
+                stopped: '🔴',
+                starting: '🟡',
+                stopping: '🟡',
+                failed: '🔴',
+                unknown: '⚪',
+              }[service.status]
+
+              console.log(`${statusEmoji} ${service.definition.name}: ${service.status}`)
+            })
+          }
+        }
+        else {
+          // Table format
+          if (services.length === 0) {
+            console.log('No services found')
+            console.log('')
+            console.log('Available services:')
+            const definitions = getAllServiceDefinitions()
+            definitions.forEach((def) => {
+              console.log(`  ${def.name.padEnd(12)} ${def.displayName}`)
+            })
+          }
+          else {
+            console.log('Service Status:')
+            console.log('')
+            console.log(`${'Name'.padEnd(12) + 'Status'.padEnd(12) + 'Enabled'.padEnd(10) + 'PID'.padEnd(8) + 'Port'.padEnd(8)}Description`)
+            console.log('─'.repeat(70))
+
+            services.forEach((service) => {
+              const statusEmoji = {
+                running: '🟢',
+                stopped: '🔴',
+                starting: '🟡',
+                stopping: '🟡',
+                failed: '🔴',
+                unknown: '⚪',
+              }[service.status]
+
+              const name = service.definition.name.padEnd(12)
+              const status = `${statusEmoji} ${service.status}`.padEnd(12)
+              const enabled = (service.enabled ? '✅' : '❌').padEnd(10)
+              const pid = (service.pid ? String(service.pid) : '-').padEnd(8)
+              const port = (service.definition.port ? String(service.definition.port) : '-').padEnd(8)
+              const description = service.definition.description
+
+              console.log(`${name}${status}${enabled}${pid}${port}${description}`)
+            })
+          }
+        }
+      }
+    }
+    catch (error) {
+      console.error('Failed to get service status:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Services command - alias for status with better discoverability
+cli
+  .command('services', 'List all services and their status')
+  .alias('service')
+  .option('--verbose', 'Enable verbose output')
+  .option('--format <type>', 'Output format: table (default), json, simple')
+  .example('launchpad services')
+  .example('launchpad services --format json')
+  .action(async (options?: { verbose?: boolean, format?: string }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    try {
+      const { listServices, getAllServiceDefinitions } = await import('../src/services')
+
+      const services = await listServices()
+      const format = options?.format || 'table'
+
+      if (format === 'json') {
+        const result = services.map(service => ({
+          name: service.definition.name,
+          displayName: service.definition.displayName,
+          status: service.status,
+          enabled: service.enabled,
+          pid: service.pid,
+          startedAt: service.startedAt,
+          port: service.definition.port,
+        }))
+        console.log(JSON.stringify(result, null, 2))
+      }
+      else if (format === 'simple') {
+        if (services.length === 0) {
+          console.log('No services found')
+        }
+        else {
+          services.forEach((service) => {
+            const statusEmoji = {
+              running: '🟢',
+              stopped: '🔴',
+              starting: '🟡',
+              stopping: '🟡',
+              failed: '🔴',
+              unknown: '⚪',
+            }[service.status]
+
+            console.log(`${statusEmoji} ${service.definition.name}: ${service.status}`)
+          })
+        }
+      }
+      else {
+        // Table format
+        if (services.length === 0) {
+          console.log('📋 Service Status: No active services')
+          console.log('')
+          console.log('🔍 Available services:')
+          const definitions = getAllServiceDefinitions()
+          definitions.forEach((def) => {
+            console.log(`  ${def.name.padEnd(12)} ${def.displayName} - ${def.description}`)
+          })
+          console.log('')
+          console.log('💡 Use "launchpad start <service>" to start a service')
+          console.log('💡 Use "launchpad enable <service>" to enable auto-start on boot')
+        }
+        else {
+          console.log('📋 Service Status:')
+          console.log('')
+          console.log(`${'Name'.padEnd(12) + 'Status'.padEnd(12) + 'Auto-Start'.padEnd(12) + 'PID'.padEnd(8) + 'Port'.padEnd(8)}Description`)
+          console.log('─'.repeat(80))
+
+          services.forEach((service) => {
+            const statusEmoji = {
+              running: '🟢',
+              stopped: '🔴',
+              starting: '🟡',
+              stopping: '🟡',
+              failed: '🔴',
+              unknown: '⚪',
+            }[service.status]
+
+            const name = service.definition.name.padEnd(12)
+            const status = `${statusEmoji} ${service.status}`.padEnd(12)
+            const enabled = (service.enabled ? '✅ Yes' : '❌ No').padEnd(12)
+            const pid = (service.pid ? String(service.pid) : '-').padEnd(8)
+            const port = (service.definition.port ? String(service.definition.port) : '-').padEnd(8)
+            const description = service.definition.description
+
+            console.log(`${name}${status}${enabled}${pid}${port}${description}`)
+          })
+        }
+      }
+    }
+    catch (error) {
+      console.error('Failed to list services:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // Parse CLI arguments
 try {
   cli.version(version)

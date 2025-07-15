@@ -64,32 +64,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       return
     }
 
-    // Set up project-specific environment
-    const projectHash = generateProjectHash(dir)
-    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
-    const envBinPath = path.join(envDir, 'bin')
-    const envSbinPath = path.join(envDir, 'sbin')
-
-    // Fast environment readiness check using cache
-    const { ready: isReady } = isEnvironmentReady(projectHash, envDir)
-
-    // For shell output mode with ready environment, output immediately without sniff
-    if (shellOutput && isReady) {
-      // For shell mode with ready environments, skip sniff entirely for maximum speed
-      // The environment is already set up, we just need to output the shell code
-      outputShellCode(dir, envBinPath, envSbinPath, projectHash, null)
-      return
-    }
-
-    // Continue with normal flow for non-shell mode or when environment isn't ready
+    // Parse dependency file and separate global vs local dependencies
     const projectDir = path.dirname(dependencyFile)
     const { default: sniff } = await import('./sniff')
     const sniffResult = await sniff({ string: projectDir })
 
-    // Cache the sniff result for future fast-path usage
-    cacheSniffResult(projectHash, sniffResult)
+    // Separate global and local packages
+    const globalPackages: string[] = []
+    const localPackages: string[] = []
 
-    const packages = sniffResult.pkgs.map((pkg: any) => {
+    for (const pkg of sniffResult.pkgs) {
       // Enhanced constraint handling to prevent [object Object] errors
       let constraintStr = ''
 
@@ -102,7 +86,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
         else if (pkg.constraint && typeof pkg.constraint === 'object') {
           // Handle SemverRange objects specifically
-          constraintStr = pkg.constraint.raw || pkg.constraint.range || String(pkg.constraint)
+          constraintStr = String(pkg.constraint)
         }
         else {
           constraintStr = String(pkg.constraint)
@@ -117,94 +101,155 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         constraintStr = '*'
       }
 
-      return `${pkg.project}@${constraintStr}`
-    })
+      const packageString = `${pkg.project}@${constraintStr}`
 
-    if (packages.length === 0) {
+      // Check if this is a global dependency
+      if (pkg.global) {
+        globalPackages.push(packageString)
+      }
+      else {
+        localPackages.push(packageString)
+      }
+    }
+
+    // For mixed installations, handle global and local separately
+    if (globalPackages.length > 0 && localPackages.length > 0) {
+      if (!quiet && !shellOutput) {
+        console.log(`Global packages: ${globalPackages.join(', ')}`)
+        console.log(`Local packages: ${localPackages.join(', ')}`)
+      }
+    }
+    else if (globalPackages.length > 0) {
+      if (!quiet && !shellOutput) {
+        console.log(`Global packages: ${globalPackages.join(', ')}`)
+      }
+    }
+    else if (localPackages.length > 0) {
+      if (!quiet && !shellOutput) {
+        console.log(`Local packages: ${localPackages.join(', ')}`)
+      }
+    }
+
+    if (globalPackages.length === 0 && localPackages.length === 0) {
       if (!quiet && !shellOutput) {
         console.log('No packages found in dependency file')
       }
       return
     }
 
-    if (!quiet && !shellOutput) {
-      console.log(`Found dependency file: ${dependencyFile}`)
-      console.log(`Packages: ${packages.join(', ')}`)
-    }
-
     if (dryrun) {
       if (!quiet && !shellOutput) {
-        console.log('Dry run - would install:', packages.join(', '))
+        if (globalPackages.length > 0) {
+          console.log('Dry run - would install globally:', globalPackages.join(', '))
+        }
+        if (localPackages.length > 0) {
+          console.log('Dry run - would install locally:', localPackages.join(', '))
+        }
       }
       return
     }
 
-    // Install packages directly to the project-specific environment directory
-    const installPath = envDir
-    let results: string[] = []
+    // Set up project-specific environment for local packages
+    const projectHash = generateProjectHash(dir)
+    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+    const envBinPath = path.join(envDir, 'bin')
+    const envSbinPath = path.join(envDir, 'sbin')
 
-    if (!isReady) {
-      // Install packages to the project environment directory
+    // Set up stable global environment for global packages
+    const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+    const globalBinPath = path.join(globalEnvDir, 'bin')
+    const globalSbinPath = path.join(globalEnvDir, 'sbin')
+
+    // Check environment readiness
+    const localReady = localPackages.length === 0 || isEnvironmentReady(projectHash, envDir).ready
+    const globalReady = globalPackages.length === 0 || isEnvironmentReady('global', globalEnvDir).ready
+
+    // For shell output mode with ready environments, output immediately
+    if (shellOutput && localReady && globalReady) {
+      outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+      return
+    }
+
+    const results: string[] = []
+
+    // Install global packages first to stable location
+    if (globalPackages.length > 0 && !globalReady) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
 
       if (shellOutput) {
         config.showShellMessages = false
+        process.stderr.write(`🌍 Installing global dependencies...\n`)
+      }
+      else if (!quiet) {
+        console.log(`🌍 Installing ${globalPackages.length} global packages...`)
+      }
 
-        // Show installation progress to stderr for shell mode - like upgrade command
+      try {
+        // Install global packages to the stable global environment
+        const globalResults = await install(globalPackages, globalEnvDir)
+        results.push(...globalResults)
+
+        // Create or update global stubs in system locations (/usr/local/bin)
+        await createGlobalStubs(globalEnvDir, globalPackages)
+
+        if (shellOutput) {
+          process.stderr.write(`✅ Global dependencies installed\n`)
+        }
+      }
+      catch (error) {
+        if (shellOutput) {
+          process.stderr.write(`❌ Failed to install global packages: ${error instanceof Error ? error.message : String(error)}\n`)
+        }
+        else {
+          console.error(`Failed to install global packages: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+
+      config.verbose = originalVerbose
+      config.showShellMessages = originalShowShellMessages
+    }
+
+    // Install local packages to project-specific environment
+    if (localPackages.length > 0 && !localReady) {
+      const originalVerbose = config.verbose
+      const originalShowShellMessages = config.showShellMessages
+
+      if (shellOutput) {
+        config.showShellMessages = false
         const projectName = path.basename(dir)
         const startTime = Date.now()
+        process.stderr.write(`🔧 Setting up project environment for ${projectName}...\n`)
 
-        process.stderr.write(`🔧 Setting up environment for ${projectName}...\n`)
-
-        // Set up progress tracking that will be used by the install function
+        // Set up progress tracking for shell mode
         const originalStdoutWrite = process.stdout.write.bind(process.stdout)
         const originalConsoleLog = console.log.bind(console)
         const originalConsoleWarn = console.warn.bind(console)
 
-        // In shell mode, redirect all stdout to stderr for progress indicators
+        // Redirect output to stderr for progress display
         process.stdout.write = (chunk: any, encoding?: any, cb?: any) => {
-          // All output goes to stderr in shell mode for real-time display
-          const result = process.stderr.write(chunk, encoding, cb)
-
-          // Force flush for progress indicators
-          if (process.stderr.isTTY) {
-            try {
-              fs.writeSync(process.stderr.fd, '')
-            }
-            catch {
-              // Ignore flush errors
-            }
-          }
-
-          return result
+          return process.stderr.write(chunk, encoding, cb)
         }
 
-        // Redirect console.log to stderr but allow download progress and completion messages
         console.log = (...args: any[]) => {
           const message = args.join(' ')
-          // Show download progress, completion messages, and resolving messages
           if (message.includes('✅') || message.includes('⬇️') || message.includes(' bytes ') || message.includes('%') || message.includes('🔍')) {
             process.stderr.write(`${message}\n`)
           }
-          // Suppress all other messages for cleaner output
         }
 
-        // Keep console.warn as is for important messages
         console.warn = (...args: any[]) => {
           process.stderr.write(`${args.join(' ')}\n`)
         }
 
         try {
-          results = await install(packages, installPath)
+          const localResults = await install(localPackages, envDir)
+          results.push(...localResults)
 
-          // Clean up any active spinner before final message
           cleanupSpinner()
-
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-          process.stderr.write(`✅ Environment activated for ${projectName} \x1B[2m\x1B[3m(${elapsed}s)\x1B[0m\n`)
+          process.stderr.write(`✅ Project environment activated for ${projectName} \x1B[2m\x1B[3m(${elapsed}s)\x1B[0m\n`)
 
-          // Force immediate flush for shell mode to ensure message appears instantly
           if (process.stderr.isTTY) {
             try {
               fs.writeSync(process.stderr.fd, '')
@@ -215,8 +260,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           }
         }
         catch (error) {
-          // For shell mode, output error to stderr and don't throw
-          process.stderr.write(`❌ Failed to install packages: ${error instanceof Error ? error.message : String(error)}\n`)
+          process.stderr.write(`❌ Failed to install local packages: ${error instanceof Error ? error.message : String(error)}\n`)
         }
         finally {
           // Restore original stdout and console methods
@@ -227,71 +271,182 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       }
       else {
         if (!quiet) {
-          console.log(`🔧 Setting up environment for ${packages.length} packages...`)
+          console.log(`🔧 Setting up project environment for ${localPackages.length} packages...`)
         }
-        results = await install(packages, installPath)
+        const localResults = await install(localPackages, envDir)
+        results.push(...localResults)
       }
 
       config.verbose = originalVerbose
       config.showShellMessages = originalShowShellMessages
     }
-    else {
-      if (!quiet && !shellOutput) {
-        console.log('📦 Using cached environment...')
-      }
-      else if (shellOutput) {
-        // For cached environments, show completion directly
-        const projectName = path.basename(dir)
-        process.stderr.write(`✅ Environment activated for ${projectName}\n`)
 
-        // Force flush to ensure message appears
-        if (process.stderr.isTTY) {
+    // Cache the sniff result for future use
+    cacheSniffResult(projectHash, sniffResult)
+
+    if (shellOutput) {
+      outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+    }
+    else if (!quiet) {
+      if (results.length > 0) {
+        console.log(`✅ Successfully set up environment with ${localPackages.length + globalPackages.length} packages`)
+        console.log(`Environment directory: ${envDir}`)
+        if (globalPackages.length > 0) {
+          console.log(`🌍 Global environment: ${globalEnvDir}`)
+        }
+        console.log(`Installed ${results.length} binaries:`)
+        results.forEach((file) => {
+          console.log(`  ${file}`)
+        })
+      }
+      else {
+        console.log('⚠️  No binaries were installed')
+      }
+
+      // Output environment variables if any exist
+      const envVars = Object.entries(sniffResult.env || {})
+      if (envVars.length > 0) {
+        console.log(`Environment variables:`)
+        envVars.forEach(([key, value]) => {
+          console.log(`  ${key}=${value}`)
+        })
+      }
+    }
+  }
+  catch (error) {
+    if (shellOutput) {
+      // For shell mode, don't throw errors - just output empty result
+      process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`)
+      return
+    }
+    throw error
+  }
+}
+
+/**
+ * Create stable global stubs in system locations that point to the global environment
+ */
+async function createGlobalStubs(globalEnvDir: string, globalPackages: string[]): Promise<void> {
+  const globalBinDir = path.join(globalEnvDir, 'bin')
+  const globalSbinDir = path.join(globalEnvDir, 'sbin')
+  const systemBinDir = '/usr/local/bin'
+
+  // Ensure system bin directory exists and is writable
+  try {
+    if (!fs.existsSync(systemBinDir)) {
+      fs.mkdirSync(systemBinDir, { recursive: true })
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Warning: Cannot create ${systemBinDir}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    return
+  }
+
+  // Find all binaries in the global environment
+  const binaryDirs = [
+    { sourceDir: globalBinDir, targetDir: systemBinDir },
+    { sourceDir: globalSbinDir, targetDir: systemBinDir },
+  ]
+
+  for (const { sourceDir, targetDir } of binaryDirs) {
+    if (!fs.existsSync(sourceDir)) {
+      continue
+    }
+
+    try {
+      const binaries = fs.readdirSync(sourceDir)
+
+      for (const binary of binaries) {
+        const sourcePath = path.join(sourceDir, binary)
+        const targetPath = path.join(targetDir, binary)
+
+        // Check if it's an executable file
+        const stat = fs.statSync(sourcePath)
+        if (stat.isFile() && (stat.mode & 0o111)) {
+          // Create a robust stub that handles missing paths gracefully
+          const stubContent = createRobustGlobalStub(binary, sourcePath, globalPackages)
+
           try {
-            fs.writeSync(process.stderr.fd, '')
+            fs.writeFileSync(targetPath, stubContent)
+            fs.chmodSync(targetPath, 0o755)
+
+            if (config.verbose) {
+              console.warn(`Created global stub: ${binary} -> ${sourcePath}`)
+            }
           }
-          catch {
-            // Ignore flush errors
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Warning: Failed to create global stub for ${binary}: ${error instanceof Error ? error.message : String(error)}`)
+            }
           }
         }
       }
     }
-
-    // Output results
-    if (shellOutput) {
-      // For shell mode, always output shell code (even if installation failed)
-      // This ensures the shell gets proper environment setup
-
-      // Ensure any remaining processing messages are cleared before shell code output
-      cleanupSpinner()
-
-      outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult)
-
-      // Exit immediately to prevent any additional output or delays
-      // Skip exit in test environment to avoid breaking tests
-      const isTestEnvironment = process.env.NODE_ENV === 'test' || process.argv.some(arg => arg.includes('test'))
-      if (!isTestEnvironment) {
-        process.exit(0)
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`Warning: Failed to read ${sourceDir}: ${error instanceof Error ? error.message : String(error)}`)
       }
-    }
-    else {
-      outputNormalResults(results, packages, envDir, sniffResult, quiet)
-    }
-  }
-  catch (error) {
-    if (!quiet && !shellOutput) {
-      console.error('Failed to set up environment:', error instanceof Error ? error.message : String(error))
-    }
-    const isTestEnvironment = process.env.NODE_ENV === 'test' || process.argv.some(arg => arg.includes('test'))
-    if (!shellOutput && !isTestEnvironment) {
-      process.exit(1)
-    }
-    if (isTestEnvironment) {
-      throw error
     }
   }
 }
 
-function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, projectHash: string, sniffResult?: any): void {
+/**
+ * Create robust global stub content that handles missing paths gracefully
+ */
+function createRobustGlobalStub(binaryName: string, globalBinaryPath: string, globalPackages: string[]): string {
+  // Determine which package this binary belongs to
+  const packageName = globalPackages.find((pkg) => {
+    const [name] = pkg.split('@')
+    return binaryName.includes(name.split('.').pop() || '') || name.includes(binaryName)
+  }) || globalPackages[0] || 'unknown'
+
+  return `#!/bin/sh
+# Global Launchpad stub for ${binaryName} (${packageName})
+# This stub is stable and survives environment rebuilds
+
+# First try the current global installation path
+if [ -x "${globalBinaryPath}" ]; then
+  exec "${globalBinaryPath}" "$@"
+fi
+
+# If the direct path doesn't work, try to find the binary in the global environment
+GLOBAL_ENV_DIR="${path.dirname(path.dirname(globalBinaryPath))}"
+if [ -d "$GLOBAL_ENV_DIR" ]; then
+  # Try both bin and sbin directories
+  for bin_dir in "$GLOBAL_ENV_DIR/bin" "$GLOBAL_ENV_DIR/sbin"; do
+    if [ -x "$bin_dir/${binaryName}" ]; then
+      exec "$bin_dir/${binaryName}" "$@"
+    fi
+  done
+fi
+
+# If global environment is missing, try to reinstall it
+if command -v launchpad >/dev/null 2>&1; then
+  echo "⚠️  Global environment missing, attempting to reinstall..." >&2
+  if launchpad dev ~/.dotfiles >/dev/null 2>&1; then
+    # Try again after reinstall
+    if [ -x "${globalBinaryPath}" ]; then
+      exec "${globalBinaryPath}" "$@"
+    fi
+  fi
+fi
+
+# Final fallback to system command if available
+if command -v "${binaryName}" >/dev/null 2>&1 && [ "$(command -v "${binaryName}")" != "$0" ]; then
+  echo "⚠️  Using system version of ${binaryName}..." >&2
+  exec "$(command -v "${binaryName}")" "$@"
+fi
+
+# If all else fails, provide helpful error message
+echo "❌ ${binaryName} not found. Please run: launchpad dev ~/.dotfiles" >&2
+echo "   This will reinstall global dependencies including ${binaryName}" >&2
+exit 127
+`
+}
+
+function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, projectHash: string, sniffResult?: any, globalBinPath?: string, globalSbinPath?: string): void {
   // Output shell code directly without extra newlines
   process.stdout.write(`# Launchpad environment setup for ${dir}\n`)
   process.stdout.write(`if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
@@ -301,7 +456,30 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
   process.stdout.write(`  export LAUNCHPAD_ORIGINAL_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"\n`)
   process.stdout.write(`fi\n`)
-  process.stdout.write(`export PATH="${envBinPath}:${envSbinPath}:$LAUNCHPAD_ORIGINAL_PATH"\n`)
+
+  // Build PATH with both project and global environments
+  const pathComponents = []
+
+  // Add project-specific paths first (highest priority)
+  if (fs.existsSync(envBinPath)) {
+    pathComponents.push(envBinPath)
+  }
+  if (fs.existsSync(envSbinPath)) {
+    pathComponents.push(envSbinPath)
+  }
+
+  // Add global paths if they exist
+  if (globalBinPath && fs.existsSync(globalBinPath)) {
+    pathComponents.push(globalBinPath)
+  }
+  if (globalSbinPath && fs.existsSync(globalSbinPath)) {
+    pathComponents.push(globalSbinPath)
+  }
+
+  // Add original PATH
+  pathComponents.push('$LAUNCHPAD_ORIGINAL_PATH')
+
+  process.stdout.write(`export PATH="${pathComponents.join(':')}"\n`)
   process.stdout.write(`export LAUNCHPAD_ENV_BIN_PATH="${envBinPath}"\n`)
   process.stdout.write(`export LAUNCHPAD_PROJECT_DIR="${dir}"\n`)
   process.stdout.write(`export LAUNCHPAD_PROJECT_HASH="${projectHash}"\n`)
@@ -326,7 +504,6 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
   process.stdout.write(`        export PATH="$LAUNCHPAD_ORIGINAL_PATH"\n`)
   process.stdout.write(`      fi\n`)
-  process.stdout.write(`      unset LAUNCHPAD_CURRENT_PROJECT\n`)
   process.stdout.write(`      unset LAUNCHPAD_ENV_BIN_PATH\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_DIR\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_HASH\n`)
@@ -334,30 +511,6 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
-}
-
-function outputNormalResults(results: string[], packages: string[], envDir: string, sniffResult: any, quiet: boolean): void {
-  if (!quiet) {
-    if (results.length > 0) {
-      console.log(`✅ Successfully set up environment with ${packages.length} packages`)
-      console.log(`Environment directory: ${envDir}`)
-      console.log(`Installed ${results.length} binaries:`)
-      results.forEach((file) => {
-        console.log(`  ${file}`)
-      })
-    }
-    else {
-      console.log('⚠️  No binaries were installed')
-    }
-
-    const envVars = Object.entries(sniffResult.env)
-    if (envVars.length > 0) {
-      console.log(`Environment variables:`)
-      envVars.forEach(([key, value]) => {
-        console.log(`  ${key}=${value}`)
-      })
-    }
-  }
 }
 
 function findDependencyFile(dir: string): string | null {

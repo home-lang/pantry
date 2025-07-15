@@ -1,5 +1,6 @@
 import type { LaunchpadConfig } from './types'
 import fs from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
@@ -51,6 +52,15 @@ export const defaultConfig: LaunchpadConfig = {
   useRegistry: true,
   installMethod: 'curl',
   installPath: getDefaultInstallPath(),
+  services: {
+    enabled: process.env.LAUNCHPAD_SERVICES_ENABLED !== 'false',
+    dataDir: process.env.LAUNCHPAD_SERVICES_DATA_DIR || path.join(homedir(), '.local', 'share', 'launchpad', 'services'),
+    logDir: process.env.LAUNCHPAD_SERVICES_LOG_DIR || path.join(homedir(), '.local', 'share', 'launchpad', 'logs'),
+    configDir: process.env.LAUNCHPAD_SERVICES_CONFIG_DIR || path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'config'),
+    autoRestart: process.env.LAUNCHPAD_SERVICES_AUTO_RESTART !== 'false',
+    startupTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_STARTUP_TIMEOUT || '30', 10),
+    shutdownTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_SHUTDOWN_TIMEOUT || '10', 10),
+  },
 }
 
 // eslint-disable-next-line antfu/no-top-level-await

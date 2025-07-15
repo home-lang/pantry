@@ -742,4 +742,350 @@ echo -e "\n📅 Oldest environments:"
 launchpad env:list --format json | jq -r 'sort_by(.created) | .[0:5] | .[] | "\(.projectName): \(.created)"'
 ```
 
+## Service Management Examples
+
+### Database Development Setup
+
+Set up a complete database development environment:
+
+```bash
+# Start essential database services
+launchpad service start postgres redis
+
+# Start modern databases for specific use cases
+launchpad service start cockroachdb      # Distributed SQL
+launchpad service start neo4j            # Graph database
+launchpad service start clickhouse       # Analytics database
+
+# Enable auto-start for core databases
+launchpad service enable postgres redis
+
+# Check service status
+launchpad service list
+
+# Connect to databases
+psql postgresql://localhost:5432/postgres           # PostgreSQL
+redis-cli -h localhost -p 6379                      # Redis
+cockroach sql --insecure --port=26257               # CockroachDB
+# Neo4j Browser: http://localhost:7474
+# ClickHouse: curl http://localhost:8123/
+```
+
+### Full-Stack Development
+
+Complete web development stack with monitoring:
+
+```bash
+# Start web development services
+launchpad service start postgres redis nginx
+
+# Start monitoring stack
+launchpad service start prometheus grafana
+
+# Check all service status
+launchpad service list
+
+# Services available at:
+# PostgreSQL: localhost:5432
+# Redis: localhost:6379
+# Nginx: http://localhost:8080
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000 (admin/admin)
+```
+
+### Microservices Development
+
+Infrastructure services for microservices development:
+
+```bash
+# Start service discovery and secrets management
+launchpad service start consul vault
+
+# Start message queue and monitoring (choose based on needs)
+launchpad service start kafka jaeger prometheus       # Traditional stack
+launchpad service start pulsar jaeger prometheus      # Cloud-native messaging
+launchpad service start nats jaeger prometheus        # High-performance messaging
+
+# Start storage services
+launchpad service start minio etcd
+
+# Start identity and API services
+launchpad service start keycloak hasura
+
+# Check all services
+launchpad service list
+
+# Services available at:
+# Consul UI: http://localhost:8500
+# Vault UI: http://localhost:8200
+# Kafka: localhost:9092 / Pulsar: localhost:6650 / NATS: localhost:4222
+# Jaeger UI: http://localhost:16686
+# Prometheus: http://localhost:9090
+# MinIO Console: http://localhost:9001
+# etcd: localhost:2379
+# Keycloak: http://localhost:8088
+# Hasura: http://localhost:8085
+```
+
+### Development Environment with Services
+
+Create a project with both packages and services:
+
+```yaml
+# dependencies.yaml
+dependencies:
+  - node@22
+  - python@3.12
+
+services:
+  - postgres
+  - redis
+  - nginx
+
+env:
+  DATABASE_URL: postgresql://localhost:5432/myapp
+  REDIS_URL: redis://localhost:6379
+  WEB_SERVER: http://localhost:8080
+```
+
+### CI/CD Development Environment
+
+Set up continuous integration and development tooling:
+
+```bash
+# Start CI/CD infrastructure
+launchpad service start jenkins          # CI/CD server
+launchpad service start verdaccio        # Private npm registry
+
+# Start local cloud development
+launchpad service start localstack       # AWS services locally
+
+# Start monitoring
+launchpad service start prometheus grafana
+
+# Services available at:
+# Jenkins: http://localhost:8090
+# Verdaccio: http://localhost:4873
+# LocalStack: http://localhost:4566
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000
+```
+
+```bash
+# Activate environment (starts services automatically)
+cd my-project/
+# ✅ Environment activated for /path/to/my-project
+# 🚀 Starting PostgreSQL...
+# 🚀 Starting Redis...
+# 🚀 Starting Nginx...
+
+# Services are available for your application
+npm run dev
+```
+
+### Service Management Workflows
+
+#### Daily Development Workflow
+
+```bash
+# Morning: Start essential services
+launchpad service start postgres redis
+
+# Check what's running
+launchpad service list
+
+# Work on projects...
+
+# Evening: Stop non-essential services
+launchpad service stop nginx grafana prometheus
+
+# Keep databases running for next day
+launchpad service list
+```
+
+#### Project-Specific Services
+
+```bash
+# Web project: Start web stack
+launchpad service start postgres nginx redis
+
+# API project: Start API stack
+launchpad service start postgres kafka vault
+
+# Data project: Start data stack
+launchpad service start postgres influxdb grafana
+
+# Stop all services when done
+launchpad service stop postgres nginx redis kafka vault influxdb grafana
+```
+
+#### Service Health Monitoring
+
+```bash
+# Check service health
+launchpad service status postgres
+launchpad service status redis
+
+# Monitor logs in real-time
+tail -f ~/.local/share/launchpad/logs/postgres.log
+tail -f ~/.local/share/launchpad/logs/redis.log
+
+# Restart unhealthy services
+launchpad service restart postgres
+```
+
+### Custom Service Configuration
+
+#### Customizing Redis Configuration
+
+```bash
+# Edit Redis configuration
+nano ~/.local/share/launchpad/services/config/redis.conf
+
+# Example customizations:
+# maxmemory 256mb
+# maxmemory-policy allkeys-lru
+# save 60 1000
+
+# Restart to apply changes
+launchpad service restart redis
+```
+
+#### Customizing Nginx Configuration
+
+```bash
+# Edit Nginx configuration
+nano ~/.local/share/launchpad/services/config/nginx.conf
+
+# Add custom server block:
+# server {
+#     listen 8081;
+#     server_name api.localhost;
+#     location / {
+#         proxy_pass http://localhost:3000;
+#     }
+# }
+
+# Test configuration
+nginx -t -c ~/.local/share/launchpad/services/config/nginx.conf
+
+# Restart to apply changes
+launchpad service restart nginx
+```
+
+### Service Backup and Migration
+
+#### Backup Service Data
+
+```bash
+# Backup all service data
+tar -czf services-backup-$(date +%Y%m%d).tar.gz \
+  ~/.local/share/launchpad/services/
+
+# Backup specific service
+tar -czf postgres-backup-$(date +%Y%m%d).tar.gz \
+  ~/.local/share/launchpad/services/postgres/
+
+# Backup with compression
+tar -czf services-backup.tar.gz \
+  --exclude='*.log' \
+  ~/.local/share/launchpad/services/
+```
+
+#### Restore Service Data
+
+```bash
+# Stop services before restore
+launchpad service stop postgres redis
+
+# Restore data
+tar -xzf services-backup.tar.gz -C ~/
+
+# Restart services
+launchpad service start postgres redis
+```
+
+### Troubleshooting Services
+
+#### Common Diagnostics
+
+```bash
+# Check if service binaries are available
+which postgres redis-server nginx
+
+# Check port usage
+lsof -i :5432  # PostgreSQL
+lsof -i :6379  # Redis
+lsof -i :8080  # Nginx
+
+# Check service logs
+tail -f ~/.local/share/launchpad/logs/postgres.log
+tail -f ~/.local/share/launchpad/logs/redis.log
+
+# Test service connectivity
+pg_isready -p 5432
+redis-cli ping
+curl http://localhost:8080/health
+```
+
+#### Service Recovery
+
+```bash
+# Stop all services
+launchpad service stop postgres redis nginx
+
+# Clear problematic data (careful!)
+rm -rf ~/.local/share/launchpad/services/postgres/data/
+rm -rf ~/.local/share/launchpad/services/redis/data/
+
+# Restart services (will reinitialize)
+launchpad service start postgres redis nginx
+```
+
+### Service Integration Examples
+
+#### Node.js Application with Services
+
+```javascript
+// app.js
+const { Pool } = require('pg')
+const redis = require('redis')
+
+// Connect to Launchpad-managed PostgreSQL
+const pool = new Pool({
+  host: 'localhost',
+  port: 5432,
+  database: 'postgres',
+  user: process.env.USER,
+})
+
+// Connect to Launchpad-managed Redis
+const redisClient = redis.createClient({
+  host: 'localhost',
+  port: 6379,
+})
+
+// Your application code...
+```
+
+#### Python Application with Services
+
+```python
+# app.py
+import psycopg2
+import redis
+
+# Connect to Launchpad-managed services
+conn = psycopg2.connect(
+    host="localhost",
+    port=5432,
+    database="postgres",
+    user=os.getenv("USER")
+)
+
+r = redis.Redis(host='localhost', port=6379, db=0)
+
+# Your application code...
+```
+
 These examples demonstrate the versatility and power of Launchpad for various development scenarios. Use them as starting points for your own projects and workflows.

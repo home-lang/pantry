@@ -68,6 +68,30 @@ const config: LaunchpadConfig = {
 
   // Custom message to show when environment is deactivated (default: "dev environment deactivated")
   shellDeactivationMessage: 'dev environment deactivated',
+
+  // Service Management Configuration
+  services: {
+    // Enable service management functionality (default: true)
+    enabled: true,
+
+    // Default services data directory (default: ~/.local/share/launchpad/services)
+    dataDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'services'),
+
+    // Default services log directory (default: ~/.local/share/launchpad/logs)
+    logDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'logs'),
+
+    // Default services configuration directory (default: ~/.local/share/launchpad/services/config)
+    configDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'services', 'config'),
+
+    // Auto-restart failed services (default: true)
+    autoRestart: true,
+
+    // Service startup timeout in seconds (default: 30)
+    startupTimeout: 30,
+
+    // Service shutdown timeout in seconds (default: 10)
+    shutdownTimeout: 10,
+  },
 }
 
 export default config
@@ -92,7 +116,16 @@ JavaScript format (`.launchpadrc`):
   "autoAddToPath": true,
   "showShellMessages": true,
   "shellActivationMessage": "✅ Environment activated for {path}",
-  "shellDeactivationMessage": "dev environment deactivated"
+  "shellDeactivationMessage": "dev environment deactivated",
+  "services": {
+    "enabled": true,
+    "dataDir": "~/.local/share/launchpad/services",
+    "logDir": "~/.local/share/launchpad/logs",
+    "configDir": "~/.local/share/launchpad/services/config",
+    "autoRestart": true,
+    "startupTimeout": 30,
+    "shutdownTimeout": 10
+  }
 }
 ```
 
@@ -245,6 +278,18 @@ This ensures that essential tools like shells, package managers, and system util
 |--------|------|---------|-------------|
 | `autoAddToPath` | boolean | `true` | Automatically add shim directories to PATH |
 
+### Service Management
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `services.enabled` | boolean | `true` | Enable service management functionality |
+| `services.dataDir` | string | `~/.local/share/launchpad/services` | Default services data directory |
+| `services.logDir` | string | `~/.local/share/launchpad/logs` | Default services log directory |
+| `services.configDir` | string | `~/.local/share/launchpad/services/config` | Default services configuration directory |
+| `services.autoRestart` | boolean | `true` | Auto-restart failed services |
+| `services.startupTimeout` | number | `30` | Service startup timeout in seconds |
+| `services.shutdownTimeout` | number | `10` | Service shutdown timeout in seconds |
+
 ## Environment Variables
 
 You can also configure Launchpad using environment variables:
@@ -261,6 +306,13 @@ You can also configure Launchpad using environment variables:
 | `LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE` | Custom shell deactivation message |
 | `LAUNCHPAD_CHECK_UPDATES` | Enable/disable update checking |
 | `LAUNCHPAD_PROMPT_BEFORE_UPDATE` | Enable/disable update prompts |
+| `LAUNCHPAD_SERVICES_ENABLED` | Enable/disable service management |
+| `LAUNCHPAD_SERVICES_DATA_DIR` | Set services data directory |
+| `LAUNCHPAD_SERVICES_LOG_DIR` | Set services log directory |
+| `LAUNCHPAD_SERVICES_CONFIG_DIR` | Set services configuration directory |
+| `LAUNCHPAD_SERVICES_AUTO_RESTART` | Enable/disable auto-restart for failed services |
+| `LAUNCHPAD_SERVICES_STARTUP_TIMEOUT` | Service startup timeout in seconds |
+| `LAUNCHPAD_SERVICES_SHUTDOWN_TIMEOUT` | Service shutdown timeout in seconds |
 | `SUDO_PASSWORD` | Password for sudo operations |
 
 Example:

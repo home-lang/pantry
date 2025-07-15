@@ -15,6 +15,13 @@ Here are the main commands available in Launchpad:
 | `dev:on` | Activate dev environment in directory |
 | `dev:dump` | Generate environment setup script for a project |
 | `dev:shellcode` | Generate shell integration code |
+| `service:start` | Start one or more services |
+| `service:stop` | Stop one or more services |
+| `service:restart` | Restart one or more services |
+| `service:status` | Check status of a service |
+| `service:list` | List all available services and their status |
+| `service:enable` | Enable service for auto-start |
+| `service:disable` | Disable service auto-start |
 | `bun` | Install Bun runtime directly |
 | `zsh` | Install Zsh shell |
 | `bootstrap` | Install all essential tools at once |
@@ -329,6 +336,49 @@ Each project gets its own isolated environment:
 - Isolated PATH and environment variables
 - Binary stubs with environment isolation
 - Automatic cleanup when leaving project directory
+
+## Service Management
+
+Launchpad provides comprehensive service management for development services like databases, web servers, and infrastructure tools. See the [Service Management](./features/service-management.md) documentation for complete details.
+
+### Quick Service Examples
+
+```bash
+# Start a database
+launchpad service start postgres
+
+# Start multiple services
+launchpad service start redis nginx prometheus
+
+# Check service status
+launchpad service status postgres
+
+# List all services
+launchpad service list
+
+# Stop services
+launchpad service stop postgres redis
+```
+
+### Available Services
+
+Launchpad includes 31+ pre-configured services:
+
+**Databases**: PostgreSQL, MySQL, MongoDB, Redis, InfluxDB, CockroachDB, Neo4j, ClickHouse
+**Web Servers**: Nginx, Caddy
+**Message Queues**: Kafka, RabbitMQ, Apache Pulsar, NATS
+**Monitoring**: Prometheus, Grafana, Jaeger
+**Infrastructure**: Vault, Consul, etcd, MinIO, SonarQube, Temporal
+**Development & CI/CD**: Jenkins, LocalStack, Verdaccio
+**API & Backend**: Hasura, Keycloak
+**Caching**: Memcached, Elasticsearch
+
+Each service includes:
+- Automatic configuration generation
+- Health monitoring
+- Cross-platform support (macOS/Linux)
+- Service-specific data directories
+- Template variables for customization
 
 ## Environment Management
 

@@ -221,6 +221,55 @@ launchpad uninstall python --dry-run
 launchpad clean --force
 ```
 
+### Service Management
+
+Manage long-running services like databases and web servers with ease:
+
+```bash
+# Start a service
+launchpad start postgres
+launchpad start redis
+launchpad start nginx
+
+# Stop a service
+launchpad stop postgres
+
+# Restart a service
+launchpad restart redis
+
+# Enable auto-start on boot
+launchpad enable postgres
+launchpad enable redis
+
+# Disable auto-start
+launchpad disable nginx
+
+# Check service status
+launchpad status postgres
+launchpad status  # Show all services
+
+# List all services
+launchpad services
+```
+
+**Supported Services:**
+- PostgreSQL (`postgres`)
+- MySQL (`mysql`)
+- Redis (`redis`)
+- Nginx (`nginx`)
+- MongoDB (`mongodb`)
+- Memcached (`memcached`)
+- RabbitMQ (`rabbitmq`)
+- Elasticsearch (`elasticsearch`)
+- Caddy (`caddy`)
+
+**Service Features:**
+- **Auto-initialization**: Services are automatically initialized with proper data directories and configuration
+- **Cross-platform**: Works on both macOS (launchd) and Linux (systemd)
+- **Health checks**: Built-in health monitoring for each service
+- **Auto-restart**: Services automatically restart if they crash (when enabled)
+- **Proper logging**: All service logs are centralized in `~/.local/share/launchpad/logs/`
+
 ### Advanced Operations
 
 ```bash
