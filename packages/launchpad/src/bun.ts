@@ -277,7 +277,15 @@ export async function install_bun(installPath: string, version?: string): Promis
 
   // Create a temporary directory for the download/extraction
   const tempDir = path.join(installPath, 'temp')
-  fs.mkdirSync(tempDir, { recursive: true })
+  try {
+    fs.mkdirSync(tempDir, { recursive: true })
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to create temp directory ${tempDir}:`, error)
+    }
+    throw new Error(`Failed to create temporary directory for bun installation: ${error instanceof Error ? error.message : String(error)}`)
+  }
 
   let zipPath: string
 
@@ -293,7 +301,15 @@ export async function install_bun(installPath: string, version?: string): Promis
 
       // Copy cached file to temp directory for extraction
       zipPath = path.join(tempDir, filename)
-      fs.copyFileSync(cachedArchivePath, zipPath)
+      try {
+        fs.copyFileSync(cachedArchivePath, zipPath)
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`Failed to copy cached bun from ${cachedArchivePath} to ${zipPath}:`, error)
+        }
+        throw new Error(`Failed to copy cached bun file: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
     else {
       // Download new version
@@ -365,7 +381,15 @@ export async function install_bun(installPath: string, version?: string): Promis
           offset += chunk.length
         }
 
-        fs.writeFileSync(zipPath, buffer)
+        try {
+          fs.writeFileSync(zipPath, buffer)
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`Failed to write bun archive to ${zipPath}:`, error)
+          }
+          throw new Error(`Failed to write bun download: ${error instanceof Error ? error.message : String(error)}`)
+        }
       }
       else if (config.verbose) {
         // Verbose mode - show size info like CLI upgrade
@@ -384,7 +408,15 @@ export async function install_bun(installPath: string, version?: string): Promis
       else {
         // Fallback: use arrayBuffer approach for compatibility
         const arrayBuffer = await response.arrayBuffer()
-        fs.writeFileSync(zipPath, new Uint8Array(arrayBuffer))
+        try {
+          fs.writeFileSync(zipPath, new Uint8Array(arrayBuffer))
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`Failed to write bun archive to ${zipPath}:`, error)
+          }
+          throw new Error(`Failed to write bun download: ${error instanceof Error ? error.message : String(error)}`)
+        }
       }
 
       if (config.verbose)

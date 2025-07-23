@@ -91,6 +91,82 @@ __launchpad_update_path() {
     fi
 }
 
+# Dynamic library path management
+__launchpad_update_library_paths() {
+    local env_dir="$1"
+
+    # Build library paths from environment
+    local lib_paths=""
+
+    # Add lib directories from the environment
+    for lib_dir in "$env_dir/lib" "$env_dir/lib64"; do
+        if [[ -d "$lib_dir" ]]; then
+            if [[ -z "$lib_paths" ]]; then
+                lib_paths="$lib_dir"
+            else
+                lib_paths="$lib_paths:$lib_dir"
+            fi
+        fi
+    done
+
+    # Add lib directories from all packages in the environment
+    if [[ -d "$env_dir" ]]; then
+        for domain_dir in "$env_dir"/*; do
+            if [[ -d "$domain_dir" && "$(basename "$domain_dir")" != "bin" && "$(basename "$domain_dir")" != "sbin" && "$(basename "$domain_dir")" != "lib" && "$(basename "$domain_dir")" != "lib64" && "$(basename "$domain_dir")" != "share" && "$(basename "$domain_dir")" != "include" && "$(basename "$domain_dir")" != "etc" && "$(basename "$domain_dir")" != "pkgs" && "$(basename "$domain_dir")" != ".tmp" && "$(basename "$domain_dir")" != ".cache" ]]; then
+                for version_dir in "$domain_dir"/v*; do
+                    if [[ -d "$version_dir" ]]; then
+                        for lib_dir in "$version_dir/lib" "$version_dir/lib64"; do
+                            if [[ -d "$lib_dir" ]]; then
+                                if [[ -z "$lib_paths" ]]; then
+                                    lib_paths="$lib_dir"
+                                else
+                                    # Avoid duplicates
+                                    if [[ ":$lib_paths:" != *":$lib_dir:"* ]]; then
+                                        lib_paths="$lib_paths:$lib_dir"
+                                    fi
+                                fi
+                            fi
+                        done
+                    fi
+                done
+            fi
+        done
+    fi
+
+    # Set up library path environment variables if we have paths
+    if [[ -n "$lib_paths" ]]; then
+        # Store original values if not already stored
+        if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
+            export LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH"
+        fi
+        if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
+            export LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH"
+        fi
+        if [[ -z "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
+            export LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+        fi
+
+        # Set library paths with fallbacks to original values
+        if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
+            export DYLD_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"
+        else
+            export DYLD_LIBRARY_PATH="$lib_paths"
+        fi
+
+        if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
+            export DYLD_FALLBACK_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"
+        else
+            export DYLD_FALLBACK_LIBRARY_PATH="$lib_paths:/usr/local/lib:/lib:/usr/lib"
+        fi
+
+        if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
+            export LD_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"
+        else
+            export LD_LIBRARY_PATH="$lib_paths"
+        fi
+    fi
+}
+
 # Setup global dependencies (only if user has manually created them)
 __launchpad_setup_global_deps() {
     local global_env_dir="$HOME/.local/share/launchpad/global"
@@ -102,12 +178,16 @@ __launchpad_setup_global_deps() {
     if [[ -d "$global_env_dir/sbin" ]]; then
         __launchpad_update_path "$global_env_dir/sbin"
     fi
+
+    # Set up library paths for global dependencies
+    if [[ -d "$global_env_dir" ]]; then
+        __launchpad_update_library_paths "$global_env_dir"
+    fi
 }
 
 # Ensure global dependencies are always in PATH
 __launchpad_ensure_global_path() {
     local global_env_dir="$HOME/.local/share/launchpad/global"
-    local system_bin_dir="/usr/local/bin"
 
     # Add global environment to PATH if it exists
     if [[ -d "$global_env_dir/bin" ]]; then
@@ -117,10 +197,8 @@ __launchpad_ensure_global_path() {
         __launchpad_update_path "$global_env_dir/sbin"
     fi
 
-    # Also ensure system bin directory is in PATH for global stubs
-    if [[ -d "$system_bin_dir" ]]; then
-        __launchpad_update_path "$system_bin_dir"
-    fi
+    # Always ensure critical system paths are available
+    __launchpad_ensure_system_path
 }
 
 __launchpad_find_deps_file() {
@@ -255,6 +333,7 @@ __launchpad_chpwd() {
 
                 if [[ -d "$env_dir/bin" ]]; then
                     __launchpad_update_path "$env_dir/bin"
+                    __launchpad_update_library_paths "$env_dir"
 
                     # Ensure global dependencies are available
                     __launchpad_ensure_global_path
@@ -283,6 +362,23 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
             fi
 
+            # Restore original library paths
+            if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
+                export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"
+            else
+                unset DYLD_LIBRARY_PATH
+            fi
+            if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
+                export DYLD_FALLBACK_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"
+            else
+                unset DYLD_FALLBACK_LIBRARY_PATH
+            fi
+            if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
+                export LD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"
+            else
+                unset LD_LIBRARY_PATH
+            fi
+
             # Show deactivation message synchronously (no background jobs)
             if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
                 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:off 2>/dev/null || true
@@ -291,6 +387,9 @@ __launchpad_chpwd() {
             unset LAUNCHPAD_CURRENT_PROJECT
             unset LAUNCHPAD_ENV_BIN_PATH
             unset LAUNCHPAD_PROJECT_DIR
+            unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH
+            unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH
+            unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH
 
             # Clear cache when leaving project
             __launchpad_cache_dir=""
@@ -322,11 +421,35 @@ elif [[ -n "$BASH_VERSION" ]]; then
     fi
 fi
 
-# Initialize LAUNCHPAD_ORIGINAL_PATH if not set and PATH looks corrupted
-if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" && ! "$PATH" =~ "/usr/local/bin" ]]; then
-    export LAUNCHPAD_ORIGINAL_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-    export PATH="$LAUNCHPAD_ORIGINAL_PATH"
+# Initialize LAUNCHPAD_ORIGINAL_PATH if not set and ensure basic system paths are always available
+if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then
+    # Store the current PATH as original if it looks valid
+    if [[ "$PATH" =~ "/usr/bin" && "$PATH" =~ "/bin" ]]; then
+        export LAUNCHPAD_ORIGINAL_PATH="$PATH"
+    else
+        # PATH looks corrupted, use standard system paths
+        export LAUNCHPAD_ORIGINAL_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        export PATH="$LAUNCHPAD_ORIGINAL_PATH"
+    fi
 fi
+
+# Ensure critical system paths are always in PATH (for basic commands like bash, grep, etc.)
+__launchpad_ensure_system_path() {
+    local system_paths="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+    # Use POSIX-compatible loop instead of bash arrays
+    local OLD_IFS="$IFS"
+    IFS=':'
+    for sys_dir in $system_paths; do
+        if [[ -d "$sys_dir" && ":$PATH:" != *":$sys_dir:"* ]]; then
+            export PATH="$PATH:$sys_dir"
+        fi
+    done
+    IFS="$OLD_IFS"
+}
+
+# Always ensure system paths are available
+__launchpad_ensure_system_path
 
 # Call global setup functions on load
 __launchpad_setup_global_deps

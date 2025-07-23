@@ -2183,6 +2183,59 @@ async function createShims(packageDir: string, installPath: string, domain: stri
     { sourceDir: path.join(packageDir, 'sbin'), shimDir: sbinShimDir },
   ]
 
+  // Helper function to build library paths for this package and its dependencies
+  function buildLibraryPaths(packageDir: string, installPath: string): string[] {
+    const libraryPaths: string[] = []
+
+    // Add library paths from this package
+    const packageLibDirs = [
+      path.join(packageDir, 'lib'),
+      path.join(packageDir, 'lib64'),
+    ]
+
+    for (const libDir of packageLibDirs) {
+      if (fs.existsSync(libDir)) {
+        libraryPaths.push(libDir)
+      }
+    }
+
+    // Add library paths from all installed packages in the environment
+    try {
+      const domains = fs.readdirSync(installPath, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory()
+          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+
+      for (const domainEntry of domains) {
+        const domainPath = path.join(installPath, domainEntry.name)
+        if (fs.existsSync(domainPath)) {
+          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+          for (const versionEntry of versions) {
+            const versionPath = path.join(domainPath, versionEntry.name)
+            const depLibDirs = [
+              path.join(versionPath, 'lib'),
+              path.join(versionPath, 'lib64'),
+            ]
+
+            for (const libDir of depLibDirs) {
+              if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
+                libraryPaths.push(libDir)
+              }
+            }
+          }
+        }
+      }
+    }
+    catch {
+      // Ignore errors reading directories
+    }
+
+    return libraryPaths
+  }
+
+  const libraryPaths = buildLibraryPaths(packageDir, installPath)
+
   for (const { sourceDir, shimDir: targetShimDir } of binaryDirs) {
     if (!fs.existsSync(sourceDir)) {
       continue
@@ -2198,9 +2251,39 @@ async function createShims(packageDir: string, installPath: string, domain: stri
       if (stat.isFile() && (stat.mode & 0o111)) {
         const shimPath = path.join(targetShimDir, binary)
 
-        // Create a shell script shim that sets up the environment
-        const shimContent = `#!/bin/sh
+        // Create a shell script shim that sets up the environment and library paths
+        let shimContent = `#!/bin/sh
 # Launchpad shim for ${binary} (${domain} v${version})
+
+# Set up library paths for dynamic linking
+`
+
+        if (libraryPaths.length > 0) {
+          const libraryPathString = libraryPaths.join(':')
+          shimContent += `# macOS dynamic library paths
+if [ -n "$DYLD_LIBRARY_PATH" ]; then
+  export DYLD_LIBRARY_PATH="${libraryPathString}:$DYLD_LIBRARY_PATH"
+else
+  export DYLD_LIBRARY_PATH="${libraryPathString}"
+fi
+
+if [ -n "$DYLD_FALLBACK_LIBRARY_PATH" ]; then
+  export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:$DYLD_FALLBACK_LIBRARY_PATH"
+else
+  export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:/usr/local/lib:/lib:/usr/lib"
+fi
+
+# Linux dynamic library paths
+if [ -n "$LD_LIBRARY_PATH" ]; then
+  export LD_LIBRARY_PATH="${libraryPathString}:$LD_LIBRARY_PATH"
+else
+  export LD_LIBRARY_PATH="${libraryPathString}"
+fi
+
+`
+        }
+
+        shimContent += `# Execute the actual binary
 exec "${binaryPath}" "$@"
 `
 
@@ -2211,6 +2294,9 @@ exec "${binaryPath}" "$@"
 
         if (config.verbose) {
           console.warn(`Created shim: ${binary} -> ${binaryPath}`)
+          if (libraryPaths.length > 0) {
+            console.warn(`  Library paths: ${libraryPaths.join(', ')}`)
+          }
         }
       }
     }

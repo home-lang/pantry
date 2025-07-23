@@ -1175,6 +1175,7 @@ cli
         dryrun: options?.dryRun || false,
         quiet: options?.quiet || false,
         shellOutput: options?.shell || false,
+        skipGlobal: false, // Always enable global support in production CLI
       })
     }
     catch (error) {
@@ -1182,9 +1183,17 @@ cli
         console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
       }
       else if (options?.shell) {
-        // For shell mode, output minimal fallback and don't exit with error
+        // For shell mode, output robust fallback that ensures basic system tools are available
         // This prevents shell integration from hanging or failing
-        console.log('# Environment setup failed, using fallback')
+        console.log('# Environment setup failed, using system fallback')
+        console.log('# Ensure basic system paths are available')
+        console.log('for sys_path in /usr/local/bin /usr/bin /bin /usr/sbin /sbin; do')
+        console.log('  if [[ -d "$sys_path" && ":$PATH:" != *":$sys_path:"* ]]; then')
+        console.log('    export PATH="$PATH:$sys_path"')
+        console.log('  fi')
+        console.log('done')
+        console.log('# Clear command hash to ensure fresh lookups')
+        console.log('hash -r 2>/dev/null || true')
         return
       }
       if (!options?.shell) {

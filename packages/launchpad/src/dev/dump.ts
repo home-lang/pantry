@@ -591,8 +591,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     const results: string[] = []
 
-    // Install global packages first to stable location (only if not skipping global)
-    if (globalPackages.length > 0 && !globalReady && !skipGlobal) {
+    // Always ensure global environment is activated first, even if already ready
+    // This ensures global tools like bash are available for subsequent operations
+    if (globalPackages.length > 0 && !skipGlobal) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
 
@@ -605,15 +606,24 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       }
 
       try {
-        // Install global packages to the stable global environment
-        const globalResults = await install(globalPackages, globalEnvDir)
-        results.push(...globalResults)
+        // If global environment is already ready, just create/update stubs
+        if (globalReady) {
+          await createGlobalStubs(globalEnvDir, globalPackages)
+          if (shellOutput) {
+            process.stderr.write(`✅ Global dependencies ready\n`)
+          }
+        }
+        else {
+          // Install global packages to the stable global environment
+          const globalResults = await install(globalPackages, globalEnvDir)
+          results.push(...globalResults)
 
-        // Create or update global stubs in system locations (/usr/local/bin)
-        await createGlobalStubs(globalEnvDir, globalPackages)
+          // Create or update global stubs in system locations (/usr/local/bin)
+          await createGlobalStubs(globalEnvDir, globalPackages)
 
-        if (shellOutput) {
-          process.stderr.write(`✅ Global dependencies installed\n`)
+          if (shellOutput) {
+            process.stderr.write(`✅ Global dependencies installed\n`)
+          }
         }
       }
       catch (error) {
@@ -679,7 +689,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           }
         }
         catch (error) {
-          process.stderr.write(`❌ Failed to install local packages: ${error instanceof Error ? error.message : String(error)}\n`)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          process.stderr.write(`❌ Failed to install local packages: ${errorMessage}\n`)
+
+          // Provide helpful guidance for common issues
+          if (errorMessage.includes('bun')) {
+            process.stderr.write(`💡 Tip: Install bun manually with: curl -fsSL https://bun.sh/install | bash\n`)
+          }
+          if (errorMessage.includes('ENOENT') || errorMessage.includes('permission')) {
+            process.stderr.write(`💡 Check directory permissions and disk space\n`)
+          }
         }
         finally {
           // Restore original stdout and console methods
@@ -821,21 +840,91 @@ function createRobustGlobalStub(binaryName: string, globalBinaryPath: string, gl
     return binaryName.includes(name.split('.').pop() || '') || name.includes(binaryName)
   }) || globalPackages[0] || 'unknown'
 
-  return `#!/bin/sh
+  // Build library paths for global environment
+  const globalEnvDir = path.dirname(path.dirname(globalBinaryPath))
+  const libraryPaths: string[] = []
+
+  // Add library paths from global packages
+  try {
+    const domains = fs.existsSync(globalEnvDir)
+      ? fs.readdirSync(globalEnvDir, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory()
+            && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+      : []
+
+    for (const domain of domains) {
+      const domainPath = path.join(globalEnvDir, domain.name)
+      if (fs.existsSync(domainPath)) {
+        const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+        for (const version of versions) {
+          const versionPath = path.join(domainPath, version.name)
+          const libDirs = [
+            path.join(versionPath, 'lib'),
+            path.join(versionPath, 'lib64'),
+          ]
+
+          for (const libDir of libDirs) {
+            if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
+              libraryPaths.push(libDir)
+            }
+          }
+        }
+      }
+    }
+  }
+  catch {
+    // Ignore errors reading directories
+  }
+
+  let stubContent = `#!/bin/sh
 # Global Launchpad stub for ${binaryName} (${packageName})
 # This stub is stable and survives environment rebuilds
 
+# Set up library paths for dynamic linking
+setup_library_paths() {
+`
+
+  if (libraryPaths.length > 0) {
+    const libraryPathString = libraryPaths.join(':')
+    stubContent += `  # macOS dynamic library paths
+  if [ -n "$DYLD_LIBRARY_PATH" ]; then
+    export DYLD_LIBRARY_PATH="${libraryPathString}:$DYLD_LIBRARY_PATH"
+  else
+    export DYLD_LIBRARY_PATH="${libraryPathString}"
+  fi
+
+  if [ -n "$DYLD_FALLBACK_LIBRARY_PATH" ]; then
+    export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:$DYLD_FALLBACK_LIBRARY_PATH"
+  else
+    export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:/usr/local/lib:/lib:/usr/lib"
+  fi
+
+  # Linux dynamic library paths
+  if [ -n "$LD_LIBRARY_PATH" ]; then
+    export LD_LIBRARY_PATH="${libraryPathString}:$LD_LIBRARY_PATH"
+  else
+    export LD_LIBRARY_PATH="${libraryPathString}"
+  fi
+`
+  }
+
+  stubContent += `}
+
 # First try the current global installation path
 if [ -x "${globalBinaryPath}" ]; then
+  setup_library_paths
   exec "${globalBinaryPath}" "$@"
 fi
 
 # If the direct path doesn't work, try to find the binary in the global environment
-GLOBAL_ENV_DIR="${path.dirname(path.dirname(globalBinaryPath))}"
+GLOBAL_ENV_DIR="${globalEnvDir}"
 if [ -d "$GLOBAL_ENV_DIR" ]; then
   # Try both bin and sbin directories
   for bin_dir in "$GLOBAL_ENV_DIR/bin" "$GLOBAL_ENV_DIR/sbin"; do
     if [ -x "$bin_dir/${binaryName}" ]; then
+      setup_library_paths
       exec "$bin_dir/${binaryName}" "$@"
     fi
   done
@@ -847,6 +936,7 @@ if command -v launchpad >/dev/null 2>&1; then
   if launchpad dev ~/.dotfiles >/dev/null 2>&1; then
     # Try again after reinstall
     if [ -x "${globalBinaryPath}" ]; then
+      setup_library_paths
       exec "${globalBinaryPath}" "$@"
     fi
   fi
@@ -863,6 +953,8 @@ echo "❌ ${binaryName} not found. Please run: launchpad dev ~/.dotfiles" >&2
 echo "   This will reinstall global dependencies including ${binaryName}" >&2
 exit 127
 `
+
+  return stubContent
 }
 
 function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, projectHash: string, sniffResult?: any, globalBinPath?: string, globalSbinPath?: string): void {
@@ -879,15 +971,7 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   // Build PATH with both project and global environments
   const pathComponents = []
 
-  // Add project-specific paths first (highest priority)
-  if (fs.existsSync(envBinPath)) {
-    pathComponents.push(envBinPath)
-  }
-  if (fs.existsSync(envSbinPath)) {
-    pathComponents.push(envSbinPath)
-  }
-
-  // Add global paths if they exist
+  // Add global paths first to ensure critical tools like bash are always available
   if (globalBinPath && fs.existsSync(globalBinPath)) {
     pathComponents.push(globalBinPath)
   }
@@ -895,10 +979,119 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
     pathComponents.push(globalSbinPath)
   }
 
+  // Add project-specific paths second (can override global if needed)
+  if (fs.existsSync(envBinPath)) {
+    pathComponents.push(envBinPath)
+  }
+  if (fs.existsSync(envSbinPath)) {
+    pathComponents.push(envSbinPath)
+  }
+
   // Add original PATH
   pathComponents.push('$LAUNCHPAD_ORIGINAL_PATH')
 
   process.stdout.write(`export PATH="${pathComponents.join(':')}"\n`)
+
+  // Ensure system paths are always available (fix for missing bash, etc.)
+  process.stdout.write(`# Ensure critical system binaries are always available\n`)
+  process.stdout.write(`for sys_path in /usr/local/bin /usr/bin /bin /usr/sbin /sbin; do\n`)
+  process.stdout.write(`  if [[ -d "$sys_path" && ":$PATH:" != *":$sys_path:"* ]]; then\n`)
+  process.stdout.write(`    export PATH="$PATH:$sys_path"\n`)
+  process.stdout.write(`  fi\n`)
+  process.stdout.write(`done\n`)
+
+  // Set up dynamic library paths for packages to find their dependencies
+  const libraryPathComponents = []
+
+  // Add library paths from project environment
+  const envLibPath = path.dirname(envBinPath) // Go up from bin to env root
+  const projectLibDirs = [
+    path.join(envLibPath, 'lib'),
+    path.join(envLibPath, 'lib64'),
+  ]
+
+  for (const libDir of projectLibDirs) {
+    if (fs.existsSync(libDir)) {
+      libraryPathComponents.push(libDir)
+    }
+  }
+
+  // Add library paths from global environment
+  if (globalBinPath) {
+    const globalLibPath = path.dirname(globalBinPath) // Go up from bin to env root
+    const globalLibDirs = [
+      path.join(globalLibPath, 'lib'),
+      path.join(globalLibPath, 'lib64'),
+    ]
+
+    for (const libDir of globalLibDirs) {
+      if (fs.existsSync(libDir)) {
+        libraryPathComponents.push(libDir)
+      }
+    }
+  }
+
+  // Add library paths from all package installations in the environment
+  const packageSearchDirs = [
+    path.dirname(envBinPath), // Project environment root
+    globalBinPath ? path.dirname(globalBinPath) : null, // Global environment root
+  ].filter(Boolean) as string[]
+
+  for (const searchDir of packageSearchDirs) {
+    try {
+      const domains = fs.readdirSync(searchDir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory() && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc'].includes(dirent.name))
+
+      for (const domain of domains) {
+        const domainPath = path.join(searchDir, domain.name)
+        if (fs.existsSync(domainPath)) {
+          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+          for (const version of versions) {
+            const versionPath = path.join(domainPath, version.name)
+            const packageLibDirs = [
+              path.join(versionPath, 'lib'),
+              path.join(versionPath, 'lib64'),
+            ]
+
+            for (const libDir of packageLibDirs) {
+              if (fs.existsSync(libDir) && !libraryPathComponents.includes(libDir)) {
+                libraryPathComponents.push(libDir)
+              }
+            }
+          }
+        }
+      }
+    }
+    catch {
+      // Ignore errors reading directories
+    }
+  }
+
+  // Set up library path environment variables
+  if (libraryPathComponents.length > 0) {
+    const libraryPath = libraryPathComponents.join(':')
+
+    // macOS uses DYLD_LIBRARY_PATH and DYLD_FALLBACK_LIBRARY_PATH
+    process.stdout.write(`# Set up dynamic library paths for package dependencies\n`)
+    process.stdout.write(`if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then\n`)
+    process.stdout.write(`  export LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH"\n`)
+    process.stdout.write(`fi\n`)
+    process.stdout.write(`if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then\n`)
+    process.stdout.write(`  export LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH"\n`)
+    process.stdout.write(`fi\n`)
+    process.stdout.write(`if [[ -z "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then\n`)
+    process.stdout.write(`  export LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"\n`)
+    process.stdout.write(`fi\n`)
+
+    // Set library paths with fallbacks to original values
+    process.stdout.write(`export DYLD_LIBRARY_PATH="${libraryPath}\${LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH:+:\$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH}"\n`)
+    process.stdout.write(`export DYLD_FALLBACK_LIBRARY_PATH="${libraryPath}\${LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH:+:\$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH}"\n`)
+    // Linux uses LD_LIBRARY_PATH
+    process.stdout.write(`export LD_LIBRARY_PATH="${libraryPath}\${LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH:+:\$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH}"\n`)
+  }
+
   process.stdout.write(`export LAUNCHPAD_ENV_BIN_PATH="${envBinPath}"\n`)
   process.stdout.write(`export LAUNCHPAD_PROJECT_DIR="${dir}"\n`)
   process.stdout.write(`export LAUNCHPAD_PROJECT_HASH="${projectHash}"\n`)
@@ -923,9 +1116,28 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
   process.stdout.write(`        export PATH="$LAUNCHPAD_ORIGINAL_PATH"\n`)
   process.stdout.write(`      fi\n`)
+  process.stdout.write(`      # Restore original library paths\n`)
+  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then\n`)
+  process.stdout.write(`        export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"\n`)
+  process.stdout.write(`      else\n`)
+  process.stdout.write(`        unset DYLD_LIBRARY_PATH\n`)
+  process.stdout.write(`      fi\n`)
+  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then\n`)
+  process.stdout.write(`        export DYLD_FALLBACK_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"\n`)
+  process.stdout.write(`      else\n`)
+  process.stdout.write(`        unset DYLD_FALLBACK_LIBRARY_PATH\n`)
+  process.stdout.write(`      fi\n`)
+  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then\n`)
+  process.stdout.write(`        export LD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"\n`)
+  process.stdout.write(`      else\n`)
+  process.stdout.write(`        unset LD_LIBRARY_PATH\n`)
+  process.stdout.write(`      fi\n`)
   process.stdout.write(`      unset LAUNCHPAD_ENV_BIN_PATH\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_DIR\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_HASH\n`)
+  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH\n`)
+  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH\n`)
+  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH\n`)
   process.stdout.write(`      echo "dev environment deactivated"\n`)
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
