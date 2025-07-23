@@ -301,28 +301,17 @@ if [[ $- == *i* ]]; then
     __launchpad_chpwd
 fi
 
-# Setup global dependencies from common locations
+# Setup global dependencies (only if user has manually created them)
 __launchpad_setup_global_deps() {
-    # Check for global dependencies in common locations
-    local global_deps_dirs=("$HOME/.dotfiles" "$HOME")
     local global_env_dir="$HOME/.local/share/launchpad/global"
 
-    for deps_dir in "\${global_deps_dirs[@]}"; do
-        if [[ -d "$deps_dir" ]]; then
-            # Check for dependency files
-            for pattern in "dependencies" "deps"; do
-                for ext in "yaml" "yml"; do
-                    local deps_file="$deps_dir/$pattern.$ext"
-                    if [[ -f "$deps_file" ]] && [[ -d "$global_env_dir" ]]; then
-                        # Global environment exists, add to PATH
-                        __launchpad_update_path "$global_env_dir/bin"
-                        __launchpad_update_path "$global_env_dir/sbin"
-                        return 0
-                    fi
-                done
-            done
-        fi
-    done
+    # Only activate if user has manually created a global environment
+    if [[ -d "$global_env_dir/bin" ]]; then
+        __launchpad_update_path "$global_env_dir/bin"
+    fi
+    if [[ -d "$global_env_dir/sbin" ]]; then
+        __launchpad_update_path "$global_env_dir/sbin"
+    fi
 }
 
 # Ensure global dependencies are always in PATH

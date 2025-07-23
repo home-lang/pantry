@@ -360,15 +360,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         // but avoid the heavy sniff module for package resolution
         let minimalSniffResult = { pkgs: [], env: {} }
 
-                 try {
-           const depContent = fs.readFileSync(dependencyFile, 'utf-8')
-           const parsed = parse(depContent)
+        try {
+          const depContent = fs.readFileSync(dependencyFile, 'utf-8')
+          const parsed = parse(depContent)
 
           // Extract environment variables if they exist
           if (parsed && typeof parsed === 'object' && 'env' in parsed) {
             minimalSniffResult.env = parsed.env || {}
           }
-        } catch {
+        }
+        catch {
           // If parsing fails, use empty env
         }
 
