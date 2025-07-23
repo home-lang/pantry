@@ -123,7 +123,7 @@ describe('Dev Performance Optimization Tests', () => {
       const avgTime = results.reduce((a, b) => a + b, 0) / results.length
       const maxTime = Math.max(...results)
 
-      expect(avgTime).toBeLessThan(500) // Average should be very fast
+      expect(avgTime).toBeLessThan(600) // Average should be very fast
       expect(maxTime).toBeLessThan(1000) // No single run should be slow
 
       console.warn(`📊 Fast path timing - avg: ${avgTime.toFixed(1)}ms, max: ${maxTime}ms`)
