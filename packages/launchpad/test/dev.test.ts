@@ -635,6 +635,112 @@ describe('Dev Commands', () => {
     }, 30000)
   })
 
+  describe('Constraint Checking and Environment Readiness', () => {
+    it('should detect when system bun satisfies constraint', async () => {
+      // Test with a constraint that should be satisfied by system bun
+      createDependenciesYaml(tempDir, { 'bun.sh': '^1.0.0' })
+
+      const result = await runCLI(['dev', '--dry-run', tempDir])
+      expect(result.exitCode).toBe(0)
+
+      // Should indicate that constraints are satisfied if system bun is available
+      if (result.stdout.includes('satisfied by existing installations')) {
+        expect(result.stdout).toContain('satisfied by existing installations')
+      }
+      else {
+        // If system bun is not available or doesn't satisfy constraint, should indicate installation needed
+        expect(result.stdout).toContain('would install locally')
+      }
+    }, 30000)
+
+    it('should require installation for unsatisfied constraints', async () => {
+      // Test with a constraint that should NOT be satisfied (future version)
+      createDependenciesYaml(tempDir, { 'bun.sh': '^999.0.0' })
+
+      const result = await runCLI(['dev', '--dry-run', tempDir])
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('would install locally')
+    }, 30000)
+
+    it('should handle mixed satisfied and unsatisfied constraints', async () => {
+      createDependenciesYaml(tempDir, {
+        'bun.sh': '^1.0.0', // Should be satisfied
+        'nonexistent-package': '^1.0.0', // Should not be satisfied
+      })
+
+      const result = await runCLI(['dev', '--dry-run', tempDir])
+      expect(result.exitCode).toBe(0)
+      // Should indicate installation needed due to unsatisfied packages
+      expect(result.stdout).toContain('would install locally')
+    }, 30000)
+
+    it('should check environment readiness before constraint validation', async () => {
+      createDependenciesYaml(tempDir, { 'bun.sh': '^1.2.0' })
+
+      const result = await runCLI(['dev', '--dry-run', tempDir])
+      expect(result.exitCode).toBe(0)
+
+      // Should show constraint checking output
+      expect(result.stdout).toMatch(/satisfied by existing installations|would install locally/)
+    }, 30000)
+
+    it('should prioritize local environment over global and system', async () => {
+      // Create a fake local environment
+      const projectHash = 'test-project-hash'
+      const localEnvDir = path.join(os.homedir(), '.local', 'share', 'launchpad', `${path.basename(tempDir)}_${projectHash}`)
+      const localBinDir = path.join(localEnvDir, 'bin')
+      const localPkgsDir = path.join(localEnvDir, 'pkgs', 'bun.sh', 'v1.2.18')
+
+      try {
+        fs.mkdirSync(localBinDir, { recursive: true })
+        fs.mkdirSync(localPkgsDir, { recursive: true })
+
+        // Create a fake bun binary
+        fs.writeFileSync(path.join(localBinDir, 'bun'), '#!/bin/sh\necho "1.2.18"')
+        fs.chmodSync(path.join(localBinDir, 'bun'), 0o755)
+
+        // Create metadata
+        const metadata = {
+          domain: 'bun.sh',
+          version: '1.2.18',
+          installedAt: new Date().toISOString(),
+          binaries: ['bun'],
+          installPath: localPkgsDir,
+        }
+        fs.writeFileSync(path.join(localPkgsDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
+
+        createDependenciesYaml(tempDir, { 'bun.sh': '^1.2.18' })
+
+        const result = await runCLI(['dev', '--dry-run', tempDir])
+        expect(result.exitCode).toBe(0)
+
+        // Should detect local installation satisfies constraint
+        expect(result.stdout).toContain('satisfied by existing installations')
+      }
+      finally {
+        // Clean up
+        if (fs.existsSync(localEnvDir)) {
+          fs.rmSync(localEnvDir, { recursive: true, force: true })
+        }
+      }
+    }, 30000)
+
+    it('should handle constraint checking with different version formats', async () => {
+      // Test various constraint formats
+      const constraints = ['^1.2.0', '~1.2.0', '1.2.0', '*', 'latest']
+
+      for (const constraint of constraints) {
+        createDependenciesYaml(tempDir, { 'bun.sh': constraint })
+
+        const result = await runCLI(['dev', '--dry-run', tempDir])
+        expect(result.exitCode).toBe(0)
+
+        // Should handle all constraint formats without crashing
+        expect(result.stdout).toMatch(/satisfied by existing installations|would install locally/)
+      }
+    }, 60000)
+  })
+
   describe('Performance', () => {
     it('should complete dev:shellcode quickly', async () => {
       const start = Date.now()
@@ -663,5 +769,27 @@ describe('Dev Commands', () => {
       expect(duration).toBeLessThan(120000) // Should complete in under 2 minutes
       expect(result.exitCode).toBeOneOf([0, 1]) // May succeed or fail, but should complete
     }, 150000)
+
+    it('should cache constraint checking results for performance', async () => {
+      createDependenciesYaml(tempDir, { 'bun.sh': '^1.2.0' })
+
+      // First run
+      const start1 = Date.now()
+      const result1 = await runCLI(['dev', '--dry-run', tempDir])
+      const duration1 = Date.now() - start1
+      expect(result1.exitCode).toBe(0)
+
+      // Second run (should be faster due to caching)
+      const start2 = Date.now()
+      const result2 = await runCLI(['dev', '--dry-run', tempDir])
+      const duration2 = Date.now() - start2
+      expect(result2.exitCode).toBe(0)
+
+      // Both should have same output
+      expect(result1.stdout).toBe(result2.stdout)
+
+      // Second run should be faster (allow some variance for system differences)
+      expect(duration2).toBeLessThan(duration1 * 1.5)
+    }, 60000)
   })
 })

@@ -725,4 +725,149 @@ describe('Environment Isolation', () => {
       }
     }, 60000)
   })
+
+  describe('Environment Priority and Constraint Checking', () => {
+    it('should prioritize local environment constraint satisfaction', async () => {
+      // Create a local environment with a specific package version
+      const launchpadDir = path.join(os.homedir(), '.local', 'share', 'launchpad')
+      const localEnvDir = path.join(launchpadDir, `${path.basename(projectA)}_${createReadableHash(projectA)}`)
+      const localPkgsDir = path.join(localEnvDir, 'pkgs', 'bun.sh', 'v1.2.18')
+      const localBinDir = path.join(localEnvDir, 'bin')
+
+      try {
+        fs.mkdirSync(localBinDir, { recursive: true })
+        fs.mkdirSync(localPkgsDir, { recursive: true })
+
+        // Create fake bun binary and metadata
+        fs.writeFileSync(path.join(localBinDir, 'bun'), '#!/bin/sh\necho "1.2.18"')
+        fs.chmodSync(path.join(localBinDir, 'bun'), 0o755)
+
+        const metadata = {
+          domain: 'bun.sh',
+          version: '1.2.18',
+          installedAt: new Date().toISOString(),
+          binaries: ['bun'],
+          installPath: localPkgsDir,
+        }
+        fs.writeFileSync(path.join(localPkgsDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
+
+        // Create dependencies file with constraint that should be satisfied by local version
+        fs.writeFileSync(path.join(projectA, 'deps.yaml'), 'dependencies:\n  bun.sh: ^1.2.18\n')
+
+        const result = await runCLI(['dev', projectA, '--dry-run'])
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('satisfied by existing installations')
+      }
+      finally {
+        // Clean up
+        if (fs.existsSync(localEnvDir)) {
+          fs.rmSync(localEnvDir, { recursive: true, force: true })
+        }
+      }
+    }, 30000)
+
+    it('should fall back to global environment when local does not satisfy constraint', async () => {
+      // Create a global environment with a package that satisfies constraint
+      const launchpadDir = path.join(os.homedir(), '.local', 'share', 'launchpad')
+      const globalEnvDir = path.join(launchpadDir, 'global')
+      const globalPkgsDir = path.join(globalEnvDir, 'pkgs', 'bun.sh', 'v1.2.19')
+      const globalBinDir = path.join(globalEnvDir, 'bin')
+
+      try {
+        fs.mkdirSync(globalBinDir, { recursive: true })
+        fs.mkdirSync(globalPkgsDir, { recursive: true })
+
+        // Create fake bun binary and metadata in global
+        fs.writeFileSync(path.join(globalBinDir, 'bun'), '#!/bin/sh\necho "1.2.19"')
+        fs.chmodSync(path.join(globalBinDir, 'bun'), 0o755)
+
+        const metadata = {
+          domain: 'bun.sh',
+          version: '1.2.19',
+          installedAt: new Date().toISOString(),
+          binaries: ['bun'],
+          installPath: globalPkgsDir,
+        }
+        fs.writeFileSync(path.join(globalPkgsDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
+
+        // Create dependencies file with constraint that requires newer version
+        fs.writeFileSync(path.join(projectB, 'deps.yaml'), 'dependencies:\n  bun.sh: ^1.2.19\n')
+
+        const result = await runCLI(['dev', projectB, '--dry-run'])
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain('satisfied by existing installations')
+      }
+      finally {
+        // Clean up
+        if (fs.existsSync(globalEnvDir)) {
+          fs.rmSync(globalEnvDir, { recursive: true, force: true })
+        }
+      }
+    }, 30000)
+
+    it('should fall back to system binaries when environments do not satisfy constraints', async () => {
+      // Create dependencies file with constraint that should be satisfied by system bun (if available)
+      fs.writeFileSync(path.join(projectA, 'deps.yaml'), 'dependencies:\n  bun.sh: ^1.0.0\n')
+
+      const result = await runCLI(['dev', projectA, '--dry-run'])
+      expect(result.exitCode).toBe(0)
+
+      // Should either be satisfied by system bun or require installation
+      expect(result.stdout).toMatch(/satisfied by existing installations|would install locally/)
+    }, 30000)
+
+    it('should require installation when no environment satisfies constraints', async () => {
+      // Create dependencies file with impossible constraint
+      fs.writeFileSync(path.join(projectA, 'deps.yaml'), 'dependencies:\n  bun.sh: ^999.0.0\n')
+
+      const result = await runCLI(['dev', projectA, '--dry-run'])
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('would install locally')
+    }, 30000)
+
+    it('should handle mixed constraints across multiple packages', async () => {
+      // Create local environment with one package
+      const launchpadDir = path.join(os.homedir(), '.local', 'share', 'launchpad')
+      const localEnvDir = path.join(launchpadDir, `${path.basename(projectA)}_${createReadableHash(projectA)}`)
+      const localPkgsDir = path.join(localEnvDir, 'pkgs', 'bun.sh', 'v1.2.18')
+      const localBinDir = path.join(localEnvDir, 'bin')
+
+      try {
+        fs.mkdirSync(localBinDir, { recursive: true })
+        fs.mkdirSync(localPkgsDir, { recursive: true })
+
+        // Create fake bun binary and metadata
+        fs.writeFileSync(path.join(localBinDir, 'bun'), '#!/bin/sh\necho "1.2.18"')
+        fs.chmodSync(path.join(localBinDir, 'bun'), 0o755)
+
+        const metadata = {
+          domain: 'bun.sh',
+          version: '1.2.18',
+          installedAt: new Date().toISOString(),
+          binaries: ['bun'],
+          installPath: localPkgsDir,
+        }
+        fs.writeFileSync(path.join(localPkgsDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
+
+        // Create dependencies with mixed satisfied/unsatisfied constraints
+        const depsContent = `dependencies:
+  bun.sh: ^1.2.18  # Should be satisfied by local
+  nonexistent-package: ^1.0.0  # Should not be satisfied
+`
+        fs.writeFileSync(path.join(projectA, 'deps.yaml'), depsContent)
+
+        const result = await runCLI(['dev', projectA, '--dry-run'])
+        expect(result.exitCode).toBe(0)
+
+        // Should require installation due to unsatisfied package
+        expect(result.stdout).toContain('would install locally')
+      }
+      finally {
+        // Clean up
+        if (fs.existsSync(localEnvDir)) {
+          fs.rmSync(localEnvDir, { recursive: true, force: true })
+        }
+      }
+    }, 30000)
+  })
 })

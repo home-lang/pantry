@@ -18,6 +18,7 @@ import { existsSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { dump } from '../src/dev/dump'
+import { DEPENDENCY_FILE_NAMES } from '../../src/env'
 
 // Mock fetch to prevent real network calls in tests
 const originalFetch = globalThis.fetch
@@ -101,28 +102,13 @@ function testCommand(binPath: string, testArgs: string[] = ['--version']): { suc
 
 // Helper to find dependency file (copied from dump.ts)
 function findDependencyFile(dir: string): string | null {
-  const possibleFiles = [
-    'dependencies.yaml',
-    'dependencies.yml',
-    'deps.yaml',
-    'deps.yml',
-    'pkgx.yaml',
-    'pkgx.yml',
-    'launchpad.yaml',
-    'launchpad.yml',
-  ]
-
-  let currentDir = dir
-  while (currentDir !== '/') {
-    for (const file of possibleFiles) {
-      const fullPath = join(currentDir, file)
-      if (existsSync(fullPath)) {
-        return fullPath
-      }
+  // Use shared constant
+  for (const file of DEPENDENCY_FILE_NAMES) {
+    const fullPath = join(dir, file)
+    if (existsSync(fullPath)) {
+      return fullPath
     }
-    currentDir = resolve(currentDir, '..')
   }
-
   return null
 }
 

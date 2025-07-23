@@ -607,3 +607,33 @@ export async function removeAllEnvironments(options: RemoveEnvironmentOptions): 
   }
   console.log(`  • Freed: ${formatSize(freedBytes)} of disk space`)
 }
+
+export const DEPENDENCY_FILE_NAMES = [
+  'dependencies.yaml',
+  'dependencies.yml',
+  'deps.yaml',
+  'deps.yml',
+  'pkgx.yaml',
+  'pkgx.yml',
+  'launchpad.yaml',
+  'launchpad.yml',
+] as const
+
+export function findDependencyFile(root: string, searchAncestors = false): string | null {
+  let currentDir = root
+
+  do {
+    for (const fileName of DEPENDENCY_FILE_NAMES) {
+      const filePath = path.join(currentDir, fileName)
+      if (fs.existsSync(filePath)) {
+        return filePath
+      }
+    }
+
+    if (!searchAncestors)
+      break
+    currentDir = path.dirname(currentDir)
+  } while (currentDir !== path.dirname(currentDir)) // Stop at root
+
+  return null
+}

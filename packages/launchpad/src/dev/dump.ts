@@ -1,10 +1,20 @@
 /* eslint-disable no-console */
 import crypto from 'node:crypto'
 import fs from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
+import { DEPENDENCY_FILE_NAMES, findDependencyFile } from '../env'
 import { cleanupSpinner, install } from '../install'
+
+// Utility functions
+function generateProjectHash(projectPath: string): string {
+  // Generate a simple hash based on the project path
+  const hash = crypto.createHash('md5').update(projectPath).digest('hex')
+  const projectName = path.basename(projectPath)
+  return `${projectName}_${hash.slice(0, 8)}`
+}
 
 export interface DumpOptions {
   dryrun?: boolean
@@ -16,31 +26,201 @@ export interface DumpOptions {
 const envReadinessCache = new Map<string, { ready: boolean, timestamp: number, envDir?: string, sniffResult?: any }>()
 const CACHE_TTL = 30000 // 30 seconds
 
-function isEnvironmentReady(projectHash: string, envDir: string): { ready: boolean, sniffResult?: any } {
-  const cacheKey = projectHash
+/**
+ * Check if a version satisfies a constraint
+ */
+async function checkVersionSatisfiesConstraint(version: string, constraint: string): Promise<boolean> {
+  // Simple constraints
+  if (constraint === '*' || constraint === 'latest') {
+    return true
+  }
+
+  try {
+    // Use Bun's built-in semver if available
+    if (typeof Bun !== 'undefined' && Bun.semver) {
+      return Bun.semver.satisfies(version, constraint)
+    }
+
+    // Fallback: basic constraint checking for caret constraints
+    if (constraint.startsWith('^')) {
+      const constraintVersion = constraint.slice(1)
+      const [constraintMajor, constraintMinor = 0, constraintPatch = 0] = constraintVersion.split('.').map(v => Number.parseInt(v, 10))
+      const [versionMajor, versionMinor = 0, versionPatch = 0] = version.split('.').map(v => Number.parseInt(v, 10))
+
+      // Caret constraint: same major, version >= constraint
+      if (versionMajor === constraintMajor) {
+        if (versionMinor > constraintMinor)
+          return true
+        if (versionMinor === constraintMinor && versionPatch >= constraintPatch)
+          return true
+      }
+      return false
+    }
+
+    // Exact version
+    return version === constraint
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Enhanced constraint satisfaction check across multiple environments
+ */
+async function checkConstraintSatisfaction(
+  envDir: string,
+  packages: Array<{ project: string, constraint: string }>,
+  envType: 'local' | 'global' = 'local',
+): Promise<{ satisfied: boolean, missingPackages: Array<{ project: string, constraint: string }> }> {
+  try {
+    const { list } = await import('../list')
+    const { spawnSync } = await import('node:child_process')
+    const missingPackages: Array<{ project: string, constraint: string }> = []
+
+    // Build list of directories to check (prioritize by environment type)
+    const dirsToCheck: string[] = [envDir]
+
+    if (envType === 'local') {
+      // For local environment, also check global environment
+      const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+      if (fs.existsSync(globalEnvDir)) {
+        dirsToCheck.push(globalEnvDir)
+      }
+    }
+
+    for (const requiredPkg of packages) {
+      const { project, constraint } = requiredPkg
+
+      let satisfied = false
+      let foundVersion = ''
+      let foundSource = ''
+
+      // Check all environment directories for this package
+      for (const checkDir of dirsToCheck) {
+        if (fs.existsSync(checkDir)) {
+          const installedPackages = await list(checkDir)
+          const installedPkg = installedPackages.find(pkg =>
+            pkg.project === project || pkg.project.includes(project.split('.')[0]),
+          )
+
+          if (installedPkg) {
+            const installedVersion = installedPkg.version.toString()
+            const satisfiesConstraint = await checkVersionSatisfiesConstraint(installedVersion, constraint)
+            if (satisfiesConstraint) {
+              satisfied = true
+              foundVersion = installedVersion
+              foundSource = checkDir === envDir ? envType : 'global'
+              break
+            }
+          }
+        }
+      }
+
+      // Check system PATH for special cases like bun
+      if (!satisfied && project === 'bun.sh') {
+        try {
+          const result = spawnSync('bun', ['--version'], { encoding: 'utf8', timeout: 5000 })
+          if (result.status === 0 && result.stdout) {
+            const systemVersion = result.stdout.trim()
+            const satisfiesConstraint = await checkVersionSatisfiesConstraint(systemVersion, constraint)
+            if (satisfiesConstraint) {
+              satisfied = true
+              foundVersion = systemVersion
+              foundSource = 'system'
+            }
+          }
+        }
+        catch {
+          // Ignore system check failures
+        }
+      }
+
+      if (satisfied) {
+        if (config.verbose) {
+          console.warn(`✅ ${project}@${foundVersion} (${foundSource}) satisfies ${constraint}`)
+        }
+      }
+      else {
+        if (config.verbose) {
+          console.warn(`❌ ${project}@${constraint} not satisfied by any installation`)
+        }
+        missingPackages.push(requiredPkg)
+      }
+    }
+
+    const allSatisfied = missingPackages.length === 0
+
+    if (config.verbose && packages.length > 0) {
+      console.warn(`${envType} environment constraint check: ${allSatisfied ? 'all constraints satisfied' : `${missingPackages.length}/${packages.length} packages need installation/update`}`)
+    }
+
+    return { satisfied: allSatisfied, missingPackages }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to check ${envType} environment constraints: ${error}`)
+    }
+    return { satisfied: false, missingPackages: packages }
+  }
+}
+
+/**
+ * Enhanced environment readiness check with constraint validation
+ */
+async function isEnvironmentReady(
+  projectHash: string,
+  envDir: string,
+  packages?: Array<{ project: string, constraint: string }>,
+  envType: 'local' | 'global' = 'local',
+): Promise<{ ready: boolean, sniffResult?: any, missingPackages?: Array<{ project: string, constraint: string }> }> {
+  const cacheKey = `${projectHash}_${envType}_${packages?.length || 0}`
   const cached = envReadinessCache.get(cacheKey)
   const now = Date.now()
 
-  // Return cached result if still valid
-  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+  // Return cached result if still valid and we have packages to check
+  if (cached && (now - cached.timestamp) < CACHE_TTL && packages) {
     return { ready: cached.ready, sniffResult: cached.sniffResult }
   }
 
-  // Check if environment has binaries
+  // Check if environment has binaries (basic check)
   const envBinPath = path.join(envDir, 'bin')
   const envSbinPath = path.join(envDir, 'sbin')
 
   const hasBinaries = (fs.existsSync(envBinPath) && fs.readdirSync(envBinPath).length > 0)
     || (fs.existsSync(envSbinPath) && fs.readdirSync(envSbinPath).length > 0)
 
-  // Cache the result (sniffResult will be added later when first computed)
+  // If no packages specified, use basic check
+  if (!packages) {
+    const result = { ready: hasBinaries }
+    envReadinessCache.set(cacheKey, {
+      ready: hasBinaries,
+      timestamp: now,
+      envDir: hasBinaries ? envDir : undefined,
+    })
+    return result
+  }
+
+  // If local environment doesn't exist but we have packages to check,
+  // still proceed with constraint checking (might be satisfied by global/system)
+
+  // Enhanced check: validate constraints
+  const constraintCheck = await checkConstraintSatisfaction(envDir, packages, envType)
+  // Environment is ready if constraints are satisfied (regardless of local binaries)
+  // OR if local binaries exist and no constraints specified
+  const ready = constraintCheck.satisfied || (hasBinaries && packages.length === 0)
+
+  // Cache the result
   envReadinessCache.set(cacheKey, {
-    ready: hasBinaries,
+    ready,
     timestamp: now,
-    envDir: hasBinaries ? envDir : undefined,
+    envDir: ready ? envDir : undefined,
   })
 
-  return { ready: hasBinaries }
+  return {
+    ready,
+    missingPackages: constraintCheck.missingPackages,
+  }
 }
 
 function cacheSniffResult(projectHash: string, sniffResult: any): void {
@@ -137,18 +317,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       return
     }
 
-    if (dryrun) {
-      if (!quiet && !shellOutput) {
-        if (globalPackages.length > 0) {
-          console.log('Dry run - would install globally:', globalPackages.join(', '))
-        }
-        if (localPackages.length > 0) {
-          console.log('Dry run - would install locally:', localPackages.join(', '))
-        }
-      }
-      return
-    }
-
     // Set up project-specific environment for local packages
     const projectHash = generateProjectHash(dir)
     const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
@@ -160,9 +328,48 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     const globalBinPath = path.join(globalEnvDir, 'bin')
     const globalSbinPath = path.join(globalEnvDir, 'sbin')
 
-    // Check environment readiness
-    const localReady = localPackages.length === 0 || isEnvironmentReady(projectHash, envDir).ready
-    const globalReady = globalPackages.length === 0 || isEnvironmentReady('global', globalEnvDir).ready
+    // Parse packages for constraint checking
+    const localPackageConstraints = localPackages.map((pkg) => {
+      const [project, constraint] = pkg.split('@')
+      return { project, constraint: constraint || '*' }
+    })
+    const globalPackageConstraints = globalPackages.map((pkg) => {
+      const [project, constraint] = pkg.split('@')
+      return { project, constraint: constraint || '*' }
+    })
+
+    // Debug logging
+    if (config.verbose) {
+      console.warn(`Checking constraints for ${localPackageConstraints.length} local packages and ${globalPackageConstraints.length} global packages`)
+      localPackageConstraints.forEach(pkg => console.warn(`Local package: ${pkg.project}@${pkg.constraint}`))
+    }
+
+    // Check environment readiness with constraint validation
+    const localReadyResult = localPackages.length === 0 ? { ready: true } : await isEnvironmentReady(projectHash, envDir, localPackageConstraints, 'local')
+
+    const globalReadyResult = globalPackages.length === 0 ? { ready: true } : await isEnvironmentReady('global', globalEnvDir, globalPackageConstraints, 'global')
+
+    const localReady = localReadyResult.ready
+    const globalReady = globalReadyResult.ready
+
+    if (config.verbose) {
+      console.warn(`Environment readiness - local: ${localReady}, global: ${globalReady}`)
+    }
+
+    // Handle dry run after constraint checking
+    if (dryrun) {
+      if (!quiet && !shellOutput) {
+        if (globalPackages.length > 0) {
+          const globalStatus = globalReady ? 'satisfied by existing installations' : 'would install globally'
+          console.log(`Global packages: ${globalPackages.join(', ')} (${globalStatus})`)
+        }
+        if (localPackages.length > 0) {
+          const localStatus = localReady ? 'satisfied by existing installations' : 'would install locally'
+          console.log(`Local packages: ${localPackages.join(', ')} (${localStatus})`)
+        }
+      }
+      return
+    }
 
     // For shell output mode with ready environments, output immediately
     if (shellOutput && localReady && globalReady) {
@@ -511,37 +718,4 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
-}
-
-function findDependencyFile(dir: string): string | null {
-  const possibleFiles = [
-    'dependencies.yaml',
-    'dependencies.yml',
-    'deps.yaml',
-    'deps.yml',
-    'pkgx.yaml',
-    'pkgx.yml',
-    'launchpad.yaml',
-    'launchpad.yml',
-  ]
-
-  let currentDir = dir
-  while (currentDir !== '/') {
-    for (const file of possibleFiles) {
-      const fullPath = path.join(currentDir, file)
-      if (fs.existsSync(fullPath)) {
-        return fullPath
-      }
-    }
-    currentDir = path.dirname(currentDir)
-  }
-
-  return null
-}
-
-function generateProjectHash(projectPath: string): string {
-  // Generate a simple hash based on the project path
-  const hash = crypto.createHash('md5').update(projectPath).digest('hex')
-  const projectName = path.basename(projectPath)
-  return `${projectName}_${hash.slice(0, 8)}`
 }
