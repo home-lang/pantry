@@ -161,6 +161,9 @@ __launchpad_chpwd() {
             local setup_exit_code=0
             local activation_needed=false
 
+            # Ensure global dependencies are available first
+            __launchpad_setup_global_deps
+
             # Allow stderr to show progress in real-time while capturing stdout for shell evaluation
             {
                 # Create a temp file for stdout only
@@ -202,6 +205,9 @@ __launchpad_chpwd() {
                     eval "$env_output" 2>/dev/null || true
                 fi
 
+                # Ensure global dependencies are still in PATH after project setup
+                __launchpad_ensure_global_path
+
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
@@ -217,6 +223,10 @@ __launchpad_chpwd() {
 
                 if [[ -d "$env_dir/bin" ]]; then
                     __launchpad_update_path "$env_dir/bin"
+
+                    # Ensure global dependencies are available
+                    __launchpad_ensure_global_path
+
                     hash -r 2>/dev/null || true
 
                     # Show activation message only if environment already exists
@@ -233,6 +243,9 @@ __launchpad_chpwd() {
             # Restore original PATH if we have it
             if [[ -n "$LAUNCHPAD_ORIGINAL_PATH" ]]; then
                 export PATH="$LAUNCHPAD_ORIGINAL_PATH"
+
+                # Re-add global dependencies to PATH even when deactivating
+                __launchpad_ensure_global_path
 
                 # Clear command hash table after PATH restoration
                 hash -r 2>/dev/null || true
@@ -287,6 +300,49 @@ fi
 if [[ $- == *i* ]]; then
     __launchpad_chpwd
 fi
+
+# Setup global dependencies from common locations
+__launchpad_setup_global_deps() {
+    # Check for global dependencies in common locations
+    local global_deps_dirs=("$HOME/.dotfiles" "$HOME")
+    local global_env_dir="$HOME/.local/share/launchpad/global"
+
+    for deps_dir in "\${global_deps_dirs[@]}"; do
+        if [[ -d "$deps_dir" ]]; then
+            # Check for dependency files
+            for pattern in "dependencies" "deps"; do
+                for ext in "yaml" "yml"; do
+                    local deps_file="$deps_dir/$pattern.$ext"
+                    if [[ -f "$deps_file" ]] && [[ -d "$global_env_dir" ]]; then
+                        # Global environment exists, add to PATH
+                        __launchpad_update_path "$global_env_dir/bin"
+                        __launchpad_update_path "$global_env_dir/sbin"
+                        return 0
+                    fi
+                done
+            done
+        fi
+    done
+}
+
+# Ensure global dependencies are always in PATH
+__launchpad_ensure_global_path() {
+    local global_env_dir="$HOME/.local/share/launchpad/global"
+    local system_bin_dir="/usr/local/bin"
+
+    # Add global environment to PATH if it exists
+    if [[ -d "$global_env_dir/bin" ]]; then
+        __launchpad_update_path "$global_env_dir/bin"
+    fi
+    if [[ -d "$global_env_dir/sbin" ]]; then
+        __launchpad_update_path "$global_env_dir/sbin"
+    fi
+
+    # Also ensure system bin directory is in PATH for global stubs
+    if [[ -d "$system_bin_dir" ]]; then
+        __launchpad_update_path "$system_bin_dir"
+    fi
+}
 
 # Clear command hash table on initial load to ensure fresh command lookup
 hash -r 2>/dev/null || true

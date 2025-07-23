@@ -24,10 +24,9 @@ export interface DumpOptions {
 
 // Cache for environment readiness to avoid repeated filesystem calls
 const envReadinessCache = new Map<string, { ready: boolean, timestamp: number, envDir?: string, sniffResult?: any }>()
-const CACHE_TTL = 30000 // 30 seconds
 
 /**
- * Check if a version satisfies a constraint
+ * Check if a version satisfies a constraint with enhanced update detection
  */
 async function checkVersionSatisfiesConstraint(version: string, constraint: string): Promise<boolean> {
   // Simple constraints
@@ -41,7 +40,7 @@ async function checkVersionSatisfiesConstraint(version: string, constraint: stri
       return Bun.semver.satisfies(version, constraint)
     }
 
-    // Fallback: basic constraint checking for caret constraints
+    // Fallback: enhanced constraint checking
     if (constraint.startsWith('^')) {
       const constraintVersion = constraint.slice(1)
       const [constraintMajor, constraintMinor = 0, constraintPatch = 0] = constraintVersion.split('.').map(v => Number.parseInt(v, 10))
@@ -66,26 +65,89 @@ async function checkVersionSatisfiesConstraint(version: string, constraint: stri
 }
 
 /**
- * Enhanced constraint satisfaction check across multiple environments
+ * Check if a package needs update by comparing with latest available version
+ */
+async function shouldUpdatePackage(project: string, currentVersion: string, constraint: string): Promise<boolean> {
+  // Don't update if constraint is satisfied and is exact version
+  if (!/[\^~*]/.test(constraint) && currentVersion === constraint) {
+    return false
+  }
+
+  try {
+    // Get latest version from the package registry
+    const { getLatestVersion } = await import('../install')
+    const latestVersion = getLatestVersion(project)
+
+    if (!latestVersion) {
+      return false
+    }
+
+    // Convert to string to handle Version objects
+    const latestVersionStr = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+
+    // Use Bun's semver to compare versions
+    if (typeof Bun !== 'undefined' && Bun.semver) {
+      // Check if latest version is newer than current
+      const isNewer = Bun.semver.order(latestVersionStr, currentVersion) > 0
+      // Check if latest version satisfies the constraint
+      const satisfiesConstraint = Bun.semver.satisfies(latestVersionStr, constraint)
+
+      return isNewer && satisfiesConstraint
+    }
+
+    // Fallback comparison
+    return latestVersionStr !== currentVersion
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Enhanced constraint satisfaction check with update detection across multiple environments
  */
 async function checkConstraintSatisfaction(
   envDir: string,
   packages: Array<{ project: string, constraint: string }>,
   envType: 'local' | 'global' = 'local',
-): Promise<{ satisfied: boolean, missingPackages: Array<{ project: string, constraint: string }> }> {
+): Promise<{ satisfied: boolean, missingPackages: Array<{ project: string, constraint: string }>, outdatedPackages: Array<{ project: string, constraint: string, currentVersion: string }> }> {
   try {
     const { list } = await import('../list')
     const { spawnSync } = await import('node:child_process')
     const missingPackages: Array<{ project: string, constraint: string }> = []
+    const outdatedPackages: Array<{ project: string, constraint: string, currentVersion: string }> = []
 
     // Build list of directories to check (prioritize by environment type)
     const dirsToCheck: string[] = [envDir]
 
-    if (envType === 'local') {
-      // For local environment, also check global environment
-      const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
-      if (fs.existsSync(globalEnvDir)) {
+    // Always check global environment for global packages or as fallback
+    const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+    if (envType === 'global' || fs.existsSync(globalEnvDir)) {
+      if (!dirsToCheck.includes(globalEnvDir)) {
         dirsToCheck.push(globalEnvDir)
+      }
+    }
+
+    // Also check for global dependencies in ~/.dotfiles and other common locations
+    const globalDepsDirs = [
+      path.join(homedir(), '.dotfiles'),
+      path.join(homedir()),
+    ]
+
+    for (const globalDepsDir of globalDepsDirs) {
+      if (fs.existsSync(globalDepsDir)) {
+        const { default: sniff } = await import('./sniff')
+        try {
+          const globalSniffResult = await sniff({ string: globalDepsDir })
+          const globalDependencies = globalSniffResult.pkgs.filter(pkg => pkg.global)
+
+          if (globalDependencies.length > 0 && config.verbose) {
+            console.warn(`Found ${globalDependencies.length} global dependencies in ${globalDepsDir}`)
+          }
+        }
+        catch {
+          // Ignore sniff errors for global directories
+        }
       }
     }
 
@@ -95,6 +157,7 @@ async function checkConstraintSatisfaction(
       let satisfied = false
       let foundVersion = ''
       let foundSource = ''
+      let needsUpdate = false
 
       // Check all environment directories for this package
       for (const checkDir of dirsToCheck) {
@@ -107,25 +170,41 @@ async function checkConstraintSatisfaction(
           if (installedPkg) {
             const installedVersion = installedPkg.version.toString()
             const satisfiesConstraint = await checkVersionSatisfiesConstraint(installedVersion, constraint)
-            if (satisfiesConstraint) {
+            const shouldUpdate = await shouldUpdatePackage(project, installedVersion, constraint)
+
+            if (satisfiesConstraint && !shouldUpdate) {
               satisfied = true
               foundVersion = installedVersion
               foundSource = checkDir === envDir ? envType : 'global'
               break
             }
+            else if (satisfiesConstraint && shouldUpdate) {
+              // Package satisfies constraint but is outdated
+              needsUpdate = true
+              foundVersion = installedVersion
+              foundSource = checkDir === envDir ? envType : 'global'
+            }
           }
         }
       }
 
-      // Check system PATH for special cases like bun
-      if (!satisfied && project === 'bun.sh') {
+      // Check system PATH for special cases like bun and bash
+      if (!satisfied && (project === 'bun.sh' || project.includes('bash'))) {
         try {
-          const result = spawnSync('bun', ['--version'], { encoding: 'utf8', timeout: 5000 })
+          const command = project === 'bun.sh' ? 'bun' : 'bash'
+          const result = spawnSync(command, ['--version'], { encoding: 'utf8', timeout: 5000 })
           if (result.status === 0 && result.stdout) {
             const systemVersion = result.stdout.trim()
             const satisfiesConstraint = await checkVersionSatisfiesConstraint(systemVersion, constraint)
-            if (satisfiesConstraint) {
+            const shouldUpdate = await shouldUpdatePackage(project, systemVersion, constraint)
+
+            if (satisfiesConstraint && !shouldUpdate) {
               satisfied = true
+              foundVersion = systemVersion
+              foundSource = 'system'
+            }
+            else if (satisfiesConstraint && shouldUpdate) {
+              needsUpdate = true
               foundVersion = systemVersion
               foundSource = 'system'
             }
@@ -141,6 +220,14 @@ async function checkConstraintSatisfaction(
           console.warn(`✅ ${project}@${foundVersion} (${foundSource}) satisfies ${constraint}`)
         }
       }
+      else if (needsUpdate) {
+        if (config.verbose) {
+          console.warn(`🔄 ${project}@${foundVersion} (${foundSource}) needs update for ${constraint}`)
+        }
+        outdatedPackages.push({ project, constraint, currentVersion: foundVersion })
+        // Treat outdated packages as missing to trigger reinstallation
+        missingPackages.push(requiredPkg)
+      }
       else {
         if (config.verbose) {
           console.warn(`❌ ${project}@${constraint} not satisfied by any installation`)
@@ -153,15 +240,18 @@ async function checkConstraintSatisfaction(
 
     if (config.verbose && packages.length > 0) {
       console.warn(`${envType} environment constraint check: ${allSatisfied ? 'all constraints satisfied' : `${missingPackages.length}/${packages.length} packages need installation/update`}`)
+      if (outdatedPackages.length > 0) {
+        console.warn(`Found ${outdatedPackages.length} outdated packages that will be updated`)
+      }
     }
 
-    return { satisfied: allSatisfied, missingPackages }
+    return { satisfied: allSatisfied, missingPackages, outdatedPackages }
   }
   catch (error) {
     if (config.verbose) {
       console.warn(`Failed to check ${envType} environment constraints: ${error}`)
     }
-    return { satisfied: false, missingPackages: packages }
+    return { satisfied: false, missingPackages: packages, outdatedPackages: [] }
   }
 }
 
@@ -173,13 +263,16 @@ async function isEnvironmentReady(
   envDir: string,
   packages?: Array<{ project: string, constraint: string }>,
   envType: 'local' | 'global' = 'local',
-): Promise<{ ready: boolean, sniffResult?: any, missingPackages?: Array<{ project: string, constraint: string }> }> {
-  const cacheKey = `${projectHash}_${envType}_${packages?.length || 0}`
+): Promise<{ ready: boolean, sniffResult?: any, missingPackages?: Array<{ project: string, constraint: string }>, outdatedPackages?: Array<{ project: string, constraint: string, currentVersion: string }> }> {
+  const cacheKey = `${projectHash}_${envType}_${packages?.length || 0}_${Date.now() % 60000}` // Include timestamp to reduce caching for updates
   const cached = envReadinessCache.get(cacheKey)
   const now = Date.now()
 
+  // Reduce cache TTL to 5 seconds for more responsive updates
+  const reducedCacheTTL = 5000
+
   // Return cached result if still valid and we have packages to check
-  if (cached && (now - cached.timestamp) < CACHE_TTL && packages) {
+  if (cached && (now - cached.timestamp) < reducedCacheTTL && packages) {
     return { ready: cached.ready, sniffResult: cached.sniffResult }
   }
 
@@ -201,16 +294,13 @@ async function isEnvironmentReady(
     return result
   }
 
-  // If local environment doesn't exist but we have packages to check,
-  // still proceed with constraint checking (might be satisfied by global/system)
-
   // Enhanced check: validate constraints
   const constraintCheck = await checkConstraintSatisfaction(envDir, packages, envType)
-  // Environment is ready if constraints are satisfied (regardless of local binaries)
+  // Environment is ready if constraints are satisfied AND no packages are outdated
   // OR if local binaries exist and no constraints specified
   const ready = constraintCheck.satisfied || (hasBinaries && packages.length === 0)
 
-  // Cache the result
+  // Cache the result with shorter TTL for update responsiveness
   envReadinessCache.set(cacheKey, {
     ready,
     timestamp: now,
@@ -220,6 +310,7 @@ async function isEnvironmentReady(
   return {
     ready,
     missingPackages: constraintCheck.missingPackages,
+    outdatedPackages: constraintCheck.outdatedPackages,
   }
 }
 
@@ -244,15 +335,69 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       return
     }
 
-    // Parse dependency file and separate global vs local dependencies
+    // For shell output mode, first check if environment is already ready without heavy operations
     const projectDir = path.dirname(dependencyFile)
+
+    // Fast path for shell output: check if environments exist and have binaries
+    if (shellOutput) {
+      const fastProjectHash = generateProjectHash(dir)
+      const fastEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', fastProjectHash)
+      const fastGlobalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+
+      const envBinPath = path.join(fastEnvDir, 'bin')
+      const envSbinPath = path.join(fastEnvDir, 'sbin')
+      const globalBinPath = path.join(fastGlobalEnvDir, 'bin')
+      const globalSbinPath = path.join(fastGlobalEnvDir, 'sbin')
+
+      const hasLocalBinaries = fs.existsSync(envBinPath) && fs.readdirSync(envBinPath).length > 0
+      const hasGlobalBinaries = fs.existsSync(globalBinPath) && fs.readdirSync(globalBinPath).length > 0
+
+      // If environments have binaries, use fast path with minimal parsing
+      if (hasLocalBinaries || hasGlobalBinaries) {
+        // Use minimal sniff result for fast path to avoid heavy file parsing
+        const minimalSniffResult = { pkgs: [], env: {} }
+        outputShellCode(dir, envBinPath, envSbinPath, fastProjectHash, minimalSniffResult, globalBinPath, globalSbinPath)
+        return
+      }
+    }
+
+    // Parse dependency file and separate global vs local dependencies
     const { default: sniff } = await import('./sniff')
     const sniffResult = await sniff({ string: projectDir })
+
+    // Only check for global dependencies when not in shell mode or when global env doesn't exist
+    const globalSniffResults: Array<{ pkgs: any[], env: Record<string, string> }> = []
+
+    if (!shellOutput) {
+      // Also check for global dependencies from well-known locations
+      const globalDepLocations = [
+        path.join(homedir(), '.dotfiles'),
+        path.join(homedir()),
+      ]
+
+      for (const globalLocation of globalDepLocations) {
+        if (fs.existsSync(globalLocation)) {
+          try {
+            const globalSniff = await sniff({ string: globalLocation })
+            if (globalSniff.pkgs.length > 0) {
+              globalSniffResults.push(globalSniff)
+              if (config.verbose) {
+                console.warn(`Found ${globalSniff.pkgs.length} packages in global location: ${globalLocation}`)
+              }
+            }
+          }
+          catch {
+            // Ignore errors sniffing global locations
+          }
+        }
+      }
+    }
 
     // Separate global and local packages
     const globalPackages: string[] = []
     const localPackages: string[] = []
 
+    // Process packages from the project directory
     for (const pkg of sniffResult.pkgs) {
       // Enhanced constraint handling to prevent [object Object] errors
       let constraintStr = ''
@@ -289,6 +434,46 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       }
       else {
         localPackages.push(packageString)
+      }
+    }
+
+    // Process packages from global locations
+    for (const globalSniffResult of globalSniffResults) {
+      for (const pkg of globalSniffResult.pkgs) {
+        // Enhanced constraint handling to prevent [object Object] errors
+        let constraintStr = ''
+
+        if (pkg.constraint) {
+          if (typeof pkg.constraint === 'string') {
+            constraintStr = pkg.constraint
+          }
+          else if (pkg.constraint && typeof pkg.constraint.toString === 'function') {
+            constraintStr = pkg.constraint.toString()
+          }
+          else if (pkg.constraint && typeof pkg.constraint === 'object') {
+            // Handle SemverRange objects specifically
+            constraintStr = String(pkg.constraint)
+          }
+          else {
+            constraintStr = String(pkg.constraint)
+          }
+        }
+        else {
+          constraintStr = '*'
+        }
+
+        // Ensure we never have [object Object] in the constraint
+        if (constraintStr === '[object Object]') {
+          constraintStr = '*'
+        }
+
+        const packageString = `${pkg.project}@${constraintStr}`
+
+        // All packages from global locations are treated as global
+        // Check if already added to avoid duplicates
+        if (!globalPackages.includes(packageString)) {
+          globalPackages.push(packageString)
+        }
       }
     }
 
@@ -352,8 +537,18 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     const localReady = localReadyResult.ready
     const globalReady = globalReadyResult.ready
 
+    // Check if we have outdated packages that need updating
+    const hasOutdatedLocal = localReadyResult.outdatedPackages && localReadyResult.outdatedPackages.length > 0
+    const hasOutdatedGlobal = globalReadyResult.outdatedPackages && globalReadyResult.outdatedPackages.length > 0
+
     if (config.verbose) {
       console.warn(`Environment readiness - local: ${localReady}, global: ${globalReady}`)
+      if (hasOutdatedLocal) {
+        console.warn(`Local outdated packages: ${localReadyResult.outdatedPackages?.map(p => `${p.project}@${p.currentVersion}`).join(', ')}`)
+      }
+      if (hasOutdatedGlobal) {
+        console.warn(`Global outdated packages: ${globalReadyResult.outdatedPackages?.map(p => `${p.project}@${p.currentVersion}`).join(', ')}`)
+      }
     }
 
     // Handle dry run after constraint checking

@@ -246,7 +246,7 @@ describe('Core Environment Validation', () => {
       let env1Success = false
       try {
         await dump(env1Path, { dryrun: false, quiet: true })
-        env1Success = existsSync(env1Dir)
+        env1Success = existsSync(env1Dir) && existsSync(join(env1Dir, 'bin'))
       }
       catch (error) {
         if (error instanceof Error && (error.message.includes('Failed to download') || error.message.includes('network'))) {
@@ -261,7 +261,7 @@ describe('Core Environment Validation', () => {
       let env2Success = false
       try {
         await dump(env2Path, { dryrun: false, quiet: true })
-        env2Success = existsSync(env2Dir)
+        env2Success = existsSync(env2Dir) && existsSync(join(env2Dir, 'bin'))
       }
       catch (error) {
         if (error instanceof Error && (error.message.includes('Failed to download') || error.message.includes('network'))) {
