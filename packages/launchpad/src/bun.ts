@@ -12,14 +12,8 @@ interface BunAsset {
   url: string
 }
 
-interface GithubRelease {
-  tag_name: string
-}
-
 // Cache configuration for GitHub API responses
 const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
-const GITHUB_CACHE_FILE = path.join(CACHE_DIR, 'github-bun-releases.json')
-const CACHE_TTL = 60 * 60 * 1000 // 1 hour in milliseconds
 
 // Binary cache configuration
 const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'bun')
@@ -35,61 +29,6 @@ function validatePath(installPath: string): boolean {
   }
   catch {
     return false
-  }
-}
-
-/**
- * Check if cache exists and is still valid
- */
-function isCacheValid(): boolean {
-  if (!fs.existsSync(GITHUB_CACHE_FILE)) {
-    return false
-  }
-
-  try {
-    const stats = fs.statSync(GITHUB_CACHE_FILE)
-    const now = Date.now()
-    const cacheAge = now - stats.mtimeMs
-
-    // Check if cache is expired
-    return cacheAge < CACHE_TTL
-  }
-  catch {
-    return false
-  }
-}
-
-/**
- * Read cached GitHub response data
- */
-function readGithubCache(): GithubRelease | null {
-  try {
-    if (isCacheValid()) {
-      const cacheData = fs.readFileSync(GITHUB_CACHE_FILE, 'utf-8')
-      return JSON.parse(cacheData) as GithubRelease
-    }
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`Failed to read GitHub cache: ${error instanceof Error ? error.message : String(error)}`)
-    }
-  }
-
-  return null
-}
-
-/**
- * Update the GitHub API response cache
- */
-function updateGithubCache(data: GithubRelease): void {
-  try {
-    fs.mkdirSync(CACHE_DIR, { recursive: true })
-    fs.writeFileSync(GITHUB_CACHE_FILE, JSON.stringify(data))
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`Failed to update GitHub cache: ${error instanceof Error ? error.message : String(error)}`)
-    }
   }
 }
 
@@ -142,31 +81,20 @@ function saveBinaryToCache(version: string, filename: string, sourcePath: string
  * Get the latest Bun version from GitHub API
  */
 export async function get_latest_bun_version(): Promise<string> {
-  // Try to get version from cache first
-  const cachedData = readGithubCache()
-  if (cachedData && cachedData.tag_name) {
-    if (config.verbose) {
-      console.warn('Using cached GitHub release data')
+  try {
+    const { pantry } = await import('ts-pkgx')
+    const bunPackage = pantry.bunsh
+
+    if (bunPackage && bunPackage.versions && bunPackage.versions.length > 0) {
+      // First version is always the latest in ts-pkgx
+      return bunPackage.versions[0]
     }
 
-    // Remove 'bun-v', 'bun-', or standalone 'v' prefix
-    return cachedData.tag_name.replace(/^(bun-v?|v)/, '')
+    throw new Error('No Bun versions found in pantry')
   }
-
-  // Fetch from GitHub API if cache is missing or invalid
-  const response = await fetch('https://api.github.com/repos/oven-sh/bun/releases/latest')
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch latest Bun version: ${response.statusText}`)
+  catch (error) {
+    throw new Error(`Failed to get latest Bun version: ${error instanceof Error ? error.message : String(error)}`)
   }
-
-  const data = await response.json() as GithubRelease
-
-  // Update cache with new data
-  updateGithubCache(data)
-
-  // Remove 'bun-v', 'bun-', or standalone 'v' prefix
-  return data.tag_name.replace(/^(bun-v?|v)/, '')
 }
 
 /**
@@ -215,8 +143,8 @@ async function resolveBunVersionConstraint(versionSpec: string): Promise<string>
     return await get_latest_bun_version()
   }
 
-  // Get available versions from GitHub (we'll need to implement this)
-  const availableVersions = await getBunVersionsFromGitHub()
+  // Get available versions from ts-pkgx pantry
+  const availableVersions = await getBunVersionsFromPantry()
 
   // Use Bun's built-in semver if available
   if (typeof Bun !== 'undefined' && Bun.semver) {
@@ -250,18 +178,46 @@ async function resolveBunVersionConstraint(versionSpec: string): Promise<string>
   // Manual constraint parsing for caret (^) constraints
   if (versionSpec.startsWith('^')) {
     const baseVersion = versionSpec.slice(1)
-    const [major, minor] = baseVersion.split('.')
+    const [major, minor, patch] = baseVersion.split('.')
 
-    // Find the latest version with the same major version
+    // Find the latest version with the same major version that satisfies the constraint
     const compatibleVersions = availableVersions.filter((v) => {
       const vParts = v.split('.')
-      return vParts[0] === major
-        && (minor ? Number.parseInt(vParts[1] || '0') >= Number.parseInt(minor) : true)
+      const vMajor = Number.parseInt(vParts[0] || '0')
+      const vMinor = Number.parseInt(vParts[1] || '0')
+      const vPatch = Number.parseInt(vParts[2] || '0')
+
+      const reqMajor = Number.parseInt(major || '0')
+      const reqMinor = Number.parseInt(minor || '0')
+      const reqPatch = Number.parseInt(patch || '0')
+
+      // Caret constraint: same major, version >= requested version
+      if (vMajor !== reqMajor)
+        return false
+
+      if (vMinor > reqMinor)
+        return true
+      if (vMinor < reqMinor)
+        return false
+
+      // Same major and minor, check patch
+      return vPatch >= reqPatch
     })
 
     if (compatibleVersions.length > 0) {
       // Return the latest compatible version
-      return compatibleVersions.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0]
+      return compatibleVersions.sort((a, b) => {
+        // Proper semantic version sorting
+        const aParts = a.split('.').map(p => Number.parseInt(p))
+        const bParts = b.split('.').map(p => Number.parseInt(p))
+
+        for (let i = 0; i < 3; i++) {
+          if (bParts[i] !== aParts[i]) {
+            return bParts[i] - aParts[i]
+          }
+        }
+        return 0
+      })[0]
     }
   }
 
@@ -270,24 +226,22 @@ async function resolveBunVersionConstraint(versionSpec: string): Promise<string>
 }
 
 /**
- * Get available bun versions from GitHub releases (cached)
+ * Get available bun versions from ts-pkgx pantry
  */
-async function getBunVersionsFromGitHub(): Promise<string[]> {
+async function getBunVersionsFromPantry(): Promise<string[]> {
   try {
-    const response = await fetch('https://api.github.com/repos/oven-sh/bun/releases?per_page=50')
-    if (!response.ok) {
-      // Fallback to known versions if GitHub API fails
-      return ['1.2.19', '1.2.18', '1.2.17', '1.2.16', '1.2.15']
+    const { pantry } = await import('ts-pkgx')
+    const bunPackage = pantry.bunsh
+
+    if (bunPackage && bunPackage.versions) {
+      // ts-pkgx versions are already sorted with latest first
+      return [...bunPackage.versions]
     }
 
-    const releases = await response.json() as Array<{ tag_name: string }>
-    return releases
-      .map(release => release.tag_name.replace(/^(bun-v?|v)/, ''))
-      .filter(version => /^\d+\.\d+\.\d+$/.test(version))
+    throw new Error('Bun package not found in pantry')
   }
-  catch {
-    // Fallback to known versions if fetch fails
-    return ['1.2.19', '1.2.18', '1.2.17', '1.2.16', '1.2.15']
+  catch (error) {
+    throw new Error(`Failed to get Bun versions from pantry: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
