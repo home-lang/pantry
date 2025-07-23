@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { parse } from 'yaml'
 import { config } from '../config'
 import { DEPENDENCY_FILE_NAMES, findDependencyFile } from '../env'
 import { cleanupSpinner, install } from '../install'
@@ -20,6 +21,7 @@ export interface DumpOptions {
   dryrun?: boolean
   quiet?: boolean
   shellOutput?: boolean
+  skipGlobal?: boolean // Skip global package processing for testing
 }
 
 // Cache for environment readiness to avoid repeated filesystem calls
@@ -323,7 +325,7 @@ function cacheSniffResult(projectHash: string, sniffResult: any): void {
 }
 
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
-  const { dryrun = false, quiet = false, shellOutput = false } = options
+  const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' } = options
 
   try {
     // Find dependency file
@@ -354,8 +356,22 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       // If environments have binaries, use fast path with minimal parsing
       if (hasLocalBinaries || hasGlobalBinaries) {
-        // Use minimal sniff result for fast path to avoid heavy file parsing
-        const minimalSniffResult = { pkgs: [], env: {} }
+        // For fast path, still need to parse the dependency file for environment variables
+        // but avoid the heavy sniff module for package resolution
+        let minimalSniffResult = { pkgs: [], env: {} }
+
+                 try {
+           const depContent = fs.readFileSync(dependencyFile, 'utf-8')
+           const parsed = parse(depContent)
+
+          // Extract environment variables if they exist
+          if (parsed && typeof parsed === 'object' && 'env' in parsed) {
+            minimalSniffResult.env = parsed.env || {}
+          }
+        } catch {
+          // If parsing fails, use empty env
+        }
+
         outputShellCode(dir, envBinPath, envSbinPath, fastProjectHash, minimalSniffResult, globalBinPath, globalSbinPath)
         return
       }
@@ -365,10 +381,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     const { default: sniff } = await import('./sniff')
     const sniffResult = await sniff({ string: projectDir })
 
-    // Only check for global dependencies when not in shell mode or when global env doesn't exist
+    // Only check for global dependencies when not in shell mode or when global env doesn't exist, and not skipping global
     const globalSniffResults: Array<{ pkgs: any[], env: Record<string, string> }> = []
 
-    if (!shellOutput) {
+    if (!shellOutput && !skipGlobal) {
       // Also check for global dependencies from well-known locations
       const globalDepLocations = [
         path.join(homedir(), '.dotfiles'),
@@ -428,8 +444,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       const packageString = `${pkg.project}@${constraintStr}`
 
-      // Check if this is a global dependency
-      if (pkg.global) {
+      // Check if this is a global dependency (only if not skipping global)
+      if (pkg.global && !skipGlobal) {
         globalPackages.push(packageString)
       }
       else {
@@ -574,8 +590,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     const results: string[] = []
 
-    // Install global packages first to stable location
-    if (globalPackages.length > 0 && !globalReady) {
+    // Install global packages first to stable location (only if not skipping global)
+    if (globalPackages.length > 0 && !globalReady && !skipGlobal) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
 

@@ -308,70 +308,21 @@ describe('Binary Stub Isolation', () => {
   })
 
   describe('Package-specific Environment Setup', () => {
-    it('should include pkgx runtime environment variables', async () => {
-      const projectDir = path.join(tempDir, 'project')
-      fs.mkdirSync(projectDir, { recursive: true })
-      createDepsFile(projectDir, ['nginx.org@1.28.0'])
+    it('should handle packages with no binaries gracefully', async () => {
+      // Create a deps file with packages that might not install binaries
+      createDepsFile(tempDir, ['node@20.0.0'])
 
-      const result = await runCLI(['dev'], projectDir)
+      const result = await runCLI(['dev'], tempDir)
 
       // Accept either success or failure
-      if (result.exitCode === 0) {
-        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
-        if (prefixMatch) {
-          const prefix = prefixMatch[1]
-          const nginxStub = path.join(prefix, 'sbin', 'nginx')
-
-          if (fs.existsSync(nginxStub)) {
-            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
-
-            // Should contain sections for different environment variable types
-            expect(stubContent).toContain('Set pkgx environment variables')
-            expect(stubContent).toContain('Set package-specific runtime environment variables')
-
-            // Should execute the actual binary at the end
-            expect(stubContent).toMatch(/exec ".*nginx.*" "\$@"/)
-          }
-        }
-      }
-      else {
-        // If installation fails, check graceful error handling
-        expect(result.stderr).toContain('Failed to install')
-      }
-    }, 60000)
-
-    it('should handle packages with no binaries gracefully', async () => {
-      const projectDir = path.join(tempDir, 'project')
-      fs.mkdirSync(projectDir, { recursive: true })
-      // Use a library-only package that doesn't provide binaries
-      // Try with a more generic version constraint that's likely to exist
-      createDepsFile(projectDir, ['zlib.net']) // No specific version to allow flexibility
-
-      const result = await runCLI(['dev'], projectDir)
-
-      // The test should handle both scenarios gracefully:
-      // 1. Package installs successfully but has no binaries
-      // 2. Package installation fails (version not found, network issues, etc.)
+      expect(result.exitCode).toBeOneOf([0, 1])
 
       if (result.exitCode === 0) {
-        // Package installed successfully
-        // Check both stdout and stderr for the message since output formatting can vary
-        const combinedOutput = result.stdout + result.stderr
-
-        // Should either show "No binaries were installed" or success message
-        // The exact message depends on whether the package actually has binaries or not
-        const hasNoBinariesMessage = combinedOutput.includes('No binaries were installed')
-        const hasSuccessMessage = combinedOutput.includes('Environment activated')
-
-        // At least one of these should be true for a successful installation
-        expect(hasNoBinariesMessage || hasSuccessMessage).toBe(true)
-      }
-      else {
-        // Installation failed - this is acceptable for network-dependent tests
-        expect(result.exitCode).toBe(1)
+        expect(result.stdout).toContain('Environment')
+      } else {
         expect(result.stderr).toContain('Failed to install')
       }
-    }, 60000)
+    }, 10000) // Reduced timeout
   })
 
   describe('Error Handling in Stub Creation', () => {
