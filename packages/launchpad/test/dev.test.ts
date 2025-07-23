@@ -541,7 +541,8 @@ describe('Dev Commands', () => {
         expect(result.stdout).toContain('TEST_VAR=integration_test')
         // Check that deactivation function includes the correct directory
         expect(result.stdout).toContain(tempDir)
-      } else {
+      }
+      else {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('Failed to install')
       }

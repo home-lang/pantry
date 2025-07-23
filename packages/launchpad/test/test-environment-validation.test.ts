@@ -16,7 +16,7 @@ import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { dump } from '../src/dev/dump'
 import { DEPENDENCY_FILE_NAMES } from '../src/env'
 

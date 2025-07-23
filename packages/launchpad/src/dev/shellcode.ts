@@ -91,6 +91,38 @@ __launchpad_update_path() {
     fi
 }
 
+# Setup global dependencies (only if user has manually created them)
+__launchpad_setup_global_deps() {
+    local global_env_dir="$HOME/.local/share/launchpad/global"
+
+    # Only activate if user has manually created a global environment
+    if [[ -d "$global_env_dir/bin" ]]; then
+        __launchpad_update_path "$global_env_dir/bin"
+    fi
+    if [[ -d "$global_env_dir/sbin" ]]; then
+        __launchpad_update_path "$global_env_dir/sbin"
+    fi
+}
+
+# Ensure global dependencies are always in PATH
+__launchpad_ensure_global_path() {
+    local global_env_dir="$HOME/.local/share/launchpad/global"
+    local system_bin_dir="/usr/local/bin"
+
+    # Add global environment to PATH if it exists
+    if [[ -d "$global_env_dir/bin" ]]; then
+        __launchpad_update_path "$global_env_dir/bin"
+    fi
+    if [[ -d "$global_env_dir/sbin" ]]; then
+        __launchpad_update_path "$global_env_dir/sbin"
+    fi
+
+    # Also ensure system bin directory is in PATH for global stubs
+    if [[ -d "$system_bin_dir" ]]; then
+        __launchpad_update_path "$system_bin_dir"
+    fi
+}
+
 __launchpad_find_deps_file() {
     local dir="$1"
     local current_time=$(date +%s)
@@ -296,45 +328,17 @@ if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" && ! "$PATH" =~ "/usr/local/bin" ]]; then
     export PATH="$LAUNCHPAD_ORIGINAL_PATH"
 fi
 
+# Call global setup functions on load
+__launchpad_setup_global_deps
+__launchpad_ensure_global_path
+
+# Clear command hash table on initial load to ensure fresh command lookup
+hash -r 2>/dev/null || true
+
 # Run on initial load (but only if we're in an interactive shell)
 if [[ $- == *i* ]]; then
     __launchpad_chpwd
 fi
-
-# Setup global dependencies (only if user has manually created them)
-__launchpad_setup_global_deps() {
-    local global_env_dir="$HOME/.local/share/launchpad/global"
-
-    # Only activate if user has manually created a global environment
-    if [[ -d "$global_env_dir/bin" ]]; then
-        __launchpad_update_path "$global_env_dir/bin"
-    fi
-    if [[ -d "$global_env_dir/sbin" ]]; then
-        __launchpad_update_path "$global_env_dir/sbin"
-    fi
-}
-
-# Ensure global dependencies are always in PATH
-__launchpad_ensure_global_path() {
-    local global_env_dir="$HOME/.local/share/launchpad/global"
-    local system_bin_dir="/usr/local/bin"
-
-    # Add global environment to PATH if it exists
-    if [[ -d "$global_env_dir/bin" ]]; then
-        __launchpad_update_path "$global_env_dir/bin"
-    fi
-    if [[ -d "$global_env_dir/sbin" ]]; then
-        __launchpad_update_path "$global_env_dir/sbin"
-    fi
-
-    # Also ensure system bin directory is in PATH for global stubs
-    if [[ -d "$system_bin_dir" ]]; then
-        __launchpad_update_path "$system_bin_dir"
-    fi
-}
-
-# Clear command hash table on initial load to ensure fresh command lookup
-hash -r 2>/dev/null || true
 `.trim()
 }
 

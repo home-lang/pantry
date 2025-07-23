@@ -6,7 +6,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { parse } from 'yaml'
 import { config } from '../config'
-import { DEPENDENCY_FILE_NAMES, findDependencyFile } from '../env'
+import { findDependencyFile } from '../env'
 import { cleanupSpinner, install } from '../install'
 
 // Utility functions
@@ -358,7 +358,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       if (hasLocalBinaries || hasGlobalBinaries) {
         // For fast path, still need to parse the dependency file for environment variables
         // but avoid the heavy sniff module for package resolution
-        let minimalSniffResult = { pkgs: [], env: {} }
+        const minimalSniffResult = { pkgs: [], env: {} }
 
         try {
           const depContent = fs.readFileSync(dependencyFile, 'utf-8')

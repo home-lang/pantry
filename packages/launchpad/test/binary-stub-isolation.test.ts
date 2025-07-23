@@ -319,7 +319,8 @@ describe('Binary Stub Isolation', () => {
 
       if (result.exitCode === 0) {
         expect(result.stdout).toContain('Environment')
-      } else {
+      }
+      else {
         expect(result.stderr).toContain('Failed to install')
       }
     }, 10000) // Reduced timeout
