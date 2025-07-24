@@ -1,4 +1,16 @@
 
+## v0.5.0...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.5.0...main)
+
+### 🏡 Chore
+
+- Adjust binary permissions ([f479595](https://github.com/stacksjs/launchpad/commit/f479595))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.26...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.26...main)
