@@ -182,21 +182,7 @@ __launchpad_setup_global_deps() {
         __launchpad_update_library_paths "$global_env_dir"
     fi
 
-    # Check for global dependencies from ~/.dotfiles (most common case)
-    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
-    for dotfiles_env in $dotfiles_env_pattern; do
-        if [[ -d "$dotfiles_env/bin" ]]; then
-            __launchpad_update_path "$dotfiles_env/bin"
-        fi
-        if [[ -d "$dotfiles_env/sbin" ]]; then
-            __launchpad_update_path "$dotfiles_env/sbin"
-        fi
-        if [[ -d "$dotfiles_env" ]]; then
-            __launchpad_update_library_paths "$dotfiles_env"
-        fi
-    done
-
-    # Also check for any other manually activated global dependency environments
+    # First, check for any other manually activated global dependency environments
     # Use launchpad to detect environments created with global: true flag
     local launchpad_envs_dir="$HOME/.local/share/launchpad"
     if [[ -d "$launchpad_envs_dir" ]] && command -v ${launchpadBinary} >/dev/null 2>&1; then
@@ -228,6 +214,21 @@ __launchpad_setup_global_deps() {
             fi
         done
     fi
+
+    # Then check for global dependencies from ~/.dotfiles (highest priority)
+    # These should come AFTER other global envs so they appear FIRST in PATH
+    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
+    for dotfiles_env in $dotfiles_env_pattern; do
+        if [[ -d "$dotfiles_env/bin" ]]; then
+            __launchpad_update_path "$dotfiles_env/bin"
+        fi
+        if [[ -d "$dotfiles_env/sbin" ]]; then
+            __launchpad_update_path "$dotfiles_env/sbin"
+        fi
+        if [[ -d "$dotfiles_env" ]]; then
+            __launchpad_update_library_paths "$dotfiles_env"
+        fi
+    done
 }
 
 # Ensure global dependencies are always in PATH
@@ -241,18 +242,7 @@ __launchpad_ensure_global_path() {
         __launchpad_update_path "$global_env_dir/sbin"
     fi
 
-    # Ensure global dependencies from ~/.dotfiles are in PATH
-    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
-    for dotfiles_env in $dotfiles_env_pattern; do
-        if [[ -d "$dotfiles_env/bin" ]]; then
-            __launchpad_update_path "$dotfiles_env/bin"
-        fi
-        if [[ -d "$dotfiles_env/sbin" ]]; then
-            __launchpad_update_path "$dotfiles_env/sbin"
-        fi
-    done
-
-    # Also ensure any other manually activated global environments are in PATH
+    # First ensure any other manually activated global environments are in PATH
     local launchpad_envs_dir="$HOME/.local/share/launchpad"
     if [[ -d "$launchpad_envs_dir" ]]; then
         for env_dir in "$launchpad_envs_dir"/*; do
@@ -278,6 +268,17 @@ __launchpad_ensure_global_path() {
             fi
         done
     fi
+
+    # Then ensure global dependencies from ~/.dotfiles are in PATH (highest priority)
+    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
+    for dotfiles_env in $dotfiles_env_pattern; do
+        if [[ -d "$dotfiles_env/bin" ]]; then
+            __launchpad_update_path "$dotfiles_env/bin"
+        fi
+        if [[ -d "$dotfiles_env/sbin" ]]; then
+            __launchpad_update_path "$dotfiles_env/sbin"
+        fi
+    done
 
     # Always ensure critical system paths are available
     __launchpad_ensure_system_path
