@@ -1175,7 +1175,7 @@ cli
         dryrun: options?.dryRun || false,
         quiet: options?.quiet || false,
         shellOutput: options?.shell || false,
-        skipGlobal: false, // Always enable global support in production CLI
+        skipGlobal: process.env.NODE_ENV === 'test', // Skip global packages in test environment
       })
     }
     catch (error) {

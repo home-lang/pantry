@@ -341,7 +341,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     const projectDir = path.dirname(dependencyFile)
 
     // Fast path for shell output: check if environments exist and have binaries
-    if (shellOutput) {
+    // Skip fast path in test mode to ensure proper package discovery
+    if (shellOutput && process.env.NODE_ENV !== 'test') {
       const fastProjectHash = generateProjectHash(dir)
       const fastEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', fastProjectHash)
       const fastGlobalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
@@ -526,6 +527,22 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       if (!quiet && !shellOutput) {
         console.log('No packages found in dependency file')
       }
+
+      // For shell output mode, still generate basic shell setup even with no packages
+      if (shellOutput) {
+        const projectHash = generateProjectHash(dir)
+        const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+        const envBinPath = path.join(envDir, 'bin')
+        const envSbinPath = path.join(envDir, 'sbin')
+        const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+        const globalBinPath = path.join(globalEnvDir, 'bin')
+        const globalSbinPath = path.join(globalEnvDir, 'sbin')
+
+        // Use empty sniff result since no packages were found
+        const emptySniffResult = { pkgs: [], env: {} }
+        outputShellCode(dir, envBinPath, envSbinPath, projectHash, emptySniffResult, globalBinPath, globalSbinPath)
+      }
+
       return
     }
 

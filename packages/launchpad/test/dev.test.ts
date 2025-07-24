@@ -659,13 +659,20 @@ describe('Dev Commands', () => {
         fs.writeFileSync(path.join(localBinDir, 'bun'), '#!/bin/sh\necho "1.2.18"')
         fs.chmodSync(path.join(localBinDir, 'bun'), 0o755)
 
+        // Also create the package directory structure (like real installations)
+        const packageDir = path.join(localEnvDir, 'bun.sh', 'v1.2.18')
+        const packageBinDir = path.join(packageDir, 'bin')
+        fs.mkdirSync(packageBinDir, { recursive: true })
+        fs.writeFileSync(path.join(packageBinDir, 'bun'), '#!/bin/sh\necho "1.2.18"')
+        fs.chmodSync(path.join(packageBinDir, 'bun'), 0o755)
+
         // Create metadata
         const metadata = {
           domain: 'bun.sh',
           version: '1.2.18',
           installedAt: new Date().toISOString(),
           binaries: ['bun'],
-          installPath: localPkgsDir,
+          installPath: packageDir,
         }
         fs.writeFileSync(path.join(localPkgsDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
 

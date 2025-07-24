@@ -224,9 +224,9 @@ describe('Shell Integration Library Paths', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should handle case where original values are empty
-      expect(generatedShellCode).toContain('else\n    export DYLD_LIBRARY_PATH="$lib_paths"')
-      expect(generatedShellCode).toContain('else\n    export LD_LIBRARY_PATH="$lib_paths"')
+      // Should handle case where original values are empty (updated to match current implementation)
+      expect(generatedShellCode).toContain('else\n            export DYLD_LIBRARY_PATH="$lib_paths"')
+      expect(generatedShellCode).toContain('else\n            export LD_LIBRARY_PATH="$lib_paths"')
     })
   })
 
