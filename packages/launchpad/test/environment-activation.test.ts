@@ -60,7 +60,7 @@ dependencies:
       await dump(projectDir, {
         shellOutput: true,
         quiet: false,
-        skipGlobal: true  // Focus on local environment for this test
+        skipGlobal: true, // Focus on local environment for this test
       })
 
       // Shell output should be generated for development workflows even when packages missing
@@ -71,8 +71,8 @@ dependencies:
       expect(errorOutput).toContain('Environment not ready')
       expect(errorOutput).toContain('Local packages need installation')
       expect(errorOutput).toContain('Generating minimal shell environment for development')
-
-    } finally {
+    }
+    finally {
       // Restore original stdout/stderr
       process.stdout.write = originalStdout
       process.stderr.write = originalStderr
@@ -118,23 +118,20 @@ dependencies:
     }
 
     try {
-      // Mock the project hash generation to use our test environment
-      const originalDump = dump
-
       // This test verifies the principle - in real usage, packages would be properly installed
       // For now, just verify that empty environments are correctly detected as not ready
       await dump(projectDir, {
         shellOutput: true,
         quiet: false,
-        skipGlobal: true
+        skipGlobal: true,
       })
 
       // With empty environment, should still generate shell code for development workflows
       expect(shellOutput).toContain('export PATH=')
       expect(errorOutput).toContain('Environment not ready')
       expect(errorOutput).toContain('Generating minimal shell environment for development')
-
-    } finally {
+    }
+    finally {
       process.stdout.write = originalStdout
       process.stderr.write = originalStderr
     }
@@ -160,14 +157,14 @@ dependencies:
     try {
       await dump(projectDir, {
         shellOutput: true,
-        skipGlobal: true
+        skipGlobal: true,
       })
 
       // Should provide helpful guidance
       expect(errorOutput).toContain('Environment not ready')
       expect(errorOutput).toContain('packages need installation')
-
-    } finally {
+    }
+    finally {
       process.stderr.write = originalStderr
     }
   })

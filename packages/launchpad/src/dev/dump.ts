@@ -4,7 +4,6 @@ import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { parse } from 'yaml'
 import { config } from '../config'
 import { findDependencyFile } from '../env'
 import { cleanupSpinner, install } from '../install'
@@ -426,21 +425,21 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Fast path for shell output: check if environments exist and have binaries
     // Skip fast path in test mode to ensure proper package discovery
     if (shellOutput && process.env.NODE_ENV !== 'test') {
-      const fastProjectHash = generateProjectHash(dir)
-      const fastEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', fastProjectHash)
-      const fastGlobalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
-
-      const envBinPath = path.join(fastEnvDir, 'bin')
-      const envSbinPath = path.join(fastEnvDir, 'sbin')
-      const globalBinPath = path.join(fastGlobalEnvDir, 'bin')
-      const globalSbinPath = path.join(fastGlobalEnvDir, 'sbin')
-
-      const hasLocalBinaries = fs.existsSync(envBinPath) && fs.readdirSync(envBinPath).length > 0
-      const hasGlobalBinaries = fs.existsSync(globalBinPath) && fs.readdirSync(globalBinPath).length > 0
-
       // Fast path disabled - always do proper constraint checking to ensure correct versions
       // The fast path was causing issues where global binaries would activate environments
       // even when local packages weren't properly installed
+      //
+      // const fastProjectHash = generateProjectHash(dir)
+      // const fastEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', fastProjectHash)
+      // const fastGlobalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+      // const envBinPath = path.join(fastEnvDir, 'bin')
+      // const envSbinPath = path.join(fastEnvDir, 'sbin')
+      // const globalBinPath = path.join(fastGlobalEnvDir, 'bin')
+      // const globalSbinPath = path.join(fastGlobalEnvDir, 'sbin')
+      //
+      // const hasLocalBinaries = fs.existsSync(envBinPath) && fs.readdirSync(envBinPath).length > 0
+      // const hasGlobalBinaries = fs.existsSync(globalBinPath) && fs.readdirSync(globalBinPath).length > 0
+      //
       // if (hasLocalBinaries || hasGlobalBinaries) {
       //   outputShellCode(dir, envBinPath, envSbinPath, fastProjectHash, minimalSniffResult, globalBinPath, globalSbinPath)
       //   return
@@ -683,7 +682,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       return
     }
 
-        // For shell output mode, handle different scenarios
+    // For shell output mode, handle different scenarios
     if (shellOutput) {
       const hasLocalPackagesInstalled = localReady || localPackages.length === 0
       const hasGlobalPackagesInstalled = globalReady || globalPackages.length === 0
@@ -698,35 +697,42 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const hasOptionalGlobalMissing = globalReadyResult.missingPackages && globalReadyResult.missingPackages.length > 0
       const coreGlobalSatisfied = globalConstraintsSatisfied || (hasOptionalGlobalMissing && globalPackages.length > 0)
 
+      // Check if we're being called from shell integration
+      const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
+
       if (hasLocalPackagesInstalled && hasGlobalPackagesInstalled) {
         // Ideal case: all packages properly installed
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
       }
-             else if (coreLocalSatisfied && coreGlobalSatisfied) {
-         // Fallback case: core constraints satisfied by system binaries, but warn user
-         if (!hasLocalPackagesInstalled && localPackages.length > 0) {
-           process.stderr.write(`⚠️  Local packages not installed but constraints satisfied by system binaries\n`)
-           process.stderr.write(`💡 Run 'launchpad dev .' to install proper versions: ${localPackages.join(', ')}\n`)
-         }
-         if (!hasGlobalPackagesInstalled && hasOptionalGlobalMissing) {
-           const missingGlobalPkgs = globalReadyResult.missingPackages?.map(p => p.project) || []
-           process.stderr.write(`⚠️  Some global packages not available: ${missingGlobalPkgs.join(', ')}\n`)
-           process.stderr.write(`💡 Install missing global packages if needed\n`)
-         }
-         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
-         return
-       }
+      else if (coreLocalSatisfied && coreGlobalSatisfied) {
+        // Fallback case: core constraints satisfied by system binaries, but warn user
+        if (!isShellIntegration) {
+          if (!hasLocalPackagesInstalled && localPackages.length > 0) {
+            process.stderr.write(`⚠️  Local packages not installed but constraints satisfied by system binaries\n`)
+            process.stderr.write(`💡 Run 'launchpad dev .' to install proper versions: ${localPackages.join(', ')}\n`)
+          }
+          if (!hasGlobalPackagesInstalled && hasOptionalGlobalMissing) {
+            const missingGlobalPkgs = globalReadyResult.missingPackages?.map(p => p.project) || []
+            process.stderr.write(`⚠️  Some global packages not available: ${missingGlobalPkgs.join(', ')}\n`)
+            process.stderr.write(`💡 Install missing global packages if needed\n`)
+          }
+        }
+        outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+        return
+      }
       else {
         // No fallback available - but still generate shell code for development workflows
-        process.stderr.write(`❌ Environment not ready: local=${localReady}, global=${globalReady}\n`)
-        if (!localReady && localPackages.length > 0) {
-          process.stderr.write(`💡 Local packages need installation: ${localPackages.join(', ')}\n`)
+        if (!isShellIntegration) {
+          process.stderr.write(`❌ Environment not ready: local=${localReady}, global=${globalReady}\n`)
+          if (!localReady && localPackages.length > 0) {
+            process.stderr.write(`💡 Local packages need installation: ${localPackages.join(', ')}\n`)
+          }
+          if (!globalReady && globalPackages.length > 0) {
+            process.stderr.write(`💡 Global packages need installation: ${globalPackages.join(', ')}\n`)
+          }
+          process.stderr.write(`⚠️  Generating minimal shell environment for development\n`)
         }
-        if (!globalReady && globalPackages.length > 0) {
-          process.stderr.write(`💡 Global packages need installation: ${globalPackages.join(', ')}\n`)
-        }
-        process.stderr.write(`⚠️  Generating minimal shell environment for development\n`)
 
         // Generate basic shell code even when packages aren't installed
         // This allows development workflows to continue with system binaries
@@ -743,12 +749,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     if (globalPackages.length > 0 && !skipGlobal) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
+      const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
 
-      if (shellOutput) {
+      if (shellOutput && !isShellIntegration) {
         config.showShellMessages = false
         process.stderr.write(`🌍 Installing global dependencies...\n`)
       }
-      else if (!quiet) {
+      else if (!quiet && !isShellIntegration) {
         console.log(`🌍 Installing ${globalPackages.length} global packages...`)
       }
 
@@ -756,7 +763,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         // If global environment is already ready, just create/update stubs
         if (globalReady) {
           await createGlobalStubs(globalEnvDir, globalPackages)
-          if (shellOutput) {
+          if (shellOutput && !isShellIntegration) {
             process.stderr.write(`✅ Global dependencies ready\n`)
           }
         }
@@ -768,13 +775,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           // Create or update global stubs in system locations (/usr/local/bin)
           await createGlobalStubs(globalEnvDir, globalPackages)
 
-          if (shellOutput) {
+          if (shellOutput && !isShellIntegration) {
             process.stderr.write(`✅ Global dependencies installed\n`)
           }
         }
       }
       catch (error) {
-                if (shellOutput) {
+        if (shellOutput) {
           process.stderr.write(`❌ Failed to install global packages: ${error instanceof Error ? error.message : String(error)}\n`)
 
           // Don't mislead users about system binary usage
@@ -800,8 +807,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     if (localPackages.length > 0 && !localReady) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
+      const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
 
-      if (shellOutput) {
+      if (shellOutput && !isShellIntegration) {
         config.showShellMessages = false
         const projectName = path.basename(dir)
         const startTime = Date.now()
@@ -896,22 +904,28 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       // Determine environment state for better messaging
       const hasInstallationFailures = localInstallationFailed || globalInstallationFailed
       const hasRequiredPackages = localPackages.length > 0 || globalPackages.length > 0
-      const systemBinariesSatisfyConstraints = (localReadyResult.missingPackages?.length === 0) &&
-                                               (globalReadyResult.missingPackages?.length === 0)
+      const systemBinariesSatisfyConstraints = (localReadyResult.missingPackages?.length === 0)
+        && (globalReadyResult.missingPackages?.length === 0)
 
-      if (!hasInstallationFailures && hasRequiredPackages) {
+      if (hasInstallationFailures) {
+        // Handle installation failures first
+        if (systemBinariesSatisfyConstraints) {
+          // Fallback case: installations failed but system binaries work
+          process.stderr.write(`⚠️  Environment activated with system binaries (installations failed)\n`)
+          process.stderr.write(`💡 Some packages may not be the exact requested versions\n`)
+        }
+        else {
+          // Bad case: installations failed and system doesn't satisfy requirements
+          process.stderr.write(`❌ Environment activation failed - required packages unavailable\n`)
+          process.stderr.write(`💡 Fix installation issues and try again\n`)
+          // Still generate basic shell code for development workflows with global dependencies
+        }
+      }
+      else if (hasRequiredPackages) {
         // Perfect case: all packages installed successfully
         process.stderr.write(`✅ Environment activated for ${path.basename(dir)}\n`)
-      } else if (hasInstallationFailures && systemBinariesSatisfyConstraints) {
-        // Fallback case: installations failed but system binaries work
-        process.stderr.write(`⚠️  Environment activated with system binaries (installations failed)\n`)
-        process.stderr.write(`💡 Some packages may not be the exact requested versions\n`)
-      } else if (hasInstallationFailures) {
-        // Bad case: installations failed and system doesn't satisfy requirements
-        process.stderr.write(`❌ Environment activation failed - required packages unavailable\n`)
-        process.stderr.write(`💡 Fix installation issues and try again\n`)
-        return // Don't generate shell code if critical packages are missing
-      } else {
+      }
+      else {
         // No packages needed or already satisfied
         process.stderr.write(`✅ Environment ready for ${path.basename(dir)}\n`)
       }

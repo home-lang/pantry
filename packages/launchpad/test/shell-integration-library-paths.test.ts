@@ -71,7 +71,7 @@ describe('Shell Integration Library Paths', () => {
       // Should scan for lib and lib64 directories
       expect(generatedShellCode).toContain('for lib_dir in "$env_dir/lib" "$env_dir/lib64"')
       expect(generatedShellCode).toContain('for domain_dir in "$env_dir"/*')
-      expect(generatedShellCode).toContain('for version_dir in "$domain_dir"/v*')
+      expect(generatedShellCode).toContain('find "$domain_dir" -maxdepth 1 -name "v*" -type d')
     })
 
     it('should set up all three library path variables', async () => {

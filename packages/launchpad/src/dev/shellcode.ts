@@ -62,7 +62,7 @@ function getLaunchpadBinary(): string {
 export function shellcode(): string {
   // Use the same launchpad binary that's currently running
   const launchpadBinary = getLaunchpadBinary()
-  const grepFilter = '/usr/bin/grep -E \'^(export|if|fi|#)\' 2>/dev/null'
+  const grepFilter = '/usr/bin/grep -v \'^$\' 2>/dev/null'
 
   return `
 # Launchpad shell integration with progress indicators
@@ -113,7 +113,8 @@ __launchpad_update_library_paths() {
     if [[ -d "$env_dir" ]]; then
         for domain_dir in "$env_dir"/*; do
             if [[ -d "$domain_dir" && "$(basename "$domain_dir")" != "bin" && "$(basename "$domain_dir")" != "sbin" && "$(basename "$domain_dir")" != "lib" && "$(basename "$domain_dir")" != "lib64" && "$(basename "$domain_dir")" != "share" && "$(basename "$domain_dir")" != "include" && "$(basename "$domain_dir")" != "etc" && "$(basename "$domain_dir")" != "pkgs" && "$(basename "$domain_dir")" != ".tmp" && "$(basename "$domain_dir")" != ".cache" ]]; then
-                for version_dir in "$domain_dir"/v*; do
+                # Use find to avoid glob expansion issues
+                while IFS= read -r -d '' version_dir; do
                     if [[ -d "$version_dir" ]]; then
                         for lib_dir in "$version_dir/lib" "$version_dir/lib64"; do
                             if [[ -d "$lib_dir" ]]; then
@@ -128,7 +129,7 @@ __launchpad_update_library_paths() {
                             fi
                         done
                     fi
-                done
+                done < <(find "$domain_dir" -maxdepth 1 -name "v*" -type d -print0 2>/dev/null)
             fi
         done
     fi
@@ -255,6 +256,24 @@ __launchpad_chpwd() {
                 return 0
             fi
 
+            # Fast path: Check if environment is already ready
+            local project_hash
+            project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
+            local env_dir="$HOME/.local/share/launchpad/launchpad_$project_hash"
+
+            # If environment exists and has binaries, activate quickly
+            if [[ -d "$env_dir/bin" && -n "$(ls -A "$env_dir/bin" 2>/dev/null)" ]]; then
+                export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
+                __launchpad_update_library_paths "$env_dir"
+                __launchpad_ensure_global_path
+                hash -r 2>/dev/null || true
+
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                    printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
+                fi
+                return 0
+            fi
+
             # Skip setup if we've had too many timeouts recently
             if [[ $__launchpad_timeout_count -gt 3 ]]; then
                 if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
@@ -274,14 +293,14 @@ __launchpad_chpwd() {
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-            # Allow stderr to show progress in real-time while capturing stdout for shell evaluation
+            # Capture both stdout and stderr for clean output management
             {
-                # Create a temp file for stdout only
+                # Create temp files for stdout and stderr
                 local temp_file=$(mktemp)
+                local temp_stderr=$(mktemp)
 
-                # Run setup command: stdout goes to temp file, stderr passes through for progress display
-                # Only capture stdout, let stderr show progress indicators directly
-                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file"; then
+                # Run setup command silently, capturing both streams
+                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file" 2> "$temp_stderr"; then
                     # Extract shell code from stdout for evaluation
                     if [[ -s "$temp_file" ]]; then
                         env_output=$(cat "$temp_file" | ${grepFilter})
@@ -293,7 +312,7 @@ __launchpad_chpwd() {
                 else
                     setup_exit_code=$?
                 fi
-                rm -f "$temp_file" 2>/dev/null || true
+                rm -f "$temp_file" "$temp_stderr" 2>/dev/null || true
             }
 
             # Clear the in-progress flag
@@ -321,9 +340,10 @@ __launchpad_chpwd() {
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Always show activation message for successful project entry
+                # Show clean activation message that replaces any previous output
                 if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe || true
+                    # Use carriage return to replace any previous output
+                    printf "\\r\\033[K✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
                 fi
             else
                 # Setup failed but not due to timeout - try to set up basic environment silently
@@ -342,7 +362,7 @@ __launchpad_chpwd() {
 
                     # Show activation message only if environment already exists
                     if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                        LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:on "$project_dir" --shell-safe || true
+                        printf "\\r\\033[K✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
                     fi
                 fi
                 # If no environment exists, be completely silent
@@ -381,7 +401,7 @@ __launchpad_chpwd() {
 
             # Show deactivation message synchronously (no background jobs)
             if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:off 2>/dev/null || true
+                printf "\\r\\033[K⚪ Environment deactivated\\n" >&2
             fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
