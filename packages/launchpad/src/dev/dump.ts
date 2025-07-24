@@ -106,6 +106,48 @@ async function shouldUpdatePackage(project: string, currentVersion: string, cons
 }
 
 /**
+ * Check if packages are satisfied specifically within a single environment directory
+ * (doesn't check system binaries or other environments)
+ */
+async function checkEnvironmentSpecificSatisfaction(
+  envDir: string,
+  packages: Array<{ project: string, constraint: string }>,
+): Promise<boolean> {
+  if (!fs.existsSync(envDir) || packages.length === 0) {
+    return packages.length === 0 // True if no packages required, false if env doesn't exist
+  }
+
+  try {
+    const { list } = await import('../list')
+    const installedPackages = await list(envDir)
+
+    for (const requiredPkg of packages) {
+      const { project, constraint } = requiredPkg
+
+      const installedPkg = installedPackages.find(pkg =>
+        pkg.project === project || pkg.project.includes(project.split('.')[0]),
+      )
+
+      if (!installedPkg) {
+        return false // Package not found in this environment
+      }
+
+      const installedVersion = installedPkg.version.toString()
+      const satisfiesConstraint = await checkVersionSatisfiesConstraint(installedVersion, constraint)
+
+      if (!satisfiesConstraint) {
+        return false // Package exists but doesn't satisfy constraint
+      }
+    }
+
+    return true // All packages found and satisfy constraints
+  }
+  catch {
+    return false
+  }
+}
+
+/**
  * Enhanced constraint satisfaction check with update detection across multiple environments
  */
 async function checkConstraintSatisfaction(
@@ -190,25 +232,62 @@ async function checkConstraintSatisfaction(
         }
       }
 
-      // Check system PATH for special cases like bun and bash
-      if (!satisfied && (project === 'bun.sh' || project.includes('bash'))) {
+      // Check system PATH for any package by trying common binary names
+      if (!satisfied) {
         try {
-          const command = project === 'bun.sh' ? 'bun' : 'bash'
-          const result = spawnSync(command, ['--version'], { encoding: 'utf8', timeout: 5000 })
-          if (result.status === 0 && result.stdout) {
-            const systemVersion = result.stdout.trim()
-            const satisfiesConstraint = await checkVersionSatisfiesConstraint(systemVersion, constraint)
-            const shouldUpdate = await shouldUpdatePackage(project, systemVersion, constraint)
+          // Extract potential binary names from the project domain
+          const potentialCommands = []
 
-            if (satisfiesConstraint && !shouldUpdate) {
-              satisfied = true
-              foundVersion = systemVersion
-              foundSource = 'system'
-            }
-            else if (satisfiesConstraint && shouldUpdate) {
-              needsUpdate = true
-              foundVersion = systemVersion
-              foundSource = 'system'
+          // Handle common patterns: domain.com/package -> package, domain.sh -> domain
+          if (project.includes('/')) {
+            const parts = project.split('/')
+            potentialCommands.push(parts[parts.length - 1]) // last part (package name)
+            potentialCommands.push(parts[0].split('.')[0]) // first part without TLD
+          }
+          else if (project.includes('.')) {
+            potentialCommands.push(project.split('.')[0]) // remove TLD
+          }
+          else {
+            potentialCommands.push(project) // use as-is
+          }
+
+          // Common mappings for well-known packages
+          const commonMappings: Record<string, string[]> = {
+            'bun.sh': ['bun'],
+            'nodejs.org': ['node'],
+            'python.org': ['python', 'python3'],
+            'go.dev': ['go'],
+            'rust-lang.org': ['rustc', 'cargo'],
+            'deno.com': ['deno'],
+            'git-scm.com': ['git'],
+            'docker.com': ['docker'],
+            'kubernetes.io': ['kubectl', 'kubelet'],
+          }
+
+          if (commonMappings[project]) {
+            potentialCommands.unshift(...commonMappings[project])
+          }
+
+          // Try each potential command
+          for (const command of potentialCommands) {
+            const result = spawnSync(command, ['--version'], { encoding: 'utf8', timeout: 5000 })
+            if (result.status === 0 && result.stdout) {
+              const systemVersion = result.stdout.trim()
+              // Extract version number from output (handle various formats)
+              const versionMatch = systemVersion.match(/(\d+\.\d+(?:\.\d+)?(?:-[\w.-]+)?)/)
+              if (versionMatch) {
+                const cleanVersion = versionMatch[1]
+                const satisfiesConstraint = await checkVersionSatisfiesConstraint(cleanVersion, constraint)
+
+                // For system binaries, if they satisfy the constraint, we consider them satisfied
+                // Don't check for updates since we can't control system installations
+                if (satisfiesConstraint) {
+                  satisfied = true
+                  foundVersion = cleanVersion
+                  foundSource = 'system'
+                  break
+                }
+              }
             }
           }
         }
@@ -296,11 +375,15 @@ async function isEnvironmentReady(
     return result
   }
 
-  // Enhanced check: validate constraints
+  // Enhanced check: validate that required packages are actually installed in this environment
+  // Don't just check if constraints are satisfied by any source (including system binaries)
+  const localSatisfactionCheck = await checkEnvironmentSpecificSatisfaction(envDir, packages)
+
+  // Environment is ready only if the specific environment directory has the required packages
+  const ready = localSatisfactionCheck || (hasBinaries && packages.length === 0)
+
+  // Also get full constraint check for error reporting
   const constraintCheck = await checkConstraintSatisfaction(envDir, packages, envType)
-  // Environment is ready if constraints are satisfied AND no packages are outdated
-  // OR if local binaries exist and no constraints specified
-  const ready = constraintCheck.satisfied || (hasBinaries && packages.length === 0)
 
   // Cache the result with shorter TTL for update responsiveness
   envReadinessCache.set(cacheKey, {
@@ -355,28 +438,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const hasLocalBinaries = fs.existsSync(envBinPath) && fs.readdirSync(envBinPath).length > 0
       const hasGlobalBinaries = fs.existsSync(globalBinPath) && fs.readdirSync(globalBinPath).length > 0
 
-      // If environments have binaries, use fast path with minimal parsing
-      if (hasLocalBinaries || hasGlobalBinaries) {
-        // For fast path, still need to parse the dependency file for environment variables
-        // but avoid the heavy sniff module for package resolution
-        const minimalSniffResult = { pkgs: [], env: {} }
-
-        try {
-          const depContent = fs.readFileSync(dependencyFile, 'utf-8')
-          const parsed = parse(depContent)
-
-          // Extract environment variables if they exist
-          if (parsed && typeof parsed === 'object' && 'env' in parsed) {
-            minimalSniffResult.env = parsed.env || {}
-          }
-        }
-        catch {
-          // If parsing fails, use empty env
-        }
-
-        outputShellCode(dir, envBinPath, envSbinPath, fastProjectHash, minimalSniffResult, globalBinPath, globalSbinPath)
-        return
-      }
+      // Fast path disabled - always do proper constraint checking to ensure correct versions
+      // The fast path was causing issues where global binaries would activate environments
+      // even when local packages weren't properly installed
+      // if (hasLocalBinaries || hasGlobalBinaries) {
+      //   outputShellCode(dir, envBinPath, envSbinPath, fastProjectHash, minimalSniffResult, globalBinPath, globalSbinPath)
+      //   return
+      // }
     }
 
     // Parse dependency file and separate global vs local dependencies
@@ -385,7 +453,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     try {
       sniffResult = await sniff({ string: projectDir })
-    } catch (error) {
+    }
+    catch (error) {
       // Handle malformed dependency files gracefully
       if (config.verbose) {
         console.warn(`Failed to parse dependency file: ${error instanceof Error ? error.message : String(error)}`)
@@ -393,10 +462,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       sniffResult = { pkgs: [], env: {} }
     }
 
-    // Only check for global dependencies when not in shell mode or when global env doesn't exist, and not skipping global
+    // Always check for global dependencies when not skipping global
     const globalSniffResults: Array<{ pkgs: any[], env: Record<string, string> }> = []
 
-    if (!shellOutput && !skipGlobal) {
+    if (!skipGlobal) {
       // Also check for global dependencies from well-known locations
       const globalDepLocations = [
         path.join(homedir(), '.dotfiles'),
@@ -599,21 +668,66 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     if (dryrun) {
       if (!quiet && !shellOutput) {
         if (globalPackages.length > 0) {
-          const globalStatus = globalReady ? 'satisfied by existing installations' : 'would install globally'
+          // Check if constraints are satisfied (either by installed packages or system binaries)
+          const globalConstraintsSatisfied = globalReadyResult.missingPackages?.length === 0
+          const globalStatus = (globalReady || globalConstraintsSatisfied) ? 'satisfied by existing installations' : 'would install globally'
           console.log(`Global packages: ${globalPackages.join(', ')} (${globalStatus})`)
         }
         if (localPackages.length > 0) {
-          const localStatus = localReady ? 'satisfied by existing installations' : 'would install locally'
+          // Check if constraints are satisfied (either by installed packages or system binaries)  
+          const localConstraintsSatisfied = localReadyResult.missingPackages?.length === 0
+          const localStatus = (localReady || localConstraintsSatisfied) ? 'satisfied by existing installations' : 'would install locally'
           console.log(`Local packages: ${localPackages.join(', ')} (${localStatus})`)
         }
       }
       return
     }
 
-    // For shell output mode with ready environments, output immediately
-    if (shellOutput && localReady && globalReady) {
-      outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
-      return
+        // For shell output mode, handle different scenarios
+    if (shellOutput) {
+      const hasLocalPackagesInstalled = localReady || localPackages.length === 0
+      const hasGlobalPackagesInstalled = globalReady || globalPackages.length === 0
+
+      // Check if we have any constraint satisfaction by system binaries
+      const localConstraintsSatisfied = localReadyResult.missingPackages?.length === 0
+      const globalConstraintsSatisfied = globalReadyResult.missingPackages?.length === 0
+
+      // Also check if core dependencies (required for basic functionality) are satisfied
+      // even if some optional global packages are missing
+      const coreLocalSatisfied = localConstraintsSatisfied || localPackages.length === 0
+      const hasOptionalGlobalMissing = globalReadyResult.missingPackages && globalReadyResult.missingPackages.length > 0
+      const coreGlobalSatisfied = globalConstraintsSatisfied || (hasOptionalGlobalMissing && globalPackages.length > 0)
+
+      if (hasLocalPackagesInstalled && hasGlobalPackagesInstalled) {
+        // Ideal case: all packages properly installed
+        outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+        return
+      }
+             else if (coreLocalSatisfied && coreGlobalSatisfied) {
+         // Fallback case: core constraints satisfied by system binaries, but warn user
+         if (!hasLocalPackagesInstalled && localPackages.length > 0) {
+           process.stderr.write(`⚠️  Local packages not installed but constraints satisfied by system binaries\n`)
+           process.stderr.write(`💡 Run 'launchpad dev .' to install proper versions: ${localPackages.join(', ')}\n`)
+         }
+         if (!hasGlobalPackagesInstalled && hasOptionalGlobalMissing) {
+           const missingGlobalPkgs = globalReadyResult.missingPackages?.map(p => p.project) || []
+           process.stderr.write(`⚠️  Some global packages not available: ${missingGlobalPkgs.join(', ')}\n`)
+           process.stderr.write(`💡 Install missing global packages if needed\n`)
+         }
+         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+         return
+       }
+      else {
+        // No fallback available - require installation
+        process.stderr.write(`❌ Environment not ready: local=${localReady}, global=${globalReady}\n`)
+        if (!localReady && localPackages.length > 0) {
+          process.stderr.write(`💡 Local packages need installation: ${localPackages.join(', ')}\n`)
+        }
+        if (!globalReady && globalPackages.length > 0) {
+          process.stderr.write(`💡 Global packages need installation: ${globalPackages.join(', ')}\n`)
+        }
+        return
+      }
     }
 
     const results: string[] = []
@@ -654,8 +768,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
       }
       catch (error) {
-        if (shellOutput) {
+                if (shellOutput) {
           process.stderr.write(`❌ Failed to install global packages: ${error instanceof Error ? error.message : String(error)}\n`)
+
+          // Don't mislead users about system binary usage
+          const constraintsSatisfiedBySystem = globalReadyResult.missingPackages?.length === 0
+          if (constraintsSatisfiedBySystem) {
+            process.stderr.write(`⚠️  System binaries may satisfy global constraints but requested packages failed to install\n`)
+          }
         }
         else {
           console.error(`Failed to install global packages: ${error instanceof Error ? error.message : String(error)}`)
@@ -719,6 +839,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           const errorMessage = error instanceof Error ? error.message : String(error)
           process.stderr.write(`❌ Failed to install local packages: ${errorMessage}\n`)
 
+          // Don't mislead users by saying we're using system binaries when they want specific versions
+          const constraintsSatisfiedBySystem = localReadyResult.missingPackages?.length === 0
+          if (constraintsSatisfiedBySystem) {
+            process.stderr.write(`⚠️  System binaries may satisfy version constraints but requested packages failed to install\n`)
+            process.stderr.write(`💡 Consider resolving installation issues for consistent environments\n`)
+          }
+
           // Provide helpful guidance for common issues
           if (errorMessage.includes('bun')) {
             process.stderr.write(`💡 Tip: Install bun manually with: curl -fsSL https://bun.sh/install | bash\n`)
@@ -750,6 +877,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     cacheSniffResult(projectHash, sniffResult)
 
     if (shellOutput) {
+      // Always output shell code in shell output mode
+      // This ensures environment activation even when installations partially fail
+      // but system binaries satisfy constraints
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
     }
     else if (!quiet) {
@@ -1132,7 +1262,7 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
 
   // Generate the deactivation function that the test expects
   process.stdout.write(`\n# Deactivation function for directory checking\n`)
-  process.stdout.write(`_pkgx_dev_try_bye() {\n`)
+  process.stdout.write(`_launchpad_dev_try_bye() {\n`)
   process.stdout.write(`  case "$PWD" in\n`)
   process.stdout.write(`    "${dir}"*)\n`)
   process.stdout.write(`      # Still in project directory, don't deactivate\n`)

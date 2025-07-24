@@ -293,7 +293,7 @@ describe('Environment Isolation', () => {
       // Accept either success or failure - the key test is that we get proper output structure
       if (result.exitCode === 0) {
         // Check deactivation function is created with proper directory checking
-        expect(result.stdout).toContain('_pkgx_dev_try_bye()')
+        expect(result.stdout).toContain('_launchpad_dev_try_bye()')
         expect(result.stdout).toContain('case "$PWD" in')
         expect(result.stdout).toContain('dev environment deactivated')
 

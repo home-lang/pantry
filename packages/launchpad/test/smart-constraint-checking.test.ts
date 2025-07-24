@@ -10,6 +10,7 @@ describe('Smart Constraint Checking', () => {
   const testBaseDir = path.join(homedir(), '.local', 'share', 'launchpad-test')
   const testProjectDir = path.join(testBaseDir, 'test-project')
   // Calculate the actual project hash that would be generated
+  // eslint-disable-next-line ts/no-require-imports
   const crypto = require('node:crypto')
   const testProjectHash = `test-project_${crypto.createHash('md5').update(testProjectDir).digest('hex').slice(0, 8)}`
   const testLocalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', testProjectHash)

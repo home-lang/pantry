@@ -143,7 +143,7 @@ export class TestUtils {
   static verifyEnvironmentIsolationOutput(output: string, expectedPaths: string[]): boolean {
     const requiredPatterns = [
       'Project-specific environment',
-      '_pkgx_dev_try_bye',
+      '_launchpad_dev_try_bye',
       '_LAUNCHPAD_ORIGINAL_PATH',
       'dev environment deactivated',
     ]

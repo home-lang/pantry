@@ -645,6 +645,7 @@ describe('Dev Commands', () => {
 
     it('should prioritize local environment over global and system', async () => {
       // Create a fake local environment
+      // eslint-disable-next-line ts/no-require-imports
       const crypto = require('node:crypto')
       const projectHash = `${path.basename(tempDir)}_${crypto.createHash('md5').update(tempDir).digest('hex').slice(0, 8)}`
       const localEnvDir = path.join(os.homedir(), '.local', 'share', 'launchpad', projectHash)

@@ -231,7 +231,7 @@ describe('Library Path Management', () => {
       const result = await runCLI(['dev', projectDir, '--shell'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('_pkgx_dev_try_bye()')
+      expect(result.stdout).toContain('_launchpad_dev_try_bye()')
       expect(result.stdout).toContain('export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"')
       expect(result.stdout).toContain('unset DYLD_LIBRARY_PATH')
       expect(result.stdout).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
