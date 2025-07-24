@@ -739,6 +739,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     // Always ensure global environment is activated first, even if already ready
     // This ensures global tools like bash are available for subsequent operations
+    let globalInstallationFailed = false
     if (globalPackages.length > 0 && !skipGlobal) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
@@ -785,6 +786,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         else {
           console.error(`Failed to install global packages: ${error instanceof Error ? error.message : String(error)}`)
         }
+
+        // Track that global installation failed
+        globalInstallationFailed = true
       }
 
       config.verbose = originalVerbose
@@ -792,6 +796,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
 
     // Install local packages to project-specific environment
+    let localInstallationFailed = false
     if (localPackages.length > 0 && !localReady) {
       const originalVerbose = config.verbose
       const originalShowShellMessages = config.showShellMessages
@@ -829,7 +834,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
           cleanupSpinner()
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
-          process.stderr.write(`✅ Project environment activated for ${projectName} \x1B[2m\x1B[3m(${elapsed}s)\x1B[0m\n`)
+          process.stderr.write(`✅ Local packages installed for ${projectName} \x1B[2m\x1B[3m(${elapsed}s)\x1B[0m\n`)
 
           if (process.stderr.isTTY) {
             try {
@@ -858,6 +863,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           if (errorMessage.includes('ENOENT') || errorMessage.includes('permission')) {
             process.stderr.write(`💡 Check directory permissions and disk space\n`)
           }
+          if (errorMessage.includes('End-of-central-directory signature not found') || errorMessage.includes('zipfile')) {
+            process.stderr.write(`💡 Download corrupted, clear cache: launchpad cache:clear --force\n`)
+          }
+
+          // Track that local installation failed
+          localInstallationFailed = true
         }
         finally {
           // Restore original stdout and console methods
@@ -882,9 +893,29 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     cacheSniffResult(projectHash, sniffResult)
 
     if (shellOutput) {
-      // Always output shell code in shell output mode
-      // This ensures environment activation even when installations partially fail
-      // but system binaries satisfy constraints
+      // Determine environment state for better messaging
+      const hasInstallationFailures = localInstallationFailed || globalInstallationFailed
+      const hasRequiredPackages = localPackages.length > 0 || globalPackages.length > 0
+      const systemBinariesSatisfyConstraints = (localReadyResult.missingPackages?.length === 0) &&
+                                               (globalReadyResult.missingPackages?.length === 0)
+
+      if (!hasInstallationFailures && hasRequiredPackages) {
+        // Perfect case: all packages installed successfully
+        process.stderr.write(`✅ Environment activated for ${path.basename(dir)}\n`)
+      } else if (hasInstallationFailures && systemBinariesSatisfyConstraints) {
+        // Fallback case: installations failed but system binaries work
+        process.stderr.write(`⚠️  Environment activated with system binaries (installations failed)\n`)
+        process.stderr.write(`💡 Some packages may not be the exact requested versions\n`)
+      } else if (hasInstallationFailures) {
+        // Bad case: installations failed and system doesn't satisfy requirements
+        process.stderr.write(`❌ Environment activation failed - required packages unavailable\n`)
+        process.stderr.write(`💡 Fix installation issues and try again\n`)
+        return // Don't generate shell code if critical packages are missing
+      } else {
+        // No packages needed or already satisfied
+        process.stderr.write(`✅ Environment ready for ${path.basename(dir)}\n`)
+      }
+
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
     }
     else if (!quiet) {
