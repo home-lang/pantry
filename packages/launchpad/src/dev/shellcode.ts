@@ -293,14 +293,11 @@ __launchpad_chpwd() {
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-            # Capture both stdout and stderr for clean output management
-            {
-                # Create temp files for stdout and stderr
+            # First install packages with visible progress messages (stderr visible, stdout hidden)
+            if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" >/dev/null; then
+                # Installation succeeded, now get shell environment
                 local temp_file=$(mktemp)
-                local temp_stderr=$(mktemp)
-
-                # Run setup command silently, capturing both streams
-                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file" 2> "$temp_stderr"; then
+                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file" 2>/dev/null; then
                     # Extract shell code from stdout for evaluation
                     if [[ -s "$temp_file" ]]; then
                         env_output=$(cat "$temp_file" | ${grepFilter})
@@ -312,8 +309,10 @@ __launchpad_chpwd() {
                 else
                     setup_exit_code=$?
                 fi
-                rm -f "$temp_file" "$temp_stderr" 2>/dev/null || true
-            }
+                rm -f "$temp_file" 2>/dev/null || true
+            else
+                setup_exit_code=$?
+            fi
 
             # Clear the in-progress flag
             __launchpad_setup_in_progress=""

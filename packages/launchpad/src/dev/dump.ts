@@ -407,7 +407,7 @@ function cacheSniffResult(projectHash: string, sniffResult: any): void {
 }
 
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
-  const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' } = options
+  const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true' } = options
 
   try {
     // Find dependency file
@@ -758,6 +758,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       else if (!quiet && !isShellIntegration) {
         console.log(`🌍 Installing ${globalPackages.length} global packages...`)
       }
+      else if (isShellIntegration && !quiet) {
+        // Show progress for shell integration but keep it clean
+        process.stderr.write(`\r🌍 Installing ${globalPackages.length} global packages...`)
+      }
 
       try {
         // If global environment is already ready, just create/update stubs
@@ -809,12 +813,19 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const originalShowShellMessages = config.showShellMessages
       const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
 
+      const projectName = path.basename(dir)
+      const startTime = Date.now()
+
       if (shellOutput && !isShellIntegration) {
         config.showShellMessages = false
-        const projectName = path.basename(dir)
-        const startTime = Date.now()
         process.stderr.write(`🔧 Setting up project environment for ${projectName}...\n`)
+      }
+      else if (isShellIntegration && !quiet) {
+        // Show progress for shell integration but keep it clean
+        process.stderr.write(`\r🔧 Setting up project environment for ${projectName}...`)
+      }
 
+      if (shellOutput && !isShellIntegration) {
         // Set up progress tracking for shell mode
         const originalStdoutWrite = process.stdout.write.bind(process.stdout)
         const originalConsoleLog = console.log.bind(console)
@@ -1178,20 +1189,20 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   // Build PATH with both project and global environments
   const pathComponents = []
 
-  // Add global paths first to ensure critical tools like bash are always available
-  if (globalBinPath && fs.existsSync(globalBinPath)) {
-    pathComponents.push(globalBinPath)
-  }
-  if (globalSbinPath && fs.existsSync(globalSbinPath)) {
-    pathComponents.push(globalSbinPath)
-  }
-
-  // Add project-specific paths second (can override global if needed)
+  // Add project-specific paths first (highest priority - can override global versions)
   if (fs.existsSync(envBinPath)) {
     pathComponents.push(envBinPath)
   }
   if (fs.existsSync(envSbinPath)) {
     pathComponents.push(envSbinPath)
+  }
+
+  // Add global paths second (fallback for tools not in project environment)
+  if (globalBinPath && fs.existsSync(globalBinPath)) {
+    pathComponents.push(globalBinPath)
+  }
+  if (globalSbinPath && fs.existsSync(globalSbinPath)) {
+    pathComponents.push(globalSbinPath)
   }
 
   // Add original PATH

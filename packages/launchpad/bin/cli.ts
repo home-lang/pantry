@@ -1175,7 +1175,7 @@ cli
         dryrun: options?.dryRun || false,
         quiet: options?.quiet || false,
         shellOutput: options?.shell || false,
-        skipGlobal: process.env.NODE_ENV === 'test', // Skip global packages in test environment
+        skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true', // Skip global packages in test environment or when explicitly disabled
       })
     }
     catch (error) {
