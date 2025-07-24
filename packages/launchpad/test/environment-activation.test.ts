@@ -26,7 +26,7 @@ describe('Environment Activation Behavior', () => {
     }
   })
 
-  test('should not activate environment when required packages are missing from environment directories', async () => {
+  test('should generate shell code with warnings when required packages are missing from environment directories', async () => {
     // Create a project with dependency requirements
     const projectDir = path.join(tempDir, 'project')
     fs.mkdirSync(projectDir)
@@ -63,13 +63,14 @@ dependencies:
         skipGlobal: true  // Focus on local environment for this test
       })
 
-      // Shell output should be empty or contain error messages, not environment setup
-      expect(shellOutput).not.toContain('export PATH=')
-      expect(shellOutput).not.toContain('LAUNCHPAD_ORIGINAL_PATH')
+      // Shell output should be generated for development workflows even when packages missing
+      expect(shellOutput).toContain('export PATH=')
+      expect(shellOutput).toContain('LAUNCHPAD_ORIGINAL_PATH')
 
       // Should have error messages about missing packages
       expect(errorOutput).toContain('Environment not ready')
       expect(errorOutput).toContain('Local packages need installation')
+      expect(errorOutput).toContain('Generating minimal shell environment for development')
 
     } finally {
       // Restore original stdout/stderr
@@ -78,7 +79,7 @@ dependencies:
     }
   })
 
-  test('should activate environment only when required packages are actually installed in environment directories', async () => {
+  test('should generate shell code with warnings when environment directories are empty', async () => {
     // Create a project directory
     const projectDir = path.join(tempDir, 'project')
     fs.mkdirSync(projectDir)
@@ -128,9 +129,10 @@ dependencies:
         skipGlobal: true
       })
 
-      // With empty environment, should not activate
-      expect(shellOutput).not.toContain('export PATH=')
+      // With empty environment, should still generate shell code for development workflows
+      expect(shellOutput).toContain('export PATH=')
       expect(errorOutput).toContain('Environment not ready')
+      expect(errorOutput).toContain('Generating minimal shell environment for development')
 
     } finally {
       process.stdout.write = originalStdout

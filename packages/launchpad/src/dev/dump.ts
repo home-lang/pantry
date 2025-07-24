@@ -674,7 +674,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           console.log(`Global packages: ${globalPackages.join(', ')} (${globalStatus})`)
         }
         if (localPackages.length > 0) {
-          // Check if constraints are satisfied (either by installed packages or system binaries)  
+          // Check if constraints are satisfied (either by installed packages or system binaries)
           const localConstraintsSatisfied = localReadyResult.missingPackages?.length === 0
           const localStatus = (localReady || localConstraintsSatisfied) ? 'satisfied by existing installations' : 'would install locally'
           console.log(`Local packages: ${localPackages.join(', ')} (${localStatus})`)
@@ -718,7 +718,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
          return
        }
       else {
-        // No fallback available - require installation
+        // No fallback available - but still generate shell code for development workflows
         process.stderr.write(`❌ Environment not ready: local=${localReady}, global=${globalReady}\n`)
         if (!localReady && localPackages.length > 0) {
           process.stderr.write(`💡 Local packages need installation: ${localPackages.join(', ')}\n`)
@@ -726,6 +726,11 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         if (!globalReady && globalPackages.length > 0) {
           process.stderr.write(`💡 Global packages need installation: ${globalPackages.join(', ')}\n`)
         }
+        process.stderr.write(`⚠️  Generating minimal shell environment for development\n`)
+
+        // Generate basic shell code even when packages aren't installed
+        // This allows development workflows to continue with system binaries
+        outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
       }
     }
