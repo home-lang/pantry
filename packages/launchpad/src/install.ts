@@ -32,6 +32,12 @@ function cleanupSpinner(): void {
   }
 }
 
+// Function to clean up all lingering processing messages at the end
+function cleanupAllProcessingMessages(): void {
+  cleanupSpinner()
+  // Additional cleanup can be added here if needed
+}
+
 // Setup signal handlers for clean exit
 function setupSignalHandlers(): void {
   process.on('SIGINT', () => {
@@ -103,19 +109,22 @@ function logUniqueMessage(message: string, forceLog = false): void {
   if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated')) {
     // Add a small delay to make the success message visible before showing processing message
     setTimeout(() => {
-      const processingMsg = `🔄 Processing next dependency...`
+      // Only show processing message if we haven't completed all packages
+      if (!hasTemporaryProcessingMessage) {
+        const processingMsg = `🔄 Processing next dependency...`
 
-      if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-        process.stderr.write(`${processingMsg}\n`)
-        if (process.stderr.isTTY) {
-          fs.writeSync(process.stderr.fd, '')
+        if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+          process.stderr.write(`${processingMsg}\n`)
+          if (process.stderr.isTTY) {
+            fs.writeSync(process.stderr.fd, '')
+          }
         }
-      }
-      else {
-        process.stdout.write(`${processingMsg}\n`)
-      }
+        else {
+          process.stdout.write(`${processingMsg}\n`)
+        }
 
-      hasTemporaryProcessingMessage = true
+        hasTemporaryProcessingMessage = true
+      }
     }, 50) // Small delay to ensure success message is visible
   }
 }
@@ -1396,6 +1405,9 @@ export async function downloadPackage(
     let archiveFile: string | null = null
     let usedCache = false
 
+    // Track whether we've shown a success message to avoid redundant extraction messages
+    let showedSuccessMessage = false
+
     for (const format of formats) {
       // Check if we have a cached version first
       const cachedArchivePath = getCachedPackagePath(domain, version, format)
@@ -1406,40 +1418,9 @@ export async function downloadPackage(
           console.warn(`Using cached ${domain} v${version} from: ${cachedArchivePath}`)
         }
         else {
-          // Show a brief processing message for cached packages to provide feedback
-          if (!config.verbose) {
-            const processingMsg = `🔄 Loading ${domain} v${version} from cache...`
-            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-              process.stderr.write(`${processingMsg}\n`)
-              if (process.stderr.isTTY) {
-                fs.writeSync(process.stderr.fd, '')
-              }
-            }
-            else {
-              process.stdout.write(`${processingMsg}\n`)
-            }
-
-            // Brief delay to make the message visible
-            await new Promise(resolve => setTimeout(resolve, 100))
-
-            // Clear the processing message by moving cursor up and clearing the line
-            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-              process.stderr.write('\x1B[1A\r\x1B[K')
-              if (process.stderr.isTTY) {
-                try {
-                  fs.writeSync(process.stderr.fd, '')
-                }
-                catch {
-                  // Ignore flush errors
-                }
-              }
-            }
-            else {
-              process.stdout.write('\x1B[1A\r\x1B[K')
-            }
-          }
-
+          // For cached packages, show completion message directly without intermediate processing message
           logUniqueMessage(`✅ ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+          showedSuccessMessage = true
         }
 
         // Copy cached file to temp directory
@@ -1671,8 +1652,9 @@ export async function downloadPackage(
     }
     else {
       // Only show extraction for very large packages (>20MB) to keep output clean
+      // But don't show if we already showed a success message (for cached packages)
       const archiveStats = fs.statSync(archiveFile)
-      if (archiveStats.size > 20 * 1024 * 1024) {
+      if (archiveStats.size > 20 * 1024 * 1024 && !showedSuccessMessage) {
         // Clear any existing spinner before starting extraction
         if (hasTemporaryProcessingMessage) {
           cleanupSpinner()
@@ -1778,7 +1760,7 @@ export async function downloadPackage(
     else {
       // Clear the extraction progress message if we showed one
       const archiveStats = fs.statSync(archiveFile)
-      if (archiveStats.size > 20 * 1024 * 1024) {
+      if (archiveStats.size > 20 * 1024 * 1024 && !showedSuccessMessage) {
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
           process.stderr.write('\x1B[1A\r\x1B[K')
           if (process.stderr.isTTY) {
@@ -2860,6 +2842,9 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       logUniqueMessage(`✅ Installed ${uniquePackages.size} packages`)
     }
   }
+
+  // Clean up any lingering processing messages
+  cleanupAllProcessingMessages()
 
   return allInstalledFiles
 }

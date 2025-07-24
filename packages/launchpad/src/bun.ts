@@ -291,12 +291,9 @@ export async function install_bun(installPath: string, version?: string): Promis
 
   try {
     if (cachedArchivePath) {
-      // Use cached version
+      // Use cached version - show success message directly without intermediate loading message
       if (config.verbose) {
         console.warn(`Using cached Bun v${bunVersion} from: ${cachedArchivePath}`)
-      }
-      else {
-        console.log(`📦 Using cached Bun v${bunVersion}...`)
       }
 
       // Copy cached file to temp directory for extraction

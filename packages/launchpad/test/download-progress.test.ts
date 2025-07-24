@@ -513,31 +513,6 @@ describe('Download Progress', () => {
   })
 
   describe('Cache vs Download Progress', () => {
-    it('should show cache loading messages for cached packages', async () => {
-      // Mock cache hit
-      jest.spyOn(fs, 'existsSync').mockReturnValue(true)
-      jest.spyOn(fs, 'statSync').mockReturnValue({ size: 1024 } as any)
-      jest.spyOn(fs, 'copyFileSync').mockImplementation(jest.fn())
-
-      process.env.NODE_ENV = 'development'
-
-      const { downloadPackage } = await import('../src/install')
-
-      try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
-      }
-      catch {
-        // Expected to fail due to mocking
-      }
-
-      // Verify cache loading messages were written
-      const cacheCalls = mockStdout.mock.calls.filter(call =>
-        call[0].includes('🔄') && call[0].includes('Loading') && call[0].includes('cache'),
-      )
-
-      expect(cacheCalls.length).toBeGreaterThan(0)
-    })
-
     it('should not show download progress for cached packages', async () => {
       // Mock cache hit
       jest.spyOn(fs, 'existsSync').mockReturnValue(true)
