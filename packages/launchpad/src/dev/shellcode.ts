@@ -293,9 +293,24 @@ __launchpad_chpwd() {
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-            # First install packages with visible progress messages (stderr visible, stdout hidden)
-            if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" >/dev/null; then
-                # Installation succeeded, now get shell environment
+            # Show initial progress message
+            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                printf "🔧 Setting up project environment for $(basename "$project_dir")..." >&2
+            fi
+
+            # Run installation and capture output for simplified progress
+            local temp_output=$(mktemp)
+            if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" > "$temp_output" 2>&1; then
+                # Show simplified progress based on what happened
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                    if grep -q "cached" "$temp_output"; then
+                        printf "\\r📦 Using cached dependencies..." >&2
+                    elif grep -q "Download" "$temp_output"; then
+                        printf "\\r📦 Installing dependencies..." >&2
+                    fi
+                fi
+                rm -f "$temp_output" 2>/dev/null || true
+                # Installation succeeded, now get shell environment quietly
                 local temp_file=$(mktemp)
                 if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file" 2>/dev/null; then
                     # Extract shell code from stdout for evaluation
@@ -312,6 +327,7 @@ __launchpad_chpwd() {
                 rm -f "$temp_file" 2>/dev/null || true
             else
                 setup_exit_code=$?
+                rm -f "$temp_output" 2>/dev/null || true
             fi
 
             # Clear the in-progress flag
