@@ -407,7 +407,7 @@ function cacheSniffResult(projectHash: string, sniffResult: any): void {
 }
 
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
-  const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true' } = options
+  const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true' || process.env.LAUNCHPAD_ENABLE_GLOBAL_AUTO_SCAN !== 'true' } = options
 
   try {
     // Find dependency file
