@@ -1,4 +1,57 @@
 
+## v0.4.26...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.26...main)
+
+### 🚀 Enhancements
+
+- Add `keep-global` option ([2a1f733](https://github.com/stacksjs/launchpad/commit/2a1f733))
+- Add service management ([c60a4b0](https://github.com/stacksjs/launchpad/commit/c60a4b0))
+
+### 🏡 Chore
+
+- More minor output improvements ([3b10af8](https://github.com/stacksjs/launchpad/commit/3b10af8))
+- Improve output ([4f951e4](https://github.com/stacksjs/launchpad/commit/4f951e4))
+- Wip ([7cda06a](https://github.com/stacksjs/launchpad/commit/7cda06a))
+- Wip ([432f1a4](https://github.com/stacksjs/launchpad/commit/432f1a4))
+- Wip ([49cd237](https://github.com/stacksjs/launchpad/commit/49cd237))
+- Wip ([c6cca34](https://github.com/stacksjs/launchpad/commit/c6cca34))
+- Wip ([281ace0](https://github.com/stacksjs/launchpad/commit/281ace0))
+- Wip ([70cc47d](https://github.com/stacksjs/launchpad/commit/70cc47d))
+- Wip ([85bfc81](https://github.com/stacksjs/launchpad/commit/85bfc81))
+- Wip ([655fb23](https://github.com/stacksjs/launchpad/commit/655fb23))
+- Ensure cli is built ([84e8207](https://github.com/stacksjs/launchpad/commit/84e8207))
+- Wip ([e1fdf6e](https://github.com/stacksjs/launchpad/commit/e1fdf6e))
+- Adjust activation message logic ([a99d9f5](https://github.com/stacksjs/launchpad/commit/a99d9f5))
+- Improve dependency resolution ([dac21ff](https://github.com/stacksjs/launchpad/commit/dac21ff))
+- Wip ([5548fcf](https://github.com/stacksjs/launchpad/commit/5548fcf))
+- Wip ([7476202](https://github.com/stacksjs/launchpad/commit/7476202))
+- Wip ([bbe5338](https://github.com/stacksjs/launchpad/commit/bbe5338))
+- Wip ([fe800f8](https://github.com/stacksjs/launchpad/commit/fe800f8))
+- Wip ([5eb64b3](https://github.com/stacksjs/launchpad/commit/5eb64b3))
+- Wip ([6fb12b7](https://github.com/stacksjs/launchpad/commit/6fb12b7))
+- Wip ([d56d2c6](https://github.com/stacksjs/launchpad/commit/d56d2c6))
+- Wip ([57ad50b](https://github.com/stacksjs/launchpad/commit/57ad50b))
+- Improve library path management ([7e319c7](https://github.com/stacksjs/launchpad/commit/7e319c7))
+- Wip ([452a6d6](https://github.com/stacksjs/launchpad/commit/452a6d6))
+- Wip ([5ab5c64](https://github.com/stacksjs/launchpad/commit/5ab5c64))
+- Wip ([0d8ac79](https://github.com/stacksjs/launchpad/commit/0d8ac79))
+- Wip ([51f2721](https://github.com/stacksjs/launchpad/commit/51f2721))
+- Wip ([afffc8a](https://github.com/stacksjs/launchpad/commit/afffc8a))
+- Wip ([ec57a27](https://github.com/stacksjs/launchpad/commit/ec57a27))
+- Wip ([c89d4c4](https://github.com/stacksjs/launchpad/commit/c89d4c4))
+- Wip ([bb44857](https://github.com/stacksjs/launchpad/commit/bb44857))
+- Wip ([5ca3b63](https://github.com/stacksjs/launchpad/commit/5ca3b63))
+- Wip ([80be6da](https://github.com/stacksjs/launchpad/commit/80be6da))
+- Wip ([ac7fa1f](https://github.com/stacksjs/launchpad/commit/ac7fa1f))
+- Wip ([df31e9a](https://github.com/stacksjs/launchpad/commit/df31e9a))
+- Wip ([43f0137](https://github.com/stacksjs/launchpad/commit/43f0137))
+- Wip ([6d828ef](https://github.com/stacksjs/launchpad/commit/6d828ef))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.4.25...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.4.25...main)
