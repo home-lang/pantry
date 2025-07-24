@@ -645,8 +645,9 @@ describe('Dev Commands', () => {
 
     it('should prioritize local environment over global and system', async () => {
       // Create a fake local environment
-      const projectHash = 'test-project-hash'
-      const localEnvDir = path.join(os.homedir(), '.local', 'share', 'launchpad', `${path.basename(tempDir)}_${projectHash}`)
+      const crypto = require('node:crypto')
+      const projectHash = `${path.basename(tempDir)}_${crypto.createHash('md5').update(tempDir).digest('hex').slice(0, 8)}`
+      const localEnvDir = path.join(os.homedir(), '.local', 'share', 'launchpad', projectHash)
       const localBinDir = path.join(localEnvDir, 'bin')
       const localPkgsDir = path.join(localEnvDir, 'pkgs', 'bun.sh', 'v1.2.18')
 

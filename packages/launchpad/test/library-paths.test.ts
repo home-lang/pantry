@@ -60,6 +60,18 @@ describe('Library Path Management', () => {
       fs.rmSync(tempDir, { recursive: true, force: true })
     }
 
+    // Clean up test environment directories
+    const launchpadEnvsDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad')
+    if (fs.existsSync(launchpadEnvsDir)) {
+      const entries = fs.readdirSync(launchpadEnvsDir)
+      for (const entry of entries) {
+        if (entry.startsWith('test-project_')) {
+          const entryPath = path.join(launchpadEnvsDir, entry)
+          fs.rmSync(entryPath, { recursive: true, force: true })
+        }
+      }
+    }
+
     // Restore original fetch
     globalThis.fetch = originalFetch
   })
@@ -143,14 +155,19 @@ describe('Library Path Management', () => {
 
   describe('Shell Environment Setup', () => {
     it('should include library paths in shell output', async () => {
-      // Create mock packages with library directories
-      const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', testInstallPath)
-      const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', testInstallPath)
-
-      // Create project directory with dependencies
+      // Create project directory with dependencies first
       const projectDir = path.join(tempDir, 'test-project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsYaml(projectDir, ['nodejs.org@20', 'zlib.net@1.3'])
+
+      // Calculate the correct environment directory where dev command will look
+      const crypto = require('node:crypto')
+      const projectHash = `test-project_${crypto.createHash('md5').update(projectDir).digest('hex').slice(0, 8)}`
+      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+
+      // Create mock packages with library directories in the correct location
+      const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
+      const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', envDir)
 
       // Run dev command with shell output
       const result = await runCLI(['dev', projectDir, '--shell'])

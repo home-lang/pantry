@@ -380,7 +380,17 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     // Parse dependency file and separate global vs local dependencies
     const { default: sniff } = await import('./sniff')
-    const sniffResult = await sniff({ string: projectDir })
+    let sniffResult: { pkgs: any[], env: Record<string, string> }
+
+    try {
+      sniffResult = await sniff({ string: projectDir })
+    } catch (error) {
+      // Handle malformed dependency files gracefully
+      if (config.verbose) {
+        console.warn(`Failed to parse dependency file: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      sniffResult = { pkgs: [], env: {} }
+    }
 
     // Only check for global dependencies when not in shell mode or when global env doesn't exist, and not skipping global
     const globalSniffResults: Array<{ pkgs: any[], env: Record<string, string> }> = []

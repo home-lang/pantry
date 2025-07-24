@@ -9,8 +9,11 @@ import { dump } from '../src/dev/dump'
 describe('Smart Constraint Checking', () => {
   const testBaseDir = path.join(homedir(), '.local', 'share', 'launchpad-test')
   const testProjectDir = path.join(testBaseDir, 'test-project')
-  const testLocalEnvDir = path.join(testBaseDir, 'test-project_12345678')
-  const testGlobalEnvDir = path.join(testBaseDir, 'global')
+  // Calculate the actual project hash that would be generated
+  const crypto = require('node:crypto')
+  const testProjectHash = `test-project_${crypto.createHash('md5').update(testProjectDir).digest('hex').slice(0, 8)}`
+  const testLocalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', testProjectHash)
+  const testGlobalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
   beforeAll(async () => {
     // Clean up any existing test directories
