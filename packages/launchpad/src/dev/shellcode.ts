@@ -182,7 +182,7 @@ __launchpad_setup_global_deps() {
         __launchpad_update_library_paths "$global_env_dir"
     fi
 
-    # Also check for global dependencies from ~/.dotfiles
+    # Check for global dependencies from ~/.dotfiles (most common case)
     local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
     for dotfiles_env in $dotfiles_env_pattern; do
         if [[ -d "$dotfiles_env/bin" ]]; then
@@ -195,6 +195,39 @@ __launchpad_setup_global_deps() {
             __launchpad_update_library_paths "$dotfiles_env"
         fi
     done
+
+    # Also check for any other manually activated global dependency environments
+    # Use launchpad to detect environments created with global: true flag
+    local launchpad_envs_dir="$HOME/.local/share/launchpad"
+    if [[ -d "$launchpad_envs_dir" ]] && command -v ${launchpadBinary} >/dev/null 2>&1; then
+        # Get list of environments with global dependencies by checking for known patterns
+        # that indicate global installations (environments named after global dependency files)
+        for env_dir in "$launchpad_envs_dir"/*; do
+            # Skip if not a directory or if it's already processed above
+            if [[ ! -d "$env_dir" ]] || [[ "$env_dir" == *"/global"* ]] || [[ "$env_dir" == *"/.dotfiles_"* ]]; then
+                continue
+            fi
+
+            # Skip regular project environments (they have specific hashes)
+            local env_name=$(basename "$env_dir")
+            if [[ "$env_name" =~ ^launchpad_[a-f0-9]{8}$ ]]; then
+                continue
+            fi
+
+            # Include environments that match global dependency file patterns
+            # These would be created from running 'launchpad dev path/to/global-deps.yaml'
+            local bin_dir="$env_dir/bin"
+            if [[ -d "$bin_dir" ]] && [[ -n "$(ls -A "$bin_dir" 2>/dev/null)" ]]; then
+                # This is likely a global environment based on the naming pattern
+                # (non-project environments with actual binaries)
+                __launchpad_update_path "$bin_dir"
+                if [[ -d "$env_dir/sbin" ]]; then
+                    __launchpad_update_path "$env_dir/sbin"
+                fi
+                __launchpad_update_library_paths "$env_dir"
+            fi
+        done
+    fi
 }
 
 # Ensure global dependencies are always in PATH
@@ -208,7 +241,7 @@ __launchpad_ensure_global_path() {
         __launchpad_update_path "$global_env_dir/sbin"
     fi
 
-    # Also ensure global dependencies from ~/.dotfiles are in PATH
+    # Ensure global dependencies from ~/.dotfiles are in PATH
     local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
     for dotfiles_env in $dotfiles_env_pattern; do
         if [[ -d "$dotfiles_env/bin" ]]; then
@@ -218,6 +251,33 @@ __launchpad_ensure_global_path() {
             __launchpad_update_path "$dotfiles_env/sbin"
         fi
     done
+
+    # Also ensure any other manually activated global environments are in PATH
+    local launchpad_envs_dir="$HOME/.local/share/launchpad"
+    if [[ -d "$launchpad_envs_dir" ]]; then
+        for env_dir in "$launchpad_envs_dir"/*; do
+            # Skip if not a directory or if it's already processed above
+            if [[ ! -d "$env_dir" ]] || [[ "$env_dir" == *"/global"* ]] || [[ "$env_dir" == *"/.dotfiles_"* ]]; then
+                continue
+            fi
+
+            # Skip regular project environments (they have specific hashes)
+            local env_name=$(basename "$env_dir")
+            if [[ "$env_name" =~ ^launchpad_[a-f0-9]{8}$ ]]; then
+                continue
+            fi
+
+            # Include environments that were created from global dependency files
+            local bin_dir="$env_dir/bin"
+            if [[ -d "$bin_dir" ]] && [[ -n "$(ls -A "$bin_dir" 2>/dev/null)" ]]; then
+                # This is likely a global environment based on the naming pattern
+                __launchpad_update_path "$bin_dir"
+                if [[ -d "$env_dir/sbin" ]]; then
+                    __launchpad_update_path "$env_dir/sbin"
+                fi
+            fi
+        done
+    fi
 
     # Always ensure critical system paths are available
     __launchpad_ensure_system_path
