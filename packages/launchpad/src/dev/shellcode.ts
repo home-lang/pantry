@@ -269,7 +269,7 @@ __launchpad_chpwd() {
                 hash -r 2>/dev/null || true
 
                 if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
+                    ${launchpadBinary} dev:on "$project_dir" --shell-safe >&2 2>/dev/null || printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
                 fi
                 return 0
             fi
@@ -343,7 +343,8 @@ __launchpad_chpwd() {
                 # Show clean activation message that replaces any previous output
                 if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
                     # Use carriage return to replace any previous output
-                    printf "\\r\\033[K✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
+                    printf "\\r\\033[K" >&2
+                    ${launchpadBinary} dev:on "$project_dir" --shell-safe >&2 2>/dev/null || printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
                 fi
             else
                 # Setup failed but not due to timeout - try to set up basic environment silently
@@ -362,7 +363,8 @@ __launchpad_chpwd() {
 
                     # Show activation message only if environment already exists
                     if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                        printf "\\r\\033[K✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
+                        printf "\\r\\033[K" >&2
+                        ${launchpadBinary} dev:on "$project_dir" --shell-safe >&2 2>/dev/null || printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
                     fi
                 fi
                 # If no environment exists, be completely silent
@@ -401,7 +403,8 @@ __launchpad_chpwd() {
 
             # Show deactivation message synchronously (no background jobs)
             if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                printf "\\r\\033[K⚪ Environment deactivated\\n" >&2
+                printf "\\r\\033[K" >&2
+                ${launchpadBinary} dev:off >&2 2>/dev/null || printf "⚪ Environment deactivated\\n" >&2
             fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
