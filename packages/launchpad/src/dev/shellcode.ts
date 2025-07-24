@@ -168,35 +168,56 @@ __launchpad_update_library_paths() {
     fi
 }
 
-# Setup global dependencies (only if user has manually created them)
+# Setup global dependencies (from multiple possible locations)
 __launchpad_setup_global_deps() {
+    # Check the standard global environment
     local global_env_dir="$HOME/.local/share/launchpad/global"
-
-    # Only activate if user has manually created a global environment
     if [[ -d "$global_env_dir/bin" ]]; then
         __launchpad_update_path "$global_env_dir/bin"
     fi
     if [[ -d "$global_env_dir/sbin" ]]; then
         __launchpad_update_path "$global_env_dir/sbin"
     fi
-
-    # Set up library paths for global dependencies
     if [[ -d "$global_env_dir" ]]; then
         __launchpad_update_library_paths "$global_env_dir"
     fi
+
+    # Also check for global dependencies from ~/.dotfiles
+    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
+    for dotfiles_env in $dotfiles_env_pattern; do
+        if [[ -d "$dotfiles_env/bin" ]]; then
+            __launchpad_update_path "$dotfiles_env/bin"
+        fi
+        if [[ -d "$dotfiles_env/sbin" ]]; then
+            __launchpad_update_path "$dotfiles_env/sbin"
+        fi
+        if [[ -d "$dotfiles_env" ]]; then
+            __launchpad_update_library_paths "$dotfiles_env"
+        fi
+    done
 }
 
 # Ensure global dependencies are always in PATH
 __launchpad_ensure_global_path() {
+    # Add standard global environment to PATH if it exists
     local global_env_dir="$HOME/.local/share/launchpad/global"
-
-    # Add global environment to PATH if it exists
     if [[ -d "$global_env_dir/bin" ]]; then
         __launchpad_update_path "$global_env_dir/bin"
     fi
     if [[ -d "$global_env_dir/sbin" ]]; then
         __launchpad_update_path "$global_env_dir/sbin"
     fi
+
+    # Also ensure global dependencies from ~/.dotfiles are in PATH
+    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
+    for dotfiles_env in $dotfiles_env_pattern; do
+        if [[ -d "$dotfiles_env/bin" ]]; then
+            __launchpad_update_path "$dotfiles_env/bin"
+        fi
+        if [[ -d "$dotfiles_env/sbin" ]]; then
+            __launchpad_update_path "$dotfiles_env/sbin"
+        fi
+    done
 
     # Always ensure critical system paths are available
     __launchpad_ensure_system_path
