@@ -1159,8 +1159,9 @@ cli
 // Dev commands for shell integration
 cli
   .command('dev:shellcode', 'Generate shell integration code')
-  .action(() => {
-    console.log(shellcode())
+  .option('--test-mode', 'Generate shellcode for testing (bypasses test environment checks)')
+  .action(({ testMode }) => {
+    console.log(shellcode(testMode))
   })
 
 cli
@@ -1171,10 +1172,17 @@ cli
   .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean, shell?: boolean }) => {
     try {
       const targetDir = dir ? path.resolve(dir) : process.cwd()
+
+      // For shell integration, force quiet mode and set environment variable
+      const isShellIntegration = options?.shell || false
+      if (isShellIntegration) {
+        process.env.LAUNCHPAD_SHELL_INTEGRATION = '1'
+      }
+
       await dump(targetDir, {
         dryrun: options?.dryRun || false,
-        quiet: options?.quiet || false,
-        shellOutput: options?.shell || false,
+        quiet: options?.quiet || isShellIntegration, // Force quiet for shell integration
+        shellOutput: isShellIntegration,
         skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true' || process.env.LAUNCHPAD_ENABLE_GLOBAL_AUTO_SCAN !== 'true', // Skip global packages by default unless explicitly enabled
       })
     }

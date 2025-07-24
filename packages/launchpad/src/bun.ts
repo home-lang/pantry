@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
@@ -33,16 +34,81 @@ function validatePath(installPath: string): boolean {
 }
 
 /**
+ * Validate if a file is a proper zip archive
+ */
+function validateZipFile(filePath: string): boolean {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return false
+    }
+
+    const stats = fs.statSync(filePath)
+
+    // Check if file size is reasonable (bun should be at least 1MB, less than 200MB)
+    if (stats.size < 1024 * 1024 || stats.size > 200 * 1024 * 1024) {
+      if (config.verbose) {
+        console.warn(`Invalid zip file size: ${stats.size} bytes (expected 1MB-200MB)`)
+      }
+      return false
+    }
+
+    // Read the first few bytes to check zip signature
+    const buffer = Buffer.alloc(4)
+    const fd = fs.openSync(filePath, 'r')
+    try {
+      fs.readSync(fd, buffer, 0, 4, 0)
+
+      // Check for ZIP signature (PK\x03\x04 or PK\x05\x06 or PK\x07\x08)
+      const signature = buffer.readUInt32LE(0)
+      // eslint-disable-next-line unicorn/number-literal-case
+      const isValidZip = signature === 0x04034b50 // Local file header
+      // eslint-disable-next-line unicorn/number-literal-case
+        || signature === 0x06054b50 // End of central directory
+      // eslint-disable-next-line unicorn/number-literal-case
+        || signature === 0x08074b50 // Data descriptor
+
+      if (!isValidZip && config.verbose) {
+        console.warn(`Invalid zip signature: 0x${signature.toString(16).padStart(8, '0')}`)
+      }
+
+      return isValidZip
+    }
+    finally {
+      fs.closeSync(fd)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Error validating zip file: ${error}`)
+    }
+    return false
+  }
+}
+
+/**
  * Get cached binary path for a specific version
  */
 function getCachedBinaryPath(version: string, filename: string): string | null {
   const cachedArchivePath = path.join(BINARY_CACHE_DIR, version, filename)
 
-  if (fs.existsSync(cachedArchivePath)) {
+  if (fs.existsSync(cachedArchivePath) && validateZipFile(cachedArchivePath)) {
     if (config.verbose) {
       console.warn(`Found cached binary: ${cachedArchivePath}`)
     }
     return cachedArchivePath
+  }
+
+  // Remove corrupted cache if it exists
+  if (fs.existsSync(cachedArchivePath) && !validateZipFile(cachedArchivePath)) {
+    try {
+      fs.unlinkSync(cachedArchivePath)
+      if (config.verbose) {
+        console.warn(`Cached file is corrupted, removing: ${cachedArchivePath}`)
+      }
+    }
+    catch {
+      // Ignore errors removing cached file
+    }
   }
 
   return null
@@ -290,7 +356,7 @@ export async function install_bun(installPath: string, version?: string): Promis
   let zipPath: string
 
   try {
-    if (cachedArchivePath) {
+    if (cachedArchivePath && validateZipFile(cachedArchivePath)) {
       // Use cached version - show success message directly without intermediate loading message
       if (config.verbose) {
         console.warn(`Using cached Bun v${bunVersion} from: ${cachedArchivePath}`)
@@ -309,6 +375,18 @@ export async function install_bun(installPath: string, version?: string): Promis
       }
     }
     else {
+      // Remove corrupted cache if it exists
+      if (cachedArchivePath && !validateZipFile(cachedArchivePath)) {
+        if (config.verbose) {
+          console.warn(`Cached file is corrupted, removing: ${cachedArchivePath}`)
+        }
+        try {
+          fs.unlinkSync(cachedArchivePath)
+        }
+        catch {
+          // Ignore errors removing corrupted cache
+        }
+      }
       // Download new version
       if (config.verbose) {
         console.warn(`Downloading from: ${url}`)
@@ -419,6 +497,33 @@ export async function install_bun(installPath: string, version?: string): Promis
       if (config.verbose)
         console.warn(`Downloaded to ${zipPath}`)
 
+      // Validate the downloaded zip file before caching and extraction
+      if (!validateZipFile(zipPath)) {
+        // Remove corrupted file
+        try {
+          fs.unlinkSync(zipPath)
+        }
+        catch {
+          // Ignore errors removing corrupted file
+        }
+
+        // Try to clear any cached corrupted versions
+        const cachedPath = getCachedBinaryPath(bunVersion, filename)
+        if (cachedPath && fs.existsSync(cachedPath)) {
+          try {
+            fs.unlinkSync(cachedPath)
+            if (config.verbose) {
+              console.warn(`Removed corrupted cached file: ${cachedPath}`)
+            }
+          }
+          catch {
+            // Ignore errors removing cached file
+          }
+        }
+
+        throw new Error(`Downloaded bun archive is corrupted. Try clearing cache with: launchpad cache:clear --force`)
+      }
+
       // Cache the downloaded file for future use
       saveBinaryToCache(bunVersion, filename, zipPath)
     }
@@ -445,7 +550,40 @@ export async function install_bun(installPath: string, version?: string): Promis
         const { promisify } = await import('node:util')
         const execAsync = promisify(exec)
 
-        await execAsync(`unzip -o "${zipPath}" -d "${tempDir}"`)
+        try {
+          await execAsync(`unzip -o "${zipPath}" -d "${tempDir}"`)
+        }
+        catch (error) {
+          // Remove the corrupted file and any cached versions
+          try {
+            fs.unlinkSync(zipPath)
+          }
+          catch {
+            // Ignore cleanup errors
+          }
+
+          const cachedPath = getCachedBinaryPath(bunVersion, filename)
+          if (cachedPath && fs.existsSync(cachedPath)) {
+            try {
+              fs.unlinkSync(cachedPath)
+              if (config.verbose) {
+                console.warn(`Removed corrupted cached file: ${cachedPath}`)
+              }
+            }
+            catch {
+              // Ignore cleanup errors
+            }
+          }
+
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          if (errorMessage.includes('End-of-central-directory signature not found')
+            || errorMessage.includes('zipfile')
+            || errorMessage.includes('not a zipfile')) {
+            throw new Error(`Downloaded bun archive is corrupted. The download may have been interrupted or the file is damaged. Try running: launchpad cache:clear --force`)
+          }
+
+          throw new Error(`Failed to extract bun archive: ${errorMessage}`)
+        }
 
         // Move the bun executable to the bin directory
         const bunExeName = platform() === 'win32' ? 'bun.exe' : 'bun'
@@ -465,6 +603,25 @@ export async function install_bun(installPath: string, version?: string): Promis
         await execAsync(`cp ${sourcePath} ${destPath}`)
         await execAsync(`chmod +x ${destPath}`)
       }
+    }
+
+    // Show individual package success message to match other packages
+    if (!config.verbose) {
+      const message = `✅ bun.sh \x1B[2m\x1B[3m(v${bunVersion})\x1B[0m`
+      if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+        process.stderr.write(`${message}\n`)
+      }
+      else {
+        console.log(message)
+      }
+    }
+
+    // Create environment readiness marker file for fast shell integration
+    try {
+      fs.writeFileSync(path.join(installPath, '.launchpad_ready'), new Date().toISOString())
+    }
+    catch {
+      // Ignore errors creating marker file
     }
 
     // Clean up

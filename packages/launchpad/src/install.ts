@@ -106,7 +106,13 @@ function logUniqueMessage(message: string, forceLog = false): void {
 
   // Show temporary processing message immediately after package success messages (not the final environment message)
   // Use a simple static message instead of animated spinner to avoid conflicts with download progress
-  if (!config.verbose && message.startsWith('✅') && !message.includes('Environment activated')) {
+  // But don't show it for the final package completion or summary messages
+  if (!config.verbose && message.startsWith('✅')
+    && !message.includes('Environment activated')
+    && !message.includes('Successfully set up environment')
+    && !message.includes('Installed')
+    && !message.includes('packages')
+    && !message.includes('(v')) { // Don't show processing message after individual package success messages
     // Add a small delay to make the success message visible before showing processing message
     setTimeout(() => {
       // Only show processing message if we haven't completed all packages
@@ -2835,16 +2841,20 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       uniquePackages.add(domain)
     })
 
-    if (packageList.length === 1) {
-      logUniqueMessage(`✅ Environment activated for ${path.basename(process.cwd())}`)
-    }
-    else {
-      logUniqueMessage(`✅ Installed ${uniquePackages.size} packages`)
-    }
+    // Always show consistent summary format regardless of package count
+    const packageWord = uniquePackages.size === 1 ? 'package' : 'packages'
+    logUniqueMessage(`✅ Installed ${uniquePackages.size} ${packageWord}`)
   }
 
   // Clean up any lingering processing messages
   cleanupAllProcessingMessages()
+
+  // Additional cleanup to ensure no processing messages remain
+  if (hasTemporaryProcessingMessage) {
+    setTimeout(() => {
+      cleanupSpinner()
+    }, 100)
+  }
 
   return allInstalledFiles
 }

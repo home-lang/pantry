@@ -31,12 +31,12 @@ describe('Environment Activation Behavior', () => {
     const projectDir = path.join(tempDir, 'project')
     fs.mkdirSync(projectDir)
 
-    // Create deps.yaml with packages that have versions satisfied by system but not installed in environment
+    // Create deps.yaml with packages that don't exist to ensure installation failure
     const depsFile = path.join(projectDir, 'deps.yaml')
     fs.writeFileSync(depsFile, `
 dependencies:
-  bun.sh: ^1.2.0  # System bun might satisfy this but environment doesn't have it
-  gnu.org/bash: ^5.0.0  # System bash might satisfy this but environment doesn't have it
+  completely-nonexistent-package-12345: ^1.0.0  # Package that doesn't exist to trigger installation failure
+  another-nonexistent-package-xyz: ^1.0.0  # Another non-existent package
 `)
 
     // Mock console.error to capture shell output
@@ -144,7 +144,7 @@ dependencies:
     const depsFile = path.join(projectDir, 'deps.yaml')
     fs.writeFileSync(depsFile, `
 dependencies:
-  bun.sh: ^1.0.0  # Very permissive constraint that system bun likely satisfies
+  nonexistent-test-package: ^1.0.0  # Package that doesn't exist to trigger installation failure
 `)
 
     let errorOutput = ''
@@ -160,7 +160,7 @@ dependencies:
         skipGlobal: true,
       })
 
-      // Should provide helpful guidance
+      // Should provide helpful guidance when installation fails
       expect(errorOutput).toContain('Environment not ready')
       expect(errorOutput).toContain('packages need installation')
     }

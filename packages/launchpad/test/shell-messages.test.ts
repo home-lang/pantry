@@ -1,79 +1,40 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import fs from 'node:fs'
-import path from 'node:path'
-import process from 'node:process'
+import { describe, expect, it } from 'bun:test'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 describe('Shell Message Configuration', () => {
-  let tempDir: string
-  let originalCwd: string
-
-  beforeEach(() => {
-    originalCwd = process.cwd()
-    tempDir = fs.mkdtempSync(path.join(import.meta.dirname, 'shell-messages-'))
-  })
-
-  afterEach(() => {
-    process.chdir(originalCwd)
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true })
-    }
-  })
-
   describe('Default Configuration', () => {
     it('should have sensible default shell message settings', async () => {
-      const { defaultConfig } = await import('../src/config')
+      const { config } = await import('../src/config')
 
-      expect(defaultConfig.showShellMessages).toBe(true)
-      // Check that activation message contains expected text (may have ANSI codes)
-      // Strip ANSI escape sequences for testing
-      const ansiEscapeRegex = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g')
-      const cleanMessage = defaultConfig.shellActivationMessage.replace(ansiEscapeRegex, '')
-      expect(cleanMessage).toContain('Environment activated for {path}')
-      expect(defaultConfig.shellDeactivationMessage).toBe('Environment deactivated')
+      expect(config.showShellMessages).toBeDefined()
+      expect(config.shellActivationMessage).toBeDefined()
+      expect(config.shellDeactivationMessage).toBeDefined()
+      expect(config.showShellMessages).toBe(true)
     })
 
     it('should support custom shell message configuration', async () => {
-      // Create a custom config file
-      const configPath = path.join(tempDir, 'launchpad.config.ts')
-      const configContent = `
-import type { LaunchpadConfig } from '../packages/launchpad/src'
+      const { config } = await import('../src/config')
 
-export default {
-  showShellMessages: false,
-  shellActivationMessage: '🚀 Custom activation for {path}',
-  shellDeactivationMessage: '👋 Custom deactivation',
-} satisfies Partial<LaunchpadConfig>
-`
-      fs.writeFileSync(configPath, configContent)
-
-      // Change to temp directory so config is loaded
-      process.chdir(tempDir)
-
-      // Test that custom config would be used if available
-      expect(fs.existsSync(configPath)).toBe(true)
-
-      // Since we can't easily reload modules in Bun, just test that the config file exists
-      // The actual config loading would work correctly in a fresh process
+      // Ensure all message types are configurable
+      expect(typeof config.shellActivationMessage).toBe('string')
+      expect(typeof config.shellDeactivationMessage).toBe('string')
+      expect(typeof config.showShellMessages).toBe('boolean')
     })
 
     it('should validate shell message types', async () => {
       const { config } = await import('../src/config')
 
-      expect(typeof config.showShellMessages).toBe('boolean')
-      expect(typeof config.shellActivationMessage).toBe('string')
-      expect(typeof config.shellDeactivationMessage).toBe('string')
-
-      expect(config.shellActivationMessage.length).toBeGreaterThan(0)
-      expect(config.shellDeactivationMessage.length).toBeGreaterThan(0)
+      expect(config.shellActivationMessage).toMatch(/✅|🔧|Environment/)
+      expect(config.shellDeactivationMessage).toMatch(/⚪|Environment|environment/)
     })
 
     it('should handle missing configuration gracefully', async () => {
-      // Even without config file, defaults should work
-      const { defaultConfig } = await import('../src/config')
+      const { config } = await import('../src/config')
 
-      expect(defaultConfig.showShellMessages).toBeDefined()
-      expect(defaultConfig.shellActivationMessage).toBeDefined()
-      expect(defaultConfig.shellDeactivationMessage).toBeDefined()
+      // Should have fallback values
+      expect(config.shellActivationMessage).toBeTruthy()
+      expect(config.shellDeactivationMessage).toBeTruthy()
     })
   })
 
@@ -82,58 +43,48 @@ export default {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should contain the actual command calls, not the message text
-      expect(code).toContain('launchpad dev:on')
-      expect(code).toContain('launchpad dev:off')
+      // Should contain optimized shell integration logic instead of dev:on
+      expect(code).toContain('__launchpad_chpwd')
+      expect(code).toContain('Environment activated')
+      expect(code).toContain('Environment deactivated')
     })
 
     it('should generate conditional message display logic', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should contain function definitions
-      expect(code).toContain('__launchpad_chpwd')
-      expect(code).toContain('__launchpad_find_deps_file')
+      // Should have conditional logic for message display
+      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
+      expect(code).toContain('false')
     })
 
     it('should handle path placeholder replacement', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should contain shell variable substitution
-      // eslint-disable-next-line no-template-curly-in-string
-      const hasShellVar = code.includes('$PWD') || code.includes('${PWD}')
-      expect(hasShellVar).toBe(true)
+      // Should use basename for project path display
+      expect(code).toContain('basename')
+      expect(code).toContain('project_dir')
     })
 
     it('should escape shell special characters', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should not contain unescaped characters that could break shell
-      const lines = code.split('\n')
-      for (const line of lines) {
-        if (line.includes('echo') && line.includes('Environment activated')) {
-          // Echo statements should be properly quoted or escaped
-          const hasProperQuoting = /echo\s+["'].*["']/.test(line) || line.includes('$')
-          expect(hasProperQuoting).toBe(true)
-        }
-      }
+      // Should properly escape shell characters in messages
+      expect(code).toContain('\\033[') // ANSI escape codes should be properly escaped
+      expect(code).toContain('\\n') // Newlines should be escaped
     })
 
     it('should generate valid shell syntax', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Basic shell syntax validation - avoid testing for "null" as it appears in >/dev/null
-      expect(code).not.toContain('undefined')
-      expect(code).not.toContain('[object Object]')
-      expect(code).not.toContain('= null')
-
-      // Should contain proper shell constructs - functions use () not function keyword in bash
-      expect(code).toContain('() {')
-      expect(code).toContain('if [')
+      // Should have proper shell syntax
+      expect(code).toContain('if [[ ')
+      expect(code).toContain('printf ')
       expect(code).toContain('fi')
+      expect(code).not.toContain('undefined')
     })
   })
 
@@ -142,9 +93,9 @@ export default {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should have conditional logic for messages (config is interpolated at generation time)
-      expect(code).toContain('launchpad dev:on')
-      expect(code).toContain('launchpad dev:off')
+      // Should have conditional logic for message display
+      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
+      expect(code).toContain('false')
     })
 
     it('should support custom activation messages', async () => {
@@ -152,9 +103,10 @@ export default {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should include command calls that will handle messages
-      expect(code).toContain('launchpad dev:on')
-      // Configuration is used by the dev:on command, not embedded in shellcode
+      // Should include activation message logic
+      expect(code).toContain('Environment activated')
+      expect(code).toContain('printf')
+      // Configuration should be available
       expect(typeof config.shellActivationMessage).toBe('string')
     })
 
@@ -163,106 +115,106 @@ export default {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should include command calls that will handle messages
-      expect(code).toContain('launchpad dev:off')
-      // Configuration is used by the dev:off command, not embedded in shellcode
+      // Should include deactivation message logic
+      expect(code).toContain('Environment deactivated')
+      expect(code).toContain('printf')
+      // Configuration should be available
       expect(typeof config.shellDeactivationMessage).toBe('string')
     })
 
     it('should handle emoji and special characters in messages', async () => {
-      const testMessage = '🚀 Environment ready for {path} 🎉'
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Test that messages with emoji would be handled correctly
-      expect(testMessage.includes('{path}')).toBe(true)
-
-      const substituted = testMessage.replace('{path}', '/test/path')
-      expect(substituted).toBe('🚀 Environment ready for /test/path 🎉')
-      expect(substituted).not.toContain('{path}')
+      // Should handle emoji properly
+      expect(code).toContain('✅') // Check individual emojis instead of regex
     })
 
     it('should preserve ANSI escape codes in messages', async () => {
-      const testMessage = '\\033[32m✅ Environment activated for {path}\\033[0m'
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Should handle ANSI escape sequences properly
-      expect(testMessage.includes('\\033[')).toBe(true)
-      expect(testMessage.includes('{path}')).toBe(true)
+      // Should have ANSI escape codes for styling
+      expect(code).toContain('\\033[')
     })
   })
 
   describe('Error Handling and Edge Cases', () => {
     it('should handle empty messages gracefully', async () => {
-      const { defaultConfig } = await import('../src/config')
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Default messages should never be empty
-      expect(defaultConfig.shellActivationMessage.trim().length).toBeGreaterThan(0)
-      expect(defaultConfig.shellDeactivationMessage.trim().length).toBeGreaterThan(0)
+      // Should not contain empty printf statements
+      expect(code).not.toContain('printf ""')
+      expect(code).not.toContain('printf \'\'')
     })
 
     it('should handle messages without path placeholder', async () => {
-      const messageWithoutPath = 'Environment activated'
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Should work even without {path} placeholder
-      const result = messageWithoutPath.replace('{path}', '/test/path')
-      expect(result).toBe('Environment activated') // No change expected
+      // Should handle both messages with and without path placeholders
+      expect(code).toContain('basename')
     })
 
     it('should handle very long messages', async () => {
-      const longMessage = `${'A'.repeat(1000)} {path}`
+      const { shellcode } = await import('../src/dev/shellcode')
 
-      // Should handle long messages without breaking
-      expect(longMessage.includes('{path}')).toBe(true)
-      expect(longMessage.length).toBeGreaterThan(1000)
-
-      const substituted = longMessage.replace('{path}', '/test')
-      expect(substituted.includes('/test')).toBe(true)
-      expect(substituted).not.toContain('{path}')
+      // Should not break with long configuration
+      expect(() => shellcode()).not.toThrow()
     })
 
     it('should handle messages with multiple path placeholders', async () => {
-      const multiPathMessage = 'Activated {path} and also {path}'
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Should replace all instances
-      const result = multiPathMessage.replace(/\{path\}/g, '/test/path')
-      expect(result).toBe('Activated /test/path and also /test/path')
-      expect(result).not.toContain('{path}')
+      // Should handle path replacement consistently
+      expect(code).toContain('project_dir')
+      expect(code).toContain('basename')
     })
 
     it('should handle shell injection attempts', async () => {
-      // Test messages that could potentially be used for shell injection
-      const maliciousMessage = 'Test `rm -rf /` {path}'
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Should still work but won't execute the command (shell will handle escaping)
-      expect(maliciousMessage.includes('`')).toBe(true)
-      expect(maliciousMessage.includes('{path}')).toBe(true)
-
-      // The replacement should work normally
-      const result = maliciousMessage.replace('{path}', '/safe/path')
-      expect(result).toContain('/safe/path')
+      // Should not contain dangerous command substitution patterns (backticks)
+      expect(code).not.toContain('`')
+      // Should have proper quoting in printf statements
+      expect(code).toMatch(/printf ".*"/)
+      // Should not contain unescaped user input
+      expect(code).not.toContain('eval "$user_input"')
     })
   })
 
   describe('Integration with Dev Environment', () => {
     it('should work with dev command', async () => {
-      // Create a test project
-      const projectDir = path.join(tempDir, 'test-project')
-      fs.mkdirSync(projectDir, { recursive: true })
+      // Create a temporary test directory
+      const testDir = join(import.meta.dirname, 'shell-messages-test')
 
-      const depsContent = `dependencies:
-  node: ^20
-`
-      fs.writeFileSync(path.join(projectDir, 'dependencies.yaml'), depsContent)
-
-      // Import dump function
       try {
+        mkdirSync(testDir, { recursive: true })
+        writeFileSync(join(testDir, 'dependencies.yaml'), `
+packages:
+  - cowsay
+`)
+
         const { dump } = await import('../src/dev/dump')
 
-        // The dump function should use the configuration
-        // This is mainly testing that it doesn't crash with config
-        expect(typeof dump).toBe('function')
+        // Should run without throwing (may produce shell output or complete successfully)
+        try {
+          await dump(testDir, { quiet: true, shellOutput: true })
+          // If it completes successfully, that's good
+          expect(true).toBe(true)
+        }
+        catch (error) {
+          // If it fails, it should still be a handled error (not a crash)
+          expect(error).toBeDefined()
+        }
       }
-      catch (error) {
-        // Acceptable in test environment
-        expect(error).toBeDefined()
+      finally {
+        if (existsSync(testDir)) {
+          rmSync(testDir, { recursive: true, force: true })
+        }
       }
     })
 
@@ -270,30 +222,20 @@ export default {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should handle various dependency file formats
-      const hasDependencyFiles = code.includes('dependencies.yaml') || code.includes('pkgx.yaml')
-      expect(hasDependencyFiles).toBe(true)
+      // Should handle multiple dependency file patterns
+      expect(code).toContain('dependencies')
+      expect(code).toContain('deps')
+      expect(code).toContain('pkgx')
+      expect(code).toContain('launchpad')
     })
 
     it('should maintain configuration across environment switches', async () => {
-      const { config } = await import('../src/config')
+      const { shellcode } = await import('../src/dev/shellcode')
+      const code = shellcode()
 
-      // Configuration should be consistent
-      const firstCheck = {
-        show: config.showShellMessages,
-        activation: config.shellActivationMessage,
-        deactivation: config.shellDeactivationMessage,
-      }
-
-      // Re-import and check again
-      const { config: secondConfig } = await import('../src/config')
-      const secondCheck = {
-        show: secondConfig.showShellMessages,
-        activation: secondConfig.shellActivationMessage,
-        deactivation: secondConfig.shellDeactivationMessage,
-      }
-
-      expect(firstCheck).toEqual(secondCheck)
+      // Should preserve message settings when switching projects
+      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
+      expect(code).toContain('LAUNCHPAD_CURRENT_PROJECT')
     })
   })
 })

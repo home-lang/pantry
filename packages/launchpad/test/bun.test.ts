@@ -31,8 +31,15 @@ async function mockFetch(url: string | URL | Request, _init?: RequestInit): Prom
 
   // Mock Bun binary download
   if (urlString.includes('github.com/oven-sh/bun/releases/download')) {
-    // Create a minimal zip file for testing
-    const zipContent = Buffer.from('fake bun binary zip content for testing')
+    // Create a minimal zip file for testing with proper ZIP signature
+    const zipContent = Buffer.alloc(1024 * 1024) // 1MB buffer
+
+    // Write ZIP Local File Header signature (PK\x03\x04 = 0x04034b50 in little endian)
+    zipContent.writeUInt32LE(0x04034B50, 0)
+
+    // Fill the rest with some content to make it look like a valid zip
+    zipContent.fill(0x20, 4) // Fill with spaces
+
     return new Response(zipContent, {
       status: 200,
       statusText: 'OK',
@@ -59,7 +66,7 @@ describe('Bun', () => {
     globalThis.fetch = mockFetch as typeof fetch
 
     // Set test environment
-    process.env.NODE_ENV = 'test'
+    process.env = { ...process.env, NODE_ENV: 'test' }
   })
 
   afterEach(() => {

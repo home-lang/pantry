@@ -431,10 +431,25 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     }
   }
 
-  if (
-    has_package_json && !pkgs.some(pkg => pkg.project === 'bun.sh')
-    && !pkgs.some(pkg => pkg.project === 'nodejs.org')
-  ) {
+  // Only auto-add nodejs.org if we have a package.json but no JS runtime is explicitly specified
+  // This should not interfere with explicit dependencies defined in deps.yaml files
+  const hasAnyJSRuntime = pkgs.some((pkg) => {
+    // Check for any explicit JS runtime specification
+    return pkg.project === 'bun.sh'
+      || pkg.project === 'bun.com'
+      || pkg.project === 'bun'
+      || pkg.project === 'nodejs.org'
+      || pkg.project === 'node'
+      || pkg.project === 'deno.land'
+      || pkg.project === 'deno.com'
+      || pkg.project === 'deno'
+      || pkg.project.includes('bun')
+      || pkg.project.includes('nodejs')
+      || pkg.project.includes('deno')
+  })
+
+  // Only auto-infer nodejs if we have package.json but no explicit JS runtime was specified
+  if (has_package_json && !hasAnyJSRuntime) {
     pkgs.push({ project: 'nodejs.org', constraint, source: 'inferred' })
   }
 

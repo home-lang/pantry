@@ -70,7 +70,8 @@ describe('Shell Integration Library Paths', () => {
 
       // Should scan for lib and lib64 directories
       expect(generatedShellCode).toContain('for lib_dir in "$env_dir/lib" "$env_dir/lib64"')
-      expect(generatedShellCode).toContain('for domain_dir in "$env_dir"/*')
+      // Current implementation uses find instead of glob expansion for robustness
+      expect(generatedShellCode).toContain('find "$env_dir" -maxdepth 1 -type d -print0')
       expect(generatedShellCode).toContain('find "$domain_dir" -maxdepth 1 -name "v*" -type d')
     })
 
@@ -194,8 +195,8 @@ describe('Shell Integration Library Paths', () => {
       // Should filter out known non-package directories early
       const excludedDirs = ['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache']
       for (const dir of excludedDirs) {
-        // The actual filtering is done in TypeScript, but shell should still be efficient
-        expect(generatedShellCode).toContain(`"$(basename "$domain_dir")" != "${dir}"`)
+        // Current implementation uses basename comparison for filtering
+        expect(generatedShellCode).toContain(`"$domain_name" != "${dir}"`)
       }
     })
 
@@ -203,9 +204,11 @@ describe('Shell Integration Library Paths', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should check directory existence before processing
-      expect(generatedShellCode).toContain('[[ -d "$domain_dir"')
+      // Should check directory existence before processing version directories
+      // (domain_dir check is unnecessary since find only returns directories)
       expect(generatedShellCode).toContain('[[ -d "$version_dir"')
+      // Should also use find which is more efficient than glob expansion
+      expect(generatedShellCode).toContain('find "$env_dir" -maxdepth 1 -type d -print0')
     })
   })
 

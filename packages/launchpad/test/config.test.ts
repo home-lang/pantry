@@ -56,7 +56,7 @@ describe('Config', () => {
       const ansiEscapeRegex = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g')
       const cleanMessage = defaultConfig.shellActivationMessage.replace(ansiEscapeRegex, '')
       expect(cleanMessage).toContain('Environment activated for {path}')
-      expect(defaultConfig.shellDeactivationMessage).toBe('Environment deactivated')
+      expect(defaultConfig.shellDeactivationMessage).toBe('⚪ Environment deactivated')
     })
 
     it('should have valid paths', () => {

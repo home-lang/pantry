@@ -6,25 +6,43 @@ import process from 'node:process'
 // Helper function to find the correct launchpad binary
 function getLaunchpadBinary(): string {
   // Check if we're running from a test environment
-  if (process.argv[1] && (process.argv[1].includes('.test.') || process.argv[1].includes('/test/'))) {
+  if (typeof process !== 'undefined' && process.argv?.[1] && (process.argv[1].includes('.test.') || process.argv[1].includes('/test/'))) {
     return 'launchpad'
   }
 
   // Check if we're running from CLI script in development (bin/cli.ts)
-  if (process.argv[1] && process.argv[1].includes('/bin/cli.ts')) {
-    return 'launchpad'
+  if (typeof process !== 'undefined' && process.argv?.[1] && process.argv[1].includes('/bin/cli.ts')) {
+    // In development mode, return the full path to ensure we use the dev version
+    return process.argv[1]
   }
 
   // Check if we're running from a compiled binary or Bun's internal filesystem
-  if (process.argv[1] && (process.argv[1].includes('launchpad') || process.argv[1].includes('$bunfs')) && !process.argv[1].includes('.test.') && !process.argv[1].includes('.ts')) {
+  if (typeof process !== 'undefined' && process.argv?.[1] && (process.argv[1].includes('launchpad') || process.argv[1].includes('$bunfs')) && !process.argv[1].includes('.test.') && !process.argv[1].includes('.ts')) {
     // When running from Bun's compiled binary, argv[1] might be internal like /$bunfs/root/launchpad
     // In this case, we should try to find the actual binary path
 
-    // First, try to use environment variables or find the binary in PATH
+    // First, try common installation paths before using 'which' to avoid dev environment issues
+    const installationPaths = [
+      '/usr/local/bin/launchpad',
+      `${process.env.HOME}/.bun/bin/launchpad`,
+      `${process.env.HOME}/.local/bin/launchpad`,
+    ]
+
+    for (const installPath of installationPaths) {
+      if (existsSync(installPath)) {
+        return installPath
+      }
+    }
+
+    // If no installation found, try 'which' as fallback with short timeout
     try {
-      const whichResult = spawnSync('which', ['launchpad'], { encoding: 'utf8', timeout: 1000 })
+      const whichResult = spawnSync('which', ['launchpad'], { encoding: 'utf8', timeout: 500 })
       if (whichResult.status === 0 && whichResult.stdout.trim()) {
-        return whichResult.stdout.trim()
+        const whichPath = whichResult.stdout.trim()
+        // Avoid relative paths from development environments
+        if (!whichPath.startsWith('./') && !whichPath.includes('/packages/')) {
+          return whichPath
+        }
       }
     }
     catch {
@@ -32,13 +50,13 @@ function getLaunchpadBinary(): string {
     }
 
     // If argv[1] looks like a real path (not internal Bun filesystem), use it
-    if (process.argv[1] && !process.argv[1].includes('$bunfs') && !process.argv[1].includes('/$bunfs')) {
+    if (typeof process !== 'undefined' && process.argv?.[1] && !process.argv[1].includes('$bunfs') && !process.argv[1].includes('/$bunfs')) {
       return process.argv[1]
     }
   }
 
   // Check if we have the executable path from argv0
-  if (process.argv0 && process.argv0.includes('launchpad')) {
+  if (typeof process !== 'undefined' && process.argv0 && process.argv0.includes('launchpad')) {
     return process.argv0
   }
 
@@ -59,17 +77,46 @@ function getLaunchpadBinary(): string {
   return 'launchpad'
 }
 
-export function shellcode(): string {
+export function shellcode(testMode: boolean = false): string {
   // Use the same launchpad binary that's currently running
   const launchpadBinary = getLaunchpadBinary()
   const grepFilter = '/usr/bin/grep -v \'^$\' 2>/dev/null'
 
+  const testModeCheck = testMode ? '' : ' || "$NODE_ENV" == "test"'
+
+  // Use default shell message configuration
+  const showMessages = (typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHOW_ENV_MESSAGES !== 'false') ? 'true' : 'false'
+  const activationMessage = ((typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_ACTIVATION_MESSAGE) || '✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m').replace('{path}', '$(basename "$project_dir")')
+  const deactivationMessage = (typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE) || 'Environment deactivated'
+
   return `
-# Launchpad shell integration with progress indicators
+# Launchpad shell integration - Performance Optimized
+# Exit early if shell integration is disabled or in test mode
+if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" == "1"${testModeCheck} ]]; then
+    return 0 2>/dev/null || exit 0
+fi
+
+# Additional safety check - exit if this is being called during CLI operations
+if [[ "$*" == *"--version"* || "$*" == *"--help"* ]]; then
+    return 0 2>/dev/null || exit 0
+fi
+
+# Performance optimization: aggressive caching with global path caching
 __launchpad_cache_dir=""
 __launchpad_cache_timestamp=0
 __launchpad_setup_in_progress=""
 __launchpad_timeout_count=0
+__launchpad_env_ready_cache=""
+__launchpad_env_ready_timestamp=0
+__launchpad_global_setup_done=""
+
+# Global path caching variables
+__launchpad_global_paths_cache=""
+__launchpad_global_paths_timestamp=0
+
+# Ultra-fast environment activation cache (survives shell restarts)
+__launchpad_persistent_cache_dir="$HOME/.cache/launchpad/shell_cache"
+mkdir -p "$__launchpad_persistent_cache_dir" 2>/dev/null
 
 # Environment variable optimization - batch export
 __launchpad_set_env() {
@@ -80,7 +127,7 @@ __launchpad_set_env() {
     fi
 }
 
-# Optimized PATH management
+# Optimized PATH management with duplicate prevention
 __launchpad_update_path() {
     local project_bin="$1"
     if [[ -d "$project_bin" ]]; then
@@ -91,14 +138,18 @@ __launchpad_update_path() {
     fi
 }
 
-# Dynamic library path management
-__launchpad_update_library_paths() {
+# Fast library path update for quick activation (no expensive find operations)
+__launchpad_update_library_paths_fast() {
     local env_dir="$1"
 
-    # Build library paths from environment
+    if [[ ! -d "$env_dir" ]]; then
+        return 0
+    fi
+
+    # Build library paths from direct lib directories only (fast path)
     local lib_paths=""
 
-    # Add lib directories from the environment
+    # Add direct lib directories only
     for lib_dir in "$env_dir/lib" "$env_dir/lib64"; do
         if [[ -d "$lib_dir" ]]; then
             if [[ -z "$lib_paths" ]]; then
@@ -108,31 +159,6 @@ __launchpad_update_library_paths() {
             fi
         fi
     done
-
-    # Add lib directories from all packages in the environment
-    if [[ -d "$env_dir" ]]; then
-        for domain_dir in "$env_dir"/*; do
-            if [[ -d "$domain_dir" && "$(basename "$domain_dir")" != "bin" && "$(basename "$domain_dir")" != "sbin" && "$(basename "$domain_dir")" != "lib" && "$(basename "$domain_dir")" != "lib64" && "$(basename "$domain_dir")" != "share" && "$(basename "$domain_dir")" != "include" && "$(basename "$domain_dir")" != "etc" && "$(basename "$domain_dir")" != "pkgs" && "$(basename "$domain_dir")" != ".tmp" && "$(basename "$domain_dir")" != ".cache" ]]; then
-                # Use find to avoid glob expansion issues
-                while IFS= read -r -d '' version_dir; do
-                    if [[ -d "$version_dir" ]]; then
-                        for lib_dir in "$version_dir/lib" "$version_dir/lib64"; do
-                            if [[ -d "$lib_dir" ]]; then
-                                if [[ -z "$lib_paths" ]]; then
-                                    lib_paths="$lib_dir"
-                                else
-                                    # Avoid duplicates
-                                    if [[ ":$lib_paths:" != *":$lib_dir:"* ]]; then
-                                        lib_paths="$lib_paths:$lib_dir"
-                                    fi
-                                fi
-                            fi
-                        done
-                    fi
-                done < <(find "$domain_dir" -maxdepth 1 -name "v*" -type d -print0 2>/dev/null)
-            fi
-        done
-    fi
 
     # Set up library path environment variables if we have paths
     if [[ -n "$lib_paths" ]]; then
@@ -147,7 +173,7 @@ __launchpad_update_library_paths() {
             export LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
         fi
 
-        # Set library paths with fallbacks to original values
+        # Handle existing library paths correctly
         if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
             export DYLD_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"
         else
@@ -168,8 +194,101 @@ __launchpad_update_library_paths() {
     fi
 }
 
-# Setup global dependencies (from multiple possible locations)
+# Comprehensive library path management with deduplication
+__launchpad_update_library_paths() {
+    local env_dir="$1"
+
+    if [[ ! -d "$env_dir" ]]; then
+        return 0
+    fi
+
+    # Build library paths from environment directories
+    local lib_paths=""
+
+    # Add direct lib directories first
+    for lib_dir in "$env_dir/lib" "$env_dir/lib64"; do
+        if [[ -d "$lib_dir" ]]; then
+            # Avoid duplicate paths in library path variables
+            if [[ ":$lib_paths:" != *":$lib_dir:"* ]]; then
+                if [[ -z "$lib_paths" ]]; then
+                    lib_paths="$lib_dir"
+                else
+                    lib_paths="$lib_paths:$lib_dir"
+                fi
+            fi
+        fi
+    done
+
+    # Scan for package-specific library directories efficiently
+    if [[ -d "$env_dir" ]]; then
+        # Filter out known non-package directories early
+        while IFS= read -r -d '' domain_dir; do
+            local domain_name=$(basename "$domain_dir")
+
+            # Skip known non-package directories
+            if [[ "$domain_name" != "bin" && "$domain_name" != "sbin" && "$domain_name" != "lib" && "$domain_name" != "lib64" && "$domain_name" != "share" && "$domain_name" != "include" && "$domain_name" != "etc" && "$domain_name" != "pkgs" && "$domain_name" != ".tmp" && "$domain_name" != ".cache" ]]; then
+                # Find version directories and check for lib directories
+                for version_dir in $(find "$domain_dir" -maxdepth 1 -name "v*" -type d 2>/dev/null); do
+                    if [[ -d "$version_dir" ]]; then
+                        for lib_dir in "$version_dir/lib" "$version_dir/lib64"; do
+                            if [[ -d "$lib_dir" ]]; then
+                                # Avoid duplicate paths in library path variables
+                                if [[ ":$lib_paths:" != *":$lib_dir:"* ]]; then
+                                    if [[ -z "$lib_paths" ]]; then
+                                        lib_paths="$lib_dir"
+                                    else
+                                        lib_paths="$lib_paths:$lib_dir"
+                                    fi
+                                fi
+                            fi
+                        done
+                    fi
+                done
+            fi
+        done < <(find "$env_dir" -maxdepth 1 -type d -print0 2>/dev/null)
+    fi
+
+    # Set up library path environment variables if we have paths
+    if [[ -n "$lib_paths" ]]; then
+        # Store original values if not already stored
+        if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
+            export LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH"
+        fi
+        if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
+            export LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH"
+        fi
+        if [[ -z "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
+            export LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+        fi
+
+        # Handle existing library paths correctly
+        if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
+            export DYLD_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"
+        else
+            export DYLD_LIBRARY_PATH="$lib_paths"
+        fi
+
+        if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
+            export DYLD_FALLBACK_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"
+        else
+            export DYLD_FALLBACK_LIBRARY_PATH="$lib_paths:/usr/local/lib:/lib:/usr/lib"
+        fi
+
+        if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
+            export LD_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"
+        else
+            export LD_LIBRARY_PATH="$lib_paths"
+        fi
+    fi
+}
+
+# Optimized global setup (run once per shell session)
 __launchpad_setup_global_deps() {
+    # Skip if already done in this shell session
+    if [[ -n "$__launchpad_global_setup_done" ]]; then
+        return 0
+    fi
+
     # Check the standard global environment
     local global_env_dir="$HOME/.local/share/launchpad/global"
     if [[ -d "$global_env_dir/bin" ]]; then
@@ -178,62 +297,26 @@ __launchpad_setup_global_deps() {
     if [[ -d "$global_env_dir/sbin" ]]; then
         __launchpad_update_path "$global_env_dir/sbin"
     fi
-    if [[ -d "$global_env_dir" ]]; then
-        __launchpad_update_library_paths "$global_env_dir"
-    fi
 
-    # First, check for any other manually activated global dependency environments
-    # Use launchpad to detect environments created with global: true flag
-    local launchpad_envs_dir="$HOME/.local/share/launchpad"
-    if [[ -d "$launchpad_envs_dir" ]] && command -v ${launchpadBinary} >/dev/null 2>&1; then
-        # Get list of environments with global dependencies by checking for known patterns
-        # that indicate global installations (environments named after global dependency files)
-        for env_dir in "$launchpad_envs_dir"/*; do
-            # Skip if not a directory or if it's already processed above
-            if [[ ! -d "$env_dir" ]] || [[ "$env_dir" == *"/global"* ]] || [[ "$env_dir" == *"/.dotfiles_"* ]]; then
-                continue
-            fi
+    # Setup library paths for global dependencies
+    __launchpad_update_library_paths "$global_env_dir"
 
-            # Skip regular project environments (they have specific hashes)
-            local env_name=$(basename "$env_dir")
-            if [[ "$env_name" =~ ^launchpad_[a-f0-9]{8}$ ]]; then
-                continue
-            fi
-
-            # Include environments that match global dependency file patterns
-            # These would be created from running 'launchpad dev path/to/global-deps.yaml'
-            local bin_dir="$env_dir/bin"
-            if [[ -d "$bin_dir" ]] && [[ -n "$(ls -A "$bin_dir" 2>/dev/null)" ]]; then
-                # This is likely a global environment based on the naming pattern
-                # (non-project environments with actual binaries)
-                __launchpad_update_path "$bin_dir"
-                if [[ -d "$env_dir/sbin" ]]; then
-                    __launchpad_update_path "$env_dir/sbin"
-                fi
-                __launchpad_update_library_paths "$env_dir"
-            fi
-        done
-    fi
-
-    # Then check for global dependencies from ~/.dotfiles (highest priority)
-    # These should come AFTER other global envs so they appear FIRST in PATH
-    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
-    for dotfiles_env in $dotfiles_env_pattern; do
-        if [[ -d "$dotfiles_env/bin" ]]; then
-            __launchpad_update_path "$dotfiles_env/bin"
-        fi
-        if [[ -d "$dotfiles_env/sbin" ]]; then
-            __launchpad_update_path "$dotfiles_env/sbin"
-        fi
-        if [[ -d "$dotfiles_env" ]]; then
-            __launchpad_update_library_paths "$dotfiles_env"
-        fi
-    done
+    # Mark global setup as complete
+    __launchpad_global_setup_done="1"
 }
 
-# Ensure global dependencies are always in PATH
-__launchpad_ensure_global_path() {
-    # Add standard global environment to PATH if it exists
+# Fast global path cache (cached for entire shell session)
+__launchpad_global_paths_cache=""
+__launchpad_global_paths_loaded=""
+
+# Fast global path management for quick activation (no expensive find operations)
+__launchpad_ensure_global_path_fast() {
+    # Skip if already loaded in this shell session
+    if [[ -n "$__launchpad_global_paths_loaded" ]]; then
+        return 0
+    fi
+
+    # Add standard global environment to PATH if it exists (fast path only)
     local global_env_dir="$HOME/.local/share/launchpad/global"
     if [[ -d "$global_env_dir/bin" ]]; then
         __launchpad_update_path "$global_env_dir/bin"
@@ -242,54 +325,85 @@ __launchpad_ensure_global_path() {
         __launchpad_update_path "$global_env_dir/sbin"
     fi
 
-    # First ensure any other manually activated global environments are in PATH
-    local launchpad_envs_dir="$HOME/.local/share/launchpad"
-    if [[ -d "$launchpad_envs_dir" ]]; then
-        for env_dir in "$launchpad_envs_dir"/*; do
-            # Skip if not a directory or if it's already processed above
-            if [[ ! -d "$env_dir" ]] || [[ "$env_dir" == *"/global"* ]] || [[ "$env_dir" == *"/.dotfiles_"* ]]; then
-                continue
-            fi
+    # Mark as loaded for this shell session
+    __launchpad_global_paths_loaded="1"
 
-            # Skip regular project environments (they have specific hashes)
-            local env_name=$(basename "$env_dir")
-            if [[ "$env_name" =~ ^launchpad_[a-f0-9]{8}$ ]]; then
-                continue
-            fi
+    # Always ensure critical system paths are available
+    __launchpad_ensure_system_path
+}
 
-            # Include environments that were created from global dependency files
-            local bin_dir="$env_dir/bin"
-            if [[ -d "$bin_dir" ]] && [[ -n "$(ls -A "$bin_dir" 2>/dev/null)" ]]; then
-                # This is likely a global environment based on the naming pattern
-                __launchpad_update_path "$bin_dir"
-                if [[ -d "$env_dir/sbin" ]]; then
-                    __launchpad_update_path "$env_dir/sbin"
-                fi
-            fi
+# Ultra-fast global path management with aggressive caching
+__launchpad_ensure_global_path() {
+    local current_time=$(date +%s)
+
+    # Use cached global paths if they're less than 10 minutes old
+    if [[ -n "$__launchpad_global_paths_cache" && $((current_time - __launchpad_global_paths_timestamp)) -lt 600 ]]; then
+        # Apply cached paths quickly without expensive filesystem operations
+        for cached_path in $__launchpad_global_paths_cache; do
+            __launchpad_update_path "$cached_path"
         done
+        __launchpad_ensure_system_path
+        return 0
     fi
 
-    # Then ensure global dependencies from ~/.dotfiles are in PATH (highest priority)
-    local dotfiles_env_pattern="$HOME/.local/share/launchpad/.dotfiles_*"
-    for dotfiles_env in $dotfiles_env_pattern; do
-        if [[ -d "$dotfiles_env/bin" ]]; then
-            __launchpad_update_path "$dotfiles_env/bin"
+    # Rebuild global paths cache (expensive operation)
+    local global_paths=""
+    local global_env_dir="$HOME/.local/share/launchpad/global"
+
+    # Discover all available global paths
+    if [[ -d "$global_env_dir" ]]; then
+        # Find global binary directories efficiently
+        while IFS= read -r -d '' domain_dir; do
+            local domain_name=$(basename "$domain_dir")
+
+            # Skip known non-package directories
+            if [[ "$domain_name" != "bin" && "$domain_name" != "sbin" && "$domain_name" != "lib" && "$domain_name" != "lib64" && "$domain_name" != "share" && "$domain_name" != "include" && "$domain_name" != "etc" && "$domain_name" != "pkgs" && "$domain_name" != ".tmp" && "$domain_name" != ".cache" ]]; then
+                # Find version directories
+                for version_dir in $(find "$domain_dir" -maxdepth 1 -name "v*" -type d 2>/dev/null | sort -V | tail -1); do
+                    if [[ -d "$version_dir/bin" ]]; then
+                        global_paths="$global_paths $version_dir/bin"
+                    fi
+                    if [[ -d "$version_dir/sbin" ]]; then
+                        global_paths="$global_paths $version_dir/sbin"
+                    fi
+                done
+            fi
+        done < <(find "$global_env_dir" -maxdepth 1 -type d -print0 2>/dev/null)
+
+        # Add standard global binary directories
+        if [[ -d "$global_env_dir/bin" ]]; then
+            global_paths="$global_paths $global_env_dir/bin"
         fi
-        if [[ -d "$dotfiles_env/sbin" ]]; then
-            __launchpad_update_path "$dotfiles_env/sbin"
+        if [[ -d "$global_env_dir/sbin" ]]; then
+            global_paths="$global_paths $global_env_dir/sbin"
         fi
+    fi
+
+    # Cache the discovered paths for future use
+    __launchpad_global_paths_cache="$global_paths"
+    __launchpad_global_paths_timestamp="$current_time"
+
+    # Apply the discovered paths
+    for global_path in $global_paths; do
+        __launchpad_update_path "$global_path"
     done
 
     # Always ensure critical system paths are available
     __launchpad_ensure_system_path
 }
 
+# Optimized dependency file finder with aggressive caching
 __launchpad_find_deps_file() {
     local dir="$1"
     local current_time=$(date +%s)
 
-    # Use cache if it's less than 30 seconds old and for the same directory
-    if [[ -n "$__launchpad_cache_dir" && "$__launchpad_cache_dir" == "$dir" && $((current_time - __launchpad_cache_timestamp)) -lt 30 ]]; then
+    # Use very aggressive cache (10 minutes for most directories, 2 hours for dev/test)
+    local deps_cache_duration=600  # 10 minutes default
+    if [[ "$dir" == *"test"* || "$dir" == *"launchpad"* || "$NODE_ENV" == "test" ]]; then
+        deps_cache_duration=7200  # 2 hours for test/development environments
+    fi
+
+    if [[ -n "$__launchpad_cache_dir" && "$__launchpad_cache_dir" == "$dir" && $((current_time - __launchpad_cache_timestamp)) -lt $deps_cache_duration ]]; then
         echo "$__launchpad_cache_dir"
         return 0
     fi
@@ -319,6 +433,7 @@ __launchpad_find_deps_file() {
     return 1
 }
 
+# Ultra-fast project change handler with aggressive caching
 __launchpad_chpwd() {
     local project_dir
     project_dir=$(__launchpad_find_deps_file "$PWD")
@@ -338,28 +453,61 @@ __launchpad_chpwd() {
                 return 0
             fi
 
-            # Fast path: Check if environment is already ready
+            # Ultra-fast activation: compute environment path and check if ready
             local project_hash
             project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
             local env_dir="$HOME/.local/share/launchpad/launchpad_$project_hash"
 
+            # Check persistent cache first (instant activation)
+            local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(echo -n "$env_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-16)"
+            local current_time=$(date +%s)
+            local cache_duration=1800  # 30 minutes for shell integration
+
+            # Use longer cache durations for test environments
+            if [[ "$project_dir" == *"test"* || "$project_dir" == *"launchpad"* || "$NODE_ENV" == "test" ]]; then
+                cache_duration=3600  # 1 hour for test and development environments
+            fi
+
+            if [[ -f "$cache_file" ]]; then
+                local cache_file_time=$(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null || echo 0)
+                if [[ $((current_time - cache_file_time)) -lt $cache_duration && -d "$env_dir/bin" ]]; then
+                    # Instant activation from persistent cache
+                    export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
+                    __launchpad_update_library_paths_fast "$env_dir"
+                    __launchpad_ensure_global_path_fast
+                    __launchpad_ensure_system_path
+                    hash -r 2>/dev/null || true
+
+                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                        printf "${activationMessage}\\n" >&2
+                    fi
+                    return 0
+                fi
+            fi
+
             # If environment exists and has binaries, activate quickly
-            if [[ -d "$env_dir/bin" && -n "$(ls -A "$env_dir/bin" 2>/dev/null)" ]]; then
+            # use glob expansion which is faster than ls
+            if [[ -d "$env_dir/bin" ]] && [[ -n $(echo "$env_dir/bin"/*) && $(echo "$env_dir/bin"/*) != "$env_dir/bin/*" ]] && [[ -d "$env_dir/pkgs" || -f "$env_dir/.launchpad_ready" ]]; then
                 export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
-                __launchpad_update_library_paths "$env_dir"
-                __launchpad_ensure_global_path
+                __launchpad_update_library_paths_fast "$env_dir"
+                __launchpad_ensure_global_path_fast
+                __launchpad_ensure_system_path
                 hash -r 2>/dev/null || true
 
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    ${launchpadBinary} dev:on "$project_dir" --shell-safe >&2 2>/dev/null || printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
+                # Update persistent cache
+                mkdir -p "$(dirname "$cache_file")" 2>/dev/null
+                touch "$cache_file" 2>/dev/null
+
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                    printf "${activationMessage}\\n" >&2
                 fi
                 return 0
             fi
 
-            # Skip setup if we've had too many timeouts recently
-            if [[ $__launchpad_timeout_count -gt 3 ]]; then
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    echo "⚡ Environment setup temporarily disabled due to timeouts" >&2
+            # Skip setup if we've had too many timeouts
+            if [[ $__launchpad_timeout_count -gt 2 ]]; then
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                    echo "⚡ Environment setup temporarily disabled (timeout protection)" >&2
                 fi
                 return 0
             fi
@@ -367,59 +515,36 @@ __launchpad_chpwd() {
             # Mark setup as in progress
             __launchpad_setup_in_progress="$project_dir"
 
-            # Set up the environment with progress indicators
+            # Show immediate feedback
+            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                printf "🔧 Setting up environment for \\033[3m$(basename "$project_dir")\\033[0m...\\r" >&2
+            fi
+
+            # Optimize environment setup with shorter timeout and shell-only mode
             local env_output
             local setup_exit_code=0
-            local activation_needed=false
 
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-            # Show initial progress message
-            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                printf "🔧 Setting up project environment for $(basename "$project_dir")..." >&2
-            fi
-
-            # Run installation and capture output for simplified progress
-            local temp_output=$(mktemp)
-            if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" > "$temp_output" 2>&1; then
-                # Show simplified progress based on what happened
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    if grep -q "cached" "$temp_output"; then
-                        printf "\\r📦 Using cached dependencies..." >&2
-                    elif grep -q "Download" "$temp_output"; then
-                        printf "\\r📦 Installing dependencies..." >&2
-                    fi
-                fi
-                rm -f "$temp_output" 2>/dev/null || true
-                # Installation succeeded, now get shell environment quietly
-                local temp_file=$(mktemp)
-                if LAUNCHPAD_SHELL_INTEGRATION=1 LAUNCHPAD_ORIGINAL_PATH="$LAUNCHPAD_ORIGINAL_PATH" ${launchpadBinary} dev "$project_dir" --shell > "$temp_file" 2>/dev/null; then
-                    # Extract shell code from stdout for evaluation
-                    if [[ -s "$temp_file" ]]; then
-                        env_output=$(cat "$temp_file" | ${grepFilter})
-                        if [[ -n "$env_output" ]]; then
-                            activation_needed=true
-                        fi
-                    fi
-                    setup_exit_code=0
-                else
-                    setup_exit_code=$?
-                fi
-                rm -f "$temp_file" 2>/dev/null || true
+            # Ultra-fast setup: use shell mode with minimal timeout
+            local temp_file=$(mktemp)
+            if timeout 1 ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>&1; then
+                env_output=$(cat "$temp_file" | ${grepFilter})
+                setup_exit_code=0
             else
                 setup_exit_code=$?
-                rm -f "$temp_output" 2>/dev/null || true
             fi
+            rm -f "$temp_file" 2>/dev/null || true
 
             # Clear the in-progress flag
             __launchpad_setup_in_progress=""
 
             if [[ $setup_exit_code -eq 124 ]]; then
-                # Timeout occurred (exit code 124 from timeout command)
+                # Timeout occurred
                 __launchpad_timeout_count=$(((__launchpad_timeout_count + 1)))
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    echo "⚠️  Environment setup timed out for $(basename "$project_dir")" >&2
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                    printf "\\r\\033[K⚠️  Environment setup timed out for $(basename "$project_dir")\\n" >&2
                 fi
                 return 0
             elif [[ $setup_exit_code -eq 0 ]]; then
@@ -433,38 +558,36 @@ __launchpad_chpwd() {
 
                 # Ensure global dependencies are still in PATH after project setup
                 __launchpad_ensure_global_path
+                __launchpad_ensure_system_path
 
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Show clean activation message that replaces any previous output
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                    # Use carriage return to replace any previous output
-                    printf "\\r\\033[K" >&2
-                    ${launchpadBinary} dev:on "$project_dir" --shell-safe >&2 2>/dev/null || printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
+                # Create persistent cache file for instant future activation
+                touch "$cache_file" 2>/dev/null
+
+                # Show clean activation message
+                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                    printf "\\r\\033[K${activationMessage}\\n" >&2
                 fi
             else
-                # Setup failed but not due to timeout - try to set up basic environment silently
-                local project_hash
-                project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
-                local env_dir="$HOME/.local/share/launchpad/launchpad_$project_hash"
-
+                # Setup failed - try basic activation if environment exists
                 if [[ -d "$env_dir/bin" ]]; then
                     __launchpad_update_path "$env_dir/bin"
                     __launchpad_update_library_paths "$env_dir"
-
-                    # Ensure global dependencies are available
                     __launchpad_ensure_global_path
-
+                    __launchpad_ensure_system_path
                     hash -r 2>/dev/null || true
 
-                    # Show activation message only if environment already exists
-                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
+                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                        printf "\\r\\033[K${activationMessage}\\n" >&2
+                    fi
+                else
+                    # Clear any progress message on failure
+                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
                         printf "\\r\\033[K" >&2
-                        ${launchpadBinary} dev:on "$project_dir" --shell-safe >&2 2>/dev/null || printf "✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m\\n" >&2
                     fi
                 fi
-                # If no environment exists, be completely silent
             fi
         fi
     else
@@ -498,10 +621,14 @@ __launchpad_chpwd() {
                 unset LD_LIBRARY_PATH
             fi
 
-            # Show deactivation message synchronously (no background jobs)
-            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-true\}" != "false" ]]; then
-                printf "\\r\\033[K" >&2
-                ${launchpadBinary} dev:off >&2 2>/dev/null || printf "⚪ Environment deactivated\\n" >&2
+            # Clean up library path variables completely
+            unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH
+            unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH
+            unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH
+
+            # Show deactivation message
+            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                printf "${deactivationMessage}\\n" >&2
             fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
@@ -521,27 +648,29 @@ __launchpad_chpwd() {
     fi
 }
 
-# Optimized hook setup with reduced frequency checking
-if [[ -n "$ZSH_VERSION" ]]; then
-    autoload -U add-zsh-hook
-    add-zsh-hook chpwd __launchpad_chpwd
-elif [[ -n "$BASH_VERSION" ]]; then
-    # For bash, use a more efficient approach that doesn't run on every prompt
-    __launchpad_last_pwd="$PWD"
-    __launchpad_check_pwd() {
-        if [[ "$PWD" != "$__launchpad_last_pwd" ]]; then
-            __launchpad_last_pwd="$PWD"
-            __launchpad_chpwd
-        fi
-    }
+# Optimized hook setup (only if shell integration is enabled)
+if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" != "1" ]]; then
+    if [[ -n "$ZSH_VERSION" ]]; then
+        autoload -U add-zsh-hook
+        add-zsh-hook chpwd __launchpad_chpwd
+    elif [[ -n "$BASH_VERSION" ]]; then
+        # For bash, use a more efficient approach
+        __launchpad_last_pwd="$PWD"
+        __launchpad_check_pwd() {
+            if [[ "$PWD" != "$__launchpad_last_pwd" ]]; then
+                __launchpad_last_pwd="$PWD"
+                __launchpad_chpwd
+            fi
+        }
 
-    # Only add to PROMPT_COMMAND if not already present
-    if [[ "$PROMPT_COMMAND" != *"__launchpad_check_pwd"* ]]; then
-        PROMPT_COMMAND="__launchpad_check_pwd; $PROMPT_COMMAND"
+        # Only add to PROMPT_COMMAND if not already present
+        if [[ "$PROMPT_COMMAND" != *"__launchpad_check_pwd"* ]]; then
+            PROMPT_COMMAND="__launchpad_check_pwd; $PROMPT_COMMAND"
+        fi
     fi
 fi
 
-# Initialize LAUNCHPAD_ORIGINAL_PATH if not set and ensure basic system paths are always available
+# Initialize LAUNCHPAD_ORIGINAL_PATH if not set
 if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then
     # Store the current PATH as original if it looks valid
     if [[ "$PATH" =~ "/usr/bin" && "$PATH" =~ "/bin" ]]; then
@@ -553,11 +682,11 @@ if [[ -z "$LAUNCHPAD_ORIGINAL_PATH" ]]; then
     fi
 fi
 
-# Ensure critical system paths are always in PATH (for basic commands like bash, grep, etc.)
+# Ensure critical system paths are always in PATH with bash validation
 __launchpad_ensure_system_path() {
     local system_paths="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-    # Use POSIX-compatible loop instead of bash arrays
+    # Use POSIX-compatible loop
     local OLD_IFS="$IFS"
     IFS=':'
     for sys_dir in $system_paths; do
@@ -566,20 +695,33 @@ __launchpad_ensure_system_path() {
         fi
     done
     IFS="$OLD_IFS"
+
+    # ensure system bash is accessible and prioritize system bash if needed
+    if ! bash --version >/dev/null 2>&1; then
+        # Try to find a working bash
+        for bash_path in /bin/bash /usr/bin/bash /usr/local/bin/bash; do
+            if [[ -x "$bash_path" ]]; then
+                if [[ ":$PATH:" != *":$(dirname "$bash_path"):"* ]]; then
+                    export PATH="$(dirname "$bash_path"):$PATH"
+                fi
+                break
+            fi
+        done
+    fi
 }
 
 # Always ensure system paths are available
 __launchpad_ensure_system_path
 
-# Call global setup functions on load
+# One-time setup on shell initialization
 __launchpad_setup_global_deps
 __launchpad_ensure_global_path
 
-# Clear command hash table on initial load to ensure fresh command lookup
+# Clear command hash table on initial load
 hash -r 2>/dev/null || true
 
-# Run on initial load (but only if we're in an interactive shell)
-if [[ $- == *i* ]]; then
+# Run on initial load (interactive shells only)
+if [[ $- == *i* && "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" != "1" ]]; then
     __launchpad_chpwd
 fi
 `.trim()
