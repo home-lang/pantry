@@ -1,4 +1,16 @@
 
+## v0.5.1...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/v0.5.1...main)
+
+### 🏡 Chore
+
+- Minor updates ([5137c37](https://github.com/stacksjs/launchpad/commit/5137c37))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.5.0...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.5.0...main)
