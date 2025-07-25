@@ -391,9 +391,6 @@ export async function install_bun(installPath: string, version?: string): Promis
       if (config.verbose) {
         console.warn(`Downloading from: ${url}`)
       }
-      else {
-        console.log(`📦 Downloading Bun v${bunVersion}...`)
-      }
 
       zipPath = path.join(tempDir, filename)
 

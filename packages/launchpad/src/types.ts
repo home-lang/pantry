@@ -109,8 +109,12 @@ export interface ServiceDefinition {
   healthCheck?: ServiceHealthCheck
   /** Service initialization command (runs once before first start) */
   initCommand?: string[]
+  /** Commands to run after service starts (for setup, database creation, etc.) */
+  postStartCommands?: string[][]
   /** Whether this service supports graceful shutdown */
   supportsGracefulShutdown: boolean
+  /** Service-specific configuration with default values */
+  config?: Record<string, unknown>
   /** Custom service configuration */
   custom?: Record<string, unknown>
 }

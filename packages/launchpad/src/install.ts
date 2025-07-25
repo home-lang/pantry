@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { Buffer } from 'node:buffer'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
@@ -644,6 +645,9 @@ export function resolvePackageName(packageName: string): string {
     gcc: 'gnu.org/gcc',
     clang: 'llvm.org',
     llvm: 'llvm.org',
+
+    // Search engines
+    meilisearch: 'meilisearch.com',
 
     // Web servers and proxies
     traefik: 'traefik.io',
@@ -2558,6 +2562,79 @@ async function installDependencies(
     // Create a unique key for this specific package@version combination
     const packageVersionKey = `${depDomain}@${versionToInstall}`
 
+    // Check if any version of this domain is already installed and compare versions
+    const domainAlreadyInstalled = Array.from(installedPackages).some(pkg =>
+      pkg === depDomain || pkg.startsWith(`${depDomain}@`),
+    )
+
+    if (domainAlreadyInstalled) {
+      const existingEntry = Array.from(installedPackages).find(pkg =>
+        pkg === depDomain || pkg.startsWith(`${depDomain}@`),
+      )
+
+      if (existingEntry) {
+        // Extract the existing version
+        const existingVersion = existingEntry.includes('@')
+          ? existingEntry.split('@')[1]
+          : null
+
+        // If we have both versions, compare them and keep the latest
+        if (existingVersion && versionToInstall) {
+          try {
+            // Use Bun.semver for comparison (20x faster than node-semver)
+            if (typeof Bun !== 'undefined' && Bun.semver) {
+              const comparison = Bun.semver.order(versionToInstall, existingVersion)
+
+              if (comparison > 0) {
+                // New version is newer, replace the existing entry
+                installedPackages.delete(existingEntry)
+                if (config.verbose) {
+                  console.warn(`Upgrading ${depDomain} from ${existingVersion} to ${versionToInstall} (newer version)`)
+                }
+                // Continue to install the newer version
+              }
+              else {
+                // Existing version is newer or equal, skip
+                if (config.verbose) {
+                  console.warn(`Skipping ${depDomain}@${versionToInstall} - already have ${existingVersion} which is newer or equal`)
+                }
+                continue
+              }
+            }
+            else {
+              // Fallback to basic string comparison if Bun.semver is not available
+              if (versionToInstall.localeCompare(existingVersion, undefined, { numeric: true }) > 0) {
+                installedPackages.delete(existingEntry)
+                if (config.verbose) {
+                  console.warn(`Upgrading ${depDomain} from ${existingVersion} to ${versionToInstall} (newer version, fallback comparison)`)
+                }
+              }
+              else {
+                if (config.verbose) {
+                  console.warn(`Skipping ${depDomain}@${versionToInstall} - already have ${existingVersion}`)
+                }
+                continue
+              }
+            }
+          }
+          catch (error) {
+            // If version comparison fails, be conservative and skip
+            if (config.verbose) {
+              console.warn(`Could not compare versions for ${depDomain}: ${versionToInstall} vs ${existingVersion}, keeping existing. Error: ${error instanceof Error ? error.message : String(error)}`)
+            }
+            continue
+          }
+        }
+        else {
+          // If we can't determine versions, skip to be safe
+          if (config.verbose) {
+            console.warn(`Skipping ${depDomain}@${versionToInstall} - domain already installed as ${existingEntry}`)
+          }
+          continue
+        }
+      }
+    }
+
     // Skip if this exact package@version is already installed to avoid circular dependencies
     if (installedPackages.has(packageVersionKey)) {
       if (config.verbose) {
@@ -2647,6 +2724,22 @@ async function installPackage(packageName: string, packageSpec: string, installP
     return await install_bun(installPath, requestedVersion)
   }
 
+  // Special handling for meilisearch - use custom GitHub releases installer
+  if (name === 'meilisearch' || domain === 'meilisearch.com') {
+    if (config.verbose) {
+      console.warn(`Using custom meilisearch installation for ${name}`)
+    }
+    return await installMeilisearch(installPath, requestedVersion)
+  }
+
+  // Special handling for PHP - use custom PHP installation with database support
+  if (name === 'php' || domain === 'php.net') {
+    if (config.verbose) {
+      console.warn(`Using custom PHP installation with database support for ${name}`)
+    }
+    return await installPhpWithDatabaseSupport(installPath, requestedVersion)
+  }
+
   if (config.verbose) {
     console.warn(`Resolved ${name} to domain: ${domain}`)
   }
@@ -2691,6 +2784,10 @@ async function installPackage(packageName: string, packageSpec: string, installP
 
   // Download and install
   const installedFiles = await downloadPackage(domain, version, os, architecture, installPath)
+
+  // Create common library symlinks for better compatibility
+  const packageDir = path.join(installPath, domain, `v${version}`)
+  await createLibrarySymlinks(packageDir, domain)
 
   if (config.verbose) {
     console.warn(`Successfully installed ${domain} v${version}`)
@@ -2757,16 +2854,90 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         const { name: packageName } = parsePackageSpec(pkg)
         const domain = resolvePackageName(packageName)
 
-        // Skip if already installed
-        if (installedPackages.has(domain)) {
-          if (config.verbose) {
-            console.warn(`Skipping ${domain} - already installed`)
+        // Parse the version from the package spec to create consistent tracking
+        const { version: requestedVersion } = parsePackageSpec(pkg)
+        let version = requestedVersion
+        if (!version) {
+          const latestVersion = getLatestVersion(domain)
+          version = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+        }
+        const packageVersionKey = `${domain}@${version}`
+
+        // Check if any version of this domain is already installed
+        const domainAlreadyInstalled = Array.from(installedPackages).some(installedPkg =>
+          installedPkg === domain || installedPkg.startsWith(`${domain}@`),
+        )
+
+        if (domainAlreadyInstalled) {
+          const existingEntry = Array.from(installedPackages).find(installedPkg =>
+            installedPkg === domain || installedPkg.startsWith(`${domain}@`),
+          )
+
+          if (existingEntry) {
+            // Extract the existing version
+            const existingVersion = existingEntry.includes('@')
+              ? existingEntry.split('@')[1]
+              : null
+
+            // If we have both versions, compare them and keep the latest
+            if (existingVersion && version) {
+              try {
+                // Use Bun.semver for comparison (20x faster than node-semver)
+                if (typeof Bun !== 'undefined' && Bun.semver) {
+                  const comparison = Bun.semver.order(version, existingVersion)
+
+                  if (comparison > 0) {
+                    // New version is newer, replace the existing entry
+                    installedPackages.delete(existingEntry)
+                    if (config.verbose) {
+                      console.warn(`Upgrading ${domain} from ${existingVersion} to ${version} (newer version)`)
+                    }
+                    // Continue to install the newer version
+                  }
+                  else {
+                    // Existing version is newer or equal, skip
+                    if (config.verbose) {
+                      console.warn(`Skipping ${packageVersionKey} - already have ${existingVersion} which is newer or equal`)
+                    }
+                    continue
+                  }
+                }
+                else {
+                  // Fallback to basic string comparison if Bun.semver is not available
+                  if (version.localeCompare(existingVersion, undefined, { numeric: true }) > 0) {
+                    installedPackages.delete(existingEntry)
+                    if (config.verbose) {
+                      console.warn(`Upgrading ${domain} from ${existingVersion} to ${version} (newer version, fallback comparison)`)
+                    }
+                  }
+                  else {
+                    if (config.verbose) {
+                      console.warn(`Skipping ${packageVersionKey} - already have ${existingVersion}`)
+                    }
+                    continue
+                  }
+                }
+              }
+              catch (error) {
+                // If version comparison fails, be conservative and skip
+                if (config.verbose) {
+                  console.warn(`Could not compare versions for ${domain}: ${version} vs ${existingVersion}, keeping existing. Error: ${error instanceof Error ? error.message : String(error)}`)
+                }
+                continue
+              }
+            }
+            else {
+              // If we can't determine versions, skip to be safe
+              if (config.verbose) {
+                console.warn(`Skipping ${packageVersionKey} - domain already installed as ${existingEntry}`)
+              }
+              continue
+            }
           }
-          continue
         }
 
-        // Mark as installed
-        installedPackages.add(domain)
+        // Mark as installed using domain@version
+        installedPackages.add(packageVersionKey)
 
         const packageInfo = getPackageInfo(packageName)
 
@@ -2865,55 +3036,113 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
 async function installPackagesInParallel(
   packages: string[],
   installPath: string,
-  maxConcurrency: number,
+  _maxConcurrency: number,
 ): Promise<Array<{ package: string, success: boolean, files: string[], error?: string }>> {
   const results: Array<{ package: string, success: boolean, files: string[], error?: string }> = []
   const installedPackages = new Set<string>()
 
-  // Process packages in batches to control concurrency
-  for (let i = 0; i < packages.length; i += maxConcurrency) {
-    const batch = packages.slice(i, i + maxConcurrency)
+  // First pass: Resolve all package versions and deduplicate serially to avoid race conditions
+  const resolvedPackages: Array<{ pkg: string, domain: string, version: string, packageVersionKey: string }> = []
 
-    const batchPromises = batch.map(async (pkg) => {
-      try {
-        // Remove 📦 package messages for cleaner output
+  for (const pkg of packages) {
+    try {
+      const { name: packageName } = parsePackageSpec(pkg)
+      const domain = resolvePackageName(packageName)
+      const { version: requestedVersion } = parsePackageSpec(pkg)
+      let version = requestedVersion
+      if (!version) {
+        const latestVersion = getLatestVersion(domain)
+        version = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+      }
+      const packageVersionKey = `${domain}@${version}`
 
-        const { name: packageName } = parsePackageSpec(pkg)
-        const domain = resolvePackageName(packageName)
+      // Check if any version of this domain is already resolved
+      const existingPackage = resolvedPackages.find(p => p.domain === domain)
 
-        // Skip if already installed
-        if (installedPackages.has(domain)) {
-          if (config.verbose) {
-            console.warn(`Skipping ${domain} - already installed`)
+      if (existingPackage) {
+        // Compare versions and keep the latest
+        try {
+          if (typeof Bun !== 'undefined' && Bun.semver) {
+            const comparison = Bun.semver.order(version, existingPackage.version)
+            if (comparison > 0) {
+              // New version is newer, replace the existing one
+              const index = resolvedPackages.findIndex(p => p.domain === domain)
+              resolvedPackages[index] = { pkg, domain, version, packageVersionKey }
+              if (config.verbose) {
+                console.warn(`Upgrading ${domain} from ${existingPackage.version} to ${version} (newer version)`)
+              }
+            }
+            else {
+              // Existing version is newer or equal, skip this package
+              if (config.verbose) {
+                console.warn(`Skipping ${packageVersionKey} - already have ${existingPackage.version} which is newer or equal`)
+              }
+            }
           }
-          return { package: pkg, success: true, files: [] }
+          else {
+            // Fallback comparison
+            if (version.localeCompare(existingPackage.version, undefined, { numeric: true }) > 0) {
+              const index = resolvedPackages.findIndex(p => p.domain === domain)
+              resolvedPackages[index] = { pkg, domain, version, packageVersionKey }
+              if (config.verbose) {
+                console.warn(`Upgrading ${domain} from ${existingPackage.version} to ${version} (newer version, fallback)`)
+              }
+            }
+            else {
+              if (config.verbose) {
+                console.warn(`Skipping ${packageVersionKey} - already have ${existingPackage.version}`)
+              }
+            }
+          }
         }
-
-        // Mark as installed
-        installedPackages.add(domain)
-
-        // Install dependencies first
-        const depFiles = await installDependencies(packageName, installPath, installedPackages)
-
-        // Install the main package
-        const mainFiles = await installPackage(packageName, pkg, installPath)
-
-        const allFiles = [...depFiles, ...mainFiles]
-
-        if (config.verbose) {
-          console.warn(`Successfully processed ${pkg}`)
+        catch {
+          if (config.verbose) {
+            console.warn(`Could not compare versions for ${domain}: ${version} vs ${existingPackage.version}, keeping existing`)
+          }
         }
-
-        return { package: pkg, success: true, files: allFiles }
       }
-      catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        return { package: pkg, success: false, files: [], error: errorMessage }
+      else {
+        // First time seeing this domain, add it
+        resolvedPackages.push({ pkg, domain, version, packageVersionKey })
       }
-    })
+    }
+    catch (err) {
+      results.push({
+        package: pkg,
+        success: false,
+        files: [],
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
 
-    const batchResults = await Promise.all(batchPromises)
-    results.push(...batchResults)
+  // Second pass: Install the resolved packages serially to avoid dependency conflicts
+  // Note: We install serially because dependencies can conflict across packages
+  for (const { pkg, domain: _domain, version: _version, packageVersionKey } of resolvedPackages) {
+    try {
+      const { name: packageName } = parsePackageSpec(pkg)
+
+      // Mark as installed using domain@version
+      installedPackages.add(packageVersionKey)
+
+      // Install dependencies first
+      const depFiles = await installDependencies(packageName, installPath, installedPackages)
+
+      // Install the main package
+      const mainFiles = await installPackage(packageName, pkg, installPath)
+
+      const allFiles = [...depFiles, ...mainFiles]
+
+      if (config.verbose) {
+        console.warn(`Successfully processed ${pkg}`)
+      }
+
+      results.push({ package: pkg, success: true, files: allFiles })
+    }
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      results.push({ package: pkg, success: false, files: [], error: errorMessage })
+    }
   }
 
   return results
@@ -3009,5 +3238,939 @@ async function _downloadWithResumption(
       // Wait before retry with exponential backoff
       await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 1000))
     }
+  }
+}
+
+/**
+ * Create common library symlinks for better compatibility
+ * Many packages expect generic library names but we install versioned ones
+ */
+async function createLibrarySymlinks(packageDir: string, domain: string): Promise<void> {
+  const libDir = path.join(packageDir, 'lib')
+  if (!fs.existsSync(libDir))
+    return
+
+  const commonSymlinks: Record<string, Array<{ target: string, link: string }>> = {
+    'libpng.org': [
+      { target: 'libpng16.dylib', link: 'libpng.dylib' },
+      { target: 'libpng16.so', link: 'libpng.so' },
+    ],
+    'invisible-island.net/ncurses': [
+      { target: 'libncurses.6.dylib', link: 'libncurses.dylib' },
+      { target: 'libncurses.so.6', link: 'libncurses.so' },
+    ],
+    'gnu.org/readline': [
+      { target: 'libreadline.8.dylib', link: 'libreadline.dylib' },
+      { target: 'libreadline.so.8', link: 'libreadline.so' },
+    ],
+    'openssl.org': [
+      { target: 'libssl.3.dylib', link: 'libssl.dylib' },
+      { target: 'libcrypto.3.dylib', link: 'libcrypto.dylib' },
+      { target: 'libssl.so.3', link: 'libssl.so' },
+      { target: 'libcrypto.so.3', link: 'libcrypto.so' },
+    ],
+  }
+
+  const symlinkConfig = commonSymlinks[domain]
+  if (!symlinkConfig)
+    return
+
+  for (const { target, link } of symlinkConfig) {
+    const targetPath = path.join(libDir, target)
+    const linkPath = path.join(libDir, link)
+
+    if (fs.existsSync(targetPath) && !fs.existsSync(linkPath)) {
+      try {
+        fs.symlinkSync(target, linkPath)
+        if (config.verbose) {
+          console.log(`Created symlink: ${link} -> ${target}`)
+        }
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`Failed to create symlink ${link}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Custom installer for Meilisearch - downloads from GitHub releases
+ */
+async function installMeilisearch(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const os = getPlatform()
+  const architecture = getArchitecture()
+
+  // Default to latest stable version if not specified
+  const version = requestedVersion || 'v1.15.2'
+
+  // Map platform and architecture to Meilisearch binary names
+  let binaryName: string
+  if (os === 'darwin') {
+    binaryName = architecture === 'aarch64' ? 'meilisearch-macos-apple-silicon' : 'meilisearch-macos-amd64'
+  }
+  else if (os === 'linux') {
+    binaryName = architecture === 'aarch64' ? 'meilisearch-linux-aarch64' : 'meilisearch-linux-amd64'
+  }
+  else if (os === 'windows') {
+    binaryName = 'meilisearch-windows-amd64.exe'
+  }
+  else {
+    throw new Error(`Unsupported platform for Meilisearch: ${os}/${architecture}`)
+  }
+
+  const downloadUrl = `https://github.com/meilisearch/meilisearch/releases/download/${version}/${binaryName}`
+  const domain = 'meilisearch.com'
+  const versionStr = version.replace(/^v/, '') // Remove 'v' prefix for directory name
+
+  // Create installation directories
+  const packageDir = path.join(installPath, domain, `v${versionStr}`)
+  const binDir = path.join(packageDir, 'bin')
+  const tempDir = path.join(installPath, '.tmp', `meilisearch-${versionStr}`)
+
+  try {
+    // Create directories
+    await fs.promises.mkdir(tempDir, { recursive: true })
+    await fs.promises.mkdir(binDir, { recursive: true })
+
+    const tempBinaryPath = path.join(tempDir, binaryName)
+    const finalBinaryPath = path.join(binDir, 'meilisearch')
+
+    // Download the binary
+    if (config.verbose) {
+      console.warn(`Downloading Meilisearch ${version} from: ${downloadUrl}`)
+    }
+
+    logUniqueMessage(`🔄 Downloading meilisearch ${version}...`)
+
+    const response = await globalThis.fetch(downloadUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download Meilisearch: ${response.status} ${response.statusText}`)
+    }
+
+    // Get file size for progress tracking
+    const contentLength = response.headers.get('content-length')
+    const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
+
+    // Download with progress tracking
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('Failed to get response reader')
+    }
+
+    const chunks: Uint8Array[] = []
+    let downloadedBytes = 0
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done)
+        break
+
+      if (value) {
+        chunks.push(value)
+        downloadedBytes += value.length
+
+        if (totalBytes > 0 && !config.verbose) {
+          const progress = Math.round((downloadedBytes / totalBytes) * 100)
+          logUniqueMessage(`🔄 Downloading meilisearch ${version}... ${progress}%`)
+        }
+      }
+    }
+
+    // Combine chunks and write to file
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    const buffer = new Uint8Array(totalLength)
+    let offset = 0
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset)
+      offset += chunk.length
+    }
+
+    await fs.promises.writeFile(tempBinaryPath, buffer)
+
+    // Copy to final location and make executable
+    await fs.promises.copyFile(tempBinaryPath, finalBinaryPath)
+    await fs.promises.chmod(finalBinaryPath, 0o755)
+
+    // Create metadata
+    const metadata = {
+      domain,
+      version: versionStr,
+      binaries: ['meilisearch'],
+      installedAt: new Date().toISOString(),
+      platform: os,
+      architecture,
+      downloadUrl,
+    }
+
+    const metadataPath = path.join(packageDir, 'metadata.json')
+    await fs.promises.writeFile(metadataPath, JSON.stringify(metadata, null, 2))
+
+    // Clean up temp directory
+    await fs.promises.rm(tempDir, { recursive: true, force: true })
+
+    // Create binary stubs in main bin directory
+    const mainBinDir = path.join(installPath, 'bin')
+    await fs.promises.mkdir(mainBinDir, { recursive: true })
+
+    const stubPath = path.join(mainBinDir, 'meilisearch')
+    const stubContent = `#!/bin/bash
+exec "${finalBinaryPath}" "$@"
+`
+    await fs.promises.writeFile(stubPath, stubContent)
+    await fs.promises.chmod(stubPath, 0o755)
+
+    logUniqueMessage(`✅ meilisearch \x1B[2m\x1B[3m(v${versionStr})\x1B[0m`)
+
+    return [stubPath]
+  }
+  catch (error) {
+    // Clean up on error
+    try {
+      await fs.promises.rm(tempDir, { recursive: true, force: true })
+    }
+    catch {
+      // Ignore cleanup errors
+    }
+    throw error
+  }
+}
+
+/**
+ * Compiles database extensions for PHP (PostgreSQL, MySQL)
+ */
+async function _compileDatabaseExtensions(installPath: string, phpVersion: string): Promise<void> {
+  const { spawn } = await import('node:child_process')
+
+  try {
+    logUniqueMessage(`🔄 Compiling database extensions for PHP ${phpVersion}...`)
+
+    // Check if we have the necessary tools
+    const phpizePath = path.join(installPath, 'bin', 'phpize')
+    const phpConfigPath = path.join(installPath, 'bin', 'php-config')
+    const pgConfigPath = path.join(installPath, 'bin', 'pg_config')
+    const mysqlConfigPath = path.join(installPath, 'bin', 'mysql_config')
+
+    const hasPhpize = await fs.promises.access(phpizePath).then(() => true, () => false)
+    const hasPhpConfig = await fs.promises.access(phpConfigPath).then(() => true, () => false)
+    const hasPgConfig = await fs.promises.access(pgConfigPath).then(() => true, () => false)
+    const hasMysqlConfig = await fs.promises.access(mysqlConfigPath).then(() => true, () => false)
+
+    if (!hasPhpize || !hasPhpConfig) {
+      if (config.verbose) {
+        console.warn('Missing PHP development tools, skipping database extension compilation')
+      }
+      return
+    }
+
+    // Create working directory
+    const workDir = path.join(installPath, '.tmp', 'php-db-compile')
+    await fs.promises.mkdir(workDir, { recursive: true })
+
+    // Download PHP source
+    const sourceUrl = `https://www.php.net/distributions/php-${phpVersion}.tar.gz`
+    const sourcePath = path.join(workDir, `php-${phpVersion}.tar.gz`)
+
+    logUniqueMessage(`🔄 Downloading PHP ${phpVersion} source...`)
+
+    const response = await globalThis.fetch(sourceUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download PHP source: ${response.status}`)
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.promises.writeFile(sourcePath, new Uint8Array(arrayBuffer))
+
+    // Extract source
+    const extractResult = await new Promise<number>((resolve) => {
+      const proc = spawn('tar', ['-xzf', sourcePath, '-C', workDir], {
+        stdio: 'pipe',
+      })
+      proc.on('close', resolve)
+    })
+
+    if (extractResult !== 0) {
+      throw new Error('Failed to extract PHP source')
+    }
+
+    const phpSourceDir = path.join(workDir, `php-${phpVersion}`)
+    const extensions: Array<{ name: string, configArgs: string, available: boolean }> = []
+
+    // Configure PostgreSQL extension if available
+    if (hasPgConfig) {
+      const pgRoot = path.dirname(path.dirname(pgConfigPath))
+      extensions.push({
+        name: 'pdo_pgsql',
+        configArgs: `--with-pdo-pgsql=${pgRoot}`,
+        available: true,
+      })
+      extensions.push({
+        name: 'pgsql',
+        configArgs: `--with-pgsql=${pgRoot}`,
+        available: true,
+      })
+    }
+
+    // Configure MySQL extension if available
+    if (hasMysqlConfig) {
+      const mysqlRoot = path.dirname(path.dirname(mysqlConfigPath))
+      extensions.push({
+        name: 'pdo_mysql',
+        configArgs: `--with-pdo-mysql=${mysqlRoot}`,
+        available: true,
+      })
+      extensions.push({
+        name: 'mysqli',
+        configArgs: `--with-mysqli=${mysqlConfigPath}`,
+        available: true,
+      })
+    }
+
+    // Compile each available extension
+    for (const ext of extensions) {
+      if (ext.available) {
+        try {
+          const extDir = path.join(phpSourceDir, 'ext', ext.name)
+          if (await fs.promises.access(extDir).then(() => true, () => false)) {
+            await compilePhpExtension(extDir, ext.name, ext.configArgs, installPath)
+            logUniqueMessage(`✅ ${ext.name} extension compiled successfully`)
+          }
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`Failed to compile ${ext.name} extension: ${error}`)
+          }
+        }
+      }
+    }
+
+    // Clean up
+    await fs.promises.rm(workDir, { recursive: true, force: true })
+
+    logUniqueMessage(`✅ Database extensions compilation completed`)
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Database extension compilation failed: ${error}`)
+    }
+    throw error
+  }
+}
+
+/**
+ * Configures PHP with database extensions in php.ini
+ */
+async function _configurePHPWithDatabaseExtensions(installPath: string, _phpVersion: string): Promise<void> {
+  try {
+    logUniqueMessage(`🔄 Configuring PHP with database extensions...`)
+
+    // Find the PHP extension directory
+    const phpExtDirs = [
+      path.join(installPath, 'lib', 'php', '20240924'), // PHP 8.4
+      path.join(installPath, 'lib', 'php', '20230831'), // PHP 8.3
+      path.join(installPath, 'lib', 'php', '20220829'), // PHP 8.2
+    ]
+
+    let phpExtDir = ''
+    for (const dir of phpExtDirs) {
+      if (await fs.promises.access(dir).then(() => true, () => false)) {
+        phpExtDir = dir
+        break
+      }
+    }
+
+    if (!phpExtDir) {
+      if (config.verbose) {
+        console.warn('Could not find PHP extension directory')
+      }
+      return
+    }
+
+    // Create etc directory for php.ini
+    const etcDir = path.join(installPath, 'etc')
+    await fs.promises.mkdir(etcDir, { recursive: true })
+
+    // Check which extensions are available
+    const availableExtensions: string[] = []
+    const extensions = ['pdo_pgsql.so', 'pgsql.so', 'pdo_mysql.so', 'mysqli.so']
+
+    for (const ext of extensions) {
+      const extPath = path.join(phpExtDir, ext)
+      if (await fs.promises.access(extPath).then(() => true, () => false)) {
+        availableExtensions.push(extPath)
+      }
+    }
+
+    if (availableExtensions.length === 0) {
+      if (config.verbose) {
+        console.warn('No database extensions found to configure')
+      }
+      return
+    }
+
+    // Create comprehensive php.ini with database extensions
+    const phpIniPath = path.join(etcDir, 'php.ini')
+    const phpIniContent = `; PHP Configuration for Launchpad
+; Optimized for Laravel development with database support
+
+[PHP]
+; Basic settings
+memory_limit = 256M
+max_execution_time = 60
+max_input_vars = 3000
+post_max_size = 64M
+upload_max_filesize = 64M
+
+; Error reporting
+display_errors = On
+error_reporting = E_ALL
+log_errors = On
+
+; Extensions (core)
+extension=curl
+extension=fileinfo
+extension=gd
+extension=intl
+extension=mbstring
+extension=openssl
+extension=pdo
+extension=pdo_sqlite
+extension=sqlite3
+extension=xml
+extension=zip
+
+; Database extensions
+${availableExtensions.map(ext => `extension=${ext}`).join('\n')}
+
+; Session
+session.save_handler = files
+session.save_path = "/tmp"
+
+; Date
+date.timezone = UTC
+
+; OPcache (for production performance)
+zend_extension=opcache
+opcache.enable=1
+opcache.enable_cli=1
+opcache.memory_consumption=128
+opcache.interned_strings_buffer=8
+opcache.max_accelerated_files=4000
+opcache.revalidate_freq=2
+opcache.fast_shutdown=1
+`
+
+    await fs.promises.writeFile(phpIniPath, phpIniContent)
+
+    logUniqueMessage(`✅ PHP configured with ${availableExtensions.length} database extensions`)
+
+    if (config.verbose) {
+      console.warn(`Created php.ini at: ${phpIniPath}`)
+      console.warn(`Enabled extensions: ${availableExtensions.map(ext => path.basename(ext)).join(', ')}`)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`PHP configuration failed: ${error}`)
+    }
+  }
+}
+
+/**
+ * Compiles PostgreSQL extensions for PHP (Homebrew-style approach)
+ * @deprecated Use compileDatabaseExtensions instead
+ */
+async function _compilePostgreSQLExtensions(installPath: string, phpVersion: string): Promise<void> {
+  const { spawn } = await import('node:child_process')
+
+  try {
+    logUniqueMessage(`🔄 Compiling PostgreSQL extensions for PHP ${phpVersion}...`)
+
+    // Check if we have the necessary tools
+    const phpizePath = path.join(installPath, 'bin', 'phpize')
+    const phpConfigPath = path.join(installPath, 'bin', 'php-config')
+    const pgConfigPath = path.join(installPath, 'bin', 'pg_config')
+
+    const hasPhpize = await fs.promises.access(phpizePath).then(() => true, () => false)
+    const hasPhpConfig = await fs.promises.access(phpConfigPath).then(() => true, () => false)
+    const hasPgConfig = await fs.promises.access(pgConfigPath).then(() => true, () => false)
+
+    if (!hasPhpize || !hasPhpConfig || !hasPgConfig) {
+      if (config.verbose) {
+        console.warn('Missing required tools for extension compilation')
+      }
+      return
+    }
+
+    // Create working directory
+    const workDir = path.join(installPath, '.tmp', 'php-pgsql-compile')
+    await fs.promises.mkdir(workDir, { recursive: true })
+
+    // Download PHP source
+    const sourceUrl = `https://www.php.net/distributions/php-${phpVersion}.tar.gz`
+    const sourcePath = path.join(workDir, `php-${phpVersion}.tar.gz`)
+
+    logUniqueMessage(`🔄 Downloading PHP ${phpVersion} source...`)
+
+    const response = await globalThis.fetch(sourceUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download PHP source: ${response.status}`)
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    await fs.promises.writeFile(sourcePath, new Uint8Array(arrayBuffer))
+
+    // Extract source
+    const extractResult = await new Promise<number>((resolve) => {
+      const proc = spawn('tar', ['-xzf', sourcePath, '-C', workDir], {
+        stdio: 'pipe',
+      })
+      proc.on('close', resolve)
+    })
+
+    if (extractResult !== 0) {
+      throw new Error('Failed to extract PHP source')
+    }
+
+    // Compile pdo_pgsql extension
+    const extDir = path.join(workDir, `php-${phpVersion}`, 'ext', 'pdo_pgsql')
+    const pgRoot = path.dirname(path.dirname(pgConfigPath)) // Go up from bin/pg_config to get PostgreSQL root
+
+    await compilePhpExtension(extDir, 'pdo_pgsql', `--with-pdo-pgsql=${pgRoot}`, installPath)
+
+    // Compile pgsql extension
+    const pgsqlExtDir = path.join(workDir, `php-${phpVersion}`, 'ext', 'pgsql')
+    await compilePhpExtension(pgsqlExtDir, 'pgsql', `--with-pgsql=${pgRoot}`, installPath)
+
+    // Clean up
+    await fs.promises.rm(workDir, { recursive: true, force: true })
+
+    logUniqueMessage(`✅ PostgreSQL extensions compiled successfully`)
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`PostgreSQL extension compilation failed: ${error}`)
+    }
+    throw error
+  }
+}
+
+/**
+ * Compiles a single PHP extension
+ */
+async function compilePhpExtension(extDir: string, extName: string, configureArgs: string, installPath: string): Promise<void> {
+  const { spawn } = await import('node:child_process')
+
+  // Get the PHP extension directory
+  const phpExtDir = await new Promise<string>((resolve, reject) => {
+    const proc = spawn(path.join(installPath, 'bin', 'php-config'), ['--extension-dir'], {
+      stdio: 'pipe',
+    })
+    let output = ''
+    proc.stdout.on('data', (data) => {
+      output += data
+    })
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve(output.trim())
+      }
+      else {
+        reject(new Error('Failed to get PHP extension directory'))
+      }
+    })
+  })
+
+  // Run phpize
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(path.join(installPath, 'bin', 'phpize'), [], {
+      cwd: extDir,
+      stdio: 'pipe',
+    })
+    proc.on('close', (code) => {
+      if (code === 0)
+        resolve()
+      else reject(new Error(`phpize failed for ${extName}`))
+    })
+  })
+
+  // Configure
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn('./configure', configureArgs.split(' '), {
+      cwd: extDir,
+      stdio: 'pipe',
+    })
+    proc.on('close', (code) => {
+      if (code === 0)
+        resolve()
+      else reject(new Error(`configure failed for ${extName}`))
+    })
+  })
+
+  // Make
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn('/usr/bin/make', [], {
+      cwd: extDir,
+      stdio: 'pipe',
+    })
+    proc.on('close', (code) => {
+      if (code === 0)
+        resolve()
+      else reject(new Error(`make failed for ${extName}`))
+    })
+  })
+
+  // Install the extension
+  const soFile = path.join(extDir, 'modules', `${extName}.so`)
+  const targetFile = path.join(phpExtDir, `${extName}.so`)
+
+  if (await fs.promises.access(soFile).then(() => true, () => false)) {
+    await fs.promises.copyFile(soFile, targetFile)
+    if (config.verbose) {
+      console.warn(`Installed ${extName}.so to ${targetFile}`)
+    }
+  }
+  else {
+    throw new Error(`Failed to find compiled ${extName}.so`)
+  }
+}
+
+/**
+ * Custom PHP installer with database extensions (PostgreSQL, MySQL)
+ * Downloads PHP source and compiles with database extensions
+ */
+async function installPhpWithDatabaseSupport(installPath: string, requestedVersion?: string): Promise<string[]> {
+  // Default to PHP 8.3 as it has better stability with extensions
+  const version = requestedVersion?.replace(/^v/, '') || '8.3.13'
+
+  try {
+    logUniqueMessage(`🔄 Installing PHP ${version} with database support (PostgreSQL, MySQL)...`)
+
+    // First install regular PHP and database servers to get base system
+    const phpResult = await installPackage('php', `php@${version}`, installPath)
+    if (phpResult.length === 0) {
+      throw new Error('Failed to install base PHP')
+    }
+
+    // Install database servers for development libraries
+    logUniqueMessage(`🔄 Installing database servers for development libraries...`)
+    await Promise.allSettled([
+      installPackage('postgresql', 'postgresql', installPath),
+      installPackage('mysql', 'mysql', installPath),
+    ])
+
+    // Set up database extensions (includes existing compiled ones)
+    await setupDatabaseExtensions(installPath)
+
+    logUniqueMessage(`✅ php \x1B[2m\x1B[3m(v${version} with PostgreSQL & MySQL support)\x1B[0m`)
+
+    return phpResult
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Custom PHP installation failed: ${error}`)
+    }
+    // Fall back to regular installation
+    return await installPackage('php', `php@${version}`, installPath)
+  }
+}
+
+/**
+ * Sets up database extensions for PHP after installation
+ * Called automatically after PHP installation to enable PostgreSQL and MySQL support
+ */
+async function setupDatabaseExtensions(installPath: string): Promise<void> {
+  try {
+    logUniqueMessage(`🔄 Setting up database extensions for PHP...`)
+
+    // Find PHP installation paths
+    const phpBinPath = path.join(installPath, 'bin', 'php')
+    const phpConfigPath = path.join(installPath, 'bin', 'php-config')
+
+    const hasPhp = await fs.promises.access(phpBinPath).then(() => true, () => false)
+    const hasPhpConfig = await fs.promises.access(phpConfigPath).then(() => true, () => false)
+
+    if (!hasPhp || !hasPhpConfig) {
+      if (config.verbose) {
+        console.warn('PHP or php-config not found, skipping database extension setup')
+      }
+      return
+    }
+
+    // Get extension directory path
+    const extensionDir = path.join(installPath, 'lib', 'php', '20240924')
+
+    // Check if we have any existing compiled extensions
+    const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
+    const mysqlExtension = path.join(extensionDir, 'pdo_mysql.so')
+
+    const hasPgsql = await fs.promises.access(pgsqlExtension).then(() => true, () => false)
+    const hasMysql = await fs.promises.access(mysqlExtension).then(() => true, () => false)
+
+    if (config.verbose) {
+      console.log(`🔍 Found extensions: PostgreSQL=${hasPgsql}, MySQL=${hasMysql}`)
+    }
+
+    // If we don't have compiled extensions, compile them
+    if (!hasPgsql || !hasMysql) {
+      await compilePhpDatabaseExtensions(installPath, extensionDir)
+    }
+
+    // Create PHP wrapper script that automatically loads database extensions
+    await createPhpWrapperWithExtensions(installPath, extensionDir)
+
+    // Create proper php.ini that will be used by our wrapper
+    await createPhpIniWithDatabaseExtensions(installPath, extensionDir)
+
+    logUniqueMessage(`✅ Database extensions setup completed for PHP`)
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`⚠️  Database extension setup failed: ${error}`)
+    }
+    // Don't fail the entire installation if database extensions fail
+  }
+}
+
+/**
+ * Compiles PHP database extensions (PostgreSQL and MySQL)
+ */
+async function compilePhpDatabaseExtensions(installPath: string, extensionDir: string): Promise<void> {
+  try {
+    logUniqueMessage(`🔧 Compiling database extensions for PHP...`)
+
+    // Create temporary directory for compilation
+    const tempDir = path.join(process.cwd(), '.tmp', 'php-ext-compile')
+    await fs.promises.mkdir(tempDir, { recursive: true })
+
+    // Download PHP source (we'll use the same version that's installed)
+    const phpVersion = '8.4.10' // This should match the installed PHP version
+    const sourceUrl = `https://www.php.net/distributions/php-${phpVersion}.tar.gz`
+
+    if (config.verbose) {
+      console.log(`📥 Downloading PHP source from ${sourceUrl}`)
+    }
+
+    // Use system curl to avoid segfault issues
+    const curlProc = spawn('/usr/bin/curl', ['-L', sourceUrl, '-o', `php-${phpVersion}.tar.gz`], {
+      cwd: tempDir,
+      stdio: config.verbose ? 'inherit' : 'pipe',
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      curlProc.on('close', (code: number | null) => {
+        if (code === 0)
+          resolve()
+        else reject(new Error(`curl failed with code ${code}`))
+      })
+    })
+
+    // Extract source
+    const tarProc = spawn('tar', ['-xzf', `php-${phpVersion}.tar.gz`], {
+      cwd: tempDir,
+      stdio: config.verbose ? 'inherit' : 'pipe',
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      tarProc.on('close', (code: number | null) => {
+        if (code === 0)
+          resolve()
+        else reject(new Error(`tar failed with code ${code}`))
+      })
+    })
+
+    // Compile PostgreSQL extension
+    await compileExtension(path.join(tempDir, `php-${phpVersion}`, 'ext', 'pdo_pgsql'), extensionDir, 'pdo_pgsql', [
+      '--with-pdo-pgsql',
+    ])
+
+    // Compile MySQL extension
+    await compileExtension(path.join(tempDir, `php-${phpVersion}`, 'ext', 'pdo_mysql'), extensionDir, 'pdo_mysql', [
+      '--with-pdo-mysql',
+    ])
+
+    // Clean up temporary directory
+    await fs.promises.rm(tempDir, { recursive: true, force: true })
+
+    logUniqueMessage(`✅ Database extensions compiled successfully`)
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`⚠️  Extension compilation failed: ${error}`)
+    }
+    throw error
+  }
+}
+
+/**
+ * Compiles a single PHP extension
+ */
+async function compileExtension(sourceDir: string, extensionDir: string, extensionName: string, configureArgs: string[]): Promise<void> {
+  try {
+    if (config.verbose) {
+      console.log(`🔧 Compiling ${extensionName} extension...`)
+    }
+
+    // Run phpize
+    const phpizeProc = spawn('phpize', [], {
+      cwd: sourceDir,
+      stdio: config.verbose ? 'inherit' : 'pipe',
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      phpizeProc.on('close', (code: number | null) => {
+        if (code === 0)
+          resolve()
+        else reject(new Error(`phpize failed for ${extensionName}`))
+      })
+    })
+
+    // Configure
+    const configureProc = spawn('./configure', configureArgs, {
+      cwd: sourceDir,
+      stdio: config.verbose ? 'inherit' : 'pipe',
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      configureProc.on('close', (code: number | null) => {
+        if (code === 0)
+          resolve()
+        else reject(new Error(`configure failed for ${extensionName}`))
+      })
+    })
+
+    // Make
+    const makeProc = spawn('/usr/bin/make', [], {
+      cwd: sourceDir,
+      stdio: config.verbose ? 'inherit' : 'pipe',
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      makeProc.on('close', (code: number | null) => {
+        if (code === 0)
+          resolve()
+        else reject(new Error(`make failed for ${extensionName}`))
+      })
+    })
+
+    // Copy the compiled extension
+    const compiledExtension = path.join(sourceDir, 'modules', `${extensionName}.so`)
+    const targetExtension = path.join(extensionDir, `${extensionName}.so`)
+
+    await fs.promises.copyFile(compiledExtension, targetExtension)
+
+    if (config.verbose) {
+      console.log(`✅ ${extensionName} extension compiled and installed`)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`⚠️  Failed to compile ${extensionName}: ${error}`)
+    }
+    // Don't throw - we want to continue with other extensions
+  }
+}
+
+/**
+ * Creates a PHP wrapper script that automatically loads database extensions
+ */
+async function createPhpWrapperWithExtensions(installPath: string, extensionDir: string): Promise<void> {
+  const phpBinPath = path.join(installPath, 'bin', 'php')
+  const phpWrapperPath = path.join(installPath, 'bin', 'php-with-db')
+
+  // Find available database extensions
+  const extensions: string[] = []
+
+  const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
+  const mysqlExtension = path.join(extensionDir, 'pdo_mysql.so')
+
+  if (await fs.promises.access(pgsqlExtension).then(() => true, () => false)) {
+    extensions.push(`-d extension=${pgsqlExtension}`)
+  }
+
+  if (await fs.promises.access(mysqlExtension).then(() => true, () => false)) {
+    extensions.push(`-d extension=${mysqlExtension}`)
+  }
+
+  // Create wrapper script
+  const wrapperScript = `#!/bin/bash
+# PHP wrapper with database extensions
+# Generated by Launchpad
+exec "${phpBinPath}" ${extensions.join(' ')} "$@"
+`
+
+  await fs.promises.writeFile(phpWrapperPath, wrapperScript, { mode: 0o755 })
+
+  // Replace the original php binary with our wrapper
+  const originalPhpPath = `${phpBinPath}.original`
+
+  // Backup original if not already backed up
+  if (!await fs.promises.access(originalPhpPath).then(() => true, () => false)) {
+    await fs.promises.copyFile(phpBinPath, originalPhpPath)
+  }
+
+  // Replace with wrapper
+  await fs.promises.copyFile(phpWrapperPath, phpBinPath)
+
+  if (config.verbose) {
+    console.log(`✅ PHP wrapper created with database extensions`)
+  }
+}
+
+/**
+ * Creates php.ini configuration file with database extensions
+ */
+async function createPhpIniWithDatabaseExtensions(installPath: string, extensionDir: string): Promise<void> {
+  const phpIniDir = path.join(installPath, 'etc')
+  const phpIniPath = path.join(phpIniDir, 'php.ini')
+
+  await fs.promises.mkdir(phpIniDir, { recursive: true })
+
+  const extensions: string[] = []
+
+  const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
+  const mysqlExtension = path.join(extensionDir, 'pdo_mysql.so')
+
+  if (await fs.promises.access(pgsqlExtension).then(() => true, () => false)) {
+    extensions.push(`extension=${pgsqlExtension}`)
+  }
+
+  if (await fs.promises.access(mysqlExtension).then(() => true, () => false)) {
+    extensions.push(`extension=${mysqlExtension}`)
+  }
+
+  const phpIniContent = `; PHP configuration with database extensions
+; Generated by Launchpad
+
+; Basic PHP settings
+memory_limit = 256M
+max_execution_time = 30
+max_input_time = 60
+upload_max_filesize = 32M
+post_max_size = 32M
+
+; Database extensions
+${extensions.join('\n')}
+
+; Enable OPcache for better performance
+opcache.enable=1
+opcache.enable_cli=1
+opcache.memory_consumption=128
+opcache.interned_strings_buffer=8
+opcache.max_accelerated_files=4000
+opcache.revalidate_freq=2
+opcache.fast_shutdown=1
+
+; Error reporting for development
+display_errors = On
+display_startup_errors = On
+error_reporting = E_ALL
+log_errors = On
+`
+
+  await fs.promises.writeFile(phpIniPath, phpIniContent)
+
+  if (config.verbose) {
+    console.log(`✅ php.ini created with database extensions at ${phpIniPath}`)
   }
 }

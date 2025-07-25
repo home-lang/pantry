@@ -50,6 +50,9 @@ export async function runDoctorChecks(): Promise<DoctorReport> {
   // Check network connectivity
   results.push(await checkNetworkConnectivity())
 
+  // Check PHP extensions
+  results.push(await checkPhpExtensions())
+
   // Calculate summary
   const summary = {
     passed: results.filter(r => r.status === 'pass').length,
@@ -412,6 +415,94 @@ async function checkNetworkConnectivity(): Promise<DiagnosticResult> {
       status: 'fail',
       message: `Cannot reach package distribution server: ${error instanceof Error ? error.message : String(error)}`,
       suggestion: 'Check your internet connection and firewall settings',
+    }
+  }
+}
+
+/**
+ * Check PHP extensions and provide installation guidance
+ */
+async function checkPhpExtensions(): Promise<DiagnosticResult> {
+  try {
+    // Check if PHP is available
+    const { execSync } = await import('node:child_process')
+    const phpVersion = execSync('php --version', { encoding: 'utf8', timeout: 5000 })
+
+    if (!phpVersion.includes('PHP')) {
+      return {
+        name: 'PHP Extensions',
+        status: 'warn',
+        message: 'PHP not found',
+        suggestion: 'PHP is not installed or not in PATH. Consider installing it for database extensions.',
+      }
+    }
+
+    // Check for common database extensions
+    const commonExtensions = ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite', 'mysqli', 'pgsql']
+    const extensionResults: Record<string, boolean> = {}
+
+    for (const ext of commonExtensions) {
+      try {
+        const result = execSync(`php -m | grep -i "^${ext}$"`, { encoding: 'utf8', timeout: 5000 })
+        extensionResults[ext] = result.trim().length > 0
+      }
+      catch {
+        extensionResults[ext] = false
+      }
+    }
+
+    // Check if any database extension is available
+    const dbExtensions = ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite', 'mysqli', 'pgsql']
+    const hasDbExtension = dbExtensions.some(ext => extensionResults[ext])
+
+    if (!hasDbExtension) {
+      return {
+        name: 'PHP Extensions',
+        status: 'warn',
+        message: 'No database extensions found',
+        suggestion: 'Consider installing PHP with database extensions or use SQLite (which is usually included)',
+      }
+    }
+
+    // Specific extension recommendations
+    if (!extensionResults.pdo_sqlite) {
+      return {
+        name: 'PHP Extensions',
+        status: 'warn',
+        message: 'SQLite extension missing',
+        suggestion: 'SQLite extension missing - this is the most compatible option for development',
+      }
+    }
+
+    if (!extensionResults.pdo_pgsql && !extensionResults.pgsql) {
+      return {
+        name: 'PHP Extensions',
+        status: 'warn',
+        message: 'PostgreSQL extensions missing',
+        suggestion: 'PostgreSQL extensions missing - needed for PostgreSQL databases',
+      }
+    }
+
+    if (!extensionResults.pdo_mysql && !extensionResults.mysqli) {
+      return {
+        name: 'PHP Extensions',
+        status: 'warn',
+        message: 'MySQL extensions missing',
+        suggestion: 'MySQL extensions missing - needed for MySQL/MariaDB databases',
+      }
+    }
+
+    return {
+      name: 'PHP Extensions',
+      status: 'pass',
+      message: 'Core database extensions are available',
+    }
+  }
+  catch (error) {
+    return {
+      name: 'PHP Extensions',
+      status: 'fail',
+      message: `Error checking PHP extensions: ${error instanceof Error ? error.message : String(error)}`,
     }
   }
 }

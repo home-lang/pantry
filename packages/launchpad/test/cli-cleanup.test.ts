@@ -39,7 +39,11 @@ describe('CLI Cleanup Commands', () => {
   })
 
   afterEach(() => {
-    process.env = originalEnv
+    // Restore environment variables properly without replacing the entire process.env object
+    Object.keys(process.env).forEach((key) => {
+      delete process.env[key]
+    })
+    Object.assign(process.env, originalEnv)
     // Restore original config
     config.installPath = originalEnv.HOME ? path.join(originalEnv.HOME, '.local') : '/usr/local'
     if (fs.existsSync(tempDir)) {

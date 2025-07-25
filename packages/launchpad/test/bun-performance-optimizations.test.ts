@@ -52,7 +52,11 @@ describe('Bun Performance Optimizations', () => {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
     }
-    process.env = originalEnv
+    // Restore environment variables properly without replacing the entire process.env object
+    Object.keys(process.env).forEach((key) => {
+      delete process.env[key]
+    })
+    Object.assign(process.env, originalEnv)
     // Clean up global mocks
     delete (globalThis as any).fetch
   })

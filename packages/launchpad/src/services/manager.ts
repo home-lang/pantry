@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
@@ -90,6 +91,16 @@ export async function startService(serviceName: string): Promise<boolean> {
     service.status = 'starting'
     service.lastCheckedAt = new Date()
 
+    // Auto-initialize databases first
+    const autoInitResult = await autoInitializeDatabase(service)
+    if (!autoInitResult) {
+      console.error(`❌ Failed to auto-initialize ${service.definition.displayName}`)
+      operation.result = 'failure'
+      operation.error = 'Auto-initialization failed'
+      manager.operations.push(operation)
+      return false
+    }
+
     // Initialize service if needed
     if (service.definition.initCommand && !await isServiceInitialized(service)) {
       console.warn(`🔧 Initializing ${service.definition.displayName}...`)
@@ -108,6 +119,9 @@ export async function startService(serviceName: string): Promise<boolean> {
       service.pid = await getServicePid(service)
 
       console.warn(`✅ ${service.definition.displayName} started successfully`)
+
+      // Execute post-start setup commands
+      await executePostStartCommands(service)
 
       // Health check after starting
       setTimeout(() => {
@@ -413,7 +427,7 @@ async function getOrCreateServiceInstance(serviceName: string): Promise<ServiceI
     status: 'stopped',
     lastCheckedAt: new Date(),
     enabled: false,
-    config: {},
+    config: { ...definition.config },
   }
 
   manager.services.set(serviceName, service)
@@ -607,6 +621,203 @@ async function disableServicePlatform(service: ServiceInstance): Promise<boolean
   }
 
   return false
+}
+
+/**
+ * Auto-initialize databases on first start
+ */
+async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean> {
+  const { definition } = service
+
+  // PostgreSQL auto-initialization
+  if (definition.name === 'postgres' || definition.name === 'postgresql') {
+    const dataDir = service.dataDir || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'postgres-data')
+    const pgVersionFile = path.join(dataDir, 'PG_VERSION')
+
+    // Check if already initialized
+    if (fs.existsSync(pgVersionFile)) {
+      return true
+    }
+
+    console.log('🔧 Initializing PostgreSQL database cluster...')
+
+    try {
+      // Create data directory
+      fs.mkdirSync(dataDir, { recursive: true })
+
+      // Initialize database
+      const { execSync } = await import('node:child_process')
+      execSync(`initdb -D "${dataDir}" --auth-local=trust --auth-host=md5`, {
+        stdio: config.verbose ? 'inherit' : 'pipe',
+        timeout: 60000,
+      })
+
+      console.log('✅ PostgreSQL database cluster initialized')
+      return true
+    }
+    catch (error) {
+      console.error(`❌ Failed to initialize PostgreSQL: ${error instanceof Error ? error.message : String(error)}`)
+      return false
+    }
+  }
+
+  // MySQL auto-initialization
+  if (definition.name === 'mysql' || definition.name === 'mariadb') {
+    const dataDir = service.dataDir || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'mysql-data')
+    const mysqlDir = path.join(dataDir, 'mysql')
+
+    // Check if already initialized
+    if (fs.existsSync(mysqlDir)) {
+      return true
+    }
+
+    console.log('🔧 Initializing MySQL database...')
+
+    try {
+      // Create data directory
+      fs.mkdirSync(dataDir, { recursive: true })
+
+      // Initialize database
+      const { execSync } = await import('node:child_process')
+      execSync(`mysql_install_db --datadir="${dataDir}" --auth-root-authentication-method=normal`, {
+        stdio: config.verbose ? 'inherit' : 'pipe',
+        timeout: 60000,
+      })
+
+      console.log('✅ MySQL database initialized')
+      return true
+    }
+    catch (error) {
+      console.error(`❌ Failed to initialize MySQL: ${error instanceof Error ? error.message : String(error)}`)
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Execute post-start commands for service setup
+ */
+async function executePostStartCommands(service: ServiceInstance): Promise<void> {
+  const { definition } = service
+
+  if (!definition.postStartCommands || definition.postStartCommands.length === 0) {
+    return
+  }
+
+  // Wait for the service to be fully ready, especially for databases
+  if (definition.name === 'postgres' || definition.name === 'mysql') {
+    // For databases, wait longer in CI environments and check if they're actually ready
+    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+    const waitTime = isCI ? 10000 : 5000 // 10s in CI, 5s locally
+    await new Promise(resolve => setTimeout(resolve, waitTime))
+
+    // Try to verify the service is responding before running post-start commands
+    if (definition.healthCheck) {
+      for (let i = 0; i < 5; i++) {
+        try {
+          const healthResult = await checkServiceHealth(service)
+          if (healthResult)
+            break
+        }
+        catch {
+          // Health check failed, wait a bit more
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      }
+    }
+  }
+  else {
+    // For other services, use the original wait time
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  }
+
+  for (const commandTemplate of definition.postStartCommands) {
+    try {
+      // Resolve template variables
+      const resolvedCommand = commandTemplate.map(arg => resolveServiceTemplateVariables(arg, service))
+
+      const [command, ...args] = resolvedCommand
+      const executablePath = findBinaryInPath(command) || command
+
+      if (config.verbose) {
+        console.warn(`📋 Executing post-start command: ${resolvedCommand.join(' ')}`)
+      }
+
+      await new Promise<void>((resolve, _reject) => {
+        const proc = spawn(executablePath, args, {
+          stdio: config.verbose ? 'inherit' : 'pipe',
+          env: { ...process.env, ...definition.env },
+        })
+
+        // Add timeout for post-start commands (30 seconds max)
+        const timeout = setTimeout(() => {
+          if (config.verbose) {
+            console.warn(`⚠️ Post-start command timed out after 30s: ${resolvedCommand.join(' ')}`)
+          }
+          proc.kill('SIGTERM')
+          resolve()
+        }, 30000)
+
+        proc.on('close', (code) => {
+          clearTimeout(timeout)
+          if (code === 0) {
+            resolve()
+          }
+          else {
+            // Don't fail the service start for post-start command failures
+            // These are often optional setup commands
+            if (config.verbose) {
+              console.warn(`⚠️ Post-start command failed with exit code ${code}: ${resolvedCommand.join(' ')}`)
+            }
+            resolve()
+          }
+        })
+
+        proc.on('error', (error) => {
+          clearTimeout(timeout)
+          if (config.verbose) {
+            console.warn(`⚠️ Post-start command error: ${error.message}`)
+          }
+          resolve()
+        })
+      })
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`⚠️ Failed to execute post-start command: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+  }
+}
+
+/**
+ * Resolve template variables in service configuration
+ */
+function resolveServiceTemplateVariables(template: string, service: ServiceInstance): string {
+  const { definition } = service
+  const dataDir = service.dataDir || definition.dataDirectory
+  const configFile = service.configFile || definition.configFile
+  const logFile = service.logFile || definition.logFile
+  const port = definition.port
+
+  // Get service config with defaults
+  const serviceConfig = { ...definition.config, ...service.config }
+
+  let resolved = template
+    .replace('{dataDir}', dataDir || '')
+    .replace('{configFile}', configFile || '')
+    .replace('{logFile}', logFile || '')
+    .replace('{pidFile}', definition.pidFile || '')
+    .replace('{port}', String(port || 5432))
+
+  // Replace service-specific config variables
+  for (const [key, value] of Object.entries(serviceConfig)) {
+    resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+  }
+
+  return resolved
 }
 
 // macOS launchd implementations

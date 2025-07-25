@@ -34,7 +34,11 @@ describe('Upgrade Command', () => {
   })
 
   afterEach(() => {
-    process.env = originalEnv
+    // Restore environment variables properly without replacing the entire process.env object
+    Object.keys(process.env).forEach((key) => {
+      delete process.env[key]
+    })
+    Object.assign(process.env, originalEnv)
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
     }

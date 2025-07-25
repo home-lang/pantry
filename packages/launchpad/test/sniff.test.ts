@@ -17,7 +17,11 @@ describe('Sniff - All File Types Detection', () => {
   })
 
   afterEach(() => {
-    process.env = originalEnv
+    // Restore environment variables properly without replacing the entire process.env object
+    Object.keys(process.env).forEach((key) => {
+      delete process.env[key]
+    })
+    Object.assign(process.env, originalEnv)
     process.chdir(path.dirname(tempDir))
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })

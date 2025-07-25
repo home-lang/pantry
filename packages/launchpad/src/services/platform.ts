@@ -15,13 +15,21 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   const dataDir = service.dataDir || definition.dataDirectory
 
   // Resolve template variables in arguments
-  const resolvedArgs = definition.args.map(arg =>
-    arg
+  const resolvedArgs = definition.args.map((arg) => {
+    let resolved = arg
       .replace('{dataDir}', dataDir || '')
       .replace('{configFile}', service.configFile || definition.configFile || '')
       .replace('{logFile}', service.logFile || definition.logFile || '')
-      .replace('{pidFile}', definition.pidFile || ''),
-  )
+      .replace('{pidFile}', definition.pidFile || '')
+      .replace('{port}', String(definition.port || 5432))
+
+    // Replace service-specific config variables
+    for (const [key, value] of Object.entries(service.config)) {
+      resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+    }
+
+    return resolved
+  })
 
   // Find the executable path
   const executablePath = findBinaryInPath(definition.executable) || definition.executable
@@ -31,7 +39,21 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
     ProgramArguments: [executablePath, ...resolvedArgs],
     WorkingDirectory: definition.workingDirectory || dataDir,
     EnvironmentVariables: {
-      ...definition.env,
+      ...Object.fromEntries(Object.entries(definition.env).map(([k, v]) => {
+        let resolved = String(v)
+          .replace('{dataDir}', dataDir || '')
+          .replace('{configFile}', service.configFile || definition.configFile || '')
+          .replace('{logFile}', service.logFile || definition.logFile || '')
+          .replace('{pidFile}', definition.pidFile || '')
+          .replace('{port}', String(definition.port || 5432))
+
+        // Replace service-specific config variables
+        for (const [key, value] of Object.entries(service.config)) {
+          resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+        }
+
+        return [k, resolved]
+      })),
       ...Object.fromEntries(Object.entries(service.config).map(([k, v]) => [k, String(v)])),
     },
     StandardOutPath: service.logFile || path.join(logDir, `${definition.name}.log`),
@@ -54,20 +76,42 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
   const dataDir = service.dataDir || definition.dataDirectory
 
   // Resolve template variables in arguments
-  const resolvedArgs = definition.args.map(arg =>
-    arg
+  const resolvedArgs = definition.args.map((arg) => {
+    let resolved = arg
       .replace('{dataDir}', dataDir || '')
       .replace('{configFile}', service.configFile || definition.configFile || '')
       .replace('{logFile}', service.logFile || definition.logFile || '')
-      .replace('{pidFile}', definition.pidFile || ''),
-  )
+      .replace('{pidFile}', definition.pidFile || '')
+      .replace('{port}', String(definition.port || 5432))
+
+    // Replace service-specific config variables
+    for (const [key, value] of Object.entries(service.config)) {
+      resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+    }
+
+    return resolved
+  })
 
   // Find the executable path
   const executablePath = findBinaryInPath(definition.executable) || definition.executable
 
   // Environment variables as array of KEY=value strings
   const envVars = Object.entries({
-    ...definition.env,
+    ...Object.fromEntries(Object.entries(definition.env).map(([k, v]) => {
+      let resolved = String(v)
+        .replace('{dataDir}', dataDir || '')
+        .replace('{configFile}', service.configFile || definition.configFile || '')
+        .replace('{logFile}', service.logFile || definition.logFile || '')
+        .replace('{pidFile}', definition.pidFile || '')
+        .replace('{port}', String(definition.port || 5432))
+
+      // Replace service-specific config variables
+      for (const [key, value] of Object.entries(service.config)) {
+        resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+      }
+
+      return [k, resolved]
+    })),
     ...Object.fromEntries(Object.entries(service.config).map(([k, v]) => [k, String(v)])),
   }).map(([key, value]) => `${key}=${value}`)
 

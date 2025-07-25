@@ -23,7 +23,11 @@ beforeEach(() => {
 
 afterEach(() => {
   // Restore original environment
-  process.env = originalEnv
+  // Restore environment variables properly without replacing the entire process.env object
+  Object.keys(process.env).forEach((key) => {
+    delete process.env[key]
+  })
+  Object.assign(process.env, originalEnv)
 
   // Clean up temp directory
   try {

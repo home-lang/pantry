@@ -23,6 +23,134 @@ export interface DumpOptions {
   skipGlobal?: boolean // Skip global package processing for testing
 }
 
+/**
+ * Check if packages are installed in the given environment directory
+ */
+function checkMissingPackages(packages: string[], envDir: string): string[] {
+  if (packages.length === 0)
+    return []
+
+  const pkgsDir = path.join(envDir, 'pkgs')
+  if (!fs.existsSync(pkgsDir)) {
+    return packages // All packages are missing if pkgs dir doesn't exist
+  }
+
+  const missingPackages: string[] = []
+
+  for (const packageSpec of packages) {
+    // Parse package spec (e.g., "php@^8.4.0" -> "php")
+    const [packageName] = packageSpec.split('@')
+
+    const packageDir = path.join(pkgsDir, packageName)
+    if (!fs.existsSync(packageDir)) {
+      missingPackages.push(packageSpec)
+      continue
+    }
+
+    // Check if any version of this package is installed
+    try {
+      const versionDirs = fs.readdirSync(packageDir, { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && entry.name.startsWith('v'))
+
+      if (versionDirs.length === 0) {
+        missingPackages.push(packageSpec)
+      }
+    }
+    catch {
+      missingPackages.push(packageSpec)
+    }
+  }
+
+  return missingPackages
+}
+
+/**
+ * Check if environment needs packages installed based on what's actually missing
+ */
+function needsPackageInstallation(localPackages: string[], globalPackages: string[], envDir: string, globalEnvDir: string): { needsLocal: boolean, needsGlobal: boolean, missingLocal: string[], missingGlobal: string[] } {
+  const missingLocal = checkMissingPackages(localPackages, envDir)
+  const missingGlobal = checkMissingPackages(globalPackages, globalEnvDir)
+
+  return {
+    needsLocal: missingLocal.length > 0,
+    needsGlobal: missingGlobal.length > 0,
+    missingLocal,
+    missingGlobal,
+  }
+}
+
+/**
+ * Detect if this is a Laravel project and provide setup assistance
+ */
+function detectLaravelProject(dir: string): { isLaravel: boolean, suggestions: string[] } {
+  const artisanFile = path.join(dir, 'artisan')
+  const composerFile = path.join(dir, 'composer.json')
+  const appDir = path.join(dir, 'app')
+
+  if (!fs.existsSync(artisanFile) || !fs.existsSync(composerFile) || !fs.existsSync(appDir)) {
+    return { isLaravel: false, suggestions: [] }
+  }
+
+  const suggestions: string[] = []
+
+  // Check for .env file
+  const envFile = path.join(dir, '.env')
+  if (!fs.existsSync(envFile)) {
+    const envExample = path.join(dir, '.env.example')
+    if (fs.existsSync(envExample)) {
+      suggestions.push('Copy .env.example to .env and configure database settings')
+    }
+  }
+
+  // Check for database configuration
+  if (fs.existsSync(envFile)) {
+    try {
+      const envContent = fs.readFileSync(envFile, 'utf8')
+      if (envContent.includes('DB_CONNECTION=mysql') && !envContent.includes('DB_PASSWORD=')) {
+        suggestions.push('Configure MySQL database credentials in .env file')
+      }
+      if (envContent.includes('DB_CONNECTION=pgsql') && !envContent.includes('DB_PASSWORD=')) {
+        suggestions.push('Configure PostgreSQL database credentials in .env file')
+      }
+      if (envContent.includes('DB_CONNECTION=sqlite')) {
+        const dbFile = envContent.match(/DB_DATABASE=(.+)/)?.[1]?.trim()
+        if (dbFile && !fs.existsSync(dbFile)) {
+          suggestions.push(`Create SQLite database file: touch ${dbFile}`)
+        }
+      }
+    }
+    catch {
+      // Ignore errors reading .env file
+    }
+  }
+
+  // Check if migrations have been run
+  try {
+    const databaseDir = path.join(dir, 'database')
+    const migrationsDir = path.join(databaseDir, 'migrations')
+    if (fs.existsSync(migrationsDir)) {
+      const migrations = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.php'))
+      if (migrations.length > 0) {
+        suggestions.push('Run database migrations: php artisan migrate')
+
+        // Check for seeders
+        const seedersDir = path.join(databaseDir, 'seeders')
+        if (fs.existsSync(seedersDir)) {
+          const seeders = fs.readdirSync(seedersDir).filter(f => f.endsWith('.php') && f !== 'DatabaseSeeder.php')
+          if (seeders.length > 0) {
+            suggestions.push('Seed database with test data: php artisan db:seed')
+          }
+        }
+      }
+    }
+  }
+  catch {
+    // Ignore errors checking migrations
+  }
+
+  return { isLaravel: true, suggestions }
+}
+
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
   const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true' || process.env.LAUNCHPAD_ENABLE_GLOBAL_AUTO_SCAN !== 'true' } = options
 
@@ -261,10 +389,19 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         const globalBinPath = path.join(globalEnvDir, 'bin')
         const globalSbinPath = path.join(globalEnvDir, 'sbin')
 
-        // If environments don't exist, trigger minimal installation
-        if (!fs.existsSync(envBinPath) && (localPackages.length > 0 || globalPackages.length > 0)) {
-          // Only install if we have packages and no environment
-          await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, effectiveQuiet)
+        // Check what packages are actually missing and need installation
+        const packageStatus = needsPackageInstallation(localPackages, globalPackages, envDir, globalEnvDir)
+
+        // Install missing packages if any are found
+        if (packageStatus.needsLocal || packageStatus.needsGlobal) {
+          await installPackagesOptimized(
+            packageStatus.missingLocal,
+            packageStatus.missingGlobal,
+            envDir,
+            globalEnvDir,
+            dryrun,
+            effectiveQuiet,
+          )
         }
 
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
@@ -275,6 +412,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Regular path for non-shell integration calls
     if (localPackages.length > 0 || globalPackages.length > 0) {
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, effectiveQuiet)
+    }
+
+    // Check for Laravel project and provide helpful suggestions
+    const laravelInfo = detectLaravelProject(projectDir)
+    if (laravelInfo.isLaravel && laravelInfo.suggestions.length > 0 && !effectiveQuiet) {
+      console.log('\n🎯 Laravel project detected! Helpful commands:')
+      laravelInfo.suggestions.forEach((suggestion) => {
+        console.log(`   • ${suggestion}`)
+      })
+      console.log()
     }
 
     // Output shell code if requested

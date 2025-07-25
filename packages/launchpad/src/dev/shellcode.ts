@@ -527,9 +527,9 @@ __launchpad_chpwd() {
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-            # Ultra-fast setup: use shell mode with minimal timeout
+            # Ultra-fast setup: use shell mode with reasonable timeout for package installation
             local temp_file=$(mktemp)
-            if timeout 1 ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>&1; then
+            if timeout 30 ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>&1; then
                 env_output=$(cat "$temp_file" | ${grepFilter})
                 setup_exit_code=0
             else
