@@ -413,7 +413,7 @@ __launchpad_find_deps_file() {
     __launchpad_cache_timestamp=0
 
     while [[ "$dir" != "/" ]]; do
-        # Check multiple file patterns efficiently
+        # Check dependency files first
         # Supported files: dependencies.yaml, dependencies.yml, deps.yaml, deps.yml,
         # pkgx.yaml, pkgx.yml, launchpad.yaml, launchpad.yml
         for pattern in "dependencies" "deps" "pkgx" "launchpad"; do
@@ -427,6 +427,15 @@ __launchpad_find_deps_file() {
                 fi
             done
         done
+
+        # Check for package.json if no dependency files found
+        if [[ -f "$dir/package.json" ]]; then
+            __launchpad_cache_dir="$dir"
+            __launchpad_cache_timestamp=$current_time
+            echo "$dir"
+            return 0
+        fi
+
         dir="$(/usr/bin/dirname "$dir")"
     done
 

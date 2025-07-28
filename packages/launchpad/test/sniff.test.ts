@@ -755,6 +755,109 @@ env:
     })
   })
 
+  describe('Auto-detection logic with enhanced rules', () => {
+    it('should auto-detect pnpm from packageManager and infer Node.js when no deps files present', async () => {
+      const packageJson = {
+        name: 'pnpm-test',
+        version: '1.0.0',
+        packageManager: 'pnpm@8.15.0',
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'pnpm.io')).toBe(true)
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
+    })
+
+    it('should auto-detect pnpm from engines.pnpm and infer Node.js', async () => {
+      const packageJson = {
+        name: 'pnpm-engines-test',
+        version: '1.0.0',
+        engines: {
+          node: '>=18',
+          pnpm: '>=8.0.0',
+        },
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'pnpm.io')).toBe(true)
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
+    })
+
+    it('should NOT infer Node.js when bun.lock is present', async () => {
+      const packageJson = {
+        name: 'bun-test',
+        version: '1.0.0',
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+      fs.writeFileSync('bun.lock', '')
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should NOT infer Node.js when deps.yaml is present', async () => {
+      const packageJson = {
+        name: 'deps-test',
+        version: '1.0.0',
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+      fs.writeFileSync('deps.yaml', 'dependencies:\n  - python.org\n')
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'python.org')).toBe(true)
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should detect pnpm from pnpm-lock.yaml and infer Node.js', async () => {
+      const packageJson = {
+        name: 'redline-simulation',
+        version: '1.0.0',
+        scripts: {
+          build: 'pnpm build',
+          dev: 'pnpm dev',
+        },
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+      fs.writeFileSync('pnpm-lock.yaml', 'lockfileVersion: 5.4\n')
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'pnpm.io')).toBe(true)
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
+    })
+
+    it('should infer Node.js when only package.json is present (no other lock files or deps files)', async () => {
+      const packageJson = {
+        name: 'simple-node-test',
+        version: '1.0.0',
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
+    })
+  })
+
   describe('Error handling', () => {
     it('should throw error for non-directory', async () => {
       fs.writeFileSync('not-a-directory', 'content')

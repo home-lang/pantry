@@ -1803,52 +1803,85 @@ cli
         const pkgsDir = path.join(installPrefix, 'pkgs')
         const binDir = path.join(installPrefix, 'bin')
 
-        if (!fs.existsSync(pkgsDir))
-          return binaries
-
-        try {
-          const domains = fs.readdirSync(pkgsDir, { withFileTypes: true })
-            .filter(dirent => dirent.isDirectory())
-
-          for (const domain of domains) {
-            const domainPath = path.join(pkgsDir, domain.name)
-            const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+        // Method 1: Use metadata if available
+        if (fs.existsSync(pkgsDir)) {
+          try {
+            const domains = fs.readdirSync(pkgsDir, { withFileTypes: true })
               .filter(dirent => dirent.isDirectory())
 
-            for (const version of versions) {
-              const versionPath = path.join(domainPath, version.name)
-              const metadataPath = path.join(versionPath, 'metadata.json')
+            for (const domain of domains) {
+              const domainPath = path.join(pkgsDir, domain.name)
+              const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
 
-              if (fs.existsSync(metadataPath)) {
-                try {
-                  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
-                  if (metadata.binaries && Array.isArray(metadata.binaries)) {
-                    for (const binary of metadata.binaries) {
-                      const binaryPath = path.join(binDir, binary)
-                      if (fs.existsSync(binaryPath)) {
-                        // Skip global dependencies if --keep-global is enabled
-                        if (options?.keepGlobal && globalDeps.has(domain.name)) {
-                          continue
+              for (const version of versions) {
+                const versionPath = path.join(domainPath, version.name)
+                const metadataPath = path.join(versionPath, 'metadata.json')
+
+                if (fs.existsSync(metadataPath)) {
+                  try {
+                    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
+                    if (metadata.binaries && Array.isArray(metadata.binaries)) {
+                      for (const binary of metadata.binaries) {
+                        const binaryPath = path.join(binDir, binary)
+                        if (fs.existsSync(binaryPath)) {
+                          // Skip global dependencies if --keep-global is enabled
+                          if (options?.keepGlobal && globalDeps.has(domain.name)) {
+                            continue
+                          }
+
+                          binaries.push({
+                            binary,
+                            package: `${domain.name}@${version.name.slice(1)}`, // Remove 'v' prefix
+                            fullPath: binaryPath,
+                          })
                         }
-
-                        binaries.push({
-                          binary,
-                          package: `${domain.name}@${version.name.slice(1)}`, // Remove 'v' prefix
-                          fullPath: binaryPath,
-                        })
                       }
                     }
                   }
-                }
-                catch {
-                  // Ignore invalid metadata files
+                  catch {
+                    // Ignore invalid metadata files
+                  }
                 }
               }
             }
           }
+          catch {
+            // Ignore errors reading package directory
+          }
         }
-        catch {
-          // Ignore errors reading package directory
+
+        // Method 2: Additional scan - always check bin directory for any remaining Launchpad shims
+        if (fs.existsSync(binDir)) {
+          try {
+                         const binFiles = fs.readdirSync(binDir, { withFileTypes: true })
+               .filter(dirent => dirent.isFile())
+
+             for (const file of binFiles) {
+               const filePath = path.join(binDir, file.name)
+               try {
+                 // Read first few lines to check if it's a Launchpad shim
+                 const content = fs.readFileSync(filePath, 'utf8')
+                 if (content.includes('Launchpad shim')) {
+                   // Check if we already have this binary from metadata
+                   const alreadyTracked = binaries.some(b => b.binary === file.name)
+                   if (!alreadyTracked) {
+                     binaries.push({
+                       binary: file.name,
+                       package: 'unknown', // We don't have metadata, so package is unknown
+                       fullPath: filePath,
+                     })
+                   }
+                 }
+               }
+               catch {
+                 // Ignore files we can't read
+               }
+             }
+          }
+          catch {
+            // Ignore errors reading bin directory
+          }
         }
 
         return binaries

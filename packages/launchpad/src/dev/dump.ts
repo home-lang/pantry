@@ -214,7 +214,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
   try {
     // Find dependency file
     const dependencyFile = findDependencyFile(dir)
-    if (!dependencyFile) {
+
+    // If no dependency file found, check for package.json to enable auto-detection
+    const packageJsonPath = path.join(dir, 'package.json')
+    const hasPackageJson = fs.existsSync(packageJsonPath)
+
+    if (!dependencyFile && !hasPackageJson) {
       if (!quiet && !shellOutput) {
         console.log('No dependency file found')
       }
@@ -222,7 +227,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
 
     // For shell output mode, prioritize speed with aggressive optimizations
-    const projectDir = path.dirname(dependencyFile)
+    const projectDir = dependencyFile ? path.dirname(dependencyFile) : dir
 
     // Ultra-fast path for shell output: check if environments exist and use cached data
     if (shellOutput) {

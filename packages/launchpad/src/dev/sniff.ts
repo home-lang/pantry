@@ -298,6 +298,9 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const constraint = new SemverRange('*')
   let has_package_json = false
+  let has_bun_lock = false
+  let has_deps_file = false
+  let detected_pnpm_usage = false
 
   const pkgs: PackageRequirement[] = []
   const env: Record<string, string> = {}
@@ -371,9 +374,11 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           break
         case 'bun.lock':
         case 'bun.lockb':
+          has_bun_lock = true
           pkgs.push({ project: 'bun.sh', constraint: new SemverRange('>=1'), source: 'inferred' })
           break
         case 'pnpm-lock.yaml':
+          detected_pnpm_usage = true
           pkgs.push({ project: 'pnpm.io', constraint, source: 'inferred' })
           break
         case 'pixi.toml':
@@ -382,20 +387,23 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           break
         case 'pkgx.yml':
         case 'pkgx.yaml':
-        case '.pkgx.yml':
-        case '.pkgx.yaml':
-        case 'launchpad.yml':
-        case 'launchpad.yaml':
-        case '.launchpad.yml':
-        case '.launchpad.yaml':
-        case 'dependencies.yml':
         case 'dependencies.yaml':
+        case 'dependencies.yml':
         case '.dependencies.yml':
         case '.dependencies.yaml':
         case 'deps.yml':
         case 'deps.yaml':
         case '.deps.yml':
         case '.deps.yaml':
+        case 'pkgx.yaml':
+        case 'pkgx.yml':
+        case '.pkgx.yml':
+        case '.pkgx.yaml':
+        case 'launchpad.yaml':
+        case 'launchpad.yml':
+        case '.launchpad.yml':
+        case '.launchpad.yaml':
+          has_deps_file = true
           await parse_well_formatted_node(await path.readYAML())
           break
         case 'cdk.json':
@@ -431,6 +439,11 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     }
   }
 
+  // Auto-install pnpm if detected usage but not explicitly installed
+  if (detected_pnpm_usage && !pkgs.some(pkg => pkg.project === 'pnpm.io' || pkg.project === 'pnpm')) {
+    pkgs.push({ project: 'pnpm.io', constraint, source: 'inferred' })
+  }
+
   // Only auto-add nodejs.org if we have a package.json but no JS runtime is explicitly specified
   // This should not interfere with explicit dependencies defined in deps.yaml files
   const hasAnyJSRuntime = pkgs.some((pkg) => {
@@ -448,9 +461,15 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
       || pkg.project.includes('deno')
   })
 
-  // Only auto-infer nodejs if we have package.json but no explicit JS runtime was specified
-  if (has_package_json && !hasAnyJSRuntime) {
-    pkgs.push({ project: 'nodejs.org', constraint, source: 'inferred' })
+  // Auto-infer nodejs.org only if:
+  // 1. We have package.json
+  // 2. No explicit JS runtime was specified
+  // 3. No bun.lock is present (indicating Bun usage)
+  // 4. No deps files are present (user controls dependencies explicitly)
+  if (has_package_json && !hasAnyJSRuntime && !has_bun_lock && !has_deps_file) {
+    // Use Node.js LTS (v22) for better compatibility with older OpenSSL versions
+    const nodeConstraint = new SemverRange('^22')
+    pkgs.push({ project: 'nodejs.org', constraint: nodeConstraint, source: 'inferred' })
   }
 
   // Optimized deduplication with source-aware priority
@@ -597,8 +616,10 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         allDependencies['npmjs.com'] = json.engines.npm
       if (json.engines.yarn)
         allDependencies['yarnpkg.com'] = json.engines.yarn
-      if (json.engines.pnpm)
+      if (json.engines.pnpm) {
         allDependencies['pnpm.io'] = json.engines.pnpm
+        detected_pnpm_usage = true
+      }
     }
 
     // Process packageManager (corepack)
@@ -621,6 +642,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
             allDependencies['yarnpkg.com'] = version
             break
           case 'pnpm':
+            detected_pnpm_usage = true
             allDependencies['pnpm.io'] = version
             break
         }
@@ -635,8 +657,10 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         allDependencies['npmjs.com'] = json.volta.npm
       if (json.volta.yarn)
         allDependencies['yarnpkg.com'] = json.volta.yarn
-      if (json.volta.pnpm)
+      if (json.volta.pnpm) {
         allDependencies['pnpm.io'] = json.volta.pnpm
+        detected_pnpm_usage = true
+      }
     }
 
     // Process pkgx section

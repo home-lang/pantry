@@ -429,9 +429,11 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'package.json', 'std')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // package.json is not currently recognized as a dependency file by Launchpad
+        // package.json is now recognized as a dependency source by Launchpad
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        // Should install zlib.net from pkgx section and auto-infer nodejs.org
+        expect(result.stdout).toContain('zlib.net')
+        expect(result.stdout).toContain('nodejs.org')
       }
     }, 60000)
 

@@ -25,51 +25,6 @@ export function resetInstalledTracker(): void {
   globalCompletedPackages.clear()
 }
 
-// Collect all dependencies (direct and transitive) for the given packages
-async function _collectAllDependencies(packages: string[]): Promise<string[]> {
-  const allDeps = new Set<string>()
-
-  // Helper function to recursively collect dependencies
-  function collectDepsRecursive(packageName: string, visited = new Set<string>()): void {
-    if (visited.has(packageName))
-      return // Prevent circular dependencies
-    visited.add(packageName)
-
-    const packageInfo = getPackageInfo(packageName)
-    if (!packageInfo || !packageInfo.dependencies)
-      return
-
-    for (const dep of packageInfo.dependencies) {
-      const { name: depName } = parsePackageSpec(dep)
-      const _depDomain = resolvePackageName(depName)
-
-      // Skip platform-specific dependencies that don't match current platform
-      if (depName.includes(':')) {
-        const [platformPrefix] = depName.split(':', 2)
-        const currentPlatform = getPlatform()
-        if ((platformPrefix === 'linux' && currentPlatform !== 'linux')
-          || (platformPrefix === 'darwin' && currentPlatform !== 'darwin')) {
-          continue
-        }
-      }
-
-      // Add this dependency
-      allDeps.add(dep)
-
-      // Recursively collect its dependencies
-      collectDepsRecursive(depName, visited)
-    }
-  }
-
-  // Collect dependencies for all packages
-  for (const pkg of packages) {
-    const { name: packageName } = parsePackageSpec(pkg)
-    collectDepsRecursive(packageName)
-  }
-
-  return Array.from(allDeps)
-}
-
 // Use ts-pkgx API to resolve all dependencies with proper version conflict resolution
 export async function resolveAllDependencies(packages: string[]): Promise<string[]> {
   try {
