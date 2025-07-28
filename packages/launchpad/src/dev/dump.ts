@@ -6,7 +6,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
 import { findDependencyFile } from '../env'
-import { install } from '../install'
+import { install, resetInstalledTracker } from '../install'
 
 // Utility functions
 function generateProjectHash(projectPath: string): string {
@@ -158,8 +158,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
   const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
   const effectiveQuiet = quiet || isShellIntegration
 
-  // For shell integration, suppress ALL output except essential messages
-  if (isShellIntegration) {
+  // For shell integration, only suppress output if in quiet mode
+  if (isShellIntegration && quiet) {
     const originalStderrWrite = process.stderr.write.bind(process.stderr)
     const originalConsoleLog = console.log.bind(console)
 
@@ -174,12 +174,17 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         || message.includes('⚠️') // Warnings
         || message.includes('❌') // Errors
         || message.includes('%') // Progress percentages
-        || message.includes('bytes')) { // Download bytes
+        || message.includes('bytes') // Download bytes
+        || message.includes('Installing') // Installation messages
+        || message.includes('Downloading') // Download start messages
+        || message.includes('Extracting') // Extraction messages
+        || message.startsWith('\r')) { // Allow carriage return progress updates
         return originalStderrWrite(chunk, encoding, cb)
       }
-      // Suppress setup messages and other verbose output
-      if (typeof cb === 'function')
-        cb()
+      // Suppress setup messages and other verbose output - call callback to signal completion
+      if (typeof cb === 'function') {
+        process.nextTick(cb)
+      }
       return true
     } as any
 
@@ -469,10 +474,33 @@ async function installPackagesOptimized(
 ): Promise<void> {
   const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
 
+  // Reset the global installed packages tracker for this environment setup
+  resetInstalledTracker()
+
+  // Add progress indicator for shell integration
+  let progressInterval: NodeJS.Timeout | null = null
+  if (isShellIntegration && (localPackages.length > 0 || globalPackages.length > 0)) {
+    const dots = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    let dotIndex = 0
+    progressInterval = setInterval(() => {
+      process.stderr.write(`\r${dots[dotIndex]} Installing packages...`)
+      dotIndex = (dotIndex + 1) % dots.length
+    }, 150)
+  }
+
   // Install global packages first (if any)
   if (globalPackages.length > 0) {
     if (!quiet && !isShellIntegration) {
       console.log(`Installing ${globalPackages.length} global packages...`)
+    }
+
+    // Clear spinner before starting installation to avoid overlap
+    if (progressInterval) {
+      clearInterval(progressInterval)
+      progressInterval = null
+      if (isShellIntegration) {
+        process.stderr.write('\r\x1B[K')
+      }
     }
 
     try {
@@ -499,6 +527,15 @@ async function installPackagesOptimized(
       console.log(`Installing ${localPackages.length} local packages...`)
     }
 
+    // Clear spinner before starting installation to avoid overlap (if not already cleared)
+    if (progressInterval) {
+      clearInterval(progressInterval)
+      progressInterval = null
+      if (isShellIntegration) {
+        process.stderr.write('\r\x1B[K')
+      }
+    }
+
     try {
       // For both shell integration and regular calls, use standard install
       await install(localPackages, envDir)
@@ -514,6 +551,15 @@ async function installPackagesOptimized(
         process.stderr.write('Local packages need installation\n')
         process.stderr.write('Generating minimal shell environment for development\n')
       }
+    }
+  }
+
+  // Clean up progress indicator (final safety check)
+  if (progressInterval) {
+    clearInterval(progressInterval)
+    progressInterval = null
+    if (isShellIntegration) {
+      process.stderr.write('\r\x1B[K')
     }
   }
 }

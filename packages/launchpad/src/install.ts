@@ -14,6 +14,124 @@ import { Path } from './path'
 const shellModeMessageCache = new Set<string>()
 let hasTemporaryProcessingMessage = false
 let spinnerInterval: Timer | null = null
+// Global tracker for deduplicating packages across all install calls
+const globalInstalledTracker = new Set<string>()
+// Global tracker for completed packages (by domain only) to prevent duplicate success messages
+const globalCompletedPackages = new Set<string>()
+
+// Reset the global tracker for a new environment setup
+export function resetInstalledTracker(): void {
+  globalInstalledTracker.clear()
+  globalCompletedPackages.clear()
+}
+
+// Collect all dependencies (direct and transitive) for the given packages
+async function _collectAllDependencies(packages: string[]): Promise<string[]> {
+  const allDeps = new Set<string>()
+
+  // Helper function to recursively collect dependencies
+  function collectDepsRecursive(packageName: string, visited = new Set<string>()): void {
+    if (visited.has(packageName))
+      return // Prevent circular dependencies
+    visited.add(packageName)
+
+    const packageInfo = getPackageInfo(packageName)
+    if (!packageInfo || !packageInfo.dependencies)
+      return
+
+    for (const dep of packageInfo.dependencies) {
+      const { name: depName } = parsePackageSpec(dep)
+      const _depDomain = resolvePackageName(depName)
+
+      // Skip platform-specific dependencies that don't match current platform
+      if (depName.includes(':')) {
+        const [platformPrefix] = depName.split(':', 2)
+        const currentPlatform = getPlatform()
+        if ((platformPrefix === 'linux' && currentPlatform !== 'linux')
+          || (platformPrefix === 'darwin' && currentPlatform !== 'darwin')) {
+          continue
+        }
+      }
+
+      // Add this dependency
+      allDeps.add(dep)
+
+      // Recursively collect its dependencies
+      collectDepsRecursive(depName, visited)
+    }
+  }
+
+  // Collect dependencies for all packages
+  for (const pkg of packages) {
+    const { name: packageName } = parsePackageSpec(pkg)
+    collectDepsRecursive(packageName)
+  }
+
+  return Array.from(allDeps)
+}
+
+// Use ts-pkgx API to resolve all dependencies with proper version conflict resolution
+export async function resolveAllDependencies(packages: string[]): Promise<string[]> {
+  try {
+    // Import resolveDependencies from ts-pkgx
+    const { resolveDependencies } = await import('ts-pkgx')
+
+    // Create a temporary dependency file content
+    const depsYaml = packages.reduce((acc, pkg) => {
+      const { name, version } = parsePackageSpec(pkg)
+      acc[name] = version || '*'
+      return acc
+    }, {} as Record<string, string>)
+
+    // Write to temporary file for ts-pkgx
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const os = await import('node:os')
+
+    const tempDir = os.tmpdir()
+    const tempFile = path.join(tempDir, `launchpad-deps-${Date.now()}.yaml`)
+
+    // Create YAML content
+    const yamlContent = `dependencies:\n${Object.entries(depsYaml).map(([name, version]) => `  ${name}: ${version}`).join('\n')}\n`
+
+    await fs.promises.writeFile(tempFile, yamlContent)
+
+    try {
+      // Resolve dependencies using ts-pkgx
+      const result = await resolveDependencies(tempFile, {
+        targetOs: getPlatform() as 'darwin' | 'linux',
+        includeOsSpecific: true,
+      })
+
+      if (config.verbose) {
+        console.warn(`🔍 ts-pkgx resolved ${result.totalCount} total packages from ${packages.length} input packages`)
+      }
+
+      // Convert resolved packages back to package specs
+      const resolvedSpecs = result.packages.map(pkg =>
+        pkg.version ? `${pkg.name}@${pkg.version}` : pkg.name,
+      )
+
+      // Clean up temp file
+      await fs.promises.unlink(tempFile)
+
+      return resolvedSpecs
+    }
+    catch (error) {
+      // Clean up temp file on error
+      await fs.promises.unlink(tempFile).catch(() => {})
+      throw error
+    }
+  }
+  catch (error) {
+    // Fallback to simple deduplication if ts-pkgx fails
+    if (config.verbose) {
+      console.warn(`Failed to use ts-pkgx for dependency resolution: ${error instanceof Error ? error.message : String(error)}`)
+      console.warn('Falling back to simple deduplication...')
+    }
+    return deduplicatePackagesByVersion(packages)
+  }
+}
 
 // Centralized cleanup function for spinner and processing messages
 function cleanupSpinner(): void {
@@ -92,6 +210,18 @@ function logUniqueMessage(message: string, forceLog = false): void {
     shellModeMessageCache.add(messageKey)
   }
 
+  // Global deduplication for package completion messages to prevent x.org/x11 duplicates
+  if (message.startsWith('✅') && message.includes('(v')) {
+    const domainMatch = message.match(/✅\s+(\S+)\s+/)
+    if (domainMatch) {
+      const domain = domainMatch[1]
+      if (globalCompletedPackages.has(domain)) {
+        return // Skip duplicate completion message for this domain
+      }
+      globalCompletedPackages.add(domain)
+    }
+  }
+
   // In shell mode, always use stderr for progress indicators and force flush
   if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
     process.stderr.write(`${message}\n`)
@@ -142,6 +272,51 @@ function clearMessageCache(): void {
 
 // Export cleanup function for external use
 export { cleanupSpinner }
+
+// Deduplicate packages by domain, keeping only the latest version
+function deduplicatePackagesByVersion(packages: PackageSpec[]): PackageSpec[] {
+  const packageMap = new Map<string, { spec: PackageSpec, version: string }>()
+
+  for (const pkg of packages) {
+    const { name: packageName } = parsePackageSpec(pkg)
+    const domain = resolvePackageName(packageName)
+    const { version: requestedVersion } = parsePackageSpec(pkg)
+
+    let version = requestedVersion
+    if (!version) {
+      const latestVersion = getLatestVersion(domain)
+      version = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+    }
+
+    const existing = packageMap.get(domain)
+    if (!existing) {
+      packageMap.set(domain, { spec: pkg, version })
+    }
+    else {
+      // Compare versions and keep the latest
+      try {
+        if (typeof Bun !== 'undefined' && Bun.semver) {
+          const comparison = Bun.semver.order(version, existing.version)
+          if (comparison > 0) {
+            // New version is newer
+            packageMap.set(domain, { spec: pkg, version })
+          }
+          // Otherwise keep existing (newer or equal)
+        }
+        else {
+          // Fallback: just keep the last one if no semver available
+          packageMap.set(domain, { spec: pkg, version })
+        }
+      }
+      catch {
+        // If version comparison fails, keep the last one
+        packageMap.set(domain, { spec: pkg, version })
+      }
+    }
+  }
+
+  return Array.from(packageMap.values()).map(entry => entry.spec)
+}
 
 // Extract all package alias names from ts-pkgx
 export type PackageAlias = keyof typeof aliases
@@ -1445,6 +1620,12 @@ export async function downloadPackage(
       const url = `${DISTRIBUTION_CONFIG.baseUrl}/${domain}/${os}/${arch}/v${version}.${format}`
       const file = path.join(tempDir, `package.${format}`)
 
+      // Add timeout and abort signal for better responsiveness
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+      }, 30000) // 30 second timeout
+
       try {
         if (config.verbose) {
           console.warn(`Trying to download: ${url}`)
@@ -1456,7 +1637,14 @@ export async function downloadPackage(
           throw new Error('Network calls disabled in test environment')
         }
 
-        const response = await fetch(url)
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Launchpad Package Manager',
+          },
+        })
+        clearTimeout(timeoutId)
+
         if (response.ok) {
           const contentLength = response.headers.get('content-length')
           const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
@@ -1637,8 +1825,15 @@ export async function downloadPackage(
         }
       }
       catch (error) {
-        if (config.verbose) {
-          console.warn(`Failed to download ${format} format:`, error)
+        clearTimeout(timeoutId)
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error(`❌ Download timeout for ${domain} (${format} format) - cancelling after 30 seconds`)
+          throw new Error(`Download timeout for ${domain} - cancelling after 30 seconds`)
+        }
+        else {
+          if (config.verbose) {
+            console.warn(`Failed to download ${format} format:`, error)
+          }
         }
       }
     }
@@ -1672,13 +1867,13 @@ export async function downloadPackage(
 
         const extractMsg = `🔧 Extracting ${domain} v${version}...`
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-          process.stderr.write(`${extractMsg}\n`)
+          process.stderr.write(`${extractMsg}\r`)
           if (process.stderr.isTTY) {
             fs.writeSync(process.stderr.fd, '')
           }
         }
         else {
-          process.stdout.write(`${extractMsg}\n`)
+          process.stdout.write(`${extractMsg}\r`)
         }
       }
     }
@@ -1772,7 +1967,7 @@ export async function downloadPackage(
       const archiveStats = fs.statSync(archiveFile)
       if (archiveStats.size > 20 * 1024 * 1024 && !showedSuccessMessage) {
         if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-          process.stderr.write('\x1B[1A\r\x1B[K')
+          process.stderr.write('\r\x1B[K')
           if (process.stderr.isTTY) {
             try {
               fs.writeSync(process.stderr.fd, '')
@@ -1783,7 +1978,7 @@ export async function downloadPackage(
           }
         }
         else {
-          process.stdout.write('\x1B[1A\r\x1B[K')
+          process.stdout.write('\r\x1B[K')
           if (process.stdout.isTTY) {
             try {
               fs.writeSync(process.stdout.fd, '')
@@ -2588,15 +2783,13 @@ async function installDependencies(
               if (comparison > 0) {
                 // New version is newer, replace the existing entry
                 installedPackages.delete(existingEntry)
-                if (config.verbose) {
-                  console.warn(`Upgrading ${depDomain} from ${existingVersion} to ${versionToInstall} (newer version)`)
-                }
+                console.warn(`🔄 Upgrading ${depDomain} from ${existingVersion} to ${versionToInstall}`)
                 // Continue to install the newer version
               }
               else {
                 // Existing version is newer or equal, skip
                 if (config.verbose) {
-                  console.warn(`Skipping ${depDomain}@${versionToInstall} - already have ${existingVersion} which is newer or equal`)
+                  console.warn(`⏭️  Skipping ${depDomain}@${versionToInstall} - already have ${existingVersion}`)
                 }
                 continue
               }
@@ -2611,7 +2804,7 @@ async function installDependencies(
               }
               else {
                 if (config.verbose) {
-                  console.warn(`Skipping ${depDomain}@${versionToInstall} - already have ${existingVersion}`)
+                  console.warn(`⏭️  Skipping ${depDomain}@${versionToInstall} - already have ${existingVersion}`)
                 }
                 continue
               }
@@ -2628,7 +2821,7 @@ async function installDependencies(
         else {
           // If we can't determine versions, skip to be safe
           if (config.verbose) {
-            console.warn(`Skipping ${depDomain}@${versionToInstall} - domain already installed as ${existingEntry}`)
+            console.warn(`⏭️  Skipping ${depDomain}@${versionToInstall} - domain already installed as ${existingEntry}`)
           }
           continue
         }
@@ -2638,7 +2831,7 @@ async function installDependencies(
     // Skip if this exact package@version is already installed to avoid circular dependencies
     if (installedPackages.has(packageVersionKey)) {
       if (config.verbose) {
-        console.warn(`Skipping ${packageVersionKey} - already installed`)
+        console.warn(`⏭️  Skipping ${packageVersionKey} - already installed`)
       }
       continue
     }
@@ -2652,8 +2845,8 @@ async function installDependencies(
       }
       // Remove dependency resolution messages - they're too verbose
 
-      // Recursively install dependencies of this dependency
-      const nestedFiles = await installDependencies(depName, installPath, installedPackages)
+      // Recursively install dependencies of this dependency (use global tracker)
+      const nestedFiles = await installDependencies(depName, installPath, globalInstalledTracker)
       allInstalledFiles.push(...nestedFiles)
 
       // Install the dependency itself with the resolved version
@@ -2665,6 +2858,7 @@ async function installDependencies(
         versionToInstall = String(versionToInstall)
       }
       const depSpec = versionToInstall ? `${depName}@${versionToInstall}` : depName
+
       const depFiles = await installPackage(depName, depSpec, installPath)
       allInstalledFiles.push(...depFiles)
 
@@ -2817,19 +3011,48 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     return []
   }
 
+  // Use ts-pkgx to resolve all dependencies with proper version conflict resolution
+  const resolvedPackages = await resolveAllDependencies(packageList)
+  const deduplicatedPackages = resolvedPackages
+
+  // Skip recursive dependency resolution since ts-pkgx already resolved everything
+  const useDirectInstallation = true
+
+  // Initialize a global set to track which packages (by domain) have been completed
+  globalCompletedPackages.clear()
+
   if (config.verbose) {
-    console.warn(`Installing packages: ${packageList.join(', ')}`)
+    console.warn(`Installing packages: ${deduplicatedPackages.join(', ')}`)
     console.warn(`Install path: ${installPath}`)
+    if (deduplicatedPackages.length < packageList.length) {
+      console.warn(`Deduplicated ${packageList.length} packages to ${deduplicatedPackages.length} packages`)
+    }
   }
 
   const allInstalledFiles: string[] = []
-  const installedPackages = new Set<string>()
+  // Use the global tracker to deduplicate across multiple install() calls
+  const installedPackages = globalInstalledTracker
 
-  // For shell integration, use sequential installation for better progress visualization
-  // For direct commands, we can still use parallel
-  if (packageList.length > 1 && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
-    const maxConcurrency = Math.min(packageList.length, 3) // Limit to 3 concurrent downloads
-    const results = await installPackagesInParallel(packageList, installPath, maxConcurrency)
+  if (useDirectInstallation) {
+    // ts-pkgx already resolved all dependencies, install all packages directly
+    for (let i = 0; i < deduplicatedPackages.length; i++) {
+      const pkg = deduplicatedPackages[i]
+      try {
+        const { name: packageName } = parsePackageSpec(pkg)
+        // Direct installation without dependency resolution
+        const packageFiles = await installPackage(packageName, pkg, installPath)
+        allInstalledFiles.push(...packageFiles)
+      }
+      catch (error) {
+        console.error(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
+        throw new Error(`Installation failed for ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+  }
+  else if (deduplicatedPackages.length > 1 && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
+    // Legacy parallel installation with dependency resolution
+    const maxConcurrency = Math.min(deduplicatedPackages.length, 3) // Limit to 3 concurrent downloads
+    const results = await installPackagesInParallel(deduplicatedPackages, installPath, maxConcurrency)
 
     results.forEach((result) => {
       if (result.success) {
@@ -2843,8 +3066,8 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }
   else {
     // Sequential package installation (for shell integration or single packages)
-    for (let i = 0; i < packageList.length; i++) {
-      const pkg = packageList[i]
+    for (let i = 0; i < deduplicatedPackages.length; i++) {
+      const pkg = deduplicatedPackages[i]
       try {
         if (config.verbose) {
           console.warn(`Processing package: ${pkg}`)
@@ -2897,7 +3120,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
                   else {
                     // Existing version is newer or equal, skip
                     if (config.verbose) {
-                      console.warn(`Skipping ${packageVersionKey} - already have ${existingVersion} which is newer or equal`)
+                      console.warn(`⏭️  Skipping ${packageVersionKey} - already have ${existingVersion} which is newer or equal`)
                     }
                     continue
                   }
@@ -2912,7 +3135,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
                   }
                   else {
                     if (config.verbose) {
-                      console.warn(`Skipping ${packageVersionKey} - already have ${existingVersion}`)
+                      console.warn(`⏭️  Skipping ${packageVersionKey} - already have ${existingVersion}`)
                     }
                     continue
                   }
@@ -2929,7 +3152,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
             else {
               // If we can't determine versions, skip to be safe
               if (config.verbose) {
-                console.warn(`Skipping ${packageVersionKey} - domain already installed as ${existingEntry}`)
+                console.warn(`⏭️  Skipping ${packageVersionKey} - domain already installed as ${existingEntry}`)
               }
               continue
             }
@@ -2955,12 +3178,19 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
           // }
         }
 
-        const depFiles = await installDependencies(packageName, installPath, installedPackages)
-        allInstalledFiles.push(...depFiles)
+        if (useDirectInstallation) {
+          // ts-pkgx already resolved all dependencies, just install the package directly
+          const mainFiles = await installPackage(packageName, pkg, installPath)
+          allInstalledFiles.push(...mainFiles)
+        }
+        else {
+          const depFiles = await installDependencies(packageName, installPath, globalInstalledTracker)
+          allInstalledFiles.push(...depFiles)
 
-        // Install the main package
-        const mainFiles = await installPackage(packageName, pkg, installPath)
-        allInstalledFiles.push(...mainFiles)
+          // Install the main package
+          const mainFiles = await installPackage(packageName, pkg, installPath)
+          allInstalledFiles.push(...mainFiles)
+        }
 
         if (config.verbose) {
           console.warn(`Successfully processed ${pkg}`)
@@ -3039,7 +3269,8 @@ async function installPackagesInParallel(
   _maxConcurrency: number,
 ): Promise<Array<{ package: string, success: boolean, files: string[], error?: string }>> {
   const results: Array<{ package: string, success: boolean, files: string[], error?: string }> = []
-  const installedPackages = new Set<string>()
+  // Use the global tracker to deduplicate across all installations
+  const installedPackages = globalInstalledTracker
 
   // First pass: Resolve all package versions and deduplicate serially to avoid race conditions
   const resolvedPackages: Array<{ pkg: string, domain: string, version: string, packageVersionKey: string }> = []
@@ -3075,7 +3306,7 @@ async function installPackagesInParallel(
             else {
               // Existing version is newer or equal, skip this package
               if (config.verbose) {
-                console.warn(`Skipping ${packageVersionKey} - already have ${existingPackage.version} which is newer or equal`)
+                console.warn(`⏭️  Skipping ${packageVersionKey} - already have ${existingPackage.version} which is newer or equal`)
               }
             }
           }
@@ -3090,7 +3321,7 @@ async function installPackagesInParallel(
             }
             else {
               if (config.verbose) {
-                console.warn(`Skipping ${packageVersionKey} - already have ${existingPackage.version}`)
+                console.warn(`⏭️  Skipping ${packageVersionKey} - already have ${existingPackage.version}`)
               }
             }
           }
@@ -3125,8 +3356,8 @@ async function installPackagesInParallel(
       // Mark as installed using domain@version
       installedPackages.add(packageVersionKey)
 
-      // Install dependencies first
-      const depFiles = await installDependencies(packageName, installPath, installedPackages)
+      // Install dependencies first - use global tracker to prevent duplicates across all packages
+      const depFiles = await installDependencies(packageName, installPath, globalInstalledTracker)
 
       // Install the main package
       const mainFiles = await installPackage(packageName, pkg, installPath)

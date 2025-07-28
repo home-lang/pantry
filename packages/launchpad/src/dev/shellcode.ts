@@ -504,18 +504,12 @@ __launchpad_chpwd() {
                 return 0
             fi
 
-            # Skip setup if we've had too many timeouts
-            if [[ $__launchpad_timeout_count -gt 2 ]]; then
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
-                    echo "⚡ Environment setup temporarily disabled (timeout protection)" >&2
-                fi
-                return 0
-            fi
+            # Continue with setup
 
             # Mark setup as in progress
             __launchpad_setup_in_progress="$project_dir"
 
-            # Show immediate feedback
+                        # Show immediate feedback
             if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
                 printf "🔧 Setting up environment for \\033[3m$(basename "$project_dir")\\033[0m...\\r" >&2
             fi
@@ -527,29 +521,34 @@ __launchpad_chpwd() {
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-            # Ultra-fast setup: use shell mode with reasonable timeout for package installation
+                                    # Run environment setup without timeout - let it take as long as needed
             local temp_file=$(mktemp)
-            if timeout 30 ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>&1; then
-                env_output=$(cat "$temp_file" | ${grepFilter})
-                setup_exit_code=0
+
+            # Run with real-time progress display - show progress on stderr, capture shell code on stdout
+            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                # Show progress in real-time while capturing output
+                ${launchpadBinary} dev "$project_dir" --shell > "$temp_file"
             else
-                setup_exit_code=$?
+                # Quiet mode - suppress all output
+                ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>/dev/null
             fi
+            setup_exit_code=$?
+
+            # Extract shell code from output
+            env_output=$(cat "$temp_file" | ${grepFilter})
             rm -f "$temp_file" 2>/dev/null || true
 
             # Clear the in-progress flag
             __launchpad_setup_in_progress=""
 
-            if [[ $setup_exit_code -eq 124 ]]; then
-                # Timeout occurred
-                __launchpad_timeout_count=$(((__launchpad_timeout_count + 1)))
+            if [[ $setup_exit_code -eq 130 ]]; then
+                # User interrupted with Ctrl+C
                 if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
-                    printf "\\r\\033[K⚠️  Environment setup timed out for $(basename "$project_dir")\\n" >&2
+                    printf "\\r\\033[K⚠️  Environment setup cancelled\\n" >&2
                 fi
-                return 0
+                return 130
             elif [[ $setup_exit_code -eq 0 ]]; then
-                # Success - reset timeout counter
-                __launchpad_timeout_count=0
+                # Success
 
                 # Execute the environment setup if we have output
                 if [[ -n "$env_output" ]]; then

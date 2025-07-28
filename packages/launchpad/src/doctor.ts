@@ -135,6 +135,7 @@ async function checkInstallationDirectory(): Promise<DiagnosticResult> {
       name: 'Installation Directory',
       status: 'fail',
       message: `Error checking installation directory: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Try running "launchpad bootstrap" to reinitialize the installation',
     }
   }
 }
@@ -186,6 +187,7 @@ async function checkPathConfiguration(): Promise<DiagnosticResult> {
       name: 'PATH Configuration',
       status: 'fail',
       message: `Error checking PATH configuration: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Check your shell configuration files and PATH environment variable',
     }
   }
 }
@@ -224,6 +226,7 @@ async function checkShimDirectory(): Promise<DiagnosticResult> {
       name: 'Shim Directory',
       status: 'fail',
       message: `Error checking shim directory: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Check directory permissions and reinstall launchpad if necessary',
     }
   }
 }
@@ -274,6 +277,7 @@ async function checkPermissions(): Promise<DiagnosticResult> {
       name: 'Permissions',
       status: 'fail',
       message: `Error checking permissions: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Check file and directory permissions for your home directory and launchpad installation',
     }
   }
 }
@@ -325,6 +329,7 @@ async function checkShellIntegration(): Promise<DiagnosticResult> {
       name: 'Shell Integration',
       status: 'fail',
       message: `Error checking shell integration: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Try running "launchpad dev:shellcode" to regenerate shell integration or check your shell configuration',
     }
   }
 }
@@ -380,6 +385,7 @@ async function checkSystemDependencies(): Promise<DiagnosticResult> {
       name: 'System Dependencies',
       status: 'fail',
       message: `Error checking system dependencies: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Install required system tools using your system package manager (brew, apt, yum, etc.)',
     }
   }
 }
@@ -503,6 +509,7 @@ async function checkPhpExtensions(): Promise<DiagnosticResult> {
       name: 'PHP Extensions',
       status: 'fail',
       message: `Error checking PHP extensions: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Install PHP and required extensions, or check PHP configuration',
     }
   }
 }

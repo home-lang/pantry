@@ -221,7 +221,7 @@ describe('Performance Optimizations', () => {
       // The fast path should have minimal filesystem calls
       const fastPathSection = generatedShellCode.substring(
         generatedShellCode.indexOf('If environment exists and has binaries, activate quickly'),
-        generatedShellCode.indexOf('Skip setup if we\'ve had too many timeouts'),
+        generatedShellCode.indexOf('Continue with setup'),
       )
 
       // Should not have expensive operations like find in fast path
