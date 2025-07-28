@@ -43,7 +43,6 @@ function resolveCriticalLibraryConflicts(packages: string[]): string[] {
   for (const domain of criticalLibraries) {
     if (packageMap.has(domain)) {
       const pkg = packageMap.get(domain)!
-      const { version } = parsePackageSpec(pkg)
 
       // Force OpenSSL to use 1.1.1w for maximum compatibility
       if (domain === 'openssl.org') {

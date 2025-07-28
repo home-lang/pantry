@@ -1854,30 +1854,30 @@ cli
         // Method 2: Additional scan - always check bin directory for any remaining Launchpad shims
         if (fs.existsSync(binDir)) {
           try {
-                         const binFiles = fs.readdirSync(binDir, { withFileTypes: true })
-               .filter(dirent => dirent.isFile())
+            const binFiles = fs.readdirSync(binDir, { withFileTypes: true })
+              .filter(dirent => dirent.isFile())
 
-             for (const file of binFiles) {
-               const filePath = path.join(binDir, file.name)
-               try {
-                 // Read first few lines to check if it's a Launchpad shim
-                 const content = fs.readFileSync(filePath, 'utf8')
-                 if (content.includes('Launchpad shim')) {
-                   // Check if we already have this binary from metadata
-                   const alreadyTracked = binaries.some(b => b.binary === file.name)
-                   if (!alreadyTracked) {
-                     binaries.push({
-                       binary: file.name,
-                       package: 'unknown', // We don't have metadata, so package is unknown
-                       fullPath: filePath,
-                     })
-                   }
-                 }
-               }
-               catch {
-                 // Ignore files we can't read
-               }
-             }
+            for (const file of binFiles) {
+              const filePath = path.join(binDir, file.name)
+              try {
+                // Read first few lines to check if it's a Launchpad shim
+                const content = fs.readFileSync(filePath, 'utf8')
+                if (content.includes('Launchpad shim')) {
+                  // Check if we already have this binary from metadata
+                  const alreadyTracked = binaries.some(b => b.binary === file.name)
+                  if (!alreadyTracked) {
+                    binaries.push({
+                      binary: file.name,
+                      package: 'unknown', // We don't have metadata, so package is unknown
+                      fullPath: filePath,
+                    })
+                  }
+                }
+              }
+              catch {
+                // Ignore files we can't read
+              }
+            }
           }
           catch {
             // Ignore errors reading bin directory

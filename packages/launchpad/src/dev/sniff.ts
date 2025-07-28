@@ -385,8 +385,6 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           pkgs.push({ project: 'prefix.dev', constraint, source: 'inferred' })
           await read_YAML_FM(path)
           break
-        case 'pkgx.yml':
-        case 'pkgx.yaml':
         case 'dependencies.yaml':
         case 'dependencies.yml':
         case '.dependencies.yml':
