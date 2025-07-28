@@ -130,8 +130,8 @@ describe('ts-pkgx Integration', () => {
 
       // The deduplication should keep only the newer version
       // This tests the core logic without needing the actual function export
-      const domains = new Set()
-      const deduplicated = []
+      const domains = new Set<string>()
+      const deduplicated: typeof packageSpecs = []
 
       for (const pkg of packageSpecs) {
         if (!domains.has(pkg.name)) {
