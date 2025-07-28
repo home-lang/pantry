@@ -25,14 +25,52 @@ export function resetInstalledTracker(): void {
   globalCompletedPackages.clear()
 }
 
+/**
+ * Resolve critical system library conflicts (like OpenSSL) to prevent runtime issues
+ */
+function resolveCriticalLibraryConflicts(packages: string[]): string[] {
+  const packageMap = new Map<string, string>()
+  const criticalLibraries = new Set(['openssl.org', 'libssl', 'libcrypto'])
+
+  // First pass: collect all packages
+  for (const pkg of packages) {
+    const { name } = parsePackageSpec(pkg)
+    const domain = resolvePackageName(name)
+    packageMap.set(domain, pkg)
+  }
+
+  // Second pass: resolve critical library conflicts
+  for (const domain of criticalLibraries) {
+    if (packageMap.has(domain)) {
+      const pkg = packageMap.get(domain)!
+      const { version } = parsePackageSpec(pkg)
+
+      // Force OpenSSL to use 1.1.1w for maximum compatibility
+      if (domain === 'openssl.org') {
+        // Always prefer OpenSSL 1.1.1w for compatibility with most software
+        const compatiblePkg = `openssl.org@1.1.1w`
+        packageMap.set(domain, compatiblePkg)
+        if (config.verbose) {
+          console.warn(`🔒 Resolved OpenSSL conflict: ${pkg} -> ${compatiblePkg} for maximum compatibility`)
+        }
+      }
+    }
+  }
+
+  return Array.from(packageMap.values())
+}
+
 // Use ts-pkgx API to resolve all dependencies with proper version conflict resolution
 export async function resolveAllDependencies(packages: string[]): Promise<string[]> {
+  // First resolve critical library conflicts
+  const conflictResolvedPackages = resolveCriticalLibraryConflicts(packages)
+
   try {
     // Import resolveDependencies from ts-pkgx
     const { resolveDependencies } = await import('ts-pkgx')
 
-    // Create a temporary dependency file content
-    const depsYaml = packages.reduce((acc, pkg) => {
+    // Create a temporary dependency file content using conflict-resolved packages
+    const depsYaml = conflictResolvedPackages.reduce((acc, pkg) => {
       const { name, version } = parsePackageSpec(pkg)
       acc[name] = version || '*'
       return acc
@@ -84,7 +122,7 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
       console.warn(`Failed to use ts-pkgx for dependency resolution: ${error instanceof Error ? error.message : String(error)}`)
       console.warn('Falling back to simple deduplication...')
     }
-    return deduplicatePackagesByVersion(packages)
+    return deduplicatePackagesByVersion(conflictResolvedPackages)
   }
 }
 
@@ -2603,8 +2641,14 @@ async function installDependencies(
               // Strategy 3: Check for well-known version compatibility mappings
               const versionCompatibilityMap: Record<string, Record<string, string[]>> = {
                 'openssl.org': {
-                  '^1.1': ['3.5.0', '3.4.0', '3.3.2'], // OpenSSL 3.x is backward compatible with 1.x APIs
-                  '^1.0': ['3.5.0', '3.4.0', '3.3.2'],
+                  // CORRECTED: OpenSSL 3.x is NOT backward compatible with 1.x due to ABI changes
+                  // Instead, prefer 1.x versions for broader compatibility
+                  '^3.0': ['1.1.1w', '1.1.1u', '1.1.1t'], // Prefer stable 1.1.1 for compatibility
+                  '^3.1': ['1.1.1w', '1.1.1u', '1.1.1t'],
+                  '^3.2': ['1.1.1w', '1.1.1u', '1.1.1t'],
+                  '^3.3': ['1.1.1w', '1.1.1u', '1.1.1t'],
+                  '^3.4': ['1.1.1w', '1.1.1u', '1.1.1t'],
+                  '^3.5': ['1.1.1w', '1.1.1u', '1.1.1t'],
                 },
                 'zlib.net': {
                   '^1.2': ['1.3.1', '1.3.0'], // zlib 1.3.x is compatible with 1.2.x
@@ -2967,7 +3011,11 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }
 
   // Use ts-pkgx to resolve all dependencies with proper version conflict resolution
-  const resolvedPackages = await resolveAllDependencies(packageList)
+  let resolvedPackages = await resolveAllDependencies(packageList)
+
+  // Apply critical library conflict resolution again in case global packages interfere
+  resolvedPackages = resolveCriticalLibraryConflicts(resolvedPackages)
+
   const deduplicatedPackages = resolvedPackages
 
   // Skip recursive dependency resolution since ts-pkgx already resolved everything
