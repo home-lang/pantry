@@ -66,10 +66,10 @@ jobs:
 
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "📋 Running in DRY RUN mode..."
-            bun buddy update-check --dry-run --verbose
+            bun buddy-bot update-check --dry-run --verbose
           else
             echo "🔄 Running in LIVE mode..."
-            bun buddy update-check --verbose
+            bun buddy-bot update-check --verbose
           fi
 
         env:

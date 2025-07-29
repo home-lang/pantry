@@ -86,15 +86,15 @@ jobs:
 
           if [ "$PACKAGES" != "" ]; then
             if [ "$VERBOSE" = "true" ]; then
-              bun buddy scan --packages "$PACKAGES" --verbose
+              bun buddy-bot scan --packages "$PACKAGES" --verbose
             else
-              bun buddy scan --packages "$PACKAGES"
+              bun buddy-bot scan --packages "$PACKAGES"
             fi
           else
             if [ "$VERBOSE" = "true" ]; then
-              bun buddy scan --strategy "$STRATEGY" --verbose
+              bun buddy-bot scan --strategy "$STRATEGY" --verbose
             else
-              bun buddy scan --strategy "$STRATEGY"
+              bun buddy-bot scan --strategy "$STRATEGY"
             fi
           fi
 
@@ -102,15 +102,15 @@ jobs:
             echo "🚀 Running dependency updates..."
             if [ "$PACKAGES" != "" ]; then
               if [ "$VERBOSE" = "true" ]; then
-                bun buddy update --packages "$PACKAGES" --verbose
+                bun buddy-bot update --packages "$PACKAGES" --verbose
               else
-                bun buddy update --packages "$PACKAGES"
+                bun buddy-bot update --packages "$PACKAGES"
               fi
             else
               if [ "$VERBOSE" = "true" ]; then
-                bun buddy update --strategy "$STRATEGY" --verbose
+                bun buddy-bot update --strategy "$STRATEGY" --verbose
               else
-                bun buddy update --strategy "$STRATEGY"
+                bun buddy-bot update --strategy "$STRATEGY"
             fi
           else
             echo "📋 DRY RUN MODE - No changes made"

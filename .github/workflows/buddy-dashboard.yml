@@ -84,7 +84,7 @@ jobs:
           echo "📊 Updating dependency dashboard..."
           set -e
 
-          COMMAND="bun buddy dashboard"
+          COMMAND="bun buddy-bot dashboard"
 
           if [ "$PIN" = "true" ]; then
             COMMAND="$COMMAND --pin"
@@ -105,7 +105,7 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then
             echo "📋 DRY RUN MODE - Command preview:"
             echo "$COMMAND"
-            bun buddy scan --verbose
+            bun buddy-bot scan --verbose
           else
             echo "🚀 Executing: $COMMAND"
             eval "$COMMAND"
