@@ -436,9 +436,16 @@ describe('Environment Isolation', () => {
       expect(result.exitCode).toBe(0)
 
       const shellCode = result.stdout
-      // Should include dependency file detection logic
-      expect(shellCode).toContain('dependencies.yaml') // Updated to match actual dependency file names
-      expect(shellCode).toContain('dependencies.yml') // Updated to match actual dependency file names
+      // Should include dependency file detection logic for Launchpad files
+      expect(shellCode).toContain('dependencies.yaml')
+      expect(shellCode).toContain('dependencies.yml')
+
+      // Should include enhanced project file detection
+      expect(shellCode).toContain('Cargo.toml') // Rust projects
+      expect(shellCode).toContain('pyproject.toml') // Python projects
+      expect(shellCode).toContain('go.mod') // Go projects
+      expect(shellCode).toContain('Gemfile') // Ruby projects
+      expect(shellCode).toContain('package.json') // Node.js projects
 
       // Should include activation logic (updated to match actual function names)
       expect(shellCode).toContain('__launchpad_chpwd')

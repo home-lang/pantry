@@ -348,9 +348,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'go.mod')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // go.mod is not currently recognized as a dependency file by Launchpad
+        // go.mod is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -358,9 +358,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'Cargo.toml')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // Cargo.toml is not currently recognized as a dependency file by Launchpad
+        // Cargo.toml is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -368,9 +368,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, '.node-version')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // .node-version is not currently recognized as a dependency file by Launchpad
+        // .node-version is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -378,9 +378,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, '.ruby-version')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // .ruby-version is not currently recognized as a dependency file by Launchpad
+        // .ruby-version is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -388,9 +388,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'deno.jsonc')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // deno.jsonc is not currently recognized as a dependency file by Launchpad
+        // deno.jsonc is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -398,9 +398,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'Gemfile')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // Gemfile is not currently recognized as a dependency file by Launchpad
+        // Gemfile is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -408,9 +408,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'requirements.txt')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // requirements.txt is not currently recognized as a dependency file by Launchpad
+        // requirements.txt is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -441,9 +441,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'deno.json', 'std')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // deno.json is not currently recognized as a dependency file by Launchpad
+        // deno.json is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -451,9 +451,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'pyproject.toml', 'std')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // pyproject.toml is not currently recognized as a dependency file by Launchpad
+        // pyproject.toml is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -461,9 +461,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'action.yml', 'std')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // action.yml is not currently recognized as a dependency file by Launchpad
+        // action.yml is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
@@ -471,9 +471,9 @@ describe('Dev Commands', () => {
       const fixturePath = path.join(fixturesDir, 'python-version', 'std')
       if (fs.existsSync(fixturePath)) {
         const result = await testFixture(fixturePath)
-        // python-version is not currently recognized as a dependency file by Launchpad
+        // .python-version is now recognized as a dependency file by Launchpad's enhanced detection
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('No dependency file found')
+        expect(result.stdout).toContain('Installing')
       }
     }, 60000)
 
