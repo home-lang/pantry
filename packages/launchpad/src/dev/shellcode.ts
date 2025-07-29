@@ -549,7 +549,7 @@ __launchpad_chpwd() {
             # Ultra-fast activation: compute environment path and check if ready
             local project_hash
             project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
-            local env_dir="$HOME/.local/share/launchpad/launchpad_$project_hash"
+            local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
 
             # Check persistent cache first (instant activation)
             local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(echo -n "$env_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-16)"

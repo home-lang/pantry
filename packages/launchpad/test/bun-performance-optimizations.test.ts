@@ -7,10 +7,12 @@ import { install_bun } from '../src/bun'
 describe('Bun Performance Optimizations', () => {
   let tempDir: string
   let originalEnv: typeof process.env
+  let originalFetch: typeof globalThis.fetch
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(import.meta.dirname, 'bun-perf-test-'))
     originalEnv = { ...process.env }
+    originalFetch = globalThis.fetch
 
     // Set test environment to avoid actual downloads
     process.env.NODE_ENV = 'test'
@@ -57,8 +59,8 @@ describe('Bun Performance Optimizations', () => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
-    // Clean up global mocks
-    delete (globalThis as any).fetch
+    // Restore original fetch
+    globalThis.fetch = originalFetch
   })
 
   describe('Environment Readiness Marker Files', () => {

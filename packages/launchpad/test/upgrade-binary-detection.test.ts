@@ -17,12 +17,14 @@ function getTestEnv() {
 
 describe('Upgrade Binary Detection Logic', () => {
   let originalEnv: NodeJS.ProcessEnv
+  let originalFetch: typeof globalThis.fetch
   let tempDir: string
   let mockFetch: any
   let cliPath: string
 
   beforeEach(() => {
     originalEnv = { ...process.env }
+    originalFetch = globalThis.fetch
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-upgrade-detection-test-'))
     cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
@@ -43,6 +45,10 @@ describe('Upgrade Binary Detection Logic', () => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
+
+    // Restore original fetch
+    globalThis.fetch = originalFetch
+
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
     }

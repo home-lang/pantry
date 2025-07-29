@@ -78,6 +78,16 @@ export async function create_shim(args: string[], basePath: string): Promise<str
       console.warn(`No binaries found in ${installBinDir}`)
     }
 
+    // Check if any packages actually got installed successfully
+    // If no shims were created and no binaries found, it means installation failed
+    if (createdShims.length === 0) {
+      // Check if the installation directory has any actual content
+      const hasContent = fs.existsSync(installBinDir) && fs.readdirSync(installBinDir).length > 0
+      if (!hasContent) {
+        throw new Error(`No executables found for packages: ${args.join(', ')}. Installation may have failed.`)
+      }
+    }
+
     // Check if shimDir is in PATH and add it if necessary
     if (createdShims.length > 0 && !isInPath(shimDir)) {
       // Check if this is a temporary directory - if so, don't suggest adding to PATH

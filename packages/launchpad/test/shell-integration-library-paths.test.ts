@@ -247,7 +247,7 @@ describe('Shell Integration Library Paths', () => {
       expect(generatedShellCode).toContain('__launchpad_ensure_global_path()')
 
       // Should handle project-specific environments
-      expect(generatedShellCode).toContain('$HOME/.local/share/launchpad/launchpad_$project_hash')
+      expect(generatedShellCode).toContain('$HOME/.local/share/launchpad/envs/$project_hash')
     })
 
     it('should maintain separation between global and local library paths', async () => {

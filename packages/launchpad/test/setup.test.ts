@@ -17,11 +17,13 @@ function getTestEnv() {
 
 describe('Setup Command', () => {
   let originalEnv: NodeJS.ProcessEnv
+  let originalFetch: typeof globalThis.fetch
   let tempDir: string
   let mockFetch: any
 
   beforeEach(() => {
     originalEnv = { ...process.env }
+    originalFetch = globalThis.fetch
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-setup-test-'))
 
     // Mock fetch for testing downloads
@@ -40,6 +42,10 @@ describe('Setup Command', () => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
+
+    // Restore original fetch
+    globalThis.fetch = originalFetch
+
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
     }

@@ -30,7 +30,7 @@ export function resetInstalledTracker(): void {
  */
 function resolveCriticalLibraryConflicts(packages: string[]): string[] {
   const packageMap = new Map<string, string>()
-  const criticalLibraries = new Set(['openssl.org', 'libssl', 'libcrypto'])
+  const criticalLibraries = new Set(['openssl.org', 'libssl', 'libcrypto', 'libjpeg-turbo.org', 'ijg.org'])
 
   // First pass: collect all packages
   for (const pkg of packages) {
@@ -51,6 +51,23 @@ function resolveCriticalLibraryConflicts(packages: string[]): string[] {
         packageMap.set(domain, compatiblePkg)
         if (config.verbose) {
           console.warn(`🔒 Resolved OpenSSL conflict: ${pkg} -> ${compatiblePkg} for maximum compatibility`)
+        }
+      }
+
+      // Force libjpeg to use the latest stable version for compatibility
+      if (domain === 'libjpeg-turbo.org') {
+        const compatiblePkg = `libjpeg-turbo.org@2.1.5.1`
+        packageMap.set(domain, compatiblePkg)
+        if (config.verbose) {
+          console.warn(`🔒 Resolved libjpeg conflict: ${pkg} -> ${compatiblePkg} for maximum compatibility`)
+        }
+      }
+
+      // Remove ijg.org if libjpeg-turbo.org is present to avoid conflicts
+      if (domain === 'ijg.org' && packageMap.has('libjpeg-turbo.org')) {
+        packageMap.delete(domain)
+        if (config.verbose) {
+          console.warn(`🔒 Removed conflicting ijg.org package in favor of libjpeg-turbo.org`)
         }
       }
     }
@@ -2924,12 +2941,25 @@ async function installPackage(packageName: string, packageSpec: string, installP
     return await installMeilisearch(installPath, requestedVersion)
   }
 
-  // Special handling for PHP - use custom PHP installation with database support
+  // Special handling for PHP - only use database support if explicitly requested
   if (name === 'php' || domain === 'php.net') {
-    if (config.verbose) {
-      console.warn(`Using custom PHP installation with database support for ${name}`)
+    // Check if database support is explicitly requested
+    const needsDatabaseSupport = process.env.LAUNCHPAD_PHP_DATABASE_SUPPORT === 'true'
+      || packageSpec.includes('with-db')
+      || packageSpec.includes('database')
+
+    if (needsDatabaseSupport) {
+      if (config.verbose) {
+        console.warn(`Using custom PHP installation with database support for ${name}`)
+      }
+      return await installPhpWithDatabaseSupport(installPath, requestedVersion)
     }
-    return await installPhpWithDatabaseSupport(installPath, requestedVersion)
+
+    // Use standard installation by default (faster and more reliable)
+    if (config.verbose) {
+      console.warn(`Using standard PHP installation for ${name} (faster, no database extensions)`)
+    }
+    // Continue with standard installation
   }
 
   if (config.verbose) {
@@ -3046,8 +3076,14 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         allInstalledFiles.push(...packageFiles)
       }
       catch (error) {
-        console.error(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
-        throw new Error(`Installation failed for ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
+        // Log error but continue with other packages
+        if (config.verbose) {
+          console.error(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+        else {
+          console.warn(`⚠️  Warning: Failed to install ${pkg}`)
+        }
+        // Continue with other packages instead of throwing
       }
     }
   }
@@ -3061,8 +3097,14 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         allInstalledFiles.push(...result.files)
       }
       else {
-        console.error(`❌ Failed to install ${result.package}: ${result.error}`)
-        throw new Error(`Installation failed for ${result.package}: ${result.error}`)
+        // Log error but continue with other packages
+        if (config.verbose) {
+          console.error(`❌ Failed to install ${result.package}: ${result.error}`)
+        }
+        else {
+          console.warn(`⚠️  Warning: Failed to install ${result.package}`)
+        }
+        // Continue with other packages instead of throwing
       }
     })
   }
@@ -3200,7 +3242,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       }
       catch (error) {
         // Clear any temporary processing message before showing error
-        if (hasTemporaryProcessingMessage) {
+        if (hasTemporaryProcessingMessage && process.env.LAUNCHPAD_DISABLE_CLEANUP !== '1') {
           if (spinnerInterval) {
             clearInterval(spinnerInterval)
             spinnerInterval = null
@@ -3218,15 +3260,26 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
 
         // Check if it's a permission error
         if (error instanceof Error && (errorMessage.includes('EACCES') || errorMessage.includes('permission denied'))) {
-          console.error(`❌ Permission denied installing ${pkg}. Try:`)
-          console.error(`   • Run with sudo: sudo launchpad install ${pkg}`)
-          console.error(`   • Or install to user directory: launchpad install --path ~/.local ${pkg}`)
-          console.error(`   • Or fix permissions: sudo chown -R $(whoami) ${installPath}`)
+          if (config.verbose) {
+            console.error(`❌ Permission denied installing ${pkg}. Try:`)
+            console.error(`   • Run with sudo: sudo launchpad install ${pkg}`)
+            console.error(`   • Or install to user directory: launchpad install --path ~/.local ${pkg}`)
+            console.error(`   • Or fix permissions: sudo chown -R $(whoami) ${installPath}`)
+          }
+          else {
+            console.warn(`⚠️  Warning: Permission denied installing ${pkg}`)
+          }
         }
         else {
-          console.error(`❌ Failed to install ${pkg}: ${errorMessage}`)
+          if (config.verbose) {
+            console.error(`❌ Failed to install ${pkg}: ${errorMessage}`)
+          }
+          else {
+            console.warn(`⚠️  Warning: Failed to install ${pkg}`)
+          }
         }
-        throw error
+        // Continue with other packages instead of throwing
+        continue
       }
     }
   }
@@ -4079,21 +4132,34 @@ async function installPhpWithDatabaseSupport(installPath: string, requestedVersi
   try {
     logUniqueMessage(`🔄 Installing PHP ${version} with database support (PostgreSQL, MySQL)...`)
 
-    // First install regular PHP and database servers to get base system
-    const phpResult = await installPackage('php', `php@${version}`, installPath)
+    // First install regular PHP using direct download (avoid recursion)
+    const domain = 'php.net'
+    const phpResult = await downloadPackage(domain, version, getPlatform(), getArchitecture(), installPath)
     if (phpResult.length === 0) {
       throw new Error('Failed to install base PHP')
     }
 
-    // Install database servers for development libraries
+    // Install database servers for development libraries (with timeout)
     logUniqueMessage(`🔄 Installing database servers for development libraries...`)
-    await Promise.allSettled([
+    const dbInstallPromise = Promise.allSettled([
       installPackage('postgresql', 'postgresql', installPath),
       installPackage('mysql', 'mysql', installPath),
     ])
 
-    // Set up database extensions (includes existing compiled ones)
-    await setupDatabaseExtensions(installPath)
+    // Add timeout for database installation (max 5 minutes)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database installation timeout (5 minutes)')), 5 * 60 * 1000)
+    })
+
+    await Promise.race([dbInstallPromise, timeoutPromise])
+
+    // Set up database extensions (includes existing compiled ones) with timeout
+    const extensionPromise = setupDatabaseExtensions(installPath)
+    const extensionTimeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database extension compilation timeout (3 minutes)')), 3 * 60 * 1000)
+    })
+
+    await Promise.race([extensionPromise, extensionTimeoutPromise])
 
     logUniqueMessage(`✅ php \x1B[2m\x1B[3m(v${version} with PostgreSQL & MySQL support)\x1B[0m`)
 
@@ -4103,8 +4169,23 @@ async function installPhpWithDatabaseSupport(installPath: string, requestedVersi
     if (config.verbose) {
       console.warn(`Custom PHP installation failed: ${error}`)
     }
-    // Fall back to regular installation
-    return await installPackage('php', `php@${version}`, installPath)
+    logUniqueMessage(`⚠️  Database support compilation failed, using standard PHP installation`)
+
+    // Fall back to regular installation - but we need to call downloadPackage directly
+    // since we can't call installPackage recursively
+    const domain = resolvePackageName('php')
+    const os = getPlatform()
+    const architecture = getArchitecture()
+
+    try {
+      const fallbackResult = await downloadPackage(domain, version, os, architecture, installPath)
+      logUniqueMessage(`✅ php \x1B[2m\x1B[3m(v${version} - standard installation)\x1B[0m`)
+      return fallbackResult
+    }
+    catch (fallbackError) {
+      console.error(`Both custom and standard PHP installation failed: ${fallbackError}`)
+      throw fallbackError
+    }
   }
 }
 
@@ -4130,8 +4211,27 @@ async function setupDatabaseExtensions(installPath: string): Promise<void> {
       return
     }
 
-    // Get extension directory path
-    const extensionDir = path.join(installPath, 'lib', 'php', '20240924')
+    // Try multiple PHP extension directories (different PHP versions)
+    const extensionDirs = [
+      path.join(installPath, 'lib', 'php', '20240924'), // PHP 8.4
+      path.join(installPath, 'lib', 'php', '20230831'), // PHP 8.3
+      path.join(installPath, 'lib', 'php', '20220829'), // PHP 8.2
+    ]
+
+    let extensionDir = ''
+    for (const dir of extensionDirs) {
+      if (await fs.promises.access(dir).then(() => true, () => false)) {
+        extensionDir = dir
+        break
+      }
+    }
+
+    if (!extensionDir) {
+      if (config.verbose) {
+        console.warn('No PHP extension directory found, skipping database extension setup')
+      }
+      return
+    }
 
     // Check if we have any existing compiled extensions
     const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
@@ -4144,12 +4244,24 @@ async function setupDatabaseExtensions(installPath: string): Promise<void> {
       console.log(`🔍 Found extensions: PostgreSQL=${hasPgsql}, MySQL=${hasMysql}`)
     }
 
-    // If we don't have compiled extensions, compile them
-    if (!hasPgsql || !hasMysql) {
-      await compilePhpDatabaseExtensions(installPath, extensionDir)
+    // If we already have both extensions, skip compilation
+    if (hasPgsql && hasMysql) {
+      logUniqueMessage(`✅ Database extensions already available, skipping compilation`)
+    }
+    else {
+      // If we don't have compiled extensions, try to compile them (with better error handling)
+      try {
+        await compilePhpDatabaseExtensions(installPath, extensionDir)
+      }
+      catch (compileError) {
+        logUniqueMessage(`⚠️  Database extension compilation failed: ${compileError}`)
+        if (config.verbose) {
+          console.warn('Continuing with available extensions...')
+        }
+      }
     }
 
-    // Create PHP wrapper script that automatically loads database extensions
+    // Create PHP wrapper script that automatically loads available database extensions
     await createPhpWrapperWithExtensions(installPath, extensionDir)
 
     // Create proper php.ini that will be used by our wrapper

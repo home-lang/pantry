@@ -1,12 +1,24 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+// Store original fetch to restore after tests
+const originalFetch = globalThis.fetch
+
 // Mock fetch for testing download progress
 const mockFetch = jest.fn()
-// @ts-expect-error - Mock fetch for testing
-globalThis.fetch = mockFetch
+
+// Only apply the mock within this test file
+beforeAll(() => {
+  // @ts-expect-error - Mock fetch for testing
+  globalThis.fetch = mockFetch
+})
+
+afterAll(() => {
+  // @ts-expect-error - Restore original fetch
+  globalThis.fetch = originalFetch
+})
 
 // Create a mock ReadableStream for testing
 class MockReadableStream {
@@ -85,6 +97,16 @@ describe('Download Progress', () => {
 
     // Restore mocks
     jest.restoreAllMocks()
+
+    // Reset any config changes that individual tests might have made
+    try {
+      // eslint-disable-next-line ts/no-require-imports
+      const { config } = require('../src/config')
+      config.verbose = false
+    }
+    catch {
+      // Ignore if config is not available
+    }
   })
 
   describe('Progress Display', () => {

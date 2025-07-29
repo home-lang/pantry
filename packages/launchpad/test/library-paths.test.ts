@@ -180,26 +180,30 @@ describe('Library Path Management', () => {
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsYaml(projectDir, ['nodejs.org@20', 'zlib.net@1.3'])
 
-      // Calculate the correct environment directory where dev command will look
-      const crypto = await import('node:crypto')
-      const projectHash = `test-project_${crypto.createHash('md5').update(projectDir).digest('hex').slice(0, 8)}`
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
 
-      // Create mock packages with library directories in the correct location
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock packages with library directories in the discovered environment directory
       const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
       const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', envDir)
 
-      // Create top-level bin directory that outputShellCode checks for
-      const envBinDir = path.join(envDir, 'bin')
-      fs.mkdirSync(envBinDir, { recursive: true })
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'nodejs'), '#!/bin/sh\necho "20.0.0"')
+      fs.writeFileSync(path.join(envBinPath, 'zlib'), '#!/bin/sh\necho "1.3.1"')
+      fs.chmodSync(path.join(envBinPath, 'nodejs'), 0o755)
+      fs.chmodSync(path.join(envBinPath, 'zlib'), 0o755)
 
-      // Create shims for the packages in the top-level bin directory
-      fs.writeFileSync(path.join(envBinDir, 'nodejs'), '#!/bin/sh\necho "20.0.0"')
-      fs.writeFileSync(path.join(envBinDir, 'zlib'), '#!/bin/sh\necho "1.3.1"')
-      fs.chmodSync(path.join(envBinDir, 'nodejs'), 0o755)
-      fs.chmodSync(path.join(envBinDir, 'zlib'), 0o755)
-
-      // Run dev command with shell output
+      // Run dev command again with the mock packages in place
       const result = await runCLI(['dev', projectDir, '--shell'])
 
       expect(result.exitCode).toBe(0)
@@ -444,21 +448,27 @@ exec node "$@"
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsYaml(projectDir, ['nodejs.org@20'])
 
-      // Create the environment with mock packages that have libraries
-      const crypto = await import('node:crypto')
-      const projectHash = `test-project_${crypto.createHash('md5').update(projectDir).digest('hex').slice(0, 8)}`
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
 
-      // Create mock packages with libraries
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock packages with libraries in the discovered environment directory
       const { libDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
 
-      // Create environment bin directory
-      const envBinDir = path.join(envDir, 'bin')
-      fs.mkdirSync(envBinDir, { recursive: true })
-      fs.writeFileSync(path.join(envBinDir, 'node'), '#!/bin/sh\necho "v20.0.0"')
-      fs.chmodSync(path.join(envBinDir, 'node'), 0o755)
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'node'), '#!/bin/sh\necho "v20.0.0"')
+      fs.chmodSync(path.join(envBinPath, 'node'), 0o755)
 
-      // Test macOS-specific library path setup
+      // Run dev command again with the mock packages in place
       const result = await runCLI(['dev', projectDir, '--shell'])
 
       expect(result.exitCode).toBe(0)
@@ -481,17 +491,25 @@ exec node "$@"
     })
 
     it('should handle lib64 directories on 64-bit systems', async () => {
-      // Create project first to calculate correct environment directory
+      // Create project first
       const projectDir = path.join(tempDir, 'test-project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsYaml(projectDir, ['test-package.org@1'])
 
-      // Calculate the environment directory
-      const crypto = await import('node:crypto')
-      const projectHash = `test-project_${crypto.createHash('md5').update(projectDir).digest('hex').slice(0, 8)}`
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
 
-      // Create mock package with lib64 directory in the correct environment
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock package with lib64 directory in the discovered environment
       const packageDir = path.join(envDir, 'test-package.org', 'v1.0.0')
       const lib64Dir = path.join(packageDir, 'lib64')
       const binDir = path.join(packageDir, 'bin')
@@ -518,12 +536,11 @@ exec node "$@"
       }
       fs.writeFileSync(path.join(pkgsPackageDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
 
-      // Create environment bin directory
-      const envBinDir = path.join(envDir, 'bin')
-      fs.mkdirSync(envBinDir, { recursive: true })
-      fs.writeFileSync(path.join(envBinDir, 'test-binary'), '#!/bin/sh\necho "test binary"')
-      fs.chmodSync(path.join(envBinDir, 'test-binary'), 0o755)
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'test-binary'), '#!/bin/sh\necho "test binary"')
+      fs.chmodSync(path.join(envBinPath, 'test-binary'), 0o755)
 
+      // Run dev command again with the mock packages in place
       const result = await runCLI(['dev', projectDir, '--shell'])
 
       expect(result.exitCode).toBe(0)
@@ -661,17 +678,25 @@ exec node "$@"
 
   describe('Integration with Real Scenarios', () => {
     it('should support the Node.js + zlib scenario', async () => {
-      // Create project first to calculate correct environment directory
+      // Create project first
       const projectDir = path.join(tempDir, 'test-project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsYaml(projectDir, ['nodejs.org@20', 'zlib.net@1.3'])
 
-      // Calculate the environment directory
-      const crypto = await import('node:crypto')
-      const projectHash = `test-project_${crypto.createHash('md5').update(projectDir).digest('hex').slice(0, 8)}`
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', projectHash)
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
 
-      // Create mock Node.js and zlib packages in the correct environment
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock Node.js and zlib packages in the discovered environment directory
       const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
       const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', envDir)
 
@@ -680,14 +705,13 @@ exec node "$@"
       fs.writeFileSync(path.join(zlibLibDir, 'libz.1.dylib'), 'zlib library v1')
       fs.writeFileSync(path.join(zlibLibDir, 'libz.1.3.1.dylib'), 'zlib library v1.3.1')
 
-      // Create environment bin directory with binaries
-      const envBinDir = path.join(envDir, 'bin')
-      fs.mkdirSync(envBinDir, { recursive: true })
-      fs.writeFileSync(path.join(envBinDir, 'node'), '#!/bin/sh\necho "v20.0.0"')
-      fs.writeFileSync(path.join(envBinDir, 'zlib'), '#!/bin/sh\necho "1.3.1"')
-      fs.chmodSync(path.join(envBinDir, 'node'), 0o755)
-      fs.chmodSync(path.join(envBinDir, 'zlib'), 0o755)
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'node'), '#!/bin/sh\necho "v20.0.0"')
+      fs.writeFileSync(path.join(envBinPath, 'zlib'), '#!/bin/sh\necho "1.3.1"')
+      fs.chmodSync(path.join(envBinPath, 'node'), 0o755)
+      fs.chmodSync(path.join(envBinPath, 'zlib'), 0o755)
 
+      // Run dev command again with the mock packages in place
       const result = await runCLI(['dev', projectDir, '--shell'])
 
       expect(result.exitCode).toBe(0)

@@ -1,0 +1,120 @@
+name: Standard Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 9 * * 1,3,5'
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: Update strategy
+        required: false
+        default: patch
+        type: choice
+        options:
+          - all
+          - major
+          - minor
+          - patch
+      dry_run:
+        description: Dry run (preview only)
+        required: false
+        default: false
+        type: boolean
+      packages:
+        description: Specific packages (comma-separated)
+        required: false
+        type: string
+      verbose:
+        description: Enable verbose logging
+        required: false
+        default: true
+        type: boolean
+
+env:
+  GITHUB_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+  checks: read
+  statuses: read
+
+jobs:
+  dependency-updates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BUDDY_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup PHP and Composer (if needed)
+        if: ${{ hashFiles('composer.json') != '' }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+
+      - name: Install Composer dependencies (if needed)
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer install --prefer-dist --optimize-autoloader
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build buddy-bot
+        run: bun run build
+
+      - name: Run dependency updates
+        run: |
+          STRATEGY="${{ github.event.inputs.strategy || 'patch' }}"
+          PACKAGES="${{ github.event.inputs.packages }}"
+          VERBOSE="${{ github.event.inputs.verbose || 'true' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+
+          echo "🔍 Scanning for dependency updates..."
+          set -e
+
+          if [ "$PACKAGES" != "" ]; then
+            if [ "$VERBOSE" = "true" ]; then
+              bun buddy scan --packages "$PACKAGES" --verbose
+            else
+              bun buddy scan --packages "$PACKAGES"
+            fi
+          else
+            if [ "$VERBOSE" = "true" ]; then
+              bun buddy scan --strategy "$STRATEGY" --verbose
+            else
+              bun buddy scan --strategy "$STRATEGY"
+            fi
+          fi
+
+          if [ "$DRY_RUN" != "true" ]; then
+            echo "🚀 Running dependency updates..."
+            if [ "$PACKAGES" != "" ]; then
+              if [ "$VERBOSE" = "true" ]; then
+                bun buddy update --packages "$PACKAGES" --verbose
+              else
+                bun buddy update --packages "$PACKAGES"
+              fi
+            else
+              if [ "$VERBOSE" = "true" ]; then
+                bun buddy update --strategy "$STRATEGY" --verbose
+              else
+                bun buddy update --strategy "$STRATEGY"
+            fi
+          else
+            echo "📋 DRY RUN MODE - No changes made"
+          fi
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN || secrets.GITHUB_TOKEN }}

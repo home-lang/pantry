@@ -248,7 +248,7 @@ describe('Dev Commands', () => {
       if (result.exitCode === 0) {
         // If installation succeeds, check expected output
         const output = result.stdout + result.stderr
-        expect(output).toMatch(/✅.*installed|✅.*package|Installing.*packages|Installed.*package/i)
+        expect(output).toMatch(/✅[^\w\n\r\u2028\u2029]*\w[^\n\r(\u2028\u2029]*\((?:[^\n\r)\u2028\u2029]*\)[^\n\r(\u2028\u2029]*\()*(?:[\n\r\u2028\u2029][^)]*|[^\n\r)\u2028\u2029]+(?:[\n\r\u2028\u2029][^)]*)?)\)|✅.*installed|Installing.*packages|Installed.*package/i)
         // Environment variables are used internally but may not be printed to stdout
       }
       else {
@@ -334,7 +334,7 @@ describe('Dev Commands', () => {
         // pkgx.yml is recognized but packages may fail to install in test environment
         if (result.exitCode === 0) {
           const output = result.stdout + result.stderr
-          expect(output).toMatch(/✅.*installed|✅.*package|Installing.*packages|Installed.*package/i)
+          expect(output).toMatch(/✅[^\w\n\r\u2028\u2029]*\w[^\n\r(\u2028\u2029]*\((?:[^\n\r)\u2028\u2029]*\)[^\n\r(\u2028\u2029]*\()*(?:[\n\r\u2028\u2029][^)]*|[^\n\r)\u2028\u2029]+(?:[\n\r\u2028\u2029][^)]*)?)\)|✅.*installed|Installing.*packages|Installed.*package/i)
           // Environment variables like FOO=BAR are used internally but may not be printed to stdout
         }
         else {
