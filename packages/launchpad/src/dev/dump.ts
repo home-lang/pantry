@@ -16,6 +16,8 @@ function generateProjectHash(projectPath: string): string {
   const hash = crypto.createHash('md5').update(resolvedPath).digest('hex')
   const projectName = path.basename(resolvedPath)
   const result = `${projectName}_${hash.slice(0, 8)}`
+
+  return result
 }
 
 export interface DumpOptions {
