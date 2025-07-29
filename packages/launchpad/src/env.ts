@@ -609,6 +609,7 @@ export async function removeAllEnvironments(options: RemoveEnvironmentOptions): 
 }
 
 export const DEPENDENCY_FILE_NAMES = [
+  // Launchpad-specific files (highest priority)
   'dependencies.yaml',
   'dependencies.yml',
   'deps.yaml',
@@ -617,6 +618,50 @@ export const DEPENDENCY_FILE_NAMES = [
   'pkgx.yml',
   'launchpad.yaml',
   'launchpad.yml',
+
+  // Node.js/JavaScript projects
+  'package.json',
+
+  // Python projects
+  'pyproject.toml',
+  'requirements.txt',
+  'setup.py',
+  'Pipfile',
+  'Pipfile.lock',
+
+  // Rust projects
+  'Cargo.toml',
+
+  // Go projects
+  'go.mod',
+  'go.sum',
+
+  // Ruby projects
+  'Gemfile',
+
+  // Deno projects
+  'deno.json',
+  'deno.jsonc',
+
+  // GitHub Actions
+  'action.yml',
+  'action.yaml',
+
+  // Kubernetes/Docker
+  'skaffold.yaml',
+  'skaffold.yml',
+
+  // Version control files
+  '.nvmrc',
+  '.node-version',
+  '.ruby-version',
+  '.python-version',
+  '.terraform-version',
+
+  // Package manager files
+  'yarn.lock',
+  'bun.lockb',
+  '.yarnrc',
 ] as const
 
 export function findDependencyFile(root: string, searchAncestors = false): string | null {

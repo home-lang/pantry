@@ -413,9 +413,7 @@ __launchpad_find_deps_file() {
     __launchpad_cache_timestamp=0
 
     while [[ "$dir" != "/" ]]; do
-        # Check dependency files first
-        # Supported files: dependencies.yaml, dependencies.yml, deps.yaml, deps.yml,
-        # pkgx.yaml, pkgx.yml, launchpad.yaml, launchpad.yml
+        # Check Launchpad-specific dependency files first (highest priority)
         for pattern in "dependencies" "deps" "pkgx" "launchpad"; do
             for ext in "yaml" "yml"; do
                 local file="$dir/$pattern.$ext"
@@ -428,13 +426,99 @@ __launchpad_find_deps_file() {
             done
         done
 
-        # Check for package.json if no dependency files found
+        # Check Node.js/JavaScript projects
         if [[ -f "$dir/package.json" ]]; then
             __launchpad_cache_dir="$dir"
             __launchpad_cache_timestamp=$current_time
             echo "$dir"
             return 0
         fi
+
+        # Check Python projects
+        for file in "pyproject.toml" "requirements.txt" "setup.py" "Pipfile" "Pipfile.lock"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
+
+        # Check Rust projects
+        if [[ -f "$dir/Cargo.toml" ]]; then
+            __launchpad_cache_dir="$dir"
+            __launchpad_cache_timestamp=$current_time
+            echo "$dir"
+            return 0
+        fi
+
+        # Check Go projects
+        for file in "go.mod" "go.sum"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
+
+        # Check Ruby projects
+        if [[ -f "$dir/Gemfile" ]]; then
+            __launchpad_cache_dir="$dir"
+            __launchpad_cache_timestamp=$current_time
+            echo "$dir"
+            return 0
+        fi
+
+        # Check Deno projects
+        for file in "deno.json" "deno.jsonc"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
+
+        # Check GitHub Actions
+        for file in "action.yml" "action.yaml"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
+
+        # Check Kubernetes/Docker projects
+        for file in "skaffold.yaml" "skaffold.yml"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
+
+        # Check version control files
+        for file in ".nvmrc" ".node-version" ".ruby-version" ".python-version" ".terraform-version"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
+
+        # Check package manager files
+        for file in "yarn.lock" "bun.lockb" ".yarnrc"; do
+            if [[ -f "$dir/$file" ]]; then
+                __launchpad_cache_dir="$dir"
+                __launchpad_cache_timestamp=$current_time
+                echo "$dir"
+                return 0
+            fi
+        done
 
         dir="$(/usr/bin/dirname "$dir")"
     done
