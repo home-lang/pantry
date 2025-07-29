@@ -129,15 +129,15 @@ jobs:
 
           if [ "$PACKAGES" != "" ]; then
             if [ "$VERBOSE" = "true" ]; then
-              bunx buddy-bot-scan --packages "$PACKAGES" --verbose
+              bunx buddy-bot scan --packages "$PACKAGES" --verbose
             else
-              bunx buddy-bot-scan --packages "$PACKAGES"
+              bunx buddy-bot scan --packages "$PACKAGES"
             fi
           else
             if [ "$VERBOSE" = "true" ]; then
-              bunx buddy-bot-scan --strategy "$STRATEGY" --verbose
+              bunx buddy-bot scan --strategy "$STRATEGY" --verbose
             else
-              bunx buddy-bot-scan --strategy "$STRATEGY"
+              bunx buddy-bot scan --strategy "$STRATEGY"
             fi
           fi
 
