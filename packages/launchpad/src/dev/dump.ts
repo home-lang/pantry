@@ -238,14 +238,24 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       // If we have any environment, try fast activation first
       if (hasLocalEnv || hasGlobalEnv) {
-        // Use minimal sniff result for fast path
-        const minimalSniffResult = { pkgs: [], env: {} }
+        // Parse dependency file to get environment variables even in fast path
+        const { default: sniff } = await import('./sniff')
+        let sniffResult: { pkgs: any[], env: Record<string, string> }
+
+        try {
+          sniffResult = await sniff({ string: projectDir })
+        }
+        catch {
+          // Handle malformed dependency files gracefully
+          sniffResult = { pkgs: [], env: {} }
+        }
+
         outputShellCode(
           dir,
           hasLocalEnv ? path.join(envDir, 'bin') : '',
           hasLocalEnv ? path.join(envDir, 'sbin') : '',
           projectHash,
-          minimalSniffResult,
+          sniffResult,
           hasGlobalEnv ? path.join(globalEnvDir, 'bin') : '',
           hasGlobalEnv ? path.join(globalEnvDir, 'sbin') : '',
         )
