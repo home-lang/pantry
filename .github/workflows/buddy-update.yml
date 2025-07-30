@@ -18,7 +18,7 @@ on:
       dry_run:
         description: Dry run (preview only)
         required: false
-        default: true
+        default: false
         type: boolean
       packages:
         description: Specific packages (comma-separated)
