@@ -14,6 +14,9 @@ describe('Package Caching System', () => {
   let testInstallDir: string
 
   beforeEach(() => {
+    // Reset global state for test isolation
+    TestUtils.resetGlobalState()
+
     originalEnv = { ...process.env }
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-cache-test-'))
     cacheDir = path.join(tempDir, '.cache', 'launchpad', 'binaries', 'packages')

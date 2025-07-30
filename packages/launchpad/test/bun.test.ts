@@ -66,7 +66,7 @@ describe('Bun', () => {
     globalThis.fetch = mockFetch as typeof fetch
 
     // Set test environment
-    process.env = { ...process.env, NODE_ENV: 'test' }
+    process.env.NODE_ENV = 'test'
   })
 
   afterEach(() => {

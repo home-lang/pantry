@@ -5,7 +5,7 @@ const config: BuddyBotConfig = {
     owner: 'stacksjs',
     name: 'launchpad',
     provider: 'github',
-    // token: process.env.BUDDY_BOT_TOKEN,
+    // Uses GITHUB_TOKEN by default
   },
   dashboard: {
     enabled: true,

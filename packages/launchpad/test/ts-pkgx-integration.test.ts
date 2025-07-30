@@ -2,12 +2,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { TestUtils } from './test.config'
 
 describe('ts-pkgx Integration', () => {
   let tempDir: string
   let originalEnv: NodeJS.ProcessEnv
 
   beforeEach(() => {
+    // Reset global state for test isolation
+    TestUtils.resetGlobalState()
+
     originalEnv = { ...process.env }
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-test-'))
   })

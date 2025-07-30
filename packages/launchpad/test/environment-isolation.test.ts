@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { TestUtils } from './test.config'
 
 describe('Environment Isolation', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -15,6 +16,9 @@ describe('Environment Isolation', () => {
   let nestedProject: string
 
   beforeEach(() => {
+    // Reset global state for test isolation
+    TestUtils.resetTestEnvironment()
+
     originalEnv = { ...process.env }
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-isolation-test-'))
     cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')

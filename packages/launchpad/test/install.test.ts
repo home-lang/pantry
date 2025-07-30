@@ -4,12 +4,16 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { DISTRIBUTION_CONFIG, install, install_prefix } from '../src/install'
+import { TestUtils } from './test.config'
 
 describe('Install', () => {
   let originalEnv: NodeJS.ProcessEnv
   let tempDir: string
 
   beforeEach(() => {
+    // Reset global state for test isolation
+    TestUtils.resetGlobalState()
+
     originalEnv = { ...process.env }
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-test-'))
   })

@@ -19,10 +19,12 @@ const globalInstalledTracker = new Set<string>()
 // Global tracker for completed packages (by domain only) to prevent duplicate success messages
 const globalCompletedPackages = new Set<string>()
 
-// Reset the global tracker for a new environment setup
+// Reset all global state for a new environment setup (critical for test isolation)
 export function resetInstalledTracker(): void {
   globalInstalledTracker.clear()
   globalCompletedPackages.clear()
+  shellModeMessageCache.clear()
+  cleanupSpinner()
 }
 
 /**

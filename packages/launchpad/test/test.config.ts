@@ -6,6 +6,7 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 
 export const TEST_CONFIG = {
   // Test timeouts
@@ -48,6 +49,55 @@ export const TEST_CONFIG = {
  * Test utilities for common operations
  */
 export class TestUtils {
+  /**
+   * Reset global state to ensure test isolation
+   */
+  static resetGlobalState(): void {
+    try {
+      // Reset install module state
+      // eslint-disable-next-line ts/no-require-imports
+      const { resetInstalledTracker } = require('../src/install')
+      resetInstalledTracker()
+    }
+    catch {
+      // Ignore if install module is not available
+    }
+
+    try {
+      // Reset service manager state
+      // eslint-disable-next-line ts/no-require-imports
+      const serviceManager = require('../src/services/manager')
+      if (serviceManager.serviceManagerState) {
+        serviceManager.serviceManagerState = null
+      }
+    }
+    catch {
+      // Ignore if service manager is not available
+    }
+
+    // Reset shell integration environment variables
+    delete process.env.LAUNCHPAD_CURRENT_PROJECT
+    delete process.env.LAUNCHPAD_ORIGINAL_PATH
+    delete process.env.LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH
+    delete process.env.LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH
+    delete process.env.LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH
+    delete process.env.LAUNCHPAD_SHELL_INTEGRATION
+    delete process.env.LAUNCHPAD_SHOW_ENV_MESSAGES
+    delete process.env.LAUNCHPAD_SHELL_ACTIVATION_MESSAGE
+    delete process.env.LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE
+    delete process.env.LAUNCHPAD_ALLOW_NETWORK
+
+    // Reset test environment variables that might affect behavior
+    delete process.env.SUDO_PASSWORD
+    delete process.env.LAUNCHPAD_AUTO_SUDO
+    delete process.env.LAUNCHPAD_AUTO_ADD_PATH
+    delete process.env.LAUNCHPAD_SERVICES_ENABLED
+    delete process.env.LAUNCHPAD_DISABLE_SHELL_INTEGRATION
+
+    // Ensure NODE_ENV is consistent for tests
+    process.env.NODE_ENV = 'test'
+  }
+
   /**
    * Clean up launchpad environment directories for test isolation
    */
@@ -92,6 +142,105 @@ export class TestUtils {
     catch {
       // Silently ignore cleanup errors to avoid test noise
       // Tests should still pass even if cleanup fails
+    }
+  }
+
+  /**
+   * Comprehensive environment reset for test isolation
+   */
+  static resetTestEnvironment(): void {
+    // Reset global state
+    this.resetGlobalState()
+
+    // Clean up environment directories
+    this.cleanupEnvironmentDirs()
+
+    // Reset cache directories
+    const cacheDir = path.join(os.homedir(), '.cache', 'launchpad')
+    if (fs.existsSync(cacheDir)) {
+      try {
+        fs.rmSync(cacheDir, { recursive: true, force: true })
+      }
+      catch {
+        // Ignore cleanup errors
+      }
+    }
+
+    // Clear shell integration cache
+    const shellCacheDir = path.join(os.homedir(), '.cache', 'launchpad', 'shell_cache')
+    if (fs.existsSync(shellCacheDir)) {
+      try {
+        fs.rmSync(shellCacheDir, { recursive: true, force: true })
+      }
+      catch {
+        // Ignore cleanup errors
+      }
+    }
+
+    // Reset file system mocks if running in test environment
+    if (typeof globalThis !== 'undefined' && 'jest' in globalThis) {
+      try {
+        const jestGlobal = globalThis as any
+        jestGlobal.jest?.restoreAllMocks?.()
+      }
+      catch {
+        // Not in Jest environment
+      }
+    }
+  }
+
+  /**
+   * Master test isolation function for maximum test separation
+   * Should be called before any test suite runs
+   */
+  static async ensureCompleteTestIsolation(): Promise<void> {
+    // Comprehensive environment reset
+    this.resetTestEnvironment()
+
+    // Force garbage collection if available
+    if ((globalThis as any).gc) {
+      (globalThis as any).gc()
+    }
+
+    // Clear module cache for critical modules to prevent state leakage
+    const moduleKeys = Object.keys(require.cache).filter(key =>
+      key.includes('launchpad')
+      && !key.includes('node_modules')
+      && (key.includes('/src/') || key.includes('/dist/')),
+    )
+
+    moduleKeys.forEach((key) => {
+      delete require.cache[key]
+    })
+
+    // Reset working directory to test directory
+    try {
+      process.chdir(path.resolve(__dirname, '..'))
+    }
+    catch {
+      // Ignore if already in the right directory
+    }
+
+    // Force a small delay to ensure async operations complete
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
+  /**
+   * Configure test environment for isolated execution
+   */
+  static configureTestEnvironment(): void {
+    // Ensure test environment variables are set consistently
+    process.env.NODE_ENV = 'test'
+    process.env.LAUNCHPAD_DISABLE_SHELL_INTEGRATION = '1'
+    process.env.LAUNCHPAD_SHOW_ENV_MESSAGES = 'false'
+
+    // Disable network operations by default in tests
+    delete process.env.LAUNCHPAD_ALLOW_NETWORK
+
+    // Set consistent test timeouts for Jest if available
+    if (typeof globalThis !== 'undefined' && 'jest' in globalThis) {
+      const jestGlobal = globalThis as any
+      jestGlobal.jest?.setTimeout?.(30000)
     }
   }
 
