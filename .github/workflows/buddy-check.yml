@@ -3,7 +3,6 @@ name: Buddy Check
 on:
   schedule:
     - cron: '*/15 * * * *' # Check every 15 minutes
-
   workflow_dispatch: # Manual trigger
     inputs:
       dry_run:
