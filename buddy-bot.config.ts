@@ -24,8 +24,12 @@ const config: BuddyBotConfig = {
   },
   packages: {
     strategy: 'all',
+    ignore: [
+      'bun-plugin-dtsx',
+    ],
     ignorePaths: [
       'packages/launchpad/test-envs/**',
+      'packages/launchpad/test/**',
     ],
   },
   verbose: false,
