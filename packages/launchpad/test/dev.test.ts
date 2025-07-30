@@ -94,11 +94,19 @@ describe('Dev Commands', () => {
   const getTestEnv = (extraEnv: Record<string, string> = {}) => {
     const currentEnv = process.env || {}
     const currentPath = currentEnv.PATH || ''
+    // Add common bun installation paths to PATH
+    const bunPaths = [
+      `${process.env.HOME}/.local/bin`, // User's bun installation
+      '/usr/local/bin',
+      '/usr/bin',
+      '/bin',
+      '/usr/sbin',
+      '/sbin',
+    ]
+    const pathWithBun = `${bunPaths.join(':')}:${currentPath}`
     return {
       ...currentEnv,
-      PATH: currentPath.includes('/usr/local/bin')
-        ? currentPath
-        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${currentPath}`,
+      PATH: pathWithBun,
       NODE_ENV: 'test',
       ...extraEnv,
     }
@@ -107,7 +115,9 @@ describe('Dev Commands', () => {
   // Helper function to run CLI commands
   const runCLI = (args: string[], cwd?: string): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
     return new Promise((resolve, reject) => {
-      const proc = spawn(process.execPath, [cliPath, ...args], {
+      // Use bun to run TypeScript files
+      const bunExecutable = 'bun'
+      const proc = spawn(bunExecutable, [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: getTestEnv(),
         cwd: cwd || tempDir,

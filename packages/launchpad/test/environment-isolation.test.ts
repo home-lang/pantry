@@ -88,8 +88,8 @@ describe('Environment Isolation', () => {
   // Helper function to run CLI commands
   const runCLI = (args: string[], cwd?: string): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
     return new Promise((resolve, reject) => {
-      // Use the current bun executable path to ensure it's found
-      const bunExecutable = process.execPath || 'bun'
+      // Use bun to run TypeScript files
+      const bunExecutable = 'bun'
       const proc = spawn(bunExecutable, [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: getTestEnv(),
