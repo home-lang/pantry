@@ -24,9 +24,8 @@ const config: BuddyBotConfig = {
   },
   packages: {
     strategy: 'all',
-    ignore: [
-      // Add packages to ignore here
-      // Example: '@types/node', 'eslint'
+    ignorePaths: [
+      'packages/launchpad/test-envs/**',
     ],
   },
   verbose: false,
