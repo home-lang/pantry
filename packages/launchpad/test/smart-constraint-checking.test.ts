@@ -81,11 +81,13 @@ describe('Smart Constraint Checking', () => {
 
         try {
           await Promise.race([dumpPromise, timeoutPromise])
-        } catch (error: any) {
+        }
+        catch (error: any) {
           if (error.message === 'Dump operation timed out') {
             // If it times out, that's also a valid indicator that the constraint was problematic
             logs.push('Operation timed out due to constraint issue')
-          } else {
+          }
+          else {
             throw error
           }
         }
