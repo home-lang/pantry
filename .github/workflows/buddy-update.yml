@@ -2,8 +2,8 @@ name: Buddy Update
 
 on:
   schedule:
-    - cron: '0 */2 * * *' # Every 2 hours for testing (more reasonable for testing)
-  workflow_dispatch: # Manual triggering for development
+    - cron: '0 9 * * 1,3,5'
+  workflow_dispatch:
     inputs:
       strategy:
         description: Update strategy
