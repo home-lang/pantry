@@ -60,6 +60,23 @@ export const defaultConfig: LaunchpadConfig = {
     autoRestart: process.env.LAUNCHPAD_SERVICES_AUTO_RESTART !== 'false',
     startupTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_STARTUP_TIMEOUT || '30', 10),
     shutdownTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_SHUTDOWN_TIMEOUT || '10', 10),
+    database: {
+      username: process.env.LAUNCHPAD_DB_USERNAME || 'root',
+      password: process.env.LAUNCHPAD_DB_PASSWORD || 'password',
+      authMethod: (process.env.LAUNCHPAD_DB_AUTH_METHOD as 'trust' | 'md5' | 'scram-sha-256') || 'trust',
+    },
+    frameworks: {
+      enabled: process.env.LAUNCHPAD_FRAMEWORKS_ENABLED !== 'false',
+      preferredDatabase: (process.env.LAUNCHPAD_PREFERRED_DATABASE as 'postgres' | 'sqlite') || 'postgres',
+      laravel: {
+        enabled: process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false',
+        autoDetect: process.env.LAUNCHPAD_LARAVEL_AUTO_DETECT !== 'false',
+      },
+      stacks: {
+        enabled: process.env.LAUNCHPAD_STACKS_ENABLED !== 'false',
+        autoDetect: process.env.LAUNCHPAD_STACKS_AUTO_DETECT !== 'false',
+      },
+    },
   },
 }
 

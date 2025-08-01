@@ -63,8 +63,8 @@ describe('Database Service Integration', () => {
       expect(initCmd[0]).toBe('initdb')
       expect(initCmd).toContain('-D')
       expect(initCmd).toContain('{dataDir}')
-      expect(initCmd).toContain('--auth-local=trust')
-      expect(initCmd).toContain('--auth-host=md5')
+      expect(initCmd).toContain('--auth-local={authMethod}')
+      expect(initCmd).toContain('--auth-host={authMethod}')
       expect(initCmd).toContain('--encoding=UTF8')
     })
 
@@ -78,23 +78,26 @@ describe('Database Service Integration', () => {
       const postStartCommands = postgres!.postStartCommands!
       expect(postStartCommands.length).toBeGreaterThan(0)
 
-      // Check for database creation command
+      // Check for database creation command with template variable
       const createDbCmd = postStartCommands.find(cmd => cmd[0] === 'createdb')
       expect(createDbCmd).toBeDefined()
-      expect(createDbCmd).toContain('launchpad_dev')
+      expect(createDbCmd).toContain('{projectDatabase}')
 
-      // Check for user creation command
+      // Check for user creation command with template variables
       const createUserCmd = postStartCommands.find(cmd =>
-        cmd[0] === 'psql' && cmd.join(' ').includes('CREATE USER IF NOT EXISTS laravel'),
+        cmd[0] === 'psql' && cmd.join(' ').includes('CREATE USER IF NOT EXISTS'),
       )
       expect(createUserCmd).toBeDefined()
-      expect(createUserCmd!.join(' ')).toContain('launchpad123')
+      expect(createUserCmd!.join(' ')).toContain('{dbUsername}')
+      expect(createUserCmd!.join(' ')).toContain('{dbPassword}')
 
-      // Check for database ownership command
-      const ownershipCmd = postStartCommands.find(cmd =>
-        cmd[0] === 'psql' && cmd.join(' ').includes('ALTER DATABASE launchpad_dev OWNER TO laravel'),
+      // Check for grants command with template variables
+      const grantsCmd = postStartCommands.find(cmd =>
+        cmd[0] === 'psql' && cmd.join(' ').includes('GRANT ALL PRIVILEGES'),
       )
-      expect(ownershipCmd).toBeDefined()
+      expect(grantsCmd).toBeDefined()
+      expect(grantsCmd!.join(' ')).toContain('{projectDatabase}')
+      expect(grantsCmd!.join(' ')).toContain('{dbUsername}')
     })
 
     it('should have proper PostgreSQL environment variables', () => {
@@ -159,26 +162,27 @@ describe('Database Service Integration', () => {
       const postStartCommands = mysql!.postStartCommands!
       expect(postStartCommands.length).toBeGreaterThan(0)
 
-      // Check for database creation command
+      // Check for database creation command with template variable
       const createDbCmd = postStartCommands.find(cmd =>
-        cmd[0] === 'mysql' && cmd.join(' ').includes('CREATE DATABASE IF NOT EXISTS launchpad_dev'),
+        cmd[0] === 'mysql' && cmd.join(' ').includes('CREATE DATABASE IF NOT EXISTS {projectDatabase}'),
       )
       expect(createDbCmd).toBeDefined()
 
-      // Check for user creation command
+      // Check for user creation command with template variables
       const createUserCmd = postStartCommands.find(cmd =>
         cmd[0] === 'mysql' && cmd.join(' ').includes('CREATE USER IF NOT EXISTS'),
       )
       expect(createUserCmd).toBeDefined()
-      expect(createUserCmd!.join(' ')).toContain('laravel')
-      expect(createUserCmd!.join(' ')).toContain('launchpad123')
+      expect(createUserCmd!.join(' ')).toContain('{dbUsername}')
+      expect(createUserCmd!.join(' ')).toContain('{dbPassword}')
 
-      // Check for privileges grant command
+      // Check for privileges grant command with template variable
       const grantCmd = postStartCommands.find(cmd =>
         cmd[0] === 'mysql' && cmd.join(' ').includes('GRANT ALL PRIVILEGES'),
       )
       expect(grantCmd).toBeDefined()
-      expect(grantCmd!.join(' ')).toContain('launchpad_dev.*')
+      expect(grantCmd!.join(' ')).toContain('{projectDatabase}')
+      expect(grantCmd!.join(' ')).toContain('{dbUsername}')
     })
 
     it('should have proper MySQL environment variables', () => {
@@ -398,18 +402,18 @@ describe('Database Service Integration', () => {
       const postgres = getServiceDefinition('postgres')
       const mysql = getServiceDefinition('mysql')
 
-      // Check PostgreSQL commands
+      // Check PostgreSQL commands use template variables consistently
       const pgCommands = postgres!.postStartCommands!
       const pgCreateDbCmd = pgCommands.find(cmd => cmd[0] === 'createdb')
       const pgUserCmd = pgCommands.find(cmd =>
         cmd[0] === 'psql' && cmd.join(' ').includes('CREATE USER'),
       )
 
-      expect(pgCreateDbCmd).toContain('launchpad_dev')
-      expect(pgUserCmd!.join(' ')).toContain('laravel')
-      expect(pgUserCmd!.join(' ')).toContain('launchpad123')
+      expect(pgCreateDbCmd).toContain('{projectDatabase}')
+      expect(pgUserCmd!.join(' ')).toContain('{dbUsername}')
+      expect(pgUserCmd!.join(' ')).toContain('{dbPassword}')
 
-      // Check MySQL commands
+      // Check MySQL commands use template variables consistently
       const mysqlCommands = mysql!.postStartCommands!
       const mysqlCreateDbCmd = mysqlCommands.find(cmd =>
         cmd.join(' ').includes('CREATE DATABASE'),
@@ -418,9 +422,9 @@ describe('Database Service Integration', () => {
         cmd.join(' ').includes('CREATE USER'),
       )
 
-      expect(mysqlCreateDbCmd!.join(' ')).toContain('launchpad_dev')
-      expect(mysqlUserCmd!.join(' ')).toContain('laravel')
-      expect(mysqlUserCmd!.join(' ')).toContain('launchpad123')
+      expect(mysqlCreateDbCmd!.join(' ')).toContain('{projectDatabase}')
+      expect(mysqlUserCmd!.join(' ')).toContain('{dbUsername}')
+      expect(mysqlUserCmd!.join(' ')).toContain('{dbPassword}')
     })
   })
 

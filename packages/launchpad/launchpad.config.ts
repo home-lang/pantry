@@ -66,6 +66,23 @@ export const defaultConfig: LaunchpadConfig = {
     autoRestart: true,
     startupTimeout: 30,
     shutdownTimeout: 10,
+    database: {
+      username: 'root',
+      password: 'password',
+      authMethod: 'trust',
+    },
+    frameworks: {
+      enabled: true,
+      preferredDatabase: 'postgres',
+      laravel: {
+        enabled: true,
+        autoDetect: true,
+      },
+      stacks: {
+        enabled: true,
+        autoDetect: true,
+      },
+    },
   },
 }
 

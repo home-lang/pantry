@@ -74,6 +74,40 @@ export interface ServiceConfig {
   startupTimeout: number
   /** Service shutdown timeout in seconds _(default: 10)_ */
   shutdownTimeout: number
+  /** Database configuration */
+  database: DatabaseConfig
+  /** Framework configuration */
+  frameworks: FrameworksConfig
+}
+
+export interface FrameworksConfig {
+  /** Enable automatic framework detection and setup _(default: true)_ */
+  enabled: boolean
+  /** Preferred database for new projects _(default: 'postgres')_ */
+  preferredDatabase: 'postgres' | 'sqlite'
+  /** Laravel-specific configuration */
+  laravel: {
+    /** Enable Laravel support _(default: true)_ */
+    enabled: boolean
+    /** Automatically detect Laravel projects _(default: true)_ */
+    autoDetect: boolean
+  }
+  /** Stacks.js-specific configuration */
+  stacks: {
+    /** Enable Stacks.js support _(default: true)_ */
+    enabled: boolean
+    /** Automatically detect Stacks.js projects _(default: true)_ */
+    autoDetect: boolean
+  }
+}
+
+export interface DatabaseConfig {
+  /** Default database username _(default: 'root')_ */
+  username: string
+  /** Default database password _(default: 'password')_ */
+  password: string
+  /** Database authentication method for local connections _(default: 'trust')_ */
+  authMethod: 'trust' | 'md5' | 'scram-sha-256'
 }
 
 export interface ServiceDefinition {
@@ -115,6 +149,14 @@ export interface ServiceDefinition {
   supportsGracefulShutdown: boolean
   /** Service-specific configuration with default values */
   config?: Record<string, unknown>
+  /** Extensions configuration (for services like PHP) */
+  extensions?: {
+    pecl?: {
+      required?: string[]
+      optional?: string[]
+      buildDependencies?: Record<string, string[]>
+    }
+  }
   /** Custom service configuration */
   custom?: Record<string, unknown>
 }

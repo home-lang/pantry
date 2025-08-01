@@ -43,6 +43,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🚀 **One-Command Service Control** — Start, stop, restart services with automatic configuration
 - 🏥 **Health Monitoring** — Built-in health checks with automatic status detection
 - 🔧 **Auto-Configuration** — Default configuration files generated for each service
+- 🔐 **Configurable Database Credentials** — Customize database usernames, passwords, and authentication methods
 - 🖥️ **Cross-Platform Service Management** — Uses launchd on macOS, systemd on Linux
 
 ### Project-Aware Environment Management
@@ -259,6 +260,31 @@ launchpad service enable postgres redis
 - **Development & CI/CD**: Jenkins, LocalStack, Verdaccio
 - **API & Backend**: Hasura, Keycloak
 - **Caching**: Memcached, Elasticsearch
+
+#### Database Configuration
+
+Customize database credentials for all database services:
+
+```bash
+# Configure database credentials globally
+export LAUNCHPAD_DB_USERNAME="myuser"
+export LAUNCHPAD_DB_PASSWORD="mypassword"
+export LAUNCHPAD_DB_AUTH_METHOD="md5"  # PostgreSQL: trust|md5|scram-sha-256
+
+# Start databases with custom credentials
+launchpad service start postgres mysql
+# Creates project-specific databases with your configured credentials
+```
+
+**Default Credentials** (secure for development):
+- Username: `root`
+- Password: `password`
+- Auth Method: `trust` (PostgreSQL)
+
+**Configuration Options:**
+- Environment variables: `LAUNCHPAD_DB_USERNAME`, `LAUNCHPAD_DB_PASSWORD`, `LAUNCHPAD_DB_AUTH_METHOD`
+- Config file: `launchpad.config.ts` → `services.database`
+- Per-project databases automatically created with your credentials
 
 ### Advanced Operations
 

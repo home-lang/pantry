@@ -90,7 +90,9 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
     // Create a temporary dependency file content using conflict-resolved packages
     const depsYaml = conflictResolvedPackages.reduce((acc, pkg) => {
       const { name, version } = parsePackageSpec(pkg)
-      acc[name] = version || '*'
+      // Use the resolved domain name, not the original alias
+      const domain = resolvePackageName(name)
+      acc[domain] = version || '*'
       return acc
     }, {} as Record<string, string>)
 
@@ -105,6 +107,11 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
     // Create YAML content
     const yamlContent = `dependencies:\n${Object.entries(depsYaml).map(([name, version]) => `  ${name}: ${version}`).join('\n')}\n`
 
+    if (config.verbose) {
+      console.warn(`📝 Generated dependency file for ts-pkgx:`)
+      console.warn(yamlContent)
+    }
+
     await fs.promises.writeFile(tempFile, yamlContent)
 
     try {
@@ -116,6 +123,7 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
 
       if (config.verbose) {
         console.warn(`🔍 ts-pkgx resolved ${result.totalCount} total packages from ${packages.length} input packages`)
+        console.warn(`📦 Resolved packages: ${result.packages.map(pkg => `${pkg.name}@${pkg.version || 'latest'}`).join(', ')}`)
       }
 
       // Convert resolved packages back to package specs
@@ -136,10 +144,11 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
   }
   catch (error) {
     // Fallback to simple deduplication if ts-pkgx fails
-    if (config.verbose) {
-      console.warn(`Failed to use ts-pkgx for dependency resolution: ${error instanceof Error ? error.message : String(error)}`)
-      console.warn('Falling back to simple deduplication...')
+    console.error(`❌ ts-pkgx dependency resolution failed: ${error instanceof Error ? error.message : String(error)}`)
+    if (error instanceof Error && error.stack) {
+      console.error('Stack trace:', error.stack)
     }
+    console.warn('Falling back to simple deduplication...')
     return deduplicatePackagesByVersion(conflictResolvedPackages)
   }
 }

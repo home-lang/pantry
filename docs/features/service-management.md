@@ -249,6 +249,138 @@ nano ~/.local/share/launchpad/services/config/nginx.conf
 launchpad service restart redis
 ```
 
+## Database Configuration
+
+Launchpad provides configurable database credentials for all database services. These settings allow you to customize database authentication while maintaining secure defaults.
+
+### Default Database Credentials
+
+By default, all database services use these standardized credentials:
+
+| Setting | Default Value | Description |
+|---------|---------------|-------------|
+| Username | `root` | Default database user |
+| Password | `password` | Default database password |
+| Auth Method | `trust` | PostgreSQL authentication method |
+
+### Configuring Database Credentials
+
+#### Environment Variables
+
+Set database credentials globally using environment variables:
+
+```bash
+# Database username (default: 'root')
+export LAUNCHPAD_DB_USERNAME="myuser"
+
+# Database password (default: 'password')
+export LAUNCHPAD_DB_PASSWORD="mypassword"
+
+# Database authentication method (default: 'trust')
+export LAUNCHPAD_DB_AUTH_METHOD="md5"  # PostgreSQL only
+```
+
+#### Configuration File
+
+Configure credentials in your `launchpad.config.ts`:
+
+```typescript
+// launchpad.config.ts
+const config: LaunchpadConfig = {
+  services: {
+    database: {
+      username: 'myuser',
+      password: 'mypassword',
+      authMethod: 'md5'  // 'trust' | 'md5' | 'scram-sha-256'
+    }
+  }
+}
+```
+
+### Database-Specific Configuration
+
+#### PostgreSQL
+
+PostgreSQL services support all configuration options:
+
+```bash
+# Start PostgreSQL with custom credentials
+export LAUNCHPAD_DB_USERNAME="postgres_user"
+export LAUNCHPAD_DB_PASSWORD="secure_password"
+export LAUNCHPAD_DB_AUTH_METHOD="md5"
+launchpad service start postgres
+```
+
+**Authentication Methods:**
+- `trust` - No password required (development)
+- `md5` - MD5-hashed password authentication
+- `scram-sha-256` - Modern SCRAM authentication (recommended for production)
+
+#### MySQL
+
+MySQL services use username and password configuration:
+
+```bash
+# Start MySQL with custom credentials
+export LAUNCHPAD_DB_USERNAME="mysql_user"
+export LAUNCHPAD_DB_PASSWORD="mysql_password"
+launchpad service start mysql
+```
+
+#### Database Creation
+
+Each service automatically creates a project-specific database:
+
+```bash
+# For project "my-app", databases are created as:
+# PostgreSQL: my_app
+# MySQL: my_app
+# With the configured username having full access
+```
+
+### Security Considerations
+
+#### Development Setup
+- Default `trust` authentication is suitable for local development
+- Credentials are simple and predictable for quick setup
+
+#### Production-like Setup
+- Use `md5` or `scram-sha-256` for PostgreSQL authentication
+- Set strong, unique passwords
+- Consider per-project credentials
+
+#### Best Practices
+- Store sensitive credentials in `.env` files (never commit)
+- Use environment variables for production deployments
+- Avoid hardcoding passwords in configuration files
+- Regularly rotate database passwords in production
+
+### Examples
+
+#### Default Development Setup
+```bash
+# Uses: username=root, password=password, authMethod=trust
+launchpad service start postgres
+# Database URL: postgresql://root:password@localhost:5432/my_project
+```
+
+#### Custom Development Setup
+```bash
+export LAUNCHPAD_DB_USERNAME="dev_user"
+export LAUNCHPAD_DB_PASSWORD="dev_password"
+launchpad service start postgres mysql
+# PostgreSQL: postgresql://dev_user:dev_password@localhost:5432/my_project
+# MySQL: mysql://dev_user:dev_password@localhost:3306/my_project
+```
+
+#### Production-like Setup
+```bash
+export LAUNCHPAD_DB_USERNAME="app_user"
+export LAUNCHPAD_DB_PASSWORD="$(openssl rand -base64 32)"
+export LAUNCHPAD_DB_AUTH_METHOD="scram-sha-256"
+launchpad service start postgres
+```
+
 ## Health Monitoring
 
 ### Automatic Health Checks

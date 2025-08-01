@@ -21,7 +21,15 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     logFile: path.join(homedir(), '.local', 'share', 'launchpad', 'logs', 'postgres.log'),
     pidFile: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'postgres', 'postgres.pid'),
     port: 5432,
-    dependencies: [],
+    dependencies: [
+      'openssl.org^1.0.1',
+      'gnu.org/readline',
+      'zlib.net',
+      'lz4.org',
+      'gnome.org/libxml2~2.13',
+      'gnome.org/libxslt',
+      'unicode.org^73',
+    ],
     healthCheck: {
       command: ['pg_isready', '-p', '5432'],
       expectedExitCode: 0,
@@ -29,15 +37,14 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       interval: 30,
       retries: 3,
     },
-    initCommand: ['initdb', '-D', '{dataDir}', '--auth-local=trust', '--auth-host=md5', '--encoding=UTF8'],
+    initCommand: ['initdb', '-D', '{dataDir}', '--auth-local={authMethod}', '--auth-host={authMethod}', '--encoding=UTF8'],
     postStartCommands: [
-      // Create application database and user for Launchpad projects
-      ['createdb', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', 'launchpad_dev'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-d', 'postgres', '-c', 'CREATE USER IF NOT EXISTS laravel WITH PASSWORD \'launchpad123\';'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-d', 'postgres', '-c', 'ALTER DATABASE launchpad_dev OWNER TO laravel;'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-d', 'postgres', '-c', 'GRANT ALL PRIVILEGES ON DATABASE launchpad_dev TO laravel;'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO laravel;'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO laravel;'],
+      // Create application database and user for any project type
+      ['createdb', '-h', '127.0.0.1', '-p', '5432', '{projectDatabase}'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'CREATE USER IF NOT EXISTS {dbUsername} WITH PASSWORD \'{dbPassword}\';'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {dbUsername};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO {dbUsername};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO {dbUsername};'],
     ],
     supportsGracefulShutdown: true,
     config: {
@@ -52,9 +59,9 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       log_filename: 'postgresql-%Y-%m-%d_%H%M%S.log',
       log_statement: 'none',
       log_line_prefix: '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h ',
-      appDatabase: 'launchpad_dev',
-      appUser: 'laravel',
-      appPassword: 'launchpad123',
+      projectDatabase: '{projectName}', // Will be replaced with actual project name
+      appUser: '{dbUsername}', // Will be replaced with configured username
+      appPassword: '{dbPassword}', // Will be replaced with configured password
     },
   },
 
@@ -68,8 +75,24 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     env: {},
     dataDirectory: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php'),
     configFile: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php', 'php.ini'),
-    dependencies: [],
+    dependencies: [
+      'postgresql.org/libpq', // PostgreSQL client library for PHP extensions
+    ],
     supportsGracefulShutdown: false,
+    extensions: {
+      // Extensions that can be installed via PECL
+      pecl: {
+        required: ['pdo_pgsql', 'pgsql'], // These will be installed automatically when PostgreSQL is needed
+        optional: ['redis', 'memcached', 'imagick', 'xdebug'], // These can be installed on demand
+        buildDependencies: {
+          pdo_pgsql: ['postgresql.org/libpq'],
+          pgsql: ['postgresql.org/libpq'],
+          redis: [],
+          memcached: [],
+          imagick: [],
+        },
+      },
+    },
     config: {
       extensions: ['pdo', 'pdo_sqlite', 'pdo_mysql', 'pdo_pgsql', 'mysqli', 'pgsql', 'sqlite3'],
       memory_limit: '512M',
@@ -103,10 +126,10 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     },
     initCommand: ['mysqld', '--initialize-insecure', '--datadir={dataDir}', '--user=mysql'],
     postStartCommands: [
-      // Create application database and user for Launchpad projects
-      ['mysql', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS launchpad_dev;'],
-      ['mysql', '-u', 'root', '-e', 'CREATE USER IF NOT EXISTS \'laravel\'@\'localhost\' IDENTIFIED BY \'launchpad123\';'],
-      ['mysql', '-u', 'root', '-e', 'GRANT ALL PRIVILEGES ON launchpad_dev.* TO \'laravel\'@\'localhost\';'],
+      // Create application database and user for any project type
+      ['mysql', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS {projectDatabase};'],
+      ['mysql', '-u', 'root', '-e', 'CREATE USER IF NOT EXISTS \'{dbUsername}\'@\'localhost\' IDENTIFIED BY \'{dbPassword}\';'],
+      ['mysql', '-u', 'root', '-e', 'GRANT ALL PRIVILEGES ON {projectDatabase}.* TO \'{dbUsername}\'@\'localhost\';'],
       ['mysql', '-u', 'root', '-e', 'FLUSH PRIVILEGES;'],
     ],
     supportsGracefulShutdown: true,
@@ -118,9 +141,9 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       query_cache_size: '32M',
       tmp_table_size: '32M',
       max_heap_table_size: '32M',
-      appDatabase: 'launchpad_dev',
-      appUser: 'laravel',
-      appPassword: 'launchpad123',
+      projectDatabase: '{projectName}', // Will be replaced with actual project name
+      appUser: '{dbUsername}', // Will be replaced with configured username
+      appPassword: '{dbPassword}', // Will be replaced with configured password
     },
   },
 
@@ -1235,6 +1258,95 @@ middlewares:
 logs: { type: stdout, format: pretty, level: http }
 
 listen: 0.0.0.0:4873
+`
+
+    case 'php':
+      return `; PHP Configuration File (php.ini)
+; This file is automatically generated by Launchpad
+
+[PHP]
+; Engine Settings
+engine = On
+short_open_tag = Off
+precision = 14
+output_buffering = 4096
+zlib.output_compression = Off
+implicit_flush = Off
+unserialize_callback_func =
+serialize_precision = -1
+disable_functions =
+disable_classes =
+zend.enable_gc = On
+
+; Resource Limits
+max_execution_time = 300
+max_input_time = 60
+memory_limit = 512M
+
+; Error handling and logging
+error_reporting = E_ALL
+display_errors = On
+display_startup_errors = On
+log_errors = On
+log_errors_max_len = 1024
+ignore_repeated_errors = Off
+ignore_repeated_source = Off
+report_memleaks = On
+track_errors = On
+html_errors = On
+error_log = ${path.join(homedir(), '.local', 'share', 'launchpad', 'logs', 'php-error.log')}
+
+; File Uploads
+file_uploads = On
+upload_tmp_dir = ${path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php', 'tmp')}
+upload_max_filesize = 64M
+max_file_uploads = 20
+
+; Post Settings
+post_max_size = 64M
+
+; Extensions
+extension=pdo
+extension=pdo_sqlite
+extension=sqlite3
+extension=pdo_mysql
+extension=mysqli
+extension=pdo_pgsql
+extension=pgsql
+extension=openssl
+extension=json
+extension=mbstring
+extension=curl
+extension=zip
+extension=gd
+extension=intl
+extension=fileinfo
+extension=tokenizer
+extension=xml
+extension=xmlreader
+extension=xmlwriter
+extension=simplexml
+extension=dom
+
+; Sessions
+session.save_handler = files
+session.save_path = "${path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php', 'sessions')}"
+session.use_strict_mode = 0
+session.use_cookies = 1
+session.use_only_cookies = 1
+session.name = PHPSESSID
+session.auto_start = 0
+session.cookie_lifetime = 0
+session.cookie_path = /
+session.cookie_domain =
+session.cookie_httponly =
+session.serialize_handler = php
+session.gc_probability = 1
+session.gc_divisor = 1000
+session.gc_maxlifetime = 1440
+
+; Timezone
+date.timezone = UTC
 `
 
     default:

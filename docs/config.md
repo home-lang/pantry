@@ -91,6 +91,18 @@ const config: LaunchpadConfig = {
 
     // Service shutdown timeout in seconds (default: 10)
     shutdownTimeout: 10,
+
+    // Database configuration for services
+    database: {
+      // Default database username (default: 'root')
+      username: 'root',
+
+      // Default database password (default: 'password')
+      password: 'password',
+
+      // Database authentication method for local connections (default: 'trust')
+      authMethod: 'trust', // 'trust' | 'md5' | 'scram-sha-256'
+    },
   },
 }
 
@@ -124,10 +136,105 @@ JavaScript format (`.launchpadrc`):
     "configDir": "~/.local/share/launchpad/services/config",
     "autoRestart": true,
     "startupTimeout": 30,
-    "shutdownTimeout": 10
+    "shutdownTimeout": 10,
+    "database": {
+      "username": "root",
+      "password": "password",
+      "authMethod": "trust"
+    }
   }
 }
 ```
+
+## Database Configuration
+
+Launchpad provides configurable database credentials for all database services. This allows you to customize authentication while maintaining secure defaults.
+
+### Configuration Options
+
+Database credentials can be configured through environment variables or configuration files:
+
+#### Environment Variables
+
+```bash
+# Database username (default: 'root')
+export LAUNCHPAD_DB_USERNAME="myuser"
+
+# Database password (default: 'password')
+export LAUNCHPAD_DB_PASSWORD="mypassword"
+
+# Database authentication method (default: 'trust')
+export LAUNCHPAD_DB_AUTH_METHOD="md5"  # 'trust' | 'md5' | 'scram-sha-256'
+```
+
+#### Configuration File
+
+```ts
+// launchpad.config.ts
+const config: LaunchpadConfig = {
+  services: {
+    database: {
+      username: 'myuser',
+      password: 'mypassword',
+      authMethod: 'md5'  // 'trust' | 'md5' | 'scram-sha-256'
+    }
+  }
+}
+```
+
+### Supported Services
+
+These database configurations apply to:
+
+- **PostgreSQL** - Uses all three options (username, password, authMethod)
+- **MySQL** - Uses username and password
+- **Other databases** - Future database services will adopt these standards
+
+### Authentication Methods (PostgreSQL)
+
+| Method | Description | Use Case |
+|--------|-------------|----------|
+| `trust` | No password required for local connections | Development (default) |
+| `md5` | MD5-hashed password authentication | Basic production setup |
+| `scram-sha-256` | Modern SCRAM-SHA-256 authentication | Secure production environments |
+
+### Template Variables
+
+Services use these configurable template variables:
+
+- `{dbUsername}` - Resolves to configured username
+- `{dbPassword}` - Resolves to configured password
+- `{authMethod}` - Resolves to configured auth method
+- `{projectDatabase}` - Resolves to project name
+
+### Examples
+
+#### Development Setup (Default)
+```bash
+# Uses: username=root, password=password, authMethod=trust
+launchpad start postgres
+```
+
+#### Custom Development Setup
+```bash
+export LAUNCHPAD_DB_USERNAME="dev_user"
+export LAUNCHPAD_DB_PASSWORD="dev_password"
+launchpad start postgres
+```
+
+#### Production-like Setup
+```bash
+export LAUNCHPAD_DB_AUTH_METHOD="md5"
+export LAUNCHPAD_DB_PASSWORD="secure_password123"
+launchpad start postgres
+```
+
+### Security Considerations
+
+1. **Development**: Default `trust` auth is suitable for local development
+2. **Production**: Use `md5` or `scram-sha-256` with strong passwords
+3. **Environment Variables**: Store sensitive credentials in `.env` files
+4. **Version Control**: Never commit passwords in configuration files
 
 ## Dependency File Configuration
 
@@ -506,6 +613,9 @@ launchpad --verbose install --dry-run node
    ```bash
    export LAUNCHPAD_VERBOSE=true
    export LAUNCHPAD_INSTALL_PATH=/custom/path
+   export LAUNCHPAD_DB_USERNAME=myuser
+   export LAUNCHPAD_DB_PASSWORD=mypassword
+   export LAUNCHPAD_DB_AUTH_METHOD=md5
    ```
 
 3. Verify shell configuration:
