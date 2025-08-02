@@ -98,11 +98,11 @@ export class TestUtils {
     process.env.NODE_ENV = 'test'
   }
 
-    /**
+  /**
    * Clean up launchpad environment directories for test isolation
    * IMPORTANT: This only cleans project-specific environments, NOT global dependencies
    */
-static cleanupEnvironmentDirs(): void {
+  static cleanupEnvironmentDirs(): void {
     // Only clean project-specific environments, not global dependencies
     // This prevents tests from removing system-wide tools
     const envBaseDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')

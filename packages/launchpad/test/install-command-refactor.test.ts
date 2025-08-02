@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
-import { homedir } from 'node:os'
 import path from 'node:path'
 import { TestUtils } from './test.config'
 
@@ -63,7 +62,8 @@ describe('Install Command Refactor', () => {
       try {
         const stats = await fs.promises.stat(nonExistentPath)
         isDirectory = stats.isDirectory()
-      } catch {
+      }
+      catch {
         isDirectory = false
       }
 
@@ -132,7 +132,8 @@ dependencies:
       const foundFiles: string[] = []
 
       for (const location of globalDepLocations) {
-        if (!fs.existsSync(location)) continue
+        if (!fs.existsSync(location))
+          continue
 
         try {
           const files = await fs.promises.readdir(location, { withFileTypes: true })
@@ -142,7 +143,8 @@ dependencies:
               foundFiles.push(path.join(location, file.name))
             }
           }
-        } catch {
+        }
+        catch {
           continue
         }
       }
@@ -185,7 +187,8 @@ dependencies:
       let sniffResult
       try {
         sniffResult = await sniff({ string: tempProjectDir })
-      } catch {
+      }
+      catch {
         sniffResult = { pkgs: [], env: {} }
       }
 
@@ -346,11 +349,12 @@ dependencies:
         await dump(tempProjectDir, {
           dryrun: true,
           quiet: true,
-          skipGlobal: true
+          skipGlobal: true,
         })
         // If no error thrown, test passes
         expect(true).toBe(true)
-      } catch (error) {
+      }
+      catch (error) {
         // In test mode, some errors are expected due to missing dependencies
         expect(error instanceof Error).toBe(true)
       }
@@ -379,7 +383,8 @@ dependencies:
       let errorHandled = false
       try {
         await fs.promises.readdir(nonExistentDir)
-      } catch {
+      }
+      catch {
         errorHandled = true
       }
 

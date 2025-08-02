@@ -7,12 +7,28 @@ describe('Environment Activation Behavior', () => {
   let tempDir: string
   let testEnvDir: string
   let testGlobalEnvDir: string
+  let originalHome: string | undefined
 
   beforeEach(() => {
+    // Save original HOME and set up isolated test environment
+    originalHome = process.env.HOME
+
     // Create temporary directories for testing
     tempDir = fs.mkdtempSync(path.join(import.meta.dir, 'test-activation-'))
     testEnvDir = path.join(tempDir, 'local-env')
     testGlobalEnvDir = path.join(tempDir, 'global-env')
+
+    // CRITICAL: Set HOME to temp directory to isolate launchpad paths
+    process.env.HOME = tempDir
+
+    // Ensure test mode is active to prevent real operations
+    process.env.NODE_ENV = 'test'
+    process.env.LAUNCHPAD_TEST_MODE = 'true'
+
+    // Create isolated launchpad directory structure
+    const launchpadDir = path.join(tempDir, '.local', 'share', 'launchpad')
+    fs.mkdirSync(path.join(launchpadDir, 'envs'), { recursive: true })
+    fs.mkdirSync(path.join(launchpadDir, 'global', 'bin'), { recursive: true })
 
     // Create empty environment directories
     fs.mkdirSync(path.join(testEnvDir, 'bin'), { recursive: true })
@@ -20,6 +36,14 @@ describe('Environment Activation Behavior', () => {
   })
 
   afterEach(() => {
+    // Restore original HOME
+    if (originalHome !== undefined) {
+      process.env.HOME = originalHome
+    }
+    else {
+      delete process.env.HOME
+    }
+
     // Clean up
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })

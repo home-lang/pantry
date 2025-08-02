@@ -24,8 +24,8 @@ export function parseEnvFile(envPath: string): Record<string, string> {
         if (key && valueParts.length > 0) {
           let value = valueParts.join('=')
           // Remove quotes if present
-          if ((value.startsWith('"') && value.endsWith('"')) ||
-              (value.startsWith("'") && value.endsWith("'"))) {
+          if ((value.startsWith('"') && value.endsWith('"'))
+            || (value.startsWith('\'') && value.endsWith('\''))) {
             value = value.slice(1, -1)
           }
           env[key] = value
@@ -34,7 +34,8 @@ export function parseEnvFile(envPath: string): Record<string, string> {
     }
 
     return env
-  } catch (error) {
+  }
+  catch (error) {
     console.warn(`Warning: Could not parse .env file at ${envPath}:`, error)
     return {}
   }
@@ -57,8 +58,8 @@ export function getLaravelDatabaseConfig(projectDir: string = process.cwd()): {
   return {
     driver: env.DB_CONNECTION || 'sqlite',
     host: env.DB_HOST || 'localhost',
-    port: parseInt(env.DB_PORT || '5432', 10),
-    database: env.DB_DATABASE || path.basename(projectDir).replace(/[^a-zA-Z0-9_]/g, '_'),
+    port: Number.parseInt(env.DB_PORT || '5432', 10),
+    database: env.DB_DATABASE || path.basename(projectDir).replace(/\W/g, '_'),
     username: env.DB_USERNAME || 'root',
     password: env.DB_PASSWORD || 'password',
   }

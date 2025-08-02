@@ -836,7 +836,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     }
 
     pkgs.push(...yaml.deps)
-    
+
     // Collect services configuration (last one wins)
     if (yaml.services) {
       services = yaml.services
@@ -892,16 +892,16 @@ function extract_well_formatted_entries(
   const topLevelGlobal = yaml.global === true || yaml.global === 'true'
   const deps = parse_deps(yaml.dependencies, topLevelGlobal)
   const env = isPlainObject(yaml.env) ? yaml.env : {}
-  
+
   // Extract services configuration
   let services: { enabled?: boolean, autoStart?: string[] } | undefined
   if (isPlainObject(yaml.services)) {
     services = {
       enabled: yaml.services.enabled === true,
-      autoStart: Array.isArray(yaml.services.autoStart) ? yaml.services.autoStart : undefined
+      autoStart: Array.isArray(yaml.services.autoStart) ? yaml.services.autoStart : undefined,
     }
   }
-  
+
   return { deps, env, services }
 }
 

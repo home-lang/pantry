@@ -82,13 +82,14 @@ describe('PHP Install Integration', () => {
 
           // Verify extension categories exist
           expect(configModule.config.services.php.extensions.core).toEqual(
-            expect.arrayContaining(['cli', 'fpm', 'mbstring'])
+            expect.arrayContaining(['cli', 'fpm', 'mbstring']),
           )
           expect(configModule.config.services.php.extensions.database).toEqual(
-            expect.arrayContaining(['pdo-mysql', 'pdo-pgsql', 'pdo-sqlite'])
+            expect.arrayContaining(['pdo-mysql', 'pdo-pgsql', 'pdo-sqlite']),
           )
         }
-      } catch (error) {
+      }
+      catch (error) {
         // Test passes if modules are not available in test environment
         expect(error).toBeDefined()
       }

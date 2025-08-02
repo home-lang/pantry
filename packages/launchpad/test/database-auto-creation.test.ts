@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
-import path from 'node:path'
 import os from 'node:os'
+import path from 'node:path'
 
 // TDD Tests for Database Auto-Creation Functionality
 
@@ -36,7 +36,7 @@ DB_PASSWORD=password
       fs.writeFileSync('artisan', '#!/usr/bin/env php\n<?php\n// Laravel Artisan')
       fs.writeFileSync('composer.json', JSON.stringify({
         name: 'vendor/my-laravel-app',
-        type: 'project'
+        type: 'project',
       }))
 
       // Act: Import database detection functions
@@ -85,7 +85,7 @@ DB_PORT=5432
       fs.writeFileSync('artisan', '#!/usr/bin/env php\n<?php\n// Laravel Artisan')
       fs.writeFileSync('composer.json', JSON.stringify({
         name: 'vendor/fallback-project',
-        type: 'project'
+        type: 'project',
       }))
 
       // Act
@@ -168,7 +168,7 @@ DB_DATABASE=/path/to/custom/database.sqlite
       fs.writeFileSync('artisan', '#!/usr/bin/env php\n<?php\n// Laravel Artisan')
       fs.writeFileSync('composer.json', JSON.stringify({
         name: 'vendor/sqlite-app',
-        type: 'project'
+        type: 'project',
       }))
 
       // Act
@@ -237,7 +237,7 @@ DB_DATABASE=custom_framework_db
       // No artisan file (not Laravel)
       fs.writeFileSync('package.json', JSON.stringify({
         name: 'my-custom-framework',
-        version: '1.0.0'
+        version: '1.0.0',
       }))
 
       // Act
@@ -255,7 +255,7 @@ DB_DATABASE=custom_framework_db
       // Arrange: Create project without .env
       fs.writeFileSync('package.json', JSON.stringify({
         name: 'no-env-project',
-        version: '1.0.0'
+        version: '1.0.0',
       }))
 
       // Act
@@ -299,7 +299,7 @@ DB_DATABASE=integration_test_db
           postStartCommands: [
             ['createdb', '-h', '127.0.0.1', '-p', '5432', '{projectDatabase}'],
             ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'CREATE USER IF NOT EXISTS {dbUsername} WITH PASSWORD \'{dbPassword}\';'],
-          ]
+          ],
         },
         config: {},
         status: 'stopped' as const,

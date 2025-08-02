@@ -67,11 +67,11 @@ services:
       // Create Laravel project files
       fs.writeFileSync(path.join(tempProjectDir, 'artisan'), '#!/usr/bin/env php\n<?php echo "Laravel Artisan";', { mode: 0o755 })
       fs.writeFileSync(path.join(tempProjectDir, 'composer.json'), JSON.stringify({
-        "name": "test/laravel-app",
-        "require": {
-          "php": "^8.4",
-          "laravel/framework": "^11.0"
-        }
+        name: 'test/laravel-app',
+        require: {
+          'php': '^8.4',
+          'laravel/framework': '^11.0',
+        },
       }, null, 2))
 
       fs.writeFileSync(path.join(tempProjectDir, '.env'), `
@@ -105,7 +105,7 @@ REDIS_PORT=6379
       expect(projectEnvDir).toBeDefined()
     }, 120000) // 2 minutes timeout for full installation
 
-                it('should build PHP from source when needed', async () => {
+    it('should build PHP from source when needed', async () => {
       const depsYaml = `
 dependencies:
   php: ^8.4.0
@@ -126,21 +126,24 @@ dependencies:
             const result = await installModule.buildPhpFromSource(installPath, '8.4.0')
             expect(result).toBeDefined()
             expect(Array.isArray(result)).toBe(true)
-          } catch (error) {
+          }
+          catch (error) {
             // In test mode, source building may fail but should be handled gracefully
             expect(error instanceof Error).toBe(true)
           }
-        } else {
+        }
+        else {
           // Function not exported yet, test passes by checking it exists in structure
           expect(typeof installModule).toBe('object')
         }
-      } catch (importError) {
+      }
+      catch (importError) {
         // If import fails, that's a test failure we need to address
         expect(importError).toBeUndefined()
       }
     }, 60000) // Reduced timeout for test mode
 
-        it('should test PHP binary functionality', async () => {
+    it('should test PHP binary functionality', async () => {
       try {
         // Import the PHP testing function
         const installModule = await import('../src/install')
@@ -153,17 +156,19 @@ dependencies:
 
           // Test the function structure
           expect(typeof installModule.testPhpBinary).toBe('function')
-        } else {
+        }
+        else {
           // Function not exported yet, test the module structure
           expect(typeof installModule).toBe('object')
         }
-      } catch (error) {
+      }
+      catch (error) {
         // If import fails, check if it's a known issue
         expect(error instanceof Error).toBe(true)
       }
     })
 
-                it('should build PHP with comprehensive Homebrew-style configuration', async () => {
+    it('should build PHP with comprehensive Homebrew-style configuration', async () => {
       // Test that PHP source building includes all necessary features
       const envDir = path.join(testHome, '.local', 'share', 'launchpad', 'envs', 'test-env')
       const packageDir = path.join(envDir, 'php.net', 'v8.4.0')
@@ -172,8 +177,15 @@ dependencies:
 
       // Test configuration includes essential PHP features
       const expectedFeatures = [
-        'mbstring', 'bcmath', 'opcache', 'intl', 'gd',
-        'mysqli', 'pdo-mysql', 'pdo-pgsql', 'sqlite3'
+        'mbstring',
+        'bcmath',
+        'opcache',
+        'intl',
+        'gd',
+        'mysqli',
+        'pdo-mysql',
+        'pdo-pgsql',
+        'sqlite3',
       ]
 
       // Since we can't actually build in tests, verify the configuration would include these
@@ -187,11 +199,11 @@ dependencies:
   })
 
   describe('Laravel Project Detection and Setup', () => {
-        it('should detect Laravel project from multiple indicators', async () => {
+    it('should detect Laravel project from multiple indicators', async () => {
       // Create Laravel project structure
       fs.writeFileSync(path.join(tempProjectDir, 'artisan'), '#!/usr/bin/env php\n<?php', { mode: 0o755 })
       fs.writeFileSync(path.join(tempProjectDir, 'composer.json'), JSON.stringify({
-        "require": { "laravel/framework": "^11.0" }
+        require: { 'laravel/framework': '^11.0' },
       }))
 
       try {
@@ -203,12 +215,14 @@ dependencies:
           expect(result.isLaravel).toBe(true)
           expect(result.suggestions.length).toBeGreaterThan(0)
           expect(result.suggestions.some(s => s.includes('migrate'))).toBe(true)
-        } else {
+        }
+        else {
           // Function not exported, test basic Laravel file detection
           expect(fs.existsSync(path.join(tempProjectDir, 'artisan'))).toBe(true)
           expect(fs.existsSync(path.join(tempProjectDir, 'composer.json'))).toBe(true)
         }
-      } catch (error) {
+      }
+      catch (error) {
         // If import fails, test the Laravel project structure we created
         expect(fs.existsSync(path.join(tempProjectDir, 'artisan'))).toBe(true)
         expect(fs.existsSync(path.join(tempProjectDir, 'composer.json'))).toBe(true)
@@ -254,7 +268,8 @@ dependencies:
         if (process.env.LAUNCHPAD_TEST_MODE === 'true') {
           expect(logOutput).toContain('PostgreSQL') || expect(logOutput).toContain('Redis')
         }
-      } finally {
+      }
+      finally {
         console.log = originalLog
       }
     }, 90000)
@@ -268,7 +283,7 @@ dependencies:
         host: '127.0.0.1',
         port: 5432,
         username: 'postgres',
-        password: ''
+        password: '',
       }
 
       // In test mode, this should not fail even if PostgreSQL isn't running
@@ -276,7 +291,8 @@ dependencies:
         await createProjectDatabase('test_laravel_app', dbConfig)
         // If we get here without throwing, the function structure is correct
         expect(true).toBe(true)
-      } catch (error) {
+      }
+      catch (error) {
         // In test environment, connection failures are expected
         expect(error instanceof Error).toBe(true)
       }
@@ -336,7 +352,8 @@ dependencies:
 
         const logOutput = logs.join(' ')
         expect(logOutput).toContain('No dependency file found')
-      } finally {
+      }
+      finally {
         console.log = originalLog
       }
     })
@@ -351,7 +368,8 @@ dependencies:
       try {
         await dump(tempProjectDir, { quiet: true, dryrun: false, shell: false })
         expect(true).toBe(true) // Completed without throwing
-      } catch (error) {
+      }
+      catch (error) {
         // If it throws, it should be a handled error
         expect(error instanceof Error).toBe(true)
       }
@@ -394,17 +412,17 @@ services:
       fs.writeFileSync(path.join(tempProjectDir, 'artisan'), '#!/usr/bin/env php\n<?php echo "Laravel Artisan";', { mode: 0o755 })
 
       const composerJson = {
-        "name": "test/laravel-app",
-        "type": "project",
-        "require": {
-          "php": "^8.4",
-          "laravel/framework": "^11.0"
+        name: 'test/laravel-app',
+        type: 'project',
+        require: {
+          'php': '^8.4',
+          'laravel/framework': '^11.0',
         },
-        "autoload": {
-          "psr-4": {
-            "App\\": "app/"
-          }
-        }
+        autoload: {
+          'psr-4': {
+            'App\\': 'app/',
+          },
+        },
       }
       fs.writeFileSync(path.join(tempProjectDir, 'composer.json'), JSON.stringify(composerJson, null, 2))
 
@@ -461,8 +479,8 @@ SESSION_DRIVER=redis
 
         // Verify dependencies were processed
         expect(logOutput).toContain('Installing') || expect(logOutput).toContain('php')
-
-      } finally {
+      }
+      finally {
         console.log = originalLog
         console.warn = originalWarn
       }

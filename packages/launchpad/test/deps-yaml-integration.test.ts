@@ -81,7 +81,7 @@ services:
       'deps.yaml',
       'deps.yml',
       'dependencies.yaml',
-      'dependencies.yml'
+      'dependencies.yml',
     ]
 
     for (const filename of variations) {

@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { Buffer } from 'node:buffer'
-import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
@@ -2186,6 +2185,30 @@ export async function downloadPackage(
     // This handles cases where a package built for openssl.org/v1 needs to work with openssl.org/v3
     await createVersionCompatibilitySymlinks(installPath, domain, version)
 
+    // Validate package completeness and trigger source build if incomplete
+    const isValidPackage = await validatePackageInstallation(packageDir, domain)
+    if (!isValidPackage) {
+      logUniqueMessage(`⚠️  Package ${domain} appears incomplete (missing lib directory), attempting source build...`)
+
+      // Try source build for known problematic packages
+      const sourceBuilt = await attemptSourceBuild(domain, installPath, version)
+      if (sourceBuilt) {
+        logUniqueMessage(`✅ Successfully built ${domain} from source`)
+        // Remove incomplete installation and use source-built version
+        await fs.promises.rm(packageDir, { recursive: true, force: true })
+        // Source build creates its own package directory, so update our reference
+        const newPackageDir = path.join(installPath, domain, `v${version}`)
+        // Update packageDir for subsequent operations
+        if (fs.existsSync(newPackageDir)) {
+        // The validation and shim creation will work on the new directory
+        }
+      }
+      else {
+        logUniqueMessage(`⚠️  ${domain} may be incomplete, but no source build available`)
+      // Keep the incomplete package - it might still have useful binaries
+      }
+    }
+
     // Find binaries and create shims
     const installedBinaries = await createShims(packageDir, installPath, domain, version)
 
@@ -2920,6 +2943,22 @@ async function installPackage(packageName: string, packageSpec: string, installP
       console.warn(`Building zlib from source to fix broken dependencies for ${name}`)
     }
     return await buildZlibFromSource(installPath, requestedVersion)
+  }
+
+  // Special handling for libpng - build from source to fix broken ts-pkgx package
+  if (name === 'libpng' || domain === 'libpng.org') {
+    if (config.verbose) {
+      console.warn(`Building libpng from source to fix broken package for ${name}`)
+    }
+    return await buildLibpngFromSource(installPath, requestedVersion)
+  }
+
+  // Special handling for GMP - build from source to fix broken ts-pkgx package
+  if (name === 'gmp' || domain === 'gnu.org/gmp') {
+    if (config.verbose) {
+      console.warn(`Building GMP from source to fix broken package for ${name}`)
+    }
+    return await buildGmpFromSource(installPath, requestedVersion)
   }
 
   if (config.verbose) {
@@ -4236,11 +4275,43 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
     return installedFiles
   }
   catch (error) {
-    if (config.verbose) {
-      console.warn(`PHP source build failed: ${error}`)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    // Provide helpful suggestions for common build failures
+    if (errorMessage.includes('pkg-config script could not be found')) {
+      logUniqueMessage(`❌ PHP ${version} build failed: Missing pkg-config`)
+      logUniqueMessage(`💡 Solution: Install build dependencies with Launchpad:`)
+      logUniqueMessage(`   launchpad install freedesktop.org/pkg-config`)
+      logUniqueMessage(`   launchpad install gnu.org/autoconf`)
+      logUniqueMessage(`   launchpad install gnu.org/automake`)
     }
-    logUniqueMessage(`❌ PHP ${version} source build failed: ${error instanceof Error ? error.message : String(error)}`)
-    throw new Error(`Failed to build PHP from source: ${error instanceof Error ? error.message : String(error)}`)
+    else if (errorMessage.includes('configure: error') && errorMessage.includes('Please reinstall')) {
+      logUniqueMessage(`❌ PHP ${version} build failed: Missing development libraries`)
+      logUniqueMessage(`💡 Solution: Install required libraries with Launchpad:`)
+      logUniqueMessage(`   launchpad install openssl.org`)
+      logUniqueMessage(`   launchpad install zlib.net`)
+      logUniqueMessage(`   launchpad install curl.se`)
+      logUniqueMessage(`   launchpad install sqlite.org`)
+    }
+    else if (errorMessage.includes('make') && errorMessage.includes('command not found')) {
+      logUniqueMessage(`❌ PHP ${version} build failed: Missing build tools`)
+      logUniqueMessage(`💡 Solution: Install development tools:`)
+      if (process.platform === 'darwin') {
+        logUniqueMessage(`   xcode-select --install`)
+      }
+      else {
+        logUniqueMessage(`   apt-get install build-essential (Ubuntu/Debian)`)
+        logUniqueMessage(`   yum groupinstall "Development Tools" (CentOS/RHEL)`)
+      }
+    }
+    else {
+      if (config.verbose) {
+        console.warn(`PHP source build failed: ${error}`)
+      }
+      logUniqueMessage(`❌ PHP ${version} source build failed: ${errorMessage}`)
+    }
+
+    throw new Error(`Failed to build PHP from source: ${errorMessage}`)
   }
 }
 
@@ -4333,10 +4404,399 @@ export async function buildZlibFromSource(installPath: string, requestedVersion?
     return installedFiles
   }
   catch (error) {
-    if (config.verbose) {
-      console.warn(`zlib source build failed: ${error}`)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    // Provide helpful suggestions for common build failures
+    if (errorMessage.includes('make') && errorMessage.includes('command not found')) {
+      logUniqueMessage(`❌ zlib ${version} build failed: Missing build tools`)
+      logUniqueMessage(`💡 Solution: Install development tools:`)
+      if (process.platform === 'darwin') {
+        logUniqueMessage(`   xcode-select --install`)
+      }
+      else {
+        logUniqueMessage(`   apt-get install build-essential (Ubuntu/Debian)`)
+        logUniqueMessage(`   yum groupinstall "Development Tools" (CentOS/RHEL)`)
+      }
     }
-    logUniqueMessage(`❌ zlib ${version} source build failed: ${error instanceof Error ? error.message : String(error)}`)
-    throw new Error(`Failed to build zlib from source: ${error instanceof Error ? error.message : String(error)}`)
+    else if (errorMessage.includes('configure') && errorMessage.includes('not found')) {
+      logUniqueMessage(`❌ zlib ${version} build failed: Missing configure script or tools`)
+      logUniqueMessage(`💡 Solution: Ensure you have development tools installed`)
+      if (process.platform === 'darwin') {
+        logUniqueMessage(`   xcode-select --install`)
+      }
+    }
+    else {
+      if (config.verbose) {
+        console.warn(`zlib source build failed: ${error}`)
+      }
+      logUniqueMessage(`❌ zlib ${version} source build failed: ${errorMessage}`)
+    }
+
+    throw new Error(`Failed to build zlib from source: ${errorMessage}`)
+  }
+}
+
+/**
+ * Build libpng from source to fix broken ts-pkgx dependencies
+ */
+export async function buildLibpngFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const version = requestedVersion?.replace(/^v/, '') || '1.6.50'
+  const domain = 'libpng.org'
+  const packageDir = path.join(installPath, domain, `v${version}`)
+
+  try {
+    logUniqueMessage(`🔄 Building libpng ${version} from source to fix broken dependencies...`)
+
+    // Create package directory
+    await fs.promises.mkdir(packageDir, { recursive: true })
+
+    // Download libpng source
+    const sourceUrl = `https://sourceforge.net/projects/libpng/files/libpng16/${version}/libpng-${version}.tar.gz/download`
+    const tempDir = path.join(installPath, '.tmp', `libpng-source-${version}`)
+    const tarFile = path.join(tempDir, `libpng-${version}.tar.gz`)
+
+    await fs.promises.mkdir(tempDir, { recursive: true })
+
+    logUniqueMessage(`📦 Downloading libpng ${version} source...`)
+    if (config.verbose) {
+      console.warn(`Downloading libpng source from: ${sourceUrl}`)
+    }
+
+    const response = await fetch(sourceUrl, {
+      redirect: 'follow', // Handle SourceForge redirects
+    })
+    if (!response.ok) {
+      throw new Error(`Failed to download libpng source: ${response.status}`)
+    }
+
+    const buffer = await response.arrayBuffer()
+    await fs.promises.writeFile(tarFile, Buffer.from(buffer))
+
+    // Extract source
+    logUniqueMessage(`📂 Extracting libpng ${version} source...`)
+    const { execSync } = await import('node:child_process')
+    execSync(`tar -xzf "${tarFile}" -C "${tempDir}"`, { stdio: 'pipe' })
+
+    const sourceDir = path.join(tempDir, `libpng-${version}`)
+    if (!fs.existsSync(sourceDir)) {
+      throw new Error('Failed to extract libpng source')
+    }
+
+    // Check for zlib dependency
+    const zlibPath = path.join(installPath, 'zlib.net')
+    let zlibConfigArgs = ''
+    if (fs.existsSync(zlibPath)) {
+      // Find the latest zlib version
+      const zlibVersions = fs.readdirSync(zlibPath, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+        .map(dirent => dirent.name)
+        .sort()
+        .reverse()
+
+      if (zlibVersions.length > 0) {
+        const zlibLibPath = path.join(zlibPath, zlibVersions[0])
+        zlibConfigArgs = `CPPFLAGS="-I${zlibLibPath}/include" LDFLAGS="-L${zlibLibPath}/lib"`
+      }
+    }
+
+    // Configure and build libpng
+    logUniqueMessage(`⚙️  Configuring libpng ${version} build...`)
+    const configureCmd = zlibConfigArgs
+      ? `cd "${sourceDir}" && ${zlibConfigArgs} ./configure --prefix="${packageDir}"`
+      : `cd "${sourceDir}" && ./configure --prefix="${packageDir}"`
+
+    execSync(configureCmd, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 300000, // 5 minutes
+    })
+
+    // Build libpng
+    logUniqueMessage(`🔨 Compiling libpng ${version}...`)
+    const { cpus } = await import('node:os')
+    const makeJobs = cpus().length
+    execSync(`cd "${sourceDir}" && make -j${makeJobs}`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 300000, // 5 minutes
+    })
+
+    // Install libpng
+    logUniqueMessage(`📦 Installing libpng ${version}...`)
+    execSync(`cd "${sourceDir}" && make install`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 120000, // 2 minutes
+    })
+
+    // Create version symlinks for compatibility
+    await createVersionSymlinks(installPath, domain, version)
+
+    // Create library symlinks
+    await createLibrarySymlinks(packageDir, domain)
+
+    // Cleanup temp directory
+    fs.rmSync(tempDir, { recursive: true, force: true })
+
+    // Return the files we created
+    const binDir = path.join(packageDir, 'bin')
+    const libDir = path.join(packageDir, 'lib')
+    const installedFiles: string[] = []
+
+    if (fs.existsSync(binDir)) {
+      const binFiles = fs.readdirSync(binDir)
+      installedFiles.push(...binFiles.map(f => path.join(binDir, f)))
+    }
+
+    if (fs.existsSync(libDir)) {
+      const libFiles = fs.readdirSync(libDir)
+      installedFiles.push(...libFiles.map(f => path.join(libDir, f)))
+    }
+
+    logUniqueMessage(`✅ libpng.org \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+    return installedFiles
+  }
+  catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    // Provide helpful suggestions for common build failures
+    if (errorMessage.includes('make') && errorMessage.includes('command not found')) {
+      logUniqueMessage(`❌ libpng ${version} build failed: Missing build tools`)
+      logUniqueMessage(`💡 Solution: Install development tools:`)
+      if (process.platform === 'darwin') {
+        logUniqueMessage(`   xcode-select --install`)
+      }
+      else {
+        logUniqueMessage(`   apt-get install build-essential (Ubuntu/Debian)`)
+        logUniqueMessage(`   yum groupinstall "Development Tools" (CentOS/RHEL)`)
+      }
+    }
+    else if (errorMessage.includes('zlib') && errorMessage.includes('not found')) {
+      logUniqueMessage(`❌ libpng ${version} build failed: Missing zlib dependency`)
+      logUniqueMessage(`💡 Solution: Install zlib first:`)
+      logUniqueMessage(`   launchpad install zlib.net`)
+    }
+    else {
+      if (config.verbose) {
+        console.warn(`libpng source build failed: ${error}`)
+      }
+      logUniqueMessage(`❌ libpng ${version} source build failed: ${errorMessage}`)
+    }
+
+    throw new Error(`Failed to build libpng from source: ${errorMessage}`)
+  }
+}
+
+/**
+ * Build GMP from source to fix broken ts-pkgx dependencies
+ */
+export async function buildGmpFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const version = requestedVersion?.replace(/^v/, '') || '6.3.0'
+  const domain = 'gnu.org/gmp'
+  const packageDir = path.join(installPath, domain, `v${version}`)
+
+  try {
+    logUniqueMessage(`🔄 Building GMP ${version} from source to fix broken dependencies...`)
+
+    // Create package directory
+    await fs.promises.mkdir(packageDir, { recursive: true })
+
+    // Download GMP source
+    const sourceUrl = `https://gmplib.org/download/gmp/gmp-${version}.tar.xz`
+    const tempDir = path.join(installPath, '.tmp', `gmp-source-${version}`)
+    const tarFile = path.join(tempDir, `gmp-${version}.tar.xz`)
+
+    await fs.promises.mkdir(tempDir, { recursive: true })
+
+    logUniqueMessage(`📦 Downloading GMP ${version} source...`)
+    if (config.verbose) {
+      console.warn(`Downloading GMP source from: ${sourceUrl}`)
+    }
+
+    const response = await fetch(sourceUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download GMP source: ${response.status}`)
+    }
+
+    const buffer = await response.arrayBuffer()
+    await fs.promises.writeFile(tarFile, Buffer.from(buffer))
+
+    // Extract source
+    logUniqueMessage(`📂 Extracting GMP ${version} source...`)
+    const { execSync } = await import('node:child_process')
+    execSync(`tar -xf "${tarFile}" -C "${tempDir}"`, { stdio: 'pipe' })
+
+    const sourceDir = path.join(tempDir, `gmp-${version}`)
+    if (!fs.existsSync(sourceDir)) {
+      throw new Error('Failed to extract GMP source')
+    }
+
+    // Configure and build GMP
+    logUniqueMessage(`⚙️  Configuring GMP ${version} build...`)
+    execSync(`cd "${sourceDir}" && ./configure --prefix="${packageDir}" --enable-shared --enable-static`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 300000, // 5 minutes
+    })
+
+    // Build GMP
+    logUniqueMessage(`🔨 Compiling GMP ${version}...`)
+    const { cpus } = await import('node:os')
+    const makeJobs = cpus().length
+    execSync(`cd "${sourceDir}" && make -j${makeJobs}`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 600000, // 10 minutes (GMP takes longer to build)
+    })
+
+    // Install GMP
+    logUniqueMessage(`📦 Installing GMP ${version}...`)
+    execSync(`cd "${sourceDir}" && make install`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 120000, // 2 minutes
+    })
+
+    // Create version symlinks for compatibility
+    await createVersionSymlinks(installPath, domain, version)
+
+    // Cleanup temp directory
+    fs.rmSync(tempDir, { recursive: true, force: true })
+
+    // Return the files we created
+    const binDir = path.join(packageDir, 'bin')
+    const libDir = path.join(packageDir, 'lib')
+    const installedFiles: string[] = []
+
+    if (fs.existsSync(binDir)) {
+      const binFiles = fs.readdirSync(binDir)
+      installedFiles.push(...binFiles.map(f => path.join(binDir, f)))
+    }
+
+    if (fs.existsSync(libDir)) {
+      const libFiles = fs.readdirSync(libDir)
+      installedFiles.push(...libFiles.map(f => path.join(libDir, f)))
+    }
+
+    logUniqueMessage(`✅ gnu.org/gmp \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+    return installedFiles
+  }
+  catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    // Provide helpful suggestions for common build failures
+    if (errorMessage.includes('make') && errorMessage.includes('command not found')) {
+      logUniqueMessage(`❌ GMP ${version} build failed: Missing build tools`)
+      logUniqueMessage(`💡 Solution: Install development tools:`)
+      if (process.platform === 'darwin') {
+        logUniqueMessage(`   xcode-select --install`)
+      }
+      else {
+        logUniqueMessage(`   apt-get install build-essential (Ubuntu/Debian)`)
+        logUniqueMessage(`   yum groupinstall "Development Tools" (CentOS/RHEL)`)
+      }
+    }
+    else if (errorMessage.includes('configure') && errorMessage.includes('not found')) {
+      logUniqueMessage(`❌ GMP ${version} build failed: Configure script failed`)
+      logUniqueMessage(`💡 Solution: Ensure you have development tools installed`)
+      if (process.platform === 'darwin') {
+        logUniqueMessage(`   xcode-select --install`)
+      }
+    }
+    else {
+      if (config.verbose) {
+        console.warn(`GMP source build failed: ${error}`)
+      }
+      logUniqueMessage(`❌ GMP ${version} source build failed: ${errorMessage}`)
+    }
+
+    throw new Error(`Failed to build GMP from source: ${errorMessage}`)
+  }
+}
+
+/**
+ * Validate if a package installation is complete
+ * A package is considered incomplete if it's a library package but only has bin/ and no lib/
+ */
+async function validatePackageInstallation(packageDir: string, domain: string): Promise<boolean> {
+  try {
+    const binDir = path.join(packageDir, 'bin')
+    const libDir = path.join(packageDir, 'lib')
+
+    const hasBin = fs.existsSync(binDir)
+    const hasLib = fs.existsSync(libDir)
+
+    // If no bin directory exists, the package might be broken entirely
+    if (!hasBin) {
+      return false
+    }
+
+    // For known library packages, they should have lib directories
+    const libraryPackages = [
+      'gnu.org/gmp',
+      'libpng.org',
+      'openssl.org',
+      'zlib.net',
+      'curl.se',
+      'gnu.org/readline',
+      'invisible-island.net/ncurses',
+      'sqlite.org',
+      'gnu.org/gettext',
+      'gnu.org/libiconv',
+      'libzip.org',
+      'sourceware.org/bzip2',
+      'facebook.com/zstd',
+      'lz4.org',
+      'tukaani.org/xz',
+      'libsodium.org',
+      'sourceware.org/libffi',
+      'gnome.org/libxml2',
+      'gnome.org/libxslt',
+      'libpng.org',
+      'google.com/webp',
+      'giflib.sourceforge.io',
+      'libjpeg-turbo.org',
+      'simplesystems.org/libtiff',
+      'gnu.org/mpfr',
+      'gnu.org/mpc',
+      'pcre.org',
+      'github.com/kkos/oniguruma',
+    ]
+
+    // If this is a known library package and it doesn't have lib/, it's incomplete
+    if (libraryPackages.includes(domain) && !hasLib) {
+      return false
+    }
+
+    // For other packages, if they have bin/ they're probably complete enough
+    return true
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Error validating package ${domain}:`, error)
+    }
+    return true // Assume valid if we can't check
+  }
+}
+
+/**
+ * Attempt to build a package from source if we have a source build function for it
+ */
+async function attemptSourceBuild(domain: string, installPath: string, version: string): Promise<boolean> {
+  try {
+    switch (domain) {
+      case 'libpng.org':
+        await buildLibpngFromSource(installPath, version)
+        return true
+      case 'gnu.org/gmp':
+        await buildGmpFromSource(installPath, version)
+        return true
+      case 'zlib.net':
+        await buildZlibFromSource(installPath, version)
+        return true
+      default:
+        // No source build available for this package
+        return false
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Source build failed for ${domain}:`, error)
+    }
+    return false
   }
 }

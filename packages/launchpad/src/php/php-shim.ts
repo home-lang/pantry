@@ -1,13 +1,14 @@
+/* eslint-disable no-console */
 /**
  * Intelligent PHP Shim System
  * Creates optimized PHP execution environment with library path management
  */
 
 import type { PHPConfig } from '../types'
-import { config } from '../config'
 import fs from 'node:fs'
-import path from 'node:path'
 import { homedir } from 'node:os'
+import path from 'node:path'
+import { config } from '../config'
 
 export interface PHPShimResult {
   success: boolean
@@ -63,10 +64,11 @@ export class PHPShimManager {
         recommendations: [
           `PHP shim created with optimized library paths`,
           `Use 'php' command normally - shim handles library dependencies`,
-          ...libraryConfig.recommendations
-        ]
+          ...libraryConfig.recommendations,
+        ],
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         shimPath: '',
@@ -74,7 +76,7 @@ export class PHPShimManager {
         environmentVariables: {},
         libraryPaths: [],
         issues: [`Failed to create PHP shim: ${error}`],
-        recommendations: ['Consider using system PHP directly or configuring library paths manually']
+        recommendations: ['Consider using system PHP directly or configuring library paths manually'],
       }
     }
   }
@@ -97,7 +99,8 @@ export class PHPShimManager {
     for (const libPath of this.phpConfig.libraryFixes.systemLibraryPaths) {
       if (fs.existsSync(libPath)) {
         libraryPaths.push(libPath)
-      } else {
+      }
+      else {
         issues.push(`System library path not found: ${libPath}`)
       }
     }
@@ -106,7 +109,7 @@ export class PHPShimManager {
     const envPath = path.join(homedir(), '.local', 'share', 'launchpad', 'envs')
     if (fs.existsSync(envPath)) {
       const envDirs = fs.readdirSync(envPath).filter(dir =>
-        dir.includes('otc-api') || dir.includes('launchpad') || dir.includes(path.basename(process.cwd()))
+        dir.includes('otc-api') || dir.includes('launchpad') || dir.includes(path.basename(process.cwd())),
       )
 
       for (const envDir of envDirs) {
@@ -137,7 +140,7 @@ export class PHPShimManager {
       libraryPaths,
       environmentVariables,
       issues,
-      recommendations
+      recommendations,
     }
   }
 
@@ -168,12 +171,14 @@ export class PHPShimManager {
                 libraryPaths.push(libPath)
               }
             }
-          } catch {
+          }
+          catch {
             // Ignore errors reading package directories
           }
         }
       }
-    } catch {
+    }
+    catch {
       // Ignore errors reading environment directory
     }
 
@@ -239,7 +244,7 @@ exec "${phpExecutablePath}" "$@"
       const databaseSupport = {
         sqlite: extensions.includes('pdo_sqlite') || extensions.includes('sqlite3'),
         mysql: extensions.includes('pdo_mysql') || extensions.includes('mysqli'),
-        postgresql: extensions.includes('pdo_pgsql') || extensions.includes('pgsql')
+        postgresql: extensions.includes('pdo_pgsql') || extensions.includes('pgsql'),
       }
 
       return {
@@ -247,15 +252,16 @@ exec "${phpExecutablePath}" "$@"
         version,
         extensions,
         databaseSupport,
-        issues: []
+        issues: [],
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         version: '',
         extensions: [],
         databaseSupport: { sqlite: false, mysql: false, postgresql: false },
-        issues: [`PHP shim test failed: ${error}`]
+        issues: [`PHP shim test failed: ${error}`],
       }
     }
   }
@@ -273,7 +279,8 @@ exec "${phpExecutablePath}" "$@"
         return true
       }
       return true // Already doesn't exist
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`❌ Failed to remove PHP shim: ${error}`)
       return false
     }
@@ -305,7 +312,8 @@ exec "${phpExecutablePath}" "$@"
         if (execMatch) {
           target = execMatch[1]
         }
-      } catch {
+      }
+      catch {
         // Ignore errors reading shim file
       }
     }
@@ -314,7 +322,7 @@ exec "${phpExecutablePath}" "$@"
       exists,
       path: shimPath,
       executable,
-      target
+      target,
     }
   }
 }

@@ -3,16 +3,15 @@
  * Uses only Homebrew-style source building for reliability
  */
 
-import type { PHPConfig } from '../types'
 import { buildPhpFromSource } from '../install'
 
 export interface PHPStrategy {
   name: string
   priority: number
-  detect(): Promise<boolean>
-  install(): Promise<PHPInstallResult>
-  getExecutablePath(): string
-  getDatabaseSupport(): DatabaseSupport
+  detect: () => Promise<boolean>
+  install: () => Promise<PHPInstallResult>
+  getExecutablePath: () => string
+  getDatabaseSupport: () => DatabaseSupport
 }
 
 export interface PHPInstallResult {
@@ -71,25 +70,26 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
         version: testResult.version || '8.4.0',
         extensions: testResult.extensions || [],
         databaseSupport: {
-          sqlite: true,      // Built with SQLite support
-          mysql: true,       // Built with MySQL support
-          postgresql: true,  // Built with PostgreSQL support
+          sqlite: true, // Built with SQLite support
+          mysql: true, // Built with MySQL support
+          postgresql: true, // Built with PostgreSQL support
           extensions: {
             pdo_sqlite: true,
             pdo_mysql: true,
             pdo_pgsql: true,
             mysqli: true,
-            pgsql: true
-          }
+            pgsql: true,
+          },
         },
         libraryIssues: [],
         recommendations: [
           'PHP built from source with full database support',
           'All libraries properly linked during compilation',
-          'Ready for Laravel development'
-        ]
+          'Ready for Laravel development',
+        ],
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         phpPath: '',
@@ -97,14 +97,14 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
         extensions: [],
         databaseSupport: { sqlite: false, mysql: false, postgresql: false, extensions: {} },
         libraryIssues: [`Source build failed: ${error}`],
-        recommendations: ['Check system dependencies and try again']
+        recommendations: ['Check system dependencies and try again'],
       }
     }
   }
 
   getExecutablePath(): string {
-    const path = require('node:path')
     const os = require('node:os')
+    const path = require('node:path')
     return path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global', 'php.net', 'v8.4.0', 'bin', 'php')
   }
 
@@ -118,8 +118,8 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
         pdo_mysql: true,
         pdo_pgsql: true,
         mysqli: true,
-        pgsql: true
-      }
+        pgsql: true,
+      },
     }
   }
 
@@ -146,9 +146,10 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
       return {
         success: true,
         version,
-        extensions
+        extensions,
       }
-    } catch {
+    }
+    catch {
       return { success: false }
     }
   }
@@ -187,7 +188,8 @@ export class PHPStrategyManager {
       }
 
       return result
-    } else {
+    }
+    else {
       console.log(`  ❌ ${this.strategy.name} failed`)
       if (result.libraryIssues.length > 0) {
         console.log(`     Issues: ${result.libraryIssues.join(', ')}`)

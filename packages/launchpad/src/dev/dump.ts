@@ -412,7 +412,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         // Auto-start services even when no packages need installation
         try {
           await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
-        } catch (error) {
+        }
+        catch (error) {
           console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
         }
 
@@ -447,7 +448,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         // Auto-start services for shell integration too
         try {
           await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
-        } catch (error) {
+        }
+        catch (error) {
           console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
         }
 
@@ -890,8 +892,6 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`}\n`)
 }
 
-
-
 /**
  * Auto-setup services for any project based on deps.yaml services configuration
  */
@@ -909,10 +909,10 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
 
     // Check deps.yaml to see what services are defined in dependencies
     const hasPostgresInDeps = sniffResult?.pkgs?.some((pkg: any) =>
-      pkg.project.includes('postgres') || pkg.project.includes('postgresql')
+      pkg.project.includes('postgres') || pkg.project.includes('postgresql'),
     )
     const hasRedisInDeps = sniffResult?.pkgs?.some((pkg: any) =>
-      pkg.project.includes('redis')
+      pkg.project.includes('redis'),
     )
 
     // Import service manager
@@ -935,36 +935,39 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
 
           // Special handling for PostgreSQL: create project database
           if ((serviceName === 'postgres' || serviceName === 'postgresql') && hasPostgresInDeps) {
-            const projectName = path.basename(projectDir).replace(/[^a-zA-Z0-9_]/g, '_')
+            const projectName = path.basename(projectDir).replace(/\W/g, '_')
             try {
               await createProjectDatabase(projectName, {
                 type: 'postgres',
                 host: '127.0.0.1',
                 port: 5432,
                 username: 'postgres',
-                password: ''
+                password: '',
               })
 
               if (showMessages) {
                 console.log(`✅ PostgreSQL database '${projectName}' created`)
               }
-            } catch (dbError) {
+            }
+            catch (dbError) {
               if (showMessages) {
                 console.warn(`⚠️  Database creation warning: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
               }
             }
           }
-        } else if (showMessages) {
+        }
+        else if (showMessages) {
           console.warn(`⚠️  Failed to start ${serviceName} service`)
         }
-      } catch (error) {
+      }
+      catch (error) {
         if (showMessages) {
           console.warn(`⚠️  Error starting ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
         }
       }
     }
-
-  } catch (error) {
+  }
+  catch (error) {
     if (showMessages) {
       console.warn(`⚠️  Service setup warning: ${error instanceof Error ? error.message : String(error)}`)
     }

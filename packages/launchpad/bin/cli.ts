@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
+import { Glob } from 'bun'
 import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
-import { Glob } from 'bun'
 import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
@@ -461,7 +461,7 @@ async function installGlobalDependencies(options: {
         for await (const file of glob.scan({
           cwd: location,
           onlyFiles: true,
-          followSymlinks: false
+          followSymlinks: false,
         })) {
           const fullPath = path.resolve(location, file)
           foundFiles.push(fullPath)
@@ -1349,6 +1349,52 @@ cli
   .option('--test-mode', 'Generate shellcode for testing (bypasses test environment checks)')
   .action(({ testMode }) => {
     console.log(shellcode(testMode))
+  })
+
+cli
+  .command('dev [dir]', 'Set up development environment for project dependencies')
+  .option('--dry-run', 'Show packages that would be installed without installing them')
+  .option('--quiet', 'Suppress non-error output')
+  .option('--shell', 'Output shell code for evaluation (use with eval)')
+  .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean, shell?: boolean }) => {
+    try {
+      const targetDir = dir ? path.resolve(dir) : process.cwd()
+
+      // For shell integration, force quiet mode and set environment variable
+      const isShellIntegration = options?.shell || false
+      if (isShellIntegration) {
+        process.env.LAUNCHPAD_SHELL_INTEGRATION = '1'
+      }
+
+      await dump(targetDir, {
+        dryrun: options?.dryRun || false,
+        quiet: options?.quiet || isShellIntegration, // Force quiet for shell integration
+        shellOutput: isShellIntegration,
+        skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true', // Skip global packages only in test mode or when explicitly disabled
+      })
+    }
+    catch (error) {
+      if (!options?.quiet && !options?.shell) {
+        console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      else if (options?.shell) {
+        // For shell mode, output robust fallback that ensures basic system tools are available
+        // This prevents shell integration from hanging or failing
+        console.log('# Environment setup failed, using system fallback')
+        console.log('# Ensure basic system paths are available')
+        console.log('for sys_path in /usr/local/bin /usr/bin /bin /usr/sbin /sbin; do')
+        console.log('  if [[ -d "$sys_path" && ":$PATH:" != *":$sys_path:"* ]]; then')
+        console.log('    export PATH="$PATH:$sys_path"')
+        console.log('  fi')
+        console.log('done')
+        console.log('# Clear command hash to ensure fresh lookups')
+        console.log('hash -r 2>/dev/null || true')
+        return
+      }
+      if (!options?.shell) {
+        process.exit(1)
+      }
+    }
   })
 
 cli

@@ -36,7 +36,7 @@ export async function setupPHP(phpConfig: PHPConfig = config.services.php): Prom
       version: '',
       databaseSupport: { sqlite: false, mysql: false, postgresql: false },
       recommendations: ['PHP support is disabled in configuration'],
-      issues: ['Enable PHP support: LAUNCHPAD_PHP_ENABLED=true']
+      issues: ['Enable PHP support: LAUNCHPAD_PHP_ENABLED=true'],
     }
   }
 
@@ -54,7 +54,7 @@ export async function setupPHP(phpConfig: PHPConfig = config.services.php): Prom
         version: '',
         databaseSupport: { sqlite: false, mysql: false, postgresql: false },
         recommendations: installResult.recommendations,
-        issues: installResult.libraryIssues
+        issues: installResult.libraryIssues,
       }
     }
 
@@ -77,10 +77,10 @@ export async function setupPHP(phpConfig: PHPConfig = config.services.php): Prom
       version: installResult.version,
       databaseSupport: installResult.databaseSupport,
       recommendations: installResult.recommendations,
-      issues: []
+      issues: [],
     }
-
-  } catch (error) {
+  }
+  catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error(`❌ PHP Setup Failed: ${errorMessage}`)
 
@@ -93,9 +93,9 @@ export async function setupPHP(phpConfig: PHPConfig = config.services.php): Prom
       recommendations: [
         'Try running the setup again',
         'Check system dependencies for building from source',
-        'Ensure internet connection for downloading PHP source'
+        'Ensure internet connection for downloading PHP source',
       ],
-      issues: [errorMessage]
+      issues: [errorMessage],
     }
   }
 }

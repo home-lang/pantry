@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
-import { homedir } from 'node:os'
 import path from 'node:path'
 import { TestUtils } from './test.config'
 
@@ -124,7 +123,8 @@ tokio = "1.0"
       const foundFiles: string[] = []
 
       for (const location of globalDepLocations) {
-        if (!fs.existsSync(location)) continue
+        if (!fs.existsSync(location))
+          continue
 
         try {
           const files = await fs.promises.readdir(location, { withFileTypes: true })
@@ -140,14 +140,17 @@ tokio = "1.0"
                     foundFiles.push(path.join(subPath, subFile))
                   }
                 }
-              } catch {
+              }
+              catch {
                 // Ignore permission errors
               }
-            } else if (DEPENDENCY_FILE_NAMES.includes(file.name as any)) {
+            }
+            else if (DEPENDENCY_FILE_NAMES.includes(file.name as any)) {
               foundFiles.push(path.join(location, file.name))
             }
           }
-        } catch {
+        }
+        catch {
           // Ignore permission errors
           continue
         }
@@ -183,7 +186,8 @@ tokio = "1.0"
           if (fs.existsSync(location)) {
             await fs.promises.readdir(location)
           }
-        } catch {
+        }
+        catch {
           errorsHandled++
         }
       }
@@ -237,7 +241,8 @@ dependencies:
           for (const pkg of sniffResult.pkgs) {
             allPackages.add(pkg.project)
           }
-        } catch {
+        }
+        catch {
           // Handle parsing errors
         }
       }
@@ -397,7 +402,8 @@ dependencies:
       let result
       try {
         result = await sniff({ string: project })
-      } catch {
+      }
+      catch {
         result = { pkgs: [], env: {} }
       }
 
@@ -445,7 +451,8 @@ dependencies:
           for (const pkg of result.pkgs) {
             allPackages.add(pkg.project)
           }
-        } catch {
+        }
+        catch {
           // Should continue with other projects
           continue
         }
@@ -488,13 +495,15 @@ dependencies:
                 try {
                   const subPath = path.join(location, file.name)
                   await fs.promises.readdir(subPath)
-                } catch {
+                }
+                catch {
                   errorsHandled++
                 }
               }
             }
           }
-        } catch {
+        }
+        catch {
           errorsHandled++
         }
       }
@@ -543,7 +552,8 @@ dependencies:
       try {
         const results = await install(packages, globalEnvDir)
         expect(Array.isArray(results)).toBe(true)
-      } catch (error) {
+      }
+      catch (error) {
         // In test mode, installation might fail due to missing deps
         expect(error instanceof Error).toBe(true)
       }
