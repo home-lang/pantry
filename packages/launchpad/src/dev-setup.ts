@@ -4,6 +4,66 @@ import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
 
+/**
+ * Parse .env file and extract database configuration
+ */
+export function parseEnvFile(envPath: string): Record<string, string> {
+  if (!fs.existsSync(envPath)) {
+    return {}
+  }
+
+  try {
+    // Use Bun's built-in env parsing
+    const envContent = fs.readFileSync(envPath, 'utf-8')
+    const env: Record<string, string> = {}
+
+    for (const line of envContent.split('\n')) {
+      const trimmed = line.trim()
+      if (trimmed && !trimmed.startsWith('#')) {
+        const [key, ...valueParts] = trimmed.split('=')
+        if (key && valueParts.length > 0) {
+          let value = valueParts.join('=')
+          // Remove quotes if present
+          if ((value.startsWith('"') && value.endsWith('"')) ||
+              (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1)
+          }
+          env[key] = value
+        }
+      }
+    }
+
+    return env
+  } catch (error) {
+    console.warn(`Warning: Could not parse .env file at ${envPath}:`, error)
+    return {}
+  }
+}
+
+/**
+ * Get database configuration from Laravel .env file
+ */
+export function getLaravelDatabaseConfig(projectDir: string = process.cwd()): {
+  driver: string
+  host: string
+  port: number
+  database: string
+  username: string
+  password: string
+} {
+  const envPath = path.join(projectDir, '.env')
+  const env = parseEnvFile(envPath)
+
+  return {
+    driver: env.DB_CONNECTION || 'sqlite',
+    host: env.DB_HOST || 'localhost',
+    port: parseInt(env.DB_PORT || '5432', 10),
+    database: env.DB_DATABASE || path.basename(projectDir).replace(/[^a-zA-Z0-9_]/g, '_'),
+    username: env.DB_USERNAME || 'root',
+    password: env.DB_PASSWORD || 'password',
+  }
+}
+
 export interface ProjectFramework {
   name: string
   detectionFile: string
@@ -12,6 +72,14 @@ export interface ProjectFramework {
     migrationCommand?: string[]
     seedCommand?: string[]
     configClearCommand?: string[]
+    actualConfig?: {
+      driver: string
+      host: string
+      port: number
+      database: string
+      username: string
+      password: string
+    }
   }
 }
 
@@ -60,6 +128,17 @@ export function detectProjectFramework(): ProjectFramework | null {
 
   for (const framework of supportedFrameworks) {
     if (fs.existsSync(framework.detectionFile)) {
+      // For Laravel, enhance with actual .env configuration
+      if (framework.name === 'Laravel' && fs.existsSync('.env')) {
+        const dbConfig = getLaravelDatabaseConfig()
+        return {
+          ...framework,
+          databaseConfig: {
+            ...framework.databaseConfig!,
+            actualConfig: dbConfig,
+          },
+        }
+      }
       return framework
     }
   }
@@ -196,19 +275,23 @@ async function setupPostgreSQLEnvironment(framework: ProjectFramework): Promise<
       return false
     }
 
-    // Get project name for database
+    // Get database configuration from .env or use defaults
+    const actualConfig = framework.databaseConfig?.actualConfig
     const projectName = getProjectDatabaseName()
 
-    // Update environment for PostgreSQL
+    // Use .env config if available, otherwise use sensible defaults
+    const dbConfig = {
+      DB_CONNECTION: actualConfig?.driver === 'sqlite' ? 'sqlite' : 'pgsql',
+      DB_HOST: actualConfig?.host || '127.0.0.1',
+      DB_PORT: String(actualConfig?.port || 5432),
+      DB_DATABASE: actualConfig?.database || projectName,
+      DB_USERNAME: actualConfig?.username || config.services.database.username,
+      DB_PASSWORD: actualConfig?.password || config.services.database.password,
+    }
+
+    // Update environment for PostgreSQL (only update if not already configured)
     if (framework.databaseConfig?.envFile) {
-      await updateProjectEnvironment(framework.databaseConfig.envFile, {
-        DB_CONNECTION: 'pgsql',
-        DB_HOST: '127.0.0.1',
-        DB_PORT: '5432',
-        DB_DATABASE: projectName,
-        DB_USERNAME: config.services.database.username,
-        DB_PASSWORD: config.services.database.password,
-      })
+      await updateProjectEnvironment(framework.databaseConfig.envFile, dbConfig)
     }
 
     console.warn(`✅ PostgreSQL environment configured`)

@@ -77,6 +77,64 @@ export const defaultConfig: LaunchpadConfig = {
         autoDetect: process.env.LAUNCHPAD_STACKS_AUTO_DETECT !== 'false',
       },
     },
+    php: {
+      enabled: process.env.LAUNCHPAD_PHP_ENABLED !== 'false',
+      strategy: 'source-build' as const,
+      version: process.env.LAUNCHPAD_PHP_VERSION || '8.4.0',
+      extensions: {
+        core: [
+          'cli',
+          'fpm',
+          'mbstring',
+          'opcache',
+          'intl',
+          'exif',
+          'bcmath',
+        ],
+        database: [
+          'pdo-mysql',
+          'pdo-pgsql',
+          'pdo-sqlite',
+          'mysqli',
+          'pgsql',
+          'sqlite3',
+        ],
+        web: [
+          'curl',
+          'openssl',
+          'gd',
+          'soap',
+          'sockets',
+        ],
+        utility: [
+          'zip',
+          'bz2',
+          'gettext',
+          'iconv',
+          'readline',
+          'libxml',
+          'zlib',
+        ],
+        optional: [
+          'pcntl',
+          'posix',
+          'shmop',
+          'sysvmsg',
+          'sysvsem',
+          'sysvshm',
+        ],
+      },
+      build: {
+        parallelJobs: undefined, // Auto-detect CPU cores
+        configureArgs: [
+          '--disable-debug',
+          '--disable-dependency-tracking',
+          '--disable-silent-rules',
+        ],
+        timeout: 600000, // 10 minutes
+        debug: false,
+      },
+    },
   },
 }
 

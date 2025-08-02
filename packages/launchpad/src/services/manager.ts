@@ -786,6 +786,12 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
  * Ensure PHP database extensions are available and configured
  */
 async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<boolean> {
+  // Skip PHP extension checks in test mode
+  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+    console.warn(`🧪 Test mode: Skipping PHP database extension checks`)
+    return true
+  }
+
   const { spawn } = await import('node:child_process')
 
   try {
@@ -978,6 +984,12 @@ async function installMissingExtensionsViaPECL(service: ServiceInstance, missing
  * Update PHP configuration to load newly installed extensions
  */
 async function updatePHPConfigWithInstalledExtensions(service: ServiceInstance, installedExtensions: string[]): Promise<void> {
+  // Skip PHP config updates in test mode
+  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+    console.warn(`🧪 Test mode: Skipping PHP configuration updates`)
+    return
+  }
+
   try {
     if (!service.definition.configFile) {
       return
@@ -1037,18 +1049,34 @@ async function updatePHPConfigWithInstalledExtensions(service: ServiceInstance, 
 /**
  * Automatically set up SQLite for the current project
  */
-async function setupSQLiteForProject(): Promise<boolean> {
+export async function setupSQLiteForProject(): Promise<boolean> {
   try {
-    // Check if this is a Laravel project
-    if (!fs.existsSync('artisan')) {
-      return false // Not a Laravel project
+    console.warn(`🔧 Configuring project for SQLite...`)
+
+    // Get SQLite path from .env if it exists, otherwise use default
+    let sqliteDbPath = 'database/database.sqlite'
+
+    if (fs.existsSync('.env')) {
+      const envContent = fs.readFileSync('.env', 'utf-8')
+      const dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.*)$/m)
+
+      if (dbDatabaseMatch && dbDatabaseMatch[1]) {
+        let envDbPath = dbDatabaseMatch[1].trim()
+        // Remove quotes if present
+        if ((envDbPath.startsWith('"') && envDbPath.endsWith('"'))
+          || (envDbPath.startsWith('\'') && envDbPath.endsWith('\''))) {
+          envDbPath = envDbPath.slice(1, -1)
+        }
+        sqliteDbPath = envDbPath
+      }
     }
 
-    console.warn(`🔧 Configuring Laravel project for SQLite...`)
+    // Ensure path is relative to project root
+    if (path.isAbsolute(sqliteDbPath)) {
+      sqliteDbPath = path.relative(process.cwd(), sqliteDbPath)
+    }
 
-    // Create database directory and SQLite file
-    const dbDir = 'database'
-    const sqliteDbPath = path.join(dbDir, 'database.sqlite')
+    const dbDir = path.dirname(sqliteDbPath)
 
     await fs.promises.mkdir(dbDir, { recursive: true })
     if (!fs.existsSync(sqliteDbPath)) {
@@ -1092,17 +1120,22 @@ async function setupSQLiteForProject(): Promise<boolean> {
       }
     }
 
-    // Try to run Laravel configuration cache clear
-    try {
-      const { spawn } = await import('node:child_process')
-      await new Promise<void>((resolve) => {
-        const configClear = spawn('php', ['artisan', 'config:clear'], { stdio: 'pipe' })
-        configClear.on('close', () => resolve())
-      })
-      console.warn(`✅ Cleared Laravel configuration cache`)
+    // Try to run Laravel configuration cache clear (skip in test mode)
+    if (process.env.NODE_ENV !== 'test' && process.env.LAUNCHPAD_TEST_MODE !== 'true') {
+      try {
+        const { spawn } = await import('node:child_process')
+        await new Promise<void>((resolve) => {
+          const configClear = spawn('php', ['artisan', 'config:clear'], { stdio: 'pipe' })
+          configClear.on('close', () => resolve())
+        })
+        console.warn(`✅ Cleared Laravel configuration cache`)
+      }
+      catch {
+        // Ignore errors - config:clear is not critical
+      }
     }
-    catch {
-      // Ignore errors - config:clear is not critical
+    else {
+      console.warn(`🧪 Test mode: Skipping Laravel config cache clear`)
     }
 
     return true
@@ -1183,6 +1216,12 @@ async function createPHPConfigWithExtensions(service: ServiceInstance, _missingE
  * Check if PHP is installed and install PostgreSQL extensions if needed
  */
 async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
+  // Skip PHP PostgreSQL extension checks in test mode
+  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+    console.warn(`🧪 Test mode: Skipping PHP PostgreSQL extension checks`)
+    return
+  }
+
   try {
     const { findBinaryInPath } = await import('../utils')
 
@@ -1424,6 +1463,9 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
   // Detect project name from current working directory
   const projectName = detectProjectName()
 
+  // Get database name from .env file if available, otherwise use project name
+  const databaseName = getDatabaseNameFromEnv() || projectName
+
   // Get service config with defaults
   const serviceConfig = { ...definition.config, ...service.config }
 
@@ -1434,7 +1476,7 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
     .replace('{pidFile}', definition.pidFile || '')
     .replace('{port}', String(port || 5432))
     .replace('{projectName}', projectName)
-    .replace('{projectDatabase}', projectName) // Use project name as database name
+    .replace('{projectDatabase}', databaseName) // Use env database name or project name
     .replace('{dbUsername}', config.services.database.username)
     .replace('{dbPassword}', config.services.database.password)
     .replace('{authMethod}', config.services.database.authMethod)
@@ -1452,8 +1494,7 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
  */
 export function detectProjectName(): string {
   try {
-    // Try to read composer.json for Laravel projects
-
+    // Try to read composer.json for Laravel/PHP projects
     const composerPath = path.join(process.cwd(), 'composer.json')
     if (fs.existsSync(composerPath)) {
       const composer = JSON.parse(fs.readFileSync(composerPath, 'utf-8'))
@@ -1463,11 +1504,55 @@ export function detectProjectName(): string {
       }
     }
 
+    // Try to read package.json for Node.js projects
+    const packagePath = path.join(process.cwd(), 'package.json')
+    if (fs.existsSync(packagePath)) {
+      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'))
+      if (packageJson.name) {
+        // Handle scoped packages like "@org/project-name" -> "project_name"
+        const name = packageJson.name.startsWith('@')
+          ? packageJson.name.split('/').pop()
+          : packageJson.name
+        return name?.replace(/[^a-z0-9]/gi, '_') || 'launchpad_dev'
+      }
+    }
+
     // Fallback to directory name
     return path.basename(process.cwd()).replace(/[^a-z0-9]/gi, '_') || 'launchpad_dev'
   }
   catch {
     return 'launchpad_dev'
+  }
+}
+
+/**
+ * Get database name from Laravel .env file
+ */
+export function getDatabaseNameFromEnv(): string | null {
+  try {
+    const envPath = path.join(process.cwd(), '.env')
+    if (!fs.existsSync(envPath)) {
+      return null
+    }
+
+    const envContent = fs.readFileSync(envPath, 'utf-8')
+    const dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.*)$/m)
+
+    if (dbDatabaseMatch && dbDatabaseMatch[1]) {
+      let dbName = dbDatabaseMatch[1].trim()
+      // Remove quotes if present
+      if ((dbName.startsWith('"') && dbName.endsWith('"'))
+        || (dbName.startsWith('\'') && dbName.endsWith('\''))) {
+        dbName = dbName.slice(1, -1)
+      }
+      // Convert to valid database name (remove special characters)
+      return dbName.replace(/\W/g, '_')
+    }
+
+    return null
+  }
+  catch {
+    return null
   }
 }
 

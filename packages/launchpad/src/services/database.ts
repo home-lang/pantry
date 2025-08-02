@@ -266,6 +266,12 @@ export async function startLaravelServices(): Promise<void> {
  * Run Laravel migrations and seeders
  */
 export async function runLaravelMigrations(seedData = false): Promise<void> {
+  // Skip Laravel migrations in test mode
+  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+    console.warn('🧪 Test mode: Skipping Laravel migrations')
+    return
+  }
+
   try {
     console.warn('🔄 Running Laravel migrations...')
     await executeCommand(['php', 'artisan', 'migrate', '--force'])

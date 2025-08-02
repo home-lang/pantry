@@ -86,7 +86,7 @@ function needsPackageInstallation(localPackages: string[], globalPackages: strin
 /**
  * Detect if this is a Laravel project and provide setup assistance
  */
-function detectLaravelProject(dir: string): { isLaravel: boolean, suggestions: string[] } {
+export function detectLaravelProject(dir: string): { isLaravel: boolean, suggestions: string[] } {
   const artisanFile = path.join(dir, 'artisan')
   const composerFile = path.join(dir, 'composer.json')
   const appDir = path.join(dir, 'app')
@@ -409,6 +409,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         const globalBinPath = path.join(globalEnvDir, 'bin')
         const globalSbinPath = path.join(globalEnvDir, 'sbin')
 
+        // Auto-start services even when no packages need installation
+        try {
+          await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
+        } catch (error) {
+          console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
       }
@@ -437,6 +444,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           )
         }
 
+        // Auto-start services for shell integration too
+        try {
+          await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
+        } catch (error) {
+          console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
       }
@@ -447,14 +461,19 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
     }
 
+    // Auto-start services for any project that has services configuration
+    await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
+
     // Check for Laravel project and provide helpful suggestions
     const laravelInfo = detectLaravelProject(projectDir)
-    if (laravelInfo.isLaravel && laravelInfo.suggestions.length > 0 && !effectiveQuiet) {
-      console.log('\n🎯 Laravel project detected! Helpful commands:')
-      laravelInfo.suggestions.forEach((suggestion) => {
-        console.log(`   • ${suggestion}`)
-      })
-      console.log()
+    if (laravelInfo.isLaravel) {
+      if (laravelInfo.suggestions.length > 0 && !effectiveQuiet) {
+        console.log('\n🎯 Laravel project detected! Helpful commands:')
+        laravelInfo.suggestions.forEach((suggestion) => {
+          console.log(`   • ${suggestion}`)
+        })
+        console.log()
+      }
     }
 
     // Output shell code if requested
@@ -869,4 +888,85 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
+}
+
+
+
+/**
+ * Auto-setup services for any project based on deps.yaml services configuration
+ */
+async function setupProjectServices(projectDir: string, sniffResult: any, showMessages: boolean): Promise<void> {
+  try {
+    // Check services.autoStart configuration from deps.yaml
+    if (!sniffResult?.services?.enabled || !sniffResult.services.autoStart || sniffResult.services.autoStart.length === 0) {
+      return // No services to auto-start
+    }
+
+    const autoStartServices = sniffResult.services.autoStart || []
+    if (showMessages && autoStartServices.length > 0) {
+      console.log(`🚀 Auto-starting services: ${autoStartServices.join(', ')}`)
+    }
+
+    // Check deps.yaml to see what services are defined in dependencies
+    const hasPostgresInDeps = sniffResult?.pkgs?.some((pkg: any) =>
+      pkg.project.includes('postgres') || pkg.project.includes('postgresql')
+    )
+    const hasRedisInDeps = sniffResult?.pkgs?.some((pkg: any) =>
+      pkg.project.includes('redis')
+    )
+
+    // Import service manager
+    const { startService } = await import('../services/manager')
+    const { createProjectDatabase } = await import('../services/database')
+
+    // Start each service specified in autoStart
+    for (const serviceName of autoStartServices) {
+      try {
+        if (showMessages) {
+          console.log(`🚀 Starting ${serviceName} service...`)
+        }
+
+        const serviceStarted = await startService(serviceName)
+
+        if (serviceStarted) {
+          if (showMessages) {
+            console.log(`✅ ${serviceName} service started successfully`)
+          }
+
+          // Special handling for PostgreSQL: create project database
+          if ((serviceName === 'postgres' || serviceName === 'postgresql') && hasPostgresInDeps) {
+            const projectName = path.basename(projectDir).replace(/[^a-zA-Z0-9_]/g, '_')
+            try {
+              await createProjectDatabase(projectName, {
+                type: 'postgres',
+                host: '127.0.0.1',
+                port: 5432,
+                username: 'postgres',
+                password: ''
+              })
+
+              if (showMessages) {
+                console.log(`✅ PostgreSQL database '${projectName}' created`)
+              }
+            } catch (dbError) {
+              if (showMessages) {
+                console.warn(`⚠️  Database creation warning: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
+              }
+            }
+          }
+        } else if (showMessages) {
+          console.warn(`⚠️  Failed to start ${serviceName} service`)
+        }
+      } catch (error) {
+        if (showMessages) {
+          console.warn(`⚠️  Error starting ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    }
+
+  } catch (error) {
+    if (showMessages) {
+      console.warn(`⚠️  Service setup warning: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
 }

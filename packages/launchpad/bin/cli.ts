@@ -1,8 +1,10 @@
 #!/usr/bin/env bun
 import fs from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
+import { Glob } from 'bun'
 import { install, install_prefix, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
@@ -381,6 +383,165 @@ async function performSetup(options: {
   }
 }
 
+/**
+ * Check if a path is a directory
+ */
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    const stats = await fs.promises.stat(path)
+    return stats.isDirectory()
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Set up development environment for a project directory
+ */
+async function setupDevelopmentEnvironment(
+  targetDir: string,
+  options: { dryRun?: boolean, quiet?: boolean, shell?: boolean },
+): Promise<void> {
+  // For shell integration, force quiet mode and set environment variable
+  const isShellIntegration = options?.shell || false
+  if (isShellIntegration) {
+    process.env.LAUNCHPAD_SHELL_INTEGRATION = '1'
+  }
+
+  await dump(targetDir, {
+    dryrun: options?.dryRun || false,
+    quiet: options?.quiet || isShellIntegration,
+    shellOutput: isShellIntegration,
+    skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true',
+  })
+}
+
+/**
+ * Find all dependency files across the machine and install global dependencies
+ */
+async function installGlobalDependencies(options: {
+  dryRun?: boolean
+  quiet?: boolean
+  verbose?: boolean
+}): Promise<void> {
+  if (!options.quiet) {
+    console.log('🔍 Scanning machine for dependency files...')
+  }
+
+  const { DEPENDENCY_FILE_NAMES } = await import('../src/env')
+  const globalDepLocations = [
+    homedir(),
+    path.join(homedir(), '.dotfiles'),
+    path.join(homedir(), '.config'),
+    path.join(homedir(), 'Desktop'),
+    path.join(homedir(), 'Documents'),
+    path.join(homedir(), 'Projects'),
+    path.join(homedir(), 'Code'),
+    path.join(homedir(), 'Development'),
+    '/opt',
+    '/usr/local',
+  ]
+
+  const foundFiles: string[] = []
+  const allPackages = new Set<string>()
+
+  // Use Bun's glob for efficient file searching
+  const dependencyPatterns = DEPENDENCY_FILE_NAMES.map(name => `**/${name}`)
+
+  // Search for dependency files in all potential locations using Bun glob
+  for (const location of globalDepLocations) {
+    if (!fs.existsSync(location))
+      continue
+
+    try {
+      // Search for all dependency file types in parallel using Bun's glob
+      for (const pattern of dependencyPatterns) {
+        const glob = new Glob(pattern)
+        for await (const file of glob.scan({
+          cwd: location,
+          onlyFiles: true,
+          followSymlinks: false
+        })) {
+          const fullPath = path.resolve(location, file)
+          foundFiles.push(fullPath)
+        }
+      }
+    }
+    catch {
+      // Ignore permission errors or other issues
+      continue
+    }
+  }
+
+  if (!options.quiet) {
+    console.log(`📁 Found ${foundFiles.length} dependency files`)
+  }
+
+  // Parse all found dependency files and extract packages
+  const { default: sniff } = await import('../src/dev/sniff')
+
+  for (const file of foundFiles) {
+    try {
+      const dir = path.dirname(file)
+      const sniffResult = await sniff({ string: dir })
+
+      for (const pkg of sniffResult.pkgs) {
+        allPackages.add(pkg.project)
+      }
+
+      if (options.verbose) {
+        console.log(`  📄 ${file}: ${sniffResult.pkgs.length} packages`)
+      }
+    }
+    catch (error) {
+      if (options.verbose) {
+        console.warn(`Failed to parse ${file}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+  }
+
+  const packageList = Array.from(allPackages)
+
+  if (!options.quiet) {
+    console.log(`📦 Found ${packageList.length} unique global dependencies`)
+    if (options.dryRun) {
+      console.log('🔍 Packages that would be installed:')
+      packageList.forEach(pkg => console.log(`  • ${pkg}`))
+      return
+    }
+  }
+
+  if (packageList.length === 0) {
+    if (!options.quiet) {
+      console.log('ℹ️  No global dependencies found')
+    }
+    return
+  }
+
+  // Install all global dependencies
+  const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+
+  try {
+    const results = await install(packageList, globalEnvDir)
+
+    if (!options.quiet) {
+      if (results.length > 0) {
+        console.log(`🎉 Successfully installed ${packageList.length} global dependencies (${results.length} binaries)`)
+      }
+      else {
+        console.log('✅ All global dependencies were already installed')
+      }
+    }
+  }
+  catch (error) {
+    if (!options.quiet) {
+      console.error('❌ Failed to install global dependencies:', error instanceof Error ? error.message : String(error))
+    }
+    throw error
+  }
+}
+
 const cli = new CAC('launchpad')
 
 cli.version(version)
@@ -388,15 +549,29 @@ cli.help()
 
 // Main installation command
 cli
-  .command('install [packages...]', 'Install packages')
+  .command('install [packages...]', 'Install packages or set up development environment')
   .alias('i')
   .alias('add')
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
+  .option('--global-deps', 'Install all global dependencies found across the machine')
+  .option('--dry-run', 'Show packages that would be installed without installing them')
+  .option('--quiet', 'Suppress non-error output')
+  .option('--shell', 'Output shell code for evaluation (use with eval)')
   .example('launchpad install node python')
   .example('launchpad install --path ~/.local node python')
+  .example('launchpad install')
+  .example('launchpad install ./my-project')
+  .example('launchpad install --global-deps')
   .example('launchpad add node python')
-  .action(async (packages: string[], options: { verbose?: boolean, path?: string }) => {
+  .action(async (packages: string[], options: {
+    verbose?: boolean
+    path?: string
+    globalDeps?: boolean
+    dryRun?: boolean
+    quiet?: boolean
+    shell?: boolean
+  }) => {
     if (options.verbose) {
       config.verbose = true
     }
@@ -404,28 +579,40 @@ cli
     // Ensure packages is an array
     const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
 
-    if (packageList.length === 0) {
-      console.error('No packages specified')
-      process.exit(1)
-    }
-
     try {
-      const installPath = options.path || install_prefix().string
+      // Handle global dependencies installation
+      if (options.globalDeps) {
+        await installGlobalDependencies(options)
+        return
+      }
 
+      // Handle development environment setup (no packages specified or directory path given)
+      if (packageList.length === 0 || (packageList.length === 1 && await isDirectory(packageList[0]))) {
+        const targetDir = packageList.length === 1 ? path.resolve(packageList[0]) : process.cwd()
+        await setupDevelopmentEnvironment(targetDir, options)
+        return
+      }
+
+      // Handle regular package installation
+      const installPath = options.path || install_prefix().string
       const results = await install(packageList, installPath)
 
-      if (results.length > 0) {
-        console.log(`🎉 Successfully installed ${packageList.join(', ')} (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
-        results.forEach((file) => {
-          console.log(`  ${file}`)
-        })
-      }
-      else {
-        console.log('⚠️  No binaries were installed')
+      if (!options.quiet) {
+        if (results.length > 0) {
+          console.log(`🎉 Successfully installed ${packageList.join(', ')} (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
+          results.forEach((file) => {
+            console.log(`  ${file}`)
+          })
+        }
+        else {
+          console.log('⚠️  No binaries were installed')
+        }
       }
     }
     catch (error) {
-      console.error('Installation failed:', error instanceof Error ? error.message : String(error))
+      if (!options.quiet) {
+        console.error('Installation failed:', error instanceof Error ? error.message : String(error))
+      }
       process.exit(1)
     }
   })
@@ -1162,52 +1349,6 @@ cli
   .option('--test-mode', 'Generate shellcode for testing (bypasses test environment checks)')
   .action(({ testMode }) => {
     console.log(shellcode(testMode))
-  })
-
-cli
-  .command('dev [dir]', 'Set up development environment for project dependencies')
-  .option('--dry-run', 'Show packages that would be installed without installing them')
-  .option('--quiet', 'Suppress non-error output')
-  .option('--shell', 'Output shell code for evaluation (use with eval)')
-  .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean, shell?: boolean }) => {
-    try {
-      const targetDir = dir ? path.resolve(dir) : process.cwd()
-
-      // For shell integration, force quiet mode and set environment variable
-      const isShellIntegration = options?.shell || false
-      if (isShellIntegration) {
-        process.env.LAUNCHPAD_SHELL_INTEGRATION = '1'
-      }
-
-      await dump(targetDir, {
-        dryrun: options?.dryRun || false,
-        quiet: options?.quiet || isShellIntegration, // Force quiet for shell integration
-        shellOutput: isShellIntegration,
-        skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true', // Skip global packages only in test mode or when explicitly disabled
-      })
-    }
-    catch (error) {
-      if (!options?.quiet && !options?.shell) {
-        console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
-      }
-      else if (options?.shell) {
-        // For shell mode, output robust fallback that ensures basic system tools are available
-        // This prevents shell integration from hanging or failing
-        console.log('# Environment setup failed, using system fallback')
-        console.log('# Ensure basic system paths are available')
-        console.log('for sys_path in /usr/local/bin /usr/bin /bin /usr/sbin /sbin; do')
-        console.log('  if [[ -d "$sys_path" && ":$PATH:" != *":$sys_path:"* ]]; then')
-        console.log('    export PATH="$PATH:$sys_path"')
-        console.log('  fi')
-        console.log('done')
-        console.log('# Clear command hash to ensure fresh lookups')
-        console.log('hash -r 2>/dev/null || true')
-        return
-      }
-      if (!options?.shell) {
-        process.exit(1)
-      }
-    }
   })
 
 cli

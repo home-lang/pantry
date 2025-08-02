@@ -160,6 +160,52 @@ __launchpad_update_library_paths_fast() {
         fi
     done
 
+    # Add package-specific library directories with validation
+    # Only include packages with actual working libraries
+    # Prioritize source-built packages over pre-built binaries
+    if [[ -d "$env_dir" ]]; then
+        # First pass: Add source-built packages (like our PHP) with priority
+        for domain_dir in "$env_dir"/*.org "$env_dir"/*.net "$env_dir"/*.com "$env_dir"/*.sh "$env_dir"/*.io; do
+            if [[ -d "$domain_dir" ]]; then
+                local domain_name=$(basename "$domain_dir")
+
+                # Find version directories and validate they have proper libraries
+                for version_dir in "$domain_dir"/v*; do
+                    if [[ -d "$version_dir" ]]; then
+                        for lib_subdir in "$version_dir/lib" "$version_dir/lib64"; do
+                            if [[ -d "$lib_subdir" ]]; then
+                                # Validate that this lib directory has actual library files
+                                # Skip if it only contains broken/placeholder files
+                                local has_valid_libs=false
+
+                                # Check for common library patterns that indicate a working installation
+                                if [[ -n "$(find "$lib_subdir" -name "*.dylib" -size +100c 2>/dev/null | head -1)" ]] || \
+                                   [[ -n "$(find "$lib_subdir" -name "*.so*" -size +100c 2>/dev/null | head -1)" ]] || \
+                                   [[ -n "$(find "$lib_subdir" -name "*.a" -size +100c 2>/dev/null | head -1)" ]]; then
+                                    has_valid_libs=true
+                                fi
+
+                                # Special case: If this is a source-built package (like our PHP), always include it
+                                if [[ "$domain_name" == "php.net" ]] && [[ -f "$version_dir/bin/php" ]]; then
+                                    has_valid_libs=true
+                                fi
+
+                                # Add to library paths if it has valid libraries
+                                if [[ "$has_valid_libs" == "true" ]]; then
+                                    if [[ -z "$lib_paths" ]]; then
+                                        lib_paths="$lib_subdir"
+                                    else
+                                        lib_paths="$lib_paths:$lib_subdir"
+                                    fi
+                                fi
+                            fi
+                        done
+                    fi
+                done
+            fi
+        done
+    fi
+
     # Set up library path environment variables if we have paths
     if [[ -n "$lib_paths" ]]; then
         # Store original values if not already stored
@@ -227,13 +273,29 @@ __launchpad_update_library_paths() {
 
             # Skip known non-package directories
             if [[ "$domain_name" != "bin" && "$domain_name" != "sbin" && "$domain_name" != "lib" && "$domain_name" != "lib64" && "$domain_name" != "share" && "$domain_name" != "include" && "$domain_name" != "etc" && "$domain_name" != "pkgs" && "$domain_name" != ".tmp" && "$domain_name" != ".cache" ]]; then
-                # Find version directories and check for lib directories
+                # Find version directories and validate they have proper libraries
                 for version_dir in $(find "$domain_dir" -maxdepth 1 -name "v*" -type d 2>/dev/null); do
                     if [[ -d "$version_dir" ]]; then
                         for lib_dir in "$version_dir/lib" "$version_dir/lib64"; do
                             if [[ -d "$lib_dir" ]]; then
-                                # Avoid duplicate paths in library path variables
-                                if [[ ":$lib_paths:" != *":$lib_dir:"* ]]; then
+                                # Validate that this lib directory has actual library files
+                                # Skip if it only contains broken/placeholder files
+                                local has_valid_libs=false
+
+                                # Check for common library patterns that indicate a working installation
+                                if [[ -n "$(find "$lib_dir" -name "*.dylib" -size +100c 2>/dev/null | head -1)" ]] || \
+                                   [[ -n "$(find "$lib_dir" -name "*.so*" -size +100c 2>/dev/null | head -1)" ]] || \
+                                   [[ -n "$(find "$lib_dir" -name "*.a" -size +100c 2>/dev/null | head -1)" ]]; then
+                                    has_valid_libs=true
+                                fi
+
+                                # Special case: If this is a source-built package (like our PHP), always include it
+                                if [[ "$domain_name" == "php.net" ]] && [[ -f "$version_dir/bin/php" ]]; then
+                                    has_valid_libs=true
+                                fi
+
+                                # Add to library paths if it has valid libraries and avoid duplicates
+                                if [[ "$has_valid_libs" == "true" ]] && [[ ":$lib_paths:" != *":$lib_dir:"* ]]; then
                                     if [[ -z "$lib_paths" ]]; then
                                         lib_paths="$lib_dir"
                                     else
@@ -330,6 +392,20 @@ __launchpad_ensure_global_path_fast() {
 
     # Always ensure critical system paths are available
     __launchpad_ensure_system_path
+}
+
+# Force refresh global paths (for use after installing new global dependencies)
+__launchpad_refresh_global_paths() {
+    # Clear cache to force immediate refresh
+    __launchpad_global_paths_cache=""
+    __launchpad_global_paths_timestamp=0
+    __launchpad_global_paths_loaded=""
+
+    # Refresh global paths immediately
+    __launchpad_ensure_global_path
+
+    # Refresh command hash table
+    hash -r 2>/dev/null || true
 }
 
 # Ultra-fast global path management with aggressive caching
@@ -811,6 +887,30 @@ __launchpad_ensure_global_path
 
 # Clear command hash table on initial load
 hash -r 2>/dev/null || true
+
+# Function to auto-refresh when global deps change
+__launchpad_auto_refresh_check() {
+    local global_dir="$HOME/.local/share/launchpad/global"
+    local refresh_marker="$HOME/.cache/launchpad/shell_cache/global_refresh_needed"
+
+    # Check if refresh is needed (marker file exists)
+    if [[ -f "$refresh_marker" ]]; then
+        # Remove marker and refresh
+        rm -f "$refresh_marker" 2>/dev/null
+        __launchpad_refresh_global_paths
+    fi
+}
+
+# Check for global refresh on every prompt (lightweight check)
+if [[ -n "$ZSH_VERSION" ]]; then
+    autoload -U add-zsh-hook
+    add-zsh-hook precmd __launchpad_auto_refresh_check
+elif [[ -n "$BASH_VERSION" ]]; then
+    # For bash, add to PROMPT_COMMAND
+    if [[ "$PROMPT_COMMAND" != *"__launchpad_auto_refresh_check"* ]]; then
+        PROMPT_COMMAND="__launchpad_auto_refresh_check; $PROMPT_COMMAND"
+    fi
+fi
 
 # Run on initial load (interactive shells only)
 if [[ $- == *i* && "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" != "1" ]]; then

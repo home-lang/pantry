@@ -21,74 +21,28 @@ const globalCompletedPackages = new Set<string>()
 
 // Reset all global state for a new environment setup (critical for test isolation)
 export function resetInstalledTracker(): void {
+  // Only reset tracking state, NOT installed packages
+  // This prevents tests from accidentally uninstalling system dependencies
   globalInstalledTracker.clear()
   globalCompletedPackages.clear()
   shellModeMessageCache.clear()
   cleanupSpinner()
-}
 
-/**
- * Resolve critical system library conflicts (like OpenSSL) to prevent runtime issues
- */
-function resolveCriticalLibraryConflicts(packages: string[]): string[] {
-  const packageMap = new Map<string, string>()
-  const criticalLibraries = new Set(['openssl.org', 'libssl', 'libcrypto', 'libjpeg-turbo.org', 'ijg.org'])
-
-  // First pass: collect all packages
-  for (const pkg of packages) {
-    const { name } = parsePackageSpec(pkg)
-    const domain = resolvePackageName(name)
-    packageMap.set(domain, pkg)
+  // Add safety check to prevent actual package removal during tests
+  if (process.env.NODE_ENV === 'test') {
+    // Log warning if test tries to reset package installations
+    console.warn('Test environment detected: resetInstalledTracker only clears tracking state, not actual packages')
   }
-
-  // Second pass: resolve critical library conflicts
-  for (const domain of criticalLibraries) {
-    if (packageMap.has(domain)) {
-      const pkg = packageMap.get(domain)!
-
-      // Force OpenSSL to use 1.1.1w for maximum compatibility
-      if (domain === 'openssl.org') {
-        // Always prefer OpenSSL 1.1.1w for compatibility with most software
-        const compatiblePkg = `openssl.org@1.1.1w`
-        packageMap.set(domain, compatiblePkg)
-        if (config.verbose) {
-          console.warn(`🔒 Resolved OpenSSL conflict: ${pkg} -> ${compatiblePkg} for maximum compatibility`)
-        }
-      }
-
-      // Force libjpeg to use the latest stable version for compatibility
-      if (domain === 'libjpeg-turbo.org') {
-        const compatiblePkg = `libjpeg-turbo.org@2.1.5.1`
-        packageMap.set(domain, compatiblePkg)
-        if (config.verbose) {
-          console.warn(`🔒 Resolved libjpeg conflict: ${pkg} -> ${compatiblePkg} for maximum compatibility`)
-        }
-      }
-
-      // Remove ijg.org if libjpeg-turbo.org is present to avoid conflicts
-      if (domain === 'ijg.org' && packageMap.has('libjpeg-turbo.org')) {
-        packageMap.delete(domain)
-        if (config.verbose) {
-          console.warn(`🔒 Removed conflicting ijg.org package in favor of libjpeg-turbo.org`)
-        }
-      }
-    }
-  }
-
-  return Array.from(packageMap.values())
 }
 
 // Use ts-pkgx API to resolve all dependencies with proper version conflict resolution
 export async function resolveAllDependencies(packages: string[]): Promise<string[]> {
-  // First resolve critical library conflicts
-  const conflictResolvedPackages = resolveCriticalLibraryConflicts(packages)
-
   try {
     // Import resolveDependencies from ts-pkgx
     const { resolveDependencies } = await import('ts-pkgx')
 
-    // Create a temporary dependency file content using conflict-resolved packages
-    const depsYaml = conflictResolvedPackages.reduce((acc, pkg) => {
+    // Create a temporary dependency file content
+    const depsYaml = packages.reduce((acc, pkg) => {
       const { name, version } = parsePackageSpec(pkg)
       // Use the resolved domain name, not the original alias
       const domain = resolvePackageName(name)
@@ -149,7 +103,7 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
       console.error('Stack trace:', error.stack)
     }
     console.warn('Falling back to simple deduplication...')
-    return deduplicatePackagesByVersion(conflictResolvedPackages)
+    return deduplicatePackagesByVersion(packages)
   }
 }
 
@@ -2952,25 +2906,20 @@ async function installPackage(packageName: string, packageSpec: string, installP
     return await installMeilisearch(installPath, requestedVersion)
   }
 
-  // Special handling for PHP - only use database support if explicitly requested
+  // Special handling for PHP - build from source like Homebrew for reliability
   if (name === 'php' || domain === 'php.net') {
-    // Check if database support is explicitly requested
-    const needsDatabaseSupport = process.env.LAUNCHPAD_PHP_DATABASE_SUPPORT === 'true'
-      || packageSpec.includes('with-db')
-      || packageSpec.includes('database')
-
-    if (needsDatabaseSupport) {
-      if (config.verbose) {
-        console.warn(`Using custom PHP installation with database support for ${name}`)
-      }
-      return await installPhpWithDatabaseSupport(installPath, requestedVersion)
-    }
-
-    // Use standard installation by default (faster and more reliable)
     if (config.verbose) {
-      console.warn(`Using standard PHP installation for ${name} (faster, no database extensions)`)
+      console.warn(`Building PHP from source for ${name}`)
     }
-    // Continue with standard installation
+    return await buildPhpFromSource(installPath, requestedVersion)
+  }
+
+  // Special handling for zlib - build from source to fix broken ts-pkgx dependencies
+  if (name === 'zlib' || domain === 'zlib.net') {
+    if (config.verbose) {
+      console.warn(`Building zlib from source to fix broken dependencies for ${name}`)
+    }
+    return await buildZlibFromSource(installPath, requestedVersion)
   }
 
   if (config.verbose) {
@@ -3051,10 +3000,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }
 
   // Use ts-pkgx to resolve all dependencies with proper version conflict resolution
-  let resolvedPackages = await resolveAllDependencies(packageList)
-
-  // Apply critical library conflict resolution again in case global packages interfere
-  resolvedPackages = resolveCriticalLibraryConflicts(resolvedPackages)
+  const resolvedPackages = await resolveAllDependencies(packageList)
 
   const deduplicatedPackages = resolvedPackages
 
@@ -4133,400 +4079,264 @@ async function compilePhpExtension(extDir: string, extName: string, configureArg
 }
 
 /**
- * Custom PHP installer with database extensions (PostgreSQL, MySQL)
- * Downloads PHP source and compiles with database extensions
+ * Test if a PHP binary actually works (can run --version without dyld errors)
  */
-async function installPhpWithDatabaseSupport(installPath: string, requestedVersion?: string): Promise<string[]> {
-  // Default to PHP 8.3 as it has better stability with extensions
-  const version = requestedVersion?.replace(/^v/, '') || '8.3.13'
-
+export async function testPhpBinary(phpPath: string): Promise<boolean> {
   try {
-    logUniqueMessage(`🔄 Installing PHP ${version} with database support (PostgreSQL, MySQL)...`)
-
-    // First install regular PHP using direct download (avoid recursion)
-    const domain = 'php.net'
-    const phpResult = await downloadPackage(domain, version, getPlatform(), getArchitecture(), installPath)
-    if (phpResult.length === 0) {
-      throw new Error('Failed to install base PHP')
+    if (!fs.existsSync(phpPath)) {
+      return false
     }
 
-    // Install database servers for development libraries (with timeout)
-    logUniqueMessage(`🔄 Installing database servers for development libraries...`)
-    const dbInstallPromise = Promise.allSettled([
-      installPackage('postgresql', 'postgresql', installPath),
-      installPackage('mysql', 'mysql', installPath),
-    ])
-
-    // Add timeout for database installation (max 5 minutes)
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database installation timeout (5 minutes)')), 5 * 60 * 1000)
+    // Test with a short timeout to avoid hanging on broken binaries
+    const { execSync } = await import('node:child_process')
+    execSync(`"${phpPath}" --version`, {
+      stdio: 'pipe',
+      timeout: 5000,
+      env: { ...process.env },
     })
-
-    await Promise.race([dbInstallPromise, timeoutPromise])
-
-    // Set up database extensions (includes existing compiled ones) with timeout
-    const extensionPromise = setupDatabaseExtensions(installPath)
-    const extensionTimeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database extension compilation timeout (3 minutes)')), 3 * 60 * 1000)
-    })
-
-    await Promise.race([extensionPromise, extensionTimeoutPromise])
-
-    logUniqueMessage(`✅ php \x1B[2m\x1B[3m(v${version} with PostgreSQL & MySQL support)\x1B[0m`)
-
-    return phpResult
+    return true
   }
   catch (error) {
     if (config.verbose) {
-      console.warn(`Custom PHP installation failed: ${error}`)
+      console.warn(`PHP binary test failed: ${error instanceof Error ? error.message : String(error)}`)
     }
-    logUniqueMessage(`⚠️  Database support compilation failed, using standard PHP installation`)
-
-    // Fall back to regular installation - but we need to call downloadPackage directly
-    // since we can't call installPackage recursively
-    const domain = resolvePackageName('php')
-    const os = getPlatform()
-    const architecture = getArchitecture()
-
-    try {
-      const fallbackResult = await downloadPackage(domain, version, os, architecture, installPath)
-      logUniqueMessage(`✅ php \x1B[2m\x1B[3m(v${version} - standard installation)\x1B[0m`)
-      return fallbackResult
-    }
-    catch (fallbackError) {
-      console.error(`Both custom and standard PHP installation failed: ${fallbackError}`)
-      throw fallbackError
-    }
+    return false
   }
 }
 
 /**
- * Sets up database extensions for PHP after installation
- * Called automatically after PHP installation to enable PostgreSQL and MySQL support
+ * Build PHP from source using a Homebrew-style approach
+ * This is our primary PHP installation method for reliability
  */
-async function setupDatabaseExtensions(installPath: string): Promise<void> {
+export async function buildPhpFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const phpConfig = config.services.php
+  const version = requestedVersion?.replace(/^v/, '') || phpConfig.version
+  const domain = 'php.net'
+  const packageDir = path.join(installPath, domain, `v${version}`)
+
   try {
-    logUniqueMessage(`🔄 Setting up database extensions for PHP...`)
+    logUniqueMessage(`🔄 Building PHP ${version} from source with configured extensions...`)
 
-    // Find PHP installation paths
-    const phpBinPath = path.join(installPath, 'bin', 'php')
-    const phpConfigPath = path.join(installPath, 'bin', 'php-config')
+    // Create package directory
+    await fs.promises.mkdir(packageDir, { recursive: true })
 
-    const hasPhp = await fs.promises.access(phpBinPath).then(() => true, () => false)
-    const hasPhpConfig = await fs.promises.access(phpConfigPath).then(() => true, () => false)
+    // Download PHP source
+    const sourceUrl = `https://www.php.net/distributions/php-${version}.tar.gz`
+    const tempDir = path.join(installPath, '.tmp', `php-source-${version}`)
+    const tarFile = path.join(tempDir, `php-${version}.tar.gz`)
 
-    if (!hasPhp || !hasPhpConfig) {
-      if (config.verbose) {
-        console.warn('PHP or php-config not found, skipping database extension setup')
-      }
-      return
-    }
-
-    // Try multiple PHP extension directories (different PHP versions)
-    const extensionDirs = [
-      path.join(installPath, 'lib', 'php', '20240924'), // PHP 8.4
-      path.join(installPath, 'lib', 'php', '20230831'), // PHP 8.3
-      path.join(installPath, 'lib', 'php', '20220829'), // PHP 8.2
-    ]
-
-    let extensionDir = ''
-    for (const dir of extensionDirs) {
-      if (await fs.promises.access(dir).then(() => true, () => false)) {
-        extensionDir = dir
-        break
-      }
-    }
-
-    if (!extensionDir) {
-      if (config.verbose) {
-        console.warn('No PHP extension directory found, skipping database extension setup')
-      }
-      return
-    }
-
-    // Check if we have any existing compiled extensions
-    const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
-    const mysqlExtension = path.join(extensionDir, 'pdo_mysql.so')
-
-    const hasPgsql = await fs.promises.access(pgsqlExtension).then(() => true, () => false)
-    const hasMysql = await fs.promises.access(mysqlExtension).then(() => true, () => false)
-
-    if (config.verbose) {
-      console.log(`🔍 Found extensions: PostgreSQL=${hasPgsql}, MySQL=${hasMysql}`)
-    }
-
-    // If we already have both extensions, skip compilation
-    if (hasPgsql && hasMysql) {
-      logUniqueMessage(`✅ Database extensions already available, skipping compilation`)
-    }
-    else {
-      // If we don't have compiled extensions, try to compile them (with better error handling)
-      try {
-        await compilePhpDatabaseExtensions(installPath, extensionDir)
-      }
-      catch (compileError) {
-        logUniqueMessage(`⚠️  Database extension compilation failed: ${compileError}`)
-        if (config.verbose) {
-          console.warn('Continuing with available extensions...')
-        }
-      }
-    }
-
-    // Create PHP wrapper script that automatically loads available database extensions
-    await createPhpWrapperWithExtensions(installPath, extensionDir)
-
-    // Create proper php.ini that will be used by our wrapper
-    await createPhpIniWithDatabaseExtensions(installPath, extensionDir)
-
-    logUniqueMessage(`✅ Database extensions setup completed for PHP`)
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`⚠️  Database extension setup failed: ${error}`)
-    }
-    // Don't fail the entire installation if database extensions fail
-  }
-}
-
-/**
- * Compiles PHP database extensions (PostgreSQL and MySQL)
- */
-async function compilePhpDatabaseExtensions(installPath: string, extensionDir: string): Promise<void> {
-  try {
-    logUniqueMessage(`🔧 Compiling database extensions for PHP...`)
-
-    // Create temporary directory for compilation
-    const tempDir = path.join(process.cwd(), '.tmp', 'php-ext-compile')
     await fs.promises.mkdir(tempDir, { recursive: true })
 
-    // Download PHP source (we'll use the same version that's installed)
-    const phpVersion = '8.4.10' // This should match the installed PHP version
-    const sourceUrl = `https://www.php.net/distributions/php-${phpVersion}.tar.gz`
-
+    logUniqueMessage(`📦 Downloading PHP ${version} source...`)
     if (config.verbose) {
-      console.log(`📥 Downloading PHP source from ${sourceUrl}`)
+      console.warn(`Downloading PHP source from: ${sourceUrl}`)
     }
 
-    // Use system curl to avoid segfault issues
-    const curlProc = spawn('/usr/bin/curl', ['-L', sourceUrl, '-o', `php-${phpVersion}.tar.gz`], {
-      cwd: tempDir,
-      stdio: config.verbose ? 'inherit' : 'pipe',
-    })
+    const response = await fetch(sourceUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download PHP source: ${response.status}`)
+    }
 
-    await new Promise<void>((resolve, reject) => {
-      curlProc.on('close', (code: number | null) => {
-        if (code === 0)
-          resolve()
-        else reject(new Error(`curl failed with code ${code}`))
-      })
-    })
+    const buffer = await response.arrayBuffer()
+    await fs.promises.writeFile(tarFile, Buffer.from(buffer))
 
     // Extract source
-    const tarProc = spawn('tar', ['-xzf', `php-${phpVersion}.tar.gz`], {
-      cwd: tempDir,
+    logUniqueMessage(`📂 Extracting PHP ${version} source...`)
+    const { execSync } = await import('node:child_process')
+    execSync(`tar -xzf "${tarFile}" -C "${tempDir}"`, { stdio: 'pipe' })
+
+    const sourceDir = path.join(tempDir, `php-${version}`)
+    if (!fs.existsSync(sourceDir)) {
+      throw new Error('Failed to extract PHP source')
+    }
+
+    // Build configure arguments from configuration
+    const configureArgs = [
+      `--prefix="${packageDir}"`,
+      ...phpConfig.build.configureArgs,
+    ]
+
+    // Add core extensions
+    phpConfig.extensions.core.forEach((ext) => {
+      configureArgs.push(`--enable-${ext}`)
+    })
+
+    // Add database extensions
+    phpConfig.extensions.database.forEach((ext) => {
+      if (ext.startsWith('pdo-')) {
+        configureArgs.push(`--with-${ext}`)
+      }
+      else {
+        configureArgs.push(`--with-${ext}`)
+      }
+    })
+
+    // Add web extensions
+    phpConfig.extensions.web.forEach((ext) => {
+      configureArgs.push(`--with-${ext}`)
+    })
+
+    // Add utility extensions
+    phpConfig.extensions.utility.forEach((ext) => {
+      configureArgs.push(`--with-${ext}`)
+    })
+
+    // Add optional extensions
+    phpConfig.extensions.optional.forEach((ext) => {
+      configureArgs.push(`--enable-${ext}`)
+    })
+
+    if (config.verbose) {
+      console.warn(`Building PHP with extensions: ${Object.values(phpConfig.extensions).flat().join(', ')}`)
+      console.warn(`Configure args: ${configureArgs.join(' ')}`)
+    }
+
+    // Run configure
+    logUniqueMessage(`⚙️  Configuring PHP ${version} build...`)
+    execSync(`cd "${sourceDir}" && ./configure ${configureArgs.join(' ')}`, {
       stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: phpConfig.build.timeout,
     })
 
-    await new Promise<void>((resolve, reject) => {
-      tarProc.on('close', (code: number | null) => {
-        if (code === 0)
-          resolve()
-        else reject(new Error(`tar failed with code ${code}`))
-      })
+    // Build PHP
+    logUniqueMessage(`🔨 Compiling PHP ${version} (this may take several minutes)...`)
+    const { cpus } = await import('node:os')
+    const makeJobs = phpConfig.build.parallelJobs || cpus().length
+    execSync(`cd "${sourceDir}" && make -j${makeJobs}`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: phpConfig.build.timeout,
     })
 
-    // Compile PostgreSQL extension
-    await compileExtension(path.join(tempDir, `php-${phpVersion}`, 'ext', 'pdo_pgsql'), extensionDir, 'pdo_pgsql', [
-      '--with-pdo-pgsql',
-    ])
+    // Install PHP
+    logUniqueMessage(`📦 Installing PHP ${version}...`)
+    execSync(`cd "${sourceDir}" && make install`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 120000, // 2 minutes
+    })
 
-    // Compile MySQL extension
-    await compileExtension(path.join(tempDir, `php-${phpVersion}`, 'ext', 'pdo_mysql'), extensionDir, 'pdo_mysql', [
-      '--with-pdo-mysql',
-    ])
+    // Cleanup temp directory
+    fs.rmSync(tempDir, { recursive: true, force: true })
 
-    // Clean up temporary directory
-    await fs.promises.rm(tempDir, { recursive: true, force: true })
+    // Return the files we created
+    const binDir = path.join(packageDir, 'bin')
+    const libDir = path.join(packageDir, 'lib')
+    const installedFiles: string[] = []
 
-    logUniqueMessage(`✅ Database extensions compiled successfully`)
+    if (fs.existsSync(binDir)) {
+      const binFiles = fs.readdirSync(binDir)
+      installedFiles.push(...binFiles.map(f => path.join(binDir, f)))
+    }
+
+    if (fs.existsSync(libDir)) {
+      const libFiles = fs.readdirSync(libDir)
+      installedFiles.push(...libFiles.map(f => path.join(libDir, f)))
+    }
+
+    logUniqueMessage(`✅ php.net \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+    return installedFiles
   }
   catch (error) {
     if (config.verbose) {
-      console.warn(`⚠️  Extension compilation failed: ${error}`)
+      console.warn(`PHP source build failed: ${error}`)
     }
-    throw error
+    logUniqueMessage(`❌ PHP ${version} source build failed: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(`Failed to build PHP from source: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
 /**
- * Compiles a single PHP extension
+ * Build zlib from source to fix broken ts-pkgx dependencies
  */
-async function compileExtension(sourceDir: string, extensionDir: string, extensionName: string, configureArgs: string[]): Promise<void> {
+export async function buildZlibFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const version = requestedVersion?.replace(/^v/, '') || '1.3.1'
+  const domain = 'zlib.net'
+  const packageDir = path.join(installPath, domain, `v${version}`)
+
   try {
+    logUniqueMessage(`🔄 Building zlib ${version} from source to fix broken dependencies...`)
+
+    // Create package directory
+    await fs.promises.mkdir(packageDir, { recursive: true })
+
+    // Download zlib source
+    const sourceUrl = `https://github.com/madler/zlib/releases/download/v${version}/zlib-${version}.tar.gz`
+    const tempDir = path.join(installPath, '.tmp', `zlib-source-${version}`)
+    const tarFile = path.join(tempDir, `zlib-${version}.tar.gz`)
+
+    await fs.promises.mkdir(tempDir, { recursive: true })
+
+    logUniqueMessage(`📦 Downloading zlib ${version} source...`)
     if (config.verbose) {
-      console.log(`🔧 Compiling ${extensionName} extension...`)
+      console.warn(`Downloading zlib source from: ${sourceUrl}`)
     }
 
-    // Run phpize
-    const phpizeProc = spawn('phpize', [], {
-      cwd: sourceDir,
-      stdio: config.verbose ? 'inherit' : 'pipe',
-    })
-
-    await new Promise<void>((resolve, reject) => {
-      phpizeProc.on('close', (code: number | null) => {
-        if (code === 0)
-          resolve()
-        else reject(new Error(`phpize failed for ${extensionName}`))
-      })
-    })
-
-    // Configure
-    const configureProc = spawn('./configure', configureArgs, {
-      cwd: sourceDir,
-      stdio: config.verbose ? 'inherit' : 'pipe',
-    })
-
-    await new Promise<void>((resolve, reject) => {
-      configureProc.on('close', (code: number | null) => {
-        if (code === 0)
-          resolve()
-        else reject(new Error(`configure failed for ${extensionName}`))
-      })
-    })
-
-    // Make
-    const makeProc = spawn('/usr/bin/make', [], {
-      cwd: sourceDir,
-      stdio: config.verbose ? 'inherit' : 'pipe',
-    })
-
-    await new Promise<void>((resolve, reject) => {
-      makeProc.on('close', (code: number | null) => {
-        if (code === 0)
-          resolve()
-        else reject(new Error(`make failed for ${extensionName}`))
-      })
-    })
-
-    // Copy the compiled extension
-    const compiledExtension = path.join(sourceDir, 'modules', `${extensionName}.so`)
-    const targetExtension = path.join(extensionDir, `${extensionName}.so`)
-
-    await fs.promises.copyFile(compiledExtension, targetExtension)
-
-    if (config.verbose) {
-      console.log(`✅ ${extensionName} extension compiled and installed`)
+    const response = await fetch(sourceUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download zlib source: ${response.status}`)
     }
+
+    const buffer = await response.arrayBuffer()
+    await fs.promises.writeFile(tarFile, Buffer.from(buffer))
+
+    // Extract source
+    logUniqueMessage(`📂 Extracting zlib ${version} source...`)
+    const { execSync } = await import('node:child_process')
+    execSync(`tar -xzf "${tarFile}" -C "${tempDir}"`, { stdio: 'pipe' })
+
+    const sourceDir = path.join(tempDir, `zlib-${version}`)
+    if (!fs.existsSync(sourceDir)) {
+      throw new Error('Failed to extract zlib source')
+    }
+
+    // Configure and build zlib
+    logUniqueMessage(`⚙️  Configuring zlib ${version} build...`)
+    execSync(`cd "${sourceDir}" && ./configure --prefix="${packageDir}"`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 300000, // 5 minutes
+    })
+
+    // Build zlib
+    logUniqueMessage(`🔨 Compiling zlib ${version}...`)
+    const { cpus } = await import('node:os')
+    const makeJobs = cpus().length
+    execSync(`cd "${sourceDir}" && make -j${makeJobs}`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 300000, // 5 minutes
+    })
+
+    // Install zlib
+    logUniqueMessage(`📦 Installing zlib ${version}...`)
+    execSync(`cd "${sourceDir}" && make install`, {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+      timeout: 120000, // 2 minutes
+    })
+
+    // Cleanup temp directory
+    fs.rmSync(tempDir, { recursive: true, force: true })
+
+    // Return the files we created
+    const binDir = path.join(packageDir, 'bin')
+    const libDir = path.join(packageDir, 'lib')
+    const installedFiles: string[] = []
+
+    if (fs.existsSync(binDir)) {
+      const binFiles = fs.readdirSync(binDir)
+      installedFiles.push(...binFiles.map(f => path.join(binDir, f)))
+    }
+
+    if (fs.existsSync(libDir)) {
+      const libFiles = fs.readdirSync(libDir)
+      installedFiles.push(...libFiles.map(f => path.join(libDir, f)))
+    }
+
+    logUniqueMessage(`✅ zlib.net \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+    return installedFiles
   }
   catch (error) {
     if (config.verbose) {
-      console.warn(`⚠️  Failed to compile ${extensionName}: ${error}`)
+      console.warn(`zlib source build failed: ${error}`)
     }
-    // Don't throw - we want to continue with other extensions
-  }
-}
-
-/**
- * Creates a PHP wrapper script that automatically loads database extensions
- */
-async function createPhpWrapperWithExtensions(installPath: string, extensionDir: string): Promise<void> {
-  const phpBinPath = path.join(installPath, 'bin', 'php')
-  const phpWrapperPath = path.join(installPath, 'bin', 'php-with-db')
-
-  // Find available database extensions
-  const extensions: string[] = []
-
-  const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
-  const mysqlExtension = path.join(extensionDir, 'pdo_mysql.so')
-
-  if (await fs.promises.access(pgsqlExtension).then(() => true, () => false)) {
-    extensions.push(`-d extension=${pgsqlExtension}`)
-  }
-
-  if (await fs.promises.access(mysqlExtension).then(() => true, () => false)) {
-    extensions.push(`-d extension=${mysqlExtension}`)
-  }
-
-  // Create wrapper script
-  const wrapperScript = `#!/bin/bash
-# PHP wrapper with database extensions
-# Generated by Launchpad
-exec "${phpBinPath}" ${extensions.join(' ')} "$@"
-`
-
-  await fs.promises.writeFile(phpWrapperPath, wrapperScript, { mode: 0o755 })
-
-  // Replace the original php binary with our wrapper
-  const originalPhpPath = `${phpBinPath}.original`
-
-  // Backup original if not already backed up
-  if (!await fs.promises.access(originalPhpPath).then(() => true, () => false)) {
-    await fs.promises.copyFile(phpBinPath, originalPhpPath)
-  }
-
-  // Replace with wrapper
-  await fs.promises.copyFile(phpWrapperPath, phpBinPath)
-
-  if (config.verbose) {
-    console.log(`✅ PHP wrapper created with database extensions`)
-  }
-}
-
-/**
- * Creates php.ini configuration file with database extensions
- */
-async function createPhpIniWithDatabaseExtensions(installPath: string, extensionDir: string): Promise<void> {
-  const phpIniDir = path.join(installPath, 'etc')
-  const phpIniPath = path.join(phpIniDir, 'php.ini')
-
-  await fs.promises.mkdir(phpIniDir, { recursive: true })
-
-  const extensions: string[] = []
-
-  const pgsqlExtension = path.join(extensionDir, 'pdo_pgsql.so')
-  const mysqlExtension = path.join(extensionDir, 'pdo_mysql.so')
-
-  if (await fs.promises.access(pgsqlExtension).then(() => true, () => false)) {
-    extensions.push(`extension=${pgsqlExtension}`)
-  }
-
-  if (await fs.promises.access(mysqlExtension).then(() => true, () => false)) {
-    extensions.push(`extension=${mysqlExtension}`)
-  }
-
-  const phpIniContent = `; PHP configuration with database extensions
-; Generated by Launchpad
-
-; Basic PHP settings
-memory_limit = 256M
-max_execution_time = 30
-max_input_time = 60
-upload_max_filesize = 32M
-post_max_size = 32M
-
-; Database extensions
-${extensions.join('\n')}
-
-; Enable OPcache for better performance
-opcache.enable=1
-opcache.enable_cli=1
-opcache.memory_consumption=128
-opcache.interned_strings_buffer=8
-opcache.max_accelerated_files=4000
-opcache.revalidate_freq=2
-opcache.fast_shutdown=1
-
-; Error reporting for development
-display_errors = On
-display_startup_errors = On
-error_reporting = E_ALL
-log_errors = On
-`
-
-  await fs.promises.writeFile(phpIniPath, phpIniContent)
-
-  if (config.verbose) {
-    console.log(`✅ php.ini created with database extensions at ${phpIniPath}`)
+    logUniqueMessage(`❌ zlib ${version} source build failed: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(`Failed to build zlib from source: ${error instanceof Error ? error.message : String(error)}`)
   }
 }

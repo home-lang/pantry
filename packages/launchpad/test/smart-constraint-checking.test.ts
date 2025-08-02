@@ -15,7 +15,7 @@ describe('Smart Constraint Checking', () => {
   const crypto = require('node:crypto')
   const testProjectHash = `test-project_${crypto.createHash('md5').update(testProjectDir).digest('hex').slice(0, 8)}`
   const testLocalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', testProjectHash)
-  const testGlobalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+  const testGlobalEnvDir = path.join(testBaseDir, 'launchpad-global-test') // Use isolated test directory, NOT real global dir
 
   beforeEach(() => {
     // Reset global state for test isolation
@@ -181,8 +181,8 @@ describe('Smart Constraint Checking', () => {
       }
       finally {
         console.log = originalLog
-        // Clean up
-        if (fs.existsSync(testGlobalEnvDir)) {
+        // Clean up test global directory (NEVER touch real global dir)
+        if (fs.existsSync(testGlobalEnvDir) && !testGlobalEnvDir.includes('global')) {
           fs.rmSync(testGlobalEnvDir, { recursive: true, force: true })
         }
       }

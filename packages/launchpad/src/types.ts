@@ -78,6 +78,8 @@ export interface ServiceConfig {
   database: DatabaseConfig
   /** Framework configuration */
   frameworks: FrameworksConfig
+  /** PHP configuration */
+  php: PHPConfig
 }
 
 export interface FrameworksConfig {
@@ -108,6 +110,39 @@ export interface DatabaseConfig {
   password: string
   /** Database authentication method for local connections _(default: 'trust')_ */
   authMethod: 'trust' | 'md5' | 'scram-sha-256'
+}
+
+export interface PHPConfig {
+  /** Enable PHP support _(default: true)_ */
+  enabled: boolean
+  /** PHP installation strategy _(default: 'source-build')_ */
+  strategy: 'source-build'
+  /** PHP version to install _(default: '8.4.0')_ */
+  version: string
+  /** PHP extensions to enable during compilation */
+  extensions: {
+    /** Core extensions (always enabled) */
+    core: string[]
+    /** Database extensions */
+    database: string[]
+    /** Web extensions */
+    web: string[]
+    /** Utility extensions */
+    utility: string[]
+    /** Optional extensions */
+    optional: string[]
+  }
+  /** Build configuration options */
+  build: {
+    /** Number of parallel jobs for compilation _(default: auto-detect CPU cores)_ */
+    parallelJobs?: number
+    /** Additional configure arguments */
+    configureArgs: string[]
+    /** Build timeout in milliseconds _(default: 600000)_ */
+    timeout: number
+    /** Enable debug build _(default: false)_ */
+    debug: boolean
+  }
 }
 
 export interface ServiceDefinition {

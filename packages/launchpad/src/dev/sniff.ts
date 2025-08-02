@@ -283,7 +283,7 @@ function setCachedResult(dir: string, result: string | null): void {
   cacheTimestamps.set(dir, Date.now())
 }
 
-export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string> }> {
+export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string>, services?: { enabled?: boolean, autoStart?: string[] } }> {
   const dirPath = dir instanceof SimplePath ? dir : new SimplePath(dir.string)
 
   if (!dirPath.isDirectory()) {
@@ -293,7 +293,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
   // Check cache first
   const cachedResult = getCachedResult(dirPath.string)
   if (cachedResult !== undefined) {
-    return cachedResult ? JSON.parse(cachedResult) : { pkgs: [], env: {} }
+    return cachedResult ? JSON.parse(cachedResult) : { pkgs: [], env: {}, services: undefined }
   }
 
   const constraint = new SemverRange('*')
@@ -304,6 +304,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const pkgs: PackageRequirement[] = []
   const env: Record<string, string> = {}
+  let services: { enabled?: boolean, autoStart?: string[] } | undefined
 
   for await (
     const [path, { name, isFile, isSymlink, isDirectory }] of dirPath.ls()
@@ -545,7 +546,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const deduplicatedPkgs = Array.from(packageMap.values())
 
-  const result = { pkgs: deduplicatedPkgs, env }
+  const result = { pkgs: deduplicatedPkgs, env, services }
 
   // Cache the result
   setCachedResult(dirPath.string, JSON.stringify(result))
@@ -835,6 +836,11 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     }
 
     pkgs.push(...yaml.deps)
+    
+    // Collect services configuration (last one wins)
+    if (yaml.services) {
+      services = yaml.services
+    }
 
     function fix(input: string): string {
       // Simple variable replacement
@@ -881,12 +887,22 @@ function validateDollarSignUsage(str: string): void {
 
 function extract_well_formatted_entries(
   yaml: PlainObject,
-): { deps: PackageRequirement[], env: Record<string, unknown> } {
+): { deps: PackageRequirement[], env: Record<string, unknown>, services?: { enabled?: boolean, autoStart?: string[] } } {
   // Extract top-level global flag
   const topLevelGlobal = yaml.global === true || yaml.global === 'true'
   const deps = parse_deps(yaml.dependencies, topLevelGlobal)
   const env = isPlainObject(yaml.env) ? yaml.env : {}
-  return { deps, env }
+  
+  // Extract services configuration
+  let services: { enabled?: boolean, autoStart?: string[] } | undefined
+  if (isPlainObject(yaml.services)) {
+    services = {
+      enabled: yaml.services.enabled === true,
+      autoStart: Array.isArray(yaml.services.autoStart) ? yaml.services.autoStart : undefined
+    }
+  }
+  
+  return { deps, env, services }
 }
 
 function parse_deps(node: unknown, topLevelGlobal = false) {
