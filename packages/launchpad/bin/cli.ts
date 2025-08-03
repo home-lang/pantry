@@ -417,6 +417,47 @@ async function setupDevelopmentEnvironment(
 }
 
 /**
+ * Create symlinks for global binaries to ~/.local/bin
+ */
+async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<void> {
+  try {
+    const globalBinDir = path.join(globalEnvDir, 'bin')
+    const localBinDir = path.join(homedir(), '.local', 'bin')
+
+    // Ensure ~/.local/bin exists
+    await fs.promises.mkdir(localBinDir, { recursive: true })
+
+    if (!fs.existsSync(globalBinDir)) {
+      return // No global binaries to link
+    }
+
+    const binaries = await fs.promises.readdir(globalBinDir)
+
+    for (const binary of binaries) {
+      const sourcePath = path.join(globalBinDir, binary)
+      const targetPath = path.join(localBinDir, binary)
+
+      // Skip if source is not a file or symlink
+      const stats = await fs.promises.lstat(sourcePath)
+      if (!stats.isFile() && !stats.isSymbolicLink()) {
+        continue
+      }
+
+      // Remove existing symlink if it exists
+      if (fs.existsSync(targetPath)) {
+        await fs.promises.unlink(targetPath)
+      }
+
+      // Create new symlink
+      await fs.promises.symlink(sourcePath, targetPath)
+    }
+  } catch (error) {
+    // Don't fail the whole installation if symlink creation fails
+    console.warn('⚠️  Warning: Failed to create global binary symlinks:', error)
+  }
+}
+
+/**
  * Find all dependency files across the machine and install global dependencies
  */
 async function installGlobalDependencies(options: {
@@ -578,6 +619,8 @@ async function installGlobalDependencies(options: {
                     'test',
                     'tests',
                     '__tests__',
+                    'test-envs',
+                    'test-environments',
                     'spec',
                     'cypress',
                     'e2e',
@@ -695,6 +738,9 @@ async function installGlobalDependencies(options: {
 
   try {
     const results = await install(filteredPackages, globalEnvDir)
+
+    // Create symlinks to ~/.local/bin for global accessibility
+    await createGlobalBinarySymlinks(globalEnvDir)
 
     if (!options.quiet) {
       if (results.length > 0) {
@@ -1252,6 +1298,223 @@ cli
       console.log('  cd launchpad && bun install && bun run build')
       process.exit(1)
     }
+  })
+
+// Debug command - debug global dependencies and their sources
+cli
+  .command('debug:deps', 'Debug global dependencies and show their sources')
+  .option('--package <name>', 'Filter by specific package name')
+  .option('--version <version>', 'Filter by specific version')
+  .action(async (options) => {
+    console.log('🔍 Debugging global dependencies...\n')
+
+    // Scan for dependency files (same logic as global deps)
+    const globalDepFileNames = [
+      'deps.yaml',
+      'deps.yml',
+      'dependencies.yaml',
+      'dependencies.yml',
+    ]
+
+    const globalDepLocations = [
+      homedir(),
+      path.join(homedir(), '.dotfiles'),
+      path.join(homedir(), '.config'),
+      path.join(homedir(), 'Projects'),
+      path.join(homedir(), 'Code'),
+      path.join(homedir(), 'Development'),
+      path.join(homedir(), 'dev'),
+      path.join(homedir(), 'workspace'),
+      path.join(homedir(), 'src'),
+      path.join(homedir(), 'Desktop'),
+      '/opt',
+      '/usr/local',
+    ]
+
+    const foundFiles: Array<{ file: string, packages: Array<{ name: string, version?: string }> }> = []
+    const packageSources: Map<string, Array<{ file: string, version?: string }>> = new Map()
+
+    // Manual traversal like in installGlobalDependencies
+    for (const location of globalDepLocations) {
+      if (!fs.existsSync(location))
+        continue
+
+      for (const fileName of globalDepFileNames) {
+        async function scanDir(dir: string, depth: number = 0): Promise<void> {
+          if (depth > 6)
+            return
+
+          try {
+            const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name)
+
+              if (entry.isDirectory()) {
+                // Skip large/irrelevant directories and test environments
+                if (['node_modules', 'vendor', '.git', '.svn', '.hg', 'dist', 'build', 'target', 'venv', '__pycache__', '.vscode', '.idea', 'coverage', '.nyc_output', 'logs', 'test-envs', 'test', 'tests', '__tests__'].includes(entry.name)) {
+                  continue
+                }
+                await scanDir(fullPath, depth + 1)
+              }
+              else if (entry.name === fileName) {
+                try {
+                  const _content = await fs.promises.readFile(fullPath, 'utf-8')
+                  const { default: sniff } = await import('../src/dev/sniff')
+                  const sniffResult = await sniff({ string: path.dirname(fullPath) })
+
+                  const packages = sniffResult.pkgs.map(pkg => ({
+                    name: pkg.project,
+                    version: String(pkg.constraint),
+                  }))
+
+                  foundFiles.push({ file: fullPath, packages })
+
+                  // Track package sources
+                  for (const pkg of packages) {
+                    if (!packageSources.has(pkg.name)) {
+                      packageSources.set(pkg.name, [])
+                    }
+                    packageSources.get(pkg.name)!.push({
+                      file: fullPath,
+                      version: String(pkg.version),
+                    })
+                  }
+                }
+                catch {
+                  // Skip files that can't be parsed
+                }
+              }
+            }
+          }
+          catch {
+            // Skip directories we can't read
+          }
+        }
+
+        if (location === homedir()) {
+          // Direct file check for home directory
+          const directFile = path.join(location, fileName)
+          if (fs.existsSync(directFile)) {
+            try {
+              const _content = await fs.promises.readFile(directFile, 'utf-8')
+              const { default: sniff } = await import('../src/dev/sniff')
+              const sniffResult = await sniff({ string: location })
+
+              const packages = sniffResult.pkgs.map(pkg => ({
+                name: pkg.project,
+                version: String(pkg.constraint),
+              }))
+
+              foundFiles.push({ file: directFile, packages })
+
+              for (const pkg of packages) {
+                if (!packageSources.has(pkg.name)) {
+                  packageSources.set(pkg.name, [])
+                }
+                packageSources.get(pkg.name)!.push({
+                  file: directFile,
+                  version: String(pkg.version),
+                })
+              }
+            }
+            catch {
+              // Skip
+            }
+          }
+        }
+        else {
+          await scanDir(location, 0)
+        }
+      }
+    }
+
+    // Filter results if options provided
+    let filteredSources = packageSources
+    if (options.package) {
+      const filtered = new Map()
+      for (const [pkg, sources] of packageSources) {
+        if (pkg.toLowerCase().includes(options.package.toLowerCase())) {
+          filtered.set(pkg, sources)
+        }
+      }
+      filteredSources = filtered
+    }
+
+    if (options.version) {
+      const filtered = new Map()
+      for (const [pkg, sources] of filteredSources) {
+        const matchingSources = sources.filter(source =>
+          source.version && source.version.includes(options.version),
+        )
+        if (matchingSources.length > 0) {
+          filtered.set(pkg, matchingSources)
+        }
+      }
+      filteredSources = filtered
+    }
+
+    // Display results
+    console.log(`📄 Found ${foundFiles.length} dependency files`)
+    console.log(`📦 Found ${packageSources.size} unique packages\n`)
+
+    if (options.package || options.version) {
+      console.log('🔍 Filtered results:\n')
+    }
+
+    // Show package sources
+    for (const [packageName, sources] of filteredSources) {
+      console.log(`📦 ${packageName}`)
+
+      // Group by version
+      const versionGroups = new Map<string, string[]>()
+      for (const source of sources) {
+        const version = source.version || 'unspecified'
+        if (!versionGroups.has(version)) {
+          versionGroups.set(version, [])
+        }
+        versionGroups.get(version)!.push(source.file)
+      }
+
+      for (const [version, files] of versionGroups) {
+        console.log(`  📌 ${version}`)
+        for (const file of files) {
+          console.log(`     📄 ${file}`)
+        }
+      }
+      console.log()
+    }
+
+    // Show summary of conflicts
+    const conflicts = Array.from(packageSources.entries()).filter(([_, sources]) => {
+      const versions = new Set(sources.map(s => s.version).filter(Boolean))
+      return versions.size > 1
+    })
+
+    if (conflicts.length > 0) {
+      console.log('⚠️  Version conflicts detected:\n')
+      for (const [packageName, sources] of conflicts) {
+        console.log(`📦 ${packageName}`)
+        const versionGroups = new Map<string, string[]>()
+        for (const source of sources) {
+          const version = source.version || 'unspecified'
+          if (!versionGroups.has(version)) {
+            versionGroups.set(version, [])
+          }
+          versionGroups.get(version)!.push(source.file)
+        }
+
+        for (const [version, files] of versionGroups) {
+          console.log(`  ⚠️  ${version} (${files.length} files)`)
+        }
+        console.log()
+      }
+    }
+
+    console.log('💡 Usage examples:')
+    console.log('  launchpad debug:deps --package bun')
+    console.log('  launchpad debug:deps --version 1.2.3')
+    console.log('  launchpad debug:deps --package php --version 8.4')
   })
 
 // Upgrade command - upgrade Launchpad itself to the latest version

@@ -2189,7 +2189,8 @@ export async function downloadPackage(
     // Validate package completeness and trigger source build if incomplete
     const isValidPackage = await validatePackageInstallation(packageDir, domain)
     if (!isValidPackage) {
-      logUniqueMessage(`⚠️  Package ${domain} appears incomplete (missing lib directory), attempting source build...`)
+      const missingComponents = getMissingComponents(packageDir, domain)
+      logUniqueMessage(`⚠️  Package ${domain} appears incomplete (missing ${missingComponents}), attempting source build...`)
 
       // Try source build for known problematic packages
       const sourceBuilt = await attemptSourceBuild(domain, installPath, version)
@@ -2479,9 +2480,7 @@ exec "${binaryPath}" "$@"
 
         if (config.verbose) {
           console.warn(`Created shim: ${binary} -> ${binaryPath}`)
-          if (libraryPaths.length > 0) {
-            console.warn(`  Library paths: ${libraryPaths.join(', ')}`)
-          }
+          // Don't spam library paths for every binary - they're mostly the same
         }
       }
     }
@@ -4156,6 +4155,77 @@ export async function testPhpBinary(phpPath: string): Promise<boolean> {
 }
 
 /**
+ * Determine what components are missing from a package installation
+ */
+function getMissingComponents(packageDir: string, domain: string): string {
+  const binDir = path.join(packageDir, 'bin')
+  const sbinDir = path.join(packageDir, 'sbin')
+  const libDir = path.join(packageDir, 'lib')
+  const shareDir = path.join(packageDir, 'share')
+  const etcDir = path.join(packageDir, 'etc')
+
+  const hasBin = fs.existsSync(binDir)
+  const hasSbin = fs.existsSync(sbinDir)
+  const hasLib = fs.existsSync(libDir)
+  const hasShare = fs.existsSync(shareDir)
+  const hasEtc = fs.existsSync(etcDir)
+
+  // Special cases for different package types
+  if (domain === 'curl.se/ca-certs') {
+    if (!hasShare && !hasEtc) {
+      return 'certificate files'
+    }
+  }
+
+  if (domain.includes('x.org/util-macros')) {
+    const aclocalDir = path.join(packageDir, 'share', 'aclocal')
+    const pkgconfigDir = path.join(packageDir, 'share', 'pkgconfig')
+    if (!fs.existsSync(aclocalDir) && !fs.existsSync(pkgconfigDir) && !hasShare && !hasBin) {
+      return 'build macros (aclocal or pkgconfig files)'
+    }
+  }
+
+  if (domain.includes('x.org/protocol')) {
+    const includeDir = path.join(packageDir, 'include')
+    const pkgconfigDir = path.join(packageDir, 'share', 'pkgconfig')
+    if (!fs.existsSync(includeDir) && !fs.existsSync(pkgconfigDir) && !hasShare && !hasBin) {
+      return 'protocol headers (include or pkgconfig files)'
+    }
+  }
+
+  // Library packages that need lib directories
+  const libraryPackages = ['gnu.org/gmp', 'openssl.org', 'zlib.net', 'libpng.org', 'libsodium.org']
+  if (libraryPackages.some(pkg => domain.includes(pkg))) {
+    if (!hasLib && !hasBin) {
+      return 'lib directory or working binaries'
+    }
+  }
+
+  // Default: expect bin or sbin
+  if (!hasBin && !hasSbin) {
+    return 'executable binaries'
+  }
+
+  return 'required components'
+}
+
+/**
+ * Get fallback versions for build dependencies when primary version fails
+ */
+function _getFallbackVersions(packageName: string): string[] {
+  const fallbacks: Record<string, string[]> = {
+    'freedesktop.org/pkg-config': ['0.29.2', '0.29.1', '0.28.0'],
+    'gnu.org/autoconf': ['2.72.0', '2.71.0', '2.70.0'],
+    'gnu.org/automake': ['1.16.5', '1.16.4', '1.16.3'],
+    'gnu.org/bison': ['3.8.2', '3.8.1', '3.7.6'],
+    'gnu.org/m4': ['1.4.19', '1.4.18', '1.4.17'],
+    're2c.org': ['3.1.0', '3.0.0', '2.2.0'],
+  }
+
+  return fallbacks[packageName] || ['1.0.0']
+}
+
+/**
  * Build PHP from source using a Homebrew-style approach
  * This is our primary PHP installation method for reliability
  */
@@ -4166,6 +4236,69 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
   const packageDir = path.join(installPath, domain, `v${version}`)
 
   try {
+    // Set up environment for PHP build - point to installed dependencies
+    const pkgConfigPaths = [
+      path.join(installPath, 'gnome.org/libxml2/*/lib/pkgconfig'),
+      path.join(installPath, 'freedesktop.org/pkg-config/*/lib/pkgconfig'),
+      path.join(installPath, 'openssl.org/*/lib/pkgconfig'),
+      path.join(installPath, 'zlib.net/*/lib/pkgconfig'),
+      path.join(installPath, 'libpng.org/*/lib/pkgconfig'),
+      path.join(installPath, 'sourceware.org/libffi/*/lib/pkgconfig'),
+      path.join(installPath, 'pcre.org/*/lib/pkgconfig'),
+      path.join(installPath, 'gnu.org/readline/*/lib/pkgconfig'),
+      path.join(installPath, 'invisible-island.net/ncurses/*/lib/pkgconfig'),
+      path.join(installPath, '*/lib/pkgconfig'),
+      '/opt/pkg/lib/pkgconfig',
+      '/usr/lib/pkgconfig',
+      '/usr/local/lib/pkgconfig',
+    ]
+
+    // Find existing pkg-config directories manually
+    const expandedPaths: string[] = []
+
+    // Look for common pkg-config paths
+    const specificPaths = [
+      path.join(installPath, 'gnome.org/libxml2/v*/lib/pkgconfig'),
+      path.join(installPath, 'freedesktop.org/pkg-config/v*/lib/pkgconfig'),
+      path.join(installPath, 'openssl.org/v*/lib/pkgconfig'),
+      path.join(installPath, 'zlib.net/v*/lib/pkgconfig'),
+    ]
+
+    for (const pkgPath of specificPaths) {
+      // Simple wildcard expansion for version directories
+      const baseParts = pkgPath.split('/v*/')
+      if (baseParts.length === 2) {
+        const baseDir = baseParts[0]
+        const suffix = baseParts[1]
+
+        try {
+          if (fs.existsSync(baseDir)) {
+            const entries = fs.readdirSync(baseDir)
+            for (const entry of entries) {
+              if (entry.startsWith('v')) {
+                const fullPath = path.join(baseDir, entry, suffix)
+                if (fs.existsSync(fullPath)) {
+                  expandedPaths.push(fullPath)
+                }
+              }
+            }
+          }
+        }
+        catch (error) {
+          // Skip if directory read fails
+        }
+      }
+    }
+
+    // Add standard paths that might exist
+    for (const staticPath of ['/opt/pkg/lib/pkgconfig', '/usr/lib/pkgconfig', '/usr/local/lib/pkgconfig']) {
+      if (fs.existsSync(staticPath)) {
+        expandedPaths.push(staticPath)
+      }
+    }
+
+    logUniqueMessage(`🔧 Setting up build environment for PHP...`)
+
     logUniqueMessage(`🔄 Building PHP ${version} from source with configured extensions...`)
 
     // Create package directory
@@ -4242,11 +4375,27 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       console.warn(`Configure args: ${configureArgs.join(' ')}`)
     }
 
+    // Set up environment variables for configure
+    const configureEnv = {
+      ...process.env,
+      PKG_CONFIG_PATH: expandedPaths.length > 0 ? expandedPaths.join(':') : '',
+      // Also set library paths for build
+      LDFLAGS: expandedPaths.map(p => `-L${p.replace('/pkgconfig', '')}`).join(' '),
+      CPPFLAGS: expandedPaths.map(p => `-I${p.replace('/lib/pkgconfig', '/include')}`).join(' '),
+    }
+
+    if (config.verbose) {
+      console.warn(`PKG_CONFIG_PATH: ${configureEnv.PKG_CONFIG_PATH}`)
+      console.warn(`LDFLAGS: ${configureEnv.LDFLAGS}`)
+      console.warn(`CPPFLAGS: ${configureEnv.CPPFLAGS}`)
+    }
+
     // Run configure
     logUniqueMessage(`⚙️  Configuring PHP ${version} build...`)
     execSync(`cd "${sourceDir}" && ./configure ${configureArgs.join(' ')}`, {
       stdio: config.verbose ? 'inherit' : 'pipe',
       timeout: phpConfig.build.timeout,
+      env: configureEnv,
     })
 
     // Build PHP
@@ -4256,6 +4405,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
     execSync(`cd "${sourceDir}" && make -j${makeJobs}`, {
       stdio: config.verbose ? 'inherit' : 'pipe',
       timeout: phpConfig.build.timeout,
+      env: configureEnv,
     })
 
     // Install PHP
@@ -4263,6 +4413,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
     execSync(`cd "${sourceDir}" && make install`, {
       stdio: config.verbose ? 'inherit' : 'pipe',
       timeout: 120000, // 2 minutes
+      env: configureEnv,
     })
 
     // Cleanup temp directory
@@ -4341,21 +4492,50 @@ export async function buildZlibFromSource(installPath: string, requestedVersion?
     // Create package directory
     await fs.promises.mkdir(packageDir, { recursive: true })
 
-    // Download zlib source
-    const sourceUrl = `https://github.com/madler/zlib/releases/download/v${version}/zlib-${version}.tar.gz`
+    // Download zlib source with fallback URLs
+    const sourceUrls = [
+      `https://github.com/madler/zlib/releases/download/v${version}/zlib-${version}.tar.gz`,
+      `https://github.com/madler/zlib/archive/refs/tags/v${version}.tar.gz`,
+      `https://sourceforge.net/projects/libpng/files/zlib/${version}/zlib-${version}.tar.gz/download`,
+    ]
+
     const tempDir = path.join(installPath, '.tmp', `zlib-source-${version}`)
     const tarFile = path.join(tempDir, `zlib-${version}.tar.gz`)
 
     await fs.promises.mkdir(tempDir, { recursive: true })
 
     logUniqueMessage(`📦 Downloading zlib ${version} source...`)
-    if (config.verbose) {
-      console.warn(`Downloading zlib source from: ${sourceUrl}`)
+
+    let response: Response | undefined
+    let lastError: Error | undefined
+
+    for (const sourceUrl of sourceUrls) {
+      try {
+        if (config.verbose) {
+          console.warn(`Trying zlib source from: ${sourceUrl}`)
+        }
+
+        response = await fetch(sourceUrl, {
+          signal: AbortSignal.timeout(15000),
+          headers: { 'User-Agent': 'Launchpad/1.0' },
+        })
+
+        if (response.ok) {
+          break
+        }
+
+        lastError = new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        if (config.verbose) {
+          console.warn(`Failed to download from ${sourceUrl}:`, lastError.message)
+        }
+      }
     }
 
-    const response = await fetch(sourceUrl)
-    if (!response.ok) {
-      throw new Error(`Failed to download zlib source: ${response.status}`)
+    if (!response || !response.ok) {
+      throw new Error(`Failed to download zlib source from all URLs: ${lastError?.message}`)
     }
 
     const buffer = await response.arrayBuffer()
@@ -4622,9 +4802,57 @@ export async function buildGmpFromSource(installPath: string, requestedVersion?:
       console.warn(`Downloading GMP source from: ${sourceUrl}`)
     }
 
-    const response = await fetch(sourceUrl)
-    if (!response.ok) {
-      throw new Error(`Failed to download GMP source: ${response.status}`)
+    // Add retry logic with multiple URLs for network issues
+    const alternativeUrls = [
+      sourceUrl,
+      `https://ftp.gnu.org/gnu/gmp/gmp-${version}.tar.xz`,
+      `https://mirrors.kernel.org/gnu/gmp/gmp-${version}.tar.xz`,
+    ]
+
+    let response: Response | undefined
+    let lastError: Error | undefined
+
+    for (const url of alternativeUrls) {
+      let retryCount = 0
+      const maxRetries = 2
+
+      while (retryCount < maxRetries) {
+        try {
+          if (config.verbose) {
+            console.warn(`Trying GMP source from: ${url} (attempt ${retryCount + 1})`)
+          }
+
+          response = await fetch(url, {
+            signal: AbortSignal.timeout(30000), // 30 second timeout
+            headers: {
+              'User-Agent': 'Launchpad/1.0',
+            },
+          })
+
+          if (response.ok) {
+            break
+          }
+
+          lastError = new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error))
+          retryCount++
+
+          if (retryCount < maxRetries) {
+            logUniqueMessage(`📦 Download attempt ${retryCount} failed, retrying...`)
+            await new Promise(resolve => setTimeout(resolve, 2000 * retryCount))
+          }
+        }
+      }
+
+      if (response?.ok) {
+        break
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`Failed to download GMP source from all URLs: ${lastError?.message}`)
     }
 
     const buffer = await response.arrayBuffer()
@@ -4774,6 +5002,34 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
       'gnu.org/autoconf': () => {
         // autoconf is a tool, only needs bin/
         return hasBin
+      },
+      'gnu.org/automake': () => {
+        // automake is a tool, only needs bin/
+        return hasBin
+      },
+      'freedesktop.org/pkg-config': () => {
+        // pkg-config is a tool, only needs bin/
+        return hasBin
+      },
+      'x.org/util-macros': () => {
+        // X11 util-macros provides build macros in share/aclocal or share/pkgconfig
+        const shareDir = path.join(packageDir, 'share')
+        const aclocalDir = path.join(shareDir, 'aclocal')
+        const pkgconfigDir = path.join(shareDir, 'pkgconfig')
+        return fs.existsSync(aclocalDir) || fs.existsSync(pkgconfigDir) || fs.existsSync(shareDir) || hasBin
+      },
+      'x.org/protocol': () => {
+        // X11 protocol headers in include/ or share/
+        const shareDir = path.join(packageDir, 'share')
+        const includeDir = path.join(packageDir, 'include')
+        const pkgconfigDir = path.join(shareDir, 'pkgconfig')
+        return fs.existsSync(includeDir) || fs.existsSync(pkgconfigDir) || fs.existsSync(shareDir) || hasBin
+      },
+      'curl.se/ca-certs': () => {
+        // CA certificate bundle - needs share/ or etc/ directory for cert files
+        const shareDir = path.join(packageDir, 'share')
+        const etcDir = path.join(packageDir, 'etc')
+        return fs.existsSync(shareDir) || fs.existsSync(etcDir)
       },
       'perl.org': () => {
         // Perl is primarily a runtime, bin/ is sufficient

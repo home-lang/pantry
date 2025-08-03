@@ -6,7 +6,7 @@ import { platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
-import { findBinaryInPath } from '../utils'
+import { findBinaryInPath, findBinaryInEnvironment } from '../utils'
 import { createDefaultServiceConfig, getServiceDefinition } from './definitions'
 import { generateLaunchdPlist, generateSystemdService, getServiceFilePath, isPlatformSupported, removeServiceFile, writeLaunchdPlist, writeSystemdService } from './platform'
 
@@ -765,12 +765,14 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
 
     // Install the main service package - this will automatically install all dependencies
     // thanks to our fixed dependency resolution
-    await install([definition.packageDomain], `${process.env.HOME}/.local`)
+    const installPath = `${process.env.HOME}/.local`
+    await install([definition.packageDomain], installPath)
 
     console.warn(`✅ ${definition.displayName} package installed successfully`)
 
-    // Verify installation worked
-    if (!findBinaryInPath(definition.executable)) {
+    // Verify installation worked by checking in the Launchpad environment
+    const binaryPath = findBinaryInEnvironment(definition.executable, installPath)
+    if (!binaryPath) {
       throw new Error(`Executable ${definition.executable} not found after installation`)
     }
 
