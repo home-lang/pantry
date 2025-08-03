@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Simplified PHP Integration for Launchpad
  * Main entry point for PHP source building setup

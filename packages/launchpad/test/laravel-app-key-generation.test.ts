@@ -34,7 +34,8 @@ describe('Laravel App Key Generation', () => {
     if (originalCwd && typeof originalCwd === 'string') {
       try {
         process.chdir(originalCwd)
-      } catch (error) {
+      }
+      catch {
         // If original directory no longer exists, change to a safe directory
         process.chdir(os.homedir())
       }
@@ -62,7 +63,7 @@ describe('Laravel App Key Generation', () => {
     // Create composer.json
     fs.writeFileSync('composer.json', JSON.stringify({
       name: 'test/laravel-app',
-      require: { 'laravel/framework': '^11.0' }
+      require: { 'laravel/framework': '^11.0' },
     }, null, 2))
 
     // Create .env file
@@ -136,7 +137,7 @@ APP_DEBUG=true
       // Should recognize the valid key (if validation logic is working)
       // The exact suggestion depends on implementation, but should not suggest key generation
       const hasKeyGenerationSuggestion = result.suggestions.some(s =>
-        s.includes('key:generate') || s.includes('encryption key')
+        s.includes('key:generate') || s.includes('encryption key'),
       )
 
       // With a valid key, should not suggest generation (or should show validation)
@@ -152,7 +153,7 @@ APP_DEBUG=true
       // Create partial Laravel structure (missing artisan)
       fs.mkdirSync('app', { recursive: true })
       fs.writeFileSync('composer.json', JSON.stringify({
-        require: { 'laravel/framework': '^11.0' }
+        require: { 'laravel/framework': '^11.0' },
       }))
 
       const { detectLaravelProject } = await import('../src/dev/dump')
@@ -178,7 +179,7 @@ APP_DEBUG=true
       // Create partial Laravel structure (missing app directory)
       fs.writeFileSync('artisan', '#!/usr/bin/env php\n<?php')
       fs.writeFileSync('composer.json', JSON.stringify({
-        require: { 'laravel/framework': '^11.0' }
+        require: { 'laravel/framework': '^11.0' },
       }))
 
       const { detectLaravelProject } = await import('../src/dev/dump')
@@ -195,7 +196,7 @@ APP_DEBUG=true
       fs.mkdirSync('app', { recursive: true })
       fs.writeFileSync('artisan', '#!/usr/bin/env php\n<?php')
       fs.writeFileSync('composer.json', JSON.stringify({
-        require: { 'laravel/framework': '^11.0' }
+        require: { 'laravel/framework': '^11.0' },
       }))
 
       // Create .env.example but no .env
@@ -252,8 +253,8 @@ DB_DATABASE=test_app
       expect(result.suggestions.some(s => s.includes('migrate'))).toBe(true)
 
       // Should also handle app key (either generation attempt or suggestion)
-      const hasAppKeyRelatedSuggestion = result.suggestions.some(s =>
-        s.includes('key') || s.includes('encryption')
+      const _hasAppKeyRelatedSuggestion = result.suggestions.some(s =>
+        s.includes('key') || s.includes('encryption'),
       )
 
       // Note: In test environment, automatic generation might not work,
@@ -269,7 +270,7 @@ DB_DATABASE=test_app
         { key: 'base64:', description: 'incomplete base64 prefix' },
         { key: 'invalid-key-format', description: 'invalid format' },
         { key: 'base64:dGVzdA==', description: 'short base64 key' },
-        { key: 'base64:XKSOwxwKVP7HgtL/SDPUpve3NPwuhJasnvdMQRsDe3E=', description: 'valid base64 key' }
+        { key: 'base64:XKSOwxwKVP7HgtL/SDPUpve3NPwuhJasnvdMQRsDe3E=', description: 'valid base64 key' },
       ]
 
       for (const testCase of testCases) {
@@ -454,11 +455,13 @@ APP_DEBUG=true
 
         // Should still work even with post-setup disabled
         expect(Array.isArray(result.suggestions)).toBe(true)
-      } finally {
+      }
+      finally {
         // Restore original setting
         if (originalConfig !== undefined) {
           process.env.LAUNCHPAD_LARAVEL_POST_SETUP = originalConfig
-        } else {
+        }
+        else {
           delete process.env.LAUNCHPAD_LARAVEL_POST_SETUP
         }
       }

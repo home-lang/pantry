@@ -4316,9 +4316,9 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       }
     }
     else {
-      if (config.verbose) {
-        console.warn(`PHP source build failed: ${error}`)
-      }
+    if (config.verbose) {
+      console.warn(`PHP source build failed: ${error}`)
+    }
       logUniqueMessage(`❌ PHP ${version} source build failed: ${errorMessage}`)
     }
 
@@ -4437,9 +4437,9 @@ export async function buildZlibFromSource(installPath: string, requestedVersion?
       }
     }
     else {
-      if (config.verbose) {
-        console.warn(`zlib source build failed: ${error}`)
-      }
+    if (config.verbose) {
+      console.warn(`zlib source build failed: ${error}`)
+    }
       logUniqueMessage(`❌ zlib ${version} source build failed: ${errorMessage}`)
     }
 
@@ -4726,55 +4726,95 @@ export async function buildGmpFromSource(installPath: string, requestedVersion?:
 async function validatePackageInstallation(packageDir: string, domain: string): Promise<boolean> {
   try {
     const binDir = path.join(packageDir, 'bin')
+    const sbinDir = path.join(packageDir, 'sbin')
     const libDir = path.join(packageDir, 'lib')
+    const lib64Dir = path.join(packageDir, 'lib64')
 
     const hasBin = fs.existsSync(binDir)
+    const hasSbin = fs.existsSync(sbinDir)
     const hasLib = fs.existsSync(libDir)
+    const hasLib64 = fs.existsSync(lib64Dir)
 
-    // If no bin directory exists, the package might be broken entirely
-    if (!hasBin) {
+    // If no bin or sbin directory exists, check if it's purely a library package
+    if (!hasBin && !hasSbin) {
+      // For pure library packages, having lib/ is enough
+      if (hasLib || hasLib64) {
+        return true
+      }
       return false
     }
 
-    // For known library packages, they should have lib directories
-    const libraryPackages = [
+    // Special handling for packages that are known to work differently
+    const specialCases = {
+      'sqlite.org': () => {
+        // SQLite can work with just binaries, lib/ is optional
+        return hasBin && fs.existsSync(path.join(binDir, 'sqlite3'))
+      },
+      'php.net': () => {
+        // PHP can work with just binaries, especially if source-built
+        return hasBin && fs.existsSync(path.join(binDir, 'php'))
+      },
+      'gnu.org/bison': () => {
+        // Bison is a tool, only needs bin/
+        return hasBin
+      },
+      'gnu.org/m4': () => {
+        // M4 is a tool, only needs bin/
+        return hasBin
+      },
+      're2c.org': () => {
+        // re2c is a tool, only needs bin/
+        return hasBin
+      },
+      'gnu.org/sed': () => {
+        // sed is a tool, only needs bin/
+        return hasBin
+      },
+      'gnu.org/autoconf': () => {
+        // autoconf is a tool, only needs bin/
+        return hasBin
+      },
+      'perl.org': () => {
+        // Perl is primarily a runtime, bin/ is sufficient
+        return hasBin && fs.existsSync(path.join(binDir, 'perl'))
+      },
+    }
+
+    // Check special cases first
+    if (specialCases[domain]) {
+      return specialCases[domain]()
+    }
+
+    // For library packages that are expected to have both bin/ and lib/
+    const strictLibraryPackages = [
       'gnu.org/gmp',
-      'libpng.org',
       'openssl.org',
       'zlib.net',
-      'curl.se',
-      'gnu.org/readline',
-      'invisible-island.net/ncurses',
-      'sqlite.org',
-      'gnu.org/gettext',
-      'gnu.org/libiconv',
-      'libzip.org',
-      'sourceware.org/bzip2',
-      'facebook.com/zstd',
-      'lz4.org',
-      'tukaani.org/xz',
+      'libpng.org',
       'libsodium.org',
       'sourceware.org/libffi',
-      'gnome.org/libxml2',
-      'gnome.org/libxslt',
-      'libpng.org',
-      'google.com/webp',
-      'giflib.sourceforge.io',
-      'libjpeg-turbo.org',
-      'simplesystems.org/libtiff',
-      'gnu.org/mpfr',
-      'gnu.org/mpc',
-      'pcre.org',
-      'github.com/kkos/oniguruma',
     ]
 
-    // If this is a known library package and it doesn't have lib/, it's incomplete
-    if (libraryPackages.includes(domain) && !hasLib) {
-      return false
+    // Only require lib/ for strict library packages, and only if they don't have working binaries
+    if (strictLibraryPackages.includes(domain)) {
+      // If it has working binaries, it's probably fine even without lib/
+      if (hasBin) {
+        try {
+          const binaries = await fs.promises.readdir(binDir)
+          if (binaries.length > 0) {
+            return true // Has working binaries, good enough
+          }
+        } catch {
+          // If we can't read binDir, fall through to lib check
+        }
+      }
+      
+      // For strict library packages, require either lib/ or working binaries
+      return hasLib || hasLib64 || hasBin
     }
 
-    // For other packages, if they have bin/ they're probably complete enough
-    return true
+    // For most packages, having bin/ or sbin/ is sufficient
+    return hasBin || hasSbin
   }
   catch (error) {
     if (config.verbose) {
@@ -4799,6 +4839,12 @@ async function attemptSourceBuild(domain: string, installPath: string, version: 
       case 'zlib.net':
         await buildZlibFromSource(installPath, version)
         return true
+      case 'sqlite.org':
+        await buildSqliteFromSource(installPath, version)
+        return true
+      case 'openssl.org':
+        await buildOpenSSLFromSource(installPath, version)
+        return true
       default:
         // No source build available for this package
         return false
@@ -4809,5 +4855,149 @@ async function attemptSourceBuild(domain: string, installPath: string, version: 
       console.warn(`Source build failed for ${domain}:`, error)
     }
     return false
+  }
+}
+
+/**
+ * Build SQLite from source
+ */
+export async function buildSqliteFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const version = requestedVersion || '3.50.4'
+  const domain = 'sqlite.org'
+
+  logUniqueMessage(`🔄 Building SQLite ${version} from source...`)
+
+  // Create a source build directory
+  const sourceDir = path.join(installPath, '.tmp', `sqlite-source-${version}`)
+  await fs.promises.rm(sourceDir, { recursive: true, force: true })
+  await fs.promises.mkdir(sourceDir, { recursive: true })
+
+  try {
+    // Download SQLite source
+    logUniqueMessage(`📦 Downloading SQLite ${version} source...`)
+    const sourceUrl = `https://www.sqlite.org/2024/sqlite-autoconf-3500400.tar.gz`
+    const response = await fetch(sourceUrl)
+
+    if (!response.ok) {
+      throw new Error(`Failed to download SQLite source: ${response.status}`)
+    }
+
+    const tarPath = path.join(sourceDir, 'sqlite.tar.gz')
+    await fs.promises.writeFile(tarPath, Buffer.from(await response.arrayBuffer()))
+
+    // Extract source
+    logUniqueMessage(`📂 Extracting SQLite ${version} source...`)
+    execSync(`cd "${sourceDir}" && tar -xzf sqlite.tar.gz`, { stdio: 'inherit' })
+
+    // Find the extracted directory
+    const extractedDir = path.join(sourceDir, 'sqlite-autoconf-3500400')
+
+    // Configure
+    logUniqueMessage(`⚙️  Configuring SQLite ${version} build...`)
+    const packageDir = path.join(installPath, domain, `v${version}`)
+    await fs.promises.mkdir(packageDir, { recursive: true })
+
+    execSync(`cd "${extractedDir}" && ./configure --prefix="${packageDir}" --enable-fts5 --enable-json1`, {
+      stdio: 'inherit',
+    })
+
+    // Build
+    logUniqueMessage(`🔨 Compiling SQLite ${version}...`)
+    const { cpus } = await import('node:os')
+    const makeJobs = cpus().length
+    execSync(`cd "${extractedDir}" && make -j${makeJobs}`, {
+      stdio: 'inherit',
+    })
+
+    // Install
+    logUniqueMessage(`📦 Installing SQLite ${version}...`)
+    execSync(`cd "${extractedDir}" && make install`, {
+      stdio: 'inherit',
+    })
+
+    // Cleanup
+    await fs.promises.rm(sourceDir, { recursive: true, force: true })
+
+    return [`${packageDir}/bin/sqlite3`]
+  }
+  catch (error) {
+    // Cleanup on error
+    await fs.promises.rm(sourceDir, { recursive: true, force: true })
+
+    const errorMessage = `SQLite ${version} source build failed: ${
+      error instanceof Error ? error.message : String(error)
+    }`
+    throw new Error(errorMessage)
+  }
+}
+
+/**
+ * Build OpenSSL from source
+ */
+export async function buildOpenSSLFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
+  const version = requestedVersion || '3.5.0'
+  const domain = 'openssl.org'
+
+  logUniqueMessage(`🔄 Building OpenSSL ${version} from source...`)
+
+  // Create a source build directory
+  const sourceDir = path.join(installPath, '.tmp', `openssl-source-${version}`)
+  await fs.promises.rm(sourceDir, { recursive: true, force: true })
+  await fs.promises.mkdir(sourceDir, { recursive: true })
+
+  try {
+    // Download OpenSSL source
+    logUniqueMessage(`📦 Downloading OpenSSL ${version} source...`)
+    const sourceUrl = `https://github.com/openssl/openssl/archive/refs/tags/openssl-${version}.tar.gz`
+    const response = await fetch(sourceUrl)
+
+    if (!response.ok) {
+      throw new Error(`Failed to download OpenSSL source: ${response.status}`)
+    }
+
+    const tarPath = path.join(sourceDir, 'openssl.tar.gz')
+    await fs.promises.writeFile(tarPath, Buffer.from(await response.arrayBuffer()))
+
+    // Extract source
+    logUniqueMessage(`📂 Extracting OpenSSL ${version} source...`)
+    execSync(`cd "${sourceDir}" && tar -xzf openssl.tar.gz`, { stdio: 'inherit' })
+
+    // Find the extracted directory
+    const extractedDir = path.join(sourceDir, `openssl-openssl-${version}`)
+
+    // Configure
+    logUniqueMessage(`⚙️  Configuring OpenSSL ${version} build...`)
+    const packageDir = path.join(installPath, domain, `v${version}`)
+    await fs.promises.mkdir(packageDir, { recursive: true })
+
+    execSync(`cd "${extractedDir}" && ./Configure --prefix="${packageDir}" shared`, {
+      stdio: 'inherit',
+    })
+
+    // Build
+    logUniqueMessage(`🔨 Compiling OpenSSL ${version}...`)
+    execSync(`cd "${extractedDir}" && make`, {
+      stdio: 'inherit',
+    })
+
+    // Install
+    logUniqueMessage(`📦 Installing OpenSSL ${version}...`)
+    execSync(`cd "${extractedDir}" && make install`, {
+      stdio: 'inherit',
+    })
+
+    // Cleanup
+    await fs.promises.rm(sourceDir, { recursive: true, force: true })
+
+    return [`${packageDir}/bin/openssl`]
+  }
+  catch (error) {
+    // Cleanup on error
+    await fs.promises.rm(sourceDir, { recursive: true, force: true })
+
+    const errorMessage = `OpenSSL ${version} source build failed: ${
+      error instanceof Error ? error.message : String(error)
+    }`
+    throw new Error(errorMessage)
   }
 }

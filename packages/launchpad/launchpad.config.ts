@@ -71,12 +71,58 @@ export const defaultConfig: LaunchpadConfig = {
       password: 'password',
       authMethod: 'trust',
     },
+    php: {
+      enabled: true,
+      strategy: 'source-build',
+      version: '8.4.0',
+      extensions: {
+        core: ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath'],
+        database: ['pdo-mysql', 'pdo-pgsql', 'pdo-sqlite', 'mysqli', 'pgsql', 'sqlite3'],
+        web: ['curl', 'openssl', 'gd', 'soap', 'sockets'],
+        utility: ['zip', 'bz2', 'gettext', 'iconv', 'readline', 'libxml', 'zlib'],
+        optional: ['pcntl', 'posix', 'shmop', 'sysvmsg', 'sysvsem', 'sysvshm'],
+      },
+      build: {
+        parallelJobs: undefined,
+        configureArgs: ['--disable-debug', '--disable-dependency-tracking', '--disable-silent-rules'],
+        timeout: 600000,
+        debug: false,
+      },
+      libraryFixes: {
+        systemLibraryPaths: ['/opt/homebrew/lib', '/usr/local/lib', '/usr/lib'],
+      },
+      shim: {
+        optimizeLibraryPath: true,
+        environmentVariables: {},
+      },
+    },
     frameworks: {
       enabled: true,
       preferredDatabase: 'postgres',
       laravel: {
         enabled: true,
         autoDetect: true,
+        postSetupCommands: {
+          enabled: true,
+          commands: [
+            {
+              name: 'migrate',
+              command: 'php artisan migrate',
+              description: 'Run database migrations',
+              condition: 'hasUnrunMigrations',
+              runInBackground: false,
+              required: false,
+            },
+            {
+              name: 'seed',
+              command: 'php artisan db:seed',
+              description: 'Seed the database with sample data',
+              condition: 'hasSeeders',
+              runInBackground: false,
+              required: false,
+            },
+          ],
+        },
       },
       stacks: {
         enabled: true,

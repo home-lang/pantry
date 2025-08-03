@@ -167,6 +167,18 @@ export interface PHPConfig {
     /** Enable debug build _(default: false)_ */
     debug: boolean
   }
+  /** Library fixes for common issues */
+  libraryFixes: {
+    /** System library paths to include */
+    systemLibraryPaths: string[]
+  }
+  /** Shim configuration */
+  shim: {
+    /** Optimize library path resolution */
+    optimizeLibraryPath: boolean
+    /** Environment variables to set */
+    environmentVariables: Record<string, string>
+  }
 }
 
 export interface ServiceDefinition {

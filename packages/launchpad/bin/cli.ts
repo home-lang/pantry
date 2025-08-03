@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import { Glob } from 'bun'
 import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
@@ -429,16 +428,33 @@ async function installGlobalDependencies(options: {
     console.log('🔍 Scanning machine for dependency files...')
   }
 
-  const { DEPENDENCY_FILE_NAMES } = await import('../src/env')
+  const overallStartTime = Date.now()
+
+  // For global deps, only scan for Launchpad-specific dependency files
+  const globalDepFileNames = [
+    'deps.yaml',
+    'deps.yml',
+    'dependencies.yaml',
+    'dependencies.yml',
+  ]
+
+  // More targeted locations where dependency files are likely to be found
   const globalDepLocations = [
+    // Direct home directory files only (no deep scanning)
     homedir(),
+    // Common dotfiles locations
     path.join(homedir(), '.dotfiles'),
     path.join(homedir(), '.config'),
-    path.join(homedir(), 'Desktop'),
-    path.join(homedir(), 'Documents'),
+    // Common project directories (limit depth)
     path.join(homedir(), 'Projects'),
     path.join(homedir(), 'Code'),
     path.join(homedir(), 'Development'),
+    path.join(homedir(), 'dev'),
+    path.join(homedir(), 'workspace'),
+    path.join(homedir(), 'src'),
+    // Desktop for quick projects
+    path.join(homedir(), 'Desktop'),
+    // System locations (but these are usually not writable anyway)
     '/opt',
     '/usr/local',
   ]
@@ -446,36 +462,168 @@ async function installGlobalDependencies(options: {
   const foundFiles: string[] = []
   const allPackages = new Set<string>()
 
-  // Use Bun's glob for efficient file searching
-  const dependencyPatterns = DEPENDENCY_FILE_NAMES.map(name => `**/${name}`)
+  // Use simple glob patterns - keep it fast and reliable
+  const dependencyPatterns = globalDepFileNames.map(name => `**/${name}`)
 
-  // Search for dependency files in all potential locations using Bun glob
+  // Search for dependency files in all potential locations using Bun glob with exclusions
   for (const location of globalDepLocations) {
     if (!fs.existsSync(location))
       continue
 
     try {
-      // Search for all dependency file types in parallel using Bun's glob
+      if (options.verbose) {
+        console.log(`🔍 Scanning ${location}...`)
+      }
+      const locationStartTime = Date.now()
+
+      // Special handling for different directory types with appropriate timeouts
+      const isHomeDir = location === homedir()
+      const isCodeDir = location.includes('/Code') || location.includes('/Projects') || location.includes('/Development')
+
+      // Use manual traversal for fast and reliable scanning with exclusions
       for (const pattern of dependencyPatterns) {
-        const glob = new Glob(pattern)
-        for await (const file of glob.scan({
-          cwd: location,
-          onlyFiles: true,
-          followSymlinks: false,
-        })) {
-          const fullPath = path.resolve(location, file)
-          foundFiles.push(fullPath)
+        let fileCount = 0
+        const startTime = Date.now()
+        const maxScanTime = isHomeDir ? 1000 : (isCodeDir ? 5000 : 2000)
+        const fileName = pattern.replace('**/', '')
+
+        if (isHomeDir) {
+          // Home dir: only scan direct files
+          try {
+            const entries = await fs.promises.readdir(location)
+            for (const entry of entries) {
+              if (entry === fileName) {
+                foundFiles.push(path.join(location, entry))
+                fileCount++
+              }
+            }
+          }
+          catch {
+            // Skip if can't read directory
+          }
+        }
+        else {
+          // Other dirs: recursive scan with exclusions
+          async function scanDir(dir: string, depth: number = 0): Promise<void> {
+            if (Date.now() - startTime > maxScanTime || fileCount >= 100 || depth > 6) {
+              return
+            }
+
+            try {
+              const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+
+              for (const entry of entries) {
+                if (Date.now() - startTime > maxScanTime || fileCount >= 100)
+                  break
+
+                const fullPath = path.join(dir, entry.name)
+
+                if (entry.isFile() && entry.name === fileName) {
+                  foundFiles.push(fullPath)
+                  fileCount++
+                }
+                else if (entry.isDirectory()) {
+                  // Skip excluded directories
+                  const shouldSkip = [
+                    'node_modules',
+                    'vendor',
+                    '.git',
+                    '.svn',
+                    '.hg',
+                    'dist',
+                    'build',
+                    'target',
+                    'out',
+                    'tmp',
+                    'temp',
+                    'cache',
+                    '.cache',
+                    '.npm',
+                    '.yarn',
+                    '.pnpm',
+                    '.bun',
+                    'logs',
+                    'coverage',
+                    '.nyc_output',
+                    '.pytest_cache',
+                    '__pycache__',
+                    '.venv',
+                    'venv',
+                    'env',
+                    '.env',
+                    'virtualenv',
+                    '.next',
+                    '.nuxt',
+                    '.output',
+                    'public',
+                    'static',
+                    'assets',
+                    'uploads',
+                    'storage',
+                    'backups',
+                    'dumps',
+                    'migrations',
+                    'seeds',
+                    'test-results',
+                    'playwright-report',
+                    '.playwright',
+                    '.vscode',
+                    '.idea',
+                    'docs',
+                    'documentation',
+                    'examples',
+                    'demo',
+                    'demos',
+                    'samples',
+                    'test',
+                    'tests',
+                    '__tests__',
+                    'spec',
+                    'cypress',
+                    'e2e',
+                    '.turbo',
+                    '.vercel',
+                    '.netlify',
+                    '.github',
+                    '.gitlab',
+                    '.bitbucket',
+                  ].includes(entry.name)
+
+                  if (!shouldSkip) {
+                    await scanDir(fullPath, depth + 1)
+                  }
+                }
+              }
+            }
+            catch {
+              // Skip directories we can't read
+            }
+          }
+
+          await scanDir(location)
+        }
+
+        if (options.verbose && fileCount > 0) {
+          console.log(`  ✓ Found ${fileCount} files matching ${pattern} in ${location} (${Date.now() - startTime}ms)`)
         }
       }
+
+      const locationTime = Date.now() - locationStartTime
+      if (options.verbose || locationTime > 1000) {
+        console.log(`📍 Completed ${location} in ${locationTime}ms`)
+      }
     }
-    catch {
-      // Ignore permission errors or other issues
+    catch (error) {
+      if (options.verbose) {
+        console.warn(`Failed to scan ${location}: ${error instanceof Error ? error.message : String(error)}`)
+      }
       continue
     }
   }
 
+  const overallTime = Date.now() - overallStartTime
   if (!options.quiet) {
-    console.log(`📁 Found ${foundFiles.length} dependency files`)
+    console.log(`📁 Found ${foundFiles.length} dependency files in ${overallTime}ms`)
   }
 
   // Parse all found dependency files and extract packages
@@ -501,18 +649,41 @@ async function installGlobalDependencies(options: {
     }
   }
 
-  const packageList = Array.from(allPackages)
+  // Filter out test/fake packages that shouldn't be installed
+  const fakePackagePatterns = [
+    'fake.com',
+    'nonexistent.org',
+    'test.com',
+    'example.com',
+    'localhost',
+    'invalid.domain',
+    'mock.test',
+    'dummy.pkg',
+  ]
+
+  const filteredPackages = Array.from(allPackages).filter(pkg => {
+    const packageName = pkg.split('@')[0].toLowerCase()
+    const isFake = fakePackagePatterns.some(pattern => 
+      packageName.includes(pattern) || packageName === pattern
+    )
+    
+    if (isFake && options.verbose) {
+      console.log(`🚫 Skipping fake/test package: ${pkg}`)
+    }
+    
+    return !isFake
+  })
 
   if (!options.quiet) {
-    console.log(`📦 Found ${packageList.length} unique global dependencies`)
+    console.log(`📦 Found ${filteredPackages.length} unique global dependencies`)
     if (options.dryRun) {
       console.log('🔍 Packages that would be installed:')
-      packageList.forEach(pkg => console.log(`  • ${pkg}`))
+      filteredPackages.forEach(pkg => console.log(`  • ${pkg}`))
       return
     }
   }
 
-  if (packageList.length === 0) {
+  if (filteredPackages.length === 0) {
     if (!options.quiet) {
       console.log('ℹ️  No global dependencies found')
     }
@@ -523,11 +694,11 @@ async function installGlobalDependencies(options: {
   const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
   try {
-    const results = await install(packageList, globalEnvDir)
+    const results = await install(filteredPackages, globalEnvDir)
 
     if (!options.quiet) {
       if (results.length > 0) {
-        console.log(`🎉 Successfully installed ${packageList.length} global dependencies (${results.length} binaries)`)
+        console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies (${results.length} binaries)`)
       }
       else {
         console.log('✅ All global dependencies were already installed')

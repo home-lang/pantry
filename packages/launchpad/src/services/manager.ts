@@ -1300,14 +1300,91 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
     console.log('🔧 Initializing PostgreSQL database cluster...')
 
     try {
+      // Initialize database
+      const { execSync } = await import('node:child_process')
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+      const { homedir } = await import('node:os')
+
       // Create data directory
       fs.mkdirSync(dataDir, { recursive: true })
 
-      // Initialize database
-      const { execSync } = await import('node:child_process')
-      execSync(`initdb -D "${dataDir}" --auth-local=trust --auth-host=md5`, {
+      // Look for project-specific environment directory
+      const projectName = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9]/g, '_')
+      const launchpadEnvs = path.join(homedir(), '.local', 'share', 'launchpad', 'envs')
+
+      let initdbPath: string | null = null
+
+      try {
+        // Find matching environment directory
+        const envDirs = fs.readdirSync(launchpadEnvs).filter((dir: string) =>
+          dir.toLowerCase().includes(projectName),
+        )
+
+        for (const dir of envDirs) {
+          const potentialPath = path.join(launchpadEnvs, dir, 'postgresql.org', 'v17.2.0', 'bin', 'initdb')
+          if (fs.existsSync(potentialPath)) {
+            initdbPath = potentialPath
+            break
+          }
+        }
+      }
+      catch {
+        // Ignore errors
+      }
+
+      if (config.verbose) {
+        console.log(`Looking for initdb binary, found: ${initdbPath}`)
+      }
+
+      if (!initdbPath) {
+        // Fallback to system PATH
+        const { findBinaryInPath } = await import('../utils')
+        initdbPath = findBinaryInPath('initdb')
+        if (initdbPath) {
+          console.log('Using system initdb binary')
+        }
+        else {
+          throw new Error('initdb binary not found in environment or system PATH')
+        }
+      }
+
+      const command = initdbPath ? `"${initdbPath}"` : 'initdb'
+
+      // Set up environment for PostgreSQL with proper library paths
+      const env = { ...process.env }
+      if (initdbPath) {
+        const binDir = path.dirname(initdbPath)
+        const pgRoot = path.dirname(binDir)
+        const libDir = path.join(pgRoot, 'lib')
+
+        // Also add Unicode.org lib paths from the environment
+        const envRoot = path.dirname(path.dirname(pgRoot))
+        const unicodeLib = path.join(envRoot, 'unicode.org', 'v73', 'lib')
+        const unicodeLibFallback = path.join(envRoot, 'unicode.org', 'v71.1.0', 'lib')
+
+        // Set library paths for macOS
+        const existingDyldPath = env.DYLD_LIBRARY_PATH || ''
+        const libPaths = [libDir]
+
+        if (fs.existsSync(unicodeLib)) {
+          libPaths.push(unicodeLib)
+        }
+        else if (fs.existsSync(unicodeLibFallback)) {
+          libPaths.push(unicodeLibFallback)
+        }
+
+        env.DYLD_LIBRARY_PATH = libPaths.join(':') + (existingDyldPath ? `:${existingDyldPath}` : '')
+
+        if (config.verbose) {
+          console.log(`Setting DYLD_LIBRARY_PATH: ${env.DYLD_LIBRARY_PATH}`)
+        }
+      }
+
+      execSync(`${command} -D "${dataDir}" --auth-local=trust --auth-host=md5`, {
         stdio: config.verbose ? 'inherit' : 'pipe',
         timeout: 60000,
+        env,
       })
 
       console.log('✅ PostgreSQL database cluster initialized')

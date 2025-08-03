@@ -67,9 +67,10 @@ describe('Bun Performance Optimizations', () => {
     it('should create .launchpad_ready marker file after successful bun installation', async () => {
       const installedFiles = await install_bun(tempDir, '1.2.19')
 
-      // Should return the bun binary path
-      expect(installedFiles).toHaveLength(1)
+      // Should return both bun and bunx binary paths
+      expect(installedFiles).toHaveLength(2)
       expect(installedFiles[0]).toContain('bun')
+      expect(installedFiles[1]).toContain('bunx')
 
       // Should create the readiness marker file
       const markerFile = path.join(tempDir, '.launchpad_ready')
@@ -96,9 +97,10 @@ describe('Bun Performance Optimizations', () => {
       // Should not throw when marker file creation might fail (test environments handle this gracefully)
       const installedFiles = await install_bun(tempDir, '1.2.19')
 
-      // Should still successfully install bun
-      expect(installedFiles).toHaveLength(1)
+      // Should still successfully install bun and bunx
+      expect(installedFiles).toHaveLength(2)
       expect(installedFiles[0]).toContain('bun')
+      expect(installedFiles[1]).toContain('bunx')
     })
   })
 

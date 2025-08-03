@@ -362,3 +362,56 @@ export function clearBinaryPathCache(): void {
   binaryPathCache.clear()
   cacheTimestamps.clear()
 }
+
+/**
+ * Find a binary in the current environment's package installations
+ */
+export function findBinaryInEnvironment(binaryName: string, packageDomain: string): string | null {
+  // eslint-disable-next-line ts/no-require-imports
+  const fs = require('node:fs')
+  // eslint-disable-next-line ts/no-require-imports
+  const { homedir } = require('node:os')
+  // eslint-disable-next-line ts/no-require-imports
+  const path = require('node:path')
+
+  try {
+    // Get current working directory to determine project environment
+    const cwd = process.cwd()
+    const projectName = path.basename(cwd)
+
+    // Look for environment directories that might match this project
+    const launchpadDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs')
+
+    if (!fs.existsSync(launchpadDir)) {
+      return null
+    }
+
+    // Find environment directories that match the current project
+    const envDirs = fs.readdirSync(launchpadDir).filter((dir: string) =>
+      dir.includes(projectName.toLowerCase().replace(/[^a-z0-9]/g, '_')),
+    )
+
+    for (const envDir of envDirs) {
+      const envPath = path.join(launchpadDir, envDir)
+      const packagePath = path.join(envPath, packageDomain)
+
+      if (fs.existsSync(packagePath)) {
+        // Look for version directories
+        const versionDirs = fs.readdirSync(packagePath).filter((dir: string) => dir.startsWith('v'))
+
+        for (const versionDir of versionDirs) {
+          const binPath = path.join(packagePath, versionDir, 'bin', binaryName)
+
+          if (fs.existsSync(binPath)) {
+            return binPath
+          }
+        }
+      }
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
+}

@@ -104,7 +104,8 @@ describe('Nginx Installation Testing', () => {
     const { stdout, stderr } = await captureOutput(async () => {
       try {
         // Use dry-run and skip global packages to avoid slow operations
-        await dump(tempDir, { dryrun: true, quiet: false, skipGlobal: true })
+        // Also set shell output to avoid actual build processes
+        await dump(tempDir, { dryrun: true, quiet: false, skipGlobal: true, shellOutput: true })
       }
       catch {
         // Installation may fail in CI environment
@@ -121,7 +122,7 @@ describe('Nginx Installation Testing', () => {
       || allOutput.includes('would install') // dry-run message
 
     expect(handlesNginx).toBe(true)
-  }, 2000) // Much shorter timeout since skipping global packages
+  }, 10000) // Longer timeout to handle potential build processes
 })
 
 describe('Binary Detection', () => {

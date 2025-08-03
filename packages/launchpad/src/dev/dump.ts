@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
-import { execSync } from 'node:child_process'
-import { config } from '../config'
 import type { PostSetupCommand } from '../types'
+import { execSync } from 'node:child_process'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { homedir } from 'node:os'
@@ -132,7 +131,7 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
           // Now generate the key
           execSync('php artisan key:generate --force', {
             cwd: dir,
-            stdio: 'pipe'
+            stdio: 'pipe',
           })
 
           // Verify the key was generated successfully
@@ -142,14 +141,17 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
 
           if (updatedAppKey && updatedAppKey !== '' && updatedAppKey !== 'base64:') {
             suggestions.push('✅ Generated Laravel application encryption key automatically')
-          } else {
+          }
+          else {
             suggestions.push('⚠️  Run: php artisan key:generate to set application encryption key')
           }
-        } catch (keyGenError) {
+        }
+        catch {
           // If automatic generation fails, suggest manual command
           suggestions.push('⚠️  Generate application encryption key: php artisan key:generate')
         }
-      } else if (appKey && appKey.length > 10) {
+      }
+      else if (appKey && appKey.length > 10) {
         // Key exists and looks valid
         suggestions.push('✅ Laravel application encryption key is configured')
       }
@@ -224,7 +226,8 @@ async function executePostSetupCommands(projectDir: string, commands: PostSetupC
         // Run in background (fire and forget)
         execSync(command.command, { cwd: projectDir, stdio: 'pipe' })
         results.push(`🚀 Running in background: ${command.description}`)
-      } else {
+      }
+      else {
         // Run synchronously
         const output = execSync(command.command, { cwd: projectDir, stdio: 'pipe', encoding: 'utf8' })
         results.push(`✅ ${command.description}`)
@@ -234,13 +237,15 @@ async function executePostSetupCommands(projectDir: string, commands: PostSetupC
           results.push(`   Output: ${output.trim().split('\n').slice(0, 3).join(', ')}...`)
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (command.required) {
         results.push(`❌ Failed (required): ${command.description}`)
         if (error instanceof Error) {
           results.push(`   Error: ${error.message}`)
         }
-      } else {
+      }
+      else {
         results.push(`⚠️  Skipped (optional): ${command.description}`)
         if (config.verbose && error instanceof Error) {
           results.push(`   Reason: ${error.message}`)
@@ -295,11 +300,13 @@ function hasUnrunMigrations(projectDir: string): boolean {
       const output = execSync('php artisan migrate:status', { cwd: projectDir, stdio: 'pipe', encoding: 'utf8' })
       // Laravel shows pending migrations as [N] instead of [Y] for migrated ones
       return output.includes('| N |') // N means Not migrated (pending)
-    } catch {
+    }
+    catch {
       // If we can't check status, assume we should run migrations if migration files exist
       return true
     }
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -329,7 +336,8 @@ function hasSeeders(projectDir: string): boolean {
     }
 
     return seederFiles.length > 0
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -345,9 +353,10 @@ function needsStorageLink(projectDir: string): boolean {
     // Need storage link if:
     // 1. storage/app/public exists
     // 2. public/storage doesn't exist or isn't a symlink to storage/app/public
-    return fs.existsSync(storageAppPublic) &&
-           (!fs.existsSync(publicStorageLink) || !fs.lstatSync(publicStorageLink).isSymbolicLink())
-  } catch {
+    return fs.existsSync(storageAppPublic)
+      && (!fs.existsSync(publicStorageLink) || !fs.lstatSync(publicStorageLink).isSymbolicLink())
+  }
+  catch {
     return false
   }
 }
@@ -367,7 +376,8 @@ function isProductionEnvironment(projectDir: string): boolean {
     const appEnv = envMatch?.[1]?.trim()
 
     return appEnv === 'production' || appEnv === 'prod'
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -1128,7 +1138,7 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
     const hasPostgresInDeps = sniffResult?.pkgs?.some((pkg: any) =>
       pkg.project.includes('postgres') || pkg.project.includes('postgresql'),
     )
-    const hasRedisInDeps = sniffResult?.pkgs?.some((pkg: any) =>
+    const _hasRedisInDeps = sniffResult?.pkgs?.some((pkg: any) =>
       pkg.project.includes('redis'),
     )
 
@@ -1158,7 +1168,7 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
                 type: 'postgres',
                 host: '127.0.0.1',
                 port: 5432,
-                username: 'postgres',
+                user: 'postgres',
                 password: '',
               })
 

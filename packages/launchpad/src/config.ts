@@ -171,6 +171,17 @@ export const defaultConfig: LaunchpadConfig = {
         timeout: 600000, // 10 minutes
         debug: false,
       },
+      libraryFixes: {
+        systemLibraryPaths: [
+          '/opt/homebrew/lib',
+          '/usr/local/lib',
+          '/usr/lib',
+        ],
+      },
+      shim: {
+        optimizeLibraryPath: true,
+        environmentVariables: {},
+      },
     },
   },
 }

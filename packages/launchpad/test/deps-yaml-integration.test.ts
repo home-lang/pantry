@@ -67,12 +67,12 @@ services:
 
     // Check that key dependencies are detected
     const packageNames = result.pkgs.map(pkg => pkg.project)
-    expect(packageNames).toContain('bun.sh')
-    expect(packageNames).toContain('nodejs.org')
-    expect(packageNames).toContain('php.net')
-    expect(packageNames).toContain('getcomposer.org')
-    expect(packageNames).toContain('postgresql.org')
-    expect(packageNames).toContain('redis.io')
+    expect(packageNames).toContain('bun')
+    expect(packageNames).toContain('node')
+    expect(packageNames).toContain('php')
+    expect(packageNames).toContain('composer')
+    expect(packageNames).toContain('postgres')
+    expect(packageNames).toContain('redis')
   })
 
   it('should handle different deps.yaml variations', async () => {
@@ -99,16 +99,23 @@ services:
 
       expect(result.pkgs.length).toBeGreaterThan(0)
       const packageNames = result.pkgs.map(pkg => pkg.project)
-      expect(packageNames).toContain('bun.sh')
-      expect(packageNames).toContain('nodejs.org')
+      expect(packageNames).toContain('bun')
+      expect(packageNames).toContain('node')
     }
   })
 
   it('should detect Laravel project and suggest database setup', async () => {
     // Create Laravel project structure
     fs.mkdirSync(path.join(projectDir, 'app'), { recursive: true })
+    fs.mkdirSync(path.join(projectDir, 'database', 'migrations'), { recursive: true })
     fs.writeFileSync(path.join(projectDir, 'artisan'), '#!/usr/bin/env php\n<?php\n// Laravel artisan script')
     fs.writeFileSync(path.join(projectDir, 'composer.json'), '{"name": "laravel/laravel"}')
+
+    // Create a sample migration file
+    fs.writeFileSync(
+      path.join(projectDir, 'database', 'migrations', '2024_01_01_000000_create_users_table.php'),
+      '<?php\n// Sample migration file'
+    )
 
     // Create .env file with PostgreSQL configuration
     const envContent = `APP_NAME=Laravel
@@ -156,7 +163,7 @@ services:
     fs.writeFileSync(path.join(projectDir, 'artisan'), '#!/usr/bin/env php\n<?php\nrequire_once __DIR__."/vendor/autoload.php";', { mode: 0o755 })
     fs.writeFileSync(path.join(projectDir, 'composer.json'), JSON.stringify({
       name: 'test/laravel-project',
-      require: { 'laravel/framework': '^11.0', 'php': '^8.4' }
+      require: { 'laravel/framework': '^11.0', 'php': '^8.4' },
     }, null, 2))
 
     // Create .env with missing APP_KEY
@@ -178,7 +185,7 @@ DB_PASSWORD=
     // Create a migration file to trigger migration suggestions
     fs.writeFileSync(
       path.join(projectDir, 'database', 'migrations', '2024_01_01_000000_create_users_table.php'),
-      '<?php\n// Test migration file'
+      '<?php\n// Test migration file',
     )
 
     // Create deps.yaml
@@ -206,11 +213,11 @@ services:
 
     // Should handle the empty APP_KEY (either by generation attempt or suggestion)
     // In test environment, automatic generation might not work, but it should be handled gracefully
-    const hasAppKeyHandling = laravelInfo.suggestions.some(s =>
-      s.includes('key') ||
-      s.includes('encryption') ||
-      s.includes('Generated') ||
-      s.includes('artisan key:generate')
+    const _hasAppKeyHandling = laravelInfo.suggestions.some(s =>
+      s.includes('key')
+      || s.includes('encryption')
+      || s.includes('Generated')
+      || s.includes('artisan key:generate'),
     )
 
     // The function should complete without throwing errors
@@ -223,9 +230,9 @@ services:
     expect(envAfter).toContain('APP_NAME')
   })
 
-  it('should prevent test cleanup from removing system dependencies', () => {
+  it('should prevent test cleanup from removing system dependencies', async () => {
     // Test that resetInstalledTracker doesn't affect actual packages in test mode
-    const { resetInstalledTracker } = require('../src/install')
+    const { resetInstalledTracker } = await import('../src/install')
 
     // This should not throw and should not attempt to remove actual packages
     expect(() => resetInstalledTracker()).not.toThrow()
@@ -244,16 +251,16 @@ services:
     fs.mkdirSync(envsDir, { recursive: true })
     fs.mkdirSync(globalDir, { recursive: true })
 
-    // Create test project environment (should be cleaned)
-    const testEnvDir = path.join(envsDir, 'test_project_abc123de')
+    // Create test project environment (should be cleaned) - use a long name like real test environments
+    const testEnvDir = path.join(envsDir, 'test_project_abcdefghijklmnopqrstuvwxyz1234567890123456789012345678901234567890')
     fs.mkdirSync(testEnvDir, { recursive: true })
     fs.writeFileSync(path.join(testEnvDir, 'test-file'), 'test')
 
     // Create global environment (should NOT be cleaned)
     fs.writeFileSync(path.join(globalDir, 'global-tool'), 'global')
 
-    // Test cleanup
-    TestUtils.cleanupEnvironmentDirs()
+    // Test cleanup with the temp directory
+    TestUtils.cleanupEnvironmentDirs(tempDir)
 
     // Test environment should be cleaned
     expect(fs.existsSync(testEnvDir)).toBe(false)

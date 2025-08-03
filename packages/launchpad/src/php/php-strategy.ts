@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Simplified PHP Setup Strategy for Launchpad
  * Uses only Homebrew-style source building for reliability
@@ -57,7 +58,7 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
     try {
       // Build PHP from source in the current environment
       const envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global')
-      const installedFiles = await buildPhpFromSource(envDir, '8.4.0')
+      const _installedFiles = await buildPhpFromSource(envDir, '8.4.0')
 
       const phpBinary = path.join(envDir, 'php.net', 'v8.4.0', 'bin', 'php')
 
@@ -103,7 +104,9 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
   }
 
   getExecutablePath(): string {
+    // eslint-disable-next-line ts/no-require-imports
     const os = require('node:os')
+    // eslint-disable-next-line ts/no-require-imports
     const path = require('node:path')
     return path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global', 'php.net', 'v8.4.0', 'bin', 'php')
   }

@@ -599,6 +599,31 @@ export async function install_bun(installPath: string, version?: string): Promis
 
         await execAsync(`cp ${sourcePath} ${destPath}`)
         await execAsync(`chmod +x ${destPath}`)
+
+        // Create bunx symlink for compatibility (bunx functionality is built into bun)
+        const bunxPath = path.join(binDir, platform() === 'win32' ? 'bunx.exe' : 'bunx')
+        try {
+          // Remove existing bunx if it exists
+          if (fs.existsSync(bunxPath)) {
+            fs.unlinkSync(bunxPath)
+          }
+          // Create symlink (or copy on Windows)
+          if (platform() === 'win32') {
+            fs.copyFileSync(destPath, bunxPath)
+          }
+          else {
+            fs.symlinkSync('bun', bunxPath)
+          }
+          if (config.verbose) {
+            console.warn(`Created bunx symlink at ${bunxPath}`)
+          }
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`Failed to create bunx symlink: ${error instanceof Error ? error.message : String(error)}`)
+          }
+          // Don't fail the installation if bunx symlink creation fails
+        }
       }
     }
 
@@ -624,7 +649,9 @@ export async function install_bun(installPath: string, version?: string): Promis
     // Clean up
     fs.rmSync(tempDir, { recursive: true, force: true })
 
-    return [path.join(binDir, platform() === 'win32' ? 'bun.exe' : 'bun')]
+    const bunPath = path.join(binDir, platform() === 'win32' ? 'bun.exe' : 'bun')
+    const bunxPath = path.join(binDir, platform() === 'win32' ? 'bunx.exe' : 'bunx')
+    return [bunPath, bunxPath]
   }
   catch (error) {
     // Clean up on error

@@ -15,6 +15,7 @@ describe('Install Command Refactor', () => {
     TestUtils.resetTestEnvironment()
 
     // Create isolated test environment
+    // eslint-disable-next-line ts/no-require-imports
     testHome = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'launchpad-install-test-'))
     tempProjectDir = path.join(testHome, 'test-project')
     fs.mkdirSync(tempProjectDir, { recursive: true })
@@ -393,7 +394,7 @@ dependencies:
 
     it('should handle invalid package specifications gracefully', async () => {
       // Test with invalid package specs
-      const invalidPackages = ['', null, undefined].filter(Boolean)
+      const invalidPackages = ['', null, undefined].filter(Boolean) as string[]
 
       expect(invalidPackages.length).toBe(0)
 

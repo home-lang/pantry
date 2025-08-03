@@ -14,6 +14,7 @@ describe('Global Dependencies Integration', () => {
     TestUtils.resetTestEnvironment()
 
     // Create isolated test environment
+    // eslint-disable-next-line ts/no-require-imports
     tempHomeDir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'launchpad-global-deps-test-'))
 
     // Set up isolated environment
