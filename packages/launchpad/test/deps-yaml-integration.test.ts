@@ -114,7 +114,7 @@ services:
     // Create a sample migration file
     fs.writeFileSync(
       path.join(projectDir, 'database', 'migrations', '2024_01_01_000000_create_users_table.php'),
-      '<?php\n// Sample migration file'
+      '<?php\n// Sample migration file',
     )
 
     // Create .env file with PostgreSQL configuration

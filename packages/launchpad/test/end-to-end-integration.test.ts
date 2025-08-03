@@ -34,7 +34,7 @@ describe('End-to-End Laravel Integration', () => {
         process.chdir(originalCwd)
       }
     }
-    catch (error) {
+    catch {
       // Ignore chdir errors during cleanup
     }
 

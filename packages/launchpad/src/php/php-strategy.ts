@@ -4,7 +4,34 @@
  * Uses only Homebrew-style source building for reliability
  */
 
+import { getLatestVersion, packages } from 'ts-pkgx'
 import { buildPhpFromSource } from '../install'
+
+/**
+ * Get the latest PHP version with fallback logic
+ */
+async function getLatestPHPVersion(): Promise<string> {
+  try {
+    // Try ts-pkgx getLatestVersion first
+    const version = await getLatestVersion('php' as any)
+    if (version) {
+      return version
+    }
+  }
+  catch {
+    // Fallback to direct package access
+  }
+
+  // Fallback: get version directly from packages
+  const phpPackage = packages.phpnet
+  if (phpPackage && 'versions' in phpPackage && Array.isArray(phpPackage.versions) && phpPackage.versions.length > 0) {
+    const latestVersion = phpPackage.versions[0]
+    return typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+  }
+
+  // Final fallback to a known stable version
+  return '8.4.11'
+}
 
 export interface PHPStrategy {
   name: string
@@ -45,6 +72,7 @@ export interface DatabaseSupport {
 export class SourceBuildPHPStrategy implements PHPStrategy {
   name = 'source-build-php'
   priority = 1
+  private installedVersion: string | null = null
 
   async detect(): Promise<boolean> {
     // Always available - we can always build from source
@@ -56,11 +84,17 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
     const os = await import('node:os')
 
     try {
+      // Get the latest PHP version dynamically
+      const latestVersion = await getLatestPHPVersion()
+
+      // Store the version for later use
+      this.installedVersion = latestVersion
+
       // Build PHP from source in the current environment
       const envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global')
-      const _installedFiles = await buildPhpFromSource(envDir, '8.4.0')
+      const _installedFiles = await buildPhpFromSource(envDir, latestVersion)
 
-      const phpBinary = path.join(envDir, 'php.net', 'v8.4.0', 'bin', 'php')
+      const phpBinary = path.join(envDir, 'php.net', `v${latestVersion}`, 'bin', 'php')
 
       // Test the installation
       const testResult = await this.testPHPInstallation(phpBinary)
@@ -68,7 +102,7 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
       return {
         success: testResult.success,
         phpPath: phpBinary,
-        version: testResult.version || '8.4.0',
+        version: testResult.version || latestVersion,
         extensions: testResult.extensions || [],
         databaseSupport: {
           sqlite: true, // Built with SQLite support
@@ -108,7 +142,12 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
     const os = require('node:os')
     // eslint-disable-next-line ts/no-require-imports
     const path = require('node:path')
-    return path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global', 'php.net', 'v8.4.0', 'bin', 'php')
+
+    // Use the installed version if available, otherwise fallback to a reasonable default
+    // Since this method must be synchronous, we can't await getLatestVersion here
+    const version = this.installedVersion || '8.4.0'
+
+    return path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global', 'php.net', `v${version}`, 'bin', 'php')
   }
 
   getDatabaseSupport(): DatabaseSupport {

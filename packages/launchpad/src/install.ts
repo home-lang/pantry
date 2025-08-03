@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { Buffer } from 'node:buffer'
+import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import { arch, platform } from 'node:os'
 import path from 'node:path'
@@ -4316,9 +4317,9 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       }
     }
     else {
-    if (config.verbose) {
-      console.warn(`PHP source build failed: ${error}`)
-    }
+      if (config.verbose) {
+        console.warn(`PHP source build failed: ${error}`)
+      }
       logUniqueMessage(`❌ PHP ${version} source build failed: ${errorMessage}`)
     }
 
@@ -4437,9 +4438,9 @@ export async function buildZlibFromSource(installPath: string, requestedVersion?
       }
     }
     else {
-    if (config.verbose) {
-      console.warn(`zlib source build failed: ${error}`)
-    }
+      if (config.verbose) {
+        console.warn(`zlib source build failed: ${error}`)
+      }
       logUniqueMessage(`❌ zlib ${version} source build failed: ${errorMessage}`)
     }
 
@@ -4745,7 +4746,7 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
     }
 
     // Special handling for packages that are known to work differently
-    const specialCases = {
+    const specialCases: Record<string, () => boolean> = {
       'sqlite.org': () => {
         // SQLite can work with just binaries, lib/ is optional
         return hasBin && fs.existsSync(path.join(binDir, 'sqlite3'))
@@ -4804,11 +4805,12 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
           if (binaries.length > 0) {
             return true // Has working binaries, good enough
           }
-        } catch {
+        }
+        catch {
           // If we can't read binDir, fall through to lib check
         }
       }
-      
+
       // For strict library packages, require either lib/ or working binaries
       return hasLib || hasLib64 || hasBin
     }

@@ -661,16 +661,16 @@ async function installGlobalDependencies(options: {
     'dummy.pkg',
   ]
 
-  const filteredPackages = Array.from(allPackages).filter(pkg => {
+  const filteredPackages = Array.from(allPackages).filter((pkg) => {
     const packageName = pkg.split('@')[0].toLowerCase()
-    const isFake = fakePackagePatterns.some(pattern => 
-      packageName.includes(pattern) || packageName === pattern
+    const isFake = fakePackagePatterns.some(pattern =>
+      packageName.includes(pattern) || packageName === pattern,
     )
-    
+
     if (isFake && options.verbose) {
       console.log(`🚫 Skipping fake/test package: ${pkg}`)
     }
-    
+
     return !isFake
   })
 
