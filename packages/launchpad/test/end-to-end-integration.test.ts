@@ -210,7 +210,7 @@ dependencies:
         const dumpModule = await import('../src/dev/dump')
 
         if (typeof dumpModule.detectLaravelProject === 'function') {
-          const result = dumpModule.detectLaravelProject(tempProjectDir)
+          const result = await dumpModule.detectLaravelProject(tempProjectDir)
 
           expect(result.isLaravel).toBe(true)
           expect(result.suggestions.length).toBeGreaterThan(0)

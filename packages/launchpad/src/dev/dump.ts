@@ -1,4 +1,7 @@
 /* eslint-disable no-console */
+import { execSync } from 'node:child_process'
+import { config } from '../config'
+import type { PostSetupCommand } from '../types'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { homedir } from 'node:os'
@@ -86,7 +89,7 @@ function needsPackageInstallation(localPackages: string[], globalPackages: strin
 /**
  * Detect if this is a Laravel project and provide setup assistance
  */
-export function detectLaravelProject(dir: string): { isLaravel: boolean, suggestions: string[] } {
+export async function detectLaravelProject(dir: string): Promise<{ isLaravel: boolean, suggestions: string[] }> {
   const artisanFile = path.join(dir, 'artisan')
   const composerFile = path.join(dir, 'composer.json')
   const appDir = path.join(dir, 'app')
@@ -106,10 +109,52 @@ export function detectLaravelProject(dir: string): { isLaravel: boolean, suggest
     }
   }
 
-  // Check for database configuration
+  // Check for Laravel application key and generate if missing
   if (fs.existsSync(envFile)) {
     try {
       const envContent = fs.readFileSync(envFile, 'utf8')
+
+      // Check for missing or empty APP_KEY
+      const appKeyMatch = envContent.match(/^APP_KEY=(.*)$/m)
+      const appKey = appKeyMatch?.[1]?.trim()
+
+      // Remove debug message
+
+      if (!appKey || appKey === '' || appKey === 'base64:') {
+        // Check if PHP and Artisan are available before attempting key generation
+        try {
+          // First verify PHP is working
+          execSync('php --version', { cwd: dir, stdio: 'pipe' })
+
+          // Then verify Artisan is available
+          execSync('php artisan --version', { cwd: dir, stdio: 'pipe' })
+
+          // Now generate the key
+          execSync('php artisan key:generate --force', {
+            cwd: dir,
+            stdio: 'pipe'
+          })
+
+          // Verify the key was generated successfully
+          const updatedEnvContent = fs.readFileSync(envFile, 'utf8')
+          const updatedAppKeyMatch = updatedEnvContent.match(/^APP_KEY=(.*)$/m)
+          const updatedAppKey = updatedAppKeyMatch?.[1]?.trim()
+
+          if (updatedAppKey && updatedAppKey !== '' && updatedAppKey !== 'base64:') {
+            suggestions.push('✅ Generated Laravel application encryption key automatically')
+          } else {
+            suggestions.push('⚠️  Run: php artisan key:generate to set application encryption key')
+          }
+        } catch (keyGenError) {
+          // If automatic generation fails, suggest manual command
+          suggestions.push('⚠️  Generate application encryption key: php artisan key:generate')
+        }
+      } else if (appKey && appKey.length > 10) {
+        // Key exists and looks valid
+        suggestions.push('✅ Laravel application encryption key is configured')
+      }
+
+      // Check for database configuration
       if (envContent.includes('DB_CONNECTION=mysql') && !envContent.includes('DB_PASSWORD=')) {
         suggestions.push('Configure MySQL database credentials in .env file')
       }
@@ -152,7 +197,179 @@ export function detectLaravelProject(dir: string): { isLaravel: boolean, suggest
     // Ignore errors checking migrations
   }
 
+  // Execute post-setup commands if enabled
+  if (config.services.frameworks.laravel.postSetupCommands.enabled) {
+    const postSetupResults = await executePostSetupCommands(dir, config.services.frameworks.laravel.postSetupCommands.commands)
+    suggestions.push(...postSetupResults)
+  }
+
   return { isLaravel: true, suggestions }
+}
+
+/**
+ * Execute post-setup commands based on their conditions
+ */
+async function executePostSetupCommands(projectDir: string, commands: PostSetupCommand[]): Promise<string[]> {
+  const results: string[] = []
+
+  for (const command of commands) {
+    try {
+      const shouldRun = evaluateCommandCondition(command.condition, projectDir)
+
+      if (!shouldRun) {
+        continue
+      }
+
+      if (command.runInBackground) {
+        // Run in background (fire and forget)
+        execSync(command.command, { cwd: projectDir, stdio: 'pipe' })
+        results.push(`🚀 Running in background: ${command.description}`)
+      } else {
+        // Run synchronously
+        const output = execSync(command.command, { cwd: projectDir, stdio: 'pipe', encoding: 'utf8' })
+        results.push(`✅ ${command.description}`)
+
+        // Add command output if verbose
+        if (config.verbose && output.trim()) {
+          results.push(`   Output: ${output.trim().split('\n').slice(0, 3).join(', ')}...`)
+        }
+      }
+    } catch (error) {
+      if (command.required) {
+        results.push(`❌ Failed (required): ${command.description}`)
+        if (error instanceof Error) {
+          results.push(`   Error: ${error.message}`)
+        }
+      } else {
+        results.push(`⚠️  Skipped (optional): ${command.description}`)
+        if (config.verbose && error instanceof Error) {
+          results.push(`   Reason: ${error.message}`)
+        }
+      }
+    }
+  }
+
+  return results
+}
+
+/**
+ * Evaluate whether a command condition is met
+ */
+function evaluateCommandCondition(condition: PostSetupCommand['condition'], projectDir: string): boolean {
+  switch (condition) {
+    case 'always':
+      return true
+    case 'never':
+      return false
+    case 'hasUnrunMigrations':
+      return hasUnrunMigrations(projectDir)
+    case 'hasSeeders':
+      return hasSeeders(projectDir)
+    case 'needsStorageLink':
+      return needsStorageLink(projectDir)
+    case 'isProduction':
+      return isProductionEnvironment(projectDir)
+    default:
+      return false
+  }
+}
+
+/**
+ * Check if there are unrun migrations
+ */
+function hasUnrunMigrations(projectDir: string): boolean {
+  try {
+    const migrationsDir = path.join(projectDir, 'database', 'migrations')
+    if (!fs.existsSync(migrationsDir)) {
+      return false
+    }
+
+    // Check if there are migration files
+    const migrationFiles = fs.readdirSync(migrationsDir).filter(file => file.endsWith('.php'))
+    if (migrationFiles.length === 0) {
+      return false
+    }
+
+    // Try to check migration status (this requires database connection)
+    try {
+      const output = execSync('php artisan migrate:status', { cwd: projectDir, stdio: 'pipe', encoding: 'utf8' })
+      // Laravel shows pending migrations as [N] instead of [Y] for migrated ones
+      return output.includes('| N |') // N means Not migrated (pending)
+    } catch {
+      // If we can't check status, assume we should run migrations if migration files exist
+      return true
+    }
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Check if there are database seeders
+ */
+function hasSeeders(projectDir: string): boolean {
+  try {
+    const seedersDir = path.join(projectDir, 'database', 'seeders')
+    if (!fs.existsSync(seedersDir)) {
+      return false
+    }
+
+    // Check for seeder files (excluding the base DatabaseSeeder.php if it's empty)
+    const seederFiles = fs.readdirSync(seedersDir).filter(file => file.endsWith('.php'))
+    if (seederFiles.length === 0) {
+      return false
+    }
+
+    // Check if DatabaseSeeder.php has actual content
+    const databaseSeederPath = path.join(seedersDir, 'DatabaseSeeder.php')
+    if (fs.existsSync(databaseSeederPath)) {
+      const content = fs.readFileSync(databaseSeederPath, 'utf8')
+      // Look for actual seeder calls (not just empty run method)
+      return content.includes('$this->call(') || seederFiles.length > 1
+    }
+
+    return seederFiles.length > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Check if storage link is needed
+ */
+function needsStorageLink(projectDir: string): boolean {
+  try {
+    const publicStorageLink = path.join(projectDir, 'public', 'storage')
+    const storageAppPublic = path.join(projectDir, 'storage', 'app', 'public')
+
+    // Need storage link if:
+    // 1. storage/app/public exists
+    // 2. public/storage doesn't exist or isn't a symlink to storage/app/public
+    return fs.existsSync(storageAppPublic) &&
+           (!fs.existsSync(publicStorageLink) || !fs.lstatSync(publicStorageLink).isSymbolicLink())
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Check if this is a production environment
+ */
+function isProductionEnvironment(projectDir: string): boolean {
+  try {
+    const envFile = path.join(projectDir, '.env')
+    if (!fs.existsSync(envFile)) {
+      return false
+    }
+
+    const envContent = fs.readFileSync(envFile, 'utf8')
+    const envMatch = envContent.match(/^APP_ENV=(.*)$/m)
+    const appEnv = envMatch?.[1]?.trim()
+
+    return appEnv === 'production' || appEnv === 'prod'
+  } catch {
+    return false
+  }
 }
 
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
@@ -467,7 +684,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
 
     // Check for Laravel project and provide helpful suggestions
-    const laravelInfo = detectLaravelProject(projectDir)
+    const laravelInfo = await detectLaravelProject(projectDir)
     if (laravelInfo.isLaravel) {
       if (laravelInfo.suggestions.length > 0 && !effectiveQuiet) {
         console.log('\n🎯 Laravel project detected! Helpful commands:')

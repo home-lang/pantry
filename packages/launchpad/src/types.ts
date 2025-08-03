@@ -82,6 +82,28 @@ export interface ServiceConfig {
   php: PHPConfig
 }
 
+export interface PostSetupCommandsConfig {
+  /** Enable post-setup commands _(default: true)_ */
+  enabled: boolean
+  /** List of commands to run after project setup */
+  commands: PostSetupCommand[]
+}
+
+export interface PostSetupCommand {
+  /** Unique name for the command */
+  name: string
+  /** The actual command to execute */
+  command: string
+  /** Human-readable description */
+  description: string
+  /** Condition that must be met for the command to run */
+  condition: 'hasUnrunMigrations' | 'hasSeeders' | 'needsStorageLink' | 'isProduction' | 'always' | 'never'
+  /** Whether to run the command in the background */
+  runInBackground: boolean
+  /** Whether this command is required (will cause setup to fail if it fails) */
+  required: boolean
+}
+
 export interface FrameworksConfig {
   /** Enable automatic framework detection and setup _(default: true)_ */
   enabled: boolean
@@ -93,6 +115,8 @@ export interface FrameworksConfig {
     enabled: boolean
     /** Automatically detect Laravel projects _(default: true)_ */
     autoDetect: boolean
+    /** Post-setup commands configuration */
+    postSetupCommands: PostSetupCommandsConfig
   }
   /** Stacks.js-specific configuration */
   stacks: {

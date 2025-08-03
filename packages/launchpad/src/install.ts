@@ -3077,7 +3077,13 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
           console.error(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
         }
         else {
-          console.warn(`⚠️  Warning: Failed to install ${pkg}`)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          if (errorMessage.includes('Library not loaded') || errorMessage.includes('dylib')) {
+            logUniqueMessage(`⚠️  Warning: Failed to install ${pkg} (library loading issue - try clearing cache)`)
+          }
+          else {
+            logUniqueMessage(`⚠️  Warning: Failed to install ${pkg}`)
+          }
         }
         // Continue with other packages instead of throwing
       }
@@ -3271,7 +3277,12 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
             console.error(`❌ Failed to install ${pkg}: ${errorMessage}`)
           }
           else {
-            console.warn(`⚠️  Warning: Failed to install ${pkg}`)
+            if (errorMessage.includes('Library not loaded') || errorMessage.includes('dylib')) {
+              logUniqueMessage(`⚠️  Warning: Failed to install ${pkg} (library loading issue - try clearing cache)`)
+            }
+            else {
+              logUniqueMessage(`⚠️  Warning: Failed to install ${pkg}`)
+            }
           }
         }
         // Continue with other packages instead of throwing

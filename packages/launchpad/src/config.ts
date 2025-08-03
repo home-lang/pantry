@@ -71,6 +71,43 @@ export const defaultConfig: LaunchpadConfig = {
       laravel: {
         enabled: process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false',
         autoDetect: process.env.LAUNCHPAD_LARAVEL_AUTO_DETECT !== 'false',
+        postSetupCommands: {
+          enabled: process.env.LAUNCHPAD_LARAVEL_POST_SETUP !== 'false',
+          commands: [
+            {
+              name: 'migrate',
+              command: 'php artisan migrate',
+              description: 'Run database migrations',
+              condition: 'hasUnrunMigrations',
+              runInBackground: false,
+              required: false,
+            },
+            {
+              name: 'seed',
+              command: 'php artisan db:seed',
+              description: 'Seed the database with sample data',
+              condition: 'hasSeeders',
+              runInBackground: false,
+              required: false,
+            },
+            {
+              name: 'storage-link',
+              command: 'php artisan storage:link',
+              description: 'Create symbolic link for storage',
+              condition: 'needsStorageLink',
+              runInBackground: false,
+              required: false,
+            },
+            {
+              name: 'optimize',
+              command: 'php artisan optimize',
+              description: 'Optimize Laravel for production',
+              condition: 'isProduction',
+              runInBackground: false,
+              required: false,
+            },
+          ],
+        },
       },
       stacks: {
         enabled: process.env.LAUNCHPAD_STACKS_ENABLED !== 'false',
