@@ -2,13 +2,51 @@
 import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
-import { arch, platform } from 'node:os'
+import os, { arch, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { aliases, packages } from 'ts-pkgx'
 import { install_bun } from './bun'
 import { config } from './config'
 import { Path } from './path'
+
+/**
+ * Execute a command with optional sudo support
+ */
+function execWithSudo(command: string, options: any = {}, useSudo = false): Buffer | string {
+  if (useSudo && process.platform !== 'win32') {
+    const sudoPassword = process.env.SUDO_PASSWORD
+    if (sudoPassword) {
+      // Use echo and pipe for non-interactive sudo
+      const sudoCommand = `echo "${sudoPassword}" | sudo -S ${command}`
+      return execSync(sudoCommand, options)
+    }
+    else {
+      // Fallback to regular sudo (might prompt)
+      return execSync(`sudo ${command}`, options)
+    }
+  }
+  return execSync(command, options)
+}
+
+/**
+ * Check if we need sudo for writing to a directory
+ */
+function needsSudo(targetPath: string): boolean {
+  if (process.platform === 'win32')
+    return false
+
+  try {
+    // Check if we can write to the target directory
+    const testDir = path.dirname(targetPath)
+    fs.accessSync(testDir, fs.constants.W_OK)
+    return false
+  }
+  catch {
+    // If we can't write, we might need sudo
+    return targetPath.startsWith('/usr/') || targetPath.startsWith('/opt/') || targetPath.startsWith('/Library/')
+  }
+}
 
 // Global message deduplication for shell mode
 const shellModeMessageCache = new Set<string>()
@@ -2294,9 +2332,7 @@ async function copyDirectoryStructure(source: string, target: string): Promise<v
       catch (error) {
         if (error instanceof Error && 'code' in error && error.code === 'EACCES') {
           // Permission denied - try to continue with other files
-          if (config.verbose) {
-            console.warn(`Permission denied copying ${entry.name}, skipping...`)
-          }
+          // Only show permission errors for critical files, not verbose spam
           continue
         }
         throw error
@@ -4253,24 +4289,72 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       '/usr/local/lib/pkgconfig',
     ]
 
-    // Find existing pkg-config directories manually
+    // Find ALL pkg-config directories in the global environment
     const expandedPaths: string[] = []
 
-    // Look for common pkg-config paths
-    const specificPaths = [
-      path.join(installPath, 'gnome.org/libxml2/v*/lib/pkgconfig'),
-      path.join(installPath, 'freedesktop.org/pkg-config/v*/lib/pkgconfig'),
-      path.join(installPath, 'openssl.org/v*/lib/pkgconfig'),
-      path.join(installPath, 'zlib.net/v*/lib/pkgconfig'),
+    // Find all pkgconfig directories in the GLOBAL installation (not current project path)
+    const globalInstallPath = path.join(os.homedir(), '.local', 'share', 'launchpad', 'global')
+
+    try {
+      const findPkgConfigDirs = (dir: string): void => {
+        if (!fs.existsSync(dir))
+          return
+
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const fullPath = path.join(dir, entry.name)
+
+            // Check if this is a pkgconfig directory
+            if (entry.name === 'pkgconfig' && fs.existsSync(fullPath)) {
+              expandedPaths.push(fullPath)
+            }
+            else {
+              // Recursively search subdirectories (but limit depth for performance)
+              const depth = fullPath.split('/').length - globalInstallPath.split('/').length
+              if (depth < 5) {
+                findPkgConfigDirs(fullPath)
+              }
+            }
+          }
+        }
+      }
+
+      findPkgConfigDirs(globalInstallPath)
+    }
+    catch (error) {
+      // If recursive search fails, fallback to manual paths
+      console.warn('Fallback to manual pkg-config path search')
+    }
+
+    // Add standard system paths
+    for (const staticPath of ['/opt/pkg/lib/pkgconfig', '/usr/lib/pkgconfig', '/usr/local/lib/pkgconfig']) {
+      if (fs.existsSync(staticPath)) {
+        expandedPaths.push(staticPath)
+      }
+    }
+
+    // Prepare library and include directories from pkg-config paths
+    const libDirs = expandedPaths.map(p => p.replace('/pkgconfig', ''))
+    const includeDirs = expandedPaths.map(p => p.replace('/lib/pkgconfig', '/include'))
+
+    // Also add common include directories from the global installation
+    const additionalIncludes = [
+      path.join(globalInstallPath, 'sourceware.org/bzip2/v*/include'),
+      path.join(globalInstallPath, 'sourceware.org/libffi/v*/include'),
+      path.join(globalInstallPath, 'zlib.net/v*/include'),
+      path.join(globalInstallPath, 'openssl.org/v*/include'),
+      path.join(globalInstallPath, 'gnome.org/libxml2/v*/include'),
+      path.join(globalInstallPath, 'libpng.org/v*/include'),
+      path.join(globalInstallPath, 'curl.se/v*/include'),
     ]
 
-    for (const pkgPath of specificPaths) {
-      // Simple wildcard expansion for version directories
-      const baseParts = pkgPath.split('/v*/')
+    // Expand the wildcard paths manually
+    for (const incPath of additionalIncludes) {
+      const baseParts = incPath.split('/v*/')
       if (baseParts.length === 2) {
         const baseDir = baseParts[0]
         const suffix = baseParts[1]
-
         try {
           if (fs.existsSync(baseDir)) {
             const entries = fs.readdirSync(baseDir)
@@ -4278,26 +4362,21 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
               if (entry.startsWith('v')) {
                 const fullPath = path.join(baseDir, entry, suffix)
                 if (fs.existsSync(fullPath)) {
-                  expandedPaths.push(fullPath)
+                  includeDirs.push(fullPath)
                 }
               }
             }
           }
         }
-        catch (error) {
-          // Skip if directory read fails
-        }
-      }
-    }
-
-    // Add standard paths that might exist
-    for (const staticPath of ['/opt/pkg/lib/pkgconfig', '/usr/lib/pkgconfig', '/usr/local/lib/pkgconfig']) {
-      if (fs.existsSync(staticPath)) {
-        expandedPaths.push(staticPath)
+        catch (error) { /* Skip */ }
       }
     }
 
     logUniqueMessage(`🔧 Setting up build environment for PHP...`)
+
+    if (config.verbose) {
+      console.warn(`PKG_CONFIG_PATH being set to: ${expandedPaths.join(':')}`)
+    }
 
     logUniqueMessage(`🔄 Building PHP ${version} from source with configured extensions...`)
 
@@ -4334,6 +4413,10 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       throw new Error('Failed to extract PHP source')
     }
 
+    // Define paths for dependencies (reuse existing globalInstallPath)
+    const bzip2Dir = path.join(globalInstallPath, 'sourceware.org/bzip2/v1.0.8')
+    const opensslDir = path.join(globalInstallPath, 'openssl.org/v3.5.0')
+
     // Build configure arguments from configuration
     const configureArgs = [
       `--prefix="${packageDir}"`,
@@ -4362,7 +4445,13 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
     // Add utility extensions
     phpConfig.extensions.utility.forEach((ext) => {
-      configureArgs.push(`--with-${ext}`)
+      // Use explicit path for bzip2
+      if (ext === 'bz2') {
+        configureArgs.push(`--with-bz2=${bzip2Dir}`)
+      }
+      else {
+        configureArgs.push(`--with-${ext}`)
+      }
     })
 
     // Add optional extensions
@@ -4375,19 +4464,27 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       console.warn(`Configure args: ${configureArgs.join(' ')}`)
     }
 
-    // Set up environment variables for configure
     const configureEnv = {
       ...process.env,
       PKG_CONFIG_PATH: expandedPaths.length > 0 ? expandedPaths.join(':') : '',
-      // Also set library paths for build
-      LDFLAGS: expandedPaths.map(p => `-L${p.replace('/pkgconfig', '')}`).join(' '),
-      CPPFLAGS: expandedPaths.map(p => `-I${p.replace('/lib/pkgconfig', '/include')}`).join(' '),
+      // Library and include paths
+      LDFLAGS: libDirs.map(p => `-L${p}`).join(' '),
+      CPPFLAGS: includeDirs.map(p => `-I${p}`).join(' '),
+      // Specific environment variables that PHP configure looks for
+      BZIP_DIR: bzip2Dir,
+      OPENSSL_PREFIX: opensslDir,
+      // Additional library paths for linker
+      LIBRARY_PATH: libDirs.join(':'),
+      C_INCLUDE_PATH: includeDirs.join(':'),
+      CPLUS_INCLUDE_PATH: includeDirs.join(':'),
     }
 
     if (config.verbose) {
       console.warn(`PKG_CONFIG_PATH: ${configureEnv.PKG_CONFIG_PATH}`)
       console.warn(`LDFLAGS: ${configureEnv.LDFLAGS}`)
       console.warn(`CPPFLAGS: ${configureEnv.CPPFLAGS}`)
+      console.warn(`BZIP_DIR: ${configureEnv.BZIP_DIR}`)
+      console.warn(`C_INCLUDE_PATH: ${configureEnv.C_INCLUDE_PATH}`)
     }
 
     // Run configure
@@ -4410,11 +4507,16 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
     // Install PHP
     logUniqueMessage(`📦 Installing PHP ${version}...`)
-    execSync(`cd "${sourceDir}" && make install`, {
+    const requiresSudo = needsSudo(packageDir)
+    if (requiresSudo && config.verbose) {
+      logUniqueMessage(`🔐 Installing PHP requires administrative privileges...`)
+    }
+
+    execWithSudo(`cd "${sourceDir}" && make install`, {
       stdio: config.verbose ? 'inherit' : 'pipe',
       timeout: 120000, // 2 minutes
       env: configureEnv,
-    })
+    }, requiresSudo)
 
     // Cleanup temp directory
     fs.rmSync(tempDir, { recursive: true, force: true })
@@ -4802,34 +4904,50 @@ export async function buildGmpFromSource(installPath: string, requestedVersion?:
       console.warn(`Downloading GMP source from: ${sourceUrl}`)
     }
 
-    // Add retry logic with multiple URLs for network issues
+    // Comprehensive retry logic with multiple mirrors and exponential backoff
     const alternativeUrls = [
-      sourceUrl,
+      sourceUrl, // Original gmplib.org
       `https://ftp.gnu.org/gnu/gmp/gmp-${version}.tar.xz`,
       `https://mirrors.kernel.org/gnu/gmp/gmp-${version}.tar.xz`,
+      `https://mirror.fcix.net/gnu/gmp/gmp-${version}.tar.xz`,
+      `https://ftpmirror.gnu.org/gmp/gmp-${version}.tar.xz`,
+      `https://ftp.wayne.edu/gnu/gmp/gmp-${version}.tar.xz`,
     ]
 
     let response: Response | undefined
     let lastError: Error | undefined
 
-    for (const url of alternativeUrls) {
+    for (let urlIndex = 0; urlIndex < alternativeUrls.length; urlIndex++) {
+      const url = alternativeUrls[urlIndex]
       let retryCount = 0
-      const maxRetries = 2
+      const maxRetries = 3
 
       while (retryCount < maxRetries) {
         try {
           if (config.verbose) {
-            console.warn(`Trying GMP source from: ${url} (attempt ${retryCount + 1})`)
+            console.warn(`Trying GMP source from: ${url} (attempt ${retryCount + 1}/${maxRetries})`)
           }
 
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 60000) // Increased to 60 second timeout
+
           response = await fetch(url, {
-            signal: AbortSignal.timeout(30000), // 30 second timeout
+            signal: controller.signal,
             headers: {
-              'User-Agent': 'Launchpad/1.0',
+              'User-Agent': 'Launchpad/1.0 (Compatible; Package Manager)',
+              'Accept': 'application/octet-stream, */*',
+              'Connection': 'close', // Avoid connection reuse issues
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
             },
           })
 
+          clearTimeout(timeoutId)
+
           if (response.ok) {
+            if (config.verbose) {
+              console.warn(`✅ Successfully connected to: ${url}`)
+            }
             break
           }
 
@@ -4840,14 +4958,20 @@ export async function buildGmpFromSource(installPath: string, requestedVersion?:
           retryCount++
 
           if (retryCount < maxRetries) {
-            logUniqueMessage(`📦 Download attempt ${retryCount} failed, retrying...`)
-            await new Promise(resolve => setTimeout(resolve, 2000 * retryCount))
+            const backoffTime = Math.min(1000 * 2 ** retryCount, 10000) // Exponential backoff, max 10s
+            logUniqueMessage(`📦 Download attempt ${retryCount} failed (${lastError.message}), retrying in ${backoffTime}ms...`)
+            await new Promise(resolve => setTimeout(resolve, backoffTime))
           }
         }
       }
 
       if (response?.ok) {
         break
+      }
+
+      // If this URL completely failed, try next one immediately
+      if (urlIndex < alternativeUrls.length - 1) {
+        logUniqueMessage(`🔄 Switching to mirror ${urlIndex + 2}/${alternativeUrls.length}...`)
       }
     }
 
@@ -4886,10 +5010,15 @@ export async function buildGmpFromSource(installPath: string, requestedVersion?:
 
     // Install GMP
     logUniqueMessage(`📦 Installing GMP ${version}...`)
-    execSync(`cd "${sourceDir}" && make install`, {
+    const requiresSudo = needsSudo(packageDir)
+    if (requiresSudo && config.verbose) {
+      logUniqueMessage(`🔐 Installing GMP requires administrative privileges...`)
+    }
+
+    execWithSudo(`cd "${sourceDir}" && make install`, {
       stdio: config.verbose ? 'inherit' : 'pipe',
       timeout: 120000, // 2 minutes
-    })
+    }, requiresSudo)
 
     // Create version symlinks for compatibility
     await createVersionSymlinks(installPath, domain, version)
@@ -5026,10 +5155,37 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
         return fs.existsSync(includeDir) || fs.existsSync(pkgconfigDir) || fs.existsSync(shareDir) || hasBin
       },
       'curl.se/ca-certs': () => {
-        // CA certificate bundle - needs share/ or etc/ directory for cert files
-        const shareDir = path.join(packageDir, 'share')
-        const etcDir = path.join(packageDir, 'etc')
-        return fs.existsSync(shareDir) || fs.existsSync(etcDir)
+        // CA certificate bundle - check for actual cert files in various locations
+        const possiblePaths = [
+          path.join(packageDir, 'share'),
+          path.join(packageDir, 'etc'),
+          path.join(packageDir, 'ssl'),
+          path.join(packageDir, 'curl.se', 'ca-certs'), // Handle nested structure
+        ]
+
+        // Also recursively check for cert files
+        const hasCertFiles = (dir: string): boolean => {
+          if (!fs.existsSync(dir))
+            return false
+          try {
+            const entries = fs.readdirSync(dir)
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry)
+              if (entry.endsWith('.pem') || entry.endsWith('.crt') || entry.includes('cert')) {
+                return true
+              }
+              // Check one level deeper for nested structures
+              if (fs.statSync(fullPath).isDirectory() && entry !== 'bin' && entry !== 'lib') {
+                if (hasCertFiles(fullPath))
+                  return true
+              }
+            }
+          }
+          catch { /* ignore */ }
+          return false
+        }
+
+        return possiblePaths.some(p => fs.existsSync(p)) || hasCertFiles(packageDir)
       },
       'perl.org': () => {
         // Perl is primarily a runtime, bin/ is sufficient
