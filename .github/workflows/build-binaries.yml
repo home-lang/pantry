@@ -1,12 +1,7 @@
-name: Build Precompiled Binaries
+name: Precompile Binaries
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - .github/workflows/build-binaries.yml
-      - 'build-configs/**'
-  pull_request:
     branches: [main, develop]
     paths:
       - .github/workflows/build-binaries.yml
@@ -77,8 +72,6 @@ jobs:
           # Skip some combinations to reduce build time
           - os: macos-13
             config: api-only
-          - php_version: 8.1.30
-            config: enterprise
           # WordPress mainly used on Linux
           - os: macos-13
             config: wordpress
@@ -163,10 +156,10 @@ jobs:
                     # Create configuration based on matrix config
           case "${{ matrix.config }}" in
             "laravel-mysql")
-              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
+              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
               ;;
             "laravel-postgres")
-              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-pgsql --with-pgsql --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
+              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-pgsql --with-pgsql --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
               ;;
             "laravel-sqlite")
               EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
@@ -211,9 +204,11 @@ jobs:
 
           # Configure with platform-specific options
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            EXTRA_CONFIG="--with-iconv=/usr/local/opt/libiconv"
-          else
+            # On macOS, let configure auto-detect iconv from system/Homebrew
             EXTRA_CONFIG=""
+          else
+            # On Linux, explicitly enable iconv (usually available in system)
+            EXTRA_CONFIG="--with-iconv"
           fi
 
           echo "Configuring PHP with:"
@@ -365,10 +360,10 @@ jobs:
           body: |
             🚀 **PHP Precompiled Binaries**
 
-                        This release contains precompiled, optimized PHP binaries:
+                        This release contains precompiled PHP binaries optimized for Laravel and modern PHP frameworks:
 
             - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
-            - **PHP Versions**: 8.4.11,8.3.24,8.2.29,8.1.32 (dynamic)
+            - **PHP Versions**: 8.4.11, 8.3.14, 8.2.26, 8.1.30
             - **Laravel-Optimized Configurations**:
               - `laravel-mysql`: Laravel with MySQL/MariaDB (most common)
               - `laravel-postgres`: Laravel with PostgreSQL (enterprise)
