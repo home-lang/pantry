@@ -6,7 +6,7 @@ import { platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
-import { findBinaryInPath, findBinaryInEnvironment } from '../utils'
+import { findBinaryInEnvironment, findBinaryInPath } from '../utils'
 import { createDefaultServiceConfig, getServiceDefinition } from './definitions'
 import { generateLaunchdPlist, generateSystemdService, getServiceFilePath, isPlatformSupported, removeServiceFile, writeLaunchdPlist, writeSystemdService } from './platform'
 
@@ -103,7 +103,7 @@ export async function startService(serviceName: string): Promise<boolean> {
     const service = await getOrCreateServiceInstance(serviceName)
 
     if (service.status === 'running') {
-      console.warn(`✅ Service ${serviceName} is already running`)
+      console.log(`✅ Service ${serviceName} is already running`)
       operation.result = 'success'
       operation.duration = 0
       manager.operations.push(operation)
@@ -167,7 +167,7 @@ export async function startService(serviceName: string): Promise<boolean> {
       service.startedAt = new Date()
       service.pid = await getServicePid(service)
 
-      console.warn(`✅ ${service.definition.displayName} started successfully`)
+      console.log(`✅ ${service.definition.displayName} started successfully`)
 
       // Execute post-start setup commands
       await executePostStartCommands(service)
@@ -250,7 +250,7 @@ export async function stopService(serviceName: string): Promise<boolean> {
     }
 
     if (service.status === 'stopped') {
-      console.warn(`✅ Service ${serviceName} is already stopped`)
+      console.log(`✅ Service ${serviceName} is already stopped`)
       operation.result = 'success'
       operation.duration = 0
       manager.operations.push(operation)
@@ -271,7 +271,7 @@ export async function stopService(serviceName: string): Promise<boolean> {
       service.pid = undefined
       service.startedAt = undefined
 
-      console.warn(`✅ ${service.definition.displayName} stopped successfully`)
+      console.log(`✅ ${service.definition.displayName} stopped successfully`)
       operation.result = 'success'
     }
     else {
@@ -356,7 +356,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
     const service = await getOrCreateServiceInstance(serviceName)
 
     if (service.enabled) {
-      console.warn(`✅ Service ${serviceName} is already enabled`)
+      console.log(`✅ Service ${serviceName} is already enabled`)
       operation.result = 'success'
       operation.duration = 0
       manager.operations.push(operation)
@@ -371,7 +371,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
     const success = await enableServicePlatform(service)
 
     if (success) {
-      console.warn(`✅ ${service.definition.displayName} enabled for auto-start`)
+      console.log(`✅ ${service.definition.displayName} enabled for auto-start`)
       operation.result = 'success'
     }
     else {
@@ -444,7 +444,7 @@ export async function disableService(serviceName: string): Promise<boolean> {
     }
 
     if (!service.enabled) {
-      console.warn(`✅ Service ${serviceName} is already disabled`)
+      console.log(`✅ Service ${serviceName} is already disabled`)
       operation.result = 'success'
       operation.duration = 0
       manager.operations.push(operation)
@@ -459,7 +459,7 @@ export async function disableService(serviceName: string): Promise<boolean> {
 
     if (success) {
       await removeServiceFile(serviceName)
-      console.warn(`✅ ${service.definition.displayName} disabled from auto-start`)
+      console.log(`✅ ${service.definition.displayName} disabled from auto-start`)
       operation.result = 'success'
     }
     else {
@@ -768,7 +768,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     const installPath = `${process.env.HOME}/.local`
     await install([definition.packageDomain], installPath)
 
-    console.warn(`✅ ${definition.displayName} package installed successfully`)
+    console.log(`✅ ${definition.displayName} package installed successfully`)
 
     // Verify installation worked by checking in the Launchpad environment
     const binaryPath = findBinaryInEnvironment(definition.executable, installPath)
@@ -829,7 +829,7 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
     const missingExtensions = requiredExtensions.filter(ext => !loadedExtensions.includes(ext))
 
     if (missingExtensions.length === 0) {
-      console.warn(`✅ All required PHP database extensions are available`)
+      console.log(`✅ All required PHP database extensions are available`)
       return true
     }
 
@@ -845,7 +845,7 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
       // Automatically configure the project for SQLite
       const sqliteSetup = await setupSQLiteForProject()
       if (sqliteSetup) {
-        console.warn(`✅ Project configured to use SQLite database`)
+        console.log(`✅ Project configured to use SQLite database`)
         console.warn(`💡 You can now run: php artisan migrate:fresh --seed`)
         return true
       }
@@ -859,14 +859,14 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
     if (nonCoreExtensions.length > 0) {
       const installResult = await installMissingExtensionsViaPECL(service, nonCoreExtensions)
       if (installResult) {
-        console.warn(`✅ Successfully installed additional PHP extensions via PECL`)
+        console.log(`✅ Successfully installed additional PHP extensions via PECL`)
       }
     }
 
     // Try to enable missing extensions via php.ini configuration anyway
     const configResult = await createPHPConfigWithExtensions(service, missingExtensions)
     if (configResult) {
-      console.warn(`📝 Created PHP configuration with database extensions`)
+      console.log(`📝 Created PHP configuration with database extensions`)
     }
 
     return configResult
@@ -949,7 +949,7 @@ async function installMissingExtensionsViaPECL(service: ServiceInstance, missing
 
         peclProcess.on('close', (code) => {
           if (code === 0) {
-            console.warn(`✅ Successfully installed ${extension}`)
+            console.log(`✅ Successfully installed ${extension}`)
             successCount++
             resolve(true)
           }
@@ -966,7 +966,7 @@ async function installMissingExtensionsViaPECL(service: ServiceInstance, missing
     }
 
     if (successCount > 0) {
-      console.warn(`✅ Installed ${successCount}/${installableExtensions.length} PHP extensions`)
+      console.log(`✅ Installed ${successCount}/${installableExtensions.length} PHP extensions`)
 
       // Update PHP configuration to load the new extensions
       await updatePHPConfigWithInstalledExtensions(service, installableExtensions.slice(0, successCount))
@@ -1083,7 +1083,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
     await fs.promises.mkdir(dbDir, { recursive: true })
     if (!fs.existsSync(sqliteDbPath)) {
       await fs.promises.writeFile(sqliteDbPath, '', 'utf8')
-      console.warn(`✅ Created SQLite database file: ${sqliteDbPath}`)
+      console.log(`✅ Created SQLite database file: ${sqliteDbPath}`)
     }
 
     // Update .env file if it exists
@@ -1118,7 +1118,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
 
       if (modified) {
         await fs.promises.writeFile('.env', envContent, 'utf8')
-        console.warn(`✅ Updated .env file to use SQLite`)
+        console.log(`✅ Updated .env file to use SQLite`)
       }
     }
 
@@ -1130,7 +1130,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
           const configClear = spawn('php', ['artisan', 'config:clear'], { stdio: 'pipe' })
           configClear.on('close', () => resolve())
         })
-        console.warn(`✅ Cleared Laravel configuration cache`)
+        console.log(`✅ Cleared Laravel configuration cache`)
       }
       catch {
         // Ignore errors - config:clear is not critical
@@ -1167,7 +1167,7 @@ async function suggestSQLiteAlternative(): Promise<void> {
         try {
           await fs.promises.mkdir('database', { recursive: true })
           await fs.promises.writeFile(sqliteDbPath, '', 'utf8')
-          console.warn(`✅ Created SQLite database file: ${sqliteDbPath}`)
+          console.log(`✅ Created SQLite database file: ${sqliteDbPath}`)
         }
         catch (error) {
           console.warn(`⚠️  Could not create SQLite database file: ${error instanceof Error ? error.message : String(error)}`)
@@ -1265,8 +1265,8 @@ async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
       if (phpService.definition.extensions?.pecl) {
         const installResult = await installMissingExtensionsViaPECL(phpService, missingPgsqlExtensions)
         if (installResult) {
-          console.warn(`✅ Successfully installed PHP PostgreSQL extensions`)
-          console.warn(`💡 You can now use PostgreSQL with PHP in your Laravel projects`)
+          console.log(`✅ Successfully installed PHP PostgreSQL extensions`)
+          console.log(`💡 You can now use PostgreSQL with PHP in your Laravel projects`)
         }
         else {
           console.warn(`⚠️  Could not install PHP PostgreSQL extensions automatically`)
@@ -1275,7 +1275,7 @@ async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
       }
     }
     else {
-      console.warn(`✅ PHP already has PostgreSQL extensions installed`)
+      console.log(`✅ PHP already has PostgreSQL extensions installed`)
     }
   }
   catch (error) {

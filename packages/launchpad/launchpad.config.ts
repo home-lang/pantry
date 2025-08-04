@@ -73,27 +73,14 @@ export const defaultConfig: LaunchpadConfig = {
     },
     php: {
       enabled: true,
-      strategy: 'source-build',
-      version: '8.4.0',
+      strategy: 'precompiled-binary',
+      version: '8.4.11',
       extensions: {
         core: ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath'],
         database: ['pdo-mysql', 'pdo-pgsql', 'pdo-sqlite', 'mysqli', 'pgsql', 'sqlite3'],
         web: ['curl', 'openssl', 'gd', 'soap', 'sockets'],
-        utility: ['zip', 'bz2', 'gettext', 'iconv', 'readline', 'libxml', 'zlib'],
+        utility: ['zip', 'bz2', 'gettext', 'readline', 'libxml', 'zlib'],
         optional: ['pcntl', 'posix', 'shmop', 'sysvmsg', 'sysvsem', 'sysvshm'],
-      },
-      build: {
-        parallelJobs: undefined,
-        configureArgs: ['--disable-debug', '--disable-dependency-tracking', '--disable-silent-rules'],
-        timeout: 600000,
-        debug: false,
-      },
-      libraryFixes: {
-        systemLibraryPaths: ['/opt/homebrew/lib', '/usr/local/lib', '/usr/lib'],
-      },
-      shim: {
-        optimizeLibraryPath: true,
-        environmentVariables: {},
       },
     },
     frameworks: {
@@ -118,6 +105,22 @@ export const defaultConfig: LaunchpadConfig = {
               command: 'php artisan db:seed',
               description: 'Seed the database with sample data',
               condition: 'hasSeeders',
+              runInBackground: false,
+              required: false,
+            },
+            {
+              name: 'storage-link',
+              command: 'php artisan storage:link',
+              description: 'Create symbolic link for storage',
+              condition: 'needsStorageLink',
+              runInBackground: false,
+              required: false,
+            },
+            {
+              name: 'optimize',
+              command: 'php artisan optimize',
+              description: 'Optimize Laravel for production',
+              condition: 'isProduction',
               runInBackground: false,
               required: false,
             },

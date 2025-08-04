@@ -147,7 +147,6 @@ export const defaultConfig: LaunchpadConfig = {
           'zip',
           'bz2',
           'gettext',
-          'iconv',
           'readline',
           'libxml',
           'zlib',
@@ -165,8 +164,6 @@ export const defaultConfig: LaunchpadConfig = {
         parallelJobs: undefined, // Auto-detect CPU cores
         configureArgs: [
           '--disable-debug',
-          '--disable-dependency-tracking',
-          '--disable-silent-rules',
         ],
         timeout: 600000, // 10 minutes
         debug: false,

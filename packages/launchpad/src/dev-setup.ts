@@ -166,7 +166,7 @@ export async function setupPHPDevelopmentEnvironment(options?: {
       return false
     }
 
-    console.warn(`✅ Detected ${framework.name} project`)
+    console.log(`✅ Detected ${framework.name} project`)
 
     // Check if PHP is available
     const phpAvailable = await checkPHPAvailability()
@@ -295,7 +295,7 @@ async function setupPostgreSQLEnvironment(framework: ProjectFramework): Promise<
       await updateProjectEnvironment(framework.databaseConfig.envFile, dbConfig)
     }
 
-    console.warn(`✅ PostgreSQL environment configured`)
+    console.log(`✅ PostgreSQL environment configured`)
     if (framework.databaseConfig?.migrationCommand) {
       console.warn(`💡 You can now run: ${framework.databaseConfig.migrationCommand.join(' ')}`)
     }
@@ -322,7 +322,7 @@ async function setupSQLiteEnvironment(framework: ProjectFramework): Promise<bool
     await fs.promises.mkdir(dbDir, { recursive: true })
     if (!fs.existsSync(sqliteDbPath)) {
       await fs.promises.writeFile(sqliteDbPath, '', 'utf8')
-      console.warn(`✅ Created SQLite database file: ${sqliteDbPath}`)
+      console.log(`✅ Created SQLite database file: ${sqliteDbPath}`)
     }
 
     // Update environment for SQLite
@@ -340,14 +340,14 @@ async function setupSQLiteEnvironment(framework: ProjectFramework): Promise<bool
           const configClear = spawn(framework.databaseConfig!.configClearCommand![0], framework.databaseConfig!.configClearCommand!.slice(1), { stdio: 'pipe' })
           configClear.on('close', () => resolve())
         })
-        console.warn(`✅ Cleared ${framework.name} configuration cache`)
+        console.log(`✅ Cleared ${framework.name} configuration cache`)
       }
       catch {
         // Ignore errors - config clear is not critical
       }
     }
 
-    console.warn(`✅ SQLite environment configured`)
+    console.log(`✅ SQLite environment configured`)
     if (framework.databaseConfig?.migrationCommand) {
       console.warn(`💡 You can now run: ${framework.databaseConfig.migrationCommand.join(' ')}`)
     }
@@ -399,7 +399,7 @@ async function updateProjectEnvironment(envFile: string, config: Record<string, 
     }
 
     await fs.promises.writeFile(envFile, envContent, 'utf8')
-    console.warn(`✅ Updated ${envFile} file`)
+    console.log(`✅ Updated ${envFile} file`)
   }
   catch (error) {
     console.warn(`⚠️  Could not update ${envFile} file: ${error instanceof Error ? error.message : String(error)}`)
@@ -452,7 +452,7 @@ export async function runDatabaseSetup(framework?: ProjectFramework): Promise<bo
       }
     }
 
-    console.warn(`✅ Database setup completed successfully`)
+    console.log(`✅ Database setup completed successfully`)
     return true
   }
   catch (error) {

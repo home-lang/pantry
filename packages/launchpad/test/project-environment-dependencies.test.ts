@@ -134,8 +134,8 @@ describe('Project Environment Dependencies', () => {
       const projectBinDir = join(actualEnvDir, 'bin')
       if (existsSync(projectBinDir)) {
         const projectBinaries = await readdir(projectBinDir)
-        console.warn(`✅ Packages installed to project directory: ${projectBinDir}`)
-        console.warn(`✅ Binaries installed: ${projectBinaries.join(', ')}`)
+        console.log(`✅ Packages installed to project directory: ${projectBinDir}`)
+        console.log(`✅ Binaries installed: ${projectBinaries.join(', ')}`)
         expect(projectBinaries.length).toBeGreaterThan(0)
       }
       else {
@@ -197,7 +197,7 @@ describe('Project Environment Dependencies', () => {
     const actualVersion = versions.find(v => v.startsWith('v3.'))
 
     if (actualVersion) {
-      console.warn(`✅ OpenSSL installed: ${actualVersion}`)
+      console.log(`✅ OpenSSL installed: ${actualVersion}`)
 
       // Verify compatibility symlinks exist for older versions
       const compatLinks = ['v1', 'v1.1', 'v1.0']
@@ -207,7 +207,7 @@ describe('Project Environment Dependencies', () => {
           expect(existsSync(linkPath)).toBe(true)
         }
       }
-      console.warn(`✅ Compatibility symlinks checked for OpenSSL`)
+      console.log(`✅ Compatibility symlinks checked for OpenSSL`)
     }
   }, 30000)
 
@@ -403,7 +403,7 @@ describe('Project Environment Dependencies', () => {
       const actualVersion = versions.find(v => v.startsWith('v3.'))
 
       if (actualVersion) {
-        console.warn(`✅ OpenSSL installed: ${actualVersion}`)
+        console.log(`✅ OpenSSL installed: ${actualVersion}`)
 
         // Check for library directories
         const versionDir = join(opensslDir, actualVersion)

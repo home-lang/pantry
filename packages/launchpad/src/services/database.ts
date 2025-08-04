@@ -60,10 +60,10 @@ async function createPostgreSQLDatabase(dbName: string, options: DatabaseOptions
       // Create the database
       const createCommand = ['createdb', '-h', host, '-p', String(port), '-U', user, dbName]
       await executeCommand(createCommand)
-      console.warn(`✅ PostgreSQL database ${dbName} created successfully`)
+      console.log(`✅ PostgreSQL database ${dbName} created successfully`)
     }
     else {
-      console.warn(`✅ PostgreSQL database ${dbName} already exists`)
+      console.log(`✅ PostgreSQL database ${dbName} already exists`)
     }
 
     return {
@@ -98,7 +98,7 @@ async function createMySQLDatabase(dbName: string, options: DatabaseOptions): Pr
     mysqlArgs.push('-e', sql)
 
     await executeCommand(['mysql', ...mysqlArgs])
-    console.warn(`✅ MySQL database ${dbName} created successfully`)
+    console.log(`✅ MySQL database ${dbName} created successfully`)
 
     return {
       type: 'mysql',
@@ -129,10 +129,10 @@ async function createSQLiteDatabase(dbName: string, _options: DatabaseOptions): 
     if (!fs.existsSync(dbPath)) {
       // Touch the file to create it
       fs.writeFileSync(dbPath, '')
-      console.warn(`✅ SQLite database created: ${dbPath}`)
+      console.log(`✅ SQLite database created: ${dbPath}`)
     }
     else {
-      console.warn(`✅ SQLite database already exists: ${dbPath}`)
+      console.log(`✅ SQLite database already exists: ${dbPath}`)
     }
 
     return {

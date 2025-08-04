@@ -475,7 +475,7 @@ export async function install_bun(installPath: string, version?: string): Promis
         const arrayBuffer = await response.arrayBuffer()
         fs.writeFileSync(zipPath, new Uint8Array(arrayBuffer))
 
-        console.warn(`✅ Downloaded ${(arrayBuffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
+        console.log(`✅ Downloaded ${(arrayBuffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
       }
       else {
         // Fallback: use arrayBuffer approach for compatibility

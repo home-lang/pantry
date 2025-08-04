@@ -1766,7 +1766,7 @@ export async function downloadPackage(
             const buffer = await response.arrayBuffer()
             await fs.promises.writeFile(file, Buffer.from(buffer))
 
-            console.warn(`✅ Downloaded ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
+            console.log(`✅ Downloaded ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
           }
           else {
             // Fallback for when content-length is not available - show simple download indicator
@@ -2267,7 +2267,7 @@ export async function downloadPackage(
     )
 
     if (config.verbose) {
-      console.warn(`✅ Successfully installed ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
+      console.log(`✅ Successfully installed ${domain} \x1B[2m\x1B[3m(v${version})\x1B[0m`)
     }
 
     // Clean up temp directory
@@ -2945,8 +2945,27 @@ async function installPackage(packageName: string, packageSpec: string, installP
   const os = getPlatform()
   const architecture = getArchitecture()
 
+  // Handle OS-specific packages (e.g., darwin@package -> package)
+  // Handle both "darwin@package" and "darwin@package: ^1" formats
+  let actualPackageSpec = packageSpec
+  const osMatch = packageSpec.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
+  if (osMatch) {
+    const [, osPrefix, basePkg, versionConstraint] = osMatch
+    // Fix malformed version constraints: ": ^1" -> "@^1"
+    if (versionConstraint) {
+      const cleanVersion = versionConstraint.replace(/^:\s*/, '@')
+      actualPackageSpec = `${basePkg}${cleanVersion}`
+    }
+    else {
+      actualPackageSpec = basePkg
+    }
+    if (config.verbose) {
+      console.warn(`OS-specific package detected: ${packageSpec} -> trying ${actualPackageSpec}`)
+    }
+  }
+
   // Parse package name and version
-  const { name, version: requestedVersion } = parsePackageSpec(packageSpec)
+  const { name, version: requestedVersion } = parsePackageSpec(actualPackageSpec)
   const domain = resolvePackageName(name)
 
   // Special handling for bun - use dedicated bun installation function
@@ -2965,37 +2984,91 @@ async function installPackage(packageName: string, packageSpec: string, installP
     return await installMeilisearch(installPath, requestedVersion)
   }
 
-  // Special handling for PHP - build from source like Homebrew for reliability
+  // Special handling for PHP - use precompiled binaries for speed
   if (name === 'php' || domain === 'php.net') {
+    try {
+      if (config.verbose) {
+        console.warn(`Installing PHP from precompiled binaries for ${name}`)
+      }
+
+      // Import the binary downloader
+      const { downloadPhpBinary, PrecompiledBinaryDownloader } = await import('./binary-downloader')
+
+      // Check if precompiled binaries are available
+      const downloader = new PrecompiledBinaryDownloader(installPath)
+      const isSupported = await downloader.isSupported()
+
+      if (isSupported) {
+        console.log('🚀 Using precompiled PHP binaries (much faster!)...')
+        return await downloadPhpBinary(installPath, requestedVersion)
+      }
+      else {
+        // Show clean message when falling back to source build
+        console.log('🔧 Custom extensions detected: falling back to source build')
+        if (config.verbose) {
+          console.log('⚠️ Precompiled binaries not available, falling back to source build...')
+        }
+      }
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.log(`⚠️ Binary download failed: ${error instanceof Error ? error.message : String(error)}`)
+        console.log('🔄 Falling back to source build...')
+      }
+    }
+
+    // Fallback to source build if binary download fails
     if (config.verbose) {
       console.warn(`Building PHP from source for ${name}`)
+    }
+    else {
+      // Show clean progress like other packages
+      console.log('🔄 Installing PHP from source...')
+    }
+
+    // CRITICAL: Install ALL PHP dependencies FIRST before building
+    if (config.verbose) {
+      console.log('🔧 Setting up build environment for PHP...')
+    }
+
+    // Step 1: Install essential build tools (pkg-config, autoconf, etc.)
+    await installPhpBuildDependencies(installPath)
+
+    // Step 2: Install ALL PHP runtime dependencies
+    if (config.verbose) {
+      console.log('🔧 Installing ALL PHP dependencies before build...')
+    }
+    await installPhpDependencies(installPath)
+
+    if (config.verbose) {
+      console.log('✅ All PHP dependencies ready - starting build...')
     }
     return await buildPhpFromSource(installPath, requestedVersion)
   }
 
-  // Special handling for zlib - build from source to fix broken ts-pkgx dependencies
-  if (name === 'zlib' || domain === 'zlib.net') {
-    if (config.verbose) {
-      console.warn(`Building zlib from source to fix broken dependencies for ${name}`)
-    }
-    return await buildZlibFromSource(installPath, requestedVersion)
-  }
+  // Special handling for zlib - disabled, let ts-pkgx handle it
+  // if (name === 'zlib' || domain === 'zlib.net') {
+  //   if (config.verbose) {
+  //     console.warn(`Building zlib from source to fix broken dependencies for ${name}`)
+  //   }
+  //   return await buildZlibFromSource(installPath, requestedVersion)
+  // }
 
-  // Special handling for libpng - build from source to fix broken ts-pkgx package
-  if (name === 'libpng' || domain === 'libpng.org') {
-    if (config.verbose) {
-      console.warn(`Building libpng from source to fix broken package for ${name}`)
-    }
-    return await buildLibpngFromSource(installPath, requestedVersion)
-  }
+  // Special handling for libpng - disabled, let ts-pkgx handle it
+  // if (name === 'libpng' || domain === 'libpng.org') {
+  //   if (config.verbose) {
+  //     console.warn(`Building libpng from source to fix broken package for ${name}`)
+  //   }
+  //   return await buildLibpngFromSource(installPath, requestedVersion)
+  // }
 
-  // Special handling for GMP - build from source to fix broken ts-pkgx package
-  if (name === 'gmp' || domain === 'gnu.org/gmp') {
-    if (config.verbose) {
-      console.warn(`Building GMP from source to fix broken package for ${name}`)
-    }
-    return await buildGmpFromSource(installPath, requestedVersion)
-  }
+  // Special handling for GMP - disabled, let ts-pkgx handle it
+  // if (name === 'gmp' || domain === 'gnu.org/gmp') {
+  //   if (config.verbose) {
+  //     console.warn(`Building GMP from source to fix broken package for ${name}`)
+  //   }
+  //   return await buildGmpFromSource(installPath, requestedVersion)
+  // }
 
   if (config.verbose) {
     console.warn(`Resolved ${name} to domain: ${domain}`)
@@ -3047,7 +3120,7 @@ async function installPackage(packageName: string, packageSpec: string, installP
   await createLibrarySymlinks(packageDir, domain)
 
   if (config.verbose) {
-    console.warn(`Successfully installed ${domain} v${version}`)
+    console.log(`Successfully installed ${domain} v${version}`)
   }
 
   return installedFiles
@@ -3101,24 +3174,82 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     // ts-pkgx already resolved all dependencies, install all packages directly
     for (let i = 0; i < deduplicatedPackages.length; i++) {
       const pkg = deduplicatedPackages[i]
+      let packageName: string
       try {
-        const { name: packageName } = parsePackageSpec(pkg)
+        const parsed = parsePackageSpec(pkg)
+        packageName = parsed.name
         // Direct installation without dependency resolution
         const packageFiles = await installPackage(packageName, pkg, installPath)
         allInstalledFiles.push(...packageFiles)
       }
       catch (error) {
-        // Log error but continue with other packages
-        if (config.verbose) {
-          console.error(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
+        // Handle OS-specific packages (e.g., darwin@package -> package)
+        const osMatch = pkg.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
+        if (osMatch) {
+          const [, osPrefix, basePkg, versionConstraint] = osMatch
+          // Fix malformed version constraints: ": ^1" -> "@^1"
+          let fallbackPkg = basePkg
+          if (versionConstraint) {
+            const cleanVersion = versionConstraint.replace(/^:\s*/, '@')
+            fallbackPkg = `${basePkg}${cleanVersion}`
+          }
+
+          if (config.verbose) {
+            console.warn(`⚠️ OS-specific package ${pkg} failed, trying fallback: ${fallbackPkg}`)
+          }
+          // Try the fallback package
+          try {
+            const fallbackFiles = await installPackage(basePkg, fallbackPkg, installPath)
+            allInstalledFiles.push(...fallbackFiles)
+            if (config.verbose) {
+              console.log(`✅ Fallback succeeded for ${fallbackPkg}`)
+            }
+            continue // Success, move to next package
+          }
+          catch (fallbackError) {
+            // If fallback with version fails, try without version
+            if (versionConstraint) {
+              try {
+                const simpleFiles = await installPackage(basePkg, basePkg, installPath)
+                allInstalledFiles.push(...simpleFiles)
+                if (config.verbose) {
+                  console.log(`✅ Fallback succeeded for ${basePkg} (without version constraint)`)
+                }
+                continue // Success, move to next package
+              }
+              catch (simpleError) {
+                // Both attempts failed
+                if (config.verbose) {
+                  console.error(`❌ Failed to install ${pkg}, fallback ${fallbackPkg}, and simple ${basePkg}`)
+                }
+                else {
+                  logUniqueMessage(`⚠️  Warning: Failed to install ${pkg} (tried multiple fallbacks)`)
+                }
+              }
+            }
+            else {
+              if (config.verbose) {
+                console.error(`❌ Failed to install ${pkg} and fallback ${fallbackPkg}: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`)
+              }
+              else {
+                logUniqueMessage(`⚠️  Warning: Failed to install ${pkg} and fallback ${fallbackPkg}`)
+              }
+            }
+          }
         }
         else {
-          const errorMessage = error instanceof Error ? error.message : String(error)
-          if (errorMessage.includes('Library not loaded') || errorMessage.includes('dylib')) {
-            logUniqueMessage(`⚠️  Warning: Failed to install ${pkg} (library loading issue - try clearing cache)`)
+        // Log error but continue with other packages
+          if (config.verbose) {
+            console.error(`❌ Failed to install ${pkg}: ${error instanceof Error ? error.message : String(error)}`)
           }
           else {
-            logUniqueMessage(`⚠️  Warning: Failed to install ${pkg}`)
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            if (errorMessage.includes('Library not loaded') || errorMessage.includes('dylib')) {
+              logUniqueMessage(`⚠️  Warning: Failed to install ${pkg} (library loading issue - try clearing cache)`)
+            }
+            else {
+              logUniqueMessage(`⚠️  Warning: Failed to install ${pkg}`)
+            }
           }
         }
         // Continue with other packages instead of throwing
@@ -3135,12 +3266,27 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         allInstalledFiles.push(...result.files)
       }
       else {
-        // Log error but continue with other packages
-        if (config.verbose) {
-          console.error(`❌ Failed to install ${result.package}: ${result.error}`)
+        // Handle OS-specific packages (e.g., darwin@package -> package)
+        const osMatch = result.package.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
+        if (osMatch) {
+          const [, osPrefix, basePkg, versionConstraint] = osMatch
+          const fallbackPkg = versionConstraint ? `${basePkg}${versionConstraint}` : basePkg
+          // For OS-specific packages, don't show warning yet - let fallback try first
+          if (config.verbose) {
+            console.warn(`⚠️ OS-specific package ${result.package} not available, will try fallback: ${fallbackPkg}`)
+          }
+          // DEBUG: Log that we're handling this as OS-specific
+          console.warn(`🧪 DEBUG: Suppressing warning for OS-specific package: ${result.package}`)
+          // The fallback will be handled by the dependency installation logic
         }
         else {
-          console.warn(`⚠️  Warning: Failed to install ${result.package}`)
+        // Log error but continue with other packages
+          if (config.verbose) {
+            console.error(`❌ Failed to install ${result.package}: ${result.error}`)
+          }
+          else {
+            console.warn(`⚠️  Warning: Failed to install ${result.package}`)
+          }
         }
         // Continue with other packages instead of throwing
       }
@@ -4265,6 +4411,173 @@ function _getFallbackVersions(packageName: string): string[] {
  * Build PHP from source using a Homebrew-style approach
  * This is our primary PHP installation method for reliability
  */
+/**
+ * Install essential PHP build dependencies first (pkg-config, autoconf, etc.)
+ */
+async function installPhpBuildDependencies(installPath: string): Promise<void> {
+  if (config.verbose) {
+    console.log('🔧 Installing essential PHP build tools...')
+  }
+
+  const buildTools = [
+    'freedesktop.org/pkg-config',
+    'gnu.org/autoconf',
+    'gnu.org/automake',
+    'gnu.org/m4',
+    'gnu.org/bison',
+    're2c.org',
+  ]
+
+  // Filter out already installed tools
+  const toolsToInstall = buildTools.filter((tool) => {
+    const toolPath = path.join(installPath, tool.split(/[<>=~^]/)[0])
+    const alreadyInstalled = fs.existsSync(toolPath)
+    if (alreadyInstalled && config.verbose) {
+      console.log(`✅ ${tool} already installed`)
+    }
+    return !alreadyInstalled
+  })
+
+  if (toolsToInstall.length > 0) {
+    try {
+      // Install all build tools in one call to avoid redundant summary messages
+      await install(toolsToInstall, installPath)
+      if (config.verbose) {
+        console.log(`✅ Installed build tools: ${toolsToInstall.join(', ')}`)
+      }
+    }
+    catch (error) {
+      console.warn(`⚠️ Warning: Could not install some PHP build tools:`, error instanceof Error ? error.message : String(error))
+      // Try individual installation as fallback
+      for (const tool of toolsToInstall) {
+        try {
+          await install([tool], installPath)
+          if (config.verbose) {
+            console.log(`✅ Installed build tool: ${tool}`)
+          }
+        }
+        catch (individualError) {
+          console.warn(`⚠️ Warning: Could not install PHP build tool ${tool}:`, individualError instanceof Error ? individualError.message : String(individualError))
+        }
+      }
+    }
+  }
+
+  if (config.verbose) {
+    console.log('✅ PHP build environment ready')
+  }
+}
+
+async function installPhpDependencies(globalInstallPath: string): Promise<void> {
+  console.log('🔧 Installing PHP build dependencies...')
+
+  // Import pantry from ts-pkgx to get PHP dependencies
+  const { pantry } = await import('ts-pkgx')
+  const phpPackage = pantry.phpnet || pantry.php
+
+  if (!phpPackage || !phpPackage.dependencies) {
+    console.warn('⚠️ Warning: Could not find PHP dependencies in pantry')
+    return
+  }
+
+  if (config.verbose) {
+    console.warn(`PHP dependencies: ${phpPackage.dependencies.join(', ')}`)
+  }
+
+  // Filter out problematic dependencies that cause builds to hang
+  const skipPatterns = [
+    'zlib.net', // Causes build failures
+    'libzip.org', // Complex build
+    'gnome.org/libxslt', // Complex build
+    'libpng.org', // Complex build
+    'google.com/webp', // Complex build
+    'ijg.org', // Complex build
+    'gnu.org/gmp', // Let ts-pkgx handle GMP instead of custom build
+  ]
+
+  const filteredDeps = phpPackage.dependencies.filter(dep =>
+    !skipPatterns.some(pattern => dep.includes(pattern)),
+  )
+
+  // Filter out already installed dependencies
+  const depsToInstall = filteredDeps.filter((dep) => {
+    const depInstallPath = path.join(globalInstallPath, dep.split(/[<>=~^]/)[0])
+    const alreadyInstalled = fs.existsSync(depInstallPath)
+    if (alreadyInstalled && config.verbose) {
+      console.log(`✅ ${dep} already installed`)
+    }
+    return !alreadyInstalled
+  })
+
+  if (depsToInstall.length > 0) {
+    console.log(`Installing ${depsToInstall.length} core PHP dependencies...`)
+
+    try {
+      // Install all PHP dependencies in one call to avoid redundant summary messages
+      const installPromise = install(depsToInstall, globalInstallPath)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Installation timeout')), 120000), // 2 minutes for bulk install
+      )
+
+      await Promise.race([installPromise, timeoutPromise])
+
+      if (config.verbose) {
+        console.log(`✅ Installed PHP dependencies: ${depsToInstall.join(', ')}`)
+      }
+    }
+    catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      if (errorMsg.includes('timeout')) {
+        console.warn(`⚠️ Some PHP dependencies timed out, trying individual installation`)
+      }
+      else {
+        console.warn(`⚠️ Bulk PHP dependency installation failed, trying individual installation`)
+      }
+
+      // Fallback to individual installation
+      for (const dep of depsToInstall) {
+        try {
+          // Handle OS-specific dependencies with fallback
+          const osMatch = dep.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
+          if (osMatch) {
+            const [, osPrefix, basePkg, versionConstraint] = osMatch
+            const fallbackPkg = versionConstraint ? `${basePkg}${versionConstraint}` : basePkg
+            console.warn(`⚠️ OS-specific dependency ${dep} failed, trying fallback: ${fallbackPkg}`)
+
+            try {
+              await install([fallbackPkg], globalInstallPath)
+              if (config.verbose) {
+                console.log(`✅ Fallback succeeded for ${fallbackPkg}`)
+              }
+            }
+            catch (fallbackError) {
+              console.warn(`⚠️ Warning: Could not install PHP dependency ${dep} or fallback ${fallbackPkg}`)
+            }
+          }
+          else {
+            // Regular dependency - try direct installation
+            try {
+              await install([dep], globalInstallPath)
+              if (config.verbose) {
+                console.log(`✅ Installed ${dep}`)
+              }
+            }
+            catch (individualError) {
+              console.warn(`⚠️ Warning: Could not install PHP dependency ${dep}:`, individualError instanceof Error ? individualError.message : String(individualError))
+            }
+          }
+        }
+        catch (depError) {
+          console.warn(`⚠️ Warning: Could not install PHP dependency ${dep}:`, depError instanceof Error ? depError.message : String(depError))
+        }
+      }
+    }
+  }
+  else {
+    console.log('✅ All PHP dependencies already installed')
+  }
+}
+
 export async function buildPhpFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
   const phpConfig = config.services.php
   const version = requestedVersion?.replace(/^v/, '') || phpConfig.version
@@ -4334,6 +4647,24 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       }
     }
 
+    // Explicitly add oniguruma pkgconfig path if it exists
+    const onigurumaPath = path.join(globalInstallPath, 'github.com/kkos/oniguruma')
+    try {
+      const onigurumaVersions = fs.readdirSync(onigurumaPath)
+      for (const version of onigurumaVersions) {
+        const pkgConfigPath = path.join(onigurumaPath, version, 'lib/pkgconfig')
+        if (fs.existsSync(pkgConfigPath)) {
+          expandedPaths.push(pkgConfigPath)
+          if (config.verbose) {
+            console.warn(`Added oniguruma pkgconfig: ${pkgConfigPath}`)
+          }
+        }
+      }
+    }
+    catch (error) {
+      // Oniguruma not found, skip
+    }
+
     // Prepare library and include directories from pkg-config paths
     const libDirs = expandedPaths.map(p => p.replace('/pkgconfig', ''))
     const includeDirs = expandedPaths.map(p => p.replace('/lib/pkgconfig', '/include'))
@@ -4345,6 +4676,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       path.join(globalInstallPath, 'zlib.net/v*/include'),
       path.join(globalInstallPath, 'openssl.org/v*/include'),
       path.join(globalInstallPath, 'gnome.org/libxml2/v*/include'),
+      path.join(globalInstallPath, 'gnu.org/gettext/v*/include'), // Critical for libintl.h
       path.join(globalInstallPath, 'libpng.org/v*/include'),
       path.join(globalInstallPath, 'curl.se/v*/include'),
     ]
@@ -4372,7 +4704,9 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       }
     }
 
-    logUniqueMessage(`🔧 Setting up build environment for PHP...`)
+    logUniqueMessage(`🔧 Configuring PHP build environment...`)
+
+    // PHP dependencies already installed - just set up build environment
 
     if (config.verbose) {
       console.warn(`PKG_CONFIG_PATH being set to: ${expandedPaths.join(':')}`)
@@ -4380,8 +4714,13 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
     logUniqueMessage(`🔄 Building PHP ${version} from source with configured extensions...`)
 
-    // Create package directory
+    // Create package directory BEFORE configure step
     await fs.promises.mkdir(packageDir, { recursive: true })
+
+    if (config.verbose) {
+      console.warn(`PHP package directory: ${packageDir}`)
+      console.warn(`Directory exists: ${fs.existsSync(packageDir)}`)
+    }
 
     // Download PHP source
     const sourceUrl = `https://www.php.net/distributions/php-${version}.tar.gz`
@@ -4395,22 +4734,140 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       console.warn(`Downloading PHP source from: ${sourceUrl}`)
     }
 
-    const response = await fetch(sourceUrl)
-    if (!response.ok) {
-      throw new Error(`Failed to download PHP source: ${response.status}`)
+    // Download with timeout and retry logic
+    let lastError: Error | null = null
+    const maxRetries = 3
+    const timeoutMs = 120000 // 2 minutes timeout per attempt
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 1) {
+          logUniqueMessage(`🔄 Retry ${attempt}/${maxRetries}: Downloading PHP ${version} source...`)
+        }
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => {
+          controller.abort()
+        }, timeoutMs)
+
+        try {
+          const response = await fetch(sourceUrl, {
+            signal: controller.signal,
+            headers: {
+              'User-Agent': 'Launchpad/1.0 (PHP source download)',
+            },
+          })
+
+          clearTimeout(timeoutId)
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+
+          logUniqueMessage(`⬇️ PHP ${version} source download started (${Math.round((response.headers.get('content-length') || '0') as any / 1024 / 1024 * 10) / 10}MB)...`)
+
+          const buffer = await response.arrayBuffer()
+          await fs.promises.writeFile(tarFile, Buffer.from(buffer))
+
+          logUniqueMessage(`✅ PHP ${version} source downloaded successfully`)
+          lastError = null
+          break // Success!
+        }
+        catch (fetchError) {
+          clearTimeout(timeoutId)
+          throw fetchError
+        }
+      }
+      catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.warn(`⏰ Download timeout (${timeoutMs}ms) on attempt ${attempt}/${maxRetries}`)
+        }
+        else {
+          console.warn(`❌ Download failed on attempt ${attempt}/${maxRetries}: ${lastError.message}`)
+        }
+
+        if (attempt < maxRetries) {
+          const delayMs = attempt * 2000 // Exponential backoff: 2s, 4s
+          logUniqueMessage(`⏳ Waiting ${delayMs / 1000}s before retry...`)
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+        }
+      }
     }
 
-    const buffer = await response.arrayBuffer()
-    await fs.promises.writeFile(tarFile, Buffer.from(buffer))
+    if (lastError) {
+      throw new Error(`Failed to download PHP source after ${maxRetries} attempts: ${lastError.message}`)
+    }
 
     // Extract source
     logUniqueMessage(`📂 Extracting PHP ${version} source...`)
-    const { execSync } = await import('node:child_process')
-    execSync(`tar -xzf "${tarFile}" -C "${tempDir}"`, { stdio: 'pipe' })
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const { spawn } = require('node:child_process')
+        const tarProcess = spawn('tar', ['-xzf', tarFile, '-C', tempDir], {
+          stdio: config.verbose ? 'inherit' : 'pipe',
+        })
+
+        let output = ''
+        let errorOutput = ''
+
+        if (tarProcess.stdout) {
+          tarProcess.stdout.on('data', (data: Buffer) => {
+            output += data.toString()
+            if (config.verbose) {
+              process.stdout.write(data)
+            }
+          })
+        }
+
+        if (tarProcess.stderr) {
+          tarProcess.stderr.on('data', (data: Buffer) => {
+            errorOutput += data.toString()
+            if (config.verbose) {
+              process.stderr.write(data)
+            }
+          })
+        }
+
+        tarProcess.on('close', (code: number | null) => {
+          if (code === 0) {
+            logUniqueMessage(`✅ PHP ${version} source extracted successfully`)
+            resolve()
+          }
+          else {
+            reject(new Error(`tar extraction failed with exit code ${code}\nOutput: ${output}\nError: ${errorOutput}`))
+          }
+        })
+
+        tarProcess.on('error', (error: Error) => {
+          reject(new Error(`Failed to start tar process: ${error.message}`))
+        })
+
+        // Extraction timeout (should be much faster than download)
+        const extractTimeoutMs = 60000 // 1 minute timeout
+        const timeoutTimer = setTimeout(() => {
+          tarProcess.kill('SIGTERM')
+          setTimeout(() => {
+            if (!tarProcess.killed) {
+              tarProcess.kill('SIGKILL')
+            }
+          }, 5000)
+          reject(new Error(`PHP source extraction timed out after ${extractTimeoutMs}ms`))
+        }, extractTimeoutMs)
+
+        tarProcess.on('close', () => {
+          clearTimeout(timeoutTimer)
+        })
+      })
+    }
+    catch (error) {
+      throw new Error(`PHP ${version} extraction failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
 
     const sourceDir = path.join(tempDir, `php-${version}`)
     if (!fs.existsSync(sourceDir)) {
-      throw new Error('Failed to extract PHP source')
+      throw new Error('Failed to extract PHP source - source directory not found')
     }
 
     // Define paths for dependencies (reuse existing globalInstallPath)
@@ -4419,8 +4876,16 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
     // Build configure arguments from configuration
     const configureArgs = [
-      `--prefix="${packageDir}"`,
-      ...phpConfig.build.configureArgs,
+      `--prefix=${packageDir}`,
+      // Only include valid PHP configure arguments (not autotools-specific ones)
+      ...phpConfig.build.configureArgs.filter(arg =>
+        !arg.includes('iconv')
+        && !arg.includes('dependency-tracking')
+        && !arg.includes('silent-rules'),
+      ),
+      // Add macOS-specific compatibility flags
+      '--enable-shared',
+      '--with-pic',
     ]
 
     // Add core extensions
@@ -4438,21 +4903,48 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
       }
     })
 
-    // Add web extensions
+    // Add web extensions with PHP 8.4 compatible syntax
     phpConfig.extensions.web.forEach((ext) => {
-      configureArgs.push(`--with-${ext}`)
-    })
-
-    // Add utility extensions
-    phpConfig.extensions.utility.forEach((ext) => {
-      // Use explicit path for bzip2
-      if (ext === 'bz2') {
-        configureArgs.push(`--with-bz2=${bzip2Dir}`)
+      if (ext === 'gd') {
+        // In PHP 8.4, GD extension is enabled, not configured with --with-gd
+        configureArgs.push('--enable-gd')
+      }
+      else if (ext === 'soap') {
+        // SOAP extension is enabled, not configured with --with-soap
+        configureArgs.push('--enable-soap')
+      }
+      else if (ext === 'sockets') {
+        // Sockets extension is enabled, not configured with --with-sockets
+        configureArgs.push('--enable-sockets')
       }
       else {
         configureArgs.push(`--with-${ext}`)
       }
     })
+
+    // Add utility extensions
+    phpConfig.extensions.utility.forEach((ext) => {
+      // Use explicit paths for problematic extensions
+      if (ext === 'bz2') {
+        configureArgs.push(`--with-bz2=${bzip2Dir}`)
+      }
+      else if (ext === 'gettext') {
+        // Explicitly specify gettext path to help configure find libintl.h
+        const gettextDir = path.join(globalInstallPath, 'gnu.org/gettext/v0.22.5')
+        configureArgs.push(`--with-gettext=${gettextDir}`)
+      }
+      else if (ext === 'readline') {
+        // Explicitly specify readline path to help configure find readline.h
+        const readlineDir = path.join(globalInstallPath, 'gnu.org/readline/v8.3.0')
+        configureArgs.push(`--with-readline=${readlineDir}`)
+      }
+      else {
+        configureArgs.push(`--with-${ext}`)
+      }
+    })
+
+    // Use system iconv without explicit path (often works better on macOS)
+    configureArgs.push('--without-iconv')
 
     // Add optional extensions
     phpConfig.extensions.optional.forEach((ext) => {
@@ -4466,10 +4958,14 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
     const configureEnv = {
       ...process.env,
+      // Ensure build tools are in PATH (critical for pkg-config, autoconf, etc.)
+      PATH: `${path.join(globalInstallPath, 'bin')}:${process.env.PATH || ''}`,
       PKG_CONFIG_PATH: expandedPaths.length > 0 ? expandedPaths.join(':') : '',
       // Library and include paths
       LDFLAGS: libDirs.map(p => `-L${p}`).join(' '),
       CPPFLAGS: includeDirs.map(p => `-I${p}`).join(' '),
+      // Use proper macOS SDK flags
+      SDKROOT: '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk',
       // Specific environment variables that PHP configure looks for
       BZIP_DIR: bzip2Dir,
       OPENSSL_PREFIX: opensslDir,
@@ -4480,30 +4976,184 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
     }
 
     if (config.verbose) {
+      console.warn(`=== PHP CONFIGURE ENVIRONMENT ===`)
       console.warn(`PKG_CONFIG_PATH: ${configureEnv.PKG_CONFIG_PATH}`)
       console.warn(`LDFLAGS: ${configureEnv.LDFLAGS}`)
       console.warn(`CPPFLAGS: ${configureEnv.CPPFLAGS}`)
       console.warn(`BZIP_DIR: ${configureEnv.BZIP_DIR}`)
       console.warn(`C_INCLUDE_PATH: ${configureEnv.C_INCLUDE_PATH}`)
+      console.warn(`PATH: ${configureEnv.PATH}`)
+      console.warn(`=== END ENVIRONMENT ===`)
     }
 
     // Run configure
     logUniqueMessage(`⚙️  Configuring PHP ${version} build...`)
-    execSync(`cd "${sourceDir}" && ./configure ${configureArgs.join(' ')}`, {
-      stdio: config.verbose ? 'inherit' : 'pipe',
-      timeout: phpConfig.build.timeout,
-      env: configureEnv,
-    })
+
+    if (config.verbose) {
+      console.warn(`=== PHP CONFIGURE COMMAND ===`)
+      console.warn(`Working directory: ${sourceDir}`)
+      console.warn(`Command: ./configure ${configureArgs.join(' ')}`)
+      console.warn(`Package directory exists: ${fs.existsSync(packageDir)}`)
+      console.warn(`===========================`)
+    }
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const { spawn } = require('node:child_process')
+        const configureProcess = spawn('./configure', configureArgs, {
+          cwd: sourceDir,
+          env: configureEnv,
+          stdio: config.verbose ? 'inherit' : 'pipe',
+        })
+
+        let output = ''
+        let errorOutput = ''
+
+        if (configureProcess.stdout) {
+          configureProcess.stdout.on('data', (data: Buffer) => {
+            output += data.toString()
+            if (config.verbose) {
+              process.stdout.write(data)
+            }
+          })
+        }
+
+        if (configureProcess.stderr) {
+          configureProcess.stderr.on('data', (data: Buffer) => {
+            errorOutput += data.toString()
+            if (config.verbose) {
+              process.stderr.write(data)
+            }
+          })
+        }
+
+        configureProcess.on('close', (code: number | null) => {
+          if (code === 0) {
+            logUniqueMessage(`✅ PHP ${version} configure completed successfully`)
+            resolve()
+          }
+          else {
+            reject(new Error(`./configure failed with exit code ${code}\nOutput: ${output}\nError: ${errorOutput}`))
+          }
+        })
+
+        configureProcess.on('error', (error: Error) => {
+          reject(new Error(`Failed to start configure process: ${error.message}`))
+        })
+
+        // Configure timeout with progress
+        const configureTimeoutMs = Math.min(phpConfig.build.timeout / 2, 300000) // Half of build timeout or 5 minutes max
+        const progressInterval = 15000 // Show progress every 15 seconds for configure
+        let progressCount = 0
+
+        const progressTimer = setInterval(() => {
+          progressCount++
+          const elapsed = progressCount * progressInterval
+          logUniqueMessage(`⏳ PHP configure in progress... (${Math.floor(elapsed / 1000)}s elapsed)`)
+        }, progressInterval)
+
+        const timeoutTimer = setTimeout(() => {
+          clearInterval(progressTimer)
+          configureProcess.kill('SIGTERM')
+          setTimeout(() => {
+            if (!configureProcess.killed) {
+              configureProcess.kill('SIGKILL')
+            }
+          }, 5000)
+          reject(new Error(`PHP configure timed out after ${configureTimeoutMs}ms. This may indicate environment issues or missing dependencies.`))
+        }, configureTimeoutMs)
+
+        configureProcess.on('close', () => {
+          clearInterval(progressTimer)
+          clearTimeout(timeoutTimer)
+        })
+      })
+    }
+    catch (error) {
+      throw new Error(`PHP ${version} configure failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
 
     // Build PHP
     logUniqueMessage(`🔨 Compiling PHP ${version} (this may take several minutes)...`)
     const { cpus } = await import('node:os')
     const makeJobs = phpConfig.build.parallelJobs || cpus().length
-    execSync(`cd "${sourceDir}" && make -j${makeJobs}`, {
-      stdio: config.verbose ? 'inherit' : 'pipe',
-      timeout: phpConfig.build.timeout,
-      env: configureEnv,
-    })
+
+    try {
+      // Use a more robust execution with better timeout handling
+      await new Promise<void>((resolve, reject) => {
+        const { spawn } = require('node:child_process')
+        const makeProcess = spawn('make', [`-j${makeJobs}`], {
+          cwd: sourceDir,
+          env: configureEnv,
+          stdio: config.verbose ? 'inherit' : 'pipe',
+        })
+
+        let output = ''
+        let errorOutput = ''
+
+        if (makeProcess.stdout) {
+          makeProcess.stdout.on('data', (data: Buffer) => {
+            output += data.toString()
+            if (config.verbose) {
+              process.stdout.write(data)
+            }
+          })
+        }
+
+        if (makeProcess.stderr) {
+          makeProcess.stderr.on('data', (data: Buffer) => {
+            errorOutput += data.toString()
+            if (config.verbose) {
+              process.stderr.write(data)
+            }
+          })
+        }
+
+        makeProcess.on('close', (code: number | null) => {
+          if (code === 0) {
+            logUniqueMessage(`✅ PHP ${version} compilation completed successfully`)
+            resolve()
+          }
+          else {
+            reject(new Error(`make failed with exit code ${code}\nOutput: ${output}\nError: ${errorOutput}`))
+          }
+        })
+
+        makeProcess.on('error', (error: Error) => {
+          reject(new Error(`Failed to start make process: ${error.message}`))
+        })
+
+        // Set a more aggressive timeout with progress checking
+        const timeoutMs = phpConfig.build.timeout || 600000 // 10 minutes default
+        const progressInterval = 30000 // Show progress every 30 seconds
+        let progressCount = 0
+
+        const progressTimer = setInterval(() => {
+          progressCount++
+          const elapsed = progressCount * progressInterval
+          logUniqueMessage(`⏳ PHP compilation in progress... (${Math.floor(elapsed / 60000)}m ${Math.floor((elapsed % 60000) / 1000)}s elapsed)`)
+        }, progressInterval)
+
+        const timeoutTimer = setTimeout(() => {
+          clearInterval(progressTimer)
+          makeProcess.kill('SIGTERM')
+          setTimeout(() => {
+            if (!makeProcess.killed) {
+              makeProcess.kill('SIGKILL')
+            }
+          }, 5000)
+          reject(new Error(`PHP compilation timed out after ${timeoutMs}ms. This may indicate a system issue or insufficient resources.`))
+        }, timeoutMs)
+
+        makeProcess.on('close', () => {
+          clearInterval(progressTimer)
+          clearTimeout(timeoutTimer)
+        })
+      })
+    }
+    catch (error) {
+      throw new Error(`PHP ${version} compilation failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
 
     // Install PHP
     logUniqueMessage(`📦 Installing PHP ${version}...`)
@@ -4946,7 +5596,7 @@ export async function buildGmpFromSource(installPath: string, requestedVersion?:
 
           if (response.ok) {
             if (config.verbose) {
-              console.warn(`✅ Successfully connected to: ${url}`)
+              console.log(`✅ Successfully connected to: ${url}`)
             }
             break
           }
@@ -5163,20 +5813,21 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
           path.join(packageDir, 'curl.se', 'ca-certs'), // Handle nested structure
         ]
 
-        // Also recursively check for cert files
-        const hasCertFiles = (dir: string): boolean => {
-          if (!fs.existsSync(dir))
+        // Also recursively check for cert files (deeper search for ca-certs)
+        const hasCertFiles = (dir: string, depth = 0): boolean => {
+          if (!fs.existsSync(dir) || depth > 5) // Limit recursion depth
             return false
           try {
             const entries = fs.readdirSync(dir)
             for (const entry of entries) {
               const fullPath = path.join(dir, entry)
-              if (entry.endsWith('.pem') || entry.endsWith('.crt') || entry.includes('cert')) {
+              // Check for certificate files
+              if (entry.endsWith('.pem') || entry.endsWith('.crt') || entry.includes('cert') || entry === 'cert.pem') {
                 return true
               }
-              // Check one level deeper for nested structures
+              // Recursively check subdirectories (especially for ca-certs nested structure)
               if (fs.statSync(fullPath).isDirectory() && entry !== 'bin' && entry !== 'lib') {
-                if (hasCertFiles(fullPath))
+                if (hasCertFiles(fullPath, depth + 1))
                   return true
               }
             }
@@ -5244,23 +5895,23 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
 async function attemptSourceBuild(domain: string, installPath: string, version: string): Promise<boolean> {
   try {
     switch (domain) {
-      case 'libpng.org':
-        await buildLibpngFromSource(installPath, version)
-        return true
-      case 'gnu.org/gmp':
-        await buildGmpFromSource(installPath, version)
-        return true
-      case 'zlib.net':
-        await buildZlibFromSource(installPath, version)
-        return true
-      case 'sqlite.org':
-        await buildSqliteFromSource(installPath, version)
-        return true
-      case 'openssl.org':
-        await buildOpenSSLFromSource(installPath, version)
-        return true
+      // case 'libpng.org': // DISABLED - let ts-pkgx handle libpng like all other deps
+      //   await buildLibpngFromSource(installPath, version)
+      //   return true
+      // case 'gnu.org/gmp': // DISABLED - let ts-pkgx handle GMP like all other deps
+      //   await buildGmpFromSource(installPath, version)
+      //   return true
+      // case 'zlib.net': // DISABLED - let ts-pkgx handle zlib like all other deps
+      //   await buildZlibFromSource(installPath, version)
+      //   return true
+      // case 'sqlite.org': // DISABLED - let ts-pkgx handle sqlite like all other deps
+      //   await buildSqliteFromSource(installPath, version)
+      //   return true
+      // case 'openssl.org': // DISABLED - let ts-pkgx handle openssl like all other deps
+      //   await buildOpenSSLFromSource(installPath, version)
+      //   return true
       default:
-        // No source build available for this package
+        // No source build available for this package - let ts-pkgx handle all deps
         return false
     }
   }

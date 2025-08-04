@@ -157,7 +157,7 @@ export async function writeLaunchdPlist(service: ServiceInstance, plist: Launchd
   await fs.promises.writeFile(plistPath, plistXml, 'utf8')
 
   if (config.verbose) {
-    console.warn(`✅ Created launchd plist: ${plistPath}`)
+    console.log(`✅ Created launchd plist: ${plistPath}`)
   }
 
   return plistPath
@@ -178,7 +178,7 @@ export async function writeSystemdService(service: ServiceInstance, systemdServi
   await fs.promises.writeFile(servicePath, serviceContent, 'utf8')
 
   if (config.verbose) {
-    console.warn(`✅ Created systemd service: ${servicePath}`)
+    console.log(`✅ Created systemd service: ${servicePath}`)
   }
 
   return servicePath

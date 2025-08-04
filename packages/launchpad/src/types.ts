@@ -82,42 +82,13 @@ export interface ServiceConfig {
   php: PHPConfig
 }
 
-export interface PostSetupCommandsConfig {
-  /** Enable post-setup commands _(default: true)_ */
-  enabled: boolean
-  /** List of commands to run after project setup */
-  commands: PostSetupCommand[]
-}
-
-export interface PostSetupCommand {
-  /** Unique name for the command */
-  name: string
-  /** The actual command to execute */
-  command: string
-  /** Human-readable description */
-  description: string
-  /** Condition that must be met for the command to run */
-  condition: 'hasUnrunMigrations' | 'hasSeeders' | 'needsStorageLink' | 'isProduction' | 'always' | 'never'
-  /** Whether to run the command in the background */
-  runInBackground: boolean
-  /** Whether this command is required (will cause setup to fail if it fails) */
-  required: boolean
-}
-
 export interface FrameworksConfig {
   /** Enable automatic framework detection and setup _(default: true)_ */
   enabled: boolean
   /** Preferred database for new projects _(default: 'postgres')_ */
   preferredDatabase: 'postgres' | 'sqlite'
   /** Laravel-specific configuration */
-  laravel: {
-    /** Enable Laravel support _(default: true)_ */
-    enabled: boolean
-    /** Automatically detect Laravel projects _(default: true)_ */
-    autoDetect: boolean
-    /** Post-setup commands configuration */
-    postSetupCommands: PostSetupCommandsConfig
-  }
+  laravel: LaravelConfig
   /** Stacks.js-specific configuration */
   stacks: {
     /** Enable Stacks.js support _(default: true)_ */
@@ -139,8 +110,8 @@ export interface DatabaseConfig {
 export interface PHPConfig {
   /** Enable PHP support _(default: true)_ */
   enabled: boolean
-  /** PHP installation strategy _(default: 'source-build')_ */
-  strategy: 'source-build'
+  /** PHP installation strategy _(default: 'precompiled-binary')_ */
+  strategy: 'source-build' | 'precompiled-binary'
   /** PHP version to install _(default: '8.4.0')_ */
   version: string
   /** PHP extensions to enable during compilation */
@@ -156,8 +127,8 @@ export interface PHPConfig {
     /** Optional extensions */
     optional: string[]
   }
-  /** Build configuration options */
-  build: {
+  /** Build configuration options (only needed for source builds) */
+  build?: {
     /** Number of parallel jobs for compilation _(default: auto-detect CPU cores)_ */
     parallelJobs?: number
     /** Additional configure arguments */
@@ -166,18 +137,6 @@ export interface PHPConfig {
     timeout: number
     /** Enable debug build _(default: false)_ */
     debug: boolean
-  }
-  /** Library fixes for common issues */
-  libraryFixes: {
-    /** System library paths to include */
-    systemLibraryPaths: string[]
-  }
-  /** Shim configuration */
-  shim: {
-    /** Optimize library path resolution */
-    optimizeLibraryPath: boolean
-    /** Environment variables to set */
-    environmentVariables: Record<string, string>
   }
 }
 
@@ -315,6 +274,35 @@ export interface LaunchdPlist {
   StartInterval?: number
   UserName?: string
   GroupName?: string
+}
+
+export interface PostSetupCommand {
+  /** Command name/identifier */
+  name: string
+  /** Command to execute */
+  command: string
+  /** Human-readable description */
+  description: string
+  /** Condition that must be met for the command to run */
+  condition: 'hasUnrunMigrations' | 'hasSeeders' | 'needsStorageLink' | 'isProduction' | 'always'
+  /** Whether to run in background */
+  runInBackground: boolean
+  /** Whether this command is required (failure will stop execution) */
+  required: boolean
+}
+
+export interface LaravelConfig {
+  /** Enable Laravel framework support */
+  enabled: boolean
+  /** Auto-detect Laravel projects */
+  autoDetect: boolean
+  /** Post-setup commands configuration */
+  postSetupCommands?: {
+    /** Enable post-setup commands */
+    enabled: boolean
+    /** Commands to run after setup */
+    commands: PostSetupCommand[]
+  }
 }
 
 export interface SystemdService {

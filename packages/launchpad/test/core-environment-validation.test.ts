@@ -135,8 +135,8 @@ describe('Core Environment Validation', () => {
 
       if (existsSync(projectBinDir)) {
         const projectBinaries = await readdir(projectBinDir)
-        console.warn(`✅ Packages installed to project directory: ${projectBinDir}`)
-        console.warn(`✅ Binaries installed: ${projectBinaries.join(', ')}`)
+        console.log(`✅ Packages installed to project directory: ${projectBinDir}`)
+        console.log(`✅ Binaries installed: ${projectBinaries.join(', ')}`)
 
         // Verify NOT in global directory
         expect(projectBinDir).not.toBe(globalBinDir)
@@ -189,7 +189,7 @@ describe('Core Environment Validation', () => {
         const actualVersion = versions.find(v => v.startsWith('v3.'))
 
         if (actualVersion) {
-          console.warn(`✅ OpenSSL installed: ${actualVersion}`)
+          console.log(`✅ OpenSSL installed: ${actualVersion}`)
 
           // Verify compatibility symlinks exist for older versions
           const compatLinks = ['v1', 'v1.1', 'v1.0']
@@ -199,7 +199,7 @@ describe('Core Environment Validation', () => {
               expect(existsSync(linkPath)).toBe(true)
             }
           }
-          console.warn(`✅ Compatibility symlinks created for OpenSSL v1.x`)
+          console.log(`✅ Compatibility symlinks created for OpenSSL v1.x`)
         }
       }
 
@@ -210,7 +210,7 @@ describe('Core Environment Validation', () => {
           const result = testCommand(wgetPath, ['--version'])
           if (result.success) {
             expect(result.output).toContain('GNU Wget')
-            console.warn(`✅ wget works correctly with OpenSSL`)
+            console.log(`✅ wget works correctly with OpenSSL`)
           }
         }
         catch {
@@ -277,7 +277,7 @@ describe('Core Environment Validation', () => {
       const hash2 = calculateProjectHash(env2Path)
       expect(hash1).not.toBe(hash2)
 
-      console.warn(`✅ Project isolation working: ${hash1} vs ${hash2}`)
+      console.log(`✅ Project isolation working: ${hash1} vs ${hash2}`)
 
       // If both succeeded, verify directory isolation
       if (env1Success && env2Success) {
@@ -338,7 +338,7 @@ describe('Core Environment Validation', () => {
       // Environment activation should be reasonably fast for CI
       expect(duration).toBeLessThan(10000) // 10 seconds max for CI environments
 
-      console.warn(`✅ Environment activation took ${duration}ms (acceptable for CI)`)
+      console.log(`✅ Environment activation took ${duration}ms (acceptable for CI)`)
     }
     finally {
       cleanupEnvDir(envDir)
@@ -407,7 +407,7 @@ describe('Core Environment Validation', () => {
             const result = testCommand(binaryPath, ['--version'])
             if (result.success) {
               workingCount++
-              console.warn(`✅ ${binary}: Working`)
+              console.log(`✅ ${binary}: Working`)
             }
             else {
               console.warn(`⚠️  ${binary}: ${result.error?.split('\n')[0]}`)
@@ -417,7 +417,7 @@ describe('Core Environment Validation', () => {
 
         if (executableCount > 0) {
           expect(executableCount).toBeGreaterThan(0)
-          console.warn(`✅ ${workingCount}/${executableCount} binaries have correct permissions`)
+          console.log(`✅ ${workingCount}/${executableCount} binaries have correct permissions`)
         }
         else {
           console.warn('No executable binaries found - packages may not have installed properly')

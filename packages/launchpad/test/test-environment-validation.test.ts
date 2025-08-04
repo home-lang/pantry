@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Comprehensive Test Environment Validation
  *
@@ -209,7 +210,7 @@ describe('Test Environment Validation', () => {
               // Check that some binaries were installed
               const binaries = readdirSync(binDir)
               if (binaries.length > 0) {
-                console.warn(`✅ ${envName}: ${binaries.length} binaries installed: ${binaries.join(', ')}`)
+                console.log(`✅ ${envName}: ${binaries.length} binaries installed: ${binaries.join(', ')}`)
               }
               else {
                 console.warn(`⚠️  ${envName}: Bin directory exists but no binaries installed (package installation may have failed)`)
@@ -277,7 +278,7 @@ describe('Test Environment Validation', () => {
           const actualVersion = versions.find(v => v.startsWith('v3.'))
 
           if (actualVersion) {
-            console.warn(`✅ OpenSSL installed: ${actualVersion}`)
+            console.log(`✅ OpenSSL installed: ${actualVersion}`)
 
             // Check for compatibility symlinks
             const compatLinks = ['v1', 'v1.1', 'v1.0']
@@ -287,7 +288,7 @@ describe('Test Environment Validation', () => {
                 expect(existsSync(linkPath)).toBe(true)
               }
             }
-            console.warn(`✅ OpenSSL compatibility verified`)
+            console.log(`✅ OpenSSL compatibility verified`)
           }
         }
 
@@ -297,7 +298,7 @@ describe('Test Environment Validation', () => {
           const result = testCommand(wgetPath, ['--version'])
           if (result.success) {
             expect(result.output).toContain('GNU Wget')
-            console.warn(`✅ wget working correctly`)
+            console.log(`✅ wget working correctly`)
           }
         }
         else {
@@ -338,12 +339,12 @@ describe('Test Environment Validation', () => {
 
         // Test that at least the environment structure is created
         if (existsSync(envDir)) {
-          console.warn(`✅ Complex environment structure created: ${envDir}`)
+          console.log(`✅ Complex environment structure created: ${envDir}`)
 
           const binDir = join(envDir, 'bin')
           if (existsSync(binDir)) {
             const binaries = await readdir(binDir)
-            console.warn(`✅ Some binaries installed: ${binaries.length} found`)
+            console.log(`✅ Some binaries installed: ${binaries.length} found`)
           }
         }
         else {
@@ -398,7 +399,7 @@ describe('Test Environment Validation', () => {
 
         // Environment activation should be reasonably fast for CI
         expect(duration).toBeLessThan(15000) // 15 seconds max for CI
-        console.warn(`✅ Environment activation took ${duration}ms`)
+        console.log(`✅ Environment activation took ${duration}ms`)
       }
       finally {
         cleanupEnvDir(envDir)
@@ -605,7 +606,7 @@ describe('Test Environment Validation', () => {
                 const result = testCommand(binPath)
                 if (result.success) {
                   workingCount++
-                  console.warn(`✅ ${binary}: Working`)
+                  console.log(`✅ ${binary}: Working`)
                 }
                 else {
                   console.warn(`⚠️  ${binary}: ${result.error?.split('\n')[0]}`)
@@ -616,7 +617,7 @@ describe('Test Environment Validation', () => {
             expect(executableCount).toBeGreaterThan(0)
             expect(workingCount).toBeGreaterThan(0)
 
-            console.warn(`✅ ${workingCount}/${executableCount} binaries working correctly`)
+            console.log(`✅ ${workingCount}/${executableCount} binaries working correctly`)
           }
         }
       }

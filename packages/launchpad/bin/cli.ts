@@ -451,7 +451,8 @@ async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<void> {
       // Create new symlink
       await fs.promises.symlink(sourcePath, targetPath)
     }
-  } catch (error) {
+  }
+  catch (error) {
     // Don't fail the whole installation if symlink creation fails
     console.warn('⚠️  Warning: Failed to create global binary symlinks:', error)
   }
@@ -811,8 +812,15 @@ cli
       }
 
       // Handle regular package installation
-      const installPath = options.path || install_prefix().string
+      // Use Launchpad global directory by default instead of /usr/local
+      const defaultInstallPath = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+      const installPath = options.path || defaultInstallPath
       const results = await install(packageList, installPath)
+
+      // Create symlinks to ~/.local/bin for global accessibility when using default path
+      if (!options.path) {
+        await createGlobalBinarySymlinks(installPath)
+      }
 
       if (!options.quiet) {
         if (results.length > 0) {
