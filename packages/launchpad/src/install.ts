@@ -3031,14 +3031,8 @@ async function installPackage(packageName: string, packageSpec: string, installP
       console.log('🔧 Setting up build environment for PHP...')
     }
 
-    // Step 1: Install essential build tools (pkg-config, autoconf, etc.)
+    // Install all PHP dependencies from ts-pkgx (includes build tools and runtime deps)
     await installPhpBuildDependencies(installPath)
-
-    // Step 2: Install ALL PHP runtime dependencies
-    if (config.verbose) {
-      console.log('🔧 Installing ALL PHP dependencies before build...')
-    }
-    await installPhpDependencies(installPath)
 
     if (config.verbose) {
       console.log('✅ All PHP dependencies ready - starting build...')
@@ -4415,57 +4409,8 @@ function _getFallbackVersions(packageName: string): string[] {
  * Install essential PHP build dependencies first (pkg-config, autoconf, etc.)
  */
 async function installPhpBuildDependencies(installPath: string): Promise<void> {
-  if (config.verbose) {
-    console.log('🔧 Installing essential PHP build tools...')
-  }
-
-  const buildTools = [
-    'freedesktop.org/pkg-config',
-    'gnu.org/autoconf',
-    'gnu.org/automake',
-    'gnu.org/m4',
-    'gnu.org/bison',
-    're2c.org',
-  ]
-
-  // Filter out already installed tools
-  const toolsToInstall = buildTools.filter((tool) => {
-    const toolPath = path.join(installPath, tool.split(/[<>=~^]/)[0])
-    const alreadyInstalled = fs.existsSync(toolPath)
-    if (alreadyInstalled && config.verbose) {
-      console.log(`✅ ${tool} already installed`)
-    }
-    return !alreadyInstalled
-  })
-
-  if (toolsToInstall.length > 0) {
-    try {
-      // Install all build tools in one call to avoid redundant summary messages
-      await install(toolsToInstall, installPath)
-      if (config.verbose) {
-        console.log(`✅ Installed build tools: ${toolsToInstall.join(', ')}`)
-      }
-    }
-    catch (error) {
-      console.warn(`⚠️ Warning: Could not install some PHP build tools:`, error instanceof Error ? error.message : String(error))
-      // Try individual installation as fallback
-      for (const tool of toolsToInstall) {
-        try {
-          await install([tool], installPath)
-          if (config.verbose) {
-            console.log(`✅ Installed build tool: ${tool}`)
-          }
-        }
-        catch (individualError) {
-          console.warn(`⚠️ Warning: Could not install PHP build tool ${tool}:`, individualError instanceof Error ? individualError.message : String(individualError))
-        }
-      }
-    }
-  }
-
-  if (config.verbose) {
-    console.log('✅ PHP build environment ready')
-  }
+  // Use ts-pkgx to get all PHP dependencies instead of hardcoded list
+  await installPhpDependencies(installPath)
 }
 
 async function installPhpDependencies(globalInstallPath: string): Promise<void> {
@@ -4635,7 +4580,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
       findPkgConfigDirs(globalInstallPath)
     }
-    catch (error) {
+    catch {
       // If recursive search fails, fallback to manual paths
       console.warn('Fallback to manual pkg-config path search')
     }
@@ -4661,7 +4606,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
         }
       }
     }
-    catch (error) {
+    catch {
       // Oniguruma not found, skip
     }
 
@@ -4804,6 +4749,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
     logUniqueMessage(`📂 Extracting PHP ${version} source...`)
     try {
       await new Promise<void>((resolve, reject) => {
+        // eslint-disable-next-line ts/no-require-imports
         const { spawn } = require('node:child_process')
         const tarProcess = spawn('tar', ['-xzf', tarFile, '-C', tempDir], {
           stdio: config.verbose ? 'inherit' : 'pipe',
@@ -4999,6 +4945,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
 
     try {
       await new Promise<void>((resolve, reject) => {
+        // eslint-disable-next-line ts/no-require-imports
         const { spawn } = require('node:child_process')
         const configureProcess = spawn('./configure', configureArgs, {
           cwd: sourceDir,
@@ -5081,6 +5028,7 @@ export async function buildPhpFromSource(installPath: string, requestedVersion?:
     try {
       // Use a more robust execution with better timeout handling
       await new Promise<void>((resolve, reject) => {
+        // eslint-disable-next-line ts/no-require-imports
         const { spawn } = require('node:child_process')
         const makeProcess = spawn('make', [`-j${makeJobs}`], {
           cwd: sourceDir,

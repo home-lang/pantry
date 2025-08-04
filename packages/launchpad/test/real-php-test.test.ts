@@ -16,15 +16,23 @@ describe('Real PHP Installation Test', () => {
       })
 
       // Install build dependencies first
-      console.log('🔧 Installing build dependencies...')
-      const buildDeps = [
-        'freedesktop.org/pkg-config',
-        'gnu.org/autoconf',
-        'gnu.org/automake',
-        'gnu.org/bison',
-        'gnu.org/m4',
-        're2c.org',
-      ]
+      console.log('🔧 Installing build dependencies from ts-pkgx...')
+
+      // Import ts-pkgx to get actual PHP dependencies
+      const { pantry } = await import('ts-pkgx')
+      const phpPackage = pantry.phpnet || pantry.php
+
+      if (!phpPackage || !phpPackage.dependencies) {
+        throw new Error('Could not find PHP dependencies in ts-pkgx pantry')
+      }
+
+      const buildDeps = phpPackage.dependencies.filter(dep =>
+        // Get essential build tools first
+        dep.includes('bison')
+        || dep.includes('autoconf')
+        || dep.includes('re2c')
+        || dep.includes('pkg-config'),
+      )
 
       for (const dep of buildDeps) {
         try {

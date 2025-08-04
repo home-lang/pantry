@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
@@ -137,8 +139,9 @@ export class PrecompiledBinaryDownloader {
    */
   private detectFrameworkAndDatabase(): string {
     try {
+      // eslint-disable-next-line ts/no-require-imports
       const fs = require('node:fs')
-      const path = require('node:path')
+      // const _path = require('node:path')
 
       // Check for Laravel
       if (fs.existsSync('artisan') && fs.existsSync('composer.json')) {

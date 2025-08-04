@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Tests for project-specific environment dependency management
  *

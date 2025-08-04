@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { LaunchdPlist, ServiceInstance, SystemdService } from '../types'
 import fs from 'node:fs'
 import { homedir, platform } from 'node:os'
