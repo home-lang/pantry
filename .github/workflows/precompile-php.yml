@@ -400,8 +400,8 @@ jobs:
             PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
             PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
 
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
-              # PHP 8.4+ requires C++17
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 3 ]]; then
+              # PHP 8.3+ requires C++17
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Using C++17 for PHP ${{ matrix.php_version }}"
             else
@@ -572,7 +572,7 @@ jobs:
             PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
             PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
 
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 3 ]]; then
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Set C++17 flags for macOS build"
             else
@@ -615,7 +615,7 @@ jobs:
           PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
 
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 3 ]]; then
               echo "Testing C++17 support:"
               echo '#include <type_traits>' > test_cpp.cpp
               echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp.cpp
@@ -645,7 +645,7 @@ jobs:
             PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
             PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
 
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 3 ]]; then
               echo "Making with explicit C++17 flags:"
               echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
               echo "  CFLAGS: (empty)"
