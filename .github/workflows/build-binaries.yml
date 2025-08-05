@@ -306,7 +306,14 @@ jobs:
               if [[ -n "$BZIP2_VERSION" ]]; then
                 BZIP2_PATH="$LAUNCHPAD_BZIP2_DIR/$BZIP2_VERSION"
                 echo "Found launchpad bzip2 at: $BZIP2_PATH"
-                EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
+                # Check if bzlib.h exists in the include directory
+                if [[ -f "$BZIP2_PATH/include/bzlib.h" ]]; then
+                  echo "✓ bzlib.h found at $BZIP2_PATH/include/bzlib.h"
+                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
+                else
+                  echo "⚠️  bzlib.h not found at $BZIP2_PATH/include/bzlib.h"
+                  echo "   Using system bzip2 instead"
+                fi
               else
                 echo "No bzip2 version found in $LAUNCHPAD_BZIP2_DIR"
               fi
@@ -447,6 +454,27 @@ jobs:
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-ldap=$OPENLDAP_PATH"
               fi
             fi
+
+            # Clean up EXTRA_CONFIG to remove any duplicate options
+            echo "Cleaning up EXTRA_CONFIG to remove duplicates..."
+            # Remove duplicate --with-* options
+            CLEANED_EXTRA_CONFIG=""
+            for option in $EXTRA_CONFIG; do
+              if [[ "$option" =~ ^--with- ]]; then
+                # Extract the option name (e.g., --with-bz2, --with-iconv)
+                option_name=$(echo "$option" | cut -d'=' -f1)
+                # Only add if not already present
+                if [[ "$CLEANED_EXTRA_CONFIG" != *"$option_name"* ]]; then
+                  CLEANED_EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG $option"
+                else
+                  echo "Removing duplicate option: $option"
+                fi
+              else
+                CLEANED_EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG $option"
+              fi
+            done
+            EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG"
+            echo "Cleaned EXTRA_CONFIG: $EXTRA_CONFIG"
           fi
 
           echo "Configuring PHP with:"
@@ -455,6 +483,10 @@ jobs:
           echo "  Extra config: $EXTRA_CONFIG"
           echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
           echo "  LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+          # Debug: Show the final configure command
+          echo "Final configure command will be:"
+          echo "./configure --prefix=\"$INSTALL_PREFIX\" --disable-debug --enable-shared --with-pic ${{ env.CONFIGURE_EXTENSIONS }} $EXTRA_CONFIG $CURL_CONFIG"
 
           # Debug: Show available pkg-config files
           echo "Available pkg-config files:"
