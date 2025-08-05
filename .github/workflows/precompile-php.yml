@@ -478,14 +478,6 @@ jobs:
             echo "Final extensions: $FINAL_EXTENSIONS"
           fi
 
-          # Add C++17 configure option for macOS
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            CONFIGURE_CXX="CXXFLAGS=-std=c++17 -stdlib=libc++ CFLAGS=-std=c++17"
-            echo "Using C++17 configure flags: $CONFIGURE_CXX"
-          else
-            CONFIGURE_CXX=""
-          fi
-
           ./configure \
             --prefix="$INSTALL_PREFIX" \
             --disable-debug \
@@ -493,8 +485,7 @@ jobs:
             --with-pic \
             $FINAL_EXTENSIONS \
             $EXTRA_CONFIG \
-            $CURL_CONFIG \
-            $CONFIGURE_CXX
+            $CURL_CONFIG
 
       - name: Build PHP
         run: |
