@@ -527,8 +527,8 @@ export async function install_bun(installPath: string, version?: string): Promis
 
     // Extract the archive
     if (filename.endsWith('.zip')) {
-      // Skip extraction in test environment (only when running under Bun test runner)
-      if (process.env.NODE_ENV === 'test' && process.env.BUN_TEST === '1') {
+      // Skip extraction in test environment (but not during normal CLI usage)
+      if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_CLI_MODE) {
         // In test mode, create a fake bun executable
         const bunExeName = platform() === 'win32' ? 'bun.exe' : 'bun'
         const destPath = path.join(binDir, bunExeName)

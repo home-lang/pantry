@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// Set CLI mode to prevent fake binaries in normal usage
+process.env.LAUNCHPAD_CLI_MODE = '1'
+
 import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
