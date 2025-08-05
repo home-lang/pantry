@@ -107,7 +107,7 @@ jobs:
         run: |
           # Use Launchpad to install PHP dependencies automatically
           # This replaces the manual apt-get install of all dependencies
-          ./launchpad install --deps-only php
+          ./launchpad install php --deps-only
 
           # Alternative: Use apt-get for manual dependency installation
           # sudo apt-get update
@@ -144,7 +144,7 @@ jobs:
         run: |
           # Use Launchpad to install PHP dependencies automatically
           # This replaces the manual brew install of all dependencies
-          ./launchpad install --deps-only php
+          ./launchpad install php --deps-only
 
           # Alternative: Use Homebrew for manual dependency installation
           # brew install \
