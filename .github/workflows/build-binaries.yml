@@ -297,6 +297,22 @@ jobs:
             else
               echo "Launchpad readline not found, using system readline"
             fi
+
+            # Find the launchpad bzip2 installation
+            LAUNCHPAD_BZIP2_DIR="$HOME/.local/share/launchpad/global/sourceware.org/bzip2"
+            if [[ -d "$LAUNCHPAD_BZIP2_DIR" ]]; then
+              # Find the latest version
+              BZIP2_VERSION=$(ls "$LAUNCHPAD_BZIP2_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$BZIP2_VERSION" ]]; then
+                BZIP2_PATH="$LAUNCHPAD_BZIP2_DIR/$BZIP2_VERSION"
+                echo "Found launchpad bzip2 at: $BZIP2_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
+              else
+                echo "No bzip2 version found in $LAUNCHPAD_BZIP2_DIR"
+              fi
+            else
+              echo "Launchpad bzip2 not found, using system bzip2"
+            fi
           fi
 
           echo "Configuring PHP with:"
@@ -333,9 +349,9 @@ jobs:
           pkg-config --exists libxml-2.0 && echo "✓ libxml-2.0 found" || echo "✗ libxml-2.0 not found"
           pkg-config --exists sqlite3 && echo "✓ sqlite3 found" || echo "✗ sqlite3 not found"
 
-          # Ensure launchpad iconv and readline are properly linked and available
+          # Ensure launchpad iconv, readline, and bzip2 are properly linked and available
           if [[ "${{ matrix.platform }}" != "darwin" ]]; then
-            echo "Ensuring launchpad iconv and readline are properly configured..."
+            echo "Ensuring launchpad iconv, readline, and bzip2 are properly configured..."
             # Check if launchpad iconv is available and working
             if command -v iconv >/dev/null 2>&1; then
               echo "✓ iconv found in PATH"
@@ -359,6 +375,26 @@ jobs:
                     echo "✓ readline.h found in launchpad: $READLINE_INCLUDE/readline/readline.h"
                   else
                     echo "⚠️  readline.h not found in launchpad include path"
+                  fi
+                fi
+              fi
+            fi
+
+            # Check if bzip2 headers are available
+            if [[ -f "/usr/include/bzlib.h" ]] || [[ -f "/usr/local/include/bzlib.h" ]]; then
+              echo "✓ bzlib.h found in system include paths"
+            else
+              echo "⚠️  bzlib.h not found in system include paths"
+              # Check if we can find it in launchpad paths
+              LAUNCHPAD_BZIP2_DIR="$HOME/.local/share/launchpad/global/sourceware.org/bzip2"
+              if [[ -d "$LAUNCHPAD_BZIP2_DIR" ]]; then
+                BZIP2_VERSION=$(ls "$LAUNCHPAD_BZIP2_DIR" | grep "^v" | sort -V | tail -1)
+                if [[ -n "$BZIP2_VERSION" ]]; then
+                  BZIP2_INCLUDE="$LAUNCHPAD_BZIP2_DIR/$BZIP2_VERSION/include"
+                  if [[ -f "$BZIP2_INCLUDE/bzlib.h" ]]; then
+                    echo "✓ bzlib.h found in launchpad: $BZIP2_INCLUDE/bzlib.h"
+                  else
+                    echo "⚠️  bzlib.h not found in launchpad include path"
                   fi
                 fi
               fi
