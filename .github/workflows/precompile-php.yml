@@ -298,7 +298,7 @@ jobs:
             "-I$(brew --prefix openldap)/include"
           )
           echo "CPPFLAGS=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")" >> $GITHUB_ENV
-          echo "CXXFLAGS=-std=c++17" >> $GITHUB_ENV
+          echo "CXXFLAGS=-std=c++14 -stdlib=libc++" >> $GITHUB_ENV
 
           # Set readline-specific paths
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
@@ -395,13 +395,13 @@ jobs:
               echo "Debug: LDAP environment variables cleared"
             fi
 
-            # Set C++17 flag for ICU4C compatibility - set explicitly
-            # Only apply C++17 to C++ compiler, not C compiler
-            export CXXFLAGS="-std=c++17 -stdlib=libc++"
+            # Set C++14 flag for ICU4C compatibility - set explicitly
+            # Only apply C++14 to C++ compiler, not C compiler
+            export CXXFLAGS="-std=c++14 -stdlib=libc++"
             # Keep CFLAGS clean for C compiler
             export CFLAGS=""
             export CPPFLAGS="$CPPFLAGS"
-            echo "Set C++17 flags for configure step"
+            echo "Set C++14 flags for configure step"
             echo "CXXFLAGS: $CXXFLAGS"
             echo "CFLAGS: $CFLAGS"
             echo "CPPFLAGS: $CPPFLAGS"
@@ -496,13 +496,13 @@ jobs:
           # Use all available CPU cores for faster builds
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             JOBS=$(sysctl -n hw.ncpu)
-            # Ensure C++17 is used during build - set explicitly
-            # Only apply C++17 to C++ compiler, not C compiler
-            export CXXFLAGS="-std=c++17 -stdlib=libc++"
+            # Ensure C++14 is used during build - set explicitly
+            # Only apply C++14 to C++ compiler, not C compiler
+            export CXXFLAGS="-std=c++14 -stdlib=libc++"
             # Keep CFLAGS clean for C compiler
             export CFLAGS=""
             export CPPFLAGS="$CPPFLAGS"
-            echo "Set C++17 flags for macOS build"
+            echo "Set C++14 flags for macOS build"
           else
             JOBS=$(nproc)
           fi
@@ -511,6 +511,12 @@ jobs:
           echo "CXXFLAGS: $CXXFLAGS"
           echo "CFLAGS: $CFLAGS"
           echo "CPPFLAGS: $CPPFLAGS"
+
+          # Show what compiler is being used
+          echo "Compiler being used:"
+          which gcc || which clang || echo "No compiler found"
+          echo "C++ compiler:"
+          which g++ || which clang++ || echo "No C++ compiler found"
 
           # Show compiler version and flags
           echo "Compiler info:"
