@@ -267,14 +267,15 @@ jobs:
             # Find the launchpad iconv installation
             LAUNCHPAD_ICONV_DIR="$HOME/.local/share/launchpad/global/gnu.org/libiconv"
             if [[ -d "$LAUNCHPAD_ICONV_DIR" ]]; then
-              # Find the latest version
-              ICONV_VERSION=$(ls "$LAUNCHPAD_ICONV_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$ICONV_VERSION" ]]; then
+              # Find the latest version - use find to avoid shell expansion issues
+              ICONV_VERSION=$(find "$LAUNCHPAD_ICONV_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$ICONV_VERSION" && "$ICONV_VERSION" != "v*" ]]; then
                 ICONV_PATH="$LAUNCHPAD_ICONV_DIR/$ICONV_VERSION"
                 echo "Found launchpad iconv at: $ICONV_PATH"
                 EXTRA_CONFIG="--with-iconv=$ICONV_PATH"
               else
-                echo "No iconv version found in $LAUNCHPAD_ICONV_DIR"
+                echo "No valid iconv version found in $LAUNCHPAD_ICONV_DIR"
+                echo "Available versions: $(ls -la "$LAUNCHPAD_ICONV_DIR" 2>/dev/null || echo 'none')"
                 EXTRA_CONFIG="--with-iconv"
               fi
             else
@@ -285,14 +286,15 @@ jobs:
             # Find the launchpad readline installation
             LAUNCHPAD_READLINE_DIR="$HOME/.local/share/launchpad/global/gnu.org/readline"
             if [[ -d "$LAUNCHPAD_READLINE_DIR" ]]; then
-              # Find the latest version
-              READLINE_VERSION=$(ls "$LAUNCHPAD_READLINE_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$READLINE_VERSION" ]]; then
+              # Find the latest version - use find to avoid shell expansion issues
+              READLINE_VERSION=$(find "$LAUNCHPAD_READLINE_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$READLINE_VERSION" && "$READLINE_VERSION" != "v*" ]]; then
                 READLINE_PATH="$LAUNCHPAD_READLINE_DIR/$READLINE_VERSION"
                 echo "Found launchpad readline at: $READLINE_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-readline=$READLINE_PATH"
               else
-                echo "No readline version found in $LAUNCHPAD_READLINE_DIR"
+                echo "No valid readline version found in $LAUNCHPAD_READLINE_DIR"
+                echo "Available versions: $(ls -la "$LAUNCHPAD_READLINE_DIR" 2>/dev/null || echo 'none')"
               fi
             else
               echo "Launchpad readline not found, using system readline"
@@ -301,9 +303,9 @@ jobs:
             # Find the launchpad bzip2 installation
             LAUNCHPAD_BZIP2_DIR="$HOME/.local/share/launchpad/global/sourceware.org/bzip2"
             if [[ -d "$LAUNCHPAD_BZIP2_DIR" ]]; then
-              # Find the latest version
-              BZIP2_VERSION=$(ls "$LAUNCHPAD_BZIP2_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$BZIP2_VERSION" ]]; then
+              # Find the latest version - use find to avoid shell expansion issues
+              BZIP2_VERSION=$(find "$LAUNCHPAD_BZIP2_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$BZIP2_VERSION" && "$BZIP2_VERSION" != "v*" ]]; then
                 BZIP2_PATH="$LAUNCHPAD_BZIP2_DIR/$BZIP2_VERSION"
                 echo "Found launchpad bzip2 at: $BZIP2_PATH"
 
@@ -355,9 +357,9 @@ jobs:
                         # Check libzip compatibility and handle zip extension
             LAUNCHPAD_LIBZIP_DIR="$HOME/.local/share/launchpad/global/libzip.org"
             if [[ -d "$LAUNCHPAD_LIBZIP_DIR" ]]; then
-              # Find the latest version
-              LIBZIP_VERSION=$(ls "$LAUNCHPAD_LIBZIP_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$LIBZIP_VERSION" ]]; then
+              # Find the latest version - use find to avoid shell expansion issues
+              LIBZIP_VERSION=$(find "$LAUNCHPAD_LIBZIP_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$LIBZIP_VERSION" && "$LIBZIP_VERSION" != "v*" ]]; then
                 LIBZIP_PATH="$LAUNCHPAD_LIBZIP_DIR/$LIBZIP_VERSION"
                 echo "Found launchpad libzip at: $LIBZIP_PATH"
 
@@ -423,8 +425,8 @@ jobs:
             # Find launchpad-installed GMP for bcmath extension
             LAUNCHPAD_GMP_DIR="$HOME/.local/share/launchpad/global/gnu.org/gmp"
             if [[ -d "$LAUNCHPAD_GMP_DIR" ]]; then
-              GMP_VERSION=$(ls "$LAUNCHPAD_GMP_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$GMP_VERSION" ]]; then
+              GMP_VERSION=$(find "$LAUNCHPAD_GMP_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$GMP_VERSION" && "$GMP_VERSION" != "v*" ]]; then
                 GMP_PATH="$LAUNCHPAD_GMP_DIR/$GMP_VERSION"
                 echo "Found launchpad GMP at: $GMP_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-gmp=$GMP_PATH"
@@ -434,8 +436,8 @@ jobs:
             # Find launchpad-installed libsodium for sodium extension
             LAUNCHPAD_SODIUM_DIR="$HOME/.local/share/launchpad/global/libsodium.org"
             if [[ -d "$LAUNCHPAD_SODIUM_DIR" ]]; then
-              SODIUM_VERSION=$(ls "$LAUNCHPAD_SODIUM_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$SODIUM_VERSION" ]]; then
+              SODIUM_VERSION=$(find "$LAUNCHPAD_SODIUM_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$SODIUM_VERSION" && "$SODIUM_VERSION" != "v*" ]]; then
                 SODIUM_PATH="$LAUNCHPAD_SODIUM_DIR/$SODIUM_VERSION"
                 echo "Found launchpad libsodium at: $SODIUM_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-sodium=$SODIUM_PATH"
@@ -445,8 +447,8 @@ jobs:
             # Find launchpad-installed oniguruma for mbstring extension
             LAUNCHPAD_ONIGURUMA_DIR="$HOME/.local/share/launchpad/global/github.com/kkos/oniguruma"
             if [[ -d "$LAUNCHPAD_ONIGURUMA_DIR" ]]; then
-              ONIGURUMA_VERSION=$(ls "$LAUNCHPAD_ONIGURUMA_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$ONIGURUMA_VERSION" ]]; then
+              ONIGURUMA_VERSION=$(find "$LAUNCHPAD_ONIGURUMA_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$ONIGURUMA_VERSION" && "$ONIGURUMA_VERSION" != "v*" ]]; then
                 ONIGURUMA_PATH="$LAUNCHPAD_ONIGURUMA_DIR/$ONIGURUMA_VERSION"
                 echo "Found launchpad oniguruma at: $ONIGURUMA_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-onig=$ONIGURUMA_PATH"
@@ -456,8 +458,8 @@ jobs:
             # Find launchpad-installed libxml2 for XML extension
             LAUNCHPAD_LIBXML2_DIR="$HOME/.local/share/launchpad/global/gnome.org/libxml2"
             if [[ -d "$LAUNCHPAD_LIBXML2_DIR" ]]; then
-              LIBXML2_VERSION=$(ls "$LAUNCHPAD_LIBXML2_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$LIBXML2_VERSION" ]]; then
+              LIBXML2_VERSION=$(find "$LAUNCHPAD_LIBXML2_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$LIBXML2_VERSION" && "$LIBXML2_VERSION" != "v*" ]]; then
                 LIBXML2_PATH="$LAUNCHPAD_LIBXML2_DIR/$LIBXML2_VERSION"
                 echo "Found launchpad libxml2 at: $LIBXML2_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-libxml-dir=$LIBXML2_PATH"
@@ -467,8 +469,8 @@ jobs:
             # Find launchpad-installed libxslt for XSLT extension
             LAUNCHPAD_LIBXSLT_DIR="$HOME/.local/share/launchpad/global/gnome.org/libxslt"
             if [[ -d "$LAUNCHPAD_LIBXSLT_DIR" ]]; then
-              LIBXSLT_VERSION=$(ls "$LAUNCHPAD_LIBXSLT_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$LIBXSLT_VERSION" ]]; then
+              LIBXSLT_VERSION=$(find "$LAUNCHPAD_LIBXSLT_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$LIBXSLT_VERSION" && "$LIBXSLT_VERSION" != "v*" ]]; then
                 LIBXSLT_PATH="$LAUNCHPAD_LIBXSLT_DIR/$LIBXSLT_VERSION"
                 echo "Found launchpad libxslt at: $LIBXSLT_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-xsl=$LIBXSLT_PATH"
@@ -478,8 +480,8 @@ jobs:
             # Find launchpad-installed openldap for LDAP extension
             LAUNCHPAD_OPENLDAP_DIR="$HOME/.local/share/launchpad/global/openldap.org"
             if [[ -d "$LAUNCHPAD_OPENLDAP_DIR" ]]; then
-              OPENLDAP_VERSION=$(ls "$LAUNCHPAD_OPENLDAP_DIR" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$OPENLDAP_VERSION" ]]; then
+              OPENLDAP_VERSION=$(find "$LAUNCHPAD_OPENLDAP_DIR" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -1)
+              if [[ -n "$OPENLDAP_VERSION" && "$OPENLDAP_VERSION" != "v*" ]]; then
                 OPENLDAP_PATH="$LAUNCHPAD_OPENLDAP_DIR/$OPENLDAP_VERSION"
                 echo "Found launchpad openldap at: $OPENLDAP_PATH"
                 EXTRA_CONFIG="$EXTRA_CONFIG --with-ldap=$OPENLDAP_PATH"
