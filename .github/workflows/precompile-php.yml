@@ -404,6 +404,10 @@ jobs:
               # PHP 8.2+ requires C++17
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Using C++17 for PHP ${{ matrix.php_version }}"
+            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+              # PHP 8.1 uses C++14 for configure, but we'll handle ICU4C in build step
+              export CXXFLAGS="-std=c++14 -stdlib=libc++"
+              echo "Using C++14 for PHP ${{ matrix.php_version }} (configure step)"
             else
               # Earlier PHP versions can use C++14
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
@@ -555,6 +559,10 @@ jobs:
             if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Set C++17 for configure: $CXXFLAGS"
+            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+              # PHP 8.1 configure step uses C++14
+              export CXXFLAGS="-std=c++14 -stdlib=libc++"
+              echo "Set C++14 for PHP 8.1 configure: $CXXFLAGS"
             else
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
               echo "Set C++14 for configure: $CXXFLAGS"
@@ -609,6 +617,10 @@ jobs:
             if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Set C++17 flags for macOS build"
+            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+              # PHP 8.1 needs C++17 for ICU4C compilation
+              export CXXFLAGS="-std=c++17 -stdlib=libc++"
+              echo "Set C++17 flags for PHP 8.1 (ICU4C compatibility)"
             else
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
               echo "Set C++14 flags for macOS build"
@@ -660,6 +672,17 @@ jobs:
                 echo "C++17 support test failed"
                 rm -f test_cpp.cpp test_cpp
               fi
+            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+              echo "Testing C++17 support for PHP 8.1 (ICU4C compatibility):"
+              echo '#include <type_traits>' > test_cpp.cpp
+              echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp.cpp
+              if clang++ -std=c++17 -stdlib=libc++ test_cpp.cpp -o test_cpp 2>/dev/null; then
+                echo "C++17 support confirmed for PHP 8.1"
+                rm -f test_cpp.cpp test_cpp
+              else
+                echo "C++17 support test failed for PHP 8.1"
+                rm -f test_cpp.cpp test_cpp
+              fi
             else
               echo "Testing C++14 support:"
               echo '#include <type_traits>' > test_cpp.cpp
@@ -681,6 +704,12 @@ jobs:
 
             if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
               echo "Making with explicit C++17 flags:"
+              echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
+              echo "  CFLAGS: (empty)"
+              echo "  CPPFLAGS: $CPPFLAGS"
+              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
+            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+              echo "Making with explicit C++17 flags for PHP 8.1 (ICU4C compatibility):"
               echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
               echo "  CFLAGS: (empty)"
               echo "  CPPFLAGS: $CPPFLAGS"
