@@ -28,10 +28,10 @@ describe('Real PHP Installation Test', () => {
       console.log('📋 PHP Installation Output (last 1000 chars):')
       console.log(output.slice(-1000))
 
-      // Check current behavior: PHP installation falls back to source build which is no longer supported
+      // Check current behavior: PHP installation fails when trying to install php.net
       // This test demonstrates that without source builds, PHP installation fails
-      expect(output).toContain('Custom extensions detected: falling back to source build')
       expect(output).toContain('Failed to install php.net')
+      expect(output).toContain('No binaries were installed')
 
       // Should NOT contain old source build setup messages since they're removed
       expect(output).not.toContain('Setting up build environment for PHP')
@@ -56,7 +56,8 @@ describe('Real PHP Installation Test', () => {
       // This test validates that the system handles the failure correctly
       if (error.stdout && error.stdout.includes('source build')) {
         console.log('✅ Test confirmed: Source builds are no longer available')
-      } else {
+      }
+      else {
         throw error
       }
     }

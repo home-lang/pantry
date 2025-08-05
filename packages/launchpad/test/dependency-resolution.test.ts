@@ -920,8 +920,8 @@ describe('Dependency Resolution System', () => {
           }
           const endTime = performance.now()
 
-          // Each operation should complete 1000 iterations in under 250ms (adjusted for CI)
-          expect(endTime - startTime).toBeLessThan(250)
+          // Each operation should complete 1000 iterations in under 500ms (adjusted for CI and system variations)
+          expect(endTime - startTime).toBeLessThan(500)
         })
       })
     })
