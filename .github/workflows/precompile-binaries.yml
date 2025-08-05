@@ -175,6 +175,18 @@ jobs:
             zlib \
             libiconv
 
+          # Verify readline installation
+          echo "Checking readline installation:"
+          ls -la $(brew --prefix readline)/include/readline/readline.h || echo "readline.h not found in expected location"
+          ls -la $(brew --prefix readline)/lib/libreadline.* || echo "libreadline not found in expected location"
+
+          # Create symlinks to help PHP find readline
+          echo "Creating symlinks for readline:"
+          sudo mkdir -p /usr/local/include/readline
+          sudo ln -sf $(brew --prefix readline)/include/readline/readline.h /usr/local/include/readline/readline.h
+          sudo ln -sf $(brew --prefix readline)/include/readline/history.h /usr/local/include/readline/history.h
+          sudo ln -sf $(brew --prefix readline)/lib/libreadline.* /usr/local/lib/
+
       - name: Create build configuration
         run: |
           mkdir -p ${{ env.BUILD_DIR }} ${{ env.OUTPUT_DIR }}
@@ -212,6 +224,10 @@ jobs:
           echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
 
+          # Set readline-specific paths
+          echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
+          echo "READLINE_LIBS=-L$(brew --prefix readline)/lib -lreadline" >> $GITHUB_ENV
+
       - name: Download and extract PHP source
         run: |
           cd ${{ env.BUILD_DIR }}
@@ -235,7 +251,20 @@ jobs:
           # Configure with platform-specific options
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             # On macOS, use Homebrew-installed libraries
-            EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv)"
+            # Set environment variables for readline detection
+            export CPPFLAGS="$CPPFLAGS -I$(brew --prefix readline)/include"
+            export LDFLAGS="$LDFLAGS -L$(brew --prefix readline)/lib"
+            export LIBS="$LIBS -lreadline"
+
+            # Try to find readline.h and set the path explicitly
+            READLINE_PATH=$(brew --prefix readline)
+            if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
+              echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
+              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --with-readline=$READLINE_PATH"
+            else
+              echo "readline.h not found, disabling readline support"
+              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --disable-readline"
+            fi
           else
             # On Linux, use system-installed libraries
             # System libraries should be available via apt-get installation
@@ -247,6 +276,17 @@ jobs:
           echo "  Extensions: ${{ env.CONFIGURE_EXTENSIONS }}"
           echo "  Prefix: $INSTALL_PREFIX"
           echo "  Extra config: $EXTRA_CONFIG"
+
+          # Debug: Check readline installation on macOS
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            echo "Debug: Checking readline installation on macOS:"
+            echo "  READLINE_CFLAGS: $READLINE_CFLAGS"
+            echo "  READLINE_LIBS: $READLINE_LIBS"
+            echo "  CPPFLAGS: $CPPFLAGS"
+            echo "  LDFLAGS: $LDFLAGS"
+            echo "  Checking if readline.h exists:"
+            find $(brew --prefix) -name "readline.h" 2>/dev/null || echo "  No readline.h found"
+          fi
 
           # Check if libcurl is found via pkg-config
           if pkg-config --exists libcurl; then
