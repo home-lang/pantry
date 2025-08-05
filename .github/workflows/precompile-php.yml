@@ -539,7 +539,30 @@ jobs:
             clang++ --help | grep -E "std=" || echo "Could not determine available standards"
           fi
 
-          make -j$JOBS
+          # Test C++17 support
+          echo "Testing C++17 support:"
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            echo '#include <type_traits>' > test_cpp17.cpp
+            echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp17.cpp
+            if clang++ -std=c++17 -stdlib=libc++ test_cpp17.cpp -o test_cpp17 2>/dev/null; then
+              echo "C++17 support confirmed"
+              rm -f test_cpp17.cpp test_cpp17
+            else
+              echo "C++17 support test failed"
+              rm -f test_cpp17.cpp test_cpp17
+            fi
+          fi
+
+          # Pass compiler flags explicitly to make
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            echo "Making with explicit C++17 flags:"
+            echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
+            echo "  CFLAGS: (empty)"
+            echo "  CPPFLAGS: $CPPFLAGS"
+            make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
+          else
+            make -j$JOBS
+          fi
 
       - name: Install PHP
         run: |
