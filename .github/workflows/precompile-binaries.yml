@@ -164,7 +164,7 @@ jobs:
             freetype \
             oniguruma \
             libzip \
-            postgresql \
+            postgresql@15 \
             readline \
             bzip2 \
             gmp \
@@ -179,6 +179,12 @@ jobs:
           echo "Checking readline installation:"
           ls -la $(brew --prefix readline)/include/readline/readline.h || echo "readline.h not found in expected location"
           ls -la $(brew --prefix readline)/lib/libreadline.* || echo "libreadline not found in expected location"
+
+          # Verify PostgreSQL installation
+          echo "Checking PostgreSQL installation:"
+          ls -la $(brew --prefix postgresql@15)/include/libpq-fe.h || echo "libpq-fe.h not found in expected location"
+          ls -la $(brew --prefix postgresql@15)/lib/libpq.* || echo "libpq not found in expected location"
+          which pg_config || echo "pg_config not found in PATH"
 
           # Create symlinks to help PHP find readline
           echo "Creating symlinks for readline:"
@@ -219,10 +225,10 @@ jobs:
         if: matrix.platform == 'darwin'
         run: |
           # Set paths for Homebrew dependencies including keg-only packages
-          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig" >> $GITHUB_ENV
-          echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$PATH" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig:$(brew --prefix postgresql@15)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$(brew --prefix postgresql@15)/bin:$PATH" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@15)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@15)/include" >> $GITHUB_ENV
 
           # Set readline-specific paths
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
@@ -255,6 +261,10 @@ jobs:
             export CPPFLAGS="$CPPFLAGS -I$(brew --prefix readline)/include"
             export LDFLAGS="$LDFLAGS -L$(brew --prefix readline)/lib"
             export LIBS="$LIBS -lreadline"
+
+            # Set PostgreSQL environment variables
+            export PGSQL_CFLAGS="-I$(brew --prefix postgresql@15)/include"
+            export PGSQL_LIBS="-L$(brew --prefix postgresql@15)/lib -lpq"
 
             # Try to find readline.h and set the path explicitly
             READLINE_PATH=$(brew --prefix readline)
