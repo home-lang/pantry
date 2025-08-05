@@ -263,7 +263,7 @@ jobs:
             # On macOS, point to Homebrew iconv installation
             EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv)"
           else
-            # On Linux, use launchpad-installed iconv
+            # On Linux, use launchpad-installed iconv and readline
             # Find the launchpad iconv installation
             LAUNCHPAD_ICONV_DIR="$HOME/.local/share/launchpad/global/gnu.org/libiconv"
             if [[ -d "$LAUNCHPAD_ICONV_DIR" ]]; then
@@ -280,6 +280,22 @@ jobs:
             else
               echo "Launchpad iconv not found, using system iconv"
               EXTRA_CONFIG="--with-iconv"
+            fi
+
+            # Find the launchpad readline installation
+            LAUNCHPAD_READLINE_DIR="$HOME/.local/share/launchpad/global/gnu.org/readline"
+            if [[ -d "$LAUNCHPAD_READLINE_DIR" ]]; then
+              # Find the latest version
+              READLINE_VERSION=$(ls "$LAUNCHPAD_READLINE_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$READLINE_VERSION" ]]; then
+                READLINE_PATH="$LAUNCHPAD_READLINE_DIR/$READLINE_VERSION"
+                echo "Found launchpad readline at: $READLINE_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-readline=$READLINE_PATH"
+              else
+                echo "No readline version found in $LAUNCHPAD_READLINE_DIR"
+              fi
+            else
+              echo "Launchpad readline not found, using system readline"
             fi
           fi
 
@@ -317,15 +333,35 @@ jobs:
           pkg-config --exists libxml-2.0 && echo "✓ libxml-2.0 found" || echo "✗ libxml-2.0 not found"
           pkg-config --exists sqlite3 && echo "✓ sqlite3 found" || echo "✗ sqlite3 not found"
 
-          # Ensure launchpad iconv is properly linked and available
+          # Ensure launchpad iconv and readline are properly linked and available
           if [[ "${{ matrix.platform }}" != "darwin" ]]; then
-            echo "Ensuring launchpad iconv is properly configured..."
+            echo "Ensuring launchpad iconv and readline are properly configured..."
             # Check if launchpad iconv is available and working
             if command -v iconv >/dev/null 2>&1; then
               echo "✓ iconv found in PATH"
               iconv --version 2>/dev/null | head -1 || echo "iconv version check failed"
             else
               echo "⚠️  iconv not found in PATH"
+            fi
+
+            # Check if readline headers are available
+            if [[ -f "/usr/include/readline/readline.h" ]] || [[ -f "/usr/local/include/readline/readline.h" ]]; then
+              echo "✓ readline.h found in system include paths"
+            else
+              echo "⚠️  readline.h not found in system include paths"
+              # Check if we can find it in launchpad paths
+              LAUNCHPAD_READLINE_DIR="$HOME/.local/share/launchpad/global/gnu.org/readline"
+              if [[ -d "$LAUNCHPAD_READLINE_DIR" ]]; then
+                READLINE_VERSION=$(ls "$LAUNCHPAD_READLINE_DIR" | grep "^v" | sort -V | tail -1)
+                if [[ -n "$READLINE_VERSION" ]]; then
+                  READLINE_INCLUDE="$LAUNCHPAD_READLINE_DIR/$READLINE_VERSION/include"
+                  if [[ -f "$READLINE_INCLUDE/readline/readline.h" ]]; then
+                    echo "✓ readline.h found in launchpad: $READLINE_INCLUDE/readline/readline.h"
+                  else
+                    echo "⚠️  readline.h not found in launchpad include path"
+                  fi
+                fi
+              fi
             fi
           fi
 
