@@ -63,7 +63,7 @@ export function getPlatform(): SupportedPlatform {
 export function getArchitecture(): SupportedArchitecture {
   const nodeArch = arch()
   switch (nodeArch) {
-    case 'x64': return 'x86_64'
+    case 'x64': return 'x86-64'
     case 'arm64': return 'aarch64'
     case 'arm': return 'armv7l'
     default: throw new Error(`Unsupported architecture: ${nodeArch}`)

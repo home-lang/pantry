@@ -15,7 +15,7 @@ export type PackageSpec = string
 // Supported distribution formats
 export type SupportedFormat = 'tar.xz' | 'tar.gz'
 export type SupportedPlatform = 'darwin' | 'linux' | 'windows'
-export type SupportedArchitecture = 'x86_64' | 'aarch64' | 'armv7l'
+export type SupportedArchitecture = 'x86-64' | 'aarch64' | 'armv7l'
 
 /**
  * Configuration for the package manager
