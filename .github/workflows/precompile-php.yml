@@ -197,8 +197,13 @@ jobs:
           ls -la $(brew --prefix gettext)/include/libintl.h || echo "libintl.h not found in expected location"
           ls -la $(brew --prefix gettext)/lib/libintl.* || echo "libintl not found in expected location"
 
-          # Create symlinks to help PHP find readline, bzip2, and gettext
-          echo "Creating symlinks for readline, bzip2, and gettext:"
+          # Verify OpenLDAP installation
+          echo "Checking OpenLDAP installation:"
+          ls -la $(brew --prefix openldap)/include/ldap.h || echo "ldap.h not found in expected location"
+          ls -la $(brew --prefix openldap)/lib/libldap.* || echo "libldap not found in expected location"
+
+          # Create symlinks to help PHP find readline, bzip2, gettext, and openldap
+          echo "Creating symlinks for readline, bzip2, gettext, and openldap:"
           sudo mkdir -p /usr/local/include/readline /usr/local/lib
           sudo ln -sf $(brew --prefix readline)/include/readline/readline.h /usr/local/include/readline/readline.h
           sudo ln -sf $(brew --prefix readline)/include/readline/history.h /usr/local/include/readline/history.h
@@ -207,6 +212,8 @@ jobs:
           sudo ln -sf $(brew --prefix bzip2)/lib/libbz2.* /usr/local/lib/
           sudo ln -sf $(brew --prefix gettext)/include/libintl.h /usr/local/include/libintl.h
           sudo ln -sf $(brew --prefix gettext)/lib/libintl.* /usr/local/lib/
+          sudo ln -sf $(brew --prefix openldap)/include/ldap.h /usr/local/include/ldap.h
+          sudo ln -sf $(brew --prefix openldap)/lib/libldap.* /usr/local/lib/
 
       - name: Create build configuration
         run: |
@@ -240,10 +247,10 @@ jobs:
         if: matrix.platform == 'darwin'
         run: |
           # Set paths for Homebrew dependencies including keg-only packages
-          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig:$(brew --prefix postgresql@17)/lib/pkgconfig:$(brew --prefix bzip2)/lib/pkgconfig:$(brew --prefix gettext)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig:$(brew --prefix postgresql@17)/lib/pkgconfig:$(brew --prefix bzip2)/lib/pkgconfig:$(brew --prefix gettext)/lib/pkgconfig:$(brew --prefix openldap)/lib/pkgconfig" >> $GITHUB_ENV
           echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$(brew --prefix postgresql@17)/bin:$(brew --prefix gettext)/bin:$PATH" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@17)/lib -L$(brew --prefix bzip2)/lib -L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@17)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix gettext)/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@17)/lib -L$(brew --prefix bzip2)/lib -L$(brew --prefix gettext)/lib -L$(brew --prefix openldap)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@17)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix gettext)/include -I$(brew --prefix openldap)/include" >> $GITHUB_ENV
           echo "CXXFLAGS=-std=c++17" >> $GITHUB_ENV
 
           # Set readline-specific paths
@@ -310,6 +317,10 @@ jobs:
             # Set gettext environment variables
             export GETTEXT_CFLAGS="-I$(brew --prefix gettext)/include"
             export GETTEXT_LIBS="-L$(brew --prefix gettext)/lib -lintl"
+
+            # Set OpenLDAP environment variables
+            export LDAP_CFLAGS="-I$(brew --prefix openldap)/include"
+            export LDAP_LIBS="-L$(brew --prefix openldap)/lib -lldap"
 
             # Set C++17 flag for ICU4C compatibility
             export CXXFLAGS="$CXXFLAGS -std=c++17"
@@ -378,12 +389,22 @@ jobs:
             CURL_CONFIG=""
           fi
 
+          # Build the final configure extensions based on availability
+          FINAL_EXTENSIONS="${{ env.CONFIGURE_EXTENSIONS }}"
+
+          # If PostgreSQL is not available, remove PostgreSQL extensions
+          if [[ "${{ matrix.platform }}" == "darwin" ]] && [[ "$POSTGRESQL_AVAILABLE" != "true" ]]; then
+            echo "Removing PostgreSQL extensions from configure command"
+            FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
+            echo "Final extensions: $FINAL_EXTENSIONS"
+          fi
+
           ./configure \
             --prefix="$INSTALL_PREFIX" \
             --disable-debug \
             --enable-shared \
             --with-pic \
-            ${{ env.CONFIGURE_EXTENSIONS }} \
+            $FINAL_EXTENSIONS \
             $EXTRA_CONFIG \
             $CURL_CONFIG
 
