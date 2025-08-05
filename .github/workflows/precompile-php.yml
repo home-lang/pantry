@@ -247,10 +247,51 @@ jobs:
         if: matrix.platform == 'darwin'
         run: |
           # Set paths for Homebrew dependencies including keg-only packages
-          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig:$(brew --prefix postgresql@17)/lib/pkgconfig:$(brew --prefix bzip2)/lib/pkgconfig:$(brew --prefix gettext)/lib/pkgconfig:$(brew --prefix openldap)/lib/pkgconfig" >> $GITHUB_ENV
-          echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$(brew --prefix postgresql@17)/bin:$(brew --prefix gettext)/bin:$PATH" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@17)/lib -L$(brew --prefix bzip2)/lib -L$(brew --prefix gettext)/lib -L$(brew --prefix openldap)/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@17)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix gettext)/include -I$(brew --prefix openldap)/include" >> $GITHUB_ENV
+          # Use a more organized approach to avoid duplicates
+          PKG_CONFIG_PATHS=(
+            "$(brew --prefix)/lib/pkgconfig"
+            "$(brew --prefix openssl@3)/lib/pkgconfig"
+            "$(brew --prefix libxml2)/lib/pkgconfig"
+            "$(brew --prefix icu4c)/lib/pkgconfig"
+            "$(brew --prefix zlib)/lib/pkgconfig"
+            "$(brew --prefix postgresql@17)/lib/pkgconfig"
+            "$(brew --prefix bzip2)/lib/pkgconfig"
+            "$(brew --prefix gettext)/lib/pkgconfig"
+            "$(brew --prefix openldap)/lib/pkgconfig"
+          )
+          echo "PKG_CONFIG_PATH=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")" >> $GITHUB_ENV
+
+          PATH_PATHS=(
+            "$(brew --prefix bison)/bin"
+            "$(brew --prefix)/bin"
+            "$(brew --prefix postgresql@17)/bin"
+            "$(brew --prefix gettext)/bin"
+          )
+          echo "PATH=$(IFS=:; echo "${PATH_PATHS[*]}"):$PATH" >> $GITHUB_ENV
+
+          LDFLAGS_PATHS=(
+            "-L$(brew --prefix)/lib"
+            "-L$(brew --prefix openssl@3)/lib"
+            "-L$(brew --prefix zlib)/lib"
+            "-L$(brew --prefix libiconv)/lib"
+            "-L$(brew --prefix postgresql@17)/lib"
+            "-L$(brew --prefix bzip2)/lib"
+            "-L$(brew --prefix gettext)/lib"
+            "-L$(brew --prefix openldap)/lib"
+          )
+          echo "LDFLAGS=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")" >> $GITHUB_ENV
+
+          CPPFLAGS_PATHS=(
+            "-I$(brew --prefix)/include"
+            "-I$(brew --prefix openssl@3)/include"
+            "-I$(brew --prefix zlib)/include"
+            "-I$(brew --prefix libiconv)/include"
+            "-I$(brew --prefix postgresql@17)/include"
+            "-I$(brew --prefix bzip2)/include"
+            "-I$(brew --prefix gettext)/include"
+            "-I$(brew --prefix openldap)/include"
+          )
+          echo "CPPFLAGS=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")" >> $GITHUB_ENV
           echo "CXXFLAGS=-std=c++17" >> $GITHUB_ENV
 
           # Set readline-specific paths
@@ -320,7 +361,7 @@ jobs:
 
             # Set OpenLDAP environment variables
             export LDAP_CFLAGS="-I$(brew --prefix openldap)/include"
-            export LDAP_LIBS="-L$(brew --prefix openldap)/lib -lldap"
+            export LDAP_LIBS="-L$(brew --prefix openldap)/lib -lldap -llber"
 
             # Set C++17 flag for ICU4C compatibility
             export CXXFLAGS="$CXXFLAGS -std=c++17"
@@ -415,11 +456,16 @@ jobs:
           # Use all available CPU cores for faster builds
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             JOBS=$(sysctl -n hw.ncpu)
+            # Ensure C++17 is used during build
+            export CXXFLAGS="$CXXFLAGS -std=c++17"
+            export CFLAGS="$CFLAGS -std=c++17"
           else
             JOBS=$(nproc)
           fi
 
           echo "Building PHP with $JOBS parallel jobs"
+          echo "CXXFLAGS: $CXXFLAGS"
+          echo "CFLAGS: $CFLAGS"
           make -j$JOBS
 
       - name: Install PHP
