@@ -86,22 +86,21 @@ describe('Install Dependencies Only', () => {
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('php'))
     })
 
-    it('should filter out problematic dependencies from PHP', async () => {
+    it('should include all dependencies from PHP package (no filtering since source builds removed)', async () => {
       const packages = ['php']
       await installDependenciesOnly(packages, tempDir)
 
-      // Should not try to install problematic dependencies like zlib.net, libzip.org
+      // All dependencies should now be included since we removed problematic filtering
       const logCalls = mockConsoleLog.mock.calls.flat()
       const warnCalls = mockConsoleWarn.mock.calls.flat()
       const allCalls = [...logCalls, ...warnCalls]
 
-      // These should be filtered out
-      expect(allCalls.some(call => call.includes('zlib.net'))).toBe(false)
-      expect(allCalls.some(call => call.includes('libzip.org'))).toBe(false)
-
-      // These should be included
+      // These should all be included now
       expect(allCalls.some(call => call.includes('autoconf.gnu.org') || call.includes('autoconf'))).toBe(true)
       expect(allCalls.some(call => call.includes('curl.se') || call.includes('curl'))).toBe(true)
+      
+      // Should skip the main package itself
+      expect(allCalls.some(call => call.includes('⏭️  Skipping') && call.includes('main package'))).toBe(true)
     })
 
     it('should handle multiple packages correctly', async () => {
