@@ -149,7 +149,8 @@ jobs:
           echo "  - Platform: darwin"
           echo "  - Architecture: $(uname -m)"
 
-          brew install \
+          # Install dependencies with quiet output to reduce warnings
+          brew install --quiet \
             autoconf \
             automake \
             libtool \
@@ -713,6 +714,11 @@ jobs:
               echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
               echo "  CFLAGS: (empty)"
               echo "  CPPFLAGS: $CPPFLAGS"
+
+              # Force update Makefile for PHP 8.1 to use C++17
+              echo "Updating Makefile for PHP 8.1 C++17 compatibility..."
+              sed -i.bak 's/-std=c++14/-std=c++17/g' Makefile 2>/dev/null || echo "No C++14 flags found in Makefile to replace"
+
               make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
             else
               echo "Making with explicit C++14 flags:"
