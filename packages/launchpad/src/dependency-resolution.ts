@@ -5,6 +5,10 @@ import { logUniqueMessage } from './logging'
 import { getAvailableVersions, getLatestVersion, getPackageInfo, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
 import { deduplicatePackagesByVersion, getPlatform } from './utils'
 
+// Global variables for processing message management
+let hasTemporaryProcessingMessage = false
+let spinnerInterval: Timer | null = null
+
 // Global tracker for deduplicating packages across all install calls
 const globalInstalledTracker = new Set<string>()
 
@@ -450,7 +454,3 @@ export async function installDependencies(
 
   return allInstalledFiles
 }
-
-// Global variables from logging module
-let hasTemporaryProcessingMessage = false
-let spinnerInterval: Timer | null = null

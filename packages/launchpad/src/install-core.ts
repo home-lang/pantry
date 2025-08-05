@@ -14,6 +14,9 @@ import { installMeilisearch } from './special-installers'
 import { DISTRIBUTION_CONFIG } from './types'
 import { copyDirectoryStructure, getArchitecture, getPlatform } from './utils'
 
+// Global variables for processing message management
+const hasTemporaryProcessingMessage = false
+
 /**
  * Create missing library symlinks for dynamic linking
  */
@@ -878,6 +881,3 @@ export async function downloadPackage(
     throw error
   }
 }
-
-// Global variables from logging module
-let hasTemporaryProcessingMessage = false

@@ -76,6 +76,7 @@ describe('Config', () => {
     })
 
     it('should have valid shell messages', () => {
+      // eslint-disable-next-line no-control-regex
       const ansiEscapeRegex = /\x1B\[[0-9;]*[a-z]/gi
 
       expect(defaultConfig.shellActivationMessage).toBeDefined()

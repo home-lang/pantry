@@ -8,9 +8,6 @@ import { clearMessageCache, logUniqueMessage } from './logging'
 import { parsePackageSpec } from './package-resolution'
 import { install_prefix } from './utils'
 
-// Global tracker for deduplicating packages across all install calls
-const globalInstalledTracker = new Set<string>()
-
 /**
  * Main installation function with type-safe package specifications
  */
@@ -49,8 +46,6 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }
 
   const allInstalledFiles: string[] = []
-  // Use the global tracker to deduplicate across multiple install() calls
-  const installedPackages = globalInstalledTracker
 
   if (useDirectInstallation) {
     // ts-pkgx already resolved all dependencies, install all packages directly
@@ -88,7 +83,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
             }
             continue // Success, move to next package
           }
-          catch (fallbackError) {
+          catch {
             // If fallback with version fails, try without version
             if (versionConstraint) {
               try {
@@ -210,9 +205,9 @@ export async function installPackagesInParallel(
  * Download with resumption support for large files
  */
 export async function _downloadWithResumption(
-  url: string,
-  destination: string,
-  expectedSize?: number,
+  _url: string,
+  _destination: string,
+  _expectedSize?: number,
 ): Promise<void> {
   // Implementation for resumable downloads
   // This is a placeholder for future implementation
