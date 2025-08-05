@@ -4,7 +4,7 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
-import { install, install_prefix, list, uninstall } from '../src'
+import { install, install_prefix, installDependenciesOnly, list, uninstall } from '../src'
 import { config } from '../src/config'
 import { dump, integrate, shellcode } from '../src/dev'
 import { formatDoctorReport, runDoctorChecks } from '../src/doctor'
@@ -773,11 +773,13 @@ cli
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
   .option('--global-deps', 'Install all global dependencies found across the machine')
+  .option('--deps-only', 'Install only the dependencies of packages, not the packages themselves')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')
   .option('--shell', 'Output shell code for evaluation (use with eval)')
   .example('launchpad install node python')
   .example('launchpad install --path ~/.local node python')
+  .example('launchpad install --deps-only php')
   .example('launchpad install')
   .example('launchpad install ./my-project')
   .example('launchpad install --global-deps')
@@ -786,6 +788,7 @@ cli
     verbose?: boolean
     path?: string
     globalDeps?: boolean
+    depsOnly?: boolean
     dryRun?: boolean
     quiet?: boolean
     shell?: boolean
@@ -801,6 +804,37 @@ cli
       // Handle global dependencies installation
       if (options.globalDeps) {
         await installGlobalDependencies(options)
+        return
+      }
+
+      // Handle dependencies-only installation
+      if (options.depsOnly) {
+        if (packageList.length === 0) {
+          console.error('Error: --deps-only requires at least one package to be specified')
+          process.exit(1)
+        }
+
+        const defaultInstallPath = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+        const installPath = options.path || defaultInstallPath
+        const results = await installDependenciesOnly(packageList, installPath)
+
+        // Create symlinks to ~/.local/bin for global accessibility when using default path
+        if (!options.path) {
+          await createGlobalBinarySymlinks(installPath)
+        }
+
+        if (!options.quiet) {
+          if (results.length > 0) {
+            console.log(`🎉 Successfully installed dependencies for ${packageList.join(', ')} (${results.length} ${results.length === 1 ? 'file' : 'files'})`)
+            if (options.verbose) {
+              results.forEach((file) => {
+                console.log(`  ${file}`)
+              })
+            }
+          } else {
+            console.log('⚠️  No dependencies were installed')
+          }
+        }
         return
       }
 
