@@ -10,7 +10,6 @@ describe('Real PHP Installation Test', () => {
 
     try {
       // Check if we're in CI environment and find the correct working directory
-      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
       const workspaceRoot = process.cwd()
       const launchpadPath = join(workspaceRoot, 'packages', 'launchpad')
       const cliPath = join(launchpadPath, 'bin', 'launchpad')
@@ -139,7 +138,7 @@ describe('Real PHP Installation Test', () => {
         setTimeout(() => reject(new Error('Validation command timed out after 600 seconds')), 600000)
       })
 
-      const [output, stderr] = await Promise.race([
+      const [output, _stderr] = await Promise.race([
         Promise.all([
           new Response(validationProc.stdout).text(),
           new Response(validationProc.stderr).text(),
