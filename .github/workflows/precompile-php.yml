@@ -250,6 +250,26 @@ jobs:
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
           echo "READLINE_LIBS=-L$(brew --prefix readline)/lib -lreadline" >> $GITHUB_ENV
 
+          # Check if PostgreSQL is available and working
+          echo "Debug: Checking PostgreSQL availability:"
+          echo "  PATH: $PATH"
+          echo "  Checking pg_config:"
+          which pg_config || echo "    pg_config not found in PATH"
+          pg_config --version 2>/dev/null || echo "    pg_config version check failed"
+          echo "  Checking libpq-fe.h:"
+          ls -la $(brew --prefix postgresql@17)/include/libpq-fe.h 2>/dev/null || echo "    libpq-fe.h not found"
+          echo "  Checking PostgreSQL installation:"
+          ls -la $(brew --prefix postgresql@17)/include/ 2>/dev/null | head -5 || echo "    PostgreSQL include directory not found"
+          ls -la $(brew --prefix postgresql@17)/lib/ 2>/dev/null | head -5 || echo "    PostgreSQL lib directory not found"
+
+          if which pg_config >/dev/null 2>&1 && [[ -f "$(brew --prefix postgresql@17)/include/libpq-fe.h" ]]; then
+            echo "PostgreSQL found and working"
+            echo "POSTGRESQL_AVAILABLE=true" >> $GITHUB_ENV
+          else
+            echo "PostgreSQL not found or not working, will disable PostgreSQL support"
+            echo "POSTGRESQL_AVAILABLE=false" >> $GITHUB_ENV
+          fi
+
       - name: Download and extract PHP source
         run: |
           cd ${{ env.BUILD_DIR }}
@@ -302,7 +322,7 @@ jobs:
             fi
 
             # Check if PostgreSQL is available and working
-            if which pg_config >/dev/null 2>&1 && [[ -f "$(brew --prefix postgresql@17)/include/libpq-fe.h" ]]; then
+            if [[ "$POSTGRESQL_AVAILABLE" == "true" ]]; then
               echo "PostgreSQL found and working"
             else
               echo "PostgreSQL not found or not working, will disable PostgreSQL support"
