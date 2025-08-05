@@ -415,6 +415,18 @@ jobs:
               echo "CXX: $CXX"
             fi
 
+            # Verify C++17 support
+            echo "Testing C++17 support before configure:"
+            echo '#include <type_traits>' > test_cpp17.cpp
+            echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp17.cpp
+            if clang++ -std=c++17 -stdlib=libc++ test_cpp17.cpp -o test_cpp17 2>/dev/null; then
+              echo "C++17 support confirmed before configure"
+              rm -f test_cpp17.cpp test_cpp17
+            else
+              echo "C++17 support test failed before configure"
+              rm -f test_cpp17.cpp test_cpp17
+            fi
+
             # Try to find readline.h and set the path explicitly
             READLINE_PATH=$(brew --prefix readline)
             if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
@@ -489,7 +501,21 @@ jobs:
             echo "Final extensions: $FINAL_EXTENSIONS"
           fi
 
-          ./configure \
+          # Add C++17 configure flags for macOS
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            CONFIGURE_ENV="CXXFLAGS=-std=c++17 -stdlib=libc++ CFLAGS= CPPFLAGS=$CPPFLAGS"
+            echo "Using C++17 configure environment: $CONFIGURE_ENV"
+          else
+            CONFIGURE_ENV=""
+          fi
+
+          echo "Configure environment:"
+          echo "  CXXFLAGS: $CXXFLAGS"
+          echo "  CFLAGS: $CFLAGS"
+          echo "  CPPFLAGS: $CPPFLAGS"
+          echo "  CONFIGURE_ENV: $CONFIGURE_ENV"
+
+          $CONFIGURE_ENV ./configure \
             --prefix="$INSTALL_PREFIX" \
             --disable-debug \
             --enable-shared \
@@ -497,6 +523,12 @@ jobs:
             $FINAL_EXTENSIONS \
             $EXTRA_CONFIG \
             $CURL_CONFIG
+
+          # Check the generated Makefile for C++ flags
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            echo "Checking Makefile for C++ flags:"
+            grep -E "CXXFLAGS|CXX|std=" Makefile | head -10 || echo "No C++ flags found in Makefile"
+          fi
 
       - name: Build PHP
         run: |
