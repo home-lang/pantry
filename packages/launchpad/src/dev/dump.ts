@@ -200,7 +200,7 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
   }
 
   // Execute post-setup commands if enabled
-  if (config.services.frameworks.laravel.postSetupCommands.enabled) {
+  if (config.services.frameworks.laravel.postSetupCommands?.enabled) {
     const postSetupResults = await executePostSetupCommands(dir, config.services.frameworks.laravel.postSetupCommands.commands)
     suggestions.push(...postSetupResults)
   }
@@ -264,8 +264,6 @@ function evaluateCommandCondition(condition: PostSetupCommand['condition'], proj
   switch (condition) {
     case 'always':
       return true
-    case 'never':
-      return false
     case 'hasUnrunMigrations':
       return hasUnrunMigrations(projectDir)
     case 'hasSeeders':

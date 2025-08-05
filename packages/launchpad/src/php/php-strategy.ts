@@ -5,7 +5,6 @@
  */
 
 import { getLatestVersion, packages } from 'ts-pkgx'
-import { buildPhpFromSource } from '../install'
 
 /**
  * Get the latest PHP version with fallback logic
@@ -90,39 +89,8 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
       // Store the version for later use
       this.installedVersion = latestVersion
 
-      // Build PHP from source in the current environment
-      const envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', 'global')
-      const _installedFiles = await buildPhpFromSource(envDir, latestVersion)
-
-      const phpBinary = path.join(envDir, 'php.net', `v${latestVersion}`, 'bin', 'php')
-
-      // Test the installation
-      const testResult = await this.testPHPInstallation(phpBinary)
-
-      return {
-        success: testResult.success,
-        phpPath: phpBinary,
-        version: testResult.version || latestVersion,
-        extensions: testResult.extensions || [],
-        databaseSupport: {
-          sqlite: true, // Built with SQLite support
-          mysql: true, // Built with MySQL support
-          postgresql: true, // Built with PostgreSQL support
-          extensions: {
-            pdo_sqlite: true,
-            pdo_mysql: true,
-            pdo_pgsql: true,
-            mysqli: true,
-            pgsql: true,
-          },
-        },
-        libraryIssues: [],
-        recommendations: [
-          'PHP built from source with full database support',
-          'All libraries properly linked during compilation',
-          'Ready for Laravel development',
-        ],
-      }
+      // Source builds are no longer supported - use precompiled binaries instead
+      throw new Error('Source builds are no longer supported. Use precompiled binaries via the main install command.')
     }
     catch (error) {
       return {

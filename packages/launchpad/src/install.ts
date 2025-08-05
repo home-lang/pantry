@@ -2983,12 +2983,12 @@ async function installPackage(packageName: string, packageSpec: string, installP
     }
 
     // Install all PHP dependencies from ts-pkgx (includes build tools and runtime deps)
-    await installPhpBuildDependencies(installPath)
+    // PHP build dependencies are no longer needed with precompiled binaries
 
     if (config.verbose) {
       console.log('✅ All PHP dependencies ready - starting build...')
     }
-    return await buildPhpFromSource(installPath, requestedVersion)
+    throw new Error('Source builds are no longer supported. Use precompiled binaries instead.')
   }
 
   // Special handling for zlib - disabled, let ts-pkgx handle it

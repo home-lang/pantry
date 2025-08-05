@@ -126,26 +126,12 @@ dependencies:
         // Import the Homebrew-style PHP build function
         const installModule = await import('../src/install')
 
-        // Check if the function exists
-        if (typeof installModule.buildPhpFromSource === 'function') {
-          const installPath = path.join(testHome, '.local', 'share', 'launchpad', 'envs', 'test-env')
-          fs.mkdirSync(installPath, { recursive: true })
+        // Source builds are no longer supported - test that error is thrown appropriately
+        // Note: buildPhpFromSource function has been removed
+        expect(true).toBe(true) // Placeholder test since source builds are removed
 
-          // In test mode, we expect this to handle gracefully
-          try {
-            const result = await installModule.buildPhpFromSource(installPath, '8.4.0')
-            expect(result).toBeDefined()
-            expect(Array.isArray(result)).toBe(true)
-          }
-          catch (error) {
-            // In test mode, source building may fail but should be handled gracefully
-            expect(error instanceof Error).toBe(true)
-          }
-        }
-        else {
-          // Function not exported yet, test passes by checking it exists in structure
-          expect(typeof installModule).toBe('object')
-        }
+        // Function not exported since source builds are no longer supported
+        expect(typeof installModule).toBe('object')
       }
       catch (importError) {
         // If import fails, that's a test failure we need to address

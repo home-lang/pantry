@@ -260,7 +260,7 @@ services:
     fs.writeFileSync(path.join(globalDir, 'global-tool'), 'global')
 
     // Test cleanup with the temp directory
-    TestUtils.cleanupEnvironmentDirs(tempDir)
+    TestUtils.cleanupEnvironmentDirs()
 
     // Test environment should be cleaned
     expect(fs.existsSync(testEnvDir)).toBe(false)

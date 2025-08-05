@@ -157,7 +157,7 @@ describe('Real PHP Installation Test', () => {
 
       // Check for specific warnings even if command times out
       if (output.includes('appears incomplete')) {
-        const warningLines = output.split('\n').filter(line => line.includes('appears incomplete'))
+        const warningLines = output.split('\n').filter((line: any) => line.includes('appears incomplete'))
         console.log('⚠️ Found validation warnings:', warningLines)
         expect(warningLines.length).toBe(0)
       }

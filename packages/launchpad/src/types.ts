@@ -1,6 +1,23 @@
 import type { Version } from '../test/version'
 import type { Path } from './path'
 
+// GitHub API types
+export interface GitHubAsset {
+  name: string
+  browser_download_url: string
+  size: number
+  content_type: string
+}
+
+export interface GitHubRelease {
+  tag_name: string
+  name: string
+  body: string
+  assets: GitHubAsset[]
+  draft: boolean
+  prerelease: boolean
+}
+
 export interface LaunchpadConfig {
   /** Enable verbose logging (default: false) */
   verbose: boolean

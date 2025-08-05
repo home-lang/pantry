@@ -96,13 +96,11 @@ export class PHPShimManager {
     const issues: string[] = []
     const recommendations: string[] = []
 
-    // Add system library paths if they exist
-    for (const libPath of this.phpConfig.libraryFixes.systemLibraryPaths) {
+    // Add common system library paths if they exist
+    const commonLibPaths = ['/opt/homebrew/lib', '/usr/local/lib', '/usr/lib']
+    for (const libPath of commonLibPaths) {
       if (fs.existsSync(libPath)) {
         libraryPaths.push(libPath)
-      }
-      else {
-        issues.push(`System library path not found: ${libPath}`)
       }
     }
 
@@ -128,14 +126,9 @@ export class PHPShimManager {
     // Add other optimizations
     environmentVariables.DYLD_FALLBACK_LIBRARY_PATH = '/opt/homebrew/lib:/usr/local/lib:/usr/lib'
 
-    // Configure PHP-specific optimizations
-    if (this.phpConfig.shim.optimizeLibraryPath) {
-      environmentVariables.PHP_INI_SCAN_DIR = '/opt/homebrew/etc/php/8.4/conf.d'
-      recommendations.push('Optimized PHP configuration scanning')
-    }
-
-    // Merge user-configured environment variables
-    Object.assign(environmentVariables, this.phpConfig.shim.environmentVariables)
+    // Configure PHP-specific optimizations for precompiled binaries
+    environmentVariables.PHP_INI_SCAN_DIR = '/opt/homebrew/etc/php/8.4/conf.d'
+    recommendations.push('Configured PHP configuration scanning')
 
     return {
       libraryPaths,

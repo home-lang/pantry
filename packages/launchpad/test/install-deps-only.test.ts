@@ -115,8 +115,8 @@ describe('Install Dependencies Only', () => {
 
       // Should mention both packages
       const logCalls = mockConsoleLog.mock.calls.flat()
-      expect(logCalls.some(call => call.includes('php'))).toBe(true)
-      expect(logCalls.some(call => call.includes('nodejs'))).toBe(true)
+      expect(logCalls.some((call: any) => call.includes('php'))).toBe(true)
+      expect(logCalls.some((call: any) => call.includes('nodejs'))).toBe(true)
     })
 
     it('should handle empty package list gracefully', async () => {
@@ -130,7 +130,7 @@ describe('Install Dependencies Only', () => {
     it('should handle packages with no dependencies', async () => {
       // Mock a package with no dependencies
       const tempPantry = { ...mockPantry }
-      tempPantry.test = { dependencies: [] }
+      ;(tempPantry as any).test = { dependencies: [] }
 
       const packages = ['test']
       const results = await installDependenciesOnly(packages, tempDir)
@@ -148,7 +148,7 @@ describe('Install Dependencies Only', () => {
 
       // Should warn about missing package
       const warnCalls = mockConsoleWarn.mock.calls.flat()
-      expect(warnCalls.some(call => call.includes('not found in pantry'))).toBe(true)
+      expect(warnCalls.some((call: any) => call.includes('not found in pantry'))).toBe(true)
     })
 
     it('should use provided install path', async () => {
@@ -167,7 +167,7 @@ describe('Install Dependencies Only', () => {
 
       // Should not mention installing PHP itself, only dependencies
       const logCalls = mockConsoleLog.mock.calls.flat()
-      const installMainPackage = logCalls.some(call =>
+      const installMainPackage = logCalls.some((call: any) =>
         call.includes('Installing php') && !call.includes('dependencies'),
       )
       expect(installMainPackage).toBe(false)
@@ -227,7 +227,7 @@ describe('Install Dependencies Only', () => {
 
       // Should warn about missing package
       const warnCalls = mockConsoleWarn.mock.calls.flat()
-      expect(warnCalls.some(call => call.includes('not found in pantry'))).toBe(true)
+      expect(warnCalls.some((call: any) => call.includes('not found in pantry'))).toBe(true)
     })
 
     it('should handle individual dependency installation failures', async () => {

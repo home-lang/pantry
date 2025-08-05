@@ -5,6 +5,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
+import type { GitHubRelease } from './types'
 
 export interface BinaryInfo {
   filename: string
@@ -216,10 +217,10 @@ export class PrecompiledBinaryDownloader {
         throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
       }
 
-      const release = await response.json()
+      const release = await response.json() as GitHubRelease
 
       // Find manifest.json in release assets
-      const manifestAsset = release.assets?.find((asset: any) => asset.name === 'manifest.json')
+      const manifestAsset = release.assets?.find((asset) => asset.name === 'manifest.json')
       if (!manifestAsset) {
         throw new Error('No manifest.json found in latest release')
       }
@@ -230,11 +231,11 @@ export class PrecompiledBinaryDownloader {
         throw new Error(`Failed to download manifest: ${manifestResponse.statusText}`)
       }
 
-      const manifest: BinaryManifest = await manifestResponse.json()
+      const manifest = await manifestResponse.json() as BinaryManifest
 
       // Add download URLs to binaries
       manifest.binaries = manifest.binaries.map((binary) => {
-        const asset = release.assets?.find((asset: any) => asset.name === binary.filename)
+        const asset = release.assets?.find((asset) => asset.name === binary.filename)
         return {
           ...binary,
           download_url: asset?.browser_download_url || '',
