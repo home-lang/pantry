@@ -10,44 +10,6 @@ import { install_bun } from './bun'
 import { config } from './config'
 import { Path } from './path'
 
-/**
- * Execute a command with optional sudo support
- */
-function execWithSudo(command: string, options: any = {}, useSudo = false): Buffer | string {
-  if (useSudo && process.platform !== 'win32') {
-    const sudoPassword = process.env.SUDO_PASSWORD
-    if (sudoPassword) {
-      // Use echo and pipe for non-interactive sudo
-      const sudoCommand = `echo "${sudoPassword}" | sudo -S ${command}`
-      return execSync(sudoCommand, options)
-    }
-    else {
-      // Fallback to regular sudo (might prompt)
-      return execSync(`sudo ${command}`, options)
-    }
-  }
-  return execSync(command, options)
-}
-
-/**
- * Check if we need sudo for writing to a directory
- */
-function needsSudo(targetPath: string): boolean {
-  if (process.platform === 'win32')
-    return false
-
-  try {
-    // Check if we can write to the target directory
-    const testDir = path.dirname(targetPath)
-    fs.accessSync(testDir, fs.constants.W_OK)
-    return false
-  }
-  catch {
-    // If we can't write, we might need sudo
-    return targetPath.startsWith('/usr/') || targetPath.startsWith('/opt/') || targetPath.startsWith('/Library/')
-  }
-}
-
 // Global message deduplication for shell mode
 const shellModeMessageCache = new Set<string>()
 let hasTemporaryProcessingMessage = false
@@ -2232,7 +2194,8 @@ export async function downloadPackage(
         if (config.verbose) {
           logUniqueMessage(`ℹ️  ${domain} installed (certificate bundle, no binaries expected)`)
         }
-      } else {
+      }
+      else {
         logUniqueMessage(`⚠️  Package ${domain} appears incomplete, source build not available...`)
       }
     }
@@ -2938,7 +2901,7 @@ async function installPackage(packageName: string, packageSpec: string, installP
   let actualPackageSpec = packageSpec
   const osMatch = packageSpec.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
   if (osMatch) {
-    const [, osPrefix, basePkg, versionConstraint] = osMatch
+    const [, _osPrefix, basePkg, versionConstraint] = osMatch
     // Fix malformed version constraints: ": ^1" -> "@^1"
     if (versionConstraint) {
       const cleanVersion = versionConstraint.replace(/^:\s*/, '@')
@@ -4198,7 +4161,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       // Fallback to partial matches only if no exact match found
       if (!packageKey) {
         packageKey = Object.keys(pantry).find(key =>
-          key.includes(packageName) || key.includes(domain.split('.')[0])
+          key.includes(packageName) || key.includes(domain.split('.')[0]),
         )
       }
 
@@ -4232,9 +4195,9 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
         const depDomain = dep.split(/[<>=~^]/)[0]
 
         // Skip if this dependency is the same as the main package we're installing deps for
-        if (depDomain === domain || depDomain === packageName ||
-            (packageName === 'php' && depDomain === 'php.net') ||
-            (domain === 'php.net' && depDomain === 'php.net')) {
+        if (depDomain === domain || depDomain === packageName
+          || (packageName === 'php' && depDomain === 'php.net')
+          || (domain === 'php.net' && depDomain === 'php.net')) {
           if (config.verbose) {
             console.log(`⏭️  Skipping ${dep} (this is the main package, not a dependency)`)
           }
@@ -4252,7 +4215,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
         return !alreadyInstalled
       })
 
-      totalDepsProcessed += filteredDeps.length
+      // totalDepsProcessed += filteredDeps.length
 
       if (depsToInstall.length === 0) {
         if (config.verbose) {
@@ -4274,8 +4237,8 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
         if (config.verbose) {
           console.log(`✅ Successfully installed ${depsToInstall.length} dependencies for ${packageName}`)
         }
-  }
-  catch (error) {
+      }
+      catch {
         console.warn(`⚠️ Some dependencies for ${packageName} failed to install, trying individual installation`)
 
         // Fallback to individual installation
@@ -4297,9 +4260,11 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
     // Improved final message
     if (allInstalledFiles.length > 0) {
       console.log(`🎉 Dependencies installation complete. Installed ${allInstalledFiles.length} files for ${packages.join(', ')}.`)
-    } else if (totalDepsAlreadyInstalled > 0) {
+    }
+    else if (totalDepsAlreadyInstalled > 0) {
       console.log(`✅ All ${totalDepsAlreadyInstalled} dependencies for ${packages.join(', ')} were already installed.`)
-    } else {
+    }
+    else {
       console.log(`ℹ️  No dependencies found to install for ${packages.join(', ')}.`)
     }
 

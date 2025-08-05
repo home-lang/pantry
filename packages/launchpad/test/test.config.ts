@@ -106,7 +106,7 @@ export class TestUtils {
     // Only clean project-specific environments, not global dependencies
     // This prevents tests from removing system-wide tools
     const envBaseDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')
-    const globalDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'global')
+    const _globalDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'global')
 
     // CRITICAL: Never touch the global directory in tests
     if (!fs.existsSync(envBaseDir)) {

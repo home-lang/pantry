@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -18,19 +19,19 @@ const mockPantry = {
       'postgresql.org/libpq',
       'zlib.net', // This should be filtered out by skipPatterns
       'libzip.org', // This should be filtered out by skipPatterns
-    ]
+    ],
   },
   nodejs: {
     dependencies: [
       'python.org',
-      'gcc.gnu.org'
-    ]
-  }
+      'gcc.gnu.org',
+    ],
+  },
 }
 
 // Mock ts-pkgx import
 mock.module('ts-pkgx', () => ({
-  pantry: mockPantry
+  pantry: mockPantry,
 }))
 
 describe('Install Dependencies Only', () => {
@@ -167,7 +168,7 @@ describe('Install Dependencies Only', () => {
       // Should not mention installing PHP itself, only dependencies
       const logCalls = mockConsoleLog.mock.calls.flat()
       const installMainPackage = logCalls.some(call =>
-        call.includes('Installing php') && !call.includes('dependencies')
+        call.includes('Installing php') && !call.includes('dependencies'),
       )
       expect(installMainPackage).toBe(false)
     })
@@ -207,7 +208,8 @@ describe('Install Dependencies Only', () => {
       // Restore original verbose setting
       if (originalVerbose !== undefined) {
         process.env.LAUNCHPAD_VERBOSE = originalVerbose
-      } else {
+      }
+      else {
         delete process.env.LAUNCHPAD_VERBOSE
       }
     })
