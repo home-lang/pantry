@@ -93,7 +93,7 @@ export async function createShims(packageDir: string, installPath: string, domai
 
         for (const entry of entries) {
           const entryPath = path.join(dir, entry.name)
-          
+
           // Check if this directory contains version directories (v*)
           const hasVersionDirs = fs.readdirSync(entryPath, { withFileTypes: true })
             .some(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
@@ -116,7 +116,8 @@ export async function createShims(packageDir: string, installPath: string, domai
                 }
               }
             }
-          } else if (depth < 3) {
+          }
+          else if (depth < 3) {
             // Recursively scan subdirectories (limit depth to avoid infinite recursion)
             scanDirectory(entryPath, depth + 1)
           }
@@ -613,7 +614,7 @@ export async function createBuildEnvironmentScript(installPath: string): Promise
 
       for (const entry of entries) {
         const entryPath = path.join(dir, entry.name)
-        
+
         // Check if this directory contains version directories (v*)
         const hasVersionDirs = fs.readdirSync(entryPath, { withFileTypes: true })
           .some(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
@@ -660,7 +661,8 @@ export async function createBuildEnvironmentScript(installPath: string): Promise
               binPaths.push(binDir)
             }
           }
-        } else if (depth < 3) {
+        }
+        else if (depth < 3) {
           // Recursively scan subdirectories (limit depth to avoid infinite recursion)
           scanDirectory(entryPath, depth + 1)
         }
