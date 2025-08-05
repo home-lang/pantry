@@ -182,7 +182,7 @@ jobs:
 
           # Create symlinks to help PHP find readline
           echo "Creating symlinks for readline:"
-          sudo mkdir -p /usr/local/include/readline
+          sudo mkdir -p /usr/local/include/readline /usr/local/lib
           sudo ln -sf $(brew --prefix readline)/include/readline/readline.h /usr/local/include/readline/readline.h
           sudo ln -sf $(brew --prefix readline)/include/readline/history.h /usr/local/include/readline/history.h
           sudo ln -sf $(brew --prefix readline)/lib/libreadline.* /usr/local/lib/
@@ -218,11 +218,11 @@ jobs:
       - name: Set macOS specific paths
         if: matrix.platform == 'darwin'
         run: |
-          # Set paths for Homebrew dependencies
-          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig" >> $GITHUB_ENV
+          # Set paths for Homebrew dependencies including keg-only packages
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig" >> $GITHUB_ENV
           echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$PATH" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include" >> $GITHUB_ENV
 
           # Set readline-specific paths
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
