@@ -406,7 +406,7 @@ jobs:
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Using C++17 for PHP ${{ matrix.php_version }}"
             elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
-              # PHP 8.1 uses C++14 for configure, but we'll handle ICU4C in build step
+              # PHP 8.1 uses C++14 for configure (PHP requirement), C++17 for build (ICU4C requirement)
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
               echo "Using C++14 for PHP ${{ matrix.php_version }} (configure step)"
             else
@@ -561,7 +561,7 @@ jobs:
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Set C++17 for configure: $CXXFLAGS"
             elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
-              # PHP 8.1 configure step uses C++14
+              # PHP 8.1 configure step uses C++14 (PHP requirement)
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
               echo "Set C++14 for PHP 8.1 configure: $CXXFLAGS"
             else
@@ -709,7 +709,7 @@ jobs:
               echo "  CFLAGS: (empty)"
               echo "  CPPFLAGS: $CPPFLAGS"
               make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
-            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+                        elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
               echo "Making with explicit C++17 flags for PHP 8.1 (ICU4C compatibility):"
               echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
               echo "  CFLAGS: (empty)"
@@ -718,8 +718,16 @@ jobs:
               # Force update Makefile for PHP 8.1 to use C++17
               echo "Updating Makefile for PHP 8.1 C++17 compatibility..."
               sed -i.bak 's/-std=c++14/-std=c++17/g' Makefile 2>/dev/null || echo "No C++14 flags found in Makefile to replace"
+              sed -i.bak 's/-std=gnu++14/-std=gnu++17/g' Makefile 2>/dev/null || echo "No gnu++14 flags found in Makefile to replace"
 
-              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
+              # Set environment variables to force C++17
+              export CXXFLAGS="-std=c++17 -stdlib=libc++"
+              export CFLAGS=""
+              export CC=clang
+              export CXX=clang++
+              echo "Final CXXFLAGS: $CXXFLAGS"
+
+              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS" CC="$CC" CXX="$CXX"
             else
               echo "Making with explicit C++14 flags:"
               echo "  CXXFLAGS: -std=c++14 -stdlib=libc++"
@@ -853,7 +861,7 @@ jobs:
           body: |
             🚀 **PHP Precompiled Binaries**
 
-                        This release contains precompiled PHP binaries optimized for Laravel and modern PHP frameworks:
+                        This release contains precompiled PHP binaries optimized for modern PHP usage:
 
             - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
             - **PHP Versions**: 8.4.11, 8.3.14, 8.2.26, 8.1.30
