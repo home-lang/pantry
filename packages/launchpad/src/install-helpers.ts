@@ -85,36 +85,49 @@ export async function createShims(packageDir: string, installPath: string, domai
     }
 
     // Add library paths from all installed packages in the environment
-    try {
-      const domains = fs.readdirSync(installPath, { withFileTypes: true })
-        .filter(dirent => dirent.isDirectory()
-          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+    function scanDirectory(dir: string, depth = 0) {
+      try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory()
+            && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
 
-      for (const domainEntry of domains) {
-        const domainPath = path.join(installPath, domainEntry.name)
-        if (fs.existsSync(domainPath)) {
-          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
-            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+        for (const entry of entries) {
+          const entryPath = path.join(dir, entry.name)
+          
+          // Check if this directory contains version directories (v*)
+          const hasVersionDirs = fs.readdirSync(entryPath, { withFileTypes: true })
+            .some(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
 
-          for (const versionEntry of versions) {
-            const versionPath = path.join(domainPath, versionEntry.name)
-            const depLibDirs = [
-              path.join(versionPath, 'lib'),
-              path.join(versionPath, 'lib64'),
-            ]
+          if (hasVersionDirs) {
+            // This is a package directory, scan for library files
+            const versions = fs.readdirSync(entryPath, { withFileTypes: true })
+              .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
 
-            for (const libDir of depLibDirs) {
-              if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
-                libraryPaths.push(libDir)
+            for (const versionEntry of versions) {
+              const versionPath = path.join(entryPath, versionEntry.name)
+              const depLibDirs = [
+                path.join(versionPath, 'lib'),
+                path.join(versionPath, 'lib64'),
+              ]
+
+              for (const libDir of depLibDirs) {
+                if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
+                  libraryPaths.push(libDir)
+                }
               }
             }
+          } else if (depth < 3) {
+            // Recursively scan subdirectories (limit depth to avoid infinite recursion)
+            scanDirectory(entryPath, depth + 1)
           }
         }
       }
+      catch {
+        // Ignore errors reading directories
+      }
     }
-    catch {
-      // Ignore errors reading directories
-    }
+
+    scanDirectory(installPath)
 
     return libraryPaths
   }
@@ -123,37 +136,50 @@ export async function createShims(packageDir: string, installPath: string, domai
   function buildPkgConfigPaths(installPath: string): string[] {
     const pkgConfigPaths: string[] = []
 
-    try {
-      const domains = fs.readdirSync(installPath, { withFileTypes: true })
-        .filter(dirent => dirent.isDirectory()
-          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+    function scanDirectory(dir: string, depth = 0) {
+      try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory()
+            && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
 
-      for (const domainEntry of domains) {
-        const domainPath = path.join(installPath, domainEntry.name)
-        if (fs.existsSync(domainPath)) {
-          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
-            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+        for (const entry of entries) {
+          const entryPath = path.join(dir, entry.name)
 
-          for (const versionEntry of versions) {
-            const versionPath = path.join(domainPath, versionEntry.name)
-            const pkgConfigDirs = [
-              path.join(versionPath, 'lib', 'pkgconfig'),
-              path.join(versionPath, 'lib64', 'pkgconfig'),
-            ]
+          // Check if this directory contains version directories (v*)
+          const hasVersionDirs = fs.readdirSync(entryPath, { withFileTypes: true })
+            .some(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
 
-            for (const pkgConfigDir of pkgConfigDirs) {
-              if (fs.existsSync(pkgConfigDir) && !pkgConfigPaths.includes(pkgConfigDir)) {
-                pkgConfigPaths.push(pkgConfigDir)
+          if (hasVersionDirs) {
+            // This is a package directory, scan for pkg-config files
+            const versions = fs.readdirSync(entryPath, { withFileTypes: true })
+              .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+            for (const versionEntry of versions) {
+              const versionPath = path.join(entryPath, versionEntry.name)
+              const pkgConfigDirs = [
+                path.join(versionPath, 'lib', 'pkgconfig'),
+                path.join(versionPath, 'lib64', 'pkgconfig'),
+              ]
+
+              for (const pkgConfigDir of pkgConfigDirs) {
+                if (fs.existsSync(pkgConfigDir) && !pkgConfigPaths.includes(pkgConfigDir)) {
+                  pkgConfigPaths.push(pkgConfigDir)
+                }
               }
             }
           }
+          else if (depth < 3) {
+            // Recursively scan subdirectories (limit depth to avoid infinite recursion)
+            scanDirectory(entryPath, depth + 1)
+          }
         }
       }
-    }
-    catch {
-      // Ignore errors reading directories
+      catch {
+        // Ignore errors reading directories
+      }
     }
 
+    scanDirectory(installPath)
     return pkgConfigPaths
   }
 
@@ -161,32 +187,45 @@ export async function createShims(packageDir: string, installPath: string, domai
   function buildIncludePaths(installPath: string): string[] {
     const includePaths: string[] = []
 
-    try {
-      const domains = fs.readdirSync(installPath, { withFileTypes: true })
-        .filter(dirent => dirent.isDirectory()
-          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+    function scanDirectory(dir: string, depth = 0) {
+      try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory()
+            && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
 
-      for (const domainEntry of domains) {
-        const domainPath = path.join(installPath, domainEntry.name)
-        if (fs.existsSync(domainPath)) {
-          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
-            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+        for (const entry of entries) {
+          const entryPath = path.join(dir, entry.name)
 
-          for (const versionEntry of versions) {
-            const versionPath = path.join(domainPath, versionEntry.name)
-            const includeDir = path.join(versionPath, 'include')
+          // Check if this directory contains version directories (v*)
+          const hasVersionDirs = fs.readdirSync(entryPath, { withFileTypes: true })
+            .some(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
 
-            if (fs.existsSync(includeDir) && !includePaths.includes(includeDir)) {
-              includePaths.push(includeDir)
+          if (hasVersionDirs) {
+            // This is a package directory, scan for include files
+            const versions = fs.readdirSync(entryPath, { withFileTypes: true })
+              .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+            for (const versionEntry of versions) {
+              const versionPath = path.join(entryPath, versionEntry.name)
+              const includeDir = path.join(versionPath, 'include')
+
+              if (fs.existsSync(includeDir) && !includePaths.includes(includeDir)) {
+                includePaths.push(includeDir)
+              }
             }
+          }
+          else if (depth < 3) {
+            // Recursively scan subdirectories (limit depth to avoid infinite recursion)
+            scanDirectory(entryPath, depth + 1)
           }
         }
       }
-    }
-    catch {
-      // Ignore errors reading directories
+      catch {
+        // Ignore errors reading directories
+      }
     }
 
+    scanDirectory(installPath)
     return includePaths
   }
 
@@ -566,60 +605,73 @@ export async function createBuildEnvironmentScript(installPath: string): Promise
   const includePaths: string[] = []
   const binPaths: string[] = []
 
-  try {
-    const domains = fs.readdirSync(installPath, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory()
-        && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+  function scanDirectory(dir: string, depth = 0) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory()
+          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
 
-    for (const domainEntry of domains) {
-      const domainPath = path.join(installPath, domainEntry.name)
-      if (fs.existsSync(domainPath)) {
-        const versions = fs.readdirSync(domainPath, { withFileTypes: true })
-          .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+      for (const entry of entries) {
+        const entryPath = path.join(dir, entry.name)
+        
+        // Check if this directory contains version directories (v*)
+        const hasVersionDirs = fs.readdirSync(entryPath, { withFileTypes: true })
+          .some(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
 
-        for (const versionEntry of versions) {
-          const versionPath = path.join(domainPath, versionEntry.name)
+        if (hasVersionDirs) {
+          // This is a package directory, scan for all paths
+          const versions = fs.readdirSync(entryPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
 
-          // Add library paths
-          const libDirs = [
-            path.join(versionPath, 'lib'),
-            path.join(versionPath, 'lib64'),
-          ]
-          for (const libDir of libDirs) {
-            if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
-              libraryPaths.push(libDir)
+          for (const versionEntry of versions) {
+            const versionPath = path.join(entryPath, versionEntry.name)
+
+            // Add library paths
+            const libDirs = [
+              path.join(versionPath, 'lib'),
+              path.join(versionPath, 'lib64'),
+            ]
+            for (const libDir of libDirs) {
+              if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
+                libraryPaths.push(libDir)
+              }
+            }
+
+            // Add pkg-config paths
+            const pkgConfigDirs = [
+              path.join(versionPath, 'lib', 'pkgconfig'),
+              path.join(versionPath, 'lib64', 'pkgconfig'),
+            ]
+            for (const pkgConfigDir of pkgConfigDirs) {
+              if (fs.existsSync(pkgConfigDir) && !pkgConfigPaths.includes(pkgConfigDir)) {
+                pkgConfigPaths.push(pkgConfigDir)
+              }
+            }
+
+            // Add include paths
+            const includeDir = path.join(versionPath, 'include')
+            if (fs.existsSync(includeDir) && !includePaths.includes(includeDir)) {
+              includePaths.push(includeDir)
+            }
+
+            // Add bin paths
+            const binDir = path.join(versionPath, 'bin')
+            if (fs.existsSync(binDir) && !binPaths.includes(binDir)) {
+              binPaths.push(binDir)
             }
           }
-
-          // Add pkg-config paths
-          const pkgConfigDirs = [
-            path.join(versionPath, 'lib', 'pkgconfig'),
-            path.join(versionPath, 'lib64', 'pkgconfig'),
-          ]
-          for (const pkgConfigDir of pkgConfigDirs) {
-            if (fs.existsSync(pkgConfigDir) && !pkgConfigPaths.includes(pkgConfigDir)) {
-              pkgConfigPaths.push(pkgConfigDir)
-            }
-          }
-
-          // Add include paths
-          const includeDir = path.join(versionPath, 'include')
-          if (fs.existsSync(includeDir) && !includePaths.includes(includeDir)) {
-            includePaths.push(includeDir)
-          }
-
-          // Add bin paths
-          const binDir = path.join(versionPath, 'bin')
-          if (fs.existsSync(binDir) && !binPaths.includes(binDir)) {
-            binPaths.push(binDir)
-          }
+        } else if (depth < 3) {
+          // Recursively scan subdirectories (limit depth to avoid infinite recursion)
+          scanDirectory(entryPath, depth + 1)
         }
       }
     }
+    catch {
+      // Ignore errors reading directories
+    }
   }
-  catch {
-    // Ignore errors reading directories
-  }
+
+  scanDirectory(installPath)
 
   // Create the environment setup script
   let scriptContent = `#!/bin/sh
