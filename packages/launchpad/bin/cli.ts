@@ -3348,6 +3348,43 @@ cli
     }
   })
 
+// Build environment command
+cli
+  .command('build-env', 'Set up build environment for launchpad-installed packages')
+  .alias('env')
+  .option('--path <path>', 'Custom installation path')
+  .option('--shell', 'Output shell code for evaluation (use with eval)')
+  .example('launchpad build-env')
+  .example('launchpad build-env --path ~/.local/share/launchpad/global')
+  .example('launchpad build-env --shell | source /dev/stdin')
+  .action(async (options?: { path?: string, shell?: boolean }) => {
+    try {
+      const defaultInstallPath = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+      const installPath = options?.path || defaultInstallPath
+      const buildEnvScript = path.join(installPath, 'build-env.sh')
+
+      if (!fs.existsSync(buildEnvScript)) {
+        console.error('❌ Build environment script not found. Please install some packages first.')
+        console.error(`   Expected location: ${buildEnvScript}`)
+        process.exit(1)
+      }
+
+      if (options?.shell) {
+        // Output the script content for shell evaluation
+        const scriptContent = fs.readFileSync(buildEnvScript, 'utf-8')
+        console.log(scriptContent)
+      } else {
+        // Execute the script directly
+        const { execSync } = await import('node:child_process')
+        execSync(`source "${buildEnvScript}"`, { stdio: 'inherit', shell: '/bin/sh' })
+      }
+    }
+    catch (error) {
+      console.error('Failed to set up build environment:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // Parse CLI arguments
 try {
   cli.version(version)

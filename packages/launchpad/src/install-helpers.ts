@@ -118,7 +118,80 @@ export async function createShims(packageDir: string, installPath: string, domai
     return libraryPaths
   }
 
+  // Helper function to build pkg-config paths for all installed packages
+  function buildPkgConfigPaths(installPath: string): string[] {
+    const pkgConfigPaths: string[] = []
+
+    try {
+      const domains = fs.readdirSync(installPath, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory()
+          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+
+      for (const domainEntry of domains) {
+        const domainPath = path.join(installPath, domainEntry.name)
+        if (fs.existsSync(domainPath)) {
+          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+          for (const versionEntry of versions) {
+            const versionPath = path.join(domainPath, versionEntry.name)
+            const pkgConfigDirs = [
+              path.join(versionPath, 'lib', 'pkgconfig'),
+              path.join(versionPath, 'lib64', 'pkgconfig'),
+            ]
+
+            for (const pkgConfigDir of pkgConfigDirs) {
+              if (fs.existsSync(pkgConfigDir) && !pkgConfigPaths.includes(pkgConfigDir)) {
+                pkgConfigPaths.push(pkgConfigDir)
+              }
+            }
+          }
+        }
+      }
+    }
+    catch {
+      // Ignore errors reading directories
+    }
+
+    return pkgConfigPaths
+  }
+
+  // Helper function to build include paths for all installed packages
+  function buildIncludePaths(installPath: string): string[] {
+    const includePaths: string[] = []
+
+    try {
+      const domains = fs.readdirSync(installPath, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory()
+          && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+
+      for (const domainEntry of domains) {
+        const domainPath = path.join(installPath, domainEntry.name)
+        if (fs.existsSync(domainPath)) {
+          const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+          for (const versionEntry of versions) {
+            const versionPath = path.join(domainPath, versionEntry.name)
+            const includeDir = path.join(versionPath, 'include')
+
+            if (fs.existsSync(includeDir) && !includePaths.includes(includeDir)) {
+              includePaths.push(includeDir)
+            }
+          }
+        }
+      }
+    }
+    catch {
+      // Ignore errors reading directories
+    }
+
+    return includePaths
+  }
+
   const libraryPaths = buildLibraryPaths(packageDir, installPath)
+  const pkgConfigPaths = buildPkgConfigPaths(installPath)
+  const includePaths = buildIncludePaths(installPath)
 
   for (const { sourceDir, shimDir: targetShimDir } of binaryDirs) {
     if (!fs.existsSync(sourceDir)) {
@@ -139,9 +212,10 @@ export async function createShims(packageDir: string, installPath: string, domai
         let shimContent = `#!/bin/sh
 # Launchpad shim for ${binary} (${domain} v${version})
 
-# Set up library paths for dynamic linking
+# Set up comprehensive build environment for launchpad-installed packages
 `
 
+        // Set up library paths for dynamic linking
         if (libraryPaths.length > 0) {
           const libraryPathString = libraryPaths.join(':')
           shimContent += `# macOS dynamic library paths
@@ -162,6 +236,39 @@ if [ -n "$LD_LIBRARY_PATH" ]; then
   export LD_LIBRARY_PATH="${libraryPathString}:$LD_LIBRARY_PATH"
 else
   export LD_LIBRARY_PATH="${libraryPathString}"
+fi
+
+`
+        }
+
+        // Set up pkg-config paths for build tools
+        if (pkgConfigPaths.length > 0) {
+          const pkgConfigPathString = pkgConfigPaths.join(':')
+          shimContent += `# Set up pkg-config to find launchpad-installed libraries
+if [ -n "$PKG_CONFIG_PATH" ]; then
+  export PKG_CONFIG_PATH="${pkgConfigPathString}:$PKG_CONFIG_PATH"
+else
+  export PKG_CONFIG_PATH="${pkgConfigPathString}"
+fi
+
+`
+        }
+
+        // Set up include paths for compilation
+        if (includePaths.length > 0) {
+          const includePathString = includePaths.join(' ')
+          shimContent += `# Set up include paths for compilation
+if [ -n "$CPPFLAGS" ]; then
+  export CPPFLAGS="-I${includePathString} $CPPFLAGS"
+else
+  export CPPFLAGS="-I${includePathString}"
+fi
+
+# Set up library paths for linking
+if [ -n "$LDFLAGS" ]; then
+  export LDFLAGS="-L${libraryPaths.join(' -L')} $LDFLAGS"
+else
+  export LDFLAGS="-L${libraryPaths.join(' -L')}"
 fi
 
 `
@@ -442,5 +549,135 @@ export async function validatePackageInstallation(packageDir: string, domain: st
       console.warn(`Error validating package ${domain}:`, error)
     }
     return true // Assume valid if we can't check
+  }
+}
+
+/**
+ * Create a comprehensive environment setup script for build tools
+ * This script can be sourced to set up all launchpad-installed packages for building
+ */
+export async function createBuildEnvironmentScript(installPath: string): Promise<void> {
+  const scriptPath = path.join(installPath, 'build-env.sh')
+
+  // Build all the paths
+  const libraryPaths: string[] = []
+  const pkgConfigPaths: string[] = []
+  const includePaths: string[] = []
+  const binPaths: string[] = []
+
+  try {
+    const domains = fs.readdirSync(installPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory()
+        && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+
+    for (const domainEntry of domains) {
+      const domainPath = path.join(installPath, domainEntry.name)
+      if (fs.existsSync(domainPath)) {
+        const versions = fs.readdirSync(domainPath, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+        for (const versionEntry of versions) {
+          const versionPath = path.join(domainPath, versionEntry.name)
+
+          // Add library paths
+          const libDirs = [
+            path.join(versionPath, 'lib'),
+            path.join(versionPath, 'lib64'),
+          ]
+          for (const libDir of libDirs) {
+            if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
+              libraryPaths.push(libDir)
+            }
+          }
+
+          // Add pkg-config paths
+          const pkgConfigDirs = [
+            path.join(versionPath, 'lib', 'pkgconfig'),
+            path.join(versionPath, 'lib64', 'pkgconfig'),
+          ]
+          for (const pkgConfigDir of pkgConfigDirs) {
+            if (fs.existsSync(pkgConfigDir) && !pkgConfigPaths.includes(pkgConfigDir)) {
+              pkgConfigPaths.push(pkgConfigDir)
+            }
+          }
+
+          // Add include paths
+          const includeDir = path.join(versionPath, 'include')
+          if (fs.existsSync(includeDir) && !includePaths.includes(includeDir)) {
+            includePaths.push(includeDir)
+          }
+
+          // Add bin paths
+          const binDir = path.join(versionPath, 'bin')
+          if (fs.existsSync(binDir) && !binPaths.includes(binDir)) {
+            binPaths.push(binDir)
+          }
+        }
+      }
+    }
+  }
+  catch {
+    // Ignore errors reading directories
+  }
+
+  // Create the environment setup script
+  let scriptContent = `#!/bin/sh
+# Launchpad Build Environment Setup Script
+# Source this script to set up environment for building with launchpad-installed packages
+
+# Set up PATH to include launchpad binaries
+if [ -n "$PATH" ]; then
+  export PATH="${binPaths.join(':')}:$PATH"
+else
+  export PATH="${binPaths.join(':')}"
+fi
+
+`
+
+  // Set up library paths
+  if (libraryPaths.length > 0) {
+    const libraryPathString = libraryPaths.join(':')
+    scriptContent += `# Set up library paths for dynamic linking
+export LD_LIBRARY_PATH="${libraryPathString}${process.platform === 'darwin' ? ':$LD_LIBRARY_PATH' : ''}"
+export DYLD_LIBRARY_PATH="${libraryPathString}${process.platform === 'darwin' ? ':$DYLD_LIBRARY_PATH' : ''}"
+export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:/usr/local/lib:/lib:/usr/lib"
+
+`
+  }
+
+  // Set up pkg-config paths
+  if (pkgConfigPaths.length > 0) {
+    const pkgConfigPathString = pkgConfigPaths.join(':')
+    scriptContent += `# Set up pkg-config to find launchpad-installed libraries
+export PKG_CONFIG_PATH="${pkgConfigPathString}${process.env.PKG_CONFIG_PATH ? ':' + process.env.PKG_CONFIG_PATH : ''}"
+
+`
+  }
+
+  // Set up include and library paths for compilation
+  if (includePaths.length > 0 || libraryPaths.length > 0) {
+    scriptContent += `# Set up include paths for compilation
+export CPPFLAGS="-I${includePaths.join(' -I')}${process.env.CPPFLAGS ? ' ' + process.env.CPPFLAGS : ''}"
+
+# Set up library paths for linking
+export LDFLAGS="-L${libraryPaths.join(' -L')}${process.env.LDFLAGS ? ' ' + process.env.LDFLAGS : ''}"
+
+`
+  }
+
+  scriptContent += `# Print environment info
+echo "Launchpad build environment activated:"
+echo "  PATH: $PATH"
+echo "  LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+echo "  CPPFLAGS: $CPPFLAGS"
+echo "  LDFLAGS: $LDFLAGS"
+`
+
+  await fs.promises.writeFile(scriptPath, scriptContent)
+  await fs.promises.chmod(scriptPath, 0o755)
+
+  if (config.verbose) {
+    console.warn(`Created build environment script: ${scriptPath}`)
   }
 }

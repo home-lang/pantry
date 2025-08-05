@@ -254,6 +254,10 @@ jobs:
           INSTALL_PREFIX="${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}"
           mkdir -p "$INSTALL_PREFIX"
 
+          # Set up launchpad build environment
+          echo "Setting up launchpad build environment..."
+          source "$HOME/.local/share/launchpad/global/build-env.sh"
+
           # Configure with platform-specific options
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             # On macOS, point to Homebrew iconv installation
@@ -267,6 +271,35 @@ jobs:
           echo "  Extensions: ${{ env.CONFIGURE_EXTENSIONS }}"
           echo "  Prefix: $INSTALL_PREFIX"
           echo "  Extra config: $EXTRA_CONFIG"
+          echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "  LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+          # Debug: Show available pkg-config files
+          echo "Available pkg-config files:"
+          pkg-config --list-all | grep -i curl || echo "No curl pkg-config found"
+          echo "libcurl pkg-config info:"
+          pkg-config --exists libcurl && pkg-config --modversion libcurl || echo "libcurl not found via pkg-config"
+
+          # Show all available pkg-config files for debugging
+          echo "All available pkg-config files:"
+          pkg-config --list-all | head -20
+          echo "... (showing first 20)"
+
+          # Check if libcurl is found via pkg-config
+          if pkg-config --exists libcurl; then
+            echo "libcurl found via pkg-config"
+            CURL_CONFIG=""
+          else
+            echo "libcurl not found via pkg-config, using manual configuration"
+            CURL_CONFIG="--with-curl=$HOME/.local/share/launchpad/global/curl.se/v8.15.0"
+          fi
+
+          # Check for other common libraries
+          echo "Checking for other required libraries:"
+          pkg-config --exists openssl && echo "✓ openssl found" || echo "✗ openssl not found"
+          pkg-config --exists zlib && echo "✓ zlib found" || echo "✗ zlib not found"
+          pkg-config --exists libxml-2.0 && echo "✓ libxml-2.0 found" || echo "✗ libxml-2.0 not found"
+          pkg-config --exists sqlite3 && echo "✓ sqlite3 found" || echo "✗ sqlite3 not found"
 
           ./configure \
             --prefix="$INSTALL_PREFIX" \
@@ -274,11 +307,15 @@ jobs:
             --enable-shared \
             --with-pic \
             ${{ env.CONFIGURE_EXTENSIONS }} \
-            $EXTRA_CONFIG
+            $EXTRA_CONFIG \
+                        $CURL_CONFIG
 
       - name: Build PHP
         run: |
           cd ${{ env.PHP_SOURCE_DIR }}
+
+          # Set up launchpad build environment for compilation
+          source "$HOME/.local/share/launchpad/global/build-env.sh"
 
           # Use all available CPU cores for faster builds
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then

@@ -7,7 +7,7 @@ import process from 'node:process'
 import { install_bun } from './bun'
 import { getCachedPackagePath, savePackageToCache } from './cache'
 import { config } from './config'
-import { createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation } from './install-helpers'
+import { createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation, createBuildEnvironmentScript } from './install-helpers'
 import { cleanupSpinner, logUniqueMessage } from './logging'
 import { getLatestVersion, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
 import { installMeilisearch } from './special-installers'
@@ -887,6 +887,9 @@ export async function downloadPackage(
 
     // Find binaries and create shims
     const installedBinaries = await createShims(packageDir, installPath, domain, version)
+
+    // Create comprehensive build environment script
+    await createBuildEnvironmentScript(installPath)
 
     // Create package metadata for tracking
     const metadata = {
