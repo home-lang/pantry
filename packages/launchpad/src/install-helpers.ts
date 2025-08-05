@@ -758,6 +758,21 @@ echo "  LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
 echo "  CPPFLAGS: $CPPFLAGS"
 echo "  LDFLAGS: $LDFLAGS"
+
+# Test iconv functionality if available
+if command -v iconv >/dev/null 2>&1; then
+  echo "Testing iconv functionality:"
+  iconv --version 2>/dev/null || echo "iconv version check failed"
+
+  # Test basic iconv conversion
+  if echo "test" | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1; then
+    echo "✓ iconv basic functionality working"
+  else
+    echo "⚠️  iconv basic functionality test failed"
+  fi
+else
+  echo "iconv not found in PATH"
+fi
 `
 
   await fs.promises.writeFile(scriptPath, scriptContent)
