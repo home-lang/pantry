@@ -7,7 +7,7 @@ import process from 'node:process'
 import { install_bun } from './bun'
 import { getCachedPackagePath, savePackageToCache } from './cache'
 import { config } from './config'
-import { createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation, createBuildEnvironmentScript } from './install-helpers'
+import { createBuildEnvironmentScript, createPkgConfigSymlinks, createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation } from './install-helpers'
 import { cleanupSpinner, logUniqueMessage } from './logging'
 import { getLatestVersion, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
 import { installMeilisearch } from './special-installers'
@@ -863,6 +863,9 @@ export async function downloadPackage(
 
     // Create missing library symlinks for dynamic linking
     await createLibrarySymlinks(packageDir, domain)
+
+    // Create pkg-config symlinks for common naming mismatches
+    await createPkgConfigSymlinks(packageDir, domain)
 
     // Create version symlinks like pkgx does
     await createVersionSymlinks(installPath, domain, version)

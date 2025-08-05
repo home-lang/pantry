@@ -3373,7 +3373,8 @@ cli
         // Output the script content for shell evaluation
         const scriptContent = fs.readFileSync(buildEnvScript, 'utf-8')
         console.log(scriptContent)
-      } else {
+      }
+      else {
         // Execute the script directly
         const { execSync } = await import('node:child_process')
         execSync(`source "${buildEnvScript}"`, { stdio: 'inherit', shell: '/bin/sh' })

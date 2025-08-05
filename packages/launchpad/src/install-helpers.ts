@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { config } from './config'
 
 /**
@@ -637,9 +638,10 @@ fi
   // Set up library paths
   if (libraryPaths.length > 0) {
     const libraryPathString = libraryPaths.join(':')
+    const isDarwin = process.platform === 'darwin'
     scriptContent += `# Set up library paths for dynamic linking
-export LD_LIBRARY_PATH="${libraryPathString}${process.platform === 'darwin' ? ':$LD_LIBRARY_PATH' : ''}"
-export DYLD_LIBRARY_PATH="${libraryPathString}${process.platform === 'darwin' ? ':$DYLD_LIBRARY_PATH' : ''}"
+export LD_LIBRARY_PATH="${libraryPathString}${isDarwin ? ':$LD_LIBRARY_PATH' : ''}"
+export DYLD_LIBRARY_PATH="${libraryPathString}${isDarwin ? ':$DYLD_LIBRARY_PATH' : ''}"
 export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:/usr/local/lib:/lib:/usr/lib"
 
 `
@@ -648,24 +650,54 @@ export DYLD_FALLBACK_LIBRARY_PATH="${libraryPathString}:/usr/local/lib:/lib:/usr
   // Set up pkg-config paths
   if (pkgConfigPaths.length > 0) {
     const pkgConfigPathString = pkgConfigPaths.join(':')
+    const existingPkgConfig = process.env.PKG_CONFIG_PATH || ''
+    const pkgConfigPath = existingPkgConfig ? `${pkgConfigPathString}:${existingPkgConfig}` : pkgConfigPathString
     scriptContent += `# Set up pkg-config to find launchpad-installed libraries
-export PKG_CONFIG_PATH="${pkgConfigPathString}${process.env.PKG_CONFIG_PATH ? ':' + process.env.PKG_CONFIG_PATH : ''}"
+export PKG_CONFIG_PATH="${pkgConfigPath}"
 
 `
   }
 
   // Set up include and library paths for compilation
   if (includePaths.length > 0 || libraryPaths.length > 0) {
+    const existingCppflags = process.env.CPPFLAGS || ''
+    const existingLdflags = process.env.LDFLAGS || ''
+    const cppflags = existingCppflags ? `-I${includePaths.join(' -I')} ${existingCppflags}` : `-I${includePaths.join(' -I')}`
+    const ldflags = existingLdflags ? `-L${libraryPaths.join(' -L')} ${existingLdflags}` : `-L${libraryPaths.join(' -L')}`
     scriptContent += `# Set up include paths for compilation
-export CPPFLAGS="-I${includePaths.join(' -I')}${process.env.CPPFLAGS ? ' ' + process.env.CPPFLAGS : ''}"
+export CPPFLAGS="${cppflags}"
 
 # Set up library paths for linking
-export LDFLAGS="-L${libraryPaths.join(' -L')}${process.env.LDFLAGS ? ' ' + process.env.LDFLAGS : ''}"
+export LDFLAGS="${ldflags}"
 
 `
   }
 
-  scriptContent += `# Print environment info
+  scriptContent += `# Create pkg-config symlinks for common naming mismatches
+# This handles cases where build scripts expect different package names
+for pkg_dir in "$PKG_CONFIG_PATH"; do
+  IFS=':' read -ra PKG_DIRS <<< "$pkg_dir"
+  for dir in "\${PKG_DIRS[@]}"; do
+    if [ -d "$dir" ]; then
+      # libpng16 -> libpng
+      if [ -f "$dir/libpng16.pc" ] && [ ! -f "$dir/libpng.pc" ]; then
+        ln -sf libpng16.pc "$dir/libpng.pc"
+      fi
+
+      # libturbojpeg -> libjpeg
+      if [ -f "$dir/libturbojpeg.pc" ] && [ ! -f "$dir/libjpeg.pc" ]; then
+        ln -sf libturbojpeg.pc "$dir/libjpeg.pc"
+      fi
+
+      # openssl -> libssl
+      if [ -f "$dir/openssl.pc" ] && [ ! -f "$dir/libssl.pc" ]; then
+        ln -sf openssl.pc "$dir/libssl.pc"
+      fi
+    fi
+  done
+done
+
+# Print environment info
 echo "Launchpad build environment activated:"
 echo "  PATH: $PATH"
 echo "  LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
@@ -679,5 +711,48 @@ echo "  LDFLAGS: $LDFLAGS"
 
   if (config.verbose) {
     console.warn(`Created build environment script: ${scriptPath}`)
+  }
+}
+
+/**
+ * Create pkg-config symlinks for common naming mismatches
+ * This handles cases where build scripts expect different package names than what's installed
+ */
+export async function createPkgConfigSymlinks(packageDir: string, domain: string): Promise<void> {
+  const pkgConfigDir = path.join(packageDir, 'lib', 'pkgconfig')
+  if (!fs.existsSync(pkgConfigDir))
+    return
+
+  const pkgConfigSymlinks: Record<string, Array<{ target: string, link: string }>> = {
+    'libpng.org': [
+      { target: 'libpng16.pc', link: 'libpng.pc' },
+    ],
+    'libjpeg-turbo.org': [
+      { target: 'libturbojpeg.pc', link: 'libjpeg.pc' },
+    ],
+    'openssl.org': [
+      { target: 'openssl.pc', link: 'libssl.pc' },
+    ],
+  }
+
+  const symlinks = pkgConfigSymlinks[domain] || []
+
+  for (const { target, link } of symlinks) {
+    const targetPath = path.join(pkgConfigDir, target)
+    const linkPath = path.join(pkgConfigDir, link)
+
+    if (fs.existsSync(targetPath) && !fs.existsSync(linkPath)) {
+      try {
+        await fs.promises.symlink(target, linkPath)
+        if (config.verbose) {
+          console.warn(`Created pkg-config symlink: ${link} -> ${target}`)
+        }
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`Failed to create pkg-config symlink ${link} -> ${target}:`, error)
+        }
+      }
+    }
   }
 }
