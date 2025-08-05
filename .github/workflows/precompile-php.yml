@@ -536,24 +536,58 @@ jobs:
           echo "  CPPFLAGS: $CPPFLAGS"
           echo "  PHP Version: ${{ matrix.php_version }} (Major: $PHP_MAJOR_VERSION, Minor: $PHP_MINOR_VERSION)"
 
+          # Test C++17 support before configure
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            echo "Testing C++17 support before configure:"
+            echo '#include <type_traits>' > test_cpp17.cpp
+            echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp17.cpp
+            if clang++ -std=c++17 -stdlib=libc++ test_cpp17.cpp -o test_cpp17 2>/dev/null; then
+              echo "C++17 support confirmed before configure"
+              rm -f test_cpp17.cpp test_cpp17
+            else
+              echo "C++17 support test failed before configure"
+              rm -f test_cpp17.cpp test_cpp17
+            fi
+          fi
+
+                    if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             # Set environment variables for configure
-            export CXXFLAGS="-std=c++14 -stdlib=libc++"
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
+              echo "Set C++17 for configure: $CXXFLAGS"
+            else
+              export CXXFLAGS="-std=c++14 -stdlib=libc++"
+              echo "Set C++14 for configure: $CXXFLAGS"
             fi
             export CFLAGS=""
             export CPPFLAGS="$CPPFLAGS"
+
+            # Also set CC and CXX explicitly
+            export CC=clang
+            export CXX=clang++
+            echo "Set CC=$CC, CXX=$CXX"
           fi
 
-          ./configure \
-            --prefix="$INSTALL_PREFIX" \
-            --disable-debug \
-            --enable-shared \
-            --with-pic \
-            $FINAL_EXTENSIONS \
-            $EXTRA_CONFIG \
-            $CURL_CONFIG
+          # Run configure with explicit environment
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CC="$CC" CXX="$CXX" ./configure \
+              --prefix="$INSTALL_PREFIX" \
+              --disable-debug \
+              --enable-shared \
+              --with-pic \
+              $FINAL_EXTENSIONS \
+              $EXTRA_CONFIG \
+              $CURL_CONFIG
+          else
+            ./configure \
+              --prefix="$INSTALL_PREFIX" \
+              --disable-debug \
+              --enable-shared \
+              --with-pic \
+              $FINAL_EXTENSIONS \
+              $EXTRA_CONFIG \
+              $CURL_CONFIG
+          fi
 
           # Check the generated Makefile for C++ flags
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
