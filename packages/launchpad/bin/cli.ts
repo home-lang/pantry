@@ -1,7 +1,5 @@
 #!/usr/bin/env bun
 // Set CLI mode to prevent fake binaries in normal usage
-process.env.LAUNCHPAD_CLI_MODE = '1'
-
 import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
@@ -18,6 +16,8 @@ import { formatSearchResults, getPopularPackages, searchPackages } from '../src/
 import { create_shim, shim_dir } from '../src/shim'
 import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, searchPackagesByTag } from '../src/tags'
 import { addToPath, isInPath } from '../src/utils'
+
+process.env.LAUNCHPAD_CLI_MODE = '1'
 // Import package.json for version
 const packageJson = await import('../package.json')
 const version = packageJson.default?.version || packageJson.version || '0.0.0'
