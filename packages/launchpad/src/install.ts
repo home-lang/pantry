@@ -2964,17 +2964,7 @@ async function installPackage(packageName: string, packageSpec: string, installP
     catch (error) {
       if (config.verbose) {
         console.log(`⚠️ Binary download failed: ${error instanceof Error ? error.message : String(error)}`)
-        console.log('🔄 Falling back to source build...')
       }
-    }
-
-    // Fallback to source build if binary download fails
-    if (config.verbose) {
-      console.warn(`Building PHP from source for ${name}`)
-    }
-    else {
-      // Show clean progress like other packages
-      console.log('🔄 Installing PHP from source...')
     }
 
     // CRITICAL: Install ALL PHP dependencies FIRST before building
@@ -2982,38 +2972,8 @@ async function installPackage(packageName: string, packageSpec: string, installP
       console.log('🔧 Setting up build environment for PHP...')
     }
 
-    // Install all PHP dependencies from ts-pkgx (includes build tools and runtime deps)
-    // PHP build dependencies are no longer needed with precompiled binaries
-
-    if (config.verbose) {
-      console.log('✅ All PHP dependencies ready - starting build...')
-    }
     throw new Error('Source builds are no longer supported. Use precompiled binaries instead.')
   }
-
-  // Special handling for zlib - disabled, let ts-pkgx handle it
-  // if (name === 'zlib' || domain === 'zlib.net') {
-  //   if (config.verbose) {
-  //     console.warn(`Building zlib from source to fix broken dependencies for ${name}`)
-  //   }
-  //   return await buildZlibFromSource(installPath, requestedVersion)
-  // }
-
-  // Special handling for libpng - disabled, let ts-pkgx handle it
-  // if (name === 'libpng' || domain === 'libpng.org') {
-  //   if (config.verbose) {
-  //     console.warn(`Building libpng from source to fix broken package for ${name}`)
-  //   }
-  //   return await buildLibpngFromSource(installPath, requestedVersion)
-  // }
-
-  // Special handling for GMP - disabled, let ts-pkgx handle it
-  // if (name === 'gmp' || domain === 'gnu.org/gmp') {
-  //   if (config.verbose) {
-  //     console.warn(`Building GMP from source to fix broken package for ${name}`)
-  //   }
-  //   return await buildGmpFromSource(installPath, requestedVersion)
-  // }
 
   if (config.verbose) {
     console.warn(`Resolved ${name} to domain: ${domain}`)
