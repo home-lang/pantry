@@ -201,6 +201,11 @@ jobs:
           echo "Checking OpenLDAP installation:"
           ls -la $(brew --prefix openldap)/include/ldap.h || echo "ldap.h not found in expected location"
           ls -la $(brew --prefix openldap)/lib/libldap.* || echo "libldap not found in expected location"
+          ls -la $(brew --prefix openldap)/lib/liblber.* || echo "liblber not found in expected location"
+          echo "OpenLDAP include directory contents:"
+          ls -la $(brew --prefix openldap)/include/ | head -10
+          echo "OpenLDAP lib directory contents:"
+          ls -la $(brew --prefix openldap)/lib/ | head -10
 
           # Create symlinks to help PHP find readline, bzip2, gettext, and openldap
           echo "Creating symlinks for readline, bzip2, gettext, and openldap:"
@@ -214,6 +219,7 @@ jobs:
           sudo ln -sf $(brew --prefix gettext)/lib/libintl.* /usr/local/lib/
           sudo ln -sf $(brew --prefix openldap)/include/ldap.h /usr/local/include/ldap.h
           sudo ln -sf $(brew --prefix openldap)/lib/libldap.* /usr/local/lib/
+          sudo ln -sf $(brew --prefix openldap)/lib/liblber.* /usr/local/lib/
 
       - name: Create build configuration
         run: |
@@ -359,9 +365,35 @@ jobs:
             export GETTEXT_CFLAGS="-I$(brew --prefix gettext)/include"
             export GETTEXT_LIBS="-L$(brew --prefix gettext)/lib -lintl"
 
-            # Set OpenLDAP environment variables
-            export LDAP_CFLAGS="-I$(brew --prefix openldap)/include"
-            export LDAP_LIBS="-L$(brew --prefix openldap)/lib -lldap -llber"
+            # Check if both LDAP libraries are available
+            echo "Debug: Checking for lber library:"
+            ls -la $(brew --prefix openldap)/lib/liblber.* 2>/dev/null || echo "  lber library not found"
+            echo "Debug: Checking for ldap library:"
+            ls -la $(brew --prefix openldap)/lib/libldap.* 2>/dev/null || echo "  ldap library not found"
+
+            if [[ -f "$(brew --prefix openldap)/lib/liblber.dylib" ]] && [[ -f "$(brew --prefix openldap)/lib/libldap.dylib" ]]; then
+              echo "Both LDAP libraries found, enabling LDAP support"
+              LDAP_AVAILABLE=true
+            else
+              echo "LDAP libraries not found, disabling LDAP support"
+              LDAP_AVAILABLE=false
+              # Remove LDAP from CONFIGURE_EXTENSIONS
+              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-ldap//g' | sed 's/  */ /g')
+              echo "Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
+            fi
+
+            # Set OpenLDAP environment variables (only if libraries are available)
+            if [[ "$LDAP_AVAILABLE" == "true" ]]; then
+              export LDAP_CFLAGS="-I$(brew --prefix openldap)/include"
+              export LDAP_LIBS="-L$(brew --prefix openldap)/lib -lldap -llber"
+              echo "Debug: LDAP_CFLAGS=$LDAP_CFLAGS"
+              echo "Debug: LDAP_LIBS=$LDAP_LIBS"
+            else
+              # Clear LDAP environment variables if not available
+              unset LDAP_CFLAGS
+              unset LDAP_LIBS
+              echo "Debug: LDAP environment variables cleared"
+            fi
 
             # Set C++17 flag for ICU4C compatibility
             export CXXFLAGS="$CXXFLAGS -std=c++17"
