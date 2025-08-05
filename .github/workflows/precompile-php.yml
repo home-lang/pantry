@@ -395,8 +395,14 @@ jobs:
               echo "Debug: LDAP environment variables cleared"
             fi
 
-            # Set C++17 flag for ICU4C compatibility
-            export CXXFLAGS="$CXXFLAGS -std=c++17"
+            # Set C++17 flag for ICU4C compatibility - set explicitly
+            export CXXFLAGS="-std=c++17 -stdlib=libc++"
+            export CFLAGS="-std=c++17"
+            export CPPFLAGS="$CPPFLAGS -std=c++17"
+            echo "Set C++17 flags for configure step"
+            echo "CXXFLAGS: $CXXFLAGS"
+            echo "CFLAGS: $CFLAGS"
+            echo "CPPFLAGS: $CPPFLAGS"
 
             # Try to find readline.h and set the path explicitly
             READLINE_PATH=$(brew --prefix readline)
@@ -472,6 +478,14 @@ jobs:
             echo "Final extensions: $FINAL_EXTENSIONS"
           fi
 
+          # Add C++17 configure option for macOS
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            CONFIGURE_CXX="CXXFLAGS=-std=c++17 -stdlib=libc++ CFLAGS=-std=c++17"
+            echo "Using C++17 configure flags: $CONFIGURE_CXX"
+          else
+            CONFIGURE_CXX=""
+          fi
+
           ./configure \
             --prefix="$INSTALL_PREFIX" \
             --disable-debug \
@@ -479,7 +493,8 @@ jobs:
             --with-pic \
             $FINAL_EXTENSIONS \
             $EXTRA_CONFIG \
-            $CURL_CONFIG
+            $CURL_CONFIG \
+            $CONFIGURE_CXX
 
       - name: Build PHP
         run: |
@@ -488,9 +503,11 @@ jobs:
           # Use all available CPU cores for faster builds
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             JOBS=$(sysctl -n hw.ncpu)
-            # Ensure C++17 is used during build
-            export CXXFLAGS="$CXXFLAGS -std=c++17"
-            export CFLAGS="$CFLAGS -std=c++17"
+            # Ensure C++17 is used during build - set explicitly
+            export CXXFLAGS="-std=c++17 -stdlib=libc++"
+            export CFLAGS="-std=c++17"
+            export CPPFLAGS="$CPPFLAGS -std=c++17"
+            echo "Set C++17 flags for macOS build"
           else
             JOBS=$(nproc)
           fi
@@ -498,6 +515,20 @@ jobs:
           echo "Building PHP with $JOBS parallel jobs"
           echo "CXXFLAGS: $CXXFLAGS"
           echo "CFLAGS: $CFLAGS"
+          echo "CPPFLAGS: $CPPFLAGS"
+
+          # Show compiler version and flags
+          echo "Compiler info:"
+          which gcc || which clang || echo "No compiler found"
+          gcc --version 2>/dev/null || clang --version 2>/dev/null || echo "Could not get compiler version"
+
+          # Check available C++ standards
+          echo "Checking available C++ standards:"
+          if command -v clang++ >/dev/null 2>&1; then
+            echo "Available C++ standards for clang++:"
+            clang++ --help | grep -E "std=" || echo "Could not determine available standards"
+          fi
+
           make -j$JOBS
 
       - name: Install PHP
