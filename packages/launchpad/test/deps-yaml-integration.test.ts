@@ -243,8 +243,8 @@ services:
   })
 
   it('should properly clean up only project environments in tests', () => {
-    // Create mock environment directories
-    const launchpadDir = path.join(tempDir, '.local', 'share', 'launchpad')
+    // Create mock environment directories in the actual home directory where cleanup expects them
+    const launchpadDir = path.join(os.homedir(), '.local', 'share', 'launchpad')
     const envsDir = path.join(launchpadDir, 'envs')
     const globalDir = path.join(launchpadDir, 'global')
 

@@ -2954,11 +2954,8 @@ async function installPackage(packageName: string, packageSpec: string, installP
         return await downloadPhpBinary(installPath, requestedVersion)
       }
       else {
-        // Show clean message when falling back to source build
-        console.log('🔧 Custom extensions detected: falling back to source build')
-        if (config.verbose) {
-          console.log('⚠️ Precompiled binaries not available, falling back to source build...')
-        }
+        console.warn('🔧 Custom extensions detected: falling back to source build. Nudge us or open an issue if you need this!')
+        throw new Error('Source builds are no longer supported. Use precompiled binaries instead. If you need this, nudge us or open an issue!')
       }
     }
     catch (error) {
