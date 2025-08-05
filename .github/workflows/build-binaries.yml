@@ -313,6 +313,140 @@ jobs:
             else
               echo "Launchpad bzip2 not found, using system bzip2"
             fi
+
+                        # Check libzip compatibility and handle zip extension
+            LAUNCHPAD_LIBZIP_DIR="$HOME/.local/share/launchpad/global/libzip.org"
+            if [[ -d "$LAUNCHPAD_LIBZIP_DIR" ]]; then
+              # Find the latest version
+              LIBZIP_VERSION=$(ls "$LAUNCHPAD_LIBZIP_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$LIBZIP_VERSION" ]]; then
+                LIBZIP_PATH="$LAUNCHPAD_LIBZIP_DIR/$LIBZIP_VERSION"
+                echo "Found launchpad libzip at: $LIBZIP_PATH"
+
+                # Check if this libzip version is compatible with PHP 8.4
+                # PHP 8.4 requires libzip >= 1.8.0 for full compatibility
+                if [[ "$LIBZIP_VERSION" =~ v1\.([0-9]+)\.([0-9]+) ]]; then
+                  MAJOR_VERSION="${BASH_REMATCH[1]}"
+                  MINOR_VERSION="${BASH_REMATCH[2]}"
+                  if [[ "$MAJOR_VERSION" -ge 1 && "$MINOR_VERSION" -ge 8 ]]; then
+                    echo "✓ libzip version $LIBZIP_VERSION is compatible with PHP 8.4"
+                    EXTRA_CONFIG="$EXTRA_CONFIG --with-libzip=$LIBZIP_PATH"
+                  else
+                    echo "⚠️  libzip version $LIBZIP_VERSION may not be fully compatible with PHP 8.4"
+                    echo "   Disabling zip extension to avoid build issues"
+                    EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+                  fi
+                elif [[ "$LIBZIP_VERSION" =~ v1\.([0-9]+) ]]; then
+                  # Handle version format like v1.9.2
+                  MAJOR_VERSION="${BASH_REMATCH[1]}"
+                  if [[ "$MAJOR_VERSION" -ge 1 ]]; then
+                    echo "✓ libzip version $LIBZIP_VERSION is compatible with PHP 8.4"
+                    EXTRA_CONFIG="$EXTRA_CONFIG --with-libzip=$LIBZIP_PATH"
+                  else
+                    echo "⚠️  libzip version $LIBZIP_VERSION may not be fully compatible with PHP 8.4"
+                    echo "   Disabling zip extension to avoid build issues"
+                    EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+                  fi
+                else
+                  echo "⚠️  Could not determine libzip version, disabling zip extension"
+                  EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+                fi
+              else
+                echo "No libzip version found in $LAUNCHPAD_LIBZIP_DIR"
+                echo "Disabling zip extension"
+                EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+              fi
+            else
+              echo "Launchpad libzip not found, checking system libzip"
+              # Check system libzip version
+              if pkg-config --exists libzip; then
+                LIBZIP_VERSION=$(pkg-config --modversion libzip)
+                echo "System libzip version: $LIBZIP_VERSION"
+                # If system libzip is too old, disable zip extension
+                if [[ "$LIBZIP_VERSION" =~ ^([0-9]+)\.([0-9]+) ]]; then
+                  MAJOR_VERSION="${BASH_REMATCH[1]}"
+                  MINOR_VERSION="${BASH_REMATCH[2]}"
+                  if [[ "$MAJOR_VERSION" -ge 1 && "$MINOR_VERSION" -ge 8 ]]; then
+                    echo "✓ System libzip version $LIBZIP_VERSION is compatible"
+                  else
+                    echo "⚠️  System libzip version $LIBZIP_VERSION is too old, disabling zip extension"
+                    EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+                  fi
+                else
+                  echo "⚠️  Could not determine system libzip version, disabling zip extension"
+                  EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+                fi
+              else
+                echo "No system libzip found, disabling zip extension"
+                EXTRA_CONFIG="$EXTRA_CONFIG --disable-zip"
+              fi
+            fi
+
+            # Find launchpad-installed GMP for bcmath extension
+            LAUNCHPAD_GMP_DIR="$HOME/.local/share/launchpad/global/gnu.org/gmp"
+            if [[ -d "$LAUNCHPAD_GMP_DIR" ]]; then
+              GMP_VERSION=$(ls "$LAUNCHPAD_GMP_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$GMP_VERSION" ]]; then
+                GMP_PATH="$LAUNCHPAD_GMP_DIR/$GMP_VERSION"
+                echo "Found launchpad GMP at: $GMP_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-gmp=$GMP_PATH"
+              fi
+            fi
+
+            # Find launchpad-installed libsodium for sodium extension
+            LAUNCHPAD_SODIUM_DIR="$HOME/.local/share/launchpad/global/libsodium.org"
+            if [[ -d "$LAUNCHPAD_SODIUM_DIR" ]]; then
+              SODIUM_VERSION=$(ls "$LAUNCHPAD_SODIUM_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$SODIUM_VERSION" ]]; then
+                SODIUM_PATH="$LAUNCHPAD_SODIUM_DIR/$SODIUM_VERSION"
+                echo "Found launchpad libsodium at: $SODIUM_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-sodium=$SODIUM_PATH"
+              fi
+            fi
+
+            # Find launchpad-installed oniguruma for mbstring extension
+            LAUNCHPAD_ONIGURUMA_DIR="$HOME/.local/share/launchpad/global/github.com/kkos/oniguruma"
+            if [[ -d "$LAUNCHPAD_ONIGURUMA_DIR" ]]; then
+              ONIGURUMA_VERSION=$(ls "$LAUNCHPAD_ONIGURUMA_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$ONIGURUMA_VERSION" ]]; then
+                ONIGURUMA_PATH="$LAUNCHPAD_ONIGURUMA_DIR/$ONIGURUMA_VERSION"
+                echo "Found launchpad oniguruma at: $ONIGURUMA_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-onig=$ONIGURUMA_PATH"
+              fi
+            fi
+
+            # Find launchpad-installed libxml2 for XML extension
+            LAUNCHPAD_LIBXML2_DIR="$HOME/.local/share/launchpad/global/gnome.org/libxml2"
+            if [[ -d "$LAUNCHPAD_LIBXML2_DIR" ]]; then
+              LIBXML2_VERSION=$(ls "$LAUNCHPAD_LIBXML2_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$LIBXML2_VERSION" ]]; then
+                LIBXML2_PATH="$LAUNCHPAD_LIBXML2_DIR/$LIBXML2_VERSION"
+                echo "Found launchpad libxml2 at: $LIBXML2_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-libxml-dir=$LIBXML2_PATH"
+              fi
+            fi
+
+            # Find launchpad-installed libxslt for XSLT extension
+            LAUNCHPAD_LIBXSLT_DIR="$HOME/.local/share/launchpad/global/gnome.org/libxslt"
+            if [[ -d "$LAUNCHPAD_LIBXSLT_DIR" ]]; then
+              LIBXSLT_VERSION=$(ls "$LAUNCHPAD_LIBXSLT_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$LIBXSLT_VERSION" ]]; then
+                LIBXSLT_PATH="$LAUNCHPAD_LIBXSLT_DIR/$LIBXSLT_VERSION"
+                echo "Found launchpad libxslt at: $LIBXSLT_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-xsl=$LIBXSLT_PATH"
+              fi
+            fi
+
+            # Find launchpad-installed openldap for LDAP extension
+            LAUNCHPAD_OPENLDAP_DIR="$HOME/.local/share/launchpad/global/openldap.org"
+            if [[ -d "$LAUNCHPAD_OPENLDAP_DIR" ]]; then
+              OPENLDAP_VERSION=$(ls "$LAUNCHPAD_OPENLDAP_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$OPENLDAP_VERSION" ]]; then
+                OPENLDAP_PATH="$LAUNCHPAD_OPENLDAP_DIR/$OPENLDAP_VERSION"
+                echo "Found launchpad openldap at: $OPENLDAP_PATH"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-ldap=$OPENLDAP_PATH"
+              fi
+            fi
           fi
 
           echo "Configuring PHP with:"
@@ -395,6 +529,66 @@ jobs:
                     echo "✓ bzlib.h found in launchpad: $BZIP2_INCLUDE/bzlib.h"
                   else
                     echo "⚠️  bzlib.h not found in launchpad include path"
+                  fi
+                fi
+              fi
+            fi
+
+            # Check if libzip headers are available
+            if [[ -f "/usr/include/zip.h" ]] || [[ -f "/usr/local/include/zip.h" ]]; then
+              echo "✓ zip.h found in system include paths"
+            else
+              echo "⚠️  zip.h not found in system include paths"
+              # Check if we can find it in launchpad paths
+              LAUNCHPAD_LIBZIP_DIR="$HOME/.local/share/launchpad/global/libzip.org"
+              if [[ -d "$LAUNCHPAD_LIBZIP_DIR" ]]; then
+                LIBZIP_VERSION=$(ls "$LAUNCHPAD_LIBZIP_DIR" | grep "^v" | sort -V | tail -1)
+                if [[ -n "$LIBZIP_VERSION" ]]; then
+                  LIBZIP_INCLUDE="$LAUNCHPAD_LIBZIP_DIR/$LIBZIP_VERSION/include"
+                  if [[ -f "$LIBZIP_INCLUDE/zip.h" ]]; then
+                    echo "✓ zip.h found in launchpad: $LIBZIP_INCLUDE/zip.h"
+                  else
+                    echo "⚠️  zip.h not found in launchpad include path"
+                  fi
+                fi
+              fi
+            fi
+
+            # Check if GMP headers are available
+            if [[ -f "/usr/include/gmp.h" ]] || [[ -f "/usr/local/include/gmp.h" ]]; then
+              echo "✓ gmp.h found in system include paths"
+            else
+              echo "⚠️  gmp.h not found in system include paths"
+              # Check if we can find it in launchpad paths
+              LAUNCHPAD_GMP_DIR="$HOME/.local/share/launchpad/global/gnu.org/gmp"
+              if [[ -d "$LAUNCHPAD_GMP_DIR" ]]; then
+                GMP_VERSION=$(ls "$LAUNCHPAD_GMP_DIR" | grep "^v" | sort -V | tail -1)
+                if [[ -n "$GMP_VERSION" ]]; then
+                  GMP_INCLUDE="$LAUNCHPAD_GMP_DIR/$GMP_VERSION/include"
+                  if [[ -f "$GMP_INCLUDE/gmp.h" ]]; then
+                    echo "✓ gmp.h found in launchpad: $GMP_INCLUDE/gmp.h"
+                  else
+                    echo "⚠️  gmp.h not found in launchpad include path"
+                  fi
+                fi
+              fi
+            fi
+
+            # Check if libxml2 headers are available
+            if [[ -f "/usr/include/libxml2/libxml/xmlversion.h" ]] || [[ -f "/usr/local/include/libxml2/libxml/xmlversion.h" ]]; then
+              echo "✓ libxml2 headers found in system include paths"
+            else
+              echo "⚠️  libxml2 headers not found in system include paths"
+              # Check if we can find it in launchpad paths
+              LAUNCHPAD_LIBXML2_DIR="$HOME/.local/share/launchpad/global/gnome.org/libxml2"
+              if [[ -d "$LAUNCHPAD_LIBXML2_DIR" ]]; then
+                LIBXML2_VERSION=$(ls "$LAUNCHPAD_LIBXML2_DIR" | grep "^v" | sort -V | tail -1)
+                if [[ -n "$LIBXML2_VERSION" ]]; then
+                  LIBXML2_INCLUDE="$LAUNCHPAD_LIBXML2_DIR/$LIBXML2_VERSION/include"
+                  if [[ -f "$LIBXML2_INCLUDE/libxml2/libxml/xmlversion.h" ]]; then
+                    echo "✓ libxml2 headers found in launchpad: $LIBXML2_INCLUDE/libxml2/libxml/xmlversion.h"
+                  else
+                    echo "⚠️  libxml2 headers not found in launchpad include path"
                   fi
                 fi
               fi
