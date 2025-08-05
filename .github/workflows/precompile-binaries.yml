@@ -269,9 +269,10 @@ jobs:
             export LDFLAGS="$LDFLAGS -L$(brew --prefix readline)/lib"
             export LIBS="$LIBS -lreadline"
 
-            # Set PostgreSQL environment variables
+            # Set PostgreSQL environment variables and PATH
             export PGSQL_CFLAGS="-I$(brew --prefix postgresql@15)/include"
             export PGSQL_LIBS="-L$(brew --prefix postgresql@15)/lib -lpq"
+            export PATH="$(brew --prefix postgresql@15)/bin:$PATH"
 
             # Set bzip2 environment variables
             export BZIP2_CFLAGS="-I$(brew --prefix bzip2)/include"
@@ -285,6 +286,16 @@ jobs:
             else
               echo "readline.h not found, disabling readline support"
               EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --disable-readline"
+            fi
+
+            # Check if PostgreSQL is available and working
+            if which pg_config >/dev/null 2>&1 && [[ -f "$(brew --prefix postgresql@15)/include/libpq-fe.h" ]]; then
+              echo "PostgreSQL found and working"
+            else
+              echo "PostgreSQL not found or not working, will disable PostgreSQL support"
+              # Remove PostgreSQL extensions from CONFIGURE_EXTENSIONS
+              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
+              echo "Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
             fi
           else
             # On Linux, use system-installed libraries
@@ -307,6 +318,16 @@ jobs:
             echo "  LDFLAGS: $LDFLAGS"
             echo "  Checking if readline.h exists:"
             find $(brew --prefix) -name "readline.h" 2>/dev/null || echo "  No readline.h found"
+
+            echo "Debug: Checking PostgreSQL installation on macOS:"
+            echo "  PGSQL_CFLAGS: $PGSQL_CFLAGS"
+            echo "  PGSQL_LIBS: $PGSQL_LIBS"
+            echo "  PATH: $PATH"
+            echo "  Checking if pg_config is available:"
+            which pg_config || echo "  pg_config not found in PATH"
+            pg_config --version 2>/dev/null || echo "  pg_config version check failed"
+            echo "  Checking if libpq-fe.h exists:"
+            find $(brew --prefix) -name "libpq-fe.h" 2>/dev/null || echo "  No libpq-fe.h found"
           fi
 
           # Check if libcurl is found via pkg-config
