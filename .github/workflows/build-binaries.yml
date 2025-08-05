@@ -111,6 +111,8 @@ jobs:
           echo "  - Platform: linux"
           echo "  - Architecture: $(uname -m)"
           echo "  - Network connectivity test:"
+          # Temporarily modify PATH to prioritize system binaries over launchpad binaries
+          export PATH="/usr/bin:/usr/local/bin:/bin:$PATH"
           curl -I --connect-timeout 10 https://dist.pkgx.dev/ || echo "  ⚠️ Network connectivity issues detected"
 
           # Set environment variables for better debugging
@@ -155,9 +157,11 @@ jobs:
           # Install PHP dependencies via Launchpad with enhanced debugging
           echo "🔧 Installing PHP dependencies via Launchpad..."
           echo "🔍 Debug info:"
-          echo "  - Platform: linux"
+          echo "  - Platform: darwin"
           echo "  - Architecture: $(uname -m)"
           echo "  - Network connectivity test:"
+          # Temporarily modify PATH to prioritize system binaries over launchpad binaries
+          export PATH="/usr/bin:/usr/local/bin:/bin:$PATH"
           curl -I --connect-timeout 10 https://dist.pkgx.dev/ || echo "  ⚠️ Network connectivity issues detected"
 
           # Set environment variables for better debugging
@@ -233,6 +237,10 @@ jobs:
       - name: Download and extract PHP source
         run: |
           cd ${{ env.BUILD_DIR }}
+          # Temporarily modify PATH to prioritize system binaries over launchpad binaries
+          # This prevents conflicts with launchpad-installed binaries that may have library dependencies
+          export PATH="/usr/bin:/usr/local/bin:/bin:$PATH"
+          # Use system curl instead of launchpad curl to avoid library conflicts
           curl -fsSL "https://www.php.net/distributions/php-${{ matrix.php_version }}.tar.gz" -o php.tar.gz
           tar -xzf php.tar.gz
           cd php-${{ matrix.php_version }}

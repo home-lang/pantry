@@ -303,17 +303,61 @@ export async function installPackage(packageName: string, packageSpec: string, i
   }
 
   // Download and install
-  const installedFiles = await downloadPackage(domain, version, os, architecture, installPath)
+  try {
+    const installedFiles = await downloadPackage(domain, version, os, architecture, installPath)
 
-  // Create common library symlinks for better compatibility
-  const packageDir = path.join(installPath, domain, `v${version}`)
-  await createLibrarySymlinks(packageDir, domain)
+    // Create common library symlinks for better compatibility
+    const packageDir = path.join(installPath, domain, `v${version}`)
+    await createLibrarySymlinks(packageDir, domain)
 
-  if (config.verbose) {
-    console.log(`Successfully installed ${domain} v${version}`)
+    if (config.verbose) {
+      console.log(`Successfully installed ${domain} v${version}`)
+    }
+
+    return installedFiles
   }
+  catch (error) {
+    // Special fallback for gnu.org/binutils - try lower version if 2.45.0 fails
+    if (domain === 'gnu.org/binutils' && version === '2.45.0') {
+      const fallbackVersions = ['2.44.0', '2.43.0', '2.42.0']
 
-  return installedFiles
+      for (const fallbackVersion of fallbackVersions) {
+        if (config.verbose) {
+          console.warn(`⚠️  Version ${version} not available, trying fallback version ${fallbackVersion}`)
+        }
+
+        try {
+          const installedFiles = await downloadPackage(domain, fallbackVersion, os, architecture, installPath)
+
+          // Create common library symlinks for better compatibility
+          const packageDir = path.join(installPath, domain, `v${fallbackVersion}`)
+          await createLibrarySymlinks(packageDir, domain)
+
+          if (config.verbose) {
+            console.log(`✅ Successfully installed ${domain} v${fallbackVersion} (fallback from v${version})`)
+          }
+
+          return installedFiles
+        }
+        catch {
+          if (config.verbose) {
+            console.warn(`⚠️  Fallback version ${fallbackVersion} also failed, trying next...`)
+          }
+          continue
+        }
+      }
+
+      // If all fallback versions failed
+      if (config.verbose) {
+        console.error(`❌ All versions failed for ${domain}: ${version}, ${fallbackVersions.join(', ')}`)
+        console.error(`   Original error: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      throw error // Re-throw the original error
+    }
+
+    // Re-throw the original error for other packages
+    throw error
+  }
 }
 
 /**
