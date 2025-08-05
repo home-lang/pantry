@@ -4095,7 +4095,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
   await fs.promises.mkdir(targetPath, { recursive: true })
 
   const allInstalledFiles: string[] = []
-  let totalDepsProcessed = 0
+  // const totalDepsProcessed = 0
   let totalDepsAlreadyInstalled = 0
 
   try {

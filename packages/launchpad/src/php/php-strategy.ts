@@ -79,9 +79,6 @@ export class SourceBuildPHPStrategy implements PHPStrategy {
   }
 
   async install(): Promise<PHPInstallResult> {
-    const path = await import('node:path')
-    const os = await import('node:os')
-
     try {
       // Get the latest PHP version dynamically
       const latestVersion = await getLatestPHPVersion()
