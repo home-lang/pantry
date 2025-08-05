@@ -443,7 +443,7 @@ jobs:
           path: ${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}.tar.gz
           retention-days: 90
 
-      - name: Upload to GitHub Container Registry
+      - name: Upload to GitHub Container Registry (Linux)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.platform == 'linux'
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USERNAME }} --password-stdin
