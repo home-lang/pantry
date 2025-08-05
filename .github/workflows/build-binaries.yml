@@ -306,19 +306,44 @@ jobs:
               if [[ -n "$BZIP2_VERSION" ]]; then
                 BZIP2_PATH="$LAUNCHPAD_BZIP2_DIR/$BZIP2_VERSION"
                 echo "Found launchpad bzip2 at: $BZIP2_PATH"
-                # Check if bzlib.h exists in the include directory
-                if [[ -f "$BZIP2_PATH/include/bzlib.h" ]]; then
-                  echo "✓ bzlib.h found at $BZIP2_PATH/include/bzlib.h"
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
-                else
-                  echo "⚠️  bzlib.h not found at $BZIP2_PATH/include/bzlib.h"
-                  echo "   Using system bzip2 instead"
+
+                # Check multiple possible locations for bzlib.h
+                BZLIB_FOUND=false
+                for include_path in "$BZIP2_PATH/include/bzlib.h" "$BZIP2_PATH/include/bzip2/bzlib.h" "$BZIP2_PATH/bzlib.h"; do
+                  if [[ -f "$include_path" ]]; then
+                    echo "✓ bzlib.h found at $include_path"
+                    EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
+                    BZLIB_FOUND=true
+                    break
+                  fi
+                done
+
+                if [[ "$BZLIB_FOUND" == "false" ]]; then
+                  echo "⚠️  bzlib.h not found in expected locations:"
+                  echo "   - $BZIP2_PATH/include/bzlib.h"
+                  echo "   - $BZIP2_PATH/include/bzip2/bzlib.h"
+                  echo "   - $BZIP2_PATH/bzlib.h"
+                  echo "   Checking what files exist in include directory:"
+                  if [[ -d "$BZIP2_PATH/include" ]]; then
+                    ls -la "$BZIP2_PATH/include/" || echo "Could not list include directory"
+                  fi
+                  echo "   Disabling bzip2 support"
+                  EXTRA_CONFIG="$EXTRA_CONFIG --disable-bz2"
                 fi
               else
                 echo "No bzip2 version found in $LAUNCHPAD_BZIP2_DIR"
+                echo "Disabling bzip2 support"
+                EXTRA_CONFIG="$EXTRA_CONFIG --disable-bz2"
               fi
             else
-              echo "Launchpad bzip2 not found, using system bzip2"
+              echo "Launchpad bzip2 not found, checking system bzip2"
+              # Check if system bzip2 is available
+              if [[ -f "/usr/include/bzlib.h" ]] || [[ -f "/usr/local/include/bzlib.h" ]]; then
+                echo "✓ System bzip2 headers found"
+              else
+                echo "⚠️  No bzip2 headers found, disabling bzip2 support"
+                EXTRA_CONFIG="$EXTRA_CONFIG --disable-bz2"
+              fi
             fi
 
                         # Check libzip compatibility and handle zip extension
@@ -455,19 +480,32 @@ jobs:
               fi
             fi
 
-            # Clean up EXTRA_CONFIG to remove any duplicate options
+            # Clean up EXTRA_CONFIG to remove any duplicate options and validate
             echo "Cleaning up EXTRA_CONFIG to remove duplicates..."
-            # Remove duplicate --with-* options
+            # Remove duplicate --with-* options and validate
             CLEANED_EXTRA_CONFIG=""
             for option in $EXTRA_CONFIG; do
+              # Skip empty options
+              if [[ -z "$option" ]]; then
+                echo "Skipping empty option"
+                continue
+              fi
+
               if [[ "$option" =~ ^--with- ]]; then
                 # Extract the option name (e.g., --with-bz2, --with-iconv)
                 option_name=$(echo "$option" | cut -d'=' -f1)
-                # Only add if not already present
-                if [[ "$CLEANED_EXTRA_CONFIG" != *"$option_name"* ]]; then
-                  CLEANED_EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG $option"
+                # Only add if not already present and has a value
+                if [[ "$CLEANED_EXTRA_CONFIG" != *"$option_name"* ]] && [[ "$option" =~ = ]]; then
+                  # Validate that the path exists
+                  option_path=$(echo "$option" | cut -d'=' -f2-)
+                  if [[ -d "$option_path" ]]; then
+                    CLEANED_EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG $option"
+                    echo "Added valid option: $option"
+                  else
+                    echo "Skipping invalid path: $option (path does not exist: $option_path)"
+                  fi
                 else
-                  echo "Removing duplicate option: $option"
+                  echo "Removing duplicate or invalid option: $option"
                 fi
               else
                 CLEANED_EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG $option"
@@ -475,6 +513,24 @@ jobs:
             done
             EXTRA_CONFIG="$CLEANED_EXTRA_CONFIG"
             echo "Cleaned EXTRA_CONFIG: $EXTRA_CONFIG"
+
+            # Final validation: ensure no empty or problematic options
+            FINAL_EXTRA_CONFIG=""
+            for option in $EXTRA_CONFIG; do
+              # Skip empty or whitespace-only options
+              if [[ -z "${option// }" ]]; then
+                echo "Removing empty option"
+                continue
+              fi
+              # Skip options that might cause issues
+              if [[ "$option" =~ ^--with-[^=]+$ ]]; then
+                echo "Removing option without value: $option"
+                continue
+              fi
+              FINAL_EXTRA_CONFIG="$FINAL_EXTRA_CONFIG $option"
+            done
+            EXTRA_CONFIG="$FINAL_EXTRA_CONFIG"
+            echo "Final EXTRA_CONFIG: $EXTRA_CONFIG"
           fi
 
           echo "Configuring PHP with:"
