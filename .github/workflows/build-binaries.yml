@@ -263,8 +263,24 @@ jobs:
             # On macOS, point to Homebrew iconv installation
             EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv)"
           else
-            # On Linux, explicitly enable iconv (usually available in system)
-            EXTRA_CONFIG="--with-iconv"
+            # On Linux, use launchpad-installed iconv
+            # Find the launchpad iconv installation
+            LAUNCHPAD_ICONV_DIR="$HOME/.local/share/launchpad/global/gnu.org/libiconv"
+            if [[ -d "$LAUNCHPAD_ICONV_DIR" ]]; then
+              # Find the latest version
+              ICONV_VERSION=$(ls "$LAUNCHPAD_ICONV_DIR" | grep "^v" | sort -V | tail -1)
+              if [[ -n "$ICONV_VERSION" ]]; then
+                ICONV_PATH="$LAUNCHPAD_ICONV_DIR/$ICONV_VERSION"
+                echo "Found launchpad iconv at: $ICONV_PATH"
+                EXTRA_CONFIG="--with-iconv=$ICONV_PATH"
+              else
+                echo "No iconv version found in $LAUNCHPAD_ICONV_DIR"
+                EXTRA_CONFIG="--with-iconv"
+              fi
+            else
+              echo "Launchpad iconv not found, using system iconv"
+              EXTRA_CONFIG="--with-iconv"
+            fi
           fi
 
           echo "Configuring PHP with:"
@@ -301,6 +317,18 @@ jobs:
           pkg-config --exists libxml-2.0 && echo "✓ libxml-2.0 found" || echo "✗ libxml-2.0 not found"
           pkg-config --exists sqlite3 && echo "✓ sqlite3 found" || echo "✗ sqlite3 not found"
 
+          # Ensure launchpad iconv is properly linked and available
+          if [[ "${{ matrix.platform }}" != "darwin" ]]; then
+            echo "Ensuring launchpad iconv is properly configured..."
+            # Check if launchpad iconv is available and working
+            if command -v iconv >/dev/null 2>&1; then
+              echo "✓ iconv found in PATH"
+              iconv --version 2>/dev/null | head -1 || echo "iconv version check failed"
+            else
+              echo "⚠️  iconv not found in PATH"
+            fi
+          fi
+
           ./configure \
             --prefix="$INSTALL_PREFIX" \
             --disable-debug \
@@ -308,7 +336,7 @@ jobs:
             --with-pic \
             ${{ env.CONFIGURE_EXTENSIONS }} \
             $EXTRA_CONFIG \
-                        $CURL_CONFIG
+            $CURL_CONFIG
 
       - name: Build PHP
         run: |
