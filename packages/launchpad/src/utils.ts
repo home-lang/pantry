@@ -1,295 +1,42 @@
-import fs, { existsSync } from 'node:fs'
-import { homedir, platform } from 'node:os'
-import path, { join } from 'node:path'
+import type { SupportedArchitecture, SupportedPlatform } from './types'
+import fs from 'node:fs'
+import { arch, platform } from 'node:os'
+import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
+import { getLatestVersion, parsePackageSpec, resolvePackageName } from './package-resolution'
+import { Path } from './path'
+
+// Cache for binary path lookups
+const binaryPathCache = new Map<string, string | null>()
 
 /**
- * Helper function to get a standard PATH environment variable
+ * Get the installation prefix
  */
-export function standardPath(): string {
-  let standardPath = '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'
-
-  // For package managers installed via homebrew
-  let homebrewPrefix = ''
-  switch (platform()) {
-    case 'darwin':
-      homebrewPrefix = '/opt/homebrew' // /usr/local is already in the path
-      break
-    case 'linux':
-      homebrewPrefix = `/home/linuxbrew/.linuxbrew:${homedir()}/.linuxbrew`
-      break
+export function install_prefix(): Path {
+  // Check for test environment override first
+  if (process.env.LAUNCHPAD_PREFIX) {
+    return new Path(process.env.LAUNCHPAD_PREFIX)
   }
 
-  if (homebrewPrefix) {
-    homebrewPrefix = process.env.HOMEBREW_PREFIX ?? homebrewPrefix
-    standardPath = `${homebrewPrefix}/bin:${standardPath}`
+  // Check if there's a configured installation path
+  if (config.installPath)
+    return new Path(config.installPath)
+
+  // if /usr/local is writable, use that
+  if (writable('/usr/local')) {
+    return new Path('/usr/local')
   }
 
-  return standardPath
+  return Path.home().join('.local')
 }
 
 /**
- * Check if a path is already in the PATH environment variable
+ * Check if a directory is writable
  */
-export function isInPath(dir: string): boolean {
-  const PATH = process.env.PATH || ''
-  return PATH.split(path.delimiter).includes(dir)
-}
-
-/**
- * Check if a directory is a temporary directory that shouldn't be added to shell configuration
- */
-export function isTemporaryDirectory(dir: string): boolean {
-  const normalizedDir = path.normalize(dir).toLowerCase()
-
-  // Common temporary directory patterns
-  const tempPatterns = [
-    '/tmp/',
-    '/temp/',
-    '\\tmp\\',
-    '\\temp\\',
-    'launchpad-test-',
-    '/var/folders/', // macOS temp directories
-    process.env.TMPDIR?.toLowerCase() || '',
-    process.env.TEMP?.toLowerCase() || '',
-    process.env.TMP?.toLowerCase() || '',
-  ].filter(Boolean)
-
-  return tempPatterns.some(pattern => normalizedDir.includes(pattern))
-}
-
-/**
- * Add a directory to the user's PATH in their shell configuration file
- * @param dir Directory to add to PATH
- * @returns Whether the operation was successful
- */
-export function addToPath(dir: string): boolean {
-  if (!config.autoAddToPath) {
-    if (config.verbose)
-      console.warn('Skipping adding to PATH (autoAddToPath is disabled)')
-
-    return false
-  }
-
-  // Don't add temporary directories to shell configuration
-  if (isTemporaryDirectory(dir)) {
-    if (config.verbose)
-      console.warn(`Skipping temporary directory: ${dir}`)
-
-    return false
-  }
-
+export function writable(dirPath: string): boolean {
   try {
-    // Handle Windows differently
-    if (platform() === 'win32') {
-      return addToWindowsPath(dir)
-    }
-
-    // Unix systems
-    const home = process.env.HOME || process.env.USERPROFILE || '~'
-    if (home === '~') {
-      if (config.verbose)
-        console.warn('Could not determine home directory')
-
-      return false
-    }
-
-    const exportLine = `export PATH="${dir}:$PATH"`
-
-    // Determine which shell configuration file to use
-    let shellConfigFile = ''
-
-    // Check for zsh
-    if (fs.existsSync(path.join(home, '.zshrc'))) {
-      shellConfigFile = path.join(home, '.zshrc')
-    }
-    // Check for bash
-    else if (fs.existsSync(path.join(home, '.bashrc'))) {
-      shellConfigFile = path.join(home, '.bashrc')
-    }
-    else if (fs.existsSync(path.join(home, '.bash_profile'))) {
-      shellConfigFile = path.join(home, '.bash_profile')
-    }
-
-    if (shellConfigFile) {
-      // Check if the export line already exists
-      const configContent = fs.readFileSync(shellConfigFile, 'utf-8')
-
-      // More comprehensive check for existing PATH entries
-      const pathAlreadyExists = configContent.includes(exportLine)
-        || configContent.includes(`PATH="${dir}:`)
-        || configContent.includes(`PATH=${dir}:`)
-        || configContent.includes(`PATH="$PATH:${dir}"`)
-        || configContent.includes(`PATH=$PATH:${dir}`)
-        || configContent.match(new RegExp(`PATH="[^"]*${dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^"]*"`))
-        || configContent.match(new RegExp(`PATH=[^\\s]*${dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\s]*`))
-
-      if (!pathAlreadyExists) {
-        fs.appendFileSync(shellConfigFile, `\n# Added by launchpad\n${exportLine}\n`)
-
-        if (config.verbose)
-          console.warn(`Added ${dir} to your PATH in ${shellConfigFile}`)
-
-        return true
-      }
-
-      if (config.verbose)
-        console.warn(`${dir} is already in PATH configuration`)
-
-      return true
-    }
-
-    if (config.verbose)
-      console.warn('Could not find shell configuration file')
-
-    return false
-  }
-  catch (error) {
-    if (config.verbose)
-      console.error(`Could not update shell configuration: ${error instanceof Error ? error.message : String(error)}`)
-
-    return false
-  }
-}
-
-/**
- * Add a directory to the Windows PATH environment variable
- * @param dir Directory to add to PATH
- * @returns Whether the operation was successful
- */
-function addToWindowsPath(dir: string): boolean {
-  try {
-    if (config.verbose)
-      console.warn('Adding to Windows PATH requires running a PowerShell command with administrator privileges')
-
-    // We can't directly modify the registry, but we can provide instructions
-    console.warn('To add this directory to your PATH on Windows, run the following in an Administrator PowerShell:')
-    console.warn(`[System.Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';${dir.replace(/\//g, '\\')}', [System.EnvironmentVariableTarget]::Machine)`)
-
-    // We return false since we're just providing instructions
-    return false
-  }
-  catch (error) {
-    if (config.verbose)
-      console.error(`Error providing Windows PATH instructions: ${error instanceof Error ? error.message : String(error)}`)
-
-    return false
-  }
-}
-
-/**
- * Get the user's current shell
- */
-export function getUserShell(): string {
-  return process.env.SHELL || ''
-}
-
-export function getDataDir(): string {
-  const xdgDataHome = process.env.XDG_DATA_HOME
-  if (xdgDataHome) {
-    return path.join(xdgDataHome, 'launchpad', 'dev')
-  }
-
-  const home = process.env.HOME || process.env.USERPROFILE
-  if (!home) {
-    throw new Error('Could not determine home directory')
-  }
-
-  switch (platform()) {
-    case 'darwin':
-      return path.join(home, 'Library', 'Application Support', 'launchpad', 'dev')
-    case 'win32': {
-      const localAppData = process.env.LOCALAPPDATA
-      if (localAppData) {
-        return path.join(localAppData, 'launchpad', 'dev')
-      }
-      return path.join(home, 'AppData', 'Local', 'launchpad', 'dev')
-    }
-    default:
-      return path.join(home, '.local', 'share', 'launchpad', 'dev')
-  }
-}
-
-export async function checkDevStatus(): Promise<boolean> {
-  const cwd = process.cwd()
-  const dataDir = getDataDir()
-  const activationFile = path.join(dataDir, cwd.slice(1), 'dev.launchpad.activated')
-
-  return fs.existsSync(activationFile)
-}
-
-export async function listActiveDevEnvs(): Promise<string[]> {
-  const dataDir = getDataDir()
-  const activeEnvs: string[] = []
-
-  if (!fs.existsSync(dataDir)) {
-    return activeEnvs
-  }
-
-  function walkDir(dir: string, basePath: string = ''): void {
-    try {
-      const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name)
-        const relativePath = path.join(basePath, entry.name)
-
-        if (entry.isDirectory()) {
-          walkDir(fullPath, relativePath)
-        }
-        else if (entry.isFile() && entry.name === 'dev.launchpad.activated') {
-          // Convert back to absolute path
-          const envPath = path.join('/', basePath)
-          activeEnvs.push(envPath)
-        }
-      }
-    }
-    catch {
-      // Ignore directories we can't read
-    }
-  }
-
-  walkDir(dataDir)
-  return activeEnvs
-}
-
-export async function deactivateDevEnv(): Promise<boolean> {
-  const cwd = process.cwd()
-  const dataDir = getDataDir()
-  const activationDir = path.join(dataDir, cwd.slice(1))
-  const activationFile = path.join(activationDir, 'dev.launchpad.activated')
-
-  if (fs.existsSync(activationFile)) {
-    try {
-      fs.unlinkSync(activationFile)
-
-      // Clean up empty directories
-      try {
-        fs.rmdirSync(activationDir)
-      }
-      catch {
-        // Directory not empty, that's fine
-      }
-
-      return true
-    }
-    catch {
-      return false
-    }
-  }
-
-  return false
-}
-
-export async function activateDevEnv(targetDir: string): Promise<boolean> {
-  const dataDir = getDataDir()
-  const activationDir = path.join(dataDir, targetDir.slice(1))
-  const activationFile = path.join(activationDir, 'dev.launchpad.activated')
-
-  try {
-    fs.mkdirSync(activationDir, { recursive: true })
-    fs.writeFileSync(activationFile, new Date().toISOString())
+    fs.accessSync(dirPath, fs.constants.W_OK)
     return true
   }
   catch {
@@ -297,121 +44,254 @@ export async function activateDevEnv(targetDir: string): Promise<boolean> {
   }
 }
 
-// Binary path cache for performance optimization
-const binaryPathCache = new Map<string, string | null>()
-const cacheTimestamps = new Map<string, number>()
-const BINARY_CACHE_TTL = 30000 // 30 seconds cache TTL
-
 /**
- * Clear stale binary path cache entries
+ * Get platform string for distribution
  */
-function clearStaleBinaryCache(): void {
-  const now = Date.now()
-  for (const [key, timestamp] of cacheTimestamps) {
-    if (now - timestamp > BINARY_CACHE_TTL) {
-      binaryPathCache.delete(key)
-      cacheTimestamps.delete(key)
-    }
+export function getPlatform(): SupportedPlatform {
+  const os = platform()
+  switch (os) {
+    case 'darwin': return 'darwin'
+    case 'linux': return 'linux'
+    case 'win32': return 'windows'
+    default: throw new Error(`Unsupported platform: ${os}`)
   }
 }
 
 /**
- * Find binary in PATH with caching for performance
+ * Get architecture string for distribution
  */
-export function findBinaryInPath(binaryName: string): string | null {
-  clearStaleBinaryCache()
-
-  // Check cache first
-  const cached = binaryPathCache.get(binaryName)
-  if (cached !== undefined) {
-    return cached
+export function getArchitecture(): SupportedArchitecture {
+  const nodeArch = arch()
+  switch (nodeArch) {
+    case 'x64': return 'x86_64'
+    case 'arm64': return 'aarch64'
+    case 'arm': return 'armv7l'
+    default: throw new Error(`Unsupported architecture: ${nodeArch}`)
   }
+}
 
+/**
+ * Get the user's default shell
+ */
+export function getUserShell(): string {
+  const shell = process.env.SHELL || process.env.COMSPEC || '/bin/bash'
+  return shell
+}
+
+/**
+ * Check if a directory is in the PATH
+ */
+export function isInPath(dirPath: string): boolean {
   const pathEnv = process.env.PATH || ''
-  const pathSeparator = process.platform === 'win32' ? ';' : ':'
-  const pathDirs = pathEnv.split(pathSeparator)
+  const paths = pathEnv.split(path.delimiter)
+  return paths.includes(dirPath)
+}
 
-  // Common binary extensions on Windows
-  const extensions = process.platform === 'win32' ? ['.exe', '.cmd', '.bat', ''] : ['']
+/**
+ * Add a directory to the PATH
+ */
+export function addToPath(dirPath: string): boolean {
+  try {
+    const shell = getUserShell()
+    const shellConfig = getShellConfigFile(shell)
 
-  for (const dir of pathDirs) {
-    if (!dir)
-      continue
-
-    for (const ext of extensions) {
-      const fullPath = join(dir, binaryName + ext)
-      if (existsSync(fullPath)) {
-        // Cache the result
-        binaryPathCache.set(binaryName, fullPath)
-        cacheTimestamps.set(binaryName, Date.now())
-        return fullPath
-      }
+    if (!shellConfig) {
+      return false
     }
+
+    const pathLine = `export PATH="${dirPath}:$PATH"`
+    const configContent = fs.readFileSync(shellConfig, 'utf-8')
+
+    if (!configContent.includes(pathLine)) {
+      fs.appendFileSync(shellConfig, `\n${pathLine}\n`)
+      return true
+    }
+
+    return false
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Get the shell configuration file path
+ */
+function getShellConfigFile(shell: string): string | null {
+  const home = process.env.HOME || process.env.USERPROFILE
+  if (!home)
+    return null
+
+  if (shell.includes('zsh')) {
+    return path.join(home, '.zshrc')
+  }
+  if (shell.includes('bash')) {
+    return path.join(home, '.bashrc')
+  }
+  if (shell.includes('fish')) {
+    return path.join(home, '.config/fish/config.fish')
   }
 
-  // Cache the null result to avoid repeated lookups
-  binaryPathCache.set(binaryName, null)
-  cacheTimestamps.set(binaryName, Date.now())
   return null
 }
 
 /**
- * Clear binary path cache (useful for testing or when PATH changes)
+ * Check if a directory is a temporary directory
  */
-export function clearBinaryPathCache(): void {
-  binaryPathCache.clear()
-  cacheTimestamps.clear()
+export function isTemporaryDirectory(dirPath: string): boolean {
+  const tempDirs = [
+    '/tmp',
+    '/var/tmp',
+    process.env.TMPDIR,
+    process.env.TEMP,
+    process.env.TMP,
+  ].filter(Boolean)
+
+  return tempDirs.some(tempDir => dirPath.startsWith(tempDir || ''))
 }
 
 /**
- * Find a binary in the current environment's package installations
+ * Find a binary in the system PATH
  */
-export function findBinaryInEnvironment(binaryName: string, packageDomain: string): string | null {
-  // eslint-disable-next-line ts/no-require-imports
-  const fs = require('node:fs')
-  // eslint-disable-next-line ts/no-require-imports
-  const { homedir } = require('node:os')
-  // eslint-disable-next-line ts/no-require-imports
-  const path = require('node:path')
+export function findBinaryInPath(binaryName: string): string | null {
+  // Check cache first
+  if (binaryPathCache.has(binaryName)) {
+    return binaryPathCache.get(binaryName) || null
+  }
 
-  try {
-    // Get current working directory to determine project environment
-    const cwd = process.cwd()
-    const projectName = path.basename(cwd)
+  const pathEnv = process.env.PATH || ''
+  const paths = pathEnv.split(path.delimiter)
 
-    // Look for environment directories that might match this project
-    const launchpadDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs')
+  for (const dir of paths) {
+    if (!dir)
+      continue
 
-    if (!fs.existsSync(launchpadDir)) {
-      return null
-    }
-
-    // Find environment directories that match the current project
-    const envDirs = fs.readdirSync(launchpadDir).filter((dir: string) =>
-      dir.includes(projectName.toLowerCase().replace(/[^a-z0-9]/g, '_')),
-    )
-
-    for (const envDir of envDirs) {
-      const envPath = path.join(launchpadDir, envDir)
-      const packagePath = path.join(envPath, packageDomain)
-
-      if (fs.existsSync(packagePath)) {
-        // Look for version directories
-        const versionDirs = fs.readdirSync(packagePath).filter((dir: string) => dir.startsWith('v'))
-
-        for (const versionDir of versionDirs) {
-          const binPath = path.join(packagePath, versionDir, 'bin', binaryName)
-
-          if (fs.existsSync(binPath)) {
-            return binPath
-          }
-        }
+    const binaryPath = path.join(dir, binaryName)
+    try {
+      const stat = fs.statSync(binaryPath)
+      if (stat.isFile() && (stat.mode & fs.constants.X_OK)) {
+        binaryPathCache.set(binaryName, binaryPath)
+        return binaryPath
       }
     }
+    catch {
+      // File doesn't exist or not accessible
+      continue
+    }
+  }
 
-    return null
+  // Not found
+  binaryPathCache.set(binaryName, null)
+  return null
+}
+
+/**
+ * Clear the binary path cache
+ */
+export function clearBinaryPathCache(): void {
+  binaryPathCache.clear()
+}
+
+/**
+ * Find a binary in a specific environment
+ */
+export function findBinaryInEnvironment(binaryName: string, envPath?: string): string | null {
+  if (!envPath) {
+    return findBinaryInPath(binaryName)
+  }
+
+  const binaryPath = path.join(envPath, 'bin', binaryName)
+  try {
+    const stat = fs.statSync(binaryPath)
+    if (stat.isFile() && (stat.mode & fs.constants.X_OK)) {
+      return binaryPath
+    }
   }
   catch {
-    return null
+    // File doesn't exist or not accessible
   }
+
+  return null
+}
+
+/**
+ * Copy directory structure preserving the layout
+ */
+export async function copyDirectoryStructure(source: string, target: string): Promise<void> {
+  await fs.promises.mkdir(target, { recursive: true })
+
+  const entries = await fs.promises.readdir(source, { withFileTypes: true })
+
+  for (const entry of entries) {
+    const sourcePath = path.join(source, entry.name)
+    const targetPath = path.join(target, entry.name)
+
+    if (entry.isDirectory()) {
+      await copyDirectoryStructure(sourcePath, targetPath)
+    }
+    else if (entry.isFile()) {
+      try {
+        await fs.promises.copyFile(sourcePath, targetPath)
+
+        // Preserve executable permissions
+        const stat = await fs.promises.stat(sourcePath)
+        await fs.promises.chmod(targetPath, stat.mode)
+      }
+      catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === 'EACCES') {
+          // Permission denied - try to continue with other files
+          // Only show permission errors for critical files, not verbose spam
+          continue
+        }
+        throw error
+      }
+    }
+  }
+}
+
+/**
+ * Deduplicate packages by domain, keeping only the latest version
+ */
+export function deduplicatePackagesByVersion(packages: string[]): string[] {
+  const packageMap = new Map<string, { spec: string, version: string }>()
+
+  for (const pkg of packages) {
+    const { name: packageName } = parsePackageSpec(pkg)
+    const domain = resolvePackageName(packageName)
+    const { version: requestedVersion } = parsePackageSpec(pkg)
+
+    let version = requestedVersion
+    if (!version) {
+      const latestVersion = getLatestVersion(domain)
+      version = typeof latestVersion === 'string' ? latestVersion : String(latestVersion)
+    }
+
+    const existing = packageMap.get(domain)
+    if (!existing) {
+      packageMap.set(domain, { spec: pkg, version })
+    }
+    else {
+      // Compare versions and keep the latest
+      try {
+        if (typeof Bun !== 'undefined' && Bun.semver) {
+          const comparison = Bun.semver.order(version, existing.version)
+          if (comparison > 0) {
+            // New version is newer
+            packageMap.set(domain, { spec: pkg, version })
+          }
+          // Otherwise keep existing (newer or equal)
+        }
+        else {
+          // Fallback: just keep the last one if no semver available
+          packageMap.set(domain, { spec: pkg, version })
+        }
+      }
+      catch {
+        // If version comparison fails, keep the last one
+        packageMap.set(domain, { spec: pkg, version })
+      }
+    }
+  }
+
+  return Array.from(packageMap.values()).map(entry => entry.spec)
 }
