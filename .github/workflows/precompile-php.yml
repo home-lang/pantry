@@ -526,29 +526,27 @@ jobs:
             echo "Final extensions: $FINAL_EXTENSIONS"
           fi
 
-          # Add C++ configure flags for macOS based on PHP version
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
-            PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
-
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
-              CONFIGURE_ENV="CXXFLAGS=-std=c++17 -stdlib=libc++ CFLAGS= CPPFLAGS=$CPPFLAGS"
-              echo "Using C++17 configure environment: $CONFIGURE_ENV"
-            else
-              CONFIGURE_ENV="CXXFLAGS=-std=c++14 -stdlib=libc++ CFLAGS= CPPFLAGS=$CPPFLAGS"
-              echo "Using C++14 configure environment: $CONFIGURE_ENV"
-            fi
-          else
-            CONFIGURE_ENV=""
-          fi
+                    # Set PHP version variables for C++ standard selection
+          PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
+          PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
 
           echo "Configure environment:"
           echo "  CXXFLAGS: $CXXFLAGS"
           echo "  CFLAGS: $CFLAGS"
           echo "  CPPFLAGS: $CPPFLAGS"
-          echo "  CONFIGURE_ENV: $CONFIGURE_ENV"
+          echo "  PHP Version: ${{ matrix.php_version }} (Major: $PHP_MAJOR_VERSION, Minor: $PHP_MINOR_VERSION)"
 
-          $CONFIGURE_ENV ./configure \
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            # Set environment variables for configure
+            export CXXFLAGS="-std=c++14 -stdlib=libc++"
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 4 ]]; then
+              export CXXFLAGS="-std=c++17 -stdlib=libc++"
+            fi
+            export CFLAGS=""
+            export CPPFLAGS="$CPPFLAGS"
+          fi
+
+          ./configure \
             --prefix="$INSTALL_PREFIX" \
             --disable-debug \
             --enable-shared \
