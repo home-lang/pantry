@@ -35,12 +35,12 @@ function getDefaultShimPath(): string {
 }
 
 export const defaultConfig: LaunchpadConfig = {
-  verbose: process.env.LAUNCHPAD_VERBOSE === 'true' || false,
+  verbose: process.env.LAUNCHPAD_VERBOSE === 'true' || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || false,
   sudoPassword: process.env.SUDO_PASSWORD || '',
   devAware: true,
   autoSudo: process.env.LAUNCHPAD_AUTO_SUDO !== 'false',
-  maxRetries: 3,
-  timeout: 60000, // 60 seconds
+  maxRetries: process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? 5 : 3,
+  timeout: process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? 120000 : 60000, // 2 minutes in CI, 1 minute locally
   symlinkVersions: true,
   forceReinstall: false,
   shimPath: getDefaultShimPath(),

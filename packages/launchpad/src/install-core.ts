@@ -587,15 +587,31 @@ export async function downloadPackage(
           throw new Error(`Download timeout for ${domain} - cancelling after 30 seconds`)
         }
         else {
-          if (config.verbose) {
-            console.warn(`Failed to download ${format} format:`, error)
+          // Always show download errors in CI environment
+          const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+          if (config.verbose || isCI) {
+            console.warn(`⚠️ Failed to download ${domain} v${version} (${format} format):`, error instanceof Error ? error.message : String(error))
+            console.warn(`   URL: ${url}`)
+            console.warn(`   Platform: ${os}/${arch}`)
           }
         }
       }
     }
 
     if (!downloadUrl || !archiveFile) {
-      throw new Error(`Failed to download package ${domain} v${version}`)
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      const errorMsg = `Failed to download package ${domain} v${version}`
+      if (isCI) {
+        console.error(`❌ ${errorMsg}`)
+        console.error(`   Tried URLs:`)
+        formats.forEach((format) => {
+          const url = `${DISTRIBUTION_CONFIG.baseUrl}/${domain}/${os}/${arch}/v${version}.${format}`
+          console.error(`   - ${url}`)
+        })
+        console.error(`   Platform: ${os}/${arch}`)
+        console.error(`   This may be due to network issues or the package not being available for this platform.`)
+      }
+      throw new Error(errorMsg)
     }
 
     if (config.verbose && !usedCache) {

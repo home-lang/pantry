@@ -105,9 +105,19 @@ jobs:
       - name: Install build dependencies (Ubuntu)
         if: matrix.platform == 'linux'
         run: |
-          # Use Launchpad to install PHP dependencies automatically
-          # This replaces the manual apt-get install of all dependencies
-          ./launchpad install php --deps-only
+          # Install PHP dependencies via Launchpad with enhanced debugging
+          echo "🔧 Installing PHP dependencies via Launchpad..."
+          echo "🔍 Debug info:"
+          echo "  - Platform: linux"
+          echo "  - Architecture: $(uname -m)"
+          echo "  - Network connectivity test:"
+          curl -I --connect-timeout 10 https://dist.pkgx.dev/ || echo "  ⚠️ Network connectivity issues detected"
+
+          # Set environment variables for better debugging
+          export LAUNCHPAD_DEBUG=1
+          export LAUNCHPAD_VERBOSE=1
+
+          ./launchpad install php --deps-only --verbose
 
           # Alternative: Use apt-get for manual dependency installation
           # sudo apt-get update
@@ -142,9 +152,19 @@ jobs:
       - name: Install build dependencies (macOS)
         if: matrix.platform == 'darwin'
         run: |
-          # Use Launchpad to install PHP dependencies automatically
-          # This replaces the manual brew install of all dependencies
-          ./launchpad install php --deps-only
+          # Install PHP dependencies via Launchpad with enhanced debugging
+          echo "🔧 Installing PHP dependencies via Launchpad..."
+          echo "🔍 Debug info:"
+          echo "  - Platform: linux"
+          echo "  - Architecture: $(uname -m)"
+          echo "  - Network connectivity test:"
+          curl -I --connect-timeout 10 https://dist.pkgx.dev/ || echo "  ⚠️ Network connectivity issues detected"
+
+          # Set environment variables for better debugging
+          export LAUNCHPAD_DEBUG=1
+          export LAUNCHPAD_VERBOSE=1
+
+          ./launchpad install php --deps-only --verbose
 
           # Alternative: Use Homebrew for manual dependency installation
           # brew install \
