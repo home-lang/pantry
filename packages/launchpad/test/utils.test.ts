@@ -101,7 +101,7 @@ describe('Utils', () => {
       addToPath(testPath)
       const secondAdd = process.env.PATH
 
-      expect(firstAdd).toBe(secondAdd)
+      expect((firstAdd ?? '')).toBe((secondAdd ?? ''))
 
       // Cleanup
       process.env.PATH = originalPath
@@ -114,7 +114,7 @@ describe('Utils', () => {
       const testPath = '/test/path'
       addToPath(testPath)
 
-      expect(process.env.PATH).toBe(testPath)
+      expect((process.env.PATH ?? '')).toBe(testPath)
 
       // Cleanup
       process.env.PATH = originalPath
@@ -127,7 +127,7 @@ describe('Utils', () => {
       const testPath = '/test/path'
       addToPath(testPath)
 
-      expect(process.env.PATH).toBe(testPath)
+      expect((process.env.PATH ?? '')).toBe(testPath)
 
       // Cleanup
       process.env.PATH = originalPath

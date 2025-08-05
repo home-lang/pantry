@@ -8,7 +8,7 @@ import process from 'node:process'
 import { config } from '../config'
 import { findBinaryInEnvironment, findBinaryInPath } from '../utils'
 import { createDefaultServiceConfig, getServiceDefinition } from './definitions'
-import { generateLaunchdPlist, generateSystemdService, getServiceFilePath, isPlatformSupported, removeServiceFile, writeLaunchdPlist, writeSystemdService } from './platform'
+import { generateLaunchdPlist, generateSystemdService, getServiceFilePath, isPlatformSupported, writeLaunchdPlist, writeSystemdService } from './platform'
 
 // Global service manager state
 let serviceManagerState: ServiceManagerState | null = null

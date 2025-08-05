@@ -249,6 +249,7 @@ describe('Service Management', () => {
   describe('Service File Generation', () => {
     it('should generate valid launchd plist', () => {
       const service = {
+        name: 'postgres',
         definition: getServiceDefinition('postgres')!,
         status: 'stopped' as const,
         lastCheckedAt: new Date(),
@@ -266,6 +267,7 @@ describe('Service Management', () => {
 
     it('should generate valid systemd service', () => {
       const service = {
+        name: 'postgres',
         definition: getServiceDefinition('postgres')!,
         status: 'stopped' as const,
         lastCheckedAt: new Date(),
@@ -283,6 +285,7 @@ describe('Service Management', () => {
 
     it('should handle template variable substitution in service files', () => {
       const service = {
+        name: 'redis',
         definition: getServiceDefinition('redis')!,
         status: 'stopped' as const,
         lastCheckedAt: new Date(),
@@ -302,6 +305,7 @@ describe('Service Management', () => {
 
     it('should include environment variables in service files', () => {
       const service = {
+        name: 'postgres',
         definition: {
           ...getServiceDefinition('postgres')!,
           env: { PGDATA: '/custom/pgdata', POSTGRES_DB: 'testdb' },
@@ -499,35 +503,35 @@ describe('Service Management', () => {
       expect(manager).toBeDefined()
 
       // Debug: Log the actual paths to see what's happening
-      const actualDataDir = config.services.dataDir
-      const actualLogDir = config.services.logDir
-      const actualConfigDir = config.services.configDir
-
-      // Force directory creation if they don't exist (this tests the underlying functionality)
-      if (!fs.existsSync(actualDataDir)) {
+      const actualDataDir = config.services?.dataDir
+      const actualLogDir = config.services?.logDir
+      const actualConfigDir = config.services?.configDir
+      if (actualDataDir && !fs.existsSync(actualDataDir)) {
         fs.mkdirSync(actualDataDir, { recursive: true })
       }
-      if (!fs.existsSync(actualLogDir)) {
+      if (actualLogDir && !fs.existsSync(actualLogDir)) {
         fs.mkdirSync(actualLogDir, { recursive: true })
       }
-      if (!fs.existsSync(actualConfigDir)) {
+      if (actualConfigDir && !fs.existsSync(actualConfigDir)) {
         fs.mkdirSync(actualConfigDir, { recursive: true })
       }
-
-      // The directories should now exist
-      expect(fs.existsSync(config.services.dataDir)).toBe(true)
-      expect(fs.existsSync(config.services.logDir)).toBe(true)
-      expect(fs.existsSync(config.services.configDir)).toBe(true)
+      expect(fs.existsSync(config.services?.dataDir ?? '')).toBe(true)
+      expect(fs.existsSync(config.services?.logDir ?? '')).toBe(true)
+      expect(fs.existsSync(config.services?.configDir ?? '')).toBe(true)
+      const originalDataDir = config.services?.dataDir
+      config.services!.dataDir = '/custom/data/dir'
+      expect(config.services!.dataDir).toBe('/custom/data/dir')
+      config.services!.dataDir = originalDataDir
     })
 
     it('should respect configuration overrides', () => {
-      const originalDataDir = config.services.dataDir
-      config.services.dataDir = '/custom/data/dir'
+      const originalDataDir = config.services?.dataDir
+      config.services!.dataDir = '/custom/data/dir'
 
-      expect(config.services.dataDir).toBe('/custom/data/dir')
+      expect(config.services?.dataDir).toBe('/custom/data/dir')
 
       // Restore original
-      config.services.dataDir = originalDataDir
+      config.services!.dataDir = originalDataDir
     })
 
     it('should handle service-specific configuration overrides', async () => {
@@ -618,6 +622,7 @@ describe('Service Management', () => {
 
       // Manually create a corrupted service instance
       const corruptedService = {
+        name: 'redis',
         definition: getServiceDefinition('redis')!,
         status: 'running' as const,
         lastCheckedAt: new Date(),
@@ -635,8 +640,8 @@ describe('Service Management', () => {
 
     it('should handle filesystem permission errors gracefully', async () => {
       // Override config to point to unwritable directory (in test this won't actually be unwritable)
-      const originalDataDir = config.services.dataDir
-      config.services.dataDir = '/proc/read-only-test'
+      const originalDataDir = config.services?.dataDir
+      config.services!.dataDir = '/proc/read-only-test'
 
       try {
         // Should handle gracefully without crashing
@@ -648,7 +653,7 @@ describe('Service Management', () => {
         expect(error).toBeInstanceOf(Error)
       }
       finally {
-        config.services.dataDir = originalDataDir
+        config.services!.dataDir = originalDataDir
       }
     })
   })
@@ -690,6 +695,7 @@ describe('Service Management', () => {
 
       // Create a service with a health check that would timeout
       const service = {
+        name: 'test-service',
         definition: {
           ...getServiceDefinition('redis')!,
           healthCheck: {
@@ -730,10 +736,10 @@ describe('Service Management', () => {
       const definitions = getAllServiceDefinitions()
 
       // Find services with dependencies (if any)
-      const servicesWithDeps = definitions.filter(def => def.dependencies.length > 0)
+      const servicesWithDeps = definitions.filter(def => (def.dependencies ?? []).length > 0)
 
       servicesWithDeps.forEach((service) => {
-        service.dependencies.forEach((dep) => {
+        (service.dependencies ?? []).forEach((dep) => {
           expect(typeof dep).toBe('string')
           expect(dep.length).toBeGreaterThan(0)
         })
@@ -767,7 +773,7 @@ describe('Service Management', () => {
           if (!portsMap.has(def.port)) {
             portsMap.set(def.port, [])
           }
-          portsMap.get(def.port)!.push(def.name)
+          portsMap.get(def.port)!.push(def.name ?? '')
         }
       })
 
@@ -828,6 +834,7 @@ describe('Service Management', () => {
 
     it('should handle missing template variables gracefully', () => {
       const service = {
+        name: 'postgres',
         definition: {
           ...getServiceDefinition('postgres')!,
           args: ['-D', '{dataDir}', '--config={missingVar}'],

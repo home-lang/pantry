@@ -1,9 +1,9 @@
+import type { ServiceInstance } from '../src/types'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import type { ServiceInstance } from '../src/types'
 
 // TDD Tests for Database Auto-Creation Functionality
 

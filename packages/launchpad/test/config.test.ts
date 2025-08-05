@@ -58,7 +58,7 @@ describe('Config', () => {
       // Check that activation message contains expected text (may have ANSI codes)
       // Strip ANSI escape sequences for testing
       const ansiEscapeRegex = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g')
-      const cleanMessage = defaultConfig.shellActivationMessage.replace(ansiEscapeRegex, '')
+      const cleanMessage = defaultConfig.shellActivationMessage?.replace(ansiEscapeRegex, '') || ''
       expect(cleanMessage).toContain('Environment activated for {path}')
       expect(defaultConfig.shellDeactivationMessage).toBe('⚪ Environment deactivated')
     })
@@ -88,10 +88,10 @@ describe('Config', () => {
 
     it('should have valid installation path', () => {
       expect(typeof defaultConfig.installPath).toBe('string')
-      expect(defaultConfig.installPath?.length).toBeGreaterThan(0)
+      expect(defaultConfig.installPath!.length).toBeGreaterThan(0)
 
       expect(defaultConfig.shimPath).toBeDefined()
-      expect(defaultConfig.shimPath?.length).toBeGreaterThan(0)
+      expect(defaultConfig.shimPath!.length).toBeGreaterThan(0)
     })
 
     it('should have activation message with path placeholder', () => {
@@ -175,7 +175,7 @@ describe('Config', () => {
     it('should have reasonable values', () => {
       expect(config.maxRetries).toBeGreaterThan(0)
       expect(config.timeout).toBeGreaterThan(0)
-      expect(config.installPath?.length).toBeGreaterThan(0)
+      expect((config.installPath ?? '').length).toBeGreaterThan(0)
       expect(config.shimPath?.length).toBeGreaterThan(0)
       // Shell message validation
       expect(config.shellActivationMessage?.length).toBeGreaterThan(0)
@@ -186,7 +186,7 @@ describe('Config', () => {
       expect(config).toBeDefined()
       expect(config.installPath).toBeDefined()
       expect(typeof config.installPath).toBe('string')
-      expect(config.installPath.length).toBeGreaterThan(0)
+      expect((config.installPath ?? '').length).toBeGreaterThan(0)
 
       expect(config.shimPath).toBeDefined()
       expect(config.shimPath?.length).toBeGreaterThan(0)
@@ -209,18 +209,18 @@ describe('Config', () => {
     it('should have valid message content', () => {
       const message = config.shellActivationMessage
       expect(message).toBeDefined()
-      expect(message?.length).toBeGreaterThan(0)
+      expect((message ?? '').length).toBeGreaterThan(0)
 
       const deactivationMessage = config.shellDeactivationMessage
       expect(deactivationMessage).toBeDefined()
-      expect(deactivationMessage?.length).toBeGreaterThan(0)
+      expect((deactivationMessage ?? '').length).toBeGreaterThan(0)
     })
 
     it('should have valid shell message format', () => {
       if (config.shellActivationMessage?.includes('{path}')) {
         // Test that the message contains valid characters
-        const validChars = /^[a-zA-Z0-9\s\x1B\[[0-9;]*[a-zA-Z]\{\}\-\_\.\,\:\;\?\!\(\)\[\]\|\/\~`@#$%^&*+=<>"']+$/
-        expect(validChars.test(config.shellActivationMessage || '')).toBe(true)
+        const validChars = /^[\w\s{}\-.,:;?!()[\]|/~`@#$%^&*+=<>"']+$/
+        expect(validChars.test(config.shellActivationMessage ?? '')).toBe(true)
 
         // Test for specific characters that should be present
         const requiredChars = ['{', '}', 'p', 'a', 't', 'h']
@@ -233,8 +233,8 @@ describe('Config', () => {
 
       if (config.shellDeactivationMessage) {
         // Test that the message contains valid characters
-        const validChars = /^[a-zA-Z0-9\s\x1B\[[0-9;]*[a-zA-Z]\{\}\-\_\.\,\:\;\?\!\(\)\[\]\|\/\~`@#$%^&*+=<>"']+$/
-        expect(validChars.test(config.shellDeactivationMessage || '')).toBe(true)
+        const validChars = /^[\w\s{}\-.,:;?!()[\]|/~`@#$%^&*+=<>"']+$/
+        expect(validChars.test(config.shellDeactivationMessage ?? '')).toBe(true)
       }
 
       expect(config.shellActivationMessage?.trim().length).toBeGreaterThan(0)
@@ -250,7 +250,7 @@ describe('Config', () => {
     it('should have valid shim path', () => {
       const homePath = process.env.HOME || process.env.USERPROFILE || '~'
       const isUnderHome = config.shimPath?.startsWith(homePath) || config.shimPath?.startsWith('~')
-      const isUnderInstall = config.shimPath?.startsWith(config.installPath)
+      const isUnderInstall = (config.shimPath ?? '').startsWith(config.installPath ?? '')
 
       expect(config.shimPath).toBeDefined()
       expect(config.shimPath?.length).toBeGreaterThan(0)
@@ -258,7 +258,7 @@ describe('Config', () => {
     })
 
     it('should have valid configuration structure', () => {
-      expect(config.installPath.length).toBeGreaterThan(0)
+      expect((config.installPath ?? '').length).toBeGreaterThan(0)
       expect(config.shimPath?.length).toBeGreaterThan(0)
     })
   })
@@ -279,7 +279,7 @@ describe('Config', () => {
     it('should handle custom activation messages', () => {
       // The activation message should be customizable
       const message = config.shellActivationMessage
-      expect(message.length).toBeGreaterThan(0)
+      expect((message ?? '').length).toBeGreaterThan(0)
       // Should be a valid string that can be used in shell scripts
       expect(message).not.toContain('\n')
     })
@@ -287,15 +287,15 @@ describe('Config', () => {
     it('should handle custom deactivation messages', () => {
       // The deactivation message should be customizable
       const message = config.shellDeactivationMessage
-      expect(message.length).toBeGreaterThan(0)
+      expect((message ?? '').length).toBeGreaterThan(0)
       // Should be a valid string that can be used in shell scripts
       expect(message).not.toContain('\n')
     })
 
     it('should preserve {path} placeholder in activation message', () => {
       // If the activation message contains {path}, it should be preserved
-      if (config.shellActivationMessage.includes('{path}')) {
-        expect(config.shellActivationMessage).toContain('{path}')
+      if ((config.shellActivationMessage ?? '').includes('{path}')) {
+        expect((config.shellActivationMessage ?? '').includes('{path}')).toBe(true)
       }
     })
 
@@ -305,7 +305,7 @@ describe('Config', () => {
 
       // Check activation message
       for (const char of unsafeChars) {
-        if (config.shellActivationMessage.includes(char)) {
+        if ((config.shellActivationMessage ?? '').includes(char)) {
           // If it contains special chars, they should be properly escaped
           // This is a warning rather than a hard failure since some messages might intentionally use these
           console.warn(`Activation message contains potentially unsafe character: ${char}`)
@@ -314,7 +314,7 @@ describe('Config', () => {
 
       // Check deactivation message
       for (const char of unsafeChars) {
-        if (config.shellDeactivationMessage.includes(char)) {
+        if ((config.shellDeactivationMessage ?? '').includes(char)) {
           console.warn(`Deactivation message contains potentially unsafe character: ${char}`)
         }
       }
@@ -348,7 +348,7 @@ describe('Config', () => {
       // Shim path should typically be under the installation path or home directory
       const homePath = process.env.HOME || process.env.USERPROFILE || '~'
       const isUnderHome = config.shimPath?.startsWith(homePath) || config.shimPath?.startsWith('~')
-      const isUnderInstall = config.shimPath?.startsWith(config.installPath)
+      const isUnderInstall = (config.shimPath ?? '').startsWith(config.installPath ?? '')
       expect(isUnderHome || isUnderInstall).toBe(true)
     })
   })
@@ -362,7 +362,7 @@ describe('Config', () => {
 
     it('should use fallback values when needed', () => {
       // Installation path should never be empty
-      expect(config.installPath?.length).toBeGreaterThan(0)
+      expect((config.installPath ?? '').length).toBeGreaterThan(0)
       expect(config.shimPath?.length).toBeGreaterThan(0)
     })
   })

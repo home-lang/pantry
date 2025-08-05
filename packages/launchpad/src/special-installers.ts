@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import type { SupportedArchitecture, SupportedPlatform } from './types'
 import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'

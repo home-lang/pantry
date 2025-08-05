@@ -1,10 +1,9 @@
-import type { aliases, packages } from 'ts-pkgx'
 import { cleanupCache, getCacheStats } from './cache'
 import { resolveAllDependencies } from './dependency-resolution'
 import { downloadPackage } from './install-core'
 import { install } from './install-main'
 import { cleanupSpinner, resetInstalledTracker } from './logging'
-import { getAllPackageAliases, getAllPackageDomains, getAllPackageNames, getAvailableVersions, getLatestVersion, getPackageInfo, isPackageAlias, isPackageDomain, isVersionAvailable, isValidPackageName, listAvailablePackages, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
+import { getAllPackageAliases, getAllPackageDomains, getAllPackageNames, getAvailableVersions, getLatestVersion, getPackageInfo, isPackageAlias, isPackageDomain, isValidPackageName, isVersionAvailable, listAvailablePackages, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
 import { buildSqliteFromSource, installDependenciesOnly, testPhpBinary } from './special-installers'
 import { DISTRIBUTION_CONFIG } from './types'
 import { install_prefix } from './utils'
@@ -28,8 +27,8 @@ export {
   installDependenciesOnly,
   isPackageAlias,
   isPackageDomain,
-  isVersionAvailable,
   isValidPackageName,
+  isVersionAvailable,
   listAvailablePackages,
   parsePackageSpec,
   resetInstalledTracker,

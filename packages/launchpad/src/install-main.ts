@@ -1,11 +1,12 @@
+/* eslint-disable no-console */
 import type { PackageSpec } from './types'
 import fs from 'node:fs'
 import { config } from './config'
-import { logUniqueMessage, clearMessageCache } from './logging'
 import { resolveAllDependencies } from './dependency-resolution'
+import { installPackage } from './install-core'
+import { clearMessageCache, logUniqueMessage } from './logging'
 import { parsePackageSpec } from './package-resolution'
 import { install_prefix } from './utils'
-import { installPackage } from './install-core'
 
 // Global tracker for deduplicating packages across all install calls
 const globalInstalledTracker = new Set<string>()

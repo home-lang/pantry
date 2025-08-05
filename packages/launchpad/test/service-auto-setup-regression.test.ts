@@ -1,9 +1,9 @@
+import type { ServiceInstance } from '../src/types'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import type { ServiceInstance } from '../src/types'
 
 // Mock environment to prevent actual service operations
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV
@@ -180,6 +180,7 @@ describe('Service Auto-Setup - Regression Tests', () => {
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
 
       const mockService = {
+        name: 'postgres',
         definition: {
           name: 'postgres',
           displayName: 'PostgreSQL',
@@ -217,6 +218,7 @@ describe('Service Auto-Setup - Regression Tests', () => {
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
 
       const mockService = {
+        name: 'postgres',
         definition: {
           name: 'postgres',
           displayName: 'PostgreSQL',
