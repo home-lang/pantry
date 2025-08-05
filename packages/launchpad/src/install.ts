@@ -2227,26 +2227,7 @@ export async function downloadPackage(
     // Validate package completeness and trigger source build if incomplete
     const isValidPackage = await validatePackageInstallation(packageDir, domain)
     if (!isValidPackage) {
-      const missingComponents = getMissingComponents(packageDir, domain)
-      logUniqueMessage(`⚠️  Package ${domain} appears incomplete (missing ${missingComponents}), attempting source build...`)
-
-      // Try source build for known problematic packages
-      const sourceBuilt = await attemptSourceBuild(domain, installPath, version)
-      if (sourceBuilt) {
-        logUniqueMessage(`✅ Successfully built ${domain} from source`)
-        // Remove incomplete installation and use source-built version
-        await fs.promises.rm(packageDir, { recursive: true, force: true })
-        // Source build creates its own package directory, so update our reference
-        const newPackageDir = path.join(installPath, domain, `v${version}`)
-        // Update packageDir for subsequent operations
-        if (fs.existsSync(newPackageDir)) {
-        // The validation and shim creation will work on the new directory
-        }
-      }
-      else {
-        logUniqueMessage(`⚠️  ${domain} may be incomplete, but no source build available`)
-      // Keep the incomplete package - it might still have useful binaries
-      }
+      logUniqueMessage(`⚠️  Package ${domain} appears incomplete, source build not available...`)
     }
 
     // Find binaries and create shims
@@ -3180,7 +3161,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         // Handle OS-specific packages (e.g., darwin@package -> package)
         const osMatch = pkg.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
         if (osMatch) {
-          const [, osPrefix, basePkg, versionConstraint] = osMatch
+          const [, _osPrefix, basePkg, versionConstraint] = osMatch
           // Fix malformed version constraints: ": ^1" -> "@^1"
           let fallbackPkg = basePkg
           if (versionConstraint) {
@@ -3263,7 +3244,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
         // Handle OS-specific packages (e.g., darwin@package -> package)
         const osMatch = result.package.match(/^(darwin|linux|windows|freebsd|openbsd|netbsd)@([^:]+)(:.*)?$/)
         if (osMatch) {
-          const [, osPrefix, basePkg, versionConstraint] = osMatch
+          const [, _osPrefix, basePkg, versionConstraint] = osMatch
           const fallbackPkg = versionConstraint ? `${basePkg}${versionConstraint}` : basePkg
           // For OS-specific packages, don't show warning yet - let fallback try first
           if (config.verbose) {
@@ -3906,9 +3887,6 @@ exec "${finalBinaryPath}" "$@"
   }
 }
 
-
-
-
 /**
  * Test if a PHP binary actually works (can run --version without dyld errors)
  */
@@ -3934,63 +3912,6 @@ export async function testPhpBinary(phpPath: string): Promise<boolean> {
     return false
   }
 }
-
-/**
- * Determine what components are missing from a package installation
- */
-function getMissingComponents(packageDir: string, domain: string): string {
-  const binDir = path.join(packageDir, 'bin')
-  const sbinDir = path.join(packageDir, 'sbin')
-  const libDir = path.join(packageDir, 'lib')
-  const shareDir = path.join(packageDir, 'share')
-  const etcDir = path.join(packageDir, 'etc')
-
-  const hasBin = fs.existsSync(binDir)
-  const hasSbin = fs.existsSync(sbinDir)
-  const hasLib = fs.existsSync(libDir)
-  const hasShare = fs.existsSync(shareDir)
-  const hasEtc = fs.existsSync(etcDir)
-
-  // Special cases for different package types
-  if (domain === 'curl.se/ca-certs') {
-    if (!hasShare && !hasEtc) {
-      return 'certificate files'
-    }
-  }
-
-  if (domain.includes('x.org/util-macros')) {
-    const aclocalDir = path.join(packageDir, 'share', 'aclocal')
-    const pkgconfigDir = path.join(packageDir, 'share', 'pkgconfig')
-    if (!fs.existsSync(aclocalDir) && !fs.existsSync(pkgconfigDir) && !hasShare && !hasBin) {
-      return 'build macros (aclocal or pkgconfig files)'
-    }
-  }
-
-  if (domain.includes('x.org/protocol')) {
-    const includeDir = path.join(packageDir, 'include')
-    const pkgconfigDir = path.join(packageDir, 'share', 'pkgconfig')
-    if (!fs.existsSync(includeDir) && !fs.existsSync(pkgconfigDir) && !hasShare && !hasBin) {
-      return 'protocol headers (include or pkgconfig files)'
-    }
-  }
-
-  // Library packages that need lib directories
-  const libraryPackages = ['gnu.org/gmp', 'openssl.org', 'zlib.net', 'libpng.org', 'libsodium.org']
-  if (libraryPackages.some(pkg => domain.includes(pkg))) {
-    if (!hasLib && !hasBin) {
-      return 'lib directory or working binaries'
-    }
-  }
-
-  // Default: expect bin or sbin
-  if (!hasBin && !hasSbin) {
-    return 'executable binaries'
-  }
-
-  return 'required components'
-}
-
-
 
 /**
  * Validate if a package installation is complete
@@ -4155,40 +4076,6 @@ async function validatePackageInstallation(packageDir: string, domain: string): 
 }
 
 /**
- * Attempt to build a package from source if we have a source build function for it
- */
-async function attemptSourceBuild(domain: string, installPath: string, version: string): Promise<boolean> {
-  try {
-    switch (domain) {
-      // case 'libpng.org': // DISABLED - let ts-pkgx handle libpng like all other deps
-      //   await buildLibpngFromSource(installPath, version)
-      //   return true
-      // case 'gnu.org/gmp': // DISABLED - let ts-pkgx handle GMP like all other deps
-      //   await buildGmpFromSource(installPath, version)
-      //   return true
-      // case 'zlib.net': // DISABLED - let ts-pkgx handle zlib like all other deps
-      //   await buildZlibFromSource(installPath, version)
-      //   return true
-      // case 'sqlite.org': // DISABLED - let ts-pkgx handle sqlite like all other deps
-      //   await buildSqliteFromSource(installPath, version)
-      //   return true
-      // case 'openssl.org': // DISABLED - let ts-pkgx handle openssl like all other deps
-      //   await buildOpenSSLFromSource(installPath, version)
-      //   return true
-      default:
-        // No source build available for this package - let ts-pkgx handle all deps
-        return false
-    }
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`Source build failed for ${domain}:`, error)
-    }
-    return false
-  }
-}
-
-/**
  * Build SQLite from source
  */
 export async function buildSqliteFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
@@ -4255,77 +4142,6 @@ export async function buildSqliteFromSource(installPath: string, requestedVersio
     await fs.promises.rm(sourceDir, { recursive: true, force: true })
 
     const errorMessage = `SQLite ${version} source build failed: ${
-      error instanceof Error ? error.message : String(error)
-    }`
-    throw new Error(errorMessage)
-  }
-}
-
-/**
- * Build OpenSSL from source
- */
-export async function buildOpenSSLFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
-  const version = requestedVersion || '3.5.0'
-  const domain = 'openssl.org'
-
-  logUniqueMessage(`🔄 Building OpenSSL ${version} from source...`)
-
-  // Create a source build directory
-  const sourceDir = path.join(installPath, '.tmp', `openssl-source-${version}`)
-  await fs.promises.rm(sourceDir, { recursive: true, force: true })
-  await fs.promises.mkdir(sourceDir, { recursive: true })
-
-  try {
-    // Download OpenSSL source
-    logUniqueMessage(`📦 Downloading OpenSSL ${version} source...`)
-    const sourceUrl = `https://github.com/openssl/openssl/archive/refs/tags/openssl-${version}.tar.gz`
-    const response = await fetch(sourceUrl)
-
-    if (!response.ok) {
-      throw new Error(`Failed to download OpenSSL source: ${response.status}`)
-    }
-
-    const tarPath = path.join(sourceDir, 'openssl.tar.gz')
-    await fs.promises.writeFile(tarPath, Buffer.from(await response.arrayBuffer()))
-
-    // Extract source
-    logUniqueMessage(`📂 Extracting OpenSSL ${version} source...`)
-    execSync(`cd "${sourceDir}" && tar -xzf openssl.tar.gz`, { stdio: 'inherit' })
-
-    // Find the extracted directory
-    const extractedDir = path.join(sourceDir, `openssl-openssl-${version}`)
-
-    // Configure
-    logUniqueMessage(`⚙️  Configuring OpenSSL ${version} build...`)
-    const packageDir = path.join(installPath, domain, `v${version}`)
-    await fs.promises.mkdir(packageDir, { recursive: true })
-
-    execSync(`cd "${extractedDir}" && ./Configure --prefix="${packageDir}" shared`, {
-      stdio: 'inherit',
-    })
-
-    // Build
-    logUniqueMessage(`🔨 Compiling OpenSSL ${version}...`)
-    execSync(`cd "${extractedDir}" && make`, {
-      stdio: 'inherit',
-    })
-
-    // Install
-    logUniqueMessage(`📦 Installing OpenSSL ${version}...`)
-    execSync(`cd "${extractedDir}" && make install`, {
-      stdio: 'inherit',
-    })
-
-    // Cleanup
-    await fs.promises.rm(sourceDir, { recursive: true, force: true })
-
-    return [`${packageDir}/bin/openssl`]
-  }
-  catch (error) {
-    // Cleanup on error
-    await fs.promises.rm(sourceDir, { recursive: true, force: true })
-
-    const errorMessage = `OpenSSL ${version} source build failed: ${
       error instanceof Error ? error.message : String(error)
     }`
     throw new Error(errorMessage)
