@@ -2,7 +2,7 @@
 import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
-import os, { arch, platform } from 'node:os'
+import { arch, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { aliases, packages } from 'ts-pkgx'
@@ -2227,7 +2227,14 @@ export async function downloadPackage(
     // Validate package completeness and trigger source build if incomplete
     const isValidPackage = await validatePackageInstallation(packageDir, domain)
     if (!isValidPackage) {
-      logUniqueMessage(`⚠️  Package ${domain} appears incomplete, source build not available...`)
+      // Some packages like ca-certs don't have traditional binaries, so this is expected
+      if (domain.includes('ca-certs')) {
+        if (config.verbose) {
+          logUniqueMessage(`ℹ️  ${domain} installed (certificate bundle, no binaries expected)`)
+        }
+      } else {
+        logUniqueMessage(`⚠️  Package ${domain} appears incomplete, source build not available...`)
+      }
     }
 
     // Find binaries and create shims
@@ -4165,6 +4172,8 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
   await fs.promises.mkdir(targetPath, { recursive: true })
 
   const allInstalledFiles: string[] = []
+  let totalDepsProcessed = 0
+  let totalDepsAlreadyInstalled = 0
 
   try {
     // Import pantry from ts-pkgx to get package dependencies
@@ -4175,12 +4184,23 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       const domain = resolvePackageName(packageName)
 
       // Try different ways to find the package in pantry
-      const packageKey = Object.keys(pantry).find(key =>
-        key === domain
-        || key === packageName
-        || key.includes(packageName)
-        || key.includes(domain.split('.')[0]),
-      )
+      // For PHP, we need to check php.net specifically
+      let packageKey: string | undefined
+      
+      // First, try exact matches
+      packageKey = Object.keys(pantry).find(key => key === domain || key === packageName)
+      
+      // Handle PHP special case - check phpnet specifically
+      if (!packageKey && packageName === 'php') {
+        packageKey = Object.keys(pantry).find(key => key === 'phpnet')
+      }
+      
+      // Fallback to partial matches only if no exact match found
+      if (!packageKey) {
+        packageKey = Object.keys(pantry).find(key => 
+          key.includes(packageName) || key.includes(domain.split('.')[0])
+        )
+      }
 
       const packageSpec = packageKey ? pantry[packageKey] : null
 
@@ -4190,18 +4210,12 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       }
 
       if (config.verbose) {
-        console.warn(`${packageName} dependencies: ${packageSpec.dependencies.join(', ')}`)
+        console.log(`📋 ${packageName} has ${packageSpec.dependencies.length} dependencies: ${packageSpec.dependencies.join(', ')}`)
       }
 
-      // Filter out problematic dependencies that cause builds to hang
+      // Filter out problematic dependencies - these are now included since source builds don't exist
       const skipPatterns = [
-        'zlib.net', // Causes build failures
-        'libzip.org', // Complex build
-        'gnome.org/libxslt', // Complex build
-        'libpng.org', // Complex build
-        'google.com/webp', // Complex build
-        'ijg.org', // Complex build
-        'gnu.org/gmp', // Let ts-pkgx handle GMP instead of custom build
+        // Only skip dependencies that are truly problematic or incompatible
       ]
 
       const filteredDeps = packageSpec.dependencies.filter(dep =>
@@ -4209,26 +4223,48 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       )
 
       if (filteredDeps.length === 0) {
-        console.log(`✅ No dependencies to install for ${packageName}`)
+        console.log(`✅ No installable dependencies found for ${packageName}`)
         continue
       }
 
-      // Filter out already installed dependencies
+      // Filter out already installed dependencies and the main package itself
       const depsToInstall = filteredDeps.filter((dep) => {
-        const depInstallPath = path.join(targetPath, dep.split(/[<>=~^]/)[0])
+        const depDomain = dep.split(/[<>=~^]/)[0]
+        
+        // Skip if this dependency is the same as the main package we're installing deps for
+        if (depDomain === domain || depDomain === packageName || 
+            (packageName === 'php' && depDomain === 'php.net') ||
+            (domain === 'php.net' && depDomain === 'php.net')) {
+          if (config.verbose) {
+            console.log(`⏭️  Skipping ${dep} (this is the main package, not a dependency)`)
+          }
+          return false
+        }
+        
+        const depInstallPath = path.join(targetPath, depDomain)
         const alreadyInstalled = fs.existsSync(depInstallPath)
-        if (alreadyInstalled && config.verbose) {
-          console.log(`✅ ${dep} already installed`)
+        if (alreadyInstalled) {
+          totalDepsAlreadyInstalled++
+          if (config.verbose) {
+            console.log(`✅ ${dep} already installed`)
+          }
         }
         return !alreadyInstalled
       })
 
+      totalDepsProcessed += filteredDeps.length
+
       if (depsToInstall.length === 0) {
-        console.log(`✅ All dependencies for ${packageName} already installed`)
+        if (config.verbose) {
+          console.log(`✅ All ${filteredDeps.length} dependencies for ${packageName} already installed`)
+        }
         continue
       }
 
-      console.log(`📦 Installing ${depsToInstall.length} dependencies for ${packageName}...`)
+      console.log(`📦 Installing ${depsToInstall.length} new dependencies for ${packageName}...`)
+      if (config.verbose) {
+        console.log(`   Dependencies to install: ${depsToInstall.join(', ')}`)
+      }
 
       try {
         // Install dependencies using the main install function
@@ -4236,10 +4272,10 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
         allInstalledFiles.push(...installedFiles)
 
         if (config.verbose) {
-          console.log(`✅ Installed ${packageName} dependencies: ${depsToInstall.join(', ')}`)
+          console.log(`✅ Successfully installed ${depsToInstall.length} dependencies for ${packageName}`)
         }
-      }
-      catch (error) {
+  }
+  catch (error) {
         console.warn(`⚠️ Some dependencies for ${packageName} failed to install, trying individual installation`)
 
         // Fallback to individual installation
@@ -4258,7 +4294,15 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       }
     }
 
-    console.log(`🎉 Dependencies installation complete. ${allInstalledFiles.length} files installed.`)
+    // Improved final message
+    if (allInstalledFiles.length > 0) {
+      console.log(`🎉 Dependencies installation complete. Installed ${allInstalledFiles.length} files for ${packages.join(', ')}.`)
+    } else if (totalDepsAlreadyInstalled > 0) {
+      console.log(`✅ All ${totalDepsAlreadyInstalled} dependencies for ${packages.join(', ')} were already installed.`)
+    } else {
+      console.log(`ℹ️  No dependencies found to install for ${packages.join(', ')}.`)
+    }
+
     return allInstalledFiles
   }
   catch (error) {

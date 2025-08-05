@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import process from 'node:process'
 import { config } from './config'
 
 export interface BinaryInfo {

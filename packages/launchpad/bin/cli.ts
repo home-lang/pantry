@@ -779,7 +779,7 @@ cli
   .option('--shell', 'Output shell code for evaluation (use with eval)')
   .example('launchpad install node python')
   .example('launchpad install --path ~/.local node python')
-  .example('launchpad install --deps-only php')
+  .example('launchpad install php --deps-only')
   .example('launchpad install')
   .example('launchpad install ./my-project')
   .example('launchpad install --global-deps')
@@ -831,8 +831,6 @@ cli
                 console.log(`  ${file}`)
               })
             }
-          } else {
-            console.log('⚠️  No dependencies were installed')
           }
         }
         return
