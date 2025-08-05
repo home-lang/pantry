@@ -186,12 +186,19 @@ jobs:
           ls -la $(brew --prefix postgresql@15)/lib/libpq.* || echo "libpq not found in expected location"
           which pg_config || echo "pg_config not found in PATH"
 
-          # Create symlinks to help PHP find readline
-          echo "Creating symlinks for readline:"
+          # Verify bzip2 installation
+          echo "Checking bzip2 installation:"
+          ls -la $(brew --prefix bzip2)/include/bzlib.h || echo "bzlib.h not found in expected location"
+          ls -la $(brew --prefix bzip2)/lib/libbz2.* || echo "libbz2 not found in expected location"
+
+          # Create symlinks to help PHP find readline and bzip2
+          echo "Creating symlinks for readline and bzip2:"
           sudo mkdir -p /usr/local/include/readline /usr/local/lib
           sudo ln -sf $(brew --prefix readline)/include/readline/readline.h /usr/local/include/readline/readline.h
           sudo ln -sf $(brew --prefix readline)/include/readline/history.h /usr/local/include/readline/history.h
           sudo ln -sf $(brew --prefix readline)/lib/libreadline.* /usr/local/lib/
+          sudo ln -sf $(brew --prefix bzip2)/include/bzlib.h /usr/local/include/bzlib.h
+          sudo ln -sf $(brew --prefix bzip2)/lib/libbz2.* /usr/local/lib/
 
       - name: Create build configuration
         run: |
@@ -225,10 +232,10 @@ jobs:
         if: matrix.platform == 'darwin'
         run: |
           # Set paths for Homebrew dependencies including keg-only packages
-          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig:$(brew --prefix postgresql@15)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig:$(brew --prefix postgresql@15)/lib/pkgconfig:$(brew --prefix bzip2)/lib/pkgconfig" >> $GITHUB_ENV
           echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$(brew --prefix postgresql@15)/bin:$PATH" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@15)/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@15)/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@15)/lib -L$(brew --prefix bzip2)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@15)/include -I$(brew --prefix bzip2)/include" >> $GITHUB_ENV
 
           # Set readline-specific paths
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
@@ -265,6 +272,10 @@ jobs:
             # Set PostgreSQL environment variables
             export PGSQL_CFLAGS="-I$(brew --prefix postgresql@15)/include"
             export PGSQL_LIBS="-L$(brew --prefix postgresql@15)/lib -lpq"
+
+            # Set bzip2 environment variables
+            export BZIP2_CFLAGS="-I$(brew --prefix bzip2)/include"
+            export BZIP2_LIBS="-L$(brew --prefix bzip2)/lib -lbz2"
 
             # Try to find readline.h and set the path explicitly
             READLINE_PATH=$(brew --prefix readline)
