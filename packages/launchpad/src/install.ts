@@ -4186,23 +4186,23 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       // Try different ways to find the package in pantry
       // For PHP, we need to check php.net specifically
       let packageKey: string | undefined
-      
+
       // First, try exact matches
       packageKey = Object.keys(pantry).find(key => key === domain || key === packageName)
-      
+
       // Handle PHP special case - check phpnet specifically
       if (!packageKey && packageName === 'php') {
         packageKey = Object.keys(pantry).find(key => key === 'phpnet')
       }
-      
+
       // Fallback to partial matches only if no exact match found
       if (!packageKey) {
-        packageKey = Object.keys(pantry).find(key => 
+        packageKey = Object.keys(pantry).find(key =>
           key.includes(packageName) || key.includes(domain.split('.')[0])
         )
       }
 
-      const packageSpec = packageKey ? pantry[packageKey] : null
+      const packageSpec = packageKey ? pantry[packageKey as keyof typeof pantry] : null
 
       if (!packageSpec || !packageSpec.dependencies) {
         console.warn(`⚠️ Package ${packageName} not found in pantry or has no dependencies`)
@@ -4214,11 +4214,11 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       }
 
       // Filter out problematic dependencies - these are now included since source builds don't exist
-      const skipPatterns = [
+      const skipPatterns: string[] = [
         // Only skip dependencies that are truly problematic or incompatible
       ]
 
-      const filteredDeps = packageSpec.dependencies.filter(dep =>
+      const filteredDeps = packageSpec.dependencies.filter((dep: string) =>
         !skipPatterns.some(pattern => dep.includes(pattern)),
       )
 
@@ -4228,11 +4228,11 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       }
 
       // Filter out already installed dependencies and the main package itself
-      const depsToInstall = filteredDeps.filter((dep) => {
+      const depsToInstall = filteredDeps.filter((dep: string) => {
         const depDomain = dep.split(/[<>=~^]/)[0]
-        
+
         // Skip if this dependency is the same as the main package we're installing deps for
-        if (depDomain === domain || depDomain === packageName || 
+        if (depDomain === domain || depDomain === packageName ||
             (packageName === 'php' && depDomain === 'php.net') ||
             (domain === 'php.net' && depDomain === 'php.net')) {
           if (config.verbose) {
@@ -4240,7 +4240,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
           }
           return false
         }
-        
+
         const depInstallPath = path.join(targetPath, depDomain)
         const alreadyInstalled = fs.existsSync(depInstallPath)
         if (alreadyInstalled) {

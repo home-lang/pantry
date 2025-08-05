@@ -823,15 +823,11 @@ cli
           await createGlobalBinarySymlinks(installPath)
         }
 
-        if (!options.quiet) {
-          if (results.length > 0) {
-            console.log(`🎉 Successfully installed dependencies for ${packageList.join(', ')} (${results.length} ${results.length === 1 ? 'file' : 'files'})`)
-            if (options.verbose) {
-              results.forEach((file) => {
-                console.log(`  ${file}`)
-              })
-            }
-          }
+        if (!options.quiet && options.verbose && results.length > 0) {
+          // Only show file list in verbose mode since installDependenciesOnly already shows summary
+          results.forEach((file) => {
+            console.log(`  ${file}`)
+          })
         }
         return
       }
