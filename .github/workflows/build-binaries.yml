@@ -307,12 +307,18 @@ jobs:
                 BZIP2_PATH="$LAUNCHPAD_BZIP2_DIR/$BZIP2_VERSION"
                 echo "Found launchpad bzip2 at: $BZIP2_PATH"
 
-                # Check multiple possible locations for bzlib.h
+                                # Check multiple possible locations for bzlib.h
                 BZLIB_FOUND=false
                 for include_path in "$BZIP2_PATH/include/bzlib.h" "$BZIP2_PATH/include/bzip2/bzlib.h" "$BZIP2_PATH/bzlib.h"; do
                   if [[ -f "$include_path" ]]; then
                     echo "✓ bzlib.h found at $include_path"
-                    EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
+                    # Only add if the path is not empty
+                    if [[ -n "$BZIP2_PATH" ]]; then
+                      EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PATH"
+                      echo "Added --with-bz2=$BZIP2_PATH"
+                    else
+                      echo "⚠️  BZIP2_PATH is empty, skipping --with-bz2 option"
+                    fi
                     BZLIB_FOUND=true
                     break
                   fi
@@ -531,6 +537,30 @@ jobs:
             done
             EXTRA_CONFIG="$FINAL_EXTRA_CONFIG"
             echo "Final EXTRA_CONFIG: $EXTRA_CONFIG"
+
+            # Final check: ensure no empty or problematic options remain
+            echo "Final validation of EXTRA_CONFIG:"
+            FINAL_VALIDATED_CONFIG=""
+            for option in $EXTRA_CONFIG; do
+              # Skip completely empty options
+              if [[ -z "$option" ]]; then
+                echo "Removing empty option"
+                continue
+              fi
+              # Skip options that are just whitespace
+              if [[ -z "${option// }" ]]; then
+                echo "Removing whitespace-only option"
+                continue
+              fi
+              # Skip options that might cause issues (like --with-bz2 without value)
+              if [[ "$option" =~ ^--with-[^=]+$ ]]; then
+                echo "Removing option without value: $option"
+                continue
+              fi
+              FINAL_VALIDATED_CONFIG="$FINAL_VALIDATED_CONFIG $option"
+            done
+            EXTRA_CONFIG="$FINAL_VALIDATED_CONFIG"
+            echo "Final validated EXTRA_CONFIG: $EXTRA_CONFIG"
           fi
 
           echo "Configuring PHP with:"
@@ -543,6 +573,22 @@ jobs:
           # Debug: Show the final configure command
           echo "Final configure command will be:"
           echo "./configure --prefix=\"$INSTALL_PREFIX\" --disable-debug --enable-shared --with-pic ${{ env.CONFIGURE_EXTENSIONS }} $EXTRA_CONFIG $CURL_CONFIG"
+
+          # Debug: Show each argument separately
+          echo "Debug: Breaking down configure arguments:"
+          echo "  --prefix=\"$INSTALL_PREFIX\""
+          echo "  --disable-debug"
+          echo "  --enable-shared"
+          echo "  --with-pic"
+          echo "  CONFIGURE_EXTENSIONS: ${{ env.CONFIGURE_EXTENSIONS }}"
+          echo "  EXTRA_CONFIG: $EXTRA_CONFIG"
+          echo "  CURL_CONFIG: $CURL_CONFIG"
+
+          # Debug: Show each EXTRA_CONFIG option separately
+          echo "Debug: EXTRA_CONFIG options:"
+          for option in $EXTRA_CONFIG; do
+            echo "  '$option'"
+          done
 
           # Debug: Show available pkg-config files
           echo "Available pkg-config files:"
