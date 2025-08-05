@@ -396,9 +396,11 @@ jobs:
             fi
 
             # Set C++17 flag for ICU4C compatibility - set explicitly
+            # Only apply C++17 to C++ compiler, not C compiler
             export CXXFLAGS="-std=c++17 -stdlib=libc++"
-            export CFLAGS="-std=c++17"
-            export CPPFLAGS="$CPPFLAGS -std=c++17"
+            # Keep CFLAGS clean for C compiler
+            export CFLAGS=""
+            export CPPFLAGS="$CPPFLAGS"
             echo "Set C++17 flags for configure step"
             echo "CXXFLAGS: $CXXFLAGS"
             echo "CFLAGS: $CFLAGS"
@@ -495,9 +497,11 @@ jobs:
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             JOBS=$(sysctl -n hw.ncpu)
             # Ensure C++17 is used during build - set explicitly
+            # Only apply C++17 to C++ compiler, not C compiler
             export CXXFLAGS="-std=c++17 -stdlib=libc++"
-            export CFLAGS="-std=c++17"
-            export CPPFLAGS="$CPPFLAGS -std=c++17"
+            # Keep CFLAGS clean for C compiler
+            export CFLAGS=""
+            export CPPFLAGS="$CPPFLAGS"
             echo "Set C++17 flags for macOS build"
           else
             JOBS=$(nproc)
