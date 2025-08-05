@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
-import os from 'node:os'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
+import type { ServiceInstance } from '../src/types'
 
 // Mock environment to prevent actual service operations
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV
@@ -17,7 +19,7 @@ describe('Service Auto-Setup - Regression Tests', () => {
     process.env.LAUNCHPAD_TEST_MODE = 'true'
 
     // Create temp directory for test project
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-service-test-'))
+    tempDir = fs.mkdtempSync(path.join(tmpdir(), 'launchpad-service-test-'))
     originalCwd = process.cwd()
     process.chdir(tempDir)
 
@@ -72,24 +74,25 @@ describe('Service Auto-Setup - Regression Tests', () => {
       expect(projectName).toBe('the_one_otc_api')
 
       // Mock service instance
-      const mockService = {
+      const mockService: ServiceInstance = {
+        name: 'test-service',
         definition: {
-          name: 'postgres',
-          displayName: 'PostgreSQL',
-          description: 'PostgreSQL Database Server',
-          packageDomain: 'postgresql.org',
-          executable: 'postgres',
+          name: 'test-service',
+          displayName: 'Test Service',
+          description: 'A test service for testing',
+          packageDomain: 'test.org',
+          executable: 'test',
           args: [],
           env: {},
           dependencies: [],
           supportsGracefulShutdown: true,
-          port: 5432,
+          port: 8080,
           config: {},
         },
         config: {},
-        status: 'stopped' as const,
+        status: 'stopped',
         lastCheckedAt: new Date(),
-        enabled: true,
+        enabled: false,
       }
 
       // Test template variable resolution

@@ -31,9 +31,11 @@ describe('Service Management', () => {
     process.env.LAUNCHPAD_TEST_MODE = 'true'
 
     // Override service directories for testing
-    config.services.dataDir = path.join(tempDir, 'services')
-    config.services.logDir = path.join(tempDir, 'logs')
-    config.services.configDir = path.join(tempDir, 'config')
+    if (config.services) {
+      config.services.dataDir = path.join(tempDir, 'services')
+      config.services.logDir = path.join(tempDir, 'logs')
+      config.services.configDir = path.join(tempDir, 'config')
+    }
   })
 
   afterEach(() => {
@@ -42,7 +44,9 @@ describe('Service Management', () => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
-    Object.assign(config.services, originalConfig)
+    if (config.services && originalConfig) {
+      Object.assign(config.services, originalConfig)
+    }
 
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
@@ -486,9 +490,9 @@ describe('Service Management', () => {
   describe('Service Configuration', () => {
     it('should create configuration directories', async () => {
       // First verify our temp directory configuration is set correctly
-      expect(config.services.dataDir).toBe(path.join(tempDir, 'services'))
-      expect(config.services.logDir).toBe(path.join(tempDir, 'logs'))
-      expect(config.services.configDir).toBe(path.join(tempDir, 'config'))
+      expect(config.services?.dataDir).toBe(path.join(tempDir, 'services'))
+      expect(config.services?.logDir).toBe(path.join(tempDir, 'logs'))
+      expect(config.services?.configDir).toBe(path.join(tempDir, 'config'))
 
       // Initialize the service manager which should create directories
       const manager = await initializeServiceManager()

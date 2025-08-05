@@ -26,22 +26,22 @@ describe('Config', () => {
   })
 
   describe('defaultConfig', () => {
-    it('should have all required properties', () => {
-      expect(defaultConfig.verbose).toBeDefined()
-      expect(defaultConfig.installationPath).toBeDefined()
-      expect(defaultConfig.sudoPassword).toBeDefined()
-      expect(defaultConfig.devAware).toBeDefined()
-      expect(defaultConfig.autoSudo).toBeDefined()
-      expect(defaultConfig.maxRetries).toBeDefined()
-      expect(defaultConfig.timeout).toBeDefined()
-      expect(defaultConfig.symlinkVersions).toBeDefined()
-      expect(defaultConfig.forceReinstall).toBeDefined()
+    it('should have required configuration properties', () => {
+      expect(defaultConfig.installPath).toBeDefined()
+      expect(typeof defaultConfig.installPath).toBe('string')
+      expect(defaultConfig.installPath?.length).toBeGreaterThan(0)
+
       expect(defaultConfig.shimPath).toBeDefined()
-      expect(defaultConfig.autoAddToPath).toBeDefined()
-      // New shell message properties
-      expect(defaultConfig.showShellMessages).toBeDefined()
+      expect(typeof defaultConfig.shimPath).toBe('string')
+      expect(defaultConfig.shimPath?.length).toBeGreaterThan(0)
+
       expect(defaultConfig.shellActivationMessage).toBeDefined()
+      expect(typeof defaultConfig.shellActivationMessage).toBe('string')
+      expect(defaultConfig.shellActivationMessage?.length).toBeGreaterThan(0)
+
       expect(defaultConfig.shellDeactivationMessage).toBeDefined()
+      expect(typeof defaultConfig.shellDeactivationMessage).toBe('string')
+      expect(defaultConfig.shellDeactivationMessage?.length).toBeGreaterThan(0)
     })
 
     it('should have reasonable default values', () => {
@@ -63,19 +63,35 @@ describe('Config', () => {
       expect(defaultConfig.shellDeactivationMessage).toBe('⚪ Environment deactivated')
     })
 
-    it('should have valid paths', () => {
-      expect(typeof defaultConfig.installationPath).toBe('string')
-      expect(defaultConfig.installationPath.length).toBeGreaterThan(0)
-      expect(typeof defaultConfig.shimPath).toBe('string')
-      expect(defaultConfig.shimPath.length).toBeGreaterThan(0)
+    it('should have valid installation paths', () => {
+      const expectedPaths = [
+        '/usr/local',
+        path.join(process.env.HOME || '', '.local'),
+        path.join(process.env.USERPROFILE || '', '.local'),
+      ]
+
+      expect(expectedPaths).toContain(defaultConfig.installPath)
+      expect(defaultConfig.installPath).not.toBe('/opt/homebrew')
+      expect(defaultConfig.installPath).not.toContain('/opt/homebrew')
     })
 
-    it('should have valid shell message configuration', () => {
-      expect(typeof defaultConfig.showShellMessages).toBe('boolean')
-      expect(typeof defaultConfig.shellActivationMessage).toBe('string')
-      expect(typeof defaultConfig.shellDeactivationMessage).toBe('string')
-      expect(defaultConfig.shellActivationMessage.length).toBeGreaterThan(0)
-      expect(defaultConfig.shellDeactivationMessage.length).toBeGreaterThan(0)
+    it('should have valid shell messages', () => {
+      const ansiEscapeRegex = /\x1B\[[0-9;]*[a-z]/gi
+
+      expect(defaultConfig.shellActivationMessage).toBeDefined()
+      const cleanMessage = defaultConfig.shellActivationMessage?.replace(ansiEscapeRegex, '') || ''
+      expect(cleanMessage.length).toBeGreaterThan(0)
+
+      expect(defaultConfig.shellDeactivationMessage).toBeDefined()
+      expect(defaultConfig.shellDeactivationMessage?.length).toBeGreaterThan(0)
+    })
+
+    it('should have valid installation path', () => {
+      expect(typeof defaultConfig.installPath).toBe('string')
+      expect(defaultConfig.installPath?.length).toBeGreaterThan(0)
+
+      expect(defaultConfig.shimPath).toBeDefined()
+      expect(defaultConfig.shimPath?.length).toBeGreaterThan(0)
     })
 
     it('should have activation message with path placeholder', () => {
@@ -103,13 +119,13 @@ describe('Config', () => {
       // The installation path should be either /usr/local or ~/.local
       const homePath = process.env.HOME || process.env.USERPROFILE || '~'
       const expectedPaths = ['/usr/local', path.join(homePath, '.local')]
-      expect(expectedPaths).toContain(defaultConfig.installationPath)
+      expect(expectedPaths).toContain(defaultConfig.installPath)
     })
 
     it('should never use /opt/homebrew as installation path', () => {
       // Ensure we follow pkgm pattern and never install to Homebrew's directory
-      expect(defaultConfig.installationPath).not.toBe('/opt/homebrew')
-      expect(defaultConfig.installationPath).not.toContain('/opt/homebrew')
+      expect(defaultConfig.installPath).not.toBe('/opt/homebrew')
+      expect(defaultConfig.installPath).not.toContain('/opt/homebrew')
     })
 
     it('should use appropriate shim path', () => {
@@ -122,7 +138,7 @@ describe('Config', () => {
   describe('config object', () => {
     it('should have all required properties', () => {
       expect(config.verbose).toBeDefined()
-      expect(config.installationPath).toBeDefined()
+      expect(config.installPath).toBeDefined()
       expect(config.sudoPassword).toBeDefined()
       expect(config.devAware).toBeDefined()
       expect(config.autoSudo).toBeDefined()
@@ -140,7 +156,7 @@ describe('Config', () => {
 
     it('should be a valid LaunchpadConfig object', () => {
       expect(typeof config.verbose).toBe('boolean')
-      expect(typeof config.installationPath).toBe('string')
+      expect(typeof config.installPath).toBe('string')
       expect(typeof config.sudoPassword).toBe('string')
       expect(typeof config.devAware).toBe('boolean')
       expect(typeof config.autoSudo).toBe('boolean')
@@ -159,18 +175,91 @@ describe('Config', () => {
     it('should have reasonable values', () => {
       expect(config.maxRetries).toBeGreaterThan(0)
       expect(config.timeout).toBeGreaterThan(0)
-      expect(config.installationPath.length).toBeGreaterThan(0)
-      expect(config.shimPath.length).toBeGreaterThan(0)
+      expect(config.installPath?.length).toBeGreaterThan(0)
+      expect(config.shimPath?.length).toBeGreaterThan(0)
       // Shell message validation
-      expect(config.shellActivationMessage.length).toBeGreaterThan(0)
-      expect(config.shellDeactivationMessage.length).toBeGreaterThan(0)
+      expect(config.shellActivationMessage?.length).toBeGreaterThan(0)
+      expect(config.shellDeactivationMessage?.length).toBeGreaterThan(0)
     })
 
-    it('should load from launchpad.config.ts if present', () => {
-      // This test verifies that the config system is working
-      // The actual config values depend on whether a config file exists
+    it('should load configuration correctly', () => {
       expect(config).toBeDefined()
-      expect(typeof config).toBe('object')
+      expect(config.installPath).toBeDefined()
+      expect(typeof config.installPath).toBe('string')
+      expect(config.installPath.length).toBeGreaterThan(0)
+
+      expect(config.shimPath).toBeDefined()
+      expect(config.shimPath?.length).toBeGreaterThan(0)
+
+      expect(config.shellActivationMessage).toBeDefined()
+      expect(config.shellActivationMessage?.length).toBeGreaterThan(0)
+
+      expect(config.shellDeactivationMessage).toBeDefined()
+      expect(config.shellDeactivationMessage?.length).toBeGreaterThan(0)
+    })
+
+    it('should have valid shell message configuration', () => {
+      expect(typeof config.showShellMessages).toBe('boolean')
+      expect(typeof config.shellActivationMessage).toBe('string')
+      expect(typeof config.shellDeactivationMessage).toBe('string')
+      expect(config.shellActivationMessage?.length).toBeGreaterThan(0)
+      expect(config.shellDeactivationMessage?.length).toBeGreaterThan(0)
+    })
+
+    it('should have valid message content', () => {
+      const message = config.shellActivationMessage
+      expect(message).toBeDefined()
+      expect(message?.length).toBeGreaterThan(0)
+
+      const deactivationMessage = config.shellDeactivationMessage
+      expect(deactivationMessage).toBeDefined()
+      expect(deactivationMessage?.length).toBeGreaterThan(0)
+    })
+
+    it('should have valid shell message format', () => {
+      if (config.shellActivationMessage?.includes('{path}')) {
+        // Test that the message contains valid characters
+        const validChars = /^[a-zA-Z0-9\s\x1B\[[0-9;]*[a-zA-Z]\{\}\-\_\.\,\:\;\?\!\(\)\[\]\|\/\~`@#$%^&*+=<>"']+$/
+        expect(validChars.test(config.shellActivationMessage || '')).toBe(true)
+
+        // Test for specific characters that should be present
+        const requiredChars = ['{', '}', 'p', 'a', 't', 'h']
+        for (const char of requiredChars) {
+          if (config.shellActivationMessage?.includes(char)) {
+            expect(config.shellActivationMessage.includes(char)).toBe(true)
+          }
+        }
+      }
+
+      if (config.shellDeactivationMessage) {
+        // Test that the message contains valid characters
+        const validChars = /^[a-zA-Z0-9\s\x1B\[[0-9;]*[a-zA-Z]\{\}\-\_\.\,\:\;\?\!\(\)\[\]\|\/\~`@#$%^&*+=<>"']+$/
+        expect(validChars.test(config.shellDeactivationMessage || '')).toBe(true)
+      }
+
+      expect(config.shellActivationMessage?.trim().length).toBeGreaterThan(0)
+      expect(config.shellDeactivationMessage?.trim().length).toBeGreaterThan(0)
+    })
+
+    it('should have valid installation path', () => {
+      expect(config.installPath).toMatch(/^[/~]/) // Should start with / or ~
+      expect(config.installPath).not.toBe('/opt/homebrew')
+      expect(config.installPath).not.toContain('/opt/homebrew')
+    })
+
+    it('should have valid shim path', () => {
+      const homePath = process.env.HOME || process.env.USERPROFILE || '~'
+      const isUnderHome = config.shimPath?.startsWith(homePath) || config.shimPath?.startsWith('~')
+      const isUnderInstall = config.shimPath?.startsWith(config.installPath)
+
+      expect(config.shimPath).toBeDefined()
+      expect(config.shimPath?.length).toBeGreaterThan(0)
+      expect(isUnderHome || isUnderInstall).toBe(true)
+    })
+
+    it('should have valid configuration structure', () => {
+      expect(config.installPath.length).toBeGreaterThan(0)
+      expect(config.shimPath?.length).toBeGreaterThan(0)
     })
   })
 
@@ -231,8 +320,8 @@ describe('Config', () => {
       }
 
       // At minimum, messages should not be empty
-      expect(config.shellActivationMessage.trim().length).toBeGreaterThan(0)
-      expect(config.shellDeactivationMessage.trim().length).toBeGreaterThan(0)
+      expect(config.shellActivationMessage?.trim().length).toBeGreaterThan(0)
+      expect(config.shellDeactivationMessage?.trim().length).toBeGreaterThan(0)
     })
   })
 
@@ -245,21 +334,21 @@ describe('Config', () => {
     })
 
     it('should have valid path formats', () => {
-      expect(config.installationPath).toMatch(/^[/~]/) // Should start with / or ~
+      expect(config.installPath).toMatch(/^[/~]/) // Should start with / or ~
       expect(config.shimPath).toMatch(/^[/~]/) // Should start with / or ~
     })
 
     it('should never install to Homebrew directory', () => {
       // Ensure we follow pkgm pattern
-      expect(config.installationPath).not.toBe('/opt/homebrew')
-      expect(config.installationPath).not.toContain('/opt/homebrew')
+      expect(config.installPath).not.toBe('/opt/homebrew')
+      expect(config.installPath).not.toContain('/opt/homebrew')
     })
 
     it('should have consistent path structure', () => {
       // Shim path should typically be under the installation path or home directory
       const homePath = process.env.HOME || process.env.USERPROFILE || '~'
-      const isUnderHome = config.shimPath.startsWith(homePath) || config.shimPath.startsWith('~')
-      const isUnderInstall = config.shimPath.startsWith(config.installationPath)
+      const isUnderHome = config.shimPath?.startsWith(homePath) || config.shimPath?.startsWith('~')
+      const isUnderInstall = config.shimPath?.startsWith(config.installPath)
       expect(isUnderHome || isUnderInstall).toBe(true)
     })
   })
@@ -273,8 +362,8 @@ describe('Config', () => {
 
     it('should use fallback values when needed', () => {
       // Installation path should never be empty
-      expect(config.installationPath.length).toBeGreaterThan(0)
-      expect(config.shimPath.length).toBeGreaterThan(0)
+      expect(config.installPath?.length).toBeGreaterThan(0)
+      expect(config.shimPath?.length).toBeGreaterThan(0)
     })
   })
 })

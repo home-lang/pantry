@@ -36,7 +36,6 @@ function getDefaultShimPath(): string {
 
 export const defaultConfig: LaunchpadConfig = {
   verbose: process.env.LAUNCHPAD_VERBOSE === 'true' || false,
-  installationPath: getDefaultInstallPath(),
   sudoPassword: process.env.SUDO_PASSWORD || '',
   devAware: true,
   autoSudo: process.env.LAUNCHPAD_AUTO_SUDO !== 'false',

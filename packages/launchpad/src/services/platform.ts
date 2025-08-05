@@ -12,11 +12,20 @@ import { findBinaryInPath } from '../utils'
  */
 export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   const { definition } = service
-  const logDir = service.logFile ? path.dirname(service.logFile) : config.services.logDir
+  if (!definition) {
+    throw new Error(`Service definition not found for ${service.name}`)
+  }
+
+  const servicesConfig = config.services
+  if (!servicesConfig) {
+    throw new Error('Services configuration not found')
+  }
+
+  const logDir = service.logFile ? path.dirname(service.logFile) : servicesConfig.logDir
   const dataDir = service.dataDir || definition.dataDirectory
 
   // Resolve template variables in arguments
-  const resolvedArgs = definition.args.map((arg) => {
+  const resolvedArgs = (definition.args || []).map((arg) => {
     let resolved = arg
       .replace('{dataDir}', dataDir || '')
       .replace('{configFile}', service.configFile || definition.configFile || '')
@@ -25,8 +34,10 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       .replace('{port}', String(definition.port || 5432))
 
     // Replace service-specific config variables
-    for (const [key, value] of Object.entries(service.config)) {
-      resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+    if (service.config) {
+      for (const [key, value] of Object.entries(service.config)) {
+        resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+      }
     }
 
     return resolved
@@ -36,11 +47,11 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   const executablePath = findBinaryInPath(definition.executable) || definition.executable
 
   return {
-    Label: `com.launchpad.${definition.name}`,
+    Label: `com.launchpad.${definition.name || service.name}`,
     ProgramArguments: [executablePath, ...resolvedArgs],
-    WorkingDirectory: definition.workingDirectory || dataDir,
+    WorkingDirectory: definition.workingDirectory || dataDir || '',
     EnvironmentVariables: {
-      ...Object.fromEntries(Object.entries(definition.env).map(([k, v]) => {
+      ...Object.fromEntries(Object.entries(definition.env || {}).map(([k, v]) => {
         let resolved = String(v)
           .replace('{dataDir}', dataDir || '')
           .replace('{configFile}', service.configFile || definition.configFile || '')
@@ -49,21 +60,20 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
           .replace('{port}', String(definition.port || 5432))
 
         // Replace service-specific config variables
-        for (const [key, value] of Object.entries(service.config)) {
-          resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+        if (service.config) {
+          for (const [key, value] of Object.entries(service.config)) {
+            resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+          }
         }
 
         return [k, resolved]
       })),
-      ...Object.fromEntries(Object.entries(service.config).map(([k, v]) => [k, String(v)])),
+      ...Object.fromEntries(Object.entries(service.config || {}).map(([k, v]) => [k, String(v)])),
     },
-    StandardOutPath: service.logFile || path.join(logDir, `${definition.name}.log`),
-    StandardErrorPath: service.logFile || path.join(logDir, `${definition.name}.log`),
-    RunAtLoad: service.enabled,
-    KeepAlive: {
-      SuccessfulExit: false, // Restart if process exits
-      NetworkState: definition.port ? true : undefined, // Wait for network if service has a port
-    },
+    StandardOutPath: service.logFile || path.join(logDir || '', `${definition.name || service.name}.log`),
+    StandardErrorPath: service.logFile || path.join(logDir || '', `${definition.name || service.name}.log`),
+    RunAtLoad: service.enabled || false,
+    KeepAlive: true, // Always keep alive for now
     UserName: process.env.USER || 'root',
   }
 }
@@ -73,11 +83,20 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
  */
 export function generateSystemdService(service: ServiceInstance): SystemdService {
   const { definition } = service
-  const _logDir = service.logFile ? path.dirname(service.logFile) : config.services.logDir
+  if (!definition) {
+    throw new Error(`Service definition not found for ${service.name}`)
+  }
+
+  const servicesConfig = config.services
+  if (!servicesConfig) {
+    throw new Error('Services configuration not found')
+  }
+
+  const _logDir = service.logFile ? path.dirname(service.logFile) : servicesConfig.logDir
   const dataDir = service.dataDir || definition.dataDirectory
 
   // Resolve template variables in arguments
-  const resolvedArgs = definition.args.map((arg) => {
+  const resolvedArgs = (definition.args || []).map((arg) => {
     let resolved = arg
       .replace('{dataDir}', dataDir || '')
       .replace('{configFile}', service.configFile || definition.configFile || '')
@@ -86,8 +105,10 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
       .replace('{port}', String(definition.port || 5432))
 
     // Replace service-specific config variables
-    for (const [key, value] of Object.entries(service.config)) {
-      resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+    if (service.config) {
+      for (const [key, value] of Object.entries(service.config)) {
+        resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+      }
     }
 
     return resolved
@@ -98,7 +119,7 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
 
   // Environment variables as array of KEY=value strings
   const envVars = Object.entries({
-    ...Object.fromEntries(Object.entries(definition.env).map(([k, v]) => {
+    ...Object.fromEntries(Object.entries(definition.env || {}).map(([k, v]) => {
       let resolved = String(v)
         .replace('{dataDir}', dataDir || '')
         .replace('{configFile}', service.configFile || definition.configFile || '')
@@ -107,20 +128,22 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
         .replace('{port}', String(definition.port || 5432))
 
       // Replace service-specific config variables
-      for (const [key, value] of Object.entries(service.config)) {
-        resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+      if (service.config) {
+        for (const [key, value] of Object.entries(service.config)) {
+          resolved = resolved.replace(new RegExp(`{${key}}`, 'g'), String(value))
+        }
       }
 
       return [k, resolved]
     })),
-    ...Object.fromEntries(Object.entries(service.config).map(([k, v]) => [k, String(v)])),
+    ...Object.fromEntries(Object.entries(service.config || {}).map(([k, v]) => [k, String(v)])),
   }).map(([key, value]) => `${key}=${value}`)
 
   return {
     Unit: {
-      Description: `${definition.displayName} - ${definition.description}`,
-      After: ['network.target', ...definition.dependencies.map(dep => `launchpad-${dep}.service`)],
-      Wants: definition.dependencies.map(dep => `launchpad-${dep}.service`),
+      Description: `${definition.displayName || service.name} - ${definition.description || ''}`,
+      After: ['network.target', ...(definition.dependencies || []).map(dep => `launchpad-${dep}.service`)],
+      Wants: (definition.dependencies || []).map(dep => `launchpad-${dep}.service`),
     },
     Service: {
       Type: 'simple',
@@ -131,10 +154,10 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
       WorkingDirectory: definition.workingDirectory || dataDir,
       Environment: envVars.length > 0 ? envVars : undefined,
       User: process.env.USER || 'root',
-      Restart: config.services.autoRestart ? 'on-failure' : 'no',
+      Restart: servicesConfig.autoRestart ? 'on-failure' : 'no',
       RestartSec: 5,
-      TimeoutStartSec: config.services.startupTimeout,
-      TimeoutStopSec: config.services.shutdownTimeout,
+      TimeoutStartSec: servicesConfig.startupTimeout,
+      TimeoutStopSec: servicesConfig.shutdownTimeout,
       PIDFile: definition.pidFile,
     },
     Install: {
@@ -171,7 +194,7 @@ export async function writeSystemdService(service: ServiceInstance, systemdServi
   const systemdDir = path.join(homedir(), '.config', 'systemd', 'user')
   await fs.promises.mkdir(systemdDir, { recursive: true })
 
-  const servicePath = path.join(systemdDir, `launchpad-${service.definition.name}.service`)
+  const servicePath = path.join(systemdDir, `launchpad-${service.definition?.name || service.name}.service`)
 
   // Convert to INI format
   const serviceContent = generateSystemdIni(systemdService)

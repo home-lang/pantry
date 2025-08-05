@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
-import os from 'node:os'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
+import type { ServiceInstance } from '../src/types'
 
 // TDD Tests for Database Auto-Creation Functionality
 
@@ -11,7 +13,7 @@ describe('Database Auto-Creation with .env Detection', () => {
 
   beforeEach(() => {
     originalCwd = process.cwd()
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-db-test-'))
+    tempDir = fs.mkdtempSync(path.join(tmpdir(), 'launchpad-db-test-'))
     process.chdir(tempDir)
   })
 
@@ -43,11 +45,12 @@ DB_PASSWORD=password
       const { getDatabaseNameFromEnv, detectProjectName, resolveServiceTemplateVariables } = await import('../src/services/manager')
 
       // Mock service instance for PostgreSQL
-      const mockPostgresService = {
+      const mockPostgresService: ServiceInstance = {
+        name: 'postgres',
         definition: {
           name: 'postgres',
           displayName: 'PostgreSQL',
-          description: 'PostgreSQL Database Server',
+          description: 'PostgreSQL database server',
           packageDomain: 'postgresql.org',
           executable: 'postgres',
           args: [],
@@ -58,9 +61,9 @@ DB_PASSWORD=password
           config: {},
         },
         config: {},
-        status: 'stopped' as const,
+        status: 'stopped',
         lastCheckedAt: new Date(),
-        enabled: true,
+        enabled: false,
       }
 
       // Assert: Database name should be detected from .env
@@ -91,11 +94,12 @@ DB_PORT=5432
       // Act
       const { getDatabaseNameFromEnv, detectProjectName, resolveServiceTemplateVariables } = await import('../src/services/manager')
 
-      const mockPostgresService = {
+      const mockPostgresService: ServiceInstance = {
+        name: 'postgres',
         definition: {
           name: 'postgres',
           displayName: 'PostgreSQL',
-          description: 'PostgreSQL Database Server',
+          description: 'PostgreSQL database server',
           packageDomain: 'postgresql.org',
           executable: 'postgres',
           args: [],
@@ -106,9 +110,9 @@ DB_PORT=5432
           config: {},
         },
         config: {},
-        status: 'stopped' as const,
+        status: 'stopped',
         lastCheckedAt: new Date(),
-        enabled: true,
+        enabled: false,
       }
 
       // Assert: Should fallback to project name
@@ -283,11 +287,12 @@ DB_DATABASE=integration_test_db
       // Act: Test template variable resolution
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
 
-      const mockPostgresService = {
+      const mockPostgresService: ServiceInstance = {
+        name: 'postgres',
         definition: {
           name: 'postgres',
           displayName: 'PostgreSQL',
-          description: 'PostgreSQL Database Server',
+          description: 'PostgreSQL database server',
           packageDomain: 'postgresql.org',
           executable: 'postgres',
           args: [],
@@ -302,9 +307,9 @@ DB_DATABASE=integration_test_db
           ],
         },
         config: {},
-        status: 'stopped' as const,
+        status: 'stopped',
         lastCheckedAt: new Date(),
-        enabled: true,
+        enabled: false,
       }
 
       // Assert: Commands should use detected database name
@@ -328,7 +333,8 @@ DB_DATABASE=mysql_custom_db
       // Act
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
 
-      const mockMysqlService = {
+      const mockMysqlService: ServiceInstance = {
+        name: 'mysql',
         definition: {
           name: 'mysql',
           displayName: 'MySQL',
@@ -343,9 +349,9 @@ DB_DATABASE=mysql_custom_db
           config: {},
         },
         config: {},
-        status: 'stopped' as const,
+        status: 'stopped',
         lastCheckedAt: new Date(),
-        enabled: true,
+        enabled: false,
       }
 
       // Assert: Should resolve MySQL database name from .env

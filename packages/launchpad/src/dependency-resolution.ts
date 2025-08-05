@@ -1,7 +1,9 @@
+import process from 'node:process'
 import { config } from './config'
-import { parsePackageSpec, resolvePackageName, getLatestVersion, resolveVersion, getPackageInfo } from './package-resolution'
-import { deduplicatePackagesByVersion } from './utils'
-import type { PackageSpec } from './types'
+import { installPackage } from './install-core'
+import { logUniqueMessage } from './logging'
+import { getAvailableVersions, getLatestVersion, getPackageInfo, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
+import { deduplicatePackagesByVersion, getPlatform } from './utils'
 
 // Global tracker for deduplicating packages across all install calls
 const globalInstalledTracker = new Set<string>()
@@ -448,11 +450,6 @@ export async function installDependencies(
 
   return allInstalledFiles
 }
-
-// Import these functions from other modules
-import { getPlatform } from './utils'
-import { logUniqueMessage } from './logging'
-import { installPackage } from './install-core'
 
 // Global variables from logging module
 let hasTemporaryProcessingMessage = false

@@ -1,14 +1,10 @@
 import type { LaunchpadConfig } from './src/types'
 
 export const defaultConfig: LaunchpadConfig = {
-  // Set to true for additional log information
+  // Whether to show verbose output
   verbose: false,
 
-  // Path where binaries should be installed
-  // Defaults to /usr/local if writable, otherwise ~/.local
-  installationPath: '/usr/local',
-
-  // Installation path (alias for installationPath for backward compatibility)
+  // Installation path for packages
   installPath: '/usr/local',
 
   // Installation method - 'direct' for direct downloads, 'registry' for package registry

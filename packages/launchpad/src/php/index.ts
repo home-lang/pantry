@@ -25,7 +25,7 @@ export interface PHPSetupResult {
 /**
  * Main PHP setup function - simplified to only use source building
  */
-export async function setupPHP(phpConfig: PHPConfig = config.services.php): Promise<PHPSetupResult> {
+export async function setupPHP(phpConfig: PHPConfig = config.services?.php || { enabled: false }): Promise<PHPSetupResult> {
   console.log('🐘 Launchpad PHP Setup (Source Build)')
   console.log('====================================')
 

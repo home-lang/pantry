@@ -200,8 +200,9 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
   }
 
   // Execute post-setup commands if enabled
-  if (config.services.frameworks.laravel.postSetupCommands?.enabled) {
-    const postSetupResults = await executePostSetupCommands(dir, config.services.frameworks.laravel.postSetupCommands.commands)
+  const laravelConfig = config.services?.frameworks?.laravel
+  if (laravelConfig?.postSetupCommands?.enabled) {
+    const postSetupResults = await executePostSetupCommands(dir, laravelConfig.postSetupCommands.commands || [])
     suggestions.push(...postSetupResults)
   }
 

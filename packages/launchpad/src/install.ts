@@ -4,19 +4,10 @@ import { resolveAllDependencies } from './dependency-resolution'
 import { downloadPackage } from './install-core'
 import { install } from './install-main'
 import { cleanupSpinner, resetInstalledTracker } from './logging'
-import { getAllPackageAliases, getAllPackageDomains, getAllPackageNames, getAvailableVersions, getPackageInfo, isPackageAlias, isPackageDomain, isValidPackageName, listAvailablePackages, parsePackageSpec, resolvePackageName } from './package-resolution'
+import { getAllPackageAliases, getAllPackageDomains, getAllPackageNames, getAvailableVersions, getLatestVersion, getPackageInfo, isPackageAlias, isPackageDomain, isVersionAvailable, isValidPackageName, listAvailablePackages, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
 import { buildSqliteFromSource, installDependenciesOnly, testPhpBinary } from './special-installers'
 import { DISTRIBUTION_CONFIG } from './types'
 import { install_prefix } from './utils'
-
-// Re-export types from types.ts
-export type PackageAlias = keyof typeof aliases
-export type PackageDomain = keyof typeof packages
-export type PackageName = PackageAlias | PackageDomain
-export type PackageSpec = string
-export type SupportedFormat = 'tar.xz' | 'tar.gz'
-export type SupportedPlatform = 'darwin' | 'linux' | 'windows'
-export type SupportedArchitecture = 'x86_64' | 'aarch64' | 'armv7l'
 
 // Re-export all the functions from the refactored modules
 export {
@@ -30,17 +21,20 @@ export {
   getAllPackageNames,
   getAvailableVersions,
   getCacheStats,
+  getLatestVersion,
   getPackageInfo,
   install,
   install_prefix,
   installDependenciesOnly,
   isPackageAlias,
   isPackageDomain,
+  isVersionAvailable,
   isValidPackageName,
   listAvailablePackages,
   parsePackageSpec,
   resetInstalledTracker,
   resolveAllDependencies,
   resolvePackageName,
+  resolveVersion,
   testPhpBinary,
 }

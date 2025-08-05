@@ -25,7 +25,7 @@ export class PHPShimManager {
   private phpConfig: PHPConfig
   private shimDir: string
 
-  constructor(phpConfig: PHPConfig = config.services.php) {
+  constructor(phpConfig: PHPConfig = config.services?.php || { enabled: false }) {
     this.phpConfig = phpConfig
     this.shimDir = path.join(homedir(), '.local', 'bin')
   }

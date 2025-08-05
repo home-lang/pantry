@@ -15,6 +15,166 @@ import { DISTRIBUTION_CONFIG } from './types'
 import { copyDirectoryStructure, getArchitecture, getPlatform } from './utils'
 
 /**
+ * Create missing library symlinks for dynamic linking
+ */
+async function createLibrarySymlinks(packageDir: string, _domain: string): Promise<void> {
+  const libDir = path.join(packageDir, 'lib')
+
+  if (!fs.existsSync(libDir)) {
+    return
+  }
+
+  try {
+    const files = await fs.promises.readdir(libDir)
+
+    for (const file of files) {
+      // Look for versioned libraries like libssl.1.1.dylib, libz.1.3.1.dylib
+      const versionedMatch = file.match(/^(lib\w+)\.(\d+(?:\.\d+)*)\.dylib$/)
+      if (versionedMatch) {
+        const [, baseName, version] = versionedMatch
+        const majorVersion = version.split('.')[0]
+
+        // Create symlinks: libssl.dylib -> libssl.1.1.dylib
+        const genericLink = `${baseName}.dylib`
+        const majorLink = `${baseName}.${majorVersion}.dylib`
+
+        const genericPath = path.join(libDir, genericLink)
+        const majorPath = path.join(libDir, majorLink)
+
+        // Create generic symlink if it doesn't exist
+        if (!fs.existsSync(genericPath)) {
+          try {
+            await fs.promises.symlink(file, genericPath)
+            if (config.verbose) {
+              console.warn(`Created library symlink: ${genericLink} -> ${file}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create symlink ${genericLink}:`, error)
+            }
+          }
+        }
+
+        // Create major version symlink if it doesn't exist and is different from generic
+        if (majorLink !== genericLink && !fs.existsSync(majorPath)) {
+          try {
+            await fs.promises.symlink(file, majorPath)
+            if (config.verbose) {
+              console.warn(`Created library symlink: ${majorLink} -> ${file}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create symlink ${majorLink}:`, error)
+            }
+          }
+        }
+      }
+
+      // Handle ncurses compatibility - create libncurses.dylib -> libncursesw.dylib
+      if (file === 'libncursesw.dylib') {
+        const ncursesPath = path.join(libDir, 'libncurses.dylib')
+        if (!fs.existsSync(ncursesPath)) {
+          try {
+            await fs.promises.symlink(file, ncursesPath)
+            if (config.verbose) {
+              console.warn(`Created ncurses compatibility symlink: libncurses.dylib -> ${file}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create ncurses compatibility symlink:`, error)
+            }
+          }
+        }
+      }
+
+      // Handle versioned ncurses compatibility - create libncurses.6.dylib -> libncursesw.6.dylib
+      if (file === 'libncursesw.6.dylib') {
+        const ncursesVersionedPath = path.join(libDir, 'libncurses.6.dylib')
+        if (!fs.existsSync(ncursesVersionedPath)) {
+          try {
+            await fs.promises.symlink(file, ncursesVersionedPath)
+            if (config.verbose) {
+              console.warn(`Created versioned ncurses compatibility symlink: libncurses.6.dylib -> ${file}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create versioned ncurses compatibility symlink:`, error)
+            }
+          }
+        }
+      }
+
+      // Handle base ncurses compatibility - create libncurses.dylib -> libncursesw.dylib
+      if (file === 'libncursesw.dylib') {
+        const ncursesBasePath = path.join(libDir, 'libncurses.dylib')
+        if (!fs.existsSync(ncursesBasePath)) {
+          try {
+            await fs.promises.symlink(file, ncursesBasePath)
+            if (config.verbose) {
+              console.warn(`Created base ncurses compatibility symlink: libncurses.dylib -> ${file}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create base ncurses compatibility symlink:`, error)
+            }
+          }
+        }
+      }
+
+      // Handle PCRE2 library compatibility - create version-less library names
+      if (file.startsWith('libpcre2-') && file.endsWith('.dylib')) {
+        const match = file.match(/^(libpcre2-(?:8|16|32))\.(\d+)\.dylib$/)
+        if (match) {
+          const [, baseName] = match
+          const versionlessPath = path.join(libDir, `${baseName}.dylib`)
+          if (!fs.existsSync(versionlessPath)) {
+            try {
+              await fs.promises.symlink(file, versionlessPath)
+              if (config.verbose) {
+                console.warn(`Created PCRE2 compatibility symlink: ${baseName}.dylib -> ${file}`)
+              }
+            }
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Failed to create PCRE2 compatibility symlink:`, error)
+              }
+            }
+          }
+        }
+      }
+
+      // Handle libpng compatibility - create libpng.dylib -> libpng16.dylib
+      if (file === 'libpng16.dylib') {
+        const libpngPath = path.join(libDir, 'libpng.dylib')
+        if (!fs.existsSync(libpngPath)) {
+          try {
+            await fs.promises.symlink(file, libpngPath)
+            if (config.verbose) {
+              console.warn(`Created libpng compatibility symlink: libpng.dylib -> ${file}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create libpng compatibility symlink:`, error)
+            }
+          }
+        }
+      }
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Error creating library symlinks:`, error)
+    }
+  }
+}
+
+/**
  * Install a single package with all its dependencies
  */
 export async function installPackage(packageName: string, packageSpec: string, installPath: string): Promise<string[]> {
@@ -639,164 +799,7 @@ export async function downloadPackage(
     await copyDirectoryStructure(packageSource, packageDir)
 
     // Create missing library symlinks for dynamic linking
-    async function createLibrarySymlinks(packageDir: string): Promise<void> {
-      const libDir = path.join(packageDir, 'lib')
-
-      if (!fs.existsSync(libDir)) {
-        return
-      }
-
-      try {
-        const files = await fs.promises.readdir(libDir)
-
-        for (const file of files) {
-          // Look for versioned libraries like libssl.1.1.dylib, libz.1.3.1.dylib
-          const versionedMatch = file.match(/^(lib\w+)\.(\d+(?:\.\d+)*)\.dylib$/)
-          if (versionedMatch) {
-            const [, baseName, version] = versionedMatch
-            const majorVersion = version.split('.')[0]
-
-            // Create symlinks: libssl.dylib -> libssl.1.1.dylib
-            const genericLink = `${baseName}.dylib`
-            const majorLink = `${baseName}.${majorVersion}.dylib`
-
-            const genericPath = path.join(libDir, genericLink)
-            const majorPath = path.join(libDir, majorLink)
-
-            // Create generic symlink if it doesn't exist
-            if (!fs.existsSync(genericPath)) {
-              try {
-                await fs.promises.symlink(file, genericPath)
-                if (config.verbose) {
-                  console.warn(`Created library symlink: ${genericLink} -> ${file}`)
-                }
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create symlink ${genericLink}:`, error)
-                }
-              }
-            }
-
-            // Create major version symlink if it doesn't exist and is different from generic
-            if (majorLink !== genericLink && !fs.existsSync(majorPath)) {
-              try {
-                await fs.promises.symlink(file, majorPath)
-                if (config.verbose) {
-                  console.warn(`Created library symlink: ${majorLink} -> ${file}`)
-                }
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create symlink ${majorLink}:`, error)
-                }
-              }
-            }
-          }
-
-          // Handle ncurses compatibility - create libncurses.dylib -> libncursesw.dylib
-          if (file === 'libncursesw.dylib') {
-            const ncursesPath = path.join(libDir, 'libncurses.dylib')
-            if (!fs.existsSync(ncursesPath)) {
-              try {
-                await fs.promises.symlink(file, ncursesPath)
-                if (config.verbose) {
-                  console.warn(`Created ncurses compatibility symlink: libncurses.dylib -> ${file}`)
-                }
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create ncurses compatibility symlink:`, error)
-                }
-              }
-            }
-          }
-
-          // Handle versioned ncurses compatibility - create libncurses.6.dylib -> libncursesw.6.dylib
-          if (file === 'libncursesw.6.dylib') {
-            const ncursesVersionedPath = path.join(libDir, 'libncurses.6.dylib')
-            if (!fs.existsSync(ncursesVersionedPath)) {
-              try {
-                await fs.promises.symlink(file, ncursesVersionedPath)
-                if (config.verbose) {
-                  console.warn(`Created versioned ncurses compatibility symlink: libncurses.6.dylib -> ${file}`)
-                }
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create versioned ncurses compatibility symlink:`, error)
-                }
-              }
-            }
-          }
-
-          // Handle base ncurses compatibility - create libncurses.dylib -> libncursesw.dylib
-          if (file === 'libncursesw.dylib') {
-            const ncursesBasePath = path.join(libDir, 'libncurses.dylib')
-            if (!fs.existsSync(ncursesBasePath)) {
-              try {
-                await fs.promises.symlink(file, ncursesBasePath)
-                if (config.verbose) {
-                  console.warn(`Created base ncurses compatibility symlink: libncurses.dylib -> ${file}`)
-                }
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create base ncurses compatibility symlink:`, error)
-                }
-              }
-            }
-          }
-
-          // Handle PCRE2 library compatibility - create version-less library names
-          if (file.startsWith('libpcre2-') && file.endsWith('.dylib')) {
-            const match = file.match(/^(libpcre2-(?:8|16|32))\.(\d+)\.dylib$/)
-            if (match) {
-              const [, baseName] = match
-              const versionlessPath = path.join(libDir, `${baseName}.dylib`)
-              if (!fs.existsSync(versionlessPath)) {
-                try {
-                  await fs.promises.symlink(file, versionlessPath)
-                  if (config.verbose) {
-                    console.warn(`Created PCRE2 compatibility symlink: ${baseName}.dylib -> ${file}`)
-                  }
-                }
-                catch (error) {
-                  if (config.verbose) {
-                    console.warn(`Failed to create PCRE2 compatibility symlink:`, error)
-                  }
-                }
-              }
-            }
-          }
-
-          // Handle libpng compatibility - create libpng.dylib -> libpng16.dylib
-          if (file === 'libpng16.dylib') {
-            const libpngPath = path.join(libDir, 'libpng.dylib')
-            if (!fs.existsSync(libpngPath)) {
-              try {
-                await fs.promises.symlink(file, libpngPath)
-                if (config.verbose) {
-                  console.warn(`Created libpng compatibility symlink: libpng.dylib -> ${file}`)
-                }
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create libpng compatibility symlink:`, error)
-                }
-              }
-            }
-          }
-        }
-      }
-      catch (error) {
-        if (config.verbose) {
-          console.warn(`Error creating library symlinks in ${libDir}:`, error)
-        }
-      }
-    }
-
-    await createLibrarySymlinks(packageDir)
+    await createLibrarySymlinks(packageDir, domain)
 
     // Create version symlinks like pkgx does
     await createVersionSymlinks(installPath, domain, version)

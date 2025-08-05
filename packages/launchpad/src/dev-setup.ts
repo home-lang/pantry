@@ -91,32 +91,37 @@ export interface ProjectFramework {
 export function getSupportedFrameworks(): ProjectFramework[] {
   const frameworks: ProjectFramework[] = []
 
-  if (config.services.frameworks.enabled) {
-    if (config.services.frameworks.stacks.enabled) {
-      frameworks.push({
-        name: 'Stacks.js',
-        detectionFile: 'buddy',
-        databaseConfig: {
-          envFile: '.env',
-          migrationCommand: ['buddy', 'migrate'],
-          seedCommand: ['buddy', 'db:seed'],
-          configClearCommand: ['buddy', 'config:clear'],
-        },
-      })
-    }
+  const servicesConfig = config.services
+  if (!servicesConfig?.frameworks?.enabled) {
+    return frameworks
+  }
 
-    if (config.services.frameworks.laravel.enabled) {
-      frameworks.push({
-        name: 'Laravel',
-        detectionFile: 'artisan',
-        databaseConfig: {
-          envFile: '.env',
-          migrationCommand: ['php', 'artisan', 'migrate:fresh'],
-          seedCommand: ['php', 'artisan', 'db:seed'],
-          configClearCommand: ['php', 'artisan', 'config:clear'],
-        },
-      })
-    }
+  const frameworksConfig = servicesConfig.frameworks
+
+  if (frameworksConfig.stacks?.enabled) {
+    frameworks.push({
+      name: 'Stacks.js',
+      detectionFile: 'buddy',
+      databaseConfig: {
+        envFile: '.env',
+        migrationCommand: ['buddy', 'migrate'],
+        seedCommand: ['buddy', 'db:seed'],
+        configClearCommand: ['buddy', 'config:clear'],
+      },
+    })
+  }
+
+  if (frameworksConfig.laravel?.enabled) {
+    frameworks.push({
+      name: 'Laravel',
+      detectionFile: 'artisan',
+      databaseConfig: {
+        envFile: '.env',
+        migrationCommand: ['php', 'artisan', 'migrate:fresh'],
+        seedCommand: ['php', 'artisan', 'db:seed'],
+        configClearCommand: ['php', 'artisan', 'config:clear'],
+      },
+    })
   }
 
   return frameworks
@@ -186,7 +191,7 @@ export async function setupPHPDevelopmentEnvironment(options?: {
     }
 
     // Determine best database setup based on available extensions and user preferences
-    const preferredDb = options?.preferredDatabase || config.services.frameworks.preferredDatabase
+    const preferredDb = options?.preferredDatabase || config.services?.frameworks?.preferredDatabase || 'sqlite'
     const forceSQLite = process.env.LAUNCHPAD_FORCE_SQLITE === 'true'
 
     if (forceSQLite || preferredDb === 'sqlite') {
@@ -287,8 +292,8 @@ async function setupPostgreSQLEnvironment(framework: ProjectFramework): Promise<
       DB_HOST: actualConfig?.host || '127.0.0.1',
       DB_PORT: String(actualConfig?.port || 5432),
       DB_DATABASE: actualConfig?.database || projectName,
-      DB_USERNAME: actualConfig?.username || config.services.database.username,
-      DB_PASSWORD: actualConfig?.password || config.services.database.password,
+      DB_USERNAME: actualConfig?.username || config.services?.database?.username || 'root',
+      DB_PASSWORD: actualConfig?.password || config.services?.database?.password || 'password',
     }
 
     // Update environment for PostgreSQL (only update if not already configured)

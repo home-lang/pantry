@@ -48,11 +48,16 @@ async function getServiceManager(): Promise<ServiceManagerState> {
  * Ensure all required directories exist
  */
 async function ensureDirectories(): Promise<void> {
+  const servicesConfig = config.services
+  if (!servicesConfig) {
+    throw new Error('Services configuration not found')
+  }
+
   const dirs = [
-    config.services.dataDir,
-    config.services.logDir,
-    config.services.configDir,
-  ]
+    servicesConfig.dataDir,
+    servicesConfig.logDir,
+    servicesConfig.configDir,
+  ].filter(Boolean) as string[]
 
   for (const dir of dirs) {
     await fs.promises.mkdir(dir, { recursive: true })
@@ -72,6 +77,7 @@ export async function startService(serviceName: string): Promise<boolean> {
     action: 'start',
     serviceName,
     timestamp: new Date(),
+    status: 'pending',
   }
 
   // In test mode, still validate service exists but mock the actual operation
@@ -110,16 +116,17 @@ export async function startService(serviceName: string): Promise<boolean> {
       return true
     }
 
-    console.warn(`🚀 Starting ${service.definition.displayName}...`)
+    console.warn(`🚀 Starting ${service.definition?.displayName || serviceName}...`)
 
     // Update status to starting
     service.status = 'starting'
     service.lastCheckedAt = new Date()
+    service.startedAt = new Date()
 
     // Install service package and dependencies if needed
     const installResult = await ensureServicePackageInstalled(service)
     if (!installResult) {
-      console.error(`❌ Failed to install ${service.definition.displayName} package`)
+      console.error(`❌ Failed to install ${service.definition?.displayName || serviceName} package`)
       operation.result = 'failure'
       operation.error = 'Package installation failed'
       manager.operations.push(operation)
@@ -127,7 +134,7 @@ export async function startService(serviceName: string): Promise<boolean> {
     }
 
     // For PHP service, ensure database extensions are available
-    if (service.definition.name === 'php') {
+    if (service.definition?.name === 'php') {
       const extensionsResult = await ensurePHPDatabaseExtensions(service)
       if (!extensionsResult) {
         console.warn(`⚠️  Some PHP database extensions may not be available.`)
@@ -136,14 +143,14 @@ export async function startService(serviceName: string): Promise<boolean> {
     }
 
     // For PostgreSQL service, check if PHP needs PostgreSQL extensions
-    if (service.definition.name === 'postgres') {
+    if (service.definition?.name === 'postgres') {
       await checkAndInstallPHPPostgreSQLExtensions()
     }
 
     // Auto-initialize databases first
     const autoInitResult = await autoInitializeDatabase(service)
     if (!autoInitResult) {
-      console.error(`❌ Failed to auto-initialize ${service.definition.displayName}`)
+      console.error(`❌ Failed to auto-initialize ${service.definition?.displayName || serviceName}`)
       operation.result = 'failure'
       operation.error = 'Auto-initialization failed'
       manager.operations.push(operation)
@@ -151,8 +158,8 @@ export async function startService(serviceName: string): Promise<boolean> {
     }
 
     // Initialize service if needed
-    if (service.definition.initCommand && !await isServiceInitialized(service)) {
-      console.warn(`🔧 Initializing ${service.definition.displayName}...`)
+    if (service.definition?.initCommand && !await isServiceInitialized(service)) {
+      console.warn(`🔧 Initializing ${service.definition?.displayName || serviceName}...`)
       await initializeService(service)
     }
 
@@ -167,7 +174,7 @@ export async function startService(serviceName: string): Promise<boolean> {
       service.startedAt = new Date()
       service.pid = await getServicePid(service)
 
-      console.log(`✅ ${service.definition.displayName} started successfully`)
+      console.log(`✅ ${service.definition?.displayName || serviceName} started successfully`)
 
       // Execute post-start setup commands
       await executePostStartCommands(service)
@@ -214,6 +221,7 @@ export async function stopService(serviceName: string): Promise<boolean> {
     action: 'stop',
     serviceName,
     timestamp: new Date(),
+    status: 'pending',
   }
 
   // In test mode, still validate and track operations
@@ -257,7 +265,7 @@ export async function stopService(serviceName: string): Promise<boolean> {
       return true
     }
 
-    console.warn(`🛑 Stopping ${service.definition.displayName}...`)
+    console.warn(`🛑 Stopping ${service.definition?.displayName || serviceName}...`)
 
     // Update status to stopping
     service.status = 'stopping'
@@ -271,7 +279,7 @@ export async function stopService(serviceName: string): Promise<boolean> {
       service.pid = undefined
       service.startedAt = undefined
 
-      console.log(`✅ ${service.definition.displayName} stopped successfully`)
+      console.log(`✅ ${service.definition?.displayName || serviceName} stopped successfully`)
       operation.result = 'success'
     }
     else {
@@ -326,6 +334,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
     action: 'enable',
     serviceName,
     timestamp: new Date(),
+    status: 'pending',
   }
 
   // In test mode, still validate service exists but mock the actual operation
@@ -363,7 +372,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
       return true
     }
 
-    console.warn(`🔧 Enabling ${service.definition.displayName} for auto-start...`)
+    console.warn(`🔧 Enabling ${service.definition?.displayName || serviceName} for auto-start...`)
 
     service.enabled = true
     await createServiceFiles(service)
@@ -371,7 +380,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
     const success = await enableServicePlatform(service)
 
     if (success) {
-      console.log(`✅ ${service.definition.displayName} enabled for auto-start`)
+      console.log(`✅ ${service.definition?.displayName || serviceName} enabled for auto-start`)
       operation.result = 'success'
     }
     else {
@@ -409,6 +418,7 @@ export async function disableService(serviceName: string): Promise<boolean> {
     action: 'disable',
     serviceName,
     timestamp: new Date(),
+    status: 'pending',
   }
 
   // In test mode, still validate and track operations
@@ -451,15 +461,15 @@ export async function disableService(serviceName: string): Promise<boolean> {
       return true
     }
 
-    console.warn(`🔧 Disabling ${service.definition.displayName} from auto-start...`)
+    console.warn(`🔧 Disabling ${service.definition?.displayName || serviceName} from auto-start...`)
 
     service.enabled = false
+    await createServiceFiles(service)
 
     const success = await disableServicePlatform(service)
 
     if (success) {
-      await removeServiceFile(serviceName)
-      console.log(`✅ ${service.definition.displayName} disabled from auto-start`)
+      console.log(`✅ ${service.definition?.displayName || serviceName} disabled from auto-start`)
       operation.result = 'success'
     }
     else {
@@ -539,6 +549,7 @@ async function getOrCreateServiceInstance(serviceName: string): Promise<ServiceI
 
   // Create new service instance
   service = {
+    name: serviceName,
     definition,
     status: 'stopped',
     lastCheckedAt: new Date(),
@@ -557,7 +568,7 @@ async function isServiceInitialized(service: ServiceInstance): Promise<boolean> 
   const { definition } = service
 
   // Check if data directory exists and has content
-  if (definition.dataDirectory) {
+  if (definition?.dataDirectory) {
     const dataDir = service.dataDir || definition.dataDirectory
     if (!fs.existsSync(dataDir)) {
       return false
@@ -581,7 +592,7 @@ async function isServiceInitialized(service: ServiceInstance): Promise<boolean> 
 async function initializeService(service: ServiceInstance): Promise<void> {
   const { definition } = service
 
-  if (!definition.initCommand) {
+  if (!definition?.initCommand) {
     return
   }
 
@@ -639,8 +650,8 @@ async function createServiceFiles(service: ServiceInstance): Promise<void> {
   const { definition } = service
 
   // Create configuration file if needed
-  if (definition.configFile && !fs.existsSync(definition.configFile)) {
-    const defaultConfig = createDefaultServiceConfig(definition.name)
+  if (definition?.configFile && !fs.existsSync(definition.configFile)) {
+    const defaultConfig = createDefaultServiceConfig(definition.name || service.name)
     if (defaultConfig) {
       const configDir = path.dirname(definition.configFile)
       await fs.promises.mkdir(configDir, { recursive: true })
@@ -653,14 +664,21 @@ async function createServiceFiles(service: ServiceInstance): Promise<void> {
   }
 
   // Create data directory
-  const dataDir = service.dataDir || definition.dataDirectory
+  const dataDir = service.dataDir || definition?.dataDirectory
   if (dataDir) {
     await fs.promises.mkdir(dataDir, { recursive: true })
   }
 
   // Create log directory
-  const logDir = service.logFile ? path.dirname(service.logFile) : config.services.logDir
-  await fs.promises.mkdir(logDir, { recursive: true })
+  const servicesConfig = config.services
+  if (!servicesConfig) {
+    throw new Error('Services configuration not found')
+  }
+
+  const logDir = service.logFile ? path.dirname(service.logFile) : servicesConfig.logDir
+  if (logDir) {
+    await fs.promises.mkdir(logDir, { recursive: true })
+  }
 
   // Create platform-specific service files
   const currentPlatform = platform()
@@ -744,6 +762,10 @@ async function disableServicePlatform(service: ServiceInstance): Promise<boolean
  */
 async function ensureServicePackageInstalled(service: ServiceInstance): Promise<boolean> {
   const { definition } = service
+
+  if (!definition) {
+    throw new Error(`Service ${service.name} has no definition`)
+  }
 
   if (!definition.packageDomain) {
     // Service doesn't require a package (e.g., built-in services)
@@ -885,6 +907,10 @@ async function installMissingExtensionsViaPECL(service: ServiceInstance, missing
     const { spawn } = await import('node:child_process')
     const { definition } = service
 
+    if (!definition) {
+      throw new Error(`Service ${service.name} has no definition`)
+    }
+
     // Check if this service has PECL extension configuration
     if (!definition.extensions?.pecl) {
       return false
@@ -993,7 +1019,7 @@ async function updatePHPConfigWithInstalledExtensions(service: ServiceInstance, 
   }
 
   try {
-    if (!service.definition.configFile) {
+    if (!service.definition?.configFile) {
       return
     }
 
@@ -1185,7 +1211,11 @@ async function suggestSQLiteAlternative(): Promise<void> {
  */
 async function createPHPConfigWithExtensions(service: ServiceInstance, _missingExtensions: string[]): Promise<boolean> {
   try {
-    const configDir = path.dirname(service.definition.configFile || '')
+    if (!service.definition?.configFile) {
+      return false
+    }
+
+    const configDir = path.dirname(service.definition.configFile)
     await fs.promises.mkdir(configDir, { recursive: true })
 
     // Create sessions and tmp directories
@@ -1262,7 +1292,7 @@ async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
 
       // Get PHP service definition to install extensions
       const phpService = await getOrCreateServiceInstance('php')
-      if (phpService.definition.extensions?.pecl) {
+      if (phpService.definition?.extensions?.pecl) {
         const installResult = await installMissingExtensionsViaPECL(phpService, missingPgsqlExtensions)
         if (installResult) {
           console.log(`✅ Successfully installed PHP PostgreSQL extensions`)
@@ -1288,6 +1318,10 @@ async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
  */
 async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean> {
   const { definition } = service
+
+  if (!definition) {
+    throw new Error(`Service ${service.name} has no definition`)
+  }
 
   // PostgreSQL auto-initialization
   if (definition.name === 'postgres' || definition.name === 'postgresql') {
@@ -1439,6 +1473,10 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 async function executePostStartCommands(service: ServiceInstance): Promise<void> {
   const { definition } = service
 
+  if (!definition) {
+    throw new Error(`Service ${service.name} has no definition`)
+  }
+
   if (!definition.postStartCommands || definition.postStartCommands.length === 0) {
     return
   }
@@ -1534,6 +1572,11 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
  */
 export function resolveServiceTemplateVariables(template: string, service: ServiceInstance): string {
   const { definition } = service
+
+  if (!definition) {
+    throw new Error(`Service ${service.name} has no definition`)
+  }
+
   const dataDir = service.dataDir || definition.dataDirectory
   const configFile = service.configFile || definition.configFile
   const logFile = service.logFile || definition.logFile
@@ -1556,9 +1599,9 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
     .replace('{port}', String(port || 5432))
     .replace('{projectName}', projectName)
     .replace('{projectDatabase}', databaseName) // Use env database name or project name
-    .replace('{dbUsername}', config.services.database.username)
-    .replace('{dbPassword}', config.services.database.password)
-    .replace('{authMethod}', config.services.database.authMethod)
+    .replace('{dbUsername}', config.services?.database?.username || 'root')
+    .replace('{dbPassword}', config.services?.database?.password || 'password')
+    .replace('{authMethod}', config.services?.database?.authMethod || 'trust')
 
   // Replace service-specific config variables
   for (const [key, value] of Object.entries(serviceConfig)) {
@@ -1643,8 +1686,17 @@ async function startServiceLaunchd(service: ServiceInstance): Promise<boolean> {
     return true
   }
 
+  if (!service.definition?.name) {
+    throw new Error(`Service ${service.name} has no definition or name`)
+  }
+
+  const serviceFilePath = getServiceFilePath(service.definition.name)
+  if (!serviceFilePath) {
+    throw new Error(`Could not determine service file path for ${service.definition.name}`)
+  }
+
   return new Promise((resolve) => {
-    const proc = spawn('launchctl', ['load', '-w', getServiceFilePath(service.definition.name)!], {
+    const proc = spawn('launchctl', ['load', '-w', serviceFilePath], {
       stdio: config.verbose ? 'inherit' : 'pipe',
     })
 
@@ -1664,8 +1716,17 @@ async function stopServiceLaunchd(service: ServiceInstance): Promise<boolean> {
     return true
   }
 
+  if (!service.definition?.name) {
+    throw new Error(`Service ${service.name} has no definition or name`)
+  }
+
+  const serviceFilePath = getServiceFilePath(service.definition.name)
+  if (!serviceFilePath) {
+    throw new Error(`Could not determine service file path for ${service.definition.name}`)
+  }
+
   return new Promise((resolve) => {
-    const proc = spawn('launchctl', ['unload', '-w', getServiceFilePath(service.definition.name)!], {
+    const proc = spawn('launchctl', ['unload', '-w', serviceFilePath], {
       stdio: config.verbose ? 'inherit' : 'pipe',
     })
 
@@ -1698,6 +1759,10 @@ async function startServiceSystemd(service: ServiceInstance): Promise<boolean> {
     return true
   }
 
+  if (!service.definition?.name) {
+    throw new Error(`Service ${service.name} has no definition or name`)
+  }
+
   const serviceName = `launchpad-${service.definition.name}.service`
 
   return new Promise((resolve) => {
@@ -1719,6 +1784,10 @@ async function stopServiceSystemd(service: ServiceInstance): Promise<boolean> {
   // In test mode, mock successful operation
   if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
     return true
+  }
+
+  if (!service.definition?.name) {
+    throw new Error(`Service ${service.name} has no definition or name`)
   }
 
   const serviceName = `launchpad-${service.definition.name}.service`
@@ -1744,6 +1813,10 @@ async function enableServiceSystemd(service: ServiceInstance): Promise<boolean> 
     return true
   }
 
+  if (!service.definition?.name) {
+    throw new Error(`Service ${service.name} has no definition or name`)
+  }
+
   const serviceName = `launchpad-${service.definition.name}.service`
 
   return new Promise((resolve) => {
@@ -1765,6 +1838,10 @@ async function disableServiceSystemd(service: ServiceInstance): Promise<boolean>
   // In test mode, mock successful operation
   if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
     return true
+  }
+
+  if (!service.definition?.name) {
+    throw new Error(`Service ${service.name} has no definition or name`)
   }
 
   const serviceName = `launchpad-${service.definition.name}.service`
@@ -1794,6 +1871,10 @@ async function checkServiceHealth(service: ServiceInstance): Promise<boolean> {
   if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
     service.lastCheckedAt = new Date()
     return true
+  }
+
+  if (!definition) {
+    throw new Error(`Service ${service.name} has no definition`)
   }
 
   if (!definition.healthCheck) {
@@ -1830,6 +1911,10 @@ async function checkServiceHealth(service: ServiceInstance): Promise<boolean> {
  */
 async function getServicePid(service: ServiceInstance): Promise<number | undefined> {
   const { definition } = service
+
+  if (!definition) {
+    throw new Error(`Service ${service.name} has no definition`)
+  }
 
   // In test environment, return mock PID
   if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {

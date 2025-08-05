@@ -3175,13 +3175,13 @@ cli
 
         if (format === 'json') {
           const result = services.map(service => ({
-            name: service.definition.name,
-            displayName: service.definition.displayName,
+            name: service.definition?.name,
+            displayName: service.definition?.displayName,
             status: service.status,
             enabled: service.enabled,
             pid: service.pid,
             startedAt: service.startedAt,
-            port: service.definition.port,
+            port: service.definition?.port,
           }))
           console.log(JSON.stringify(result, null, 2))
         }
@@ -3200,7 +3200,7 @@ cli
                 unknown: '⚪',
               }[service.status]
 
-              console.log(`${statusEmoji} ${service.definition.name}: ${service.status}`)
+              console.log(`${statusEmoji} ${service.definition?.name}: ${service.status}`)
             })
           }
         }
@@ -3212,7 +3212,7 @@ cli
             console.log('Available services:')
             const definitions = getAllServiceDefinitions()
             definitions.forEach((def) => {
-              console.log(`  ${def.name.padEnd(12)} ${def.displayName}`)
+              console.log(`  ${def.name?.padEnd(12)} ${def.displayName}`)
             })
           }
           else {
@@ -3231,12 +3231,12 @@ cli
                 unknown: '⚪',
               }[service.status]
 
-              const name = service.definition.name.padEnd(12)
+              const name = service.definition?.name?.padEnd(12) || 'unknown'.padEnd(12)
               const status = `${statusEmoji} ${service.status}`.padEnd(12)
               const enabled = (service.enabled ? '✅' : '❌').padEnd(10)
               const pid = (service.pid ? String(service.pid) : '-').padEnd(8)
-              const port = (service.definition.port ? String(service.definition.port) : '-').padEnd(8)
-              const description = service.definition.description
+              const port = (service.definition?.port ? String(service.definition.port) : '-').padEnd(8)
+              const description = service.definition?.description || ''
 
               console.log(`${name}${status}${enabled}${pid}${port}${description}`)
             })
@@ -3271,13 +3271,13 @@ cli
 
       if (format === 'json') {
         const result = services.map(service => ({
-          name: service.definition.name,
-          displayName: service.definition.displayName,
+          name: service.definition?.name,
+          displayName: service.definition?.displayName,
           status: service.status,
           enabled: service.enabled,
           pid: service.pid,
           startedAt: service.startedAt,
-          port: service.definition.port,
+          port: service.definition?.port,
         }))
         console.log(JSON.stringify(result, null, 2))
       }
@@ -3296,7 +3296,7 @@ cli
               unknown: '⚪',
             }[service.status]
 
-            console.log(`${statusEmoji} ${service.definition.name}: ${service.status}`)
+            console.log(`${statusEmoji} ${service.definition?.name}: ${service.status}`)
           })
         }
       }
@@ -3308,7 +3308,7 @@ cli
           console.log('🔍 Available services:')
           const definitions = getAllServiceDefinitions()
           definitions.forEach((def) => {
-            console.log(`  ${def.name.padEnd(12)} ${def.displayName} - ${def.description}`)
+            console.log(`  ${def.name?.padEnd(12)} ${def.displayName} - ${def.description}`)
           })
           console.log('')
           console.log('💡 Use "launchpad start <service>" to start a service')
@@ -3330,12 +3330,12 @@ cli
               unknown: '⚪',
             }[service.status]
 
-            const name = service.definition.name.padEnd(12)
+            const name = service.definition?.name?.padEnd(12) || 'unknown'.padEnd(12)
             const status = `${statusEmoji} ${service.status}`.padEnd(12)
             const enabled = (service.enabled ? '✅ Yes' : '❌ No').padEnd(12)
             const pid = (service.pid ? String(service.pid) : '-').padEnd(8)
-            const port = (service.definition.port ? String(service.definition.port) : '-').padEnd(8)
-            const description = service.definition.description
+            const port = (service.definition?.port ? String(service.definition.port) : '-').padEnd(8)
+            const description = service.definition?.description || ''
 
             console.log(`${name}${status}${enabled}${pid}${port}${description}`)
           })

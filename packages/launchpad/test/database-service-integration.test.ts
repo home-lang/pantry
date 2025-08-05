@@ -21,9 +21,11 @@ describe('Database Service Integration', () => {
     process.env.LAUNCHPAD_TEST_MODE = 'true'
 
     // Override service directories for testing
-    config.services.dataDir = path.join(tempDir, 'services')
-    config.services.logDir = path.join(tempDir, 'logs')
-    config.services.configDir = path.join(tempDir, 'config')
+    if (config.services) {
+      config.services.dataDir = path.join(tempDir, 'services')
+      config.services.logDir = path.join(tempDir, 'logs')
+      config.services.configDir = path.join(tempDir, 'config')
+    }
   })
 
   afterEach(() => {
@@ -32,7 +34,9 @@ describe('Database Service Integration', () => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
-    Object.assign(config.services, originalConfig)
+    if (config.services && originalConfig) {
+      Object.assign(config.services, originalConfig)
+    }
 
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })

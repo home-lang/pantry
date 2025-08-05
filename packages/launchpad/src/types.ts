@@ -1,4 +1,4 @@
-import { aliases, packages } from 'ts-pkgx'
+import type { aliases, packages } from 'ts-pkgx'
 
 // Extract all package alias names from ts-pkgx
 export type PackageAlias = keyof typeof aliases
@@ -40,4 +40,235 @@ export interface CacheMetadata {
     checksum?: string
     lastAccessed: string
   }>
+}
+
+/**
+ * Launchpad configuration interface
+ */
+export interface LaunchpadConfig {
+  installPath?: string
+  verbose?: boolean
+  forceReinstall?: boolean
+  autoAddToPath?: boolean
+  shellMessages?: {
+    activation?: string
+    deactivation?: string
+  }
+  sudoPassword?: string
+  devAware?: boolean
+  autoSudo?: boolean
+  maxRetries?: number
+  timeout?: number
+  symlinkVersions?: boolean
+  shimPath?: string
+  showShellMessages?: boolean
+  shellActivationMessage?: string
+  shellDeactivationMessage?: string
+  useRegistry?: boolean
+  installMethod?: string
+  services?: {
+    enabled?: boolean
+    autoStart?: boolean
+    dataDir?: string
+    logDir?: string
+    configDir?: string
+    autoRestart?: boolean
+    startupTimeout?: number
+    shutdownTimeout?: number
+    database?: {
+      username?: string
+      password?: string
+      authMethod?: 'trust' | 'md5' | 'scram-sha-256'
+    }
+    frameworks?: {
+      enabled?: boolean
+      preferredDatabase?: 'postgres' | 'sqlite'
+      laravel?: {
+        enabled?: boolean
+        autoDetect?: boolean
+        postSetupCommands?: {
+          enabled?: boolean
+          commands?: PostSetupCommand[]
+        }
+      }
+      stacks?: {
+        enabled?: boolean
+        autoDetect?: boolean
+      }
+    }
+    php?: {
+      enabled?: boolean
+      strategy?: 'source-build' | 'binary' | 'precompiled-binary'
+      version?: string
+      build?: {
+        enabled?: boolean
+        dependencies?: string[]
+        parallelJobs?: number
+        configureArgs?: string[]
+        timeout?: number
+        debug?: boolean
+      }
+      extensions?: {
+        core?: string[]
+        database?: string[]
+        web?: string[]
+        utility?: string[]
+        optional?: string[]
+      }
+    }
+  }
+}
+
+/**
+ * GitHub release interface
+ */
+export interface GitHubRelease {
+  tag_name: string
+  assets?: Array<{
+    name: string
+    browser_download_url: string
+  }>
+}
+
+/**
+ * Service-related types
+ */
+export interface ServiceDefinition {
+  name?: string
+  displayName?: string
+  description?: string
+  packageDomain?: string
+  executable: string
+  args?: string[]
+  env?: Record<string, string>
+  dataDirectory?: string
+  configFile?: string
+  logFile?: string
+  pidFile?: string
+  port?: number
+  workingDirectory?: string
+  dependencies?: string[]
+  postStartCommands?: string[][]
+  healthCheck?: ServiceHealthCheck
+  initCommand?: string[]
+  supportsGracefulShutdown?: boolean
+  config?: Record<string, any>
+  extensions?: Record<string, any>
+}
+
+export interface ServiceHealthCheck {
+  command: string | string[]
+  interval: number
+  timeout: number
+  retries: number
+  expectedExitCode?: number
+}
+
+export interface ServiceInstance {
+  name: string
+  status: ServiceStatus
+  pid?: number
+  startTime?: Date
+  lastHealthCheck?: Date
+  lastCheckedAt?: Date
+  startedAt?: Date
+  enabled?: boolean
+  definition?: ServiceDefinition
+  logFile?: string
+  dataDir?: string
+  configFile?: string
+  config?: Record<string, any>
+}
+
+export type ServiceStatus = 'running' | 'stopped' | 'starting' | 'stopping' | 'failed' | 'unknown'
+
+export interface ServiceManagerState {
+  services: Map<string, ServiceInstance>
+  operations: ServiceOperation[]
+  config?: Record<string, any>
+  lastScanTime?: Date
+}
+
+export interface ServiceOperation {
+  action: 'start' | 'stop' | 'restart' | 'enable' | 'disable'
+  serviceName: string
+  timestamp: Date
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  result?: any
+  duration?: number
+  error?: string
+}
+
+export interface ServiceConfig {
+  name: string
+  definition: ServiceDefinition
+  instances: ServiceInstance[]
+}
+
+export interface LaunchdPlist {
+  Label: string
+  ProgramArguments: string[]
+  RunAtLoad: boolean
+  KeepAlive?: boolean | {
+    SuccessfulExit?: boolean
+    NetworkState?: boolean
+  }
+  StandardOutPath?: string
+  StandardErrorPath?: string
+  WorkingDirectory?: string
+  EnvironmentVariables?: Record<string, string>
+  UserName?: string
+}
+
+export interface SystemdService {
+  Unit: {
+    Description: string
+    After?: string[]
+    Wants?: string[]
+  }
+  Service: {
+    Type: string
+    ExecStart: string
+    ExecStop?: string
+    WorkingDirectory?: string
+    Environment?: string[]
+    User?: string
+    Restart?: string
+    RestartSec?: number
+    TimeoutStartSec?: number
+    TimeoutStopSec?: number
+    PIDFile?: string
+  }
+  Install: {
+    WantedBy: string[]
+  }
+}
+
+/**
+ * PHP configuration interface
+ */
+export interface PHPConfig {
+  version?: string
+  extensions?: string[] | {
+    core?: string[]
+    database?: string[]
+    web?: string[]
+    utility?: string[]
+    optional?: string[]
+  }
+  iniSettings?: Record<string, string>
+  enabled?: boolean
+}
+
+/**
+ * Post-setup command interface
+ */
+export interface PostSetupCommand {
+  name?: string
+  command: string
+  args?: string[]
+  description?: string
+  condition?: string
+  runInBackground?: boolean
+  required?: boolean
 }

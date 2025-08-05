@@ -72,15 +72,20 @@ export class PrecompiledBinaryDownloader {
    * Check if user has customized PHP extensions that require source build
    */
   private hasCustomExtensions(): { hasCustom: boolean, customExtensions: string[], reason: string } {
-    const { extensions } = config.services.php
+    const phpConfig = config.services?.php
+    if (!phpConfig?.extensions) {
+      return { hasCustom: false, customExtensions: [], reason: 'No PHP extensions configured' }
+    }
+
+    const { extensions } = phpConfig
 
     // Get all user-configured extensions
     const userExtensions = [
-      ...extensions.core,
-      ...extensions.database,
-      ...extensions.web,
-      ...extensions.utility,
-      ...extensions.optional,
+      ...(extensions.core || []),
+      ...(extensions.database || []),
+      ...(extensions.web || []),
+      ...(extensions.utility || []),
+      ...(extensions.optional || []),
     ]
 
     // Define what each precompiled config includes
