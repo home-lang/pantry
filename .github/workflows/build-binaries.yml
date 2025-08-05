@@ -88,12 +88,26 @@ jobs:
           echo "BUILD_DIR=${{ github.workspace }}/build" >> $GITHUB_ENV
           echo "OUTPUT_DIR=${{ github.workspace }}/binaries" >> $GITHUB_ENV
 
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Use cached node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            node-modules-
+
+      - name: Install Dependencies
+        run: bun install
+
       - name: Install build dependencies (Ubuntu)
         if: matrix.platform == 'linux'
         run: |
           # Use Launchpad to install PHP dependencies automatically
           # This replaces the manual apt-get install of all dependencies
-          launchpad install --deps-only php
+          ./launchpad install --deps-only php
 
           # Alternative: Use apt-get for manual dependency installation
           # sudo apt-get update
@@ -130,7 +144,7 @@ jobs:
         run: |
           # Use Launchpad to install PHP dependencies automatically
           # This replaces the manual brew install of all dependencies
-          launchpad install --deps-only php
+          ./launchpad install --deps-only php
 
           # Alternative: Use Homebrew for manual dependency installation
           # brew install \
