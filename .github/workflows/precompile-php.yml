@@ -1,10 +1,10 @@
-name: Precompile Binaries
+name: Precompile PHP
 
 on:
   push:
     branches: [main, develop]
     paths:
-      - .github/workflows/build-binaries.yml
+      - .github/workflows/precompile-php.yml
       - 'build-configs/**'
   schedule:
     # Build weekly on Sunday at 2 AM UTC to get latest dependencies
@@ -244,7 +244,7 @@ jobs:
           echo "PATH=$(brew --prefix bison)/bin:$(brew --prefix)/bin:$(brew --prefix postgresql@17)/bin:$(brew --prefix gettext)/bin:$PATH" >> $GITHUB_ENV
           echo "LDFLAGS=-L$(brew --prefix)/lib -L$(brew --prefix openssl@3)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix libiconv)/lib -L$(brew --prefix postgresql@17)/lib -L$(brew --prefix bzip2)/lib -L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$(brew --prefix)/include -I$(brew --prefix openssl@3)/include -I$(brew --prefix zlib)/include -I$(brew --prefix libiconv)/include -I$(brew --prefix postgresql@17)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix gettext)/include" >> $GITHUB_ENV
-          echo "CXXFLAGS=-std=c++11" >> $GITHUB_ENV
+          echo "CXXFLAGS=-std=c++17" >> $GITHUB_ENV
 
           # Set readline-specific paths
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
