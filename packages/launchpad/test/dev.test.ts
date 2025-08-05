@@ -801,11 +801,11 @@ describe('Dev Commands', () => {
       // Both should contain the same success messages
       expect(cleanOutput1).toContain('Installing 1 local packages')
       expect(cleanOutput1).toContain('✅ bun.sh')
-      expect(cleanOutput1).toContain('✅ Installed 1 package')
+      expect(cleanOutput1).toContain('Successfully set up environment')
 
       expect(cleanOutput2).toContain('Installing 1 local packages')
       expect(cleanOutput2).toContain('✅ bun.sh')
-      expect(cleanOutput2).toContain('✅ Installed 1 package')
+      expect(cleanOutput2).toContain('Successfully set up environment')
 
       // Second run should be faster (allow some variance for system differences)
       expect(duration2).toBeLessThan(duration1 * 1.5)

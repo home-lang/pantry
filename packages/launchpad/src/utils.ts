@@ -92,11 +92,24 @@ export function isInPath(dirPath: string): boolean {
  */
 export function addToPath(dirPath: string): boolean {
   try {
+    // Update process.env.PATH directly for immediate effect
+    const currentPath = process.env.PATH || ''
+    if (!currentPath.includes(dirPath)) {
+      // If PATH is empty or undefined, just set it to the new path
+      if (!currentPath) {
+        process.env.PATH = dirPath
+      }
+      else {
+        process.env.PATH = `${dirPath}:${currentPath}`
+      }
+    }
+
+    // Also write to shell configuration file for persistence
     const shell = getUserShell()
     const shellConfig = getShellConfigFile(shell)
 
     if (!shellConfig) {
-      return false
+      return true // Still return true since we updated the env var
     }
 
     const pathLine = `export PATH="${dirPath}:$PATH"`
@@ -107,7 +120,7 @@ export function addToPath(dirPath: string): boolean {
       return true
     }
 
-    return false
+    return true // Return true since we updated the env var
   }
   catch {
     return false

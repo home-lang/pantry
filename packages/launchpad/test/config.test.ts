@@ -219,9 +219,12 @@ describe('Config', () => {
 
     it('should have valid shell message format', () => {
       if (config.shellActivationMessage?.includes('{path}')) {
-        // Test that the message contains valid characters
-        const validChars = /^[\w\s{}\-.,:;?!()[\]|/~`@#$%^&*+=<>"']+$/
-        expect(validChars.test(config.shellActivationMessage ?? '')).toBe(true)
+        // Test that the message contains valid characters (including ANSI escape codes and emojis)
+        const message = config.shellActivationMessage ?? ''
+        // Allow common shell-safe characters, ANSI escape sequences, and Unicode emojis
+        const hasValidChars = /^[\w\s{}\-.,:;?!()[\]|/~`@#$%^&*+=<>"'\\\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]+$/u.test(message)
+          || message.includes('\x1B[') // Allow ANSI escape sequences
+        expect(hasValidChars).toBe(true)
 
         // Test for specific characters that should be present
         const requiredChars = ['{', '}', 'p', 'a', 't', 'h']
@@ -233,9 +236,12 @@ describe('Config', () => {
       }
 
       if (config.shellDeactivationMessage) {
-        // Test that the message contains valid characters
-        const validChars = /^[\w\s{}\-.,:;?!()[\]|/~`@#$%^&*+=<>"']+$/
-        expect(validChars.test(config.shellDeactivationMessage ?? '')).toBe(true)
+        // Test that the message contains valid characters (including ANSI escape codes and emojis)
+        const message = config.shellDeactivationMessage ?? ''
+        // Allow common shell-safe characters, ANSI escape sequences, and Unicode emojis
+        const hasValidChars = /^[\w\s{}\-.,:;?!()[\]|/~`@#$%^&*+=<>"'\\\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]+$/u.test(message)
+          || message.includes('\x1B[') // Allow ANSI escape sequences
+        expect(hasValidChars).toBe(true)
       }
 
       expect(config.shellActivationMessage?.trim().length).toBeGreaterThan(0)

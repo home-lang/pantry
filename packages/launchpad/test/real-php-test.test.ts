@@ -11,8 +11,11 @@ describe('Real PHP Installation Test', () => {
     try {
       // Check if we're in CI environment and find the correct working directory
       const workspaceRoot = process.cwd()
-      const launchpadPath = join(workspaceRoot, 'packages', 'launchpad')
-      const cliPath = join(launchpadPath, 'bin', 'launchpad')
+      // Try multiple possible CLI paths based on where the test is running from
+      let cliPath = join(workspaceRoot, 'bin', 'cli.ts')
+      if (!existsSync(cliPath)) {
+        cliPath = join(workspaceRoot, 'packages', 'launchpad', 'bin', 'cli.ts')
+      }
 
       console.log(`Working directory: ${workspaceRoot}`)
       console.log(`CLI path: ${cliPath}`)
