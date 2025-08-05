@@ -311,6 +311,9 @@ jobs:
             export GETTEXT_CFLAGS="-I$(brew --prefix gettext)/include"
             export GETTEXT_LIBS="-L$(brew --prefix gettext)/lib -lintl"
 
+            # Set C++17 flag for ICU4C compatibility
+            export CXXFLAGS="$CXXFLAGS -std=c++17"
+
             # Try to find readline.h and set the path explicitly
             READLINE_PATH=$(brew --prefix readline)
             if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
@@ -322,6 +325,7 @@ jobs:
             fi
 
             # Check if PostgreSQL is available and working
+            echo "Debug: POSTGRESQL_AVAILABLE=$POSTGRESQL_AVAILABLE"
             if [[ "$POSTGRESQL_AVAILABLE" == "true" ]]; then
               echo "PostgreSQL found and working"
             else
@@ -440,7 +444,7 @@ jobs:
           retention-days: 90
 
       - name: Upload to GitHub Container Registry
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.platform == 'linux'
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USERNAME }} --password-stdin
 
