@@ -45,11 +45,20 @@ describe('Config', () => {
     })
 
     it('should have reasonable default values', () => {
-      expect(defaultConfig.verbose).toBe(false)
+      // In CI/GitHub Actions, verbose is set to true
+      if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+        expect(defaultConfig.verbose).toBe(true)
+        expect(defaultConfig.maxRetries).toBe(5)
+        expect(defaultConfig.timeout).toBe(120000)
+      }
+      else {
+        expect(defaultConfig.verbose).toBe(false)
+        expect(defaultConfig.maxRetries).toBe(3)
+        expect(defaultConfig.timeout).toBe(60000)
+      }
+
       expect(defaultConfig.devAware).toBe(true)
       expect(defaultConfig.autoSudo).toBe(true)
-      expect(defaultConfig.maxRetries).toBe(3)
-      expect(defaultConfig.timeout).toBe(60000)
       expect(defaultConfig.symlinkVersions).toBe(true)
       expect(defaultConfig.forceReinstall).toBe(false)
       expect(defaultConfig.autoAddToPath).toBe(true)
