@@ -95,11 +95,15 @@ Launchpad includes several utility scripts for development and maintenance:
 # Get latest PHP versions from ts-pkgx registry
 bun scripts/get-php-versions.ts
 
-# This script:
-# - Fetches latest PHP versions dynamically
-# - Generates improved configuration descriptions
-# - Outputs JSON for GitHub Actions
-# - Creates markdown tables for documentation
+# Check if there are new PHP versions available
+bun scripts/check-php-updates.ts
+
+# These scripts:
+# - Fetch latest PHP versions dynamically
+# - Generates configuration descriptions
+# - Check if rebuilds are needed
+# - Output JSON for GitHub Actions
+# - Create markdown tables for documentation
 ```
 
 ## Installation

@@ -6,13 +6,20 @@ This document describes the utility scripts available in the Launchpad project f
 
 ### `scripts/get-php-versions.ts`
 
-A TypeScript script that dynamically fetches the latest PHP versions from the ts-pkgx registry and generates improved configuration descriptions.
+A TypeScript script that dynamically fetches the latest PHP versions from the ts-pkgx registry and generates configuration descriptions.
+
+### `scripts/check-php-updates.ts`
+
+A TypeScript script that checks if there are new PHP versions available and determines if a rebuild is needed. This script is used by the GitHub workflow to avoid unnecessary builds.
 
 #### Usage
 
 ```bash
 # Run the script to get latest PHP versions and configuration info
 bun scripts/get-php-versions.ts
+
+# Check if there are new PHP versions available
+bun scripts/check-php-updates.ts
 ```
 
 #### Features
@@ -24,6 +31,13 @@ bun scripts/get-php-versions.ts
   - Human-readable output for development
   - JSON output for GitHub Actions
   - Markdown tables for documentation
+
+#### Update Checking Features
+
+- **Version Comparison**: Compares current versions with latest available versions
+- **Smart Rebuild Logic**: Determines if a rebuild is needed based on version changes
+- **GitHub Actions Integration**: Provides outputs for workflow decision making
+- **Detailed Reporting**: Shows what changed and why a rebuild is needed
 
 #### Output
 
@@ -49,6 +63,31 @@ The script provides three types of output:
    | Configuration | Description | Use Case | Database Support |
    |---------------|-------------|----------|------------------|
    | `laravel-mysql` | Laravel with MySQL/MariaDB | Laravel applications using MySQL or MariaDB | MySQL, MariaDB |
+   ```
+
+#### Update Check Output
+
+The update checking script provides:
+
+1. **Human-readable summary**:
+   ```
+   🔍 PHP Version Update Check
+
+   📊 Version Comparison:
+     Current: 8.4.11, 8.3.14, 8.2.26, 8.1.30
+     Latest:  8.4.11, 8.3.24, 8.2.29, 8.1.32
+
+   🔄 Rebuild Required: YES
+      Reason: New versions available: 8.3.24, 8.2.29, 8.1.32
+   ```
+
+2. **GitHub Actions outputs**:
+   ```
+   rebuild_needed=true
+   reason=New versions available: 8.3.24, 8.2.29, 8.1.32
+   current_versions=["8.4.11","8.3.14","8.2.26","8.1.30"]
+   latest_versions=["8.4.11","8.3.24","8.2.29","8.1.32"]
+   new_versions=["8.3.24","8.2.29","8.1.32"]
    ```
 
 #### Configuration Descriptions

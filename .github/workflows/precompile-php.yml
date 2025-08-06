@@ -5,19 +5,16 @@ on:
     branches: [main, develop]
     paths:
       - .github/workflows/precompile-php.yml
-      - 'build-configs/**'
+      - build-configs/**
+      - scripts/get-php-versions.ts
+      - scripts/check-php-updates.ts
   schedule:
-    # Build weekly on Sunday at 2 AM UTC to get latest dependencies
-    - cron: '0 2 * * 0'
+    # Check for updates daily at 2 AM UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
-      php_version:
-        description: PHP Version to build
-        required: false
-        default: 8.4.11
-        type: string
       force_rebuild:
-        description: Force rebuild even if binary exists
+        description: Force rebuild even if no new versions
         required: false
         default: false
         type: boolean
@@ -28,12 +25,56 @@ env:
   REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  # First job: Get dynamic PHP versions from ts-pkgx
-  get-php-versions:
+  # First job: Check if we need to rebuild based on new PHP versions
+  check-for-updates:
     runs-on: ubuntu-latest
+    outputs:
+      rebuild_needed: ${{ steps.check-updates.outputs.rebuild_needed }}
+      reason: ${{ steps.check-updates.outputs.reason }}
+      current_versions: ${{ steps.check-updates.outputs.current_versions }}
+      latest_versions: ${{ steps.check-updates.outputs.latest_versions }}
+      new_versions: ${{ steps.check-updates.outputs.new_versions }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Check for PHP updates
+        id: check-updates
+        run: |
+          # Check if there are new PHP versions available
+          UPDATE_CHECK=$(bun scripts/check-php-updates.ts)
+
+          # Extract outputs for GitHub Actions
+          REBUILD_NEEDED=$(echo "$UPDATE_CHECK" | grep "rebuild_needed=" | cut -d'=' -f2)
+          REASON=$(echo "$UPDATE_CHECK" | grep "reason=" | cut -d'=' -f2-)
+          CURRENT_VERSIONS=$(echo "$UPDATE_CHECK" | grep "current_versions=" | cut -d'=' -f2-)
+          LATEST_VERSIONS=$(echo "$UPDATE_CHECK" | grep "latest_versions=" | cut -d'=' -f2-)
+          NEW_VERSIONS=$(echo "$UPDATE_CHECK" | grep "new_versions=" | cut -d'=' -f2-)
+
+          echo "rebuild_needed=$REBUILD_NEEDED" >> $GITHUB_OUTPUT
+          echo "reason=$REASON" >> $GITHUB_OUTPUT
+          echo "current_versions=$CURRENT_VERSIONS" >> $GITHUB_OUTPUT
+          echo "latest_versions=$LATEST_VERSIONS" >> $GITHUB_OUTPUT
+          echo "new_versions=$NEW_VERSIONS" >> $GITHUB_OUTPUT
+
+          echo "$UPDATE_CHECK"
+
+  # Second job: Get dynamic PHP versions from ts-pkgx (only if rebuild is needed)
+  get-php-versions:
+    needs: check-for-updates
+    runs-on: ubuntu-latest
+    if: needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true'
     outputs:
       php_versions: ${{ steps.get-versions.outputs.php_versions }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -47,10 +88,30 @@ jobs:
           echo "php_versions=$PHP_VERSIONS" >> $GITHUB_OUTPUT
           echo "🔍 Dynamic PHP versions: $PHP_VERSIONS"
 
+  # Job to provide feedback when no rebuild is needed
+  no-rebuild-needed:
+    needs: check-for-updates
+    runs-on: ubuntu-latest
+    if: needs.check-for-updates.outputs.rebuild_needed == 'false' && github.event.inputs.force_rebuild != 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: No rebuild needed
+        run: |
+          echo "✅ No rebuild needed"
+          echo "Reason: ${{ needs.check-for-updates.outputs.reason }}"
+          echo "Current versions: ${{ needs.check-for-updates.outputs.current_versions }}"
+          echo "Latest versions: ${{ needs.check-for-updates.outputs.latest_versions }}"
+          echo ""
+          echo "The workflow will skip building since no new PHP versions are available."
+          echo "To force a rebuild, use the 'force_rebuild' input parameter."
+
   # Matrix strategy for building across different platforms and configurations
   build-matrix:
-    needs: get-php-versions
+    needs: [check-for-updates, get-php-versions]
     runs-on: ${{ matrix.os }}
+    if: needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -876,9 +937,9 @@ jobs:
 
   # Release job to create GitHub releases with binaries
   create-release:
-    needs: [build-matrix, get-php-versions]
+    needs: [check-for-updates, build-matrix, get-php-versions]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') && (needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true')
 
     steps:
       - name: Checkout repository
@@ -946,11 +1007,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: binaries-${{ github.run_number }}
-          name: PHP Precompiled Binaries - Build ${{ github.run_number }}
+          name: PHP Binaries - Build ${{ github.run_number }}
           body: |
             🚀 **PHP Precompiled Binaries**
 
-            This release contains precompiled PHP binaries optimized for modern PHP usage:
+            > This release contains precompiled PHP binaries optimized for modern PHP usage
 
             - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
             - **PHP Versions**: ${{ fromJSON(steps.get-versions.outputs.php_versions).join(', ') }}
@@ -964,9 +1025,10 @@ jobs:
               - `full-stack`: Complete PHP build with major extensions and database drivers
 
             📦 **Usage with Launchpad**:
-            These binaries are automatically downloaded by Launchpad instead of compiling from source.
+            You may use these however, but if you are looking for automation, these binaries are automatically downloaded by Launchpad instead of compiling from source.
 
             🔧 **Built from commit**: ${{ github.sha }}
+            🔄 **Update Reason**: ${{ needs.check-for-updates.outputs.reason }}
 
             See `manifest.json` for detailed information about each binary.
           files: |

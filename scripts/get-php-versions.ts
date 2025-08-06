@@ -54,7 +54,7 @@ async function getPHPVersions(): Promise<string[]> {
     console.error('Failed to fetch PHP versions from ts-pkgx:', error);
 
     // Fallback to hardcoded versions
-    return ['8.4.11', '8.3.14', '8.2.26', '8.1.30'];
+    return ['8.4.11', '8.3.24', '8.2.29', '8.1.32'];
   }
 }
 
