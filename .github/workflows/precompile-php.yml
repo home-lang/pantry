@@ -229,7 +229,12 @@ jobs:
           # Create configuration based on matrix config
           case "${{ matrix.config }}" in
             "laravel-mysql")
-              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
+              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+              else
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+              fi
               ;;
             "laravel-postgres")
               # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
