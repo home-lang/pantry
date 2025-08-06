@@ -811,15 +811,11 @@ describe('Dev Commands', () => {
       // Second run should be faster (allow more variance for CI environments)
       const expectedMultiplier = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? 2.0 : 1.5
 
-      // Log timing information for debugging
-      console.log(`Performance test timing: first run=${duration1}ms, second run=${duration2}ms, expected max=${duration1 * expectedMultiplier}ms`)
-
       // In CI environments, sometimes the second run might be slower due to system load
       // So we'll be more lenient and just ensure both runs complete successfully
       if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
         // In CI, just ensure both runs complete and the second run doesn't take more than 3x the first
         expect(duration2).toBeLessThan(duration1 * 3.0)
-        console.log('CI environment detected - using relaxed timing constraints')
       }
       else {
         // In local environment, expect the second run to be faster
