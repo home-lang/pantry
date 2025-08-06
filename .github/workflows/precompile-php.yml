@@ -715,7 +715,7 @@ jobs:
               echo "  CFLAGS: (empty)"
               echo "  CPPFLAGS: $CPPFLAGS"
 
-              # Force update Makefile for PHP 8.1 to use C++17
+                            # Force update Makefile for PHP 8.1 to use C++17
               echo "Updating Makefile for PHP 8.1 C++17 compatibility..."
               sed -i.bak 's/-std=c++14/-std=c++17/g' Makefile 2>/dev/null || echo "No C++14 flags found in Makefile to replace"
               sed -i.bak 's/-std=gnu++14/-std=gnu++17/g' Makefile 2>/dev/null || echo "No gnu++14 flags found in Makefile to replace"
@@ -727,7 +727,36 @@ jobs:
               export CXX=clang++
               echo "Final CXXFLAGS: $CXXFLAGS"
 
-              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS" CC="$CC" CXX="$CXX"
+              # Also update the Makefile to force C++17 for all compilation rules
+              echo "Forcing C++17 in all Makefile compilation rules..."
+              sed -i.bak 's/$(CXX) $(CFLAGS_CXX) $(CXXFLAGS) $(CPPFLAGS_CXX) $(CPPFLAGS) -c/$(CXX) $(CFLAGS_CXX) -std=c++17 -stdlib=libc++ $(CXXFLAGS) $(CPPFLAGS_CXX) $(CPPFLAGS) -c/g' Makefile 2>/dev/null || echo "Could not update Makefile compilation rules"
+
+              # Show what C++ flags are in the Makefile after all updates
+              echo "C++ flags in Makefile after all updates:"
+              grep -E "std=" Makefile | head -10 || echo "No std flags found in Makefile"
+
+              # Set system-wide C++17 flags
+              export CXXFLAGS="-std=c++17 -stdlib=libc++"
+              export CFLAGS=""
+              export CPPFLAGS="$CPPFLAGS"
+              export CC=clang
+              export CXX=clang++
+
+              # Test C++17 compilation before building
+              echo "Testing C++17 compilation before build:"
+              echo '#include <type_traits>' > test_cpp17.cpp
+              echo 'int main() { std::enable_if_t<true, int> x = 0; std::is_same_v<int, int> y = true; return 0; }' >> test_cpp17.cpp
+              if clang++ -std=c++17 -stdlib=libc++ test_cpp17.cpp -o test_cpp17 2>/dev/null; then
+                echo "C++17 compilation test passed"
+                rm -f test_cpp17.cpp test_cpp17
+              else
+                echo "C++17 compilation test failed"
+                rm -f test_cpp17.cpp test_cpp17
+              fi
+
+              # Use a more aggressive approach - override the compiler
+              echo "Using aggressive C++17 enforcement..."
+              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS" CC="clang" CXX="clang++ -std=c++17 -stdlib=libc++"
             else
               echo "Making with explicit C++14 flags:"
               echo "  CXXFLAGS: -std=c++14 -stdlib=libc++"
