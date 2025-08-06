@@ -178,7 +178,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking
@@ -219,7 +219,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking
@@ -255,7 +255,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking
@@ -292,7 +292,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking
@@ -329,7 +329,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking
@@ -368,7 +368,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking
@@ -400,7 +400,7 @@ describe('Download Progress', () => {
 
       const { downloadPackage } = await import('../src/install')
 
-      await expect(downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir))
+      await expect(downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir))
         .rejects
         .toThrow()
     })
@@ -417,7 +417,7 @@ describe('Download Progress', () => {
 
       const { downloadPackage } = await import('../src/install')
 
-      await expect(downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir))
+      await expect(downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir))
         .rejects
         .toThrow()
     })
@@ -446,7 +446,7 @@ describe('Download Progress', () => {
 
       const { downloadPackage } = await import('../src/install')
 
-      await expect(downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir))
+      await expect(downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir))
         .rejects
         .toThrow()
     })
@@ -547,7 +547,7 @@ describe('Download Progress', () => {
       const { downloadPackage } = await import('../src/install')
 
       try {
-        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86_64', tempDir)
+        await downloadPackage('test.domain', '1.0.0', 'darwin', 'x86-64', tempDir)
       }
       catch {
         // Expected to fail due to mocking

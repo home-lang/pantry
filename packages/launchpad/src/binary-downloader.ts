@@ -163,7 +163,7 @@ export class PrecompiledBinaryDownloader {
     const phpConfig = config.services?.php
 
     // Use manual configuration if specified
-    if (phpConfig?.strategy === 'precompiled-binary' && phpConfig?.manual?.configuration) {
+    if (phpConfig?.manual?.configuration) {
       console.log(`🔧 Using manual configuration: ${phpConfig.manual.configuration}`)
       return phpConfig.manual.configuration
     }

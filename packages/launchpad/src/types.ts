@@ -98,7 +98,7 @@ export interface LaunchpadConfig {
     }
     php?: {
       enabled?: boolean
-      strategy?: 'auto-detect' | 'precompiled-binary'
+      strategy?: 'auto-detect'
       version?: string
       autoDetect?: {
         enabled?: boolean

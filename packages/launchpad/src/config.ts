@@ -115,7 +115,7 @@ export const defaultConfig: LaunchpadConfig = {
     },
     php: {
       enabled: process.env.LAUNCHPAD_PHP_ENABLED !== 'false',
-      strategy: (process.env.LAUNCHPAD_PHP_STRATEGY as 'auto-detect' | 'precompiled-binary') || 'auto-detect',
+      strategy: (process.env.LAUNCHPAD_PHP_STRATEGY as 'auto-detect') || 'auto-detect',
       version: process.env.LAUNCHPAD_PHP_VERSION || '8.4.0',
       // Smart auto-detection based on project analysis
       autoDetect: {

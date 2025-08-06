@@ -69,15 +69,7 @@ export const defaultConfig: LaunchpadConfig = {
     },
     php: {
       enabled: true,
-      strategy: 'precompiled-binary',
       version: '8.4.11',
-      extensions: {
-        core: ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath'],
-        database: ['pdo-mysql', 'pdo-pgsql', 'pdo-sqlite', 'mysqli', 'pgsql', 'sqlite3'],
-        web: ['curl', 'openssl', 'gd', 'soap', 'sockets'],
-        utility: ['zip', 'bz2', 'gettext', 'readline', 'libxml', 'zlib'],
-        optional: ['pcntl', 'posix', 'shmop', 'sysvmsg', 'sysvsem', 'sysvshm'],
-      },
     },
     frameworks: {
       enabled: true,
