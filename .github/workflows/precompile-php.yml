@@ -768,10 +768,8 @@ jobs:
               echo "Using aggressive C++17 enforcement..."
 
               # Create a wrapper script that forces C++17
-              cat > cxx17_wrapper.sh << 'EOF'
-              #!/bin/bash
-              exec clang++ -std=c++17 -stdlib=libc++ "$@"
-              EOF
+              echo '#!/bin/bash' > cxx17_wrapper.sh
+              echo 'exec clang++ -std=c++17 -stdlib=libc++ "$@"' >> cxx17_wrapper.sh
               chmod +x cxx17_wrapper.sh
 
               # Use the wrapper script as the C++ compiler
