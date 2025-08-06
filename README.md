@@ -84,6 +84,24 @@ Modern development requires managing dependencies at multiple levels - from syst
 
 [Read more about why we created Launchpad](https://github.com/stacksjs/launchpad/tree/main/docs/why.md)
 
+## Development
+
+### Scripts
+
+Launchpad includes several utility scripts for development and maintenance:
+
+#### Dynamic PHP Version Management
+```bash
+# Get latest PHP versions from ts-pkgx registry
+bun scripts/get-php-versions.ts
+
+# This script:
+# - Fetches latest PHP versions dynamically
+# - Generates improved configuration descriptions
+# - Outputs JSON for GitHub Actions
+# - Creates markdown tables for documentation
+```
+
 ## Installation
 
 Get started with Launchpad through your preferred package manager:

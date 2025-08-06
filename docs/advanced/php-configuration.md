@@ -78,15 +78,15 @@ export LAUNCHPAD_PHP_VERSION=8.4.11                # PHP version
 
 ## Available Configurations
 
-| Configuration | When Used | Includes |
-|---------------|-----------|----------|
-| `laravel-mysql` | Laravel + MySQL (default) | Core + MySQL drivers + web extensions |
-| `laravel-postgres` | Laravel + PostgreSQL | Core + PostgreSQL drivers + web extensions |
-| `laravel-sqlite` | Laravel + SQLite (dev) | Core + SQLite drivers + web extensions |
-| `api-only` | API-only applications | Minimal: CLI, FPM, basic web extensions |
-| `enterprise` | Enterprise features | All major extensions + all database drivers |
-| `wordpress` | WordPress applications | WordPress-specific extensions |
-| `full-stack` | **Complete flexibility** | **All extensions + all databases** |
+| Configuration | Description | Use Case | Database Support |
+|---------------|-------------|----------|------------------|
+| `laravel-mysql` | Laravel with MySQL/MariaDB | Laravel applications using MySQL or MariaDB | MySQL, MariaDB |
+| `laravel-postgres` | Laravel with PostgreSQL | Laravel applications using PostgreSQL | PostgreSQL |
+| `laravel-sqlite` | Laravel with SQLite | Laravel applications using SQLite (development) | SQLite |
+| `api-only` | API-only applications | Minimal footprint for API-only applications | MySQL |
+| `enterprise` | Enterprise applications | Full-featured configuration for enterprise applications | MySQL, PostgreSQL, SQLite |
+| `wordpress` | WordPress applications | WordPress optimized build | MySQL |
+| `full-stack` | Complete PHP build | Complete PHP build with major extensions and database drivers | MySQL, PostgreSQL, SQLite |
 
 ## Smart Auto-Detection
 

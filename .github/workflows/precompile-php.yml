@@ -42,8 +42,8 @@ jobs:
       - name: Get PHP versions from ts-pkgx
         id: get-versions
         run: |
-          # Get dynamic PHP versions using published ts-pkgx package
-          PHP_VERSIONS=$(bunx ts-pkgx get-php-versions)
+          # Get dynamic PHP versions using our custom script
+          PHP_VERSIONS=$(bun scripts/get-php-versions.ts | grep "JSON output for GitHub Actions:" -A 1 | tail -1)
           echo "php_versions=$PHP_VERSIONS" >> $GITHUB_OUTPUT
           echo "🔍 Dynamic PHP versions: $PHP_VERSIONS"
 
@@ -876,13 +876,26 @@ jobs:
 
   # Release job to create GitHub releases with binaries
   create-release:
-    needs: build-matrix
+    needs: [build-matrix, get-php-versions]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Get PHP versions
+        id: get-versions
+        run: |
+          # Get dynamic PHP versions using our custom script
+          PHP_VERSIONS=$(bun scripts/get-php-versions.ts | grep "JSON output for GitHub Actions:" -A 1 | tail -1)
+          echo "php_versions=$PHP_VERSIONS" >> $GITHUB_OUTPUT
+          echo "🔍 Dynamic PHP versions: $PHP_VERSIONS"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -937,16 +950,16 @@ jobs:
           body: |
             🚀 **PHP Precompiled Binaries**
 
-                        This release contains precompiled PHP binaries optimized for modern PHP usage:
+            This release contains precompiled PHP binaries optimized for modern PHP usage:
 
             - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
-            - **PHP Versions**: 8.4.11, 8.3.14, 8.2.26, 8.1.30
-            - **Laravel-Optimized Configurations**:
-              - `laravel-mysql`: Laravel with MySQL/MariaDB (most common)
-              - `laravel-postgres`: Laravel with PostgreSQL (enterprise)
-              - `laravel-sqlite`: Laravel with SQLite (development/testing)
-              - `api-only`: API-only applications (minimal footprint)
-              - `enterprise`: Full-featured Laravel with all extensions
+            - **PHP Versions**: ${{ fromJSON(steps.get-versions.outputs.php_versions).join(', ') }}
+            - **Configuration Options**:
+              - `laravel-mysql`: Laravel applications using MySQL or MariaDB
+              - `laravel-postgres`: Laravel applications using PostgreSQL
+              - `laravel-sqlite`: Laravel applications using SQLite
+              - `api-only`: Minimal footprint for API-only applications
+              - `enterprise`: Full-featured configuration for enterprise applications
               - `wordpress`: WordPress optimized build
               - `full-stack`: Complete PHP build with major extensions and database drivers
 

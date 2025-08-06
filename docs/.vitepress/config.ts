@@ -80,6 +80,8 @@ const sidebar = [
       { text: 'Cross-platform Compatibility', link: '/advanced/cross-platform' },
       { text: 'Performance Optimization', link: '/advanced/performance' },
       { text: 'Cache Optimization', link: '/advanced/cache-optimization' },
+      { text: 'PHP Configuration', link: '/advanced/php-configuration' },
+      { text: 'Scripts', link: '/scripts' },
     ],
   },
   {
