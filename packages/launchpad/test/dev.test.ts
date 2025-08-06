@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
