@@ -1014,7 +1014,7 @@ jobs:
             > This release contains precompiled PHP binaries optimized for modern PHP usage
 
             - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
-            - **PHP Versions**: ${{ fromJSON(steps.get-versions.outputs.php_versions).join(', ') }}
+            - **PHP Versions**: ${{ fromJSON(needs.get-php-versions.outputs.php_versions).join(', ') }}
             - **Configuration Options**:
               - `laravel-mysql`: Laravel applications using MySQL or MariaDB
               - `laravel-postgres`: Laravel applications using PostgreSQL
