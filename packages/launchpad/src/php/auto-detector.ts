@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { config } from '../config'
 
 export interface ProjectAnalysis {
@@ -77,8 +78,8 @@ export class PHPAutoDetector {
    */
   private detectFramework(): ProjectAnalysis['framework'] {
     // Check for Laravel
-    if (fs.existsSync(path.join(this.projectRoot, 'artisan')) &&
-        fs.existsSync(path.join(this.projectRoot, 'composer.json'))) {
+    if (fs.existsSync(path.join(this.projectRoot, 'artisan'))
+      && fs.existsSync(path.join(this.projectRoot, 'composer.json'))) {
       try {
         const composerJson = JSON.parse(fs.readFileSync(path.join(this.projectRoot, 'composer.json'), 'utf-8'))
         if (composerJson.require?.['laravel/framework']) {
@@ -94,14 +95,14 @@ export class PHPAutoDetector {
     }
 
     // Check for WordPress
-    if (fs.existsSync(path.join(this.projectRoot, 'wp-config.php')) ||
-        fs.existsSync(path.join(this.projectRoot, 'wp-config-sample.php'))) {
+    if (fs.existsSync(path.join(this.projectRoot, 'wp-config.php'))
+      || fs.existsSync(path.join(this.projectRoot, 'wp-config-sample.php'))) {
       return 'wordpress'
     }
 
     // Check for Symfony
-    if (fs.existsSync(path.join(this.projectRoot, 'symfony.lock')) ||
-        fs.existsSync(path.join(this.projectRoot, 'config', 'bundles.php'))) {
+    if (fs.existsSync(path.join(this.projectRoot, 'symfony.lock'))
+      || fs.existsSync(path.join(this.projectRoot, 'config', 'bundles.php'))) {
       return 'symfony'
     }
 
@@ -120,10 +121,9 @@ export class PHPAutoDetector {
       try {
         const envContent = fs.readFileSync(envPath, 'utf-8')
 
-        if (envContent.includes('DB_CONNECTION=mysql') ||
-            envContent.includes('DB_CONNECTION=pgsql') ||
-            envContent.includes('DB_CONNECTION=sqlite')) {
-
+        if (envContent.includes('DB_CONNECTION=mysql')
+          || envContent.includes('DB_CONNECTION=pgsql')
+          || envContent.includes('DB_CONNECTION=sqlite')) {
           if (envContent.includes('DB_CONNECTION=mysql')) {
             databases.push('mysql')
           }
@@ -141,8 +141,8 @@ export class PHPAutoDetector {
     }
 
     // Check for database files
-    if (fs.existsSync(path.join(this.projectRoot, 'database.sqlite')) ||
-        fs.existsSync(path.join(this.projectRoot, 'database', 'database.sqlite'))) {
+    if (fs.existsSync(path.join(this.projectRoot, 'database.sqlite'))
+      || fs.existsSync(path.join(this.projectRoot, 'database', 'database.sqlite'))) {
       if (!databases.includes('sqlite')) {
         databases.push('sqlite')
       }
@@ -169,7 +169,8 @@ export class PHPAutoDetector {
       const userPref = config.services?.php?.autoDetect?.preferredDatabase
       if (userPref && userPref !== 'auto') {
         databases.push(userPref)
-      } else {
+      }
+      else {
         // Default to SQLite for development
         databases.push('sqlite')
       }
@@ -243,7 +244,7 @@ export class PHPAutoDetector {
    * Determine the optimal PHP configuration based on analysis
    */
   private determineOptimalConfig(analysis: ProjectAnalysis): string {
-    const { framework, databases, hasApi, hasWebInterface, hasImageProcessing, hasEnterpriseFeatures } = analysis
+    const { framework, databases, hasApi, hasWebInterface, hasEnterpriseFeatures } = analysis
 
     // Framework-specific configurations
     if (framework === 'wordpress') {
@@ -298,12 +299,12 @@ export class PHPAutoDetector {
    * Get human-readable explanation of the configuration choice
    */
   getConfigurationExplanation(analysis: ProjectAnalysis): string {
-    const { framework, databases, recommendedConfig, reasoning } = analysis
+    const { recommendedConfig, reasoning } = analysis
 
     let explanation = `🎯 Recommended PHP Configuration: ${recommendedConfig}\n\n`
 
     explanation += `📋 Analysis:\n`
-    reasoning.forEach(reason => {
+    reasoning.forEach((reason) => {
       explanation += `  • ${reason}\n`
     })
 
