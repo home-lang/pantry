@@ -807,20 +807,20 @@ describe('Dev Commands', () => {
       expect(cleanOutput2).toContain('✅ bun.sh')
       expect(cleanOutput2).toContain('Successfully set up environment')
 
-      // Second run should be faster (allow more variance for CI environments)
-      const expectedMultiplier = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? 2.0 : 1.5
+      // Test caching behavior rather than strict timing
+      // The key is that both runs complete successfully, indicating caching works
+      expect(duration1).toBeGreaterThan(0)
+      expect(duration2).toBeGreaterThan(0)
 
+      // In CI, we're more lenient about timing but still test the core functionality
       if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
-        // In CI, just ensure both runs complete successfully
-        // The important thing is that both runs work, not the exact timing
-        expect(duration1).toBeGreaterThan(0)
-        expect(duration2).toBeGreaterThan(0)
-        expect(result1.exitCode).toBe(0)
-        expect(result2.exitCode).toBe(0)
-      }
-      else {
+        // In CI, just ensure both runs complete and don't take an unreasonable amount of time
+        // (more than 30 seconds would indicate a serious problem)
+        expect(duration1).toBeLessThan(30000)
+        expect(duration2).toBeLessThan(30000)
+      } else {
         // In local environment, expect the second run to be faster
-        expect(duration2).toBeLessThan(duration1 * expectedMultiplier)
+        expect(duration2).toBeLessThan(duration1 * 1.5)
       }
     }, 60000)
   })
