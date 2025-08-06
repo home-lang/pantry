@@ -98,22 +98,16 @@ export interface LaunchpadConfig {
     }
     php?: {
       enabled?: boolean
-      strategy?: 'source-build' | 'binary' | 'precompiled-binary'
+      strategy?: 'auto-detect' | 'precompiled-binary'
       version?: string
-      build?: {
+      autoDetect?: {
         enabled?: boolean
-        dependencies?: string[]
-        parallelJobs?: number
-        configureArgs?: string[]
-        timeout?: number
-        debug?: boolean
+        preferredDatabase?: 'mysql' | 'postgres' | 'sqlite' | 'auto'
+        includeAllDatabases?: boolean
+        includeEnterprise?: boolean
       }
-      extensions?: {
-        core?: string[]
-        database?: string[]
-        web?: string[]
-        utility?: string[]
-        optional?: string[]
+      manual?: {
+        configuration?: 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack'
       }
     }
   }

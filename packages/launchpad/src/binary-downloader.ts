@@ -71,84 +71,79 @@ export class PrecompiledBinaryDownloader {
   /**
    * Check if user has customized PHP extensions that require source build
    */
-  private hasCustomExtensions(): { hasCustom: boolean, customExtensions: string[], reason: string } {
+  private async hasCustomExtensions(): Promise<{ hasCustom: boolean, customExtensions: string[], reason: string }> {
     const phpConfig = config.services?.php
-    if (!phpConfig?.extensions) {
-      return { hasCustom: false, customExtensions: [], reason: 'No PHP extensions configured' }
+
+    // Auto-detection strategy - no custom extensions needed
+    if (phpConfig?.strategy === 'auto-detect') {
+      return { hasCustom: false, customExtensions: [], reason: 'Using auto-detection strategy' }
     }
 
-    const { extensions } = phpConfig
+    // Precompiled binary strategy - no custom extensions needed
+    if (phpConfig?.strategy === 'precompiled-binary') {
+      return { hasCustom: false, customExtensions: [], reason: 'Using precompiled binary strategy' }
+    }
 
-    // Get all user-configured extensions
-    const userExtensions = [
-      ...(extensions.core || []),
-      ...(extensions.database || []),
-      ...(extensions.web || []),
-      ...(extensions.utility || []),
-      ...(extensions.optional || []),
+    // Legacy support for manual extension configuration (deprecated)
+    if ((phpConfig as any)?.extensions) {
+      console.warn('⚠️ Manual extension configuration is deprecated. Use auto-detection or manual configuration instead.')
+      return { hasCustom: false, customExtensions: [], reason: 'Legacy extension configuration detected' }
+    }
+
+    return { hasCustom: false, customExtensions: [], reason: 'No custom extensions configured' }
+  }
+
+  /**
+   * Check if user extensions are compatible with full-stack configuration
+   */
+  private isCompatibleWithFullStack(userExtensions: string[]): boolean {
+    // Define what full-stack includes
+    const fullStackExtensions = [
+      'cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath', 'calendar', 'ftp',
+      'sysvmsg', 'sysvsem', 'sysvshm', 'wddx', 'pdo-mysql', 'pdo-pgsql', 'pdo-sqlite',
+      'pdo-odbc', 'mysqli', 'pgsql', 'sqlite3', 'curl', 'openssl', 'gd', 'soap', 'sockets',
+      'zip', 'bz2', 'readline', 'libxml', 'zlib', 'pcntl', 'posix', 'gettext', 'gmp',
+      'ldap', 'xsl', 'sodium', 'iconv', 'fileinfo', 'json', 'phar', 'filter', 'hash',
+      'session', 'tokenizer', 'ctype', 'dom', 'simplexml', 'xml', 'xmlreader', 'xmlwriter', 'shmop'
     ]
 
-    // Define what each precompiled config includes
-    const precompiledConfigs = {
-      'laravel-mysql': ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath', 'pdo-mysql', 'mysqli', 'curl', 'openssl', 'gd', 'zip', 'readline', 'libxml', 'zlib'],
-      'laravel-postgres': ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath', 'pdo-pgsql', 'pgsql', 'curl', 'openssl', 'gd', 'zip', 'readline', 'libxml', 'zlib'],
-      'laravel-sqlite': ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath', 'pdo-sqlite', 'sqlite3', 'curl', 'openssl', 'gd', 'zip', 'readline', 'libxml', 'zlib'],
-      'api-only': ['cli', 'fpm', 'mbstring', 'opcache', 'bcmath', 'pdo-mysql', 'mysqli', 'curl', 'openssl', 'zip', 'libxml', 'zlib'],
-      'enterprise': ['cli', 'fpm', 'mbstring', 'opcache', 'intl', 'exif', 'bcmath', 'pdo-mysql', 'pdo-pgsql', 'pdo-sqlite', 'mysqli', 'pgsql', 'sqlite3', 'curl', 'openssl', 'gd', 'soap', 'sockets', 'zip', 'bz2', 'readline', 'libxml', 'zlib', 'pcntl', 'posix', 'gettext', 'gmp', 'ldap', 'xsl', 'sodium'],
-      'wordpress': ['cli', 'fpm', 'mbstring', 'opcache', 'exif', 'pdo-mysql', 'mysqli', 'curl', 'openssl', 'gd', 'zip', 'libxml', 'zlib'],
-    }
-
-    // Find the best matching config based on framework detection
-    const detectedConfig = this.detectFrameworkAndDatabase()
-    const availableExtensions = precompiledConfigs[detectedConfig as keyof typeof precompiledConfigs] || precompiledConfigs['laravel-mysql']
-
-    // Check if user wants extensions not in any precompiled config
-    const missingExtensions = userExtensions.filter((ext) => {
-      // Check if this extension exists in ANY precompiled config
-      return !Object.values(precompiledConfigs).some(configExts => configExts.includes(ext))
-    })
-
-    if (missingExtensions.length > 0) {
-      return {
-        hasCustom: true,
-        customExtensions: missingExtensions,
-        reason: `Custom extensions not available in precompiled binaries: ${missingExtensions.join(', ')}`,
-      }
-    }
-
-    // Check if user wants extensions not in their detected config
-    const incompatibleExtensions = userExtensions.filter(ext => !availableExtensions.includes(ext))
-
-    if (incompatibleExtensions.length > 0) {
-      // Check if enterprise config would work
-      const enterpriseExtensions = precompiledConfigs.enterprise
-      const stillMissing = incompatibleExtensions.filter(ext => !enterpriseExtensions.includes(ext))
-
-      if (stillMissing.length > 0) {
-        return {
-          hasCustom: true,
-          customExtensions: stillMissing,
-          reason: `Extensions not available in any precompiled config: ${stillMissing.join(', ')}`,
-        }
-      }
-      else {
-        // Enterprise config would work, but let them know
-        console.log(`⚠️ Your extensions require the 'enterprise' configuration: ${incompatibleExtensions.join(', ')}`)
-        console.log('💡 Consider using enterprise config or reducing extensions for better performance')
-      }
-    }
-
-    return { hasCustom: false, customExtensions: [], reason: '' }
+    // Check if all user extensions are included in full-stack
+    return userExtensions.every(ext => fullStackExtensions.includes(ext))
   }
 
   /**
    * Detect Laravel framework and suggest optimal configuration
    */
-  private detectFrameworkAndDatabase(): string {
+  private async detectFrameworkAndDatabase(): Promise<string> {
+    const phpConfig = config.services?.php
+
+    // Use manual configuration if specified
+    if (phpConfig?.strategy === 'precompiled-binary' && phpConfig?.manual?.configuration) {
+      console.log(`🔧 Using manual configuration: ${phpConfig.manual.configuration}`)
+      return phpConfig.manual.configuration
+    }
+
+    // Use auto-detection if enabled
+    if (phpConfig?.strategy === 'auto-detect') {
+      try {
+        const { PHPAutoDetector } = await import('./php/auto-detector')
+        const detector = new PHPAutoDetector()
+        const analysis = await detector.analyzeProject()
+
+        console.log(detector.getConfigurationExplanation(analysis))
+
+        return analysis.recommendedConfig
+      }
+      catch (error) {
+        console.warn(`⚠️ Auto-detection failed: ${error instanceof Error ? error.message : String(error)}`)
+        console.warn('🔄 Falling back to basic detection...')
+      }
+    }
+
+    // Fallback to basic detection
     try {
       // eslint-disable-next-line ts/no-require-imports
       const fs = require('node:fs')
-      // const _path = require('node:path')
 
       // Check for Laravel
       if (fs.existsSync('artisan') && fs.existsSync('composer.json')) {
@@ -257,10 +252,10 @@ export class PrecompiledBinaryDownloader {
   /**
    * Find the best matching binary for the current system and requirements
    */
-  private findMatchingBinary(manifest: BinaryManifest, phpVersion?: string): BinaryInfo | null {
+  private async findMatchingBinary(manifest: BinaryManifest, phpVersion?: string): Promise<BinaryInfo | null> {
     const platform = this.getPlatform()
     const architecture = this.getArchitecture()
-    const detectedConfig = this.detectFrameworkAndDatabase()
+    const detectedConfig = await this.detectFrameworkAndDatabase()
 
     console.log(`🔍 Detected configuration: ${detectedConfig}`)
 
@@ -328,19 +323,21 @@ export class PrecompiledBinaryDownloader {
   private getFallbackConfigurations(detectedConfig: string): string[] {
     switch (detectedConfig) {
       case 'laravel-mysql':
-        return ['enterprise', 'laravel-postgres', 'laravel-sqlite']
+        return ['enterprise', 'full-stack', 'laravel-postgres', 'laravel-sqlite']
       case 'laravel-postgres':
-        return ['enterprise', 'laravel-mysql', 'laravel-sqlite']
+        return ['enterprise', 'full-stack', 'laravel-mysql', 'laravel-sqlite']
       case 'laravel-sqlite':
-        return ['laravel-mysql', 'enterprise', 'laravel-postgres']
+        return ['laravel-mysql', 'enterprise', 'full-stack', 'laravel-postgres']
       case 'api-only':
-        return ['laravel-mysql', 'laravel-postgres', 'laravel-sqlite']
+        return ['laravel-mysql', 'enterprise', 'full-stack', 'laravel-postgres', 'laravel-sqlite']
       case 'wordpress':
-        return ['laravel-mysql', 'enterprise']
+        return ['laravel-mysql', 'enterprise', 'full-stack']
       case 'enterprise':
-        return ['laravel-mysql', 'laravel-postgres']
+        return ['full-stack', 'laravel-mysql', 'laravel-postgres']
+      case 'full-stack':
+        return ['enterprise', 'laravel-mysql', 'laravel-postgres']
       default:
-        return ['laravel-mysql', 'enterprise', 'laravel-postgres', 'laravel-sqlite']
+        return ['laravel-mysql', 'enterprise', 'full-stack', 'laravel-postgres', 'laravel-sqlite']
     }
   }
 
@@ -491,7 +488,7 @@ Thanks for helping us make Launchpad better! 🙏
       console.log(`🔍 Target: ${this.getPlatform()}-${this.getArchitecture()}`)
 
       // Check for custom extensions first
-      const customCheck = this.hasCustomExtensions()
+      const customCheck = await this.hasCustomExtensions()
       if (customCheck.hasCustom) {
         this.provideSuggestions(customCheck)
         throw new Error(`Custom extensions required: ${customCheck.reason}`)
@@ -502,7 +499,7 @@ Thanks for helping us make Launchpad better! 🙏
       console.log(`📋 Found ${manifest.binaries.length} available binaries`)
 
       // Find matching binary
-      const binary = this.findMatchingBinary(manifest, requestedVersion)
+      const binary = await this.findMatchingBinary(manifest, requestedVersion)
 
       if (!binary) {
         const platform = this.getPlatform()
@@ -510,7 +507,7 @@ Thanks for helping us make Launchpad better! 🙏
         const detectedConfig = this.detectFrameworkAndDatabase()
 
         // Generate helpful Discord error message
-        const discordMessage = this.generateDiscordErrorMessage(detectedConfig, platform, arch)
+        const discordMessage = this.generateDiscordErrorMessage(await detectedConfig, platform, arch)
         console.log(`\n${discordMessage}\n`)
 
         throw new Error(
@@ -558,7 +555,7 @@ Thanks for helping us make Launchpad better! 🙏
   async isSupported(): Promise<boolean> {
     try {
       // First check if user has custom extensions
-      const customCheck = this.hasCustomExtensions()
+      const customCheck = await this.hasCustomExtensions()
       if (customCheck.hasCustom) {
         if (config.verbose) {
           console.log(`🔧 Custom extensions detected: ${customCheck.customExtensions.join(', ')}`)
@@ -568,7 +565,7 @@ Thanks for helping us make Launchpad better! 🙏
       }
 
       const manifest = await this.downloadManifest()
-      const binary = this.findMatchingBinary(manifest)
+      const binary = await this.findMatchingBinary(manifest)
       return binary !== null
     }
     catch {

@@ -115,57 +115,18 @@ export const defaultConfig: LaunchpadConfig = {
     },
     php: {
       enabled: process.env.LAUNCHPAD_PHP_ENABLED !== 'false',
-      strategy: 'source-build' as const,
+      strategy: (process.env.LAUNCHPAD_PHP_STRATEGY as 'auto-detect' | 'precompiled-binary') || 'auto-detect',
       version: process.env.LAUNCHPAD_PHP_VERSION || '8.4.0',
-      extensions: {
-        core: [
-          'cli',
-          'fpm',
-          'mbstring',
-          'opcache',
-          'intl',
-          'exif',
-          'bcmath',
-        ],
-        database: [
-          'pdo-mysql',
-          'pdo-pgsql',
-          'pdo-sqlite',
-          'mysqli',
-          'pgsql',
-          'sqlite3',
-        ],
-        web: [
-          'curl',
-          'openssl',
-          'gd',
-          'soap',
-          'sockets',
-        ],
-        utility: [
-          'zip',
-          'bz2',
-          'gettext',
-          'readline',
-          'libxml',
-          'zlib',
-        ],
-        optional: [
-          'pcntl',
-          'posix',
-          'shmop',
-          'sysvmsg',
-          'sysvsem',
-          'sysvshm',
-        ],
+      // Smart auto-detection based on project analysis
+      autoDetect: {
+        enabled: process.env.LAUNCHPAD_PHP_AUTO_DETECT !== 'false',
+        preferredDatabase: (process.env.LAUNCHPAD_PREFERRED_DATABASE as 'mysql' | 'postgres' | 'sqlite') || 'auto',
+        includeAllDatabases: process.env.LAUNCHPAD_PHP_ALL_DATABASES === 'true',
+        includeEnterprise: process.env.LAUNCHPAD_PHP_ENTERPRISE === 'true',
       },
-      build: {
-        parallelJobs: undefined, // Auto-detect CPU cores
-        configureArgs: [
-          '--disable-debug',
-        ],
-        timeout: 600000, // 10 minutes
-        debug: false,
+      // Manual configuration (when auto-detect is disabled)
+      manual: {
+        configuration: (process.env.LAUNCHPAD_PHP_CONFIGURATION as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack') || 'laravel-mysql',
       },
     },
   },
