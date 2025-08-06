@@ -939,7 +939,7 @@ jobs:
   create-release:
     needs: [check-for-updates, build-matrix, get-php-versions]
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') && (needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true')
+    if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && (needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true')
 
     steps:
       - name: Checkout repository
