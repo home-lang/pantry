@@ -818,7 +818,8 @@ describe('Dev Commands', () => {
         // (more than 30 seconds would indicate a serious problem)
         expect(duration1).toBeLessThan(30000)
         expect(duration2).toBeLessThan(30000)
-      } else {
+      }
+      else {
         // In local environment, expect the second run to be faster
         expect(duration2).toBeLessThan(duration1 * 1.5)
       }
