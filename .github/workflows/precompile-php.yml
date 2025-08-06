@@ -240,7 +240,12 @@ jobs:
               fi
               ;;
             "laravel-sqlite")
-              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
+              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
+              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
+              else
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
+              fi
               ;;
             "api-only")
               EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --with-zip --with-libxml --with-zlib"
@@ -425,9 +430,9 @@ jobs:
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
               echo "Using C++17 for PHP ${{ matrix.php_version }}"
             elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
-              # PHP 8.1 uses C++14 for configure (PHP requirement), C++17 for build (ICU4C requirement)
+              # PHP 8.1 configure step requires C++14, but build step will need C++17 for ICU4C
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
-              echo "Using C++14 for PHP ${{ matrix.php_version }} (configure step)"
+              echo "Using C++14 for PHP ${{ matrix.php_version }} (configure step only)"
             else
               # Earlier PHP versions can use C++14
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
@@ -463,10 +468,21 @@ jobs:
                 echo "C++17 support test failed before configure"
                 rm -f test_cpp.cpp test_cpp
               fi
+            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
+              echo "Testing C++14 support before configure (PHP 8.1 configure step):"
+              echo '#include <type_traits>' > test_cpp.cpp
+              echo 'int main() { typename std::enable_if<true, int>::type x = 0; return x; }' >> test_cpp.cpp
+              if clang++ -std=c++14 -stdlib=libc++ test_cpp.cpp -o test_cpp 2>/dev/null; then
+                echo "C++14 support confirmed before configure"
+                rm -f test_cpp.cpp test_cpp
+              else
+                echo "C++14 support test failed before configure"
+                rm -f test_cpp.cpp test_cpp
+              fi
             else
               echo "Testing C++14 support before configure:"
               echo '#include <type_traits>' > test_cpp.cpp
-              echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp.cpp
+              echo 'int main() { typename std::enable_if<true, int>::type x = 0; return x; }' >> test_cpp.cpp
               if clang++ -std=c++14 -stdlib=libc++ test_cpp.cpp -o test_cpp 2>/dev/null; then
                 echo "C++14 support confirmed before configure"
                 rm -f test_cpp.cpp test_cpp
@@ -706,7 +722,7 @@ jobs:
             else
               echo "Testing C++14 support:"
               echo '#include <type_traits>' > test_cpp.cpp
-              echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp.cpp
+              echo 'int main() { typename std::enable_if<true, int>::type x = 0; return x; }' >> test_cpp.cpp
               if clang++ -std=c++14 -stdlib=libc++ test_cpp.cpp -o test_cpp 2>/dev/null; then
                 echo "C++14 support confirmed"
                 rm -f test_cpp.cpp test_cpp
