@@ -248,26 +248,47 @@ export class PrecompiledBinaryDownloader {
   private async downloadManifest(): Promise<BinaryManifest> {
     console.log('📋 Downloading precompiled binary manifest...')
 
-    const manifestUrl = `${this.GITHUB_API}/repos/${this.GITHUB_REPO}/releases/latest`
+    // First, get all releases to find the latest binaries release
+    const releasesUrl = `${this.GITHUB_API}/repos/${this.GITHUB_REPO}/releases`
 
     try {
-      const response = await fetch(manifestUrl, {
+      const releasesResponse = await fetch(releasesUrl, {
         headers: {
           'User-Agent': 'Launchpad Binary Downloader',
           'Accept': 'application/vnd.github.v3+json',
         },
       })
 
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
+      if (!releasesResponse.ok) {
+        if (releasesResponse.status === 403) {
+          throw new Error('GitHub API rate limit exceeded. Please try again later.')
+        }
+        throw new Error(`GitHub API error: ${releasesResponse.status} ${releasesResponse.statusText}`)
       }
 
-      const release = await response.json() as GitHubRelease
+      const releases = await releasesResponse.json() as GitHubRelease[]
+
+      // Find the latest release with binaries- prefix
+      const binariesReleases = releases.filter(release =>
+        release.tag_name.startsWith('binaries-'),
+      ).sort((a, b) => {
+        // Sort by release number (binaries-1234)
+        const aNum = Number.parseInt(a.tag_name.replace('binaries-', ''), 10)
+        const bNum = Number.parseInt(b.tag_name.replace('binaries-', ''), 10)
+        return bNum - aNum // Latest first
+      })
+
+      if (binariesReleases.length === 0) {
+        throw new Error('No binaries releases found. The precompile workflow may not have run yet.')
+      }
+
+      const binariesRelease = binariesReleases[0]
+      console.log(`📦 Found binaries release: ${binariesRelease.tag_name}`)
 
       // Find manifest.json in release assets
-      const manifestAsset = release.assets?.find(asset => asset.name === 'manifest.json')
+      const manifestAsset = binariesRelease.assets?.find(asset => asset.name === 'manifest.json')
       if (!manifestAsset) {
-        throw new Error('No manifest.json found in latest release')
+        throw new Error('No manifest.json found in binaries release')
       }
 
       // Download manifest content
@@ -280,12 +301,21 @@ export class PrecompiledBinaryDownloader {
 
       // Add download URLs to binaries
       manifest.binaries = manifest.binaries.map((binary) => {
-        const asset = release.assets?.find(asset => asset.name === binary.filename)
+        const asset = binariesRelease.assets?.find(asset => asset.name === binary.filename)
+        if (!asset) {
+          console.warn(`⚠️ No asset found for binary: ${binary.filename}`)
+        }
         return {
           ...binary,
           download_url: asset?.browser_download_url || '',
         }
-      })
+      }).filter(binary => binary.download_url) // Remove binaries without download URLs
+
+      console.log(`📋 Manifest loaded: ${manifest.binaries.length} binaries available`)
+
+      if (manifest.binaries.length === 0) {
+        throw new Error('No valid binaries found in manifest. The release may be incomplete.')
+      }
 
       return manifest
     }
@@ -391,7 +421,7 @@ export class PrecompiledBinaryDownloader {
    */
   private generateDiscordErrorMessage(detectedConfig: string, platform: string, architecture: string): string {
     return `
-🚨 **Unsupported PHP Configuration Detected**
+🚨 **PHP Binary Not Available**
 
 We don't have a precompiled binary for your setup yet. Please help us improve!
 
@@ -405,9 +435,19 @@ We don't have a precompiled binary for your setup yet. Please help us improve!
 2. Share this error in the #launchpad channel
 3. Tell us about your project setup so we can add support
 
-**Workaround:**
-- Launchpad will automatically fall back to source compilation
-- This will take longer but will work for your configuration
+**Available Configurations:**
+- laravel-mysql: Laravel with MySQL/MariaDB
+- laravel-postgres: Laravel with PostgreSQL
+- laravel-sqlite: Laravel with SQLite
+- api-only: Minimal API applications
+- enterprise: Full-featured enterprise build
+- wordpress: WordPress-optimized
+- full-stack: Complete PHP with all major extensions
+
+**Next Steps:**
+- Try a different PHP version if available
+- Check if your platform/architecture is supported
+- Request support for your specific configuration
 
 Thanks for helping us make Launchpad better! 🙏
     `.trim()
@@ -549,16 +589,31 @@ Thanks for helping us make Launchpad better! 🙏
       if (!binary) {
         const platform = this.getPlatform()
         const arch = this.getArchitecture()
-        const detectedConfig = this.detectFrameworkAndDatabase()
+        const detectedConfig = await this.detectFrameworkAndDatabase()
+
+        // Show available binaries for debugging
+        const availableBinaries = manifest.binaries.filter(b =>
+          b.platform === platform && b.architecture === arch,
+        )
+
+        console.log(`\n🔍 Available binaries for ${platform}-${arch}:`)
+        if (availableBinaries.length > 0) {
+          availableBinaries.forEach((b) => {
+            console.log(`  - PHP ${b.php_version} (${b.configuration})`)
+          })
+        }
+        else {
+          console.log(`  ❌ No binaries available for ${platform}-${arch}`)
+        }
 
         // Generate helpful Discord error message
-        const discordMessage = this.generateDiscordErrorMessage(await detectedConfig, platform, arch)
+        const discordMessage = this.generateDiscordErrorMessage(detectedConfig, platform, arch)
         console.log(`\n${discordMessage}\n`)
 
         throw new Error(
           `No precompiled binary found for ${platform}-${arch} with ${detectedConfig} configuration${
             requestedVersion ? ` and PHP ${requestedVersion}` : ''
-          }. See Discord message above for help.`,
+          }. See available binaries above and Discord message for help.`,
         )
       }
 

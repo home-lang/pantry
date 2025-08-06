@@ -975,6 +975,14 @@ jobs:
         run: |
           cd binaries/
 
+          # Debug: Show what we have
+          echo "🔍 Current directory structure:"
+          ls -la
+          echo ""
+          echo "🔍 Looking for tar.gz files:"
+          find . -name "*.tar.gz" -type f
+          echo ""
+
           # Create a manifest of all built binaries
           cat > manifest.json << EOF
           {
@@ -985,31 +993,61 @@ jobs:
           EOF
 
           first=true
-          for dir in */; do
-            if [[ -f "$dir"*.tar.gz ]]; then
-              if [[ $first == "false" ]]; then
-                echo "," >> manifest.json
-              fi
-              tarball=$(ls "$dir"*.tar.gz | head -1)
-              filename=$(basename "$tarball")
-              size=$(stat -c%s "$tarball" 2>/dev/null || stat -f%z "$tarball")
-
-              # Extract metadata from tarball if available
-              tar -xzOf "$tarball" "*/metadata.json" > temp_metadata.json 2>/dev/null || echo '{}' > temp_metadata.json
-
-              echo "      {" >> manifest.json
-              echo "        \"filename\": \"$filename\"," >> manifest.json
-              echo "        \"size\": $size," >> manifest.json
-              cat temp_metadata.json | sed 's/^/        /' | sed '1s/^        {//' | sed '$s/$//' >> manifest.json
-              echo "      }" >> manifest.json
-              first=false
+          # Find all tar.gz files recursively
+          for tarball in $(find . -name "*.tar.gz" -type f); do
+            if [[ $first == "false" ]]; then
+              echo "," >> manifest.json
             fi
+
+            filename=$(basename "$tarball")
+            size=$(stat -c%s "$tarball" 2>/dev/null || stat -f%z "$tarball")
+
+            echo "Processing: $filename (size: $size bytes)"
+
+            # Extract metadata from tarball if available
+            tar -xzOf "$tarball" "*/metadata.json" > temp_metadata.json 2>/dev/null || echo '{}' > temp_metadata.json
+
+            # Parse the binary name to extract components
+            # Expected format: php-8.4.11-darwin-arm64-laravel-mysql.tar.gz
+            binary_name=$(echo "$filename" | sed 's/\.tar\.gz$//')
+
+            # Extract components from binary name
+            if [[ "$binary_name" =~ ^php-([^-]+)-([^-]+)-([^-]+)-(.+)$ ]]; then
+              php_version="${BASH_REMATCH[1]}"
+              platform="${BASH_REMATCH[2]}"
+              architecture="${BASH_REMATCH[3]}"
+              configuration="${BASH_REMATCH[4]}"
+            else
+              # Fallback if pattern doesn't match
+              php_version="unknown"
+              platform="unknown"
+              architecture="unknown"
+              configuration="unknown"
+            fi
+
+            echo "      {" >> manifest.json
+            echo "        \"filename\": \"$filename\"," >> manifest.json
+            echo "        \"size\": $size," >> manifest.json
+            echo "        \"php_version\": \"$php_version\"," >> manifest.json
+            echo "        \"platform\": \"$platform\"," >> manifest.json
+            echo "        \"architecture\": \"$architecture\"," >> manifest.json
+            echo "        \"configuration\": \"$configuration\"," >> manifest.json
+            echo "        \"built_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," >> manifest.json
+            echo "        \"extensions\": \"$(cat temp_metadata.json | jq -r '.extensions // ""' 2>/dev/null || echo '')\"" >> manifest.json
+            echo "      }" >> manifest.json
+            first=false
           done
 
           echo "    ]" >> manifest.json
           echo "  }" >> manifest.json
 
+          echo ""
+          echo "📋 Generated manifest.json:"
           cat manifest.json
+          echo ""
+          echo "📊 Summary:"
+          echo "  - Total binaries found: $(find . -name "*.tar.gz" -type f | wc -l)"
+          echo "  - Manifest file size: $(stat -c%s manifest.json 2>/dev/null || stat -f%z manifest.json) bytes"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

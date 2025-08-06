@@ -223,41 +223,30 @@ export async function installPackage(packageName: string, packageSpec: string, i
     return await installMeilisearch(installPath, requestedVersion)
   }
 
-  // Special handling for PHP - use precompiled binaries for speed
+  // Special handling for PHP - use precompiled binaries from GitHub
   if (name === 'php' || domain === 'php.net') {
+    console.log('🐘 Installing PHP using precompiled binaries from GitHub...')
+
     try {
-      if (config.verbose) {
-        console.warn(`Installing PHP from precompiled binaries for ${name}`)
-      }
-
       // Import the binary downloader
-      const { downloadPhpBinary, PrecompiledBinaryDownloader } = await import('./binary-downloader')
+      const { downloadPhpBinary } = await import('./binary-downloader')
 
-      // Check if precompiled binaries are available
-      const downloader = new PrecompiledBinaryDownloader(installPath)
-      const isSupported = await downloader.isSupported()
-
-      if (isSupported) {
-        console.log('🚀 Using precompiled PHP binaries...')
-        return await downloadPhpBinary(installPath, requestedVersion)
-      }
-      else {
-        console.warn('🔧 Custom extensions detected: falling back to source build. Nudge us or open an issue if you need this!')
-        throw new Error('Source builds are no longer supported. Use precompiled binaries instead. If you need this, nudge us or open an issue!')
-      }
+      // Always use precompiled binaries for PHP
+      return await downloadPhpBinary(installPath, requestedVersion)
     }
     catch (error) {
-      if (config.verbose) {
-        console.log(`⚠️ Binary download failed: ${error instanceof Error ? error.message : String(error)}`)
-      }
-    }
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`❌ Failed to install PHP from precompiled binaries: ${errorMessage}`)
 
-    // CRITICAL: Install ALL PHP dependencies FIRST before building
-    if (config.verbose) {
-      console.log('🔧 Setting up build environment for PHP...')
-    }
+      // Provide helpful error message
+      console.log('\n💡 Troubleshooting:')
+      console.log('1. Check your internet connection')
+      console.log('2. Verify that the precompile workflow has run recently')
+      console.log('3. Try a different PHP version if available')
+      console.log('4. Join our Discord for help: https://discord.gg/stacksjs')
 
-    throw new Error('Source builds are no longer supported. Use precompiled binaries instead.')
+      throw new Error(`PHP installation failed: ${errorMessage}`)
+    }
   }
 
   if (config.verbose) {
