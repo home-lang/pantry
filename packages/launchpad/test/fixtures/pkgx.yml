@@ -1,5 +1,5 @@
 dependencies:
   zlib.net: ^1.2
-  python.org: latest
+  python.org: latest3.13.5
 env:
   FOO: BAR
