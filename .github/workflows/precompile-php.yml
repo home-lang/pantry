@@ -958,6 +958,14 @@ jobs:
           echo "php_versions=$PHP_VERSIONS" >> $GITHUB_OUTPUT
           echo "🔍 Dynamic PHP versions: $PHP_VERSIONS"
 
+      - name: Format PHP versions for release
+        id: format-versions
+        run: |
+          # Convert JSON array to comma-separated string
+          PHP_VERSIONS_JSON='${{ needs.get-php-versions.outputs.php_versions }}'
+          PHP_VERSIONS_STRING=$(echo "$PHP_VERSIONS_JSON" | jq -r 'join(", ")')
+          echo "php_versions_string=$PHP_VERSIONS_STRING" >> $GITHUB_OUTPUT
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -1014,7 +1022,7 @@ jobs:
             > This release contains precompiled PHP binaries optimized for modern PHP usage
 
             - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
-            - **PHP Versions**: ${{ fromJSON(needs.get-php-versions.outputs.php_versions).join(', ') }}
+            - **PHP Versions**: ${{ steps.format-versions.outputs.php_versions_string }}
             - **Configuration Options**:
               - `laravel-mysql`: Laravel applications using MySQL or MariaDB
               - `laravel-postgres`: Laravel applications using PostgreSQL
