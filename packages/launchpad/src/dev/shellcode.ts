@@ -881,9 +881,23 @@ __launchpad_ensure_system_path() {
 # Always ensure system paths are available
 __launchpad_ensure_system_path
 
+# Generic hook sourcing (allows prompt/tool activation without hardcoding)
+__launchpad_source_hooks_dir() {
+    local dir="$1"
+    if [[ -d "$dir" ]]; then
+        for hook in "$dir"/*.sh; do
+            if [[ -f "$hook" ]]; then
+                # shellcheck disable=SC1090
+                source "$hook" >/dev/null 2>&1 || true
+            fi
+        done
+    fi
+}
+
 # One-time setup on shell initialization
 __launchpad_setup_global_deps
 __launchpad_ensure_global_path
+__launchpad_source_hooks_dir "$HOME/.config/launchpad/hooks/init.d"
 
 # Clear command hash table on initial load
 hash -r 2>/dev/null || true
@@ -898,6 +912,7 @@ __launchpad_auto_refresh_check() {
         # Remove marker and refresh
         rm -f "$refresh_marker" 2>/dev/null
         __launchpad_refresh_global_paths
+        __launchpad_source_hooks_dir "$HOME/.config/launchpad/hooks/post-refresh.d"
     fi
 }
 

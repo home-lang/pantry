@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import type { PackageSpec } from './types'
 import fs from 'node:fs'
+import process from 'node:process'
 import { config } from './config'
 import { resolveAllDependencies } from './dependency-resolution'
 import { installPackage } from './install-core'
@@ -149,8 +150,9 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     }
   }
 
-  // Show final summary
-  if (allInstalledFiles.length > 0) {
+  // Show final summary (allow CLI to suppress this to avoid duplicate success lines)
+  const suppressSummary = process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY === 'true'
+  if (allInstalledFiles.length > 0 && !suppressSummary) {
     if (config.verbose) {
       console.log(`✅ Successfully installed ${allInstalledFiles.length} files`)
     }
@@ -158,7 +160,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       logUniqueMessage(`✅ Successfully set up environment with ${allInstalledFiles.length} files`)
     }
   }
-  else {
+  else if (!suppressSummary) {
     if (config.verbose) {
       console.log(`ℹ️  No new files installed (packages may have been already installed)`)
     }

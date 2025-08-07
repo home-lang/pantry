@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { spawn } from 'node:child_process'
 
 function getTestEnv(extra?: Record<string, string>): NodeJS.ProcessEnv {
   return {
@@ -82,11 +82,18 @@ dependencies:
       let stdout = ''
       let stderr = ''
 
-      proc.stdout.on('data', (data) => { stdout += data.toString() })
-      proc.stderr.on('data', (data) => { stderr += data.toString() })
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString()
+      })
+      proc.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
 
       const timeout = setTimeout(() => {
-        try { proc.kill() } catch {}
+        try {
+          proc.kill()
+        }
+        catch {}
         reject(new Error('Timed out waiting for CLI output'))
       }, 20000)
 

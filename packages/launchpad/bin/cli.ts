@@ -25,6 +25,104 @@ const version = packageJson.default?.version || packageJson.version || '0.0.0'
 // Default version for setup command (derived from package.json version)
 const DEFAULT_SETUP_VERSION = `v${version}`
 
+// Notify shell integration to refresh global paths on next prompt
+function triggerShellGlobalRefresh(): void {
+  try {
+    const refreshDir = path.join(homedir(), '.cache', 'launchpad', 'shell_cache')
+    fs.mkdirSync(refreshDir, { recursive: true })
+    const marker = path.join(refreshDir, 'global_refresh_needed')
+    fs.writeFileSync(marker, '')
+  }
+  catch {
+    // Non-fatal: shell will refresh on next activation anyway
+  }
+}
+
+// Install pluggable shell hooks for newly available tools (no hardcoding in shellcode)
+function ensurePostInstallHooks(): void {
+  try {
+    const home = homedir()
+    const initDir = path.join(home, '.config', 'launchpad', 'hooks', 'init.d')
+    const refreshDir = path.join(home, '.config', 'launchpad', 'hooks', 'post-refresh.d')
+    fs.mkdirSync(initDir, { recursive: true })
+    fs.mkdirSync(refreshDir, { recursive: true })
+
+    // Starship prompt hook (installed only if starship is present)
+    const starshipPathCandidates = [
+      path.join(home, '.local', 'bin', 'starship'),
+      '/usr/local/bin/starship',
+      '/usr/bin/starship',
+    ]
+    const hasStarship = starshipPathCandidates.some(p => fs.existsSync(p))
+    if (hasStarship) {
+      const hookContent = [
+        '# Launchpad hook: initialize starship prompt if available',
+        'if command -v starship >/dev/null 2>&1; then',
+        '  if [[ -n "$ZSH_VERSION" ]]; then',
+        '    eval "$(starship init zsh)" >/dev/null 2>&1 || true',
+        '  elif [[ -n "$BASH_VERSION" ]]; then',
+        '    eval "$(starship init bash)" >/dev/null 2>&1 || true',
+        '  fi',
+        'fi',
+        '',
+      ].join('\n')
+
+      // Ensure starship wins over other prompt initializers by running late
+      const initHook = path.join(initDir, '99-starship.sh')
+      const refreshHook = path.join(refreshDir, '99-starship.sh')
+
+      // Write or update if content differs
+      try {
+        const existing = fs.existsSync(initHook) ? fs.readFileSync(initHook, 'utf8') : ''
+        if (existing !== hookContent)
+          fs.writeFileSync(initHook, hookContent, { mode: 0o644 })
+      }
+      catch {}
+      try {
+        const existing = fs.existsSync(refreshHook) ? fs.readFileSync(refreshHook, 'utf8') : ''
+        if (existing !== hookContent)
+          fs.writeFileSync(refreshHook, hookContent, { mode: 0o644 })
+      }
+      catch {}
+    }
+  }
+  catch {
+    // Best-effort hooks; ignore failures
+  }
+}
+
+function hasShellIntegration(): boolean {
+  try {
+    const home = homedir()
+    const zshrc = path.join(process.env.ZDOTDIR || home, '.zshrc')
+    const bashrc = path.join(home, '.bashrc')
+    const bashProfile = path.join(home, '.bash_profile')
+    const needle1 = 'launchpad dev:shellcode'
+    const needle2 = 'LAUNCHPAD_SHELL_INTEGRATION=1'
+    const files = [zshrc, bashrc, bashProfile].filter(f => fs.existsSync(f))
+    for (const file of files) {
+      const content = fs.readFileSync(file, 'utf8')
+      if (content.includes(needle1) || content.includes(needle2))
+        return true
+    }
+  }
+  catch {}
+  return false
+}
+
+async function ensureShellIntegrationInstalled(): Promise<void> {
+  try {
+    if (!hasShellIntegration()) {
+      // Install integration hooks silently
+      const { default: integrate } = await import('../src/dev/integrate')
+      await integrate('install', { dryrun: false })
+    }
+  }
+  catch {
+    // Best-effort; ignore failures
+  }
+}
+
 /**
  * Core setup logic that can be called from both setup and upgrade commands
  * Returns true if verification succeeded, false if it failed
@@ -745,10 +843,19 @@ async function installGlobalDependencies(options: {
   const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
   try {
+    // Suppress internal summary to avoid duplicate success lines
+    process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
     const results = await install(filteredPackages, globalEnvDir)
+    delete process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
 
     // Create symlinks to ~/.local/bin for global accessibility
     await createGlobalBinarySymlinks(globalEnvDir)
+
+    // Ensure shell integration is installed for current user
+    await ensureShellIntegrationInstalled()
+    // Ensure post-install hooks are present and signal shell to refresh
+    ensurePostInstallHooks()
+    triggerShellGlobalRefresh()
 
     if (!options.quiet) {
       if (results.length > 0) {
@@ -823,12 +930,20 @@ cli
 
         const defaultInstallPath = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
         const installPath = options.path || defaultInstallPath
+        process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
         const results = await installDependenciesOnly(packageList, installPath)
+        delete process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
 
         // Create symlinks to ~/.local/bin for global accessibility when using default path
         if (!options.path) {
           await createGlobalBinarySymlinks(installPath)
         }
+
+        // Ensure shell integration is installed for current user
+        await ensureShellIntegrationInstalled()
+        // Ensure post-install hooks are present and signal shell to refresh
+        ensurePostInstallHooks()
+        triggerShellGlobalRefresh()
 
         if (!options.quiet && options.verbose && results.length > 0) {
           // Only show file list in verbose mode since installDependenciesOnly already shows summary
@@ -850,12 +965,20 @@ cli
       // Use Launchpad global directory by default instead of /usr/local
       const defaultInstallPath = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
       const installPath = options.path || defaultInstallPath
+      process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
       const results = await install(packageList, installPath)
+      delete process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
 
       // Create symlinks to ~/.local/bin for global accessibility when using default path
       if (!options.path) {
         await createGlobalBinarySymlinks(installPath)
       }
+
+      // Ensure shell integration is installed for current user
+      await ensureShellIntegrationInstalled()
+      // Ensure post-install hooks are present and signal shell to refresh
+      ensurePostInstallHooks()
+      triggerShellGlobalRefresh()
 
       if (!options.quiet) {
         if (results.length > 0) {

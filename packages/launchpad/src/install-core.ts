@@ -297,9 +297,7 @@ export async function installPackage(packageName: string, packageSpec: string, i
     const packageDir = path.join(installPath, domain, `v${version}`)
     await createLibrarySymlinks(packageDir, domain)
 
-    if (config.verbose) {
-      console.log(`Successfully installed ${domain} v${version}`)
-    }
+    // Per-package success is logged once later with consistent formatting
 
     return installedFiles
   }
