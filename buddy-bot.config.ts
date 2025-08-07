@@ -24,6 +24,7 @@ const config: BuddyBotConfig = {
   },
   packages: {
     strategy: 'all',
+    respectLatest: true,
     ignore: [
       // Add packages to ignore here
       // Example: '@types/node', 'eslint'
