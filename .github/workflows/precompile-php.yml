@@ -983,22 +983,11 @@ jobs:
           find . -name "*.tar.gz" -type f
           echo ""
 
-          # Create a manifest of all built binaries
-          cat > manifest.json << EOF
-          {
-            "version": "$(date +%Y.%m.%d)",
-            "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "commit": "${{ github.sha }}",
-            "binaries": [
-          EOF
+          # Create a temporary JSON array file
+          echo "[]" > binaries_array.json
 
-          first=true
-          # Find all tar.gz files recursively
+          # Find all tar.gz files recursively and process them
           for tarball in $(find . -name "*.tar.gz" -type f); do
-            if [[ $first == "false" ]]; then
-              echo "," >> manifest.json
-            fi
-
             filename=$(basename "$tarball")
             size=$(stat -c%s "$tarball" 2>/dev/null || stat -f%z "$tarball")
 
@@ -1025,21 +1014,39 @@ jobs:
               configuration="unknown"
             fi
 
-            echo "      {" >> manifest.json
-            echo "        \"filename\": \"$filename\"," >> manifest.json
-            echo "        \"size\": $size," >> manifest.json
-            echo "        \"php_version\": \"$php_version\"," >> manifest.json
-            echo "        \"platform\": \"$platform\"," >> manifest.json
-            echo "        \"architecture\": \"$architecture\"," >> manifest.json
-            echo "        \"configuration\": \"$configuration\"," >> manifest.json
-            echo "        \"built_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," >> manifest.json
-            echo "        \"extensions\": \"$(cat temp_metadata.json | jq -r '.extensions // ""' 2>/dev/null || echo '')\"" >> manifest.json
-            echo "      }" >> manifest.json
-            first=false
+            # Create JSON object for this binary
+            binary_json=$(cat <<EOF
+{
+  "filename": "$filename",
+  "size": $size,
+  "php_version": "$php_version",
+  "platform": "$platform",
+  "architecture": "$architecture",
+  "configuration": "$configuration",
+  "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "extensions": "$(cat temp_metadata.json | jq -r '.extensions // ""' 2>/dev/null || echo '')"
+}
+EOF
+)
+
+            # Add this binary to the array using jq
+            jq --argjson binary "$binary_json" '. += [$binary]' binaries_array.json > temp_array.json
+            mv temp_array.json binaries_array.json
           done
 
-          echo "    ]" >> manifest.json
-          echo "  }" >> manifest.json
+          # Create the final manifest with proper structure and sorted binaries
+          jq --arg version "$(date +%Y.%m.%d)" \
+             --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+             --arg commit "${{ github.sha }}" \
+             '{
+               version: $version,
+               built_at: $built_at,
+               commit: $commit,
+               binaries: (. | sort_by(.php_version))
+             }' binaries_array.json > manifest.json
+
+          # Clean up temporary files
+          rm -f binaries_array.json temp_metadata.json
 
           echo ""
           echo "📋 Generated manifest.json:"
