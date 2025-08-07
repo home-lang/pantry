@@ -225,8 +225,6 @@ export async function installPackage(packageName: string, packageSpec: string, i
 
   // Special handling for PHP - use precompiled binaries from GitHub
   if (name === 'php' || domain === 'php.net') {
-    console.log('🐘 Installing PHP using precompiled binaries from GitHub...')
-
     try {
       // Import the binary downloader
       const { downloadPhpBinary } = await import('./binary-downloader')

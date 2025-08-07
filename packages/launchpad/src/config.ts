@@ -126,7 +126,7 @@ export const defaultConfig: LaunchpadConfig = {
       },
       // Manual configuration (when auto-detect is disabled)
       manual: {
-        configuration: (process.env.LAUNCHPAD_PHP_CONFIGURATION as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack') || 'laravel-mysql',
+        configuration: (process.env.LAUNCHPAD_PHP_CONFIGURATION as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack') || 'full-stack',
       },
     },
   },

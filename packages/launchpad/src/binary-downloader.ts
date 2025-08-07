@@ -64,8 +64,8 @@ export class PrecompiledBinaryDownloader {
    * Detect the optimal PHP configuration based on the system and requirements
    */
   private getOptimalConfiguration(): string {
-    // Default to Laravel MySQL (most common setup)
-    return 'laravel-mysql'
+    // Default to full-stack (most comprehensive setup)
+    return 'full-stack'
   }
 
   /**
@@ -208,10 +208,10 @@ export class PrecompiledBinaryDownloader {
               else if (envContent.includes('DB_CONNECTION=sqlite')) {
                 return 'laravel-sqlite'
               }
-              // Default to MySQL for Laravel
-              return 'laravel-mysql'
+              // Default to full-stack for Laravel
+              return 'full-stack'
             }
-            return 'laravel-mysql'
+            return 'full-stack'
           }
 
           // Check for API-only Laravel (Lumen-like)
@@ -234,11 +234,11 @@ export class PrecompiledBinaryDownloader {
         return 'wordpress'
       }
 
-      // Default to Laravel MySQL (most popular setup)
-      return 'laravel-mysql'
+      // Default to full-stack (most comprehensive setup)
+      return 'full-stack'
     }
     catch {
-      return 'laravel-mysql'
+      return 'full-stack'
     }
   }
 

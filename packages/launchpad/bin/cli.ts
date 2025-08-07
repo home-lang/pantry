@@ -681,12 +681,16 @@ async function installGlobalDependencies(options: {
       const dir = path.dirname(file)
       const sniffResult = await sniff({ string: dir })
 
-      for (const pkg of sniffResult.pkgs) {
+      // Only include packages explicitly marked as global (or via top-level global flag)
+      const globalPkgs = sniffResult.pkgs.filter(p => p.global)
+
+      for (const pkg of globalPkgs) {
         allPackages.add(pkg.project)
       }
 
       if (options.verbose) {
-        console.log(`  📄 ${file}: ${sniffResult.pkgs.length} packages`)
+        const skipped = sniffResult.pkgs.length - globalPkgs.length
+        console.log(`  📄 ${file}: ${globalPkgs.length} global package(s)${skipped > 0 ? `, skipped ${skipped} local` : ''}`)
       }
     }
     catch (error) {
