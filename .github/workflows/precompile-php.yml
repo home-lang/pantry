@@ -1015,19 +1015,25 @@ jobs:
             fi
 
             # Create JSON object for this binary
-            binary_json=$(cat <<EOF
-{
-  "filename": "$filename",
-  "size": $size,
-  "php_version": "$php_version",
-  "platform": "$platform",
-  "architecture": "$architecture",
-  "configuration": "$configuration",
-  "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "extensions": "$(cat temp_metadata.json | jq -r '.extensions // ""' 2>/dev/null || echo '')"
-}
-EOF
-)
+            binary_json=$(jq -n \
+              --arg filename "$filename" \
+              --arg size "$size" \
+              --arg php_version "$php_version" \
+              --arg platform "$platform" \
+              --arg architecture "$architecture" \
+              --arg configuration "$configuration" \
+              --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --arg extensions "$(cat temp_metadata.json | jq -r '.extensions // ""' 2>/dev/null || echo '')" \
+              '{
+                filename: $filename,
+                size: ($size | tonumber),
+                php_version: $php_version,
+                platform: $platform,
+                architecture: $architecture,
+                configuration: $configuration,
+                built_at: $built_at,
+                extensions: $extensions
+              }')
 
             # Add this binary to the array using jq
             jq --argjson binary "$binary_json" '. += [$binary]' binaries_array.json > temp_array.json
