@@ -65,7 +65,6 @@ export const defaultConfig: LaunchpadConfig = {
     },
     frameworks: {
       enabled: process.env.LAUNCHPAD_FRAMEWORKS_ENABLED !== 'false',
-      preferredDatabase: (process.env.LAUNCHPAD_PREFERRED_DATABASE as 'postgres' | 'sqlite') || 'postgres',
       laravel: {
         enabled: process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false',
         autoDetect: process.env.LAUNCHPAD_LARAVEL_AUTO_DETECT !== 'false',
@@ -119,14 +118,11 @@ export const defaultConfig: LaunchpadConfig = {
       // Smart auto-detection based on project analysis
       autoDetect: {
         enabled: process.env.LAUNCHPAD_PHP_AUTO_DETECT !== 'false',
-        preferredDatabase: (process.env.LAUNCHPAD_PREFERRED_DATABASE as 'mysql' | 'postgres' | 'sqlite') || 'auto',
         includeAllDatabases: process.env.LAUNCHPAD_PHP_ALL_DATABASES === 'true',
         includeEnterprise: process.env.LAUNCHPAD_PHP_ENTERPRISE === 'true',
       },
-      // Manual configuration (when auto-detect is disabled)
-      manual: {
-        configuration: (process.env.LAUNCHPAD_PHP_CONFIGURATION as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack') || 'full-stack',
-      },
+      // configuration (when auto-detect is disabled)
+      configuration: (process.env.LAUNCHPAD_PHP_CONFIGURATION as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack') || 'full-stack',
     },
   },
 }

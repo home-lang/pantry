@@ -164,17 +164,9 @@ export class PHPAutoDetector {
       }
     }
 
-    // If no databases detected, check user preference
-    if (databases.length === 0) {
-      const userPref = config.services?.php?.autoDetect?.preferredDatabase
-      if (userPref && userPref !== 'auto') {
-        databases.push(userPref)
-      }
-      else {
-        // Default to SQLite for development
-        databases.push('sqlite')
-      }
-    }
+    // If no databases detected, default to SQLite
+    if (databases.length === 0)
+      databases.push('sqlite')
 
     return databases
   }

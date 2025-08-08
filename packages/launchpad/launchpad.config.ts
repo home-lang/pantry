@@ -69,11 +69,7 @@ export const defaultConfig: LaunchpadConfig = {
       version: '8.4.11',
     },
     frameworks: {
-      enabled: true,
-      preferredDatabase: 'postgres',
       laravel: {
-        enabled: true,
-        autoDetect: true,
         postSetupCommands: {
           enabled: true,
           commands: [
@@ -81,7 +77,6 @@ export const defaultConfig: LaunchpadConfig = {
               name: 'migrate',
               command: 'php artisan migrate',
               description: 'Run database migrations',
-              condition: 'hasUnrunMigrations',
               runInBackground: false,
               required: false,
             },
@@ -89,7 +84,6 @@ export const defaultConfig: LaunchpadConfig = {
               name: 'seed',
               command: 'php artisan db:seed',
               description: 'Seed the database with sample data',
-              condition: 'hasSeeders',
               runInBackground: false,
               required: false,
             },
@@ -97,7 +91,6 @@ export const defaultConfig: LaunchpadConfig = {
               name: 'storage-link',
               command: 'php artisan storage:link',
               description: 'Create symbolic link for storage',
-              condition: 'needsStorageLink',
               runInBackground: false,
               required: false,
             },
@@ -105,7 +98,6 @@ export const defaultConfig: LaunchpadConfig = {
               name: 'optimize',
               command: 'php artisan optimize',
               description: 'Optimize Laravel for production',
-              condition: 'isProduction',
               runInBackground: false,
               required: false,
             },

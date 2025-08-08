@@ -80,7 +80,6 @@ export interface LaunchpadConfig {
     }
     frameworks?: {
       enabled?: boolean
-      preferredDatabase?: 'postgres' | 'sqlite'
       laravel?: {
         enabled?: boolean
         autoDetect?: boolean
@@ -100,13 +99,10 @@ export interface LaunchpadConfig {
       version?: string
       autoDetect?: {
         enabled?: boolean
-        preferredDatabase?: 'mysql' | 'postgres' | 'sqlite' | 'auto'
         includeAllDatabases?: boolean
         includeEnterprise?: boolean
       }
-      manual?: {
-        configuration?: 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack'
-      }
+      configuration?: 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack'
     }
   }
   verbose?: boolean

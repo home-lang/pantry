@@ -23,7 +23,6 @@ services: {
     version: '8.4.11',
     autoDetect: {
       enabled: true,
-      preferredDatabase: 'auto',
       includeAllDatabases: false,
       includeEnterprise: false,
     },
@@ -137,7 +136,6 @@ services: {
     strategy: 'auto-detect',
     autoDetect: {
       enabled: true,
-      preferredDatabase: 'auto',
       includeAllDatabases: false,
       includeEnterprise: false,
     },
@@ -231,7 +229,6 @@ services: {
     strategy: 'auto-detect',
     autoDetect: {
       enabled: true,
-      preferredDatabase: 'auto',
     },
   },
 }

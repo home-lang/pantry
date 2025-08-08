@@ -441,20 +441,15 @@ export async function validatePackageInstallation(packageDir: string, domain: st
     const sbinDir = path.join(packageDir, 'sbin')
     const libDir = path.join(packageDir, 'lib')
     const lib64Dir = path.join(packageDir, 'lib64')
+    const includeDir = path.join(packageDir, 'include')
+    const shareDir = path.join(packageDir, 'share')
 
     const hasBin = fs.existsSync(binDir)
     const hasSbin = fs.existsSync(sbinDir)
     const hasLib = fs.existsSync(libDir)
     const hasLib64 = fs.existsSync(lib64Dir)
-
-    // If no bin or sbin directory exists, check if it's purely a library package
-    if (!hasBin && !hasSbin) {
-      // For pure library packages, having lib/ is enough
-      if (hasLib || hasLib64) {
-        return true
-      }
-      return false
-    }
+    const hasInclude = fs.existsSync(includeDir)
+    const hasShare = fs.existsSync(shareDir)
 
     // Special handling for packages that are known to work differently
     const specialCases: Record<string, () => boolean> = {
@@ -496,17 +491,14 @@ export async function validatePackageInstallation(packageDir: string, domain: st
       },
       'x.org/util-macros': () => {
         // X11 util-macros provides build macros in share/aclocal or share/pkgconfig
-        const shareDir = path.join(packageDir, 'share')
         const aclocalDir = path.join(shareDir, 'aclocal')
         const pkgconfigDir = path.join(shareDir, 'pkgconfig')
-        return fs.existsSync(aclocalDir) || fs.existsSync(pkgconfigDir) || fs.existsSync(shareDir) || hasBin
+        return fs.existsSync(aclocalDir) || fs.existsSync(pkgconfigDir) || hasShare || hasBin
       },
       'x.org/protocol': () => {
         // X11 protocol headers in include/ or share/
-        const shareDir = path.join(packageDir, 'share')
-        const includeDir = path.join(packageDir, 'include')
         const pkgconfigDir = path.join(shareDir, 'pkgconfig')
-        return fs.existsSync(includeDir) || fs.existsSync(pkgconfigDir) || fs.existsSync(shareDir) || hasBin
+        return hasInclude || fs.existsSync(pkgconfigDir) || hasShare || hasBin
       },
       'curl.se/ca-certs': () => {
         // CA certificate bundle - check for actual cert files in various locations
@@ -548,9 +540,18 @@ export async function validatePackageInstallation(packageDir: string, domain: st
       },
     }
 
-    // Check special cases first
+    // Check special cases first so they don't get flagged by generic rules
     if (specialCases[domain]) {
       return specialCases[domain]()
+    }
+
+    // If no bin or sbin directory exists, check if it's library or headers-only package
+    if (!hasBin && !hasSbin) {
+      // For library or headers-only packages, having lib/, include/, or share/ is enough
+      if (hasLib || hasLib64 || hasInclude || hasShare) {
+        return true
+      }
+      return false
     }
 
     // For library packages that are expected to have both bin/ and lib/
