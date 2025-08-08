@@ -96,8 +96,8 @@ export class PHPShimManager {
     const issues: string[] = []
     const recommendations: string[] = []
 
-    // Add common system library paths if they exist
-    const commonLibPaths = ['/opt/homebrew/lib', '/usr/local/lib', '/usr/lib']
+    // Add common system library paths if they exist (exclude Homebrew-specific paths)
+    const commonLibPaths = ['/usr/local/lib', '/usr/lib']
     for (const libPath of commonLibPaths) {
       if (fs.existsSync(libPath)) {
         libraryPaths.push(libPath)
@@ -117,18 +117,14 @@ export class PHPShimManager {
       }
     }
 
-    // Configure DYLD_LIBRARY_PATH for macOS
+    // Configure DYLD_LIBRARY_PATH for macOS (Launchpad-only, no Homebrew fallback)
     if (libraryPaths.length > 0) {
       environmentVariables.DYLD_LIBRARY_PATH = libraryPaths.join(':')
       recommendations.push(`Configured DYLD_LIBRARY_PATH with ${libraryPaths.length} library paths`)
     }
 
-    // Add other optimizations
-    environmentVariables.DYLD_FALLBACK_LIBRARY_PATH = '/opt/homebrew/lib:/usr/local/lib:/usr/lib'
-
-    // Configure PHP-specific optimizations for precompiled binaries
-    environmentVariables.PHP_INI_SCAN_DIR = '/opt/homebrew/etc/php/8.4/conf.d'
-    recommendations.push('Configured PHP configuration scanning')
+    // Add other optimizations (strictly system defaults only)
+    environmentVariables.DYLD_FALLBACK_LIBRARY_PATH = '/usr/local/lib:/usr/lib'
 
     return {
       libraryPaths,

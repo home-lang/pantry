@@ -726,6 +726,15 @@ __launchpad_chpwd() {
                     eval "$env_output" 2>/dev/null || true
                 fi
 
+                # After activation, attempt to run Laravel post-setup if configured
+                if command -v launchpad >/dev/null 2>&1; then
+                    # Best-effort: run migrate if configured and php works
+                    if command -v php >/dev/null 2>&1; then
+                        # Trigger a lightweight Laravel detect to run post-setup via CLI (quiet)
+                        LAUNCHPAD_SHOW_ENV_MESSAGES=false launchpad dev "$project_dir" --quiet >/dev/null 2>&1 || true
+                    fi
+                fi
+
                 # Ensure global dependencies are still in PATH after project setup
                 __launchpad_ensure_global_path
                 __launchpad_ensure_system_path

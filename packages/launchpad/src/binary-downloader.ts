@@ -687,7 +687,15 @@ Thanks for helping us make Launchpad better! 🙏
       if (!fs.existsSync(binDir))
         return
 
-      // Find Launchpad-installed readline library
+      // Ensure PHP runtime dependencies are installed into this environment
+      try {
+        await this.ensurePhpDependenciesInstalled()
+      }
+      catch (err) {
+        console.warn(`⚠️ Failed to install PHP dependencies: ${err instanceof Error ? err.message : String(err)}`)
+      }
+
+      // Find Launchpad-installed libraries for PHP dependencies
       const launchpadLibraryPaths = await this.findLaunchpadLibraryPaths()
 
       // Get all PHP binaries
@@ -703,6 +711,14 @@ Thanks for helping us make Launchpad better! 🙏
 
         // Move original binary
         fs.renameSync(originalBinary, shimPath)
+
+        // First, on macOS fix absolute Homebrew dylib references to Launchpad-managed libs
+        try {
+          await this.fixMacOSDylibs(packageDir, launchpadLibraryPaths)
+        }
+        catch (err) {
+          console.warn(`⚠️ Could not fix macOS dylib references: ${err instanceof Error ? err.message : String(err)}`)
+        }
 
         // Create wrapper script with library paths including Launchpad libraries
         let libraryPaths = '/usr/local/lib:/usr/lib:/lib'
@@ -729,11 +745,97 @@ exec "${shimPath}" "$@"
 
       console.log(`🔗 Created PHP shims with Launchpad library paths for ${binaries.length} binaries`)
 
-      // Also try to create Homebrew-compatible symlinks for the precompiled binaries
-      await this.createHomebrewCompatSymlinks(launchpadLibraryPaths)
+      // Do not rely on Homebrew; shims use Launchpad-managed library paths only
     }
     catch (error) {
       console.warn(`⚠️ Failed to create PHP shims: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Fix macOS dylib references in php.original that point to Homebrew paths
+   */
+  private async fixMacOSDylibs(packageDir: string, launchpadLibraryPaths: string[]): Promise<void> {
+    if (process.platform !== 'darwin')
+      return
+
+    const phpOriginal = path.join(packageDir, 'bin', 'php.original')
+    if (!fs.existsSync(phpOriginal))
+      return
+
+    try {
+      const { execSync } = await import('node:child_process')
+      const output = execSync(`otool -L "${phpOriginal}"`, { encoding: 'utf8' })
+
+      const lines = output.split('\n').slice(1).map(l => l.trim()).filter(Boolean)
+      const candidates: Array<{ oldPath: string, libName: string }> = []
+      for (const line of lines) {
+        const match = line.match(/^(\S+) \(/)
+        if (!match)
+          continue
+        const oldPath = match[1]
+        if (oldPath.includes('/opt/homebrew/') || oldPath.includes('/usr/local/opt/') || oldPath.includes('/Cellar/')) {
+          const libName = path.basename(oldPath)
+          candidates.push({ oldPath, libName })
+        }
+      }
+
+      if (candidates.length === 0)
+        return
+
+      // Build search directories from known Launchpad libraries and env lib dirs
+      const searchDirs = new Set<string>()
+      for (const p of launchpadLibraryPaths) searchDirs.add(p)
+
+      // Also scan installPath packages for lib directories
+      try {
+        const domains = fs.readdirSync(this.installPath)
+        for (const domain of domains) {
+          const domainPath = path.join(this.installPath, domain)
+          if (!fs.existsSync(domainPath) || !fs.statSync(domainPath).isDirectory())
+            continue
+          try {
+            const versions = fs.readdirSync(domainPath).filter(v => v.startsWith('v'))
+            for (const v of versions) {
+              const libDir = path.join(domainPath, v, 'lib')
+              if (fs.existsSync(libDir))
+                searchDirs.add(libDir)
+            }
+          }
+          catch {}
+        }
+      }
+      catch {}
+
+      // For each candidate, try to find a replacement in our search dirs and rewrite
+      for (const { oldPath, libName } of candidates) {
+        let replacement: string | null = null
+        for (const dir of searchDirs) {
+          const testPath = path.join(dir, libName)
+          if (fs.existsSync(testPath)) {
+            replacement = testPath
+            break
+          }
+        }
+
+        if (replacement) {
+          try {
+            execSync(`install_name_tool -change "${oldPath}" "${replacement}" "${phpOriginal}"`)
+            if (config.verbose) {
+              console.log(`🔧 Rewrote dylib reference: ${oldPath} → ${replacement}`)
+            }
+          }
+          catch (e) {
+            console.warn(`⚠️ install_name_tool failed for ${libName}: ${e instanceof Error ? e.message : String(e)}`)
+          }
+        }
+      }
+    }
+    catch (error) {
+      // Non-fatal on systems without Xcode tools
+      if (config.verbose) {
+        console.warn(`⚠️ otool/install_name_tool unavailable: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
   }
 
@@ -771,7 +873,7 @@ exec "${shimPath}" "$@"
         // Also check global installation as fallback
         const globalDepDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', depName)
         if (fs.existsSync(globalDepDir)) {
-          const versions = fs.readdirSync(globalDepDir).filter(d => d.startsWith('v')).sort().reverse()
+          const versions = fs.readdirSync(globalDepDir).filter((d: string) => d.startsWith('v')).sort().reverse()
           for (const version of versions) {
             const libDir = path.join(globalDepDir, version, 'lib')
             if (fs.existsSync(libDir)) {
@@ -792,7 +894,87 @@ exec "${shimPath}" "$@"
       console.warn(`⚠️ Error finding Launchpad libraries: ${error instanceof Error ? error.message : String(error)}`)
     }
 
+    // Do not include Homebrew compatibility paths
+
     return paths
+  }
+
+  /**
+   * Ensure PHP dynamic dependencies from pantry are installed in the current environment
+   */
+  private async ensurePhpDependenciesInstalled(): Promise<void> {
+    try {
+      const deps = await this.getPhpDependenciesFromPantry()
+      const depsSet = new Set<string>(deps)
+
+      // Best-effort: detect required ICU major version and include matching unicode.org
+      const icuMajor = await this.detectRequiredIcuMajor()
+      if (icuMajor) {
+        // Prefer caret range for the detected major
+        depsSet.add(`unicode.org@^${icuMajor}.0.0`)
+      }
+
+      const finalDeps = Array.from(depsSet)
+      if (finalDeps.length === 0)
+        return
+
+      // Install all dependencies into this.installPath
+      const { install } = await import('./install')
+      // Suppress extra summary
+      const original = process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
+      process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
+      try {
+        await install(finalDeps, this.installPath)
+      }
+      finally {
+        if (original === undefined)
+          delete process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
+        else
+          process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = original
+      }
+    }
+    catch (error) {
+      // Non-fatal, shims may still work without explicit deps
+      if (config.verbose) {
+        console.warn(`⚠️ Could not ensure PHP dependencies: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+  }
+
+  /**
+   * Detect required ICU major version from php.original dylib references (macOS only)
+   */
+  private async detectRequiredIcuMajor(): Promise<number | null> {
+    if (process.platform !== 'darwin')
+      return null
+    try {
+      const phpOriginal = path.join(this.installPath, 'php.net')
+      if (!fs.existsSync(phpOriginal))
+        return null
+
+      // Find version directories
+      const versions = fs.readdirSync(phpOriginal).filter(v => v.startsWith('v'))
+      if (versions.length === 0)
+        return null
+
+      // Pick latest
+      const latest = versions.sort().reverse()[0]
+      const originalPath = path.join(phpOriginal, latest, 'bin', 'php.original')
+      if (!fs.existsSync(originalPath))
+        return null
+
+      const { execSync } = await import('node:child_process')
+      const output = execSync(`otool -L "${originalPath}"`, { encoding: 'utf8' })
+      const match = output.match(/libicu\w+\.(\d+)\.dylib/)
+      if (match) {
+        const major = Number.parseInt(match[1], 10)
+        return Number.isFinite(major) ? major : null
+      }
+      return null
+    }
+    catch {
+      return null
+    }
   }
 
   /**

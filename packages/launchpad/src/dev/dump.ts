@@ -199,9 +199,9 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
     // Ignore errors checking migrations
   }
 
-  // Execute post-setup commands if enabled
+  // Execute post-setup commands if enabled (skip in shell integration; handled later with full env)
   const laravelConfig = config.services?.frameworks?.laravel
-  if (laravelConfig?.postSetup?.enabled) {
+  if (laravelConfig?.postSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
     const postSetupResults = await executepostSetup(dir, laravelConfig.postSetup.commands || [])
     suggestions.push(...postSetupResults)
   }
@@ -223,20 +223,29 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
         continue
       }
 
+      const inShell = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
+
+      // Announce start (stderr to avoid interfering with shellcode)
+      try {
+        process.stderr.write(`\n🔧 Post-setup: ${command.name || command.command}\n`)
+      }
+      catch {}
+
       if (command.runInBackground) {
-        // Run in background (fire and forget)
-        execSync(command.command, { cwd: projectDir, stdio: 'pipe' })
+        // Fire-and-forget; still surface errors if they occur
+        execSync(command.command, {
+          cwd: projectDir,
+          stdio: inShell ? (['ignore', 2, 2] as any) : 'inherit',
+        })
         results.push(`🚀 Running in background: ${command.description}`)
       }
       else {
-        // Run synchronously
-        const output = execSync(command.command, { cwd: projectDir, stdio: 'pipe', encoding: 'utf8' })
+        // Run synchronously and stream output to user's shell
+        execSync(command.command, {
+          cwd: projectDir,
+          stdio: inShell ? (['ignore', 2, 2] as any) : 'inherit',
+        })
         results.push(`✅ ${command.description}`)
-
-        // Add command output if verbose
-        if (config.verbose && output.trim()) {
-          results.push(`   Output: ${output.trim().split('\n').slice(0, 3).join(', ')}...`)
-        }
       }
     }
     catch (error) {
@@ -248,8 +257,11 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
       }
       else {
         results.push(`⚠️  Skipped (optional): ${command.description}`)
-        if (config.verbose && error instanceof Error) {
-          results.push(`   Reason: ${error.message}`)
+        if (error instanceof Error) {
+          try {
+            process.stderr.write(`⚠️  ${error.message}\n`)
+          }
+          catch {}
         }
       }
     }
@@ -262,6 +274,10 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
  * Evaluate whether a command condition is met
  */
 function evaluateCommandCondition(condition: PostSetupCommand['condition'], projectDir: string): boolean {
+  // Default to running when no condition specified
+  if (!condition || condition === 'always')
+    return true
+
   switch (condition) {
     case 'always':
       return true
@@ -493,6 +509,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           sniffResult = { pkgs: [], env: {} }
         }
 
+        // Ensure Laravel post-setup runs at least once per project (fast path)
+        await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+
         outputShellCode(
           dir,
           hasLocalEnv ? path.join(envDir, 'bin') : '',
@@ -687,6 +706,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
         }
 
+        // Ensure Laravel post-setup runs at least once per project (install path)
+        await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
       }
@@ -699,6 +721,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     // Auto-start services for any project that has services configuration
     await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
+
+    // Ensure Laravel post-setup runs (regular path)
+    await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
 
     // Check for Laravel project and provide helpful suggestions
     const laravelInfo = await detectLaravelProject(projectDir)
@@ -1160,7 +1185,7 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
       // Check if this directory has PHP binaries
       const binDir = path.join(packageDir, 'bin')
       if (fs.existsSync(binDir)) {
-        const downloader = new PrecompiledBinaryDownloader('')
+        const downloader = new PrecompiledBinaryDownloader(envDir)
         console.log(`🔗 Creating PHP ${version} shims with proper library paths...`)
         await downloader.createPhpShims(packageDir, version)
 
@@ -1172,6 +1197,44 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
   catch (error) {
     // Don't fail the entire setup if shim creation fails
     console.warn(`⚠️ Failed to create PHP shims: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+/**
+ * Run Laravel post-setup commands once per project activation
+ */
+async function maybeRunLaravelPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
+  try {
+    const laravelConfig = config.services?.frameworks?.laravel
+    if (!laravelConfig?.postSetup?.enabled) {
+      return
+    }
+
+    // Use a marker file inside env to avoid re-running on every prompt
+    const markerDir = path.join(envDir, 'pkgs')
+    const markerFile = path.join(markerDir, '.post_setup_done')
+
+    if (fs.existsSync(markerFile)) {
+      return
+    }
+
+    // Ensure envDir/pkgs exists (env may be fast-activated without pkgs when empty)
+    try {
+      fs.mkdirSync(markerDir, { recursive: true })
+    }
+    catch {}
+
+    // Execute and mark
+    const results = await executepostSetup(projectDir, laravelConfig.postSetup.commands || [])
+    if ((results && results.length > 0) || true) {
+      try {
+        fs.writeFileSync(markerFile, new Date().toISOString())
+      }
+      catch {}
+    }
+  }
+  catch {
+    // non-fatal
   }
 }
 

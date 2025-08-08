@@ -65,6 +65,7 @@ const sidebar = [
     text: 'Features',
     items: [
       { text: 'Package Management', link: '/features/package-management' },
+      { text: 'Service Management', link: '/features/service-management' },
       { text: 'Environment Management', link: '/features/environment-management' },
       { text: 'Cache Management', link: '/features/cache-management' },
       { text: 'Shim Creation', link: '/features/shim-creation' },
