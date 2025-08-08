@@ -879,6 +879,24 @@ const cli = new CAC('launchpad')
 cli.version(version)
 cli.help()
 
+// Config command - show resolved user configuration
+cli
+  .command('config', 'Show current Launchpad configuration')
+  .option('--json', 'Output as JSON (default)')
+  .example('launchpad config')
+  .example('launchpad config --json')
+  .action(async (_options?: { json?: boolean }) => {
+    try {
+      // Always output JSON for reliability (machine-readable)
+      const output = JSON.stringify(config, null, 2)
+      console.log(output)
+    }
+    catch (error) {
+      console.error('Failed to load configuration:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // Main installation command
 cli
   .command('install [packages...]', 'Install packages or set up development environment')

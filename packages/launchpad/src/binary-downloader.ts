@@ -6,6 +6,8 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
+import { createShims } from './install-helpers'
+import { logUniqueMessage } from './logging'
 
 export interface BinaryInfo {
   filename: string
@@ -509,17 +511,51 @@ Thanks for helping us make Launchpad better! 🙏
           const progressPercent = Math.floor(progress / 5) * 5 // Round to nearest 5%
 
           if (now - lastProgressUpdate > 100 || progress >= 100 || downloadedBytes === value.length) {
-            if (config.verbose) {
-              const progressMsg = `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%) - PHP ${binary.php_version}`
+            const progressMsg = config.verbose
+              ? `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%) - php.net v${binary.php_version}`
+              : `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%)`
+
+            if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+              process.stderr.write(`\r${progressMsg}`)
+              if (process.stderr.isTTY) {
+                try {
+                  fs.writeSync(process.stderr.fd, '')
+                }
+                catch { /* ignore */ }
+              }
+            }
+            else {
               process.stdout.write(`\r${progressMsg}`)
+              if (process.stdout.isTTY) {
+                try {
+                  fs.writeSync(process.stdout.fd, '')
+                }
+                catch { /* ignore */ }
+              }
             }
             lastProgressUpdate = now
           }
         }
       }
 
-      if (config.verbose) {
-        process.stdout.write('\r\x1B[K') // Clear the progress line
+      // Clear the progress line
+      if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+        process.stderr.write('\r\x1B[K')
+        if (process.stderr.isTTY) {
+          try {
+            fs.writeSync(process.stderr.fd, '')
+          }
+          catch { /* ignore */ }
+        }
+      }
+      else {
+        process.stdout.write('\r\x1B[K')
+        if (process.stdout.isTTY) {
+          try {
+            fs.writeSync(process.stdout.fd, '')
+          }
+          catch { /* ignore */ }
+        }
       }
 
       // Combine all chunks
@@ -534,9 +570,52 @@ Thanks for helping us make Launchpad better! 🙏
       await fs.promises.writeFile(cachedPath, buffer)
     }
     else {
-      // Fallback for unknown content length
+      // Fallback for unknown content length - show simple download indicator
+      const downloadMsg = config.verbose
+        ? `⬇️  Downloading php.net v${binary.php_version} (size unknown)...`
+        : `⬇️  Downloading php.net v${binary.php_version}...`
+
+      if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+        process.stderr.write(`\r${downloadMsg}`)
+        if (process.stderr.isTTY) {
+          try {
+            fs.writeSync(process.stderr.fd, '')
+          }
+          catch { /* ignore */ }
+        }
+      }
+      else {
+        process.stdout.write(`\r${downloadMsg}`)
+        if (process.stdout.isTTY) {
+          try {
+            fs.writeSync(process.stdout.fd, '')
+          }
+          catch { /* ignore */ }
+        }
+      }
+
       const buffer = await response.arrayBuffer()
       await fs.promises.writeFile(cachedPath, Buffer.from(buffer))
+
+      // Clear the download message
+      if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+        process.stderr.write('\r\x1B[K')
+        if (process.stderr.isTTY) {
+          try {
+            fs.writeSync(process.stderr.fd, '')
+          }
+          catch { /* ignore */ }
+        }
+      }
+      else {
+        process.stdout.write('\r\x1B[K')
+        if (process.stdout.isTTY) {
+          try {
+            fs.writeSync(process.stdout.fd, '')
+          }
+          catch { /* ignore */ }
+        }
+      }
     }
 
     if (config.verbose) {
@@ -1027,15 +1106,26 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
     throw new Error(`Failed to install PHP binary: ${result.error}`)
   }
 
-  // Show clean success message (non-verbose) or detailed info (verbose)
-  if (config.verbose) {
-    console.log(`🎉 PHP ${result.version} (${result.configuration}) installed successfully!`)
-    console.log(`📁 Location: ${result.packageDir}`)
-    console.log(`🔌 Extensions: ${result.extensions.length} loaded`)
+  // Create shims in installPath/bin and sbin so php is available on PATH
+  try {
+    const installedBinaries = await createShims(result.packageDir, installPath, 'php.net', result.version)
+    // Optionally report number of binaries installed in verbose
+    if (config.verbose) {
+      console.log(`🎉 Successfully installed php.net (${installedBinaries.length} ${installedBinaries.length === 1 ? 'binary' : 'binaries'})`)
+      console.log(`📁 Location: ${result.packageDir}`)
+      console.log(`🔌 Extensions: ${result.extensions.length} loaded`)
+    }
   }
-  else {
-    console.log(`✅ php.net (v${result.version})`)
+  catch (error) {
+    // Don't fail installation if shim creation has issues, but report in verbose
+    if (config.verbose) {
+      console.warn(`⚠️ Failed to create php shims: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
+  // Show standardized success message
+  logUniqueMessage(`✅ php.net \x1B[2m\x1B[3m(v${result.version})\x1B[0m`)
+
+  // Keep return shape for compatibility
   return [result.packageDir]
 }

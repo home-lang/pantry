@@ -191,7 +191,7 @@ export async function setupPHPDevelopmentEnvironment(options?: {
     }
 
     // Determine best database setup based on available extensions and user preferences
-    const preferredDb = options?.preferredDatabase || config.services?.frameworks?.preferredDatabase || 'sqlite'
+    const preferredDb = options?.preferredDatabase || 'sqlite'
     const forceSQLite = process.env.LAUNCHPAD_FORCE_SQLITE === 'true'
 
     if (forceSQLite || preferredDb === 'sqlite') {
