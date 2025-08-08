@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 import { spawn } from 'bun'
 import { describe, expect, it } from 'bun:test'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 describe('Real PHP Installation Test', () => {
@@ -9,6 +10,18 @@ describe('Real PHP Installation Test', () => {
     console.log('🧪 Testing PHP precompiled binary installation...')
 
     try {
+      // Sandbox HOME and installation paths to avoid touching real global deps
+      const tempHome = mkdtempSync(join(tmpdir(), 'launchpad-real-php-test-'))
+      const sandboxEnv = {
+        ...process.env,
+        HOME: tempHome,
+        LAUNCHPAD_PREFIX: tempHome,
+        XDG_CACHE_HOME: join(tempHome, '.cache'),
+        XDG_DATA_HOME: join(tempHome, '.local', 'share'),
+        LAUNCHPAD_CLI_MODE: '1',
+        LAUNCHPAD_TEST_MODE: 'true',
+      }
+
       // Check if we're in CI environment and find the correct working directory
       const workspaceRoot = process.cwd()
       // Try multiple possible CLI paths based on where the test is running from
@@ -30,7 +43,7 @@ describe('Real PHP Installation Test', () => {
       const cleanProc = spawn(['bun', 'run', cliPath, 'clean', '--force'], {
         cwd: workspaceRoot,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, LAUNCHPAD_CLI_MODE: '1', LAUNCHPAD_TEST_MODE: 'true' },
+        env: sandboxEnv,
       })
 
       const cleanTimeout = new Promise((_, reject) => {
@@ -44,7 +57,7 @@ describe('Real PHP Installation Test', () => {
       const phpInstallProc = spawn(['bun', 'run', cliPath, 'install', 'php.net'], {
         cwd: workspaceRoot,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, LAUNCHPAD_CLI_MODE: '1', LAUNCHPAD_TEST_MODE: 'true' },
+        env: sandboxEnv,
       })
 
       const installTimeout = new Promise((_, reject) => {
@@ -91,6 +104,11 @@ describe('Real PHP Installation Test', () => {
       // Test passes because the system handles the current state correctly
       // Note: In the future, when precompiled PHP binaries with extensions are available,
       // this test should be updated to expect successful installation
+      // Cleanup sandbox
+      try {
+        rmSync(tempHome, { recursive: true, force: true })
+      }
+      catch {}
     }
     catch (error: any) {
       // Handle any unexpected errors during the test
@@ -111,7 +129,7 @@ describe('Real PHP Installation Test', () => {
         throw error
       }
     }
-  })
+  }, 300000)
 
   it('should have no validation warnings for packages', async () => {
     console.log('🔍 Testing package validation...')
@@ -170,5 +188,5 @@ describe('Real PHP Installation Test', () => {
 
       throw error
     }
-  })
+  }, 300000)
 })
