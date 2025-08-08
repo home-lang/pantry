@@ -775,7 +775,8 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     return true
   }
 
-  if (config.verbose) console.warn(`📦 Installing ${definition.displayName} package...`)
+  if (config.verbose)
+    console.warn(`📦 Installing ${definition.displayName} package...`)
 
   try {
     // Import install function to install service package with dependencies
@@ -786,7 +787,8 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     const installPath = `${process.env.HOME}/.local`
     await install([definition.packageDomain], installPath)
 
-    if (config.verbose) console.log(`✅ ${definition.displayName} package installed successfully`)
+    if (config.verbose)
+      console.log(`✅ ${definition.displayName} package installed successfully`)
 
     // Verify installation worked by checking in the Launchpad environment
     const binaryPath = findBinaryInEnvironment(definition.executable, installPath)
@@ -805,7 +807,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
 /**
  * Ensure PHP database extensions are available and configured
  */
-async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<boolean> {
+async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<boolean> {
   // Skip PHP extension checks in test mode
   if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
     console.warn(`🧪 Test mode: Skipping PHP database extension checks`)
@@ -816,7 +818,8 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
 
   try {
     // Quietly check PHP modules; do not try to install via PECL
-    if (config.verbose) console.warn(`🔧 Checking PHP database extensions...`)
+    if (config.verbose)
+      console.warn(`🔧 Checking PHP database extensions...`)
 
     // Check what extensions are currently loaded
     const phpProcess = spawn('php', ['-m'], { stdio: ['pipe', 'pipe', 'pipe'] })
@@ -848,97 +851,21 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
     const missingExtensions = requiredExtensions.filter(ext => !loadedExtensions.includes(ext))
 
     if (missingExtensions.length === 0) {
-      if (config.verbose) console.log(`✅ All required PHP database extensions are available`)
+      if (config.verbose)
+        console.log(`✅ All required PHP database extensions are available`)
       return true
     }
 
-    if (config.verbose) console.warn(`⚠️  Missing PHP extensions: ${missingExtensions.join(', ')}`)
-    if (config.verbose) console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
+    if (config.verbose)
+      console.warn(`⚠️  Missing PHP extensions: ${missingExtensions.join(', ')}`)
+    if (config.verbose)
+      console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
     // Do not attempt PECL here. Let binary-downloader pick the right PHP and shims load the project php.ini
     return false
   }
   catch (error) {
     console.error(`❌ Failed to check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
     return false
-  }
-}
-
-/**
- * Install missing PHP extensions via PECL
- */
-async function installMissingExtensionsViaPECL(_service: ServiceInstance, _missingExtensions: string[]): Promise<boolean> {
-  try {
-    // Hard-disable PECL install path; always return false
-    return false
-  }
-  catch (error) {
-    return false
-  }
-}
-
-/**
- * Update PHP configuration to load newly installed extensions
- */
-async function updatePHPConfigWithInstalledExtensions(service: ServiceInstance, installedExtensions: string[]): Promise<void> {
-  // Skip PHP config updates in test mode
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
-    console.warn(`🧪 Test mode: Skipping PHP configuration updates`)
-    return
-  }
-
-  try {
-    if (!service.definition?.configFile) {
-      return
-    }
-
-    // Get the PHP extension directory
-    const { spawn } = await import('node:child_process')
-    const extDir = await new Promise<string>((resolve) => {
-      const phpProcess = spawn('php', ['-i'], { stdio: ['pipe', 'pipe', 'pipe'] })
-      let output = ''
-
-      phpProcess.stdout.on('data', (data) => {
-        output += data.toString()
-      })
-
-      phpProcess.on('close', () => {
-        const match = output.match(/extension_dir => (.+)/i)
-        resolve(match ? match[1].trim() : '')
-      })
-    })
-
-    if (!extDir) {
-      console.warn(`⚠️  Could not determine PHP extension directory`)
-      return
-    }
-
-    // Read current php.ini
-    let phpIniContent = ''
-    try {
-      phpIniContent = await fs.promises.readFile(service.definition.configFile, 'utf8')
-    }
-    catch {
-      // File doesn't exist, create it
-      phpIniContent = createDefaultServiceConfig('php') || ''
-    }
-
-    // Add extension entries for newly installed extensions
-    if (!phpIniContent.includes('extension_dir')) {
-      phpIniContent = `extension_dir = "${extDir}"\n\n${phpIniContent}`
-    }
-
-    // Add the new extensions if they're not already there
-    for (const ext of installedExtensions) {
-      if (!phpIniContent.includes(`extension=${ext}`)) {
-        phpIniContent += `\nextension=${ext}.so`
-      }
-    }
-
-    await fs.promises.writeFile(service.definition.configFile, phpIniContent, 'utf8')
-    console.warn(`📝 Updated PHP configuration to load new extensions`)
-  }
-  catch (error) {
-    console.warn(`⚠️  Could not update PHP configuration: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
@@ -1039,137 +966,6 @@ export async function setupSQLiteForProject(): Promise<boolean> {
   catch (error) {
     console.warn(`⚠️  Could not set up SQLite automatically: ${error instanceof Error ? error.message : String(error)}`)
     return false
-  }
-}
-
-/**
- * Suggest SQLite as an alternative when PostgreSQL extensions are missing
- */
-async function suggestSQLiteAlternative(): Promise<void> {
-  try {
-    // Check if this is a Laravel project
-    if (fs.existsSync('artisan')) {
-      console.warn(`💡 For Laravel projects, you can use SQLite with these commands:`)
-      console.warn(`   php artisan migrate:fresh --seed --database=sqlite`)
-      console.warn(`   Or configure SQLite in .env:`)
-      console.warn(`   DB_CONNECTION=sqlite`)
-      console.warn(`   DB_DATABASE=database/database.sqlite`)
-
-      // Check if SQLite database file exists, create if not
-      const sqliteDbPath = 'database/database.sqlite'
-      if (!fs.existsSync(sqliteDbPath)) {
-        try {
-          await fs.promises.mkdir('database', { recursive: true })
-          await fs.promises.writeFile(sqliteDbPath, '', 'utf8')
-          console.log(`✅ Created SQLite database file: ${sqliteDbPath}`)
-        }
-        catch (error) {
-          console.warn(`⚠️  Could not create SQLite database file: ${error instanceof Error ? error.message : String(error)}`)
-        }
-      }
-    }
-  }
-  catch (error) {
-    console.warn(`⚠️  Could not suggest SQLite alternative: ${error instanceof Error ? error.message : String(error)}`)
-  }
-}
-
-/**
- * Create PHP configuration file with database extensions enabled
- */
-async function createPHPConfigWithExtensions(service: ServiceInstance, _missingExtensions: string[]): Promise<boolean> {
-  try {
-    if (!service.definition?.configFile) {
-      return false
-    }
-
-    const configDir = path.dirname(service.definition.configFile)
-    await fs.promises.mkdir(configDir, { recursive: true })
-
-    // Create sessions and tmp directories
-    const sessionsDir = path.join(configDir, 'sessions')
-    const tmpDir = path.join(configDir, 'tmp')
-    await fs.promises.mkdir(sessionsDir, { recursive: true })
-    await fs.promises.mkdir(tmpDir, { recursive: true })
-
-    // Generate php.ini with extensions
-    const phpIniContent = createDefaultServiceConfig('php')
-    if (phpIniContent && service.definition.configFile) {
-      await fs.promises.writeFile(service.definition.configFile, phpIniContent, 'utf8')
-
-      // Set PHP to use our custom php.ini file
-      process.env.PHPRC = path.dirname(service.definition.configFile)
-
-      console.warn(`📝 Created PHP configuration at: ${service.definition.configFile}`)
-      return true
-    }
-
-    return false
-  }
-  catch (error) {
-    console.error(`❌ Failed to create PHP configuration: ${error instanceof Error ? error.message : String(error)}`)
-    return false
-  }
-}
-
-/**
- * Check if PHP is installed and install PostgreSQL extensions if needed
- */
-async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
-  // Skip PHP PostgreSQL extension checks in test mode
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
-    console.warn(`🧪 Test mode: Skipping PHP PostgreSQL extension checks`)
-    return
-  }
-
-  try {
-    const { findBinaryInPath } = await import('../utils')
-
-    // Check if PHP is installed
-    if (!findBinaryInPath('php')) {
-      return // PHP not installed, nothing to do
-    }
-
-    // Check if PHP is missing PostgreSQL extensions
-    const { spawn } = await import('node:child_process')
-
-    const phpProcess = spawn('php', ['-m'], { stdio: ['pipe', 'pipe', 'pipe'] })
-    let output = ''
-
-    phpProcess.stdout.on('data', (data) => {
-      output += data.toString()
-    })
-
-    const checkResult = await new Promise<boolean>((resolve) => {
-      phpProcess.on('close', (code) => {
-        resolve(code === 0)
-      })
-    })
-
-    if (!checkResult) {
-      return
-    }
-
-    const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
-    const missingPgsqlExtensions = ['pdo_pgsql', 'pgsql'].filter(ext => !loadedExtensions.includes(ext))
-
-    // We ship PHP binaries with the correct extensions via the precompiled downloader.
-    // Do not attempt PECL installs here; just warn if user-provided PHP lacks extensions.
-    if (missingPgsqlExtensions.length > 0) {
-      if (config.verbose) {
-        console.warn(`⚠️  PHP appears to be missing PostgreSQL extensions: ${missingPgsqlExtensions.join(', ')}`)
-        console.warn(`💡 Launchpad's precompiled PHP includes these extensions. If you installed PHP externally,`
-          + ` consider switching to Launchpad-managed PHP or use SQLite (DB_CONNECTION=sqlite).`)
-      }
-      // Continue without blocking; extensions are best-effort
-    }
-    else {
-      if (config.verbose)
-        console.log(`✅ PHP already has PostgreSQL extensions installed`)
-    }
-  }
-  catch (error) {
-    console.warn(`⚠️  Could not check PHP PostgreSQL extensions: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
