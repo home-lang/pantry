@@ -50,6 +50,10 @@ export const defaultConfig: LaunchpadConfig = {
   useRegistry: true,
   installMethod: 'curl',
   installPath: getDefaultInstallPath(),
+  postSetup: {
+    enabled: process.env.LAUNCHPAD_POST_SETUP_ENABLED === 'true',
+    commands: [],
+  },
   services: {
     enabled: process.env.LAUNCHPAD_SERVICES_ENABLED !== 'false',
     dataDir: process.env.LAUNCHPAD_SERVICES_DATA_DIR || path.join(homedir(), '.local', 'share', 'launchpad', 'services'),
@@ -58,6 +62,7 @@ export const defaultConfig: LaunchpadConfig = {
     autoRestart: process.env.LAUNCHPAD_SERVICES_AUTO_RESTART !== 'false',
     startupTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_STARTUP_TIMEOUT || '30', 10),
     shutdownTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_SHUTDOWN_TIMEOUT || '10', 10),
+    infer: process.env.LAUNCHPAD_SERVICES_INFER !== 'false',
     database: {
       username: process.env.LAUNCHPAD_DB_USERNAME || 'root',
       password: process.env.LAUNCHPAD_DB_PASSWORD || 'password',
@@ -68,43 +73,6 @@ export const defaultConfig: LaunchpadConfig = {
       laravel: {
         enabled: process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false',
         autoDetect: process.env.LAUNCHPAD_LARAVEL_AUTO_DETECT !== 'false',
-        postSetup: {
-          enabled: process.env.LAUNCHPAD_LARAVEL_POST_SETUP !== 'false',
-          commands: [
-            {
-              name: 'migrate',
-              command: 'php artisan migrate',
-              description: 'Run database migrations',
-              condition: 'hasUnrunMigrations',
-              runInBackground: false,
-              required: false,
-            },
-            {
-              name: 'seed',
-              command: 'php artisan db:seed',
-              description: 'Seed the database with sample data',
-              condition: 'hasSeeders',
-              runInBackground: false,
-              required: false,
-            },
-            {
-              name: 'storage-link',
-              command: 'php artisan storage:link',
-              description: 'Create symbolic link for storage',
-              condition: 'needsStorageLink',
-              runInBackground: false,
-              required: false,
-            },
-            {
-              name: 'optimize',
-              command: 'php artisan optimize',
-              description: 'Optimize Laravel for production',
-              condition: 'isProduction',
-              runInBackground: false,
-              required: false,
-            },
-          ],
-        },
       },
       stacks: {
         enabled: process.env.LAUNCHPAD_STACKS_ENABLED !== 'false',

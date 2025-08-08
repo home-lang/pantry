@@ -838,9 +838,11 @@ dependencies:
   - python@3.12
 
 services:
-  - postgres
-  - redis
-  - nginx
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+    - nginx
 
 env:
   DATABASE_URL: postgresql://localhost:5432/myapp

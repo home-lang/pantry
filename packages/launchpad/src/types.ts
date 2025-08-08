@@ -64,6 +64,11 @@ export interface LaunchpadConfig {
   shellDeactivationMessage?: string
   useRegistry?: boolean
   installMethod?: string
+  /** Project-level post-setup commands (run after environment is prepared) */
+  postSetup?: {
+    enabled?: boolean
+    commands?: PostSetupCommand[]
+  }
   services?: {
     enabled?: boolean
     autoStart?: boolean
@@ -73,6 +78,8 @@ export interface LaunchpadConfig {
     autoRestart?: boolean
     startupTimeout?: number
     shutdownTimeout?: number
+    /** Infer services to auto-start from framework config (e.g., Laravel/Stacks .env) */
+    infer?: boolean
     database?: {
       username?: string
       password?: string
@@ -83,6 +90,7 @@ export interface LaunchpadConfig {
       laravel?: {
         enabled?: boolean
         autoDetect?: boolean
+        /** Deprecated: use top-level postSetup */
         postSetup?: {
           enabled?: boolean
           commands?: PostSetupCommand[]

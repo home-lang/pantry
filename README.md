@@ -283,6 +283,23 @@ launchpad service enable postgres redis
 - **API & Backend**: Hasura, Keycloak
 - **Caching**: Memcached, Elasticsearch
 
+#### Configure services in deps.yaml
+
+Add services to your dependency file to auto-start when the project environment activates:
+
+```yaml
+# deps.yaml
+dependencies:
+  - node@22
+  - postgresql@15
+
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+```
+
 #### Database Configuration
 
 Customize database credentials for all database services:

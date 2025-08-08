@@ -35,6 +35,53 @@ launchpad service list
 launchpad service restart redis
 ```
 
+## Configure Services in dependencies.yaml
+
+You can declare services in your project `deps.yaml`/`dependencies.yaml` to auto-start when your environment activates:
+
+```yaml
+# deps.yaml
+dependencies:
+  bun: ^1.2.19
+  node: ^22.17.0
+  php: ^8.4.11
+  composer: ^2.8.10
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+```
+
+### Shorthand: services.infer: true
+
+For Stacks & Laravel projects, you can enable a shorthand that auto-detects DB & cache from your `.env` and auto-starts the right services:
+
+```yaml
+# deps.yaml
+dependencies:
+  php: ^8.4.11
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+# Shorthand that infers services from Stacks/Laravel .env
+services:
+  infer: true
+```
+
+Behavior:
+- Reads `DB_CONNECTION` and `CACHE_DRIVER` or `CACHE_STORE` from `.env` when a Stacks or Laravel app is detected (`buddy` or `artisan` present).
+- Maps to services: `pgsql` → `postgres`, `mysql`/`mariadb` → `mysql`, `redis` → `redis`, `memcached` → `memcached`.
+- Equivalent to specifying `services.enabled: true` with an `autoStart` list of detected services.
+- Can be disabled via env: set `LAUNCHPAD_AUTO_START_FROM_FRAMEWORK=false`.
+
+Notes:
+- **services.enabled**: turn service management on for the project.
+- **services.autoStart**: list of services to start automatically (supported values are listed below in Available Services). These start when the environment activates (e.g. upon `cd` into the project with shell integration).
+
 ## Available Services
 
 Launchpad includes pre-configured definitions for these services:
@@ -699,14 +746,16 @@ Services are automatically initialized on first start:
 Service management integrates well with project environments:
 
 ```yaml
-# dependencies.yaml
+# deps.yaml
 dependencies:
   - node@22
   - postgresql@15
 
 services:
-  - postgres
-  - redis
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
 
 env:
   DATABASE_URL: postgresql://localhost:5432/myapp

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as fs from 'node:fs'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { PrecompiledBinaryDownloader } from '../src/binary-downloader'
 
@@ -22,7 +22,7 @@ describe('Precompiled PHP binary caching', () => {
     originalFetch = globalThis.fetch
     fetchCalls = 0
     // Generic fetch mock; we'll only rely on it for the tarball download
-    globalThis.fetch = (async () => {
+    globalThis.fetch = (async (..._args: any[]) => {
       fetchCalls++
       return {
         ok: true,
@@ -33,7 +33,8 @@ describe('Precompiled PHP binary caching', () => {
         body: {},
         arrayBuffer: async () => new ArrayBuffer(16),
       } as any
-    }) as typeof fetch
+    }) as unknown as typeof fetch
+    ;(globalThis.fetch as any).preconnect = () => {}
   })
 
   afterEach(async () => {
@@ -99,5 +100,3 @@ describe('Precompiled PHP binary caching', () => {
     expect(fetchCalls).toBe(1)
   })
 })
-
-

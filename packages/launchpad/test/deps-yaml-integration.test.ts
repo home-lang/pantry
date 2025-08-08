@@ -104,6 +104,68 @@ services:
     }
   })
 
+  it('should infer services from Laravel .env when services.infer: true is set', async () => {
+    // Create Laravel-like project
+    fs.mkdirSync(path.join(projectDir, 'app'), { recursive: true })
+    fs.writeFileSync(path.join(projectDir, 'artisan'), '#!/usr/bin/env php\n<?php\n// Laravel artisan script')
+
+    // Write Laravel .env specifying Postgres + Redis
+    const envContent = `APP_NAME=Laravel\nDB_CONNECTION=pgsql\nCACHE_DRIVER=redis\n`
+    fs.writeFileSync(path.join(projectDir, '.env'), envContent)
+
+    // deps.yaml with services.infer: true (no explicit services block)
+    const depsContent = `dependencies:\n  php: ^8.4.0\n  composer: ^2.8.9\n  postgres: ^17.2.0\n  redis: ^8.0.3\n\nservices:\n  infer: true\n`
+    fs.writeFileSync(path.join(projectDir, 'deps.yaml'), depsContent)
+
+    // Ensure env toggles allow framework inference
+    process.env.LAUNCHPAD_FRAMEWORKS_ENABLED = 'true'
+    process.env.LAUNCHPAD_SERVICES_INFER = 'true'
+    process.env.LAUNCHPAD_LARAVEL_ENABLED = 'true'
+
+    const sniff = (await import('../src/dev/sniff')).default
+    const result = await sniff({ string: projectDir })
+
+    expect(result.services?.enabled).toBe(true)
+    expect(result.services?.autoStart).toEqual(expect.arrayContaining(['postgres', 'redis']))
+  })
+
+  it('should not infer services when inference is disabled', async () => {
+    fs.mkdirSync(path.join(projectDir, 'app'), { recursive: true })
+    fs.writeFileSync(path.join(projectDir, 'artisan'), '#!/usr/bin/env php\n<?php')
+    fs.writeFileSync(path.join(projectDir, '.env'), 'DB_CONNECTION=pgsql\nCACHE_DRIVER=redis\n')
+
+    const depsContent = `dependencies:\n  php: ^8.4.0\n\nservices:\n  infer: true\n`
+    fs.writeFileSync(path.join(projectDir, 'deps.yaml'), depsContent)
+
+    process.env.LAUNCHPAD_FRAMEWORKS_ENABLED = 'true'
+    process.env.LAUNCHPAD_SERVICES_INFER = 'false' // disabled
+    process.env.LAUNCHPAD_LARAVEL_ENABLED = 'true'
+
+    const sniff = (await import('../src/dev/sniff')).default
+    const result = await sniff({ string: projectDir })
+
+    expect(result.services?.enabled).not.toBe(true)
+  })
+
+  it('should infer mysql and memcached when configured in .env', async () => {
+    fs.mkdirSync(path.join(projectDir, 'app'), { recursive: true })
+    fs.writeFileSync(path.join(projectDir, 'artisan'), '#!/usr/bin/env php\n<?php')
+    fs.writeFileSync(path.join(projectDir, '.env'), 'DB_CONNECTION=mysql\nCACHE_STORE=memcached\n')
+
+    const depsContent = `dependencies:\n  php: ^8.4.0\n\nservices:\n  infer: true\n`
+    fs.writeFileSync(path.join(projectDir, 'deps.yaml'), depsContent)
+
+    process.env.LAUNCHPAD_FRAMEWORKS_ENABLED = 'true'
+    process.env.LAUNCHPAD_AUTO_START_FROM_FRAMEWORK = 'true'
+    process.env.LAUNCHPAD_LARAVEL_ENABLED = 'true'
+
+    const sniff = (await import('../src/dev/sniff')).default
+    const result = await sniff({ string: projectDir })
+
+    expect(result.services?.enabled).toBe(true)
+    expect(result.services?.autoStart).toEqual(expect.arrayContaining(['mysql', 'memcached']))
+  })
+
   it('should detect Laravel project and suggest database setup', async () => {
     // Create Laravel project structure
     fs.mkdirSync(path.join(projectDir, 'app'), { recursive: true })

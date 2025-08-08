@@ -338,6 +338,58 @@ dependencies:
 
 This ensures that essential tools like shells, package managers, and system utilities are preserved during cleanup operations, preventing system breakage.
 
+### Service Management in dependencies.yaml
+
+Define services that should automatically start for your project:
+
+```yaml
+# deps.yaml
+dependencies:
+  bun: ^1.2.19
+  node: ^22.17.0
+  php: ^8.4.11
+  composer: ^2.8.10
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+```
+
+Behavior:
+- **enabled**: toggles service management for the project.
+- **autoStart**: array of service names to start automatically on environment activation.
+- Service names must match those in the Supported Services list (e.g. `postgres`, `redis`, `nginx`).
+
+#### Inference shorthand
+
+You can enable a shorthand for framework-based projects (e.g., Laravel) to infer services automatically:
+
+```yaml
+# deps.yaml
+dependencies:
+  php: ^8.4.11
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+services:
+  infer: true
+```
+
+When enabled and a Laravel app is detected (`artisan` present), Launchpad will read `.env` and infer services:
+- `DB_CONNECTION=pgsql` → `postgres`
+- `DB_CONNECTION=mysql|mariadb` → `mysql`
+- `CACHE_DRIVER=redis` or `CACHE_STORE=redis` → `redis`
+- `CACHE_DRIVER=memcached` or `CACHE_STORE=memcached` → `memcached`
+
+Environment toggles:
+- `LAUNCHPAD_FRAMEWORKS_ENABLED` (default: true)
+- `LAUNCHPAD_SERVICES_INFER` (default: true)
+- `LAUNCHPAD_LARAVEL_ENABLED` (default: true)
+
 ## Configuration Options
 
 ### General Options
@@ -391,6 +443,34 @@ This ensures that essential tools like shells, package managers, and system util
 | `services.autoRestart` | boolean | `true` | Auto-restart failed services |
 | `services.startupTimeout` | number | `30` | Service startup timeout in seconds |
 | `services.shutdownTimeout` | number | `10` | Service shutdown timeout in seconds |
+| `services.infer` | boolean | `true` | Derive services to auto-start from framework configuration |
+
+### Post-Setup Commands
+
+Configure commands to run after the environment is prepared (independent of services):
+
+```ts
+// launchpad.config.ts
+import type { LaunchpadConfig } from '@stacksjs/launchpad'
+
+const config: LaunchpadConfig = {
+  postSetup: {
+    enabled: true,
+    commands: [
+      {
+        name: 'migrate',
+        command: 'php artisan migrate',
+        description: 'Run database migrations',
+        condition: 'hasUnrunMigrations',
+        runInBackground: false,
+        required: false,
+      },
+    ],
+  },
+}
+
+export default config
+```
 
 ## Environment Variables
 

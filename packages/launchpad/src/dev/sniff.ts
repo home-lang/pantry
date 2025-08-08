@@ -546,6 +546,14 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const deduplicatedPkgs = Array.from(packageMap.values())
 
+  // If services are not explicitly configured, derive from framework config when enabled
+  if (!services?.enabled && shouldInferServices()) {
+    const inferred = await inferServicesFromFramework(dirPath.string)
+    if (inferred.autoStart.length > 0) {
+      services = { enabled: true, autoStart: inferred.autoStart }
+    }
+  }
+
   const result = { pkgs: deduplicatedPkgs, env, services }
 
   // Cache the result
@@ -842,6 +850,17 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
       services = yaml.services
     }
 
+    // Support shorthand: services.infer: true (and deprecated: inferServices / framework)
+    const wantsInference = (obj as any).services?.infer === true || (obj as any).inferServices === true || (obj as any).framework === true
+    if (wantsInference) {
+      if (!services || !services.enabled) {
+        const inferred = await inferServicesFromFramework(dirPath.string)
+        if (inferred.autoStart.length > 0) {
+          services = { enabled: true, autoStart: inferred.autoStart }
+        }
+      }
+    }
+
     function fix(input: string): string {
       // Simple variable replacement
       const replacements = [
@@ -858,6 +877,89 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
       return result
     }
   }
+}
+
+function shouldInferServices(): boolean {
+  // Controlled by config via env vars (wired in default config):
+  // LAUNCHPAD_FRAMEWORKS_ENABLED and LAUNCHPAD_SERVICES_INFER
+  const frameworksEnabled = process.env.LAUNCHPAD_FRAMEWORKS_ENABLED !== 'false'
+  const inferServices = process.env.LAUNCHPAD_SERVICES_INFER !== 'false'
+  const laravelEnabled = process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false'
+  const stacksEnabled = process.env.LAUNCHPAD_STACKS_ENABLED !== 'false'
+  return frameworksEnabled && inferServices && (laravelEnabled || stacksEnabled)
+}
+
+async function inferServicesFromFramework(projectDir: string): Promise<{ autoStart: string[] }> {
+  const autoStart: string[] = []
+
+  // Stacks/Laravel detection via presence of buddy or artisan and .env
+  try {
+    const artisanPath = join(projectDir, 'artisan')
+    const buddyPath = join(projectDir, 'buddy')
+    const envPath = join(projectDir, '.env')
+    const hasArtisan = (() => {
+      try {
+        return statSync(artisanPath).isFile()
+      }
+      catch { return false }
+    })()
+    const hasBuddy = (() => {
+      try {
+        return statSync(buddyPath).isFile()
+      }
+      catch { return false }
+    })()
+    const hasEnv = statSync(envPath).isFile()
+    if (!(hasArtisan || hasBuddy) || !hasEnv)
+      return { autoStart }
+
+    const envContent = readFileSync(envPath, 'utf8')
+    const dbConn = getEnvValue(envContent, 'DB_CONNECTION')
+    const cacheDriver = getEnvValue(envContent, 'CACHE_STORE') || getEnvValue(envContent, 'CACHE_DRIVER')
+
+    // Database
+    if (dbConn === 'pgsql' || dbConn === 'postgres' || dbConn === 'postgresql') {
+      autoStart.push('postgres')
+    }
+    else if (dbConn === 'mysql' || dbConn === 'mariadb') {
+      autoStart.push('mysql')
+    }
+
+    // Cache
+    if (cacheDriver === 'redis') {
+      autoStart.push('redis')
+    }
+    else if (cacheDriver === 'memcached') {
+      autoStart.push('memcached')
+    }
+  }
+  catch {
+    // Ignore inference errors
+  }
+
+  // Deduplicate
+  return { autoStart: Array.from(new Set(autoStart)) }
+}
+
+function getEnvValue(envContent: string, key: string): string | undefined {
+  // Simple .env parser: supports KEY=VALUE, ignores commented lines
+  const lines = envContent.split('\n')
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#'))
+      continue
+    const idx = trimmed.indexOf('=')
+    if (idx === -1)
+      continue
+    const k = trimmed.substring(0, idx).trim()
+    if (k !== key)
+      continue
+    let v = trimmed.substring(idx + 1).trim()
+    // Strip quotes
+    v = v.replace(/^['"]|['"]$/g, '')
+    return v
+  }
+  return undefined
 }
 
 function validateDollarSignUsage(str: string): void {

@@ -543,6 +543,71 @@ await dump('/path/to/project', { dryrun: false, quiet: false })
 // - Install git@2.42 globally (individual flag)
 ```
 
+### Services in dependencies.yaml
+
+Launchpad can read a `services` section from your dependency file to automatically start services on environment activation.
+
+```yaml
+# deps.yaml
+dependencies:
+  bun: ^1.2.19
+  node: ^22.17.0
+  php: ^8.4.11
+  composer: ^2.8.10
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+```
+
+At runtime, the environment generator detects `services.enabled` and starts each service in `autoStart`.
+
+#### Inference shorthand
+
+For Stacks & Laravel projects, you can also use a shorthand to infer services from `.env`:
+
+```yaml
+# deps.yaml
+dependencies:
+  php: ^8.4.11
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+services:
+  infer: true
+```
+
+This will auto-start services based on `.env` (e.g., `DB_CONNECTION=pgsql` and `CACHE_DRIVER=redis` → `postgres` and `redis`).
+
+Project-level post-setup commands can be configured via top-level `postSetup` in `launchpad.config.ts`:
+
+```ts
+// launchpad.config.ts
+import type { LaunchpadConfig } from '@stacksjs/launchpad'
+
+const config: LaunchpadConfig = {
+  postSetup: {
+    enabled: true,
+    commands: [
+      {
+        name: 'migrate',
+        command: 'php artisan migrate',
+        description: 'Run database migrations',
+        condition: 'hasUnrunMigrations',
+        runInBackground: false,
+        required: false,
+      },
+    ],
+  },
+}
+
+export default config
+```
+
 ### Global Flag Resolution Examples
 
 ```typescript

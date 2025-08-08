@@ -199,10 +199,10 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
     // Ignore errors checking migrations
   }
 
-  // Execute post-setup commands if enabled (skip in shell integration; handled later with full env)
-  const laravelConfig = config.services?.frameworks?.laravel
-  if (laravelConfig?.postSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
-    const postSetupResults = await executepostSetup(dir, laravelConfig.postSetup.commands || [])
+  // Execute project-level post-setup commands if enabled (skip in shell integration)
+  const projectPostSetup = config.postSetup
+  if (projectPostSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
+    const postSetupResults = await executepostSetup(dir, projectPostSetup.commands || [])
     suggestions.push(...postSetupResults)
   }
 
@@ -1205,8 +1205,8 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
  */
 async function maybeRunLaravelPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
   try {
-    const laravelConfig = config.services?.frameworks?.laravel
-    if (!laravelConfig?.postSetup?.enabled) {
+    const projectPostSetup = config.postSetup
+    if (!projectPostSetup?.enabled) {
       return
     }
 
@@ -1225,7 +1225,7 @@ async function maybeRunLaravelPostSetup(projectDir: string, envDir: string, _isS
     catch {}
 
     // Execute and mark
-    const results = await executepostSetup(projectDir, laravelConfig.postSetup.commands || [])
+    const results = await executepostSetup(projectDir, projectPostSetup.commands || [])
     if ((results && results.length > 0) || true) {
       try {
         fs.writeFileSync(markerFile, new Date().toISOString())
