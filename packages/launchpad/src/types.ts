@@ -47,7 +47,6 @@ export interface CacheMetadata {
  */
 export interface LaunchpadConfig {
   installPath?: string
-  verbose?: boolean
   forceReinstall?: boolean
   autoAddToPath?: boolean
   shellMessages?: {
@@ -56,7 +55,6 @@ export interface LaunchpadConfig {
   }
   sudoPassword?: string
   devAware?: boolean
-  autoSudo?: boolean
   maxRetries?: number
   timeout?: number
   symlinkVersions?: boolean
@@ -111,6 +109,7 @@ export interface LaunchpadConfig {
       }
     }
   }
+  verbose?: boolean
 }
 
 /**

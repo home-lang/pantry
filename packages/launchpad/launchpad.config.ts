@@ -22,9 +22,6 @@ export const defaultConfig: LaunchpadConfig = {
   // will be dev-aware (will respect the current dev environment)
   devAware: true,
 
-  // Auto-elevate with sudo when needed
-  autoSudo: true,
-
   // Max installation retries on failure
   maxRetries: 3,
 

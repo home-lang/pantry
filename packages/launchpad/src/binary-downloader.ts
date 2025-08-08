@@ -164,7 +164,9 @@ export class PrecompiledBinaryDownloader {
 
     // Use manual configuration if specified
     if (phpConfig?.manual?.configuration) {
-      console.log(`🔧 Using manual configuration: ${phpConfig.manual.configuration}`)
+      if (config.verbose) {
+        console.log(`🔧 Using manual configuration: ${phpConfig.manual.configuration}`)
+      }
       return phpConfig.manual.configuration
     }
 
@@ -467,8 +469,10 @@ Thanks for helping us make Launchpad better! 🙏
       return cachedPath
     }
 
-    console.log(`⬇️ Downloading precompiled PHP ${binary.php_version} (${binary.configuration})...`)
-    console.log(`📊 Size: ${Math.round(binary.size / 1024 / 1024 * 10) / 10}MB`)
+    if (config.verbose) {
+      console.log(`⬇️ Downloading precompiled PHP ${binary.php_version} (${binary.configuration})...`)
+      console.log(`📊 Size: ${Math.round(binary.size / 1024 / 1024 * 10) / 10}MB`)
+    }
 
     const response = await fetch(binary.download_url, {
       headers: {
@@ -476,15 +480,331 @@ Thanks for helping us make Launchpad better! 🙏
       },
     })
 
-    if (!response.ok) {
+    if (!response.ok || !response.body) {
       throw new Error(`Download failed: ${response.status} ${response.statusText}`)
     }
 
-    const buffer = await response.arrayBuffer()
-    await fs.promises.writeFile(cachedPath, Buffer.from(buffer))
+    // Show download progress like other packages
+    const contentLength = response.headers.get('content-length')
+    const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0
 
-    console.log(`✅ Downloaded: ${binary.filename}`)
+    if (totalBytes > 0) {
+      const reader = response.body.getReader()
+      const chunks: Uint8Array[] = []
+      let downloadedBytes = 0
+      let lastProgressUpdate = 0
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done)
+          break
+
+        if (value) {
+          chunks.push(value)
+          downloadedBytes += value.length
+
+          // Throttle progress updates to every 100ms
+          const now = Date.now()
+          const progress = (downloadedBytes / totalBytes * 100)
+          const progressPercent = Math.floor(progress / 5) * 5 // Round to nearest 5%
+
+          if (now - lastProgressUpdate > 100 || progress >= 100 || downloadedBytes === value.length) {
+            if (config.verbose) {
+              const progressMsg = `⬇️  ${downloadedBytes}/${totalBytes} bytes (${progressPercent}%) - PHP ${binary.php_version}`
+              process.stdout.write(`\r${progressMsg}`)
+            }
+            lastProgressUpdate = now
+          }
+        }
+      }
+
+      if (config.verbose) {
+        process.stdout.write('\r\x1B[K') // Clear the progress line
+      }
+
+      // Combine all chunks
+      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+      const buffer = new Uint8Array(totalLength)
+      let offset = 0
+      for (const chunk of chunks) {
+        buffer.set(chunk, offset)
+        offset += chunk.length
+      }
+
+      await fs.promises.writeFile(cachedPath, buffer)
+    }
+    else {
+      // Fallback for unknown content length
+      const buffer = await response.arrayBuffer()
+      await fs.promises.writeFile(cachedPath, Buffer.from(buffer))
+    }
+
+    if (config.verbose) {
+      console.log(`✅ Downloaded: ${binary.filename}`)
+    }
     return cachedPath
+  }
+
+  /**
+   * Get PHP dependencies from ts-pkgx pantry
+   */
+  private async getPhpDependenciesFromPantry(): Promise<string[]> {
+    try {
+      // Import ts-pkgx pantry
+      const { pantry } = await import('ts-pkgx')
+
+      // Get PHP package info
+      const phpPackage = pantry.phpnet
+
+      if (!phpPackage) {
+        console.warn('⚠️ PHP package not found in pantry')
+        return []
+      }
+
+      // Get dependencies from the package
+      const dependencies = phpPackage.dependencies || []
+
+      return dependencies.map((dep: any) => {
+        // Convert dependency format to domain format if needed
+        let packageName = ''
+
+        if (typeof dep === 'string') {
+          packageName = dep
+        }
+        else if (dep && typeof dep === 'object' && 'project' in dep) {
+          packageName = dep.project as string
+        }
+        else {
+          packageName = String(dep)
+        }
+
+        // Remove version constraints and platform prefixes to get clean package names
+        // Examples: "curl.se^8" -> "curl.se", "darwin:zlib.net^1" -> "zlib.net"
+        packageName = packageName.replace(/^[^:]+:/, '') // Remove platform prefix
+        packageName = packageName.replace(/[~^<>=].*$/, '') // Remove version constraints
+
+        return packageName
+      }).filter(Boolean)
+    }
+    catch (error) {
+      console.warn(`⚠️ Failed to get PHP dependencies from pantry: ${error instanceof Error ? error.message : String(error)}`)
+
+      // Fallback to essential dependencies if pantry access fails
+      return [
+        'gnu.org/readline', // Essential for PHP CLI
+        'openssl.org', // Essential for HTTPS
+        'curl.se', // Essential for HTTP functions
+        'zlib.net', // Essential for compression
+      ]
+    }
+  }
+
+  /**
+   * Create PHP shims with proper library paths
+   */
+  async createPhpShims(packageDir: string, version: string): Promise<void> {
+    try {
+      const binDir = path.join(packageDir, 'bin')
+      if (!fs.existsSync(binDir))
+        return
+
+      // Find Launchpad-installed readline library
+      const launchpadLibraryPaths = await this.findLaunchpadLibraryPaths()
+
+      // Get all PHP binaries
+      const binaries = fs.readdirSync(binDir).filter((file) => {
+        const fullPath = path.join(binDir, file)
+        const stat = fs.statSync(fullPath)
+        return stat.isFile() && (stat.mode & 0o111) // is executable
+      })
+
+      for (const binary of binaries) {
+        const originalBinary = path.join(binDir, binary)
+        const shimPath = path.join(binDir, `${binary}.original`)
+
+        // Move original binary
+        fs.renameSync(originalBinary, shimPath)
+
+        // Create wrapper script with library paths including Launchpad libraries
+        let libraryPaths = '/usr/local/lib:/usr/lib:/lib'
+        if (launchpadLibraryPaths.length > 0) {
+          libraryPaths = `${launchpadLibraryPaths.join(':')}:${libraryPaths}`
+        }
+
+        const wrapperScript = `#!/bin/sh
+# Launchpad PHP binary wrapper with library paths
+# Auto-generated wrapper for ${binary} v${version}
+
+# Set up library paths to find Launchpad-installed libraries first, then system libraries
+export DYLD_LIBRARY_PATH="${libraryPaths}:$DYLD_LIBRARY_PATH"
+export DYLD_FALLBACK_LIBRARY_PATH="${libraryPaths}:$DYLD_FALLBACK_LIBRARY_PATH"
+export LD_LIBRARY_PATH="${libraryPaths}:$LD_LIBRARY_PATH"
+
+# Execute the original binary
+exec "${shimPath}" "$@"
+`
+
+        fs.writeFileSync(originalBinary, wrapperScript)
+        fs.chmodSync(originalBinary, 0o755)
+      }
+
+      console.log(`🔗 Created PHP shims with Launchpad library paths for ${binaries.length} binaries`)
+
+      // Also try to create Homebrew-compatible symlinks for the precompiled binaries
+      await this.createHomebrewCompatSymlinks(launchpadLibraryPaths)
+    }
+    catch (error) {
+      console.warn(`⚠️ Failed to create PHP shims: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Find Launchpad-installed library paths for PHP dependencies
+   */
+  private async findLaunchpadLibraryPaths(): Promise<string[]> {
+    const paths: string[] = []
+
+    try {
+      // Get dynamic PHP dependencies from ts-pkgx pantry
+      const phpDependencies = await this.getPhpDependenciesFromPantry()
+
+      console.log(`🔍 Scanning library paths for ${phpDependencies.length} PHP dependencies...`)
+
+      for (const depName of phpDependencies) {
+        // Check local environment installation first (where dependencies are actually installed)
+        const localDepDir = path.join(this.installPath, depName)
+        if (fs.existsSync(localDepDir)) {
+          // Find version directories
+          const versionDirs = fs.readdirSync(localDepDir).filter((item) => {
+            const fullPath = path.join(localDepDir, item)
+            return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
+          })
+
+          for (const versionDir of versionDirs) {
+            const libDir = path.join(localDepDir, versionDir, 'lib')
+            if (fs.existsSync(libDir)) {
+              paths.push(libDir)
+              console.log(`📚 Found local library: ${libDir}`)
+            }
+          }
+        }
+
+        // Also check global installation as fallback
+        const globalDepDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', depName)
+        if (fs.existsSync(globalDepDir)) {
+          const versions = fs.readdirSync(globalDepDir).filter(d => d.startsWith('v')).sort().reverse()
+          for (const version of versions) {
+            const libDir = path.join(globalDepDir, version, 'lib')
+            if (fs.existsSync(libDir)) {
+              paths.push(libDir)
+            }
+          }
+        }
+      }
+
+      if (paths.length > 0) {
+        console.log(`🔍 Found Launchpad library paths for PHP: ${paths.length} paths`)
+      }
+      else {
+        console.warn('⚠️ No Launchpad libraries found for PHP dependencies')
+      }
+    }
+    catch (error) {
+      console.warn(`⚠️ Error finding Launchpad libraries: ${error instanceof Error ? error.message : String(error)}`)
+    }
+
+    return paths
+  }
+
+  /**
+   * Create Homebrew-compatible symlinks for precompiled PHP binaries
+   */
+  private async createHomebrewCompatSymlinks(launchpadLibraryPaths: string[]): Promise<void> {
+    if (launchpadLibraryPaths.length === 0) {
+      console.warn('⚠️ No Launchpad readline found, skipping Homebrew compatibility symlinks')
+      return
+    }
+
+    try {
+      // Find the best readline library file
+      let readlineLibPath = ''
+      for (const libDir of launchpadLibraryPaths) {
+        const possibleFiles = [
+          path.join(libDir, 'libreadline.8.dylib'),
+          path.join(libDir, 'libreadline.dylib'),
+          path.join(libDir, 'libreadline.so.8'),
+          path.join(libDir, 'libreadline.so'),
+        ]
+
+        for (const file of possibleFiles) {
+          if (fs.existsSync(file)) {
+            readlineLibPath = file
+            break
+          }
+        }
+
+        if (readlineLibPath)
+          break
+      }
+
+      if (!readlineLibPath) {
+        if (config.verbose) {
+          console.warn('⚠️ No readable readline library file found')
+        }
+        return
+      }
+
+      // Create the expected Homebrew directory structure in the package directory
+      // This avoids permission issues with system directories
+      const homebrewCompatDir = path.join(this.installPath, '.homebrew-compat', 'opt', 'homebrew', 'opt', 'readline', 'lib')
+      const targetSymlink = path.join(homebrewCompatDir, 'libreadline.8.dylib')
+
+      try {
+        await fs.promises.mkdir(homebrewCompatDir, { recursive: true })
+
+        if (!fs.existsSync(targetSymlink)) {
+          await fs.promises.symlink(readlineLibPath, targetSymlink)
+          console.log(`🔗 Created Homebrew-compat readline symlink: ${targetSymlink} -> ${readlineLibPath}`)
+        }
+      }
+      catch (error) {
+        console.warn(`⚠️ Could not create Homebrew compatibility symlinks: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    catch (error) {
+      console.warn(`⚠️ Failed to create Homebrew compatibility symlinks: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Validate that PHP installation works
+   */
+  async validatePhpInstallation(packageDir: string, version: string): Promise<void> {
+    try {
+      const phpBinary = path.join(packageDir, 'bin', 'php')
+
+      if (!fs.existsSync(phpBinary)) {
+        throw new Error('PHP binary not found after installation')
+      }
+
+      // Try to run php --version with the shim
+      const versionOutput = execSync(`"${phpBinary}" --version`, {
+        encoding: 'utf-8',
+        timeout: 10000,
+      })
+
+      if (config.verbose) {
+        console.log(`✅ PHP ${version} installed and validated successfully`)
+        console.log(`🐘 Version: ${versionOutput.split('\n')[0]}`)
+      }
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`⚠️ PHP validation failed: ${error instanceof Error ? error.message : String(error)}`)
+        console.warn('💡 The binary was installed but may have library dependency issues')
+      }
+      // Don't throw here - let the installation continue
+    }
   }
 
   /**
@@ -503,8 +823,8 @@ Thanks for helping us make Launchpad better! 🙏
     console.log(`📂 Extracting PHP ${binary.php_version} to ${packageDir}...`)
 
     try {
-      // Extract the tarball
-      execSync(`tar -xzf "${binaryPath}" -C "${path.dirname(packageDir)}" --strip-components=1`, {
+      // Extract the tarball directly into the target version directory
+      execSync(`tar -xzf "${binaryPath}" -C "${packageDir}" --strip-components=1`, {
         stdio: 'pipe',
         timeout: 60000, // 1 minute timeout
       })
@@ -515,14 +835,10 @@ Thanks for helping us make Launchpad better! 🙏
         throw new Error('PHP binary not found after extraction')
       }
 
-      // Verify the installation
-      const versionOutput = execSync(`"${phpBinary}" --version`, {
-        encoding: 'utf-8',
-        timeout: 10000,
-      })
+      // Note: Skip validation here since the binary might need library paths
+      // Validation will happen after shims are created
 
-      console.log(`✅ PHP ${binary.php_version} installed successfully`)
-      console.log(`🐘 Version: ${versionOutput.split('\n')[0]}`)
+      console.log(`📂 PHP ${binary.php_version} extracted successfully`)
 
       return packageDir
     }
@@ -569,8 +885,10 @@ Thanks for helping us make Launchpad better! 🙏
     error?: string
   }> {
     try {
-      console.log('🚀 Installing PHP from precompiled binaries...')
-      console.log(`🔍 Target: ${this.getPlatform()}-${this.getArchitecture()}`)
+      if (config.verbose) {
+        console.log('🚀 Installing PHP from precompiled binaries...')
+        console.log(`🔍 Target: ${this.getPlatform()}-${this.getArchitecture()}`)
+      }
 
       // Check for custom extensions first
       const customCheck = await this.hasCustomExtensions()
@@ -617,14 +935,23 @@ Thanks for helping us make Launchpad better! 🙏
         )
       }
 
-      console.log(`🎯 Selected: PHP ${binary.php_version} (${binary.configuration})`)
-      console.log(`📦 Extensions: ${binary.extensions.split(',').length} included`)
+      if (config.verbose) {
+        console.log(`🎯 Selected: PHP ${binary.php_version} (${binary.configuration})`)
+        console.log(`📦 Extensions: ${binary.extensions.split(',').length} included`)
+      }
 
       // Download binary
       const binaryPath = await this.downloadBinary(binary)
 
       // Extract and install
       const packageDir = await this.extractBinary(binaryPath, binary)
+
+      // Skip shim creation during installation - will be created later after all dependencies are installed
+      if (config.verbose) {
+        console.log(`📦 PHP ${binary.php_version} binary installed, shims will be created after dependencies are ready`)
+      }
+
+      // Skip validation for now - will be done after shims are created
 
       return {
         success: true,
@@ -700,9 +1027,15 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
     throw new Error(`Failed to install PHP binary: ${result.error}`)
   }
 
-  console.log(`🎉 PHP ${result.version} (${result.configuration}) installed successfully!`)
-  console.log(`📁 Location: ${result.packageDir}`)
-  console.log(`🔌 Extensions: ${result.extensions.length} loaded`)
+  // Show clean success message (non-verbose) or detailed info (verbose)
+  if (config.verbose) {
+    console.log(`🎉 PHP ${result.version} (${result.configuration}) installed successfully!`)
+    console.log(`📁 Location: ${result.packageDir}`)
+    console.log(`🔌 Extensions: ${result.extensions.length} loaded`)
+  }
+  else {
+    console.log(`✅ php.net (v${result.version})`)
+  }
 
   return [result.packageDir]
 }

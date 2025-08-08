@@ -340,8 +340,7 @@ import type { LaunchpadConfig } from '@stacksjs/launchpad'
 const config: LaunchpadConfig = {
   // System-wide installation preferences
   installationPath: '/usr/local', // Default system location
-  autoSudo: true, // Auto-elevate when needed
-  sudoPassword: '', // Password for sudo operations
+  sudoPassword: '', // Password for sudo operations, can be loaded from `SUDO_PASSWORD` environment variable
 
   // Development environment settings
   devAware: true, // Enable dev-aware installations

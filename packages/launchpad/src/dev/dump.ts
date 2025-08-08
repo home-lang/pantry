@@ -479,8 +479,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const hasLocalEnv = fs.existsSync(path.join(envDir, 'bin'))
       const hasGlobalEnv = fs.existsSync(path.join(globalEnvDir, 'bin'))
 
-      // If we have any environment, try fast activation first
-      if (hasLocalEnv || hasGlobalEnv) {
+      // Fast activation ONLY if local env already exists; otherwise we must install local deps
+      if (hasLocalEnv) {
         // Parse dependency file to get environment variables even in fast path
         const { default: sniff } = await import('./sniff')
         let sniffResult: { pkgs: any[], env: Record<string, string> }
@@ -504,6 +504,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         )
         return
       }
+      // If no local environment exists, we need to continue with full installation process
+      // Don't return early - fall through to the installation logic below
     }
 
     // Parse dependency file with optimization for shell integration
@@ -670,6 +672,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
             quiet,
           )
         }
+
+        // Create PHP shims after all dependencies are installed
+        if (config.verbose) {
+          console.log('🔍 Checking for PHP installations to create shims...')
+        }
+        await createPhpShimsAfterInstall(envDir)
 
         // Auto-start services for shell integration too
         try {
@@ -1116,6 +1124,55 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
+}
+
+/**
+ * Create PHP shims after all dependencies are installed
+ */
+async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
+  const path = await import('node:path')
+  const fs = await import('node:fs')
+
+  try {
+    // Check if there's a PHP installation in this environment
+    const phpDir = path.join(envDir, 'php.net')
+    if (!fs.existsSync(phpDir)) {
+      return // No PHP installation, nothing to do
+    }
+
+    // Find PHP version directories
+    const versionDirs = fs.readdirSync(phpDir).filter((item) => {
+      const fullPath = path.join(phpDir, item)
+      return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
+    })
+
+    if (versionDirs.length === 0) {
+      return // No PHP versions found
+    }
+
+    // Import the PrecompiledBinaryDownloader to create shims
+    const { PrecompiledBinaryDownloader } = await import('../binary-downloader.js')
+
+    for (const versionDir of versionDirs) {
+      const packageDir = path.join(phpDir, versionDir)
+      const version = versionDir.replace(/^v/, '') // Remove 'v' prefix
+
+      // Check if this directory has PHP binaries
+      const binDir = path.join(packageDir, 'bin')
+      if (fs.existsSync(binDir)) {
+        const downloader = new PrecompiledBinaryDownloader('')
+        console.log(`🔗 Creating PHP ${version} shims with proper library paths...`)
+        await downloader.createPhpShims(packageDir, version)
+
+        // Now validate that PHP works
+        await downloader.validatePhpInstallation(packageDir, version)
+      }
+    }
+  }
+  catch (error) {
+    // Don't fail the entire setup if shim creation fails
+    console.warn(`⚠️ Failed to create PHP shims: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 /**

@@ -30,9 +30,6 @@ const config: LaunchpadConfig = {
   // Whether to enable dev-aware installations (default: true)
   devAware: true,
 
-  // Whether to auto-elevate with sudo when needed (default: true)
-  autoSudo: true,
-
   // Max installation retries on failure (default: 3)
   maxRetries: 3,
 
@@ -117,7 +114,6 @@ JavaScript format (`.launchpadrc`):
   "installationPath": "/usr/local",
   "sudoPassword": "",
   "devAware": true,
-  "autoSudo": true,
   "maxRetries": 3,
   "timeout": 60000,
   "symlinkVersions": true,
@@ -369,7 +365,6 @@ This ensures that essential tools like shells, package managers, and system util
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `sudoPassword` | string | `""` | Password for sudo operations, can be loaded from `SUDO_PASSWORD` environment variable |
-| `autoSudo` | boolean | `true` | Automatically use sudo when needed |
 
 ### Shell Environment Messages
 

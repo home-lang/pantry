@@ -502,7 +502,7 @@ __launchpad_find_deps_file() {
             done
         done
 
-        # Check Node.js/JavaScript projects
+        # Check Node.js/JavaScript projects (require package.json explicitly)
         if [[ -f "$dir/package.json" ]]; then
             __launchpad_cache_dir="$dir"
             __launchpad_cache_timestamp=$current_time
@@ -576,25 +576,7 @@ __launchpad_find_deps_file() {
             fi
         done
 
-        # Check version control files
-        for file in ".nvmrc" ".node-version" ".ruby-version" ".python-version" ".terraform-version"; do
-            if [[ -f "$dir/$file" ]]; then
-                __launchpad_cache_dir="$dir"
-                __launchpad_cache_timestamp=$current_time
-                echo "$dir"
-                return 0
-            fi
-        done
-
-        # Check package manager files
-        for file in "yarn.lock" "bun.lockb" ".yarnrc"; do
-            if [[ -f "$dir/$file" ]]; then
-                __launchpad_cache_dir="$dir"
-                __launchpad_cache_timestamp=$current_time
-                echo "$dir"
-                return 0
-            fi
-        done
+        # Do not treat standalone version/lock files as a project to avoid false positives (e.g. $HOME)
 
         dir="$(/usr/bin/dirname "$dir")"
     done

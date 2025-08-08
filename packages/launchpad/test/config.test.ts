@@ -58,7 +58,6 @@ describe('Config', () => {
       }
 
       expect(defaultConfig.devAware).toBe(true)
-      expect(defaultConfig.autoSudo).toBe(true)
       expect(defaultConfig.symlinkVersions).toBe(true)
       expect(defaultConfig.forceReinstall).toBe(false)
       expect(defaultConfig.autoAddToPath).toBe(true)
@@ -151,7 +150,6 @@ describe('Config', () => {
       expect(config.installPath).toBeDefined()
       expect(config.sudoPassword).toBeDefined()
       expect(config.devAware).toBeDefined()
-      expect(config.autoSudo).toBeDefined()
       expect(config.maxRetries).toBeDefined()
       expect(config.timeout).toBeDefined()
       expect(config.symlinkVersions).toBeDefined()
@@ -169,7 +167,6 @@ describe('Config', () => {
       expect(typeof config.installPath).toBe('string')
       expect(typeof config.sudoPassword).toBe('string')
       expect(typeof config.devAware).toBe('boolean')
-      expect(typeof config.autoSudo).toBe('boolean')
       expect(typeof config.maxRetries).toBe('number')
       expect(typeof config.timeout).toBe('number')
       expect(typeof config.symlinkVersions).toBe('boolean')

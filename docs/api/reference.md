@@ -251,8 +251,6 @@ interface LaunchpadConfig {
   sudoPassword: string
   /** Whether to enable dev-aware installations (default: true) */
   devAware: boolean
-  /** Whether to auto-elevate with sudo when needed (default: true) */
-  autoSudo: boolean
   /** Max installation retries on failure (default: 3) */
   maxRetries: number
   /** Timeout for pkgx operations in milliseconds (default: 60000) */
