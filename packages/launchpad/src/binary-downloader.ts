@@ -194,7 +194,7 @@ export class PrecompiledBinaryDownloader {
       // eslint-disable-next-line ts/no-require-imports
       const fs = require('node:fs')
 
-      // Check for Laravel
+      // Check for Laravel (or Laravel-like) projects
       if (fs.existsSync('artisan') && fs.existsSync('composer.json')) {
         try {
           const composerJson = JSON.parse(fs.readFileSync('composer.json', 'utf-8'))
@@ -232,6 +232,20 @@ export class PrecompiledBinaryDownloader {
           // Fall through to default
         }
       }
+
+      // Even if composer does not indicate Laravel explicitly, infer from .env alone
+      try {
+        if (fs.existsSync('.env')) {
+          const envContent = fs.readFileSync('.env', 'utf-8')
+          if (envContent.includes('DB_CONNECTION=pgsql') || envContent.includes('DB_CONNECTION=postgres')) {
+            return 'laravel-postgres'
+          }
+          if (envContent.includes('DB_CONNECTION=sqlite')) {
+            return 'laravel-sqlite'
+          }
+        }
+      }
+      catch {}
 
       // Check for WordPress without Laravel
       if (fs.existsSync('wp-config.php') || fs.existsSync('wp-config-sample.php')) {
@@ -697,6 +711,20 @@ Thanks for helping us make Launchpad better! 🙏
 
       // Find Launchpad-installed libraries for PHP dependencies
       const launchpadLibraryPaths = await this.findLaunchpadLibraryPaths()
+      // Ensure readline from pantry is included as many PHP builds reference it
+      const readlineLocal = path.join(this.installPath, 'gnu.org/readline')
+      const readlineGlobal = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', 'gnu.org/readline')
+      for (const base of [readlineLocal, readlineGlobal]) {
+        if (fs.existsSync(base)) {
+          const versions = fs.readdirSync(base).filter(v => v.startsWith('v'))
+          for (const v of versions) {
+            const libDir = path.join(base, v, 'lib')
+            if (fs.existsSync(libDir) && !launchpadLibraryPaths.includes(libDir)) {
+              launchpadLibraryPaths.push(libDir)
+            }
+          }
+        }
+      }
 
       // Get all PHP binaries
       const binaries = fs.readdirSync(binDir).filter((file) => {
@@ -704,6 +732,40 @@ Thanks for helping us make Launchpad better! 🙏
         const stat = fs.statSync(fullPath)
         return stat.isFile() && (stat.mode & 0o111) // is executable
       })
+
+      // Prepare a project-level php.ini with database extensions based on detected project usage
+      const projectPhpIni = path.join(this.installPath, 'php.ini')
+      try {
+        const detected = await this.detectFrameworkAndDatabase()
+        const dbExtensions: string[] = []
+        if (detected === 'laravel-postgres') {
+          dbExtensions.push('pdo_pgsql', 'pgsql')
+        }
+        else if (detected === 'laravel-mysql') {
+          dbExtensions.push('pdo_mysql', 'mysqli')
+        }
+        else if (detected === 'laravel-sqlite') {
+          dbExtensions.push('pdo_sqlite', 'sqlite3')
+        }
+
+        const ini = [
+          '; Launchpad php.ini (auto-generated)',
+          'memory_limit = 512M',
+          'max_execution_time = 300',
+          'upload_max_filesize = 64M',
+          'post_max_size = 64M',
+          'display_errors = On',
+          'error_reporting = E_ALL',
+          '',
+          '; Enable database extensions based on project detection',
+          ...dbExtensions.map(ext => `extension=${ext}`),
+          '',
+        ].join('\n')
+        fs.writeFileSync(projectPhpIni, ini, 'utf8')
+      }
+      catch (err) {
+        console.warn(`⚠️ Could not write project php.ini: ${err instanceof Error ? err.message : String(err)}`)
+      }
 
       for (const binary of binaries) {
         const originalBinary = path.join(binDir, binary)
@@ -734,6 +796,11 @@ Thanks for helping us make Launchpad better! 🙏
 export DYLD_LIBRARY_PATH="${libraryPaths}:$DYLD_LIBRARY_PATH"
 export DYLD_FALLBACK_LIBRARY_PATH="${libraryPaths}:$DYLD_FALLBACK_LIBRARY_PATH"
 export LD_LIBRARY_PATH="${libraryPaths}:$LD_LIBRARY_PATH"
+
+# Prefer project-level php.ini when present
+if [ -f "${projectPhpIni.replace(/"/g, '\\"')}" ]; then
+  export PHPRC="${projectPhpIni.replace(/"/g, '\\"')}"
+fi
 
 # Execute the original binary
 exec "${shimPath}" "$@"
@@ -1287,6 +1354,48 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
   if (!result.success) {
     throw new Error(`Failed to install PHP binary: ${result.error}`)
   }
+
+  // Generate a project-level php.ini that enables DB extensions based on simple detection
+  try {
+    const phpIniPath = path.join(installPath, 'php.ini')
+    const iniLines: string[] = [
+      '; Launchpad php.ini (auto-generated)',
+      'memory_limit = 512M',
+      'max_execution_time = 300',
+      'upload_max_filesize = 64M',
+      'post_max_size = 64M',
+      'display_errors = On',
+      'error_reporting = E_ALL',
+      '',
+      '; Enable database extensions based on project detection',
+    ]
+
+    // Basic detection using .env
+    try {
+      const envPath = path.join(process.cwd(), '.env')
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf-8')
+        const dbConnMatch = envContent.match(/^DB_CONNECTION=(.*)$/m)
+        const dbConn = dbConnMatch?.[1]?.trim().toLowerCase()
+        if (dbConn === 'pgsql' || dbConn === 'postgres' || dbConn === 'postgresql') {
+          iniLines.push('extension=pdo_pgsql')
+          iniLines.push('extension=pgsql')
+        }
+        else if (dbConn === 'mysql' || dbConn === 'mariadb') {
+          iniLines.push('extension=pdo_mysql')
+          iniLines.push('extension=mysqli')
+        }
+        else if (dbConn === 'sqlite') {
+          iniLines.push('extension=pdo_sqlite')
+          iniLines.push('extension=sqlite3')
+        }
+      }
+    }
+    catch {}
+
+    fs.writeFileSync(phpIniPath, iniLines.join('\n'))
+  }
+  catch {}
 
   // Create shims in installPath/bin and sbin so php is available on PATH
   try {

@@ -133,19 +133,15 @@ export async function startService(serviceName: string): Promise<boolean> {
       return false
     }
 
-    // For PHP service, ensure database extensions are available
+    // For PHP service, ensure database extensions are available (non-blocking)
     if (service.definition?.name === 'php') {
       const extensionsResult = await ensurePHPDatabaseExtensions(service)
-      if (!extensionsResult) {
-        console.warn(`⚠️  Some PHP database extensions may not be available.`)
-        // Don't fail here as basic PHP functionality may still work
+      if (!extensionsResult && config.verbose) {
+        console.warn(`⚠️  Some PHP database extensions may not be available; not attempting PECL. Proceeding.`)
       }
     }
 
-    // For PostgreSQL service, check if PHP needs PostgreSQL extensions
-    if (service.definition?.name === 'postgres') {
-      await checkAndInstallPHPPostgreSQLExtensions()
-    }
+    // For PostgreSQL service, do not attempt to install PHP extensions via PECL
 
     // Auto-initialize databases first
     const autoInitResult = await autoInitializeDatabase(service)
@@ -779,7 +775,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     return true
   }
 
-  console.warn(`📦 Installing ${definition.displayName} package...`)
+  if (config.verbose) console.warn(`📦 Installing ${definition.displayName} package...`)
 
   try {
     // Import install function to install service package with dependencies
@@ -790,7 +786,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     const installPath = `${process.env.HOME}/.local`
     await install([definition.packageDomain], installPath)
 
-    console.log(`✅ ${definition.displayName} package installed successfully`)
+    if (config.verbose) console.log(`✅ ${definition.displayName} package installed successfully`)
 
     // Verify installation worked by checking in the Launchpad environment
     const binaryPath = findBinaryInEnvironment(definition.executable, installPath)
@@ -819,7 +815,8 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
   const { spawn } = await import('node:child_process')
 
   try {
-    console.warn(`🔧 Checking PHP database extensions...`)
+    // Quietly check PHP modules; do not try to install via PECL
+    if (config.verbose) console.warn(`🔧 Checking PHP database extensions...`)
 
     // Check what extensions are currently loaded
     const phpProcess = spawn('php', ['-m'], { stdio: ['pipe', 'pipe', 'pipe'] })
@@ -851,47 +848,14 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
     const missingExtensions = requiredExtensions.filter(ext => !loadedExtensions.includes(ext))
 
     if (missingExtensions.length === 0) {
-      console.log(`✅ All required PHP database extensions are available`)
+      if (config.verbose) console.log(`✅ All required PHP database extensions are available`)
       return true
     }
 
-    console.warn(`⚠️  Missing PHP extensions: ${missingExtensions.join(', ')}`)
-
-    // Check if PostgreSQL extensions are missing specifically
-    const missingPgsqlExtensions = missingExtensions.filter(ext => ext.includes('pgsql'))
-    if (missingPgsqlExtensions.length > 0) {
-      console.warn(`⚠️  PostgreSQL extensions (${missingPgsqlExtensions.join(', ')}) are core PHP extensions`)
-      console.warn(`💡 These extensions require PHP to be compiled with PostgreSQL support`)
-      console.warn(`🔧 Setting up SQLite as the database for seamless development...`)
-
-      // Automatically configure the project for SQLite
-      const sqliteSetup = await setupSQLiteForProject()
-      if (sqliteSetup) {
-        console.log(`✅ Project configured to use SQLite database`)
-        console.warn(`💡 You can now run: php artisan migrate:fresh --seed`)
-        return true
-      }
-      else {
-        await suggestSQLiteAlternative()
-      }
-    }
-
-    // Try to install other non-core extensions via PECL if any
-    const nonCoreExtensions = missingExtensions.filter(ext => !['pdo_pgsql', 'pgsql', 'pdo_mysql', 'mysqli'].includes(ext))
-    if (nonCoreExtensions.length > 0) {
-      const installResult = await installMissingExtensionsViaPECL(service, nonCoreExtensions)
-      if (installResult) {
-        console.log(`✅ Successfully installed additional PHP extensions via PECL`)
-      }
-    }
-
-    // Try to enable missing extensions via php.ini configuration anyway
-    const configResult = await createPHPConfigWithExtensions(service, missingExtensions)
-    if (configResult) {
-      console.log(`📝 Created PHP configuration with database extensions`)
-    }
-
-    return configResult
+    if (config.verbose) console.warn(`⚠️  Missing PHP extensions: ${missingExtensions.join(', ')}`)
+    if (config.verbose) console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
+    // Do not attempt PECL here. Let binary-downloader pick the right PHP and shims load the project php.ini
+    return false
   }
   catch (error) {
     console.error(`❌ Failed to check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
@@ -902,108 +866,12 @@ async function ensurePHPDatabaseExtensions(service: ServiceInstance): Promise<bo
 /**
  * Install missing PHP extensions via PECL
  */
-async function installMissingExtensionsViaPECL(service: ServiceInstance, missingExtensions: string[]): Promise<boolean> {
+async function installMissingExtensionsViaPECL(_service: ServiceInstance, _missingExtensions: string[]): Promise<boolean> {
   try {
-    const { spawn } = await import('node:child_process')
-    const { definition } = service
-
-    if (!definition) {
-      throw new Error(`Service ${service.name} has no definition`)
-    }
-
-    // Check if this service has PECL extension configuration
-    if (!definition.extensions?.pecl) {
-      return false
-    }
-
-    console.warn(`🔧 Attempting to install PHP extensions via PECL...`)
-
-    // Filter to only install extensions that are defined in our configuration
-    const installableExtensions = missingExtensions.filter(ext =>
-      definition.extensions?.pecl?.required?.includes(ext)
-      || definition.extensions?.pecl?.optional?.includes(ext),
-    )
-
-    if (installableExtensions.length === 0) {
-      console.warn(`⚠️  No installable extensions found in PECL configuration`)
-      return false
-    }
-
-    // Ensure build dependencies are installed first
-    for (const extension of installableExtensions) {
-      const buildDeps = definition.extensions?.pecl?.buildDependencies?.[extension] || []
-      if (buildDeps.length > 0) {
-        console.warn(`📦 Installing build dependencies for ${extension}: ${buildDeps.join(', ')}`)
-
-        try {
-          const { install } = await import('../install')
-          await install(buildDeps, `${process.env.HOME}/.local`)
-        }
-        catch (depError) {
-          console.warn(`⚠️  Could not install build dependencies for ${extension}: ${depError instanceof Error ? depError.message : String(depError)}`)
-        }
-      }
-    }
-
-    // Install extensions one by one
-    let successCount = 0
-    for (const extension of installableExtensions) {
-      console.warn(`🔧 Installing ${extension} via PECL...`)
-
-      await new Promise<boolean>((resolve) => {
-        const peclProcess = spawn('pecl', ['install', extension], {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          env: {
-            ...process.env,
-            // Ensure PECL can find PostgreSQL libraries
-            PKG_CONFIG_PATH: `${process.env.HOME}/.local/postgresql.org/lib/pkgconfig:${process.env.PKG_CONFIG_PATH || ''}`,
-            LD_LIBRARY_PATH: `${process.env.HOME}/.local/postgresql.org/lib:${process.env.LD_LIBRARY_PATH || ''}`,
-            DYLD_LIBRARY_PATH: `${process.env.HOME}/.local/postgresql.org/lib:${process.env.DYLD_LIBRARY_PATH || ''}`,
-          },
-        })
-
-        let _output = ''
-        let errorOutput = ''
-
-        peclProcess.stdout.on('data', (data) => {
-          _output += data.toString()
-        })
-
-        peclProcess.stderr.on('data', (data) => {
-          errorOutput += data.toString()
-        })
-
-        peclProcess.on('close', (code) => {
-          if (code === 0) {
-            console.log(`✅ Successfully installed ${extension}`)
-            successCount++
-            resolve(true)
-          }
-          else {
-            console.warn(`❌ Failed to install ${extension}: ${errorOutput}`)
-            resolve(false)
-          }
-        })
-
-        // Auto-answer any prompts (like "press [Enter] to continue")
-        peclProcess.stdin.write('\n')
-        peclProcess.stdin.end()
-      })
-    }
-
-    if (successCount > 0) {
-      console.log(`✅ Installed ${successCount}/${installableExtensions.length} PHP extensions`)
-
-      // Update PHP configuration to load the new extensions
-      await updatePHPConfigWithInstalledExtensions(service, installableExtensions.slice(0, successCount))
-
-      return successCount === installableExtensions.length
-    }
-
+    // Hard-disable PECL install path; always return false
     return false
   }
   catch (error) {
-    console.error(`❌ Failed to install PHP extensions via PECL: ${error instanceof Error ? error.message : String(error)}`)
     return false
   }
 }
@@ -1285,27 +1153,19 @@ async function checkAndInstallPHPPostgreSQLExtensions(): Promise<void> {
     const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
     const missingPgsqlExtensions = ['pdo_pgsql', 'pgsql'].filter(ext => !loadedExtensions.includes(ext))
 
+    // We ship PHP binaries with the correct extensions via the precompiled downloader.
+    // Do not attempt PECL installs here; just warn if user-provided PHP lacks extensions.
     if (missingPgsqlExtensions.length > 0) {
-      console.warn(`🔧 PostgreSQL is starting - checking if PHP needs PostgreSQL extensions...`)
-      console.warn(`⚠️  PHP is missing PostgreSQL extensions: ${missingPgsqlExtensions.join(', ')}`)
-      console.warn(`🔧 Attempting to install PHP PostgreSQL extensions via PECL...`)
-
-      // Get PHP service definition to install extensions
-      const phpService = await getOrCreateServiceInstance('php')
-      if (phpService.definition?.extensions?.pecl) {
-        const installResult = await installMissingExtensionsViaPECL(phpService, missingPgsqlExtensions)
-        if (installResult) {
-          console.log(`✅ Successfully installed PHP PostgreSQL extensions`)
-          console.log(`💡 You can now use PostgreSQL with PHP in your Laravel projects`)
-        }
-        else {
-          console.warn(`⚠️  Could not install PHP PostgreSQL extensions automatically`)
-          console.warn(`💡 Consider using SQLite as an alternative: DB_CONNECTION=sqlite`)
-        }
+      if (config.verbose) {
+        console.warn(`⚠️  PHP appears to be missing PostgreSQL extensions: ${missingPgsqlExtensions.join(', ')}`)
+        console.warn(`💡 Launchpad's precompiled PHP includes these extensions. If you installed PHP externally,`
+          + ` consider switching to Launchpad-managed PHP or use SQLite (DB_CONNECTION=sqlite).`)
       }
+      // Continue without blocking; extensions are best-effort
     }
     else {
-      console.log(`✅ PHP already has PostgreSQL extensions installed`)
+      if (config.verbose)
+        console.log(`✅ PHP already has PostgreSQL extensions installed`)
     }
   }
   catch (error) {
@@ -1325,7 +1185,8 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
   // PostgreSQL auto-initialization
   if (definition.name === 'postgres' || definition.name === 'postgresql') {
-    const dataDir = service.dataDir || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'postgres-data')
+    // Use the definition's dataDirectory for consistency with runtime
+    const dataDir = service.dataDir || definition.dataDirectory || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'services', 'postgres', 'data')
     const pgVersionFile = path.join(dataDir, 'PG_VERSION')
 
     // Check if already initialized

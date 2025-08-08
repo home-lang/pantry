@@ -32,7 +32,7 @@ export async function createProjectDatabase(dbName: string, options: DatabaseOpt
   // Auto-detect database type based on available services or options
   const dbType = options.type || await detectPreferredDatabaseType()
 
-  console.warn(`🗄️ Creating ${dbType.toUpperCase()} database: ${sanitizedName}`)
+  console.warn(`🗄️  Creating ${dbType.toUpperCase()} database: ${sanitizedName}`)
 
   switch (dbType) {
     case 'postgres':

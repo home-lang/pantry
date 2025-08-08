@@ -51,7 +51,7 @@ export const defaultConfig: LaunchpadConfig = {
   installMethod: 'curl',
   installPath: getDefaultInstallPath(),
   postSetup: {
-    enabled: process.env.LAUNCHPAD_POST_SETUP_ENABLED === 'true',
+    enabled: process.env.LAUNCHPAD_POST_SETUP_ENABLED !== 'false',
     commands: [],
   },
   services: {

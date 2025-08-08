@@ -90,11 +90,6 @@ export interface LaunchpadConfig {
       laravel?: {
         enabled?: boolean
         autoDetect?: boolean
-        /** Deprecated: use top-level postSetup */
-        postSetup?: {
-          enabled?: boolean
-          commands?: PostSetupCommand[]
-        }
       }
       stacks?: {
         enabled?: boolean

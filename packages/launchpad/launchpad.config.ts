@@ -68,47 +68,6 @@ export const defaultConfig: LaunchpadConfig = {
       enabled: true,
       version: '8.4.11',
     },
-    frameworks: {
-      laravel: {
-        postSetup: {
-          enabled: true,
-          commands: [
-            {
-              name: 'migrate',
-              command: 'php artisan migrate',
-              description: 'Run database migrations',
-              runInBackground: false,
-              required: false,
-            },
-            {
-              name: 'seed',
-              command: 'php artisan db:seed',
-              description: 'Seed the database with sample data',
-              runInBackground: false,
-              required: false,
-            },
-            {
-              name: 'storage-link',
-              command: 'php artisan storage:link',
-              description: 'Create symbolic link for storage',
-              runInBackground: false,
-              required: false,
-            },
-            {
-              name: 'optimize',
-              command: 'php artisan optimize',
-              description: 'Optimize Laravel for production',
-              runInBackground: false,
-              required: false,
-            },
-          ],
-        },
-      },
-      stacks: {
-        enabled: true,
-        autoDetect: true,
-      },
-    },
   },
 }
 

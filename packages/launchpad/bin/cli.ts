@@ -904,7 +904,7 @@ cli
   .alias('add')
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
-  .option('--global-deps', 'Install all global dependencies found across the machine')
+  .option('-g, --global-deps', 'Install all global dependencies found across the machine')
   .option('--deps-only', 'Install only the dependencies of packages, not the packages themselves')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')

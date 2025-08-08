@@ -199,14 +199,56 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
     // Ignore errors checking migrations
   }
 
-  // Execute project-level post-setup commands if enabled (skip in shell integration)
+  // Execute project-level post-setup commands if enabled (skip in shell integration fast path)
   const projectPostSetup = config.postSetup
   if (projectPostSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
+    // Ensure php.ini exists before running any PHP commands
+    await ensureProjectPhpIni(dir, path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', generateProjectHash(dir)))
     const postSetupResults = await executepostSetup(dir, projectPostSetup.commands || [])
     suggestions.push(...postSetupResults)
   }
 
   return { isLaravel: true, suggestions }
+}
+async function ensureProjectPhpIni(projectDir: string, envDir: string): Promise<void> {
+  try {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const iniPath = path.join(envDir, 'php.ini')
+    if (!fs.existsSync(iniPath)) {
+      const envPath = path.join(projectDir, '.env')
+      let dbConn = ''
+      try {
+        if (fs.existsSync(envPath)) {
+          const envContent = fs.readFileSync(envPath, 'utf8')
+          const match = envContent.match(/^DB_CONNECTION=(.*)$/m)
+          dbConn = match?.[1]?.trim().toLowerCase() || ''
+        }
+      }
+      catch {}
+      const lines: string[] = [
+        '; Launchpad php.ini (auto-generated at activation time)',
+        'memory_limit = 512M',
+        'max_execution_time = 300',
+        'upload_max_filesize = 64M',
+        'post_max_size = 64M',
+        'display_errors = On',
+        'error_reporting = E_ALL',
+        '',
+      ]
+      if (dbConn === 'pgsql' || dbConn === 'postgres' || dbConn === 'postgresql') {
+        lines.push('extension=pdo_pgsql', 'extension=pgsql')
+      }
+      else if (dbConn === 'mysql' || dbConn === 'mariadb') {
+        lines.push('extension=pdo_mysql', 'extension=mysqli')
+      }
+      else if (dbConn === 'sqlite') {
+        lines.push('extension=pdo_sqlite', 'extension=sqlite3')
+      }
+      fs.writeFileSync(iniPath, lines.join('\n'))
+    }
+  }
+  catch {}
 }
 
 /**
@@ -231,18 +273,32 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
       }
       catch {}
 
+      // Build PATH that includes project env first, then global env, then original PATH
+      const projectHash = generateProjectHash(projectDir)
+      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
+      const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+      const envBinPath = path.join(envDir, 'bin')
+      const envSbinPath = path.join(envDir, 'sbin')
+      const globalBinPath = path.join(globalEnvDir, 'bin')
+      const globalSbinPath = path.join(globalEnvDir, 'sbin')
+      const composedPath = [envBinPath, envSbinPath, globalBinPath, globalSbinPath, process.env.PATH || '']
+        .filter(Boolean)
+        .join(':')
+
+      const execEnv = { ...process.env, PATH: composedPath }
+
       if (command.runInBackground) {
-        // Fire-and-forget; still surface errors if they occur
         execSync(command.command, {
           cwd: projectDir,
+          env: execEnv,
           stdio: inShell ? (['ignore', 2, 2] as any) : 'inherit',
         })
         results.push(`🚀 Running in background: ${command.description}`)
       }
       else {
-        // Run synchronously and stream output to user's shell
         execSync(command.command, {
           cwd: projectDir,
+          env: execEnv,
           stdio: inShell ? (['ignore', 2, 2] as any) : 'inherit',
         })
         results.push(`✅ ${command.description}`)
@@ -509,7 +565,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           sniffResult = { pkgs: [], env: {} }
         }
 
-        // Ensure Laravel post-setup runs at least once per project (fast path)
+        // Ensure project php.ini and Laravel post-setup run at least once per project (fast path)
+        await ensureProjectPhpIni(projectDir, envDir)
         await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
 
         outputShellCode(
@@ -706,7 +763,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
         }
 
-        // Ensure Laravel post-setup runs at least once per project (install path)
+        // Ensure project php.ini and Laravel post-setup run at least once per project (install path)
+        await ensureProjectPhpIni(projectDir, envDir)
         await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
 
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
@@ -722,7 +780,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Auto-start services for any project that has services configuration
     await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
 
-    // Ensure Laravel post-setup runs (regular path)
+    // Ensure php.ini and Laravel post-setup runs (regular path)
+    await ensureProjectPhpIni(projectDir, envDir)
     await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
 
     // Check for Laravel project and provide helpful suggestions

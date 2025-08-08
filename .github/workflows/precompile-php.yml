@@ -573,7 +573,11 @@ jobs:
             if [[ "$POSTGRESQL_AVAILABLE" == "true" ]]; then
               echo "PostgreSQL found and working"
             else
-              echo "PostgreSQL not found or not working, will disable PostgreSQL support"
+              if [[ "${{ matrix.config }}" == "laravel-postgres" ]]; then
+                echo "❌ PostgreSQL not available; cannot build laravel-postgres binary on this runner"
+                exit 1
+              fi
+              echo "PostgreSQL not found or not working, will disable PostgreSQL support for non-postgres configs"
               # Remove PostgreSQL extensions from CONFIGURE_EXTENSIONS
               export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
               echo "Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
@@ -682,6 +686,8 @@ jobs:
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CC="$CC" CXX="$CXX" ./configure \
               --prefix="$INSTALL_PREFIX" \
+              --with-config-file-path="$INSTALL_PREFIX/lib" \
+              --with-config-file-scan-dir="$INSTALL_PREFIX/lib/conf.d" \
               --disable-debug \
               --enable-shared \
               --with-pic \
@@ -691,6 +697,8 @@ jobs:
           else
             ./configure \
               --prefix="$INSTALL_PREFIX" \
+              --with-config-file-path="$INSTALL_PREFIX/lib" \
+              --with-config-file-scan-dir="$INSTALL_PREFIX/lib/conf.d" \
               --disable-debug \
               --enable-shared \
               --with-pic \
@@ -885,6 +893,51 @@ jobs:
           INSTALL_PREFIX="${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}"
           "$INSTALL_PREFIX/bin/php" --version
           "$INSTALL_PREFIX/bin/php" -m # Show loaded modules
+
+          # Generate a default php.ini to ensure DB extensions are enabled by default
+          echo "Generating default php.ini for configuration: ${{ matrix.config }}"
+          EXT_DIR=$("$INSTALL_PREFIX/bin/php-config" --extension-dir 2>/dev/null || echo "")
+          PHP_INI_DIR="$INSTALL_PREFIX/lib"
+          mkdir -p "$PHP_INI_DIR"
+          PHP_INI="$PHP_INI_DIR/php.ini"
+          {
+            echo "; Launchpad php.ini (auto-generated in CI)"
+            echo "memory_limit = 512M"
+            echo "max_execution_time = 300"
+            echo "upload_max_filesize = 64M"
+            echo "post_max_size = 64M"
+            echo "display_errors = On"
+            echo "error_reporting = E_ALL"
+            if [ -n "$EXT_DIR" ]; then
+              echo "extension_dir = \"$EXT_DIR\""
+            fi
+            case "${{ matrix.config }}" in
+              "laravel-postgres")
+                echo "extension=pdo_pgsql"
+                echo "extension=pgsql"
+                ;;
+              "laravel-mysql")
+                echo "extension=pdo_mysql"
+                echo "extension=mysqli"
+                ;;
+              "laravel-sqlite")
+                echo "extension=pdo_sqlite"
+                echo "extension=sqlite3"
+                ;;
+              "enterprise"|"full-stack")
+                echo "extension=pdo_pgsql"
+                echo "extension=pgsql"
+                echo "extension=pdo_mysql"
+                echo "extension=mysqli"
+                echo "extension=pdo_sqlite"
+                echo "extension=sqlite3"
+                ;;
+              *)
+                :
+                ;;
+            esac
+          } > "$PHP_INI"
+          echo "Created $PHP_INI"
 
       - name: Create binary package
         run: |

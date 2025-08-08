@@ -295,6 +295,12 @@ fi
 `
         }
 
+        // Prefer project-level php.ini for php.net
+        if (domain === 'php.net') {
+          const projectPhpIni = path.join(installPath, 'php.ini')
+          shimContent += `# Prefer project-level php.ini when present\nif [ -f "${projectPhpIni.replace(/"/g, '\\"')}" ]; then\n  export PHPRC="${projectPhpIni.replace(/"/g, '\\"')}"\nfi\n\n`
+        }
+
         // Set up include paths for compilation
         if (includePaths.length > 0) {
           const includePathString = includePaths.join(' ')
