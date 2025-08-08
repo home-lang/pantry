@@ -68,7 +68,7 @@ export const defaultConfig: LaunchpadConfig = {
       laravel: {
         enabled: process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false',
         autoDetect: process.env.LAUNCHPAD_LARAVEL_AUTO_DETECT !== 'false',
-        postSetupCommands: {
+        postSetup: {
           enabled: process.env.LAUNCHPAD_LARAVEL_POST_SETUP !== 'false',
           commands: [
             {

@@ -70,7 +70,7 @@ export const defaultConfig: LaunchpadConfig = {
     },
     frameworks: {
       laravel: {
-        postSetupCommands: {
+        postSetup: {
           enabled: true,
           commands: [
             {

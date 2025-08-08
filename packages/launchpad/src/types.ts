@@ -83,7 +83,7 @@ export interface LaunchpadConfig {
       laravel?: {
         enabled?: boolean
         autoDetect?: boolean
-        postSetupCommands?: {
+        postSetup?: {
           enabled?: boolean
           commands?: PostSetupCommand[]
         }
