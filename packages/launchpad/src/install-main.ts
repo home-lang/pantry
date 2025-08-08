@@ -156,9 +156,6 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     if (config.verbose) {
       console.log(`✅ Successfully installed ${allInstalledFiles.length} files`)
     }
-    else {
-      logUniqueMessage(`✅ Successfully set up environment with ${allInstalledFiles.length} files`)
-    }
   }
   else if (!suppressSummary) {
     if (config.verbose) {
