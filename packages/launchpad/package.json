@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/launchpad",
   "type": "module",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

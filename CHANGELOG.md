@@ -1,4 +1,20 @@
 
+## binaries-79...main
+
+[compare changes](https://github.com/stacksjs/launchpad/compare/binaries-79...main)
+
+### 🏡 Chore
+
+- Wip ([ee52259](https://github.com/stacksjs/launchpad/commit/ee52259))
+- Wip ([1782c6d](https://github.com/stacksjs/launchpad/commit/1782c6d))
+- Wip ([a9c719a](https://github.com/stacksjs/launchpad/commit/a9c719a))
+- Wip ([5d744b5](https://github.com/stacksjs/launchpad/commit/5d744b5))
+- Wip ([c8866f2](https://github.com/stacksjs/launchpad/commit/c8866f2))
+
+### ❤️ Contributors
+
+- Chris ([@chrisbbreuer](https://github.com/chrisbbreuer))
+
 ## v0.5.1...main
 
 [compare changes](https://github.com/stacksjs/launchpad/compare/v0.5.1...main)
