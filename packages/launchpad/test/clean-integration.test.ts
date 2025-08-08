@@ -6,6 +6,7 @@ import path from 'node:path'
 describe('Clean Command Integration Test', () => {
   let tempDir: string
   let cliPath: string
+  let originalHome: string | undefined
 
   beforeEach(() => {
     // Create temporary directory for test
@@ -18,6 +19,10 @@ describe('Clean Command Integration Test', () => {
     if (!fs.existsSync(cliPath)) {
       throw new Error(`CLI not found at ${cliPath}`)
     }
+
+    // Sandbox HOME so cleanup only touches test directories
+    originalHome = process.env.HOME
+    process.env.HOME = tempDir
   })
 
   // Helper to ensure proper PATH for tests
@@ -25,6 +30,7 @@ describe('Clean Command Integration Test', () => {
     return {
       ...process.env,
       ...extraEnv,
+      HOME: tempDir,
       PATH: process.env.PATH?.includes('/usr/local/bin')
         ? process.env.PATH
         : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
@@ -35,6 +41,14 @@ describe('Clean Command Integration Test', () => {
     // Clean up temporary directory
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true })
+    }
+
+    // Restore HOME
+    if (originalHome !== undefined) {
+      process.env.HOME = originalHome
+    }
+    else {
+      delete process.env.HOME
     }
   })
 
