@@ -159,14 +159,18 @@ __launchpad_update_path() {
 __launchpad_update_library_paths_fast() {
     local env_dir="$1"
 
+    # Prevent zsh nomatch warnings inside this function (restores on return)
+    if [[ -n "$ZSH_VERSION" ]]; then
+        setopt localoptions nonomatch
+    fi
+
     if [[ ! -d "$env_dir" ]]; then
+        # nothing to do
         return 0
     fi
 
     # Build library paths from direct lib directories only (fast path)
     local lib_paths=""
-
-    # Add direct lib directories only
     for lib_dir in "$env_dir/lib" "$env_dir/lib64"; do
         if [[ -d "$lib_dir" ]]; then
             if [[ -z "$lib_paths" ]]; then
@@ -176,52 +180,6 @@ __launchpad_update_library_paths_fast() {
             fi
         fi
     done
-
-    # Add package-specific library directories with validation
-    # Only include packages with actual working libraries
-    # Prioritize source-built packages over pre-built binaries
-    if [[ -d "$env_dir" ]]; then
-        # First pass: Add source-built packages (like our PHP) with priority
-        for domain_dir in "$env_dir"/*.org "$env_dir"/*.net "$env_dir"/*.com "$env_dir"/*.sh "$env_dir"/*.io; do
-            if [[ -d "$domain_dir" ]]; then
-                local domain_name=$(basename "$domain_dir")
-
-                # Find version directories and validate they have proper libraries
-                for version_dir in "$domain_dir"/v*; do
-                    if [[ -d "$version_dir" ]]; then
-                        for lib_subdir in "$version_dir/lib" "$version_dir/lib64"; do
-                            if [[ -d "$lib_subdir" ]]; then
-                                # Validate that this lib directory has actual library files
-                                # Skip if it only contains broken/placeholder files
-                                local has_valid_libs=false
-
-                                # Check for common library patterns that indicate a working installation
-                                if [[ -n "$(find "$lib_subdir" -name "*.dylib" -size +100c 2>/dev/null | head -1)" ]] || \
-                                   [[ -n "$(find "$lib_subdir" -name "*.so*" -size +100c 2>/dev/null | head -1)" ]] || \
-                                   [[ -n "$(find "$lib_subdir" -name "*.a" -size +100c 2>/dev/null | head -1)" ]]; then
-                                    has_valid_libs=true
-                                fi
-
-                                # Special case: If this is a source-built package (like our PHP), always include it
-                                if [[ "$domain_name" == "php.net" ]] && [[ -f "$version_dir/bin/php" ]]; then
-                                    has_valid_libs=true
-                                fi
-
-                                # Add to library paths if it has valid libraries
-                                if [[ "$has_valid_libs" == "true" ]]; then
-                                    if [[ -z "$lib_paths" ]]; then
-                                        lib_paths="$lib_subdir"
-                                    else
-                                        lib_paths="$lib_paths:$lib_subdir"
-                                    fi
-                                fi
-                            fi
-                        done
-                    fi
-                done
-            fi
-        done
-    fi
 
     # Set up library path environment variables if we have paths
     if [[ -n "$lib_paths" ]]; then
@@ -641,53 +599,110 @@ __launchpad_chpwd() {
                 return 0
             fi
 
+            # Avoid zsh glob nomatch errors inside this handler
+            if [[ -n "$ZSH_VERSION" ]]; then
+                setopt localoptions nonomatch
+            fi
+
             # Ultra-fast activation: compute environment path and check if ready
-            local project_hash
-            project_hash=$(echo -n "$project_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-8) || project_hash="default"
+            # Resolve to physical path and compute MD5 (matches generateProjectHash in dump.ts)
+            local real_project_dir
+            real_project_dir=$(cd "$project_dir" 2>/dev/null && pwd -P || echo "$project_dir")
+            local project_basename
+            project_basename=$(basename "$real_project_dir")
+            local md5hash
+            if command -v md5 >/dev/null 2>&1; then
+                md5hash=$(md5 -q -s "$real_project_dir" 2>/dev/null || md5 -q "$real_project_dir" 2>/dev/null)
+            fi
+            if [[ -z "$md5hash" ]] && command -v md5sum >/dev/null 2>&1; then
+                md5hash=$(printf "%s" "$real_project_dir" | md5sum 2>/dev/null | awk '{print $1}')
+            fi
+            if [[ -z "$md5hash" ]] && command -v openssl >/dev/null 2>&1; then
+                md5hash=$(printf "%s" "$real_project_dir" | openssl md5 2>/dev/null | awk '{print $2}')
+            fi
+            if [[ -z "$md5hash" ]]; then
+                md5hash="00000000"
+            fi
+            local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
             local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
 
-            # Check persistent cache first (instant activation)
-            local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(echo -n "$env_dir" | sha256sum 2>/dev/null | cut -d' ' -f1 | cut -c1-16)"
+            # Fallback: if md5-based env dir doesn't exist, try to locate legacy env by basename prefix
+            if [[ ! -d "$env_dir/bin" ]]; then
+                local envs_root="$HOME/.local/share/launchpad/envs"
+                if [[ -d "$envs_root" ]]; then
+                    local found_env=""
+                    # Iterate safely (no globs) and match prefix
+                    for candidate in "$envs_root"/*; do
+                        if [[ -d "$candidate" ]]; then
+                            local base=$(basename "$candidate")
+                            case "$base" in
+                                "\${project_basename}_"*)
+                                    if [[ -d "$candidate/bin" ]]; then
+                                        found_env="$candidate"
+                                        # Prefer one that has .launchpad_ready
+                                        if [[ -f "$candidate/.launchpad_ready" ]]; then
+                                            env_dir="$candidate"
+                                            break
+                                        fi
+                                    fi
+                                    ;;
+                            esac
+                        fi
+                    done
+                    if [[ -z "$env_dir" || ! -d "$env_dir/bin" ]]; then
+                        if [[ -n "$found_env" ]]; then
+                            env_dir="$found_env"
+                        fi
+                    fi
+                fi
+            fi
+
+            # Persistent cache: check before slow operations
+            local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(printf "%s" "$env_dir" | md5sum 2>/dev/null | awk '{print $1}' | cut -c1-16)"
             local current_time=$(date +%s)
             local cache_duration=1800  # 30 minutes for shell integration
-
-            # Use longer cache durations for test environments
+            # Use longer cache durations for test/development environments
             if [[ "$project_dir" == *"test"* || "$project_dir" == *"launchpad"* || "$NODE_ENV" == "test" ]]; then
                 cache_duration=3600  # 1 hour for test and development environments
             fi
-
             if [[ -f "$cache_file" ]]; then
                 local cache_file_time=$(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null || echo 0)
                 if [[ $((current_time - cache_file_time)) -lt $cache_duration && -d "$env_dir/bin" ]]; then
-                    # Instant activation from persistent cache
+                    # Instant activation from persistent cache (no filesystem scans)
                     export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
                     __launchpad_update_library_paths_fast "$env_dir"
                     __launchpad_ensure_global_path_fast
                     __launchpad_ensure_system_path
                     hash -r 2>/dev/null || true
-
-                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
-                        printf "${activationMessage}\\n" >&2
+                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
+                        printf "${activationMessage}\n" >&2
                     fi
                     return 0
                 fi
             fi
 
+            # Check readiness markers explicitly (used by tests and fast path)
+            if [[ -d "$env_dir/pkgs" || -f "$env_dir/.launchpad_ready" ]]; then
+                __lp_markers_ready=1
+            else
+                __lp_markers_ready=0
+            fi
+
             # If environment exists and has binaries, activate quickly
             # use glob expansion which is faster than ls
-            if [[ -d "$env_dir/bin" ]] && [[ -n $(echo "$env_dir/bin"/*) && $(echo "$env_dir/bin"/*) != "$env_dir/bin/*" ]] && [[ -d "$env_dir/pkgs" || -f "$env_dir/.launchpad_ready" ]]; then
+            if [[ -d "$env_dir/bin" ]] && [[ $__lp_markers_ready -eq 1 || $(echo "$env_dir/bin"/*) != "$env_dir/bin/*" ]]; then
                 export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
                 __launchpad_update_library_paths_fast "$env_dir"
                 __launchpad_ensure_global_path_fast
                 __launchpad_ensure_system_path
                 hash -r 2>/dev/null || true
 
-                # Update persistent cache
-                mkdir -p "$(dirname "$cache_file")" 2>/dev/null
-                touch "$cache_file" 2>/dev/null
+                # Update persistent cache for instant future activation
+                mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
+                touch "$cache_file" 2>/dev/null || true
 
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
-                    printf "${activationMessage}\\n" >&2
+                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
+                    printf "${activationMessage}\n" >&2
                 fi
                 return 0
             fi
@@ -696,11 +711,7 @@ __launchpad_chpwd() {
 
             # Mark setup as in progress
             __launchpad_setup_in_progress="$project_dir"
-
-                        # Show immediate feedback
-            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
-                printf "🔧 Setting up environment for \\033[3m$(basename "$project_dir")\\033[0m...\\r" >&2
-            fi
+            # Suppress transient progress to keep prompt responsive; only final activation prints
 
             # Optimize environment setup with shorter timeout and shell-only mode
             local env_output
@@ -709,17 +720,11 @@ __launchpad_chpwd() {
             # Ensure global dependencies are available first
             __launchpad_setup_global_deps
 
-                                    # Run environment setup without timeout - let it take as long as needed
+            # Run environment setup without timeout - let it take as long as needed
             local temp_file=$(mktemp)
 
-            # Run with real-time progress display - show progress on stderr, capture shell code on stdout
-            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
-                # Show progress in real-time while capturing output
-                ${launchpadBinary} dev "$project_dir" --shell > "$temp_file"
-            else
-                # Quiet mode - suppress all output
-                ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>/dev/null
-            fi
+            # Always run shell-mode setup quietly for speed; capture only the shell code
+            ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>/dev/null
             setup_exit_code=$?
 
             # Extract shell code from output
@@ -731,7 +736,7 @@ __launchpad_chpwd() {
 
             if [[ $setup_exit_code -eq 130 ]]; then
                 # User interrupted with Ctrl+C
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                     printf "\\r\\033[K⚠️  Environment setup cancelled\\n" >&2
                 fi
                 return 130
@@ -753,11 +758,14 @@ __launchpad_chpwd() {
                 # Clear command hash table to ensure commands are found in new PATH
                 hash -r 2>/dev/null || true
 
-                # Create persistent cache file for instant future activation
-                touch "$cache_file" 2>/dev/null
+                # Mark environment ready for instant future activation (both cache and marker)
+                mkdir -p "$env_dir" 2>/dev/null || true
+                touch "$env_dir/.launchpad_ready" 2>/dev/null || true
+                mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
+                touch "$cache_file" 2>/dev/null || true
 
                 # Show clean activation message
-                if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                     printf "\\r\\033[K${activationMessage}\\n" >&2
                 fi
             else
@@ -769,12 +777,12 @@ __launchpad_chpwd() {
                     __launchpad_ensure_system_path
                     hash -r 2>/dev/null || true
 
-                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                         printf "\\r\\033[K${activationMessage}\\n" >&2
                     fi
                 else
                     # Clear any progress message on failure
-                    if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                         printf "\\r\\033[K" >&2
                     fi
                 fi
@@ -817,7 +825,7 @@ __launchpad_chpwd() {
             unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH
 
             # Show deactivation message
-            if [[ "\$\{LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}\}" != "false" ]]; then
+            if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                 printf "${deactivationMessage}\\n" >&2
             fi
 
@@ -916,9 +924,7 @@ __launchpad_source_hooks_dir() {
     fi
 }
 
-# One-time setup on shell initialization
-__launchpad_setup_global_deps
-__launchpad_ensure_global_path_fast
+# One-time setup on shell initialization (no global setup)
 __launchpad_source_hooks_dir "$HOME/.config/launchpad/hooks/init.d"
 
 # Clear command hash table on initial load

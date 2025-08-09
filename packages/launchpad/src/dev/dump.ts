@@ -693,9 +693,11 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           sniffResult = { pkgs: [], env: {} }
         }
 
-        // Ensure project php.ini and Laravel post-setup run at least once per project (fast path)
-        await ensureProjectPhpIni(projectDir, envDir)
-        await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+        // In shell integration fast path, skip services and heavy post-setup
+        // Only ensure php.ini exists if already marked ready
+        if (fs.existsSync(path.join(envDir, '.launchpad_ready'))) {
+          await ensureProjectPhpIni(projectDir, envDir)
+        }
 
         outputShellCode(
           dir,
@@ -841,13 +843,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         const globalBinPath = path.join(globalEnvDir, 'bin')
         const globalSbinPath = path.join(globalEnvDir, 'sbin')
 
-        // Auto-start services even when no packages need installation
-        try {
-          await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
-        }
-        catch (error) {
-          console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
-        }
+        // In shell integration, do not start services automatically
 
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
@@ -883,17 +879,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
         await createPhpShimsAfterInstall(envDir)
 
-        // Auto-start services for shell integration too
-        try {
-          await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
-        }
-        catch (error) {
-          console.error(`⚠️  Service auto-start failed: ${error instanceof Error ? error.message : String(error)}`)
-        }
+        // Do not auto-start services during shell integration
 
-        // Ensure project php.ini and Laravel post-setup run at least once per project (install path)
+        // Ensure project php.ini exists only
         await ensureProjectPhpIni(projectDir, envDir)
-        await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
 
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
@@ -910,7 +899,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       catch {}
     }
 
-    // Auto-start services for any project that has services configuration
+    // Auto-start services for any project that has services configuration (non-shell calls only)
     // Pre-activation hook (runs after install/services and before shell activation)
     const preActivation = config.preActivation
     if (dependencyFile) {
@@ -929,17 +918,21 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       }
     }
     // Suppress interstitial processing messages during service startup phase
-    const prevProcessing = process.env.LAUNCHPAD_PROCESSING
-    process.env.LAUNCHPAD_PROCESSING = '0'
-    await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
-    if (prevProcessing === undefined)
-      delete process.env.LAUNCHPAD_PROCESSING
-    else
-      process.env.LAUNCHPAD_PROCESSING = prevProcessing
+    if (!isShellIntegration) {
+      const prevProcessing = process.env.LAUNCHPAD_PROCESSING
+      process.env.LAUNCHPAD_PROCESSING = '0'
+      await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
+      if (prevProcessing === undefined)
+        delete process.env.LAUNCHPAD_PROCESSING
+      else
+        process.env.LAUNCHPAD_PROCESSING = prevProcessing
+    }
 
     // Ensure php.ini and Laravel post-setup runs (regular path)
     await ensureProjectPhpIni(projectDir, envDir)
-    await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+    if (!isShellIntegration) {
+      await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+    }
 
     // Mark environment as ready for fast shell activation on subsequent prompts
     try {
