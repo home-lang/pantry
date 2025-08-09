@@ -176,52 +176,113 @@ export async function startService(serviceName: string): Promise<boolean> {
     // Create/update service files
     await createServiceFiles(service)
 
-    // Start the service using platform-specific method
-    const success = await startServicePlatform(service)
-
-    if (success) {
-      service.status = 'running'
-      service.startedAt = new Date()
-      service.pid = await getServicePid(service)
-
-      logUniqueMessage(`✅ ${service.definition?.displayName || serviceName} started successfully`, true)
-
-      // Execute post-start setup commands
-      await executePostStartCommands(service)
-      // For databases, perform a final readiness handshake to avoid races with immediate consumers
-      if (service.definition?.name === 'postgres' && process.platform === 'darwin') {
-        try {
-          // quick extra wait to ensure socket/listen transition is complete
-          await new Promise(r => setTimeout(r, 300))
-        }
-        catch {}
+    // Provide template variables for postgres commands
+    if (service.definition?.name === 'postgres') {
+      const projectName = detectProjectName()
+      service.config = {
+        ...(service.config || {}),
+        projectDatabase: projectName.replace(/\W/g, '_'),
+        appUser: 'postgres',
+        appPassword: '',
       }
-
-      // Health check after starting
-      setTimeout(() => {
-        void checkServiceHealth(service)
-      }, 2000)
-
-      operation.result = 'success'
     }
-    else {
-      service.status = 'failed'
+
+    // Start the service using platform-specific method
+    let startSuccess = await startServicePlatform(service)
+    if (!startSuccess && service.definition?.name === 'postgres') {
+      // Fallback: start with pg_ctl in the foreground and wait
+      try {
+        const { findBinaryInPath } = await import('../utils')
+        const pgCtl = findBinaryInPath('pg_ctl') || 'pg_ctl'
+        const dataDir = service.dataDir || service.definition.dataDirectory
+        const port = service.definition.port || 5432
+        const extraArgs = `-p ${port} -c listen_addresses=127.0.0.1`
+        console.warn('⚠️  launchd/system start failed; falling back to pg_ctl start')
+        await new Promise<void>((resolve, reject) => {
+          const proc = spawn(pgCtl, ['-D', String(dataDir), '-o', extraArgs, '-w', 'start'], {
+            stdio: config.verbose ? 'inherit' : 'pipe',
+          })
+          proc.on('close', (code) => {
+            if (code === 0)
+              resolve()
+            else reject(new Error(`pg_ctl start failed with exit ${code}`))
+          })
+          proc.on('error', reject)
+        })
+        startSuccess = true
+      }
+      catch (e) {
+        console.error(`❌ Fallback start failed: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
+    if (!startSuccess) {
+      console.error(`❌ Failed to start ${service.definition?.displayName || serviceName}`)
       operation.result = 'failure'
-      operation.error = 'Failed to start service'
+      operation.error = 'Start failed'
+      manager.operations.push(operation)
+      return false
     }
 
-    operation.duration = Date.now() - operation.timestamp.getTime()
-    manager.operations.push(operation)
+    // Post-start health verification; if unhealthy, attempt pg_ctl fallback for postgres
+    if (service.definition?.name === 'postgres') {
+      let healthy = await checkServiceHealth(service)
+      if (!healthy) {
+        await new Promise(r => setTimeout(r, 500))
+        healthy = await checkServiceHealth(service)
+      }
+      if (!healthy) {
+        try {
+          const { findBinaryInPath } = await import('../utils')
+          const pgCtl = findBinaryInPath('pg_ctl') || 'pg_ctl'
+          const dataDir = service.dataDir || service.definition.dataDirectory
+          const port = service.definition.port || 5432
+          const extraArgs = `-p ${port} -c listen_addresses=127.0.0.1`
+          console.warn('⚠️  Service unhealthy after start; attempting pg_ctl restart')
+          const stop = spawn(pgCtl, ['-D', String(dataDir), '-m', 'fast', 'stop'], { stdio: 'ignore' })
+          await new Promise(res => stop.on('close', () => res(null)))
+          await new Promise<void>((resolve, reject) => {
+            const proc = spawn(pgCtl, ['-D', String(dataDir), '-o', extraArgs, '-w', 'start'], { stdio: config.verbose ? 'inherit' : 'pipe' })
+            proc.on('close', code => code === 0 ? resolve() : reject(new Error(`pg_ctl start failed with exit ${code}`)))
+            proc.on('error', reject)
+          })
+        }
+        catch (e) {
+          console.error(`❌ pg_ctl restart failed: ${e instanceof Error ? e.message : String(e)}`)
+        }
+      }
+    }
 
-    return success
+    // Execute post-start commands
+    // Small grace before post-start commands to avoid races
+    await new Promise(r => setTimeout(r, 500))
+    await executePostStartCommands(service)
+
+    // For databases, perform a final readiness handshake to avoid races with immediate consumers
+    if (service.definition?.name === 'postgres' && process.platform === 'darwin') {
+      try {
+        // quick extra wait to ensure socket/listen transition is complete
+        await new Promise(r => setTimeout(r, 300))
+      }
+      catch {}
+    }
+
+    // Health check after starting
+    setTimeout(() => {
+      void checkServiceHealth(service)
+    }, 2000)
+
+    // Mark operation success
+    operation.result = 'success'
+    operation.duration = 0
+    manager.operations.push(operation)
+    return true
   }
   catch (error) {
+    console.error(`❌ Failed to start service ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
     operation.result = 'failure'
     operation.error = error instanceof Error ? error.message : String(error)
-    operation.duration = Date.now() - operation.timestamp.getTime()
+    operation.duration = 0
     manager.operations.push(operation)
-
-    console.error(`❌ Failed to start ${serviceName}: ${operation.error}`)
     return false
   }
 }
@@ -1187,6 +1248,22 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
       logUniqueMessage(`✅ ${definition.displayName} is accepting connections`, true)
     }
 
+    // Additional verification for postgres using psql
+    if (definition.name === 'postgres') {
+      const { findBinaryInPath } = await import('../utils')
+      const psql = findBinaryInPath('psql') || 'psql'
+      for (let i = 0; i < 8; i++) {
+        const ok = await new Promise<boolean>((resolve) => {
+          const proc = spawn(psql, ['-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-tAc', 'SELECT 1'], { stdio: 'ignore' })
+          proc.on('close', code => resolve(code === 0))
+          proc.on('error', () => resolve(false))
+        })
+        if (ok)
+          break
+        await new Promise(r => setTimeout(r, 300 + i * 200))
+      }
+    }
+
     // Announce post-start setup phase for databases
     logUniqueMessage(`🔧 ${definition.displayName} post-start setup...`, true)
   }
@@ -1195,6 +1272,7 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
     await new Promise(resolve => setTimeout(resolve, 2000))
   }
 
+  let allOk = true
   for (const commandTemplate of definition.postStartCommands) {
     try {
       // Resolve template variables
@@ -1219,6 +1297,7 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
             console.warn(`⚠️ Post-start command timed out after 30s: ${resolvedCommand.join(' ')}`)
           }
           proc.kill('SIGTERM')
+          allOk = false
           resolve()
         }, 30000)
 
@@ -1228,11 +1307,10 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
             resolve()
           }
           else {
-            // Don't fail the service start for post-start command failures
-            // These are often optional setup commands
             if (config.verbose) {
               console.warn(`⚠️ Post-start command failed with exit code ${code}: ${resolvedCommand.join(' ')}`)
             }
+            allOk = false
             resolve()
           }
         })
@@ -1242,6 +1320,7 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
           if (config.verbose) {
             console.warn(`⚠️ Post-start command error: ${error.message}`)
           }
+          allOk = false
           resolve()
         })
       })
@@ -1250,11 +1329,14 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
       if (config.verbose) {
         console.warn(`⚠️ Failed to execute post-start command: ${error instanceof Error ? error.message : String(error)}`)
       }
+      allOk = false
     }
   }
 
   if (definition.name === 'postgres' || definition.name === 'mysql') {
-    logUniqueMessage(`✅ ${definition.displayName} post-start setup completed`, true)
+    if (allOk)
+      logUniqueMessage(`✅ ${definition.displayName} post-start setup completed`, true)
+    else logUniqueMessage(`⚠️ ${definition.displayName} post-start setup completed with warnings`, true)
   }
 }
 
@@ -1390,11 +1472,16 @@ async function startServiceLaunchd(service: ServiceInstance): Promise<boolean> {
     const proc = spawn('launchctl', ['load', '-w', serviceFilePath], {
       stdio: config.verbose ? 'inherit' : 'pipe',
     })
-
+    let stderr = ''
+    if (!config.verbose) {
+      proc.stderr?.on('data', (d) => {
+        stderr += d.toString()
+      })
+    }
     proc.on('close', (code) => {
-      resolve(code === 0)
+      const ok = code === 0 && !(stderr.includes('Load failed') || stderr.includes('Input/output error'))
+      resolve(ok)
     })
-
     proc.on('error', () => {
       resolve(false)
     })
@@ -1595,49 +1682,4 @@ async function checkServiceHealth(service: ServiceInstance): Promise<boolean> {
       resolve(false)
     })
   })
-}
-
-/**
- * Get the PID of a running service
- */
-async function getServicePid(service: ServiceInstance): Promise<number | undefined> {
-  const { definition } = service
-
-  if (!definition) {
-    throw new Error(`Service ${service.name} has no definition`)
-  }
-
-  // In test environment, return mock PID
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
-    return 12345
-  }
-
-  // Try to read PID from PID file
-  if (definition.pidFile && fs.existsSync(definition.pidFile)) {
-    try {
-      const pidContent = await fs.promises.readFile(definition.pidFile, 'utf8')
-      const pid = Number.parseInt(pidContent.trim(), 10)
-      if (!Number.isNaN(pid)) {
-        return pid
-      }
-    }
-    catch {
-      // Ignore errors reading PID file
-    }
-  }
-
-  // Try to find process by name with timeout
-  try {
-    const { execSync } = await import('node:child_process')
-    const output = execSync(`pgrep -f "${definition.executable}"`, {
-      encoding: 'utf8',
-      timeout: 5000, // 5 second timeout
-    })
-    const pids = output.trim().split('\n').map(line => Number.parseInt(line.trim(), 10))
-    return pids[0]
-  }
-  catch {
-    // Process not found or command timed out
-    return undefined
-  }
 }

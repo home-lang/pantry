@@ -486,7 +486,7 @@ Thanks for helping us make Launchpad better! 🙏
     }
 
     if (config.verbose) {
-      console.log(`⬇️ Downloading precompiled PHP ${binary.php_version} (${binary.configuration})...`)
+      console.log(`⬇️  Downloading precompiled PHP ${binary.php_version} (${binary.configuration})...`)
       console.log(`📊 Size: ${Math.round(binary.size / 1024 / 1024 * 10) / 10}MB`)
     }
 

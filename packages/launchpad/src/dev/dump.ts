@@ -322,6 +322,13 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
 
       const { findBinaryInPath } = await import('../utils')
       const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+      if (process.env.LAUNCHPAD_DEBUG === '1') {
+        try {
+          process.stderr.write(`🐞 waitForPostgresIfNeeded: PATH=${process.env.PATH}\n`)
+          process.stderr.write(`🐞 waitForPostgresIfNeeded: host=${host} port=${port} pg_isready=${pgIsReady}\n`)
+        }
+        catch {}
+      }
       let ready = false
       // First pass: pg_isready
       for (let i = 0; i < 20 && !ready; i++) {
@@ -333,12 +340,24 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
           p.on('error', () => resolve(false))
         })
         ready = ok
+        if (process.env.LAUNCHPAD_DEBUG === '1') {
+          try {
+            process.stderr.write(`🐞 pg_isready attempt ${i + 1}: ${ok ? 'ok' : 'fail'}\n`)
+          }
+          catch {}
+        }
         if (!ready)
           await new Promise(r => setTimeout(r, 250 + i * 150))
       }
       // Fallback: TCP probe
       if (!ready) {
         const net = await import('node:net')
+        if (process.env.LAUNCHPAD_DEBUG === '1') {
+          try {
+            process.stderr.write('🐞 pg_isready not ready, falling back to TCP probe\n')
+          }
+          catch {}
+        }
         for (let i = 0; i < 20 && !ready; i++) {
           const ok = await new Promise<boolean>((resolve) => {
             const socket = net.connect({ host, port: Number(port), timeout: 1000 }, () => {
@@ -352,6 +371,12 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
             })
           })
           ready = ok
+          if (process.env.LAUNCHPAD_DEBUG === '1') {
+            try {
+              process.stderr.write(`🐞 TCP probe attempt ${i + 1}: ${ok ? 'ok' : 'fail'}\n`)
+            }
+            catch {}
+          }
           if (!ready)
             await new Promise(r => setTimeout(r, 250 + i * 150))
         }
@@ -363,6 +388,12 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
       // Final verification using psql simple query if available
       const psqlBin = findBinaryInPath('psql') || 'psql'
       if (psqlBin) {
+        if (process.env.LAUNCHPAD_DEBUG === '1') {
+          try {
+            process.stderr.write(`🐞 using psql binary: ${psqlBin}\n`)
+          }
+          catch {}
+        }
         for (let i = 0; i < 8; i++) {
           const ok = await new Promise<boolean>((resolve) => {
             // eslint-disable-next-line ts/no-require-imports
@@ -371,6 +402,12 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
             p.on('close', (code: number) => resolve(code === 0))
             p.on('error', () => resolve(false))
           })
+          if (process.env.LAUNCHPAD_DEBUG === '1') {
+            try {
+              process.stderr.write(`🐞 psql SELECT 1 attempt ${i + 1}: ${ok ? 'ok' : 'fail'}\n`)
+            }
+            catch {}
+          }
           if (ok)
             break
           await new Promise(r => setTimeout(r, 300 + i * 200))
@@ -429,6 +466,15 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
         }
       }
       catch {}
+      // Also set PG* vars for libpq tools and frameworks that honor them
+      if (!execEnv.PGHOST)
+        execEnv.PGHOST = execEnv.DB_HOST
+      if (!execEnv.PGPORT)
+        execEnv.PGPORT = execEnv.DB_PORT
+      if (!execEnv.PGUSER)
+        execEnv.PGUSER = execEnv.DB_USERNAME || execEnv.DB_USER || 'postgres'
+      if (!execEnv.PGPASSWORD && execEnv.DB_PASSWORD !== undefined)
+        execEnv.PGPASSWORD = execEnv.DB_PASSWORD
 
       if (command.runInBackground) {
         execSync(command.command, {
@@ -446,12 +492,47 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
           }
           catch {}
           await waitForPostgresIfNeeded()
+          // final short grace period
+          await new Promise(r => setTimeout(r, 500))
         }
-        execSync(command.command, {
-          cwd: projectDir,
-          env: execEnv,
-          stdio: inShell ? (['ignore', 2, 2] as any) : 'inherit',
-        })
+        try {
+          execSync(command.command, {
+            cwd: projectDir,
+            env: execEnv,
+            stdio: inShell ? (['ignore', 2, 2] as any) : 'inherit',
+          })
+        }
+        catch (err) {
+          // Deep diagnostics on failure
+          try {
+            process.stderr.write('🐞 Migration failed; collecting diagnostics...\n')
+            process.stderr.write(`🐞 PATH=${execEnv.PATH}\n`)
+            process.stderr.write(`🐞 DB env: HOST=${execEnv.DB_HOST} PORT=${execEnv.DB_PORT} USERNAME=${execEnv.DB_USERNAME || execEnv.DB_USER || ''} DATABASE_URL=${execEnv.DATABASE_URL || ''}\n`)
+          }
+          catch {}
+          try {
+            const { spawnSync } = await import('node:child_process')
+            const pgReady = spawnSync(execEnv.PG_ISREADY || 'pg_isready', ['-h', execEnv.DB_HOST || '127.0.0.1', '-p', execEnv.DB_PORT || '5432'])
+            process.stderr.write(`🐞 pg_isready exit=${pgReady.status} stdout=${(pgReady.stdout || '').toString()} stderr=${(pgReady.stderr || '').toString()}\n`)
+          }
+          catch {}
+          try {
+            const { spawnSync } = await import('node:child_process')
+            const psql = spawnSync('psql', ['-h', execEnv.DB_HOST || '127.0.0.1', '-p', execEnv.DB_PORT || '5432', '-U', 'postgres', '-tAc', 'SELECT 1'])
+            process.stderr.write(`🐞 psql check exit=${psql.status} stdout=${(psql.stdout || '').toString()} stderr=${(psql.stderr || '').toString()}\n`)
+          }
+          catch {}
+          try {
+            const logPath = path.join(homedir(), '.local', 'share', 'launchpad', 'logs', 'postgres.log')
+            if (fs.existsSync(logPath)) {
+              const content = fs.readFileSync(logPath, 'utf8')
+              const tail = content.split(/\r?\n/).slice(-100).join('\n')
+              process.stderr.write(`🐞 tail -100 postgres.log:\n${tail}\n`)
+            }
+          }
+          catch {}
+          throw err
+        }
         results.push(`✅ ${command.description}`)
       }
     }
