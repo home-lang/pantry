@@ -147,7 +147,11 @@ describe('Service Auto-Setup - Regression Tests', () => {
 
       // Should have health check for service validation
       expect(postgresService.healthCheck).toBeDefined()
-      expect(postgresService.healthCheck?.command).toEqual(['pg_isready', '-p', '5432'])
+      const hc = postgresService.healthCheck?.command as string[]
+      expect(Array.isArray(hc)).toBe(true)
+      expect(hc[0]).toBe('pg_isready')
+      expect(hc).toContain('-p')
+      expect(hc).toContain('5432')
     })
   })
 

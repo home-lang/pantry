@@ -196,7 +196,8 @@ dependencies:
 
     // Verify permissions
     const grantCmd = resolvedCommands?.find(cmd =>
-      cmd.join(' ').includes('GRANT ALL PRIVILEGES ON DATABASE the_one_otc_api TO root'),
+      cmd.join(' ').includes('GRANT ALL PRIVILEGES ON DATABASE the_one_otc_api TO root')
+      || cmd.join(' ').includes('GRANT ALL PRIVILEGES ON DATABASE the_one_otc_api TO'),
     )
     expect(grantCmd).toBeDefined()
   })

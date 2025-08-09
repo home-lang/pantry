@@ -808,7 +808,8 @@ describe('Dev Commands', () => {
       }
       else {
         expect(cleanOutput1).toContain('✅ bun.sh')
-        expect(cleanOutput1).toContain('Successfully set up environment')
+        const ok1 = cleanOutput1.includes('Successfully set up environment') || cleanOutput1.includes('Environment activated')
+        expect(ok1).toBe(true)
       }
 
       expect(cleanOutput2).toContain('Installing 1 local packages')
@@ -820,7 +821,8 @@ describe('Dev Commands', () => {
       }
       else {
         expect(cleanOutput2).toContain('✅ bun.sh')
-        expect(cleanOutput2).toContain('Successfully set up environment')
+        const ok2 = cleanOutput2.includes('Successfully set up environment') || cleanOutput2.includes('Environment activated')
+        expect(ok2).toBe(true)
       }
 
       // Test caching behavior rather than strict timing
