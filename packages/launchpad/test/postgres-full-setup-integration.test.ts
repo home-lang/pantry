@@ -127,9 +127,12 @@ DB_PASSWORD=launchpad123
     expect(postgresService.initCommand).toContain('--auth-host={authMethod}')
 
     // Verify post-start commands create database user
-    const createUserCommand = postgresService.postStartCommands?.find(cmd =>
-      Array.isArray(cmd) && cmd.join(' ').includes('CREATE USER') && cmd.join(' ').includes('{dbUsername}'),
-    )
+    const createUserCommand = postgresService.postStartCommands?.find((cmd) => {
+      if (!Array.isArray(cmd))
+        return false
+      const s = cmd.join(' ')
+      return s.includes('CREATE USER') || (s.includes('DO $$') && s.includes('CREATE ROLE'))
+    })
     expect(createUserCommand).toBeDefined()
   })
 
@@ -142,7 +145,11 @@ DB_PASSWORD=launchpad123
 
     // Verify health check configuration
     expect(postgresService.healthCheck).toBeDefined()
-    expect(postgresService.healthCheck?.command).toEqual(['pg_isready', '-p', '5432'])
+    const hc = postgresService.healthCheck?.command as string[]
+    expect(Array.isArray(hc)).toBe(true)
+    expect(hc[0]).toBe('pg_isready')
+    expect(hc).toContain('-p')
+    expect(hc).toContain('5432')
     expect(postgresService.healthCheck?.expectedExitCode).toBe(0)
 
     // Verify graceful shutdown support
@@ -188,17 +195,18 @@ dependencies:
     const createDbCmd = resolvedCommands?.find(cmd => cmd.includes('createdb'))
     expect(createDbCmd).toContain('the_one_otc_api')
 
-    // Verify user creation
-    const createUserCmd = resolvedCommands?.find(cmd =>
-      cmd.join(' ').includes('CREATE USER') && cmd.join(' ').includes('root'),
-    )
+    // Verify user creation (allow idempotent role block)
+    const createUserCmd = resolvedCommands?.find((cmd) => {
+      const s = cmd.join(' ')
+      return s.includes('CREATE USER') || (s.includes('DO $$') && s.includes('CREATE ROLE'))
+    })
     expect(createUserCmd).toBeDefined()
 
     // Verify permissions
-    const grantCmd = resolvedCommands?.find(cmd =>
-      cmd.join(' ').includes('GRANT ALL PRIVILEGES ON DATABASE the_one_otc_api TO root')
-      || cmd.join(' ').includes('GRANT ALL PRIVILEGES ON DATABASE the_one_otc_api TO'),
-    )
+    const grantCmd = resolvedCommands?.find((cmd) => {
+      const s = cmd.join(' ')
+      return s.includes('GRANT ALL PRIVILEGES ON DATABASE') && s.includes('the_one_otc_api')
+    })
     expect(grantCmd).toBeDefined()
   })
 

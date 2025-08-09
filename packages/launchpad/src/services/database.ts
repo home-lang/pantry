@@ -50,9 +50,26 @@ export async function createProjectDatabase(dbName: string, options: DatabaseOpt
  * Create PostgreSQL database
  */
 async function createPostgreSQLDatabase(dbName: string, options: DatabaseOptions): Promise<DatabaseConnectionInfo> {
-  const { host = 'localhost', port = 5432, user = process.env.USER || 'postgres' } = options
+  const { host = '127.0.0.1', port = 5432, user = 'postgres' } = options
 
   try {
+    // Ensure server is accepting TCP connections before attempting to create DB
+    const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+    let ready = false
+    for (let i = 0; i < 12; i++) {
+      try {
+        await executeCommand([pgIsReady, '-h', host, '-p', String(port)])
+        ready = true
+        break
+      }
+      catch {
+        await new Promise(r => setTimeout(r, 500 + i * 250))
+      }
+    }
+    if (!ready) {
+      throw new Error('PostgreSQL not accepting connections yet')
+    }
+
     // Check if database exists
     const checkCommand = ['psql', '-h', host, '-p', String(port), '-U', user, '-lqt']
     const existing = await executeCommand(checkCommand)
@@ -60,7 +77,22 @@ async function createPostgreSQLDatabase(dbName: string, options: DatabaseOptions
     if (!existing.includes(dbName)) {
       // Create the database
       const createCommand = ['createdb', '-h', host, '-p', String(port), '-U', user, dbName]
-      await executeCommand(createCommand)
+      let created = false
+      let lastErr: unknown
+      for (let i = 0; i < 5; i++) {
+        try {
+          await executeCommand(createCommand)
+          created = true
+          break
+        }
+        catch (e) {
+          lastErr = e
+          await new Promise(r => setTimeout(r, 500 + i * 500))
+        }
+      }
+      if (!created) {
+        throw lastErr instanceof Error ? lastErr : new Error(String(lastErr))
+      }
       console.log(`✅ PostgreSQL database ${dbName} created successfully`)
     }
     else {
@@ -175,7 +207,7 @@ async function detectPreferredDatabaseType(): Promise<'postgres' | 'mysql' | 'sq
 async function isServiceRunning(service: string, port: number): Promise<boolean> {
   try {
     if (service === 'postgres') {
-      await executeCommand(['pg_isready', '-p', String(port)])
+      await executeCommand(['pg_isready', '-h', '127.0.0.1', '-p', String(port)])
       return true
     }
     else if (service === 'mysql') {

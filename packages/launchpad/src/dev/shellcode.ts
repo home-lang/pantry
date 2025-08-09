@@ -723,8 +723,10 @@ __launchpad_chpwd() {
             # Run environment setup without timeout - let it take as long as needed
             local temp_file=$(mktemp)
 
-            # Always run shell-mode setup quietly for speed; capture only the shell code
-            ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file" 2>/dev/null
+            # Immediate, persistent status line
+            printf "⏳ Preparing environment for \\033[3m$(basename \"$project_dir\")\\033[0m...\n" >&2
+            # Run quietly but keep stderr for incremental progress messages
+            ${launchpadBinary} dev "$project_dir" --shell --quiet > "$temp_file"
             setup_exit_code=$?
 
             # Extract shell code from output
@@ -777,14 +779,10 @@ __launchpad_chpwd() {
                     __launchpad_ensure_system_path
                     hash -r 2>/dev/null || true
 
-                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
-                        printf "\\r\\033[K${activationMessage}\\n" >&2
-                    fi
+                    printf "${activationMessage}\n" >&2
                 else
                     # Clear any progress message on failure
-                    if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
-                        printf "\\r\\033[K" >&2
-                    fi
+                    :
                 fi
             fi
         fi

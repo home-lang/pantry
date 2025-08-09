@@ -421,13 +421,20 @@ describe('Database Service Integration', () => {
       // Check PostgreSQL commands use template variables consistently
       const pgCommands = postgres!.postStartCommands!
       const pgCreateDbCmd = pgCommands.find(cmd => cmd[0] === 'createdb')
-      const pgUserCmd = pgCommands.find(cmd =>
-        cmd[0] === 'psql' && cmd.join(' ').includes('CREATE USER'),
-      )
+      const pgUserCmd = pgCommands.find((cmd) => {
+        if (cmd[0] !== 'psql')
+          return false
+        const s = cmd.join(' ')
+        // Prefer commands that target the app user
+        if (!s.includes('{dbUsername}'))
+          return false
+        return s.includes('CREATE USER') || (s.includes('DO $$') && s.includes('CREATE ROLE'))
+      })
 
       expect(pgCreateDbCmd).toContain('{projectDatabase}')
-      expect(pgUserCmd!.join(' ')).toContain('{dbUsername}')
-      expect(pgUserCmd!.join(' ')).toContain('{dbPassword}')
+      const pgUserJoined = pgUserCmd!.join(' ')
+      expect(pgUserJoined).toContain('{dbUsername}')
+      expect(pgUserJoined).toContain('{dbPassword}')
 
       // Check MySQL commands use template variables consistently
       const mysqlCommands = mysql!.postStartCommands!

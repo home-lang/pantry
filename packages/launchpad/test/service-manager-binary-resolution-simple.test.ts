@@ -80,7 +80,8 @@ describe('service Manager Binary Resolution (Simplified)', () => {
         Array.isArray(cmd) && cmd.some(arg => arg.includes('createdb')),
       )
       const hasCreateUser = postStartCommands!.some(cmd =>
-        Array.isArray(cmd) && cmd.some(arg => arg.includes('CREATE USER')),
+        Array.isArray(cmd)
+        && cmd.some(arg => arg.includes('CREATE USER') || (arg.includes('DO $$') && arg.includes('CREATE ROLE'))),
       )
       const hasGrantPrivileges = postStartCommands!.some(cmd =>
         Array.isArray(cmd) && cmd.some(arg => arg.includes('GRANT')),

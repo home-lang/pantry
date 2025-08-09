@@ -921,7 +921,9 @@ exec "${shimPath}" "$@"
             }
           }
           catch (e) {
-            console.warn(`⚠️ install_name_tool failed for ${libName}: ${e instanceof Error ? e.message : String(e)}`)
+            if (config.verbose) {
+              console.warn(`⚠️ install_name_tool failed for ${libName}: ${e instanceof Error ? e.message : String(e)}`)
+            }
           }
         }
       }

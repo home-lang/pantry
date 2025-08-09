@@ -595,6 +595,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       if (message.includes('🔄') // Processing dependency
         || message.includes('⬇️') // Download progress
         || message.includes('🔧') // Extracting
+        || message.includes('🚀') // Service start messages
+        || message.includes('⏳') // Waiting messages
         || message.includes('✅') // Success messages
         || message.includes('⚠️') // Warnings
         || message.includes('❌') // Errors
@@ -619,6 +621,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       if (message.includes('🔄') // Processing dependency
         || message.includes('⬇️') // Download progress
         || message.includes('🔧') // Extracting
+        || message.includes('🚀') // Service start messages
+        || message.includes('⏳') // Waiting messages
         || message.includes('✅') // Success messages
         || message.includes('⚠️') // Warnings
         || message.includes('❌') // Errors
@@ -693,10 +697,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           sniffResult = { pkgs: [], env: {} }
         }
 
-        // In shell integration fast path, skip services and heavy post-setup
-        // Only ensure php.ini exists if already marked ready
+        // In shell integration fast path, ensure php.ini and start services when configured
+        // Only ensure php.ini if already marked ready
         if (fs.existsSync(path.join(envDir, '.launchpad_ready'))) {
           await ensureProjectPhpIni(projectDir, envDir)
+          try {
+            await setupProjectServices(projectDir, sniffResult, true)
+          }
+          catch {}
         }
 
         outputShellCode(
@@ -879,7 +887,11 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
         await createPhpShimsAfterInstall(envDir)
 
-        // Do not auto-start services during shell integration
+        // Start services during shell integration when configured
+        try {
+          await setupProjectServices(projectDir, sniffResult, true)
+        }
+        catch {}
 
         // Ensure project php.ini exists only
         await ensureProjectPhpIni(projectDir, envDir)
@@ -1542,6 +1554,20 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
               console.log('🔧 Creating project PostgreSQL database...')
             const projectName = path.basename(projectDir).replace(/\W/g, '_')
             try {
+              // Ensure DB utilities resolve from project environment first
+              const projectHash = generateProjectHash(projectDir)
+              const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
+              const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+              const envBinPath = path.join(envDir, 'bin')
+              const envSbinPath = path.join(envDir, 'sbin')
+              const globalBinPath = path.join(globalEnvDir, 'bin')
+              const globalSbinPath = path.join(globalEnvDir, 'sbin')
+              const originalPath = process.env.PATH || ''
+              const augmentedPath = [envBinPath, envSbinPath, globalBinPath, globalSbinPath, originalPath]
+                .filter(Boolean)
+                .join(':')
+              process.env.PATH = augmentedPath
+
               await createProjectDatabase(projectName, {
                 type: 'postgres',
                 host: '127.0.0.1',
