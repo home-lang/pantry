@@ -748,6 +748,29 @@ Thanks for helping us make Launchpad better! 🙏
           dbExtensions.push('pdo_sqlite', 'sqlite3')
         }
 
+        // Detect extension_dir of this PHP installation and filter only present extensions
+        let extensionDirLine = ''
+        try {
+          const extBase = path.join(packageDir, 'lib', 'php', 'extensions')
+          if (fs.existsSync(extBase)) {
+            const subdirs = fs.readdirSync(extBase).filter(d => fs.statSync(path.join(extBase, d)).isDirectory())
+            if (subdirs.length > 0) {
+              const extDir = path.join(extBase, subdirs[0])
+              extensionDirLine = `extension_dir = ${extDir}`
+              // Filter dbExtensions to those that exist in extDir
+              const existing = new Set(fs.readdirSync(extDir))
+              for (let i = dbExtensions.length - 1; i >= 0; i--) {
+                const ext = dbExtensions[i]
+                const so = `${ext}.so`
+                if (!existing.has(so)) {
+                  dbExtensions.splice(i, 1)
+                }
+              }
+            }
+          }
+        }
+        catch {}
+
         const ini = [
           '; Launchpad php.ini (auto-generated)',
           'memory_limit = 512M',
@@ -757,6 +780,7 @@ Thanks for helping us make Launchpad better! 🙏
           'display_errors = On',
           'error_reporting = E_ALL',
           '',
+          ...(extensionDirLine ? [extensionDirLine, ''] : []),
           '; Enable database extensions based on project detection',
           ...dbExtensions.map(ext => `extension=${ext}`),
           '',
@@ -1367,10 +1391,36 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
       'display_errors = On',
       'error_reporting = E_ALL',
       '',
-      '; Enable database extensions based on project detection',
     ]
 
-    // Basic detection using .env
+    // Detect extension_dir from installed package
+    let extDir = ''
+    try {
+      const extBase = path.join(result.packageDir, 'lib', 'php', 'extensions')
+      if (fs.existsSync(extBase)) {
+        const subdirs = fs.readdirSync(extBase).filter(d => fs.statSync(path.join(extBase, d)).isDirectory())
+        if (subdirs.length > 0) {
+          extDir = path.join(extBase, subdirs[0])
+        }
+      }
+    }
+    catch {}
+
+    if (extDir) {
+      iniLines.push(`extension_dir = ${extDir}`)
+      iniLines.push('')
+    }
+
+    // Basic detection using .env, but only enable extensions that exist in extDir
+    const existing = new Set<string>(extDir && fs.existsSync(extDir) ? fs.readdirSync(extDir) : [])
+    const enableIfExists = (ext: string) => {
+      const so = `${ext}.so`
+      if (!extDir || existing.has(so)) {
+        iniLines.push(`extension=${ext}`)
+      }
+    }
+
+    iniLines.push('; Enable database extensions based on project detection')
     try {
       const envPath = path.join(process.cwd(), '.env')
       if (fs.existsSync(envPath)) {
@@ -1378,16 +1428,16 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
         const dbConnMatch = envContent.match(/^DB_CONNECTION=(.*)$/m)
         const dbConn = dbConnMatch?.[1]?.trim().toLowerCase()
         if (dbConn === 'pgsql' || dbConn === 'postgres' || dbConn === 'postgresql') {
-          iniLines.push('extension=pdo_pgsql')
-          iniLines.push('extension=pgsql')
+          enableIfExists('pdo_pgsql')
+          enableIfExists('pgsql')
         }
         else if (dbConn === 'mysql' || dbConn === 'mariadb') {
-          iniLines.push('extension=pdo_mysql')
-          iniLines.push('extension=mysqli')
+          enableIfExists('pdo_mysql')
+          enableIfExists('mysqli')
         }
         else if (dbConn === 'sqlite') {
-          iniLines.push('extension=pdo_sqlite')
-          iniLines.push('extension=sqlite3')
+          enableIfExists('pdo_sqlite')
+          enableIfExists('sqlite3')
         }
       }
     }

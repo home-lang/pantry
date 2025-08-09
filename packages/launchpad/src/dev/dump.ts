@@ -257,6 +257,38 @@ async function ensureProjectPhpIni(projectDir: string, envDir: string): Promise<
 async function executepostSetup(projectDir: string, commands: PostSetupCommand[]): Promise<string[]> {
   const results: string[] = []
 
+  // Helper: wait for PostgreSQL if project uses it
+  async function waitForPostgresIfNeeded(): Promise<void> {
+    try {
+      const { parseEnvFile } = await import('../dev-setup')
+      const env = parseEnvFile(path.join(projectDir, '.env'))
+      const usesPg = (env.DB_CONNECTION || '').toLowerCase().includes('pg')
+      if (!usesPg)
+        return
+
+      const host = env.DB_HOST || '127.0.0.1'
+      const port = env.DB_PORT || '5432'
+
+      const pgIsReady = (await import('../utils')).findBinaryInPath('pg_isready') || 'pg_isready'
+      // Probe up to 15 times with backoff
+      for (let i = 0; i < 15; i++) {
+        const ok = await new Promise<boolean>((resolve) => {
+          // eslint-disable-next-line ts/no-require-imports
+          const { spawn } = require('node:child_process')
+          const p = spawn(pgIsReady, ['-h', host, '-p', port], { stdio: 'pipe' })
+          p.on('close', (code: number) => resolve(code === 0))
+          p.on('error', () => resolve(false))
+        })
+        if (ok)
+          break
+        await new Promise(r => setTimeout(r, Math.min(500 + i * 500, 5000)))
+      }
+      // Small grace delay after ready
+      await new Promise(r => setTimeout(r, 250))
+    }
+    catch {}
+  }
+
   for (const command of commands) {
     try {
       const shouldRun = evaluateCommandCondition(command.condition, projectDir)
@@ -296,6 +328,14 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
         results.push(`🚀 Running in background: ${command.description}`)
       }
       else {
+        // If we're about to run Laravel migrations, ensure DB is ready
+        if (command.command.includes('artisan') && command.command.includes('migrate')) {
+          try {
+            process.stderr.write('⏳ Ensuring database is ready before running migrations...\n')
+          }
+          catch {}
+          await waitForPostgresIfNeeded()
+        }
         execSync(command.command, {
           cwd: projectDir,
           env: execEnv,
@@ -1342,8 +1382,34 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
             console.log(`✅ ${serviceName} service started successfully`)
           }
 
-          // Special handling for PostgreSQL: create project database
+          // Special handling for PostgreSQL: wait for readiness and create project database
           if ((serviceName === 'postgres' || serviceName === 'postgresql') && hasPostgresInDeps) {
+            if (showMessages) {
+              console.log('⏳ Verifying PostgreSQL readiness...')
+            }
+            // Ensure postgres is actually accepting connections
+            try {
+              const { findBinaryInPath } = await import('../utils')
+              const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+              // Probe up to 10 times
+              for (let i = 0; i < 10; i++) {
+                const probe = await new Promise<boolean>((resolve) => {
+                  // eslint-disable-next-line ts/no-require-imports
+                  const { spawn } = require('node:child_process')
+                  const p = spawn(pgIsReady, ['-h', '127.0.0.1', '-p', '5432'], { stdio: 'pipe' })
+                  p.on('close', (code: number) => resolve(code === 0))
+                  p.on('error', () => resolve(false))
+                })
+                if (probe)
+                  break
+                await new Promise(r => setTimeout(r, Math.min(1000 * (i + 1), 5000)))
+              }
+            }
+            catch {}
+
+            if (showMessages) {
+              console.log('🔧 Creating project PostgreSQL database...')
+            }
             const projectName = path.basename(projectDir).replace(/\W/g, '_')
             try {
               await createProjectDatabase(projectName, {

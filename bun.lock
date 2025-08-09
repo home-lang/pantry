@@ -18,7 +18,7 @@
     },
     "packages/action": {
       "name": "launchpad-installer",
-      "version": "0.6.1",
+      "version": "0.6.3",
       "bin": {
         "launchpad-installer": "dist/index.js",
       },
@@ -35,7 +35,7 @@
     },
     "packages/launchpad": {
       "name": "@stacksjs/launchpad",
-      "version": "0.6.1",
+      "version": "0.6.3",
       "bin": {
         "launchpad": "./dist/bin/cli.js",
       },

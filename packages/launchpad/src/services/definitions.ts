@@ -13,7 +13,7 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     description: 'PostgreSQL database server',
     packageDomain: 'postgresql.org',
     executable: 'postgres',
-    args: ['-D', '{dataDir}'],
+    args: ['-D', '{dataDir}', '-p', '{port}', '-c', 'listen_addresses=127.0.0.1'],
     env: {
       PGDATA: '{dataDir}',
     },
@@ -31,7 +31,7 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       'unicode.org^73',
     ],
     healthCheck: {
-      command: ['pg_isready', '-p', '5432'],
+      command: ['pg_isready', '-h', '127.0.0.1', '-p', '5432'],
       expectedExitCode: 0,
       timeout: 5,
       interval: 30,
@@ -41,8 +41,10 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     postStartCommands: [
       // Create application database and user for any project type
       ['createdb', '-h', '127.0.0.1', '-p', '5432', '{projectDatabase}'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'CREATE USER IF NOT EXISTS {dbUsername} WITH PASSWORD \'{dbPassword}\';'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {dbUsername};'],
+      // Ensure default postgres role exists for framework defaults
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'postgres\') THEN CREATE ROLE postgres SUPERUSER LOGIN; END IF; END $$;'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'{dbUsername}\') THEN CREATE ROLE {dbUsername} LOGIN PASSWORD \'{dbPassword}\'; END IF; END $$;'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'ALTER DATABASE {projectDatabase} OWNER TO {dbUsername}; GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {dbUsername};'],
       ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO {dbUsername};'],
       ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO {dbUsername};'],
     ],

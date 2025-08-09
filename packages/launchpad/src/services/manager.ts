@@ -6,6 +6,7 @@ import { platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
+import { logUniqueMessage } from '../logging'
 import { findBinaryInEnvironment, findBinaryInPath } from '../utils'
 import { createDefaultServiceConfig, getServiceDefinition } from './definitions'
 import { generateLaunchdPlist, generateSystemdService, getServiceFilePath, isPlatformSupported, writeLaunchdPlist, writeSystemdService } from './platform'
@@ -1074,7 +1075,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
         }
       }
 
-      execSync(`${command} -D "${dataDir}" --auth-local=trust --auth-host=md5`, {
+      execSync(`${command} -D "${dataDir}" --auth-local=trust --auth-host=trust`, {
         stdio: config.verbose ? 'inherit' : 'pipe',
         timeout: 60000,
         env,
@@ -1140,14 +1141,17 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
 
   // Wait for the service to be fully ready, especially for databases
   if (definition.name === 'postgres' || definition.name === 'mysql') {
+    // Immediate feedback so it doesn't look frozen after the "started successfully" line
+    logUniqueMessage(`⏳ Waiting for ${definition.displayName} to be ready...`, true)
     // For databases, wait longer in CI environments and check if they're actually ready
     const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-    const waitTime = isCI ? 10000 : 5000 // 10s in CI, 5s locally
+    const waitTime = isCI ? 15000 : 8000 // 15s in CI, 8s locally to allow first cold start
     await new Promise(resolve => setTimeout(resolve, waitTime))
 
     // Try to verify the service is responding before running post-start commands
     if (definition.healthCheck) {
-      for (let i = 0; i < 5; i++) {
+      // Try up to 10 times with exponential backoff
+      for (let i = 0; i < 10; i++) {
         try {
           const healthResult = await checkServiceHealth(service)
           if (healthResult)
@@ -1155,10 +1159,15 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
         }
         catch {
           // Health check failed, wait a bit more
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          const backoff = Math.min(1000 * (i + 1), 5000)
+          await new Promise(resolve => setTimeout(resolve, backoff))
         }
       }
+      logUniqueMessage(`✅ ${definition.displayName} is accepting connections`, true)
     }
+
+    // Announce post-start setup phase for databases
+    logUniqueMessage(`🔧 Running ${definition.displayName} post-start setup...`, true)
   }
   else {
     // For other services, use the original wait time
@@ -1221,6 +1230,10 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
         console.warn(`⚠️ Failed to execute post-start command: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
+  }
+
+  if (definition.name === 'postgres' || definition.name === 'mysql') {
+    logUniqueMessage(`✅ ${definition.displayName} post-start setup completed`, true)
   }
 }
 

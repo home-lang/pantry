@@ -46,6 +46,72 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   // Find the executable path
   const executablePath = findBinaryInPath(definition.executable) || definition.executable
 
+  // Compute runtime PATH and dynamic library search paths for packages started by launchd
+  // launchd does not inherit shell env, so we must include env-specific paths here.
+  const envVars: Record<string, string> = {}
+
+  try {
+    const binDir = path.dirname(executablePath)
+    const versionDir = path.dirname(binDir)
+    const domainDir = path.dirname(versionDir)
+    const envRoot = path.dirname(domainDir)
+
+    // Only apply when executable lives inside a Launchpad environment
+    const looksLikeEnv = fs.existsSync(envRoot) && fs.existsSync(path.join(envRoot, 'bin'))
+
+    if (looksLikeEnv) {
+      // Build PATH to include env bin/sbin first
+      const envBin = path.join(envRoot, 'bin')
+      const envSbin = path.join(envRoot, 'sbin')
+      const basePath = process.env.PATH || ''
+      envVars.PATH = [envBin, envSbin, basePath].filter(Boolean).join(':')
+
+      // Discover all package lib directories under this env root
+      const libraryDirs: string[] = []
+
+      const pushIfExists = (p: string) => {
+        try {
+          if (fs.existsSync(p) && !libraryDirs.includes(p))
+            libraryDirs.push(p)
+        }
+        catch {}
+      }
+
+      // Common top-level lib dirs
+      pushIfExists(path.join(envRoot, 'lib'))
+      pushIfExists(path.join(envRoot, 'lib64'))
+
+      // Scan domain/version directories for lib folders
+      try {
+        const entries = fs.readdirSync(envRoot, { withFileTypes: true })
+        for (const entry of entries) {
+          if (!entry.isDirectory())
+            continue
+          if (['bin', 'sbin', 'share', 'include', 'etc', 'pkgs'].includes(entry.name))
+            continue
+          const domainPath = path.join(envRoot, entry.name)
+          const versions = fs.readdirSync(domainPath, { withFileTypes: true }).filter(v => v.isDirectory() && v.name.startsWith('v'))
+          for (const ver of versions) {
+            pushIfExists(path.join(domainPath, ver.name, 'lib'))
+            pushIfExists(path.join(domainPath, ver.name, 'lib64'))
+          }
+        }
+      }
+      catch {}
+
+      if (libraryDirs.length > 0) {
+        const existingDyld = process.env.DYLD_LIBRARY_PATH || ''
+        envVars.DYLD_LIBRARY_PATH = [libraryDirs.join(':'), existingDyld].filter(Boolean).join(':')
+        // Also set fallback for good measure
+        const existingFallback = process.env.DYLD_FALLBACK_LIBRARY_PATH || ''
+        envVars.DYLD_FALLBACK_LIBRARY_PATH = [libraryDirs.join(':'), existingFallback].filter(Boolean).join(':')
+      }
+    }
+  }
+  catch {
+    // Best-effort only
+  }
+
   return {
     Label: `com.launchpad.${definition.name || service.name}`,
     ProgramArguments: [executablePath, ...resolvedArgs],
@@ -69,11 +135,12 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
         return [k, resolved]
       })),
       ...Object.fromEntries(Object.entries(service.config || {}).map(([k, v]) => [k, String(v)])),
+      ...envVars,
     },
     StandardOutPath: service.logFile || path.join(logDir || '', `${definition.name || service.name}.log`),
     StandardErrorPath: service.logFile || path.join(logDir || '', `${definition.name || service.name}.log`),
     RunAtLoad: service.enabled || false,
-    KeepAlive: true, // Always keep alive for now
+    KeepAlive: { SuccessfulExit: false },
     UserName: process.env.USER || 'root',
   }
 }
