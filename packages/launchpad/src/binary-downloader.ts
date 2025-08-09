@@ -800,7 +800,11 @@ Thanks for helping us make Launchpad better! 🙏
 
         // First, on macOS fix absolute Homebrew dylib references to Launchpad-managed libs
         try {
-          await this.fixMacOSDylibs(packageDir, launchpadLibraryPaths)
+          // Best-effort only; if this fails due to headerpad limits, skip silently (shims set DYLD paths)
+          try {
+            await this.fixMacOSDylibs(packageDir, launchpadLibraryPaths)
+          }
+          catch {}
         }
         catch (err) {
           console.warn(`⚠️ Could not fix macOS dylib references: ${err instanceof Error ? err.message : String(err)}`)

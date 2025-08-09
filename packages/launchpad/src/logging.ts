@@ -127,35 +127,6 @@ export function logUniqueMessage(message: string, forceLog = false): void {
     console.log(message)
   }
 
-  // Show temporary processing message immediately after package success messages (not the final environment message)
-  // Use a simple static message instead of animated spinner to avoid conflicts with download progress
-  // But don't show it for the final package completion or summary messages
-  if (!config.verbose && message.startsWith('✅')
-    && !message.includes('Environment activated')
-    && !message.includes('Successfully set up environment')
-    && !message.includes('Installed')
-    && !message.includes('packages')
-    && !message.includes('(v')) { // Don't show processing message after individual package success messages
-    // Add a small delay to make the success message visible before showing processing message
-    setTimeout(() => {
-      // Only show processing message if we haven't completed all packages
-      if (!hasTemporaryProcessingMessage) {
-        const processingMsg = `🔄 Processing next dependency...`
-
-        if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
-          process.stderr.write(`${processingMsg}\n`)
-          if (process.stderr.isTTY) {
-            fs.writeSync(process.stderr.fd, '')
-          }
-        }
-        else {
-          process.stdout.write(`${processingMsg}\n`)
-        }
-
-        hasTemporaryProcessingMessage = true
-      }
-    }, 50) // Small delay to ensure success message is visible
-  }
 }
 
 export function clearMessageCache(): void {

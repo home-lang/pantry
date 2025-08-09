@@ -285,6 +285,30 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
       }
       // Small grace delay after ready
       await new Promise(r => setTimeout(r, 250))
+
+      // If still not listening, wait a bit longer with additional probes instead of restarting
+      const readyAfterFirstPass = await new Promise<boolean>((resolve) => {
+        // eslint-disable-next-line ts/no-require-imports
+        const { spawn } = require('node:child_process')
+        const p = spawn(pgIsReady, ['-h', host, '-p', port], { stdio: 'ignore' })
+        p.on('close', (code: number) => resolve(code === 0))
+        p.on('error', () => resolve(false))
+      })
+      if (!readyAfterFirstPass) {
+        for (let i = 0; i < 12; i++) {
+          const ok = await new Promise<boolean>((resolve) => {
+            // eslint-disable-next-line ts/no-require-imports
+            const { spawn } = require('node:child_process')
+            const p = spawn(pgIsReady, ['-h', host, '-p', port], { stdio: 'ignore' })
+            p.on('close', (code: number) => resolve(code === 0))
+            p.on('error', () => resolve(false))
+          })
+          if (ok)
+            break
+          await new Promise(r => setTimeout(r, Math.min(750 + i * 250, 3000)))
+        }
+        await new Promise(r => setTimeout(r, 250))
+      }
     }
     catch {}
   }
@@ -815,10 +839,20 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Regular path for non-shell integration calls
     if (localPackages.length > 0 || globalPackages.length > 0) {
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
+      // Visual separator after dependency install list
+      try { console.log() }
+      catch {}
     }
 
     // Auto-start services for any project that has services configuration
+    // Suppress interstitial processing messages during service startup phase
+    const prevProcessing = process.env.LAUNCHPAD_PROCESSING
+    process.env.LAUNCHPAD_PROCESSING = '0'
     await setupProjectServices(projectDir, sniffResult, !effectiveQuiet)
+    if (prevProcessing === undefined)
+      delete process.env.LAUNCHPAD_PROCESSING
+    else
+      process.env.LAUNCHPAD_PROCESSING = prevProcessing
 
     // Ensure php.ini and Laravel post-setup runs (regular path)
     await ensureProjectPhpIni(projectDir, envDir)
@@ -845,9 +879,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
     }
-    else if (!effectiveQuiet) {
-      // Final success summary for non-shell runs (used by tests)
-      console.log('Successfully set up environment')
+    else {
+      // Always print a final activation message, even in quiet mode
+      const { config } = await import('../config')
+      const activation = (config.shellActivationMessage || '✅ Environment activated for {path}')
+        .replace('{path}', process.cwd())
+      console.log(activation)
     }
   }
   catch (error) {
@@ -1384,9 +1421,8 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
 
           // Special handling for PostgreSQL: wait for readiness and create project database
           if ((serviceName === 'postgres' || serviceName === 'postgresql') && hasPostgresInDeps) {
-            if (showMessages) {
+            if (showMessages)
               console.log('⏳ Verifying PostgreSQL readiness...')
-            }
             // Ensure postgres is actually accepting connections
             try {
               const { findBinaryInPath } = await import('../utils')
@@ -1407,9 +1443,8 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
             }
             catch {}
 
-            if (showMessages) {
+            if (showMessages)
               console.log('🔧 Creating project PostgreSQL database...')
-            }
             const projectName = path.basename(projectDir).replace(/\W/g, '_')
             try {
               await createProjectDatabase(projectName, {

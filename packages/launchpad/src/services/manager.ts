@@ -110,14 +110,27 @@ export async function startService(serviceName: string): Promise<boolean> {
     const service = await getOrCreateServiceInstance(serviceName)
 
     if (service.status === 'running') {
-      console.log(`✅ Service ${serviceName} is already running`)
-      operation.result = 'success'
-      operation.duration = 0
-      manager.operations.push(operation)
-      return true
+      // Verify actual health with a couple retries to avoid false negatives
+      let healthy = await checkServiceHealth(service)
+      if (!healthy) {
+        await new Promise(r => setTimeout(r, 500))
+        healthy = await checkServiceHealth(service)
+      }
+      if (healthy) {
+        logUniqueMessage(`✅ Service ${serviceName} is already running`, true)
+        operation.result = 'success'
+        operation.duration = 0
+        manager.operations.push(operation)
+        return true
+      }
+      else {
+        logUniqueMessage(`⚠️  ${service.definition?.displayName || serviceName} reported running but appears unhealthy. Attempting gentle restart...`, true)
+        await stopService(serviceName)
+        // fall through to start flow
+      }
     }
 
-    console.warn(`🚀 Starting ${service.definition?.displayName || serviceName}...`)
+    logUniqueMessage(`🚀 Starting ${service.definition?.displayName || serviceName}...`, true)
 
     // Update status to starting
     service.status = 'starting'
@@ -171,10 +184,18 @@ export async function startService(serviceName: string): Promise<boolean> {
       service.startedAt = new Date()
       service.pid = await getServicePid(service)
 
-      console.log(`✅ ${service.definition?.displayName || serviceName} started successfully`)
+      logUniqueMessage(`✅ ${service.definition?.displayName || serviceName} started successfully`, true)
 
       // Execute post-start setup commands
       await executePostStartCommands(service)
+      // For databases, perform a final readiness handshake to avoid races with immediate consumers
+      if (service.definition?.name === 'postgres' && process.platform === 'darwin') {
+        try {
+          // quick extra wait to ensure socket/listen transition is complete
+          await new Promise(r => setTimeout(r, 300))
+        }
+        catch {}
+      }
 
       // Health check after starting
       setTimeout(() => {
@@ -1167,7 +1188,7 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
     }
 
     // Announce post-start setup phase for databases
-    logUniqueMessage(`🔧 Running ${definition.displayName} post-start setup...`, true)
+    logUniqueMessage(`🔧 ${definition.displayName} post-start setup...`, true)
   }
   else {
     // For other services, use the original wait time
