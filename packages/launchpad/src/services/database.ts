@@ -54,36 +54,44 @@ async function createPostgreSQLDatabase(dbName: string, options: DatabaseOptions
   const { host = '127.0.0.1', port = 5432, user = 'postgres' } = options
 
   try {
-    // Ensure server is accepting TCP connections before attempting to create DB
+    // Ensure server is accepting connections before attempting to create DB
     const maxAttempts = 20
-    let ready = false
-    for (let i = 0; i < maxAttempts; i++) {
-      const attempt = await new Promise<boolean>((resolve) => {
-        const socket = net.connect({ host, port, timeout: 1000 }, () => {
-          socket.end()
-          resolve(true)
-        })
-        socket.on('error', () => resolve(false))
-        socket.on('timeout', () => {
-          socket.destroy()
-          resolve(false)
-        })
-      })
-      if (attempt) {
-        ready = true
-        break
-      }
-      await new Promise(r => setTimeout(r, 250 + i * 150))
-    }
-    if (!ready) {
-      // As a fallback, try pg_isready if available
-      const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+    let ready = process.env.LAUNCHPAD_PG_READY === '1'
+    const pgIsReadyBin = findBinaryInPath('pg_isready') || 'pg_isready'
+
+    for (let i = 0; i < maxAttempts && !ready; i++) {
+      let okPg = false
       try {
-        await executeCommand([pgIsReady, '-h', host, '-p', String(port)])
-        ready = true
+        await executeCommand([pgIsReadyBin, '-h', host, '-p', String(port)])
+        okPg = true
       }
       catch {}
+
+      let okTcp = false
+      if (!okPg) {
+        okTcp = await new Promise<boolean>((resolve) => {
+          const socket = net.connect({ host, port, timeout: 1000 }, () => {
+            socket.end()
+            resolve(true)
+          })
+          socket.on('error', () => resolve(false))
+          socket.on('timeout', () => {
+            socket.destroy()
+            resolve(false)
+          })
+        })
+      }
+
+      ready = okPg || okTcp
+
+      if (!ready) {
+        if (process.env.LAUNCHPAD_DEBUG === '1') {
+          console.warn(`⏳ PostgreSQL readiness attempt ${i + 1}/${maxAttempts} not ready; methods: pg_isready=${okPg ? 'ok' : 'fail'} tcp=${okTcp ? 'ok' : 'fail'}`)
+        }
+        await new Promise(r => setTimeout(r, 250 + i * 150))
+      }
     }
+
     if (!ready)
       throw new Error('PostgreSQL not accepting connections yet')
     // Small grace period after accept

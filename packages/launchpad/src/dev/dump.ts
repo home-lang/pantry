@@ -310,54 +310,71 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
   // Helper: wait for PostgreSQL if project uses it
   async function waitForPostgresIfNeeded(): Promise<void> {
     try {
-      const { parseEnvFile } = await import('../dev-setup')
-      const env = parseEnvFile(path.join(projectDir, '.env'))
-      const usesPg = (env.DB_CONNECTION || '').toLowerCase().includes('pg')
-      if (!usesPg)
-        return
+      let host = '127.0.0.1'
+      let port = '5432'
+      try {
+        const { parseEnvFile } = await import('../dev-setup')
+        const env = parseEnvFile(path.join(projectDir, '.env'))
+        host = env.DB_HOST || host
+        port = env.DB_PORT || port
+      }
+      catch {}
 
-      const host = env.DB_HOST || '127.0.0.1'
-      const port = env.DB_PORT || '5432'
-
-      const pgIsReady = (await import('../utils')).findBinaryInPath('pg_isready') || 'pg_isready'
-      // Probe up to 15 times with backoff
-      for (let i = 0; i < 15; i++) {
+      const { findBinaryInPath } = await import('../utils')
+      const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+      let ready = false
+      // First pass: pg_isready
+      for (let i = 0; i < 20 && !ready; i++) {
         const ok = await new Promise<boolean>((resolve) => {
           // eslint-disable-next-line ts/no-require-imports
           const { spawn } = require('node:child_process')
-          const p = spawn(pgIsReady, ['-h', host, '-p', port], { stdio: 'pipe' })
+          const p = spawn(pgIsReady, ['-h', host, '-p', String(port)], { stdio: 'pipe' })
           p.on('close', (code: number) => resolve(code === 0))
           p.on('error', () => resolve(false))
         })
-        if (ok)
-          break
-        await new Promise(r => setTimeout(r, Math.min(500 + i * 500, 5000)))
+        ready = ok
+        if (!ready)
+          await new Promise(r => setTimeout(r, 250 + i * 150))
+      }
+      // Fallback: TCP probe
+      if (!ready) {
+        const net = await import('node:net')
+        for (let i = 0; i < 20 && !ready; i++) {
+          const ok = await new Promise<boolean>((resolve) => {
+            const socket = net.connect({ host, port: Number(port), timeout: 1000 }, () => {
+              socket.end()
+              resolve(true)
+            })
+            socket.on('error', () => resolve(false))
+            socket.on('timeout', () => {
+              socket.destroy()
+              resolve(false)
+            })
+          })
+          ready = ok
+          if (!ready)
+            await new Promise(r => setTimeout(r, 250 + i * 150))
+        }
       }
       // Small grace delay after ready
-      await new Promise(r => setTimeout(r, 250))
+      if (ready)
+        await new Promise(r => setTimeout(r, 250))
 
-      // If still not listening, wait a bit longer with additional probes instead of restarting
-      const readyAfterFirstPass = await new Promise<boolean>((resolve) => {
-        // eslint-disable-next-line ts/no-require-imports
-        const { spawn } = require('node:child_process')
-        const p = spawn(pgIsReady, ['-h', host, '-p', port], { stdio: 'ignore' })
-        p.on('close', (code: number) => resolve(code === 0))
-        p.on('error', () => resolve(false))
-      })
-      if (!readyAfterFirstPass) {
-        for (let i = 0; i < 12; i++) {
+      // Final verification using psql simple query if available
+      const psqlBin = findBinaryInPath('psql') || 'psql'
+      if (psqlBin) {
+        for (let i = 0; i < 8; i++) {
           const ok = await new Promise<boolean>((resolve) => {
             // eslint-disable-next-line ts/no-require-imports
             const { spawn } = require('node:child_process')
-            const p = spawn(pgIsReady, ['-h', host, '-p', port], { stdio: 'ignore' })
+            const p = spawn(psqlBin, ['-h', host, '-p', String(port), '-U', 'postgres', '-tAc', 'SELECT 1'], { stdio: 'ignore' })
             p.on('close', (code: number) => resolve(code === 0))
             p.on('error', () => resolve(false))
           })
           if (ok)
             break
-          await new Promise(r => setTimeout(r, Math.min(750 + i * 250, 3000)))
+          await new Promise(r => setTimeout(r, 300 + i * 200))
         }
-        await new Promise(r => setTimeout(r, 250))
       }
     }
     catch {}
@@ -391,7 +408,27 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
         .filter(Boolean)
         .join(':')
 
-      const execEnv = { ...process.env, PATH: composedPath }
+      const execEnv: Record<string, string> = { ...process.env, PATH: composedPath }
+      // Ensure DB defaults for tools that honor process/env
+      if (!execEnv.DB_HOST)
+        execEnv.DB_HOST = '127.0.0.1'
+      if (!execEnv.DB_PORT)
+        execEnv.DB_PORT = '5432'
+      if (!execEnv.DB_USERNAME && !execEnv.DB_USER)
+        execEnv.DB_USERNAME = 'root'
+      if (!execEnv.DB_PASSWORD)
+        execEnv.DB_PASSWORD = ''
+      // Provide DATABASE_URL to override framework defaults when supported
+      try {
+        const dbName = path.basename(projectDir).replace(/\W/g, '_')
+        if (!execEnv.DATABASE_URL) {
+          const u = execEnv.DB_USERNAME || 'root'
+          const p = execEnv.DB_PASSWORD || ''
+          const cred = p ? `${u}:${p}` : `${u}`
+          execEnv.DATABASE_URL = `pgsql://${cred}@${execEnv.DB_HOST}:${execEnv.DB_PORT}/${dbName}`
+        }
+      }
+      catch {}
 
       if (command.runInBackground) {
         execSync(command.command, {
@@ -703,6 +740,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           await ensureProjectPhpIni(projectDir, envDir)
           try {
             await setupProjectServices(projectDir, sniffResult, true)
+            // Also run post-setup once in shell fast path (idempotent marker)
+            await maybeRunProjectPostSetup(projectDir, envDir, true)
           }
           catch {}
         }
@@ -896,6 +935,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         // Ensure project php.ini exists only
         await ensureProjectPhpIni(projectDir, envDir)
 
+        // Run project-level post-setup once (idempotent marker)
+        try {
+          await maybeRunProjectPostSetup(projectDir, envDir, true)
+        }
+        catch {}
+
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
         return
       }
@@ -943,7 +988,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Ensure php.ini and Laravel post-setup runs (regular path)
     await ensureProjectPhpIni(projectDir, envDir)
     if (!isShellIntegration) {
-      await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+      await maybeRunProjectPostSetup(projectDir, envDir, isShellIntegration)
     }
 
     // Mark environment as ready for fast shell activation on subsequent prompts
@@ -1450,7 +1495,7 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
 /**
  * Run Laravel post-setup commands once per project activation
  */
-async function maybeRunLaravelPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
+async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
   try {
     const projectPostSetup = config.postSetup
     if (!projectPostSetup?.enabled) {
@@ -1510,7 +1555,6 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
 
     // Import service manager
     const { startService } = await import('../services/manager')
-    const { createProjectDatabase } = await import('../services/database')
 
     // Start each service specified in autoStart
     for (const serviceName of autoStartServices) {
@@ -1528,63 +1572,8 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
 
           // Special handling for PostgreSQL: wait for readiness and create project database
           if ((serviceName === 'postgres' || serviceName === 'postgresql') && hasPostgresInDeps) {
-            if (showMessages)
-              console.log('⏳ Verifying PostgreSQL readiness...')
-            // Ensure postgres is actually accepting connections
-            try {
-              const { findBinaryInPath } = await import('../utils')
-              const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
-              // Probe up to 10 times
-              for (let i = 0; i < 10; i++) {
-                const probe = await new Promise<boolean>((resolve) => {
-                  // eslint-disable-next-line ts/no-require-imports
-                  const { spawn } = require('node:child_process')
-                  const p = spawn(pgIsReady, ['-h', '127.0.0.1', '-p', '5432'], { stdio: 'pipe' })
-                  p.on('close', (code: number) => resolve(code === 0))
-                  p.on('error', () => resolve(false))
-                })
-                if (probe)
-                  break
-                await new Promise(r => setTimeout(r, Math.min(1000 * (i + 1), 5000)))
-              }
-            }
-            catch {}
-
-            if (showMessages)
-              console.log('🔧 Creating project PostgreSQL database...')
-            const projectName = path.basename(projectDir).replace(/\W/g, '_')
-            try {
-              // Ensure DB utilities resolve from project environment first
-              const projectHash = generateProjectHash(projectDir)
-              const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
-              const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
-              const envBinPath = path.join(envDir, 'bin')
-              const envSbinPath = path.join(envDir, 'sbin')
-              const globalBinPath = path.join(globalEnvDir, 'bin')
-              const globalSbinPath = path.join(globalEnvDir, 'sbin')
-              const originalPath = process.env.PATH || ''
-              const augmentedPath = [envBinPath, envSbinPath, globalBinPath, globalSbinPath, originalPath]
-                .filter(Boolean)
-                .join(':')
-              process.env.PATH = augmentedPath
-
-              await createProjectDatabase(projectName, {
-                type: 'postgres',
-                host: '127.0.0.1',
-                port: 5432,
-                user: 'postgres',
-                password: '',
-              })
-
-              if (showMessages) {
-                console.log(`✅ PostgreSQL database '${projectName}' created`)
-              }
-            }
-            catch (dbError) {
-              if (showMessages) {
-                console.warn(`⚠️  Database creation warning: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
-              }
-            }
+            // Manager has already waited and verified health before returning true.
+            process.env.LAUNCHPAD_PG_READY = '1'
           }
         }
         else if (showMessages) {
@@ -1598,9 +1587,7 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
       }
     }
   }
-  catch (error) {
-    if (showMessages) {
-      console.warn(`⚠️  Service setup warning: ${error instanceof Error ? error.message : String(error)}`)
-    }
+  catch {
+    // non-fatal
   }
 }
