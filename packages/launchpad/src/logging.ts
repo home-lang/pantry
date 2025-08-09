@@ -126,7 +126,6 @@ export function logUniqueMessage(message: string, forceLog = false): void {
   else {
     console.log(message)
   }
-
 }
 
 export function clearMessageCache(): void {
