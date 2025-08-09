@@ -227,6 +227,7 @@ jobs:
             oniguruma \
             libzip \
             postgresql@17 \
+            libpq \
             readline \
             bzip2 \
             gmp \
@@ -245,8 +246,8 @@ jobs:
 
           # Verify PostgreSQL installation
           echo "Checking PostgreSQL installation:"
-          ls -la $(brew --prefix postgresql@17)/include/libpq-fe.h || echo "libpq-fe.h not found in expected location"
-          ls -la $(brew --prefix postgresql@17)/lib/libpq.* || echo "libpq not found in expected location"
+          ls -la $(brew --prefix libpq)/include/libpq-fe.h || echo "libpq-fe.h not found in expected location (libpq)"
+          ls -la $(brew --prefix libpq)/lib/libpq.* || echo "libpq not found in expected location (libpq)"
           which pg_config || echo "pg_config not found in PATH"
 
           # Verify bzip2 installation
@@ -352,6 +353,7 @@ jobs:
             "$(brew --prefix icu4c)/lib/pkgconfig"
             "$(brew --prefix zlib)/lib/pkgconfig"
             "$(brew --prefix postgresql@17)/lib/pkgconfig"
+            "$(brew --prefix libpq)/lib/pkgconfig"
             "$(brew --prefix bzip2)/lib/pkgconfig"
             "$(brew --prefix gettext)/lib/pkgconfig"
             "$(brew --prefix openldap)/lib/pkgconfig"
@@ -361,6 +363,7 @@ jobs:
           PATH_PATHS=(
             "$(brew --prefix bison)/bin"
             "$(brew --prefix)/bin"
+            "$(brew --prefix libpq)/bin"
             "$(brew --prefix postgresql@17)/bin"
             "$(brew --prefix gettext)/bin"
           )
@@ -371,7 +374,7 @@ jobs:
             "-L$(brew --prefix openssl@3)/lib"
             "-L$(brew --prefix zlib)/lib"
             "-L$(brew --prefix libiconv)/lib"
-            "-L$(brew --prefix postgresql@17)/lib"
+            "-L$(brew --prefix libpq)/lib"
             "-L$(brew --prefix bzip2)/lib"
             "-L$(brew --prefix gettext)/lib"
             "-L$(brew --prefix openldap)/lib"
@@ -383,7 +386,7 @@ jobs:
             "-I$(brew --prefix openssl@3)/include"
             "-I$(brew --prefix zlib)/include"
             "-I$(brew --prefix libiconv)/include"
-            "-I$(brew --prefix postgresql@17)/include"
+            "-I$(brew --prefix libpq)/include"
             "-I$(brew --prefix bzip2)/include"
             "-I$(brew --prefix gettext)/include"
             "-I$(brew --prefix openldap)/include"
@@ -402,12 +405,12 @@ jobs:
           which pg_config || echo "    pg_config not found in PATH"
           pg_config --version 2>/dev/null || echo "    pg_config version check failed"
           echo "  Checking libpq-fe.h:"
-          ls -la $(brew --prefix postgresql@17)/include/libpq-fe.h 2>/dev/null || echo "    libpq-fe.h not found"
-          echo "  Checking PostgreSQL installation:"
-          ls -la $(brew --prefix postgresql@17)/include/ 2>/dev/null | head -5 || echo "    PostgreSQL include directory not found"
-          ls -la $(brew --prefix postgresql@17)/lib/ 2>/dev/null | head -5 || echo "    PostgreSQL lib directory not found"
+          ls -la $(brew --prefix libpq)/include/libpq-fe.h 2>/dev/null || echo "    libpq-fe.h not found"
+          echo "  Checking libpq installation:"
+          ls -la $(brew --prefix libpq)/include/ 2>/dev/null | head -5 || echo "    libpq include directory not found"
+          ls -la $(brew --prefix libpq)/lib/ 2>/dev/null | head -5 || echo "    libpq lib directory not found"
 
-          if which pg_config >/dev/null 2>&1 && [[ -f "$(brew --prefix postgresql@17)/include/libpq-fe.h" ]]; then
+          if which pg_config >/dev/null 2>&1 && [[ -f "$(brew --prefix libpq)/include/libpq-fe.h" ]]; then
             echo "PostgreSQL found and working"
             echo "POSTGRESQL_AVAILABLE=true" >> $GITHUB_ENV
           else
@@ -444,9 +447,9 @@ jobs:
             export LIBS="$LIBS -lreadline"
 
             # Set PostgreSQL environment variables and PATH
-            export PGSQL_CFLAGS="-I$(brew --prefix postgresql@17)/include"
-            export PGSQL_LIBS="-L$(brew --prefix postgresql@17)/lib -lpq"
-            export PATH="$(brew --prefix postgresql@17)/bin:$PATH"
+            export PGSQL_CFLAGS="-I$(brew --prefix libpq)/include"
+            export PGSQL_LIBS="-L$(brew --prefix libpq)/lib -lpq"
+            export PATH="$(brew --prefix libpq)/bin:$(brew --prefix postgresql@17)/bin:$PATH"
 
             # Set bzip2 environment variables
             export BZIP2_CFLAGS="-I$(brew --prefix bzip2)/include"
