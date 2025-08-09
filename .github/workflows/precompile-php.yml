@@ -358,7 +358,9 @@ jobs:
             "$(brew --prefix gettext)/lib/pkgconfig"
             "$(brew --prefix openldap)/lib/pkgconfig"
           )
-          echo "PKG_CONFIG_PATH=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")" >> $GITHUB_ENV
+          PKG_CONFIG_PATH_JOINED=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH_JOINED" >> $GITHUB_ENV
+          export PKG_CONFIG_PATH="$PKG_CONFIG_PATH_JOINED"
 
           PATH_PATHS=(
             "$(brew --prefix bison)/bin"
@@ -367,7 +369,9 @@ jobs:
             "$(brew --prefix postgresql@17)/bin"
             "$(brew --prefix gettext)/bin"
           )
-          echo "PATH=$(IFS=:; echo "${PATH_PATHS[*]}"):$PATH" >> $GITHUB_ENV
+          PATH_JOINED=$(IFS=:; echo "${PATH_PATHS[*]}")
+          echo "PATH=$PATH_JOINED:$PATH" >> $GITHUB_ENV
+          export PATH="$PATH_JOINED:$PATH"
 
           LDFLAGS_PATHS=(
             "-L$(brew --prefix)/lib"
@@ -379,7 +383,9 @@ jobs:
             "-L$(brew --prefix gettext)/lib"
             "-L$(brew --prefix openldap)/lib"
           )
-          echo "LDFLAGS=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")" >> $GITHUB_ENV
+          LDFLAGS_JOINED=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
+          echo "LDFLAGS=$LDFLAGS_JOINED" >> $GITHUB_ENV
+          export LDFLAGS="$LDFLAGS_JOINED"
 
           CPPFLAGS_PATHS=(
             "-I$(brew --prefix)/include"
@@ -391,12 +397,20 @@ jobs:
             "-I$(brew --prefix gettext)/include"
             "-I$(brew --prefix openldap)/include"
           )
-          echo "CPPFLAGS=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")" >> $GITHUB_ENV
+          CPPFLAGS_JOINED=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
+          echo "CPPFLAGS=$CPPFLAGS_JOINED" >> $GITHUB_ENV
+          export CPPFLAGS="$CPPFLAGS_JOINED"
           echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
+          export CXXFLAGS="-std=c++17 -stdlib=libc++"
 
           # Set readline-specific paths
           echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
           echo "READLINE_LIBS=-L$(brew --prefix readline)/lib -lreadline" >> $GITHUB_ENV
+          export READLINE_CFLAGS="-I$(brew --prefix readline)/include"
+          export READLINE_LIBS="-L$(brew --prefix readline)/lib -lreadline"
+
+          # Ensure libpq is linked for pg_config availability (keg-only)
+          brew link libpq --force || true
 
           # Check if PostgreSQL is available and working
           echo "Debug: Checking PostgreSQL availability:"
