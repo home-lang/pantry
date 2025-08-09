@@ -293,17 +293,17 @@ jobs:
             "laravel-mysql")
               # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
               if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
               else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
               fi
               ;;
             "laravel-postgres")
               # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
               if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-pgsql --with-pgsql --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-pgsql=$(brew --prefix libpq) --with-pgsql=$(brew --prefix libpq) --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
               else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-pgsql --with-pgsql --enable-curl --with-openssl --enable-gd --with-zip --with-readline --enable-libxml --with-zlib"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-pgsql=$(brew --prefix libpq) --with-pgsql=$(brew --prefix libpq) --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
               fi
               ;;
             "laravel-sqlite")
@@ -320,9 +320,9 @@ jobs:
             "enterprise")
               # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
               if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql --with-pdo-sqlite --with-mysqli --with-pgsql --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql=$(brew --prefix libpq) --with-pdo-sqlite --with-mysqli --with-pgsql=$(brew --prefix libpq) --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
               else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql --with-pdo-sqlite --with-mysqli --with-pgsql --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql=$(brew --prefix libpq) --with-pdo-sqlite --with-mysqli --with-pgsql=$(brew --prefix libpq) --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
               fi
               ;;
             "wordpress")
@@ -332,9 +332,9 @@ jobs:
               # Comprehensive configuration with all major database drivers and extensions for local testing
               # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
               if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --with-pdo-mysql --with-pdo-pgsql --with-pdo-sqlite --with-mysqli --with-pgsql --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --with-pdo-mysql --with-pdo-pgsql=$(brew --prefix libpq) --with-pdo-sqlite --with-mysqli --with-pgsql=$(brew --prefix libpq) --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
               else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --with-pdo-mysql --with-pdo-pgsql --with-pdo-sqlite --with-mysqli --with-pgsql --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
+                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --with-pdo-mysql --with-pdo-pgsql=$(brew --prefix libpq) --with-pdo-sqlite --with-mysqli --with-pgsql=$(brew --prefix libpq) --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
               fi
               ;;
           esac
