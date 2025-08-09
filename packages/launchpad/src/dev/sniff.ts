@@ -852,7 +852,8 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
     // Support shorthand: services.infer: true (and deprecated: inferServices / framework)
     const wantsInference = (obj as any).services?.infer === true || (obj as any).inferServices === true || (obj as any).framework === true
-    if (wantsInference) {
+    // Only infer when globally allowed by environment/config toggles
+    if (wantsInference && shouldInferServices()) {
       if (!services || !services.enabled) {
         const inferred = await inferServicesFromFramework(dirPath.string)
         if (inferred.autoStart.length > 0) {

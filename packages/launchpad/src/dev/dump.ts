@@ -805,6 +805,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
     }
+    else if (!effectiveQuiet) {
+      // Final success summary for non-shell runs (used by tests)
+      console.log('Successfully set up environment')
+    }
   }
   catch (error) {
     // Check if this is a package installation failure (which should be handled gracefully)
