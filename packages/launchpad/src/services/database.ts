@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
 import { findBinaryInPath } from '../utils'
@@ -54,21 +55,39 @@ async function createPostgreSQLDatabase(dbName: string, options: DatabaseOptions
 
   try {
     // Ensure server is accepting TCP connections before attempting to create DB
-    const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+    const maxAttempts = 20
     let ready = false
-    for (let i = 0; i < 12; i++) {
-      try {
-        await executeCommand([pgIsReady, '-h', host, '-p', String(port)])
+    for (let i = 0; i < maxAttempts; i++) {
+      const attempt = await new Promise<boolean>((resolve) => {
+        const socket = net.connect({ host, port, timeout: 1000 }, () => {
+          socket.end()
+          resolve(true)
+        })
+        socket.on('error', () => resolve(false))
+        socket.on('timeout', () => {
+          socket.destroy()
+          resolve(false)
+        })
+      })
+      if (attempt) {
         ready = true
         break
       }
-      catch {
-        await new Promise(r => setTimeout(r, 500 + i * 250))
-      }
+      await new Promise(r => setTimeout(r, 250 + i * 150))
     }
     if (!ready) {
-      throw new Error('PostgreSQL not accepting connections yet')
+      // As a fallback, try pg_isready if available
+      const pgIsReady = findBinaryInPath('pg_isready') || 'pg_isready'
+      try {
+        await executeCommand([pgIsReady, '-h', host, '-p', String(port)])
+        ready = true
+      }
+      catch {}
     }
+    if (!ready)
+      throw new Error('PostgreSQL not accepting connections yet')
+    // Small grace period after accept
+    await new Promise(r => setTimeout(r, 250))
 
     // Check if database exists
     const checkCommand = ['psql', '-h', host, '-p', String(port), '-U', user, '-lqt']
