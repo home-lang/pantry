@@ -49,6 +49,14 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   // Compute runtime PATH and dynamic library search paths for packages started by launchd
   // launchd does not inherit shell env, so we must include env-specific paths here.
   const envVars: Record<string, string> = {}
+  // Determine auto-start preference: env override > config > service.enabled
+  const envAutoStart = process.env.LAUNCHPAD_SERVICES_SHOULD_AUTOSTART
+  const shouldAutoStartEffective
+    = envAutoStart !== undefined
+      ? (envAutoStart !== 'false')
+      : ((config.services && 'shouldAutoStart' in config.services)
+          ? Boolean(config.services.shouldAutoStart)
+          : Boolean(service.enabled))
 
   try {
     const binDir = path.dirname(executablePath)
@@ -139,7 +147,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
     },
     StandardOutPath: service.logFile || path.join(logDir || '', `${definition.name || service.name}.log`),
     StandardErrorPath: service.logFile || path.join(logDir || '', `${definition.name || service.name}.log`),
-    RunAtLoad: service.enabled || false,
+    RunAtLoad: shouldAutoStartEffective,
     KeepAlive: { SuccessfulExit: false },
     UserName: process.env.USER || 'root',
   }

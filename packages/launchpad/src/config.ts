@@ -75,6 +75,7 @@ export const defaultConfig: LaunchpadConfig = {
     startupTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_STARTUP_TIMEOUT || '30', 10),
     shutdownTimeout: Number.parseInt(process.env.LAUNCHPAD_SERVICES_SHUTDOWN_TIMEOUT || '10', 10),
     infer: process.env.LAUNCHPAD_SERVICES_INFER !== 'false',
+    shouldAutoStart: process.env.LAUNCHPAD_SERVICES_SHOULD_AUTOSTART !== 'false',
     database: {
       username: process.env.LAUNCHPAD_DB_USERNAME || 'root',
       password: process.env.LAUNCHPAD_DB_PASSWORD || 'password',

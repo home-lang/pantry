@@ -87,6 +87,7 @@ export interface LaunchpadConfig {
   services?: {
     enabled?: boolean
     autoStart?: boolean
+    shouldAutoStart?: boolean
     dataDir?: string
     logDir?: string
     configDir?: string
