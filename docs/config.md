@@ -472,6 +472,77 @@ const config: LaunchpadConfig = {
 export default config
 ```
 
+### Lifecycle Hooks (preSetup, preActivation, postActivation)
+
+In addition to `postSetup`, Launchpad provides three more lifecycle hooks for fine-grained control:
+
+- preSetup: runs before any installation/services start
+- preActivation: runs after installs/services, just before activation
+- postActivation: runs immediately after activation completes
+
+You can configure them in `launchpad.config.ts` or inline in your dependency file (e.g., `deps.yaml`).
+
+Config file example:
+
+```ts
+// launchpad.config.ts
+import type { LaunchpadConfig } from '@stacksjs/launchpad'
+
+const config: LaunchpadConfig = {
+  preSetup: {
+    enabled: true,
+    commands: [
+      { command: "bash -lc 'echo preSetup'" },
+    ],
+  },
+  preActivation: {
+    enabled: true,
+    commands: [
+      { command: "bash -lc 'echo preActivation'" },
+    ],
+  },
+  postActivation: {
+    enabled: true,
+    commands: [
+      { command: "bash -lc 'echo postActivation'" },
+    ],
+  },
+}
+
+export default config
+```
+
+Dependency file example (inline hooks):
+
+```yaml
+# deps.yaml
+preSetup:
+  enabled: true
+  commands:
+    - { command: "bash -lc 'echo preSetup'" }
+
+postSetup:
+  enabled: true
+  commands:
+    - { command: "bash -lc 'echo postSetup'" }
+
+preActivation:
+  enabled: true
+  commands:
+    - { command: "bash -lc 'echo preActivation'" }
+
+postActivation:
+  enabled: true
+  commands:
+    - { command: "bash -lc 'echo postActivation'" }
+```
+
+Notes:
+- Inline hooks in `deps.yaml` run alongside config hooks of the same phase.
+- preSetup runs before dependency installation and service auto-start.
+- preActivation runs after installation/services and before printing the activation message.
+- postActivation runs after the final activation message.
+
 ## Environment Variables
 
 You can also configure Launchpad using environment variables:

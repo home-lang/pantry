@@ -54,6 +54,18 @@ export const defaultConfig: LaunchpadConfig = {
     enabled: process.env.LAUNCHPAD_POST_SETUP_ENABLED !== 'false',
     commands: [],
   },
+  preSetup: {
+    enabled: process.env.LAUNCHPAD_PRE_SETUP_ENABLED !== 'false',
+    commands: [],
+  },
+  preActivation: {
+    enabled: process.env.LAUNCHPAD_PRE_ACTIVATION_ENABLED !== 'false',
+    commands: [],
+  },
+  postActivation: {
+    enabled: process.env.LAUNCHPAD_POST_ACTIVATION_ENABLED !== 'false',
+    commands: [],
+  },
   services: {
     enabled: process.env.LAUNCHPAD_SERVICES_ENABLED !== 'false',
     dataDir: process.env.LAUNCHPAD_SERVICES_DATA_DIR || path.join(homedir(), '.local', 'share', 'launchpad', 'services'),

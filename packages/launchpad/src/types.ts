@@ -69,6 +69,21 @@ export interface LaunchpadConfig {
     enabled?: boolean
     commands?: PostSetupCommand[]
   }
+  /** Project-level pre-setup commands (run before any installation/services) */
+  preSetup?: {
+    enabled?: boolean
+    commands?: PostSetupCommand[]
+  }
+  /** Commands to run just before activation (after install/services) */
+  preActivation?: {
+    enabled?: boolean
+    commands?: PostSetupCommand[]
+  }
+  /** Commands to run right after activation completes */
+  postActivation?: {
+    enabled?: boolean
+    commands?: PostSetupCommand[]
+  }
   services?: {
     enabled?: boolean
     autoStart?: boolean

@@ -205,6 +205,15 @@ cd ../          # → Automatically deactivates
 # dev environment deactivated
 ```
 
+Hook lifecycle during activation:
+
+- preSetup (before installs/services)
+- postSetup (after environment is prepared)
+- preActivation (after installs/services, before activation message)
+- postActivation (immediately after activation message)
+
+Define hooks in `launchpad.config.ts` or inline in `deps.yaml` (see Configuration → Lifecycle Hooks).
+
 ::: tip Prompt Compatibility
 If you use **Starship prompt** and see timeout warnings like `[WARN] - (starship::utils): Executing command timed out`, add `command_timeout = 5000` to the top of your `~/.config/starship.toml` file. This gives Starship enough time to detect tool versions from Launchpad-managed binaries. See [Troubleshooting](./troubleshooting.md#starship-prompt-timeout-warnings) for details.
 :::

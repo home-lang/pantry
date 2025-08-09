@@ -29,6 +29,49 @@ export interface DumpOptions {
   skipGlobal?: boolean // Skip global package processing for testing
 }
 
+function extractHookCommandsFromDepsYaml(filePath: string, hookName: 'preSetup' | 'postSetup' | 'preActivation' | 'postActivation'): PostSetupCommand[] {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8')
+    const lines = content.split(/\r?\n/)
+    const cmds: PostSetupCommand[] = []
+    let inHook = false
+    let inCommands = false
+    let baseIndent = 0
+    for (let i = 0; i < lines.length; i++) {
+      const raw = lines[i]
+      const indent = raw.length - raw.trimStart().length
+      const line = raw.trim()
+      if (!inHook) {
+        if (line.startsWith(`${hookName}:`)) {
+          inHook = true
+          baseIndent = indent
+        }
+        continue
+      }
+      if (indent <= baseIndent && line.endsWith(':')) {
+        break
+      }
+      if (!inCommands && line.startsWith('commands:')) {
+        inCommands = true
+        continue
+      }
+      if (inCommands) {
+        const m1 = line.match(/command:\s*"([^"]+)"/)
+        const m2 = line.match(/command:\s*'([^']+)'/)
+        if (m1 || m2) {
+          const cmd = (m1?.[1] || m2?.[1]) as string
+          if (cmd && cmd.length > 0)
+            cmds.push({ command: cmd })
+        }
+      }
+    }
+    return cmds
+  }
+  catch {
+    return []
+  }
+}
+
 /**
  * Check if packages are installed in the given environment directory
  */
@@ -197,6 +240,13 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
   }
   catch {
     // Ignore errors checking migrations
+  }
+
+  // Execute project-level post-setup commands if enabled (skip in shell integration fast path)
+  const projectPreSetup = config.preSetup
+  if (projectPreSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
+    const preSetupResults = await executepostSetup(dir, projectPreSetup.commands || [])
+    suggestions.push(...preSetupResults)
   }
 
   // Execute project-level post-setup commands if enabled (skip in shell integration fast path)
@@ -589,6 +639,20 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
   try {
     // Find dependency file using our comprehensive detection
     const dependencyFile = findDependencyFile(dir)
+    // Early pre-setup hook (before any installs/services) when config present in working dir
+    try {
+      if (dependencyFile) {
+        const fileCmds = extractHookCommandsFromDepsYaml(dependencyFile, 'preSetup')
+        if (fileCmds.length > 0) {
+          await executepostSetup(path.dirname(dependencyFile), fileCmds)
+        }
+      }
+      const projectPreSetup = config.preSetup
+      if (projectPreSetup?.enabled && !shellOutput && !quiet && dependencyFile) {
+        await executepostSetup(path.dirname(dependencyFile), projectPreSetup.commands || [])
+      }
+    }
+    catch {}
 
     if (!dependencyFile) {
       if (!quiet && !shellOutput) {
@@ -840,11 +904,30 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     if (localPackages.length > 0 || globalPackages.length > 0) {
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
       // Visual separator after dependency install list
-      try { console.log() }
+      try {
+        console.log()
+      }
       catch {}
     }
 
     // Auto-start services for any project that has services configuration
+    // Pre-activation hook (runs after install/services and before shell activation)
+    const preActivation = config.preActivation
+    if (dependencyFile) {
+      const filePostSetup = extractHookCommandsFromDepsYaml(dependencyFile, 'postSetup')
+      if (filePostSetup.length > 0) {
+        await executepostSetup(projectDir, filePostSetup)
+      }
+    }
+    if (preActivation?.enabled && !isShellIntegration) {
+      await executepostSetup(projectDir, preActivation.commands || [])
+    }
+    if (dependencyFile) {
+      const filePreActivation = extractHookCommandsFromDepsYaml(dependencyFile, 'preActivation')
+      if (filePreActivation.length > 0) {
+        await executepostSetup(projectDir, filePreActivation)
+      }
+    }
     // Suppress interstitial processing messages during service startup phase
     const prevProcessing = process.env.LAUNCHPAD_PROCESSING
     process.env.LAUNCHPAD_PROCESSING = '0'
@@ -857,6 +940,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Ensure php.ini and Laravel post-setup runs (regular path)
     await ensureProjectPhpIni(projectDir, envDir)
     await maybeRunLaravelPostSetup(projectDir, envDir, isShellIntegration)
+
+    // Mark environment as ready for fast shell activation on subsequent prompts
+    try {
+      await fs.promises.mkdir(path.join(envDir), { recursive: true })
+      await fs.promises.writeFile(path.join(envDir, '.launchpad_ready'), '1')
+    }
+    catch {}
 
     // Check for Laravel project and provide helpful suggestions
     const laravelInfo = await detectLaravelProject(projectDir)
@@ -885,6 +975,18 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const activation = (config.shellActivationMessage || '✅ Environment activated for {path}')
         .replace('{path}', process.cwd())
       console.log(activation)
+
+      // Post-activation hook (file-level then config)
+      if (dependencyFile) {
+        const filePostActivation = extractHookCommandsFromDepsYaml(dependencyFile, 'postActivation')
+        if (filePostActivation.length > 0) {
+          await executepostSetup(projectDir, filePostActivation)
+        }
+      }
+      const postActivation = config.postActivation
+      if (postActivation?.enabled) {
+        await executepostSetup(projectDir, postActivation.commands || [])
+      }
     }
   }
   catch (error) {

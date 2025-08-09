@@ -91,6 +91,23 @@ export function shellcode(testMode: boolean = false): string {
 
   return `
 # Launchpad shell integration - Performance Optimized
+# Ultra-fast init guard: avoid any heavy work during initial shell startup
+if [[ -z "$__LAUNCHPAD_INIT_DONE" ]]; then
+    export __LAUNCHPAD_INIT_DONE=1
+    # Preload minimal global paths only; defer scans to first cd
+    if [[ -d "$HOME/.local/share/launchpad/global/bin" ]]; then
+        case ":$PATH:" in
+            *":$HOME/.local/share/launchpad/global/bin:"*) ;;
+            *) export PATH="$HOME/.local/share/launchpad/global/bin:$PATH" ;;
+        esac
+    fi
+    if [[ -d "$HOME/.local/share/launchpad/global/sbin" ]]; then
+        case ":$PATH:" in
+            *":$HOME/.local/share/launchpad/global/sbin:"*) ;;
+            *) export PATH="$HOME/.local/share/launchpad/global/sbin:$PATH" ;;
+        esac
+    fi
+fi
 # Exit early if shell integration is disabled or in test mode
 if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" == "1"${testModeCheck} ]]; then
     return 0 2>/dev/null || exit 0
@@ -726,14 +743,8 @@ __launchpad_chpwd() {
                     eval "$env_output" 2>/dev/null || true
                 fi
 
-                # After activation, attempt to run Laravel post-setup if configured
-                if command -v launchpad >/dev/null 2>&1; then
-                    # Best-effort: run migrate if configured and php works
-                    if command -v php >/dev/null 2>&1; then
-                        # Trigger a lightweight Laravel detect to run post-setup via CLI (quiet)
-                        LAUNCHPAD_SHOW_ENV_MESSAGES=false launchpad dev "$project_dir" --quiet >/dev/null 2>&1 || true
-                    fi
-                fi
+                # Defer post-setup quietly without background job output; precmd hook will refresh
+                touch "$HOME/.cache/launchpad/shell_cache/global_refresh_needed" 2>/dev/null || true
 
                 # Ensure global dependencies are still in PATH after project setup
                 __launchpad_ensure_global_path
@@ -907,7 +918,7 @@ __launchpad_source_hooks_dir() {
 
 # One-time setup on shell initialization
 __launchpad_setup_global_deps
-__launchpad_ensure_global_path
+__launchpad_ensure_global_path_fast
 __launchpad_source_hooks_dir "$HOME/.config/launchpad/hooks/init.d"
 
 # Clear command hash table on initial load

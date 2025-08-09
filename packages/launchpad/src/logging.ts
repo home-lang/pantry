@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import fs from 'node:fs'
 import process from 'node:process'
-import { config } from './config'
 
 // Global message deduplication for shell mode
 const shellModeMessageCache = new Set<string>()
