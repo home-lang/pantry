@@ -2472,11 +2472,13 @@ cli
       const installPrefix = install_prefix().string
 
       // Helper function to get global dependencies from deps.yaml files
-      const getGlobalDependencies = async (): Promise<Set<string>> => {
+      const getGlobalDependencies = async (): Promise<{ globalDeps: Set<string>, explicitTrue: Set<string>, hadTopLevelGlobal: boolean }> => {
         const globalDeps = new Set<string>()
+        const explicitTrue = new Set<string>()
+        let hadTopLevelGlobal = false
 
         if (!options?.keepGlobal) {
-          return globalDeps
+          return { globalDeps, explicitTrue, hadTopLevelGlobal }
         }
 
         // Common locations for global deps.yaml files
@@ -2501,88 +2503,113 @@ cli
                 const lines = content.split('\n')
                 let topLevelGlobal = false
                 let inDependencies = false
-                let currentIndent = 0
+                let depsIndent = -1 // indent level of entries under dependencies
+                let currentIndent = 0 // indent of the 'dependencies:' line
+                const explicitFalse: Set<string> = new Set()
 
-                for (const line of lines) {
+                for (let idx = 0; idx < lines.length; idx++) {
+                  const line = lines[idx]
                   const trimmed = line.trim()
+                  const lineIndent = line.length - line.trimStart().length
 
                   // Skip empty lines and comments
-                  if (!trimmed || trimmed.startsWith('#')) {
+                  if (!trimmed || trimmed.startsWith('#'))
                     continue
-                  }
 
                   // Check for top-level global flag
-                  if (trimmed.startsWith('global:')) {
+                  if (lineIndent === 0 && trimmed.startsWith('global:')) {
                     const value = trimmed.split(':')[1]?.trim()
                     topLevelGlobal = value === 'true' || value === 'yes'
+                    if (topLevelGlobal)
+                      hadTopLevelGlobal = true
                     continue
                   }
 
                   // Check for dependencies section
                   if (trimmed.startsWith('dependencies:')) {
                     inDependencies = true
-                    currentIndent = line.length - line.trimStart().length
+                    currentIndent = lineIndent
+                    depsIndent = -1
                     continue
                   }
 
-                  // If we're in dependencies section
-                  if (inDependencies) {
-                    const lineIndent = line.length - line.trimStart().length
+                  if (!inDependencies)
+                    continue
 
-                    // If we're back to the same or less indentation, we're out of dependencies
-                    if (lineIndent <= currentIndent && trimmed.length > 0) {
-                      inDependencies = false
-                      continue
-                    }
+                  // If we're back to the same or less indentation, we're out of dependencies
+                  if (lineIndent <= currentIndent && trimmed.length > 0) {
+                    inDependencies = false
+                    depsIndent = -1
+                    continue
+                  }
 
-                    // Parse dependency entry
-                    if (lineIndent > currentIndent && trimmed.includes(':')) {
-                      const depName = trimmed.split(':')[0].trim()
+                  if (!trimmed.includes(':'))
+                    continue
 
-                      if (depName && !depName.startsWith('#')) {
-                        // Check if this is a simple string value or object
-                        const colonIndex = trimmed.indexOf(':')
-                        const afterColon = trimmed.substring(colonIndex + 1).trim()
+                  // Establish dependency entry indent on first child line
+                  if (depsIndent === -1 && lineIndent > currentIndent)
+                    depsIndent = lineIndent
 
-                        if (afterColon && !afterColon.startsWith('{') && afterColon !== '') {
-                          // Simple string format - use top-level global flag
-                          if (topLevelGlobal) {
-                            globalDeps.add(depName)
-                          }
-                        }
-                        else {
-                          // Object format - need to check for individual global flag
-                          // Look for the global flag in subsequent lines
-                          let checkingForGlobal = true
-                          let foundGlobal = false
+                  // Only treat lines at the dependency-entry indent as dependency keys
+                  if (lineIndent !== depsIndent)
+                    continue
 
-                          for (let i = lines.indexOf(line) + 1; i < lines.length && checkingForGlobal; i++) {
-                            const nextLine = lines[i]
-                            const nextTrimmed = nextLine.trim()
-                            const nextIndent = nextLine.length - nextLine.trimStart().length
+                  const depName = trimmed.split(':')[0].trim()
+                  // Only consider plausible package domains (contain '.' or '/') and skip common keys
+                  if (!depName || depName === 'version' || depName === 'global' || (!depName.includes('.') && !depName.includes('/')))
+                    continue
 
-                            // If we're back to same or less indentation, stop looking
-                            if (nextIndent <= lineIndent && nextTrimmed.length > 0) {
-                              checkingForGlobal = false
-                              break
-                            }
+                  const colonIndex = trimmed.indexOf(':')
+                  const afterColon = trimmed.substring(colonIndex + 1).trim()
 
-                            // Check for global flag
-                            if (nextTrimmed.startsWith('global:')) {
-                              const globalValue = nextTrimmed.split(':')[1]?.trim()
-                              foundGlobal = globalValue === 'true' || globalValue === 'yes'
-                              checkingForGlobal = false
-                            }
-                          }
-
-                          // If we found an explicit global flag, use it; otherwise use top-level
-                          if (foundGlobal || (topLevelGlobal && !foundGlobal)) {
-                            globalDeps.add(depName)
-                          }
-                        }
+                  if (afterColon && !afterColon.startsWith('{') && afterColon !== '') {
+                    // Simple string format - use top-level global flag only
+                    if (topLevelGlobal)
+                      globalDeps.add(depName)
+                  }
+                  else {
+                    // Object format - look ahead for an explicit global flag within this entry
+                    let foundGlobal = false
+                    for (let j = idx + 1; j < lines.length; j++) {
+                      const nextLine = lines[j]
+                      const nextTrimmed = nextLine.trim()
+                      const nextIndent = nextLine.length - nextLine.trimStart().length
+                      // Stop if out of this entry block
+                      if (nextIndent <= depsIndent && nextTrimmed.length > 0)
+                        break
+                      if (nextTrimmed.startsWith('global:')) {
+                        const globalValue = nextTrimmed.split(':')[1]?.trim()
+                        foundGlobal = globalValue === 'true' || globalValue === 'yes'
+                        if (globalValue === 'false' || globalValue === 'no')
+                          explicitFalse.add(depName)
+                        break
                       }
                     }
+                    if (foundGlobal) {
+                      explicitTrue.add(depName)
+                      globalDeps.add(depName)
+                    }
+                    else if (topLevelGlobal) {
+                      globalDeps.add(depName)
+                    }
                   }
+                }
+
+                // Remove any explicitly false packages from both sets
+                for (const pkg of explicitFalse) {
+                  globalDeps.delete(pkg)
+                  explicitTrue.delete(pkg)
+                }
+
+                // Final safety: remove non-domain keys accidentally parsed
+                const isDomainLike = (s: string) => s.includes('.') || s.includes('/')
+                for (const pkg of Array.from(globalDeps)) {
+                  if (!isDomainLike(pkg))
+                    globalDeps.delete(pkg)
+                }
+                for (const pkg of Array.from(explicitTrue)) {
+                  if (!isDomainLike(pkg))
+                    explicitTrue.delete(pkg)
                 }
               }
 
@@ -2596,11 +2623,60 @@ cli
           }
         }
 
-        return globalDeps
+        return { globalDeps, explicitTrue, hadTopLevelGlobal }
       }
 
       // Get global dependencies
-      const globalDeps = await getGlobalDependencies()
+      const { globalDeps, explicitTrue, hadTopLevelGlobal } = await getGlobalDependencies()
+
+      // Determine Launchpad-managed services to stop (respecting --keep-global)
+      const {
+        getAllServiceDefinitions,
+        getServiceStatus,
+        stopService,
+        disableService,
+        removeServiceFile,
+        getServiceFilePath,
+      } = await import('../src/services')
+
+      const serviceDefs = getAllServiceDefinitions()
+      const candidateServices = serviceDefs.filter((def) => {
+        if (options?.keepGlobal && def.packageDomain) {
+          return !globalDeps.has(def.packageDomain)
+        }
+        return true
+      })
+
+      const runningServices: string[] = []
+      for (const def of candidateServices) {
+        if (!def.name)
+          continue
+        let shouldInclude = false
+        try {
+          const status = await getServiceStatus(def.name)
+          if (status !== 'stopped')
+            shouldInclude = true
+        }
+        catch {}
+
+        // Include if a service file exists
+        try {
+          const serviceFile = getServiceFilePath(def.name)
+          if (serviceFile && fs.existsSync(serviceFile))
+            shouldInclude = true
+        }
+        catch {}
+
+        // Include if a data directory exists
+        try {
+          if (def.dataDirectory && fs.existsSync(def.dataDirectory))
+            shouldInclude = true
+        }
+        catch {}
+
+        if (shouldInclude)
+          runningServices.push(def.name)
+      }
 
       // Helper function to get all Launchpad-managed binaries from package metadata
       const getLaunchpadBinaries = (): Array<{ binary: string, package: string, fullPath: string }> => {
@@ -2863,11 +2939,21 @@ cli
             })
           }
 
+          // Show services that would be stopped
+          if (runningServices.length > 0) {
+            console.log('')
+            console.log('🛑 Services that would be stopped:')
+            runningServices.forEach((name) => {
+              console.log(`   • ${name}`)
+            })
+          }
+
           // Show preserved global dependencies
-          if (options?.keepGlobal && globalDeps.size > 0) {
+          if (options?.keepGlobal && (explicitTrue.size > 0 || hadTopLevelGlobal)) {
             console.log('')
             console.log('✅ Global dependencies that would be preserved:')
-            Array.from(globalDeps).sort().forEach((dep) => {
+            const toPrint = explicitTrue.size > 0 ? explicitTrue : globalDeps
+            Array.from(toPrint).sort().forEach((dep) => {
               console.log(`   • ${dep}`)
             })
           }
@@ -2879,7 +2965,26 @@ cli
       }
 
       // Actually perform cleanup
-      if (existingDirs.length > 0 || launchpadBinaries.length > 0) {
+      if (existingDirs.length > 0 || launchpadBinaries.length > 0 || runningServices.length > 0) {
+        // Stop Launchpad-managed services first so files can be removed cleanly
+        if (runningServices.length > 0) {
+          console.log(`🛑 Stopping ${runningServices.length} Launchpad service(s)...`)
+          for (const name of runningServices) {
+            try {
+              await stopService(name)
+            }
+            catch {}
+            try {
+              await disableService(name)
+            }
+            catch {}
+            try {
+              await removeServiceFile(name)
+            }
+            catch {}
+          }
+        }
+
         console.log(`📊 Cleaning ${formatSize(totalSize)} of data (${totalFiles} files)...`)
         console.log('')
 
@@ -2933,10 +3038,11 @@ cli
           console.log('💡 Cache was preserved. Use `launchpad cache:clear` to remove cached downloads.')
         }
 
-        if (options?.keepGlobal && globalDeps.size > 0) {
+        if (options?.keepGlobal && (explicitTrue.size > 0 || hadTopLevelGlobal)) {
           console.log('')
           console.log('✅ Global dependencies were preserved:')
-          Array.from(globalDeps).sort().forEach((dep) => {
+          const toPrint = explicitTrue.size > 0 ? explicitTrue : globalDeps
+          Array.from(toPrint).sort().forEach((dep) => {
             console.log(`   • ${dep}`)
           })
         }

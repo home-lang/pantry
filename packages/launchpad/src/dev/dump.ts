@@ -821,7 +821,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           await ensureProjectPhpIni(projectDir, envDir)
           try {
             await setupProjectServices(projectDir, sniffResult, true)
-            // Also run post-setup once in shell fast path (idempotent marker)
+            // Run project-configured post-setup once in shell fast path (idempotent)
             await maybeRunProjectPostSetup(projectDir, envDir, true)
           }
           catch {}
@@ -1016,7 +1016,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         // Ensure project php.ini exists only
         await ensureProjectPhpIni(projectDir, envDir)
 
-        // Run project-level post-setup once (idempotent marker)
+        // Run project-configured post-setup once (idempotent marker)
         try {
           await maybeRunProjectPostSetup(projectDir, envDir, true)
         }
@@ -1578,11 +1578,6 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
  */
 async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
   try {
-    const projectPostSetup = config.postSetup
-    if (!projectPostSetup?.enabled) {
-      return
-    }
-
     // Use a marker file inside env to avoid re-running on every prompt
     const markerDir = path.join(envDir, 'pkgs')
     const markerFile = path.join(markerDir, '.post_setup_done')
@@ -1597,9 +1592,37 @@ async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isS
     }
     catch {}
 
+    // Aggregate post-setup commands from both runtime config and project-local config
+    const commands: PostSetupCommand[] = []
+
+    // 1) Runtime config (global/app config)
+    const projectPostSetup = config.postSetup
+    if (projectPostSetup?.enabled && Array.isArray(projectPostSetup.commands)) {
+      commands.push(...projectPostSetup.commands)
+    }
+
+    // 2) Project-local launchpad.config.ts (if present)
+    try {
+      const configPathTs = path.join(projectDir, 'launchpad.config.ts')
+      if (fs.existsSync(configPathTs)) {
+        const mod = await import(configPathTs)
+        const local = mod.default || mod
+        if (local?.postSetup?.enabled && Array.isArray(local.postSetup.commands)) {
+          commands.push(...local.postSetup.commands)
+        }
+      }
+    }
+    catch {
+      // Ignore import errors; absence or parse errors should not fail setup
+    }
+
+    if (commands.length === 0) {
+      return
+    }
+
     // Execute and mark
-    const results = await executepostSetup(projectDir, projectPostSetup.commands || [])
-    if ((results && results.length > 0) || true) {
+    const results = await executepostSetup(projectDir, commands)
+    if (results && results.length > 0) {
       try {
         fs.writeFileSync(markerFile, new Date().toISOString())
       }
@@ -1610,6 +1633,9 @@ async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isS
     // non-fatal
   }
 }
+
+// Deprecated: kept here for reference only (no longer used)
+// Previously attempted a local fallback migration; removed per product decision.
 
 /**
  * Auto-setup services for any project based on deps.yaml services configuration

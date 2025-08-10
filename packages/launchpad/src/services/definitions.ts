@@ -44,11 +44,11 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       // Ensure default postgres role exists for framework defaults
       ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'postgres\') THEN CREATE ROLE postgres SUPERUSER LOGIN; END IF; END $$;'],
       // Create project-specific user idempotently
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'{appUser}\') THEN CREATE ROLE {appUser} LOGIN PASSWORD \'{appPassword}\'; ELSE ALTER ROLE {appUser} WITH PASSWORD \'{appPassword}\'; END IF; END $$;'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'{dbUsername}\') THEN CREATE ROLE {dbUsername} LOGIN PASSWORD \'{dbPassword}\'; ELSE ALTER ROLE {dbUsername} WITH PASSWORD \'{dbPassword}\'; END IF; END $$;'],
       // Grant permissions and set ownership
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'ALTER DATABASE {projectDatabase} OWNER TO {appUser}; GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {appUser};'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO {appUser};'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO {appUser};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'ALTER DATABASE {projectDatabase} OWNER TO {dbUsername}; GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {dbUsername};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO {dbUsername};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO {dbUsername};'],
     ],
     supportsGracefulShutdown: true,
     config: {
