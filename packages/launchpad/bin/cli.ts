@@ -514,6 +514,7 @@ async function setupDevelopmentEnvironment(
     quiet: options?.quiet || isShellIntegration,
     shellOutput: isShellIntegration,
     skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true',
+    verbose: config.verbose,
   })
 }
 
@@ -1989,6 +1990,7 @@ cli
         quiet: options?.quiet || isShellIntegration, // Force quiet for shell integration
         shellOutput: isShellIntegration,
         skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true', // Skip global packages only in test mode or when explicitly disabled
+        verbose: config.verbose,
       })
     }
     catch (error) {

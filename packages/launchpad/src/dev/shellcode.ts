@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
+import { config } from '../config'
 
 // Helper function to find the correct launchpad binary
 function getLaunchpadBinary(): string {
@@ -89,11 +90,17 @@ export function shellcode(testMode: boolean = false): string {
   const activationMessage = ((typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_ACTIVATION_MESSAGE) || '✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m').replace('{path}', '$(basename "$project_dir")')
   const deactivationMessage = (typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE) || 'Environment deactivated'
 
+  const verboseDefault = !!config.verbose
+
   return `
 # Launchpad shell integration - Performance Optimized
 # Ultra-fast init guard: avoid any heavy work during initial shell startup
 if [[ -z "$__LAUNCHPAD_INIT_DONE" ]]; then
     export __LAUNCHPAD_INIT_DONE=1
+    # Propagate verbose from Launchpad config to environment if not already set
+    if [[ -z "$LAUNCHPAD_VERBOSE" && "${verboseDefault ? '1' : ''}" == "1" ]]; then
+        export LAUNCHPAD_VERBOSE=true
+    fi
     # Preload minimal global paths only; defer scans to first cd
     if [[ -d "$HOME/.local/share/launchpad/global/bin" ]]; then
         case ":$PATH:" in
@@ -608,6 +615,10 @@ __launchpad_chpwd() {
             # Resolve to physical path and compute MD5 (matches generateProjectHash in dump.ts)
             local real_project_dir
             real_project_dir=$(cd "$project_dir" 2>/dev/null && pwd -P || echo "$project_dir")
+            # Enable verbose logs for this shell when project config sets verbose: true
+            if [[ -f "$real_project_dir/launchpad.config.ts" ]] && /usr/bin/grep -Eq "verbose:\\s*true" "$real_project_dir/launchpad.config.ts" 2>/dev/null; then
+                export LAUNCHPAD_VERBOSE=true
+            fi
             local project_basename
             project_basename=$(basename "$real_project_dir")
             local md5hash
@@ -674,6 +685,11 @@ __launchpad_chpwd() {
                     __launchpad_ensure_global_path_fast
                     __launchpad_ensure_system_path
                     hash -r 2>/dev/null || true
+                    # Verbose diagnostics for fast cached activation
+                    if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                        printf "🔍 Fast path (cache): env_dir=%s ready=%s\n" "$env_dir" "$([ -f "$env_dir/.launchpad_ready" ] && echo true || echo false)" >&2
+                        printf "🔍 PATH head: %s\n" "$env_dir/bin" >&2
+                    fi
                     if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                         printf "${activationMessage}\n" >&2
                     fi
@@ -700,6 +716,11 @@ __launchpad_chpwd() {
                 # Update persistent cache for instant future activation
                 mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
                 touch "$cache_file" 2>/dev/null || true
+                # Verbose diagnostics for fast path activation
+                if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                    printf "🔍 Fast path: env_dir=%s ready=%s\n" "$env_dir" "$([ -f "$env_dir/.launchpad_ready" ] && echo true || echo false)" >&2
+                    printf "🔍 PATH head: %s\n" "$env_dir/bin" >&2
+                fi
 
                 if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                     printf "${activationMessage}\n" >&2
@@ -747,7 +768,11 @@ __launchpad_chpwd() {
 
                 # Execute the environment setup if we have output
                 if [[ -n "$env_output" ]]; then
-                    eval "$env_output" 2>/dev/null || true
+                    if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                        eval "$env_output"
+                    else
+                        eval "$env_output" 2>/dev/null || true
+                    fi
                 fi
 
                 # Defer post-setup quietly without background job output; precmd hook will refresh

@@ -18,7 +18,7 @@
     },
     "packages/action": {
       "name": "launchpad-installer",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "bin": {
         "launchpad-installer": "dist/index.js",
       },
@@ -35,14 +35,14 @@
     },
     "packages/launchpad": {
       "name": "@stacksjs/launchpad",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "bin": {
         "launchpad": "./dist/bin/cli.js",
       },
       "dependencies": {
         "bunfig": "^0.11.1",
         "cac": "^6.7.14",
-        "ts-pkgx": "0.4.24",
+        "ts-pkgx": "0.4.30",
       },
       "devDependencies": {
         "bun-plugin-dtsx": "^0.9.5",
@@ -1884,7 +1884,7 @@
 
     "ts-declaration-location": ["ts-declaration-location@1.0.7", "", { "dependencies": { "picomatch": "^4.0.2" }, "peerDependencies": { "typescript": ">=4.0.0" } }, "sha512-EDyGAwH1gO0Ausm9gV6T2nUvBgXT5kGoCMJPllOaooZ+4VvJiKBdZE7wK18N1deEowhcUptS+5GXZK8U/fvpwA=="],
 
-    "ts-pkgx": ["ts-pkgx@0.4.24", "", { "dependencies": { "chromium-bidi": "^7.2.0", "electron": "^37.2.4", "js-yaml": "^4.1.0", "playwright": "^1.54.1" }, "bin": { "ts-pkgx": "dist/bin/cli.js" } }, "sha512-iTQIQGIrV3A5eulkYmH+zTbtPuncOp+XsoE4WDi8cRb4ioxwPScn+0w/xBN3Suo9/SSupenPTUI3sz8jZooOHw=="],
+    "ts-pkgx": ["ts-pkgx@0.4.30", "", { "dependencies": { "chromium-bidi": "^7.2.0", "electron": "^37.2.4", "js-yaml": "^4.1.0", "playwright": "^1.54.1" }, "bin": { "ts-pkgx": "dist/bin/cli.js" } }, "sha512-+nGlEMpIz2zZB6p1agtG9z7Jz6i84RR+xxrRAB9j2hhbvLbi3FVcvB2BEslAuBrI4c7EAKSF/+NnzReNj2Y0rQ=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 

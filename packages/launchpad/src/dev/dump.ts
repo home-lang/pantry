@@ -687,6 +687,33 @@ function isProductionEnvironment(projectDir: string): boolean {
 
 export async function dump(dir: string, options: DumpOptions = {}): Promise<void> {
   const { dryrun = false, quiet = false, shellOutput = false, skipGlobal = process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true' || process.env.LAUNCHPAD_ENABLE_GLOBAL_AUTO_SCAN !== 'true' } = options
+  let isVerbose = ((options as any).verbose === true)
+    || process.env.LAUNCHPAD_VERBOSE === 'true'
+    || config.verbose
+
+  // Lightweight timing helpers (stderr-only, verbose mode)
+  const timings: Array<{ label: string, ms: number }> = []
+  const tick = () => (typeof process.hrtime === 'function' && (process.hrtime as any).bigint)
+    ? (process.hrtime as any).bigint()
+    : BigInt(Date.now()) * BigInt(1_000_000)
+  const since = (start: bigint) => Number((tick() - start) / BigInt(1_000_000))
+  const addTiming = (label: string, start: bigint) => {
+    if (isVerbose)
+      timings.push({ label, ms: since(start) })
+  }
+  const flushTimings = (phase: string): string | null => {
+    if (!isVerbose || timings.length === 0)
+      return null
+    const total = timings.reduce((acc, t) => acc + t.ms, 0)
+    const parts = timings.map(t => `${t.label}=${t.ms}ms`).join(' | ')
+    const summary = `⏱ ${phase}: ${total}ms (${parts})`
+    try {
+      process.stderr.write(`${summary}\n`)
+    }
+    catch {}
+    return summary
+  }
+  const tTotal = tick()
 
   // Set shell integration mode when shell output is requested
   if (shellOutput) {
@@ -715,6 +742,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         || message.includes('🔧') // Extracting
         || message.includes('🚀') // Service start messages
         || message.includes('⏳') // Waiting messages
+        || message.includes('🔍') // Verbose diagnostics
+        || message.includes('⏱') // Timing summaries (verbose)
         || message.includes('✅') // Success messages
         || message.includes('⚠️') // Warnings
         || message.includes('❌') // Errors
@@ -741,6 +770,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         || message.includes('🔧') // Extracting
         || message.includes('🚀') // Service start messages
         || message.includes('⏳') // Waiting messages
+        || message.includes('🔍') // Verbose diagnostics
+        || message.includes('⏱') // Timing summaries (verbose)
         || message.includes('✅') // Success messages
         || message.includes('⚠️') // Warnings
         || message.includes('❌') // Errors
@@ -760,7 +791,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
   try {
     // Find dependency file using our comprehensive detection
+    const tFindDep = tick()
     const dependencyFile = findDependencyFile(dir)
+    addTiming('findDependencyFile', tFindDep)
     // Early pre-setup hook (before any installs/services) when config present in working dir
     try {
       if (dependencyFile) {
@@ -790,6 +823,18 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // For shell output mode, prioritize speed with aggressive optimizations
     const projectDir = path.dirname(dependencyFile)
 
+    // Re-evaluate verbose using project-local launchpad.config.ts if present
+    try {
+      const localCfgPath = path.join(projectDir, 'launchpad.config.ts')
+      if (fs.existsSync(localCfgPath)) {
+        const mod = await import(localCfgPath)
+        const local = (mod as any).default || mod
+        if (local && local.verbose === true)
+          isVerbose = true
+      }
+    }
+    catch {}
+
     // Ultra-fast path for shell output: check if environments exist and use cached data
     if (shellOutput) {
       // Generate hash for this project
@@ -808,25 +853,129 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         let sniffResult: { pkgs: any[], env: Record<string, string> }
 
         try {
+          const tSniff = tick()
           sniffResult = await sniff({ string: projectDir })
+          addTiming('sniff(project)', tSniff)
         }
         catch {
           // Handle malformed dependency files gracefully
           sniffResult = { pkgs: [], env: {} }
         }
 
+        // Quick constraint satisfaction check for already-existing environment
+        const semverCompare = (a: string, b: string): number => {
+          const pa = a.replace(/^v/, '').split('.').map(n => Number.parseInt(n, 10))
+          const pb = b.replace(/^v/, '').split('.').map(n => Number.parseInt(n, 10))
+          for (let i = 0; i < 3; i++) {
+            const da = pa[i] || 0
+            const db = pb[i] || 0
+            if (da > db) return 1
+            if (da < db) return -1
+          }
+          return 0
+        }
+        const satisfies = (installed: string, constraint?: string): boolean => {
+          if (!constraint || constraint === '*' || constraint === '') return true
+          const c = constraint.trim()
+          const ver = installed.replace(/^v/, '')
+          const [cOp, cVerRaw] = c.startsWith('^') || c.startsWith('~') ? [c[0], c.slice(1)] : ['', c]
+          const cParts = cVerRaw.split('.')
+          const vParts = ver.split('.')
+          const cmp = semverCompare(ver, cVerRaw)
+          if (cOp === '^') {
+            return vParts[0] === cParts[0] && cmp >= 0
+          }
+          if (cOp === '~') {
+            return vParts[0] === cParts[0] && vParts[1] === cParts[1] && cmp >= 0
+          }
+          // exact or >= style: treat as minimum version
+          return cmp >= 0
+        }
+        const needsUpgrade = (() => {
+          try {
+            for (const pkg of sniffResult.pkgs || []) {
+              const domain = pkg.project as string
+              const constraint = typeof pkg.constraint === 'string' ? pkg.constraint : String(pkg.constraint || '*')
+              const domainDir = path.join(envDir, domain)
+              if (!fs.existsSync(domainDir)) return true
+              const versions = fs.readdirSync(domainDir, { withFileTypes: true })
+                .filter(e => e.isDirectory() && e.name.startsWith('v'))
+                .map(e => e.name)
+              if (versions.length === 0) return true
+              const highest = versions.sort((a, b) => semverCompare(a.slice(1), b.slice(1))).slice(-1)[0]
+              if (!satisfies(highest, constraint)) return true
+            }
+          }
+          catch {}
+          return false
+        })()
+
+        // If constraints are not satisfied, fall back to install path
+        if (needsUpgrade) {
+          const envBinPath = path.join(envDir, 'bin')
+          const envSbinPath = path.join(envDir, 'sbin')
+          const globalBinPath = path.join(globalEnvDir, 'bin')
+          const globalSbinPath = path.join(globalEnvDir, 'sbin')
+          // Build package lists
+          const globalPackages: string[] = []
+          const localPackages: string[] = []
+          for (const pkg of sniffResult.pkgs) {
+            const constraintStr = typeof pkg.constraint === 'string' ? pkg.constraint : String(pkg.constraint || '*')
+            const packageString = `${pkg.project}@${constraintStr}`
+            if (pkg.global && !skipGlobal) globalPackages.push(packageString)
+            else localPackages.push(packageString)
+          }
+          const tInstallFast = tick()
+          await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
+          addTiming('install(packages)', tInstallFast)
+          const tOutFast = tick()
+          outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+          addTiming('outputShellCode', tOutFast)
+          addTiming('total', tTotal)
+          {
+            const summary = flushTimings('shell-install-path')
+            if (shellOutput && summary) {
+              const msg = summary.replace(/"/g, '\\"')
+              const guard = isVerbose ? 'true' : 'false'
+              try { process.stdout.write(`if ${guard}; then >&2 echo "${msg}"; fi\n`) } catch {}
+            }
+          }
+          return
+        }
+
         // In shell integration fast path, ensure php.ini and start services when configured
         // Only ensure php.ini if already marked ready
-        if (fs.existsSync(path.join(envDir, '.launchpad_ready'))) {
-          await ensureProjectPhpIni(projectDir, envDir)
+        const readyMarker = path.join(envDir, '.launchpad_ready')
+        const isReady = fs.existsSync(readyMarker)
+        if (isVerbose) {
           try {
+            process.stderr.write(`🔍 Fast path: envDir=${envDir} globalEnvDir=${globalEnvDir} ready=${isReady}\n`)
+            const envBinPath = path.join(envDir, 'bin')
+            const envSbinPath = path.join(envDir, 'sbin')
+            const glbBinPath = path.join(globalEnvDir, 'bin')
+            const glbSbinPath = path.join(globalEnvDir, 'sbin')
+            process.stderr.write(`🔍 Paths: envBin=${fs.existsSync(envBinPath) ? envBinPath : '-'} envSbin=${fs.existsSync(envSbinPath) ? envSbinPath : '-'} glbBin=${fs.existsSync(glbBinPath) ? glbBinPath : '-'} glbSbin=${fs.existsSync(glbSbinPath) ? glbSbinPath : '-'}\n`)
+            process.stderr.write(`🔍 Sniff: pkgs=${sniffResult.pkgs?.length || 0} envKeys=${Object.keys(sniffResult.env || {}).length}\n`)
+          }
+          catch {}
+        }
+        if (isReady) {
+          const tIni = tick()
+          await ensureProjectPhpIni(projectDir, envDir)
+          addTiming('ensurePhpIni', tIni)
+          try {
+            const tSvc = tick()
             await setupProjectServices(projectDir, sniffResult, true)
+            addTiming('setupServices', tSvc)
+            const tPost = tick()
             // Run project-configured post-setup once in shell fast path (idempotent)
             await maybeRunProjectPostSetup(projectDir, envDir, true)
+            addTiming('postSetup', tPost)
           }
           catch {}
         }
 
+        const tOut1 = tick()
         outputShellCode(
           dir,
           hasLocalEnv ? path.join(envDir, 'bin') : '',
@@ -836,6 +985,20 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           hasGlobalEnv ? path.join(globalEnvDir, 'bin') : '',
           hasGlobalEnv ? path.join(globalEnvDir, 'sbin') : '',
         )
+        addTiming('outputShellCode', tOut1)
+        addTiming('total', tTotal)
+        {
+          const summary = flushTimings('shell-fast-path')
+          if (shellOutput && summary) {
+            const msg = summary.replace(/"/g, '\\"')
+            const guard = isVerbose ? 'true' : 'false'
+            try {
+              const shellLine = `if ${guard}; then >&2 echo "${msg}"; fi\n`
+              process.stdout.write(shellLine)
+            }
+            catch {}
+          }
+        }
         return
       }
       // If no local environment exists, we need to continue with full installation process
@@ -848,7 +1011,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     try {
       // For shell integration, use standard parsing (no 'fast' option available)
+      const tSniff2 = tick()
       sniffResult = await sniff({ string: projectDir })
+      addTiming('sniff(project)', tSniff2)
     }
     catch (error) {
       // Handle malformed dependency files gracefully
@@ -871,7 +1036,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       for (const globalLocation of globalDepLocations) {
         if (fs.existsSync(globalLocation)) {
           try {
+            const tGSniff = tick()
             const globalSniff = await sniff({ string: globalLocation })
+            addTiming(`sniff(global:${path.basename(globalLocation)})`, tGSniff)
             if (globalSniff.pkgs.length > 0) {
               globalSniffResults.push(globalSniff)
               if (config.verbose) {
@@ -991,6 +1158,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         // Install missing packages if any are found
         if (packageStatus.needsLocal || packageStatus.needsGlobal) {
+          const tInstall = tick()
           await installPackagesOptimized(
             packageStatus.missingLocal,
             packageStatus.missingGlobal,
@@ -999,37 +1167,63 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
             dryrun,
             quiet,
           )
+          addTiming('install(packages)', tInstall)
         }
 
         // Create PHP shims after all dependencies are installed
         if (config.verbose) {
           console.log('🔍 Checking for PHP installations to create shims...')
         }
+        const tShim = tick()
         await createPhpShimsAfterInstall(envDir)
+        addTiming('createPhpShims', tShim)
 
         // Start services during shell integration when configured
         try {
+          const tSvc2 = tick()
           await setupProjectServices(projectDir, sniffResult, true)
+          addTiming('setupServices', tSvc2)
         }
         catch {}
 
         // Ensure project php.ini exists only
+        const tIni2 = tick()
         await ensureProjectPhpIni(projectDir, envDir)
+        addTiming('ensurePhpIni', tIni2)
 
         // Run project-configured post-setup once (idempotent marker)
         try {
+          const tPost2 = tick()
           await maybeRunProjectPostSetup(projectDir, envDir, true)
+          addTiming('postSetup', tPost2)
         }
         catch {}
 
+        const tOut2 = tick()
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+        addTiming('outputShellCode', tOut2)
+        addTiming('total', tTotal)
+        {
+          const summary = flushTimings('shell-install-path')
+          if (shellOutput && summary) {
+            const msg = summary.replace(/"/g, '\\"')
+            const guard = isVerbose ? 'true' : 'false'
+            try {
+              const shellLine = `if ${guard}; then >&2 echo "${msg}"; fi\n`
+              process.stdout.write(shellLine)
+            }
+            catch {}
+          }
+        }
         return
       }
     }
 
     // Regular path for non-shell integration calls
     if (localPackages.length > 0 || globalPackages.length > 0) {
+      const tInstall3 = tick()
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
+      addTiming('install(packages)', tInstall3)
       // Visual separator after dependency install list
       try {
         console.log()
@@ -1067,9 +1261,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
 
     // Ensure php.ini and Laravel post-setup runs (regular path)
+    const tIni3 = tick()
     await ensureProjectPhpIni(projectDir, envDir)
+    addTiming('ensurePhpIni', tIni3)
     if (!isShellIntegration) {
+      const tPost3 = tick()
       await maybeRunProjectPostSetup(projectDir, envDir, isShellIntegration)
+      addTiming('postSetup', tPost3)
     }
 
     // Mark environment as ready for fast shell activation on subsequent prompts
@@ -1098,7 +1296,22 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const globalBinPath = path.join(globalEnvDir, 'bin')
       const globalSbinPath = path.join(globalEnvDir, 'sbin')
 
+      const tOut3 = tick()
       outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
+      addTiming('outputShellCode', tOut3)
+      addTiming('total', tTotal)
+      {
+        const summary = flushTimings('regular-shell-output')
+        if (shellOutput && summary) {
+          const msg = summary.replace(/"/g, '\\"')
+          const guard = isVerbose ? 'true' : 'false'
+          try {
+            const shellLine = `if ${guard}; then >&2 echo "${msg}"; fi\n`
+            process.stdout.write(shellLine)
+          }
+          catch {}
+        }
+      }
     }
     else {
       // Always print a final activation message, even in quiet mode
@@ -1106,6 +1319,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const activation = (config.shellActivationMessage || '✅ Environment activated for {path}')
         .replace('{path}', process.cwd())
       console.log(activation)
+      addTiming('total', tTotal)
+      flushTimings('regular-activation')
 
       // Post-activation hook (file-level then config)
       if (dependencyFile) {
