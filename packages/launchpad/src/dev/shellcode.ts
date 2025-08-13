@@ -162,6 +162,32 @@ __launchpad_update_path() {
     fi
 }
 
+# Ensure the active environment's bin path stays first in PATH
+__launchpad_ensure_env_path_priority() {
+    if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" && -d "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+        local OLD_IFS="$IFS"
+        local rebuilt_path=""
+        IFS=':'
+        for seg in $PATH; do
+            if [[ -z "$seg" ]]; then continue; fi
+            if [[ "$seg" == "$LAUNCHPAD_ENV_BIN_PATH" ]]; then continue; fi
+            if [[ -z "$rebuilt_path" ]]; then
+                rebuilt_path="$seg"
+            else
+                rebuilt_path="$rebuilt_path:$seg"
+            fi
+        done
+        IFS="$OLD_IFS"
+        if [[ -n "$rebuilt_path" ]]; then
+            export PATH="$LAUNCHPAD_ENV_BIN_PATH:$rebuilt_path"
+        else
+            export PATH="$LAUNCHPAD_ENV_BIN_PATH"
+        fi
+        # Refresh command hash tables for both bash and zsh
+        hash -r 2>/dev/null || rehash 2>/dev/null || true
+    fi
+}
+
 # Fast library path update for quick activation (no expensive find operations)
 __launchpad_update_library_paths_fast() {
     local env_dir="$1"
@@ -793,10 +819,11 @@ __launchpad_chpwd() {
                 if [[ -n "$__lp_cache_ok" ]]; then
                     # Instant activation from persistent cache (no filesystem scans)
                     export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
+                    export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
                     __launchpad_update_library_paths_fast "$env_dir"
                     __launchpad_ensure_global_path_fast
                     __launchpad_ensure_system_path
-                    hash -r 2>/dev/null || true
+                    __launchpad_ensure_env_path_priority
                     # Verbose diagnostics for fast cached activation
                     if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
                         printf "🔍 Fast path (cache): env_dir=%s ready=%s\n" "$env_dir" "$([ -f "$env_dir/.launchpad_ready" ] && echo true || echo false)" >&2
@@ -820,10 +847,11 @@ __launchpad_chpwd() {
             # use glob expansion which is faster than ls
             if [[ -d "$env_dir/bin" ]] && [[ $__lp_markers_ready -eq 1 || $(echo "$env_dir/bin"/*) != "$env_dir/bin/*" ]]; then
                 export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
+                export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
                 __launchpad_update_library_paths_fast "$env_dir"
                 __launchpad_ensure_global_path_fast
                 __launchpad_ensure_system_path
-                hash -r 2>/dev/null || true
+                __launchpad_ensure_env_path_priority
 
                 # Update persistent cache for instant future activation and keep parity with dep file
                 mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
@@ -906,9 +934,8 @@ __launchpad_chpwd() {
                 # Ensure global dependencies are still in PATH after project setup
                 __launchpad_ensure_global_path
                 __launchpad_ensure_system_path
-
-                # Clear command hash table to ensure commands are found in new PATH
-                hash -r 2>/dev/null || true
+                export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+                __launchpad_ensure_env_path_priority
 
                 # Mark environment ready for instant future activation (both cache and marker)
                 mkdir -p "$env_dir" 2>/dev/null || true
@@ -927,7 +954,8 @@ __launchpad_chpwd() {
                     __launchpad_update_library_paths "$env_dir"
                     __launchpad_ensure_global_path
                     __launchpad_ensure_system_path
-                    hash -r 2>/dev/null || true
+                    export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+                    __launchpad_ensure_env_path_priority
 
                     printf "${activationMessage}\n" >&2
                 else
@@ -1090,6 +1118,8 @@ __launchpad_auto_refresh_check() {
         __launchpad_refresh_global_paths
         __launchpad_source_hooks_dir "$HOME/.config/launchpad/hooks/post-refresh.d"
     fi
+    # Always reassert env path precedence on each prompt
+    __launchpad_ensure_env_path_priority
 }
 
 # Check for global refresh on every prompt (lightweight check)
