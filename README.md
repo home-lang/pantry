@@ -26,7 +26,7 @@ Launchpad is a comprehensive dependency management solution that bridges the gap
 - Version-specific tool installation
 - Seamless switching between project contexts
 
-At its core, Launchpad leverages pkgx's powerful package ecosystem while adding intelligent management, environment isolation, and developer-friendly workflows.
+At its core, Launchpad leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows. Learn more in the docs: [Why Launchpad](https://stacks-launchpad.netlify.app/why), [Quickstart](https://stacks-launchpad.netlify.app/quickstart).
 
 ## Features
 
@@ -39,7 +39,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🪟 **Cross-Platform Support** — Consistent experience across macOS, Linux, and Windows
 
 ### Service Management
-- ⚡ **19+ Pre-configured Services** — PostgreSQL, Redis, Kafka, Prometheus, Grafana, Vault, and more
+- ⚡ **30+ Pre-configured Services** — PostgreSQL, Redis, Kafka, Prometheus, Grafana, Vault, and more
 - 🚀 **One-Command Service Control** — Start, stop, restart services with automatic configuration
 - 🏥 **Health Monitoring** — Built-in health checks with automatic status detection
 - 🔧 **Auto-Configuration** — Default configuration files generated for each service
@@ -48,7 +48,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 
 ### Project-Aware Environment Management
 - 🌍 **Automatic Environment Isolation** — Project-specific environments that activate when you enter a project directory
-- 🎯 **Dependency Detection** — Automatically reads `dependencies.yaml`, `package.json`, and other project files
+- 🎯 **Dependency Detection** — Automatically reads `deps.yaml`, `dependencies.yaml`, `package.json`, `pyproject.toml`, and other project files
 - 🔄 **Context Switching** — Seamlessly switch between different project environments
 - 📋 **Version Management** — Install and manage specific versions of tools per project
 - 🗂️ **Environment Management** — List, inspect, clean, and remove project environments with readable identifiers
@@ -124,7 +124,7 @@ yarn global add @stacksjs/launchpad
 pnpm add -g @stacksjs/launchpad
 ```
 
-See [Installation Guide](https://github.com/stacksjs/launchpad/tree/main/docs/install.md) for more options.
+See [Installation Guide](https://stacks-launchpad.netlify.app/install) for more options.
 
 ## Quick Start
 
@@ -203,8 +203,13 @@ cd ..
 # → 🔄 Environment deactivated
 ```
 
+Learn more: [Environment Management](https://stacks-launchpad.netlify.app/features/environment-management), [Package Management](https://stacks-launchpad.netlify.app/features/package-management), [Configuration](https://stacks-launchpad.netlify.app/config), [FAQ](https://stacks-launchpad.netlify.app/faq).
+
 **Supported Project Files:**
+- `deps.yaml` / `deps.yml`
 - `dependencies.yaml` / `dependencies.yml`
+- `launchpad.yaml` / `launchpad.yml`
+- `pkgx.yaml` / `pkgx.yml`
 - `package.json` (Node.js projects)
 - `pyproject.toml` (Python projects)
 - `Cargo.toml` (Rust projects)
@@ -219,7 +224,7 @@ Manage your project environments with human-readable identifiers:
 launchpad env:list
 
 # Inspect a specific environment
-launchpad env:inspect my-project_1a2b3c4d
+launchpad env:inspect my-project_1a2b3c4d-d89abc12
 
 # Clean up old or failed environments
 launchpad env:clean --dry-run
@@ -228,10 +233,10 @@ launchpad env:clean --dry-run
 launchpad env:remove old-project_5e6f7g8h --force
 ```
 
-**Environment Hash Format:** `{project-name}_{8-char-hex}`
-- `final-project_7db6cf06` - Easy to identify and manage
-- `working-test_208a31ec` - Human-readable project identification
-- `my-app_1a2b3c4d` - Collision-resistant unique identifiers
+**Environment Hash Format:** `{project-name}_{8-char-hex}-d{8-char-dep-hash}`
+- `final-project_7db6cf06-d89abc12` - Project path hash plus dependency fingerprint
+- `working-test_208a31ec-d1029a7b` - Human-readable with version-aware suffix
+- `my-app_1a2b3c4d-deadbeef` - Collision-resistant, version-switching on cd
 
 ### Package Management
 
@@ -416,12 +421,12 @@ See [GitHub Action Documentation](https://github.com/stacksjs/launchpad/tree/mai
 
 Explore advanced dependency management topics:
 
-- [Service Management](https://github.com/stacksjs/launchpad/tree/main/docs/features/service-management.md)
-- [Project Environment Configuration](https://github.com/stacksjs/launchpad/tree/main/docs/features/package-management.md)
-- [Custom Shims and Tool Management](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/custom-shims.md)
-- [Cross-platform Compatibility](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/cross-platform.md)
-- [Performance Optimization](https://github.com/stacksjs/launchpad/tree/main/docs/advanced/performance.md)
-- [API Reference](https://github.com/stacksjs/launchpad/tree/main/docs/api/reference.md)
+- [Service Management](https://stacks-launchpad.netlify.app/features/service-management)
+- [Project Environment Configuration](https://stacks-launchpad.netlify.app/features/package-management)
+- [Custom Shims and Tool Management](https://stacks-launchpad.netlify.app/advanced/custom-shims)
+- [Cross-platform Compatibility](https://stacks-launchpad.netlify.app/advanced/cross-platform)
+- [Performance Optimization](https://stacks-launchpad.netlify.app/advanced/performance)
+- [API Reference](https://stacks-launchpad.netlify.app/api/reference)
 
 ## Comparing to Alternatives
 

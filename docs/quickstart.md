@@ -1,6 +1,6 @@
 # Quick Start
 
-Get up and running with Launchpad in under 5 minutes! This guide will help you install, configure, and start using Launchpad right away.
+This guide will help you install, configure, and start using Launchpad right away.
 
 ## 1. Install Launchpad
 
@@ -38,9 +38,9 @@ This command will:
 - ✅ Configure your PATH automatically
 - ✅ Set up shell integration for automatic environment activation
 
-## 3. Set Up Shell Integration
+## 3. (Optional) Set Up Shell Integration
 
-Enable automatic environment activation for project directories:
+Shell integration is installed automatically when you run `launchpad bootstrap` (unless you pass `--skip-shell-integration`). If you skipped bootstrap or want to set it up manually, run:
 
 ```bash
 # Add to your shell configuration (zsh)
@@ -104,7 +104,7 @@ launchpad list
 🎉 **Congratulations!** You've just:
 
 1. **Installed Launchpad** - A modern package manager that works alongside your existing tools
-2. **Bootstrapped your system** - Set up pkgx, Bun, and shell integration
+2. **Bootstrapped your system** - Set up pkgx, Bun, and (optionally) shell integration
 3. **Created your first environment** - Project-specific isolation with automatic activation
 4. **Installed packages** - Node.js and TypeScript are now available in your project
 

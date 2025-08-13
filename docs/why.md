@@ -19,7 +19,10 @@ Launchpad is a CLI and TypeScript library designed to solve these problems by pr
 - **Isolated packages**: Install only what you need without affecting other dependencies
 - **Automatic PATH management**: Easily access installed tools from anywhere
 - **Consistent interface**: Same commands work across macOS, Linux, and Windows
-- **Dev environments**: Dedicated support for project-specific development environments
+- **Project-aware dev environments**: Automatic activation in project directories with version-aware isolation
+- **Version switching on cd**: Environments are derived from a project hash plus a dependency fingerprint, so changing versions in `deps.yaml` selects a new env automatically
+
+Learn more: [Quickstart](https://stacks-launchpad.netlify.app/quickstart), [Environment Management](https://stacks-launchpad.netlify.app/features/environment-management), [Package Management](https://stacks-launchpad.netlify.app/features/package-management).
 
 ## Key Advantages
 
@@ -53,15 +56,19 @@ Launchpad is built with the developer experience in mind. It provides a clean, i
 # Install Node.js in seconds
 launchpad install node@22
 
-# Create a dedicated environment for a project
+# Create a project environment (auto-activates on cd)
+echo "dependencies:\n  - node@22" > deps.yaml
+cd /path/to/project   # ✅ Environment activates automatically
+
+# Or force activation manually (without cd)
 launchpad dev:on
 
-# Bootstrap development environment
+# Bootstrap development environment (installs shell integration, etc.)
 launchpad bootstrap
 ```
 
 ## Why Now?
 
-As software development becomes increasingly complex, the tools we use to manage our environments should become simpler. Launchpad represents a modern approach to package management that embraces isolation, speed, and cross-platform compatibility. This software is by the team that created Stacks.js, and in order to automated the onboarding process, we needed a better package manager.
+As software development becomes increasingly complex, the tools we use to manage our environments should become simpler. Launchpad represents a modern approach to package management that embraces isolation, speed, and cross-platform compatibility. This software is by the team that created Stacks.js, and in order to automate the onboarding process, we needed a better package manager.
 
-By building on top of pkgx and focusing on the developer experience, Launchpad provides a powerful yet intuitive solution for managing packages and development environments in a way that's sustainable for the future of software development.
+By building on top of pkgx's Pantry and focusing on the developer experience, Launchpad provides a powerful yet intuitive solution for managing packages and development environments in a way that's sustainable for the future of software development.

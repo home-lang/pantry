@@ -111,7 +111,7 @@ brew uninstall node python go rust
 
 | Homebrew | Launchpad | Notes |
 |----------|-----------|-------|
-| `brew install node` | `launchpad install node@22` | Launchpad requires version specification |
+| `brew install node` | `launchpad install node` or `launchpad install node@22` | Versions are optional; pin them when you need determinism |
 | `brew uninstall node` | `launchpad remove node` | Launchpad removes all versions by default |
 | `brew list` | `launchpad list` | Both show installed packages |
 | `brew upgrade` | N/A | Launchpad uses immutable packages |
