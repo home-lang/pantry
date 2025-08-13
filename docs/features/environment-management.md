@@ -17,28 +17,29 @@ Environment management in Launchpad consists of two main components:
 When you enter a directory containing dependency files (like `dependencies.yaml`), Launchpad automatically:
 
 1. **Generates a unique environment hash** based on the project path
-2. **Creates an isolated environment directory** at `~/.local/share/launchpad/envs/{hash}/`
-3. **Installs project-specific packages** to the isolated environment
-4. **Modifies PATH** to prioritize the project's binaries
-5. **Sets up environment variables** as specified in the dependency file
-6. **Creates deactivation hooks** to restore the original environment when leaving
-7. **Displays customizable messages** for activation and deactivation
+2. **Computes a dependency fingerprint** (md5 of the dependency file content)
+3. **Creates/selects an isolated environment directory** at `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
+4. **Installs project-specific packages** to the isolated environment
+5. **Modifies PATH** to prioritize the project's binaries
+6. **Sets up environment variables** as specified in the dependency file
+7. **Creates deactivation hooks** to restore the original environment when leaving
+8. **Displays customizable messages** for activation and deactivation
 
 ### Environment Hash Format
 
 Launchpad uses a human-readable hash format for environment directories:
 
-**Format:** `{project-name}_{8-char-hex-hash}`
+**Format:** `{project-name}_{8-char-hex-hash}-d{8-char-dep-hash}`
 
 **Examples:**
-- `my-web-app_1a2b3c4d` - For a project in `/home/user/projects/my-web-app`
-- `api-server_5e6f7g8h` - For a project in `/work/api-server`
-- `final-project_7db6cf06` - For a deeply nested project
+- `my-web-app_1a2b3c4d-d9f1a2b3` - Project `/home/user/projects/my-web-app`, dependency fingerprint `d9f1a2b3`
+- `api-server_5e6f7g8h-d0c1e2f3` - Project `/work/api-server`, dependency fingerprint `d0c1e2f3`
 
 **Benefits:**
 - **Human-readable** - Easy to identify which project an environment belongs to
+- **Version-aware** - Dependency changes always map to a distinct environment
 - **Unique** - 8-character hex hash prevents collisions between projects
-- **Consistent** - Same project path always generates the same hash
+- **Consistent** - Same project path and same deps yield the same env path
 - **Collision-resistant** - Different paths with same project name get different hashes
 
 ### Supported Dependency Files

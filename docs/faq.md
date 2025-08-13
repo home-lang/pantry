@@ -86,14 +86,15 @@ Currently, Launchpad is distributed via npm/bun/yarn/pnpm. However, after global
 
 ### How do environment activations work?
 
-When you enter a directory with a `dependencies.yaml` file:
+When you enter a directory with a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`):
 
-1. **Launchpad generates a hash** based on the project path
-2. **Creates an isolated environment** at `~/.local/share/launchpad/envs/{hash}/`
-3. **Installs project packages** to the isolated environment
-4. **Modifies PATH** to prioritize project binaries
-5. **Sets environment variables** from the dependency file
-6. **Shows activation message** (customizable)
+1. Launchpad generates a hash based on the project path
+2. Launchpad computes a dependency fingerprint (md5 of the dependency file content)
+3. It creates/selects an environment at `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
+4. Installs project packages into that isolated environment (if needed)
+5. Modifies PATH to prioritize project binaries
+6. Sets environment variables from the dependency file
+7. Shows an activation message (customizable)
 
 When you leave the directory, everything is automatically restored.
 
@@ -115,6 +116,44 @@ source ~/.zshrc
 cat dependencies.yaml
 launchpad dev:dump --dryrun
 ```
+
+### Why didn't my tool version switch after I changed deps.yaml?
+
+When you cd into a project, Launchpad now derives the environment directory from:
+
+- a hash of the project path, and
+- a dependency fingerprint (md5 of the dependency file content),
+
+producing a path like:
+
+```
+~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>
+```
+
+Changing versions in `deps.yaml` (or `dependencies.yml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`, etc.) changes the fingerprint, so a new env dir is selected and the correct versions are installed/activated automatically.
+
+To see this live, enable verbose logging and cd into the project:
+
+```bash
+export LAUNCHPAD_VERBOSE=true
+cd my-project
+```
+
+You’ll see a line like:
+
+```
+🔍 Env target: env_dir=… dep_file=… dep_hash=…
+```
+
+If the env didn’t change, confirm the `dep_file` is the one you edited and that `dep_hash` differs from the previous run. You can also inspect cache decisions:
+
+```
+🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
+🔁 Cache invalid: dependency newer than cache
+🔁 Cache invalid: fingerprint mismatch
+```
+
+Tip: if you previously activated a project and then edited dependencies, simply `cd .. && cd my-project` to pick up the new env.
 
 ### Can I disable shell messages?
 

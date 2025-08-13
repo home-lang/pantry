@@ -572,6 +572,31 @@ Example:
 
 ```bash
 LAUNCHPAD_VERBOSE=true LAUNCHPAD_INSTALL_PATH=~/apps launchpad install node@22
+
+## Environment Activation Model
+
+When you cd into a project directory that contains a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`), Launchpad computes:
+
+- A project hash based on the physical path
+- A dependency fingerprint based on the content of the dependency file (md5)
+
+The target environment directory is derived as:
+
+```
+~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>
+```
+
+This guarantees that editing dependency versions switches to a distinct environment on the next `cd`, ensuring the correct tools are active immediately.
+
+To inspect selection and cache behavior, enable verbose logging:
+
+```bash
+export LAUNCHPAD_VERBOSE=true # or set in .env
+cd my-project
+# 🔍 Env target: env_dir=… dep_file=… dep_hash=…
+# 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
+# 🔁 Cache invalid: dependency newer than cache
+# 🔁 Cache invalid: fingerprint mismatch
 ```
 
 ## Shell Message Customization
