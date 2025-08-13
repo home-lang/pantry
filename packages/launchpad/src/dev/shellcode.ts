@@ -637,11 +637,33 @@ __launchpad_chpwd() {
             local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
             local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
 
-            # Fallback: if md5-based env dir doesn't exist, try to locate legacy env by basename prefix
+            # Optionally suffix environment with dependency hash so version changes map to distinct envs
+            local dep_file_path dep_md5 dep_short
+            dep_file_path="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
+            if [[ -n "$dep_file_path" && -f "$dep_file_path" ]]; then
+                if command -v md5 >/dev/null 2>&1; then
+                    dep_md5=$(md5 -q "$dep_file_path" 2>/dev/null || echo "")
+                elif command -v md5sum >/dev/null 2>&1; then
+                    dep_md5=$(md5sum "$dep_file_path" 2>/dev/null | awk '{print $1}')
+                else
+                    dep_md5=""
+                fi
+                if [[ -n "$dep_md5" ]]; then
+                    dep_short=$(printf "%s" "$dep_md5" | cut -c1-8)
+                    env_dir="\${env_dir}-d\${dep_short}"
+                fi
+            fi
+
+            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                printf "🔍 Env target: env_dir=%s dep_file=%s dep_hash=%s\n" "$env_dir" "\${dep_file_path:-none}" "\${dep_short:-none}" >&2
+            fi
+
+            # Fallback: if target env dir doesn't exist, try to locate an existing env
             if [[ ! -d "$env_dir/bin" ]]; then
                 local envs_root="$HOME/.local/share/launchpad/envs"
                 if [[ -d "$envs_root" ]]; then
-                    local found_env=""
+                    local best_env=""
+                    local legacy_env=""
                     # Iterate safely (no globs) and match prefix
                     for candidate in "$envs_root"/*; do
                         if [[ -d "$candidate" ]]; then
@@ -649,26 +671,86 @@ __launchpad_chpwd() {
                             case "$base" in
                                 "\${project_basename}_"*)
                                     if [[ -d "$candidate/bin" ]]; then
-                                        found_env="$candidate"
-                                        # Prefer one that has .launchpad_ready
-                                        if [[ -f "$candidate/.launchpad_ready" ]]; then
-                                            env_dir="$candidate"
-                                            break
+                                        # If we have a dep hash, prefer an env that embeds the same dep hash
+                                         if [[ -n "$dep_short" && "$base" == *"-d\${dep_short}"* ]]; then
+                                            best_env="$candidate"
+                                            # Prefer ready
+                                            if [[ -f "$candidate/.launchpad_ready" ]]; then
+                                                env_dir="$candidate"
+                                                break
+                                            fi
+                                        else
+                                            # Track a legacy env as a fallback when no dep hash available
+                                            if [[ -z "$dep_short" ]]; then
+                                                legacy_env="$candidate"
+                                                if [[ -f "$candidate/.launchpad_ready" ]]; then
+                                                    env_dir="$candidate"
+                                                    break
+                                                fi
+                                            fi
                                         fi
                                     fi
                                     ;;
                             esac
                         fi
                     done
-                    if [[ -z "$env_dir" || ! -d "$env_dir/bin" ]]; then
-                        if [[ -n "$found_env" ]]; then
-                            env_dir="$found_env"
+                    if [[ ( -z "$env_dir" || ! -d "$env_dir/bin" ) ]]; then
+                        if [[ -n "$best_env" ]]; then
+                            env_dir="$best_env"
+                        elif [[ -n "$legacy_env" ]]; then
+                            env_dir="$legacy_env"
                         fi
                     fi
                 fi
             fi
 
-            # Persistent cache: check before slow operations
+            # Helper: find a dependency file path inside a directory
+            __launchpad_find_dependency_file_path() {
+                local dir="$1"
+                # Check common dependency manifest files (order matters)
+                for name in \
+                    "dependencies.yaml" "dependencies.yml" \
+                    "deps.yaml" "deps.yml" \
+                    "pkgx.yaml" "pkgx.yml" \
+                    "launchpad.yaml" "launchpad.yml" \
+                    "package.json" \
+                    "pyproject.toml" "requirements.txt" \
+                    "deno.json" "deno.jsonc" \
+                    "yarn.lock" "bun.lock" "bun.lockb"; do
+                    if [[ -f "$dir/$name" ]]; then
+                        echo "$dir/$name"
+                        return 0
+                    fi
+                done
+                return 1
+            }
+
+            # Compute a lightweight dependency fingerprint for invalidation (mtime+size or checksum)
+            __launchpad_compute_deps_fingerprint() {
+                local dir="$1"
+                local dep_file="$(__launchpad_find_dependency_file_path "$dir" 2>/dev/null)"
+                if [[ -z "$dep_file" ]]; then
+                    echo ""
+                    return 0
+                fi
+                # Prefer stat mtime+size (fast); fall back to md5 if available
+                local mtime size
+                mtime=$(stat -c %Y "$dep_file" 2>/dev/null || stat -f %m "$dep_file" 2>/dev/null || echo 0)
+                size=$(stat -c %s "$dep_file" 2>/dev/null || stat -f %z "$dep_file" 2>/dev/null || echo 0)
+                if command -v md5 >/dev/null 2>&1; then
+                    local sum
+                    sum=$(md5 -q "$dep_file" 2>/dev/null || md5 -q -s "$dep_file" 2>/dev/null)
+                    echo "file=$dep_file m=$mtime s=$size md5=$sum"
+                elif command -v md5sum >/dev/null 2>&1; then
+                    local sum
+                    sum=$(md5sum "$dep_file" 2>/dev/null | awk '{print $1}')
+                    echo "file=$dep_file m=$mtime s=$size md5=$sum"
+                else
+                    echo "file=$dep_file m=$mtime s=$size"
+                fi
+            }
+
+            # Persistent cache: check before slow operations (but invalidate when deps changed)
             local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(printf "%s" "$env_dir" | md5sum 2>/dev/null | awk '{print $1}' | cut -c1-16)"
             local current_time=$(date +%s)
             local cache_duration=1800  # 30 minutes for shell integration
@@ -678,7 +760,37 @@ __launchpad_chpwd() {
             fi
             if [[ -f "$cache_file" ]]; then
                 local cache_file_time=$(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null || echo 0)
-                if [[ $((current_time - cache_file_time)) -lt $cache_duration && -d "$env_dir/bin" ]]; then
+                # Invalidate persistent cache immediately when dependency file changed after cache
+                local dep_file="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
+                local dep_mtime=0
+                if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+                    dep_mtime=$(stat -c %Y "$dep_file" 2>/dev/null || stat -f %m "$dep_file" 2>/dev/null || echo 0)
+                fi
+                # Compare fingerprints for extra safety
+                local fp_current fp_stored fp_file
+                fp_current="$(__launchpad_compute_deps_fingerprint "$real_project_dir")"
+                fp_file="$env_dir/.deps_fingerprint"
+                if [[ -f "$fp_file" ]]; then fp_stored="$(cat "$fp_file" 2>/dev/null)"; fi
+                # Determine cache eligibility and log reasons when verbose
+                local __lp_cache_ok=1
+                if [[ $((current_time - cache_file_time)) -ge $cache_duration ]]; then __lp_cache_ok=""; fi
+                if [[ ! -d "$env_dir/bin" ]]; then __lp_cache_ok=""; fi
+                if [[ -n "$dep_file" && -f "$dep_file" && $dep_mtime -gt $cache_file_time ]]; then
+                    __lp_cache_ok=""
+                    if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                        printf "🔁 Cache invalid: dependency newer than cache (%s)\n" "$dep_file" >&2
+                    fi
+                fi
+                if [[ -n "$fp_current" && -n "$fp_stored" && "$fp_current" != "$fp_stored" ]]; then
+                    __lp_cache_ok=""
+                    if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                        printf "🔁 Cache invalid: fingerprint mismatch\n" >&2
+                    fi
+                fi
+                if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                    printf "🔍 Cache check: dep=%s dep_mtime=%s cache_mtime=%s fp_match=%s\n" "\${dep_file:-none}" "$dep_mtime" "$cache_file_time" "$([[ "$fp_current" == "$fp_stored" ]] && echo yes || echo no)" >&2
+                fi
+                if [[ -n "$__lp_cache_ok" ]]; then
                     # Instant activation from persistent cache (no filesystem scans)
                     export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"
                     __launchpad_update_library_paths_fast "$env_dir"
@@ -713,9 +825,22 @@ __launchpad_chpwd() {
                 __launchpad_ensure_system_path
                 hash -r 2>/dev/null || true
 
-                # Update persistent cache for instant future activation
+                # Update persistent cache for instant future activation and keep parity with dep file
                 mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
                 touch "$cache_file" 2>/dev/null || true
+                if [[ -z "$dep_file" ]]; then
+                    dep_file="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
+                fi
+                if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+                    # Set cache mtime to dep file mtime when supported
+                    touch -mr "$dep_file" "$cache_file" 2>/dev/null || true
+                fi
+                # Write/update dependency fingerprint for future cache validation
+                local fp_current
+                fp_current="$(__launchpad_compute_deps_fingerprint "$real_project_dir")"
+                if [[ -n "$fp_current" ]]; then
+                    echo "$fp_current" > "$env_dir/.deps_fingerprint" 2>/dev/null || true
+                fi
                 # Verbose diagnostics for fast path activation
                 if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
                     printf "🔍 Fast path: env_dir=%s ready=%s\n" "$env_dir" "$([ -f "$env_dir/.launchpad_ready" ] && echo true || echo false)" >&2

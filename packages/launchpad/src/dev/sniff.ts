@@ -1,5 +1,4 @@
 import type { PlainObject } from 'is-what'
-
 import { semver } from 'bun'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'

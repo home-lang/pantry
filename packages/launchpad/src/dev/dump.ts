@@ -742,6 +742,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         || message.includes('🔧') // Extracting
         || message.includes('🚀') // Service start messages
         || message.includes('⏳') // Waiting messages
+        || message.includes('📌') // Pin/version update notices
         || message.includes('🔍') // Verbose diagnostics
         || message.includes('⏱') // Timing summaries (verbose)
         || message.includes('✅') // Success messages
@@ -770,6 +771,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         || message.includes('🔧') // Extracting
         || message.includes('🚀') // Service start messages
         || message.includes('⏳') // Waiting messages
+        || message.includes('📌') // Pin/version update notices
         || message.includes('🔍') // Verbose diagnostics
         || message.includes('⏱') // Timing summaries (verbose)
         || message.includes('✅') // Success messages
@@ -839,7 +841,15 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     if (shellOutput) {
       // Generate hash for this project
       const projectHash = generateProjectHash(dir)
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
+      // Compute dependency fingerprint to ensure env path reflects dependency versions
+      let depSuffix = ''
+      try {
+        const depContent = fs.readFileSync(dependencyFile)
+        const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
+        depSuffix = `-d${depHash}`
+      }
+      catch {}
+      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
       const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
 
       // Check if environments exist first (quick filesystem check)
@@ -862,6 +872,90 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           sniffResult = { pkgs: [], env: {} }
         }
 
+        // Merge raw constraints from deps.yaml to honor exact pins over any normalization
+        try {
+          const rawContent = fs.readFileSync(dependencyFile, 'utf8')
+          const rawLines = rawContent.split(/\r?\n/)
+          let inDeps = false
+          const rawMap = new Map<string, string>()
+          for (const raw of rawLines) {
+            const indent = raw.length - raw.trimStart().length
+            const line = raw.trim()
+            if (!inDeps) {
+              if (line.startsWith('dependencies:'))
+                inDeps = true
+              continue
+            }
+            if (indent === 0 && line.endsWith(':'))
+              break
+            if (!line || line.startsWith('#'))
+              continue
+            const m = line.match(/^([\w.\-/]+):\s*(\S.*)$/)
+            if (m) {
+              rawMap.set(m[1], m[2])
+              continue
+            }
+            if (line.startsWith('- ')) {
+              const spec = line.slice(2).trim()
+              const [domain, constraint = '*'] = spec.split('@')
+              if (domain)
+                rawMap.set(domain, constraint)
+            }
+          }
+          if (sniffResult && Array.isArray(sniffResult.pkgs) && rawMap.size > 0) {
+            sniffResult.pkgs = sniffResult.pkgs.map((p: any) => {
+              const domain = String(p.project || '')
+              const rawC = rawMap.get(domain)
+              if (rawC && rawC !== '*' && !rawC.startsWith('^') && !rawC.startsWith('~')) {
+                return { ...p, constraint: rawC }
+              }
+              return p
+            })
+          }
+        }
+        catch {}
+
+        // Fallback: if sniff returned no packages, parse deps.yaml minimally for pins
+        if ((!sniffResult.pkgs || sniffResult.pkgs.length === 0) && dependencyFile) {
+          try {
+            const content = fs.readFileSync(dependencyFile, 'utf8')
+            const lines = content.split(/\r?\n/)
+            let inDeps = false
+            const pkgs: any[] = []
+            for (const raw of lines) {
+              const indent = raw.length - raw.trimStart().length
+              const line = raw.trim()
+              if (!inDeps) {
+                if (line.startsWith('dependencies:')) {
+                  inDeps = true
+                }
+                continue
+              }
+              if (indent === 0 && line.endsWith(':'))
+                break
+              if (!line || line.startsWith('#'))
+                continue
+              const m = line.match(/^([\w.\-/]+):\s*(\S.*)$/)
+              if (m) {
+                const domain = m[1]
+                const val = m[2].trim()
+                if (domain && val && !val.startsWith('{')) {
+                  pkgs.push({ project: domain, constraint: val, global: false })
+                }
+              }
+              else if (line.startsWith('- ')) {
+                const spec = line.slice(2).trim()
+                const [domain, constraint = '*'] = spec.split('@')
+                if (domain)
+                  pkgs.push({ project: domain, constraint, global: false })
+              }
+            }
+            if (pkgs.length > 0)
+              sniffResult = { pkgs, env: sniffResult.env || {} }
+          }
+          catch {}
+        }
+
         // Quick constraint satisfaction check for already-existing environment
         const semverCompare = (a: string, b: string): number => {
           const pa = a.replace(/^v/, '').split('.').map(n => Number.parseInt(n, 10))
@@ -869,13 +963,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           for (let i = 0; i < 3; i++) {
             const da = pa[i] || 0
             const db = pb[i] || 0
-            if (da > db) return 1
-            if (da < db) return -1
+            if (da > db)
+              return 1
+            if (da < db)
+              return -1
           }
           return 0
         }
         const satisfies = (installed: string, constraint?: string): boolean => {
-          if (!constraint || constraint === '*' || constraint === '') return true
+          if (!constraint || constraint === '*' || constraint === '')
+            return true
           const c = constraint.trim()
           const ver = installed.replace(/^v/, '')
           const [cOp, cVerRaw] = c.startsWith('^') || c.startsWith('~') ? [c[0], c.slice(1)] : ['', c]
@@ -888,22 +985,59 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           if (cOp === '~') {
             return vParts[0] === cParts[0] && vParts[1] === cParts[1] && cmp >= 0
           }
-          // exact or >= style: treat as minimum version
-          return cmp >= 0
+          // No operator provided: treat as exact pin
+          return cmp === 0
         }
+        const pinInfo: Array<{ domain: string, desired: string, installed: string }> = []
+        // Extra-robust exact-pin check for well-known tools (like bun.sh)
+        const exactPins: Array<{ domain: string, version: string }> = []
+        try {
+          for (const pkg of sniffResult.pkgs || []) {
+            const domain = String(pkg.project)
+            const constraint = String(typeof pkg.constraint === 'string' ? pkg.constraint : (pkg.constraint || ''))
+            if (constraint && !constraint.startsWith('^') && !constraint.startsWith('~') && constraint !== '*') {
+              exactPins.push({ domain, version: constraint.replace(/^v/, '') })
+            }
+          }
+        }
+        catch {}
         const needsUpgrade = (() => {
           try {
             for (const pkg of sniffResult.pkgs || []) {
               const domain = pkg.project as string
               const constraint = typeof pkg.constraint === 'string' ? pkg.constraint : String(pkg.constraint || '*')
               const domainDir = path.join(envDir, domain)
-              if (!fs.existsSync(domainDir)) return true
+              if (!fs.existsSync(domainDir))
+                return true
               const versions = fs.readdirSync(domainDir, { withFileTypes: true })
                 .filter(e => e.isDirectory() && e.name.startsWith('v'))
                 .map(e => e.name)
-              if (versions.length === 0) return true
+              if (versions.length === 0)
+                return true
               const highest = versions.sort((a, b) => semverCompare(a.slice(1), b.slice(1))).slice(-1)[0]
-              if (!satisfies(highest, constraint)) return true
+              if (!satisfies(highest, constraint)) {
+                pinInfo.push({ domain, desired: constraint, installed: highest.replace(/^v/, '') })
+                return true
+              }
+            }
+            // Additionally, ensure exact pins are active (symlinks point to pinned version)
+            for (const pin of exactPins) {
+              if (pin.domain === 'bun.sh') {
+                const pinDir = path.join(envDir, 'bun.sh', `v${pin.version}`)
+                if (!fs.existsSync(pinDir))
+                  return true
+                const bunBin = path.join(envDir, 'bin', 'bun')
+                try {
+                  if (fs.existsSync(bunBin)) {
+                    const target = fs.realpathSync(bunBin)
+                    if (!target.includes(path.join('bun.sh', `v${pin.version}`, 'bin', 'bun')))
+                      return true
+                  }
+                }
+                catch {
+                  return true
+                }
+              }
             }
           }
           catch {}
@@ -912,6 +1046,13 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
         // If constraints are not satisfied, fall back to install path
         if (needsUpgrade) {
+          if (isVerbose && pinInfo.length > 0) {
+            try {
+              const details = pinInfo.map(p => `${p.domain}@${p.desired} (installed ${p.installed})`).join(', ')
+              process.stderr.write(`📌 Updating to satisfy pins: ${details}\n`)
+            }
+            catch {}
+          }
           const envBinPath = path.join(envDir, 'bin')
           const envSbinPath = path.join(envDir, 'sbin')
           const globalBinPath = path.join(globalEnvDir, 'bin')
@@ -922,7 +1063,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           for (const pkg of sniffResult.pkgs) {
             const constraintStr = typeof pkg.constraint === 'string' ? pkg.constraint : String(pkg.constraint || '*')
             const packageString = `${pkg.project}@${constraintStr}`
-            if (pkg.global && !skipGlobal) globalPackages.push(packageString)
+            if (pkg.global && !skipGlobal)
+              globalPackages.push(packageString)
             else localPackages.push(packageString)
           }
           const tInstallFast = tick()
@@ -937,7 +1079,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
             if (shellOutput && summary) {
               const msg = summary.replace(/"/g, '\\"')
               const guard = isVerbose ? 'true' : 'false'
-              try { process.stdout.write(`if ${guard}; then >&2 echo "${msg}"; fi\n`) } catch {}
+              try {
+                process.stdout.write(`if ${guard}; then >&2 echo "${msg}"; fi\n`)
+              }
+              catch {}
             }
           }
           return
@@ -1126,7 +1271,15 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
 
     // Generate hash for this project
     const projectHash = generateProjectHash(dir)
-    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
+    // Compute dependency fingerprint to ensure env path reflects dependency versions
+    let depSuffix = ''
+    try {
+      const depContent = fs.readFileSync(dependencyFile)
+      const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
+      depSuffix = `-d${depHash}`
+    }
+    catch {}
+    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
     const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
 
     // For shell output mode, check if we can skip expensive operations
@@ -1531,7 +1684,27 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`fi\n`)
 
   // Build PATH with both project and global environments
-  const pathComponents = []
+  const pathComponents: string[] = []
+
+  // If exact pins exist, prepend their bin directories ahead of generic env bin
+  try {
+    if (sniffResult && Array.isArray(sniffResult.pkgs)) {
+      const envRoot = fs.existsSync(envBinPath) ? path.dirname(envBinPath) : ''
+      for (const pkg of sniffResult.pkgs) {
+        const domain = String(pkg.project || '')
+        const constraint = String(typeof pkg.constraint === 'string' ? pkg.constraint : (pkg.constraint || ''))
+        if (!domain || !constraint || constraint === '*' || constraint.startsWith('^') || constraint.startsWith('~'))
+          continue
+        if (!envRoot)
+          continue
+        const pinnedBin = path.join(envRoot, domain, `v${constraint.replace(/^v/, '')}`, 'bin')
+        if (fs.existsSync(pinnedBin) && !pathComponents.includes(pinnedBin)) {
+          pathComponents.push(pinnedBin)
+        }
+      }
+    }
+  }
+  catch {}
 
   // Add project-specific paths first (highest priority - can override global versions)
   if (fs.existsSync(envBinPath)) {
@@ -1737,6 +1910,8 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
+  // Refresh the command hash so version switches take effect immediately
+  process.stdout.write(`hash -r 2>/dev/null || true\n`)
 }
 
 /**
