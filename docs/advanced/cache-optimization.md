@@ -31,6 +31,20 @@ Cache keys are generated using a deterministic approach:
 - **Bun Cache:** `{version}` (e.g., `1.2.3`)
 - **Temporary Cache:** `{timestamp}-{hash}` for downloads in progress
 
+### Environment Selection Cache
+
+Launchpad also maintains a lightweight shell-side cache for environment activation. It stores:
+
+- a persistent marker for fast-path activation, and
+- a `.deps_fingerprint` file inside the environment with the dependency fingerprint used to select it.
+
+On directory change, Launchpad validates fast-path cache with two signals:
+
+- "Cache invalid: dependency newer than cache" (dep file mtime > cache mtime)
+- "Cache invalid: fingerprint mismatch" (computed fingerprint != stored fingerprint)
+
+When either triggers, Launchpad skips fast-path and refreshes the environment selection, ensuring the correct versions are active.
+
 ## Performance Optimization
 
 ### Cache Hit Optimization

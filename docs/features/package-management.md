@@ -271,6 +271,22 @@ Launchpad's update system provides:
 4. **Helpful messages**: Provides installation instructions for uninstalled packages
 5. **Dry-run mode**: Preview updates safely before applying changes
 
+### Version Switching on cd
+
+Launchpad encodes dependency versions into the environment directory via a dependency fingerprint (md5 of your dependency file). When you change pinned versions in your dependency file and `cd` into the project, Launchpad automatically selects a new env path:
+
+```
+~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>
+```
+
+This guarantees immediate version switches without manual cleanup. Enable verbose logs to see the chosen `env_dir`, dependency file, and fingerprint:
+
+```bash
+export LAUNCHPAD_VERBOSE=true
+cd my-project
+# 🔍 Env target: env_dir=… dep_file=… dep_hash=…
+```
+
 ### Update Examples
 
 ```bash

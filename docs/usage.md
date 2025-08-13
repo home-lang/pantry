@@ -341,7 +341,7 @@ Supported dependency file formats:
 ### Environment Isolation
 
 Each project gets its own isolated environment:
-- Project-specific installation directory: `~/.local/share/launchpad/envs/{project-hash}/`
+- Project-specific installation directory: `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
 - Isolated PATH and environment variables
 - Binary stubs with environment isolation
 - Automatic cleanup when leaving project directory
@@ -491,13 +491,20 @@ Launchpad uses human-readable hash identifiers for environments:
 
 ### Updating Dependencies
 
-To update dependencies in your project, you'll need to manually edit your `dependencies.yaml` file and then reactivate the environment:
+To update dependencies in your project, edit your dependency file (e.g. `deps.yaml` / `dependencies.yaml`) and then reactivate the environment:
 
 ```bash
-# Edit your dependencies.yaml file
-# Change: node@22 to node@23
-# Then reactivate the environment
-cd . # This triggers environment reactivation with new dependencies
+# Edit your dependency file
+# Change: node@22 -> node@23 (or bun.sh: 1.2.19 -> 1.2.20)
+
+# Reactivate the environment (new env_dir is selected automatically)
+cd .. && cd my-project
+
+# Optional: inspect selection decisions
+export LAUNCHPAD_VERBOSE=true
+cd my-project
+# 🔍 Env target: env_dir=… dep_file=… dep_hash=…
+# 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
 ```
 
 ## Bootstrap Setup

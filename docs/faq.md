@@ -132,6 +132,15 @@ producing a path like:
 
 Changing versions in `deps.yaml` (or `dependencies.yml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`, etc.) changes the fingerprint, so a new env dir is selected and the correct versions are installed/activated automatically.
 
+Recognized dependency files include:
+
+- `deps.yaml` / `deps.yml`
+- `dependencies.yaml` / `dependencies.yml`
+- `pkgx.yaml` / `pkgx.yml`
+- `launchpad.yaml` / `launchpad.yml`
+- `package.json`
+- `pyproject.toml`
+
 To see this live, enable verbose logging and cd into the project:
 
 ```bash

@@ -60,6 +60,10 @@ cd /path/to/project  # Even faster (cache hit)
 - Optimized PATH management (no duplicates)
 - Reduced filesystem syscalls
 
+#### Dependency Fingerprint Overhead
+
+Launchpad computes a dependency fingerprint by md5 hashing the dependency file (e.g. `deps.yaml`). This cost is O(file-size) and negligible for typical YAML/JSON files. The fingerprint is used only to select the environment directory and to validate cache freshness.
+
 ### 4. Dependency Detection Memoization
 
 Intelligent caching of dependency analysis results:
