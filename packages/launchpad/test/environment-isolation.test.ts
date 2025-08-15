@@ -33,27 +33,53 @@ describe('Environment Isolation', () => {
     fs.mkdirSync(nestedProject, { recursive: true })
   })
 
-  afterEach(() => {
+  afterEach(async () => {
     // Restore environment variables properly without replacing the entire process.env object
     Object.keys(process.env).forEach((key) => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
 
+    // Add a small delay to ensure processes have finished
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Clean up temp directory with retry logic
     if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true })
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true })
+      }
+      catch {
+        // Retry after a short delay if directory is still in use
+        await new Promise(resolve => setTimeout(resolve, 500))
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true })
+        }
+        catch {
+          // Ignore cleanup failures in tests - they'll be cleaned up by OS
+        }
+      }
     }
 
     // Clean up any test environment directories
-    const launchpadEnvsDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')
-    if (fs.existsSync(launchpadEnvsDir)) {
-      const entries = fs.readdirSync(launchpadEnvsDir)
-      for (const entry of entries) {
-        const entryPath = path.join(launchpadEnvsDir, entry)
-        if (fs.statSync(entryPath).isDirectory() && entry.includes('dGVzdC')) { // Base64 contains 'test'
-          fs.rmSync(entryPath, { recursive: true, force: true })
+    try {
+      const launchpadEnvsDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs')
+      if (fs.existsSync(launchpadEnvsDir)) {
+        const entries = fs.readdirSync(launchpadEnvsDir)
+        for (const entry of entries) {
+          const entryPath = path.join(launchpadEnvsDir, entry)
+          if (fs.statSync(entryPath).isDirectory() && entry.includes('dGVzdC')) { // Base64 contains 'test'
+            try {
+              fs.rmSync(entryPath, { recursive: true, force: true })
+            }
+            catch {
+              // Ignore cleanup failures
+            }
+          }
         }
       }
+    }
+    catch {
+      // Ignore cleanup failures
     }
   })
 

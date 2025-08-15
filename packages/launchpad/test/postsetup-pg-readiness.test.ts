@@ -81,20 +81,20 @@ exit 0
 `)
     fs.chmodSync(artisan, 0o755)
 
-      // Compute envDir exactly like dump.ts (including dependency suffix)
-  const envHash = generateProjectHashForTest(projectDir)
-  // Compute dependency fingerprint to match dump.ts logic
-  let depSuffix = ''
-  try {
-    const depsFilePath = path.join(projectDir, 'deps.yaml')
-    if (fs.existsSync(depsFilePath)) {
-      const depContent = fs.readFileSync(depsFilePath)
-      const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
-      depSuffix = `-d${depHash}`
+    // Compute envDir exactly like dump.ts (including dependency suffix)
+    const envHash = generateProjectHashForTest(projectDir)
+    // Compute dependency fingerprint to match dump.ts logic
+    let depSuffix = ''
+    try {
+      const depsFilePath = path.join(projectDir, 'deps.yaml')
+      if (fs.existsSync(depsFilePath)) {
+        const depContent = fs.readFileSync(depsFilePath)
+        const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
+        depSuffix = `-d${depHash}`
+      }
     }
-  }
-  catch {}
-  envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', `${envHash}${depSuffix}`)
+    catch {}
+    envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', `${envHash}${depSuffix}`)
     fs.mkdirSync(envDir, { recursive: true })
     fs.writeFileSync(path.join(envDir, '.launchpad_ready'), '1')
     // Create expected bin/sbin to satisfy composed PATH
@@ -106,16 +106,28 @@ exit 0
     process.env.LAUNCHPAD_TEST_MODE = 'true'
   })
 
-  afterAll(() => {
+  afterAll(async () => {
     process.env.PATH = originalPath
+
+    // Add a delay to ensure processes have finished
+    await new Promise(resolve => setTimeout(resolve, 200))
+
     try {
-      fs.rmSync(projectDir, { recursive: true, force: true })
+      if (fs.existsSync(projectDir)) {
+        fs.rmSync(projectDir, { recursive: true, force: true })
+      }
     }
-    catch {}
+    catch {
+      // Ignore cleanup failures
+    }
     try {
-      fs.rmSync(envDir, { recursive: true, force: true })
+      if (fs.existsSync(envDir)) {
+        fs.rmSync(envDir, { recursive: true, force: true })
+      }
     }
-    catch {}
+    catch {
+      // Ignore cleanup failures
+    }
   })
 
   it('runs post-setup after services and completes without connection errors', async () => {
@@ -150,5 +162,5 @@ exit 0
     }
     console.log('Post marker exists:', fs.existsSync(postMarker))
     expect(fs.existsSync(postMarker)).toBe(true)
-  })
+  }, 15000) // Increased timeout for database operations
 })
