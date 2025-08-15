@@ -1,5 +1,4 @@
 export * from '../test/version'
-export * from './bun'
 export * from './config'
 export * from './dev'
 export * from './doctor'

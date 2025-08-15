@@ -334,6 +334,112 @@ exec "${binaryPath}" "$@"
           console.warn(`Created shim: ${binary} -> ${binaryPath}`)
           // Don't spam library paths for every binary - they're mostly the same
         }
+
+        // Special handling for Bun: create bunx symlink as specified in ts-pkgx script
+        if (domain === 'bun.sh' && binary === 'bun') {
+          // 1. Create bunx symlink to bun (like the ts-pkgx script: ln -s bun bunx)
+          const bunxShimPath = path.join(targetShimDir, 'bunx')
+          try {
+            // Remove existing bunx if it exists
+            if (fs.existsSync(bunxShimPath)) {
+              fs.unlinkSync(bunxShimPath)
+            }
+
+            // Create symlink from bunx to bun
+            fs.symlinkSync('bun', bunxShimPath)
+
+            installedBinaries.push('bunx')
+
+            if (config.verbose) {
+              console.warn(`Created bunx symlink: bunx -> bun (as specified in ts-pkgx script)`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to create bunx symlink: ${error instanceof Error ? error.message : String(error)}`)
+            }
+            // Don't fail the installation if bunx symlink creation fails
+          }
+
+          // 2. Modify the bun shim to set BUN_INSTALL environment variable
+          // This is critical for Bun to work correctly, as it needs to know where it's installed
+          try {
+            // Add BUN_INSTALL environment variable to the shim content
+            // We don't need the package root for this implementation
+
+            // Create the official Bun directory structure
+            const officialBunDir = path.join(installPath, '.bun')
+            fs.mkdirSync(officialBunDir, { recursive: true })
+
+            // Create the install directory structure
+            const installDir = path.join(officialBunDir, 'install')
+            fs.mkdirSync(installDir, { recursive: true })
+
+            // Create global and cache directories
+            const globalDir = path.join(installDir, 'global')
+            const cacheDir = path.join(installDir, 'cache')
+            fs.mkdirSync(globalDir, { recursive: true })
+            fs.mkdirSync(cacheDir, { recursive: true })
+
+            // Create a minimal package.json in the global directory
+            const packageJsonPath = path.join(globalDir, 'package.json')
+            const packageJson = {
+              name: 'bun-global',
+              version: '0.0.0',
+              private: true,
+            }
+            fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
+
+            // Create bin directory in the official Bun directory
+            const officialBinDir = path.join(officialBunDir, 'bin')
+            fs.mkdirSync(officialBinDir, { recursive: true })
+
+            // Create symlinks from the actual binary to the official bin directory
+            const officialBunBinPath = path.join(officialBinDir, 'bun')
+            const officialBunxBinPath = path.join(officialBinDir, 'bunx')
+
+            // Remove existing symlinks if they exist
+            if (fs.existsSync(officialBunBinPath)) {
+              fs.unlinkSync(officialBunBinPath)
+            }
+            if (fs.existsSync(officialBunxBinPath)) {
+              fs.unlinkSync(officialBunxBinPath)
+            }
+
+            // Create symlinks to the actual binaries
+            fs.symlinkSync(binaryPath, officialBunBinPath)
+            fs.symlinkSync(officialBunBinPath, officialBunxBinPath)
+
+            // Create a custom shim for Bun with BUN_INSTALL environment variable
+            const customShimContent = `#!/bin/sh
+# Launchpad shim for ${binary} (${domain} v${version})
+
+# Set up Bun environment variables
+export BUN_INSTALL="${officialBunDir}"
+
+# Execute the actual binary
+exec "${binaryPath}" "$@"
+`
+            // Write the custom shim directly to the file
+            fs.writeFileSync(shimPath, customShimContent)
+            fs.chmodSync(shimPath, 0o755)
+
+            // Skip the default shim writing by continuing to the next binary
+            if (config.verbose) {
+              console.warn(`Added BUN_INSTALL environment variable to bun shim`)
+              console.warn(`Created Bun directory structure at ${officialBunDir}`)
+            }
+
+            installedBinaries.push(binary)
+            continue
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`Failed to set up Bun environment: ${error instanceof Error ? error.message : String(error)}`)
+            }
+            // Don't fail the installation if environment setup fails
+          }
+        }
       }
     }
   }

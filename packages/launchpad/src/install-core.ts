@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { install_bun } from './bun'
+
 import { getCachedPackagePath, savePackageToCache } from './cache'
 import { config } from './config'
 import { createBuildEnvironmentScript, createPkgConfigSymlinks, createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation } from './install-helpers'
@@ -206,14 +206,6 @@ export async function installPackage(packageName: string, packageSpec: string, i
   // Parse package name and version
   const { name, version: requestedVersion } = parsePackageSpec(actualPackageSpec)
   const domain = resolvePackageName(name)
-
-  // Special handling for bun - use dedicated bun installation function
-  if (name === 'bun' || domain === 'bun.sh') {
-    if (config.verbose) {
-      console.warn(`Using dedicated bun installation for ${name}`)
-    }
-    return await install_bun(installPath, requestedVersion)
-  }
 
   // Special handling for meilisearch - use custom GitHub releases installer
   if (name === 'meilisearch' || domain === 'meilisearch.com') {
