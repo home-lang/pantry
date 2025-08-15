@@ -1968,11 +1968,18 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
  */
 async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
   try {
+    if (process.env.LAUNCHPAD_VERBOSE === 'true') {
+      console.warn(`maybeRunProjectPostSetup called: projectDir=${projectDir}, envDir=${envDir}`)
+    }
+
     // Use a marker file inside env to avoid re-running on every prompt
     const markerDir = path.join(envDir, 'pkgs')
     const markerFile = path.join(markerDir, '.post_setup_done')
 
     if (fs.existsSync(markerFile)) {
+      if (process.env.LAUNCHPAD_VERBOSE === 'true') {
+        console.warn(`Post-setup marker file already exists, skipping: ${markerFile}`)
+      }
       return
     }
 
@@ -1980,7 +1987,11 @@ async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isS
     try {
       fs.mkdirSync(markerDir, { recursive: true })
     }
-    catch {}
+    catch (error) {
+      if (process.env.LAUNCHPAD_VERBOSE === 'true') {
+        console.warn(`Failed to create marker directory ${markerDir}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
 
     // Aggregate post-setup commands from both runtime config and project-local config
     const commands: PostSetupCommand[] = []
@@ -1995,14 +2006,19 @@ async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isS
     try {
       const configPathTs = path.join(projectDir, 'launchpad.config.ts')
       if (fs.existsSync(configPathTs)) {
-        const mod = await import(configPathTs)
+        const configUrl = new URL(`file://${configPathTs}`)
+        const mod = await import(configUrl.href)
         const local = mod.default || mod
         if (local?.postSetup?.enabled && Array.isArray(local.postSetup.commands)) {
           commands.push(...local.postSetup.commands)
         }
       }
     }
-    catch {
+    catch (error) {
+      // Log import errors in verbose mode for debugging
+      if (process.env.LAUNCHPAD_VERBOSE === 'true') {
+        console.warn(`Failed to import launchpad.config.ts: ${error instanceof Error ? error.message : String(error)}`)
+      }
       // Ignore import errors; absence or parse errors should not fail setup
     }
 

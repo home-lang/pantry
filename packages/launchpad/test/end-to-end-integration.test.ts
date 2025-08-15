@@ -264,30 +264,6 @@ dependencies:
         console.log = originalLog
       }
     }, 90000)
-
-    it.skip('should create project database automatically', async () => {
-      // Import database creation function
-      const { createProjectDatabase } = await import('../src/services/database')
-
-      const dbConfig = {
-        type: 'postgres' as const,
-        host: '127.0.0.1',
-        port: 5432,
-        username: 'postgres',
-        password: '',
-      }
-
-      // In test mode, this should not fail even if PostgreSQL isn't running
-      try {
-        await createProjectDatabase('test_laravel_app', dbConfig)
-        // If we get here without throwing, the function structure is correct
-        expect(true).toBe(true)
-      }
-      catch (error) {
-        // In test environment, connection failures are expected
-        expect(error instanceof Error).toBe(true)
-      }
-    })
   })
 
   describe('Shell Integration and PATH Management', () => {

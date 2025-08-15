@@ -39,7 +39,7 @@ postActivation:
     writeFileSync(path.join(tmpDir, 'hooks.log'), '', 'utf8')
   })
 
-  it.skip('runs hooks in correct phases and creates readiness marker', async () => {
+  it('runs hooks in correct phases and creates readiness marker', async () => {
     // Import dump programmatically
     const { dump } = await import('../src/dev/dump')
 
@@ -64,19 +64,33 @@ postActivation:
     const resolved = fsmod.existsSync(tmpDir) ? fsmod.realpathSync(tmpDir) : tmpDir
     const md5 = crypto.createHash('md5').update(resolved).digest('hex')
     const hash = `${path.basename(resolved)}_${md5.slice(0, 8)}`
-    const ready = path.join(envsDir, hash, '.launchpad_ready')
+
+    // Compute dependency fingerprint to match dump.ts logic
+    let depSuffix = ''
+    try {
+      const depsFilePath = path.join(tmpDir, 'deps.yaml')
+      if (fsmod.existsSync(depsFilePath)) {
+        const depContent = fsmod.readFileSync(depsFilePath)
+        const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
+        depSuffix = `-d${depHash}`
+      }
+    }
+    catch {}
+
+    const ready = path.join(envsDir, `${hash}${depSuffix}`, '.launchpad_ready')
 
     console.log('tmpDir:', tmpDir)
     console.log('resolved:', resolved)
     console.log('hash:', hash)
+    console.log('depSuffix:', depSuffix)
     console.log('envsDir:', envsDir)
     console.log('expected ready path:', ready)
     console.log('ready file exists:', existsSync(ready))
-    console.log('envs directory exists:', existsSync(path.join(envsDir, hash)))
+    console.log('envs directory exists:', existsSync(path.join(envsDir, `${hash}${depSuffix}`)))
 
     // List files in env directory if it exists
-    if (existsSync(path.join(envsDir, hash))) {
-      const files = fsmod.readdirSync(path.join(envsDir, hash))
+    if (existsSync(path.join(envsDir, `${hash}${depSuffix}`))) {
+      const files = fsmod.readdirSync(path.join(envsDir, `${hash}${depSuffix}`))
       console.log('files in env dir:', files)
     }
 

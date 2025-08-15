@@ -24,7 +24,7 @@ function runDevShell(projectDir: string, extraEnv?: Record<string, string>): { s
   return { stderr: res.stderr || '', stdout: res.stdout || '' }
 }
 
-describe.skip('pin downgrade fast-path behavior', () => {
+describe('pin downgrade fast-path behavior', () => {
   const projectDir = mkdtemp()
   const home = os.homedir()
   const envsRoot = path.join(home, '.local', 'share', 'launchpad', 'envs')
@@ -36,12 +36,26 @@ describe.skip('pin downgrade fast-path behavior', () => {
     const r1 = runDevShell(projectDir)
     expect(r1.stdout).toContain('# Launchpad environment setup')
 
-    // Compute hash as in implementation
+    // Compute hash as in implementation (including dependency suffix)
     const real = fs.realpathSync(projectDir)
     const base = path.basename(real)
 
     const md5 = crypto.createHash('md5').update(real).digest('hex')
-    projectHash = `${base}_${md5.slice(0, 8)}`
+    const baseHash = `${base}_${md5.slice(0, 8)}`
+
+    // Compute dependency fingerprint to match dump.ts logic
+    let depSuffix = ''
+    try {
+      const depsFilePath = path.join(projectDir, 'deps.yaml')
+      if (fs.existsSync(depsFilePath)) {
+        const depContent = fs.readFileSync(depsFilePath)
+        const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
+        depSuffix = `-d${depHash}`
+      }
+    }
+    catch {}
+
+    projectHash = `${baseHash}${depSuffix}`
     expect(fs.existsSync(path.join(envsRoot, projectHash))).toBe(true)
   })
 

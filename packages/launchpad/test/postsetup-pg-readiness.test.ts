@@ -66,12 +66,35 @@ pkgs:
 
     // Mock artisan that writes a marker file
     const artisan = path.join(binDir, 'artisan')
-    fs.writeFileSync(artisan, `#!/bin/sh\necho \"artisan called with args: $@\" > \"${path.join(projectDir, 'artisan-debug.log')}\"\nif [ \"$1\" = \"migrate:fresh\" ]; then echo migrated > \"${path.join(projectDir, 'migrated.marker')}\"; fi; exit 0\n`)
+    fs.writeFileSync(artisan, `#!/bin/sh
+echo "artisan called with args: $@" > "${path.join(projectDir, 'artisan-debug.log')}"
+echo "First arg: '$1'" >> "${path.join(projectDir, 'artisan-debug.log')}"
+echo "Checking condition: [ '$1' = 'migrate:fresh' ]" >> "${path.join(projectDir, 'artisan-debug.log')}"
+if [ "$1" = "migrate:fresh" ]; then
+  echo "Condition matched! Creating marker file..." >> "${path.join(projectDir, 'artisan-debug.log')}"
+  echo migrated > "${path.join(projectDir, 'migrated.marker')}"
+  echo "Marker file created: $?" >> "${path.join(projectDir, 'artisan-debug.log')}"
+else
+  echo "Condition NOT matched" >> "${path.join(projectDir, 'artisan-debug.log')}"
+fi
+exit 0
+`)
     fs.chmodSync(artisan, 0o755)
 
-    // Compute envDir exactly like dump.ts
-    const envHash = generateProjectHashForTest(projectDir)
-    envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', envHash)
+      // Compute envDir exactly like dump.ts (including dependency suffix)
+  const envHash = generateProjectHashForTest(projectDir)
+  // Compute dependency fingerprint to match dump.ts logic
+  let depSuffix = ''
+  try {
+    const depsFilePath = path.join(projectDir, 'deps.yaml')
+    if (fs.existsSync(depsFilePath)) {
+      const depContent = fs.readFileSync(depsFilePath)
+      const depHash = crypto.createHash('md5').update(depContent).digest('hex').slice(0, 8)
+      depSuffix = `-d${depHash}`
+    }
+  }
+  catch {}
+  envDir = path.join(os.homedir(), '.local', 'share', 'launchpad', 'envs', `${envHash}${depSuffix}`)
     fs.mkdirSync(envDir, { recursive: true })
     fs.writeFileSync(path.join(envDir, '.launchpad_ready'), '1')
     // Create expected bin/sbin to satisfy composed PATH
@@ -95,8 +118,8 @@ pkgs:
     catch {}
   })
 
-  it.skip('runs post-setup after services and completes without connection errors', async () => {
-    await dump(projectDir, { shellOutput: true, quiet: true })
+  it('runs post-setup after services and completes without connection errors', async () => {
+    await dump(projectDir, { shellOutput: false, quiet: true })
 
     // Check if artisan was called at all
     const debugLogPath = path.join(projectDir, 'artisan-debug.log')
@@ -107,9 +130,25 @@ pkgs:
 
     // Expect our mock artisan to have executed
     const markerPath = path.join(projectDir, 'migrated.marker')
+    console.log('Expected marker path:', markerPath)
+    console.log('Marker exists:', fs.existsSync(markerPath))
+    console.log('Project dir contents:', fs.readdirSync(projectDir))
+    if (fs.existsSync(markerPath)) {
+      console.log('Marker content:', fs.readFileSync(markerPath, 'utf8'))
+    }
     expect(fs.existsSync(markerPath)).toBe(true)
     // And the idempotent marker to be created
     const postMarker = path.join(envDir, 'pkgs', '.post_setup_done')
+    console.log('Expected post marker path:', postMarker)
+    console.log('EnvDir exists:', fs.existsSync(envDir))
+    console.log('EnvDir/pkgs exists:', fs.existsSync(path.join(envDir, 'pkgs')))
+    if (fs.existsSync(envDir)) {
+      console.log('EnvDir contents:', fs.readdirSync(envDir))
+      if (fs.existsSync(path.join(envDir, 'pkgs'))) {
+        console.log('EnvDir/pkgs contents:', fs.readdirSync(path.join(envDir, 'pkgs')))
+      }
+    }
+    console.log('Post marker exists:', fs.existsSync(postMarker))
     expect(fs.existsSync(postMarker)).toBe(true)
   })
 })
