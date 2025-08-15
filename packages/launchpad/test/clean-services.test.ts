@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
@@ -57,6 +58,12 @@ describe('clean command - service shutdown behavior', () => {
   })
 
   it('dry-run should show services that would be stopped', async () => {
+    // Skip on non-macOS platforms where service management differs
+    if (process.platform !== 'darwin') {
+      console.log('Skipping macOS-specific service test on', process.platform)
+      return
+    }
+
     // Prepare a fake user LaunchAgents with a Launchpad plist to simulate a registered service
     const launchAgents = path.join(process.env.HOME!, 'Library', 'LaunchAgents')
     fs.mkdirSync(launchAgents, { recursive: true })
@@ -77,6 +84,12 @@ describe('clean command - service shutdown behavior', () => {
   })
 
   it('should stop, disable and remove service files before cleaning (keep-global respected)', async () => {
+    // Skip on non-macOS platforms where service management differs
+    if (process.platform !== 'darwin') {
+      console.log('Skipping macOS-specific service test on', process.platform)
+      return
+    }
+
     // Create a deps.yaml that marks postgres as global to ensure we do not stop it with --keep-global
     const dotfiles = path.join(process.env.HOME!, '.dotfiles')
     fs.mkdirSync(dotfiles, { recursive: true })
