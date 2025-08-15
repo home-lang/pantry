@@ -73,6 +73,28 @@ This directory contains comprehensive test environments for Launchpad's global/l
 - **Expected**: All packages install locally (default behavior)
 - **Use Case**: Traditional project-isolated installation
 
+### Bun Package Manager Tests
+
+#### `bun-package-manager-basic/` 🆕
+- **Pattern**: `packageManager: "bun"` (no version)
+- **Expected**: Bun latest installed, NO Node.js, proper environment setup
+- **Use Case**: Basic Bun project without version constraints
+
+#### `bun-package-manager-versioned/` 🆕
+- **Pattern**: `packageManager: "bun@1.2.20"` (specific version)
+- **Expected**: Exact Bun version, TypeScript/ESLint support, NO Node.js
+- **Use Case**: Project requiring specific Bun version for stability
+
+#### `bun-package-manager-with-deps/` 🆕
+- **Pattern**: `packageManager: "bun@latest"` + additional tools from dependencies.yaml
+- **Expected**: Bun + additional tools, complex npm packages working, NO Node.js
+- **Use Case**: Full-stack project using Bun with additional development tools
+
+#### `bun-vs-node-engines/` 🆕
+- **Pattern**: `packageManager: "bun"` + conflicting `engines.node` + `volta.node`
+- **Expected**: Bun prioritized over Node.js engines/volta, node symlink for compatibility
+- **Use Case**: Testing package manager priority over other Node.js configurations
+
 ### Existing Test Environments
 
 #### `complex-deps/`
@@ -133,6 +155,9 @@ launchpad env:list
 | `no-global-flag` | None | None | All local (default) |
 | `team-standard` | None | Mixed | Mixed per individual flags |
 | `fullstack-mixed` | None | Mixed | Runtimes global, tools local |
+| `bun-package-manager-basic` | N/A | `packageManager: "bun"` | Only Bun, NO Node.js |
+| `bun-package-manager-versioned` | N/A | `packageManager: "bun@1.2.20"` | Bun v1.2.20, NO Node.js |
+| `bun-vs-node-engines` | N/A | Bun vs engines conflict | Bun wins, NO Node.js |
 
 ## Key Test Cases Covered
 
@@ -145,5 +170,12 @@ launchpad env:list
 ✅ Complex real-world scenarios (team, fullstack, dev machine)
 ✅ String array format with top-level global
 ✅ Object format with version and global flags
+🆕 **Bun Package Manager Support**:
+✅ `packageManager: "bun"` without version (defaults to latest)
+✅ `packageManager: "bun@version"` with specific version
+✅ Bun prioritized over Node.js engines/volta configurations
+✅ Node.js compatibility via symlink creation
+✅ Complex npm packages working with Bun runtime
+✅ ESLint/Prettier/Next.js compatibility testing
 
-These test environments comprehensively validate Launchpad's global/local installation functionality across all supported configuration patterns.
+These test environments comprehensively validate Launchpad's global/local installation functionality and Bun package manager support across all supported configuration patterns.

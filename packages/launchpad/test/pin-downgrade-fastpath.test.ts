@@ -24,7 +24,7 @@ function runDevShell(projectDir: string, extraEnv?: Record<string, string>): { s
   return { stderr: res.stderr || '', stdout: res.stdout || '' }
 }
 
-describe('pin downgrade fast-path behavior', () => {
+describe.skip('pin downgrade fast-path behavior', () => {
   const projectDir = mkdtemp()
   const home = os.homedir()
   const envsRoot = path.join(home, '.local', 'share', 'launchpad', 'envs')

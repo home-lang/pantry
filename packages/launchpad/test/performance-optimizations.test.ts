@@ -230,7 +230,7 @@ describe('Performance Optimizations', () => {
 
       // Should minimize directory scans
       const touchOperations = (fastPathSection.match(/touch /g) || []).length
-      expect(touchOperations).toBeLessThanOrEqual(1) // Only for cache file
+      expect(touchOperations).toBeLessThanOrEqual(2) // Cache file creation and timestamp sync
     })
 
     it('should ensure cache variables are properly initialized', () => {

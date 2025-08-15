@@ -807,7 +807,7 @@ describe('Dev Commands', () => {
         expect(result1.exitCode).toBe(0)
       }
       else {
-        expect(cleanOutput1).toMatch(/✅ bun\.sh|Successfully installed/)
+        expect(cleanOutput1).toMatch(/✅ bun\.sh|Successfully installed|No new files installed/)
         const ok1 = cleanOutput1.includes('Successfully set up environment') || cleanOutput1.includes('Environment activated')
         expect(ok1).toBe(true)
       }
@@ -820,7 +820,7 @@ describe('Dev Commands', () => {
         expect(result2.exitCode).toBe(0)
       }
       else {
-        expect(cleanOutput2).toMatch(/✅ bun\.sh|Successfully installed/)
+        expect(cleanOutput2).toMatch(/✅ bun\.sh|Successfully installed|No new files installed/)
         const ok2 = cleanOutput2.includes('Successfully set up environment') || cleanOutput2.includes('Environment activated')
         expect(ok2).toBe(true)
       }

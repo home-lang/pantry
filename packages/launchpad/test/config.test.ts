@@ -45,14 +45,26 @@ describe('Config', () => {
     })
 
     it('should have reasonable default values', () => {
-      // In CI/GitHub Actions, verbose is set to true
-      if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      // Check if verbose is set by environment variables
+      const shouldBeVerbose = originalEnv.LAUNCHPAD_VERBOSE === 'true'
+        || originalEnv.CI === 'true'
+        || originalEnv.GITHUB_ACTIONS === 'true'
+
+      // CI-specific settings (maxRetries and timeout) are separate from verbose
+      const isCI = originalEnv.CI === 'true' || originalEnv.GITHUB_ACTIONS === 'true'
+
+      if (shouldBeVerbose) {
         expect(defaultConfig.verbose).toBe(true)
+      }
+      else {
+        expect(defaultConfig.verbose).toBe(false)
+      }
+
+      if (isCI) {
         expect(defaultConfig.maxRetries).toBe(5)
         expect(defaultConfig.timeout).toBe(120000)
       }
       else {
-        expect(defaultConfig.verbose).toBe(false)
         expect(defaultConfig.maxRetries).toBe(3)
         expect(defaultConfig.timeout).toBe(60000)
       }

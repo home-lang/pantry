@@ -390,6 +390,26 @@ exec "${binaryPath}" "$@"
             }
             fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
 
+            // Create node_modules directory structure
+            const nodeModulesDir = path.join(globalDir, 'node_modules')
+            fs.mkdirSync(nodeModulesDir, { recursive: true })
+
+            // Create empty bun.lock file to make Bun recognize this as a valid package
+            const lockFilePath = path.join(globalDir, 'bun.lock')
+            if (!fs.existsSync(lockFilePath)) {
+              try {
+                fs.writeFileSync(lockFilePath, '')
+                if (config.verbose) {
+                  console.warn(`Created empty bun.lock file in global directory`)
+                }
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create bun.lock file: ${error instanceof Error ? error.message : String(error)}`)
+                }
+              }
+            }
+
             // Create bin directory in the official Bun directory
             const officialBinDir = path.join(officialBunDir, 'bin')
             fs.mkdirSync(officialBinDir, { recursive: true })
@@ -409,6 +429,28 @@ exec "${binaryPath}" "$@"
             // Create symlinks to the actual binaries
             fs.symlinkSync(binaryPath, officialBunBinPath)
             fs.symlinkSync(officialBunBinPath, officialBunxBinPath)
+
+            // Create a node symlink to bun to handle packages that expect node
+            // Only create if no node binary/shim already exists (avoids conflict with actual Node.js)
+            const nodeShimPath = path.join(targetShimDir, 'node')
+            if (!fs.existsSync(nodeShimPath)) {
+              try {
+                fs.symlinkSync('bun', nodeShimPath)
+                if (config.verbose) {
+                  console.warn(`Created node symlink: node -> bun (to handle packages that expect node)`)
+                }
+                installedBinaries.push('node')
+              }
+              catch (error) {
+                if (config.verbose) {
+                  console.warn(`Failed to create node symlink: ${error instanceof Error ? error.message : String(error)}`)
+                }
+                // Don't fail the installation if node symlink creation fails
+              }
+            }
+            else if (config.verbose) {
+              console.warn(`Skipped creating node symlink: node binary/shim already exists`)
+            }
 
             // Create a custom shim for Bun with BUN_INSTALL environment variable
             const customShimContent = `#!/bin/sh

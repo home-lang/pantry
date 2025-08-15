@@ -1,3 +1,6 @@
+pkgs:
+  - bun.sh
+
 preSetup:
   enabled: true
   commands:

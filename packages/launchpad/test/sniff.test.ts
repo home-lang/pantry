@@ -175,6 +175,71 @@ describe('Sniff - All File Types Detection', () => {
       expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
     })
 
+    it('should detect package.json with packageManager: bun', async () => {
+      const packageJson = {
+        name: 'bun-project',
+        packageManager: 'bun@1.2.0',
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      // Should NOT install Node.js when Bun is the package manager
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should detect package.json with packageManager: bun (latest version)', async () => {
+      const packageJson = {
+        name: 'bun-project',
+        packageManager: 'bun@latest',
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      // Should NOT install Node.js when Bun is the package manager
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should detect package.json with packageManager: bun (no version)', async () => {
+      const packageJson = {
+        name: 'bun-project',
+        packageManager: 'bun',
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      // Should NOT install Node.js when Bun is the package manager
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should detect package.json with packageManager: npm and install Node.js', async () => {
+      const packageJson = {
+        name: 'npm-project',
+        packageManager: 'npm@10.2.4',
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'npmjs.com')).toBe(true)
+      // Should install Node.js when npm is the package manager
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
+    })
+
+    it('should detect package.json with packageManager: yarn and install Node.js', async () => {
+      const packageJson = {
+        name: 'yarn-project',
+        packageManager: 'yarn@4.0.0',
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'yarnpkg.com')).toBe(true)
+      // Should install Node.js when yarn is the package manager
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(true)
+    })
+
     it('should detect package.json with volta', async () => {
       const packageJson = {
         name: 'test-project',
@@ -804,6 +869,52 @@ env:
 
       const result = await sniff({ string: tempDir })
       expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should NOT infer Node.js when packageManager is bun even with engines.node', async () => {
+      const packageJson = {
+        name: 'bun-with-engines-test',
+        version: '1.0.0',
+        packageManager: 'bun@1.2.0',
+        engines: {
+          node: '>=18.0.0',
+        },
+        dependencies: {
+          express: '^4.18.0',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      // Should NOT install Node.js even when engines.node is present, because packageManager is bun
+      expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
+    })
+
+    it('should handle complex package.json with packageManager: bun', async () => {
+      const packageJson = {
+        name: 'complex-bun-project',
+        version: '1.0.0',
+        packageManager: 'bun@1.2.20',
+        scripts: {
+          dev: 'bun run dev',
+          build: 'bun run build',
+          test: 'bun test',
+        },
+        dependencies: {
+          'express': '^4.18.0',
+          '@types/express': '^4.17.0',
+        },
+        devDependencies: {
+          '@types/bun': 'latest',
+        },
+      }
+      fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
+
+      const result = await sniff({ string: tempDir })
+      expect(result.pkgs.some(pkg => pkg.project === 'bun.sh')).toBe(true)
+      // Should NOT install Node.js when Bun is explicitly the package manager
       expect(result.pkgs.some(pkg => pkg.project === 'nodejs.org')).toBe(false)
     })
 

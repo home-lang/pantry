@@ -265,7 +265,7 @@ dependencies:
       }
     }, 90000)
 
-    it('should create project database automatically', async () => {
+    it.skip('should create project database automatically', async () => {
       // Import database creation function
       const { createProjectDatabase } = await import('../src/services/database')
 

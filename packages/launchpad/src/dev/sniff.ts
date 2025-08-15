@@ -614,31 +614,21 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
     // Collect all dependencies from different sources
     const allDependencies: Record<string, string> = {}
 
-    // Process engines
-    if (json?.engines) {
-      if (json.engines.node)
-        allDependencies['nodejs.org'] = json.engines.node
-      if (json.engines.npm)
-        allDependencies['npmjs.com'] = json.engines.npm
-      if (json.engines.yarn)
-        allDependencies['yarnpkg.com'] = json.engines.yarn
-      if (json.engines.pnpm) {
-        allDependencies['pnpm.io'] = json.engines.pnpm
-        detected_pnpm_usage = true
-      }
-    }
-
-    // Process packageManager (corepack)
+    // First check packageManager to determine if we should skip Node.js-specific processing
+    let isUsingBun = false
     if (json?.packageManager) {
-      const match = json.packageManager.match(
+      // Support both "pkg@version" and "pkg" formats
+      const matchWithVersion = json.packageManager.match(
         /^(?<pkg>[^@]+)@(?<version>[^+]+)/,
       )
+      const matchWithoutVersion = json.packageManager.match(
+        /^(?<pkg>[^@]+)$/,
+      )
 
+      const match = matchWithVersion || matchWithoutVersion
       if (match) {
-        const { pkg, version } = match.groups as {
-          pkg: string
-          version: string
-        }
+        const { pkg } = match.groups as { pkg: string }
+        const version = matchWithVersion?.groups?.version || '*' // Default to latest
 
         switch (pkg) {
           case 'npm':
@@ -651,19 +641,37 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
             detected_pnpm_usage = true
             allDependencies['pnpm.io'] = version
             break
+          case 'bun':
+            allDependencies['bun.sh'] = version
+            isUsingBun = true
+            break
         }
       }
     }
 
-    // Process volta
+    // Process engines (but skip Node.js ecosystem if packageManager is bun)
+    if (json?.engines) {
+      if (json.engines.node && !isUsingBun)
+        allDependencies['nodejs.org'] = json.engines.node
+      if (json.engines.npm && !isUsingBun)
+        allDependencies['npmjs.com'] = json.engines.npm
+      if (json.engines.yarn && !isUsingBun)
+        allDependencies['yarnpkg.com'] = json.engines.yarn
+      if (json.engines.pnpm && !isUsingBun) {
+        allDependencies['pnpm.io'] = json.engines.pnpm
+        detected_pnpm_usage = true
+      }
+    }
+
+    // Process volta (but skip Node.js ecosystem if packageManager is bun)
     if (json?.volta) {
-      if (json.volta.node)
+      if (json.volta.node && !isUsingBun)
         allDependencies['nodejs.org'] = json.volta.node
-      if (json.volta.npm)
+      if (json.volta.npm && !isUsingBun)
         allDependencies['npmjs.com'] = json.volta.npm
-      if (json.volta.yarn)
+      if (json.volta.yarn && !isUsingBun)
         allDependencies['yarnpkg.com'] = json.volta.yarn
-      if (json.volta.pnpm) {
+      if (json.volta.pnpm && !isUsingBun) {
         allDependencies['pnpm.io'] = json.volta.pnpm
         detected_pnpm_usage = true
       }
