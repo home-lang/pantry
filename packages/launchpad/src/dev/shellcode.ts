@@ -864,12 +864,13 @@ __launchpad_chpwd() {
                     __launchpad_ensure_system_path
                     __launchpad_ensure_env_path_priority
 
-                    # Mark as ready for future use and do maintenance in background
-                    {
+                    # Mark as ready for future use and do maintenance in background (completely detached)
+                    (
                         touch "$env_dir/.launchpad_ready" 2>/dev/null || true
                         mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
                         touch "$cache_file" 2>/dev/null || true
-                    } >/dev/null 2>&1 &
+                    ) >/dev/null 2>&1 &
+                    disown 2>/dev/null || true
 
                     if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
                         printf "${activationMessage}\n" >&2
@@ -931,7 +932,7 @@ __launchpad_chpwd() {
                 __launchpad_ensure_env_path_priority
 
                 # All file operations in background
-                {
+                (
                     mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
                     touch "$cache_file" 2>/dev/null || true
                     if [[ -z "$dep_file" ]]; then
@@ -945,7 +946,8 @@ __launchpad_chpwd() {
                     if [[ -n "$fp_current" ]]; then
                         echo "$fp_current" > "$env_dir/.deps_fingerprint" 2>/dev/null || true
                     fi
-                } &
+                ) >/dev/null 2>&1 &
+                disown 2>/dev/null || true
 
                 # Verbose diagnostics for fast path activation
                 if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
@@ -1062,7 +1064,8 @@ export LAUNCHPAD_PROJECT_DIR=\"$project_dir\"
                 fi
 
                 # Defer post-setup quietly without background job output; precmd hook will refresh (async)
-                { touch "$HOME/.cache/launchpad/shell_cache/global_refresh_needed" 2>/dev/null || true; } &
+                (touch "$HOME/.cache/launchpad/shell_cache/global_refresh_needed" 2>/dev/null || true) >/dev/null 2>&1 &
+                disown 2>/dev/null || true
 
                 # Ensure global dependencies are still in PATH after project setup
                 __launchpad_ensure_global_path
@@ -1071,12 +1074,13 @@ export LAUNCHPAD_PROJECT_DIR=\"$project_dir\"
                 __launchpad_ensure_env_path_priority
 
                 # Mark environment ready for instant future activation (both cache and marker) - async
-                {
+                (
                     mkdir -p "$env_dir" 2>/dev/null || true
                     touch "$env_dir/.launchpad_ready" 2>/dev/null || true
                     mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
                     touch "$cache_file" 2>/dev/null || true
-                } &
+                ) >/dev/null 2>&1 &
+                disown 2>/dev/null || true
 
                 # Show clean activation message
                 if [[ "\${LAUNCHPAD_SHOW_ENV_MESSAGES:-${showMessages}}" != "false" ]]; then
@@ -1111,10 +1115,12 @@ export LAUNCHPAD_PROJECT_DIR=\"$project_dir\"
                 export PATH="$LAUNCHPAD_ORIGINAL_PATH"
 
                 # Re-add global dependencies to PATH even when deactivating (async)
-                { __launchpad_ensure_global_path; } >/dev/null 2>&1 &
+                (__launchpad_ensure_global_path) >/dev/null 2>&1 &
+                disown 2>/dev/null || true
 
                 # Clear command hash table after PATH restoration (async)
-                { hash -r 2>/dev/null || true; } &
+                (hash -r 2>/dev/null || true) >/dev/null 2>&1 &
+                disown 2>/dev/null || true
             fi
 
             # Restore original library paths

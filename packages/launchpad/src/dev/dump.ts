@@ -1924,8 +1924,8 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
-  // Refresh the command hash so version switches take effect immediately (async)
-  process.stdout.write(`{ hash -r 2>/dev/null || true; } &\n`)
+  // Refresh the command hash so version switches take effect immediately (async, detached)
+  process.stdout.write(`(hash -r 2>/dev/null || true) >/dev/null 2>&1 & disown 2>/dev/null || true\n`)
 }
 
 /**
