@@ -32,6 +32,7 @@ const config: BuddyBotConfig = {
     ignorePaths: [
       // Add file/directory paths to ignore using glob patterns
       // Example: 'packages/test-*/**', '**/*test-envs/**', 'apps/legacy/**'
+      'packages/launchpad/test-envs/**',
     ],
   },
   verbose: false,

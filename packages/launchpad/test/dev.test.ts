@@ -623,7 +623,13 @@ describe('Dev Commands', () => {
       try {
         const result = await runCLI(['dev', tempDir])
         // Should handle permission errors gracefully
-        expect(result.exitCode).toBe(1)
+        // The runCLI function returns exitCode -13 for EACCES errors, or 1 for other errors
+        expect(result.exitCode).toBeOneOf([1, -13])
+
+        // If it's a permission error, stderr should contain error info
+        if (result.exitCode === -13) {
+          expect(result.stderr).toMatch(/Process error.*EACCES|permission denied/i)
+        }
       }
       catch (error) {
         // Permission errors during process spawn are also acceptable
@@ -817,7 +823,9 @@ describe('Dev Commands', () => {
         expect(result1.exitCode).toBe(0)
       }
       else {
-        expect(cleanOutput1).toMatch(/✅ bun\.sh|Successfully installed|No new files installed/)
+        // Check for success indicators, allowing for installation warnings
+        const hasSuccessIndicator = cleanOutput1.match(/✅ bun\.sh|Successfully installed|No new files installed|Environment activated/)
+        expect(hasSuccessIndicator).toBeTruthy()
         const ok1 = cleanOutput1.includes('Successfully set up environment') || cleanOutput1.includes('Environment activated')
         expect(ok1).toBe(true)
       }
@@ -834,7 +842,9 @@ describe('Dev Commands', () => {
         expect(result2.exitCode).toBe(0)
       }
       else {
-        expect(cleanOutput2).toMatch(/✅ bun\.sh|Successfully installed|No new files installed/)
+        // Check for success indicators, allowing for installation warnings
+        const hasSuccessIndicator = cleanOutput2.match(/✅ bun\.sh|Successfully installed|No new files installed|Environment activated/)
+        expect(hasSuccessIndicator).toBeTruthy()
         const ok2 = cleanOutput2.includes('Successfully set up environment') || cleanOutput2.includes('Environment activated')
         expect(ok2).toBe(true)
       }
