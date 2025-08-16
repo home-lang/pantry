@@ -540,17 +540,39 @@ __launchpad_chpwd() {
         printf "⏱️  [0s] Shell integration started for PWD=%s\n" "$PWD" >&2
     fi
 
+    # Simple dependency change detection: check if deps file is newer than our cache
+    if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$PWD" == "$LAUNCHPAD_CURRENT_PROJECT"* ]]; then
+        local deps_file="$(__launchpad_find_dependency_file_path "$LAUNCHPAD_CURRENT_PROJECT" 2>/dev/null)"
+        if [[ -n "$deps_file" && -f "$deps_file" ]]; then
+            local cache_marker="$HOME/.cache/launchpad/shell_cache/project_\${LAUNCHPAD_CURRENT_PROJECT//\//_}"
+
+            # If deps file is newer than our cache marker, dependencies may have changed
+            if [[ ! -f "$cache_marker" || "$deps_file" -nt "$cache_marker" ]]; then
+                if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                    printf "⏱️  [0s] Dependency file changed, clearing cache\n" >&2
+                fi
+                # Clear the current project to force a fresh setup
+                unset LAUNCHPAD_CURRENT_PROJECT
+                # Update cache marker
+                mkdir -p "$(dirname "$cache_marker")" 2>/dev/null
+                touch "$cache_marker" 2>/dev/null
+            fi
+        fi
+    fi
+
     local project_dir
 
     # Super-fast path: if we're already in the same project, skip file search entirely
     if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$PWD" == "$LAUNCHPAD_CURRENT_PROJECT"* ]]; then
         project_dir="$LAUNCHPAD_CURRENT_PROJECT"
+
         if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
             __lp_current_time=$(__lp_get_time_s)
             printf "⏱️  [%ss] Using cached project dir (same project): %s\n" "$(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time")" "$project_dir" >&2
         fi
     else
         project_dir=$(__launchpad_find_deps_file "$PWD")
+
         if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
             __lp_current_time=$(__lp_get_time_s)
             printf "⏱️  [%ss] Dependency file search completed: %s\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") "\${project_dir:-none}" >&2
@@ -558,6 +580,62 @@ __launchpad_chpwd() {
     fi
 
     if [[ -n "$project_dir" ]]; then
+        # Always compute dependency hash (even for same project, dependencies can change)
+        local real_project_dir
+        real_project_dir=$(cd "$project_dir" 2>/dev/null && pwd -P || echo "$project_dir")
+
+        local dep_file_path dep_short
+        dep_file_path="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
+
+
+        if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+            __lp_current_time=$(__lp_get_time_s)
+            printf "⏱️  [%ss] Dependency file path found: %s\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") "\${dep_file_path:-none}" >&2
+        fi
+
+        if [[ -n "$dep_file_path" && -f "$dep_file_path" ]]; then
+            # Use launchpad's built-in MD5 computation for reliability
+            dep_short=$(${launchpadBinary} dev:md5 "$dep_file_path" 2>/dev/null || echo "")
+        fi
+
+        # Compute environment directory with dependency hash
+            local project_basename
+            project_basename=$(basename "$real_project_dir")
+            local md5hash
+            # Use launchpad's built-in MD5 computation for project path
+            md5hash=$(printf "%s" "$real_project_dir" | ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+        local project_hash="${project_basename}_$(echo "$md5hash" | cut -c1-8)"
+            local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+
+        # Add dependency hash suffix if we have dependencies
+        if [[ -n "$dep_short" ]]; then
+            env_dir="${env_dir}-d${dep_short}"
+        fi
+
+        if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+            __lp_current_time=$(__lp_get_time_s)
+            printf "⏱️  [%ss] Project hash computed: %s\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") "$project_hash" >&2
+            printf "🔍 Env target: env_dir=%s dep_file=%s dep_hash=%s\n" "$env_dir" "\${dep_file_path:-none}" "\${dep_short:-none}" >&2
+        fi
+
+        # Check if dependencies changed in the same project (force new setup)
+        if [[ "$LAUNCHPAD_CURRENT_PROJECT" == "$project_dir" && -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+            # Extract current environment directory from LAUNCHPAD_ENV_BIN_PATH
+            local current_env_dir="\${LAUNCHPAD_ENV_BIN_PATH%/bin}"
+
+            # If current environment doesn't match expected environment, dependencies changed
+            if [[ "$current_env_dir" != "$env_dir" ]]; then
+                if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                    __lp_current_time=$(__lp_get_time_s)
+                    printf "⏱️  [%ss] Dependencies changed, forcing new setup\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") >&2
+                    printf "🔍 Current: %s\n" "$current_env_dir" >&2
+                    printf "🔍 Expected: %s\n" "$env_dir" >&2
+                fi
+                # Force new project setup by unsetting the current project
+                unset LAUNCHPAD_CURRENT_PROJECT
+            fi
+        fi
+
         # Check if we're entering a new project or if this is the first time
         if [[ "$LAUNCHPAD_CURRENT_PROJECT" != "$project_dir" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
@@ -569,7 +647,7 @@ __launchpad_chpwd() {
 
             # Check if setup is already in progress to avoid duplicate work
             if [[ "$__launchpad_setup_in_progress" == "$project_dir" ]]; then
-                if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
                     __lp_current_time=$(__lp_get_time_s)
                     printf "⏱️  [%ss] Setup already in progress, skipping\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") >&2
                 fi
@@ -581,70 +659,17 @@ __launchpad_chpwd() {
                 setopt localoptions nonomatch
             fi
 
-            # Ultra-fast activation: compute environment path and check if ready
-            # Resolve to physical path and compute MD5 (matches generateProjectHash in dump.ts)
-            local real_project_dir
-            real_project_dir=$(cd "$project_dir" 2>/dev/null && pwd -P || echo "$project_dir")
-            # Enable verbose logs for this shell when project config sets verbose: true
+            # Ultra-fast activation: enable verbose logs for this shell when project config sets verbose: true
             if [[ -f "$real_project_dir/launchpad.config.ts" ]] && /usr/bin/grep -Eq "verbose:\\s*true" "$real_project_dir/launchpad.config.ts" 2>/dev/null; then
                 export LAUNCHPAD_VERBOSE=true
-            fi
-            local project_basename
-            project_basename=$(basename "$real_project_dir")
-            local md5hash
-            if command -v md5 >/dev/null 2>&1; then
-                md5hash=$(md5 -q -s "$real_project_dir" 2>/dev/null || md5 -q "$real_project_dir" 2>/dev/null)
-            fi
-            if [[ -z "$md5hash" ]] && command -v md5sum >/dev/null 2>&1; then
-                md5hash=$(printf "%s" "$real_project_dir" | md5sum 2>/dev/null | awk '{print $1}')
-            fi
-            if [[ -z "$md5hash" ]] && command -v openssl >/dev/null 2>&1; then
-                md5hash=$(printf "%s" "$real_project_dir" | openssl md5 2>/dev/null | awk '{print $2}')
-            fi
-            if [[ -z "$md5hash" ]]; then
-                md5hash="00000000"
-            fi
-            local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
-            local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
-
-            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-                __lp_current_time=$(__lp_get_time_s)
-                printf "⏱️  [%ss] Project hash computed: %s\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") "$project_hash" >&2
-            fi
-
-            # Optionally suffix environment with dependency hash so version changes map to distinct envs
-            local dep_file_path dep_md5 dep_short
-            dep_file_path="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
-
-            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-                __lp_current_time=$(__lp_get_time_s)
-                printf "⏱️  [%ss] Dependency file path found: %s\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") "\${dep_file_path:-none}" >&2
-            fi
-
-            if [[ -n "$dep_file_path" && -f "$dep_file_path" ]]; then
-                if command -v md5 >/dev/null 2>&1; then
-                    dep_md5=$(md5 -q "$dep_file_path" 2>/dev/null || echo "")
-                elif command -v md5sum >/dev/null 2>&1; then
-                    dep_md5=$(md5sum "$dep_file_path" 2>/dev/null | awk '{print $1}')
-                else
-                    dep_md5=""
-                fi
-                if [[ -n "$dep_md5" ]]; then
-                    dep_short=$(printf "%s" "$dep_md5" | cut -c1-8)
-                    env_dir="\${env_dir}-d\${dep_short}"
-                fi
-            fi
-
-            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-                printf "🔍 Env target: env_dir=%s dep_file=%s dep_hash=%s\n" "$env_dir" "\${dep_file_path:-none}" "\${dep_short:-none}" >&2
             fi
 
             # Skip expensive fallback in shell integration - if env doesn't exist, let full setup handle it
             if [[ ! -d "$env_dir/bin" && -z "$LAUNCHPAD_SHELL_INTEGRATION" ]]; then
-                if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
                     __lp_current_time=$(__lp_get_time_s)
                     printf "⏱️  [%ss] Starting expensive environment fallback search\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") >&2
-                fi
+            fi
                 local envs_root="$HOME/.local/share/launchpad/envs"
                 if [[ -d "$envs_root" ]]; then
                     local best_env=""
@@ -722,13 +747,9 @@ __launchpad_chpwd() {
                 local mtime size
                 mtime=$(stat -c %Y "$dep_file" 2>/dev/null || stat -f %m "$dep_file" 2>/dev/null || echo 0)
                 size=$(stat -c %s "$dep_file" 2>/dev/null || stat -f %z "$dep_file" 2>/dev/null || echo 0)
-                if command -v md5 >/dev/null 2>&1; then
                     local sum
-                    sum=$(md5 -q "$dep_file" 2>/dev/null || md5 -q -s "$dep_file" 2>/dev/null)
-                    echo "file=$dep_file m=$mtime s=$size md5=$sum"
-                elif command -v md5sum >/dev/null 2>&1; then
-                    local sum
-                    sum=$(md5sum "$dep_file" 2>/dev/null | awk '{print $1}')
+                sum=$(${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null || echo "")
+                if [[ -n "$sum" ]]; then
                     echo "file=$dep_file m=$mtime s=$size md5=$sum"
                 else
                     echo "file=$dep_file m=$mtime s=$size"
@@ -736,7 +757,7 @@ __launchpad_chpwd() {
             }
 
             # Persistent cache: check before slow operations (but invalidate when deps changed)
-            local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(printf "%s" "$env_dir" | md5sum 2>/dev/null | awk '{print $1}' | cut -c1-16)"
+            local cache_file="$__launchpad_persistent_cache_dir/env_cache_$(printf "%s" "$env_dir" | ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null | cut -c1-16)"
             local current_time=$(date +%s)
             local cache_duration=1800  # 30 minutes for shell integration
             # Use longer cache durations for test/development environments
@@ -826,14 +847,10 @@ __launchpad_chpwd() {
                   if [[ -n "$dep_file" && -f "$dep_file" ]]; then
                     # Check if the current environment directory matches the expected one for current deps
                     local expected_dep_md5 expected_dep_short expected_env_dir
-                    if command -v md5 >/dev/null 2>&1; then
-                        expected_dep_md5=$(md5 -q "$dep_file" 2>/dev/null || echo "")
-                    elif command -v md5sum >/dev/null 2>&1; then
-                        expected_dep_md5=$(md5sum "$dep_file" 2>/dev/null | awk '{print $1}')
-                    fi
+                    expected_dep_md5=$(${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null || echo "")
 
                     if [[ -n "$expected_dep_md5" ]]; then
-                        expected_dep_short=$(printf "%s" "$expected_dep_md5" | cut -c1-8)
+                        expected_dep_short="$expected_dep_md5" # Already truncated to 8 chars
                         expected_env_dir="$HOME/.local/share/launchpad/envs/\\${project_basename}_$(echo "$md5hash" | cut -c1-8)-d\\${expected_dep_short}"
 
                         # If current environment doesn't match expected environment, dependencies changed
@@ -933,19 +950,19 @@ __launchpad_chpwd() {
 
                 # All file operations in background
                 (
-                    mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
-                    touch "$cache_file" 2>/dev/null || true
-                    if [[ -z "$dep_file" ]]; then
-                        dep_file="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
-                    fi
-                    if [[ -n "$dep_file" && -f "$dep_file" ]]; then
-                        touch -mr "$dep_file" "$cache_file" 2>/dev/null || true
-                    fi
-                    local fp_current
-                    fp_current="$(__launchpad_compute_deps_fingerprint "$real_project_dir")"
-                    if [[ -n "$fp_current" ]]; then
-                        echo "$fp_current" > "$env_dir/.deps_fingerprint" 2>/dev/null || true
-                    fi
+                mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
+                touch "$cache_file" 2>/dev/null || true
+                if [[ -z "$dep_file" ]]; then
+                    dep_file="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
+                fi
+                if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+                    touch -mr "$dep_file" "$cache_file" 2>/dev/null || true
+                fi
+                local fp_current
+                fp_current="$(__launchpad_compute_deps_fingerprint "$real_project_dir")"
+                if [[ -n "$fp_current" ]]; then
+                    echo "$fp_current" > "$env_dir/.deps_fingerprint" 2>/dev/null || true
+                fi
                 ) >/dev/null 2>&1 &
                 disown 2>/dev/null || true
 
@@ -1004,7 +1021,7 @@ export LAUNCHPAD_PROJECT_DIR=\"$project_dir\"
 
                 # All maintenance in background
                 {
-                    __launchpad_setup_global_deps
+            __launchpad_setup_global_deps
                     touch "$HOME/.cache/launchpad/shell_cache/global_refresh_needed" 2>/dev/null || true
                     mkdir -p "$env_dir" 2>/dev/null || true
                     touch "$env_dir/.launchpad_ready" 2>/dev/null || true
@@ -1075,10 +1092,10 @@ export LAUNCHPAD_PROJECT_DIR=\"$project_dir\"
 
                 # Mark environment ready for instant future activation (both cache and marker) - async
                 (
-                    mkdir -p "$env_dir" 2>/dev/null || true
-                    touch "$env_dir/.launchpad_ready" 2>/dev/null || true
-                    mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
-                    touch "$cache_file" 2>/dev/null || true
+                mkdir -p "$env_dir" 2>/dev/null || true
+                touch "$env_dir/.launchpad_ready" 2>/dev/null || true
+                mkdir -p "$(dirname "$cache_file")" 2>/dev/null || true
+                touch "$cache_file" 2>/dev/null || true
                 ) >/dev/null 2>&1 &
                 disown 2>/dev/null || true
 
@@ -1102,6 +1119,12 @@ export LAUNCHPAD_PROJECT_DIR=\"$project_dir\"
                     :
                 fi
             fi
+        fi
+
+        # Always run environment setup logic (ultra-fast path will handle optimization)
+        # Enable verbose logs for this shell when project config sets verbose: true
+        if [[ -f "$real_project_dir/launchpad.config.ts" ]] && /usr/bin/grep -Eq "verbose:\\s*true" "$real_project_dir/launchpad.config.ts" 2>/dev/null; then
+            export LAUNCHPAD_VERBOSE=true
         fi
     else
         # No deps file found, deactivate if we were in a project

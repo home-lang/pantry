@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import type { Buffer } from 'node:buffer'
 // Set CLI mode to prevent fake binaries in normal usage
 import fs from 'node:fs'
 import { homedir } from 'node:os'
@@ -1974,6 +1975,34 @@ cli
     catch (error) {
       console.error('Failed to generate shellcode:', error instanceof Error ? error.message : String(error))
       process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:md5 <file>', 'Compute MD5 hash of a file (first 8 characters)')
+  .action((file: string) => {
+    try {
+      let content: Buffer
+
+      if (file === '/dev/stdin') {
+        // Read from stdin
+        content = fs.readFileSync(0) // 0 is stdin file descriptor
+      }
+      else {
+        // Read from file
+        content = fs.readFileSync(file)
+      }
+
+      const hasher = new Bun.CryptoHasher('md5')
+      hasher.update(content)
+      const hash = hasher.digest('hex')
+      console.log(hash.slice(0, 8)) // Return first 8 characters
+      process.exit(0)
+    }
+    catch {
+      // If file doesn't exist or can't be read, return empty string
+      console.log('')
+      process.exit(0)
     }
   })
 
