@@ -599,17 +599,16 @@ __launchpad_chpwd() {
         fi
 
         # Compute environment directory with dependency hash
-            local project_basename
-            project_basename=$(basename "$real_project_dir")
-            local md5hash
-            # Use launchpad's built-in MD5 computation for project path
-            md5hash=$(printf "%s" "$real_project_dir" | ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
-        local project_hash="${project_basename}_$(echo "$md5hash" | cut -c1-8)"
-            local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+        local project_basename md5hash project_hash env_dir
+        project_basename=$(basename "$real_project_dir")
+        # Use launchpad's built-in MD5 computation for project path
+        md5hash=$(printf "%s" "$real_project_dir" | ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+        project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
+        env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
 
         # Add dependency hash suffix if we have dependencies
         if [[ -n "$dep_short" ]]; then
-            env_dir="${env_dir}-d${dep_short}"
+            env_dir="\${env_dir}-d\${dep_short}"
         fi
 
         if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
@@ -845,23 +844,15 @@ __launchpad_chpwd() {
                 local dep_file="$(__launchpad_find_dependency_file_path "$real_project_dir" 2>/dev/null)"
 
                   if [[ -n "$dep_file" && -f "$dep_file" ]]; then
-                    # Check if the current environment directory matches the expected one for current deps
-                    local expected_dep_md5 expected_dep_short expected_env_dir
-                    expected_dep_md5=$(${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null || echo "")
-
-                    if [[ -n "$expected_dep_md5" ]]; then
-                        expected_dep_short="$expected_dep_md5" # Already truncated to 8 chars
-                        expected_env_dir="$HOME/.local/share/launchpad/envs/\\${project_basename}_$(echo "$md5hash" | cut -c1-8)-d\\${expected_dep_short}"
-
-                        # If current environment doesn't match expected environment, dependencies changed
-                        if [[ "$env_dir" != "$expected_env_dir" ]]; then
-                            deps_changed=1
-                            if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-                                __lp_current_time=$(__lp_get_time_s)
-                                printf "⏱️  [%ss] Dependencies changed (env mismatch), need reinstall\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") >&2
-                                printf "🔍 Current: %s\n" "$env_dir" >&2
-                                printf "🔍 Expected: %s\n" "$expected_env_dir" >&2
-                            fi
+                    # Simple check: if we're not in the expected environment directory, dependencies changed
+                    # The expected environment directory is already computed as $env_dir
+                    if [[ "$env_dir" != "$(dirname "$(dirname "$LAUNCHPAD_ENV_BIN_PATH")")" ]]; then
+                        deps_changed=1
+                        if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+                            __lp_current_time=$(__lp_get_time_s)
+                            printf "⏱️  [%ss] Dependencies changed (env mismatch), need reinstall\n" $(__lp_elapsed_s "$__lp_start_time" "$__lp_current_time") >&2
+                            printf "🔍 Current: %s\n" "$(dirname "$(dirname "$LAUNCHPAD_ENV_BIN_PATH")")" >&2
+                            printf "🔍 Expected: %s\n" "$env_dir" >&2
                         fi
                     fi
                 fi
