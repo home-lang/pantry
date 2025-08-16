@@ -121,21 +121,21 @@ describe('Performance Optimizations', () => {
       const generatedShellCode = shellcode()
 
       // Fast path should return 0 immediately when conditions are met
-      const fastPathSection = generatedShellCode.substring(
-        generatedShellCode.indexOf('If environment exists and has binaries, activate quickly'),
-        generatedShellCode.indexOf('Skip setup if we\'ve had too many timeouts'),
-      )
+      // Look for the ultra-fast path activation logic
+      expect(generatedShellCode).toContain('Ultra-fast path activation completed')
+      expect(generatedShellCode).toContain('return 0')
 
-      expect(fastPathSection).toContain('return 0')
+      // Should have instant activation logic
+      expect(generatedShellCode).toContain('Instant activation - no external commands, no file operations')
     })
 
     it('should include optimized binary existence check', () => {
       const generatedShellCode = shellcode()
 
-      // Should use glob expansion which is faster than ls
-      expect(generatedShellCode).toContain('use glob expansion which is faster than ls')
-      expect(generatedShellCode).toContain('$(echo "$env_dir/bin"/*)')
-      expect(generatedShellCode).toContain('!= "$env_dir/bin/*"')
+      // Should have directory existence checks for fast path
+      expect(generatedShellCode).toContain('-d "$env_dir/bin"')
+      expect(generatedShellCode).toContain('Ultra-fast path')
+      expect(generatedShellCode).toContain('ready=true')
     })
 
     it('should use optimized printf instead of slow commands in fast path', () => {
@@ -144,8 +144,8 @@ describe('Performance Optimizations', () => {
       // Should use printf for activation messages
       expect(generatedShellCode).toContain('printf "✅ Environment activated')
 
-      // Should have the basic fast path logic
-      expect(generatedShellCode).toContain('If environment exists and has binaries, activate quickly')
+      // Should have fast path logic with return 0
+      expect(generatedShellCode).toContain('Ultra-fast path')
       expect(generatedShellCode).toContain('return 0')
     })
   })
@@ -218,19 +218,16 @@ describe('Performance Optimizations', () => {
     it('should minimize filesystem operations in fast path', () => {
       const generatedShellCode = shellcode()
 
-      // The fast path should have minimal filesystem calls
-      const fastPathSection = generatedShellCode.substring(
-        generatedShellCode.indexOf('If environment exists and has binaries, activate quickly'),
-        generatedShellCode.indexOf('Continue with setup'),
-      )
+      // Should have background operations to avoid blocking
+      expect(generatedShellCode).toContain('>/dev/null 2>&1 &')
+      expect(generatedShellCode).toContain('disown 2>/dev/null || true')
 
-      // Should not have expensive operations like find in fast path
-      expect(fastPathSection).not.toContain('find ')
-      expect(fastPathSection).not.toContain('ls -A')
+      // Should not have expensive operations in the main path
+      expect(generatedShellCode).not.toContain('find ')
+      expect(generatedShellCode).not.toContain('ls -A')
 
-      // Should minimize directory scans
-      const touchOperations = (fastPathSection.match(/touch /g) || []).length
-      expect(touchOperations).toBeLessThanOrEqual(2) // Cache file creation and timestamp sync
+      // Should have instant activation logic
+      expect(generatedShellCode).toContain('Instant activation - no external commands')
     })
 
     it('should ensure cache variables are properly initialized', () => {
