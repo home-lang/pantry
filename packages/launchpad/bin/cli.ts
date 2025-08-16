@@ -1979,6 +1979,43 @@ cli
   })
 
 cli
+  .command('dev:find-project-root [dir]', 'Find project root directory using fast file detection')
+  .option('--fallback-shell', 'Use shell fallback if fast detection fails')
+  .action(async (dir?: string, options?: { fallbackShell?: boolean }) => {
+    try {
+      const { findProjectRoot, findProjectRootFast } = await import('../src/dev/benchmark')
+      const startDir = dir ? path.resolve(dir) : process.cwd()
+
+      let result: string | null = null
+
+      if (options?.fallbackShell) {
+        result = findProjectRoot(startDir) // Uses hybrid approach
+      }
+      else {
+        result = findProjectRootFast(startDir) // Fast-only approach
+      }
+
+      if (result) {
+        console.log(result)
+        process.exit(0)
+      }
+      else {
+        process.exit(1)
+      }
+    }
+    catch (error) {
+      if (options?.fallbackShell) {
+        // If fast detection fails and fallback is requested, exit with error
+        process.exit(1)
+      }
+      else {
+        // For fast-only mode, just exit with error code
+        process.exit(1)
+      }
+    }
+  })
+
+cli
   .command('dev:md5 <file>', 'Compute MD5 hash of a file (first 8 characters)')
   .action((file: string) => {
     try {
@@ -3675,6 +3712,44 @@ cli
     }
     catch (error) {
       console.error('Failed to set up build environment:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Benchmark commands
+cli
+  .command('benchmark:file-detection', 'Benchmark file detection performance (shell vs Bun)')
+  .option('--iterations <number>', 'Number of iterations per test (default: varies by test)')
+  .option('--depths <numbers>', 'Comma-separated list of directory depths to test (default: 3,7,15,25)')
+  .option('--verbose', 'Show detailed output')
+  .option('--json', 'Output results as JSON')
+  .example('launchpad benchmark:file-detection')
+  .example('launchpad benchmark:file-detection --depths 5,10,20 --verbose')
+  .example('launchpad benchmark:file-detection --json')
+  .action(async (options?: {
+    iterations?: string
+    depths?: string
+    verbose?: boolean
+    json?: boolean
+  }) => {
+    try {
+      const { runFileDetectionBenchmark } = await import('../src/dev/benchmark')
+
+      const depths = options?.depths && typeof options.depths === 'string'
+        ? options.depths.split(',').map(d => Number.parseInt(d.trim(), 10)).filter(d => !isNaN(d))
+        : [3, 7, 15, 25]
+
+      const iterations = options?.iterations ? Number.parseInt(options.iterations, 10) : undefined
+
+      await runFileDetectionBenchmark({
+        depths,
+        iterations,
+        verbose: options?.verbose || false,
+        json: options?.json || false,
+      })
+    }
+    catch (error) {
+      console.error('Benchmark failed:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })
