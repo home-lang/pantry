@@ -1966,7 +1966,15 @@ cli
   .command('dev:shellcode', 'Generate shell integration code')
   .option('--test-mode', 'Generate shellcode for testing (bypasses test environment checks)')
   .action(({ testMode }) => {
-    console.log(shellcode(testMode))
+    try {
+      console.log(shellcode(testMode))
+      // Force immediate exit to prevent any hanging
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Failed to generate shellcode:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
   })
 
 cli
@@ -1990,6 +1998,11 @@ cli
         shellOutput: isShellIntegration,
         skipGlobal: process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true', // Skip global packages only in test mode or when explicitly disabled
       })
+
+      // Force immediate exit for shell integration to prevent hanging
+      if (isShellIntegration) {
+        process.exit(0)
+      }
     }
     catch (error) {
       if (!options?.quiet && !options?.shell) {
@@ -2007,7 +2020,7 @@ cli
         console.log('done')
         console.log('# Clear command hash to ensure fresh lookups')
         console.log('hash -r 2>/dev/null || true')
-        return
+        process.exit(0)
       }
       if (!options?.shell) {
         process.exit(1)

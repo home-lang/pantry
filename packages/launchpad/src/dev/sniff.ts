@@ -546,7 +546,8 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
   const deduplicatedPkgs = Array.from(packageMap.values())
 
   // If services are not explicitly configured, derive from framework config when enabled
-  if (!services?.enabled && shouldInferServices()) {
+  // But only if we don't have an explicit deps file with just packages (respect user intent)
+  if (!services?.enabled && shouldInferServices() && !has_deps_file) {
     const inferred = await inferServicesFromFramework(dirPath.string)
     if (inferred.autoStart.length > 0) {
       services = { enabled: true, autoStart: inferred.autoStart }
@@ -894,6 +895,12 @@ function shouldInferServices(): boolean {
   const inferServices = process.env.LAUNCHPAD_SERVICES_INFER !== 'false'
   const laravelEnabled = process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false'
   const stacksEnabled = process.env.LAUNCHPAD_STACKS_ENABLED !== 'false'
+
+  // Skip inference in shell integration mode for performance
+  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+    return false
+  }
+
   return frameworksEnabled && inferServices && (laravelEnabled || stacksEnabled)
 }
 

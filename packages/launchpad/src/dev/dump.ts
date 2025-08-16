@@ -1105,19 +1105,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           catch {}
         }
         if (isReady) {
-          const tIni = tick()
-          await ensureProjectPhpIni(projectDir, envDir)
-          addTiming('ensurePhpIni', tIni)
-          try {
-            const tSvc = tick()
-            await setupProjectServices(projectDir, sniffResult, true)
-            addTiming('setupServices', tSvc)
-            const tPost = tick()
-            // Run project-configured post-setup once in shell fast path (idempotent)
-            await maybeRunProjectPostSetup(projectDir, envDir, true)
-            addTiming('postSetup', tPost)
+          // Skip all expensive operations in shell integration mode for instant activation
+          // Services, PHP ini, and post-setup will be handled by regular dev command when needed
+          if (isVerbose) {
+            try {
+              process.stderr.write(`🔍 Shell fast path: skipping services/php/post-setup for performance\n`)
+            }
+            catch {}
           }
-          catch {}
         }
 
         const tOut1 = tick()
@@ -1306,51 +1301,66 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         const globalBinPath = path.join(globalEnvDir, 'bin')
         const globalSbinPath = path.join(globalEnvDir, 'sbin')
 
-        // Check what packages are actually missing and need installation
-        const packageStatus = needsPackageInstallation(localPackages, globalPackages, envDir, globalEnvDir)
+        // In shell integration mode with ready environment, skip package installation checks
+        const readyMarker = path.join(envDir, '.launchpad_ready')
+        const isEnvReady = fs.existsSync(readyMarker)
 
-        // Install missing packages if any are found
-        if (packageStatus.needsLocal || packageStatus.needsGlobal) {
-          const tInstall = tick()
-          await installPackagesOptimized(
-            packageStatus.missingLocal,
-            packageStatus.missingGlobal,
-            envDir,
-            globalEnvDir,
-            dryrun,
-            quiet,
-          )
-          addTiming('install(packages)', tInstall)
+        if (!isEnvReady) {
+          // Check what packages are actually missing and need installation
+          const packageStatus = needsPackageInstallation(localPackages, globalPackages, envDir, globalEnvDir)
+
+          // Install missing packages if any are found
+          if (packageStatus.needsLocal || packageStatus.needsGlobal) {
+            const tInstall = tick()
+            await installPackagesOptimized(
+              packageStatus.missingLocal,
+              packageStatus.missingGlobal,
+              envDir,
+              globalEnvDir,
+              dryrun,
+              quiet,
+            )
+            addTiming('install(packages)', tInstall)
+          }
+        }
+        else if (isVerbose) {
+          try {
+            process.stderr.write(`🔍 Shell integration: environment ready, skipping package checks\n`)
+          }
+          catch {}
         }
 
-        // Create PHP shims after all dependencies are installed
-        if (config.verbose) {
-          console.log('🔍 Checking for PHP installations to create shims...')
+        // Create PHP shims only if environment was just created or updated
+        if (!isEnvReady) {
+          if (config.verbose) {
+            console.log('🔍 Checking for PHP installations to create shims...')
+          }
+          const tShim = tick()
+          if (isShellIntegration) {
+            // Run PHP shim creation in background to avoid blocking shell activation
+            createPhpShimsAfterInstall(envDir).catch(() => {}) // Fire and forget
+            addTiming('createPhpShims(async)', tShim)
+          }
+          else {
+            await createPhpShimsAfterInstall(envDir)
+            addTiming('createPhpShims', tShim)
+          }
         }
-        const tShim = tick()
-        await createPhpShimsAfterInstall(envDir)
-        addTiming('createPhpShims', tShim)
-
-        // Start services during shell integration when configured
-        try {
-          const tSvc2 = tick()
-          await setupProjectServices(projectDir, sniffResult, true)
-          addTiming('setupServices', tSvc2)
+        else if (isVerbose) {
+          try {
+            process.stderr.write(`🔍 Shell integration: environment ready, skipping PHP shim creation\n`)
+          }
+          catch {}
         }
-        catch {}
 
-        // Ensure project php.ini exists only
-        const tIni2 = tick()
-        await ensureProjectPhpIni(projectDir, envDir)
-        addTiming('ensurePhpIni', tIni2)
-
-        // Run project-configured post-setup once (idempotent marker)
-        try {
-          const tPost2 = tick()
-          await maybeRunProjectPostSetup(projectDir, envDir, true)
-          addTiming('postSetup', tPost2)
+        // Skip expensive operations in shell integration mode for instant activation
+        // Services, PHP ini, and post-setup will be handled by regular dev command when needed
+        if (isVerbose) {
+          try {
+            process.stderr.write(`🔍 Shell integration: skipping services/php/post-setup for performance\n`)
+          }
+          catch {}
         }
-        catch {}
 
         const tOut2 = tick()
         outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
@@ -1414,10 +1424,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     }
 
     // Ensure php.ini and Laravel post-setup runs (regular path)
-    const tIni3 = tick()
-    await ensureProjectPhpIni(projectDir, envDir)
-    addTiming('ensurePhpIni', tIni3)
+    // Skip expensive operations in shell integration mode
     if (!isShellIntegration) {
+      const tIni3 = tick()
+      await ensureProjectPhpIni(projectDir, envDir)
+      addTiming('ensurePhpIni', tIni3)
+
       const tPost3 = tick()
       await maybeRunProjectPostSetup(projectDir, envDir, isShellIntegration)
       addTiming('postSetup', tPost3)
@@ -1475,16 +1487,18 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       addTiming('total', tTotal)
       flushTimings('regular-activation')
 
-      // Post-activation hook (file-level then config)
-      if (dependencyFile) {
-        const filePostActivation = extractHookCommandsFromDepsYaml(dependencyFile, 'postActivation')
-        if (filePostActivation.length > 0) {
-          await executepostSetup(projectDir, filePostActivation)
+      // Post-activation hook (file-level then config) - skip in shell integration mode for performance
+      if (!isShellIntegration) {
+        if (dependencyFile) {
+          const filePostActivation = extractHookCommandsFromDepsYaml(dependencyFile, 'postActivation')
+          if (filePostActivation.length > 0) {
+            await executepostSetup(projectDir, filePostActivation)
+          }
         }
-      }
-      const postActivation = config.postActivation
-      if (postActivation?.enabled) {
-        await executepostSetup(projectDir, postActivation.commands || [])
+        const postActivation = config.postActivation
+        if (postActivation?.enabled) {
+          await executepostSetup(projectDir, postActivation.commands || [])
+        }
       }
     }
   }
@@ -1910,8 +1924,8 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
-  // Refresh the command hash so version switches take effect immediately
-  process.stdout.write(`hash -r 2>/dev/null || true\n`)
+  // Refresh the command hash so version switches take effect immediately (async)
+  process.stdout.write(`{ hash -r 2>/dev/null || true; } &\n`)
 }
 
 /**
@@ -1966,8 +1980,13 @@ async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
 /**
  * Run Laravel post-setup commands once per project activation
  */
-async function maybeRunProjectPostSetup(projectDir: string, envDir: string, _isShellIntegration: boolean): Promise<void> {
+async function maybeRunProjectPostSetup(projectDir: string, envDir: string, isShellIntegration: boolean): Promise<void> {
   try {
+    // Skip post-setup entirely in shell integration mode for performance
+    if (isShellIntegration) {
+      return
+    }
+
     if (process.env.LAUNCHPAD_VERBOSE === 'true') {
       console.warn(`maybeRunProjectPostSetup called: projectDir=${projectDir}, envDir=${envDir}`)
     }
@@ -2050,6 +2069,9 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
   try {
     // Check services.autoStart configuration from deps.yaml
     if (!sniffResult?.services?.enabled || !sniffResult.services.autoStart || sniffResult.services.autoStart.length === 0) {
+      if (showMessages && process.env.LAUNCHPAD_VERBOSE === 'true') {
+        console.log('🔍 No services configured in deps.yaml - skipping service setup')
+      }
       return // No services to auto-start
     }
 
