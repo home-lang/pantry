@@ -500,7 +500,7 @@ __launchpad_find_deps_file() {
     while [[ "$dir" != "/" ]]; do
         # Single ls command to check all files at once (much faster than multiple -f checks)
         local files
-        files=$(ls -1a "$dir" 2>/dev/null | grep -E '^(dependencies|deps|pkgx|launchpad)\.(yaml|yml)$|^package\.json$|^pyproject\.toml$|^Cargo\.toml$|^go\.(mod|sum)$|^Gemfile$|^deno\.jsonc?$|^action\.ya?ml$|^skaffold\.ya?ml$|^\.(nvmrc|node-version|ruby-version|python-version|terraform-version)$|^(yarn\.lock|bun\.lockb|\.yarnrc|requirements\.txt|setup\.py|Pipfile\.?lock?)$' | head -1)
+        files=$(ls -1a "$dir" 2>/dev/null | grep -E '^(dependencies|deps|pkgx|launchpad)\.(yaml|yml)$|^package\.json$|^pyproject\.toml$|^Cargo\.toml$|^go\.(mod|sum)$|^Gemfile$|^deno\.jsonc?$|^action\.ya?ml$|^skaffold\.ya?ml$|^\.(nvmrc|node-version|ruby-version|python-version|terraform-version)$|^(yarn\.lock|bun\.lock|bun\.lockb|\.yarnrc|requirements\.txt|setup\.py|Pipfile\.?lock?)$' | head -1)
 
         if [[ -n "$files" ]]; then
             __launchpad_cache_dir="$dir"
