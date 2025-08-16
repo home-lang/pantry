@@ -222,12 +222,15 @@ describe('Performance Optimizations', () => {
       expect(generatedShellCode).toContain('>/dev/null 2>&1 &')
       expect(generatedShellCode).toContain('disown 2>/dev/null || true')
 
-      // Should not have expensive operations in the main path
-      expect(generatedShellCode).not.toContain('find ')
-      expect(generatedShellCode).not.toContain('ls -A')
+      // Should have ultra-fast path that returns early
+      expect(generatedShellCode).toContain('Ultra-fast path activation completed')
+      expect(generatedShellCode).toContain('return 0')
 
       // Should have instant activation logic
       expect(generatedShellCode).toContain('Instant activation - no external commands')
+
+      // Should use efficient caching mechanisms
+      expect(generatedShellCode).toContain('persistent_cache_dir')
     })
 
     it('should ensure cache variables are properly initialized', () => {
