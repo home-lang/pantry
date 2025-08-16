@@ -127,8 +127,6 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
 
       - name: Setup PHP and Composer (if needed)
         if: ${{ hashFiles('composer.json') != '' }}
@@ -166,8 +164,6 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
 
       - name: Install dependencies
         run: bun install
@@ -214,6 +210,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN || secrets.GITHUB_TOKEN }}
           BUDDY_BOT_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN }}
 
+      - name: Clean up stale branches
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          echo "🧹 Cleaning up stale buddy-bot branches..."
+          echo "This will remove branches older than 2 days that don't have associated open PRs"
+
+          # Run cleanup automatically (with confirmation disabled in CI)
+          bunx buddy-bot cleanup --days 2 --force --verbose
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+          BUDDY_BOT_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN }}
+
       - name: Create check summary
         if: always()
         run: |
@@ -231,7 +240,7 @@ jobs:
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📋 View detailed logs above for check results (rebase requests and auto-closing)." >> $GITHUB_STEP_SUMMARY
+          echo "📋 View detailed logs above for check results (rebase requests, auto-closing, and branch cleanup)." >> $GITHUB_STEP_SUMMARY
 
   # Dependency update job
   dependency-update:
@@ -249,8 +258,6 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
 
       - name: Setup PHP and Composer (if needed)
         if: ${{ hashFiles('composer.json') != '' }}
@@ -358,8 +365,6 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
 
       - name: Install dependencies
         run: bun install
@@ -375,6 +380,31 @@ jobs:
           echo "Triggered by: ${{ github.event_name }}"
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref_name }}"
+
+      - name: Pre-flight dashboard check
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          echo "🔍 Pre-flight check: Looking for existing dashboard issues..."
+
+          # Check for existing dashboard issues to prevent duplicates
+          if command -v gh &> /dev/null; then
+            EXISTING_DASHBOARDS=$(gh issue list --label "dashboard,dependencies" --state open --json number,title,url --jq length 2>/dev/null || echo "0")
+            echo "Found $EXISTING_DASHBOARDS existing dashboard issue(s)"
+
+            if [ "$EXISTING_DASHBOARDS" -gt 1 ]; then
+              echo "⚠️ WARNING: Multiple dashboard issues detected!"
+              gh issue list --label "dashboard,dependencies" --state open --json number,title,url --jq '.[] | "  - #\(.number): \(.title) - \(.url)"' 2>/dev/null || true
+              echo ""
+              echo "🔧 Buddy Bot will attempt to update the most recent one and may close duplicates"
+            elif [ "$EXISTING_DASHBOARDS" -eq 1 ]; then
+              DASHBOARD_INFO=$(gh issue list --label "dashboard,dependencies" --state open --json number,title,url --jq '.[0] | "#\(.number): \(.title) - \(.url)"' 2>/dev/null || echo "Found 1 dashboard")
+              echo "✅ Found existing dashboard: $DASHBOARD_INFO"
+            else
+              echo "ℹ️ No existing dashboard found - a new one will be created"
+            fi
+          else
+            echo "⚠️ GitHub CLI not available - cannot perform pre-flight check"
+          fi
 
       - name: Update Dependency Dashboard
         run: |
@@ -396,10 +426,6 @@ jobs:
 
           # Build the command
           COMMAND="bunx buddy-bot dashboard"
-
-          if [ "$PIN" = "true" ]; then
-            COMMAND="$COMMAND --pin"
-          fi
 
           if [ "$TITLE" != "" ]; then
             COMMAND="$COMMAND --title \"$TITLE\""
