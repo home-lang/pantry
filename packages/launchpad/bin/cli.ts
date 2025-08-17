@@ -2003,7 +2003,7 @@ cli
         process.exit(1)
       }
     }
-    catch (error) {
+    catch {
       if (options?.fallbackShell) {
         // If fast detection fails and fallback is requested, exit with error
         process.exit(1)
@@ -2012,6 +2012,34 @@ cli
         // For fast-only mode, just exit with error code
         process.exit(1)
       }
+    }
+  })
+
+cli
+  .command('dev:scan-library-paths <envDir>', 'Fast scan for library paths in environment directory')
+  .action(async (envDir: string) => {
+    try {
+      const { scanLibraryPaths } = await import('../src/dev/path-scanner')
+      const paths = await scanLibraryPaths(envDir)
+      console.log(paths.join(':'))
+      process.exit(0)
+    }
+    catch (error) {
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('dev:scan-global-paths <globalDir>', 'Fast scan for global binary paths')
+  .action(async (globalDir: string) => {
+    try {
+      const { scanGlobalPaths } = await import('../src/dev/path-scanner')
+      const paths = await scanGlobalPaths(globalDir)
+      console.log(paths.join(' '))
+      process.exit(0)
+    }
+    catch (error) {
+      process.exit(1)
     }
   })
 
@@ -3736,7 +3764,7 @@ cli
       const { runFileDetectionBenchmark } = await import('../src/dev/benchmark')
 
       const depths = options?.depths && typeof options.depths === 'string'
-        ? options.depths.split(',').map(d => Number.parseInt(d.trim(), 10)).filter(d => !isNaN(d))
+        ? options.depths.split(',').map(d => Number.parseInt(d.trim(), 10)).filter(d => !Number.isNaN(d))
         : [3, 7, 15, 25]
 
       const iterations = options?.iterations ? Number.parseInt(options.iterations, 10) : undefined

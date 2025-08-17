@@ -706,18 +706,23 @@ export async function downloadPackage(
     }
 
     if (isMockData || !isValidArchive) {
-      // In test mode with mock data or invalid archive, create a fake extracted structure
-      const mockBinDir = path.join(extractDir, 'bin')
-      await fs.promises.mkdir(mockBinDir, { recursive: true })
+      // Only create mock binaries in test mode - never in production
+      if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+        const mockBinDir = path.join(extractDir, 'bin')
+        await fs.promises.mkdir(mockBinDir, { recursive: true })
 
-      // Create a mock binary based on the domain name
-      const binaryName = domain.split('.')[0] || 'mock-binary'
-      const mockBinary = path.join(mockBinDir, binaryName)
-      await fs.promises.writeFile(mockBinary, `#!/bin/bash\necho "Mock ${domain} v${version}"\n`)
-      await fs.promises.chmod(mockBinary, 0o755)
+        // Create a mock binary based on the domain name
+        const binaryName = domain.split('.')[0] || 'mock-binary'
+        const mockBinary = path.join(mockBinDir, binaryName)
+        await fs.promises.writeFile(mockBinary, `#!/bin/bash\necho "Mock ${domain} v${version}"\n`)
+        await fs.promises.chmod(mockBinary, 0o755)
 
-      if (config.verbose && !isValidArchive && !isMockData) {
-        console.warn(`Archive ${archiveFile} is not a valid tar archive, using mock extraction`)
+        if (config.verbose) {
+          console.warn(`Test mode: Created mock binary for ${domain}`)
+        }
+      } else {
+        // In production, fail the installation if archive is invalid
+        throw new Error(`Invalid archive format for ${domain} v${version}. Archive may be corrupted.`)
       }
     }
     else {
@@ -737,18 +742,23 @@ export async function downloadPackage(
       if (result !== 0) {
         const stderr = await new Response(proc.stderr).text()
 
-        // If extraction fails, fall back to mock extraction
-        if (config.verbose) {
-          console.warn(`Tar extraction failed (${stderr}), falling back to mock extraction`)
+        // If extraction fails, only create mock in test mode
+        if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+          if (config.verbose) {
+            console.warn(`Tar extraction failed (${stderr}), falling back to mock extraction`)
+          }
+
+          const mockBinDir = path.join(extractDir, 'bin')
+          await fs.promises.mkdir(mockBinDir, { recursive: true })
+
+          const binaryName = domain.split('.')[0] || 'mock-binary'
+          const mockBinary = path.join(mockBinDir, binaryName)
+          await fs.promises.writeFile(mockBinary, `#!/bin/bash\necho "Mock ${domain} v${version}"\n`)
+          await fs.promises.chmod(mockBinary, 0o755)
+        } else {
+          // In production, fail the installation if extraction fails
+          throw new Error(`Failed to extract ${domain} v${version}: ${stderr}`)
         }
-
-        const mockBinDir = path.join(extractDir, 'bin')
-        await fs.promises.mkdir(mockBinDir, { recursive: true })
-
-        const binaryName = domain.split('.')[0] || 'mock-binary'
-        const mockBinary = path.join(mockBinDir, binaryName)
-        await fs.promises.writeFile(mockBinary, `#!/bin/bash\necho "Mock ${domain} v${version}"\n`)
-        await fs.promises.chmod(mockBinary, 0o755)
       }
     }
 
