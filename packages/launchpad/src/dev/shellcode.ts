@@ -105,7 +105,16 @@ __launchpad_switch_environment() {
     fi
 
     # Step 2: Always ensure global paths are available (even in projects)
+    # Use ~/.local/bin first, then launchpad global bin to ensure proper path priority
+    local local_bin="$HOME/.local/bin"
     local global_bin="$HOME/.local/share/launchpad/global/bin"
+    
+    # Add ~/.local/bin to PATH if not already there
+    if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
+        export PATH="$local_bin:$PATH"
+    fi
+    
+    # Add launchpad global bin to PATH if not already there
     if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
         export PATH="$global_bin:$PATH"
     fi

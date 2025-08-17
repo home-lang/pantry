@@ -948,14 +948,20 @@ export async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<
     const globalBinDir = path.join(globalEnvDir, 'bin')
     const localBinDir = path.join(homedir(), '.local', 'bin')
 
-    // Ensure ~/.local/bin exists
+    // Ensure ~/.local/bin exists and is in PATH
     await fs.promises.mkdir(localBinDir, { recursive: true })
+
+    // Add ~/.local/bin to PATH if not already there (for this process)
+    if (!process.env.PATH?.includes(localBinDir)) {
+      process.env.PATH = `${localBinDir}:${process.env.PATH || ''}`
+    }
 
     if (!fs.existsSync(globalBinDir)) {
       return // No global binaries to link
     }
 
     const binaries = await fs.promises.readdir(globalBinDir)
+    const createdSymlinks: string[] = []
 
     for (const binary of binaries) {
       const sourcePath = path.join(globalBinDir, binary)
@@ -967,14 +973,43 @@ export async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<
         continue
       }
 
-      // Remove existing symlink if it exists
-      if (fs.existsSync(targetPath)) {
-        await fs.promises.unlink(targetPath)
-      }
+      try {
+        // Remove existing symlink if it exists
+        if (fs.existsSync(targetPath)) {
+          // Check if it's already a symlink to our source
+          if (fs.lstatSync(targetPath).isSymbolicLink()) {
+            const currentTarget = fs.readlinkSync(targetPath)
+            if (currentTarget === sourcePath) {
+              // Already correctly linked, skip
+              continue
+            }
+          }
+          await fs.promises.unlink(targetPath)
+        }
 
-      // Create new symlink
-      await fs.promises.symlink(sourcePath, targetPath)
+        // Create new symlink
+        await fs.promises.symlink(sourcePath, targetPath)
+        createdSymlinks.push(binary)
+        
+        // Ensure the symlink is executable
+        await fs.promises.chmod(targetPath, 0o755)
+      } 
+      catch (err) {
+        if (config.verbose) {
+          console.warn(`Failed to create symlink for ${binary}:`, err)
+        }
+      }
     }
+
+    if (config.verbose && createdSymlinks.length > 0) {
+      console.log(`Created ${createdSymlinks.length} symlinks in ~/.local/bin`)
+    }
+
+    // Create a marker file to trigger shell refresh
+    const cacheDir = path.join(homedir(), '.cache', 'launchpad', 'shell_cache')
+    await fs.promises.mkdir(cacheDir, { recursive: true })
+    const refreshMarker = path.join(cacheDir, 'global_refresh_needed')
+    await fs.promises.writeFile(refreshMarker, new Date().toISOString())
   }
   catch (error) {
     // Don't fail the whole installation if symlink creation fails

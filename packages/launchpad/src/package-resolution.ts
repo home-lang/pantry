@@ -9,7 +9,9 @@ import { config } from './config'
 export function resolvePackageName(packageName: string): string {
   // First check for known incorrect aliases that need to be overridden
   const overrideAliases: Record<string, string> = {
-    // ts-pkgx correctly maps git to git-scm.com, so no override needed
+    // Fix git domain mismatch between ts-pkgx alias (git-scm.com) and actual package domain (git-scm.org)
+    'git-scm.com': 'git-scm.org',
+    'git': 'git-scm.org',
   }
 
   if (overrideAliases[packageName]) {
@@ -134,7 +136,13 @@ export function resolvePackageName(packageName: string): string {
  * Gets the latest version for a package
  */
 export function getLatestVersion(packageName: string): string | null {
-  const domain = resolvePackageName(packageName)
+  // Handle special case for git-scm.com -> git-scm.org mapping
+  let domain = resolvePackageName(packageName)
+
+  // Special handling for git-scm.com which should map to git-scm.org
+  if (domain === 'git-scm.com') {
+    domain = 'git-scm.org'
+  }
 
   // First, try to find the package by iterating through all packages and matching the domain
   for (const [_, pkg] of Object.entries(packages)) {
@@ -165,7 +173,13 @@ export function getLatestVersion(packageName: string): string | null {
  * Gets all available versions for a package
  */
 export function getAvailableVersions(packageName: string): string[] {
-  const domain = resolvePackageName(packageName)
+  // Handle special case for git-scm.com -> git-scm.org mapping
+  let domain = resolvePackageName(packageName)
+
+  // Special handling for git-scm.com which should map to git-scm.org
+  if (domain === 'git-scm.com') {
+    domain = 'git-scm.org'
+  }
 
   // First, try to find the package by iterating through all packages and matching the domain
   for (const [_, pkg] of Object.entries(packages)) {
