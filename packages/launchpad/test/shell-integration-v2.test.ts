@@ -81,6 +81,7 @@ describe('Shell Integration V2 - Performance Optimized', () => {
 
       // Should create env_dir with project_hash and optional dep_hash
       expect(shell).toContain('env_dir="$HOME/.local/share/launchpad/envs/$project_hash"')
+      // eslint-disable-next-line no-template-curly-in-string
       expect(shell).toContain('env_dir="${env_dir}-d${dep_short}"')
     })
   })

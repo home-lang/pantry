@@ -74,6 +74,7 @@ describe('Shell Environment Switching - TDD', () => {
       const shell = shellcode(true)
 
       // Should check if hook is already registered before adding
+      // eslint-disable-next-line no-template-curly-in-string
       expect(shell).toContain('! " ${chpwd_functions[*]} " =~ " __launchpad_chpwd "')
       expect(shell).toContain('*"__launchpad_prompt_command"*')
     })
@@ -108,7 +109,9 @@ describe('Shell Environment Switching - TDD', () => {
       // Should use launchpad dev:md5 for consistent hashing
       expect(shell).toContain('dev:md5')
       expect(shell).toContain('timeout 1s')
+      // eslint-disable-next-line no-template-curly-in-string
       expect(shell).toContain('project_hash="${project_basename}_$(echo "$md5hash" | cut -c1-8)"')
+      // eslint-disable-next-line no-template-curly-in-string
       expect(shell).toContain('env_dir="${env_dir}-d${dep_short}"')
     })
   })

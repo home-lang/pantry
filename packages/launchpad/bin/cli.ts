@@ -519,44 +519,48 @@ async function setupDevelopmentEnvironment(
 }
 
 /**
- * Create symlinks for global binaries to ~/.local/bin
+ * Install specific packages globally
  */
-async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<void> {
+async function installPackagesGlobally(packages: string[], options: { verbose?: boolean, quiet?: boolean }): Promise<void> {
   try {
-    const globalBinDir = path.join(globalEnvDir, 'bin')
-    const localBinDir = path.join(homedir(), '.local', 'bin')
+    const { install } = await import('../src/install-main')
 
-    // Ensure ~/.local/bin exists
-    await fs.promises.mkdir(localBinDir, { recursive: true })
+    // Install to global directory
+    const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
-    if (!fs.existsSync(globalBinDir)) {
-      return // No global binaries to link
+    if (!options.quiet) {
+      console.log(`Installing ${packages.length} package${packages.length === 1 ? '' : 's'} globally...`)
     }
 
-    const binaries = await fs.promises.readdir(globalBinDir)
+    const results = await install(packages, globalEnvDir)
 
-    for (const binary of binaries) {
-      const sourcePath = path.join(globalBinDir, binary)
-      const targetPath = path.join(localBinDir, binary)
+    // Create global binary symlinks
+    const { createGlobalBinarySymlinks } = await import('../src/install-helpers')
+    await createGlobalBinarySymlinks(globalEnvDir)
 
-      // Skip if source is not a file or symlink
-      const stats = await fs.promises.lstat(sourcePath)
-      if (!stats.isFile() && !stats.isSymbolicLink()) {
-        continue
+    // Ensure shell integration is installed for current user
+    await ensureShellIntegrationInstalled()
+    // Ensure post-install hooks are present and signal shell to refresh
+    ensurePostInstallHooks()
+    triggerShellGlobalRefresh()
+
+    if (!options.quiet) {
+      if (results.length > 0) {
+        console.log(`🎉 Successfully installed ${packages.join(', ')} globally (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
+        results.forEach((file) => {
+          console.log(`  ${file}`)
+        })
       }
-
-      // Remove existing symlink if it exists
-      if (fs.existsSync(targetPath)) {
-        await fs.promises.unlink(targetPath)
+      else {
+        console.log('✅ All specified packages were already installed globally')
       }
-
-      // Create new symlink
-      await fs.promises.symlink(sourcePath, targetPath)
     }
   }
   catch (error) {
-    // Don't fail the whole installation if symlink creation fails
-    console.warn('⚠️  Warning: Failed to create global binary symlinks:', error)
+    if (!options.quiet) {
+      console.error('❌ Failed to install packages globally:', error instanceof Error ? error.message : String(error))
+    }
+    process.exit(1)
   }
 }
 
@@ -905,7 +909,7 @@ cli
   .alias('add')
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
-  .option('-g, --global-deps', 'Install all global dependencies found across the machine')
+  .option('-g, --global', 'Install packages globally (or scan for all global dependencies if no packages specified)')
   .option('--deps-only', 'Install only the dependencies of packages, not the packages themselves')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')
@@ -915,12 +919,13 @@ cli
   .example('launchpad install php --deps-only')
   .example('launchpad install')
   .example('launchpad install ./my-project')
-  .example('launchpad install --global-deps')
+  .example('launchpad install -g')
+  .example('launchpad install starship -g')
   .example('launchpad add node python')
   .action(async (packages: string[], options: {
     verbose?: boolean
     path?: string
-    globalDeps?: boolean
+    global?: boolean
     depsOnly?: boolean
     dryRun?: boolean
     quiet?: boolean
@@ -934,10 +939,18 @@ cli
     const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
 
     try {
-      // Handle global dependencies installation
-      if (options.globalDeps) {
-        await installGlobalDependencies(options)
-        return
+      // Handle global installation
+      if (options.global) {
+        if (packageList.length === 0) {
+          // No packages specified - scan for all global dependencies (old behavior)
+          await installGlobalDependencies(options)
+          return
+        }
+        else {
+          // Packages specified - install them globally
+          await installPackagesGlobally(packageList, options)
+          return
+        }
       }
 
       // Handle dependencies-only installation

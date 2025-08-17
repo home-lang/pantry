@@ -939,6 +939,50 @@ fi
 }
 
 /**
+ * Create symlinks for global binaries to ~/.local/bin
+ */
+export async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<void> {
+  const { homedir } = await import('node:os')
+
+  try {
+    const globalBinDir = path.join(globalEnvDir, 'bin')
+    const localBinDir = path.join(homedir(), '.local', 'bin')
+
+    // Ensure ~/.local/bin exists
+    await fs.promises.mkdir(localBinDir, { recursive: true })
+
+    if (!fs.existsSync(globalBinDir)) {
+      return // No global binaries to link
+    }
+
+    const binaries = await fs.promises.readdir(globalBinDir)
+
+    for (const binary of binaries) {
+      const sourcePath = path.join(globalBinDir, binary)
+      const targetPath = path.join(localBinDir, binary)
+
+      // Skip if source is not a file or symlink
+      const stats = await fs.promises.lstat(sourcePath)
+      if (!stats.isFile() && !stats.isSymbolicLink()) {
+        continue
+      }
+
+      // Remove existing symlink if it exists
+      if (fs.existsSync(targetPath)) {
+        await fs.promises.unlink(targetPath)
+      }
+
+      // Create new symlink
+      await fs.promises.symlink(sourcePath, targetPath)
+    }
+  }
+  catch (error) {
+    // Don't fail the whole installation if symlink creation fails
+    console.warn('⚠️  Warning: Failed to create global binary symlinks:', error)
+  }
+}
+
+/**
  * Create pkg-config symlinks for common naming mismatches
  * This handles cases where build scripts expect different package names than what's installed
  */

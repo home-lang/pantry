@@ -53,6 +53,9 @@ export async function runDoctorChecks(): Promise<DoctorReport> {
   // Check PHP extensions
   results.push(await checkPhpExtensions())
 
+  // Check starship configuration
+  results.push(await checkStarshipConfiguration())
+
   // Calculate summary
   const summary = {
     passed: results.filter(r => r.status === 'pass').length,
@@ -510,6 +513,143 @@ async function checkPhpExtensions(): Promise<DiagnosticResult> {
       status: 'fail',
       message: `Error checking PHP extensions: ${error instanceof Error ? error.message : String(error)}`,
       suggestion: 'Install PHP and required extensions, or check PHP configuration',
+    }
+  }
+}
+
+/**
+ * Check starship configuration for compatibility with launchpad
+ */
+async function checkStarshipConfiguration(): Promise<DiagnosticResult> {
+  try {
+    const homeDir = os.homedir()
+
+    // Check if starship is installed
+    let starshipInstalled = false
+    try {
+      const { execSync } = await import('node:child_process')
+      execSync('which starship', { stdio: 'ignore', timeout: 3000 })
+      starshipInstalled = true
+    }
+    catch {
+      // Starship not installed, this is not an error
+      return {
+        name: 'Starship Configuration',
+        status: 'pass',
+        message: 'Starship not installed - no configuration issues',
+      }
+    }
+
+    if (!starshipInstalled) {
+      return {
+        name: 'Starship Configuration',
+        status: 'pass',
+        message: 'Starship not installed - no configuration issues',
+      }
+    }
+
+    // Check starship configuration file for invalid entries
+    const starshipConfigPath = path.join(homeDir, '.config', 'starship.toml')
+    let hasConfigIssues = false
+    const configIssues: string[] = []
+
+    if (fs.existsSync(starshipConfigPath)) {
+      try {
+        const configContent = fs.readFileSync(starshipConfigPath, 'utf8')
+
+        // Check for the specific invalid line that causes issues
+        if (configContent.includes('get = "format"')) {
+          hasConfigIssues = true
+          configIssues.push('Invalid "get = \\"format\\"" line found')
+        }
+
+        // Check for other common configuration issues
+        const lines = configContent.split('\n')
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (line.startsWith('get =') && !line.includes('# ')) {
+            hasConfigIssues = true
+            configIssues.push(`Invalid "get" configuration on line ${i + 1}`)
+          }
+        }
+      }
+      catch (error) {
+        return {
+          name: 'Starship Configuration',
+          status: 'warn',
+          message: `Cannot read starship configuration: ${error instanceof Error ? error.message : String(error)}`,
+          suggestion: 'Check starship configuration file permissions',
+        }
+      }
+    }
+
+    // Check shell configuration for proper launchpad/starship order
+    const shellConfigIssues: string[] = []
+    const zshrcPath = path.join(homeDir, '.zshrc')
+
+    if (fs.existsSync(zshrcPath)) {
+      try {
+        const zshrcContent = fs.readFileSync(zshrcPath, 'utf8')
+        const lines = zshrcContent.split('\n')
+
+        let launchpadLine = -1
+        let starshipLine = -1
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (line.includes('launchpad dev:shellcode') && !line.startsWith('#')) {
+            launchpadLine = i
+          }
+          if (line.includes('starship init') && !line.startsWith('#')) {
+            starshipLine = i
+          }
+        }
+
+        // Check if both are present and in wrong order
+        if (launchpadLine !== -1 && starshipLine !== -1 && starshipLine < launchpadLine) {
+          // Starship loads before launchpad - this is wrong
+          shellConfigIssues.push('Starship loads before launchpad shellcode (should load after)')
+        }
+        else if (launchpadLine !== -1 && starshipLine !== -1 && launchpadLine < starshipLine) {
+          // Launchpad loads before starship - this is correct, no issue
+        }
+      }
+      catch {
+        // Ignore errors reading zshrc
+      }
+    }
+
+    // Determine result based on issues found
+    if (hasConfigIssues) {
+      return {
+        name: 'Starship Configuration',
+        status: 'fail',
+        message: `Starship configuration issues detected: ${configIssues.join(', ')}`,
+        suggestion: 'Remove invalid "get = \\"format\\"" line from ~/.config/starship.toml. This line causes starship initialization to fail silently.',
+      }
+    }
+
+    if (shellConfigIssues.length > 0) {
+      return {
+        name: 'Starship Configuration',
+        status: 'warn',
+        message: `Shell configuration issues: ${shellConfigIssues.join(', ')}`,
+        suggestion: 'Ensure "eval \\"$(starship init zsh)\\"" loads AFTER "eval \\"$(launchpad dev:shellcode)\\"" in your ~/.zshrc for proper prompt initialization',
+      }
+    }
+
+    return {
+      name: 'Starship Configuration',
+      status: 'pass',
+      message: 'Starship configuration is compatible with launchpad',
+    }
+  }
+  catch (error) {
+    return {
+      name: 'Starship Configuration',
+      status: 'fail',
+      message: `Error checking starship configuration: ${error instanceof Error ? error.message : String(error)}`,
+      suggestion: 'Check starship installation and configuration files',
     }
   }
 }
