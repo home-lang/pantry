@@ -6,7 +6,6 @@
 import { execSync } from 'node:child_process'
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import process from 'node:process'
 
 // Configuration files to detect (matching the shell regex pattern)
 const PROJECT_FILES = [

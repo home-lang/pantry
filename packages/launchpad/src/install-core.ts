@@ -720,7 +720,8 @@ export async function downloadPackage(
         if (config.verbose) {
           console.warn(`Test mode: Created mock binary for ${domain}`)
         }
-      } else {
+      }
+      else {
         // In production, fail the installation if archive is invalid
         throw new Error(`Invalid archive format for ${domain} v${version}. Archive may be corrupted.`)
       }
@@ -755,7 +756,8 @@ export async function downloadPackage(
           const mockBinary = path.join(mockBinDir, binaryName)
           await fs.promises.writeFile(mockBinary, `#!/bin/bash\necho "Mock ${domain} v${version}"\n`)
           await fs.promises.chmod(mockBinary, 0o755)
-        } else {
+        }
+        else {
           // In production, fail the installation if extraction fails
           throw new Error(`Failed to extract ${domain} v${version}: ${stderr}`)
         }

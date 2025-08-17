@@ -1,9 +1,9 @@
 {
   "name": "@launchpad/benchmark",
+  "type": "module",
   "version": "1.0.0",
   "private": true,
   "description": "Performance benchmarks for Launchpad file detection",
-  "type": "module",
   "scripts": {
     "file-detection": "bun run file-detection-comparison.ts"
   },

@@ -12,8 +12,6 @@ function getLaunchpadBinary(): string {
 export function shellcode(testMode: boolean = false): string {
   // Use the same launchpad binary that's currently running
   const launchpadBinary = getLaunchpadBinary()
-  const grepFilter = '/usr/bin/grep -v \'^$\' 2>/dev/null'
-
   const testModeCheck = testMode ? '' : ' || "$NODE_ENV" == "test"'
 
   // Use default shell message configuration
@@ -32,61 +30,177 @@ if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" == "1"${testModeCheck} ]]; then
     return 0 2>/dev/null || exit 0
 fi
 
+# Set up directory change hooks for zsh and bash (do this first, before any processing guards)
+    if [[ -n "$ZSH_VERSION" ]]; then
+    # zsh hook
+    __launchpad_chpwd() {
+        # Prevent infinite recursion during hook execution
+        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
+        return 0
+        fi
+        export __LAUNCHPAD_IN_HOOK=1
+
+        # Note: trap cleanup removed due to zsh compatibility issues
+
+        # Only run the environment switching logic, not the full shell integration
+        __launchpad_switch_environment
+
+        # Clean up hook flag explicitly
+        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
+    }
+
+    # Add the hook if not already added
+    if [[ ! " \${chpwd_functions[*]} " =~ " __launchpad_chpwd " ]]; then
+        chpwd_functions+=(__launchpad_chpwd)
+    fi
+elif [[ -n "$BASH_VERSION" ]]; then
+    # bash hook using PROMPT_COMMAND
+    __launchpad_prompt_command() {
+        # Prevent infinite recursion during hook execution
+        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
+            return 0
+        fi
+        export __LAUNCHPAD_IN_HOOK=1
+
+        # Note: trap cleanup removed due to zsh compatibility issues
+
+        # Only run the environment switching logic, not the full shell integration
+        __launchpad_switch_environment
+
+        # Clean up hook flag explicitly
+        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
+    }
+
+    # Add to PROMPT_COMMAND if not already there
+    if [[ "$PROMPT_COMMAND" != *"__launchpad_prompt_command"* ]]; then
+        PROMPT_COMMAND="__launchpad_prompt_command;\$PROMPT_COMMAND"
+    fi
+fi
+
+# Environment switching function (called by hooks)
+__launchpad_switch_environment() {
+    # Step 1: Find project directory using our fast binary (with timeout)
+    local project_dir=""
+    if timeout 0.5s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null; then
+        project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 0.5s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
+    fi
+
+    # Step 2: Always ensure global paths are available (even in projects)
+    local global_bin="$HOME/.local/share/launchpad/global/bin"
+    if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
+        export PATH="$global_bin:$PATH"
+    fi
+
+    # If no project found, check if we need to deactivate current project
+    if [[ -z "$project_dir" ]]; then
+        # If we were in a project but now we're not, deactivate it
+        if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+            # Remove project-specific paths from PATH
+            export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+
+            # Show deactivation message if enabled
+            if [[ "${showMessages}" == "true" ]]; then
+                printf "${deactivationMessage}\\n" >&2
+            fi
+
+            unset LAUNCHPAD_CURRENT_PROJECT
+            unset LAUNCHPAD_ENV_BIN_PATH
+        fi
+        return 0
+    fi
+
+    # Step 3: For projects, activate environment (using proper MD5 hashing)
+    if [[ -n "$project_dir" ]]; then
+        local project_basename=$(basename "$project_dir")
+        # Use proper MD5 hash to match existing environments
+        local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 1s ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+        local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
+
+        # Check for dependency file to add dependency hash
+        local dep_file=""
+        for name in "dependencies.yaml" "deps.yaml" "pkgx.yaml" "package.json"; do
+            if [[ -f "$project_dir/$name" ]]; then
+                dep_file="$project_dir/$name"
+                break
+            fi
+        done
+
+        local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+        if [[ -n "$dep_file" ]]; then
+            local dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 1s ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
+        if [[ -n "$dep_short" ]]; then
+            env_dir="\${env_dir}-d\${dep_short}"
+        fi
+        fi
+
+        # Check if we're switching projects
+        if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$LAUNCHPAD_CURRENT_PROJECT" != "$project_dir" ]]; then
+            # Remove old project paths from PATH
+            if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+                export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+
+                # Show deactivation message for old project if enabled
+                if [[ "${showMessages}" == "true" ]]; then
+                    printf "${deactivationMessage}\\n" >&2
+                fi
+            fi
+        fi
+
+        # If environment exists, activate it
+        if [[ -d "$env_dir/bin" ]]; then
+            export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
+            export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+            export PATH="$env_dir/bin:$PATH"
+
+            # Show activation message if enabled
+            if [[ "${showMessages}" == "true" ]]; then
+                printf "${activationMessage}\\n" >&2
+            fi
+        else
+            # Install dependencies synchronously but with timeout to avoid hanging
+            # Use LAUNCHPAD_SHELL_INTEGRATION=1 to enable proper progress display
+            if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 timeout 30s ${launchpadBinary} install "$project_dir"; then
+                # If install succeeded, try to activate the environment
+                if [[ -d "$env_dir/bin" ]]; then
+                    export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
+                    export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+                    export PATH="$env_dir/bin:$PATH"
+
+                    # Show activation message if enabled
+                    if [[ "${showMessages}" == "true" ]]; then
+                        printf "${activationMessage}\\n" >&2
+                    fi
+                fi
+            fi
+        fi
+    fi
+}
+
 # CRITICAL: Prevent infinite loops - if we're already processing, exit immediately
 if [[ "$__LAUNCHPAD_PROCESSING" == "1" ]]; then
     return 0 2>/dev/null || exit 0
 fi
 export __LAUNCHPAD_PROCESSING=1
 
-# Ensure we clean up the processing flag on exit
-trap 'unset __LAUNCHPAD_PROCESSING' EXIT
+# Ensure we clean up the processing flag on exit (use a more robust approach)
+trap 'unset __LAUNCHPAD_PROCESSING 2>/dev/null || true' EXIT
 
 # Basic shell integration with aggressive safeguards
-if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
+# Use verbose default if LAUNCHPAD_VERBOSE is not explicitly set
+local verbose_mode="${verboseDefault}"
+if [[ -n "$LAUNCHPAD_VERBOSE" ]]; then
+    verbose_mode="$LAUNCHPAD_VERBOSE"
+fi
+
+if [[ "$verbose_mode" == "true" ]]; then
     printf "⏱️  [0s] Shell integration started for PWD=%s\\n" "$PWD" >&2
 fi
 
-# Step 1: Find project directory using our fast binary (with timeout)
-project_dir=""
-if timeout 0.5s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null; then
-    project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 0.5s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
-fi
+# Run the environment switching logic
+__launchpad_switch_environment
 
-if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-    printf "⏱️  [0s] Project search completed: %s\\n" "\${project_dir:-none}" >&2
-fi
-
-# Step 2: If no project found, ensure global paths are available
-if [[ -z "$project_dir" ]]; then
-    # Add global paths if they exist
-    global_bin="$HOME/.local/share/launchpad/global/bin"
-    if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
-        export PATH="$global_bin:$PATH"
-        if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-            printf "⏱️  [0s] Global paths activated\\n" >&2
-        fi
-    fi
-    return 0 2>/dev/null || exit 0
-fi
-
-# Step 3: For projects, activate environment (simplified, no hanging operations)
-if [[ -n "$project_dir" ]]; then
-    project_basename=$(basename "$project_dir")
-    # Simple hash without calling external binary
-    project_hash="\${project_basename}_$(echo "$project_dir" | cksum | cut -d' ' -f1)"
-    env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
-
-    # If environment exists, activate it
-    if [[ -d "$env_dir/bin" ]]; then
-        export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
-        export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-        export PATH="$env_dir/bin:$PATH"
-
-        if [[ "$LAUNCHPAD_VERBOSE" == "true" ]]; then
-            printf "✅ Environment activated for %s\\n" "$project_basename" >&2
-        fi
-    fi
-fi
+# Clean up processing flag before exit
+unset __LAUNCHPAD_PROCESSING 2>/dev/null || true
 
 return 0 2>/dev/null || exit 0`
 }

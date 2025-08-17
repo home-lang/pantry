@@ -1479,11 +1479,14 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       }
     }
     else {
-      // Always print a final activation message, even in quiet mode
-      const { config } = await import('../config')
-      const activation = (config.shellActivationMessage || '✅ Environment activated for {path}')
-        .replace('{path}', process.cwd())
-      console.log(activation)
+      // Print a final activation message, but skip in shell integration mode to avoid duplicates
+      // (shell integration handles its own custom activation messages)
+      if (!isShellIntegration) {
+        const { config } = await import('../config')
+        const activation = (config.shellActivationMessage || '✅ Environment activated for {path}')
+          .replace('{path}', process.cwd())
+        console.log(activation)
+      }
       addTiming('total', tTotal)
       flushTimings('regular-activation')
 
@@ -1590,6 +1593,7 @@ async function installPackagesOptimized(
     }
     catch (error) {
       globalInstallSuccess = false
+      // Only show installation warnings in non-shell-integration mode to avoid confusing messages
       if (!quiet && !isShellIntegration) {
         console.warn(`Failed to install some global packages: ${error instanceof Error ? error.message : String(error)}`)
       }
@@ -1619,6 +1623,7 @@ async function installPackagesOptimized(
     }
     catch (error) {
       localInstallSuccess = false
+      // Only show installation warnings in non-shell-integration mode to avoid confusing messages
       if (!quiet && !isShellIntegration) {
         console.warn(`Failed to install some local packages: ${error instanceof Error ? error.message : String(error)}`)
       }
@@ -1659,30 +1664,19 @@ async function installPackagesOptimized(
 
   // Output environment warning messages AFTER all cleanup with a small delay
   // Use the original quiet parameter, not effectiveQuiet, for environment warnings
-  if (needsEnvironmentWarning && !quiet) {
+  // Skip confusing messages in shell integration mode - they're not helpful for users
+  if (needsEnvironmentWarning && !quiet && !isShellIntegration) {
     // Add a small delay to ensure all install function cleanup is complete
     await new Promise(resolve => setTimeout(resolve, 50))
 
-    if (isShellIntegration) {
-      process.stderr.write('Environment not ready\n')
-      if (localPackages.length > 0) {
-        process.stderr.write('Local packages need installation\n')
-      }
-      if (globalPackages.length > 0) {
-        process.stderr.write('Global packages need installation\n')
-      }
-      process.stderr.write('Generating minimal shell environment for development\n')
+    console.warn('Environment not ready')
+    if (localPackages.length > 0) {
+      console.warn('Local packages need installation')
     }
-    else {
-      console.warn('Environment not ready')
-      if (localPackages.length > 0) {
-        console.warn('Local packages need installation')
-      }
-      if (globalPackages.length > 0) {
-        console.warn('Global packages need installation')
-      }
-      console.warn('Generating minimal shell environment for development')
+    if (globalPackages.length > 0) {
+      console.warn('Global packages need installation')
     }
+    console.warn('Generating minimal shell environment for development')
   }
 }
 

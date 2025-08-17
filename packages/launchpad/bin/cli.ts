@@ -2024,7 +2024,7 @@ cli
       console.log(paths.join(':'))
       process.exit(0)
     }
-    catch (error) {
+    catch {
       process.exit(1)
     }
   })
@@ -2038,7 +2038,7 @@ cli
       console.log(paths.join(' '))
       process.exit(0)
     }
-    catch (error) {
+    catch {
       process.exit(1)
     }
   })

@@ -92,12 +92,18 @@ export function logUniqueMessage(message: string, forceLog = false): void {
     hasTemporaryProcessingMessage = false
   }
 
-  // In shell mode, deduplicate messages to avoid spam
+  // In shell mode, deduplicate messages to avoid spam and suppress confusing warnings
   if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1' && !forceLog) {
     const messageKey = message.replace(/\r.*/, '').trim() // Remove progress overwrite chars
     if (shellModeMessageCache.has(messageKey)) {
       return // Skip duplicate message
     }
+
+    // Suppress confusing warning messages in shell integration mode
+    if (message.includes('Warning: Failed to install') && !message.includes('(tried multiple fallbacks)')) {
+      return // Skip individual package failure warnings - they're often followed by success
+    }
+
     shellModeMessageCache.add(messageKey)
   }
 

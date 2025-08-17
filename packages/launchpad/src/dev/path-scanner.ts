@@ -25,7 +25,8 @@ export async function scanLibraryPaths(envDir: string): Promise<string[]> {
     const entries = readdirSync(envDir, { withFileTypes: true })
 
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory())
+        continue
 
       const domainName = entry.name
 
@@ -41,7 +42,8 @@ export async function scanLibraryPaths(envDir: string): Promise<string[]> {
         const versionEntries = readdirSync(domainDir, { withFileTypes: true })
 
         for (const versionEntry of versionEntries) {
-          if (!versionEntry.isDirectory() || !versionEntry.name.startsWith('v')) continue
+          if (!versionEntry.isDirectory() || !versionEntry.name.startsWith('v'))
+            continue
 
           const versionDir = join(domainDir, versionEntry.name)
 
@@ -56,12 +58,14 @@ export async function scanLibraryPaths(envDir: string): Promise<string[]> {
             }
           }
         }
-      } catch {
+      }
+      catch {
         // Skip directories we can't read
         continue
       }
     }
-  } catch {
+  }
+  catch {
     // If we can't read the env directory, return what we have
   }
 
@@ -92,7 +96,8 @@ export async function scanGlobalPaths(globalDir: string): Promise<string[]> {
     const entries = readdirSync(globalDir, { withFileTypes: true })
 
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory())
+        continue
 
       const domainName = entry.name
 
@@ -111,8 +116,8 @@ export async function scanGlobalPaths(globalDir: string): Promise<string[]> {
           .map(entry => entry.name)
           .sort((a, b) => {
             // Simple version sort - extract numbers and compare
-            const aNum = a.slice(1).split('.').map(n => parseInt(n, 10) || 0)
-            const bNum = b.slice(1).split('.').map(n => parseInt(n, 10) || 0)
+            const aNum = a.slice(1).split('.').map(n => Number.parseInt(n, 10) || 0)
+            const bNum = b.slice(1).split('.').map(n => Number.parseInt(n, 10) || 0)
 
             for (let i = 0; i < Math.max(aNum.length, bNum.length); i++) {
               const aPart = aNum[i] || 0
@@ -137,12 +142,14 @@ export async function scanGlobalPaths(globalDir: string): Promise<string[]> {
             }
           }
         }
-      } catch {
+      }
+      catch {
         // Skip directories we can't read
         continue
       }
     }
-  } catch {
+  }
+  catch {
     // If we can't read the global directory, return what we have
   }
 
@@ -159,7 +166,8 @@ async function hasValidLibraries(libDir: string, domainName: string, versionDir:
 
     // Check for common library patterns
     for (const entry of entries) {
-      if (!entry.isFile()) continue
+      if (!entry.isFile())
+        continue
 
       const name = entry.name
 
@@ -171,7 +179,8 @@ async function hasValidLibraries(libDir: string, domainName: string, versionDir:
           if (stats > 100) {
             return true
           }
-        } catch {
+        }
+        catch {
           // If we can't get size, assume it's valid
           return true
         }
@@ -184,7 +193,8 @@ async function hasValidLibraries(libDir: string, domainName: string, versionDir:
     }
 
     return false
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -205,13 +215,14 @@ export async function checkEnvironmentReady(envDir: string): Promise<{
   try {
     const libPaths = await scanLibraryPaths(envDir)
     hasLibraries = libPaths.length > 0
-  } catch {
+  }
+  catch {
     hasLibraries = false
   }
 
   return {
     ready: binExists, // Environment is ready if bin directory exists
     binExists,
-    hasLibraries
+    hasLibraries,
   }
 }
