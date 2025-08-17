@@ -990,10 +990,10 @@ export async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<
         // Create new symlink
         await fs.promises.symlink(sourcePath, targetPath)
         createdSymlinks.push(binary)
-        
+
         // Ensure the symlink is executable
         await fs.promises.chmod(targetPath, 0o755)
-      } 
+      }
       catch (err) {
         if (config.verbose) {
           console.warn(`Failed to create symlink for ${binary}:`, err)
