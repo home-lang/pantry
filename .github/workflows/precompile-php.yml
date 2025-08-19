@@ -153,7 +153,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Use cached node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.4
         with:
           path: node_modules
           key: node-modules-${{ hashFiles('**/bun.lock') }}
@@ -988,7 +988,7 @@ jobs:
           ls -lh ${{ env.BINARY_NAME }}.tar.gz
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: ${{ env.BINARY_NAME }}
           path: ${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}.tar.gz
