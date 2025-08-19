@@ -17,7 +17,7 @@
     "check-runtime": "bunx node --version"
   },
   "dependencies": {
-    "lodash": "^4.17.0"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "eslint": "^8.0.0"
