@@ -59,6 +59,26 @@ fi
     if [[ ! " \${chpwd_functions[*]} " =~ " __launchpad_chpwd " ]]; then
         chpwd_functions+=(__launchpad_chpwd)
     fi
+
+    # zsh precmd to refresh on each prompt
+    __launchpad_precmd() {
+        # Prevent infinite recursion during hook execution
+        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
+            return 0
+        fi
+        export __LAUNCHPAD_IN_HOOK=1
+
+        # Reuse the same environment switching/refresh logic
+        __launchpad_switch_environment
+
+        # Clean up hook flag explicitly
+        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
+    }
+
+    # Add the precmd hook if not already added
+    if [[ ! " \${precmd_functions[*]} " =~ " __launchpad_precmd " ]]; then
+        precmd_functions+=(__launchpad_precmd)
+    fi
 elif [[ -n "$BASH_VERSION" ]]; then
     # bash hook using PROMPT_COMMAND
     __launchpad_prompt_command() {
@@ -124,19 +144,6 @@ __launchpad_switch_environment() {
     if [[ -f "$refresh_marker" ]]; then
         # Remove the marker file
         rm -f "$refresh_marker" 2>/dev/null || true
-
-        # Re-initialize tools that may have just become available
-        # This mirrors the conditional checks typically found in shell configs
-
-        # Skip starship initialization - let user's shell config handle it
-        # This prevents conflicts with user's own starship configuration
-        # if command -v starship >/dev/null 2>&1 && [[ -z "$STARSHIP_SHELL" ]]; then
-        #     if [[ -n "$ZSH_VERSION" ]]; then
-        #         eval "$(starship init zsh 2>/dev/null || true)"
-        #     elif [[ -n "$BASH_VERSION" ]]; then
-        #         eval "$(starship init bash 2>/dev/null || true)"
-        #     fi
-        # fi
 
         # Refresh command hash table to pick up new binaries
         hash -r 2>/dev/null || true
