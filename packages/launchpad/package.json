@@ -69,7 +69,7 @@
     "ts-pkgx": "^0.4.30"
   },
   "devDependencies": {
-    "bun-plugin-dtsx": "0.9.5"
+    "bun-plugin-dtsx": "0.21.12"
   },
   "lint-staged": {
     "*.{js,ts}": "bunx --bun eslint . --fix"
