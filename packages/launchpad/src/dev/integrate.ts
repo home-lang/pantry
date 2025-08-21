@@ -88,8 +88,8 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
 }
 
 function getShellFiles(): [string, string][] {
-  // Simple shell integration - the shellcode handles all the safety checks
-  const eval_ln = 'eval "$(launchpad dev:shellcode)"'
+  // Robust integration: only eval if launchpad is available on PATH
+  const eval_ln = 'command -v launchpad >/dev/null 2>&1 && eval "$(launchpad dev:shellcode)"'
 
   const home = homedir()
   const zdotdir = process.env.ZDOTDIR || home

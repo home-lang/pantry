@@ -115,7 +115,13 @@ function findProjectRootShell(startDir: string): string | null {
  * Optimized implementation: Always use fast approach since we're in Node.js/Bun environment
  */
 export function findProjectRoot(startDir: string): string | null {
-  return findProjectRootFast(startDir)
+  // Try fast detection first
+  const fast = findProjectRootFast(startDir)
+  if (fast)
+    return fast
+
+  // Fallback to shell-based detection for edge cases
+  return findProjectRootShell(startDir)
 }
 
 /**

@@ -1992,21 +1992,14 @@ cli
   })
 
 cli
-  .command('dev:find-project-root [dir]', 'Find project root directory using fast file detection')
-  .option('--fallback-shell', 'Use shell fallback if fast detection fails')
-  .action(async (dir?: string, options?: { fallbackShell?: boolean }) => {
+  .command('dev:find-project-root [dir]', 'Find project root directory (fast detection with shell fallback)')
+  .option('--fallback-shell', 'Deprecated: hybrid fallback is now the default')
+  .action(async (dir?: string) => {
     try {
-      const { findProjectRoot, findProjectRootFast } = await import('../src/dev/benchmark')
+      const { findProjectRoot } = await import('../src/dev/benchmark')
       const startDir = dir ? path.resolve(dir) : process.cwd()
 
-      let result: string | null = null
-
-      if (options?.fallbackShell) {
-        result = findProjectRoot(startDir) // Uses hybrid approach
-      }
-      else {
-        result = findProjectRootFast(startDir) // Fast-only approach
-      }
+      const result = findProjectRoot(startDir)
 
       if (result) {
         console.log(result)
@@ -2017,14 +2010,7 @@ cli
       }
     }
     catch {
-      if (options?.fallbackShell) {
-        // If fast detection fails and fallback is requested, exit with error
-        process.exit(1)
-      }
-      else {
-        // For fast-only mode, just exit with error code
-        process.exit(1)
-      }
+      process.exit(1)
     }
   })
 

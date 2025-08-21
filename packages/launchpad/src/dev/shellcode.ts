@@ -9,24 +9,29 @@ function getLaunchpadBinary(): string {
   return 'launchpad'
 }
 
-export function shellcode(testMode: boolean = false): string {
+export function shellcode(_testMode: boolean = false): string {
   // Use the same launchpad binary that's currently running
   const launchpadBinary = getLaunchpadBinary()
-  const testModeCheck = testMode ? '' : ' || "$NODE_ENV" == "test"'
 
-  // Use default shell message configuration
-  const showMessages = (typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHOW_ENV_MESSAGES !== 'false') ? 'true' : 'false'
-  const activationMessage = ((typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_ACTIVATION_MESSAGE) || '✅ Environment activated for \\033[3m$(basename "$project_dir")\\033[0m').replace('{path}', '$(basename "$project_dir")')
-  const deactivationMessage = (typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE) || 'Environment deactivated'
+  // Use config-backed shell message configuration with {path} substitution
+  const showMessages = config.showShellMessages ? 'true' : 'false'
+  // Replace {path} with shell-evaluated basename
+  const activationMessage = (config.shellActivationMessage || '✅ Environment activated for {path}')
+    .replace('{path}', '$(basename "$project_dir")')
+  const deactivationMessage = config.shellDeactivationMessage || 'Environment deactivated'
 
-  const verboseDefault = !!config.verbose
+  // Verbosity: default to verbose for shell integration unless explicitly disabled
+  // Priority: LAUNCHPAD_VERBOSE (runtime) > LAUNCHPAD_SHELL_VERBOSE (env) > config.verbose
+  const verboseDefault = (typeof process !== 'undefined' && process.env?.LAUNCHPAD_SHELL_VERBOSE !== 'false')
+    ? true
+    : !!config.verbose
 
   return `
 # MINIMAL LAUNCHPAD SHELL INTEGRATION - DEBUGGING VERSION
 # This is a minimal version to isolate the hanging issue
 
-# Exit early if shell integration is disabled or in test mode
-if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" == "1"${testModeCheck} ]]; then
+# Exit early if shell integration is disabled or explicit test mode
+if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" == "1" || "$LAUNCHPAD_TEST_MODE" == "1" ]]; then
     return 0 2>/dev/null || exit 0
 fi
 
@@ -36,9 +41,64 @@ if [[ "$LAUNCHPAD_SKIP_INITIAL_INTEGRATION" == "1" ]]; then
     return 0 2>/dev/null || exit 0
 fi
 
+# PATH helper: prepend a directory if not already present
+__lp_prepend_path() {
+    local dir="$1"
+    if [[ -n "$dir" && -d "$dir" ]]; then
+        case ":$PATH:" in
+            *":$dir:"*) : ;;
+            *) PATH="$dir:$PATH"; export PATH ;;
+        esac
+    fi
+}
+
+# Ensure Launchpad global bin is on PATH early (for globally installed tools)
+__lp_prepend_path "$HOME/.local/share/launchpad/global/bin"
+
+# Portable timeout helper: uses timeout, gtimeout (macOS), or no-timeout fallback
+lp_timeout() {
+    local duration="$1"; shift
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$duration" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$duration" "$@"
+    else
+        "$@"
+    fi
+}
+
+# Portable current time in milliseconds
+lp_now_ms() {
+    if [[ -n "$ZSH_VERSION" && -n "$EPOCHREALTIME" ]]; then
+        # EPOCHREALTIME is like: seconds.microseconds
+        local sec="\${EPOCHREALTIME%.*}"
+        local usec="\${EPOCHREALTIME#*.}"
+        # Zero-pad/truncate to 3 digits for milliseconds
+        local msec=$(( 10#\${usec:0:3} ))
+        printf '%d%03d\n' "$sec" "$msec"
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 - <<'PY'
+import time
+print(int(time.time() * 1000))
+PY
+    else
+        # Fallback: seconds * 1000 (approx)
+        local s=$(date +%s 2>/dev/null || echo 0)
+        printf '%d\n' $(( s * 1000 ))
+    fi
+}
+
 # Set up directory change hooks for zsh and bash (do this first, before any processing guards)
     if [[ -n "$ZSH_VERSION" ]]; then
     # zsh hook
+    # Ensure hook arrays exist
+    if ! typeset -p chpwd_functions >/dev/null 2>&1; then
+        typeset -ga chpwd_functions
+    fi
+    if ! typeset -p precmd_functions >/dev/null 2>&1; then
+        typeset -ga precmd_functions
+    fi
+    
     __launchpad_chpwd() {
         # Prevent infinite recursion during hook execution
         if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
@@ -60,24 +120,26 @@ fi
         chpwd_functions+=(__launchpad_chpwd)
     fi
 
-    # zsh precmd to refresh on each prompt
-    __launchpad_precmd() {
-        # Prevent infinite recursion during hook execution
-        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
-            return 0
+    # Optionally enable a precmd-based refresh if explicitly requested
+    if [[ "$LAUNCHPAD_USE_PRECMD" == "1" ]]; then
+        __launchpad_precmd() {
+            # Prevent infinite recursion during hook execution
+            if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
+                return 0
+            fi
+            export __LAUNCHPAD_IN_HOOK=1
+
+            # Reuse the same environment switching/refresh logic
+            __launchpad_switch_environment
+
+            # Clean up hook flag explicitly
+            unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
+        }
+
+        # Add the precmd hook if not already added
+        if [[ ! " \${precmd_functions[*]} " =~ " __launchpad_precmd " ]]; then
+            precmd_functions+=(__launchpad_precmd)
         fi
-        export __LAUNCHPAD_IN_HOOK=1
-
-        # Reuse the same environment switching/refresh logic
-        __launchpad_switch_environment
-
-        # Clean up hook flag explicitly
-        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
-    }
-
-    # Add the precmd hook if not already added
-    if [[ ! " \${precmd_functions[*]} " =~ " __launchpad_precmd " ]]; then
-        precmd_functions+=(__launchpad_precmd)
     fi
 elif [[ -n "$BASH_VERSION" ]]; then
     # bash hook using PROMPT_COMMAND
@@ -105,8 +167,8 @@ fi
 
 # Environment switching function (called by hooks)
 __launchpad_switch_environment() {
-    # Start timer for performance tracking
-    local start_time=$(date +%s%3N 2>/dev/null || echo "0")
+    # Start timer for performance tracking (portable)
+    local start_time=$(lp_now_ms)
 
     # Check if verbose mode is enabled
     local verbose_mode="${verboseDefault}"
@@ -114,14 +176,31 @@ __launchpad_switch_environment() {
         verbose_mode="$LAUNCHPAD_VERBOSE"
     fi
 
-    if [[ "$verbose_mode" == "true" ]]; then
+    # Dedupe key for verbose printing (avoid duplicate start/completion logs per PWD)
+    local __lp_verbose_key="$PWD"
+    local __lp_should_verbose_print="1"
+    if [[ "$__LAUNCHPAD_LAST_VERBOSE_KEY" == "$__lp_verbose_key" ]]; then
+        __lp_should_verbose_print="0"
+    fi
+    export __LAUNCHPAD_LAST_VERBOSE_KEY="$__lp_verbose_key"
+
+    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
         printf "⏱️  [0ms] Shell integration started for PWD=%s\\n" "$PWD" >&2
     fi
 
-    # Step 1: Find project directory using our fast binary (with timeout)
+    # Step 1: Find project directory using our fast binary (with portable timeout)
     local project_dir=""
-    if timeout 0.5s ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
-        project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 0.5s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
+    if lp_timeout 1s ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
+        project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 lp_timeout 1s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
+    fi
+
+    # Verbose: show project detection result
+    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+        if [[ -n "$project_dir" ]]; then
+            printf "📁 Project detected: %s\n" "$project_dir" >&2
+        else
+            printf "📁 No project detected (global mode)\n" >&2
+        fi
     fi
 
     # Step 2: Always ensure global paths are available (even in projects)
@@ -153,9 +232,21 @@ __launchpad_switch_environment() {
             rehash 2>/dev/null || true
         fi
 
+        # Initialize starship when it just became available (idempotent)
+        if command -v starship >/dev/null 2>&1 && [[ -z "$STARSHIP_SHELL" ]]; then
+            if [[ -n "$ZSH_VERSION" ]]; then
+                eval "$(starship init zsh)" >/dev/null 2>&1 || true
+            elif [[ -n "$BASH_VERSION" ]]; then
+                eval "$(starship init bash)" >/dev/null 2>&1 || true
+            fi
+            if [[ "$verbose_mode" == "true" ]]; then
+                printf "🌟 Initialized Starship prompt after install\n" >&2
+            fi
+        fi
+
         # Show refresh message if verbose
         if [[ "$verbose_mode" == "true" ]]; then
-            printf "🔄 Shell environment refreshed for newly installed tools\\n" >&2
+            printf "🔄 Shell environment refreshed for newly installed tools\n" >&2
         fi
     fi
 
@@ -166,13 +257,19 @@ __launchpad_switch_environment() {
             # Remove project-specific paths from PATH
             export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
 
-            # Show deactivation message if enabled
-            if [[ "${showMessages}" == "true" ]]; then
+            # Show deactivation message if enabled (only once per deactivation)
+            if [[ "${showMessages}" == "true" && -n "$__LAUNCHPAD_LAST_ACTIVATION_KEY" ]]; then
                 printf "${deactivationMessage}\\n" >&2
+            fi
+
+            # Verbose: deactivated environment
+            if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                printf "⚪ Deactivated environment\n" >&2
             fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
             unset LAUNCHPAD_ENV_BIN_PATH
+            unset __LAUNCHPAD_LAST_ACTIVATION_KEY
         fi
         return 0
     fi
@@ -181,7 +278,7 @@ __launchpad_switch_environment() {
     if [[ -n "$project_dir" ]]; then
         local project_basename=$(basename "$project_dir")
         # Use proper MD5 hash to match existing environments
-        local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 1s ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+        local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 lp_timeout 2s ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
         local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
 
         # Check for dependency file to add dependency hash
@@ -195,7 +292,7 @@ __launchpad_switch_environment() {
 
         local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
         if [[ -n "$dep_file" ]]; then
-            local dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 timeout 1s ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
+            local dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 lp_timeout 2s ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
         if [[ -n "$dep_short" ]]; then
             env_dir="\${env_dir}-d\${dep_short}"
         fi
@@ -220,16 +317,27 @@ __launchpad_switch_environment() {
                     export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
             export PATH="$env_dir/bin:$PATH"
 
-            # Show activation message if enabled
+            # Show activation message if enabled (only when env changes)
             if [[ "${showMessages}" == "true" ]]; then
-                printf "${activationMessage}\\n" >&2
+                if [[ "$__LAUNCHPAD_LAST_ACTIVATION_KEY" != "$env_dir" ]]; then
+                    printf "${activationMessage}\\n" >&2
+                fi
+            fi
+            export __LAUNCHPAD_LAST_ACTIVATION_KEY="$env_dir"
+
+            # Verbose: show activated env path
+            if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                printf "✅ Activated environment: %s\n" "$env_dir" >&2
             fi
         else
             # Install dependencies synchronously but with timeout to avoid hanging
             # Use LAUNCHPAD_SHELL_INTEGRATION=1 to enable proper progress display
-            if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 timeout 30s ${launchpadBinary} install "$project_dir"; then
+            if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 lp_timeout 30s ${launchpadBinary} install "$project_dir"; then
+                if [[ "$verbose_mode" == "true" ]]; then
+                    printf "📦 Installed project dependencies (on-demand)\n" >&2
+                fi
                 # If install succeeded, try to activate the environment
-            if [[ -d "$env_dir/bin" ]]; then
+                if [[ -d "$env_dir/bin" ]]; then
                     export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
                     export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
                     export PATH="$env_dir/bin:$PATH"
@@ -238,17 +346,25 @@ __launchpad_switch_environment() {
                     if [[ "${showMessages}" == "true" ]]; then
                         printf "${activationMessage}\\n" >&2
                     fi
+
+                    # Verbose: show activated env path after install
+                    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                        printf "✅ Activated environment after install: %s\n" "$env_dir" >&2
+                    fi
                 fi
             fi
         fi
     fi
 
     # Show completion time if verbose
-    if [[ "$verbose_mode" == "true" ]]; then
-        local end_time=$(date +%s%3N 2>/dev/null || echo "0")
-        local elapsed=$((end_time - start_time))
-        if [[ "$elapsed" -gt 0 ]]; then
-            printf "⏱️  [%sms] Shell integration completed\\n" "$elapsed" >&2
+    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+        local end_time=$(lp_now_ms)
+        # Only print if both are integers
+        if [[ "$start_time" =~ ^[0-9]+$ && "$end_time" =~ ^[0-9]+$ ]]; then
+            local elapsed=$(( end_time - start_time ))
+            if [[ "$elapsed" -ge 0 ]]; then
+                printf "⏱️  [%sms] Shell integration completed\n" "$elapsed" >&2
+            fi
         fi
     fi
 }
