@@ -176,10 +176,53 @@ __launchpad_switch_environment() {
         printf "⏱️  [0ms] Shell integration started for PWD=%s\\n" "$PWD" >&2
     fi
 
+    # Known dependency filenames (keep in sync with DEPENDENCY_FILE_NAMES in src/env.ts)
+    local _dep_names=(
+        # Launchpad-specific files (highest priority)
+        "dependencies.yaml" "dependencies.yml" "deps.yaml" "deps.yml" "pkgx.yaml" "pkgx.yml" "launchpad.yaml" "launchpad.yml"
+        # Node.js/JavaScript
+        "package.json"
+        # Python
+        "pyproject.toml" "requirements.txt" "setup.py" "Pipfile" "Pipfile.lock"
+        # Rust
+        "Cargo.toml"
+        # Go
+        "go.mod" "go.sum"
+        # Ruby
+        "Gemfile"
+        # Deno
+        "deno.json" "deno.jsonc"
+        # GitHub Actions
+        "action.yml" "action.yaml"
+        # Kubernetes/Docker
+        "skaffold.yaml" "skaffold.yml"
+        # Version control files
+        ".nvmrc" ".node-version" ".ruby-version" ".python-version" ".terraform-version"
+        # Package manager files
+        "yarn.lock" "bun.lockb" ".yarnrc"
+    )
+
     # Step 1: Find project directory using our fast binary (no artificial timeout)
     local project_dir=""
     if ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
         project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
+    fi
+
+    # Fallback: If binary didn't detect a project, scan upwards for known dependency files
+    if [[ -z "$project_dir" ]]; then
+        local __dir="$PWD"
+        while [[ "$__dir" != "/" ]]; do
+            for name in "\${_dep_names[@]}"; do
+                if [[ -f "$__dir/$name" ]]; then
+                    project_dir="$__dir"
+                    break
+                fi
+            done
+            if [[ -n "$project_dir" ]]; then
+                break
+            fi
+            __dir="$(dirname "$__dir")"
+        done
     fi
 
     # Verbose: show project detection result
@@ -270,8 +313,9 @@ __launchpad_switch_environment() {
         local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
 
         # Check for dependency file to add dependency hash
+        # IMPORTANT: keep this list in sync with DEPENDENCY_FILE_NAMES in src/env.ts
         local dep_file=""
-        for name in "dependencies.yaml" "deps.yaml" "pkgx.yaml" "package.json"; do
+        for name in "\${_dep_names[@]}"; do
             if [[ -f "$project_dir/$name" ]]; then
                 dep_file="$project_dir/$name"
                 break
@@ -279,11 +323,16 @@ __launchpad_switch_environment() {
         done
 
         local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+        local dep_short=""
         if [[ -n "$dep_file" ]]; then
-            local dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
+            dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
             if [[ -n "$dep_short" ]]; then
                 env_dir="\${env_dir}-d\${dep_short}"
             fi
+        fi
+
+        if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+            printf "🔎 dep_file=%q dep_short=%s env_dir=%q\n" "$dep_file" "$dep_short" "$env_dir" >&2
         fi
 
         # Check if we're switching projects
@@ -334,8 +383,21 @@ __launchpad_switch_environment() {
             fi
 
             if [[ "$should_attempt" -eq 1 ]]; then
-                # Suppress installer output in hooks to avoid stray blank lines in the prompt
-                if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir" >/dev/null 2>&1; then
+                # Run installer; show output if verbose, otherwise suppress to keep prompt clean
+                if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                    printf "🚀 Starting on-demand install for %q\n" "$project_dir" >&2
+                fi
+
+                if [[ "$verbose_mode" == "true" ]]; then
+                    # In verbose mode, avoid LAUNCHPAD_SHELL_INTEGRATION=1 so installer prints logs
+                    LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir"
+                    install_status=$?
+                else
+                    LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir" >/dev/null 2>&1
+                    install_status=$?
+                fi
+
+                if [[ $install_status -eq 0 ]]; then
                     if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
                         printf "📦 Installed project dependencies (on-demand)\n" >&2
                     fi
@@ -356,7 +418,7 @@ __launchpad_switch_environment() {
                     # Touch backoff marker only on failure to avoid repeated attempts
                     : > "$backoff_marker" 2>/dev/null || true
                     if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                        printf "⏭️  Deferred on-demand install. Run 'launchpad install %q' manually.\n" "$project_dir" >&2
+                        printf "❌ On-demand install failed (exit %d). Run 'launchpad install %q' manually.\n" "$install_status" "$project_dir" >&2
                     fi
                 fi
             else

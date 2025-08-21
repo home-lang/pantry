@@ -335,31 +335,19 @@ exec "${binaryPath}" "$@"
           // Don't spam library paths for every binary - they're mostly the same
         }
 
-        // Special handling for Bun: create bunx symlink as specified in ts-pkgx script
+        // Special handling for Bun: create bunx shim and set BUN_INSTALL
         if (domain === 'bun.sh' && binary === 'bun') {
-          // 1. Create bunx symlink to bun (like the ts-pkgx script: ln -s bun bunx)
+          // 1. Create bunx shim that proxies to `bun x` with proper environment
           const bunxShimPath = path.join(targetShimDir, 'bunx')
           try {
             // Remove existing bunx if it exists
             if (fs.existsSync(bunxShimPath)) {
               fs.unlinkSync(bunxShimPath)
             }
-
-            // Create symlink from bunx to bun
-            fs.symlinkSync('bun', bunxShimPath)
-
-            installedBinaries.push('bunx')
-
-            if (config.verbose) {
-              console.warn(`Created bunx symlink: bunx -> bun (as specified in ts-pkgx script)`)
-            }
           }
-          catch (error) {
-            if (config.verbose) {
-              console.warn(`Failed to create bunx symlink: ${error instanceof Error ? error.message : String(error)}`)
-            }
-            // Don't fail the installation if bunx symlink creation fails
-          }
+          catch { /* ignore */ }
+
+          // We will write bunx after establishing BUN_INSTALL below so we can embed the path
 
           // 2. Modify the bun shim to set BUN_INSTALL environment variable
           // This is critical for Bun to work correctly, as it needs to know where it's installed
@@ -453,7 +441,7 @@ exec "${binaryPath}" "$@"
             }
 
             // Create a custom shim for Bun with BUN_INSTALL environment variable
-            const customShimContent = `#!/bin/sh
+            const bunShimContent = `#!/bin/sh
 # Launchpad shim for ${binary} (${domain} v${version})
 
 # Set up Bun environment variables
@@ -463,16 +451,29 @@ export BUN_INSTALL="${officialBunDir}"
 exec "${binaryPath}" "$@"
 `
             // Write the custom shim directly to the file
-            fs.writeFileSync(shimPath, customShimContent)
+            fs.writeFileSync(shimPath, bunShimContent)
             fs.chmodSync(shimPath, 0o755)
 
-            // Skip the default shim writing by continuing to the next binary
+            // Create bunx shim that runs `bun x`
+            const bunxShimContent = `#!/bin/sh
+# Launchpad shim for bunx (${domain} v${version})
+
+# Set up Bun environment variables
+export BUN_INSTALL="${officialBunDir}"
+
+# Execute bun x with forwarded args
+exec "${binaryPath}" x "$@"
+`
+            fs.writeFileSync(bunxShimPath, bunxShimContent)
+            fs.chmodSync(bunxShimPath, 0o755)
+
             if (config.verbose) {
-              console.warn(`Added BUN_INSTALL environment variable to bun shim`)
+              console.warn(`Created bun shim with BUN_INSTALL and bunx shim that proxies to 'bun x'`)
               console.warn(`Created Bun directory structure at ${officialBunDir}`)
             }
 
             installedBinaries.push(binary)
+            installedBinaries.push('bunx')
             continue
           }
           catch (error) {
