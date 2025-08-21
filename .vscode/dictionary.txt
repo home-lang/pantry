@@ -6,6 +6,7 @@ bunfig
 bunx
 changelogen
 changelogithub
+chpwd
 chrisbbreuer
 codecov
 commitlint
@@ -24,6 +25,7 @@ openweb
 outdir
 pausable
 Postcardware
+precmd
 prefetch
 preinstall
 quickfix

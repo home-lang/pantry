@@ -55,18 +55,6 @@ __lp_prepend_path() {
 # Ensure Launchpad global bin is on PATH early (for globally installed tools)
 __lp_prepend_path "$HOME/.local/share/launchpad/global/bin"
 
-# Portable timeout helper: uses timeout, gtimeout (macOS), or no-timeout fallback
-lp_timeout() {
-    local duration="$1"; shift
-    if command -v timeout >/dev/null 2>&1; then
-        timeout "$duration" "$@"
-    elif command -v gtimeout >/dev/null 2>&1; then
-        gtimeout "$duration" "$@"
-    else
-        "$@"
-    fi
-}
-
 # Portable current time in milliseconds
 lp_now_ms() {
     if [[ -n "$ZSH_VERSION" && -n "$EPOCHREALTIME" ]]; then
@@ -188,10 +176,10 @@ __launchpad_switch_environment() {
         printf "⏱️  [0ms] Shell integration started for PWD=%s\\n" "$PWD" >&2
     fi
 
-    # Step 1: Find project directory using our fast binary (with portable timeout)
+    # Step 1: Find project directory using our fast binary (no artificial timeout)
     local project_dir=""
-    if lp_timeout 1s ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
-        project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 lp_timeout 1s ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
+    if ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
+        project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
     fi
 
     # Verbose: show project detection result
@@ -278,7 +266,7 @@ __launchpad_switch_environment() {
     if [[ -n "$project_dir" ]]; then
         local project_basename=$(basename "$project_dir")
         # Use proper MD5 hash to match existing environments
-        local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 lp_timeout 2s ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+        local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
         local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
 
         # Check for dependency file to add dependency hash
@@ -292,10 +280,10 @@ __launchpad_switch_environment() {
 
         local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
         if [[ -n "$dep_file" ]]; then
-            local dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 lp_timeout 2s ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
-        if [[ -n "$dep_short" ]]; then
-            env_dir="\${env_dir}-d\${dep_short}"
-        fi
+            local dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
+            if [[ -n "$dep_short" ]]; then
+                env_dir="\${env_dir}-d\${dep_short}"
+            fi
         fi
 
         # Check if we're switching projects
@@ -330,27 +318,43 @@ __launchpad_switch_environment() {
                 printf "✅ Activated environment: %s\n" "$env_dir" >&2
             fi
         else
-            # Install dependencies synchronously but with timeout to avoid hanging
-            # Use LAUNCHPAD_SHELL_INTEGRATION=1 to enable proper progress display
-            if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 lp_timeout 30s ${launchpadBinary} install "$project_dir"; then
-                if [[ "$verbose_mode" == "true" ]]; then
-                    printf "📦 Installed project dependencies (on-demand)\n" >&2
+            # Non-blocking on-demand install with retry backoff (no artificial timeout)
+            local cache_dir="$HOME/.cache/launchpad/shell_cache"
+            mkdir -p "$cache_dir" 2>/dev/null || true
+            local backoff_marker="$cache_dir/install_backoff_$(echo "$env_dir" | sed 's/\//_/g')"
+
+            local now_s=$(date +%s 2>/dev/null || echo 0)
+            local retry_after=600  # 10 minutes
+            local should_attempt=1
+            if [[ -f "$backoff_marker" ]]; then
+                local mtime=$(date -r "$backoff_marker" +%s 2>/dev/null || echo 0)
+                if [[ $(( now_s - mtime )) -lt $retry_after ]]; then
+                    should_attempt=0
                 fi
-                # If install succeeded, try to activate the environment
-                if [[ -d "$env_dir/bin" ]]; then
-                    export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
-                    export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-                    export PATH="$env_dir/bin:$PATH"
+            fi
 
-                    # Show activation message if enabled
-                    if [[ "${showMessages}" == "true" ]]; then
-                        printf "${activationMessage}\\n" >&2
+            if [[ "$should_attempt" -eq 1 ]]; then
+                : > "$backoff_marker" 2>/dev/null || true
+                if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir"; then
+                    if [[ -d "$env_dir/bin" ]]; then
+                        export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
+                        export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+                        export PATH="$env_dir/bin:$PATH"
+                        if [[ "${showMessages}" == "true" ]]; then
+                            printf "${activationMessage}\\n" >&2
+                        fi
+                        if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                            printf "✅ Activated environment after install: %s\n" "$env_dir" >&2
+                        fi
                     fi
-
-                    # Verbose: show activated env path after install
+                else
                     if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                        printf "✅ Activated environment after install: %s\n" "$env_dir" >&2
+                        printf "⏭️  Deferred on-demand install. Run 'launchpad install %q' manually.\n" "$project_dir" >&2
                     fi
+                fi
+            else
+                if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                    printf "⏳ Install backoff active; not attempting on-demand install.\n" >&2
                 fi
             fi
         fi
