@@ -321,7 +321,7 @@ __launchpad_switch_environment() {
             # Non-blocking on-demand install with retry backoff (no artificial timeout)
             local cache_dir="$HOME/.cache/launchpad/shell_cache"
             mkdir -p "$cache_dir" 2>/dev/null || true
-            local backoff_marker="$cache_dir/install_backoff_$(echo "$env_dir" | sed 's/\//_/g')"
+            local backoff_marker="$cache_dir/install_backoff_$(echo "$env_dir" | tr '/' '_')"
 
             local now_s=$(date +%s 2>/dev/null || echo 0)
             local retry_after=600  # 10 minutes
@@ -334,8 +334,11 @@ __launchpad_switch_environment() {
             fi
 
             if [[ "$should_attempt" -eq 1 ]]; then
-                : > "$backoff_marker" 2>/dev/null || true
-                if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir"; then
+                # Suppress installer output in hooks to avoid stray blank lines in the prompt
+                if LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir" >/dev/null 2>&1; then
+                    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+                        printf "📦 Installed project dependencies (on-demand)\n" >&2
+                    fi
                     if [[ -d "$env_dir/bin" ]]; then
                         export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
                         export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
@@ -346,8 +349,12 @@ __launchpad_switch_environment() {
                         if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
                             printf "✅ Activated environment after install: %s\n" "$env_dir" >&2
                         fi
+                        # Clear any backoff marker after successful install
+                        rm -f "$backoff_marker" 2>/dev/null || true
                     fi
                 else
+                    # Touch backoff marker only on failure to avoid repeated attempts
+                    : > "$backoff_marker" 2>/dev/null || true
                     if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
                         printf "⏭️  Deferred on-demand install. Run 'launchpad install %q' manually.\n" "$project_dir" >&2
                     fi
