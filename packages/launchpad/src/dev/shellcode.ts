@@ -86,7 +86,7 @@ PY
     if ! typeset -p precmd_functions >/dev/null 2>&1; then
         typeset -ga precmd_functions
     fi
-    
+
     __launchpad_chpwd() {
         # Prevent infinite recursion during hook execution
         if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
@@ -366,6 +366,56 @@ __launchpad_switch_environment() {
             if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
                 printf "✅ Activated environment: %s\n" "$env_dir" >&2
             fi
+
+            # Ensure dynamic linker can find Launchpad-managed libraries (macOS/Linux)
+            # Build a list of library directories from the active environment and global install
+            __lp_add_unique_colon_path() {
+                # $1=varname $2=value
+                local __var_name="$1"; shift
+                local __val="$1"; shift
+                if [[ -z "$__val" ]]; then return 0; fi
+                local __cur=""
+                # Portable indirection via eval (works in bash and zsh)
+                eval "__cur=\${$__var_name}"
+                case ":$__cur:" in
+                    *":$__val:"*) : ;; # already present
+                    *)
+                        if [[ -n "$__cur" ]]; then
+                            eval "export $__var_name=\"$__val:\${$__var_name}\""
+                        else
+                            eval "export $__var_name=\"$__val\""
+                        fi
+                    ;;
+                esac
+            }
+
+            # Collect candidate lib dirs
+            local __lp_libs=()
+            # Env-level libs
+            if [[ -d "$env_dir/php.net" ]]; then
+                while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$env_dir/php.net" -maxdepth 2 -type d -name 'v*' 2>/dev/null)
+            fi
+            for dom in curl.se openssl.org zlib.net gnu.org/readline; do
+                if [[ -d "$env_dir/$dom" ]]; then
+                    while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$env_dir/$dom" -maxdepth 2 -type d -name 'v*' 2>/dev/null)
+                fi
+            done
+            # Global-level libs
+            local __lp_global="$HOME/.local/share/launchpad/global"
+            for dom in curl.se openssl.org zlib.net gnu.org/readline; do
+                if [[ -d "$__lp_global/$dom" ]]; then
+                    while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$__lp_global/$dom" -maxdepth 2 -type d -name 'v*' 2>/dev/null)
+                fi
+            done
+
+            # Export DYLD and LD paths (prepend Launchpad libs)
+            for libdir in "\${__lp_libs[@]}"; do
+                if [[ -d "$libdir" ]]; then
+                    __lp_add_unique_colon_path DYLD_LIBRARY_PATH "$libdir"
+                    __lp_add_unique_colon_path DYLD_FALLBACK_LIBRARY_PATH "$libdir"
+                    __lp_add_unique_colon_path LD_LIBRARY_PATH "$libdir"
+                fi
+            done
         else
             # Non-blocking on-demand install with retry backoff (no artificial timeout)
             local cache_dir="$HOME/.cache/launchpad/shell_cache"
@@ -466,5 +516,6 @@ export function datadir(): string {
 }
 
 function platform_data_home_default(): string {
-  return join(process.env.HOME || '~', '.local', 'share', 'launchpad')
+  return join(process.env.HOME || '~',
+     '.local', 'share', 'launchpad')
 }

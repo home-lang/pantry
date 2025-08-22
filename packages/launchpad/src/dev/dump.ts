@@ -1070,6 +1070,17 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           const tInstallFast = tick()
           await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
           addTiming('install(packages)', tInstallFast)
+          // After installing in shell fast path (upgrade case), ensure PHP shims exist
+          try {
+            if (config.verbose) {
+              console.log('🔍 Fast path: creating PHP shims after upgrade...')
+            }
+            const tShimFast = tick()
+            // In shellOutput mode, do not block activation; fire-and-forget
+            createPhpShimsAfterInstall(envDir).catch(() => {})
+            addTiming('createPhpShims(async)', tShimFast)
+          }
+          catch {}
           const tOutFast = tick()
           outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
           addTiming('outputShellCode', tOutFast)
@@ -1387,6 +1398,16 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const tInstall3 = tick()
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
       addTiming('install(packages)', tInstall3)
+      // Create PHP shims synchronously in regular path to ensure immediate availability
+      try {
+        if (config.verbose) {
+          console.log('🔍 Regular path: creating PHP shims after install...')
+        }
+        const tShimReg = tick()
+        await createPhpShimsAfterInstall(envDir)
+        addTiming('createPhpShims', tShimReg)
+      }
+      catch {}
       // Visual separator after dependency install list
       try {
         console.log()
@@ -1599,6 +1620,20 @@ async function installPackagesOptimized(
       }
 
       // Don't rethrow package installation errors - continue with partial setup
+    }
+
+    // After global install, ensure global binaries are linked into ~/.local/bin
+    try {
+      const { createGlobalBinarySymlinks } = await import('../install-helpers.js')
+      if (config.verbose) {
+        console.log('🔗 Creating/refreshing global binary symlinks in ~/.local/bin...')
+      }
+      await createGlobalBinarySymlinks(globalEnvDir)
+    }
+    catch (e) {
+      if (!quiet && !isShellIntegration) {
+        console.warn(`⚠️  Warning: Failed to create global binary symlinks: ${e instanceof Error ? e.message : String(e)}`)
+      }
     }
   }
 
