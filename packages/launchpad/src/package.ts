@@ -110,6 +110,17 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
       await outdated()
       break
 
+    case 'dev:check-updates':
+      {
+        const { checkAndMaybeUpdate } = await import('./dev/update-check')
+        const result = await checkAndMaybeUpdate({})
+        if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+          // Print minimal output for CI diagnostics
+          console.log(JSON.stringify(result))
+        }
+      }
+      break
+
     default:
       if (args.length === 0) {
         console.error('https://github.com/stacksjs/launchpad')

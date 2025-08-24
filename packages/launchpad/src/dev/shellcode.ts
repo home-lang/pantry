@@ -249,6 +249,66 @@ __launchpad_switch_environment() {
         export PATH="$global_bin:$PATH"
     fi
 
+    # Step 2.0: Detect global ready markers (persistent) to skip redundant global setup
+    local ready_cache_marker="$HOME/.cache/launchpad/global_ready"
+    local ready_global_marker="$HOME/.local/share/launchpad/global/.ready"
+    if [[ -f "$ready_cache_marker" || -f "$ready_global_marker" ]]; then
+        if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
+            printf "♻️  Reusing existing global tools (ready marker found)\n" >&2
+        fi
+        # No-op: presence of the marker simply informs reuse; installs remain on-demand per env needs
+
+        # TTL-based background update check to keep globals fresh without blocking the prompt
+        # Uses LAUNCHPAD_GLOBAL_UPDATE_TTL_HOURS (default 24). Backoff 60 minutes between checks.
+        __lp_file_mtime() {
+            local f="$1"
+            if [[ -z "$f" || ! -e "$f" ]]; then echo 0; return; fi
+            if stat -f %m "$f" >/dev/null 2>&1; then
+                stat -f %m "$f"
+            elif stat -c %Y "$f" >/dev/null 2>&1; then
+                stat -c %Y "$f"
+            else
+                echo 0
+            fi
+        }
+
+        __lp_bg_update_check() {
+            local cache_dir="$HOME/.cache/launchpad"
+            local shell_cache_dir="$cache_dir/shell_cache"
+            local backoff_marker="$shell_cache_dir/update_check_backoff"
+            local ready_cache="$cache_dir/global_ready"
+            local ready_global="$HOME/.local/share/launchpad/global/.ready"
+
+            mkdir -p "$shell_cache_dir" >/dev/null 2>&1 || true
+
+            local now_s=$(date +%s 2>/dev/null || echo 0)
+            local mtime_a=$(__lp_file_mtime "$ready_cache")
+            local mtime_b=$(__lp_file_mtime "$ready_global")
+            local newest=$(( mtime_a > mtime_b ? mtime_a : mtime_b ))
+
+            # TTL hours env var, default 24
+            local ttl_hours="\${LAUNCHPAD_GLOBAL_UPDATE_TTL_HOURS:-24}"
+            # Convert to seconds cautiously
+            if ! [[ "$ttl_hours" =~ ^[0-9]+$ ]]; then ttl_hours=24; fi
+            local ttl_s=$(( ttl_hours * 3600 ))
+
+            # Backoff: 60 minutes
+            local backoff_mtime=$(__lp_file_mtime "$backoff_marker")
+            local backoff_s=$(( 60 * 60 ))
+            if (( now_s - backoff_mtime < backoff_s )); then
+                return 0
+            fi
+
+            if (( newest == 0 || now_s - newest > ttl_s )); then
+                : > "$backoff_marker" 2>/dev/null || true
+                # Run update check in background (non-blocking)
+                LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:check-updates >/dev/null 2>&1 &
+            fi
+        }
+
+        __lp_bg_update_check
+    fi
+
     # Step 2.1: Check for global refresh marker and initialize newly available tools
     local refresh_marker="$HOME/.cache/launchpad/shell_cache/global_refresh_needed"
     if [[ -f "$refresh_marker" ]]; then
@@ -279,6 +339,14 @@ __launchpad_switch_environment() {
         if [[ "$verbose_mode" == "true" ]]; then
             printf "🔄 Shell environment refreshed for newly installed tools\n" >&2
         fi
+    fi
+
+    # Step 2.2: If a global update notice is present, display it once and remove
+    local update_notice="$HOME/.cache/launchpad/shell_cache/global_update_notice"
+    if [[ -f "$update_notice" ]]; then
+        # Print to stderr to avoid interfering with commands
+        cat "$update_notice" >&2 || true
+        rm -f "$update_notice" 2>/dev/null || true
     fi
 
     # If no project found, check if we need to deactivate current project
@@ -516,6 +584,5 @@ export function datadir(): string {
 }
 
 function platform_data_home_default(): string {
-  return join(process.env.HOME || '~',
-     '.local', 'share', 'launchpad')
+  return join(process.env.HOME || '~', '.local', 'share', 'launchpad')
 }

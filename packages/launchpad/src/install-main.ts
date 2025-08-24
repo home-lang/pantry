@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 import type { PackageSpec } from './types'
 import fs from 'node:fs'
+import { homedir } from 'node:os'
+import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
 import { resolveAllDependencies } from './dependency-resolution'
@@ -22,6 +24,28 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   // Create installation directory even if no packages to install
   await fs.promises.mkdir(installPath, { recursive: true })
 
+  // Optional short-circuit: if we're targeting the Launchpad global directory and a
+  // persistent ready marker exists, skip redundant global reinstalls initiated by
+  // shell integration. Users can force a reinstall via config.forceReinstall.
+  try {
+    const globalTargetDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
+    const isGlobalTarget = installPath === globalTargetDir
+    const isShellInitiated = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
+    if (isGlobalTarget && isShellInitiated && !config.forceReinstall) {
+      const readyCacheMarker = path.join(homedir(), '.cache', 'launchpad', 'global_ready')
+      const readyGlobalMarker = path.join(globalTargetDir, '.ready')
+      if (fs.existsSync(readyCacheMarker) || fs.existsSync(readyGlobalMarker)) {
+        if (config.verbose) {
+          console.warn('♻️  Reusing existing global tools (ready marker present) — skipping global install')
+        }
+        return []
+      }
+    }
+  }
+  catch {
+    // Non-fatal: proceed with normal install flow if any check fails
+  }
+
   // If no packages specified, just ensure directory exists and return
   if (packageList.length === 0 || (packageList.length === 1 && !packageList[0])) {
     if (config.verbose) {
@@ -30,13 +54,30 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     return []
   }
 
-  // Use ts-pkgx to resolve all dependencies with proper version conflict resolution
-  const resolvedPackages = await resolveAllDependencies(packageList)
-
-  const deduplicatedPackages = resolvedPackages
-
-  // Skip recursive dependency resolution since ts-pkgx already resolved everything
-  const useDirectInstallation = true
+  // Decide whether to resolve runtime dependencies
+  let deduplicatedPackages: string[]
+  let useDirectInstallation = true
+  if (config.installDependencies) {
+    // Use ts-pkgx to resolve all dependencies with proper version conflict resolution
+    const resolvedPackages = await resolveAllDependencies(packageList)
+    deduplicatedPackages = resolvedPackages
+    useDirectInstallation = true // already fully resolved
+  }
+  else {
+    // Install only the requested packages (no runtime dependency resolution)
+    // Deduplicate while preserving order
+    const seen = new Set<string>()
+    deduplicatedPackages = []
+    for (const p of packageList) {
+      if (!seen.has(p)) {
+        seen.add(p)
+        deduplicatedPackages.push(p)
+      }
+    }
+    if (config.verbose) {
+      console.warn('⏭️  Skipping runtime dependency resolution (installDependencies=false).')
+    }
+  }
 
   if (config.verbose) {
     console.warn(`Installing packages: ${deduplicatedPackages.join(', ')}`)

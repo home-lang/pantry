@@ -1011,6 +1011,25 @@ export async function createGlobalBinarySymlinks(globalEnvDir: string): Promise<
     await fs.promises.mkdir(cacheDir, { recursive: true })
     const refreshMarker = path.join(cacheDir, 'global_refresh_needed')
     await fs.promises.writeFile(refreshMarker, new Date().toISOString())
+
+    // Also create a persistent "global ready" marker so the shell can quickly detect
+    // that the global toolchain is installed and skip redundant work during env switches
+    try {
+      // Marker inside the global environment directory
+      const readyMarkerInGlobal = path.join(globalEnvDir, '.ready')
+      await fs.promises.writeFile(readyMarkerInGlobal, new Date().toISOString())
+
+      // Lightweight cache marker for quick checks by shell integration
+      const globalCacheDir = path.join(homedir(), '.cache', 'launchpad')
+      await fs.promises.mkdir(globalCacheDir, { recursive: true })
+      const readyMarkerInCache = path.join(globalCacheDir, 'global_ready')
+      await fs.promises.writeFile(readyMarkerInCache, new Date().toISOString())
+    }
+    catch (markerErr) {
+      if (config.verbose) {
+        console.warn('Warning: Failed to write global ready markers:', markerErr)
+      }
+    }
   }
   catch (error) {
     // Don't fail the whole installation if symlink creation fails

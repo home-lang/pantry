@@ -38,6 +38,84 @@ export class PrecompiledBinaryDownloader {
   }
 
   /**
+   * Find Launchpad-installed library paths for PHP dependencies (when build deps are enabled)
+   */
+  private async findLaunchpadLibraryPaths(): Promise<string[]> {
+    const paths: string[] = []
+
+    // Gate scanning to avoid unnecessary I/O and logs
+    const pkgNames = ['php', 'php.net']
+    const isListed = (val: unknown): boolean => {
+      if (typeof val === 'string') return pkgNames.includes(val)
+      if (Array.isArray(val)) return val.some(v => typeof v === 'string' && pkgNames.includes(v))
+      return false
+    }
+    const globalBuildDeps = (config as any).installBuildDeps
+    const phpBuildDeps = (config.services?.php as any)?.installBuildDeps
+    const shouldInstallBuildDeps = (
+      process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1'
+      || globalBuildDeps === true
+      || isListed(globalBuildDeps)
+      || phpBuildDeps === true
+      || isListed(phpBuildDeps)
+    )
+
+    if (!shouldInstallBuildDeps)
+      return []
+
+    try {
+      const phpDependencies = await this.getPhpDependenciesFromPantry()
+      if (config.verbose) {
+        console.log(`🔍 Scanning library paths for ${phpDependencies.length} PHP dependencies...`)
+      }
+
+      for (const depName of phpDependencies) {
+        // Local env installation (project-specific)
+        const localDepDir = path.join(this.installPath, depName)
+        if (fs.existsSync(localDepDir)) {
+          const versionDirs = fs.readdirSync(localDepDir).filter((item) => {
+            const fullPath = path.join(localDepDir, item)
+            return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
+          })
+          for (const versionDir of versionDirs) {
+            const libDir = path.join(localDepDir, versionDir, 'lib')
+            if (fs.existsSync(libDir)) {
+              paths.push(libDir)
+              if (config.verbose) console.log(`📚 Found local library: ${libDir}`)
+            }
+          }
+        }
+
+        // Global installation fallback
+        const globalDepDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', depName)
+        if (fs.existsSync(globalDepDir)) {
+          const versions = fs.readdirSync(globalDepDir).filter((d: string) => d.startsWith('v')).sort().reverse()
+          for (const version of versions) {
+            const libDir = path.join(globalDepDir, version, 'lib')
+            if (fs.existsSync(libDir)) paths.push(libDir)
+          }
+        }
+      }
+
+      if (config.verbose) {
+        if (paths.length > 0) {
+          console.log(`🔍 Found Launchpad library paths for PHP: ${paths.length} paths`)
+        }
+        else {
+          console.warn('⚠️ No Launchpad libraries found for PHP dependencies')
+        }
+      }
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`⚠️ Error finding Launchpad libraries: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+
+    return paths
+  }
+
+  /**
    * Get the platform identifier for the current system
    */
   private getPlatform(): string {
@@ -701,26 +779,61 @@ Thanks for helping us make Launchpad better! 🙏
       if (!fs.existsSync(binDir))
         return
 
-      // Ensure PHP runtime dependencies are installed into this environment
-      try {
-        await this.ensurePhpDependenciesInstalled()
+      // Optionally ensure package-declared build-time dependencies are installed into this environment
+      const pkgNames = ['php', 'php.net']
+      const isListed = (val: unknown): boolean => {
+        if (typeof val === 'string')
+          return pkgNames.includes(val)
+        if (Array.isArray(val))
+          return val.some(v => typeof v === 'string' && pkgNames.includes(v))
+        return false
       }
-      catch (err) {
-        console.warn(`⚠️ Failed to install PHP dependencies: ${err instanceof Error ? err.message : String(err)}`)
+      const globalBuildDeps = (config as any).installBuildDeps
+      const phpBuildDeps = (config.services?.php as any)?.installBuildDeps
+      const shouldInstallBuildDeps = (
+        process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1'
+        || globalBuildDeps === true
+        || isListed(globalBuildDeps)
+        || phpBuildDeps === true
+        || isListed(phpBuildDeps)
+      )
+      if (shouldInstallBuildDeps) {
+        try {
+          await this.ensurePhpDependenciesInstalled()
+        }
+        catch (err) {
+          console.warn(`⚠️ Failed to install PHP dependencies: ${err instanceof Error ? err.message : String(err)}`)
+        }
+      }
+      else if (config.verbose) {
+        console.log('ℹ️ Skipping install of package-declared build-time dependencies for PHP (disabled by config)')
       }
 
-      // Find Launchpad-installed libraries for PHP dependencies
+      // Find Launchpad-installed libraries for PHP dependencies (only when build-deps auto-install enabled)
       const launchpadLibraryPaths = await this.findLaunchpadLibraryPaths()
-      // Ensure readline from pantry is included as many PHP builds reference it
-      const readlineLocal = path.join(this.installPath, 'gnu.org/readline')
-      const readlineGlobal = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', 'gnu.org/readline')
-      for (const base of [readlineLocal, readlineGlobal]) {
-        if (fs.existsSync(base)) {
-          const versions = fs.readdirSync(base).filter(v => v.startsWith('v'))
-          for (const v of versions) {
-            const libDir = path.join(base, v, 'lib')
-            if (fs.existsSync(libDir) && !launchpadLibraryPaths.includes(libDir)) {
-              launchpadLibraryPaths.push(libDir)
+      // Always include the package's own lib directories
+      const pkgLib = path.join(packageDir, 'lib')
+      const pkgLib64 = path.join(packageDir, 'lib64')
+      const addIfExists = (p: string) => {
+        if (!fs.existsSync(p))
+          return
+        if (!launchpadLibraryPaths.includes(p))
+          launchpadLibraryPaths.push(p)
+      }
+      addIfExists(pkgLib)
+      addIfExists(pkgLib64)
+      // Include readline libs only when build-deps auto-install is enabled (pantry-provided)
+      if (shouldInstallBuildDeps) {
+        const readlineLocal = path.join(this.installPath, 'gnu.org/readline')
+        const readlineGlobal = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', 'gnu.org/readline')
+        for (const base of [readlineLocal, readlineGlobal]) {
+          if (fs.existsSync(base)) {
+            const versions = fs.readdirSync(base).filter(v => v.startsWith('v'))
+            for (const v of versions) {
+              const libDir = path.join(base, v, 'lib')
+              if (fs.existsSync(libDir) && !launchpadLibraryPaths.includes(libDir)) {
+                launchpadLibraryPaths.push(libDir)
+              }
             }
           }
         }
@@ -936,69 +1049,6 @@ exec "${shimPath}" "$@"
     }
   }
 
-  /**
-   * Find Launchpad-installed library paths for PHP dependencies
-   */
-  private async findLaunchpadLibraryPaths(): Promise<string[]> {
-    const paths: string[] = []
-
-    try {
-      // Get dynamic PHP dependencies from ts-pkgx pantry
-      const phpDependencies = await this.getPhpDependenciesFromPantry()
-
-      console.log(`🔍 Scanning library paths for ${phpDependencies.length} PHP dependencies...`)
-
-      for (const depName of phpDependencies) {
-        // Check local environment installation first (where dependencies are actually installed)
-        const localDepDir = path.join(this.installPath, depName)
-        if (fs.existsSync(localDepDir)) {
-          // Find version directories
-          const versionDirs = fs.readdirSync(localDepDir).filter((item) => {
-            const fullPath = path.join(localDepDir, item)
-            return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
-          })
-
-          for (const versionDir of versionDirs) {
-            const libDir = path.join(localDepDir, versionDir, 'lib')
-            if (fs.existsSync(libDir)) {
-              paths.push(libDir)
-              console.log(`📚 Found local library: ${libDir}`)
-            }
-          }
-        }
-
-        // Also check global installation as fallback
-        const globalDepDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', depName)
-        if (fs.existsSync(globalDepDir)) {
-          const versions = fs.readdirSync(globalDepDir).filter((d: string) => d.startsWith('v')).sort().reverse()
-          for (const version of versions) {
-            const libDir = path.join(globalDepDir, version, 'lib')
-            if (fs.existsSync(libDir)) {
-              paths.push(libDir)
-            }
-          }
-        }
-      }
-
-      if (paths.length > 0) {
-        console.log(`🔍 Found Launchpad library paths for PHP: ${paths.length} paths`)
-      }
-      else {
-        console.warn('⚠️ No Launchpad libraries found for PHP dependencies')
-      }
-    }
-    catch (error) {
-      console.warn(`⚠️ Error finding Launchpad libraries: ${error instanceof Error ? error.message : String(error)}`)
-    }
-
-    // Do not include Homebrew compatibility paths
-
-    return paths
-  }
-
-  /**
-   * Ensure PHP dynamic dependencies from pantry are installed in the current environment
-   */
   private async ensurePhpDependenciesInstalled(): Promise<void> {
     try {
       const deps = await this.getPhpDependenciesFromPantry()

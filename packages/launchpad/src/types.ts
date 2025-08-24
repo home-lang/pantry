@@ -49,6 +49,22 @@ export interface LaunchpadConfig {
   installPath?: string
   forceReinstall?: boolean
   autoAddToPath?: boolean
+  /** If true, auto-install tools/binaries themselves when referenced. Default: true in practice. */
+  autoInstall?: boolean
+  /**
+   * Control installing runtime dependencies of requested packages.
+   * - false (default): only install explicitly requested packages
+   * - true: resolve and install full dependency graphs
+   * Can be overridden via env LAUNCHPAD_INSTALL_DEPS=1|true
+   */
+  installDependencies?: boolean
+  /**
+   * Control installing package-declared build-time dependencies (aka pantry deps).
+   * - false (default): do not install build-time deps
+   * - true: install for all packages
+   * - string | string[]: install only for the listed package name(s)
+   */
+  installBuildDeps?: boolean | string | string[]
   shellMessages?: {
     activation?: string
     deactivation?: string
@@ -122,6 +138,13 @@ export interface LaunchpadConfig {
         includeEnterprise?: boolean
       }
       configuration?: 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack'
+      /** If true, auto-install the PHP binary when needed. Default: true in practice. */
+      autoInstall?: boolean
+      /**
+       * Deprecated: prefer global `installBuildDeps` with package list.
+       * If provided here, it will still be honored for PHP only.
+       */
+      installBuildDeps?: boolean | string | string[]
     }
   }
   verbose?: boolean

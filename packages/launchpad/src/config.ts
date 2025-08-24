@@ -50,6 +50,10 @@ export const defaultConfig: LaunchpadConfig = {
   useRegistry: true,
   installMethod: 'curl',
   installPath: getDefaultInstallPath(),
+  // By default, do NOT install runtime dependencies unless explicitly enabled
+  installDependencies: process.env.LAUNCHPAD_INSTALL_DEPS === '1' || process.env.LAUNCHPAD_INSTALL_DEPS === 'true' || false,
+  // By default, do NOT install build-time dependencies (pantry/build deps)
+  installBuildDeps: process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1' || process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === 'true' || false,
   postSetup: {
     enabled: process.env.LAUNCHPAD_POST_SETUP_ENABLED !== 'false',
     commands: [],
