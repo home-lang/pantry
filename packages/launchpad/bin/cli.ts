@@ -1,21 +1,10 @@
 #!/usr/bin/env bun
-import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
 import { resolveCommand } from '../src/commands'
 import { config } from '../src/config'
-// Avoid importing the dev barrel here to prevent parsing heavy modules at startup
-// doctor helpers no longer needed here; delegated via modular command
-// import { formatDoctorReport, runDoctorChecks } from '../src/doctor'
-// info helpers no longer needed here; delegated via modular command
-// import { formatPackageInfo, formatPackageNotFound, getDetailedPackageInfo, packageExists } from '../src/info'
-// search helpers no longer needed here; delegated via modular command
-// import { formatSearchResults, getPopularPackages, searchPackages } from '../src/search'
-// shim helpers no longer needed here; delegated via modular command
-// import { create_shim, shim_dir } from '../src/shim'
-// tags helpers no longer needed here; delegated via modular command
-// import { formatCategoriesList, formatPackagesByCategory, formatTagSearchResults, getAvailableCategories, getPackagesByCategory, searchPackagesByTag } from '../src/tags'
+
 process.env.LAUNCHPAD_CLI_MODE = '1'
 // Import package.json for version
 const packageJson = await import('../package.json')
@@ -345,7 +334,8 @@ cli
       const argv: string[] = []
       if (options?.verbose)
         argv.push('--verbose')
-      if (options?.path) { argv.push('--path', options.path) }
+      if (options?.path)
+        argv.push('--path', options.path)
       if (options?.force)
         argv.push('--force')
       if (options?.autoPath === false)
@@ -385,8 +375,10 @@ cli
         argv.push('--force')
       if (options?.verbose)
         argv.push('--verbose')
-      if (options?.release) { argv.push('--release', options.release) }
-      if (options?.target) { argv.push('--target', options.target) }
+      if (options?.release)
+        argv.push('--release', options.release)
+      if (options?.target)
+        argv.push('--target', options.target)
       const cmd = await resolveCommand('setup')
       if (!cmd)
         return
@@ -449,8 +441,10 @@ cli
         argv.push('--force')
       if (options?.verbose)
         argv.push('--verbose')
-      if (options?.target) { argv.push('--target', options.target) }
-      if (options?.release) { argv.push('--release', options.release) }
+      if (options?.target)
+        argv.push('--target', options.target)
+      if (options?.release)
+        argv.push('--release', options.release)
       if (options?.dryRun)
         argv.push('--dry-run')
       const cmd = await resolveCommand('upgrade')
@@ -552,12 +546,15 @@ cli
   .option('--test-mode', 'Generate shellcode for testing (bypasses test environment checks)')
   .action(async ({ testMode }) => {
     try {
-      // Use computed dynamic import to prevent Bun from pre-parsing this module at CLI startup
-      const mod = await import('../src/dev/' + 'shellcode')
-      const { shellcode } = mod as { shellcode: (testMode?: boolean) => string }
-      console.log(shellcode(testMode))
-      // Force immediate exit to prevent any hanging
-      process.exit(0)
+      const argv: string[] = []
+      if (testMode)
+        argv.push('--test-mode')
+      const cmd = await resolveCommand('dev:shellcode')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to generate shellcode:', error instanceof Error ? error.message : String(error))
@@ -1380,20 +1377,21 @@ cli
     json?: boolean
   }) => {
     try {
-      const { runFileDetectionBenchmark } = await import('../src/dev/benchmark')
-
-      const depths = options?.depths && typeof options.depths === 'string'
-        ? options.depths.split(',').map(d => Number.parseInt(d.trim(), 10)).filter(d => !Number.isNaN(d))
-        : [3, 7, 15, 25]
-
-      const iterations = options?.iterations ? Number.parseInt(options.iterations, 10) : undefined
-
-      await runFileDetectionBenchmark({
-        depths,
-        iterations,
-        verbose: options?.verbose || false,
-        json: options?.json || false,
-      })
+      const argv: string[] = []
+      if (options?.iterations)
+        argv.push('--iterations', String(options.iterations))
+      if (options?.depths)
+        argv.push('--depths', options.depths)
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.json)
+        argv.push('--json')
+      const cmd = await resolveCommand('benchmark:file-detection')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Benchmark failed:', error instanceof Error ? error.message : String(error))
@@ -1433,40 +1431,25 @@ cli
     password?: string
   }) => {
     try {
-      const { createProjectDatabase, generateLaravelConfig } = await import('../src/services/database')
-      const dbName = options.name || path.basename(process.cwd()).replace(/\W/g, '_')
-
-      const dbOptions = {
-        host: options.host,
-        port: options.port ? Number.parseInt(options.port, 10) : undefined,
-        user: options.user,
-        password: options.password,
-        type: options.type === 'auto' ? undefined : options.type as any,
-      }
-
-      const connectionInfo = await createProjectDatabase(dbName, dbOptions)
-
-      console.warn('\n📋 Database Connection Details:')
-      console.warn(`   Type: ${connectionInfo.type}`)
-      if (connectionInfo.host)
-        console.warn(`   Host: ${connectionInfo.host}`)
-      if (connectionInfo.port)
-        console.warn(`   Port: ${connectionInfo.port}`)
-      console.warn(`   Database: ${connectionInfo.database}`)
-      if (connectionInfo.username)
-        console.warn(`   Username: ${connectionInfo.username}`)
-      if (connectionInfo.path)
-        console.warn(`   Path: ${connectionInfo.path}`)
-
-      // Generate Laravel .env configuration
-      const envConfig = generateLaravelConfig(connectionInfo)
-      console.warn('\n🔧 Laravel .env configuration:')
-      console.warn(envConfig)
-
-      // Check if this is a Laravel project and offer to update .env
-      if (fs.existsSync('artisan') && fs.existsSync('.env')) {
-        console.warn('\n💡 Laravel project detected! You can update your .env file with the configuration above.')
-      }
+      const argv: string[] = []
+      if (options?.name)
+        argv.push('--name', options.name)
+      if (options?.type)
+        argv.push('--type', options.type)
+      if (options?.host)
+        argv.push('--host', options.host)
+      if (options?.port)
+        argv.push('--port', String(options.port))
+      if (options?.user)
+        argv.push('--user', options.user)
+      if (options?.password)
+        argv.push('--password', options.password)
+      const cmd = await resolveCommand('db:create')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error(`Failed to create database: ${error instanceof Error ? error.message : String(error)}`)

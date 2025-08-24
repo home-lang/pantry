@@ -29,6 +29,7 @@ precmd
 prefetch
 preinstall
 quickfix
+shellcode
 shikijs
 socio
 Solana

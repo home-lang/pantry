@@ -5,6 +5,7 @@ const registry: Record<string, () => Promise<Command>> = {
   'bootstrap': async () => (await import('./bootstrap')).default,
   'setup': async () => (await import('./setup')).default,
   'upgrade': async () => (await import('./upgrade')).default,
+  'dev:shellcode': async () => (await import('./dev/shellcode')).default,
   'dev:check-updates': async () => (await import('./dev/check-updates')).default,
   'dev:find-project-root': async () => (await import('./dev/find-project-root')).default,
   'dev:md5': async () => (await import('./dev/md5')).default,
@@ -32,6 +33,8 @@ const registry: Record<string, () => Promise<Command>> = {
   'outdated': async () => (await import('./outdated')).default,
   'update': async () => (await import('./update')).default,
   'debug:deps': async () => (await import('./debug/deps')).default,
+  'benchmark:file-detection': async () => (await import('./benchmark/file-detection')).default,
+  'db:create': async () => (await import('./db/create')).default,
   // services
   'start': async () => (await import('./start')).default,
   'stop': async () => (await import('./stop')).default,
