@@ -33,18 +33,32 @@ function parseArgs(argv: string[]): { term?: string, opts: Record<string, string
 const command: Command = {
   name: 'search',
   description: 'Search for packages by name, domain, description, or program',
-  async run(ctx) {
-    const { term, opts } = parseArgs(ctx.argv)
+  async run({ argv, options }) {
+    // Strongly type options and merge with argv-parsed fallback
+    interface Opts {
+      term?: string
+      limit?: number | string
+      compact?: boolean
+      ['no-programs']?: boolean
+      ['no-versions']?: boolean
+      ['case-sensitive']?: boolean
+    }
+    const optsFromOptions = (options ?? {}) as Opts
+    const { term: parsedTerm, opts } = parseArgs(argv)
+    const term = typeof optsFromOptions.term === 'string' ? optsFromOptions.term : parsedTerm
+
     if (!term) {
       console.error('Usage: launchpad search <term> [--limit N] [--compact] [--no-programs] [--no-versions] [--case-sensitive]')
       return 1
     }
 
-    const limit = opts.limit ? Number(opts.limit) : 50
-    const includePrograms = !opts['no-programs']
-    const caseSensitive = Boolean(opts['case-sensitive'])
-    const compact = Boolean(opts.compact)
-    const showVersions = !opts['no-versions']
+    const limit = typeof optsFromOptions.limit === 'number' ? optsFromOptions.limit
+      : typeof optsFromOptions.limit === 'string' ? Number(optsFromOptions.limit)
+      : opts.limit ? Number(opts.limit) : 50
+    const includePrograms = optsFromOptions['no-programs'] === true ? false : !opts['no-programs']
+    const caseSensitive = typeof optsFromOptions['case-sensitive'] === 'boolean' ? optsFromOptions['case-sensitive'] : Boolean(opts['case-sensitive'])
+    const compact = typeof optsFromOptions.compact === 'boolean' ? optsFromOptions.compact : Boolean(opts.compact)
+    const showVersions = optsFromOptions['no-versions'] === true ? false : !opts['no-versions']
 
     const results = searchPackages(term, { limit, includePrograms, caseSensitive })
     const out = formatSearchResults(results, { showPrograms: includePrograms, showVersions, compact, searchTerm: term })

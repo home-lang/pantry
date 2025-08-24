@@ -1,5 +1,5 @@
 import type { Command } from '../cli/types'
-import { getServiceStatus, listServices, getAllServiceDefinitions } from '../services'
+import { getAllServiceDefinitions, getServiceStatus, listServices } from '../services'
 
 interface Options {
   format?: 'table' | 'json' | 'simple'
@@ -27,14 +27,18 @@ function parse(argv: string[]): { service?: string, opts: Options } {
 const cmd: Command = {
   name: 'status',
   description: 'Show service status',
-  async run({ argv }): Promise<number> {
-    const { service, opts } = parse(argv)
+  async run({ argv, options }): Promise<number> {
+    // Prefer options with argv fallback
+    interface Opts { service?: string; format?: 'table' | 'json' | 'simple' }
+    const o = (options ?? {}) as Opts
+    const { service: parsedService, opts } = parse(argv)
+    const service = typeof o.service === 'string' ? o.service : parsedService
+    const format = (o.format ?? opts.format) || (service ? 'simple' : 'table')
 
     if (service) {
       const status = await getServiceStatus(service)
-      const format = opts.format || 'simple'
       if (format === 'json') {
-        console.log(JSON.stringify({ service, status }, null, 2))
+        console.warn(JSON.stringify({ service, status }, null, 2))
       }
       else {
         const statusEmoji: Record<string, string> = {
@@ -45,13 +49,12 @@ const cmd: Command = {
           failed: '🔴',
           unknown: '⚪',
         }
-        console.log(`${statusEmoji[status]} ${service}: ${status}`)
+        console.warn(`${statusEmoji[status]} ${service}: ${status}`)
       }
       return 0
     }
 
     const services = await listServices()
-    const format = opts.format || 'table'
 
     if (format === 'json') {
       const result = services.map(service => ({
@@ -63,13 +66,13 @@ const cmd: Command = {
         startedAt: service.startedAt,
         port: service.definition?.port,
       }))
-      console.log(JSON.stringify(result, null, 2))
+      console.warn(JSON.stringify(result, null, 2))
       return 0
     }
 
     if (format === 'simple') {
       if (services.length === 0) {
-        console.log('No services found')
+        console.warn('No services found')
         return 0
       }
       services.forEach((service) => {
@@ -81,27 +84,27 @@ const cmd: Command = {
           failed: '🔴',
           unknown: '⚪',
         }
-        console.log(`${statusEmoji[service.status]} ${service.definition?.name}: ${service.status}`)
+        console.warn(`${statusEmoji[service.status]} ${service.definition?.name}: ${service.status}`)
       })
       return 0
     }
 
     // table
     if (services.length === 0) {
-      console.log('No services found')
-      console.log('')
-      console.log('Available services:')
+      console.warn('No services found')
+      console.warn('')
+      console.warn('Available services:')
       const definitions = getAllServiceDefinitions()
       definitions.forEach((def) => {
-        console.log(`  ${def.name?.padEnd(12)} ${def.displayName}`)
+        console.warn(`  ${def.name?.padEnd(12)} ${def.displayName}`)
       })
       return 0
     }
 
-    console.log('Service Status:')
-    console.log('')
-    console.log(`${'Name'.padEnd(12) + 'Status'.padEnd(12) + 'Enabled'.padEnd(10) + 'PID'.padEnd(8) + 'Port'.padEnd(8)}Description`)
-    console.log('─'.repeat(70))
+    console.warn('Service Status:')
+    console.warn('')
+    console.warn(`${'Name'.padEnd(12) + 'Status'.padEnd(12) + 'Enabled'.padEnd(10) + 'PID'.padEnd(8) + 'Port'.padEnd(8)}Description`)
+    console.warn('─'.repeat(70))
 
     services.forEach((service) => {
       const statusEmoji: Record<string, string> = {
@@ -120,7 +123,7 @@ const cmd: Command = {
       const port = (service.definition?.port ? String(service.definition.port) : '-').padEnd(8)
       const description = service.definition?.description || ''
 
-      console.log(`${name}${status}${enabled}${pid}${port}${description}`)
+      console.warn(`${name}${status}${enabled}${pid}${port}${description}`)
     })
 
     return 0

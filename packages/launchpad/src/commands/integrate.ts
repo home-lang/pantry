@@ -1,10 +1,10 @@
-import type { Command } from '../../cli/types'
+import type { Command } from '../cli/types'
 
 const cmd: Command = {
-  name: 'dev:integrate',
+  name: 'integrate',
   description: 'Install or uninstall shell integration hooks',
   async run({ argv }) {
-    const { default: integrate } = await import('../../dev/integrate')
+    const { default: integrate } = await import('../dev/integrate')
 
     const uninstall = argv.includes('--uninstall')
     const dryrun = argv.includes('--dry-run')

@@ -1,19 +1,25 @@
+/* eslint-disable no-console */
 import type { Command } from '../../cli/types'
 
 const cmd: Command = {
   name: 'cache:clear',
   description: 'Clear all cached packages and downloads',
-  async run({ argv }) {
+  async run({ argv, options }) {
     const fs = await import('node:fs')
     const path = await import('node:path')
     const os = await import('node:os')
     const { config } = await import('../../config')
 
-    const verbose = argv.includes('--verbose')
-    const force = argv.includes('--force')
-    const dryRun = argv.includes('--dry-run')
+    // Strongly type options
+    interface Opts { verbose?: boolean, force?: boolean, dryRun?: boolean }
+    const opts = (options ?? {}) as Opts
 
-    if (verbose) config.verbose = true
+    const verbose = typeof opts.verbose === 'boolean' ? opts.verbose : argv.includes('--verbose')
+    const force = typeof opts.force === 'boolean' ? opts.force : argv.includes('--force')
+    const dryRun = typeof opts.dryRun === 'boolean' ? opts.dryRun : argv.includes('--dry-run')
+
+    if (verbose)
+      config.verbose = true
 
     const homeDir = os.homedir()
     const cacheDir = path.join(homeDir, '.cache', 'launchpad')
@@ -35,7 +41,8 @@ const cmd: Command = {
     let fileCount = 0
 
     const calculateCacheStats = (dir: string) => {
-      if (!fs.existsSync(dir)) return
+      if (!fs.existsSync(dir))
+        return
       try {
         const stack = [dir]
         while (stack.length > 0) {
@@ -63,7 +70,8 @@ const cmd: Command = {
       catch { /* ignore */ }
     }
 
-    if (fs.existsSync(cacheDir)) calculateCacheStats(cacheDir)
+    if (fs.existsSync(cacheDir))
+      calculateCacheStats(cacheDir)
 
     const formatSize = (bytes: number): string => {
       const units = ['B', 'KB', 'MB', 'GB']
@@ -84,8 +92,10 @@ const cmd: Command = {
         console.log(`   • Cache directory: ${cacheDir}`)
         console.log('')
         console.log('Would remove:')
-        if (fs.existsSync(bunCacheDir)) console.log(`   • Bun cache: ${bunCacheDir}`)
-        if (fs.existsSync(packageCacheDir)) console.log(`   • Package cache: ${packageCacheDir}`)
+        if (fs.existsSync(bunCacheDir))
+          console.log(`   • Bun cache: ${bunCacheDir}`)
+        if (fs.existsSync(packageCacheDir))
+          console.log(`   • Package cache: ${packageCacheDir}`)
       }
       else {
         console.log('📭 No cache found - nothing to clear')

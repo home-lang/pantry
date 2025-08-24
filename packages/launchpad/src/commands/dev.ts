@@ -1,4 +1,4 @@
-import type { Command } from '../../cli/types'
+import type { Command } from '../cli/types'
 
 const cmd: Command = {
   name: 'dev',
@@ -16,11 +16,11 @@ const cmd: Command = {
     const targetDir = dirArg ? path.resolve(dirArg) : process.cwd()
 
     // For shell integration, force quiet mode and set environment variable
-    const isShellIntegration = shell || false
+    const isShellIntegration = Boolean(shell)
     if (isShellIntegration)
       env.LAUNCHPAD_SHELL_INTEGRATION = '1'
 
-    const { dump } = await import('../../dev/dump')
+    const { dump } = await import('../dev/dump')
     await dump(targetDir, {
       dryrun: dryRun,
       quiet: quiet || isShellIntegration,

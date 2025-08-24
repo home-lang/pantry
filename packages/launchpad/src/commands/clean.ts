@@ -1,8 +1,8 @@
+/* eslint-disable no-console */
+import type { Command } from '../cli/types'
 import fs from 'node:fs'
-import path from 'node:path'
 import os from 'node:os'
-import process from 'node:process'
-import { type Command } from '../cli/types'
+import path from 'node:path'
 import { config } from '../config'
 import { install_prefix } from '../install'
 
@@ -22,7 +22,8 @@ async function getGlobalDependencies(keepGlobal: boolean, verbose?: boolean): Pr
   const explicitTrue = new Set<string>()
   let hadTopLevelGlobal = false
 
-  if (!keepGlobal) return { globalDeps, explicitTrue, hadTopLevelGlobal }
+  if (!keepGlobal)
+    return { globalDeps, explicitTrue, hadTopLevelGlobal }
 
   const homeDir = os.homedir()
   const globalDepFiles = [
@@ -37,7 +38,8 @@ async function getGlobalDependencies(keepGlobal: boolean, verbose?: boolean): Pr
   ]
 
   for (const depFile of globalDepFiles) {
-    if (!fs.existsSync(depFile)) continue
+    if (!fs.existsSync(depFile))
+      continue
     try {
       const content = fs.readFileSync(depFile, 'utf8')
       const lines = content.split('\n')
@@ -51,12 +53,14 @@ async function getGlobalDependencies(keepGlobal: boolean, verbose?: boolean): Pr
         const line = lines[idx]
         const trimmed = line.trim()
         const lineIndent = line.length - line.trimStart().length
-        if (!trimmed || trimmed.startsWith('#')) continue
+        if (!trimmed || trimmed.startsWith('#'))
+          continue
 
         if (lineIndent === 0 && trimmed.startsWith('global:')) {
           const value = trimmed.split(':')[1]?.trim()
           topLevelGlobal = value === 'true' || value === 'yes'
-          if (topLevelGlobal) hadTopLevelGlobal = true
+          if (topLevelGlobal)
+            hadTopLevelGlobal = true
           continue
         }
 
@@ -66,24 +70,30 @@ async function getGlobalDependencies(keepGlobal: boolean, verbose?: boolean): Pr
           depsIndent = -1
           continue
         }
-        if (!inDependencies) continue
+        if (!inDependencies)
+          continue
         if (lineIndent <= currentIndent && trimmed.length > 0) {
           inDependencies = false
           depsIndent = -1
           continue
         }
-        if (!trimmed.includes(':')) continue
-        if (depsIndent === -1 && lineIndent > currentIndent) depsIndent = lineIndent
-        if (lineIndent !== depsIndent) continue
+        if (!trimmed.includes(':'))
+          continue
+        if (depsIndent === -1 && lineIndent > currentIndent)
+          depsIndent = lineIndent
+        if (lineIndent !== depsIndent)
+          continue
 
         const depName = trimmed.split(':')[0].trim()
-        if (!depName || depName === 'version' || depName === 'global' || (!depName.includes('.') && !depName.includes('/'))) continue
+        if (!depName || depName === 'version' || depName === 'global' || (!depName.includes('.') && !depName.includes('/')))
+          continue
 
         const colonIndex = trimmed.indexOf(':')
         const afterColon = trimmed.substring(colonIndex + 1).trim()
 
         if (afterColon && !afterColon.startsWith('{') && afterColon !== '') {
-          if (topLevelGlobal) globalDeps.add(depName)
+          if (topLevelGlobal)
+            globalDeps.add(depName)
         }
         else {
           let foundGlobal = false
@@ -91,11 +101,13 @@ async function getGlobalDependencies(keepGlobal: boolean, verbose?: boolean): Pr
             const nextLine = lines[j]
             const nextTrimmed = nextLine.trim()
             const nextIndent = nextLine.length - nextLine.trimStart().length
-            if (nextIndent <= depsIndent && nextTrimmed.length > 0) break
+            if (nextIndent <= depsIndent && nextTrimmed.length > 0)
+              break
             if (nextTrimmed.startsWith('global:')) {
               const globalValue = nextTrimmed.split(':')[1]?.trim()
               foundGlobal = globalValue === 'true' || globalValue === 'yes'
-              if (globalValue === 'false' || globalValue === 'no') explicitFalse.add(depName)
+              if (globalValue === 'false' || globalValue === 'no')
+                explicitFalse.add(depName)
               break
             }
           }
@@ -115,11 +127,18 @@ async function getGlobalDependencies(keepGlobal: boolean, verbose?: boolean): Pr
       }
 
       const isDomainLike = (s: string) => s.includes('.') || s.includes('/')
-      for (const pkg of Array.from(globalDeps)) if (!isDomainLike(pkg)) globalDeps.delete(pkg)
-      for (const pkg of Array.from(explicitTrue)) if (!isDomainLike(pkg)) explicitTrue.delete(pkg)
+      for (const pkg of Array.from(globalDeps)) {
+        if (!isDomainLike(pkg))
+          globalDeps.delete(pkg)
+      }
+      for (const pkg of Array.from(explicitTrue)) {
+        if (!isDomainLike(pkg))
+          explicitTrue.delete(pkg)
+      }
     }
     catch (error) {
-      if (verbose) console.log(`⚠️  Could not parse ${depFile}: ${error instanceof Error ? error.message : String(error)}`)
+      if (verbose)
+        console.log(`⚠️  Could not parse ${depFile}: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -140,14 +159,17 @@ async function getLaunchpadBinaries(installPrefix: string, keepGlobal: boolean, 
         for (const version of versions) {
           const versionPath = path.join(domainPath, version.name)
           const metadataPath = path.join(versionPath, 'metadata.json')
-          if (!fs.existsSync(metadataPath)) continue
+          if (!fs.existsSync(metadataPath))
+            continue
           try {
             const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
             if (metadata.binaries && Array.isArray(metadata.binaries)) {
               for (const binary of metadata.binaries) {
                 const binaryPath = path.join(binDir, binary)
-                if (!fs.existsSync(binaryPath)) continue
-                if (keepGlobal && globalDeps.has(domain.name)) continue
+                if (!fs.existsSync(binaryPath))
+                  continue
+                if (keepGlobal && globalDeps.has(domain.name))
+                  continue
                 binaries.push({ binary, package: `${domain.name}@${version.name.slice(1)}`, fullPath: binaryPath })
               }
             }
@@ -168,7 +190,8 @@ async function getLaunchpadBinaries(installPrefix: string, keepGlobal: boolean, 
           const content = fs.readFileSync(filePath, 'utf8')
           if (content.includes('Launchpad shim')) {
             const alreadyTracked = binaries.some(b => b.binary === file.name)
-            if (!alreadyTracked) binaries.push({ binary: file.name, package: 'unknown', fullPath: filePath })
+            if (!alreadyTracked)
+              binaries.push({ binary: file.name, package: 'unknown', fullPath: filePath })
           }
         }
         catch {}
@@ -191,10 +214,12 @@ const command: Command = {
     const keepCache = argv.includes('--keep-cache')
     const keepGlobal = argv.includes('--keep-global')
 
-    if (verbose) config.verbose = true
+    if (verbose)
+      config.verbose = true
 
     try {
-      if (dryRun) console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
+      if (dryRun)
+        console.log('🔍 DRY RUN MODE - Nothing will actually be removed')
 
       console.log(`${dryRun ? 'Would perform' : 'Performing'} complete cleanup...`)
 
@@ -209,29 +234,34 @@ const command: Command = {
 
       const { globalDeps, explicitTrue, hadTopLevelGlobal } = await getGlobalDependencies(keepGlobal, verbose)
 
-      let runningServices: string[] = []
+      const runningServices: string[] = []
       try {
         const services = await import('../services')
         const serviceDefs = services.getAllServiceDefinitions()
         const candidateServices = serviceDefs.filter((def: any) => keepGlobal && def.packageDomain ? !globalDeps.has(def.packageDomain) : true)
         for (const def of candidateServices) {
-          if (!def.name) continue
+          if (!def.name)
+            continue
           let shouldInclude = false
           try {
             const status = await services.getServiceStatus(def.name)
-            if (status !== 'stopped') shouldInclude = true
+            if (status !== 'stopped')
+              shouldInclude = true
           }
           catch {}
           try {
             const serviceFile = services.getServiceFilePath(def.name)
-            if (serviceFile && fs.existsSync(serviceFile)) shouldInclude = true
+            if (serviceFile && fs.existsSync(serviceFile))
+              shouldInclude = true
           }
           catch {}
           try {
-            if (def.dataDirectory && fs.existsSync(def.dataDirectory)) shouldInclude = true
+            if (def.dataDirectory && fs.existsSync(def.dataDirectory))
+              shouldInclude = true
           }
           catch {}
-          if (shouldInclude) runningServices.push(def.name)
+          if (shouldInclude)
+            runningServices.push(def.name)
         }
       }
       catch {}
@@ -244,14 +274,16 @@ const command: Command = {
         { path: pkgsDir, name: 'Package metadata' },
         { path: localShareDir, name: 'Project environments' },
       ]
-      if (!keepCache) dirsToCheck.push({ path: cacheDir, name: 'Cache directory' })
+      if (!keepCache)
+        dirsToCheck.push({ path: cacheDir, name: 'Cache directory' })
 
       try {
         const domains = fs.readdirSync(installPrefix, { withFileTypes: true })
           .filter(d => d.isDirectory() && !['bin', 'pkgs', '.tmp', '.cache', '.local'].includes(d.name))
         for (const domain of domains) {
           if (keepGlobal && globalDeps.has(domain.name)) {
-            if (verbose) console.log(`Skipping global dependency: ${domain.name}`)
+            if (verbose)
+              console.log(`Skipping global dependency: ${domain.name}`)
             continue
           }
           const domainPath = path.join(installPrefix, domain.name)
@@ -268,7 +300,8 @@ const command: Command = {
       const existingDirs: { path: string, name: string, size: number, files: number }[] = []
 
       for (const dir of dirsToCheck) {
-        if (!fs.existsSync(dir.path)) continue
+        if (!fs.existsSync(dir.path))
+          continue
         let dirSize = 0
         let dirFiles = 0
         try {
@@ -318,14 +351,15 @@ const command: Command = {
           console.log('')
           console.log('Would remove:')
           existingDirs.forEach((dir) => {
-            console.log(`   • ${dir.name}: ${dir.path} (${formatSize(dir.size)}, ${dir.files} files)`) 
+            console.log(`   • ${dir.name}: ${dir.path} (${formatSize(dir.size)}, ${dir.files} files)`)
           })
           if (launchpadBinaries.length > 0) {
             console.log(`   • Launchpad binaries: ${launchpadBinaries.length} files`)
             console.log('')
             console.log('🔧 Binaries that would be removed:')
             const byPkg = launchpadBinaries.reduce((acc, b) => {
-              if (!acc[b.package]) acc[b.package] = []
+              if (!acc[b.package])
+                acc[b.package] = []
               acc[b.package].push(b.binary)
               return acc
             }, {} as Record<string, string[]>)
@@ -355,24 +389,58 @@ const command: Command = {
       try {
         const services = await import('../services')
         for (const name of runningServices) {
-          try { await services.stopService(name) } catch {}
-          try { await services.disableService(name) } catch {}
+          // Determine registration and status to avoid duplicate warnings from stop/disable
+          let serviceFile: string | undefined
+          let isRegistered = false
           try {
-            const file = services.getServiceFilePath(name)
-            if (file && fs.existsSync(file)) await services.removeServiceFile(name)
-          } catch {}
+            const sf = services.getServiceFilePath(name) as string | null | undefined
+            if (sf)
+              serviceFile = sf
+            isRegistered = Boolean(serviceFile && fs.existsSync(serviceFile))
+          }
+          catch {}
+
+          try {
+            const status = await services.getServiceStatus(name)
+            if (status !== 'stopped') {
+              try {
+                await services.stopService(name)
+              }
+              catch {}
+            }
+          }
+          catch {}
+
+          if (isRegistered) {
+            try {
+              await services.disableService(name)
+            }
+            catch {}
+          }
+
+          try {
+            if (serviceFile && fs.existsSync(serviceFile))
+              await services.removeServiceFile(name)
+          }
+          catch {}
         }
       }
       catch {}
 
       // remove binaries
       for (const b of launchpadBinaries) {
-        try { fs.rmSync(b.fullPath, { force: true }) } catch {}
+        try {
+          fs.rmSync(b.fullPath, { force: true })
+        }
+        catch {}
       }
 
       // remove directories
       for (const dir of existingDirs) {
-        try { fs.rmSync(dir.path, { recursive: true, force: true }) } catch {}
+        try {
+          fs.rmSync(dir.path, { recursive: true, force: true })
+        }
+        catch {}
       }
 
       console.log('✅ Cleanup complete!')

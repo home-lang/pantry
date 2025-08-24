@@ -25,6 +25,8 @@ const cli = new CAC('launchpad')
 cli.version(version)
 cli.help()
 
+//
+
 // Config command - show resolved user configuration
 cli
   .command('config', 'Show current Launchpad configuration')
@@ -48,6 +50,8 @@ cli
       process.exit(1)
     }
   })
+
+// (parse moved to end)
 
 // Main installation command
 cli
@@ -1377,19 +1381,10 @@ cli
     json?: boolean
   }) => {
     try {
-      const argv: string[] = []
-      if (options?.iterations)
-        argv.push('--iterations', String(options.iterations))
-      if (options?.depths)
-        argv.push('--depths', options.depths)
-      if (options?.verbose)
-        argv.push('--verbose')
-      if (options?.json)
-        argv.push('--json')
       const cmd = await resolveCommand('benchmark:file-detection')
       if (!cmd)
         return
-      const code = await cmd.run({ argv, env: process.env })
+      const code = await cmd.run({ argv: [], options, env: process.env })
       if (typeof code === 'number' && code !== 0)
         process.exit(code)
     }
@@ -1399,16 +1394,7 @@ cli
     }
   })
 
-// Parse CLI arguments
-try {
-  cli.version(version)
-  cli.help()
-  cli.parse()
-}
-catch (error) {
-  console.error('CLI error:', error instanceof Error ? error.message : String(error))
-  process.exit(1)
-}
+// NOTE: cli.parse() moved to the end of the file to ensure all commands are registered
 
 // Database management commands
 cli
@@ -1431,23 +1417,10 @@ cli
     password?: string
   }) => {
     try {
-      const argv: string[] = []
-      if (options?.name)
-        argv.push('--name', options.name)
-      if (options?.type)
-        argv.push('--type', options.type)
-      if (options?.host)
-        argv.push('--host', options.host)
-      if (options?.port)
-        argv.push('--port', String(options.port))
-      if (options?.user)
-        argv.push('--user', options.user)
-      if (options?.password)
-        argv.push('--password', options.password)
       const cmd = await resolveCommand('db:create')
       if (!cmd)
         return
-      const code = await cmd.run({ argv, env: process.env })
+      const code = await cmd.run({ argv: [], options, env: process.env })
       if (typeof code === 'number' && code !== 0)
         process.exit(code)
     }
@@ -1456,3 +1429,12 @@ cli
       process.exit(1)
     }
   })
+
+// Parse CLI arguments (must be last)
+try {
+  cli.parse()
+}
+catch (error) {
+  console.error('CLI error:', error instanceof Error ? error.message : String(error))
+  process.exit(1)
+}

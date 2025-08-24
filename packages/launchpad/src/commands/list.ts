@@ -27,11 +27,16 @@ function parseArgs(argv: string[]): ListArgs {
 const command: Command = {
   name: 'list',
   description: 'List installed packages',
-  async run(ctx) {
-    const { path, verbose } = parseArgs(ctx.argv)
+  async run({ argv, options }) {
+    // Strongly type options and merge with argv-parsed fallback
+    interface Opts { path?: string; verbose?: boolean }
+    const opts = (options ?? {}) as Opts
+    const parsed = parseArgs(argv)
+    const pathOpt = typeof opts.path === 'string' ? opts.path : parsed.path
+    const verbose = typeof opts.verbose === 'boolean' ? opts.verbose : Boolean(parsed.verbose)
 
     try {
-      const basePath = path || install_prefix().string
+      const basePath = pathOpt || install_prefix().string
       const packages = await listInstalled(basePath)
 
       if (packages.length === 0) {

@@ -1,10 +1,10 @@
-import type { Command } from '../../cli/types'
+import type { Command } from '../cli/types'
 
 const cmd: Command = {
-  name: 'dev:scan-global-paths',
+  name: 'scan-global-paths',
   description: 'Fast scan for global binary paths',
   async run({ argv }) {
-    const { scanGlobalPaths } = await import('../../dev/path-scanner')
+    const { scanGlobalPaths } = await import('../dev/path-scanner')
     const globalDir = argv[0]
     try {
       const paths = await scanGlobalPaths(globalDir)

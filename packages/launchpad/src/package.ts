@@ -112,7 +112,7 @@ export async function run(args: string[] = process.argv.slice(2)): Promise<void>
 
     case 'dev:check-updates':
       {
-        const { checkAndMaybeUpdate } = await import('./dev/update-check')
+        const { checkAndMaybeUpdate } = await import('./update-check')
         const result = await checkAndMaybeUpdate({})
         if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
           // Print minimal output for CI diagnostics

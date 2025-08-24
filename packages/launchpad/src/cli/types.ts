@@ -1,5 +1,8 @@
 export interface CommandContext {
+  // Backward-compat: most commands expect argv to exist
   argv: string[]
+  // Preferred: structured options parsed by the CLI
+  options?: Record<string, any>
   env: NodeJS.ProcessEnv
 }
 
@@ -8,7 +11,7 @@ export interface Command {
   aliases?: string[]
   description?: string
   help?: string
-  run(ctx: CommandContext): Promise<number> | number
+  run: (ctx: CommandContext) => Promise<number> | number
 }
 
-export type CommandModule = { default: Command }
+export interface CommandModule { default: Command }

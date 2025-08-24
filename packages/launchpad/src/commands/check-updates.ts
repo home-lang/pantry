@@ -1,11 +1,11 @@
-import type { Command } from '../../cli/types'
+import type { Command } from '../cli/types'
 
 const cmd: Command = {
-  name: 'dev:check-updates',
+  name: 'check-updates',
   aliases: [],
   description: 'Check global dependencies for updates (TTL-based); auto-update if enabled',
   async run({ argv, env }) {
-    const { checkAndMaybeUpdate } = await import('../../dev/update-check')
+    const { checkAndMaybeUpdate } = await import('../dev/update-check')
 
     // Flags (optional): --dry-run to skip network, --auto-update to force on
     const dryRun = argv.includes('--dry-run') || env.LAUNCHPAD_SKIP_NETWORK === '1'

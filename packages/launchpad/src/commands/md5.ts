@@ -1,7 +1,7 @@
-import type { Command } from '../../cli/types'
+import type { Command } from '../cli/types'
 
 const cmd: Command = {
-  name: 'dev:md5',
+  name: 'md5',
   description: 'Compute MD5 hash of a file (first 8 characters)',
   async run({ argv }) {
     const fs = await import('node:fs')

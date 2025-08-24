@@ -3,8 +3,12 @@ import type { Command } from '../../cli/types'
 const cmd: Command = {
   name: 'cache:clean',
   description: 'Clean up old cached packages based on age and size limits',
-  async run({ argv }) {
+  async run({ argv, options }) {
     const { getCacheStats, cleanupCache } = await import('../../cache')
+
+    // Strongly type options
+    interface Opts { maxAge?: number | string; maxSize?: number | string; dryRun?: boolean }
+    const opts = (options ?? {}) as Opts
 
     const getArgValue = (flag: string): string | undefined => {
       const idx = argv.indexOf(flag)
@@ -12,9 +16,13 @@ const cmd: Command = {
       return undefined
     }
 
-    const maxAge = getArgValue('--max-age')
-    const maxSize = getArgValue('--max-size')
-    const dryRun = argv.includes('--dry-run')
+    const maxAge = typeof opts.maxAge === 'number' ? String(opts.maxAge)
+      : typeof opts.maxAge === 'string' ? opts.maxAge
+      : getArgValue('--max-age')
+    const maxSize = typeof opts.maxSize === 'number' ? String(opts.maxSize)
+      : typeof opts.maxSize === 'string' ? opts.maxSize
+      : getArgValue('--max-size')
+    const dryRun = typeof opts.dryRun === 'boolean' ? opts.dryRun : argv.includes('--dry-run')
 
     const maxAgeDays = maxAge ? Number.parseInt(maxAge, 10) : 30
     const maxSizeGB = maxSize ? Number.parseFloat(maxSize) : 5

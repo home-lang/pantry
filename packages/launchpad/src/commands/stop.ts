@@ -9,8 +9,11 @@ function parseArgs(argv: string[]): { service?: string } {
 const cmd: Command = {
   name: 'stop',
   description: 'Stop a service',
-  async run({ argv }): Promise<number> {
-    const { service } = parseArgs(argv)
+  async run({ argv, options }): Promise<number> {
+    interface Opts { service?: string }
+    const o = (options ?? {}) as Opts
+    const { service: parsedService } = parseArgs(argv)
+    const service = typeof o.service === 'string' ? o.service : parsedService
     if (!service) {
       console.error('No service specified')
       return 1
