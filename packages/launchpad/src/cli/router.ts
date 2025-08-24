@@ -1,6 +1,6 @@
 import process from 'node:process'
-import { parseArgv } from './parse'
 import { listCommands, resolveCommand } from '../commands'
+import { parseArgv } from './parse'
 
 export async function runCLI(rawArgv: string[] = process.argv.slice(2)): Promise<number> {
   const { command, argv } = parseArgv(rawArgv)
@@ -23,7 +23,7 @@ export async function runCLI(rawArgv: string[] = process.argv.slice(2)): Promise
 
 function printHelp() {
   const commands = listCommands()
-  console.log('Launchpad CLI (modular)')
+  console.log('Launchpad CLI')
   console.log('')
   console.log('Available commands:')
   for (const c of commands) console.log(`  • ${c}`)

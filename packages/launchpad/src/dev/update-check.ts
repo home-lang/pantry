@@ -15,7 +15,16 @@ export function resolveHomedir(): string {
   return process.env.LAUNCHPAD_TEST_HOME || osHomedir()
 }
 
-export function getGlobalPaths(home = resolveHomedir()) {
+export function getGlobalPaths(home: string = resolveHomedir()): {
+  cacheDir: string
+  shellCacheDir: string
+  readyCacheMarker: string
+  globalDir: string
+  readyGlobalMarker: string
+  refreshMarker: string
+  updateBackoffMarker: string
+  updateNotice: string
+} {
   const cacheDir = path.join(home, '.cache', 'launchpad')
   const shellCacheDir = path.join(cacheDir, 'shell_cache')
   const readyCacheMarker = path.join(cacheDir, 'global_ready')
@@ -27,7 +36,7 @@ export function getGlobalPaths(home = resolveHomedir()) {
   return { cacheDir, shellCacheDir, readyCacheMarker, globalDir, readyGlobalMarker, refreshMarker, updateBackoffMarker, updateNotice }
 }
 
-export function isMarkerStale(markerMtimeMs: number | null, nowMs: number, ttlHours = DEFAULT_TTL_HOURS): boolean {
+export function isMarkerStale(markerMtimeMs: number | null, nowMs: number, ttlHours: number = DEFAULT_TTL_HOURS): boolean {
   if (!markerMtimeMs)
     return true
   const ttlMs = ttlHours * HOUR_MS

@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 import fs from 'node:fs'
-import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { CAC } from 'cac'
@@ -32,7 +31,6 @@ if (process.env.LAUNCHPAD_USE_ROUTER === '1') {
 // Default version for setup command (derived from package.json version)
 const DEFAULT_SETUP_VERSION = `v${version}`
 
-
 const cli = new CAC('launchpad')
 
 cli.version(version)
@@ -47,11 +45,14 @@ cli
   .action(async (options?: { json?: boolean }) => {
     try {
       const argv: string[] = []
-      if (options?.json) argv.push('--json')
+      if (options?.json)
+        argv.push('--json')
       const cmd = await resolveCommand('config')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to load configuration:', error instanceof Error ? error.message : String(error))
@@ -92,17 +93,26 @@ cli
       const argv: string[] = []
       const list = Array.isArray(packages) ? packages : [packages].filter(Boolean)
       argv.push(...list)
-      if (options.verbose) argv.push('--verbose')
-      if (options.path) argv.push('--path', options.path)
-      if (options.global) argv.push('--global')
-      if (options.depsOnly) argv.push('--deps-only')
-      if (options.dryRun) argv.push('--dry-run')
-      if (options.quiet) argv.push('--quiet')
-      if (options.shell) argv.push('--shell')
+      if (options.verbose)
+        argv.push('--verbose')
+      if (options.path)
+        argv.push('--path', options.path)
+      if (options.global)
+        argv.push('--global')
+      if (options.depsOnly)
+        argv.push('--deps-only')
+      if (options.dryRun)
+        argv.push('--dry-run')
+      if (options.quiet)
+        argv.push('--quiet')
+      if (options.shell)
+        argv.push('--shell')
       const cmd = await resolveCommand('install')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Installation failed:', error instanceof Error ? error.message : String(error))
@@ -129,17 +139,23 @@ cli
   }) => {
     try {
       const argv: string[] = []
-      if (term && term.trim().length > 0) argv.push(term)
+      if (term && term.trim().length > 0)
+        argv.push(term)
       if (options?.limit) {
         argv.push('--limit', String(options.limit))
       }
-      if (options?.compact) argv.push('--compact')
-      if (options?.programs === false) argv.push('--no-programs')
-      if (options?.caseSensitive) argv.push('--case-sensitive')
+      if (options?.compact)
+        argv.push('--compact')
+      if (options?.programs === false)
+        argv.push('--no-programs')
+      if (options?.caseSensitive)
+        argv.push('--case-sensitive')
       const cmd = await resolveCommand('search')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Search failed:', error instanceof Error ? error.message : String(error))
@@ -168,15 +184,22 @@ cli
   }) => {
     try {
       const argv: string[] = [packageName]
-      if (options?.versions) argv.push('--versions')
-      if (options?.programs === false) argv.push('--no-programs')
-      if (options?.dependencies === false) argv.push('--no-dependencies')
-      if (options?.companions === false) argv.push('--no-companions')
-      if (options?.compact) argv.push('--compact')
+      if (options?.versions)
+        argv.push('--versions')
+      if (options?.programs === false)
+        argv.push('--no-programs')
+      if (options?.dependencies === false)
+        argv.push('--no-dependencies')
+      if (options?.companions === false)
+        argv.push('--no-companions')
+      if (options?.compact)
+        argv.push('--compact')
       const cmd = await resolveCommand('info')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to get package info:', error instanceof Error ? error.message : String(error))
@@ -199,11 +222,14 @@ cli
 
     try {
       const argv: string[] = []
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.verbose)
+        argv.push('--verbose')
       const cmd = await resolveCommand('doctor')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Health check failed:', error instanceof Error ? error.message : String(error))
@@ -236,20 +262,26 @@ cli
   }) => {
     try {
       const argv: string[] = []
-      if (options?.list) argv.push('--list')
+      if (options?.list)
+        argv.push('--list')
       if (options?.category) {
         argv.push('--category', options.category)
       }
       if (options?.search) {
         argv.push('--search', options.search)
       }
-      if (options?.compact) argv.push('--compact')
-      if (options?.programs === false) argv.push('--no-programs')
-      if (options?.versions === false) argv.push('--no-versions')
+      if (options?.compact)
+        argv.push('--compact')
+      if (options?.programs === false)
+        argv.push('--no-programs')
+      if (options?.versions === false)
+        argv.push('--no-versions')
       const cmd = await resolveCommand('tags')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Tags command failed:', error instanceof Error ? error.message : String(error))
@@ -275,11 +307,14 @@ cli
       if (options?.path) {
         argv.push('--path', options.path)
       }
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.verbose)
+        argv.push('--verbose')
       const cmd = await resolveCommand('list')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to list packages:', error instanceof Error ? error.message : String(error))
@@ -299,21 +334,30 @@ cli
   .example('launchpad bootstrap --verbose --force')
   .example('launchpad bootstrap --path ~/.local')
   .action(async (options?: { verbose?: boolean, path?: string, force?: boolean, autoPath?: boolean, skipShellIntegration?: boolean }) => {
-    if (options?.verbose) config.verbose = true
-    if (options?.force) config.forceReinstall = true
-    if (options?.autoPath === false) config.autoAddToPath = false
+    if (options?.verbose)
+      config.verbose = true
+    if (options?.force)
+      config.forceReinstall = true
+    if (options?.autoPath === false)
+      config.autoAddToPath = false
 
     try {
       const argv: string[] = []
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.verbose)
+        argv.push('--verbose')
       if (options?.path) { argv.push('--path', options.path) }
-      if (options?.force) argv.push('--force')
-      if (options?.autoPath === false) argv.push('--no-auto-path')
-      if (options?.skipShellIntegration) argv.push('--skip-shell-integration')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.autoPath === false)
+        argv.push('--no-auto-path')
+      if (options?.skipShellIntegration)
+        argv.push('--skip-shell-integration')
       const cmd = await resolveCommand('bootstrap')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Bootstrap failed:', error instanceof Error ? error.message : String(error))
@@ -333,17 +377,22 @@ cli
   .example('launchpad setup --release v0.3.5')
   .example('launchpad setup --target ~/bin/launchpad')
   .action(async (options?: { force?: boolean, verbose?: boolean, release?: string, target?: string }) => {
-    if (options?.verbose) config.verbose = true
+    if (options?.verbose)
+      config.verbose = true
     try {
       const argv: string[] = []
-      if (options?.force) argv.push('--force')
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.verbose)
+        argv.push('--verbose')
       if (options?.release) { argv.push('--release', options.release) }
       if (options?.target) { argv.push('--target', options.target) }
       const cmd = await resolveCommand('setup')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Setup failed:', error instanceof Error ? error.message : String(error))
@@ -359,12 +408,16 @@ cli
   .action(async (options) => {
     try {
       const argv: string[] = []
-      if (options?.package) argv.push(`--package=${options.package}`)
-      if (options?.version) argv.push(`--version=${options.version}`)
+      if (options?.package)
+        argv.push(`--package=${options.package}`)
+      if (options?.version)
+        argv.push(`--version=${options.version}`)
       const cmd = await resolveCommand('debug:deps')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to debug dependencies:', error instanceof Error ? error.message : String(error))
@@ -392,15 +445,20 @@ cli
 
     try {
       const argv: string[] = []
-      if (options?.force) argv.push('--force')
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.verbose)
+        argv.push('--verbose')
       if (options?.target) { argv.push('--target', options.target) }
       if (options?.release) { argv.push('--release', options.release) }
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.dryRun)
+        argv.push('--dry-run')
       const cmd = await resolveCommand('upgrade')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Upgrade failed:', error instanceof Error ? error.message : String(error))
@@ -441,16 +499,21 @@ cli
 
     try {
       const argv: string[] = [...packageList]
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.verbose)
+        argv.push('--verbose')
       if (options?.path) {
         argv.push('--path', options.path)
       }
-      if (options?.force) argv.push('--force')
-      if (options?.autoPath === false) argv.push('--no-auto-path')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.autoPath === false)
+        argv.push('--no-auto-path')
       const cmd = await resolveCommand('shim')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to create shims:', error instanceof Error ? error.message : String(error))
@@ -466,15 +529,20 @@ cli
   .action(async (options?: { dryRun?: boolean, autoUpdate?: boolean }) => {
     try {
       const argv: string[] = []
-      if (options?.dryRun) argv.push('--dry-run')
-      if (options?.autoUpdate) argv.push('--auto-update')
+      if (options?.dryRun)
+        argv.push('--dry-run')
+      if (options?.autoUpdate)
+        argv.push('--auto-update')
       const cmd = await resolveCommand('dev:check-updates')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
-      if (config.verbose) console.warn('dev:check-updates failed:', error instanceof Error ? error.message : String(error))
+      if (config.verbose)
+        console.warn('dev:check-updates failed:', error instanceof Error ? error.message : String(error))
       process.exit(0)
     }
   })
@@ -503,13 +571,17 @@ cli
   .action(async (dir?: string, _opts?: { fallbackShell?: boolean }) => {
     try {
       const argv: string[] = []
-      if (dir) argv.push(dir)
+      if (dir)
+        argv.push(dir)
       // keep forwarding deprecated flag for parity
-      if (_opts?.fallbackShell) argv.push('--fallback-shell')
+      if (_opts?.fallbackShell)
+        argv.push('--fallback-shell')
       const cmd = await resolveCommand('dev:find-project-root')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch {
       process.exit(1)
@@ -521,11 +593,14 @@ cli
   .action(async (envDir: string) => {
     try {
       const argv: string[] = []
-      if (envDir) argv.push(envDir)
+      if (envDir)
+        argv.push(envDir)
       const cmd = await resolveCommand('dev:scan-library-paths')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch { process.exit(1) }
   })
@@ -535,11 +610,14 @@ cli
   .action(async (globalDir: string) => {
     try {
       const argv: string[] = []
-      if (globalDir) argv.push(globalDir)
+      if (globalDir)
+        argv.push(globalDir)
       const cmd = await resolveCommand('dev:scan-global-paths')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch { process.exit(1) }
   })
@@ -549,11 +627,14 @@ cli
   .action(async (file: string) => {
     try {
       const argv: string[] = []
-      if (file) argv.push(file)
+      if (file)
+        argv.push(file)
       const cmd = await resolveCommand('dev:md5')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch { process.exit(0) }
   })
@@ -566,18 +647,26 @@ cli
   .action(async (dir?: string, options?: { dryRun?: boolean, quiet?: boolean, shell?: boolean }) => {
     try {
       const argv: string[] = []
-      if (dir) argv.push(dir)
-      if (options?.dryRun) argv.push('--dry-run')
-      if (options?.quiet) argv.push('--quiet')
-      if (options?.shell) argv.push('--shell')
+      if (dir)
+        argv.push(dir)
+      if (options?.dryRun)
+        argv.push('--dry-run')
+      if (options?.quiet)
+        argv.push('--quiet')
+      if (options?.shell)
+        argv.push('--shell')
       const cmd = await resolveCommand('dev')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
-      if (!options?.quiet && !options?.shell) console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
-      if (!options?.shell) process.exit(1)
+      if (!options?.quiet && !options?.shell)
+        console.error('Failed to set up dev environment:', error instanceof Error ? error.message : String(error))
+      if (!options?.shell)
+        process.exit(1)
       // for shell mode, allow handler to manage output/exit; fall through
     }
   })
@@ -589,12 +678,16 @@ cli
   .action(async (options?: { uninstall?: boolean, dryRun?: boolean }) => {
     try {
       const argv: string[] = []
-      if (options?.uninstall) argv.push('--uninstall')
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.uninstall)
+        argv.push('--uninstall')
+      if (options?.dryRun)
+        argv.push('--dry-run')
       const cmd = await resolveCommand('dev:integrate')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to integrate shell hooks:', error instanceof Error ? error.message : String(error))
@@ -670,14 +763,17 @@ cli
   .action(async (options?: { verbose?: boolean, format?: string }) => {
     try {
       const argv: string[] = []
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.verbose)
+        argv.push('--verbose')
       if (options?.format) {
         argv.push('--format', options.format)
       }
       const cmd = await resolveCommand('env:list')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to list environments:', error instanceof Error ? error.message : String(error))
@@ -695,12 +791,16 @@ cli
   .action(async (hash: string, options?: { verbose?: boolean, showStubs?: boolean }) => {
     try {
       const argv: string[] = [hash]
-      if (options?.verbose) argv.push('--verbose')
-      if (options?.showStubs) argv.push('--show-stubs')
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.showStubs)
+        argv.push('--show-stubs')
       const cmd = await resolveCommand('env:inspect')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to inspect environment:', error instanceof Error ? error.message : String(error))
@@ -719,15 +819,19 @@ cli
   .action(async (options?: { dryRun?: boolean, olderThan?: string, force?: boolean }) => {
     try {
       const argv: string[] = []
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.dryRun)
+        argv.push('--dry-run')
       if (options?.olderThan) {
         argv.push('--older-than', options.olderThan)
       }
-      if (options?.force) argv.push('--force')
+      if (options?.force)
+        argv.push('--force')
       const cmd = await resolveCommand('env:clean')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to clean environments:', error instanceof Error ? error.message : String(error))
@@ -753,14 +857,20 @@ cli
         process.exit(1)
       }
       const argv: string[] = []
-      if (hash) argv.push(hash)
-      if (options?.force) argv.push('--force')
-      if (options?.verbose) argv.push('--verbose')
-      if (options?.all) argv.push('--all')
+      if (hash)
+        argv.push(hash)
+      if (options?.force)
+        argv.push('--force')
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.all)
+        argv.push('--all')
       const cmd = await resolveCommand('env:remove')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to remove environment:', error instanceof Error ? error.message : String(error))
@@ -797,13 +907,18 @@ cli
 
     try {
       const argv: string[] = [...packageList]
-      if (options?.verbose) argv.push('--verbose')
-      if (options?.force) argv.push('--force')
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.dryRun)
+        argv.push('--dry-run')
       const cmd = await resolveCommand('uninstall')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to uninstall:', error instanceof Error ? error.message : String(error))
@@ -827,13 +942,18 @@ cli
 
     try {
       const argv: string[] = []
-      if (options?.verbose) argv.push('--verbose')
-      if (options?.force) argv.push('--force')
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.dryRun)
+        argv.push('--dry-run')
       const cmd = await resolveCommand('cache:clear')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to clear cache:', error instanceof Error ? error.message : String(error))
@@ -860,15 +980,22 @@ cli
 
     try {
       const argv: string[] = []
-      if (options?.verbose) argv.push('--verbose')
-      if (options?.force) argv.push('--force')
-      if (options?.dryRun) argv.push('--dry-run')
-      if (options?.keepCache) argv.push('--keep-cache')
-      if (options?.keepGlobal) argv.push('--keep-global')
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.dryRun)
+        argv.push('--dry-run')
+      if (options?.keepCache)
+        argv.push('--keep-cache')
+      if (options?.keepGlobal)
+        argv.push('--keep-global')
       const cmd = await resolveCommand('clean')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to perform clean:', error instanceof Error ? error.message : String(error))
@@ -889,11 +1016,14 @@ cli
 
     try {
       const cmd = await resolveCommand('outdated')
-      if (!cmd) return
+      if (!cmd)
+        return
       const argv: string[] = []
-      if (options?.verbose) argv.push('--verbose')
+      if (options?.verbose)
+        argv.push('--verbose')
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to check for outdated packages:', error instanceof Error ? error.message : String(error))
@@ -923,13 +1053,18 @@ cli
     try {
       const argv: string[] = []
       for (const p of packageList) argv.push(p)
-      if (options?.verbose) argv.push('--verbose')
-      if (options?.latest) argv.push('--latest')
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.latest)
+        argv.push('--latest')
+      if (options?.dryRun)
+        argv.push('--dry-run')
       const cmd = await resolveCommand('update')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to update packages:', error instanceof Error ? error.message : String(error))
@@ -945,9 +1080,11 @@ cli
   .action(async () => {
     try {
       const cmd = await resolveCommand('cache:stats')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv: [], env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to get cache stats:', error instanceof Error ? error.message : String(error))
@@ -973,21 +1110,21 @@ cli
       if (options?.maxSize) {
         argv.push('--max-size', String(options.maxSize))
       }
-      if (options?.dryRun) argv.push('--dry-run')
+      if (options?.dryRun)
+        argv.push('--dry-run')
 
       const cmd = await resolveCommand('cache:clean')
-      if (!cmd) return
+      if (!cmd)
+        return
       const code = await cmd.run({ argv, env: process.env })
-      if (typeof code === 'number' && code !== 0) process.exit(code)
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to clean cache:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })
-
-// (removed duplicate cache:clear definition; see delegated version above)
-
 // Service management commands
 
 // Start service command
@@ -998,17 +1135,20 @@ cli
   .example('launchpad start redis')
   .example('launchpad start nginx')
   .action(async (serviceName: string, options?: { verbose?: boolean }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { startService } = await import('../src/services')
-      const success = await startService(serviceName)
-
-      if (!success) {
-        process.exit(1)
-      }
+      const argv: string[] = []
+      if (serviceName)
+        argv.push(serviceName)
+      if (options?.verbose)
+        argv.push('--verbose')
+      const cmd = await resolveCommand('start')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to start service:', error instanceof Error ? error.message : String(error))
@@ -1024,17 +1164,20 @@ cli
   .example('launchpad stop redis')
   .example('launchpad stop nginx')
   .action(async (serviceName: string, options?: { verbose?: boolean }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { stopService } = await import('../src/services')
-      const success = await stopService(serviceName)
-
-      if (!success) {
-        process.exit(1)
-      }
+      const argv: string[] = []
+      if (serviceName)
+        argv.push(serviceName)
+      if (options?.verbose)
+        argv.push('--verbose')
+      const cmd = await resolveCommand('stop')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to stop service:', error instanceof Error ? error.message : String(error))
@@ -1050,17 +1193,20 @@ cli
   .example('launchpad restart redis')
   .example('launchpad restart nginx')
   .action(async (serviceName: string, options?: { verbose?: boolean }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { restartService } = await import('../src/services')
-      const success = await restartService(serviceName)
-
-      if (!success) {
-        process.exit(1)
-      }
+      const argv: string[] = []
+      if (serviceName)
+        argv.push(serviceName)
+      if (options?.verbose)
+        argv.push('--verbose')
+      const cmd = await resolveCommand('restart')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to restart service:', error instanceof Error ? error.message : String(error))
@@ -1076,17 +1222,20 @@ cli
   .example('launchpad enable redis')
   .example('launchpad enable nginx')
   .action(async (serviceName: string, options?: { verbose?: boolean }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { enableService } = await import('../src/services')
-      const success = await enableService(serviceName)
-
-      if (!success) {
-        process.exit(1)
-      }
+      const argv: string[] = []
+      if (serviceName)
+        argv.push(serviceName)
+      if (options?.verbose)
+        argv.push('--verbose')
+      const cmd = await resolveCommand('enable')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to enable service:', error instanceof Error ? error.message : String(error))
@@ -1102,17 +1251,20 @@ cli
   .example('launchpad disable redis')
   .example('launchpad disable nginx')
   .action(async (serviceName: string, options?: { verbose?: boolean }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { disableService } = await import('../src/services')
-      const success = await disableService(serviceName)
-
-      if (!success) {
-        process.exit(1)
-      }
+      const argv: string[] = []
+      if (serviceName)
+        argv.push(serviceName)
+      if (options?.verbose)
+        argv.push('--verbose')
+      const cmd = await resolveCommand('disable')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to disable service:', error instanceof Error ? error.message : String(error))
@@ -1129,109 +1281,22 @@ cli
   .example('launchpad status postgres')
   .example('launchpad status --format json')
   .action(async (serviceName?: string, options?: { verbose?: boolean, format?: string }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { getServiceStatus, listServices, getAllServiceDefinitions } = await import('../src/services')
-
-      if (serviceName) {
-        // Show status for specific service
-        const status = await getServiceStatus(serviceName)
-        const format = options?.format || 'simple'
-
-        if (format === 'json') {
-          console.log(JSON.stringify({ service: serviceName, status }, null, 2))
-        }
-        else {
-          const statusEmoji = {
-            running: '🟢',
-            stopped: '🔴',
-            starting: '🟡',
-            stopping: '🟡',
-            failed: '🔴',
-            unknown: '⚪',
-          }[status]
-
-          console.log(`${statusEmoji} ${serviceName}: ${status}`)
-        }
-      }
-      else {
-        // Show status for all services
-        const services = await listServices()
-        const format = options?.format || 'table'
-
-        if (format === 'json') {
-          const result = services.map(service => ({
-            name: service.definition?.name,
-            displayName: service.definition?.displayName,
-            status: service.status,
-            enabled: service.enabled,
-            pid: service.pid,
-            startedAt: service.startedAt,
-            port: service.definition?.port,
-          }))
-          console.log(JSON.stringify(result, null, 2))
-        }
-        else if (format === 'simple') {
-          if (services.length === 0) {
-            console.log('No services found')
-          }
-          else {
-            services.forEach((service) => {
-              const statusEmoji = {
-                running: '🟢',
-                stopped: '🔴',
-                starting: '🟡',
-                stopping: '🟡',
-                failed: '🔴',
-                unknown: '⚪',
-              }[service.status]
-
-              console.log(`${statusEmoji} ${service.definition?.name}: ${service.status}`)
-            })
-          }
-        }
-        else {
-          // Table format
-          if (services.length === 0) {
-            console.log('No services found')
-            console.log('')
-            console.log('Available services:')
-            const definitions = getAllServiceDefinitions()
-            definitions.forEach((def) => {
-              console.log(`  ${def.name?.padEnd(12)} ${def.displayName}`)
-            })
-          }
-          else {
-            console.log('Service Status:')
-            console.log('')
-            console.log(`${'Name'.padEnd(12) + 'Status'.padEnd(12) + 'Enabled'.padEnd(10) + 'PID'.padEnd(8) + 'Port'.padEnd(8)}Description`)
-            console.log('─'.repeat(70))
-
-            services.forEach((service) => {
-              const statusEmoji = {
-                running: '🟢',
-                stopped: '🔴',
-                starting: '🟡',
-                stopping: '🟡',
-                failed: '🔴',
-                unknown: '⚪',
-              }[service.status]
-
-              const name = service.definition?.name?.padEnd(12) || 'unknown'.padEnd(12)
-              const status = `${statusEmoji} ${service.status}`.padEnd(12)
-              const enabled = (service.enabled ? '✅' : '❌').padEnd(10)
-              const pid = (service.pid ? String(service.pid) : '-').padEnd(8)
-              const port = (service.definition?.port ? String(service.definition.port) : '-').padEnd(8)
-              const description = service.definition?.description || ''
-
-              console.log(`${name}${status}${enabled}${pid}${port}${description}`)
-            })
-          }
-        }
-      }
+      const argv: string[] = []
+      if (serviceName)
+        argv.push(serviceName)
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.format)
+        argv.push('--format', options.format)
+      const cmd = await resolveCommand('status')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to get service status:', error instanceof Error ? error.message : String(error))
@@ -1248,88 +1313,20 @@ cli
   .example('launchpad services')
   .example('launchpad services --format json')
   .action(async (options?: { verbose?: boolean, format?: string }) => {
-    if (options?.verbose) {
+    if (options?.verbose)
       config.verbose = true
-    }
-
     try {
-      const { listServices, getAllServiceDefinitions } = await import('../src/services')
-
-      const services = await listServices()
-      const format = options?.format || 'table'
-
-      if (format === 'json') {
-        const result = services.map(service => ({
-          name: service.definition?.name,
-          displayName: service.definition?.displayName,
-          status: service.status,
-          enabled: service.enabled,
-          pid: service.pid,
-          startedAt: service.startedAt,
-          port: service.definition?.port,
-        }))
-        console.log(JSON.stringify(result, null, 2))
-      }
-      else if (format === 'simple') {
-        if (services.length === 0) {
-          console.log('No services found')
-        }
-        else {
-          services.forEach((service) => {
-            const statusEmoji = {
-              running: '🟢',
-              stopped: '🔴',
-              starting: '🟡',
-              stopping: '🟡',
-              failed: '🔴',
-              unknown: '⚪',
-            }[service.status]
-
-            console.log(`${statusEmoji} ${service.definition?.name}: ${service.status}`)
-          })
-        }
-      }
-      else {
-        // Table format
-        if (services.length === 0) {
-          console.log('📋 Service Status: No active services')
-          console.log('')
-          console.log('🔍 Available services:')
-          const definitions = getAllServiceDefinitions()
-          definitions.forEach((def) => {
-            console.log(`  ${def.name?.padEnd(12)} ${def.displayName} - ${def.description}`)
-          })
-          console.log('')
-          console.log('💡 Use "launchpad start <service>" to start a service')
-          console.log('💡 Use "launchpad enable <service>" to enable auto-start on boot')
-        }
-        else {
-          console.log('📋 Service Status:')
-          console.log('')
-          console.log(`${'Name'.padEnd(12) + 'Status'.padEnd(12) + 'Auto-Start'.padEnd(12) + 'PID'.padEnd(8) + 'Port'.padEnd(8)}Description`)
-          console.log('─'.repeat(80))
-
-          services.forEach((service) => {
-            const statusEmoji = {
-              running: '🟢',
-              stopped: '🔴',
-              starting: '🟡',
-              stopping: '🟡',
-              failed: '🔴',
-              unknown: '⚪',
-            }[service.status]
-
-            const name = service.definition?.name?.padEnd(12) || 'unknown'.padEnd(12)
-            const status = `${statusEmoji} ${service.status}`.padEnd(12)
-            const enabled = (service.enabled ? '✅ Yes' : '❌ No').padEnd(12)
-            const pid = (service.pid ? String(service.pid) : '-').padEnd(8)
-            const port = (service.definition?.port ? String(service.definition.port) : '-').padEnd(8)
-            const description = service.definition?.description || ''
-
-            console.log(`${name}${status}${enabled}${pid}${port}${description}`)
-          })
-        }
-      }
+      const argv: string[] = []
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.format)
+        argv.push('--format', options.format)
+      const cmd = await resolveCommand('services')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to list services:', error instanceof Error ? error.message : String(error))
@@ -1348,26 +1345,17 @@ cli
   .example('launchpad build-env --shell | source /dev/stdin')
   .action(async (options?: { path?: string, shell?: boolean }) => {
     try {
-      const defaultInstallPath = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
-      const installPath = options?.path || defaultInstallPath
-      const buildEnvScript = path.join(installPath, 'build-env.sh')
-
-      if (!fs.existsSync(buildEnvScript)) {
-        console.error('❌ Build environment script not found. Please install some packages first.')
-        console.error(`   Expected location: ${buildEnvScript}`)
-        process.exit(1)
-      }
-
-      if (options?.shell) {
-        // Output the script content for shell evaluation
-        const scriptContent = fs.readFileSync(buildEnvScript, 'utf-8')
-        console.log(scriptContent)
-      }
-      else {
-        // Execute the script directly
-        const { execSync } = await import('node:child_process')
-        execSync(`source "${buildEnvScript}"`, { stdio: 'inherit', shell: '/bin/sh' })
-      }
+      const argv: string[] = []
+      if (options?.path)
+        argv.push('--path', options.path)
+      if (options?.shell)
+        argv.push('--shell')
+      const cmd = await resolveCommand('build-env')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
     }
     catch (error) {
       console.error('Failed to set up build environment:', error instanceof Error ? error.message : String(error))

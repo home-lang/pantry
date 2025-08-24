@@ -32,15 +32,26 @@ const registry: Record<string, () => Promise<Command>> = {
   'outdated': async () => (await import('./outdated')).default,
   'update': async () => (await import('./update')).default,
   'debug:deps': async () => (await import('./debug/deps')).default,
+  // services
+  'start': async () => (await import('./start')).default,
+  'stop': async () => (await import('./stop')).default,
+  'restart': async () => (await import('./restart')).default,
+  'enable': async () => (await import('./enable')).default,
+  'disable': async () => (await import('./disable')).default,
+  'status': async () => (await import('./status')).default,
+  'services': async () => (await import('./services')).default,
+  // build env
+  'build-env': async () => (await import('./build-env')).default,
 }
 
 // Aliases map to canonical command names
 const aliases: Record<string, string> = {
-  remove: 'uninstall',
-  packages: 'tags',
+  'remove': 'uninstall',
+  'packages': 'tags',
   'cache:info': 'cache:stats',
-  up: 'update',
+  'up': 'update',
   'self-update': 'upgrade',
+  'service': 'services',
 }
 
 export async function resolveCommand(name?: string): Promise<Command | undefined> {
@@ -48,7 +59,8 @@ export async function resolveCommand(name?: string): Promise<Command | undefined
     return undefined
   const key = aliases[name] || name
   const loader = registry[key]
-  if (!loader) return undefined
+  if (!loader)
+    return undefined
   return loader()
 }
 
