@@ -8,7 +8,7 @@ import { config } from './config'
 import { resolveAllDependencies } from './dependency-resolution'
 import { installPackage } from './install-core'
 import { clearMessageCache, logUniqueMessage } from './logging'
-import { parsePackageSpec } from './package-resolution'
+import { getPackageInfo, parsePackageSpec, resolvePackageName } from './package-resolution'
 import { install_prefix } from './utils'
 
 /**
@@ -76,6 +76,50 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     }
     if (config.verbose) {
       console.warn('⏭️  Skipping runtime dependency resolution (installDependencies=false).')
+    }
+  }
+
+  // Expand with companion packages (e.g., npm for node) using ts-pkgx metadata
+  try {
+    const seen = new Set<string>(deduplicatedPackages)
+    const companionsToAdd: string[] = []
+
+    // Only guarantee companions for the user-requested packages
+    for (const requested of packageList) {
+      const { name } = parsePackageSpec(requested)
+      const info = getPackageInfo(name)
+      if (!info || !info.companions || info.companions.length === 0)
+        continue
+
+      for (const comp of info.companions) {
+        // Normalize companion identifier: allow aliases or domains
+        const compName = parsePackageSpec(comp).name
+        const normalized = resolvePackageName(compName)
+
+        // Avoid duplicates if already present either as alias, domain, or any versioned spec
+        const alreadyPresent = Array.from(seen).some(p => {
+          const n = parsePackageSpec(p).name
+          const r = resolvePackageName(n)
+          return r === normalized
+        })
+
+        if (!alreadyPresent) {
+          companionsToAdd.push(comp)
+          seen.add(comp)
+        }
+      }
+    }
+
+    if (companionsToAdd.length > 0) {
+      if (config.verbose) {
+        console.warn(`➕ Adding companion packages: ${companionsToAdd.join(', ')}`)
+      }
+      deduplicatedPackages.push(...companionsToAdd)
+    }
+  }
+  catch (e) {
+    if (config.verbose) {
+      console.warn(`Failed to expand companions: ${e instanceof Error ? e.message : String(e)}`)
     }
   }
 

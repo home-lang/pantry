@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { checkAndMaybeUpdate, getGlobalPaths, isMarkerStale, writeUpdateNotice } from './update-check'
+import { checkAndMaybeUpdate, getGlobalPaths, isMarkerStale, writeUpdateNotice } from '../src/dev/update-check'
 
 function mkdtemp(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-upd-'))
