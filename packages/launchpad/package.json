@@ -64,7 +64,7 @@
     "typecheck": "bun --bun tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "bunfig": "^0.14.1",
+    "bunfig": "^0.15.0",
     "cac": "^6.7.14",
     "ts-pkgx": "^0.4.51"
   },
