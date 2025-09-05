@@ -672,55 +672,63 @@ jobs:
               fi
             fi
 
-            # Try to find readline.h from Launchpad and set the path explicitly
-            READLINE_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
-            if [[ -d "$READLINE_DIR" ]]; then
-              READLINE_PATH=$(dirname "$READLINE_DIR")
-              if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
-                echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
-                
-                # Find iconv and bzip2 from Launchpad
-                ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
-                BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
-                
-                EXTRA_CONFIG="--with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
-                if [[ -d "$ICONV_DIR" ]]; then
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
-                fi
-                if [[ -d "$BZIP2_DIR" ]]; then
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
-                fi
-              else
-                echo "readline.h not found, disabling readline support"
-                ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
-                BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
-                
-                EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
-                if [[ -d "$ICONV_DIR" ]]; then
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
-                fi
-                if [[ -d "$BZIP2_DIR" ]]; then
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
-                fi
-              fi
+            # Build EXTRA_CONFIG with all dependency paths
+            EXTRA_CONFIG=""
+            
+            # Find and configure ICU
+            if [[ -n "$ICU_PREFIX" && -d "$ICU_PREFIX" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-icu-dir=$ICU_PREFIX"
+              echo "✅ ICU configured: $ICU_PREFIX"
             else
-              echo "readline directory not found in Launchpad, disabling readline support"
-              ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
-              BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
-              
-              EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
-              if [[ -d "$ICONV_DIR" ]]; then
-                EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
-              fi
-              if [[ -d "$BZIP2_DIR" ]]; then
-                EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
-              fi
+              echo "⚠️  ICU not found, disabling intl extension"
+              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--enable-intl//g' | sed 's/  */ /g')
             fi
             
-            echo "🔍 ICU configuration: --with-icu-dir=$ICU_PREFIX"
-            echo "🔍 ICU version being used: $ICU_VERSION"
-            echo "🔍 Extra configure options: $EXTRA_CONFIG"
-
+            # Find and configure iconv
+            ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+            if [[ -d "$ICONV_DIR" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
+              echo "✅ iconv configured: $ICONV_DIR"
+            else
+              echo "⚠️  iconv not found"
+            fi
+            
+            # Find and configure BZip2 - CRITICAL FIX
+            BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
+            if [[ -d "$BZIP2_DIR" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
+              echo "✅ BZip2 configured: $BZIP2_DIR"
+              # Also set environment variables for BZip2
+              export BZIP2_CFLAGS="-I$BZIP2_DIR/include"
+              export BZIP2_LIBS="-L$BZIP2_DIR/lib -lbz2"
+            else
+              echo "⚠️  BZip2 not found, disabling bzip2 support"
+              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-bz2//g' | sed 's/  */ /g')
+            fi
+            
+            # Find and configure readline
+            READLINE_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/readline/v*" -type d | head -1)
+            if [[ -d "$READLINE_DIR" && -f "$READLINE_DIR/include/readline/readline.h" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-readline=$READLINE_DIR"
+              echo "✅ Readline configured: $READLINE_DIR"
+            else
+              echo "⚠️  Readline not found, disabling readline support"
+              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-readline//g' | sed 's/  */ /g')
+              EXTRA_CONFIG="$EXTRA_CONFIG --disable-readline"
+            fi
+            
+            # Find and configure gettext
+            GETTEXT_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/gettext/v*" -type d | head -1)
+            if [[ -d "$GETTEXT_DIR" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-gettext=$GETTEXT_DIR"
+              echo "✅ Gettext configured: $GETTEXT_DIR"
+            else
+              echo "⚠️  Gettext not found"
+            fi
+            
+            echo "🔍 Final EXTRA_CONFIG: $EXTRA_CONFIG"
+            echo "🔍 Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
+            
             # Export EXTRA_CONFIG to environment for configure step
             echo "EXTRA_CONFIG=$EXTRA_CONFIG" >> $GITHUB_ENV
             export EXTRA_CONFIG="$EXTRA_CONFIG"
@@ -843,10 +851,19 @@ jobs:
 
           # Run configure with explicit environment
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            echo "Final configure command will be:"
-            echo "./configure --prefix=$INSTALL_PREFIX --with-config-file-path=$INSTALL_PREFIX/lib --with-config-file-scan-dir=$INSTALL_PREFIX/lib/conf.d --disable-debug --enable-shared --with-pic $FINAL_EXTENSIONS $EXTRA_CONFIG $CURL_CONFIG"
+            echo "🚀 Final configure command:"
+            echo "CXXFLAGS='$CXXFLAGS' CFLAGS='$CFLAGS' CPPFLAGS='$CPPFLAGS' LDFLAGS='$LDFLAGS' CC='$CC' CXX='$CXX' ./configure --prefix=$INSTALL_PREFIX --with-config-file-path=$INSTALL_PREFIX/lib --with-config-file-scan-dir=$INSTALL_PREFIX/lib/conf.d --disable-debug --enable-shared --with-pic $FINAL_EXTENSIONS $EXTRA_CONFIG"
+            echo "🔍 Environment variables:"
+            echo "  CXXFLAGS: $CXXFLAGS"
+            echo "  CFLAGS: $CFLAGS"
+            echo "  CPPFLAGS: $CPPFLAGS"
+            echo "  LDFLAGS: $LDFLAGS"
+            echo "  BZIP2_CFLAGS: $BZIP2_CFLAGS"
+            echo "  BZIP2_LIBS: $BZIP2_LIBS"
             
-            CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" LDFLAGS="$LDFLAGS" CC="$CC" CXX="$CXX" ./configure \
+            CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" LDFLAGS="$LDFLAGS" \
+            BZIP2_CFLAGS="$BZIP2_CFLAGS" BZIP2_LIBS="$BZIP2_LIBS" \
+            CC="$CC" CXX="$CXX" ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/lib" \
               --with-config-file-scan-dir="$INSTALL_PREFIX/lib/conf.d" \
@@ -854,8 +871,7 @@ jobs:
               --enable-shared \
               --with-pic \
               $FINAL_EXTENSIONS \
-              $EXTRA_CONFIG \
-              $CURL_CONFIG
+              $EXTRA_CONFIG
           else
             ./configure \
               --prefix="$INSTALL_PREFIX" \
