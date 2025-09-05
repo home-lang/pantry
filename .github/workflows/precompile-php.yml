@@ -219,17 +219,31 @@ jobs:
           bun install
           bun run build
           
-          # Use Launchpad to install PHP - this will automatically install all dependencies
-          echo "📦 Installing PHP via Launchpad (includes all build dependencies)..."
-          ./packages/launchpad/bin/cli.ts install php.net --verbose
+          # Install PHP and essential build dependencies via Launchpad
+          echo "📦 Installing PHP and essential build dependencies via Launchpad..."
+          # Set environment variable to ensure dependencies are installed
+          export LAUNCHPAD_INSTALL_DEPS=true
+          ./packages/launchpad/bin/cli.ts install \
+            php.net \
+            gnu.org/libiconv \
+            sourceware.org/bzip2 \
+            gnu.org/readline \
+            postgresql.org \
+            openldap.org \
+            unicode.org \
+            gnu.org/gettext \
+            --verbose
           
-          echo "✅ PHP dependencies installed successfully via Launchpad"
+          echo "✅ PHP build dependencies installed successfully via Launchpad"
           
           # Debug: List all installed packages to see what we have
           echo "🔍 Debugging: Listing all Launchpad installations..."
           ls -la $HOME/.local/ | head -20
           echo "🔍 Looking for specific dependencies..."
           find $HOME/.local -maxdepth 2 -type d -name "*.org" | sort
+          echo "🔍 Checking for specific libraries..."
+          find $HOME/.local -name "lib" -type d | head -10
+          find $HOME/.local -name "include" -type d | head -10
           
           # Find Launchpad installation directory and ICU version
           LAUNCHPAD_DIR="$HOME/.local"
@@ -664,29 +678,41 @@ jobs:
               if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
                 echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
                 
-                # Find iconv from Launchpad
+                # Find iconv and bzip2 from Launchpad
                 ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+                BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
+                
+                EXTRA_CONFIG="--with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
                 if [[ -d "$ICONV_DIR" ]]; then
-                  EXTRA_CONFIG="--with-iconv=$ICONV_DIR --with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
-                else
-                  EXTRA_CONFIG="--with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
+                  EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
+                fi
+                if [[ -d "$BZIP2_DIR" ]]; then
+                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
                 fi
               else
                 echo "readline.h not found, disabling readline support"
                 ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+                BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
+                
+                EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
                 if [[ -d "$ICONV_DIR" ]]; then
-                  EXTRA_CONFIG="--with-iconv=$ICONV_DIR --disable-readline --with-icu-dir=$ICU_PREFIX"
-                else
-                  EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
+                  EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
+                fi
+                if [[ -d "$BZIP2_DIR" ]]; then
+                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
                 fi
               fi
             else
               echo "readline directory not found in Launchpad, disabling readline support"
               ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+              BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*" -type d | head -1)
+              
+              EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
               if [[ -d "$ICONV_DIR" ]]; then
-                EXTRA_CONFIG="--with-iconv=$ICONV_DIR --disable-readline --with-icu-dir=$ICU_PREFIX"
-              else
-                EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_DIR"
+              fi
+              if [[ -d "$BZIP2_DIR" ]]; then
+                EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_DIR"
               fi
             fi
             
