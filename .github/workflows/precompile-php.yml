@@ -255,16 +255,17 @@ jobs:
             ICU_VERSION_DIR=$(ls -1 $ICU_DIR | grep "^v" | sort -V | tail -1)
             ICU_FULL_VER=$(echo "$ICU_VERSION_DIR" | sed 's/^v//')
             ICU_VER=$(echo "$ICU_FULL_VER" | cut -d. -f1)
+            ICU_PREFIX="$ICU_DIR/$ICU_VERSION_DIR"
             
-            echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) at unicode.org"
+            echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) at $ICU_PREFIX"
             echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
             echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
-            echo "ICU_PREFIX=$ICU_DIR/$ICU_VERSION_DIR" >> $GITHUB_ENV
+            echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
             
             # Verify ICU installation
             echo "🔍 ICU installation details:"
-            echo "ICU_PREFIX: $ICU_DIR/$ICU_VERSION_DIR"
-            ls -la $ICU_DIR/$ICU_VERSION_DIR/lib/libicu*.dylib 2>/dev/null | head -5 || echo "ICU libraries not found in expected location"
+            echo "ICU_PREFIX: $ICU_PREFIX"
+            ls -la $ICU_PREFIX/lib/libicu*.dylib 2>/dev/null | head -5 || echo "ICU libraries not found in expected location"
           else
             # Try alternative ICU locations that might be used by Launchpad
             echo "🔍 ICU not found at unicode.org, checking alternative locations..."
@@ -405,7 +406,7 @@ jobs:
           
           # Build PKG_CONFIG_PATH from Launchpad installations
           PKG_CONFIG_PATHS=()
-          for dep_path in $(find $LAUNCHPAD_DIR -name "lib" -type d | grep -E "/(openssl|libxml2|unicode|zlib|postgresql|bzip2|gettext|openldap|gnu|sourceware)\.org/v[^/]+/lib$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "lib" -type d | grep -E "/(openssl|libxml2|unicode|zlib|postgresql|sourceware|gnu|openldap)\.org/v[^/]+/lib$"); do
             if [[ -d "$dep_path/pkgconfig" ]]; then
               PKG_CONFIG_PATHS+=("$dep_path/pkgconfig")
               echo "📦 Found pkgconfig: $dep_path/pkgconfig"
@@ -428,7 +429,7 @@ jobs:
 
           # Build LDFLAGS from Launchpad installations
           LDFLAGS_PATHS=()
-          for dep_path in $(find $LAUNCHPAD_DIR -name "lib" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/lib$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "lib" -type d | grep -E "/(openssl|libxml2|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/lib$"); do
             LDFLAGS_PATHS+=("-L$dep_path")
             echo "📦 Found lib: $dep_path"
           done
@@ -439,7 +440,7 @@ jobs:
 
           # Build CPPFLAGS from Launchpad installations
           CPPFLAGS_PATHS=()
-          for dep_path in $(find $LAUNCHPAD_DIR -name "include" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/include$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "include" -type d | grep -E "/(openssl|libxml2|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/include$"); do
             CPPFLAGS_PATHS+=("-I$dep_path")
             echo "📦 Found include: $dep_path"
           done
@@ -718,6 +719,11 @@ jobs:
             
             echo "🔍 ICU configuration: --with-icu-dir=$ICU_PREFIX"
             echo "🔍 ICU version being used: $ICU_VERSION"
+            echo "🔍 Extra configure options: $EXTRA_CONFIG"
+
+            # Export EXTRA_CONFIG to environment for configure step
+            echo "EXTRA_CONFIG=$EXTRA_CONFIG" >> $GITHUB_ENV
+            export EXTRA_CONFIG="$EXTRA_CONFIG"
 
             # Check if PostgreSQL is available and working
             echo "Debug: POSTGRESQL_AVAILABLE=$POSTGRESQL_AVAILABLE"
@@ -734,6 +740,8 @@ jobs:
               echo "Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
               # Also disable PostgreSQL in the configuration
               EXTRA_CONFIG="$EXTRA_CONFIG --disable-pgsql --disable-pdo-pgsql"
+              echo "EXTRA_CONFIG=$EXTRA_CONFIG" >> $GITHUB_ENV
+              export EXTRA_CONFIG="$EXTRA_CONFIG"
             fi
           else
             # On Linux, use system-installed libraries
@@ -835,7 +843,10 @@ jobs:
 
           # Run configure with explicit environment
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CC="$CC" CXX="$CXX" ./configure \
+            echo "Final configure command will be:"
+            echo "./configure --prefix=$INSTALL_PREFIX --with-config-file-path=$INSTALL_PREFIX/lib --with-config-file-scan-dir=$INSTALL_PREFIX/lib/conf.d --disable-debug --enable-shared --with-pic $FINAL_EXTENSIONS $EXTRA_CONFIG $CURL_CONFIG"
+            
+            CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" LDFLAGS="$LDFLAGS" CC="$CC" CXX="$CXX" ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/lib" \
               --with-config-file-scan-dir="$INSTALL_PREFIX/lib/conf.d" \
