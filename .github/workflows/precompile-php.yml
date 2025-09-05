@@ -224,17 +224,28 @@ jobs:
           # Set environment variable to ensure dependencies are installed
           export LAUNCHPAD_INSTALL_DEPS=true
           
-          # Base dependencies for all builds
-          DEPS="php.net gnu.org/libiconv sourceware.org/bzip2 gnu.org/readline openldap.org unicode.org gnu.org/gettext"
+          # Install dependencies based on build configuration
+          echo "🔍 Build configuration: ${{ matrix.config }}"
           
-          # Add PostgreSQL for postgres-related builds
+          # Always install base dependencies
+          echo "📦 Installing base dependencies..."
+          ./packages/launchpad/bin/cli.ts install \
+            php.net \
+            gnu.org/libiconv \
+            sourceware.org/bzip2 \
+            gnu.org/readline \
+            openldap.org \
+            unicode.org \
+            gnu.org/gettext \
+            --verbose
+          
+          # Install PostgreSQL for postgres-related builds
           if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
-            echo "🐘 Adding PostgreSQL dependency for ${{ matrix.config }} build"
-            DEPS="$DEPS postgresql.org"
+            echo "🐘 Installing PostgreSQL for ${{ matrix.config }} build"
+            ./packages/launchpad/bin/cli.ts install postgresql.org --verbose
+          else
+            echo "⏭️  Skipping PostgreSQL for ${{ matrix.config }} build"
           fi
-          
-          echo "🔍 Installing dependencies: $DEPS"
-          ./packages/launchpad/bin/cli.ts install $DEPS --verbose
           
           echo "✅ PHP build dependencies installed successfully via Launchpad"
           
@@ -567,13 +578,19 @@ jobs:
               echo "✅ PostgreSQL configured: $PGSQL_DIR/$PGSQL_VER"
             fi
 
-            # Set bzip2 environment variables from Launchpad
-            BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*/include" -type d | head -1)
-            if [[ -d "$BZIP2_DIR" ]]; then
-              BZIP2_PREFIX=$(dirname "$BZIP2_DIR")
-              export BZIP2_CFLAGS="-I$BZIP2_PREFIX/include"
-              export BZIP2_LIBS="-L$BZIP2_PREFIX/lib -lbz2"
-              echo "✅ Bzip2 configured: $BZIP2_PREFIX"
+            # Set bzip2 environment variables from Launchpad - Fix path detection
+            BZIP2_BASE_DIR=$(find $LAUNCHPAD_DIR -name "sourceware.org" -type d | head -1)
+            if [[ -d "$BZIP2_BASE_DIR" ]]; then
+              BZIP2_SUBDIR=$(find $BZIP2_BASE_DIR -name "bzip2" -type d | head -1)
+              if [[ -d "$BZIP2_SUBDIR" ]]; then
+                BZIP2_VERSION_DIR=$(ls -1 $BZIP2_SUBDIR | grep "^v" | sort -V | tail -1)
+                if [[ -n "$BZIP2_VERSION_DIR" ]]; then
+                  BZIP2_PREFIX="$BZIP2_SUBDIR/$BZIP2_VERSION_DIR"
+                  export BZIP2_CFLAGS="-I$BZIP2_PREFIX/include"
+                  export BZIP2_LIBS="-L$BZIP2_PREFIX/lib -lbz2"
+                  echo "✅ Bzip2 configured: $BZIP2_PREFIX"
+                fi
+              fi
             fi
 
             # Set gettext environment variables from Launchpad
@@ -696,18 +713,10 @@ jobs:
             # Build EXTRA_CONFIG with all dependency paths
             EXTRA_CONFIG=""
             
-            # Find and configure ICU - Fix wildcard issue
-            ICU_DIR=$(find $LAUNCHPAD_DIR -name "unicode.org" -type d | head -1)
-            if [[ -d "$ICU_DIR" ]]; then
-              ICU_VERSION_DIR=$(ls -1 $ICU_DIR | grep "^v" | sort -V | tail -1)
-              if [[ -n "$ICU_VERSION_DIR" ]]; then
-                ICU_FULL_PATH="$ICU_DIR/$ICU_VERSION_DIR"
-                EXTRA_CONFIG="$EXTRA_CONFIG --with-icu-dir=$ICU_FULL_PATH"
-                echo "✅ ICU configured: $ICU_FULL_PATH"
-              else
-                echo "⚠️  ICU version directory not found, disabling intl extension"
-                export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--enable-intl//g' | sed 's/  */ /g')
-              fi
+            # Find and configure ICU - Use ICU_PREFIX from environment
+            if [[ -n "$ICU_PREFIX" && -d "$ICU_PREFIX" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-icu-dir=$ICU_PREFIX"
+              echo "✅ ICU configured: $ICU_PREFIX"
             else
               echo "⚠️  ICU not found, disabling intl extension"
               export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--enable-intl//g' | sed 's/  */ /g')
@@ -722,27 +731,10 @@ jobs:
               echo "⚠️  iconv not found"
             fi
             
-            # Find and configure BZip2 - Fix path inconsistency
-            BZIP2_DIR=$(find $LAUNCHPAD_DIR -name "sourceware.org" -type d | head -1)
-            if [[ -d "$BZIP2_DIR" ]]; then
-              BZIP2_SUBDIR=$(find $BZIP2_DIR -name "bzip2" -type d | head -1)
-              if [[ -d "$BZIP2_SUBDIR" ]]; then
-                BZIP2_VERSION_DIR=$(ls -1 $BZIP2_SUBDIR | grep "^v" | sort -V | tail -1)
-                if [[ -n "$BZIP2_VERSION_DIR" ]]; then
-                  BZIP2_FULL_PATH="$BZIP2_SUBDIR/$BZIP2_VERSION_DIR"
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_FULL_PATH"
-                  echo "✅ BZip2 configured: $BZIP2_FULL_PATH"
-                  # Also set environment variables for BZip2
-                  export BZIP2_CFLAGS="-I$BZIP2_FULL_PATH/include"
-                  export BZIP2_LIBS="-L$BZIP2_FULL_PATH/lib -lbz2"
-                else
-                  echo "⚠️  BZip2 version directory not found, disabling bzip2 support"
-                  export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-bz2//g' | sed 's/  */ /g')
-                fi
-              else
-                echo "⚠️  BZip2 subdirectory not found, disabling bzip2 support"
-                export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-bz2//g' | sed 's/  */ /g')
-              fi
+            # Find and configure BZip2 - Use BZIP2_PREFIX from environment
+            if [[ -n "$BZIP2_PREFIX" && -d "$BZIP2_PREFIX" ]]; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PREFIX"
+              echo "✅ BZip2 configured: $BZIP2_PREFIX"
             else
               echo "⚠️  BZip2 not found, disabling bzip2 support"
               export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-bz2//g' | sed 's/  */ /g')
