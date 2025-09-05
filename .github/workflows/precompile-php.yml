@@ -225,6 +225,12 @@ jobs:
           
           echo "✅ PHP dependencies installed successfully via Launchpad"
           
+          # Debug: List all installed packages to see what we have
+          echo "🔍 Debugging: Listing all Launchpad installations..."
+          ls -la $HOME/.local/ | head -20
+          echo "🔍 Looking for specific dependencies..."
+          find $HOME/.local -maxdepth 2 -type d -name "*.org" | sort
+          
           # Find Launchpad installation directory and ICU version
           LAUNCHPAD_DIR="$HOME/.local"
           echo "🔍 Searching for ICU installation..."
@@ -379,68 +385,78 @@ jobs:
       - name: Set macOS specific paths
         if: matrix.platform == 'darwin'
         run: |
-          # Set paths for pkgx dependencies
-          PKGX_DIR="$HOME/.local"
-          echo "🔍 Using pkgx from: $PKGX_DIR"
+          # Set paths for Launchpad-installed dependencies
+          LAUNCHPAD_DIR="$HOME/.local"
+          echo "🔍 Using Launchpad dependencies from: $LAUNCHPAD_DIR"
           
-          # Build PKG_CONFIG_PATH from pkgx installations
+          # Build PKG_CONFIG_PATH from Launchpad installations
           PKG_CONFIG_PATHS=()
-          for dep_path in $(find $PKGX_DIR -name "lib" -type d | grep -E "/(openssl|libxml2|unicode|zlib|postgresql|bzip2|gettext|openldap)\.org/v[^/]+/lib$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "lib" -type d | grep -E "/(openssl|libxml2|unicode|zlib|postgresql|bzip2|gettext|openldap|gnu|sourceware)\.org/v[^/]+/lib$"); do
             if [[ -d "$dep_path/pkgconfig" ]]; then
               PKG_CONFIG_PATHS+=("$dep_path/pkgconfig")
+              echo "📦 Found pkgconfig: $dep_path/pkgconfig"
             fi
           done
           PKG_CONFIG_PATH_JOINED=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH_JOINED" >> $GITHUB_ENV
           export PKG_CONFIG_PATH="$PKG_CONFIG_PATH_JOINED"
+          echo "🔧 PKG_CONFIG_PATH: $PKG_CONFIG_PATH_JOINED"
 
-          # Build PATH from pkgx installations
+          # Build PATH from Launchpad installations
           PATH_PATHS=()
-          for dep_path in $(find $PKGX_DIR -name "bin" -type d | grep -E "/(gnu|postgresql)\.org/v[^/]+/bin$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "bin" -type d | grep -E "/(gnu|postgresql|sourceware)\.org/v[^/]+/bin$"); do
             PATH_PATHS+=("$dep_path")
+            echo "📦 Found bin: $dep_path"
           done
           PATH_JOINED=$(IFS=:; echo "${PATH_PATHS[*]}")
           echo "PATH=$PATH_JOINED:$PATH" >> $GITHUB_ENV
           export PATH="$PATH_JOINED:$PATH"
 
-          # Build LDFLAGS from pkgx installations
+          # Build LDFLAGS from Launchpad installations
           LDFLAGS_PATHS=()
-          for dep_path in $(find $PKGX_DIR -name "lib" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/lib$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "lib" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/lib$"); do
             LDFLAGS_PATHS+=("-L$dep_path")
+            echo "📦 Found lib: $dep_path"
           done
           LDFLAGS_JOINED=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
           echo "LDFLAGS=$LDFLAGS_JOINED" >> $GITHUB_ENV
           export LDFLAGS="$LDFLAGS_JOINED"
+          echo "🔧 LDFLAGS: $LDFLAGS_JOINED"
 
-          # Build CPPFLAGS from pkgx installations
+          # Build CPPFLAGS from Launchpad installations
           CPPFLAGS_PATHS=()
-          for dep_path in $(find $PKGX_DIR -name "include" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/include$"); do
+          for dep_path in $(find $LAUNCHPAD_DIR -name "include" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/include$"); do
             CPPFLAGS_PATHS+=("-I$dep_path")
+            echo "📦 Found include: $dep_path"
           done
           CPPFLAGS_JOINED=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
           echo "CPPFLAGS=$CPPFLAGS_JOINED" >> $GITHUB_ENV
           export CPPFLAGS="$CPPFLAGS_JOINED"
+          echo "🔧 CPPFLAGS: $CPPFLAGS_JOINED"
           echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
           export CXXFLAGS="-std=c++17 -stdlib=libc++"
 
-          # Set readline-specific paths from pkgx
-          READLINE_DIR=$(find $PKGX_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
+          # Set readline-specific paths from Launchpad
+          READLINE_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
           if [[ -d "$READLINE_DIR" ]]; then
             READLINE_PREFIX=$(dirname "$READLINE_DIR")
             echo "READLINE_CFLAGS=-I$READLINE_PREFIX/include" >> $GITHUB_ENV
             echo "READLINE_LIBS=-L$READLINE_PREFIX/lib -lreadline" >> $GITHUB_ENV
             export READLINE_CFLAGS="-I$READLINE_PREFIX/include"
             export READLINE_LIBS="-L$READLINE_PREFIX/lib -lreadline"
+            echo "✅ Readline found: $READLINE_PREFIX"
+          else
+            echo "⚠️  Readline not found in Launchpad installations"
           fi
 
-          # Check if PostgreSQL is available and working from pkgx
-          echo "Debug: Checking PostgreSQL availability from pkgx:"
+          # Check if PostgreSQL is available and working from Launchpad
+          echo "Debug: Checking PostgreSQL availability from Launchpad:"
           echo "  PATH: $PATH"
           echo "  Checking pg_config:"
           which pg_config || echo "    pg_config not found in PATH"
           pg_config --version 2>/dev/null || echo "    pg_config version check failed"
           
-          PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d | head -1)
+          PGSQL_DIR=$(find $LAUNCHPAD_DIR -name "postgresql.org" -type d | head -1)
           if [[ -d "$PGSQL_DIR" ]]; then
             PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
             echo "  Checking libpq-fe.h:"
@@ -486,51 +502,62 @@ jobs:
 
           # Configure with platform-specific options
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            # On macOS, use pkgx-installed libraries
-            # Set environment variables for readline detection from pkgx
-            PKGX_DIR="$HOME/.local"
-            READLINE_DIR=$(find $PKGX_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
+            # On macOS, use Launchpad-installed libraries
+            # Environment variables should already be set from previous step
+            LAUNCHPAD_DIR="$HOME/.local"
+            
+            echo "🔧 Using environment variables from Launchpad installations:"
+            echo "  CPPFLAGS: $CPPFLAGS"
+            echo "  LDFLAGS: $LDFLAGS"
+            echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+            echo "  PATH: $PATH"
+
+            # Additional specific library configurations for PHP configure
+            # Set readline-specific paths from Launchpad
+            READLINE_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
             if [[ -d "$READLINE_DIR" ]]; then
               READLINE_PREFIX=$(dirname "$READLINE_DIR")
-              export CPPFLAGS="$CPPFLAGS -I$READLINE_PREFIX/include"
-              export LDFLAGS="$LDFLAGS -L$READLINE_PREFIX/lib"
               export LIBS="$LIBS -lreadline"
+              echo "✅ Readline configured: $READLINE_PREFIX"
             fi
 
-            # Set PostgreSQL environment variables and PATH from pkgx
-            PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d | head -1)
+            # Set PostgreSQL environment variables and PATH from Launchpad
+            PGSQL_DIR=$(find $LAUNCHPAD_DIR -name "postgresql.org" -type d | head -1)
             if [[ -d "$PGSQL_DIR" ]]; then
               PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
               export PGSQL_CFLAGS="-I$PGSQL_DIR/$PGSQL_VER/include"
               export PGSQL_LIBS="-L$PGSQL_DIR/$PGSQL_VER/lib -lpq"
               export PATH="$PGSQL_DIR/$PGSQL_VER/bin:$PATH"
+              echo "✅ PostgreSQL configured: $PGSQL_DIR/$PGSQL_VER"
             fi
 
-            # Set bzip2 environment variables from pkgx
-            BZIP2_DIR=$(find $PKGX_DIR -path "*/sourceware.org/bzip2/v*/include" -type d | head -1)
+            # Set bzip2 environment variables from Launchpad
+            BZIP2_DIR=$(find $LAUNCHPAD_DIR -path "*/sourceware.org/bzip2/v*/include" -type d | head -1)
             if [[ -d "$BZIP2_DIR" ]]; then
               BZIP2_PREFIX=$(dirname "$BZIP2_DIR")
               export BZIP2_CFLAGS="-I$BZIP2_PREFIX/include"
               export BZIP2_LIBS="-L$BZIP2_PREFIX/lib -lbz2"
+              echo "✅ Bzip2 configured: $BZIP2_PREFIX"
             fi
 
-            # Set gettext environment variables from pkgx
-            GETTEXT_DIR=$(find $PKGX_DIR -path "*/gnu.org/gettext/v*/include" -type d | head -1)
+            # Set gettext environment variables from Launchpad
+            GETTEXT_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/gettext/v*/include" -type d | head -1)
             if [[ -d "$GETTEXT_DIR" ]]; then
               GETTEXT_PREFIX=$(dirname "$GETTEXT_DIR")
               export GETTEXT_CFLAGS="-I$GETTEXT_PREFIX/include"
               export GETTEXT_LIBS="-L$GETTEXT_PREFIX/lib -lintl"
+              echo "✅ Gettext configured: $GETTEXT_PREFIX"
             fi
 
-            # Check if both LDAP libraries are available from pkgx
-            OPENLDAP_DIR=$(find $PKGX_DIR -path "*/openldap.org/v*/lib" -type d | head -1)
+            # Check if both LDAP libraries are available from Launchpad
+            OPENLDAP_DIR=$(find $LAUNCHPAD_DIR -path "*/openldap.org/v*/lib" -type d | head -1)
             echo "Debug: Checking for lber library:"
             if [[ -d "$OPENLDAP_DIR" ]]; then
               ls -la $OPENLDAP_DIR/liblber.* 2>/dev/null || echo "  lber library not found"
               echo "Debug: Checking for ldap library:"
               ls -la $OPENLDAP_DIR/libldap.* 2>/dev/null || echo "  ldap library not found"
             else
-              echo "  OpenLDAP directory not found in pkgx"
+              echo "  OpenLDAP directory not found in Launchpad"
             fi
 
             if [[ -d "$OPENLDAP_DIR" ]] && [[ -f "$OPENLDAP_DIR/liblber.dylib" ]] && [[ -f "$OPENLDAP_DIR/libldap.dylib" ]]; then
@@ -630,15 +657,15 @@ jobs:
               fi
             fi
 
-            # Try to find readline.h from pkgx and set the path explicitly
-            READLINE_DIR=$(find $PKGX_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
+            # Try to find readline.h from Launchpad and set the path explicitly
+            READLINE_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
             if [[ -d "$READLINE_DIR" ]]; then
               READLINE_PATH=$(dirname "$READLINE_DIR")
               if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
                 echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
                 
-                # Find iconv from pkgx
-                ICONV_DIR=$(find $PKGX_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+                # Find iconv from Launchpad
+                ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
                 if [[ -d "$ICONV_DIR" ]]; then
                   EXTRA_CONFIG="--with-iconv=$ICONV_DIR --with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
                 else
@@ -646,7 +673,7 @@ jobs:
                 fi
               else
                 echo "readline.h not found, disabling readline support"
-                ICONV_DIR=$(find $PKGX_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+                ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
                 if [[ -d "$ICONV_DIR" ]]; then
                   EXTRA_CONFIG="--with-iconv=$ICONV_DIR --disable-readline --with-icu-dir=$ICU_PREFIX"
                 else
@@ -654,8 +681,8 @@ jobs:
                 fi
               fi
             else
-              echo "readline directory not found in pkgx, disabling readline support"
-              ICONV_DIR=$(find $PKGX_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+              echo "readline directory not found in Launchpad, disabling readline support"
+              ICONV_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
               if [[ -d "$ICONV_DIR" ]]; then
                 EXTRA_CONFIG="--with-iconv=$ICONV_DIR --disable-readline --with-icu-dir=$ICU_PREFIX"
               else
@@ -702,7 +729,7 @@ jobs:
             echo "  CPPFLAGS: $CPPFLAGS"
             echo "  LDFLAGS: $LDFLAGS"
             echo "  Checking if readline.h exists:"
-            find $PKGX_DIR -name "readline.h" 2>/dev/null || echo "  No readline.h found"
+            find $LAUNCHPAD_DIR -name "readline.h" 2>/dev/null || echo "  No readline.h found"
 
             echo "Debug: Checking PostgreSQL installation on macOS:"
             echo "  PGSQL_CFLAGS: $PGSQL_CFLAGS"
@@ -712,7 +739,7 @@ jobs:
             which pg_config || echo "  pg_config not found in PATH"
             pg_config --version 2>/dev/null || echo "  pg_config version check failed"
             echo "  Checking if libpq-fe.h exists:"
-            find $PKGX_DIR -name "libpq-fe.h" 2>/dev/null || echo "  No libpq-fe.h found"
+            find $LAUNCHPAD_DIR -name "libpq-fe.h" 2>/dev/null || echo "  No libpq-fe.h found"
           fi
 
           # Check if libcurl is found via pkg-config
