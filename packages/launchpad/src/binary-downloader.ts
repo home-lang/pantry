@@ -43,73 +43,53 @@ export class PrecompiledBinaryDownloader {
   private async findLaunchpadLibraryPaths(): Promise<string[]> {
     const paths: string[] = []
 
-    // Gate scanning to avoid unnecessary I/O and logs
-    const pkgNames = ['php', 'php.net']
-    const isListed = (val: unknown): boolean => {
-      if (typeof val === 'string') return pkgNames.includes(val)
-      if (Array.isArray(val)) return val.some(v => typeof v === 'string' && pkgNames.includes(v))
-      return false
-    }
-    const globalBuildDeps = (config as any).installBuildDeps
-    const phpBuildDeps = (config.services?.php as any)?.installBuildDeps
-    const shouldInstallBuildDeps = (
-      process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1'
-      || globalBuildDeps === true
-      || isListed(globalBuildDeps)
-      || phpBuildDeps === true
-      || isListed(phpBuildDeps)
-    )
-
-    if (!shouldInstallBuildDeps)
-      return []
-
     try {
+      // Get dynamic PHP dependencies from ts-pkgx pantry
       const phpDependencies = await this.getPhpDependenciesFromPantry()
-      if (config.verbose) {
-        console.log(`🔍 Scanning library paths for ${phpDependencies.length} PHP dependencies...`)
-      }
+
+      console.log(`🔍 Scanning library paths for ${phpDependencies.length} PHP dependencies...`)
 
       for (const depName of phpDependencies) {
-        // Local env installation (project-specific)
+        // Check local environment installation first (where dependencies are actually installed)
         const localDepDir = path.join(this.installPath, depName)
         if (fs.existsSync(localDepDir)) {
+          // Find version directories
           const versionDirs = fs.readdirSync(localDepDir).filter((item) => {
             const fullPath = path.join(localDepDir, item)
             return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
           })
+
           for (const versionDir of versionDirs) {
             const libDir = path.join(localDepDir, versionDir, 'lib')
             if (fs.existsSync(libDir)) {
               paths.push(libDir)
-              if (config.verbose) console.log(`📚 Found local library: ${libDir}`)
+              console.log(`📚 Found local library: ${libDir}`)
             }
           }
         }
 
-        // Global installation fallback
+        // Also check global installation as fallback
         const globalDepDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global', depName)
         if (fs.existsSync(globalDepDir)) {
           const versions = fs.readdirSync(globalDepDir).filter((d: string) => d.startsWith('v')).sort().reverse()
           for (const version of versions) {
             const libDir = path.join(globalDepDir, version, 'lib')
-            if (fs.existsSync(libDir)) paths.push(libDir)
+            if (fs.existsSync(libDir)) {
+              paths.push(libDir)
+            }
           }
         }
       }
 
-      if (config.verbose) {
-        if (paths.length > 0) {
-          console.log(`🔍 Found Launchpad library paths for PHP: ${paths.length} paths`)
-        }
-        else {
-          console.warn('⚠️ No Launchpad libraries found for PHP dependencies')
-        }
+      if (paths.length > 0) {
+        console.log(`🔍 Found Launchpad library paths for PHP: ${paths.length} paths`)
+      }
+      else {
+        console.warn('⚠️ No Launchpad libraries found for PHP dependencies')
       }
     }
     catch (error) {
-      if (config.verbose) {
-        console.warn(`⚠️ Error finding Launchpad libraries: ${error instanceof Error ? error.message : String(error)}`)
-      }
+      console.warn(`⚠️ Error finding Launchpad libraries: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     return paths
@@ -799,7 +779,7 @@ Thanks for helping us make Launchpad better! 🙏
       )
       if (shouldInstallBuildDeps) {
         try {
-          await this.ensurePhpDependenciesInstalled()
+          await this.ensurePhpDependenciesInstalled(packageDir)
         }
         catch (err) {
           console.warn(`⚠️ Failed to install PHP dependencies: ${err instanceof Error ? err.message : String(err)}`)
@@ -1049,16 +1029,25 @@ exec "${shimPath}" "$@"
     }
   }
 
-  private async ensurePhpDependenciesInstalled(): Promise<void> {
+  private async ensurePhpDependenciesInstalled(packageDir?: string): Promise<void> {
     try {
       const deps = await this.getPhpDependenciesFromPantry()
       const depsSet = new Set<string>(deps)
 
       // Best-effort: detect required ICU major version and include matching unicode.org
-      const icuMajor = await this.detectRequiredIcuMajor()
+      const icuMajor = await this.detectRequiredIcuMajor(packageDir)
       if (icuMajor) {
-        // Prefer caret range for the detected major
-        depsSet.add(`unicode.org@^${icuMajor}.0.0`)
+        // Try to install the exact ICU version required by PHP
+        depsSet.add(`unicode.org@${icuMajor}`)
+        if (config.verbose) {
+          console.log(`📦 Adding ICU v${icuMajor} dependency for PHP compatibility`)
+        }
+      } else {
+        // Install latest ICU version if we can't detect the required version
+        depsSet.add('unicode.org')
+        if (config.verbose) {
+          console.log('📦 Adding latest ICU version for PHP compatibility')
+        }
       }
 
       const finalDeps = Array.from(depsSet)
@@ -1067,7 +1056,6 @@ exec "${shimPath}" "$@"
 
       // Install all dependencies into this.installPath
       const { install } = await import('./install')
-      // Suppress extra summary
       const original = process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
       process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
       try {
@@ -1079,6 +1067,27 @@ exec "${shimPath}" "$@"
         else
           process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = original
       }
+
+      // After installing dependencies, check for ICU version compatibility
+      if (packageDir) {
+        const detectedIcuMajor = icuMajor || await this.detectRequiredIcuMajor(packageDir)
+        if (detectedIcuMajor) {
+          const availableVersions = await this.getAvailableIcuVersions()
+          const hasCompatibleIcu = availableVersions.includes(detectedIcuMajor)
+          
+          if (!hasCompatibleIcu && availableVersions.length > 0) {
+            if (config.verbose) {
+              console.log(`🔍 PHP binary built with ICU v${detectedIcuMajor}, available: v${availableVersions.join(', ')}`)
+            }
+            
+            // Fix references to use available ICU version
+            const success = await this.fixPhpIcuReferences(packageDir, detectedIcuMajor)
+            if (!success && config.verbose) {
+              console.warn('⚠️ Could not fix ICU references - PHP may not work correctly')
+            }
+          }
+        }
+      }
     }
     catch (error) {
       // Non-fatal, shims may still work without explicit deps
@@ -1089,37 +1098,257 @@ exec "${shimPath}" "$@"
   }
 
   /**
-   * Detect required ICU major version from php.original dylib references (macOS only)
+   * Get available ICU versions in the environment
    */
-  private async detectRequiredIcuMajor(): Promise<number | null> {
-    if (process.platform !== 'darwin')
-      return null
+  private async getAvailableIcuVersions(): Promise<number[]> {
+    const versions: number[] = []
     try {
-      const phpOriginal = path.join(this.installPath, 'php.net')
-      if (!fs.existsSync(phpOriginal))
+      // Check global installation
+      const globalIcuDir = path.join(this.installPath, 'unicode.org')
+      if (fs.existsSync(globalIcuDir)) {
+        const versionDirs = fs.readdirSync(globalIcuDir).filter(v => v.startsWith('v'))
+        for (const versionDir of versionDirs) {
+          const match = versionDir.match(/^v(\d+)\./)
+          if (match) {
+            const major = Number.parseInt(match[1], 10)
+            if (Number.isFinite(major)) {
+              versions.push(major)
+            }
+          }
+        }
+      }
+
+      // Check project-specific installation
+      const projectIcuDir = path.join(this.installPath, '..', 'share', 'launchpad', 'envs')
+      if (fs.existsSync(projectIcuDir)) {
+        const envDirs = fs.readdirSync(projectIcuDir)
+        for (const envDir of envDirs) {
+          const envIcuDir = path.join(projectIcuDir, envDir, 'unicode.org')
+          if (fs.existsSync(envIcuDir)) {
+            const versionDirs = fs.readdirSync(envIcuDir).filter(v => v.startsWith('v'))
+            for (const versionDir of versionDirs) {
+              const match = versionDir.match(/^v(\d+)\./)
+              if (match) {
+                const major = Number.parseInt(match[1], 10)
+                if (Number.isFinite(major) && !versions.includes(major)) {
+                  versions.push(major)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`⚠️ Error scanning for available ICU versions: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    return versions
+  }
+
+  /**
+   * Fix PHP binary ICU references to use available ICU version
+   */
+  private async fixPhpIcuReferences(packageDir: string, requiredIcuMajor: number): Promise<boolean> {
+    try {
+      const phpBinary = path.join(packageDir, 'bin', 'php')
+      if (!fs.existsSync(phpBinary)) {
+        if (config.verbose) {
+          console.warn(`⚠️ PHP binary not found at ${phpBinary}`)
+        }
+        return false
+      }
+
+      // Find available ICU versions and select the best match
+      const availableVersions = await this.getAvailableIcuVersions()
+      if (availableVersions.length === 0) {
+        if (config.verbose) {
+          console.warn('⚠️ No ICU versions found in environment')
+        }
+        return false
+      }
+
+      // Prefer exact match, then closest lower version
+      let targetIcuMajor = availableVersions.find(v => v === requiredIcuMajor)
+      if (!targetIcuMajor) {
+        targetIcuMajor = availableVersions.filter(v => v < requiredIcuMajor).sort((a, b) => b - a)[0]
+      }
+      if (!targetIcuMajor) {
+        targetIcuMajor = availableVersions[0] // Use any available version as last resort
+      }
+
+      // Modern ICU versions should be forward/backward compatible within reason
+      // Only warn for very large gaps (more than 10 major versions)
+      const versionGap = Math.abs(requiredIcuMajor - targetIcuMajor)
+      if (versionGap > 10) {
+        if (config.verbose) {
+          console.warn(`⚠️ Large ICU version gap: PHP built with v${requiredIcuMajor}, using v${targetIcuMajor}`)
+          console.warn('   This may cause issues, but attempting to fix references...')
+        }
+      }
+
+      // Find ICU library path for the target version
+      const icuLibPath = path.join(this.installPath, `unicode.org/v${targetIcuMajor}.1.0/lib`)
+      if (!fs.existsSync(icuLibPath)) {
+        // Try alternative path patterns
+        const altPaths = [
+          path.join(this.installPath, `unicode.org/v${targetIcuMajor}.1/lib`),
+          path.join(this.installPath, `unicode.org/v${targetIcuMajor}/lib`)
+        ]
+        
+        let foundPath = ''
+        for (const altPath of altPaths) {
+          if (fs.existsSync(altPath)) {
+            foundPath = altPath
+            break
+          }
+        }
+        
+        if (!foundPath) {
+          if (config.verbose) {
+            console.warn(`⚠️ ICU library path not found for version ${targetIcuMajor}`)
+          }
+          return false
+        }
+      }
+
+      // Fix ICU library references in PHP binary
+      const { execSync } = await import('node:child_process')
+      const icuLibs = ['libicuio', 'libicui18n', 'libicuuc']
+      let fixedCount = 0
+      
+      for (const libName of icuLibs) {
+        const oldPath = `/opt/homebrew/opt/icu4c@${requiredIcuMajor}/lib/${libName}.${requiredIcuMajor}.dylib`
+        
+        // Try different library naming patterns
+        const possibleLibs = [
+          path.join(icuLibPath, `${libName}.${targetIcuMajor}.1.dylib`),
+          path.join(icuLibPath, `${libName}.${targetIcuMajor}.dylib`),
+          path.join(icuLibPath, `${libName}.dylib`)
+        ]
+        
+        let newPath = ''
+        for (const testLib of possibleLibs) {
+          if (fs.existsSync(testLib)) {
+            newPath = testLib
+            break
+          }
+        }
+        
+        if (newPath && fs.existsSync(newPath)) {
+          try {
+            execSync(`install_name_tool -change "${oldPath}" "${newPath}" "${phpBinary}"`)
+            fixedCount++
+            if (config.verbose) {
+              console.log(`🔧 Fixed ICU reference: ${oldPath} → ${newPath}`)
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`⚠️ Failed to fix ICU reference for ${libName}: ${error instanceof Error ? error.message : String(error)}`)
+            }
+          }
+        } else {
+          if (config.verbose) {
+            console.warn(`⚠️ ICU library ${libName} not found in ${icuLibPath}`)
+          }
+        }
+      }
+
+      return fixedCount === icuLibs.length
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`⚠️ Error fixing PHP ICU references: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      return false
+    }
+  }
+
+  /**
+   * Detect required ICU major version from metadata or php.original dylib references
+   */
+  private async detectRequiredIcuMajor(packageDir?: string): Promise<number | null> {
+    try {
+      // First try to get ICU version from metadata if available
+      if (packageDir) {
+        const metadataPath = path.join(packageDir, 'metadata.json')
+        if (fs.existsSync(metadataPath)) {
+          try {
+            const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
+            if (metadata.icu_version && metadata.icu_version !== 'unknown') {
+              const icuMajor = Number.parseInt(metadata.icu_version, 10)
+              if (!isNaN(icuMajor)) {
+                if (config.verbose) {
+                  console.log(`🔍 Detected ICU v${icuMajor} from binary metadata`)
+                }
+                return icuMajor
+              }
+            }
+          }
+          catch (error) {
+            if (config.verbose) {
+              console.warn(`⚠️ Error reading metadata: ${error instanceof Error ? error.message : String(error)}`)
+            }
+          }
+        }
+      }
+
+      // Fallback to dylib inspection on macOS
+      if (process.platform !== 'darwin')
         return null
 
-      // Find version directories
-      const versions = fs.readdirSync(phpOriginal).filter(v => v.startsWith('v'))
-      if (versions.length === 0)
-        return null
+      let phpOriginalPath: string
+      if (packageDir) {
+        // Use the specific package directory if provided
+        phpOriginalPath = path.join(packageDir, 'bin', 'php.original')
+      }
+      else {
+        // Look for php.original in the installation path
+        // Look for php.original in the installation path - we don't have version context here
+        const phpNetDir = path.join(this.installPath, 'php.net')
+        if (fs.existsSync(phpNetDir)) {
+          const versions = fs.readdirSync(phpNetDir).filter(d => d.startsWith('v')).sort().reverse()
+          if (versions.length > 0) {
+            phpOriginalPath = path.join(phpNetDir, versions[0], 'bin', 'php.original')
+          } else {
+            return null
+          }
+        } else {
+          return null
+        }
+      }
 
-      // Pick latest
-      const latest = versions.sort().reverse()[0]
-      const originalPath = path.join(phpOriginal, latest, 'bin', 'php.original')
-      if (!fs.existsSync(originalPath))
+      if (!fs.existsSync(phpOriginalPath)) {
+        if (config.verbose) {
+          console.log(`⚠️ php.original not found at ${phpOriginalPath}`)
+        }
         return null
+      }
 
       const { execSync } = await import('node:child_process')
-      const output = execSync(`otool -L "${originalPath}"`, { encoding: 'utf8' })
-      const match = output.match(/libicu\w+\.(\d+)\.dylib/)
-      if (match) {
-        const major = Number.parseInt(match[1], 10)
-        return Number.isFinite(major) ? major : null
+      const output = execSync(`otool -L "${phpOriginalPath}"`, { encoding: 'utf8' })
+
+      // Look for ICU library references like: /opt/homebrew/opt/icu4c@77/lib/libicuuc.77.dylib
+      const icuMatch = output.match(/icu4c@(\d+)\/lib\/libicu\w+\.(\d+)\.dylib/)
+      if (icuMatch) {
+        const icuMajor = Number.parseInt(icuMatch[2], 10) // Use the version from the dylib name
+        if (config.verbose) {
+          console.log(`🔍 Detected ICU v${icuMajor} requirement from PHP binary dylib`)
+        }
+        return icuMajor
+      }
+
+      if (config.verbose) {
+        console.log('⚠️ No ICU version detected from PHP binary dylib references')
       }
       return null
     }
-    catch {
+    catch (error) {
+      if (config.verbose) {
+        console.warn(`⚠️ Error detecting ICU version: ${error instanceof Error ? error.message : String(error)}`)
+      }
       return null
     }
   }

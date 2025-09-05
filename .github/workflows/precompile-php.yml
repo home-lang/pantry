@@ -204,12 +204,15 @@ jobs:
       - name: Install build dependencies (macOS)
         if: matrix.platform == 'darwin'
         run: |
-          # Install PHP dependencies via Homebrew (alternative to launchpad)
+          # Install PHP dependencies via Homebrew but use specific ICU version for compatibility
           echo "🔧 Installing PHP dependencies via Homebrew..."
           echo "🔍 Debug info:"
           echo "  - Platform: darwin"
           echo "  - Architecture: $(uname -m)"
 
+          # Update Homebrew to ensure we get the latest packages
+          brew update
+          
           # Install dependencies with quiet output to reduce warnings
           brew install --quiet \
             autoconf \
@@ -238,6 +241,22 @@ jobs:
             zlib \
             libiconv \
             gettext
+
+          # Get ICU version info
+          echo "🔧 ICU installation complete"
+          
+          # Get the actual installed version
+          ICU_VER=$(brew list --versions icu4c | grep -o '[0-9]\+\.[0-9]\+' | head -1 | cut -d. -f1)
+          ICU_FULL_VER=$(brew list --versions icu4c | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+          
+          echo "✅ Using ICU v$ICU_VER (full version: $ICU_FULL_VER) - latest from Homebrew"
+          echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
+          echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
+          
+          # Verify ICU installation
+          echo "🔍 ICU installation details:"
+          brew --prefix icu4c
+          ls -la $(brew --prefix icu4c)/lib/libicu*.dylib | head -5
 
           # Verify readline installation
           echo "Checking readline installation:"
@@ -352,11 +371,14 @@ jobs:
         run: |
           # Set paths for Homebrew dependencies including keg-only packages
           # Use a more organized approach to avoid duplicates
+          ICU_PREFIX="$(brew --prefix icu4c)"
+          echo "🔍 Using ICU from: $ICU_PREFIX"
+          
           PKG_CONFIG_PATHS=(
             "$(brew --prefix)/lib/pkgconfig"
             "$(brew --prefix openssl@3)/lib/pkgconfig"
             "$(brew --prefix libxml2)/lib/pkgconfig"
-            "$(brew --prefix icu4c)/lib/pkgconfig"
+            "$ICU_PREFIX/lib/pkgconfig"
             "$(brew --prefix zlib)/lib/pkgconfig"
             "$(brew --prefix postgresql@17)/lib/pkgconfig"
             "$(brew --prefix libpq)/lib/pkgconfig"
@@ -388,6 +410,7 @@ jobs:
             "-L$(brew --prefix bzip2)/lib"
             "-L$(brew --prefix gettext)/lib"
             "-L$(brew --prefix openldap)/lib"
+            "-L$ICU_PREFIX/lib"
           )
           LDFLAGS_JOINED=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
           echo "LDFLAGS=$LDFLAGS_JOINED" >> $GITHUB_ENV
@@ -402,6 +425,7 @@ jobs:
             "-I$(brew --prefix bzip2)/include"
             "-I$(brew --prefix gettext)/include"
             "-I$(brew --prefix openldap)/include"
+            "-I$ICU_PREFIX/include"
           )
           CPPFLAGS_JOINED=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
           echo "CPPFLAGS=$CPPFLAGS_JOINED" >> $GITHUB_ENV
@@ -585,11 +609,14 @@ jobs:
             READLINE_PATH=$(brew --prefix readline)
             if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
               echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
-              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --with-readline=$READLINE_PATH"
+              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
             else
               echo "readline.h not found, disabling readline support"
-              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --disable-readline"
+              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --disable-readline --with-icu-dir=$ICU_PREFIX"
             fi
+            
+            echo "🔍 ICU configuration: --with-icu-dir=$ICU_PREFIX"
+            echo "🔍 ICU version being used: $ICU_VERSION"
 
             # Check if PostgreSQL is available and working
             echo "Debug: POSTGRESQL_AVAILABLE=$POSTGRESQL_AVAILABLE"
@@ -966,16 +993,30 @@ jobs:
         run: |
           cd ${{ env.OUTPUT_DIR }}
 
-          # Create metadata file
+          # Create metadata file with ICU version info
+          ICU_VER="unknown"
+          ICU_FULL_VER="unknown"
+          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
+            ICU_VER="${ICU_VERSION:-unknown}"
+            ICU_FULL_VER="${ICU_FULL_VERSION:-unknown}"
+          elif [[ "${{ matrix.platform }}" == "linux" ]]; then
+            # Get ICU version on Linux
+            ICU_VER=$(pkg-config --modversion icu-uc 2>/dev/null | cut -d. -f1 || echo "unknown")
+            ICU_FULL_VER=$(pkg-config --modversion icu-uc 2>/dev/null || echo "unknown")
+          fi
+          
           cat > ${{ env.BINARY_NAME }}/metadata.json << EOF
           {
             "php_version": "${{ matrix.php_version }}",
             "platform": "${{ matrix.platform }}",
             "architecture": "${{ matrix.arch }}",
             "configuration": "${{ matrix.config }}",
+            "icu_version": "$ICU_VER",
+            "icu_full_version": "$ICU_FULL_VER",
             "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "built_by": "GitHub Actions",
             "commit": "${{ github.sha }}",
+            "runner_os": "${{ runner.os }}",
             "extensions": "$(echo '${{ env.CONFIGURE_EXTENSIONS }}' | tr ' ' '\n' | grep -E '^--(enable|with)-' | sed 's/^--[^-]*-//' | sort | tr '\n' ',' | sed 's/,$//')"
           }
           EOF

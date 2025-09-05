@@ -76,82 +76,7 @@ PY
     fi
 }
 
-# Set up directory change hooks for zsh and bash (do this first, before any processing guards)
-    if [[ -n "$ZSH_VERSION" ]]; then
-    # zsh hook
-    # Ensure hook arrays exist
-    if ! typeset -p chpwd_functions >/dev/null 2>&1; then
-        typeset -ga chpwd_functions
-    fi
-    if ! typeset -p precmd_functions >/dev/null 2>&1; then
-        typeset -ga precmd_functions
-    fi
-
-    __launchpad_chpwd() {
-        # Prevent infinite recursion during hook execution
-        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
-        return 0
-        fi
-        export __LAUNCHPAD_IN_HOOK=1
-
-        # Note: trap cleanup removed due to zsh compatibility issues
-
-        # Only run the environment switching logic, not the full shell integration
-        __launchpad_switch_environment
-
-        # Clean up hook flag explicitly
-        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
-    }
-
-    # Add the hook if not already added
-    if [[ ! " \${chpwd_functions[*]} " =~ " __launchpad_chpwd " ]]; then
-        chpwd_functions+=(__launchpad_chpwd)
-    fi
-
-    # Optionally enable a precmd-based refresh if explicitly requested
-    if [[ "$LAUNCHPAD_USE_PRECMD" == "1" ]]; then
-        __launchpad_precmd() {
-            # Prevent infinite recursion during hook execution
-            if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
-                return 0
-            fi
-            export __LAUNCHPAD_IN_HOOK=1
-
-            # Reuse the same environment switching/refresh logic
-            __launchpad_switch_environment
-
-            # Clean up hook flag explicitly
-            unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
-        }
-
-        # Add the precmd hook if not already added
-        if [[ ! " \${precmd_functions[*]} " =~ " __launchpad_precmd " ]]; then
-            precmd_functions+=(__launchpad_precmd)
-        fi
-    fi
-elif [[ -n "$BASH_VERSION" ]]; then
-    # bash hook using PROMPT_COMMAND
-    __launchpad_prompt_command() {
-        # Prevent infinite recursion during hook execution
-        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
-            return 0
-        fi
-        export __LAUNCHPAD_IN_HOOK=1
-
-        # Note: trap cleanup removed due to zsh compatibility issues
-
-        # Only run the environment switching logic, not the full shell integration
-        __launchpad_switch_environment
-
-        # Clean up hook flag explicitly
-        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
-    }
-
-    # Add to PROMPT_COMMAND if not already there
-    if [[ "$PROMPT_COMMAND" != *"__launchpad_prompt_command"* ]]; then
-        PROMPT_COMMAND="__launchpad_prompt_command;\$PROMPT_COMMAND"
-    fi
-fi
+# Hook functions will be defined and registered after initial processing
 
 # Environment switching function (called by hooks)
 __launchpad_switch_environment() {
@@ -444,14 +369,14 @@ __launchpad_switch_environment() {
                 if [[ -z "$__val" ]]; then return 0; fi
                 local __cur=""
                 # Portable indirection via eval (works in bash and zsh)
-                eval "__cur=\${$__var_name}"
+                eval "__cur=\\$\${__var_name}"
                 case ":$__cur:" in
                     *":$__val:"*) : ;; # already present
                     *)
                         if [[ -n "$__cur" ]]; then
-                            eval "export $__var_name=\"$__val:\${$__var_name}\""
+                            eval "export \${__var_name}=\"$__val:\\$\${__var_name}\""
                         else
-                            eval "export $__var_name=\"$__val\""
+                            eval "export \${__var_name}=\"$__val\""
                         fi
                     ;;
                 esac
@@ -572,6 +497,53 @@ trap 'unset __LAUNCHPAD_PROCESSING 2>/dev/null || true' EXIT
 # Basic shell integration with aggressive safeguards
 # Run the environment switching logic (which handles its own timing)
 __launchpad_switch_environment
+
+# Set up directory change hooks AFTER initial processing (but only if not already set up)
+if [[ -n "$ZSH_VERSION" ]]; then
+    # Define the hook function
+    __launchpad_chpwd() {
+        # Prevent infinite recursion during hook execution
+        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
+            return 0
+        fi
+        export __LAUNCHPAD_IN_HOOK=1
+        
+        # Only run the environment switching logic, not the full shell integration
+        __launchpad_switch_environment
+        
+        # Clean up hook flag explicitly
+        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
+    }
+    
+    # Ensure hook arrays exist
+    if ! typeset -p chpwd_functions >/dev/null 2>&1; then
+        typeset -ga chpwd_functions
+    fi
+    # Add the hook if not already added
+    if [[ ! " \${chpwd_functions[*]} " =~ " __launchpad_chpwd " ]]; then
+        chpwd_functions+=(__launchpad_chpwd)
+    fi
+elif [[ -n "$BASH_VERSION" ]]; then
+    # Define the hook function
+    __launchpad_prompt_command() {
+        # Prevent infinite recursion during hook execution
+        if [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]]; then
+            return 0
+        fi
+        export __LAUNCHPAD_IN_HOOK=1
+        
+        # Only run the environment switching logic, not the full shell integration
+        __launchpad_switch_environment
+        
+        # Clean up hook flag explicitly
+        unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
+    }
+    
+    # Add to PROMPT_COMMAND if not already there
+    if [[ "$PROMPT_COMMAND" != *"__launchpad_prompt_command"* ]]; then
+        PROMPT_COMMAND="__launchpad_prompt_command;\$PROMPT_COMMAND"
+    fi
+fi
 
 # Clean up processing flag before exit
 unset __LAUNCHPAD_PROCESSING 2>/dev/null || true
