@@ -204,113 +204,104 @@ jobs:
       - name: Install build dependencies (macOS)
         if: matrix.platform == 'darwin'
         run: |
-          # Install PHP dependencies via Homebrew but use specific ICU version for compatibility
-          echo "🔧 Installing PHP dependencies via Homebrew..."
+          # Install PHP dependencies via Launchpad itself for compatibility
+          echo "🔧 Installing PHP dependencies via Launchpad..."
           echo "🔍 Debug info:"
           echo "  - Platform: darwin"
-          echo "  - Architecture: $(uname -m)"
-
-          # Update Homebrew to ensure we get the latest packages
-          brew update
+          echo "  - PHP version: ${{ matrix.php_version }}"
+          echo "  - Config: ${{ matrix.config }}"
+          echo "  - Working directory: $(pwd)"
+          echo "  - PATH: $PATH"
           
-          # Install dependencies with quiet output to reduce warnings
-          brew install --quiet \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            bison \
-            re2c \
-            libxml2 \
-            openssl@3 \
-            curl \
-            libpng \
-            jpeg \
-            freetype \
-            oniguruma \
-            libzip \
-            postgresql@17 \
-            libpq \
-            readline \
-            bzip2 \
-            gmp \
-            openldap \
-            libxslt \
-            icu4c \
-            libsodium \
-            zlib \
-            libiconv \
-            gettext
-
-          # Get ICU version info
+          # Build Launchpad first so we can use it to install dependencies
+          echo "🔨 Building Launchpad..."
+          cd ${{ github.workspace }}
+          bun install
+          bun run build
+          
+          # Use Launchpad to install PHP - this will automatically install all dependencies
+          echo "📦 Installing PHP via Launchpad (includes all build dependencies)..."
+          ./packages/launchpad/bin/cli.ts install php.net --verbose
+          
+          echo "✅ PHP dependencies installed successfully via Launchpad"
           echo "🔧 ICU installation complete"
           
-          # Get the actual installed version
-          ICU_VER=$(brew list --versions icu4c | grep -o '[0-9]\+\.[0-9]\+' | head -1 | cut -d. -f1)
-          ICU_FULL_VER=$(brew list --versions icu4c | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+          # Find pkgx installation directory and ICU version
+          PKGX_DIR="$HOME/.local"
+          ICU_DIR=$(find $PKGX_DIR -name "unicode.org" -type d | head -1)
+          if [[ -d "$ICU_DIR" ]]; then
+            ICU_VERSION_DIR=$(ls -1 $ICU_DIR | grep "^v" | sort -V | tail -1)
+            ICU_FULL_VER=$(echo "$ICU_VERSION_DIR" | sed 's/^v//')
+            ICU_VER=$(echo "$ICU_FULL_VER" | cut -d. -f1)
+            
+            echo "✅ Using ICU v$ICU_VER (full version: $ICU_FULL_VER) - from pkgx"
+            echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
+            echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
+            echo "ICU_PREFIX=$ICU_DIR/$ICU_VERSION_DIR" >> $GITHUB_ENV
+            
+            # Verify ICU installation
+            echo "🔍 ICU installation details:"
+            echo "ICU_PREFIX: $ICU_DIR/$ICU_VERSION_DIR"
+            ls -la $ICU_DIR/$ICU_VERSION_DIR/lib/libicu*.dylib | head -5
+          else
+            echo "❌ ICU installation not found in pkgx"
+            exit 1
+          fi
+
+          # Verify pkgx installations
+          echo "Checking pkgx installations:"
           
-          echo "✅ Using ICU v$ICU_VER (full version: $ICU_FULL_VER) - latest from Homebrew"
-          echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
-          echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
+          # Find and verify readline
+          READLINE_DIR=$(find $PKGX_DIR -name "gnu.org" -type d)/readline
+          if [[ -d "$READLINE_DIR" ]]; then
+            READLINE_VER=$(ls -1 $READLINE_DIR | grep "^v" | sort -V | tail -1)
+            echo "✅ Readline: $READLINE_DIR/$READLINE_VER"
+            ls -la $READLINE_DIR/$READLINE_VER/include/readline/readline.h || echo "readline.h not found"
+            ls -la $READLINE_DIR/$READLINE_VER/lib/libreadline.* || echo "libreadline not found"
+          fi
           
-          # Verify ICU installation
-          echo "🔍 ICU installation details:"
-          brew --prefix icu4c
-          ls -la $(brew --prefix icu4c)/lib/libicu*.dylib | head -5
-
-          # Verify readline installation
-          echo "Checking readline installation:"
-          ls -la $(brew --prefix readline)/include/readline/readline.h || echo "readline.h not found in expected location"
-          ls -la $(brew --prefix readline)/lib/libreadline.* || echo "libreadline not found in expected location"
-
-          # Verify PostgreSQL installation
-          echo "Checking PostgreSQL installation:"
-          ls -la $(brew --prefix libpq)/include/libpq-fe.h || echo "libpq-fe.h not found in expected location (libpq)"
-          ls -la $(brew --prefix libpq)/lib/libpq.* || echo "libpq not found in expected location (libpq)"
-          which pg_config || echo "pg_config not found in PATH"
-
-          # Verify bzip2 installation
-          echo "Checking bzip2 installation:"
-          ls -la $(brew --prefix bzip2)/include/bzlib.h || echo "bzlib.h not found in expected location"
-          ls -la $(brew --prefix bzip2)/lib/libbz2.* || echo "libbz2 not found in expected location"
-
-          # Verify gettext installation
-          echo "Checking gettext installation:"
-          ls -la $(brew --prefix gettext)/include/libintl.h || echo "libintl.h not found in expected location"
-          ls -la $(brew --prefix gettext)/lib/libintl.* || echo "libintl not found in expected location"
-
-          # Verify OpenLDAP installation
-          echo "Checking OpenLDAP installation:"
-          ls -la $(brew --prefix openldap)/include/ldap.h || echo "ldap.h not found in expected location"
-          ls -la $(brew --prefix openldap)/lib/libldap.* || echo "libldap not found in expected location"
-          ls -la $(brew --prefix openldap)/lib/liblber.* || echo "liblber not found in expected location"
-          echo "OpenLDAP include directory contents:"
-          ls -la $(brew --prefix openldap)/include/ | head -10
-          echo "OpenLDAP lib directory contents:"
-          ls -la $(brew --prefix openldap)/lib/ | head -10
-
-          # Create symlinks to help PHP find readline, bzip2, gettext, and openldap
-          echo "Creating symlinks for readline, bzip2, gettext, and openldap:"
-          sudo mkdir -p /usr/local/include/readline /usr/local/lib
-          sudo ln -sf $(brew --prefix readline)/include/readline/readline.h /usr/local/include/readline/readline.h
-          sudo ln -sf $(brew --prefix readline)/include/readline/history.h /usr/local/include/readline/history.h
-          sudo ln -sf $(brew --prefix readline)/lib/libreadline.* /usr/local/lib/
-          sudo ln -sf $(brew --prefix bzip2)/include/bzlib.h /usr/local/include/bzlib.h
-          sudo ln -sf $(brew --prefix bzip2)/lib/libbz2.* /usr/local/lib/
-          sudo ln -sf $(brew --prefix gettext)/include/libintl.h /usr/local/include/libintl.h
-          sudo ln -sf $(brew --prefix gettext)/lib/libintl.* /usr/local/lib/
-          sudo ln -sf $(brew --prefix openldap)/include/ldap.h /usr/local/include/ldap.h
-          sudo ln -sf $(brew --prefix openldap)/lib/libldap.* /usr/local/lib/
-          sudo ln -sf $(brew --prefix openldap)/lib/liblber.* /usr/local/lib/
+          # Find and verify PostgreSQL
+          PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d)
+          if [[ -d "$PGSQL_DIR" ]]; then
+            PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
+            echo "✅ PostgreSQL: $PGSQL_DIR/$PGSQL_VER"
+            ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h || echo "libpq-fe.h not found"
+            ls -la $PGSQL_DIR/$PGSQL_VER/lib/libpq.* || echo "libpq not found"
+          fi
+          
+          # Find and verify OpenSSL
+          OPENSSL_DIR=$(find $PKGX_DIR -name "openssl.org" -type d)
+          if [[ -d "$OPENSSL_DIR" ]]; then
+            OPENSSL_VER=$(ls -1 $OPENSSL_DIR | grep "^v" | sort -V | tail -1)
+            echo "✅ OpenSSL: $OPENSSL_DIR/$OPENSSL_VER"
+            ls -la $OPENSSL_DIR/$OPENSSL_VER/include/openssl/ssl.h || echo "ssl.h not found"
+            ls -la $OPENSSL_DIR/$OPENSSL_VER/lib/libssl.* || echo "libssl not found"
+          fi
+          
+          # Find and verify other dependencies
+          for dep in "gnu.org/gettext" "sourceware.org/bzip2" "openldap.org"; do
+            DEP_DIR=$(find $PKGX_DIR -path "*/$dep" -type d | head -1)
+            if [[ -d "$DEP_DIR" ]]; then
+              DEP_VER=$(ls -1 $DEP_DIR | grep "^v" | sort -V | tail -1)
+              echo "✅ $dep: $DEP_DIR/$DEP_VER"
+            else
+              echo "❌ $dep not found"
+            fi
+          done
 
       - name: Create build configuration
         run: |
           mkdir -p ${{ env.BUILD_DIR }} ${{ env.OUTPUT_DIR }}
 
-          # Determine libpq prefix only on macOS (avoid brew on Linux)
+          # Determine libpq prefix from pkgx on macOS (avoid brew on Linux)
           PG_PREFIX=""
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            PG_PREFIX="$(brew --prefix libpq)"
+            PKGX_DIR="$HOME/.local"
+            PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d | head -1)
+            if [[ -d "$PGSQL_DIR" ]]; then
+              PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
+              PG_PREFIX="$PGSQL_DIR/$PGSQL_VER"
+            fi
           fi
 
           # Create configuration based on matrix config
@@ -369,93 +360,85 @@ jobs:
       - name: Set macOS specific paths
         if: matrix.platform == 'darwin'
         run: |
-          # Set paths for Homebrew dependencies including keg-only packages
-          # Use a more organized approach to avoid duplicates
-          ICU_PREFIX="$(brew --prefix icu4c)"
-          echo "🔍 Using ICU from: $ICU_PREFIX"
+          # Set paths for pkgx dependencies
+          PKGX_DIR="$HOME/.local"
+          echo "🔍 Using pkgx from: $PKGX_DIR"
           
-          PKG_CONFIG_PATHS=(
-            "$(brew --prefix)/lib/pkgconfig"
-            "$(brew --prefix openssl@3)/lib/pkgconfig"
-            "$(brew --prefix libxml2)/lib/pkgconfig"
-            "$ICU_PREFIX/lib/pkgconfig"
-            "$(brew --prefix zlib)/lib/pkgconfig"
-            "$(brew --prefix postgresql@17)/lib/pkgconfig"
-            "$(brew --prefix libpq)/lib/pkgconfig"
-            "$(brew --prefix bzip2)/lib/pkgconfig"
-            "$(brew --prefix gettext)/lib/pkgconfig"
-            "$(brew --prefix openldap)/lib/pkgconfig"
-          )
+          # Build PKG_CONFIG_PATH from pkgx installations
+          PKG_CONFIG_PATHS=()
+          for dep_path in $(find $PKGX_DIR -name "lib" -type d | grep -E "/(openssl|libxml2|unicode|zlib|postgresql|bzip2|gettext|openldap)\.org/v[^/]+/lib$"); do
+            if [[ -d "$dep_path/pkgconfig" ]]; then
+              PKG_CONFIG_PATHS+=("$dep_path/pkgconfig")
+            fi
+          done
           PKG_CONFIG_PATH_JOINED=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH_JOINED" >> $GITHUB_ENV
           export PKG_CONFIG_PATH="$PKG_CONFIG_PATH_JOINED"
 
-          PATH_PATHS=(
-            "$(brew --prefix bison)/bin"
-            "$(brew --prefix)/bin"
-            "$(brew --prefix libpq)/bin"
-            "$(brew --prefix postgresql@17)/bin"
-            "$(brew --prefix gettext)/bin"
-          )
+          # Build PATH from pkgx installations
+          PATH_PATHS=()
+          for dep_path in $(find $PKGX_DIR -name "bin" -type d | grep -E "/(gnu|postgresql)\.org/v[^/]+/bin$"); do
+            PATH_PATHS+=("$dep_path")
+          done
           PATH_JOINED=$(IFS=:; echo "${PATH_PATHS[*]}")
           echo "PATH=$PATH_JOINED:$PATH" >> $GITHUB_ENV
           export PATH="$PATH_JOINED:$PATH"
 
-          LDFLAGS_PATHS=(
-            "-L$(brew --prefix)/lib"
-            "-L$(brew --prefix openssl@3)/lib"
-            "-L$(brew --prefix zlib)/lib"
-            "-L$(brew --prefix libiconv)/lib"
-            "-L$(brew --prefix libpq)/lib"
-            "-L$(brew --prefix bzip2)/lib"
-            "-L$(brew --prefix gettext)/lib"
-            "-L$(brew --prefix openldap)/lib"
-            "-L$ICU_PREFIX/lib"
-          )
+          # Build LDFLAGS from pkgx installations
+          LDFLAGS_PATHS=()
+          for dep_path in $(find $PKGX_DIR -name "lib" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/lib$"); do
+            LDFLAGS_PATHS+=("-L$dep_path")
+          done
           LDFLAGS_JOINED=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
           echo "LDFLAGS=$LDFLAGS_JOINED" >> $GITHUB_ENV
           export LDFLAGS="$LDFLAGS_JOINED"
 
-          CPPFLAGS_PATHS=(
-            "-I$(brew --prefix)/include"
-            "-I$(brew --prefix openssl@3)/include"
-            "-I$(brew --prefix zlib)/include"
-            "-I$(brew --prefix libiconv)/include"
-            "-I$(brew --prefix libpq)/include"
-            "-I$(brew --prefix bzip2)/include"
-            "-I$(brew --prefix gettext)/include"
-            "-I$(brew --prefix openldap)/include"
-            "-I$ICU_PREFIX/include"
-          )
+          # Build CPPFLAGS from pkgx installations
+          CPPFLAGS_PATHS=()
+          for dep_path in $(find $PKGX_DIR -name "include" -type d | grep -E "/(openssl|zlib|gnu|postgresql|sourceware|openldap|unicode)\.org/v[^/]+/include$"); do
+            CPPFLAGS_PATHS+=("-I$dep_path")
+          done
           CPPFLAGS_JOINED=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
           echo "CPPFLAGS=$CPPFLAGS_JOINED" >> $GITHUB_ENV
           export CPPFLAGS="$CPPFLAGS_JOINED"
           echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
           export CXXFLAGS="-std=c++17 -stdlib=libc++"
 
-          # Set readline-specific paths
-          echo "READLINE_CFLAGS=-I$(brew --prefix readline)/include" >> $GITHUB_ENV
-          echo "READLINE_LIBS=-L$(brew --prefix readline)/lib -lreadline" >> $GITHUB_ENV
-          export READLINE_CFLAGS="-I$(brew --prefix readline)/include"
-          export READLINE_LIBS="-L$(brew --prefix readline)/lib -lreadline"
+          # Set readline-specific paths from pkgx
+          READLINE_DIR=$(find $PKGX_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
+          if [[ -d "$READLINE_DIR" ]]; then
+            READLINE_PREFIX=$(dirname "$READLINE_DIR")
+            echo "READLINE_CFLAGS=-I$READLINE_PREFIX/include" >> $GITHUB_ENV
+            echo "READLINE_LIBS=-L$READLINE_PREFIX/lib -lreadline" >> $GITHUB_ENV
+            export READLINE_CFLAGS="-I$READLINE_PREFIX/include"
+            export READLINE_LIBS="-L$READLINE_PREFIX/lib -lreadline"
+          fi
 
-          # Ensure libpq is linked for pg_config availability (keg-only)
-          brew link libpq --force || true
-
-          # Check if PostgreSQL is available and working
-          echo "Debug: Checking PostgreSQL availability:"
+          # Check if PostgreSQL is available and working from pkgx
+          echo "Debug: Checking PostgreSQL availability from pkgx:"
           echo "  PATH: $PATH"
           echo "  Checking pg_config:"
           which pg_config || echo "    pg_config not found in PATH"
           pg_config --version 2>/dev/null || echo "    pg_config version check failed"
-          echo "  Checking libpq-fe.h:"
-          ls -la $(brew --prefix libpq)/include/libpq-fe.h 2>/dev/null || echo "    libpq-fe.h not found"
-          echo "  Checking libpq installation:"
-          ls -la $(brew --prefix libpq)/include/ 2>/dev/null | head -5 || echo "    libpq include directory not found"
-          ls -la $(brew --prefix libpq)/lib/ 2>/dev/null | head -5 || echo "    libpq lib directory not found"
+          
+          PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d | head -1)
+          if [[ -d "$PGSQL_DIR" ]]; then
+            PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
+            echo "  Checking libpq-fe.h:"
+            ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h 2>/dev/null || echo "    libpq-fe.h not found"
+            echo "  Checking libpq installation:"
+            ls -la $PGSQL_DIR/$PGSQL_VER/include/ 2>/dev/null | head -5 || echo "    libpq include directory not found"
+            ls -la $PGSQL_DIR/$PGSQL_VER/lib/ 2>/dev/null | head -5 || echo "    libpq lib directory not found"
+          fi
 
-          if which pg_config >/dev/null 2>&1 && [[ -f "$(brew --prefix libpq)/include/libpq-fe.h" ]]; then
-            echo "PostgreSQL found and working"
+          # Check if PostgreSQL is available from pkgx
+          PGSQL_HEADER=""
+          if [[ -d "$PGSQL_DIR" ]]; then
+            PGSQL_HEADER="$PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h"
+          fi
+          
+          if which pg_config >/dev/null 2>&1 && [[ -f "$PGSQL_HEADER" ]]; then
+            echo "PostgreSQL found and working from pkgx"
             echo "POSTGRESQL_AVAILABLE=true" >> $GITHUB_ENV
           else
             echo "PostgreSQL not found or not working, will disable PostgreSQL support"
@@ -484,32 +467,54 @@ jobs:
 
           # Configure with platform-specific options
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            # On macOS, use Homebrew-installed libraries
-            # Set environment variables for readline detection
-            export CPPFLAGS="$CPPFLAGS -I$(brew --prefix readline)/include"
-            export LDFLAGS="$LDFLAGS -L$(brew --prefix readline)/lib"
-            export LIBS="$LIBS -lreadline"
+            # On macOS, use pkgx-installed libraries
+            # Set environment variables for readline detection from pkgx
+            PKGX_DIR="$HOME/.local"
+            READLINE_DIR=$(find $PKGX_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
+            if [[ -d "$READLINE_DIR" ]]; then
+              READLINE_PREFIX=$(dirname "$READLINE_DIR")
+              export CPPFLAGS="$CPPFLAGS -I$READLINE_PREFIX/include"
+              export LDFLAGS="$LDFLAGS -L$READLINE_PREFIX/lib"
+              export LIBS="$LIBS -lreadline"
+            fi
 
-            # Set PostgreSQL environment variables and PATH
-            export PGSQL_CFLAGS="-I$(brew --prefix libpq)/include"
-            export PGSQL_LIBS="-L$(brew --prefix libpq)/lib -lpq"
-            export PATH="$(brew --prefix libpq)/bin:$(brew --prefix postgresql@17)/bin:$PATH"
+            # Set PostgreSQL environment variables and PATH from pkgx
+            PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d | head -1)
+            if [[ -d "$PGSQL_DIR" ]]; then
+              PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
+              export PGSQL_CFLAGS="-I$PGSQL_DIR/$PGSQL_VER/include"
+              export PGSQL_LIBS="-L$PGSQL_DIR/$PGSQL_VER/lib -lpq"
+              export PATH="$PGSQL_DIR/$PGSQL_VER/bin:$PATH"
+            fi
 
-            # Set bzip2 environment variables
-            export BZIP2_CFLAGS="-I$(brew --prefix bzip2)/include"
-            export BZIP2_LIBS="-L$(brew --prefix bzip2)/lib -lbz2"
+            # Set bzip2 environment variables from pkgx
+            BZIP2_DIR=$(find $PKGX_DIR -path "*/sourceware.org/bzip2/v*/include" -type d | head -1)
+            if [[ -d "$BZIP2_DIR" ]]; then
+              BZIP2_PREFIX=$(dirname "$BZIP2_DIR")
+              export BZIP2_CFLAGS="-I$BZIP2_PREFIX/include"
+              export BZIP2_LIBS="-L$BZIP2_PREFIX/lib -lbz2"
+            fi
 
-            # Set gettext environment variables
-            export GETTEXT_CFLAGS="-I$(brew --prefix gettext)/include"
-            export GETTEXT_LIBS="-L$(brew --prefix gettext)/lib -lintl"
+            # Set gettext environment variables from pkgx
+            GETTEXT_DIR=$(find $PKGX_DIR -path "*/gnu.org/gettext/v*/include" -type d | head -1)
+            if [[ -d "$GETTEXT_DIR" ]]; then
+              GETTEXT_PREFIX=$(dirname "$GETTEXT_DIR")
+              export GETTEXT_CFLAGS="-I$GETTEXT_PREFIX/include"
+              export GETTEXT_LIBS="-L$GETTEXT_PREFIX/lib -lintl"
+            fi
 
-            # Check if both LDAP libraries are available
+            # Check if both LDAP libraries are available from pkgx
+            OPENLDAP_DIR=$(find $PKGX_DIR -path "*/openldap.org/v*/lib" -type d | head -1)
             echo "Debug: Checking for lber library:"
-            ls -la $(brew --prefix openldap)/lib/liblber.* 2>/dev/null || echo "  lber library not found"
-            echo "Debug: Checking for ldap library:"
-            ls -la $(brew --prefix openldap)/lib/libldap.* 2>/dev/null || echo "  ldap library not found"
+            if [[ -d "$OPENLDAP_DIR" ]]; then
+              ls -la $OPENLDAP_DIR/liblber.* 2>/dev/null || echo "  lber library not found"
+              echo "Debug: Checking for ldap library:"
+              ls -la $OPENLDAP_DIR/libldap.* 2>/dev/null || echo "  ldap library not found"
+            else
+              echo "  OpenLDAP directory not found in pkgx"
+            fi
 
-            if [[ -f "$(brew --prefix openldap)/lib/liblber.dylib" ]] && [[ -f "$(brew --prefix openldap)/lib/libldap.dylib" ]]; then
+            if [[ -d "$OPENLDAP_DIR" ]] && [[ -f "$OPENLDAP_DIR/liblber.dylib" ]] && [[ -f "$OPENLDAP_DIR/libldap.dylib" ]]; then
               echo "Both LDAP libraries found, enabling LDAP support"
               LDAP_AVAILABLE=true
             else
@@ -520,10 +525,11 @@ jobs:
               echo "Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
             fi
 
-            # Set OpenLDAP environment variables (only if libraries are available)
+            # Set OpenLDAP environment variables from pkgx (only if libraries are available)
             if [[ "$LDAP_AVAILABLE" == "true" ]]; then
-              export LDAP_CFLAGS="-I$(brew --prefix openldap)/include"
-              export LDAP_LIBS="-L$(brew --prefix openldap)/lib -lldap -llber"
+              OPENLDAP_PREFIX=$(dirname "$OPENLDAP_DIR")
+              export LDAP_CFLAGS="-I$OPENLDAP_PREFIX/include"
+              export LDAP_LIBS="-L$OPENLDAP_PREFIX/lib -lldap -llber"
               echo "Debug: LDAP_CFLAGS=$LDAP_CFLAGS"
               echo "Debug: LDAP_LIBS=$LDAP_LIBS"
             else
@@ -605,14 +611,37 @@ jobs:
               fi
             fi
 
-            # Try to find readline.h and set the path explicitly
-            READLINE_PATH=$(brew --prefix readline)
-            if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
-              echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
-              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
+            # Try to find readline.h from pkgx and set the path explicitly
+            READLINE_DIR=$(find $PKGX_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
+            if [[ -d "$READLINE_DIR" ]]; then
+              READLINE_PATH=$(dirname "$READLINE_DIR")
+              if [[ -f "$READLINE_PATH/include/readline/readline.h" ]]; then
+                echo "Found readline.h at $READLINE_PATH/include/readline/readline.h"
+                
+                # Find iconv from pkgx
+                ICONV_DIR=$(find $PKGX_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+                if [[ -d "$ICONV_DIR" ]]; then
+                  EXTRA_CONFIG="--with-iconv=$ICONV_DIR --with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
+                else
+                  EXTRA_CONFIG="--with-readline=$READLINE_PATH --with-icu-dir=$ICU_PREFIX"
+                fi
+              else
+                echo "readline.h not found, disabling readline support"
+                ICONV_DIR=$(find $PKGX_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+                if [[ -d "$ICONV_DIR" ]]; then
+                  EXTRA_CONFIG="--with-iconv=$ICONV_DIR --disable-readline --with-icu-dir=$ICU_PREFIX"
+                else
+                  EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
+                fi
+              fi
             else
-              echo "readline.h not found, disabling readline support"
-              EXTRA_CONFIG="--with-iconv=$(brew --prefix libiconv) --disable-readline --with-icu-dir=$ICU_PREFIX"
+              echo "readline directory not found in pkgx, disabling readline support"
+              ICONV_DIR=$(find $PKGX_DIR -path "*/gnu.org/libiconv/v*" -type d | head -1)
+              if [[ -d "$ICONV_DIR" ]]; then
+                EXTRA_CONFIG="--with-iconv=$ICONV_DIR --disable-readline --with-icu-dir=$ICU_PREFIX"
+              else
+                EXTRA_CONFIG="--disable-readline --with-icu-dir=$ICU_PREFIX"
+              fi
             fi
             
             echo "🔍 ICU configuration: --with-icu-dir=$ICU_PREFIX"
@@ -654,7 +683,7 @@ jobs:
             echo "  CPPFLAGS: $CPPFLAGS"
             echo "  LDFLAGS: $LDFLAGS"
             echo "  Checking if readline.h exists:"
-            find $(brew --prefix) -name "readline.h" 2>/dev/null || echo "  No readline.h found"
+            find $PKGX_DIR -name "readline.h" 2>/dev/null || echo "  No readline.h found"
 
             echo "Debug: Checking PostgreSQL installation on macOS:"
             echo "  PGSQL_CFLAGS: $PGSQL_CFLAGS"
@@ -664,7 +693,7 @@ jobs:
             which pg_config || echo "  pg_config not found in PATH"
             pg_config --version 2>/dev/null || echo "  pg_config version check failed"
             echo "  Checking if libpq-fe.h exists:"
-            find $(brew --prefix) -name "libpq-fe.h" 2>/dev/null || echo "  No libpq-fe.h found"
+            find $PKGX_DIR -name "libpq-fe.h" 2>/dev/null || echo "  No libpq-fe.h found"
           fi
 
           # Check if libcurl is found via pkg-config
