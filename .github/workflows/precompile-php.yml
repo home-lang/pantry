@@ -224,17 +224,19 @@ jobs:
           ./packages/launchpad/bin/cli.ts install php.net --verbose
           
           echo "✅ PHP dependencies installed successfully via Launchpad"
-          echo "🔧 ICU installation complete"
           
-          # Find pkgx installation directory and ICU version
-          PKGX_DIR="$HOME/.local"
-          ICU_DIR=$(find $PKGX_DIR -name "unicode.org" -type d | head -1)
+          # Find Launchpad installation directory and ICU version
+          LAUNCHPAD_DIR="$HOME/.local"
+          echo "🔍 Searching for ICU installation..."
+          
+          # ICU might be installed as unicode.org
+          ICU_DIR=$(find $LAUNCHPAD_DIR -name "unicode.org" -type d | head -1)
           if [[ -d "$ICU_DIR" ]]; then
             ICU_VERSION_DIR=$(ls -1 $ICU_DIR | grep "^v" | sort -V | tail -1)
             ICU_FULL_VER=$(echo "$ICU_VERSION_DIR" | sed 's/^v//')
             ICU_VER=$(echo "$ICU_FULL_VER" | cut -d. -f1)
             
-            echo "✅ Using ICU v$ICU_VER (full version: $ICU_FULL_VER) - from pkgx"
+            echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) at unicode.org"
             echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
             echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
             echo "ICU_PREFIX=$ICU_DIR/$ICU_VERSION_DIR" >> $GITHUB_ENV
@@ -242,45 +244,62 @@ jobs:
             # Verify ICU installation
             echo "🔍 ICU installation details:"
             echo "ICU_PREFIX: $ICU_DIR/$ICU_VERSION_DIR"
-            ls -la $ICU_DIR/$ICU_VERSION_DIR/lib/libicu*.dylib | head -5
+            ls -la $ICU_DIR/$ICU_VERSION_DIR/lib/libicu*.dylib 2>/dev/null | head -5 || echo "ICU libraries not found in expected location"
           else
-            echo "❌ ICU installation not found in pkgx"
-            exit 1
+            # Try alternative ICU locations that might be used by Launchpad
+            echo "🔍 ICU not found at unicode.org, checking alternative locations..."
+            
+            # Check if ICU is available via pkg-config (installed as dependency)
+            if pkg-config --exists icu-uc icu-i18n 2>/dev/null; then
+              ICU_PREFIX=$(pkg-config --variable=prefix icu-uc)
+              ICU_VER=$(pkg-config --modversion icu-uc | cut -d. -f1)
+              ICU_FULL_VER=$(pkg-config --modversion icu-uc)
+              
+              echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) via pkg-config"
+              echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
+              echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
+              echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
+            else
+              echo "⚠️  ICU not found, will disable intl extension for PHP build"
+              echo "ICU_VERSION=" >> $GITHUB_ENV
+              echo "ICU_FULL_VERSION=" >> $GITHUB_ENV
+              echo "ICU_PREFIX=" >> $GITHUB_ENV
+            fi
           fi
 
-          # Verify pkgx installations
-          echo "Checking pkgx installations:"
+          # Verify Launchpad installations
+          echo "🔍 Checking Launchpad dependency installations:"
           
           # Find and verify readline
-          READLINE_DIR=$(find $PKGX_DIR -name "gnu.org" -type d)/readline
+          READLINE_DIR=$(find $LAUNCHPAD_DIR -name "gnu.org" -type d)/readline
           if [[ -d "$READLINE_DIR" ]]; then
             READLINE_VER=$(ls -1 $READLINE_DIR | grep "^v" | sort -V | tail -1)
             echo "✅ Readline: $READLINE_DIR/$READLINE_VER"
-            ls -la $READLINE_DIR/$READLINE_VER/include/readline/readline.h || echo "readline.h not found"
-            ls -la $READLINE_DIR/$READLINE_VER/lib/libreadline.* || echo "libreadline not found"
+            ls -la $READLINE_DIR/$READLINE_VER/include/readline/readline.h 2>/dev/null || echo "readline.h not found"
+            ls -la $READLINE_DIR/$READLINE_VER/lib/libreadline.* 2>/dev/null || echo "libreadline not found"
           fi
           
           # Find and verify PostgreSQL
-          PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d)
+          PGSQL_DIR=$(find $LAUNCHPAD_DIR -name "postgresql.org" -type d)
           if [[ -d "$PGSQL_DIR" ]]; then
             PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
             echo "✅ PostgreSQL: $PGSQL_DIR/$PGSQL_VER"
-            ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h || echo "libpq-fe.h not found"
-            ls -la $PGSQL_DIR/$PGSQL_VER/lib/libpq.* || echo "libpq not found"
+            ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h 2>/dev/null || echo "libpq-fe.h not found"
+            ls -la $PGSQL_DIR/$PGSQL_VER/lib/libpq.* 2>/dev/null || echo "libpq not found"
           fi
           
           # Find and verify OpenSSL
-          OPENSSL_DIR=$(find $PKGX_DIR -name "openssl.org" -type d)
+          OPENSSL_DIR=$(find $LAUNCHPAD_DIR -name "openssl.org" -type d)
           if [[ -d "$OPENSSL_DIR" ]]; then
             OPENSSL_VER=$(ls -1 $OPENSSL_DIR | grep "^v" | sort -V | tail -1)
             echo "✅ OpenSSL: $OPENSSL_DIR/$OPENSSL_VER"
-            ls -la $OPENSSL_DIR/$OPENSSL_VER/include/openssl/ssl.h || echo "ssl.h not found"
-            ls -la $OPENSSL_DIR/$OPENSSL_VER/lib/libssl.* || echo "libssl not found"
+            ls -la $OPENSSL_DIR/$OPENSSL_VER/include/openssl/ssl.h 2>/dev/null || echo "ssl.h not found"
+            ls -la $OPENSSL_DIR/$OPENSSL_VER/lib/libssl.* 2>/dev/null || echo "libssl not found"
           fi
           
           # Find and verify other dependencies
           for dep in "gnu.org/gettext" "sourceware.org/bzip2" "openldap.org"; do
-            DEP_DIR=$(find $PKGX_DIR -path "*/$dep" -type d | head -1)
+            DEP_DIR=$(find $LAUNCHPAD_DIR -path "*/$dep" -type d | head -1)
             if [[ -d "$DEP_DIR" ]]; then
               DEP_VER=$(ls -1 $DEP_DIR | grep "^v" | sort -V | tail -1)
               echo "✅ $dep: $DEP_DIR/$DEP_VER"
