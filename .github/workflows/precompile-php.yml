@@ -453,47 +453,20 @@ jobs:
           echo "🔧 Setting up Launchpad build environment..."
           LAUNCHPAD_DIR="$HOME/.local"
 
-          # Find all unique library and include paths from Launchpad packages
-          LDFLAGS_PATHS=()
-          CPPFLAGS_PATHS=()
-          PKG_CONFIG_PATHS=()
-
-          # Loop through all installed packages (e.g., openssl.org, gnu.org, etc.)
-          for pkg_root in $(find $LAUNCHPAD_DIR -maxdepth 2 -type d -name "*.org"); do
-            # Find the latest version directory (e.g., v1.2.3)
-            latest_version_dir=$(find "$pkg_root" -maxdepth 1 -type d -name "v*" | sort -V | tail -n 1)
-
-            if [[ -n "$latest_version_dir" ]]; then
-              # Add lib path for linker
-              if [[ -d "$latest_version_dir/lib" ]]; then
-                LDFLAGS_PATHS+=("-L$latest_version_dir/lib")
-              fi
-
-              # Add include path for compiler
-              if [[ -d "$latest_version_dir/include" ]]; then
-                CPPFLAGS_PATHS+=("-I$latest_version_dir/include")
-              fi
-
-              # Add pkgconfig path
-              if [[ -d "$latest_version_dir/lib/pkgconfig" ]]; then
-                PKG_CONFIG_PATHS+=("$latest_version_dir/lib/pkgconfig")
-              fi
-            fi
-          done
+          # Recursively find all library, include, and pkg-config paths
+          LDFLAGS_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | sed 's/^/-L/' | tr '\n' ' ')
+          CPPFLAGS_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'include' | sed 's/^/-I/' | tr '\n' ' ')
+          PKG_CONFIG_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'pkgconfig' | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
 
           # Export the environment variables
-          LDFLAGS=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
-          CPPFLAGS=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
-          PKG_CONFIG_PATH=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")
-
-          echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
-          echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "LDFLAGS=$LDFLAGS_PATHS" >> $GITHUB_ENV
+          echo "CPPFLAGS=$CPPFLAGS_PATHS" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATHS" >> $GITHUB_ENV
 
           echo "✅ Environment configured:"
-          echo "  LDFLAGS: $LDFLAGS"
-          echo "  CPPFLAGS: $CPPFLAGS"
-          echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "  LDFLAGS: $LDFLAGS_PATHS"
+          echo "  CPPFLAGS: $CPPFLAGS_PATHS"
+          echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATHS"
 
       - name: Download and extract PHP source
         run: |
@@ -530,48 +503,44 @@ jobs:
             fi
             echo "Using CXXFLAGS: $CXXFLAGS"
 
-            # Use clang compilers
             export CC=clang
             export CXX=clang++
 
-            # Check if PostgreSQL is available for builds that need it
+            # Check for PostgreSQL
             if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
               if ! pkg-config --exists libpq; then
-                echo "⚠️ PostgreSQL (libpq) not found via pkg-config. Disabling PostgreSQL extensions."
-                FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
+                echo "⚠️ PostgreSQL (libpq) not found. Disabling PostgreSQL extensions."
+                FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -e 's/--with-pdo-pgsql//g' -e 's/--with-pgsql//g' | sed 's/  */ /g')
               else
-                echo "✅ PostgreSQL (libpq) found via pkg-config."
+                echo "✅ PostgreSQL (libpq) found."
               fi
             fi
 
-            # Add explicit paths for libraries that need it
+            # Build explicit configure flags for critical libraries
             EXTRA_CONFIG=""
-            
-            # Find and configure iconv
-            if pkg-config --exists libiconv; then
-              EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$(pkg-config --variable=prefix libiconv)"
-              echo "✅ iconv configured via pkg-config"
-            fi
+            for lib in iconv openssl curl bzip2 gmp readline;
+            do
+              PKG_NAME=""
+              CONFIGURE_FLAG=""
+              case $lib in
+                  iconv) PKG_NAME="libiconv"; CONFIGURE_FLAG="--with-iconv";; 
+                  openssl) PKG_NAME="openssl"; CONFIGURE_FLAG="--with-openssl";; 
+                  curl) PKG_NAME="libcurl"; CONFIGURE_FLAG="--with-curl";; 
+                  bzip2) PKG_NAME="bzip2"; CONFIGURE_FLAG="--with-bz2";; 
+                  gmp) PKG_NAME="gmp"; CONFIGURE_FLAG="--with-gmp";; 
+                  readline) PKG_NAME="readline"; CONFIGURE_FLAG="--with-readline";; 
+              esac
 
-            # Find and configure openssl
-            if pkg-config --exists openssl; then
-              EXTRA_CONFIG="$EXTRA_CONFIG --with-openssl=$(pkg-config --variable=prefix openssl)"
-              echo "✅ openssl configured via pkg-config"
-            fi
+              if pkg-config --exists "$PKG_NAME"; then
+                  PREFIX=$(pkg-config --variable=prefix "$PKG_NAME")
+                  EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG=$PREFIX"
+                  echo "✅ $lib configured at: $PREFIX"
+              else
+                  echo "⚠️  $lib not found via pkg-config. The build may fail."
+              fi
+            done
 
-            # Find and configure curl
-            if pkg-config --exists libcurl; then
-              EXTRA_CONFIG="$EXTRA_CONFIG --with-curl=$(pkg-config --variable=prefix libcurl)"
-              echo "✅ curl configured via pkg-config"
-            fi
-
-            # Find and configure bzip2
-            if pkg-config --exists bzip2; then
-              EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$(pkg-config --variable=prefix bzip2)"
-              echo "✅ bzip2 configured via pkg-config"
-            fi
-
-            # Run configure, relying on the environment variables and explicit paths
+            # Run configure with all flags
             ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
