@@ -544,7 +544,34 @@ jobs:
               fi
             fi
 
-            # Run configure, relying on the environment variables for dependency paths
+            # Add explicit paths for libraries that need it
+            EXTRA_CONFIG=""
+            
+            # Find and configure iconv
+            if pkg-config --exists libiconv; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$(pkg-config --variable=prefix libiconv)"
+              echo "✅ iconv configured via pkg-config"
+            fi
+
+            # Find and configure openssl
+            if pkg-config --exists openssl; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-openssl=$(pkg-config --variable=prefix openssl)"
+              echo "✅ openssl configured via pkg-config"
+            fi
+
+            # Find and configure curl
+            if pkg-config --exists libcurl; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-curl=$(pkg-config --variable=prefix libcurl)"
+              echo "✅ curl configured via pkg-config"
+            fi
+
+            # Find and configure bzip2
+            if pkg-config --exists bzip2; then
+              EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$(pkg-config --variable=prefix bzip2)"
+              echo "✅ bzip2 configured via pkg-config"
+            fi
+
+            # Run configure, relying on the environment variables and explicit paths
             ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
@@ -552,7 +579,8 @@ jobs:
               --disable-debug \
               --enable-shared \
               --with-pic \
-              $FINAL_EXTENSIONS
+              $FINAL_EXTENSIONS \
+              $EXTRA_CONFIG
 
           else # For Linux
             echo "🔧 Configuring PHP build for Linux..."
