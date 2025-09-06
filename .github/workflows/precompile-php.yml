@@ -115,7 +115,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13] # Include Intel Mac
+        os: [ubuntu-latest, macos-latest, macos-13, windows-latest] # Include Intel Mac
         php_version: ${{ fromJSON(needs.get-php-versions.outputs.php_versions) }}
         config: [laravel-mysql, laravel-postgres, laravel-sqlite, api-only, enterprise, wordpress, full-stack]
         include:
@@ -129,6 +129,9 @@ jobs:
           - os: macos-13
             platform: darwin
             arch: x86_64
+          - os: windows-latest
+            platform: win32
+            arch: x64
         exclude:
           # Skip some combinations to reduce build time
           - os: macos-13
@@ -162,6 +165,25 @@ jobs:
 
       - name: Install Dependencies
         run: bun install
+
+      # - name: Install build dependencies (Windows)
+      #   if: matrix.platform == 'win32'
+      #   run: |
+      #     echo "🔧 Installing PHP dependencies via Chocolatey..."
+      #     choco install -y --no-progress \
+      #       git \
+      #       unzip \
+      #       bison \
+      #       pkg-config-lite \
+      #       libxml2 \
+      #       zlib \
+      #       openssl \
+      #       curl \
+      #       libpng \
+      #       jpeg \
+      #       freetype \
+      #       libiconv \
+      #       icu
 
       - name: Install build dependencies (Ubuntu)
         if: matrix.platform == 'linux'
@@ -212,21 +234,21 @@ jobs:
           echo "  - Config: ${{ matrix.config }}"
           echo "  - Working directory: $(pwd)"
           echo "  - PATH: $PATH"
-          
+
           # Build Launchpad first so we can use it to install dependencies
           echo "🔨 Building Launchpad..."
           cd ${{ github.workspace }}
           bun install
           bun run build
-          
+
           # Install PHP and essential build dependencies via Launchpad
           echo "📦 Installing PHP dependencies via Launchpad..."
           # Set environment variable to ensure dependencies are installed
           export LAUNCHPAD_INSTALL_DEPS=true
-          
+
           # Install dependencies based on build configuration
           echo "🔍 Build configuration: ${{ matrix.config }}"
-          
+
           # Always install base dependencies
           echo "📦 Installing base dependencies..."
           ./packages/launchpad/bin/cli.ts install \
@@ -246,7 +268,7 @@ jobs:
             gnome.org/libxml2 \
             curl.se \
             --verbose
-          
+
           # Install PostgreSQL for postgres-related builds
           if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
             echo "🐘 Installing PostgreSQL for ${{ matrix.config }} build"
@@ -254,9 +276,9 @@ jobs:
           else
             echo "⏭️  Skipping PostgreSQL for ${{ matrix.config }} build"
           fi
-          
+
           echo "✅ PHP build dependencies installed successfully via Launchpad"
-          
+
           # Debug: List all installed packages to see what we have
           echo "🔍 Debugging: Listing all Launchpad installations..."
           ls -la $HOME/.local/ | head -20
@@ -265,12 +287,12 @@ jobs:
           echo "🔍 Checking for specific libraries..."
           find $HOME/.local -name "lib" -type d | head -10
           find $HOME/.local -name "include" -type d | head -10
-          
+
           # Use the standard Launchpad directory
           LAUNCHPAD_DIR="$HOME/.local"
           echo "LAUNCHPAD_DIR=$LAUNCHPAD_DIR" >> $GITHUB_ENV
           echo "🔍 Searching for ICU installation..."
-          
+
           # ICU might be installed as unicode.org
           ICU_DIR=$(find $LAUNCHPAD_DIR -name "unicode.org" -type d | head -1)
           if [[ -d "$ICU_DIR" ]]; then
@@ -278,12 +300,12 @@ jobs:
             ICU_FULL_VER=$(echo "$ICU_VERSION_DIR" | sed 's/^v//')
             ICU_VER=$(echo "$ICU_FULL_VER" | cut -d. -f1)
             ICU_PREFIX="$ICU_DIR/$ICU_VERSION_DIR"
-            
+
             echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) at $ICU_PREFIX"
             echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
             echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
             echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
-            
+
             # Verify ICU installation
             echo "🔍 ICU installation details:"
             echo "ICU_PREFIX: $ICU_PREFIX"
@@ -291,13 +313,13 @@ jobs:
           else
             # Try alternative ICU locations that might be used by Launchpad
             echo "🔍 ICU not found at unicode.org, checking alternative locations..."
-            
+
             # Check if ICU is available via pkg-config (installed as dependency)
             if pkg-config --exists icu-uc icu-i18n 2>/dev/null; then
               ICU_PREFIX=$(pkg-config --variable=prefix icu-uc)
               ICU_VER=$(pkg-config --modversion icu-uc | cut -d. -f1)
               ICU_FULL_VER=$(pkg-config --modversion icu-uc)
-              
+
               echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) via pkg-config"
               echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
               echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
@@ -312,7 +334,7 @@ jobs:
 
           # Verify Launchpad installations
           echo "🔍 Checking Launchpad dependency installations:"
-          
+
           # Find and verify readline
           READLINE_DIR=$(find $LAUNCHPAD_DIR -name "gnu.org" -type d)/readline
           if [[ -d "$READLINE_DIR" ]]; then
@@ -321,7 +343,7 @@ jobs:
             ls -la $READLINE_DIR/$READLINE_VER/include/readline/readline.h 2>/dev/null || echo "readline.h not found"
             ls -la $READLINE_DIR/$READLINE_VER/lib/libreadline.* 2>/dev/null || echo "libreadline not found"
           fi
-          
+
           # Find and verify PostgreSQL
           PGSQL_DIR=$(find $LAUNCHPAD_DIR -name "postgresql.org" -type d)
           if [[ -d "$PGSQL_DIR" ]]; then
@@ -330,7 +352,7 @@ jobs:
             ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h 2>/dev/null || echo "libpq-fe.h not found"
             ls -la $PGSQL_DIR/$PGSQL_VER/lib/libpq.* 2>/dev/null || echo "libpq not found"
           fi
-          
+
           # Find and verify OpenSSL
           OPENSSL_DIR=$(find $LAUNCHPAD_DIR -name "openssl.org" -type d)
           if [[ -d "$OPENSSL_DIR" ]]; then
@@ -339,7 +361,7 @@ jobs:
             ls -la $OPENSSL_DIR/$OPENSSL_VER/include/openssl/ssl.h 2>/dev/null || echo "ssl.h not found"
             ls -la $OPENSSL_DIR/$OPENSSL_VER/lib/libssl.* 2>/dev/null || echo "libssl not found"
           fi
-          
+
           # Find and verify other dependencies
           for dep in "gnu.org/gettext" "sourceware.org/bzip2" "openldap.org"; do
             DEP_DIR=$(find $LAUNCHPAD_DIR -path "*/$dep" -type d | head -1)
@@ -425,167 +447,53 @@ jobs:
 
           echo "CONFIGURE_EXTENSIONS=$EXTENSIONS" >> $GITHUB_ENV
 
-      - name: Set macOS specific paths
+      - name: Set up Launchpad Environment (macOS)
         if: matrix.platform == 'darwin'
         run: |
-          # Set paths for Launchpad-installed dependencies
-          LAUNCHPAD_DIR="${{ env.LAUNCHPAD_DIR }}"
-          echo "🔍 Using Launchpad dependencies from: $LAUNCHPAD_DIR"
-          
-          # Build PKG_CONFIG_PATH from Launchpad installations - Fix wildcard paths
-          PKG_CONFIG_PATHS=()
-          for org_dir in $(find $LAUNCHPAD_DIR -maxdepth 1 -name "*.org" -type d); do
-            if [[ -d "$org_dir" ]]; then
-              # Find the latest version directory for this org
-              latest_version=$(ls -1 "$org_dir" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$latest_version" && -d "$org_dir/$latest_version/lib/pkgconfig" ]]; then
-                PKG_CONFIG_PATHS+=("$org_dir/$latest_version/lib/pkgconfig")
-                echo "📦 Found pkgconfig: $org_dir/$latest_version/lib/pkgconfig"
-              fi
-            fi
-          done
-          PKG_CONFIG_PATH_JOINED=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH_JOINED" >> $GITHUB_ENV
-          export PKG_CONFIG_PATH="$PKG_CONFIG_PATH_JOINED"
-          echo "🔧 PKG_CONFIG_PATH: $PKG_CONFIG_PATH_JOINED"
+          echo "🔧 Setting up Launchpad build environment..."
+          LAUNCHPAD_DIR="$HOME/.local"
 
-          # Build PATH from Launchpad installations - Fix wildcard paths
-          PATH_PATHS=()
-          for org_dir in $(find $LAUNCHPAD_DIR -maxdepth 1 -name "*.org" -type d); do
-            if [[ -d "$org_dir" ]]; then
-              # Find the latest version directory for this org
-              latest_version=$(ls -1 "$org_dir" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$latest_version" && -d "$org_dir/$latest_version/bin" ]]; then
-                PATH_PATHS+=("$org_dir/$latest_version/bin")
-                echo "📦 Found bin: $org_dir/$latest_version/bin"
-              fi
-            fi
-          done
-          PATH_JOINED=$(IFS=:; echo "${PATH_PATHS[*]}")
-          echo "PATH=$PATH_JOINED:$PATH" >> $GITHUB_ENV
-          export PATH="$PATH_JOINED:$PATH"
-
-          # Build LDFLAGS from Launchpad installations - Fix wildcard paths
+          # Find all unique library and include paths from Launchpad packages
           LDFLAGS_PATHS=()
-          for org_dir in $(find $LAUNCHPAD_DIR -maxdepth 1 -name "*.org" -type d); do
-            if [[ -d "$org_dir" ]]; then
-              # Find the latest version directory for this org
-              latest_version=$(ls -1 "$org_dir" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$latest_version" && -d "$org_dir/$latest_version/lib" ]]; then
-                LDFLAGS_PATHS+=("-L$org_dir/$latest_version/lib")
-                echo "📦 Found lib: $org_dir/$latest_version/lib"
-              fi
-            fi
-          done
-          LDFLAGS_JOINED=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
-          echo "LDFLAGS=$LDFLAGS_JOINED" >> $GITHUB_ENV
-          export LDFLAGS="$LDFLAGS_JOINED"
-          echo "🔧 LDFLAGS: $LDFLAGS_JOINED"
-
-          # Build CPPFLAGS from Launchpad installations - Fix wildcard paths
           CPPFLAGS_PATHS=()
-          for org_dir in $(find $LAUNCHPAD_DIR -maxdepth 1 -name "*.org" -type d); do
-            if [[ -d "$org_dir" ]]; then
-              # Find the latest version directory for this org
-              latest_version=$(ls -1 "$org_dir" | grep "^v" | sort -V | tail -1)
-              if [[ -n "$latest_version" && -d "$org_dir/$latest_version/include" ]]; then
-                CPPFLAGS_PATHS+=("-I$org_dir/$latest_version/include")
-                echo "📦 Found include: $org_dir/$latest_version/include"
+          PKG_CONFIG_PATHS=()
+
+          # Loop through all installed packages (e.g., openssl.org, gnu.org, etc.)
+          for pkg_root in $(find $LAUNCHPAD_DIR -maxdepth 2 -type d -name "*.org"); do
+            # Find the latest version directory (e.g., v1.2.3)
+            latest_version_dir=$(find "$pkg_root" -maxdepth 1 -type d -name "v*" | sort -V | tail -n 1)
+
+            if [[ -n "$latest_version_dir" ]]; then
+              # Add lib path for linker
+              if [[ -d "$latest_version_dir/lib" ]]; then
+                LDFLAGS_PATHS+=("-L$latest_version_dir/lib")
+              fi
+
+              # Add include path for compiler
+              if [[ -d "$latest_version_dir/include" ]]; then
+                CPPFLAGS_PATHS+=("-I$latest_version_dir/include")
+              fi
+
+              # Add pkgconfig path
+              if [[ -d "$latest_version_dir/lib/pkgconfig" ]]; then
+                PKG_CONFIG_PATHS+=("$latest_version_dir/lib/pkgconfig")
               fi
             fi
           done
-          CPPFLAGS_JOINED=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
-          echo "CPPFLAGS=$CPPFLAGS_JOINED" >> $GITHUB_ENV
-          export CPPFLAGS="$CPPFLAGS_JOINED"
-          echo "🔧 CPPFLAGS: $CPPFLAGS_JOINED"
-          
-          # Specific BZip2 configuration to fix header detection
-          echo "🔍 Configuring BZip2 paths..."
-          BZIP2_DIR=$(find $LAUNCHPAD_DIR -name "sourceware.org" -type d | head -1)
-          if [[ -d "$BZIP2_DIR" ]]; then
-            BZIP2_VER=$(ls -1 $BZIP2_DIR | grep "^v" | sort -V | tail -1)
-            if [[ -n "$BZIP2_VER" && -d "$BZIP2_DIR/$BZIP2_VER" ]]; then
-              BZIP2_PREFIX="$BZIP2_DIR/$BZIP2_VER"
-              echo "BZIP2_DIR=$BZIP2_PREFIX" >> $GITHUB_ENV
-              echo "✅ BZip2 configured: $BZIP2_PREFIX"
-              
-              # Add BZip2 specific flags
-              if [[ -f "$BZIP2_PREFIX/include/bzlib.h" ]]; then
-                echo "✅ Found bzlib.h at: $BZIP2_PREFIX/include/bzlib.h"
-                echo "BZIP2_CFLAGS=-I$BZIP2_PREFIX/include" >> $GITHUB_ENV
-                echo "BZIP2_LIBS=-L$BZIP2_PREFIX/lib -lbz2" >> $GITHUB_ENV
-              else
-                echo "⚠️  bzlib.h not found in $BZIP2_PREFIX/include"
-              fi
-            fi
-          else
-            echo "⚠️  BZip2 not found in Launchpad installations"
-          fi
-          echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
-          export CXXFLAGS="-std=c++17 -stdlib=libc++"
 
-          # Set readline-specific paths from Launchpad
-          READLINE_DIR=$(find $LAUNCHPAD_DIR -path "*/gnu.org/readline/v*/include" -type d | head -1)
-          if [[ -d "$READLINE_DIR" ]]; then
-            READLINE_PREFIX=$(dirname "$READLINE_DIR")
-            echo "READLINE_CFLAGS=-I$READLINE_PREFIX/include" >> $GITHUB_ENV
-            echo "READLINE_LIBS=-L$READLINE_PREFIX/lib -lreadline" >> $GITHUB_ENV
-            export READLINE_CFLAGS="-I$READLINE_PREFIX/include"
-            export READLINE_LIBS="-L$READLINE_PREFIX/lib -lreadline"
-            echo "✅ Readline found: $READLINE_PREFIX"
-          else
-            echo "⚠️  Readline not found in Launchpad installations"
-          fi
+          # Export the environment variables
+          LDFLAGS=$(IFS=' '; echo "${LDFLAGS_PATHS[*]}")
+          CPPFLAGS=$(IFS=' '; echo "${CPPFLAGS_PATHS[*]}")
+          PKG_CONFIG_PATH=$(IFS=:; echo "${PKG_CONFIG_PATHS[*]}")
 
-          # Check if PostgreSQL is available and working from Launchpad
-          echo "Debug: Checking PostgreSQL availability from Launchpad:"
-          echo "  PATH: $PATH"
-          echo "  Checking pg_config:"
-          which pg_config || echo "    pg_config not found in PATH"
-          pg_config --version 2>/dev/null || echo "    pg_config version check failed"
-          
-          PGSQL_DIR=$(find $LAUNCHPAD_DIR -name "postgresql.org" -type d | head -1)
-          if [[ -d "$PGSQL_DIR" ]]; then
-            PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
-            echo "  Checking libpq-fe.h:"
-            ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h 2>/dev/null || echo "    libpq-fe.h not found"
-            echo "  Checking libpq installation:"
-            ls -la $PGSQL_DIR/$PGSQL_VER/include/ 2>/dev/null | head -5 || echo "    libpq include directory not found"
-            ls -la $PGSQL_DIR/$PGSQL_VER/lib/ 2>/dev/null | head -5 || echo "    libpq lib directory not found"
-          fi
+          echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
+          echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
-          # Check if PostgreSQL is available from Launchpad - Enhanced detection
-          PGSQL_HEADER=""
-          PG_CONFIG_PATH=""
-          if [[ -d "$PGSQL_DIR" ]]; then
-            PGSQL_HEADER="$PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h"
-            PG_CONFIG_PATH="$PGSQL_DIR/$PGSQL_VER/bin/pg_config"
-          fi
-          
-          # More robust PostgreSQL detection
-          POSTGRESQL_WORKING=false
-          if [[ -f "$PG_CONFIG_PATH" && -f "$PGSQL_HEADER" ]]; then
-            echo "PostgreSQL binaries and headers found"
-            # Test pg_config execution
-            if $PG_CONFIG_PATH --version >/dev/null 2>&1; then
-              echo "pg_config is working"
-              POSTGRESQL_WORKING=true
-            else
-              echo "pg_config found but not working"
-            fi
-          else
-            echo "PostgreSQL binaries or headers missing:"
-            echo "  pg_config: $PG_CONFIG_PATH (exists: $(test -f "$PG_CONFIG_PATH" && echo yes || echo no))"
-            echo "  libpq-fe.h: $PGSQL_HEADER (exists: $(test -f "$PGSQL_HEADER" && echo yes || echo no))"
-          fi
-          
-          if [[ "$POSTGRESQL_WORKING" == "true" ]]; then
-            echo "PostgreSQL found and working from Launchpad"
-            echo "POSTGRESQL_AVAILABLE=true" >> $GITHUB_ENV
-          else
-            echo "PostgreSQL not found or not working, will disable PostgreSQL support"
-            echo "POSTGRESQL_AVAILABLE=false" >> $GITHUB_ENV
-          fi
+          echo "✅ Environment configured:"
+          echo "  LDFLAGS: $LDFLAGS"
+          echo "  CPPFLAGS: $CPPFLAGS"
+          echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
 
       - name: Download and extract PHP source
         run: |
@@ -598,299 +506,87 @@ jobs:
           echo "PHP_SOURCE_DIR=${{ env.BUILD_DIR }}/php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
       - name: Configure PHP build
+        if: matrix.platform != 'win32'
         run: |
           cd ${{ env.PHP_SOURCE_DIR }}
 
-          # Create installation directory
           INSTALL_PREFIX="${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}"
           mkdir -p "$INSTALL_PREFIX"
 
-          # Configure with platform-specific options
+          FINAL_EXTENSIONS="${{ env.CONFIGURE_EXTENSIONS }}"
+
+          # Platform-specific configuration
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            # Use Launchpad environment for PHP compilation
-            echo "🔧 Configuring PHP build with Launchpad environment..."
-            
-            # Set up environment variables from Launchpad installations
-            echo "🔍 Using environment variables from Launchpad installations:"
-            echo "  CPPFLAGS: $CPPFLAGS"
-            echo "  LDFLAGS: $LDFLAGS"
-            echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-            echo "  PATH: $PATH"
+            echo "🔧 Configuring PHP build for macOS with Launchpad environment..."
 
             # Set C++ standard based on PHP version
             PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
             PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
-            
+
             if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
               export CXXFLAGS="-std=c++17 -stdlib=libc++"
-              echo "Using C++17 for PHP ${{ matrix.php_version }}"
             else
               export CXXFLAGS="-std=c++14 -stdlib=libc++"
-              echo "Using C++14 for PHP ${{ matrix.php_version }}"
             fi
-            
+            echo "Using CXXFLAGS: $CXXFLAGS"
+
             # Use clang compilers
             export CC=clang
             export CXX=clang++
-            
-            # Configure PHP with Launchpad-provided dependencies
+
+            # Check if PostgreSQL is available for builds that need it
+            if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
+              if ! pkg-config --exists libpq; then
+                echo "⚠️ PostgreSQL (libpq) not found via pkg-config. Disabling PostgreSQL extensions."
+                FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
+              else
+                echo "✅ PostgreSQL (libpq) found via pkg-config."
+              fi
+            fi
+
+            # Run configure, relying on the environment variables for dependency paths
             ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
               --with-config-file-scan-dir="$INSTALL_PREFIX/etc/conf.d" \
-              ${{ env.CONFIGURE_EXTENSIONS }}
-            EXTRA_CONFIG=""
-            
-            # Find and configure ICU - Use ICU_PREFIX from environment
-            if [[ -n "$ICU_PREFIX" && -d "$ICU_PREFIX" ]]; then
-              EXTRA_CONFIG="$EXTRA_CONFIG --with-icu-dir=$ICU_PREFIX"
-              echo "✅ ICU configured: $ICU_PREFIX"
-            else
-              echo "⚠️  ICU not found, disabling intl extension"
-              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--enable-intl//g' | sed 's/  */ /g')
-            fi
-            
-            # Find and configure iconv
-            ICONV_BASE_DIR=$(find $LAUNCHPAD_DIR -name "gnu.org" -type d | head -1)
-            if [[ -d "$ICONV_BASE_DIR" ]]; then
-              ICONV_SUBDIR=$(find $ICONV_BASE_DIR -name "libiconv" -type d | head -1)
-              if [[ -d "$ICONV_SUBDIR" ]]; then
-                ICONV_VERSION_DIR=$(ls -1 $ICONV_SUBDIR | grep "^v" | sort -V | tail -1)
-                if [[ -n "$ICONV_VERSION_DIR" ]]; then
-                  ICONV_FULL_PATH="$ICONV_SUBDIR/$ICONV_VERSION_DIR"
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-iconv=$ICONV_FULL_PATH"
-                  echo "✅ iconv configured: $ICONV_FULL_PATH"
-                else
-                  echo "⚠️  iconv version directory not found"
-                fi
-              else
-                echo "⚠️  iconv subdirectory not found"
-              fi
-            else
-              echo "⚠️  iconv not found"
-            fi
-            
-            # Find and configure BZip2 - Use BZIP2_PREFIX from environment
-            if [[ -n "$BZIP2_PREFIX" && -d "$BZIP2_PREFIX" ]]; then
-              EXTRA_CONFIG="$EXTRA_CONFIG --with-bz2=$BZIP2_PREFIX"
-              echo "✅ BZip2 configured: $BZIP2_PREFIX"
-            else
-              echo "⚠️  BZip2 not found, disabling bzip2 support"
-              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-bz2//g' | sed 's/  */ /g')
-            fi
-            
-            # Find and configure readline
-            READLINE_BASE_DIR=$(find $LAUNCHPAD_DIR -name "gnu.org" -type d | head -1)
-            if [[ -d "$READLINE_BASE_DIR" ]]; then
-              READLINE_SUBDIR=$(find $READLINE_BASE_DIR -name "readline" -type d | head -1)
-              if [[ -d "$READLINE_SUBDIR" ]]; then
-                READLINE_VERSION_DIR=$(ls -1 $READLINE_SUBDIR | grep "^v" | sort -V | tail -1)
-                if [[ -n "$READLINE_VERSION_DIR" && -f "$READLINE_SUBDIR/$READLINE_VERSION_DIR/include/readline/readline.h" ]]; then
-                  READLINE_FULL_PATH="$READLINE_SUBDIR/$READLINE_VERSION_DIR"
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-readline=$READLINE_FULL_PATH"
-                  echo "✅ Readline configured: $READLINE_FULL_PATH"
-                else
-                  echo "⚠️  Readline header not found, disabling readline support"
-                  export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-readline//g' | sed 's/  */ /g')
-                  EXTRA_CONFIG="$EXTRA_CONFIG --disable-readline"
-                fi
-              else
-                echo "⚠️  Readline subdirectory not found, disabling readline support"
-                export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-readline//g' | sed 's/  */ /g')
-                EXTRA_CONFIG="$EXTRA_CONFIG --disable-readline"
-              fi
-            else
-              echo "⚠️  Readline not found, disabling readline support"
-              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-readline//g' | sed 's/  */ /g')
-              EXTRA_CONFIG="$EXTRA_CONFIG --disable-readline"
-            fi
-            
-            # Find and configure gettext
-            GETTEXT_BASE_DIR=$(find $LAUNCHPAD_DIR -name "gnu.org" -type d | head -1)
-            if [[ -d "$GETTEXT_BASE_DIR" ]]; then
-              GETTEXT_SUBDIR=$(find $GETTEXT_BASE_DIR -name "gettext" -type d | head -1)
-              if [[ -d "$GETTEXT_SUBDIR" ]]; then
-                GETTEXT_VERSION_DIR=$(ls -1 $GETTEXT_SUBDIR | grep "^v" | sort -V | tail -1)
-                if [[ -n "$GETTEXT_VERSION_DIR" ]]; then
-                  GETTEXT_FULL_PATH="$GETTEXT_SUBDIR/$GETTEXT_VERSION_DIR"
-                  EXTRA_CONFIG="$EXTRA_CONFIG --with-gettext=$GETTEXT_FULL_PATH"
-                  echo "✅ Gettext configured: $GETTEXT_FULL_PATH"
-                else
-                  echo "⚠️  Gettext version directory not found"
-                fi
-              else
-                echo "⚠️  Gettext subdirectory not found"
-              fi
-            else
-              echo "⚠️  Gettext not found"
-            fi
-            
-            echo "🔍 Final EXTRA_CONFIG: $EXTRA_CONFIG"
-            echo "🔍 Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
-            
-            # Export EXTRA_CONFIG to environment for configure step
-            echo "EXTRA_CONFIG=$EXTRA_CONFIG" >> $GITHUB_ENV
-            export EXTRA_CONFIG="$EXTRA_CONFIG"
-
-            # Check if PostgreSQL is available and working
-            echo "Debug: POSTGRESQL_AVAILABLE=$POSTGRESQL_AVAILABLE"
-            if [[ "$POSTGRESQL_AVAILABLE" == "true" ]]; then
-              echo "PostgreSQL found and working"
-            else
-              if [[ "${{ matrix.config }}" == "laravel-postgres" ]]; then
-                echo "❌ PostgreSQL not available; cannot build laravel-postgres binary on this runner"
-                exit 1
-              fi
-              echo "PostgreSQL not found or not working, will disable PostgreSQL support for non-postgres configs"
-              # Remove PostgreSQL extensions from CONFIGURE_EXTENSIONS
-              export CONFIGURE_EXTENSIONS=$(echo "$CONFIGURE_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
-              echo "Updated CONFIGURE_EXTENSIONS: $CONFIGURE_EXTENSIONS"
-              # Also disable PostgreSQL in the configuration
-              EXTRA_CONFIG="$EXTRA_CONFIG --disable-pgsql --disable-pdo-pgsql"
-              echo "EXTRA_CONFIG=$EXTRA_CONFIG" >> $GITHUB_ENV
-              export EXTRA_CONFIG="$EXTRA_CONFIG"
-            fi
-          else
-            # On macOS, use Launchpad-installed libraries
-            # Environment variables should already be set from previous step
-            LAUNCHPAD_DIR="${{ env.LAUNCHPAD_DIR }}"
-            EXTRA_CONFIG=""
-          fi
-
-          echo "Configuring PHP with:"
-          echo "  Extensions: ${{ env.CONFIGURE_EXTENSIONS }}"
-          echo "  Prefix: $INSTALL_PREFIX"
-          echo "  Extra config: $EXTRA_CONFIG"
-
-          # Debug: Check readline installation on macOS
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            echo "Debug: Checking readline installation on macOS:"
-            echo "  READLINE_CFLAGS: $READLINE_CFLAGS"
-            echo "  READLINE_LIBS: $READLINE_LIBS"
-            echo "  CPPFLAGS: $CPPFLAGS"
-            echo "  LDFLAGS: $LDFLAGS"
-            echo "  Checking if readline.h exists:"
-            find $LAUNCHPAD_DIR -name "readline.h" 2>/dev/null || echo "  No readline.h found"
-
-            echo "Debug: Checking PostgreSQL installation on macOS:"
-            echo "  PGSQL_CFLAGS: $PGSQL_CFLAGS"
-            echo "  PGSQL_LIBS: $PGSQL_LIBS"
-            echo "  PATH: $PATH"
-            echo "  Checking if pg_config is available:"
-            which pg_config || echo "  pg_config not found in PATH"
-            pg_config --version 2>/dev/null || echo "  pg_config version check failed"
-            echo "  Checking if libpq-fe.h exists:"
-            find $LAUNCHPAD_DIR -name "libpq-fe.h" 2>/dev/null || echo "  No libpq-fe.h found"
-          fi
-
-          # Check if libcurl is found via pkg-config
-          if pkg-config --exists libcurl; then
-            echo "libcurl found via pkg-config"
-            CURL_CONFIG=""
-          else
-            echo "libcurl not found via pkg-config, using system curl"
-            CURL_CONFIG=""
-          fi
-
-          # Build the final configure extensions based on availability
-          FINAL_EXTENSIONS="${{ env.CONFIGURE_EXTENSIONS }}"
-
-          # If PostgreSQL is not available, remove PostgreSQL extensions
-          if [[ "${{ matrix.platform }}" == "darwin" ]] && [[ "$POSTGRESQL_AVAILABLE" != "true" ]]; then
-            echo "Removing PostgreSQL extensions from configure command"
-            FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed 's/--with-pdo-pgsql//g' | sed 's/--with-pgsql//g' | sed 's/  */ /g')
-            echo "Final extensions: $FINAL_EXTENSIONS"
-          fi
-
-                    # Set PHP version variables for C++ standard selection
-          PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
-          PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
-
-          echo "Configure environment:"
-          echo "  CXXFLAGS: $CXXFLAGS"
-          echo "  CFLAGS: $CFLAGS"
-          echo "  CPPFLAGS: $CPPFLAGS"
-          echo "  PHP Version: ${{ matrix.php_version }} (Major: $PHP_MAJOR_VERSION, Minor: $PHP_MINOR_VERSION)"
-
-          # Test C++17 support before configure
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            echo "Testing C++17 support before configure:"
-            echo '#include <type_traits>' > test_cpp17.cpp
-            echo 'int main() { std::enable_if_t<true, int> x = 0; return x; }' >> test_cpp17.cpp
-            if clang++ -std=c++17 -stdlib=libc++ test_cpp17.cpp -o test_cpp17 2>/dev/null; then
-              echo "C++17 support confirmed before configure"
-              rm -f test_cpp17.cpp test_cpp17
-            else
-              echo "C++17 support test failed before configure"
-              rm -f test_cpp17.cpp test_cpp17
-            fi
-          fi
-
-                    if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            # Set environment variables for configure
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
-              export CXXFLAGS="-std=c++17 -stdlib=libc++"
-              echo "Set C++17 for configure: $CXXFLAGS"
-            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
-              # PHP 8.1 configure step uses C++14 (PHP requirement)
-              export CXXFLAGS="-std=c++14 -stdlib=libc++"
-              echo "Set C++14 for PHP 8.1 configure: $CXXFLAGS"
-            else
-              export CXXFLAGS="-std=c++14 -stdlib=libc++"
-              echo "Set C++14 for configure: $CXXFLAGS"
-            fi
-            export CFLAGS=""
-            export CPPFLAGS="$CPPFLAGS"
-
-            # Also set CC and CXX explicitly
-            export CC=clang
-            export CXX=clang++
-            echo "Set CC=$CC, CXX=$CXX"
-          fi
-
-          # Run configure with explicit environment
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            echo "🚀 Final configure command:"
-            echo "CXXFLAGS='$CXXFLAGS' CFLAGS='$CFLAGS' CPPFLAGS='$CPPFLAGS' LDFLAGS='$LDFLAGS' CC='$CC' CXX='$CXX' ./configure --prefix=$INSTALL_PREFIX --with-config-file-path=$INSTALL_PREFIX/lib --with-config-file-scan-dir=$INSTALL_PREFIX/lib/conf.d --disable-debug --enable-shared --with-pic $FINAL_EXTENSIONS $EXTRA_CONFIG"
-            echo "🔍 Environment variables:"
-            echo "  CXXFLAGS: $CXXFLAGS"
-            echo "  CFLAGS: $CFLAGS"
-            echo "  CPPFLAGS: $CPPFLAGS"
-            echo "  LDFLAGS: $LDFLAGS"
-            echo "  BZIP2_CFLAGS: $BZIP2_CFLAGS"
-            echo "  BZIP2_LIBS: $BZIP2_LIBS"
-            
-            CXXFLAGS="$CXXFLAGS" CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" LDFLAGS="$LDFLAGS" \
-            BZIP2_CFLAGS="$BZIP2_CFLAGS" BZIP2_LIBS="$BZIP2_LIBS" \
-            CC="$CC" CXX="$CXX" ./configure \
-              --prefix="$INSTALL_PREFIX" \
-              --with-config-file-path="$INSTALL_PREFIX/lib" \
-              --with-config-file-scan-dir="$INSTALL_PREFIX/lib/conf.d" \
               --disable-debug \
               --enable-shared \
               --with-pic \
-              $FINAL_EXTENSIONS \
-              $EXTRA_CONFIG
-          else
+              $FINAL_EXTENSIONS
+
+          else # For Linux
+            echo "🔧 Configuring PHP build for Linux..."
             ./configure \
               --prefix="$INSTALL_PREFIX" \
-              --with-config-file-path="$INSTALL_PREFIX/lib" \
-              --with-config-file-scan-dir="$INSTALL_PREFIX/lib/conf.d" \
+              --with-config-file-path="$INSTALL_PREFIX/etc" \
+              --with-config-file-scan-dir="$INSTALL_PREFIX/etc/conf.d" \
               --disable-debug \
               --enable-shared \
               --with-pic \
-              $FINAL_EXTENSIONS \
-              $EXTRA_CONFIG \
-              $CURL_CONFIG
+              $FINAL_EXTENSIONS
           fi
 
-          # Check the generated Makefile for C++ flags
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            echo "Checking Makefile for C++ flags:"
-            grep -E "CXXFLAGS|CXX|std=" Makefile | head -10 || echo "No C++ flags found in Makefile"
-          fi
+      # - name: Configure and Build PHP (Windows)
+      #   if: matrix.platform == 'win32'
+      #   run: |
+      #     cd ${{ env.PHP_SOURCE_DIR }}
+
+      #     # Set up Visual Studio environment
+      #     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+
+      #     # Configure PHP
+      #     ./buildconf
+      #     ./configure --help
+
+      #     # For now, we will use a minimal config for Windows
+      #     # This can be expanded later
+      #     ./configure --disable-all --enable-cli
+
+      #     # Build PHP
+      #     nmake
 
       - name: Build PHP
+        if: matrix.platform != 'win32'
         run: |
           cd ${{ env.PHP_SOURCE_DIR }}
 
@@ -1008,16 +704,16 @@ jobs:
             make -j$JOBS
           fi
 
-            
+
             make -j$NPROC
           else
             # Linux build
             make -j$NPROC
           fi
-          
+
           # Create necessary directories
           mkdir -p "${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}/etc/conf.d"
-          
+
           # Copy default configuration
           if [[ -f "php.ini-production" ]]; then
             cp php.ini-production "${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}/etc/php.ini"
@@ -1081,7 +777,7 @@ jobs:
             ICU_VER=$(pkg-config --modversion icu-uc 2>/dev/null | cut -d. -f1 || echo "unknown")
             ICU_FULL_VER=$(pkg-config --modversion icu-uc 2>/dev/null || echo "unknown")
           fi
-          
+
           cat > ${{ env.BINARY_NAME }}/metadata.json << EOF
           {
             "php_version": "${{ matrix.php_version }}",
