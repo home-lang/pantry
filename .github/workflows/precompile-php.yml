@@ -500,6 +500,9 @@ jobs:
             if [[ -n "$ICONV_PREFIX" ]]; then
               export CPPFLAGS="-I$ICONV_PREFIX/include $CPPFLAGS"
               export LDFLAGS="-L$ICONV_PREFIX/lib -Wl,-rpath,$ICONV_PREFIX/lib $LDFLAGS"
+              export LIBRARY_PATH="$ICONV_PREFIX/lib:$LIBRARY_PATH"
+              export LIBICONV="-L$ICONV_PREFIX/lib -liconv"
+              export ICONV_CFLAGS="-I$ICONV_PREFIX/include"
               echo "Using ICONV_PREFIX=$ICONV_PREFIX"
               # Show selected headers and libs
               ls -la "$ICONV_PREFIX/include/iconv.h" 2>/dev/null || true
@@ -516,6 +519,48 @@ jobs:
               ls -la "$GETTEXT_PREFIX/include/libintl.h" 2>/dev/null || true
               ls -la "$GETTEXT_PREFIX/lib/libintl."* 2>/dev/null | head -5 || true
             fi
+
+            # Preflight: compile and run a tiny iconv errno test to ensure runtime linking is correct
+            echo "🔍 Preflight: testing iconv errno support"
+            cat > conftest_iconv.c <<'EOF'
+            #include <errno.h>
+            #include <iconv.h>
+            #include <stddef.h>
+            int main() {
+              iconv_t cd = iconv_open("UTF-8","UTF-8");
+              if (cd==(iconv_t)-1) return 2;
+              char inbuf_data = (char)0xFF; // invalid byte
+              char* inbuf = &inbuf_data;
+              size_t inbytes = 1;
+              char out[8]; char* outbuf = out; size_t outbytes = sizeof(out);
+              errno = 0;
+              (void)iconv(cd, &inbuf, &inbytes, &outbuf, &outbytes);
+              int e = errno;
+              iconv_close(cd);
+              return (e != 0) ? 0 : 1; // success if errno is set
+            }
+EOF
+            $CC $ICONV_CFLAGS $CPPFLAGS $CFLAGS conftest_iconv.c -o conftest_iconv $LDFLAGS $LIBICONV || true
+            if [[ -x ./conftest_iconv ]]; then
+              if ./conftest_iconv; then
+                echo "✅ iconv errno preflight passed"
+                # Seed common autoconf cache hints used by gnulib-style checks (best-effort)
+                export ac_cv_func_iconv=yes
+                export gl_cv_func_iconv_works=yes
+                export am_cv_func_iconv=yes
+              else
+                echo "⚠️ iconv errno preflight failed; printing diagnostics"
+                otool -L ./conftest_iconv || true
+                echo "DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
+                echo "LDFLAGS=$LDFLAGS"
+                echo "CPPFLAGS=$CPPFLAGS"
+              fi
+            else
+              echo "⚠️ Could not build conftest_iconv; proceeding without preflight"
+            fi
+
+            # Prefer first -L search paths over system defaults when duplicate libs exist
+            export LDFLAGS="-Wl,-search_paths_first $LDFLAGS"
 
             # Check for PostgreSQL
             if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
@@ -579,6 +624,12 @@ jobs:
                 fi
               fi
             done
+
+            # If iconv prefix was discovered but EXTRA_CONFIG did not include it, force it
+            if [[ -n "$ICONV_PREFIX" && "$EXTRA_CONFIG" != *"--with-iconv="* ]]; then
+              EXTRA_CONFIG="--with-iconv=$ICONV_PREFIX $EXTRA_CONFIG"
+              echo "Forcing --with-iconv to $ICONV_PREFIX"
+            fi
 
             # Run configure with all flags
             ./configure \
