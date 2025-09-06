@@ -494,6 +494,9 @@ jobs:
             export CXX=clang++
             # Help iconv/gettext tests link/run cleanly (ensure -liconv seen first)
             export LIBS="-liconv -lintl $LIBS"
+            # Ensure we link against libc++ (replace any libstdc++)
+            LIBS=${LIBS//-lstdc++/-lc++}
+            export LIBS
 
             # Ensure iconv include/lib come first so we don't pick up SDK/system headers
             ICONV_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/libiconv/*/include/iconv.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
@@ -525,6 +528,25 @@ jobs:
               # Show selected headers and libs
               ls -la "$GETTEXT_PREFIX/include/libintl.h" 2>/dev/null || true
               ls -la "$GETTEXT_PREFIX/lib/libintl."* 2>/dev/null | head -5 || true
+            fi
+
+            # Prefer OpenSSL v3 if available in Launchpad (PHP 8.4 is fully compatible with v3)
+            OPENSSL_V3_PREFIX=$(find "$LAUNCHPAD_DIR" -type d -path "*/openssl.org/v3*/include" -print -quit 2>/dev/null | sed -E 's#/include$##')
+            if [[ -n "$OPENSSL_V3_PREFIX" ]]; then
+              echo "Using OpenSSL v3 at $OPENSSL_V3_PREFIX"
+              export CPPFLAGS="-I$OPENSSL_V3_PREFIX/include $CPPFLAGS"
+              export LDFLAGS="-L$OPENSSL_V3_PREFIX/lib -Wl,-rpath,$OPENSSL_V3_PREFIX/lib $LDFLAGS"
+              # Put its pkgconfig dir first and filter out old openssl v1.* entries
+              if [[ -d "$OPENSSL_V3_PREFIX/lib/pkgconfig" ]]; then
+                OLD_PKG="$PKG_CONFIG_PATH"
+                # Build a cleaned PKG_CONFIG_PATH without any openssl v1.* entries
+                CLEANED=$(echo "$OLD_PKG" | awk -v RS=':' -v ORS=':' '!/openssl.org\/v1\./ { printf "%s", $0 }')
+                export PKG_CONFIG_PATH="$OPENSSL_V3_PREFIX/lib/pkgconfig:${CLEANED%:}"
+              fi
+              # Ensure configure flag uses this prefix if not already path-specified
+              if [[ "$EXTRA_CONFIG" != *"--with-openssl="* ]]; then
+                EXTRA_CONFIG="--with-openssl=$OPENSSL_V3_PREFIX $EXTRA_CONFIG"
+              fi
             fi
 
             # Preflight: compile and run a tiny iconv errno test to ensure runtime linking is correct
@@ -568,6 +590,8 @@ jobs:
 
             # Prefer first -L search paths over system defaults when duplicate libs exist
             export LDFLAGS="-Wl,-search_paths_first $LDFLAGS"
+            # Ensure libc++ selection is also applied at link time
+            export LDFLAGS="$LDFLAGS -stdlib=libc++"
 
             # Check for PostgreSQL
             if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
@@ -701,6 +725,7 @@ jobs:
               PATH="$PATH" \
               DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH" \
               DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH" \
+              PG_CONFIG="${PG_PREFIX_CAND:+$PG_PREFIX_CAND/bin/pg_config}" \
               ac_cv_func_iconv=yes \
               gl_cv_func_iconv_works=yes \
               am_cv_func_iconv=yes \
@@ -723,6 +748,8 @@ jobs:
                 (grep -niE "(iconv|libpq|pgsql|readline|icu|gettext|libintl)" config.log || true) | tail -n 200;
                 echo '--- tail config.log ---';
                 tail -n 200 config.log || true;
+                echo '--- head config.log ---';
+                sed -n '1,200p' config.log || true;
                 exit 1;
               }
 
