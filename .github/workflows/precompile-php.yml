@@ -166,24 +166,24 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      # - name: Install build dependencies (Windows)
-      #   if: matrix.platform == 'win32'
-      #   run: |
-      #     echo "🔧 Installing PHP dependencies via Chocolatey..."
-      #     choco install -y --no-progress \
-      #       git \
-      #       unzip \
-      #       bison \
-      #       pkg-config-lite \
-      #       libxml2 \
-      #       zlib \
-      #       openssl \
-      #       curl \
-      #       libpng \
-      #       jpeg \
-      #       freetype \
-      #       libiconv \
-      #       icu
+      - name: Install build dependencies (Windows)
+        if: matrix.platform == 'win32'
+        run: |
+          echo "🔧 Installing PHP dependencies via Chocolatey..."
+          choco install -y --no-progress \
+            git \
+            unzip \
+            bison \
+            pkg-config-lite \
+            libxml2 \
+            zlib \
+            openssl \
+            curl \
+            libpng \
+            jpeg \
+            freetype \
+            libiconv \
+            icu
 
       - name: Install build dependencies (Ubuntu)
         if: matrix.platform == 'linux'
@@ -563,24 +563,24 @@ jobs:
               $FINAL_EXTENSIONS
           fi
 
-      # - name: Configure and Build PHP (Windows)
-      #   if: matrix.platform == 'win32'
-      #   run: |
-      #     cd ${{ env.PHP_SOURCE_DIR }}
-
-      #     # Set up Visual Studio environment
-      #     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-
-      #     # Configure PHP
-      #     ./buildconf
-      #     ./configure --help
-
-      #     # For now, we will use a minimal config for Windows
-      #     # This can be expanded later
-      #     ./configure --disable-all --enable-cli
-
-      #     # Build PHP
-      #     nmake
+      - name: Configure and Build PHP (Windows)
+        if: matrix.platform == 'win32'
+        run: |
+          cd ${{ env.PHP_SOURCE_DIR }}
+          
+          # Set up Visual Studio environment
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          
+          # Configure PHP
+          ./buildconf
+          ./configure --help
+          
+          # For now, we will use a minimal config for Windows
+          # This can be expanded later
+          ./configure --disable-all --enable-cli
+          
+          # Build PHP
+          nmake
 
       - name: Build PHP
         if: matrix.platform != 'win32'
