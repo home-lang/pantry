@@ -204,8 +204,8 @@ jobs:
       - name: Install build dependencies (macOS)
         if: matrix.platform == 'darwin'
         run: |
-          # Install PHP dependencies via ts-pkgx for portable binaries
-          echo "🔧 Installing PHP dependencies via ts-pkgx for portable builds..."
+          # Install PHP dependencies via Launchpad for portable binaries
+          echo "🔧 Installing PHP dependencies via Launchpad..."
           echo "🔍 Debug info:"
           echo "  - Platform: darwin"
           echo "  - PHP version: ${{ matrix.php_version }}"
@@ -213,65 +213,62 @@ jobs:
           echo "  - Working directory: $(pwd)"
           echo "  - PATH: $PATH"
           
-          # Install ts-pkgx for dependency management
-          echo "📦 Installing ts-pkgx..."
-          curl -fsSL https://pkgx.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
+          # Build Launchpad first so we can use it to install dependencies
+          echo "🔨 Building Launchpad..."
+          cd ${{ github.workspace }}
+          bun install
+          bun run build
           
-          # Create a dedicated build environment directory
-          BUILD_ENV_DIR="$HOME/php-build-env"
-          mkdir -p "$BUILD_ENV_DIR"
-          export PKGX_DIR="$BUILD_ENV_DIR"
+          # Install PHP and essential build dependencies via Launchpad
+          echo "📦 Installing PHP dependencies via Launchpad..."
+          # Set environment variable to ensure dependencies are installed
+          export LAUNCHPAD_INSTALL_DEPS=true
           
-          echo "🏗️  Using dedicated build environment: $BUILD_ENV_DIR"
-          
-          # Set up pkgx environment for this build
-          eval "$(pkgx --shellcode)"
-          
-          # Install dependencies based on build configuration using pkgx
+          # Install dependencies based on build configuration
           echo "🔍 Build configuration: ${{ matrix.config }}"
           
-          # Always install base dependencies with pkgx in isolated environment
-          echo "📦 Installing base dependencies with pkgx..."
-          pkgx +gnu.org/libiconv \
-               +sourceware.org/bzip2 \
-               +gnu.org/readline \
-               +openldap.org \
-               +unicode.org \
-               +gnu.org/gettext \
-               +openssl.org \
-               +zlib.net \
-               +libpng.org \
-               +gnu.org/gmp \
-               +github.com/kkos/oniguruma \
-               +libsodium.org \
-               +libzip.org \
-               +gnome.org/libxml2 \
-               +curl.se \
-               bash -c "echo 'Dependencies installed in pkgx environment'"
+          # Always install base dependencies
+          echo "📦 Installing base dependencies..."
+          ./packages/launchpad/bin/cli.ts install \
+            gnu.org/libiconv \
+            sourceware.org/bzip2 \
+            gnu.org/readline \
+            openldap.org \
+            unicode.org \
+            gnu.org/gettext \
+            openssl.org \
+            zlib.net \
+            libpng.org \
+            gnu.org/gmp \
+            github.com/kkos/oniguruma \
+            libsodium.org \
+            libzip.org \
+            gnome.org/libxml2 \
+            curl.se \
+            --verbose
           
           # Install PostgreSQL for postgres-related builds
           if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
             echo "🐘 Installing PostgreSQL for ${{ matrix.config }} build"
-            pkgx +postgresql.org bash -c "echo 'PostgreSQL installed in pkgx environment'"
+            ./packages/launchpad/bin/cli.ts install postgresql.org --verbose
           else
             echo "⏭️  Skipping PostgreSQL for ${{ matrix.config }} build"
           fi
           
-          echo "✅ PHP build dependencies installed successfully via pkgx"
+          echo "✅ PHP build dependencies installed successfully via Launchpad"
           
           # Debug: List all installed packages to see what we have
-          echo "🔍 Debugging: Listing all pkgx installations..."
-          ls -la $BUILD_ENV_DIR/ | head -20
+          echo "🔍 Debugging: Listing all Launchpad installations..."
+          ls -la $HOME/.local/ | head -20
           echo "🔍 Looking for specific dependencies..."
-          find $BUILD_ENV_DIR -maxdepth 2 -type d -name "*.org" | sort
+          find $HOME/.local -maxdepth 2 -type d -name "*.org" | sort
           echo "🔍 Checking for specific libraries..."
-          find $BUILD_ENV_DIR -name "lib" -type d | head -10
-          find $BUILD_ENV_DIR -name "include" -type d | head -10
+          find $HOME/.local -name "lib" -type d | head -10
+          find $HOME/.local -name "include" -type d | head -10
           
-          # Use the dedicated build environment directory
-          LAUNCHPAD_DIR="$BUILD_ENV_DIR"
-          echo "BUILD_ENV_DIR=$BUILD_ENV_DIR" >> $GITHUB_ENV
+          # Use the standard Launchpad directory
+          LAUNCHPAD_DIR="$HOME/.local"
+          echo "LAUNCHPAD_DIR=$LAUNCHPAD_DIR" >> $GITHUB_ENV
           echo "🔍 Searching for ICU installation..."
           
           # ICU might be installed as unicode.org
@@ -431,9 +428,9 @@ jobs:
       - name: Set macOS specific paths
         if: matrix.platform == 'darwin'
         run: |
-          # Set paths for pkgx-installed dependencies in build environment
-          LAUNCHPAD_DIR="${{ env.BUILD_ENV_DIR }}"
-          echo "🔍 Using pkgx dependencies from build environment: $LAUNCHPAD_DIR"
+          # Set paths for Launchpad-installed dependencies
+          LAUNCHPAD_DIR="${{ env.LAUNCHPAD_DIR }}"
+          echo "🔍 Using Launchpad dependencies from: $LAUNCHPAD_DIR"
           
           # Build PKG_CONFIG_PATH from Launchpad installations - Fix wildcard paths
           PKG_CONFIG_PATHS=()
@@ -501,6 +498,29 @@ jobs:
           echo "CPPFLAGS=$CPPFLAGS_JOINED" >> $GITHUB_ENV
           export CPPFLAGS="$CPPFLAGS_JOINED"
           echo "🔧 CPPFLAGS: $CPPFLAGS_JOINED"
+          
+          # Specific BZip2 configuration to fix header detection
+          echo "🔍 Configuring BZip2 paths..."
+          BZIP2_DIR=$(find $LAUNCHPAD_DIR -name "sourceware.org" -type d | head -1)
+          if [[ -d "$BZIP2_DIR" ]]; then
+            BZIP2_VER=$(ls -1 $BZIP2_DIR | grep "^v" | sort -V | tail -1)
+            if [[ -n "$BZIP2_VER" && -d "$BZIP2_DIR/$BZIP2_VER" ]]; then
+              BZIP2_PREFIX="$BZIP2_DIR/$BZIP2_VER"
+              echo "BZIP2_DIR=$BZIP2_PREFIX" >> $GITHUB_ENV
+              echo "✅ BZip2 configured: $BZIP2_PREFIX"
+              
+              # Add BZip2 specific flags
+              if [[ -f "$BZIP2_PREFIX/include/bzlib.h" ]]; then
+                echo "✅ Found bzlib.h at: $BZIP2_PREFIX/include/bzlib.h"
+                echo "BZIP2_CFLAGS=-I$BZIP2_PREFIX/include" >> $GITHUB_ENV
+                echo "BZIP2_LIBS=-L$BZIP2_PREFIX/lib -lbz2" >> $GITHUB_ENV
+              else
+                echo "⚠️  bzlib.h not found in $BZIP2_PREFIX/include"
+              fi
+            fi
+          else
+            echo "⚠️  BZip2 not found in Launchpad installations"
+          fi
           echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
           export CXXFLAGS="-std=c++17 -stdlib=libc++"
 
@@ -587,49 +607,38 @@ jobs:
 
           # Configure with platform-specific options
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            # Set up pkgx environment for PHP compilation
-            eval "$(pkgx --shellcode)"
+            # Use Launchpad environment for PHP compilation
+            echo "🔧 Configuring PHP build with Launchpad environment..."
             
-            # Use pkgx environment with all dependencies for PHP build
-            echo "🔧 Configuring PHP build with pkgx environment..."
+            # Set up environment variables from Launchpad installations
+            echo "🔍 Using environment variables from Launchpad installations:"
+            echo "  CPPFLAGS: $CPPFLAGS"
+            echo "  LDFLAGS: $LDFLAGS"
+            echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+            echo "  PATH: $PATH"
+
+            # Set C++ standard based on PHP version
+            PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
+            PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
             
-            # Build the complete pkgx command with all dependencies
-            PKGX_DEPS="+gnu.org/libiconv +sourceware.org/bzip2 +gnu.org/readline +openldap.org +unicode.org +gnu.org/gettext +openssl.org +zlib.net +libpng.org +gnu.org/gmp +github.com/kkos/oniguruma +libsodium.org +libzip.org +gnome.org/libxml2 +curl.se"
-            
-            # Add PostgreSQL if needed
-            if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
-              PKGX_DEPS="$PKGX_DEPS +postgresql.org"
+            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
+              export CXXFLAGS="-std=c++17 -stdlib=libc++"
+              echo "Using C++17 for PHP ${{ matrix.php_version }}"
+            else
+              export CXXFLAGS="-std=c++14 -stdlib=libc++"
+              echo "Using C++14 for PHP ${{ matrix.php_version }}"
             fi
             
-            # Configure PHP within the pkgx environment to ensure portable binaries
-            echo "🔧 Running PHP configure within pkgx environment..."
+            # Use clang compilers
+            export CC=clang
+            export CXX=clang++
             
-            # Run configure within pkgx environment to get proper library paths
-            pkgx $PKGX_DEPS bash -c "
-              # Set C++ standard based on PHP version
-              PHP_MAJOR_VERSION=\$(echo '${{ matrix.php_version }}' | cut -d. -f1)
-              PHP_MINOR_VERSION=\$(echo '${{ matrix.php_version }}' | cut -d. -f2)
-              
-              if [[ \"\$PHP_MAJOR_VERSION\" -eq 8 && \"\$PHP_MINOR_VERSION\" -ge 2 ]]; then
-                export CXXFLAGS='-std=c++17 -stdlib=libc++'
-                echo 'Using C++17 for PHP ${{ matrix.php_version }}'
-              else
-                export CXXFLAGS='-std=c++14 -stdlib=libc++'
-                echo 'Using C++14 for PHP ${{ matrix.php_version }}'
-              fi
-              
-              # Use clang compilers
-              export CC=clang
-              export CXX=clang++
-              
-              # Configure PHP with pkgx-provided dependencies
-              ./configure \\
-                --prefix=$INSTALL_PREFIX \\
-                --with-config-file-path=$INSTALL_PREFIX/etc \\
-                --with-config-file-scan-dir=$INSTALL_PREFIX/etc/conf.d \\
-                --with-ldap \\
-                ${{ env.CONFIGURE_EXTENSIONS }}
-            "
+            # Configure PHP with Launchpad-provided dependencies
+            ./configure \
+              --prefix="$INSTALL_PREFIX" \
+              --with-config-file-path="$INSTALL_PREFIX/etc" \
+              --with-config-file-scan-dir="$INSTALL_PREFIX/etc/conf.d" \
+              ${{ env.CONFIGURE_EXTENSIONS }}
             EXTRA_CONFIG=""
             
             # Find and configure ICU - Use ICU_PREFIX from environment
@@ -742,9 +751,9 @@ jobs:
               export EXTRA_CONFIG="$EXTRA_CONFIG"
             fi
           else
-            # On Linux, use system-installed libraries
-            # System libraries should be available via apt-get installation
-            echo "Using system libraries installed via apt-get"
+            # On macOS, use Launchpad-installed libraries
+            # Environment variables should already be set from previous step
+            LAUNCHPAD_DIR="${{ env.LAUNCHPAD_DIR }}"
             EXTRA_CONFIG=""
           fi
 
@@ -920,24 +929,7 @@ jobs:
           echo "Compiler being used:"
           which gcc || which clang || echo "No compiler found"
           echo "C++ compiler:"
-                rm -f test_cpp.cpp test_cpp
-              else
-                echo "C++17 support test failed for PHP 8.1"
-                rm -f test_cpp.cpp test_cpp
-              fi
-            else
-              echo "Testing C++14 support:"
-              echo '#include <type_traits>' > test_cpp.cpp
-              echo 'int main() { typename std::enable_if<true, int>::type x = 0; return x; }' >> test_cpp.cpp
-              if clang++ -std=c++14 -stdlib=libc++ test_cpp.cpp -o test_cpp 2>/dev/null; then
-                echo "C++14 support confirmed"
-                rm -f test_cpp.cpp test_cpp
-              else
-                echo "C++14 support test failed"
-                rm -f test_cpp.cpp test_cpp
-              fi
-            fi
-          fi
+          which g++ || which clang++ || echo "No C++ compiler found"
 
           # Pass compiler flags explicitly to make
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
@@ -1016,28 +1008,11 @@ jobs:
             make -j$JOBS
           fi
 
-      - name: Install and make PHP
-        run: |
-          cd ${{ env.PHP_SOURCE_DIR }}
-          
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            # Set up pkgx environment for PHP installation
-            eval "$(pkgx --shellcode)"
             
-            # Build the complete pkgx command with all dependencies
-            PKGX_DEPS="+gnu.org/libiconv +sourceware.org/bzip2 +gnu.org/readline +openldap.org +unicode.org +gnu.org/gettext +openssl.org +zlib.net +libpng.org +gnu.org/gmp +github.com/kkos/oniguruma +libsodium.org +libzip.org +gnome.org/libxml2 +curl.se"
-            
-            # Add PostgreSQL if needed
-            if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
-              PKGX_DEPS="$PKGX_DEPS +postgresql.org"
-            fi
-            
-            # Install PHP within pkgx environment
-            echo "📦 Installing PHP within pkgx environment..."
-            pkgx $PKGX_DEPS bash -c "make install"
+            make -j$NPROC
           else
-            # Linux installation
-            make install
+            # Linux build
+            make -j$NPROC
           fi
           
           # Create necessary directories
