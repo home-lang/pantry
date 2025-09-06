@@ -251,28 +251,23 @@ jobs:
 
           # Always install base dependencies
           echo "📦 Installing base dependencies..."
-          PACKAGES_TO_INSTALL=(
-            "gnu.org/libiconv"
-            "sourceware.org/bzip2"
-            "gnu.org/readline"
-            "openldap.org"
-            "unicode.org"
-            "gnu.org/gettext"
-            "openssl.org"
-            "zlib.net"
-            "libpng.org"
-            "gnu.org/gmp"
-            "github.com/kkos/oniguruma"
-            "libsodium.org"
-            "libzip.org"
-            "gnome.org/libxml2"
-            "curl.se"
-          )
-
-          for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
-            echo "Installing $pkg..."
-            ./packages/launchpad/bin/cli.ts install "$pkg" --verbose
-          done
+          ./packages/launchpad/bin/cli.ts install \
+            gnu.org/libiconv \
+            sourceware.org/bzip2 \
+            gnu.org/readline \
+            openldap.org \
+            unicode.org \
+            gnu.org/gettext \
+            openssl.org \
+            zlib.net \
+            libpng.org \
+            gnu.org/gmp \
+            github.com/kkos/oniguruma \
+            libsodium.org \
+            libzip.org \
+            gnome.org/libxml2 \
+            curl.se \
+            --verbose
 
           # Install PostgreSQL for postgres-related builds
           if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
