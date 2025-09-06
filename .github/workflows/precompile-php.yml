@@ -571,11 +571,61 @@ jobs:
 
             # Check for PostgreSQL
             if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
-              if ! pkg-config --exists libpq; then
-                echo "⚠️ PostgreSQL (libpq) not found. Disabling PostgreSQL extensions."
-                FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -e 's/--with-pdo-pgsql//g' -e 's/--with-pgsql//g' | sed 's/  */ /g')
+              PG_PREFIX_CAND=""
+              if pkg-config --exists libpq; then
+                PG_PREFIX_CAND=$(pkg-config --variable=prefix libpq 2>/dev/null || echo "")
+              fi
+
+              # Prefer Launchpad Postgres over Homebrew/system
+              if [[ -z "$PG_PREFIX_CAND" || "$PG_PREFIX_CAND" == /opt/homebrew/* || "$PG_PREFIX_CAND" == /usr/local/* || "$PG_PREFIX_CAND" == /usr/* ]]; then
+                # Try Launchpad
+                PG_DIR=$(find "$LAUNCHPAD_DIR" -type d -path "*/postgresql.org/v*/include" -print -quit 2>/dev/null | sed -E 's#/include$##')
+                if [[ -n "$PG_DIR" ]]; then
+                  PG_PREFIX_CAND="$PG_DIR"
+                fi
+              fi
+
+              if [[ -n "$PG_PREFIX_CAND" ]]; then
+                echo "✅ Using PostgreSQL prefix: $PG_PREFIX_CAND"
+                export CPPFLAGS="-I$PG_PREFIX_CAND/include $CPPFLAGS"
+                export LDFLAGS="-L$PG_PREFIX_CAND/lib -Wl,-rpath,$PG_PREFIX_CAND/lib $LDFLAGS"
+                # Ensure pkg-config sees Postgres first
+                if [[ -d "$PG_PREFIX_CAND/lib/pkgconfig" ]]; then
+                  export PKG_CONFIG_PATH="$PG_PREFIX_CAND/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+                fi
+                # Prefer Launchpad pg_config for configure detection
+                if [[ -d "$PG_PREFIX_CAND/bin" ]]; then
+                  export PATH="$PG_PREFIX_CAND/bin:$PATH"
+                fi
+
+                # Ensure FINAL_EXTENSIONS carries explicit PG prefix
+                if [[ "$FINAL_EXTENSIONS" == *"--with-pdo-pgsql"* && "$FINAL_EXTENSIONS" != *"--with-pdo-pgsql="* ]]; then
+                  FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -E "s#--with-pdo-pgsql( |$)#--with-pdo-pgsql=$PG_PREFIX_CAND #")
+                fi
+                if [[ "$FINAL_EXTENSIONS" == *"--with-pgsql"* && "$FINAL_EXTENSIONS" != *"--with-pgsql="* ]]; then
+                  FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -E "s#--with-pgsql( |$)#--with-pgsql=$PG_PREFIX_CAND #")
+                fi
+
+                # Preflight: compile/link a tiny libpq program
+                echo "🔍 Preflight: testing libpq link"
+                {
+                  echo '#include <libpq-fe.h>'
+                  echo 'int main(){ return PQlibVersion() > 0 ? 0 : 1; }'
+                } > conftest_pq.c
+                $CC $CPPFLAGS $CFLAGS conftest_pq.c -o conftest_pq $LDFLAGS -lpq || true
+                if [[ -x ./conftest_pq ]]; then
+                  if ./conftest_pq; then
+                    echo "✅ libpq preflight passed"
+                  else
+                    echo "⚠️ libpq preflight failed to run; printing diagnostics"
+                    otool -L ./conftest_pq || true
+                  fi
+                else
+                  echo "⚠️ Could not build conftest_pq; continuing"
+                fi
               else
-                echo "✅ PostgreSQL (libpq) found."
+                echo "⚠️ PostgreSQL (libpq) not found. Disabling PostgreSQL extensions."
+                FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -e 's/--with-pdo-pgsql[^ ]*//g' -e 's/--with-pgsql[^ ]*//g' | sed 's/  */ /g')
               fi
             fi
 
@@ -648,6 +698,7 @@ jobs:
               LDFLAGS="$LDFLAGS" \
               LIBS="$LIBS" \
               PKG_CONFIG_PATH="$PKG_CONFIG_PATH" \
+              PATH="$PATH" \
               DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH" \
               DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH" \
               ac_cv_func_iconv=yes \
@@ -665,7 +716,15 @@ jobs:
               --with-pic \
               $FINAL_EXTENSIONS \
               $EXTRA_CONFIG \
-              || { echo '--- config.log (iconv excerpt) ---'; (grep -n "iconv" config.log || true) | tail -n 200; echo '--- tail config.log ---'; tail -n 200 config.log || true; exit 1; }
+              || {
+                echo '--- config.log (error excerpts) ---';
+                (grep -niE "(error:|fatal:|failed)" config.log || true) | tail -n 200;
+                echo '--- config.log (pgsql/libpq/iconv excerpts) ---';
+                (grep -niE "(iconv|libpq|pgsql|readline|icu|gettext|libintl)" config.log || true) | tail -n 200;
+                echo '--- tail config.log ---';
+                tail -n 200 config.log || true;
+                exit 1;
+              }
 
           else # For Linux
             echo "🔧 Configuring PHP build for Linux..."
