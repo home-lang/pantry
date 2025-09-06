@@ -437,16 +437,23 @@ jobs:
           LDFLAGS_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | sed 's/^/-L/' | tr '\n' ' ')
           CPPFLAGS_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'include' | sed 's/^/-I/' | tr '\n' ' ')
           PKG_CONFIG_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'pkgconfig' | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
+          DYLD_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
+          # Add rpath entries so configure test executables can locate libs at runtime without DYLD env
+          RPATH_FLAGS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | sed 's/^/-Wl,-rpath,/' | tr '\n' ' ')
 
           # Export the environment variables
-          echo "LDFLAGS=$LDFLAGS_PATHS" >> $GITHUB_ENV
+          echo "LDFLAGS=$LDFLAGS_PATHS $RPATH_FLAGS" >> $GITHUB_ENV
           echo "CPPFLAGS=$CPPFLAGS_PATHS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATHS" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=$DYLD_PATHS" >> $GITHUB_ENV
+          echo "DYLD_FALLBACK_LIBRARY_PATH=$DYLD_PATHS" >> $GITHUB_ENV
 
           echo "✅ Environment configured:"
           echo "  LDFLAGS: $LDFLAGS_PATHS"
           echo "  CPPFLAGS: $CPPFLAGS_PATHS"
           echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATHS"
+          echo "  DYLD_LIBRARY_PATH: $DYLD_PATHS"
+          echo "  DYLD_FALLBACK_LIBRARY_PATH: $DYLD_PATHS"
 
       - name: Download and extract PHP source
         run: |
@@ -485,6 +492,30 @@ jobs:
 
             export CC=clang
             export CXX=clang++
+            # Help iconv/gettext tests link/run cleanly
+            export LIBS="$LIBS -liconv -lintl"
+
+            # Ensure iconv include/lib come first so we don't pick up SDK/system headers
+            ICONV_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/libiconv/*/include/iconv.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
+            if [[ -n "$ICONV_PREFIX" ]]; then
+              export CPPFLAGS="-I$ICONV_PREFIX/include $CPPFLAGS"
+              export LDFLAGS="-L$ICONV_PREFIX/lib -Wl,-rpath,$ICONV_PREFIX/lib $LDFLAGS"
+              echo "Using ICONV_PREFIX=$ICONV_PREFIX"
+              # Show selected headers and libs
+              ls -la "$ICONV_PREFIX/include/iconv.h" 2>/dev/null || true
+              ls -la "$ICONV_PREFIX/lib/libiconv."* 2>/dev/null | head -5 || true
+            fi
+
+            # Ensure gettext (libintl.h) include/lib come first so header is found
+            GETTEXT_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/gettext/*/include/libintl.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
+            if [[ -n "$GETTEXT_PREFIX" ]]; then
+              export CPPFLAGS="-I$GETTEXT_PREFIX/include $CPPFLAGS"
+              export LDFLAGS="-L$GETTEXT_PREFIX/lib -Wl,-rpath,$GETTEXT_PREFIX/lib $LDFLAGS"
+              echo "Using GETTEXT_PREFIX=$GETTEXT_PREFIX"
+              # Show selected headers and libs
+              ls -la "$GETTEXT_PREFIX/include/libintl.h" 2>/dev/null || true
+              ls -la "$GETTEXT_PREFIX/lib/libintl."* 2>/dev/null | head -5 || true
+            fi
 
             # Check for PostgreSQL
             if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
@@ -499,7 +530,7 @@ jobs:
             # Build explicit configure flags for critical libraries
             EXTRA_CONFIG=""
             LAUNCHPAD_DIR="${LAUNCHPAD_DIR:-$HOME/.local}"
-            for lib in iconv openssl curl bzip2 gmp readline; do
+            for lib in iconv openssl curl bzip2 gmp readline gettext; do
               PKG_NAME=""; CONFIGURE_FLAG=""; HEADER_PATH=""; LIB_GLOB=""
               case $lib in
                 iconv)
@@ -514,7 +545,14 @@ jobs:
                   PKG_NAME="gmp"; CONFIGURE_FLAG="--with-gmp"; HEADER_PATH="gmp.h"; LIB_GLOB="libgmp.*" ;;
                 readline)
                   PKG_NAME="readline"; CONFIGURE_FLAG="--with-readline"; HEADER_PATH="readline/readline.h"; LIB_GLOB="libreadline.*" ;;
+                gettext)
+                  PKG_NAME="libintl"; CONFIGURE_FLAG="--with-gettext"; HEADER_PATH="libintl.h"; LIB_GLOB="libintl.*" ;;
               esac
+
+              # For gettext, fall back to the 'gettext' pkg-config name if 'libintl' isn't present
+              if [[ "$lib" == "gettext" ]] && ! pkg-config --exists "$PKG_NAME" 2>/dev/null; then
+                PKG_NAME="gettext"
+              fi
 
               if pkg-config --exists "$PKG_NAME" 2>/dev/null; then
                 PREFIX=$(pkg-config --variable=prefix "$PKG_NAME")
