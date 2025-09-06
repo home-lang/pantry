@@ -168,22 +168,16 @@ jobs:
 
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'
+        shell: pwsh
         run: |
-          echo "🔧 Installing PHP dependencies via Chocolatey..."
-          choco install -y --no-progress \
-            git \
-            unzip \
-            bison \
-            pkg-config-lite \
-            libxml2 \
-            zlib \
-            openssl \
-            curl \
-            libpng \
-            jpeg \
-            freetype \
-            libiconv \
-            icu
+          Write-Host "🔧 Installing PHP dependencies via Chocolatey..."
+          # Use PowerShell and list packages on a single line to avoid stray '\' tokens
+          choco install -y --no-progress git unzip bison pkg-config-lite re2c
+          refreshenv || Write-Host "refreshenv not found; continuing"
+          # Quick sanity checks (non-fatal)
+          git --version || Write-Host "git not found"
+          unzip -v || Write-Host "unzip not found"
+          bison --version || Write-Host "bison not found"
 
       - name: Install build dependencies (Ubuntu)
         if: matrix.platform == 'linux'
@@ -433,13 +427,29 @@ jobs:
           echo "🔧 Setting up Launchpad build environment..."
           LAUNCHPAD_DIR="$HOME/.local"
 
-          # Recursively find all library, include, and pkg-config paths
-          LDFLAGS_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | sed 's/^/-L/' | tr '\n' ' ')
-          CPPFLAGS_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'include' | sed 's/^/-I/' | tr '\n' ' ')
-          PKG_CONFIG_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'pkgconfig' | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
-          DYLD_PATHS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
-          # Add rpath entries so configure test executables can locate libs at runtime without DYLD env
-          RPATH_FLAGS=$(find "$LAUNCHPAD_DIR" -type d -name 'lib' | sed 's/^/-Wl,-rpath,/' | tr '\n' ' ')
+          # Curate only the latest version per domain to avoid conflicting headers (e.g. multiple ICU versions)
+          LATEST_INCLUDE_DIRS=()
+          LATEST_LIB_DIRS=()
+          LATEST_PKGCONFIG_DIRS=()
+          while IFS= read -r domain; do
+            latest=$(ls -1 "$domain" 2>/dev/null | grep '^v' | sort -V | tail -1)
+            if [[ -n "$latest" ]]; then
+              inc="$domain/$latest/include"
+              lib="$domain/$latest/lib"
+              pc="$domain/$latest/lib/pkgconfig"
+              [[ -d "$inc" ]] && LATEST_INCLUDE_DIRS+=("$inc")
+              [[ -d "$lib" ]] && LATEST_LIB_DIRS+=("$lib")
+              [[ -d "$pc" ]] && LATEST_PKGCONFIG_DIRS+=("$pc")
+            fi
+          done < <(find "$LAUNCHPAD_DIR" -mindepth 1 -maxdepth 1 -type d)
+
+          # Compose paths from curated dirs
+          CPPFLAGS_PATHS=$(printf '%s\n' "${LATEST_INCLUDE_DIRS[@]}" | sed 's/^/-I/' | tr '\n' ' ')
+          LDFLAGS_PATHS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | sed 's/^/-L/' | tr '\n' ' ')
+          PKG_CONFIG_PATHS=$(printf '%s\n' "${LATEST_PKGCONFIG_DIRS[@]}" | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
+          DYLD_PATHS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
+          # Add rpath entries from curated lib dirs
+          RPATH_FLAGS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | sed 's/^/-Wl,-rpath,/' | tr '\n' ' ')
 
           # Export the environment variables
           echo "LDFLAGS=$LDFLAGS_PATHS $RPATH_FLAGS" >> $GITHUB_ENV
