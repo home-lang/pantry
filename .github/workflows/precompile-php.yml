@@ -241,33 +241,13 @@ jobs:
           bun install
           bun run build
 
-          # Install PHP and essential build dependencies via Launchpad
-          echo "📦 Installing PHP dependencies via Launchpad..."
-          # Set environment variable to ensure dependencies are installed
+          # Install all PHP runtime dependencies from pantry (no need to list them manually)
+          echo "📦 Installing PHP runtime dependencies from pantry (php.net --deps-only)..."
+          # Ensure runtime deps are enabled
           export LAUNCHPAD_INSTALL_DEPS=true
-
-          # Install dependencies based on build configuration
           echo "🔍 Build configuration: ${{ matrix.config }}"
-
-          # Always install base dependencies
-          echo "📦 Installing base dependencies..."
-          ./packages/launchpad/bin/cli.ts install \
-            gnu.org/libiconv \
-            sourceware.org/bzip2 \
-            gnu.org/readline \
-            openldap.org \
-            unicode.org \
-            gnu.org/gettext \
-            openssl.org \
-            zlib.net \
-            libpng.org \
-            gnu.org/gmp \
-            github.com/kkos/oniguruma \
-            libsodium.org \
-            libzip.org \
-            gnome.org/libxml2 \
-            curl.se \
-            --verbose
+          # Resolves ~30+ deps (icu, openssl, curl, libxml2, zip, oniguruma, readline, bzip2, gmp, gettext, etc.)
+          ./packages/launchpad/bin/cli.ts install php.net --deps-only --verbose
 
           # Install PostgreSQL for postgres-related builds
           if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
@@ -362,7 +342,7 @@ jobs:
             ls -la $OPENSSL_DIR/$OPENSSL_VER/lib/libssl.* 2>/dev/null || echo "libssl not found"
           fi
 
-          # Find and verify other dependencies
+          # Find and verify other common dependencies
           for dep in "gnu.org/gettext" "sourceware.org/bzip2" "openldap.org"; do
             DEP_DIR=$(find $LAUNCHPAD_DIR -path "*/$dep" -type d | head -1)
             if [[ -d "$DEP_DIR" ]]; then
@@ -518,25 +498,47 @@ jobs:
 
             # Build explicit configure flags for critical libraries
             EXTRA_CONFIG=""
-            for lib in iconv openssl curl bzip2 gmp readline;
-            do
-              PKG_NAME=""
-              CONFIGURE_FLAG=""
+            LAUNCHPAD_DIR="${LAUNCHPAD_DIR:-$HOME/.local}"
+            for lib in iconv openssl curl bzip2 gmp readline; do
+              PKG_NAME=""; CONFIGURE_FLAG=""; HEADER_PATH=""; LIB_GLOB=""
               case $lib in
-                  iconv) PKG_NAME="libiconv"; CONFIGURE_FLAG="--with-iconv";; 
-                  openssl) PKG_NAME="openssl"; CONFIGURE_FLAG="--with-openssl";; 
-                  curl) PKG_NAME="libcurl"; CONFIGURE_FLAG="--with-curl";; 
-                  bzip2) PKG_NAME="bzip2"; CONFIGURE_FLAG="--with-bz2";; 
-                  gmp) PKG_NAME="gmp"; CONFIGURE_FLAG="--with-gmp";; 
-                  readline) PKG_NAME="readline"; CONFIGURE_FLAG="--with-readline";; 
+                iconv)
+                  PKG_NAME="libiconv"; CONFIGURE_FLAG="--with-iconv"; HEADER_PATH="iconv.h"; LIB_GLOB="libiconv.*" ;;
+                openssl)
+                  PKG_NAME="openssl"; CONFIGURE_FLAG="--with-openssl"; HEADER_PATH="openssl/ssl.h"; LIB_GLOB="libssl.*" ;;
+                curl)
+                  PKG_NAME="libcurl"; CONFIGURE_FLAG="--with-curl"; HEADER_PATH="curl/curl.h"; LIB_GLOB="libcurl.*" ;;
+                bzip2)
+                  PKG_NAME="bzip2"; CONFIGURE_FLAG="--with-bz2"; HEADER_PATH="bzlib.h"; LIB_GLOB="libbz2.*" ;;
+                gmp)
+                  PKG_NAME="gmp"; CONFIGURE_FLAG="--with-gmp"; HEADER_PATH="gmp.h"; LIB_GLOB="libgmp.*" ;;
+                readline)
+                  PKG_NAME="readline"; CONFIGURE_FLAG="--with-readline"; HEADER_PATH="readline/readline.h"; LIB_GLOB="libreadline.*" ;;
               esac
 
-              if pkg-config --exists "$PKG_NAME"; then
-                  PREFIX=$(pkg-config --variable=prefix "$PKG_NAME")
-                  EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG=$PREFIX"
-                  echo "✅ $lib configured at: $PREFIX"
+              if pkg-config --exists "$PKG_NAME" 2>/dev/null; then
+                PREFIX=$(pkg-config --variable=prefix "$PKG_NAME")
+                # Prefer Launchpad prefix; if pkg-config resolves to Homebrew or system, try Launchpad header-derived prefix
+                if [[ "$PREFIX" == /opt/homebrew/* || "$PREFIX" == /usr/local/* || "$PREFIX" == /usr/* ]] ; then
+                  ALT_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/include/$HEADER_PATH" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
+                  if [[ -n "$ALT_PREFIX" ]]; then
+                    PREFIX="$ALT_PREFIX"
+                    echo "ℹ️  Overriding pkg-config prefix with Launchpad path: $ALT_PREFIX"
+                  fi
+                fi
+                EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG=$PREFIX"
+                echo "✅ $lib configured at: $PREFIX"
               else
-                  echo "⚠️  $lib not found via pkg-config. The build may fail."
+                # Fallback: search Launchpad install for headers/libs to derive prefix
+                PREFIX_CANDIDATE=$(find "$LAUNCHPAD_DIR" -type f -path "*/include/$HEADER_PATH" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
+                if [[ -n "$PREFIX_CANDIDATE" ]]; then
+                  EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG=$PREFIX_CANDIDATE"
+                  echo "✅ $lib configured via headers at: $PREFIX_CANDIDATE"
+                else
+                  # Final fallback: rely on CPPFLAGS/LDFLAGS and generic flag without path
+                  EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG"
+                  echo "ℹ️  $lib: pkg-config not found; using generic $CONFIGURE_FLAG with CPPFLAGS/LDFLAGS"
+                fi
               fi
             done
 

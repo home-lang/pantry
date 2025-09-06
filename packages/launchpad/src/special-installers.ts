@@ -287,7 +287,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       packageKey = Object.keys(pantry).find(key => key === domain || key === packageName)
 
       // Handle PHP special case - check phpnet specifically
-      if (!packageKey && packageName === 'php') {
+      if (!packageKey && (packageName === 'php' || packageName === 'php.net' || domain === 'php.net')) {
         packageKey = Object.keys(pantry).find(key => key === 'phpnet')
       }
 
