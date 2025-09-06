@@ -522,24 +522,24 @@ jobs:
 
             # Preflight: compile and run a tiny iconv errno test to ensure runtime linking is correct
             echo "🔍 Preflight: testing iconv errno support"
-            cat > conftest_iconv.c <<'EOF'
-            #include <errno.h>
-            #include <iconv.h>
-            #include <stddef.h>
-            int main() {
-              iconv_t cd = iconv_open("UTF-8","UTF-8");
-              if (cd==(iconv_t)-1) return 2;
-              char inbuf_data = (char)0xFF; // invalid byte
-              char* inbuf = &inbuf_data;
-              size_t inbytes = 1;
-              char out[8]; char* outbuf = out; size_t outbytes = sizeof(out);
-              errno = 0;
-              (void)iconv(cd, &inbuf, &inbytes, &outbuf, &outbytes);
-              int e = errno;
-              iconv_close(cd);
-              return (e != 0) ? 0 : 1; // success if errno is set
-            }
-EOF
+            {
+              echo '#include <errno.h>'
+              echo '#include <iconv.h>'
+              echo '#include <stddef.h>'
+              echo 'int main() {'
+              echo '  iconv_t cd = iconv_open("UTF-8","UTF-8");'
+              echo '  if (cd==(iconv_t)-1) return 2;'
+              echo '  char inbuf_data = (char)0xFF;'
+              echo '  char* inbuf = &inbuf_data;'
+              echo '  size_t inbytes = 1;'
+              echo '  char out[8]; char* outbuf = out; size_t outbytes = sizeof(out);'
+              echo '  errno = 0;'
+              echo '  (void)iconv(cd, &inbuf, &inbytes, &outbuf, &outbytes);'
+              echo '  int e = errno;'
+              echo '  iconv_close(cd);'
+              echo '  return (e != 0) ? 0 : 1;'
+              echo '}'
+            } > conftest_iconv.c
             $CC $ICONV_CFLAGS $CPPFLAGS $CFLAGS conftest_iconv.c -o conftest_iconv $LDFLAGS $LIBICONV || true
             if [[ -x ./conftest_iconv ]]; then
               if ./conftest_iconv; then
