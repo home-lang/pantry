@@ -562,13 +562,11 @@ jobs:
           ./buildconf --force
 
           # Create a custom conftest.c that will never fail for ac_nonexistent.h
-          cat > conftest_override.c << 'EOF'
-#ifndef AC_NONEXISTENT_H_OVERRIDE
-#define AC_NONEXISTENT_H_OVERRIDE
-// Override for ac_nonexistent.h test
-int main() { return 0; }
-#endif
-EOF
+          echo '#ifndef AC_NONEXISTENT_H_OVERRIDE' > conftest_override.c
+          echo '#define AC_NONEXISTENT_H_OVERRIDE' >> conftest_override.c
+          echo '// Override for ac_nonexistent.h test' >> conftest_override.c
+          echo 'int main() { return 0; }' >> conftest_override.c
+          echo '#endif' >> conftest_override.c
 
           # Platform-specific configuration
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
