@@ -891,15 +891,68 @@ jobs:
           else # For Linux
             echo "🔧 Configuring PHP build for Linux..."
 
+            # Set basic compiler environment for Linux
+            export CC=gcc
+            export CXX=g++
+            export CFLAGS="-O2 -fPIC"
+            export CXXFLAGS="-O2 -fPIC"
+
             # Run buildconf for Linux as well
-            ./buildconf --force
+            echo "🔧 Running buildconf to regenerate configure script..."
+            ./buildconf --force || {
+              echo "buildconf --force failed, trying without --force"
+              ./buildconf
+            }
 
             # Create fake ac_nonexistent.h for Linux too
             mkdir -p fake_headers
             touch fake_headers/ac_nonexistent.h
             export CPPFLAGS="-I$(pwd)/fake_headers $CPPFLAGS"
 
-            ./configure \
+            # Fix autoconf cache issues that cause configure failures
+            export ac_cv_header_ac_nonexistent_h=no
+            export ac_cv_prog_cc_c89=
+            export ac_cv_prog_cc_c99=
+            export ac_cv_prog_cc_stdc=
+            
+            # Clear any existing autoconf cache that might cause issues
+            rm -rf autom4te.cache config.cache
+
+            # Set additional autoconf cache variables to prevent header detection issues
+            export ac_cv_header_stdc=yes
+            export ac_cv_header_sys_types_h=yes
+            export ac_cv_header_sys_stat_h=yes
+            export ac_cv_header_stdlib_h=yes
+            export ac_cv_header_string_h=yes
+            export ac_cv_header_memory_h=yes
+            export ac_cv_header_strings_h=yes
+            export ac_cv_header_inttypes_h=yes
+            export ac_cv_header_stdint_h=yes
+            export ac_cv_header_unistd_h=yes
+
+            # Run configure with comprehensive environment and cache variables
+            env \
+              CC="$CC" \
+              CXX="$CXX" \
+              CFLAGS="$CFLAGS" \
+              CXXFLAGS="$CXXFLAGS" \
+              CPPFLAGS="$CPPFLAGS" \
+              LDFLAGS="$LDFLAGS" \
+              ac_cv_header_ac_nonexistent_h=no \
+              ac_cv_prog_cc_c89= \
+              ac_cv_prog_cc_c99= \
+              ac_cv_prog_cc_stdc= \
+              ac_cv_header_stdc=yes \
+              ac_cv_header_sys_types_h=yes \
+              ac_cv_header_sys_stat_h=yes \
+              ac_cv_header_stdlib_h=yes \
+              ac_cv_header_string_h=yes \
+              ac_cv_header_memory_h=yes \
+              ac_cv_header_strings_h=yes \
+              ac_cv_header_inttypes_h=yes \
+              ac_cv_header_stdint_h=yes \
+              ac_cv_header_unistd_h=yes \
+              ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
               --with-config-file-scan-dir="$INSTALL_PREFIX/etc/conf.d" \
@@ -910,8 +963,12 @@ jobs:
               || {
                 echo '--- config.log (error excerpts) ---';
                 (grep -niE "(error:|fatal:|failed)" config.log || true) | tail -n 200;
+                echo '--- config.log (ac_nonexistent excerpts) ---';
+                (grep -niE "(ac_nonexistent|nonexistent)" config.log || true) | tail -n 50;
                 echo '--- tail config.log ---';
                 tail -n 200 config.log || true;
+                echo '--- head config.log ---';
+                sed -n '1,200p' config.log || true;
                 exit 1;
               }
           fi
