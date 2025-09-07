@@ -463,7 +463,19 @@ jobs:
         if: matrix.platform == 'win32'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path "${{ env.BUILD_DIR }}", "${{ env.OUTPUT_DIR }}"
+          # Ensure environment variables are set before using them
+          $BUILD_DIR = "${{ env.BUILD_DIR }}"
+          $OUTPUT_DIR = "${{ env.OUTPUT_DIR }}"
+          
+          if ([string]::IsNullOrEmpty($BUILD_DIR)) {
+            $BUILD_DIR = "${{ github.workspace }}\build"
+          }
+          if ([string]::IsNullOrEmpty($OUTPUT_DIR)) {
+            $OUTPUT_DIR = "${{ github.workspace }}\binaries"
+          }
+          
+          Write-Host "Creating directories: $BUILD_DIR, $OUTPUT_DIR"
+          New-Item -ItemType Directory -Force -Path $BUILD_DIR, $OUTPUT_DIR
 
           # Create configuration based on matrix config
           $extensions = ""
@@ -515,7 +527,7 @@ jobs:
             fi
           done < <(find "$LAUNCHPAD_DIR" -mindepth 1 -maxdepth 1 -type d)
 
-          # Compose paths from curated dirs
+          # Compose paths from curated dirs (avoid wildcards in CPPFLAGS)
           CPPFLAGS_PATHS=$(printf '%s\n' "${LATEST_INCLUDE_DIRS[@]}" | sed 's/^/-I/' | tr '\n' ' ')
           LDFLAGS_PATHS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | sed 's/^/-L/' | tr '\n' ' ')
           PKG_CONFIG_PATHS=$(printf '%s\n' "${LATEST_PKGCONFIG_DIRS[@]}" | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
@@ -523,9 +535,9 @@ jobs:
           # Add rpath entries from curated lib dirs
           RPATH_FLAGS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | sed 's/^/-Wl,-rpath,/' | tr '\n' ' ')
 
-          # Export the environment variables
-          echo "LDFLAGS=$LDFLAGS_PATHS $RPATH_FLAGS" >> $GITHUB_ENV
-          echo "CPPFLAGS=$CPPFLAGS_PATHS" >> $GITHUB_ENV
+          # Export the environment variables (clean up any trailing spaces)
+          echo "LDFLAGS=$(echo "$LDFLAGS_PATHS $RPATH_FLAGS" | sed 's/[[:space:]]*$//')" >> $GITHUB_ENV
+          echo "CPPFLAGS=$(echo "$CPPFLAGS_PATHS" | sed 's/[[:space:]]*$//')" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATHS" >> $GITHUB_ENV
           echo "DYLD_LIBRARY_PATH=$DYLD_PATHS" >> $GITHUB_ENV
           echo "DYLD_FALLBACK_LIBRARY_PATH=$DYLD_PATHS" >> $GITHUB_ENV
@@ -912,7 +924,7 @@ jobs:
             # Create fake ac_nonexistent.h for Linux too
             mkdir -p fake_headers
             touch fake_headers/ac_nonexistent.h
-            export CPPFLAGS="-I$(pwd)/fake_headers $CPPFLAGS"
+            export CPPFLAGS="-I$(pwd)/fake_headers"
 
             # Fix autoconf cache issues that cause configure failures
             export ac_cv_header_ac_nonexistent_h=no
@@ -920,9 +932,17 @@ jobs:
             export ac_cv_prog_cc_c99=
             export ac_cv_prog_cc_stdc=
             
-            # Prevent traditional-cpp usage (incompatible with modern glibc)
+            # Prevent traditional-cpp usage and fix preprocessor sanity check
             export ac_cv_prog_CPP="gcc -E"
             export CPP="gcc -E"
+            
+            # Test preprocessor before configure to ensure it works
+            echo "🔍 Testing preprocessor sanity..."
+            echo '#include <stdio.h>' | gcc -E - > /dev/null 2>&1 || {
+              echo "❌ Preprocessor test failed, trying alternative"
+              export CPP="/usr/bin/cpp"
+              export ac_cv_prog_CPP="/usr/bin/cpp"
+            }
             
             # Clear any existing autoconf cache that might cause issues
             rm -rf autom4te.cache config.cache
@@ -952,7 +972,7 @@ jobs:
               ac_cv_prog_cc_c89= \
               ac_cv_prog_cc_c99= \
               ac_cv_prog_cc_stdc= \
-              ac_cv_prog_CPP="gcc -E" \
+              ac_cv_prog_CPP="$CPP" \
               ac_cv_header_stdc=yes \
               ac_cv_header_sys_types_h=yes \
               ac_cv_header_sys_stat_h=yes \
