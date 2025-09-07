@@ -2,6 +2,9 @@ name: Precompile PHP
 
 on:
   push:
+    schedule:
+      # Check for updates daily at 2 AM UTC
+      - cron: '0 2 * * *'
     branches: [main]
   workflow_dispatch:
     inputs:
