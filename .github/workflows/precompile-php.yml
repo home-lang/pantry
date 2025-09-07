@@ -172,12 +172,24 @@ jobs:
         run: |
           Write-Host "🔧 Installing PHP dependencies via Chocolatey..."
           # Use PowerShell and list packages on a single line to avoid stray '\' tokens
-          choco install -y --no-progress git unzip bison pkg-config-lite re2c
-          refreshenv || Write-Host "refreshenv not found; continuing"
+          choco install -y --no-progress git unzip winflexbison pkg-config-lite
+          
+          # Refresh environment variables
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          
           # Quick sanity checks (non-fatal)
-          git --version || Write-Host "git not found"
-          unzip -v || Write-Host "unzip not found"
-          bison --version || Write-Host "bison not found"
+          try { git --version; Write-Host "✅ Git installed" } catch { Write-Host "⚠️ Git not found" }
+          try { unzip; Write-Host "✅ Unzip installed" } catch { Write-Host "⚠️ Unzip not found" }
+          try { win_bison --version; Write-Host "✅ Bison (win_bison) installed" } catch { Write-Host "⚠️ Bison not found" }
+          try { win_flex --version; Write-Host "✅ Flex (win_flex) installed" } catch { Write-Host "⚠️ Flex not found" }
+          
+          # Create bison symlink for compatibility
+          if (Test-Path "C:\ProgramData\chocolatey\bin\win_bison.exe") {
+            Copy-Item "C:\ProgramData\chocolatey\bin\win_bison.exe" "C:\ProgramData\chocolatey\bin\bison.exe" -Force
+            Write-Host "✅ Created bison.exe symlink"
+          }
+          
+          Write-Host "✅ Windows build dependencies installed"
 
       - name: Install build dependencies (Ubuntu)
         if: matrix.platform == 'linux'
@@ -542,6 +554,21 @@ jobs:
             export ac_cv_prog_cc_c89=
             export ac_cv_prog_cc_c99=
             export ac_cv_prog_cc_stdc=
+            
+            # Clear any existing autoconf cache that might cause issues
+            rm -rf autom4te.cache config.cache
+            
+            # Set additional autoconf cache variables to prevent header detection issues
+            export ac_cv_header_stdc=yes
+            export ac_cv_header_sys_types_h=yes
+            export ac_cv_header_sys_stat_h=yes
+            export ac_cv_header_stdlib_h=yes
+            export ac_cv_header_string_h=yes
+            export ac_cv_header_memory_h=yes
+            export ac_cv_header_strings_h=yes
+            export ac_cv_header_inttypes_h=yes
+            export ac_cv_header_stdint_h=yes
+            export ac_cv_header_unistd_h=yes
 
             # Ensure iconv include/lib come first so we don't pick up SDK/system headers
             ICONV_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/libiconv/*/include/iconv.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
@@ -781,6 +808,16 @@ jobs:
               ac_cv_prog_cc_c89= \
               ac_cv_prog_cc_c99= \
               ac_cv_prog_cc_stdc= \
+              ac_cv_header_stdc=yes \
+              ac_cv_header_sys_types_h=yes \
+              ac_cv_header_sys_stat_h=yes \
+              ac_cv_header_stdlib_h=yes \
+              ac_cv_header_string_h=yes \
+              ac_cv_header_memory_h=yes \
+              ac_cv_header_strings_h=yes \
+              ac_cv_header_inttypes_h=yes \
+              ac_cv_header_stdint_h=yes \
+              ac_cv_header_unistd_h=yes \
               ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
@@ -831,24 +868,49 @@ jobs:
         if: matrix.platform == 'win32'
         shell: cmd
         run: |
-          cd ${{ env.PHP_SOURCE_DIR }}
-
-          # Set up Visual Studio environment
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" || call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-
-          # Configure PHP
-          buildconf.bat
-          configure.bat --help
-
-          # For now, we will use a minimal config for Windows
-          # This can be expanded later
-          configure.bat --disable-all --enable-cli --prefix=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }}
-
-          # Build PHP
+          cd /d ${{ env.PHP_SOURCE_DIR }}
+          
+          REM Set up Visual Studio environment
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" 2>nul || call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" 2>nul || call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" 2>nul
+          
+          REM Ensure bison and flex are in PATH
+          set PATH=C:\ProgramData\chocolatey\bin;%PATH%
+          
+          REM Verify tools are available
+          where bison >nul 2>&1 || echo Warning: bison not found in PATH
+          where win_bison >nul 2>&1 || echo Warning: win_bison not found in PATH
+          
+          REM Configure PHP with buildconf
+          call buildconf.bat --force
+          if errorlevel 1 (
+            echo buildconf failed, trying without --force
+            call buildconf.bat
+          )
+          
+          REM Configure with extensions based on matrix config
+          set EXTENSIONS=--enable-cli --enable-mbstring --enable-opcache
+          if "${{ matrix.config }}"=="laravel-mysql" set EXTENSIONS=%EXTENSIONS% --with-pdo-mysql --with-mysqli
+          if "${{ matrix.config }}"=="laravel-postgres" set EXTENSIONS=%EXTENSIONS% --with-pdo-pgsql --with-pgsql
+          if "${{ matrix.config }}"=="laravel-sqlite" set EXTENSIONS=%EXTENSIONS% --with-pdo-sqlite --with-sqlite3
+          if "${{ matrix.config }}"=="wordpress" set EXTENSIONS=%EXTENSIONS% --with-pdo-mysql --with-mysqli --enable-gd
+          
+          call configure.bat --disable-all %EXTENSIONS% --prefix=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }} --with-config-file-path=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }}\etc
+          
+          REM Build PHP
           nmake
-
-          # Install PHP
+          if errorlevel 1 (
+            echo Build failed with error %errorlevel%
+            exit /b %errorlevel%
+          )
+          
+          REM Install PHP
           nmake install
+          if errorlevel 1 (
+            echo Install failed with error %errorlevel%
+            exit /b %errorlevel%
+          )
+          
+          echo Windows PHP build completed successfully
 
       - name: Build PHP
         if: matrix.platform != 'win32'
