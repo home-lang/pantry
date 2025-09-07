@@ -215,7 +215,24 @@ jobs:
             libxslt1-dev \
             libicu-dev \
             libsodium-dev \
-            zlib1g-dev
+            zlib1g-dev \
+            mysql-client \
+            libmysqlclient-dev \
+            gettext \
+            libgettext-ocaml-dev \
+            libiconv-hook-dev \
+            autotools-dev \
+            m4 || true
+
+          # Verify autotools installation
+          echo "🔍 Verifying autotools installation:"
+          autoconf --version | head -1
+          automake --version | head -1
+          libtool --version | head -1
+          bison --version | head -1
+          re2c --version | head -1
+
+          echo "✅ Ubuntu build dependencies installed"
 
       - name: Install build dependencies (macOS)
         if: matrix.platform == 'darwin'
@@ -228,6 +245,14 @@ jobs:
           echo "  - Config: ${{ matrix.config }}"
           echo "  - Working directory: $(pwd)"
           echo "  - PATH: $PATH"
+
+          # Install autotools via Homebrew for buildconf (required for PHP compilation)
+          echo "🔧 Installing autotools via Homebrew..."
+          brew install autoconf automake libtool bison re2c
+
+          # Add Homebrew bison to PATH (newer version required)
+          export PATH="/opt/homebrew/opt/bison/bin:$PATH"
+          echo "PATH=/opt/homebrew/opt/bison/bin:$PATH" >> $GITHUB_ENV
 
           # Build Launchpad first so we can use it to install dependencies
           echo "🔨 Building Launchpad..."
@@ -485,6 +510,10 @@ jobs:
 
           FINAL_EXTENSIONS="${{ env.CONFIGURE_EXTENSIONS }}"
 
+          # Run buildconf first to regenerate configure script
+          echo "🔧 Running buildconf to regenerate configure script..."
+          ./buildconf --force
+
           # Platform-specific configuration
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
             echo "🔧 Configuring PHP build for macOS with Launchpad environment..."
@@ -507,6 +536,12 @@ jobs:
             # Ensure we link against libc++ (replace any libstdc++)
             LIBS=${LIBS//-lstdc++/-lc++}
             export LIBS
+
+            # Fix autoconf cache issues that cause ac_nonexistent.h errors
+            export ac_cv_header_ac_nonexistent_h=no
+            export ac_cv_prog_cc_c89=
+            export ac_cv_prog_cc_c99=
+            export ac_cv_prog_cc_stdc=
 
             # Ensure iconv include/lib come first so we don't pick up SDK/system headers
             ICONV_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/libiconv/*/include/iconv.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
@@ -742,6 +777,10 @@ jobs:
               php_cv_iconv_errno=yes \
               ac_cv_php_iconv_errno=yes \
               php_cv_func_iconv=yes \
+              ac_cv_header_ac_nonexistent_h=no \
+              ac_cv_prog_cc_c89= \
+              ac_cv_prog_cc_c99= \
+              ac_cv_prog_cc_stdc= \
               ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
@@ -756,6 +795,8 @@ jobs:
                 (grep -niE "(error:|fatal:|failed)" config.log || true) | tail -n 200;
                 echo '--- config.log (pgsql/libpq/iconv excerpts) ---';
                 (grep -niE "(iconv|libpq|pgsql|readline|icu|gettext|libintl)" config.log || true) | tail -n 200;
+                echo '--- config.log (ac_nonexistent excerpts) ---';
+                (grep -niE "(ac_nonexistent|nonexistent)" config.log || true) | tail -n 50;
                 echo '--- tail config.log ---';
                 tail -n 200 config.log || true;
                 echo '--- head config.log ---';
@@ -765,6 +806,10 @@ jobs:
 
           else # For Linux
             echo "🔧 Configuring PHP build for Linux..."
+
+            # Run buildconf for Linux as well
+            ./buildconf --force
+
             ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
@@ -772,27 +817,38 @@ jobs:
               --disable-debug \
               --enable-shared \
               --with-pic \
-              $FINAL_EXTENSIONS
+              $FINAL_EXTENSIONS \
+              || {
+                echo '--- config.log (error excerpts) ---';
+                (grep -niE "(error:|fatal:|failed)" config.log || true) | tail -n 200;
+                echo '--- tail config.log ---';
+                tail -n 200 config.log || true;
+                exit 1;
+              }
           fi
 
       - name: Configure and Build PHP (Windows)
         if: matrix.platform == 'win32'
+        shell: cmd
         run: |
           cd ${{ env.PHP_SOURCE_DIR }}
-          
+
           # Set up Visual Studio environment
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" || call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+
           # Configure PHP
-          ./buildconf
-          ./configure --help
-          
+          buildconf.bat
+          configure.bat --help
+
           # For now, we will use a minimal config for Windows
           # This can be expanded later
-          ./configure --disable-all --enable-cli
-          
+          configure.bat --disable-all --enable-cli --prefix=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }}
+
           # Build PHP
           nmake
+
+          # Install PHP
+          nmake install
 
       - name: Build PHP
         if: matrix.platform != 'win32'
@@ -913,12 +969,8 @@ jobs:
             make -j$JOBS
           fi
 
-
-            make -j$NPROC
-          else
-            # Linux build
-            make -j$NPROC
-          fi
+          # Install PHP
+          make install
 
           # Create necessary directories
           mkdir -p "${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}/etc/conf.d"
@@ -928,6 +980,7 @@ jobs:
             cp php.ini-production "${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}/etc/php.ini"
           fi
           echo "Generating default php.ini for configuration: ${{ matrix.config }}"
+          INSTALL_PREFIX="${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}"
           EXT_DIR=$("$INSTALL_PREFIX/bin/php-config" --extension-dir 2>/dev/null || echo "")
           PHP_INI_DIR="$INSTALL_PREFIX/lib"
           mkdir -p "$PHP_INI_DIR"
