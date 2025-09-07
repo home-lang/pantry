@@ -585,6 +585,9 @@ jobs:
 
             export CC=clang
             export CXX=clang++
+            # Set correct preprocessor for macOS (prevent /lib/cpp fallback)
+            export CPP="clang -E"
+            export ac_cv_prog_CPP="clang -E"
             # Help iconv/gettext tests link/run cleanly (ensure -liconv seen first)
             export LIBS="-liconv -lintl $LIBS"
             # Ensure we link against libc++ (replace any libstdc++)
@@ -835,6 +838,7 @@ jobs:
             env \
               CC="$CC" \
               CXX="$CXX" \
+              CPP="$CPP" \
               CFLAGS="$CFLAGS" \
               CXXFLAGS="$CXXFLAGS" \
               CPPFLAGS="$CPPFLAGS" \
@@ -855,6 +859,7 @@ jobs:
               ac_cv_prog_cc_c89= \
               ac_cv_prog_cc_c99= \
               ac_cv_prog_cc_stdc= \
+              ac_cv_prog_CPP="clang -E" \
               ac_cv_header_stdc=yes \
               ac_cv_header_sys_types_h=yes \
               ac_cv_header_sys_stat_h=yes \
@@ -915,6 +920,10 @@ jobs:
             export ac_cv_prog_cc_c99=
             export ac_cv_prog_cc_stdc=
             
+            # Prevent traditional-cpp usage (incompatible with modern glibc)
+            export ac_cv_prog_CPP="gcc -E"
+            export CPP="gcc -E"
+            
             # Clear any existing autoconf cache that might cause issues
             rm -rf autom4te.cache config.cache
 
@@ -934,6 +943,7 @@ jobs:
             env \
               CC="$CC" \
               CXX="$CXX" \
+              CPP="$CPP" \
               CFLAGS="$CFLAGS" \
               CXXFLAGS="$CXXFLAGS" \
               CPPFLAGS="$CPPFLAGS" \
@@ -942,6 +952,7 @@ jobs:
               ac_cv_prog_cc_c89= \
               ac_cv_prog_cc_c99= \
               ac_cv_prog_cc_stdc= \
+              ac_cv_prog_CPP="gcc -E" \
               ac_cv_header_stdc=yes \
               ac_cv_header_sys_types_h=yes \
               ac_cv_header_sys_stat_h=yes \
