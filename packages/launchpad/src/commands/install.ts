@@ -98,7 +98,7 @@ async function ensureShellIntegrationInstalled(): Promise<void> {
   catch {}
 }
 
-async function installPackagesGlobally(packages: string[], options: { verbose?: boolean, quiet?: boolean }) {
+async function installPackagesGlobally(packages: string[], options: { verbose?: boolean, quiet?: boolean, noInteractive?: boolean }) {
   const { install } = await import('../install-main')
   const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
   if (!options.quiet)
@@ -120,8 +120,10 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
   }
 
   await createGlobalBinarySymlinks(globalEnvDir)
-  await ensureShellIntegrationInstalled()
-  triggerShellGlobalRefresh()
+  if (!options.quiet && !options.noInteractive) {
+    await ensureShellIntegrationInstalled()
+    triggerShellGlobalRefresh()
+  }
 
   if (!options.quiet) {
     if (results.length > 0) {
@@ -134,7 +136,7 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
   }
 }
 
-async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: boolean, verbose?: boolean }) {
+async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: boolean, verbose?: boolean, noInteractive?: boolean }) {
   if (!options.quiet)
     console.log('🔍 Scanning machine for dependency files...')
 
@@ -350,17 +352,20 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
         return val.some(v => typeof v === 'string' && pkgNames.includes(v))
       return false
     }
-    const globalBuildDeps = (config as any).installBuildDeps
-    const phpBuildDeps = (config.services?.php as any)?.installBuildDeps
-    const shouldInstallBuildDeps = (
-      process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1'
-      || globalBuildDeps === true
-      || isListed(globalBuildDeps)
-      || phpBuildDeps === true
-      || isListed(phpBuildDeps)
-    )
+    // Check for excluded dependencies configuration
+    const excludedDeps = (config as any).excludeDependencies || []
+    const globalExcludedDeps = (config as any).excludeGlobalDependencies || []
+    const phpExcludedDeps = (config.services?.php as any)?.excludeDependencies || []
+    
+    const allExcludedDeps = new Set([
+      ...excludedDeps,
+      ...globalExcludedDeps, 
+      ...phpExcludedDeps
+    ])
 
-    if (!shouldInstallBuildDeps) {
+    // Always install PHP dependencies by default - they are runtime dependencies, not build dependencies
+    // Only exclude if explicitly configured to do so
+    if (allExcludedDeps.size > 0) {
       try {
         const { pantry } = await import('ts-pkgx')
         const phpPackage = (pantry as any)?.phpnet
@@ -375,13 +380,13 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
           name = name.replace(/[~^<>=].*$/, '')
           return name
         }).filter(Boolean)
+        
         if (phpDeps.length > 0) {
-          const phpDepSet = new Set(phpDeps)
           const before = filteredPackages.length
-          filteredPackages = filteredPackages.filter(pkg => !phpDepSet.has(pkg))
+          filteredPackages = filteredPackages.filter(pkg => !allExcludedDeps.has(pkg))
           const removed = before - filteredPackages.length
           if (options.verbose && removed > 0)
-            console.log(`ℹ️  Skipping ${removed} PHP build-time dependencies during global auto-install. Set LAUNCHPAD_INSTALL_BUILD_DEPS=1 to include them.`)
+            console.log(`ℹ️  Excluded ${removed} dependencies from global install based on configuration.`)
         }
       }
       catch {}
@@ -404,8 +409,10 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
     delete process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
 
     await createGlobalBinarySymlinks(globalEnvDir)
-    await ensureShellIntegrationInstalled()
-    triggerShellGlobalRefresh()
+    if (!options.noInteractive) {
+      await ensureShellIntegrationInstalled()
+      triggerShellGlobalRefresh()
+    }
 
     if (!options.quiet) {
       if (results.length > 0)

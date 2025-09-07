@@ -868,6 +868,12 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     // Install the main service package - this will automatically install all dependencies
     // thanks to our fixed dependency resolution
     const installPath = `${process.env.HOME}/.local`
+    
+    // Validate packageDomain before calling install to prevent JavaScript errors
+    if (!definition.packageDomain || typeof definition.packageDomain !== 'string') {
+      throw new Error(`Invalid package domain for ${definition.displayName}: ${definition.packageDomain}`)
+    }
+    
     await install([definition.packageDomain], installPath)
 
     if (config.verbose)

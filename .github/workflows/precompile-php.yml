@@ -2,27 +2,31 @@ name: Precompile PHP
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - .github/workflows/precompile-php.yml
-      - build-configs/**
-      - scripts/get-php-versions.ts
-      - scripts/check-php-updates.ts
-  schedule:
-    # Check for updates daily at 2 AM UTC
-    - cron: '0 2 * * *'
+    branches: [main]
   workflow_dispatch:
     inputs:
+      php_version:
+        description: 'PHP version to build (leave empty for auto-detection)'
+        required: false
+        type: string
+      php_config:
+        description: 'PHP build configuration'
+        required: true
+        default: 'laravel-mysql'
+        type: choice
+        options:
+          - laravel-mysql
+          - laravel-postgres
+          - laravel-sqlite
+          - api-only
+          - enterprise
+          - wordpress
+          - full-stack
       force_rebuild:
-        description: Force rebuild even if no new versions
+        description: 'Force rebuild even if no updates'
         required: false
         default: false
         type: boolean
-
-env:
-  REGISTRY_URL: ghcr.io
-  REGISTRY_USERNAME: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   # First job: Check if we need to rebuild based on new PHP versions
@@ -68,7 +72,7 @@ jobs:
   get-php-versions:
     needs: check-for-updates
     runs-on: ubuntu-latest
-    if: needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true'
+    if: needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true' || github.event.inputs.php_version != ''
     outputs:
       php_versions: ${{ steps.get-versions.outputs.php_versions }}
     steps:
@@ -83,1216 +87,105 @@ jobs:
       - name: Get PHP versions from ts-pkgx
         id: get-versions
         run: |
-          # Get dynamic PHP versions using our custom script
-          PHP_VERSIONS=$(bun scripts/get-php-versions.ts | grep "JSON output for GitHub Actions:" -A 1 | tail -1)
+          if [ -n "${{ github.event.inputs.php_version }}" ]; then
+            # Use specific version if provided
+            PHP_VERSIONS='["${{ github.event.inputs.php_version }}"]'
+          else
+            # Get dynamic PHP versions using our custom script
+            PHP_VERSIONS=$(bun scripts/get-php-versions.ts | grep "JSON output for GitHub Actions:" -A 1 | tail -1)
+          fi
           echo "php_versions=$PHP_VERSIONS" >> $GITHUB_OUTPUT
           echo "🔍 Dynamic PHP versions: $PHP_VERSIONS"
 
-  # Job to provide feedback when no rebuild is needed
-  no-rebuild-needed:
-    needs: check-for-updates
-    runs-on: ubuntu-latest
-    if: needs.check-for-updates.outputs.rebuild_needed == 'false' && github.event.inputs.force_rebuild != 'true'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: No rebuild needed
-        run: |
-          echo "✅ No rebuild needed"
-          echo "Reason: ${{ needs.check-for-updates.outputs.reason }}"
-          echo "Current versions: ${{ needs.check-for-updates.outputs.current_versions }}"
-          echo "Latest versions: ${{ needs.check-for-updates.outputs.latest_versions }}"
-          echo ""
-          echo "The workflow will skip building since no new PHP versions are available."
-          echo "To force a rebuild, use the 'force_rebuild' input parameter."
-
-  # Matrix strategy for building across different platforms and configurations
-  build-matrix:
+  build:
     needs: [check-for-updates, get-php-versions]
-    runs-on: ${{ matrix.os }}
-    if: needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true'
+    if: needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true' || github.event.inputs.php_version != ''
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13, windows-latest] # Include Intel Mac
-        php_version: ${{ fromJSON(needs.get-php-versions.outputs.php_versions) }}
-        config: [laravel-mysql, laravel-postgres, laravel-sqlite, api-only, enterprise, wordpress, full-stack]
+        php_version: ${{ fromJson(needs.get-php-versions.outputs.php_versions) }}
+        config:
+          - laravel-mysql
+          - laravel-postgres
+          - laravel-sqlite
+          - api-only
+          - enterprise
+          - wordpress
+          - full-stack
         include:
-          # Add Windows later if needed
           - os: ubuntu-latest
             platform: linux
+            arch: x86_64
+          - os: macos-13
+            platform: darwin
             arch: x86_64
           - os: macos-latest
             platform: darwin
             arch: arm64
-          - os: macos-13
-            platform: darwin
-            arch: x86_64
           - os: windows-latest
             platform: win32
-            arch: x64
-        exclude:
-          # Skip some combinations to reduce build time
-          - os: macos-13
-            config: api-only
-          # WordPress mainly used on Linux
-          - os: macos-13
-            config: wordpress
+            arch: x86_64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up build environment
-        run: |
-          echo "Building PHP ${{ matrix.php_version }} for ${{ matrix.platform }}-${{ matrix.arch }}"
-          echo "Configuration: ${{ matrix.config }}"
-          echo "BINARY_NAME=php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}" >> $GITHUB_ENV
-          echo "BUILD_DIR=${{ github.workspace }}/build" >> $GITHUB_ENV
-          echo "OUTPUT_DIR=${{ github.workspace }}/binaries" >> $GITHUB_ENV
-
-      - name: Install Bun
+      - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-
-      - name: Use cached node_modules
-        uses: actions/cache@v4
         with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            node-modules-
-
-      - name: Install Dependencies
-        run: bun install
-
-      - name: Install build dependencies (Windows)
-        if: matrix.platform == 'win32'
-        shell: pwsh
-        run: |
-          Write-Host "🔧 Installing PHP dependencies via Chocolatey..."
-          # Use PowerShell and list packages on a single line to avoid stray '\' tokens
-          choco install -y --no-progress git unzip winflexbison pkg-config-lite
-
-          # Refresh environment variables
-          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
-
-          # Quick sanity checks (non-fatal)
-          try { git --version; Write-Host "✅ Git installed" } catch { Write-Host "⚠️ Git not found" }
-          try { unzip; Write-Host "✅ Unzip installed" } catch { Write-Host "⚠️ Unzip not found" }
-          try { win_bison --version; Write-Host "✅ Bison (win_bison) installed" } catch { Write-Host "⚠️ Bison not found" }
-          try { win_flex --version; Write-Host "✅ Flex (win_flex) installed" } catch { Write-Host "⚠️ Flex not found" }
-
-          # Create bison symlink for compatibility
-          if (Test-Path "C:\ProgramData\chocolatey\bin\win_bison.exe") {
-            Copy-Item "C:\ProgramData\chocolatey\bin\win_bison.exe" "C:\ProgramData\chocolatey\bin\bison.exe" -Force
-            Write-Host "✅ Created bison.exe symlink"
-          }
-
-          Write-Host "✅ Windows build dependencies installed"
-
-      - name: Install build dependencies (Ubuntu)
-        if: matrix.platform == 'linux'
-        run: |
-          # Install PHP dependencies via apt-get (alternative to launchpad)
-          echo "🔧 Installing PHP dependencies via apt-get..."
-          echo "🔍 Debug info:"
-          echo "  - Platform: linux"
-          echo "  - Architecture: $(uname -m)"
-
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            bison \
-            re2c \
-            libxml2-dev \
-            libssl-dev \
-            libcurl4-openssl-dev \
-            libpng-dev \
-            libjpeg-dev \
-            libfreetype6-dev \
-            libonig-dev \
-            libzip-dev \
-            libsqlite3-dev \
-            libpq-dev \
-            libreadline-dev \
-            libbz2-dev \
-            libgmp-dev \
-            libldap2-dev \
-            libsasl2-dev \
-            libxslt1-dev \
-            libicu-dev \
-            libsodium-dev \
-            zlib1g-dev \
-            mysql-client \
-            libmysqlclient-dev \
-            gettext \
-            libgettext-ocaml-dev \
-            libiconv-hook-dev \
-            autotools-dev \
-            m4 || true
-
-          # Verify autotools installation
-          echo "🔍 Verifying autotools installation:"
-          autoconf --version | head -1
-          automake --version | head -1
-          libtool --version | head -1
-          bison --version | head -1
-          re2c --version | head -1
-
-          echo "✅ Ubuntu build dependencies installed"
-
-      - name: Install build dependencies (macOS)
-        if: matrix.platform == 'darwin'
-        run: |
-          # Install PHP dependencies via Launchpad for portable binaries
-          echo "🔧 Installing PHP dependencies via Launchpad..."
-          echo "🔍 Debug info:"
-          echo "  - Platform: darwin"
-          echo "  - PHP version: ${{ matrix.php_version }}"
-          echo "  - Config: ${{ matrix.config }}"
-          echo "  - Working directory: $(pwd)"
-          echo "  - PATH: $PATH"
-
-          # Install autotools via Homebrew for buildconf (required for PHP compilation)
-          echo "🔧 Installing autotools via Homebrew..."
-          brew install autoconf automake libtool bison re2c
-
-          # Add Homebrew bison to PATH (newer version required)
-          export PATH="/opt/homebrew/opt/bison/bin:$PATH"
-          echo "PATH=/opt/homebrew/opt/bison/bin:$PATH" >> $GITHUB_ENV
-
-          # Build Launchpad first so we can use it to install dependencies
-          echo "🔨 Building Launchpad..."
-          cd ${{ github.workspace }}
-          bun install
-          bun run build
-
-          # Install all PHP runtime dependencies from pantry (no need to list them manually)
-          echo "📦 Installing PHP runtime dependencies from pantry (php.net --deps-only)..."
-          # Ensure runtime deps are enabled
-          export LAUNCHPAD_INSTALL_DEPS=true
-          echo "🔍 Build configuration: ${{ matrix.config }}"
-          # Resolves ~30+ deps (icu, openssl, curl, libxml2, zip, oniguruma, readline, bzip2, gmp, gettext, etc.)
-          ./packages/launchpad/bin/cli.ts install php.net --deps-only --verbose
-
-          # Install PostgreSQL for postgres-related builds
-          if [[ "${{ matrix.config }}" == "laravel-postgres" || "${{ matrix.config }}" == "enterprise" || "${{ matrix.config }}" == "full-stack" ]]; then
-            echo "🐘 Installing PostgreSQL for ${{ matrix.config }} build"
-            ./packages/launchpad/bin/cli.ts install postgresql.org --verbose
-          else
-            echo "⏭️  Skipping PostgreSQL for ${{ matrix.config }} build"
-          fi
-
-          echo "✅ PHP build dependencies installed successfully via Launchpad"
-
-          # Debug: List all installed packages to see what we have
-          echo "🔍 Debugging: Listing all Launchpad installations..."
-          ls -la $HOME/.local/ | head -20
-          echo "🔍 Looking for specific dependencies..."
-          find $HOME/.local -maxdepth 2 -type d -name "*.org" | sort
-          echo "🔍 Checking for specific libraries..."
-          find $HOME/.local -name "lib" -type d | head -10
-          find $HOME/.local -name "include" -type d | head -10
-
-          # Use the standard Launchpad directory
-          LAUNCHPAD_DIR="$HOME/.local"
-          echo "LAUNCHPAD_DIR=$LAUNCHPAD_DIR" >> $GITHUB_ENV
-          echo "🔍 Searching for ICU installation..."
-
-          # ICU might be installed as unicode.org
-          ICU_DIR=$(find $LAUNCHPAD_DIR -name "unicode.org" -type d | head -1)
-          if [[ -d "$ICU_DIR" ]]; then
-            ICU_VERSION_DIR=$(ls -1 $ICU_DIR | grep "^v" | sort -V | tail -1)
-            ICU_FULL_VER=$(echo "$ICU_VERSION_DIR" | sed 's/^v//')
-            ICU_VER=$(echo "$ICU_FULL_VER" | cut -d. -f1)
-            ICU_PREFIX="$ICU_DIR/$ICU_VERSION_DIR"
-
-            echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) at $ICU_PREFIX"
-            echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
-            echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
-            echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
-
-            # Verify ICU installation
-            echo "🔍 ICU installation details:"
-            echo "ICU_PREFIX: $ICU_PREFIX"
-            ls -la $ICU_PREFIX/lib/libicu*.dylib 2>/dev/null | head -5 || echo "ICU libraries not found in expected location"
-          else
-            # Try alternative ICU locations that might be used by Launchpad
-            echo "🔍 ICU not found at unicode.org, checking alternative locations..."
-
-            # Check if ICU is available via pkg-config (installed as dependency)
-            if pkg-config --exists icu-uc icu-i18n 2>/dev/null; then
-              ICU_PREFIX=$(pkg-config --variable=prefix icu-uc)
-              ICU_VER=$(pkg-config --modversion icu-uc | cut -d. -f1)
-              ICU_FULL_VER=$(pkg-config --modversion icu-uc)
-
-              echo "✅ Found ICU v$ICU_VER (full version: $ICU_FULL_VER) via pkg-config"
-              echo "ICU_VERSION=$ICU_VER" >> $GITHUB_ENV
-              echo "ICU_FULL_VERSION=$ICU_FULL_VER" >> $GITHUB_ENV
-              echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
-            else
-              echo "⚠️  ICU not found, will disable intl extension for PHP build"
-              echo "ICU_VERSION=" >> $GITHUB_ENV
-              echo "ICU_FULL_VERSION=" >> $GITHUB_ENV
-              echo "ICU_PREFIX=" >> $GITHUB_ENV
-            fi
-          fi
-
-          # Verify Launchpad installations
-          echo "🔍 Checking Launchpad dependency installations:"
-
-          # Find and verify readline
-          READLINE_DIR=$(find $LAUNCHPAD_DIR -name "gnu.org" -type d)/readline
-          if [[ -d "$READLINE_DIR" ]]; then
-            READLINE_VER=$(ls -1 $READLINE_DIR | grep "^v" | sort -V | tail -1)
-            echo "✅ Readline: $READLINE_DIR/$READLINE_VER"
-            ls -la $READLINE_DIR/$READLINE_VER/include/readline/readline.h 2>/dev/null || echo "readline.h not found"
-            ls -la $READLINE_DIR/$READLINE_VER/lib/libreadline.* 2>/dev/null || echo "libreadline not found"
-          fi
-
-          # Find and verify PostgreSQL
-          PGSQL_DIR=$(find $LAUNCHPAD_DIR -name "postgresql.org" -type d)
-          if [[ -d "$PGSQL_DIR" ]]; then
-            PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
-            echo "✅ PostgreSQL: $PGSQL_DIR/$PGSQL_VER"
-            ls -la $PGSQL_DIR/$PGSQL_VER/include/libpq-fe.h 2>/dev/null || echo "libpq-fe.h not found"
-            ls -la $PGSQL_DIR/$PGSQL_VER/lib/libpq.* 2>/dev/null || echo "libpq not found"
-          fi
-
-          # Find and verify OpenSSL
-          OPENSSL_DIR=$(find $LAUNCHPAD_DIR -name "openssl.org" -type d)
-          if [[ -d "$OPENSSL_DIR" ]]; then
-            OPENSSL_VER=$(ls -1 $OPENSSL_DIR | grep "^v" | sort -V | tail -1)
-            echo "✅ OpenSSL: $OPENSSL_DIR/$OPENSSL_VER"
-            ls -la $OPENSSL_DIR/$OPENSSL_VER/include/openssl/ssl.h 2>/dev/null || echo "ssl.h not found"
-            ls -la $OPENSSL_DIR/$OPENSSL_VER/lib/libssl.* 2>/dev/null || echo "libssl not found"
-          fi
-
-          # Find and verify other common dependencies
-          for dep in "gnu.org/gettext" "sourceware.org/bzip2" "openldap.org"; do
-            DEP_DIR=$(find $LAUNCHPAD_DIR -path "*/$dep" -type d | head -1)
-            if [[ -d "$DEP_DIR" ]]; then
-              DEP_VER=$(ls -1 $DEP_DIR | grep "^v" | sort -V | tail -1)
-              echo "✅ $dep: $DEP_DIR/$DEP_VER"
-            else
-              echo "❌ $dep not found"
-            fi
-          done
-
-      - name: Create build configuration (Unix)
-        if: matrix.platform != 'win32'
-        run: |
-          mkdir -p ${{ env.BUILD_DIR }} ${{ env.OUTPUT_DIR }}
-
-          # Determine libpq prefix from pkgx on macOS (avoid brew on Linux)
-          PG_PREFIX=""
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            PKGX_DIR="$HOME/.local"
-            PGSQL_DIR=$(find $PKGX_DIR -name "postgresql.org" -type d | head -1)
-            if [[ -d "$PGSQL_DIR" ]]; then
-              PGSQL_VER=$(ls -1 $PGSQL_DIR | grep "^v" | sort -V | tail -1)
-              PG_PREFIX="$PGSQL_DIR/$PGSQL_VER"
-            fi
-          fi
-
-          # Create configuration based on matrix config
-          case "${{ matrix.config }}" in
-            "laravel-mysql")
-              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
-              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-              else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-              fi
-              ;;
-            "laravel-postgres")
-              # Use PGSQL_PREFIX if available, otherwise use PG_PREFIX
-              POSTGRES_PREFIX="${PGSQL_PREFIX:-$PG_PREFIX}"
-              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
-              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-              else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-              fi
-              ;;
-            "laravel-sqlite")
-              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
-              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-              else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-              fi
-              ;;
-            "api-only")
-              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --with-zip --with-libxml --with-zlib"
-              ;;
-            "enterprise")
-              # Use PGSQL_PREFIX if available, otherwise use PG_PREFIX
-              POSTGRES_PREFIX="${PGSQL_PREFIX:-$PG_PREFIX}"
-              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
-              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-pdo-sqlite --with-mysqli --with-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
-              else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-pdo-sqlite --with-mysqli --with-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
-              fi
-              ;;
-            "wordpress")
-              EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-libxml --with-zlib"
-              ;;
-            "full-stack")
-              # Comprehensive configuration with all major database drivers and extensions for local testing
-              # Use PGSQL_PREFIX if available, otherwise use PG_PREFIX
-              POSTGRES_PREFIX="${PGSQL_PREFIX:-$PG_PREFIX}"
-              # For PHP 8.1, disable intl extension to avoid ICU4C C++17 issues
-              if [[ "${{ matrix.php_version }}" == 8.1* ]]; then
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --with-pdo-mysql --with-pdo-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-pdo-sqlite --with-mysqli --with-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
-              else
-                EXTENSIONS="--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-intl --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --with-pdo-mysql --with-pdo-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-pdo-sqlite --with-mysqli --with-pgsql${POSTGRES_PREFIX:+=$POSTGRES_PREFIX} --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
-              fi
-              ;;
-          esac
-
-          echo "CONFIGURE_EXTENSIONS=$EXTENSIONS" >> $GITHUB_ENV
-
-      - name: Create build configuration (Windows)
-        if: matrix.platform == 'win32'
-        shell: pwsh
-        run: |
-          # Ensure environment variables are set before using them
-          $BUILD_DIR = "${{ env.BUILD_DIR }}"
-          $OUTPUT_DIR = "${{ env.OUTPUT_DIR }}"
-          
-          if ([string]::IsNullOrEmpty($BUILD_DIR)) {
-            $BUILD_DIR = "${{ github.workspace }}\build"
-          }
-          if ([string]::IsNullOrEmpty($OUTPUT_DIR)) {
-            $OUTPUT_DIR = "${{ github.workspace }}\binaries"
-          }
-          
-          Write-Host "Creating directories: $BUILD_DIR, $OUTPUT_DIR"
-          New-Item -ItemType Directory -Force -Path $BUILD_DIR, $OUTPUT_DIR
-
-          # Create configuration based on matrix config
-          $extensions = ""
-          switch ("${{ matrix.config }}") {
-            "laravel-mysql" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-            }
-            "laravel-postgres" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-pgsql --with-pgsql --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-            }
-            "laravel-sqlite" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-sqlite --with-sqlite3 --with-curl --with-openssl --enable-gd --with-zip --with-readline --with-libxml --with-zlib"
-            }
-            "api-only" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-bcmath --with-pdo-mysql --with-mysqli --with-curl --with-openssl --with-zip --with-libxml --with-zlib"
-            }
-            "enterprise" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --with-pdo-mysql --with-pdo-pgsql --with-pdo-sqlite --with-mysqli --with-pgsql --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium"
-            }
-            "wordpress" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --with-pdo-mysql --with-mysqli --with-curl --with-openssl --enable-gd --with-zip --with-libxml --with-zlib"
-            }
-            "full-stack" {
-              $extensions = "--enable-cli --enable-fpm --enable-mbstring --enable-opcache --enable-exif --enable-bcmath --enable-calendar --enable-ftp --enable-sysvmsg --enable-sysvsem --enable-sysvshm --with-pdo-mysql --with-pdo-pgsql --with-pdo-sqlite --with-mysqli --with-pgsql --with-sqlite3 --with-curl --with-openssl --enable-gd --enable-soap --enable-sockets --with-zip --with-bz2 --with-readline --with-libxml --with-zlib --enable-pcntl --enable-posix --with-gettext --with-gmp --with-ldap --with-xsl --with-sodium --with-iconv --enable-fileinfo --enable-json --enable-phar --enable-filter --enable-hash --enable-session --enable-tokenizer --enable-ctype --enable-dom --enable-simplexml --enable-xml --enable-xmlreader --enable-xmlwriter --enable-shmop"
-            }
-          }
-
-          echo "CONFIGURE_EXTENSIONS=$extensions" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Set up Launchpad Environment (macOS)
-        if: matrix.platform == 'darwin'
-        run: |
-          echo "🔧 Setting up Launchpad build environment..."
-          LAUNCHPAD_DIR="$HOME/.local"
-
-          # Curate only the latest version per domain to avoid conflicting headers (e.g. multiple ICU versions)
-          LATEST_INCLUDE_DIRS=()
-          LATEST_LIB_DIRS=()
-          LATEST_PKGCONFIG_DIRS=()
-          while IFS= read -r domain; do
-            latest=$(ls -1 "$domain" 2>/dev/null | grep '^v' | sort -V | tail -1)
-            if [[ -n "$latest" ]]; then
-              inc="$domain/$latest/include"
-              lib="$domain/$latest/lib"
-              pc="$domain/$latest/lib/pkgconfig"
-              [[ -d "$inc" ]] && LATEST_INCLUDE_DIRS+=("$inc")
-              [[ -d "$lib" ]] && LATEST_LIB_DIRS+=("$lib")
-              [[ -d "$pc" ]] && LATEST_PKGCONFIG_DIRS+=("$pc")
-            fi
-          done < <(find "$LAUNCHPAD_DIR" -mindepth 1 -maxdepth 1 -type d)
-
-          # Compose paths from curated dirs (avoid wildcards in CPPFLAGS)
-          CPPFLAGS_PATHS=$(printf '%s\n' "${LATEST_INCLUDE_DIRS[@]}" | sed 's/^/-I/' | tr '\n' ' ')
-          LDFLAGS_PATHS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | sed 's/^/-L/' | tr '\n' ' ')
-          PKG_CONFIG_PATHS=$(printf '%s\n' "${LATEST_PKGCONFIG_DIRS[@]}" | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
-          DYLD_PATHS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | awk 'NR > 1 { printf(":") } { printf("%s", $0) }')
-          # Add rpath entries from curated lib dirs
-          RPATH_FLAGS=$(printf '%s\n' "${LATEST_LIB_DIRS[@]}" | sed 's/^/-Wl,-rpath,/' | tr '\n' ' ')
-
-          # Export the environment variables (clean up any trailing spaces)
-          echo "LDFLAGS=$(echo "$LDFLAGS_PATHS $RPATH_FLAGS" | sed 's/[[:space:]]*$//')" >> $GITHUB_ENV
-          echo "CPPFLAGS=$(echo "$CPPFLAGS_PATHS" | sed 's/[[:space:]]*$//')" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATHS" >> $GITHUB_ENV
-          echo "DYLD_LIBRARY_PATH=$DYLD_PATHS" >> $GITHUB_ENV
-          echo "DYLD_FALLBACK_LIBRARY_PATH=$DYLD_PATHS" >> $GITHUB_ENV
-
-          echo "✅ Environment configured:"
-          echo "  LDFLAGS: $LDFLAGS_PATHS"
-          echo "  CPPFLAGS: $CPPFLAGS_PATHS"
-          echo "  PKG_CONFIG_PATH: $PKG_CONFIG_PATHS"
-          echo "  DYLD_LIBRARY_PATH: $DYLD_PATHS"
-          echo "  DYLD_FALLBACK_LIBRARY_PATH: $DYLD_PATHS"
-
-      - name: Download and extract PHP source
-        run: |
-          cd ${{ env.BUILD_DIR }}
-          # Use system curl to download PHP source
-          export PATH="/usr/bin:/usr/local/bin:/bin:$PATH"
-          curl -fsSL "https://www.php.net/distributions/php-${{ matrix.php_version }}.tar.gz" -o php.tar.gz
-          tar -xzf php.tar.gz
-          cd php-${{ matrix.php_version }}
-          echo "PHP_SOURCE_DIR=${{ env.BUILD_DIR }}/php-${{ matrix.php_version }}" >> $GITHUB_ENV
-
-      - name: Configure PHP build
-        if: matrix.platform != 'win32'
-        run: |
-          cd ${{ env.PHP_SOURCE_DIR }}
-
-          INSTALL_PREFIX="${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}"
-          mkdir -p "$INSTALL_PREFIX"
-
-          FINAL_EXTENSIONS="${{ env.CONFIGURE_EXTENSIONS }}"
-
-          # Run buildconf first to regenerate configure script
-          echo "🔧 Running buildconf to regenerate configure script..."
-          ./buildconf --force
-
-          # Create a custom conftest.c that will never fail for ac_nonexistent.h
-          echo '#ifndef AC_NONEXISTENT_H_OVERRIDE' > conftest_override.c
-          echo '#define AC_NONEXISTENT_H_OVERRIDE' >> conftest_override.c
-          echo '// Override for ac_nonexistent.h test' >> conftest_override.c
-          echo 'int main() { return 0; }' >> conftest_override.c
-          echo '#endif' >> conftest_override.c
-
-          # Platform-specific configuration
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            echo "🔧 Configuring PHP build for macOS with Launchpad environment..."
-
-            # Set C++ standard based on PHP version
-            PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
-            PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
-
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
-              export CXXFLAGS="-std=c++17 -stdlib=libc++"
-            else
-              export CXXFLAGS="-std=c++14 -stdlib=libc++"
-            fi
-            echo "Using CXXFLAGS: $CXXFLAGS"
-
-            export CC=clang
-            export CXX=clang++
-            # Set correct preprocessor for macOS (prevent /lib/cpp fallback)
-            export CPP="clang -E"
-            export ac_cv_prog_CPP="clang -E"
-            # Bypass preprocessor sanity check entirely (problematic with complex CPPFLAGS)
-            export ac_cv_prog_CPP_works=yes
-            # Help iconv/gettext tests link/run cleanly (ensure -liconv seen first)
-            export LIBS="-liconv -lintl $LIBS"
-            # Ensure we link against libc++ (replace any libstdc++)
-            LIBS=${LIBS//-lstdc++/-lc++}
-            export LIBS
-
-            # Fix autoconf cache issues that cause ac_nonexistent.h errors
-            export ac_cv_header_ac_nonexistent_h=no
-            export ac_cv_prog_cc_c89=
-            export ac_cv_prog_cc_c99=
-            export ac_cv_prog_cc_stdc=
-
-            # Clear any existing autoconf cache that might cause issues
-            rm -rf autom4te.cache config.cache
-
-            # Create a fake ac_nonexistent.h header to prevent configure failures
-            mkdir -p fake_headers
-            touch fake_headers/ac_nonexistent.h
-            export CPPFLAGS="-I$(pwd)/fake_headers $CPPFLAGS"
-
-            # Set additional autoconf cache variables to prevent header detection issues
-            export ac_cv_header_stdc=yes
-            export ac_cv_header_sys_types_h=yes
-            export ac_cv_header_sys_stat_h=yes
-            export ac_cv_header_stdlib_h=yes
-            export ac_cv_header_string_h=yes
-            export ac_cv_header_memory_h=yes
-            export ac_cv_header_strings_h=yes
-            export ac_cv_header_inttypes_h=yes
-            export ac_cv_header_stdint_h=yes
-            export ac_cv_header_unistd_h=yes
-
-            # Ensure iconv include/lib come first so we don't pick up SDK/system headers
-            ICONV_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/libiconv/*/include/iconv.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
-            if [[ -n "$ICONV_PREFIX" ]]; then
-              export CPPFLAGS="-I$ICONV_PREFIX/include $CPPFLAGS"
-              export LDFLAGS="-L$ICONV_PREFIX/lib -Wl,-rpath,$ICONV_PREFIX/lib $LDFLAGS"
-              export LIBRARY_PATH="$ICONV_PREFIX/lib:$LIBRARY_PATH"
-              export LIBICONV="-L$ICONV_PREFIX/lib -liconv"
-              export ICONV_CFLAGS="-I$ICONV_PREFIX/include"
-              # Prepend iconv lib dir to DYLD paths so runtime tests pick it first
-              export DYLD_LIBRARY_PATH="$ICONV_PREFIX/lib:${DYLD_LIBRARY_PATH:-}"
-              export DYLD_FALLBACK_LIBRARY_PATH="$ICONV_PREFIX/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
-              echo "Using ICONV_PREFIX=$ICONV_PREFIX"
-              # Show selected headers and libs
-              ls -la "$ICONV_PREFIX/include/iconv.h" 2>/dev/null || true
-              ls -la "$ICONV_PREFIX/lib/libiconv."* 2>/dev/null | head -5 || true
-            fi
-
-            # Ensure gettext (libintl.h) include/lib come first so header is found
-            GETTEXT_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/gnu.org/gettext/*/include/libintl.h" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
-            if [[ -n "$GETTEXT_PREFIX" ]]; then
-              export CPPFLAGS="-I$GETTEXT_PREFIX/include $CPPFLAGS"
-              # Keep iconv first by appending gettext after current -L/-rpath entries
-              export LDFLAGS="$LDFLAGS -L$GETTEXT_PREFIX/lib -Wl,-rpath,$GETTEXT_PREFIX/lib"
-              # And ensure DYLD paths keep iconv first
-              export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$GETTEXT_PREFIX/lib"
-              export DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH:$GETTEXT_PREFIX/lib"
-              echo "Using GETTEXT_PREFIX=$GETTEXT_PREFIX"
-              # Show selected headers and libs
-              ls -la "$GETTEXT_PREFIX/include/libintl.h" 2>/dev/null || true
-              ls -la "$GETTEXT_PREFIX/lib/libintl."* 2>/dev/null | head -5 || true
-            fi
-
-            # Prefer OpenSSL v3 if available in Launchpad (PHP 8.4 is fully compatible with v3)
-            OPENSSL_V3_PREFIX=$(find "$LAUNCHPAD_DIR" -type d -path "*/openssl.org/v3*/include" -print -quit 2>/dev/null | sed -E 's#/include$##')
-            if [[ -n "$OPENSSL_V3_PREFIX" ]]; then
-              echo "Using OpenSSL v3 at $OPENSSL_V3_PREFIX"
-              export CPPFLAGS="-I$OPENSSL_V3_PREFIX/include $CPPFLAGS"
-              export LDFLAGS="-L$OPENSSL_V3_PREFIX/lib -Wl,-rpath,$OPENSSL_V3_PREFIX/lib $LDFLAGS"
-              # Put its pkgconfig dir first and filter out old openssl v1.* entries
-              if [[ -d "$OPENSSL_V3_PREFIX/lib/pkgconfig" ]]; then
-                OLD_PKG="$PKG_CONFIG_PATH"
-                # Build a cleaned PKG_CONFIG_PATH without any openssl v1.* entries
-                CLEANED=$(echo "$OLD_PKG" | awk -v RS=':' -v ORS=':' '!/openssl.org\/v1\./ { printf "%s", $0 }')
-                export PKG_CONFIG_PATH="$OPENSSL_V3_PREFIX/lib/pkgconfig:${CLEANED%:}"
-              fi
-              # Ensure configure flag uses this prefix if not already path-specified
-              if [[ "$EXTRA_CONFIG" != *"--with-openssl="* ]]; then
-                EXTRA_CONFIG="--with-openssl=$OPENSSL_V3_PREFIX $EXTRA_CONFIG"
-              fi
-            fi
-
-            # Preflight: compile and run a tiny iconv errno test to ensure runtime linking is correct
-            echo "🔍 Preflight: testing iconv errno support"
-            {
-              echo '#include <errno.h>'
-              echo '#include <iconv.h>'
-              echo '#include <stddef.h>'
-              echo 'int main() {'
-              echo '  iconv_t cd = iconv_open("UTF-8","UTF-8");'
-              echo '  if (cd==(iconv_t)-1) return 2;'
-              echo '  char inbuf_data = (char)0xFF;'
-              echo '  char* inbuf = &inbuf_data;'
-              echo '  size_t inbytes = 1;'
-              echo '  char out[8]; char* outbuf = out; size_t outbytes = sizeof(out);'
-              echo '  errno = 0;'
-              echo '  (void)iconv(cd, &inbuf, &inbytes, &outbuf, &outbytes);'
-              echo '  int e = errno;'
-              echo '  iconv_close(cd);'
-              echo '  return (e != 0) ? 0 : 1;'
-              echo '}'
-            } > conftest_iconv.c
-            $CC $ICONV_CFLAGS $CPPFLAGS $CFLAGS conftest_iconv.c -o conftest_iconv $LDFLAGS $LIBICONV || true
-            if [[ -x ./conftest_iconv ]]; then
-              if ./conftest_iconv; then
-                echo "✅ iconv errno preflight passed"
-                # Seed common autoconf cache hints used by gnulib-style checks (best-effort)
-                export ac_cv_func_iconv=yes
-                export gl_cv_func_iconv_works=yes
-                export am_cv_func_iconv=yes
-              else
-                echo "⚠️ iconv errno preflight failed; printing diagnostics"
-                otool -L ./conftest_iconv || true
-                echo "DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
-                echo "LDFLAGS=$LDFLAGS"
-                echo "CPPFLAGS=$CPPFLAGS"
-              fi
-            else
-              echo "⚠️ Could not build conftest_iconv; proceeding without preflight"
-            fi
-
-            # Prefer first -L search paths over system defaults when duplicate libs exist
-            export LDFLAGS="-Wl,-search_paths_first $LDFLAGS"
-            # Ensure libc++ selection is also applied at link time
-            export LDFLAGS="$LDFLAGS -stdlib=libc++"
-
-            # Check for PostgreSQL
-            if [[ "${{ matrix.config }}" == *"postgres"* || "${{ matrix.config }}" == "full-stack" || "${{ matrix.config }}" == "enterprise" ]]; then
-              PG_PREFIX_CAND=""
-              if pkg-config --exists libpq; then
-                PG_PREFIX_CAND=$(pkg-config --variable=prefix libpq 2>/dev/null || echo "")
-              fi
-
-              # Prefer Launchpad Postgres over Homebrew/system
-              if [[ -z "$PG_PREFIX_CAND" || "$PG_PREFIX_CAND" == /opt/homebrew/* || "$PG_PREFIX_CAND" == /usr/local/* || "$PG_PREFIX_CAND" == /usr/* ]]; then
-                # Try Launchpad
-                PG_DIR=$(find "$LAUNCHPAD_DIR" -type d -path "*/postgresql.org/v*/include" -print -quit 2>/dev/null | sed -E 's#/include$##')
-                if [[ -n "$PG_DIR" ]]; then
-                  PG_PREFIX_CAND="$PG_DIR"
-                fi
-              fi
-
-              if [[ -n "$PG_PREFIX_CAND" ]]; then
-                echo "✅ Using PostgreSQL prefix: $PG_PREFIX_CAND"
-                export CPPFLAGS="-I$PG_PREFIX_CAND/include $CPPFLAGS"
-                export LDFLAGS="-L$PG_PREFIX_CAND/lib -Wl,-rpath,$PG_PREFIX_CAND/lib $LDFLAGS"
-                # Ensure pkg-config sees Postgres first
-                if [[ -d "$PG_PREFIX_CAND/lib/pkgconfig" ]]; then
-                  export PKG_CONFIG_PATH="$PG_PREFIX_CAND/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-                fi
-                # Prefer Launchpad pg_config for configure detection
-                if [[ -d "$PG_PREFIX_CAND/bin" ]]; then
-                  export PATH="$PG_PREFIX_CAND/bin:$PATH"
-                fi
-
-                # Ensure FINAL_EXTENSIONS carries explicit PG prefix
-                if [[ "$FINAL_EXTENSIONS" == *"--with-pdo-pgsql"* && "$FINAL_EXTENSIONS" != *"--with-pdo-pgsql="* ]]; then
-                  FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -E "s#--with-pdo-pgsql( |$)#--with-pdo-pgsql=$PG_PREFIX_CAND #")
-                fi
-                if [[ "$FINAL_EXTENSIONS" == *"--with-pgsql"* && "$FINAL_EXTENSIONS" != *"--with-pgsql="* ]]; then
-                  FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -E "s#--with-pgsql( |$)#--with-pgsql=$PG_PREFIX_CAND #")
-                fi
-
-                # Preflight: compile/link a tiny libpq program
-                echo "🔍 Preflight: testing libpq link"
-                {
-                  echo '#include <libpq-fe.h>'
-                  echo 'int main(){ return PQlibVersion() > 0 ? 0 : 1; }'
-                } > conftest_pq.c
-                $CC $CPPFLAGS $CFLAGS conftest_pq.c -o conftest_pq $LDFLAGS -lpq || true
-                if [[ -x ./conftest_pq ]]; then
-                  if ./conftest_pq; then
-                    echo "✅ libpq preflight passed"
-                  else
-                    echo "⚠️ libpq preflight failed to run; printing diagnostics"
-                    otool -L ./conftest_pq || true
-                  fi
-                else
-                  echo "⚠️ Could not build conftest_pq; continuing"
-                fi
-              else
-                echo "⚠️ PostgreSQL (libpq) not found. Disabling PostgreSQL extensions."
-                FINAL_EXTENSIONS=$(echo "$FINAL_EXTENSIONS" | sed -e 's/--with-pdo-pgsql[^ ]*//g' -e 's/--with-pgsql[^ ]*//g' | sed 's/  */ /g')
-              fi
-            fi
-
-            # Build explicit configure flags for critical libraries
-            EXTRA_CONFIG=""
-            LAUNCHPAD_DIR="${LAUNCHPAD_DIR:-$HOME/.local}"
-            for lib in iconv openssl curl bzip2 gmp readline gettext; do
-              PKG_NAME=""; CONFIGURE_FLAG=""; HEADER_PATH=""; LIB_GLOB=""
-              case $lib in
-                iconv)
-                  PKG_NAME="libiconv"; CONFIGURE_FLAG="--with-iconv"; HEADER_PATH="iconv.h"; LIB_GLOB="libiconv.*" ;;
-                openssl)
-                  PKG_NAME="openssl"; CONFIGURE_FLAG="--with-openssl"; HEADER_PATH="openssl/ssl.h"; LIB_GLOB="libssl.*" ;;
-                curl)
-                  PKG_NAME="libcurl"; CONFIGURE_FLAG="--with-curl"; HEADER_PATH="curl/curl.h"; LIB_GLOB="libcurl.*" ;;
-                bzip2)
-                  PKG_NAME="bzip2"; CONFIGURE_FLAG="--with-bz2"; HEADER_PATH="bzlib.h"; LIB_GLOB="libbz2.*" ;;
-                gmp)
-                  PKG_NAME="gmp"; CONFIGURE_FLAG="--with-gmp"; HEADER_PATH="gmp.h"; LIB_GLOB="libgmp.*" ;;
-                readline)
-                  PKG_NAME="readline"; CONFIGURE_FLAG="--with-readline"; HEADER_PATH="readline/readline.h"; LIB_GLOB="libreadline.*" ;;
-                gettext)
-                  PKG_NAME="libintl"; CONFIGURE_FLAG="--with-gettext"; HEADER_PATH="libintl.h"; LIB_GLOB="libintl.*" ;;
-              esac
-
-              # For gettext, fall back to the 'gettext' pkg-config name if 'libintl' isn't present
-              if [[ "$lib" == "gettext" ]] && ! pkg-config --exists "$PKG_NAME" 2>/dev/null; then
-                PKG_NAME="gettext"
-              fi
-
-              if pkg-config --exists "$PKG_NAME" 2>/dev/null; then
-                PREFIX=$(pkg-config --variable=prefix "$PKG_NAME")
-                # Prefer Launchpad prefix; if pkg-config resolves to Homebrew or system, try Launchpad header-derived prefix
-                if [[ "$PREFIX" == /opt/homebrew/* || "$PREFIX" == /usr/local/* || "$PREFIX" == /usr/* ]] ; then
-                  ALT_PREFIX=$(find "$LAUNCHPAD_DIR" -type f -path "*/include/$HEADER_PATH" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
-                  if [[ -n "$ALT_PREFIX" ]]; then
-                    PREFIX="$ALT_PREFIX"
-                    echo "ℹ️  Overriding pkg-config prefix with Launchpad path: $ALT_PREFIX"
-                  fi
-                fi
-                EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG=$PREFIX"
-                echo "✅ $lib configured at: $PREFIX"
-              else
-                # Fallback: search Launchpad install for headers/libs to derive prefix
-                PREFIX_CANDIDATE=$(find "$LAUNCHPAD_DIR" -type f -path "*/include/$HEADER_PATH" -print -quit 2>/dev/null | sed -E 's#/include/.*$##')
-                if [[ -n "$PREFIX_CANDIDATE" ]]; then
-                  EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG=$PREFIX_CANDIDATE"
-                  echo "✅ $lib configured via headers at: $PREFIX_CANDIDATE"
-                else
-                  # Final fallback: rely on CPPFLAGS/LDFLAGS and generic flag without path
-                  EXTRA_CONFIG="$EXTRA_CONFIG $CONFIGURE_FLAG"
-                  echo "ℹ️  $lib: pkg-config not found; using generic $CONFIGURE_FLAG with CPPFLAGS/LDFLAGS"
-                fi
-              fi
-            done
-
-            # If iconv prefix was discovered but EXTRA_CONFIG did not include it, force it
-            if [[ -n "$ICONV_PREFIX" && "$EXTRA_CONFIG" != *"--with-iconv="* ]]; then
-              EXTRA_CONFIG="--with-iconv=$ICONV_PREFIX $EXTRA_CONFIG"
-              echo "Forcing --with-iconv to $ICONV_PREFIX"
-            fi
-
-            # Run configure with all flags and explicit env to ensure tests use Launchpad libs
-            env \
-              CC="$CC" \
-              CXX="$CXX" \
-              CPP="$CPP" \
-              CFLAGS="$CFLAGS" \
-              CXXFLAGS="$CXXFLAGS" \
-              CPPFLAGS="$CPPFLAGS" \
-              LDFLAGS="$LDFLAGS" \
-              LIBS="$LIBS" \
-              PKG_CONFIG_PATH="$PKG_CONFIG_PATH" \
-              PATH="$PATH" \
-              DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH" \
-              DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH" \
-              PG_CONFIG="${PG_PREFIX_CAND:+$PG_PREFIX_CAND/bin/pg_config}" \
-              ac_cv_func_iconv=yes \
-              gl_cv_func_iconv_works=yes \
-              am_cv_func_iconv=yes \
-              php_cv_iconv_errno=yes \
-              ac_cv_php_iconv_errno=yes \
-              php_cv_func_iconv=yes \
-              ac_cv_header_ac_nonexistent_h=no \
-              ac_cv_prog_cc_c89= \
-              ac_cv_prog_cc_c99= \
-              ac_cv_prog_cc_stdc= \
-              ac_cv_prog_CPP="clang -E" \
-              ac_cv_prog_CPP_works=yes \
-              ac_cv_header_stdc=yes \
-              ac_cv_header_sys_types_h=yes \
-              ac_cv_header_sys_stat_h=yes \
-              ac_cv_header_stdlib_h=yes \
-              ac_cv_header_string_h=yes \
-              ac_cv_header_memory_h=yes \
-              ac_cv_header_strings_h=yes \
-              ac_cv_header_inttypes_h=yes \
-              ac_cv_header_stdint_h=yes \
-              ac_cv_header_unistd_h=yes \
-              ./configure \
-              --prefix="$INSTALL_PREFIX" \
-              --with-config-file-path="$INSTALL_PREFIX/etc" \
-              --with-config-file-scan-dir="$INSTALL_PREFIX/etc/conf.d" \
-              --disable-debug \
-              --enable-shared \
-              --with-pic \
-              $FINAL_EXTENSIONS \
-              $EXTRA_CONFIG \
-              || {
-                echo '--- config.log (error excerpts) ---';
-                (grep -niE "(error:|fatal:|failed)" config.log || true) | tail -n 200;
-                echo '--- config.log (pgsql/libpq/iconv excerpts) ---';
-                (grep -niE "(iconv|libpq|pgsql|readline|icu|gettext|libintl)" config.log || true) | tail -n 200;
-                echo '--- config.log (ac_nonexistent excerpts) ---';
-                (grep -niE "(ac_nonexistent|nonexistent)" config.log || true) | tail -n 50;
-                echo '--- tail config.log ---';
-                tail -n 200 config.log || true;
-                echo '--- head config.log ---';
-                sed -n '1,200p' config.log || true;
-                exit 1;
-              }
-
-          else # For Linux
-            echo "🔧 Configuring PHP build for Linux..."
-
-            # Set basic compiler environment for Linux
-            export CC=gcc
-            export CXX=g++
-            export CFLAGS="-O2 -fPIC"
-            export CXXFLAGS="-O2 -fPIC"
-
-            # Run buildconf for Linux as well
-            echo "🔧 Running buildconf to regenerate configure script..."
-            ./buildconf --force || {
-              echo "buildconf --force failed, trying without --force"
-              ./buildconf
-            }
-
-            # Create fake ac_nonexistent.h for Linux too
-            mkdir -p fake_headers
-            touch fake_headers/ac_nonexistent.h
-            export CPPFLAGS="-I$(pwd)/fake_headers"
-
-            # Fix autoconf cache issues that cause configure failures
-            export ac_cv_header_ac_nonexistent_h=no
-            export ac_cv_prog_cc_c89=
-            export ac_cv_prog_cc_c99=
-            export ac_cv_prog_cc_stdc=
-            
-            # Prevent traditional-cpp usage and fix preprocessor sanity check
-            export ac_cv_prog_CPP="gcc -E"
-            export CPP="gcc -E"
-            
-            # Bypass preprocessor sanity check entirely (it's problematic with fake_headers)
-            echo "🔍 Bypassing preprocessor sanity check..."
-            export ac_cv_prog_CPP_works=yes
-            export ac_cv_prog_CPP="gcc -E"
-            
-            # Clear any existing autoconf cache that might cause issues
-            rm -rf autom4te.cache config.cache
-
-            # Set additional autoconf cache variables to prevent header detection issues
-            export ac_cv_header_stdc=yes
-            export ac_cv_header_sys_types_h=yes
-            export ac_cv_header_sys_stat_h=yes
-            export ac_cv_header_stdlib_h=yes
-            export ac_cv_header_string_h=yes
-            export ac_cv_header_memory_h=yes
-            export ac_cv_header_strings_h=yes
-            export ac_cv_header_inttypes_h=yes
-            export ac_cv_header_stdint_h=yes
-            export ac_cv_header_unistd_h=yes
-
-            # Run configure with comprehensive environment and cache variables
-            env \
-              CC="$CC" \
-              CXX="$CXX" \
-              CPP="$CPP" \
-              CFLAGS="$CFLAGS" \
-              CXXFLAGS="$CXXFLAGS" \
-              CPPFLAGS="$CPPFLAGS" \
-              LDFLAGS="$LDFLAGS" \
-              ac_cv_header_ac_nonexistent_h=no \
-              ac_cv_prog_cc_c89= \
-              ac_cv_prog_cc_c99= \
-              ac_cv_prog_cc_stdc= \
-              ac_cv_prog_CPP="$CPP" \
-              ac_cv_prog_CPP_works=yes \
-              ac_cv_header_stdc=yes \
-              ac_cv_header_sys_types_h=yes \
-              ac_cv_header_sys_stat_h=yes \
-              ac_cv_header_stdlib_h=yes \
-              ac_cv_header_string_h=yes \
-              ac_cv_header_memory_h=yes \
-              ac_cv_header_strings_h=yes \
-              ac_cv_header_inttypes_h=yes \
-              ac_cv_header_stdint_h=yes \
-              ac_cv_header_unistd_h=yes \
-              ./configure \
-              --prefix="$INSTALL_PREFIX" \
-              --with-config-file-path="$INSTALL_PREFIX/etc" \
-              --with-config-file-scan-dir="$INSTALL_PREFIX/etc/conf.d" \
-              --disable-debug \
-              --enable-shared \
-              --with-pic \
-              $FINAL_EXTENSIONS \
-              || {
-                echo '--- config.log (error excerpts) ---';
-                (grep -niE "(error:|fatal:|failed)" config.log || true) | tail -n 200;
-                echo '--- config.log (ac_nonexistent excerpts) ---';
-                (grep -niE "(ac_nonexistent|nonexistent)" config.log || true) | tail -n 50;
-                echo '--- tail config.log ---';
-                tail -n 200 config.log || true;
-                echo '--- head config.log ---';
-                sed -n '1,200p' config.log || true;
-                exit 1;
-              }
-          fi
-
-      - name: Configure and Build PHP (Windows)
-        if: matrix.platform == 'win32'
-        shell: cmd
-        run: |
-          cd /d ${{ env.PHP_SOURCE_DIR }}
-
-          REM Set up Visual Studio environment
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" 2>nul || call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" 2>nul || call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" 2>nul
-
-          REM Ensure bison and flex are in PATH
-          set PATH=C:\ProgramData\chocolatey\bin;%PATH%
-
-          REM Verify tools are available
-          where bison >nul 2>&1 || echo Warning: bison not found in PATH
-          where win_bison >nul 2>&1 || echo Warning: win_bison not found in PATH
-
-          REM Configure PHP with buildconf
-          call buildconf.bat --force
-          if errorlevel 1 (
-            echo buildconf failed, trying without --force
-            call buildconf.bat
-          )
-
-          REM Configure with extensions based on matrix config
-          set EXTENSIONS=--enable-cli --enable-mbstring --enable-opcache
-          if "${{ matrix.config }}"=="laravel-mysql" set EXTENSIONS=%EXTENSIONS% --with-pdo-mysql --with-mysqli
-          if "${{ matrix.config }}"=="laravel-postgres" set EXTENSIONS=%EXTENSIONS% --with-pdo-pgsql --with-pgsql
-          if "${{ matrix.config }}"=="laravel-sqlite" set EXTENSIONS=%EXTENSIONS% --with-pdo-sqlite --with-sqlite3
-          if "${{ matrix.config }}"=="wordpress" set EXTENSIONS=%EXTENSIONS% --with-pdo-mysql --with-mysqli --enable-gd
-
-          call configure.bat --disable-all %EXTENSIONS% --prefix=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }} --with-config-file-path=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }}\etc
-
-          REM Build PHP
-          nmake
-          if errorlevel 1 (
-            echo Build failed with error %errorlevel%
-            exit /b %errorlevel%
-          )
-
-          REM Install PHP
-          nmake install
-          if errorlevel 1 (
-            echo Install failed with error %errorlevel%
-            exit /b %errorlevel%
-          )
-
-          echo Windows PHP build completed successfully
+          bun-version: latest
 
       - name: Build PHP
-        if: matrix.platform != 'win32'
+        env:
+          PHP_VERSION: ${{ matrix.php_version }}
+          PHP_CONFIG: ${{ matrix.config }}
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          TARGET_ARCH: ${{ matrix.arch }}
+          BUILD_DIR: ${{ github.workspace }}/build
+          OUTPUT_DIR: ${{ github.workspace }}/binaries
+        run: bun run scripts/build-php-simple.ts
+
+      - name: Create tarball
         run: |
-          cd ${{ env.PHP_SOURCE_DIR }}
+          cd binaries
+          BINARY_NAME="php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
+          if [ -d "$BINARY_NAME" ]; then
+            # Create metadata file
+            echo '{"php_version":"${{ matrix.php_version }}","platform":"${{ matrix.platform }}","arch":"${{ matrix.arch }}","config":"${{ matrix.config }}","built_at":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$BINARY_NAME/metadata.json"
 
-          # Use all available CPU cores for faster builds
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            JOBS=$(sysctl -n hw.ncpu)
-            # Set C++ standard based on PHP version for build
-            PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
-            PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
-
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
-              export CXXFLAGS="-std=c++17 -stdlib=libc++"
-              echo "Set C++17 flags for macOS build"
-            elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
-              # PHP 8.1 needs C++17 for ICU4C compilation
-              export CXXFLAGS="-std=c++17 -stdlib=libc++"
-              echo "Set C++17 flags for PHP 8.1 (ICU4C compatibility)"
-            else
-              export CXXFLAGS="-std=c++14 -stdlib=libc++"
-              echo "Set C++14 flags for macOS build"
-            fi
-
-            # Keep CFLAGS clean for C compiler
-            export CFLAGS=""
-            export CPPFLAGS="$CPPFLAGS"
+            # Create tarball
+            tar -czf "$BINARY_NAME.tar.gz" "$BINARY_NAME"
+            echo "✅ Created tarball: $BINARY_NAME.tar.gz"
+            ls -lh "$BINARY_NAME.tar.gz"
           else
-            JOBS=$(nproc)
+            echo "❌ Binary directory not found: $BINARY_NAME"
+            exit 1
           fi
 
-          echo "Building PHP with $JOBS parallel jobs"
-          echo "CXXFLAGS: $CXXFLAGS"
-          echo "CFLAGS: $CFLAGS"
-          echo "CPPFLAGS: $CPPFLAGS"
-
-          # Show what compiler is being used
-          echo "Compiler being used:"
-          which gcc || which clang || echo "No compiler found"
-          echo "C++ compiler:"
-          which g++ || which clang++ || echo "No C++ compiler found"
-
-          # Pass compiler flags explicitly to make
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            PHP_MAJOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f1)
-            PHP_MINOR_VERSION=$(echo "${{ matrix.php_version }}" | cut -d. -f2)
-
-            if [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -ge 2 ]]; then
-              echo "Making with explicit C++17 flags:"
-              echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
-              echo "  CFLAGS: (empty)"
-              echo "  CPPFLAGS: $CPPFLAGS"
-              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
-                        elif [[ "$PHP_MAJOR_VERSION" -eq 8 && "$PHP_MINOR_VERSION" -eq 1 ]]; then
-              echo "Making with explicit C++17 flags for PHP 8.1 (ICU4C compatibility):"
-              echo "  CXXFLAGS: -std=c++17 -stdlib=libc++"
-              echo "  CFLAGS: (empty)"
-              echo "  CPPFLAGS: $CPPFLAGS"
-
-                            # Force update Makefile for PHP 8.1 to use C++17
-              echo "Updating Makefile for PHP 8.1 C++17 compatibility..."
-              sed -i.bak 's/-std=c++14/-std=c++17/g' Makefile 2>/dev/null || echo "No C++14 flags found in Makefile to replace"
-              sed -i.bak 's/-std=gnu++14/-std=gnu++17/g' Makefile 2>/dev/null || echo "No gnu++14 flags found in Makefile to replace"
-
-              # Set environment variables to force C++17
-              export CXXFLAGS="-std=c++17 -stdlib=libc++"
-              export CFLAGS=""
-              export CC=clang
-              export CXX=clang++
-              echo "Final CXXFLAGS: $CXXFLAGS"
-
-              # Also update the Makefile to force C++17 for all compilation rules
-              echo "Forcing C++17 in all Makefile compilation rules..."
-              sed -i.bak 's/$(CXX) $(CFLAGS_CXX) $(CXXFLAGS) $(CPPFLAGS_CXX) $(CPPFLAGS) -c/$(CXX) $(CFLAGS_CXX) -std=c++17 -stdlib=libc++ $(CXXFLAGS) $(CPPFLAGS_CXX) $(CPPFLAGS) -c/g' Makefile 2>/dev/null || echo "Could not update Makefile compilation rules"
-
-              # Show what C++ flags are in the Makefile after all updates
-              echo "C++ flags in Makefile after all updates:"
-              grep -E "std=" Makefile | head -10 || echo "No std flags found in Makefile"
-
-              # Set system-wide C++17 flags
-              export CXXFLAGS="-std=c++17 -stdlib=libc++"
-              export CFLAGS=""
-              export CPPFLAGS="$CPPFLAGS"
-              export CC=clang
-              export CXX=clang++
-
-              # Test C++17 compilation before building
-              echo "Testing C++17 compilation before build:"
-              echo '#include <type_traits>' > test_cpp17.cpp
-              echo 'int main() { std::enable_if_t<true, int> x = 0; std::is_same_v<int, int> y = true; return 0; }' >> test_cpp17.cpp
-              if clang++ -std=c++17 -stdlib=libc++ test_cpp17.cpp -o test_cpp17 2>/dev/null; then
-                echo "C++17 compilation test passed"
-                rm -f test_cpp17.cpp test_cpp17
-              else
-                echo "C++17 compilation test failed"
-                rm -f test_cpp17.cpp test_cpp17
-              fi
-
-              # Use a more aggressive approach - override the compiler
-              echo "Using aggressive C++17 enforcement..."
-
-              # Create a wrapper script that forces C++17
-              echo '#!/bin/bash' > cxx17_wrapper.sh
-              echo 'exec clang++ -std=c++17 -stdlib=libc++ "$@"' >> cxx17_wrapper.sh
-              chmod +x cxx17_wrapper.sh
-
-              # Use the wrapper script as the C++ compiler
-              make -j$JOBS CXXFLAGS="-std=c++17 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS" CC="clang" CXX="./cxx17_wrapper.sh"
-            else
-              echo "Making with explicit C++14 flags:"
-              echo "  CXXFLAGS: -std=c++14 -stdlib=libc++"
-              echo "  CFLAGS: (empty)"
-              echo "  CPPFLAGS: $CPPFLAGS"
-              make -j$JOBS CXXFLAGS="-std=c++14 -stdlib=libc++" CFLAGS="" CPPFLAGS="$CPPFLAGS"
-            fi
-          else
-            make -j$JOBS
-          fi
-
-          # Install PHP
-          make install
-
-          # Create necessary directories
-          mkdir -p "${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}/etc/conf.d"
-
-          # Copy default configuration
-          if [[ -f "php.ini-production" ]]; then
-            cp php.ini-production "${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}/etc/php.ini"
-          fi
-          echo "Generating default php.ini for configuration: ${{ matrix.config }}"
-          INSTALL_PREFIX="${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}"
-          EXT_DIR=$("$INSTALL_PREFIX/bin/php-config" --extension-dir 2>/dev/null || echo "")
-          PHP_INI_DIR="$INSTALL_PREFIX/lib"
-          mkdir -p "$PHP_INI_DIR"
-          PHP_INI="$PHP_INI_DIR/php.ini"
-          {
-            echo "; Launchpad php.ini (auto-generated in CI)"
-            echo "memory_limit = 512M"
-            echo "max_execution_time = 300"
-            echo "upload_max_filesize = 64M"
-            echo "post_max_size = 64M"
-            echo "display_errors = On"
-            echo "error_reporting = E_ALL"
-            if [ -n "$EXT_DIR" ]; then
-              echo "extension_dir = \"$EXT_DIR\""
-            fi
-            case "${{ matrix.config }}" in
-              "laravel-postgres")
-                echo "extension=pdo_pgsql"
-                echo "extension=pgsql"
-                ;;
-              "laravel-mysql")
-                echo "extension=pdo_mysql"
-                echo "extension=mysqli"
-                ;;
-              "laravel-sqlite")
-                echo "extension=pdo_sqlite"
-                echo "extension=sqlite3"
-                ;;
-              "enterprise"|"full-stack")
-                echo "extension=pdo_pgsql"
-                echo "extension=pgsql"
-                echo "extension=pdo_mysql"
-                echo "extension=mysqli"
-                echo "extension=pdo_sqlite"
-                echo "extension=sqlite3"
-                ;;
-              *)
-                :
-                ;;
-            esac
-          } > "$PHP_INI"
-          echo "Created $PHP_INI"
-
-      - name: Create binary package
+      - name: Test PHP Binary
         run: |
-          cd ${{ env.OUTPUT_DIR }}
-
-          # Create metadata file with ICU version info
-          ICU_VER="unknown"
-          ICU_FULL_VER="unknown"
-          if [[ "${{ matrix.platform }}" == "darwin" ]]; then
-            ICU_VER="${ICU_VERSION:-unknown}"
-            ICU_FULL_VER="${ICU_FULL_VERSION:-unknown}"
-          elif [[ "${{ matrix.platform }}" == "linux" ]]; then
-            # Get ICU version on Linux
-            ICU_VER=$(pkg-config --modversion icu-uc 2>/dev/null | cut -d. -f1 || echo "unknown")
-            ICU_FULL_VER=$(pkg-config --modversion icu-uc 2>/dev/null || echo "unknown")
+          BINARY_NAME="php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
+          if [ -f "binaries/$BINARY_NAME/bin/php" ]; then
+            echo "✅ PHP binary created successfully"
+            binaries/$BINARY_NAME/bin/php --version
+            binaries/$BINARY_NAME/bin/php -m | head -20
+          else
+            echo "❌ PHP binary not found"
+            exit 1
           fi
 
-          cat > ${{ env.BINARY_NAME }}/metadata.json << EOF
-          {
-            "php_version": "${{ matrix.php_version }}",
-            "platform": "${{ matrix.platform }}",
-            "architecture": "${{ matrix.arch }}",
-            "configuration": "${{ matrix.config }}",
-            "icu_version": "$ICU_VER",
-            "icu_full_version": "$ICU_FULL_VER",
-            "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "built_by": "GitHub Actions",
-            "commit": "${{ github.sha }}",
-            "runner_os": "${{ runner.os }}",
-            "extensions": "$(echo '${{ env.CONFIGURE_EXTENSIONS }}' | tr ' ' '\n' | grep -E '^--(enable|with)-' | sed 's/^--[^-]*-//' | sort | tr '\n' ',' | sed 's/,$//')"
-          }
-          EOF
-
-          # Create tarball
-          tar -czf ${{ env.BINARY_NAME }}.tar.gz ${{ env.BINARY_NAME }}/
-
-          # Show package info
-          echo "Created package: ${{ env.BINARY_NAME }}.tar.gz"
-          ls -lh ${{ env.BINARY_NAME }}.tar.gz
-
-      - name: Upload binary artifact
+      - name: Upload PHP Binary
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}
-          path: ${{ env.OUTPUT_DIR }}/${{ env.BINARY_NAME }}.tar.gz
-          retention-days: 90
-
-      - name: Upload to GitHub Container Registry (Linux)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.platform == 'linux'
-        run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USERNAME }} --password-stdin
-
-          # Create a simple Dockerfile for the binary
-          cd ${{ env.OUTPUT_DIR }}
-          cat > Dockerfile << EOF
-          FROM scratch
-          COPY ${{ env.BINARY_NAME }}.tar.gz /php-binary.tar.gz
-          EOF
-
-          # Build and push
-          IMAGE_TAG="${{ env.REGISTRY_URL }}/${{ github.repository_owner }}/php-binaries:${{ env.BINARY_NAME }}"
-          docker build -t "$IMAGE_TAG" .
-          docker push "$IMAGE_TAG"
+          name: php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
+          path: binaries/php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}.tar.gz
+          retention-days: 30
 
   # Release job to create GitHub releases with binaries
   create-release:
-    needs: [check-for-updates, build-matrix, get-php-versions]
+    needs: [check-for-updates, build, get-php-versions]
     runs-on: ubuntu-latest
     if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && (needs.check-for-updates.outputs.rebuild_needed == 'true' || github.event.inputs.force_rebuild == 'true')
 
