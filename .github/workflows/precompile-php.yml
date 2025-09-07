@@ -173,22 +173,22 @@ jobs:
           Write-Host "🔧 Installing PHP dependencies via Chocolatey..."
           # Use PowerShell and list packages on a single line to avoid stray '\' tokens
           choco install -y --no-progress git unzip winflexbison pkg-config-lite
-          
+
           # Refresh environment variables
           $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
-          
+
           # Quick sanity checks (non-fatal)
           try { git --version; Write-Host "✅ Git installed" } catch { Write-Host "⚠️ Git not found" }
           try { unzip; Write-Host "✅ Unzip installed" } catch { Write-Host "⚠️ Unzip not found" }
           try { win_bison --version; Write-Host "✅ Bison (win_bison) installed" } catch { Write-Host "⚠️ Bison not found" }
           try { win_flex --version; Write-Host "✅ Flex (win_flex) installed" } catch { Write-Host "⚠️ Flex not found" }
-          
+
           # Create bison symlink for compatibility
           if (Test-Path "C:\ProgramData\chocolatey\bin\win_bison.exe") {
             Copy-Item "C:\ProgramData\chocolatey\bin\win_bison.exe" "C:\ProgramData\chocolatey\bin\bison.exe" -Force
             Write-Host "✅ Created bison.exe symlink"
           }
-          
+
           Write-Host "✅ Windows build dependencies installed"
 
       - name: Install build dependencies (Ubuntu)
@@ -560,15 +560,15 @@ jobs:
           # Run buildconf first to regenerate configure script
           echo "🔧 Running buildconf to regenerate configure script..."
           ./buildconf --force
-          
+
           # Create a custom conftest.c that will never fail for ac_nonexistent.h
-          cat > conftest_override.c << 'EOF2'
+          cat > conftest_override.c << 'END_CONFTEST_OVERRIDE'
 #ifndef AC_NONEXISTENT_H_OVERRIDE
 #define AC_NONEXISTENT_H_OVERRIDE
 /* Override for ac_nonexistent.h test */
 int main() { return 0; }
 #endif
-EOF2
+END_CONFTEST_OVERRIDE
 
           # Platform-specific configuration
           if [[ "${{ matrix.platform }}" == "darwin" ]]; then
@@ -598,15 +598,15 @@ EOF2
             export ac_cv_prog_cc_c89=
             export ac_cv_prog_cc_c99=
             export ac_cv_prog_cc_stdc=
-            
+
             # Clear any existing autoconf cache that might cause issues
             rm -rf autom4te.cache config.cache
-            
+
             # Create a fake ac_nonexistent.h header to prevent configure failures
             mkdir -p fake_headers
             touch fake_headers/ac_nonexistent.h
             export CPPFLAGS="-I$(pwd)/fake_headers $CPPFLAGS"
-            
+
             # Set additional autoconf cache variables to prevent header detection issues
             export ac_cv_header_stdc=yes
             export ac_cv_header_sys_types_h=yes
@@ -892,15 +892,15 @@ EOF2
 
           else # For Linux
             echo "🔧 Configuring PHP build for Linux..."
-            
+
             # Run buildconf for Linux as well
             ./buildconf --force
-            
+
             # Create fake ac_nonexistent.h for Linux too
             mkdir -p fake_headers
             touch fake_headers/ac_nonexistent.h
             export CPPFLAGS="-I$(pwd)/fake_headers $CPPFLAGS"
-            
+
             ./configure \
               --prefix="$INSTALL_PREFIX" \
               --with-config-file-path="$INSTALL_PREFIX/etc" \
@@ -923,47 +923,47 @@ EOF2
         shell: cmd
         run: |
           cd /d ${{ env.PHP_SOURCE_DIR }}
-          
+
           REM Set up Visual Studio environment
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" 2>nul || call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" 2>nul || call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" 2>nul
-          
+
           REM Ensure bison and flex are in PATH
           set PATH=C:\ProgramData\chocolatey\bin;%PATH%
-          
+
           REM Verify tools are available
           where bison >nul 2>&1 || echo Warning: bison not found in PATH
           where win_bison >nul 2>&1 || echo Warning: win_bison not found in PATH
-          
+
           REM Configure PHP with buildconf
           call buildconf.bat --force
           if errorlevel 1 (
             echo buildconf failed, trying without --force
             call buildconf.bat
           )
-          
+
           REM Configure with extensions based on matrix config
           set EXTENSIONS=--enable-cli --enable-mbstring --enable-opcache
           if "${{ matrix.config }}"=="laravel-mysql" set EXTENSIONS=%EXTENSIONS% --with-pdo-mysql --with-mysqli
           if "${{ matrix.config }}"=="laravel-postgres" set EXTENSIONS=%EXTENSIONS% --with-pdo-pgsql --with-pgsql
           if "${{ matrix.config }}"=="laravel-sqlite" set EXTENSIONS=%EXTENSIONS% --with-pdo-sqlite --with-sqlite3
           if "${{ matrix.config }}"=="wordpress" set EXTENSIONS=%EXTENSIONS% --with-pdo-mysql --with-mysqli --enable-gd
-          
+
           call configure.bat --disable-all %EXTENSIONS% --prefix=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }} --with-config-file-path=${{ env.OUTPUT_DIR }}\${{ env.BINARY_NAME }}\etc
-          
+
           REM Build PHP
           nmake
           if errorlevel 1 (
             echo Build failed with error %errorlevel%
             exit /b %errorlevel%
           )
-          
+
           REM Install PHP
           nmake install
           if errorlevel 1 (
             echo Install failed with error %errorlevel%
             exit /b %errorlevel%
           )
-          
+
           echo Windows PHP build completed successfully
 
       - name: Build PHP
