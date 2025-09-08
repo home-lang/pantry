@@ -927,6 +927,75 @@ cli
     }
   })
 
+// Reinstall command - uninstall and reinstall packages
+cli
+  .command('reinstall [packages...]', 'Uninstall and reinstall packages')
+  .option('--verbose', 'Enable verbose output')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--dry-run', 'Show what would be reinstalled without actually doing it')
+  .option('--path <path>', 'Custom installation path')
+  .option('-g, --global', 'Reinstall packages globally')
+  .option('--deps-only', 'Reinstall only the dependencies of packages, not the packages themselves')
+  .option('--quiet', 'Suppress non-error output')
+  .example('launchpad reinstall node python')
+  .example('launchpad reinstall php --force')
+  .example('launchpad reinstall node --global')
+  .example('launchpad reinstall --dry-run')
+  .action(async (packages: string[], options?: { 
+    verbose?: boolean
+    force?: boolean
+    dryRun?: boolean
+    path?: string
+    global?: boolean
+    depsOnly?: boolean
+    quiet?: boolean
+  }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    // Ensure packages is an array
+    const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
+
+    if (packageList.length === 0) {
+      console.error('No packages specified for reinstallation')
+      console.log('')
+      console.log('Usage examples:')
+      console.log('  launchpad reinstall node python')
+      console.log('  launchpad reinstall php --force')
+      console.log('  launchpad reinstall node --global')
+      process.exit(1)
+    }
+
+    try {
+      const argv: string[] = [...packageList]
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.dryRun)
+        argv.push('--dry-run')
+      if (options?.path)
+        argv.push('--path', options.path)
+      if (options?.global)
+        argv.push('--global')
+      if (options?.depsOnly)
+        argv.push('--deps-only')
+      if (options?.quiet)
+        argv.push('--quiet')
+      const cmd = await resolveCommand('reinstall')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
+    }
+    catch (error) {
+      console.error('Failed to reinstall:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // Cache management command
 cli
   .command('cache:clear', 'Clear all cached packages and downloads')

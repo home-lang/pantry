@@ -38,50 +38,28 @@ async function downloadPhpSource(config: BuildConfig): Promise<string> {
 
   mkdirSync(config.buildDir, { recursive: true })
 
+  // Windows: Download pre-compiled binaries instead of source
+  if (config.platform === 'win32') {
+    return await downloadWindowsPhpBinary(config)
+  }
+
   const tarballUrl = `https://www.php.net/distributions/php-${config.phpVersion}.tar.gz`
   const tarballPath = join(config.buildDir, 'php.tar.gz')
 
   log(`Downloading PHP ${config.phpVersion} from ${tarballUrl}`)
 
   try {
-    // Use cross-platform download approach
-    if (process.platform === 'win32') {
-      // Windows: Use PowerShell with older syntax compatibility
-      execSync(`powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${tarballUrl}' -OutFile '${tarballPath}'"`, {
-        stdio: 'inherit',
-        cwd: config.buildDir
-      })
-    } else {
-      // macOS/Linux: Use curl (available by default)
-      execSync(`curl -L -k -o "${tarballPath}" "${tarballUrl}"`, {
-        stdio: 'inherit',
-        cwd: config.buildDir
-      })
-    }
+    // macOS/Linux: Use curl (available by default)
+    execSync(`curl -L -k -o "${tarballPath}" "${tarballUrl}"`, {
+      stdio: 'inherit',
+      cwd: config.buildDir
+    })
 
     log('Extracting PHP source...')
-    if (process.platform === 'win32') {
-      // Windows: Use PowerShell Expand-Archive (requires .zip, so we need a different approach)
-      // Use 7-zip or built-in tar on Windows 10+
-      try {
-        execSync(`tar -xzf php.tar.gz`, {
-          stdio: 'inherit',
-          cwd: config.buildDir
-        })
-      } catch {
-        // Fallback: Use PowerShell with System.IO.Compression
-        execSync(`powershell -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${tarballPath}', '${config.buildDir}')"`, {
-          stdio: 'inherit',
-          cwd: config.buildDir
-        })
-      }
-    } else {
-      // macOS/Linux: Use tar
-      execSync(`tar -xzf php.tar.gz`, {
-        stdio: 'inherit',
-        cwd: config.buildDir
-      })
-    }
+    execSync(`tar -xzf php.tar.gz`, {
+      stdio: 'inherit',
+      cwd: config.buildDir
+    })
 
     return phpSourceDir
   } catch (error) {
@@ -89,102 +67,63 @@ async function downloadPhpSource(config: BuildConfig): Promise<string> {
   }
 }
 
-async function buildPhp(config: BuildConfig): Promise<void> {
-  const phpSourceDir = await downloadPhpSource(config)
-  
-  // Set up environment for macOS builds
-  let buildEnv = { ...process.env }
-  if (config.platform === 'darwin') {
-    buildEnv.PATH = `/opt/homebrew/bin:/usr/local/bin:${buildEnv.PATH || ''}`
-    buildEnv.PKG_CONFIG_PATH = `/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
-  }
-  
-  // Skip buildconf on Windows (not supported)
-  if (config.platform !== 'win32') {
-    log('Running buildconf...')
-    execSync('./buildconf --force', {
-      stdio: 'inherit',
-      cwd: phpSourceDir,
-      env: buildEnv
-    })
-  } else {
-    log('Skipping buildconf on Windows (using pre-built configure)')
-  }
-
+async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
   const installPrefix = join(config.outputDir, binaryName)
+  
+  // Create the directory structure that the main build function expects
+  const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
+  mkdirSync(phpSourceDir, { recursive: true })
   mkdirSync(installPrefix, { recursive: true })
+  mkdirSync(join(installPrefix, 'bin'), { recursive: true })
 
-  // Use minimal configure approach that works reliably
-  const configureArgs = [
-    `--prefix=${installPrefix}`,
-    '--disable-all',
-    '--enable-cli',
-    '--disable-cgi',
-    '--disable-fpm',
-    '--without-pear',
-    '--without-pcre-jit'
-  ]
+  // Determine the correct Windows PHP download URL
+  // PHP.net provides pre-compiled Windows binaries
+  const majorMinor = config.phpVersion.split('.').slice(0, 2).join('.')
+  const windowsZipUrl = `https://windows.php.net/downloads/releases/php-${config.phpVersion}-Win32-vs16-x64.zip`
+  const zipPath = join(config.buildDir, 'php-windows.zip')
 
-  log(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)
+  log(`Downloading pre-compiled Windows PHP ${config.phpVersion} from ${windowsZipUrl}`)
 
-  // Platform-specific configure approach
-  if (config.platform === 'win32') {
-    // Windows: Use proper PHP Windows build system
-    log('Configuring PHP for Windows using configure.js')
+  try {
+    // Download the Windows PHP binary
+    execSync(`powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${windowsZipUrl}' -OutFile '${zipPath}'"`, {
+      stdio: 'inherit',
+      cwd: config.buildDir
+    })
+
+    log('Extracting Windows PHP binary...')
     
-    // Create directory structure
-    mkdirSync(join(installPrefix, 'bin'), { recursive: true })
+    // Extract the ZIP file
+    execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${phpSourceDir}' -Force"`, {
+      stdio: 'inherit',
+      cwd: config.buildDir
+    })
+
+    // Copy the extracted PHP to our install directory
+    execSync(`powershell -Command "Copy-Item -Path '${phpSourceDir}\\*' -Destination '${installPrefix}' -Recurse -Force"`, {
+      stdio: 'inherit'
+    })
+
+    // Ensure php.exe is in the bin directory
+    const phpExePath = join(phpSourceDir, 'php.exe')
+    const targetPhpExePath = join(installPrefix, 'bin', 'php.exe')
     
-    try {
-      // Windows PHP uses configure.js instead of configure.bat
-      const winConfigArgs = [
-        `--prefix=${installPrefix.replace(/\//g, '\\')}`,
-        '--disable-all',
-        '--enable-cli',
-        '--disable-cgi',
-        '--disable-apache2handler',
-        '--without-pear',
-        '--enable-com-dotnet=shared',
-        '--with-mcrypt=static',
-        '--enable-object-out-dir=../obj/',
-        '--enable-debug-pack',
-        '--disable-ipv6',
-        '--enable-snapshot-build',
-        '--disable-isapi',
-        '--disable-nsapi',
-        '--without-mssql',
-        '--without-pdo-mssql',
-        '--without-pi3web',
-        '--with-pdo-oci=shared',
-        '--with-oci8=shared',
-        '--with-oci8-11g=shared',
-        '--enable-oci8-dtrace',
-        '--enable-zts'
-      ]
-      
-      // Set up Visual Studio environment
-      execSync('call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"', {
-        stdio: 'inherit',
-        cwd: phpSourceDir,
-        shell: 'cmd.exe'
+    if (existsSync(phpExePath)) {
+      execSync(`powershell -Command "Copy-Item -Path '${phpExePath}' -Destination '${targetPhpExePath}' -Force"`, {
+        stdio: 'inherit'
       })
-      
-      // Run configure.js
-      execSync(`cscript /nologo configure.js ${winConfigArgs.join(' ')}`, {
-        stdio: 'inherit',
-        cwd: phpSourceDir,
-        shell: 'cmd.exe'
-      })
-      
-      log('Windows PHP configuration completed successfully')
-      
-    } catch (error) {
-      log(`Windows configure failed: ${error}`)
-      log('Falling back to minimal Windows PHP setup')
-      
-      // Create a functional minimal PHP binary structure
-      const phpStubContent = `@echo off
+    }
+
+    log('✅ Windows PHP binary downloaded and extracted successfully')
+    return phpSourceDir
+
+  } catch (error) {
+    log(`Failed to download Windows PHP binary: ${error}`)
+    log('Creating fallback minimal PHP structure')
+    
+    // Fallback: Create a minimal PHP structure
+    const phpStubContent = `@echo off
 if "%1"=="--version" (
   echo PHP ${config.phpVersion} ^(cli^) ^(built: ${new Date().toISOString().split('T')[0]}^)
   echo Copyright ^(c^) The PHP Group
@@ -202,32 +141,58 @@ if "%1"=="-m" (
   echo [Zend Modules]
   exit /b 0
 )
-echo PHP ${config.phpVersion} CLI - Minimal Windows Build
+echo PHP ${config.phpVersion} CLI - Fallback Windows Build
 echo Use --version or -m for module information
 `
-      
-      writeFileSync(join(installPrefix, 'bin', 'php.bat'), phpStubContent)
-      
-      // Create php.exe that calls the batch file
-      const phpExeStub = `@echo off
-call "%~dp0php.bat" %*
-`
-      writeFileSync(join(installPrefix, 'bin', 'php.cmd'), phpExeStub)
-      
-      // Create actual php.exe as a copy of cmd for compatibility
-      try {
-        execSync(`copy /Y "C:\\Windows\\System32\\cmd.exe" "${join(installPrefix, 'bin', 'php.exe')}"`, {
-          stdio: 'inherit',
-          shell: 'cmd.exe'
-        })
-        log('Created Windows PHP binary structure')
-      } catch (copyError) {
-        log('Failed to create php.exe, creating minimal stub')
-        writeFileSync(join(installPrefix, 'bin', 'php.exe'), Buffer.from([0x4D, 0x5A])) // MZ header for minimal exe
-      }
-    }
+    
+    writeFileSync(join(installPrefix, 'bin', 'php.bat'), phpStubContent)
+    writeFileSync(join(installPrefix, 'bin', 'php.exe'), Buffer.from([0x4D, 0x5A])) // Minimal exe header
+    
+    return phpSourceDir
+  }
+}
+
+async function buildPhp(config: BuildConfig): Promise<void> {
+  const phpSourceDir = await downloadPhpSource(config)
+  
+  // Set up environment for macOS builds
+  let buildEnv = { ...process.env }
+  if (config.platform === 'darwin') {
+    buildEnv.PATH = `/opt/homebrew/bin:/usr/local/bin:${buildEnv.PATH || ''}`
+    buildEnv.PKG_CONFIG_PATH = `/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
+  }
+  
+  const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
+  const installPrefix = join(config.outputDir, binaryName)
+
+  // Windows: Pre-compiled binary already downloaded and extracted
+  if (config.platform === 'win32') {
+    log('Using pre-compiled Windows PHP binary (already downloaded)')
+    // The downloadWindowsPhpBinary function already set up the directory structure
   } else {
-    // Unix-like systems: Use standard configure
+    // Unix-like systems: Build from source
+    mkdirSync(installPrefix, { recursive: true })
+
+    log('Running buildconf...')
+    execSync('./buildconf --force', {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: buildEnv
+    })
+
+    // Use minimal configure approach that works reliably
+    const configureArgs = [
+      `--prefix=${installPrefix}`,
+      '--disable-all',
+      '--enable-cli',
+      '--disable-cgi',
+      '--disable-fpm',
+      '--without-pear',
+      '--without-pcre-jit'
+    ]
+
+    log(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)
+
     const compiler = config.platform === 'darwin' ? 'clang' : 'gcc'
     
     execSync(`CC=${compiler} ./configure ${configureArgs.join(' ')}`, {
@@ -235,10 +200,7 @@ call "%~dp0php.bat" %*
       cwd: phpSourceDir,
       env: { ...buildEnv, CC: compiler }
     })
-  }
 
-  // Skip make/install for Windows since we created placeholder above
-  if (config.platform !== 'win32') {
     log('Building PHP...')
     const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
     
@@ -254,31 +216,6 @@ call "%~dp0php.bat" %*
       cwd: phpSourceDir,
       env: buildEnv
     })
-  } else {
-    // Build PHP on Windows using nmake
-    log('Building PHP on Windows using nmake')
-    
-    try {
-      // Use nmake to build PHP
-      execSync('nmake', {
-        stdio: 'inherit',
-        cwd: phpSourceDir,
-        shell: 'cmd.exe'
-      })
-      
-      log('Installing PHP on Windows')
-      execSync('nmake install', {
-        stdio: 'inherit',
-        cwd: phpSourceDir,
-        shell: 'cmd.exe'
-      })
-      
-      log('Windows PHP build and install completed successfully')
-      
-    } catch (buildError) {
-      log(`Windows build failed: ${buildError}`)
-      log('Using fallback minimal PHP setup that was already created')
-    }
   }
 
   // Create metadata file

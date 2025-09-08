@@ -18,6 +18,7 @@ const registry: Record<string, () => Promise<Command>> = {
   'env:clean': async () => (await import('./env/clean')).default,
   'env:remove': async () => (await import('./env/remove')).default,
   'uninstall': async () => (await import('./uninstall')).default,
+  'reinstall': async () => (await import('./reinstall')).default,
   'cache:clear': async () => (await import('./cache/clear')).default,
   'cache:stats': async () => (await import('./cache/stats')).default,
   'cache:clean': async () => (await import('./cache/clean')).default,
