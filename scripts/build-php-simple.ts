@@ -28,7 +28,7 @@ function log(message: string): void {
   console.log(`🔧 ${message}`)
 }
 
-async function downloadPhpSource(config: BuildConfig): Promise<string> {
+function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
   
   if (existsSync(phpSourceDir)) {
@@ -40,7 +40,12 @@ async function downloadPhpSource(config: BuildConfig): Promise<string> {
 
   // Windows: Download pre-compiled binaries instead of source
   if (config.platform === 'win32') {
-    return await downloadWindowsPhpBinary(config)
+    // This is a synchronous function that needs to return a string, not a Promise
+    // We'll handle this by creating a placeholder directory and letting the async function
+    // handle the actual download in buildPhp
+    const winPhpDir = join(config.buildDir, `php-${config.phpVersion}`)
+    mkdirSync(winPhpDir, { recursive: true })
+    return winPhpDir
   }
 
   const tarballUrl = `https://www.php.net/distributions/php-${config.phpVersion}.tar.gz`
@@ -80,46 +85,112 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   // Determine the correct Windows PHP download URL
   // PHP.net provides pre-compiled Windows binaries
   const majorMinor = config.phpVersion.split('.').slice(0, 2).join('.')
-  const windowsZipUrl = `https://windows.php.net/downloads/releases/php-${config.phpVersion}-Win32-vs16-x64.zip`
+  
+  // Determine Visual Studio version based on PHP version
+  let vsVersion = 'vs16' // Default for PHP 8.0-8.3
+  if (majorMinor === '7.4') {
+    vsVersion = 'vc15'
+  } else if (majorMinor === '8.4') {
+    vsVersion = 'vs17'
+  }
+  
+  // Try multiple URL patterns and fallback options
   const zipPath = join(config.buildDir, 'php-windows.zip')
-
-  log(`Downloading pre-compiled Windows PHP ${config.phpVersion} from ${windowsZipUrl}`)
-
+  const urlsToTry = [
+    // Try exact version first
+    `https://windows.php.net/downloads/releases/php-${config.phpVersion}-Win32-${vsVersion}-x64.zip`,
+    // Try archives folder as fallback
+    `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-Win32-${vsVersion}-x64.zip`
+  ]
+  
+  // Try to get the releases.json to find latest patch version if needed
+  let latestPatchVersion: string | undefined = undefined
   try {
-    // Download the Windows PHP binary
-    execSync(`powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${windowsZipUrl}' -OutFile '${zipPath}'"`, {
-      stdio: 'inherit',
-      cwd: config.buildDir
-    })
-
-    log('Extracting Windows PHP binary...')
+    log('Checking for available Windows PHP versions...')
+    execSync(
+      `powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://windows.php.net/downloads/releases/releases.json' -OutFile '${config.buildDir}/releases.json'"`,
+      { stdio: 'pipe', encoding: 'utf8' }
+    )
     
-    // Extract the ZIP file
-    execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${phpSourceDir}' -Force"`, {
-      stdio: 'inherit',
-      cwd: config.buildDir
-    })
+    // Read the releases.json file if it was downloaded successfully
+    if (existsSync(join(config.buildDir, 'releases.json'))) {
+      try {
+        const releasesJsonText = await Bun.file(join(config.buildDir, 'releases.json')).text()
+        const releasesJson = JSON.parse(releasesJsonText)
+        // Find latest version with same major.minor
+        const matchingVersions = Object.keys(releasesJson)
+          .filter(v => v.startsWith(majorMinor + '.'))
+          .sort((a, b) => releasesJson[b].date.localeCompare(releasesJson[a].date))
+        
+        if (matchingVersions.length > 0) {
+          latestPatchVersion = matchingVersions[0]
+          log(`Found latest ${majorMinor}.x version: ${latestPatchVersion}`)
+          // Add the latest patch version URL to our try list
+          urlsToTry.push(`https://windows.php.net/downloads/releases/php-${latestPatchVersion}-Win32-${vsVersion}-x64.zip`)
+        }
+      } catch (e) {
+        log(`Error parsing releases.json: ${e}`)
+      }
+    }
+  } catch (e) {
+    log(`Could not fetch releases.json: ${e}`)
+  }
+  
+  // Try each URL until one works
+  let downloadSuccess = false
+  let downloadedVersion = config.phpVersion
+  let usedUrl = ''
+  
+  for (const url of urlsToTry) {
+    log(`Trying to download Windows PHP from ${url}`)
+    try {
+      execSync(`powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${url}' -OutFile '${zipPath}'"`, {
+        stdio: 'inherit',
+        cwd: config.buildDir
+      })
 
-    // Copy the extracted PHP to our install directory
-    execSync(`powershell -Command "Copy-Item -Path '${phpSourceDir}\\*' -Destination '${installPrefix}' -Recurse -Force"`, {
-      stdio: 'inherit'
-    })
+      log('Extracting Windows PHP binary...')
+      
+      // Extract the ZIP file
+      execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${phpSourceDir}' -Force"`, {
+        stdio: 'inherit',
+        cwd: config.buildDir
+      })
 
-    // Ensure php.exe is in the bin directory
-    const phpExePath = join(phpSourceDir, 'php.exe')
-    const targetPhpExePath = join(installPrefix, 'bin', 'php.exe')
-    
-    if (existsSync(phpExePath)) {
-      execSync(`powershell -Command "Copy-Item -Path '${phpExePath}' -Destination '${targetPhpExePath}' -Force"`, {
+      // Copy the extracted PHP to our install directory
+      execSync(`powershell -Command "Copy-Item -Path '${phpSourceDir}\\*' -Destination '${installPrefix}' -Recurse -Force"`, {
         stdio: 'inherit'
       })
+
+      // Ensure php.exe is in the bin directory
+      const phpExePath = join(phpSourceDir, 'php.exe')
+      const targetPhpExePath = join(installPrefix, 'bin', 'php.exe')
+      
+      if (existsSync(phpExePath)) {
+        execSync(`powershell -Command "Copy-Item -Path '${phpExePath}' -Destination '${targetPhpExePath}' -Force"`, {
+          stdio: 'inherit'
+        })
+      }
+
+      // If we downloaded a different version than requested, update the metadata
+      if (latestPatchVersion && url.includes(latestPatchVersion)) {
+        downloadedVersion = latestPatchVersion
+        log(`⚠️ Using PHP ${latestPatchVersion} instead of ${config.phpVersion} (not available for Windows)`)
+      }
+      
+      downloadSuccess = true
+      usedUrl = url
+      break
+    } catch (error) {
+      log(`Failed to download from ${url}: ${error}`)
     }
+  }
 
-    log('✅ Windows PHP binary downloaded and extracted successfully')
+  if (downloadSuccess) {
+    log(`✅ Windows PHP binary downloaded and extracted successfully from ${usedUrl}`)
     return phpSourceDir
-
-  } catch (error) {
-    log(`Failed to download Windows PHP binary: ${error}`)
+  } else {
+    log(`Failed to download Windows PHP binary from any source`)
     log('Creating fallback minimal PHP structure')
     
     // Fallback: Create a minimal PHP structure
@@ -153,7 +224,7 @@ echo Use --version or -m for module information
 }
 
 async function buildPhp(config: BuildConfig): Promise<void> {
-  const phpSourceDir = await downloadPhpSource(config)
+  const phpSourceDir = downloadPhpSource(config)
   
   // Set up environment for macOS builds
   let buildEnv = { ...process.env }
@@ -165,10 +236,11 @@ async function buildPhp(config: BuildConfig): Promise<void> {
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
   const installPrefix = join(config.outputDir, binaryName)
 
-  // Windows: Pre-compiled binary already downloaded and extracted
+  // Windows: Download and extract pre-compiled binary
   if (config.platform === 'win32') {
-    log('Using pre-compiled Windows PHP binary (already downloaded)')
-    // The downloadWindowsPhpBinary function already set up the directory structure
+    log('Setting up Windows PHP binary')
+    // We need to download the Windows PHP binary here
+    await downloadWindowsPhpBinary(config)
   } else {
     // Unix-like systems: Build from source
     mkdirSync(installPrefix, { recursive: true })
