@@ -120,9 +120,6 @@ jobs:
           - macos-13
           - macos-latest
           - windows-latest
-        exclude:
-          # Exclude Windows builds for now (requires different build approach)
-          - os: windows-latest
         include:
           - os: ubuntu-latest
             platform: linux
@@ -133,6 +130,9 @@ jobs:
           - os: macos-latest
             platform: darwin
             arch: arm64
+          - os: windows-latest
+            platform: win32
+            arch: x86_64
 
     runs-on: ${{ matrix.os }}
 
@@ -163,9 +163,10 @@ jobs:
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'
         run: |
-          # Windows: Install dependencies via chocolatey
+          # Windows: Install Visual Studio Build Tools and dependencies
+          choco install -y visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
           choco install -y 7zip
-          # Note: PHP on Windows typically uses pre-built dependencies
+          # Note: PHP on Windows requires Visual Studio for nmake
 
       - name: Build PHP
         env:

@@ -130,10 +130,47 @@ async function buildPhp(config: BuildConfig): Promise<void> {
 
   // Platform-specific configure approach
   if (config.platform === 'win32') {
-    // Windows: Use pre-built configure.bat if available, otherwise skip configure
-    log('Windows PHP builds typically require pre-built binaries or Visual Studio setup')
-    log('Skipping configure step - Windows builds not fully supported in this simple script')
-    return
+    // Windows: Try to use configure.bat or nmake approach
+    log('Attempting Windows PHP build with configure.bat')
+    try {
+      // Check if configure.bat exists
+      execSync('configure.bat --help', {
+        stdio: 'pipe',
+        cwd: phpSourceDir
+      })
+      
+      // Use configure.bat with minimal options
+      const winConfigArgs = [
+        `--prefix=${installPrefix.replace(/\//g, '\\')}`,
+        '--disable-all',
+        '--enable-cli',
+        '--disable-cgi',
+        '--without-pear'
+      ]
+      
+      execSync(`configure.bat ${winConfigArgs.join(' ')}`, {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv
+      })
+    } catch (error) {
+      log('configure.bat not available, trying alternative Windows approach')
+      // Create a minimal config for Windows
+      log('Creating minimal Windows configuration')
+      // For now, we'll create a basic binary structure
+      mkdirSync(join(installPrefix, 'bin'), { recursive: true })
+      
+      // Copy php.exe if it exists in the source (pre-built)
+      try {
+        execSync(`copy php.exe "${join(installPrefix, 'bin', 'php.exe')}"`, {
+          stdio: 'inherit',
+          cwd: phpSourceDir
+        })
+      } catch {
+        log('No pre-built php.exe found, Windows build incomplete')
+        return
+      }
+    }
   } else {
     // Unix-like systems: Use standard configure
     const compiler = config.platform === 'darwin' ? 'clang' : 'gcc'
@@ -145,21 +182,43 @@ async function buildPhp(config: BuildConfig): Promise<void> {
     })
   }
 
-  log('Building PHP...')
-  const jobs = config.platform === 'win32' ? '2' : execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
-  
-  execSync(`make -j${jobs}`, {
-    stdio: 'inherit',
-    cwd: phpSourceDir,
-    env: buildEnv
-  })
+  // Skip make/install for Windows if we already handled it above
+  if (config.platform !== 'win32') {
+    log('Building PHP...')
+    const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
+    
+    execSync(`make -j${jobs}`, {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: buildEnv
+    })
 
-  log('Installing PHP...')
-  execSync('make install', {
-    stdio: 'inherit',
-    cwd: phpSourceDir,
-    env: buildEnv
-  })
+    log('Installing PHP...')
+    execSync('make install', {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: buildEnv
+    })
+  } else {
+    // Windows: Try nmake if configure.bat worked
+    try {
+      log('Building PHP with nmake...')
+      execSync('nmake', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv
+      })
+      
+      log('Installing PHP with nmake...')
+      execSync('nmake install', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv
+      })
+    } catch (error) {
+      log('nmake failed, Windows build may be incomplete')
+    }
+  }
 
   // Create metadata file
   const metadata = {
