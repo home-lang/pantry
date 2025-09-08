@@ -178,7 +178,8 @@ jobs:
           OUTPUT_DIR: ${{ github.workspace }}/binaries
         run: bun run scripts/build-php-simple.ts
 
-      - name: Create tarball
+      - name: Create tarball (Unix)
+        if: matrix.platform != 'win32'
         run: |
           cd binaries
           BINARY_NAME="php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
@@ -195,7 +196,33 @@ jobs:
             exit 1
           fi
 
-      - name: Test PHP Binary
+      - name: Create tarball (Windows)
+        if: matrix.platform == 'win32'
+        run: |
+          cd binaries
+          $BINARY_NAME = "php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
+          if (Test-Path -Path $BINARY_NAME -PathType Container) {
+            # Create metadata file
+            $metadata = @{
+              php_version = "${{ matrix.php_version }}"
+              platform = "${{ matrix.platform }}"
+              arch = "${{ matrix.arch }}"
+              config = "${{ matrix.config }}"
+              built_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+            } | ConvertTo-Json
+            $metadata | Out-File -FilePath "$BINARY_NAME\metadata.json" -Encoding UTF8
+
+            # Create zip archive (Windows equivalent of tarball)
+            Compress-Archive -Path $BINARY_NAME -DestinationPath "$BINARY_NAME.zip" -Force
+            Write-Host "✅ Created archive: $BINARY_NAME.zip"
+            Get-ChildItem "$BINARY_NAME.zip" | Format-List Name, Length
+          } else {
+            Write-Host "❌ Binary directory not found: $BINARY_NAME"
+            exit 1
+          }
+
+      - name: Test PHP Binary (Unix)
+        if: matrix.platform != 'win32'
         run: |
           BINARY_NAME="php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
           if [ -f "binaries/$BINARY_NAME/bin/php" ]; then
@@ -207,11 +234,33 @@ jobs:
             exit 1
           fi
 
-      - name: Upload PHP Binary
+      - name: Test PHP Binary (Windows)
+        if: matrix.platform == 'win32'
+        run: |
+          $BINARY_NAME = "php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
+          if (Test-Path -Path "binaries\$BINARY_NAME\bin\php.exe" -PathType Leaf) {
+            Write-Host "✅ PHP binary created successfully"
+            & "binaries\$BINARY_NAME\bin\php.exe" --version
+            & "binaries\$BINARY_NAME\bin\php.exe" -m | Select-Object -First 20
+          } else {
+            Write-Host "❌ PHP binary not found"
+            exit 1
+          }
+
+      - name: Upload PHP Binary (Unix)
+        if: matrix.platform != 'win32'
         uses: actions/upload-artifact@v4
         with:
           name: php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
           path: binaries/php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}.tar.gz
+          retention-days: 30
+
+      - name: Upload PHP Binary (Windows)
+        if: matrix.platform == 'win32'
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
+          path: binaries/php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}.zip
           retention-days: 30
 
   # Release job to create GitHub releases with binaries
