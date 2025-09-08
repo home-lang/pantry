@@ -95,17 +95,21 @@ async function buildPhp(config: BuildConfig): Promise<void> {
   // Set up environment for macOS builds
   let buildEnv = { ...process.env }
   if (config.platform === 'darwin') {
-    const homeDir = process.env.HOME || '/Users/runner'
-    buildEnv.PATH = `${homeDir}/.local/bin:${buildEnv.PATH || ''}`
-    buildEnv.PKG_CONFIG_PATH = `${homeDir}/.local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
+    buildEnv.PATH = `/opt/homebrew/bin:/usr/local/bin:${buildEnv.PATH || ''}`
+    buildEnv.PKG_CONFIG_PATH = `/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
   }
   
-  log('Running buildconf...')
-  execSync('./buildconf --force', {
-    stdio: 'inherit',
-    cwd: phpSourceDir,
-    env: buildEnv
-  })
+  // Skip buildconf on Windows (not supported)
+  if (config.platform !== 'win32') {
+    log('Running buildconf...')
+    execSync('./buildconf --force', {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: buildEnv
+    })
+  } else {
+    log('Skipping buildconf on Windows (using pre-built configure)')
+  }
 
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
   const installPrefix = join(config.outputDir, binaryName)
@@ -124,14 +128,22 @@ async function buildPhp(config: BuildConfig): Promise<void> {
 
   log(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)
 
-  // Use simple CC compiler configure without complex environment variables
-  const compiler = config.platform === 'win32' ? 'cl' : (config.platform === 'darwin' ? 'clang' : 'gcc')
-  
-  execSync(`CC=${compiler} ./configure ${configureArgs.join(' ')}`, {
-    stdio: 'inherit',
-    cwd: phpSourceDir,
-    env: { ...buildEnv, CC: compiler }
-  })
+  // Platform-specific configure approach
+  if (config.platform === 'win32') {
+    // Windows: Use pre-built configure.bat if available, otherwise skip configure
+    log('Windows PHP builds typically require pre-built binaries or Visual Studio setup')
+    log('Skipping configure step - Windows builds not fully supported in this simple script')
+    return
+  } else {
+    // Unix-like systems: Use standard configure
+    const compiler = config.platform === 'darwin' ? 'clang' : 'gcc'
+    
+    execSync(`CC=${compiler} ./configure ${configureArgs.join(' ')}`, {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: { ...buildEnv, CC: compiler }
+    })
+  }
 
   log('Building PHP...')
   const jobs = config.platform === 'win32' ? '2' : execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()

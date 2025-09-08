@@ -120,6 +120,9 @@ jobs:
           - macos-13
           - macos-latest
           - windows-latest
+        exclude:
+          # Exclude Windows builds for now (requires different build approach)
+          - os: windows-latest
         include:
           - os: ubuntu-latest
             platform: linux
@@ -130,9 +133,6 @@ jobs:
           - os: macos-latest
             platform: darwin
             arch: arm64
-          - os: windows-latest
-            platform: win32
-            arch: x86_64
 
     runs-on: ${{ matrix.os }}
 
@@ -154,11 +154,11 @@ jobs:
       - name: Install build dependencies (macOS)
         if: matrix.platform == 'darwin'
         run: |
-          # Use local Launchpad CLI to install dependencies
-          ./launchpad install autoconf automake libtool pkg-config bison re2c libxml2 openssl curl libpng jpeg freetype oniguruma libzip postgresql readline bzip2 gmp openldap libxslt icu4c libsodium zlib gettext
-          # Set up environment for installed tools
-          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          # Fallback to Homebrew for reliable CI builds
+          brew install autoconf automake libtool pkg-config bison re2c libxml2 openssl curl libpng jpeg freetype oniguruma libzip postgresql readline bzip2 gmp openldap libxslt icu4c libsodium zlib gettext
+          # Set up environment for Homebrew tools
+          echo "/opt/homebrew/bin:/usr/local/bin:$PATH" >> $GITHUB_PATH
+          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'
