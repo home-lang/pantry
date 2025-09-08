@@ -341,14 +341,15 @@ jobs:
           echo "🔍 Current directory structure:"
           ls -la
           echo ""
-          echo "🔍 Looking for tar.gz files:"
-          find . -name "*.tar.gz" -type f
+          echo "🔍 Looking for binary files (tar.gz and zip):"
+          find . -name "*.tar.gz" -type f -o -name "*.zip" -type f
           echo ""
 
           # Create a temporary JSON array file
           echo "[]" > binaries_array.json
 
-          # Find all tar.gz files recursively and process them
+          # Process tar.gz files (Unix binaries)
+          echo "Processing Unix binaries (.tar.gz files)..."
           for tarball in $(find . -name "*.tar.gz" -type f); do
             filename=$(basename "$tarball")
             size=$(stat -c%s "$tarball" 2>/dev/null || stat -f%z "$tarball")
@@ -401,6 +402,70 @@ jobs:
             jq --argjson binary "$binary_json" '. += [$binary]' binaries_array.json > temp_array.json
             mv temp_array.json binaries_array.json
           done
+          
+          # Process zip files (Windows binaries)
+          echo "Processing Windows binaries (.zip files)..."
+          for zipfile in $(find . -name "*.zip" -type f); do
+            filename=$(basename "$zipfile")
+            size=$(stat -c%s "$zipfile" 2>/dev/null || stat -f%z "$zipfile")
+
+            echo "Processing: $filename (size: $size bytes)"
+
+            # Parse the binary name to extract components
+            # Expected format: php-8.4.11-win32-x86_64-laravel-mysql.zip
+            binary_name=$(echo "$filename" | sed 's/\.zip$//')
+
+            # Extract components from binary name
+            if [[ "$binary_name" =~ ^php-([^-]+)-([^-]+)-([^-]+)-(.+)$ ]]; then
+              php_version="${BASH_REMATCH[1]}"
+              platform="${BASH_REMATCH[2]}"
+              architecture="${BASH_REMATCH[3]}"
+              configuration="${BASH_REMATCH[4]}"
+            else
+              # Fallback if pattern doesn't match
+              php_version="unknown"
+              platform="unknown"
+              architecture="unknown"
+              configuration="unknown"
+            fi
+
+            # Try to extract metadata from zip if possible
+            # This is more complex with zip files, so we'll use a simpler approach
+            # Create a temporary directory
+            temp_dir="temp_extract_$RANDOM"
+            mkdir -p "$temp_dir"
+            
+            # Try to extract just the metadata file
+            unzip -q -j "$zipfile" "*/metadata.json" -d "$temp_dir" 2>/dev/null || echo '{}' > "$temp_dir/metadata.json"
+            
+            # Create JSON object for this binary
+            binary_json=$(jq -n \
+              --arg filename "$filename" \
+              --arg size "$size" \
+              --arg php_version "$php_version" \
+              --arg platform "$platform" \
+              --arg architecture "$architecture" \
+              --arg configuration "$configuration" \
+              --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --arg extensions "$(cat "$temp_dir/metadata.json" | jq -r '.extensions // ""' 2>/dev/null || echo '')" \
+              '{
+                filename: $filename,
+                size: ($size | tonumber),
+                php_version: $php_version,
+                platform: $platform,
+                architecture: $architecture,
+                configuration: $configuration,
+                built_at: $built_at,
+                extensions: $extensions
+              }')
+
+            # Add this binary to the array using jq
+            jq --argjson binary "$binary_json" '. += [$binary]' binaries_array.json > temp_array.json
+            mv temp_array.json binaries_array.json
+            
+            # Clean up temp directory
+            rm -rf "$temp_dir"
+          done
 
           # Create the final manifest with proper structure and sorted binaries
           jq --arg version "$(date +%Y.%m.%d)" \
@@ -421,7 +486,9 @@ jobs:
           cat manifest.json
           echo ""
           echo "📊 Summary:"
-          echo "  - Total binaries found: $(find . -name "*.tar.gz" -type f | wc -l)"
+          echo "  - Unix binaries found: $(find . -name "*.tar.gz" -type f | wc -l)"
+          echo "  - Windows binaries found: $(find . -name "*.zip" -type f | wc -l)"
+          echo "  - Total binaries found: $(find . -name "*.tar.gz" -o -name "*.zip" -type f | wc -l)"
           echo "  - Manifest file size: $(stat -c%s manifest.json 2>/dev/null || stat -f%z manifest.json) bytes"
 
       - name: Create GitHub Release
@@ -434,7 +501,7 @@ jobs:
 
             > This release contains precompiled PHP binaries optimized for modern PHP usage
 
-            - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel)
+            - **Platforms**: Linux (x86_64), macOS (ARM64 & Intel), Windows (x86_64)
             - **PHP Versions**: ${{ steps.format-versions.outputs.php_versions_string }}
             - **Configuration Options**:
               - `laravel-mysql`: Laravel applications using MySQL or MariaDB
@@ -454,6 +521,7 @@ jobs:
             See `manifest.json` for detailed information about each binary.
           files: |
             binaries/**/*.tar.gz
+            binaries/**/*.zip
             binaries/manifest.json
           draft: false
           prerelease: false
