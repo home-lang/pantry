@@ -156,6 +156,9 @@ jobs:
         run: |
           # Use local Launchpad CLI to install dependencies
           ./launchpad install autoconf automake libtool pkg-config bison re2c libxml2 openssl curl libpng jpeg freetype oniguruma libzip postgresql readline bzip2 gmp openldap libxslt icu4c libsodium zlib gettext
+          # Set up environment for installed tools
+          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'

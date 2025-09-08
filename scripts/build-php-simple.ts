@@ -46,8 +46,8 @@ async function downloadPhpSource(config: BuildConfig): Promise<string> {
   try {
     // Use cross-platform download approach
     if (process.platform === 'win32') {
-      // Windows: Use PowerShell Invoke-WebRequest
-      execSync(`powershell -Command "Invoke-WebRequest -Uri '${tarballUrl}' -OutFile '${tarballPath}' -SkipCertificateCheck"`, {
+      // Windows: Use PowerShell with older syntax compatibility
+      execSync(`powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${tarballUrl}' -OutFile '${tarballPath}'"`, {
         stdio: 'inherit',
         cwd: config.buildDir
       })
@@ -92,10 +92,19 @@ async function downloadPhpSource(config: BuildConfig): Promise<string> {
 async function buildPhp(config: BuildConfig): Promise<void> {
   const phpSourceDir = await downloadPhpSource(config)
   
+  // Set up environment for macOS builds
+  let buildEnv = { ...process.env }
+  if (config.platform === 'darwin') {
+    const homeDir = process.env.HOME || '/Users/runner'
+    buildEnv.PATH = `${homeDir}/.local/bin:${buildEnv.PATH || ''}`
+    buildEnv.PKG_CONFIG_PATH = `${homeDir}/.local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
+  }
+  
   log('Running buildconf...')
   execSync('./buildconf --force', {
     stdio: 'inherit',
-    cwd: phpSourceDir
+    cwd: phpSourceDir,
+    env: buildEnv
   })
 
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
@@ -121,7 +130,7 @@ async function buildPhp(config: BuildConfig): Promise<void> {
   execSync(`CC=${compiler} ./configure ${configureArgs.join(' ')}`, {
     stdio: 'inherit',
     cwd: phpSourceDir,
-    env: { ...process.env, CC: compiler }
+    env: { ...buildEnv, CC: compiler }
   })
 
   log('Building PHP...')
@@ -129,13 +138,15 @@ async function buildPhp(config: BuildConfig): Promise<void> {
   
   execSync(`make -j${jobs}`, {
     stdio: 'inherit',
-    cwd: phpSourceDir
+    cwd: phpSourceDir,
+    env: buildEnv
   })
 
   log('Installing PHP...')
   execSync('make install', {
     stdio: 'inherit',
-    cwd: phpSourceDir
+    cwd: phpSourceDir,
+    env: buildEnv
   })
 
   // Create metadata file
