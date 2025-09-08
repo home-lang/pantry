@@ -41,11 +41,25 @@ export class PhpPrecompiler {
         '--enable-fpm',
         '--enable-mbstring',
         '--enable-opcache',
+        '--enable-phar',
+        '--enable-filter',
+        '--enable-hash',
+        '--enable-json',
+        '--enable-ctype',
+        '--enable-tokenizer',
+        '--enable-session',
+        '--enable-fileinfo',
+        '--enable-dom',
+        '--enable-xml',
+        '--enable-xmlreader',
+        '--enable-xmlwriter',
+        '--enable-simplexml',
         '--with-curl',
         '--with-openssl',
         '--with-zip',
         '--with-libxml',
-        '--with-zlib'
+        '--with-zlib',
+        '--with-iconv'
       ],
       mysql: [
         '--enable-exif',
@@ -125,20 +139,6 @@ export class PhpPrecompiler {
         '--with-ldap',
         '--with-xsl',
         '--with-sodium',
-        '--with-iconv',
-        '--enable-fileinfo',
-        '--enable-json',
-        '--enable-phar',
-        '--enable-filter',
-        '--enable-hash',
-        '--enable-session',
-        '--enable-tokenizer',
-        '--enable-ctype',
-        '--enable-dom',
-        '--enable-simplexml',
-        '--enable-xml',
-        '--enable-xmlreader',
-        '--enable-xmlwriter',
         '--enable-shmop'
       ]
     }
@@ -321,15 +321,14 @@ export class PhpPrecompiler {
     const installPrefix = join(this.config.outputDir, this.getBinaryName())
     mkdirSync(installPrefix, { recursive: true })
 
-    // Use minimal configure approach that works reliably
+    // Use proper configure approach with required extensions
+    const extensions = this.getConfigureExtensions()
     const configureArgs = [
       `--prefix=${installPrefix}`,
-      '--disable-all',
-      '--enable-cli',
       '--disable-cgi',
-      '--disable-fpm',
       '--without-pear',
-      '--without-pcre-jit'
+      '--without-pcre-jit',
+      ...extensions.split(' ')
     ]
 
     logUniqueMessage(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)

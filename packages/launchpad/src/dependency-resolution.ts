@@ -15,8 +15,19 @@ const globalInstalledTracker = new Set<string>()
 // Use ts-pkgx API to resolve all dependencies with proper version conflict resolution
 export async function resolveAllDependencies(packages: string[]): Promise<string[]> {
   try {
-    // Import resolveDependencies from ts-pkgx
-    const { resolveDependencies } = await import('ts-pkgx')
+    // Import resolveDependencies from ts-pkgx with better error handling
+    let resolveDependencies: any
+    try {
+      const tsPkgx = await import('ts-pkgx')
+      resolveDependencies = tsPkgx.resolveDependencies
+      if (typeof resolveDependencies !== 'function') {
+        throw new Error('resolveDependencies is not available or not a function')
+      }
+    } catch (importError) {
+      console.warn(`⚠️  ts-pkgx import failed: ${importError instanceof Error ? importError.message : String(importError)}`)
+      console.warn('Falling back to simple deduplication...')
+      return deduplicatePackagesByVersion(packages)
+    }
 
     // Create a temporary dependency file content
     const depsYaml = packages.reduce((acc, pkg) => {
@@ -46,14 +57,19 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
     await fs.promises.writeFile(tempFile, yamlContent)
 
     try {
-      // Resolve dependencies using ts-pkgx
+      // Resolve dependencies using ts-pkgx with additional error handling
       const result = await resolveDependencies(tempFile, {
         targetOs: getPlatform() as 'darwin' | 'linux',
         includeOsSpecific: true,
       })
 
+      // Validate the result structure
+      if (!result || typeof result !== 'object' || !Array.isArray(result.packages)) {
+        throw new Error('Invalid result structure from ts-pkgx resolveDependencies')
+      }
+
       if (config.verbose) {
-        console.warn(`🔍 ts-pkgx resolved ${result.totalCount} total packages from ${packages.length} input packages`)
+        console.warn(`🔍 ts-pkgx resolved ${result.totalCount || result.packages.length} total packages from ${packages.length} input packages`)
         console.warn(`📦 Resolved packages: ${result.packages.map(pkg => `${pkg.name}@${pkg.version || 'latest'}`).join(', ')}`)
       }
 

@@ -79,7 +79,7 @@ export class PrecompiledBinaryDownloader {
             }
           }
         }
-        
+
         // Also check for environment-specific installations (scan all envs)
         const launchpadEnvsDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs')
         if (fs.existsSync(launchpadEnvsDir)) {
@@ -806,6 +806,10 @@ Thanks for helping us make Launchpad better! 🙏
       if (!fs.existsSync(binDir))
         return
 
+      // Create shims in the environment bin directory, not the package bin directory
+      const envBinDir = path.join(this.installPath, 'bin')
+      await fs.promises.mkdir(envBinDir, { recursive: true })
+
       // Optionally ensure package-declared build-time dependencies are installed into this environment
       const pkgNames = ['php', 'php.net']
       const isListed = (val: unknown): boolean => {
@@ -899,23 +903,19 @@ Thanks for helping us make Launchpad better! 🙏
             const subdirs = fs.readdirSync(extBase).filter(d => fs.statSync(path.join(extBase, d)).isDirectory())
             if (subdirs.length > 0) {
               const extDir = path.join(extBase, subdirs[0])
-              extensionDirLine = `extension_dir = ${extDir}`
-              // Filter dbExtensions to those that exist in extDir
-              const existing = new Set(fs.readdirSync(extDir))
-              for (let i = dbExtensions.length - 1; i >= 0; i--) {
-                const ext = dbExtensions[i]
-                const so = `${ext}.so`
-                if (!existing.has(so)) {
-                  dbExtensions.splice(i, 1)
-                }
-              }
+              extensionDirLine = `extension_dir = "${extDir}"`
+              // Filter extensions to only those that exist
+              const availableExtensions = fs.readdirSync(extDir).map(f => path.basename(f, '.so'))
+              const filteredExtensions = dbExtensions.filter(ext => availableExtensions.includes(ext))
+              dbExtensions.length = 0
+              dbExtensions.push(...filteredExtensions)
             }
           }
         }
         catch {}
 
         const ini = [
-          '; Launchpad php.ini (auto-generated)',
+          '; Launchpad PHP configuration',
           'memory_limit = 512M',
           'max_execution_time = 300',
           'upload_max_filesize = 64M',
@@ -936,10 +936,7 @@ Thanks for helping us make Launchpad better! 🙏
 
       for (const binary of binaries) {
         const originalBinary = path.join(binDir, binary)
-        const shimPath = path.join(binDir, `${binary}.original`)
-
-        // Move original binary
-        fs.renameSync(originalBinary, shimPath)
+        const shimBinary = path.join(envBinDir, binary) // Create shim in env bin directory
 
         // First, on macOS fix absolute Homebrew dylib references to Launchpad-managed libs
         try {
@@ -975,11 +972,11 @@ if [ -f "${projectPhpIni.replace(/"/g, '\\"')}" ]; then
 fi
 
 # Execute the original binary
-exec "${shimPath}" "$@"
+exec "${originalBinary}" "$@"
 `
 
-        fs.writeFileSync(originalBinary, wrapperScript)
-        fs.chmodSync(originalBinary, 0o755)
+        fs.writeFileSync(shimBinary, wrapperScript)
+        fs.chmodSync(shimBinary, 0o755)
       }
 
       console.log(`🔗 Created PHP shims with Launchpad library paths for ${binaries.length} binaries`)
@@ -1092,12 +1089,14 @@ exec "${shimPath}" "$@"
       try {
         const { execSync } = await import('node:child_process')
         const otoolOutput = execSync(`otool -L "${phpBinaryPath}"`, { encoding: 'utf8' })
-        const detectedDylibs = otoolOutput.split('\n')
+
+        const lines = otoolOutput.split('\n').slice(1).map(l => l.trim()).filter(Boolean)
+        const detectedDylibs = lines
           .filter((line: string) => line.includes('/opt/homebrew/') && line.includes('.dylib'))
           .map((line: string) => line.trim().split(' ')[0])
-        
+
         allDylibPaths = [...new Set([...dylibPaths, ...detectedDylibs])]
-        
+
         if (config.verbose) {
           console.log(`🔍 Found ${detectedDylibs.length} dylib dependencies in PHP binary`)
         }
@@ -1112,7 +1111,7 @@ exec "${shimPath}" "$@"
       try {
         const dylibName = path.basename(dylibPath)
         const targetPath = path.join(libDir, dylibName)
-        
+
         // Find the corresponding library in the environment
         const envLibPath = this.findLibraryInEnvironment(dylibName, packageDir)
         if (envLibPath && fs.existsSync(envLibPath)) {
@@ -1136,7 +1135,7 @@ exec "${shimPath}" "$@"
 
   private findLibraryInEnvironment(dylibName: string, packageDir: string): string | null {
     const envDir = path.dirname(path.dirname(packageDir)) // Go up to env root
-    
+
     // Find which package this library belongs to
     for (const [libPrefix, packageDomains] of Object.entries(this.getLibraryMappings())) {
       if (dylibName.startsWith(libPrefix)) {
@@ -1160,16 +1159,16 @@ exec "${shimPath}" "$@"
 
   private async createVersionGenericSymlink(dylibName: string, packageDir: string, libDir: string): Promise<void> {
     const envDir = path.dirname(path.dirname(packageDir))
-    
+
     // Extract base library name (e.g., libreadline from libreadline.8.dylib)
     const baseLibName = dylibName.split('.')[0]
-    
+
     // Common version patterns to look for
     const versionPatterns = [
       new RegExp(`${baseLibName}\\.(\\d+)\\.(\\d+)\\.dylib$`),
       new RegExp(`${baseLibName}\\.(\\d+)\\.dylib$`)
     ]
-    
+
     // Search through all installed packages for versioned libraries
     for (const [libPrefix, packageDomains] of Object.entries(this.getLibraryMappings())) {
       if (dylibName.startsWith(libPrefix)) {
@@ -1181,14 +1180,14 @@ exec "${shimPath}" "$@"
               const libPath = path.join(packagePath, version, 'lib')
               if (fs.existsSync(libPath)) {
                 const libFiles = fs.readdirSync(libPath)
-                
+
                 // Look for versioned libraries that match our pattern
                 for (const libFile of libFiles) {
                   for (const pattern of versionPatterns) {
                     if (pattern.test(libFile) && libFile.startsWith(baseLibName)) {
                       const sourcePath = path.join(libPath, libFile)
                       const targetPath = path.join(libDir, dylibName)
-                      
+
                       if (!fs.existsSync(targetPath)) {
                         try {
                           await fs.promises.symlink(sourcePath, targetPath)
@@ -1241,11 +1240,11 @@ exec "${shimPath}" "$@"
 
   private findIcuInstallations(): Array<{ path: string; major: number; version: number }> {
     const installations: Array<{ path: string; major: number; version: number }> = []
-    
+
     // Look in the environment directory
     const envDir = path.dirname(path.dirname(this.installPath))
     const unicodeOrgPath = path.join(envDir, 'unicode.org')
-    
+
     if (fs.existsSync(unicodeOrgPath)) {
       const versions = fs.readdirSync(unicodeOrgPath)
         .filter(d => d.startsWith('v'))
@@ -1311,12 +1310,12 @@ exec "${shimPath}" "$@"
         if (detectedIcuMajor) {
           const availableVersions = await this.getAvailableIcuVersions()
           const hasCompatibleIcu = availableVersions.includes(detectedIcuMajor)
-          
+
           if (!hasCompatibleIcu && availableVersions.length > 0) {
             if (config.verbose) {
               console.log(`🔍 PHP binary built with ICU v${detectedIcuMajor}, available: v${availableVersions.join(', ')}`)
             }
-            
+
             // Fix references to use available ICU version
             const success = await this.fixPhpIcuReferences(packageDir, detectedIcuMajor)
             if (!success && config.verbose) {
@@ -1412,13 +1411,13 @@ exec "${shimPath}" "$@"
 
       // Find the closest ICU version to what PHP needs
       let targetIcuMajor = requiredIcuMajor
-      
+
       // First try exact match
       if (availableIcuVersions.includes(requiredIcuMajor)) {
         targetIcuMajor = requiredIcuMajor
       } else {
         // Use the closest available version
-        targetIcuMajor = availableIcuVersions.reduce((prev, curr) => 
+        targetIcuMajor = availableIcuVersions.reduce((prev, curr) =>
           Math.abs(curr - requiredIcuMajor) < Math.abs(prev - requiredIcuMajor) ? curr : prev
         )
       }
@@ -1426,7 +1425,7 @@ exec "${shimPath}" "$@"
       // Find the ICU installation path
       const icuInstallations = this.findIcuInstallations()
       const targetIcuInstallation = icuInstallations.find((install: any) => install.major === targetIcuMajor)
-      
+
       if (!targetIcuInstallation) {
         if (config.verbose) {
           console.warn(`⚠️ ICU v${targetIcuMajor} installation path not found`)
@@ -1441,13 +1440,13 @@ exec "${shimPath}" "$@"
           console.warn(`⚠️ Large ICU version gap: PHP built with v${requiredIcuMajor}, using v${targetIcuMajor}`)
           console.warn('   Creating compatibility symlinks instead of patching binary...')
         }
-        
+
         // Create symlinks for all required libraries instead of patching the binary
         await this.createLibrarySymlinks([], packageDir)
 
         if (config.verbose) {
           console.log('✅ All library symlinks created')
-        }  
+        }
         return true
       }
 
@@ -1458,12 +1457,12 @@ exec "${shimPath}" "$@"
       // Create compatibility symlinks in the package lib directory
       const packageLibDir = path.join(packageDir, 'lib')
       await fs.promises.mkdir(packageLibDir, { recursive: true })
-      
+
       const icuLibs = ['libicuio', 'libicui18n', 'libicuuc', 'libicudata']
       for (const lib of icuLibs) {
         const sourcePath = path.join(targetIcuInstallation.path, 'lib', `${lib}.${targetIcuMajor}.dylib`)
         const targetPath = path.join(packageLibDir, `${lib}.${requiredIcuMajor}.dylib`)
-        
+
         try {
           if (fs.existsSync(sourcePath) && !fs.existsSync(targetPath)) {
             await fs.promises.symlink(sourcePath, targetPath)
@@ -1726,6 +1725,7 @@ exec "${shimPath}" "$@"
       console.log('- api-only: Minimal API applications')
       console.log('- enterprise: All common extensions')
       console.log('- wordpress: WordPress-optimized')
+      console.log('- full-stack: Complete PHP with all major extensions')
       console.log('')
     }
   }
@@ -1848,6 +1848,7 @@ exec "${shimPath}" "$@"
         return false
       }
 
+      // Download manifest
       const manifest = await this.downloadManifest()
       const binary = await this.findMatchingBinary(manifest)
       return binary !== null

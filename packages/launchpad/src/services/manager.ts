@@ -862,19 +862,56 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     console.warn(`📦 Installing ${definition.displayName} package...`)
 
   try {
-    // Import install function to install service package with dependencies
-    const { install } = await import('../install')
-
-    // Install the main service package - this will automatically install all dependencies
-    // thanks to our fixed dependency resolution
-    const installPath = `${process.env.HOME}/.local`
-    
     // Validate packageDomain before calling install to prevent JavaScript errors
     if (!definition.packageDomain || typeof definition.packageDomain !== 'string') {
       throw new Error(`Invalid package domain for ${definition.displayName}: ${definition.packageDomain}`)
     }
-    
-    await install([definition.packageDomain], installPath)
+
+    // Try multiple import strategies for the install function
+    let install: any
+    try {
+      // First try the main install module
+      const installModule = await import('../install-main')
+      install = installModule.install
+      if (typeof install !== 'function') {
+        throw new Error('install function not found in install-main')
+      }
+    } catch (importError) {
+      try {
+        // Fallback to the install index
+        const installModule = await import('../install')
+        install = installModule.install
+        if (typeof install !== 'function') {
+          throw new Error('install function not found in install index')
+        }
+      } catch (fallbackError) {
+        console.error(`❌ Failed to import install function from both modules:`)
+        console.error(`  - install-main: ${importError instanceof Error ? importError.message : String(importError)}`)
+        console.error(`  - install: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`)
+        return false
+      }
+    }
+
+    // Install the main service package - this will automatically install all dependencies
+    // thanks to our fixed dependency resolution
+    const installPath = `${process.env.HOME}/.local`
+
+    // Call install with proper error handling
+    try {
+      await install([definition.packageDomain], installPath)
+    } catch (installError) {
+      // If the install fails, provide detailed error information
+      console.error(`❌ Package installation failed for ${definition.displayName}:`)
+      console.error(`  - Package domain: ${definition.packageDomain}`)
+      console.error(`  - Install path: ${installPath}`)
+      console.error(`  - Error: ${installError instanceof Error ? installError.message : String(installError)}`)
+
+      if (installError instanceof Error && installError.stack) {
+        console.error(`  - Stack trace: ${installError.stack}`)
+      }
+
+      return false
+    }
 
     if (config.verbose)
       console.log(`✅ ${definition.displayName} package installed successfully`)
