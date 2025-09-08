@@ -44,17 +44,44 @@ async function downloadPhpSource(config: BuildConfig): Promise<string> {
   log(`Downloading PHP ${config.phpVersion} from ${tarballUrl}`)
 
   try {
-    // Use wget with SSL bypass (works on all platforms)
-    execSync(`wget --no-check-certificate -O "${tarballPath}" "${tarballUrl}"`, {
-      stdio: 'inherit',
-      cwd: config.buildDir
-    })
+    // Use cross-platform download approach
+    if (process.platform === 'win32') {
+      // Windows: Use PowerShell Invoke-WebRequest
+      execSync(`powershell -Command "Invoke-WebRequest -Uri '${tarballUrl}' -OutFile '${tarballPath}' -SkipCertificateCheck"`, {
+        stdio: 'inherit',
+        cwd: config.buildDir
+      })
+    } else {
+      // macOS/Linux: Use curl (available by default)
+      execSync(`curl -L -k -o "${tarballPath}" "${tarballUrl}"`, {
+        stdio: 'inherit',
+        cwd: config.buildDir
+      })
+    }
 
     log('Extracting PHP source...')
-    execSync(`tar -xzf php.tar.gz`, {
-      stdio: 'inherit',
-      cwd: config.buildDir
-    })
+    if (process.platform === 'win32') {
+      // Windows: Use PowerShell Expand-Archive (requires .zip, so we need a different approach)
+      // Use 7-zip or built-in tar on Windows 10+
+      try {
+        execSync(`tar -xzf php.tar.gz`, {
+          stdio: 'inherit',
+          cwd: config.buildDir
+        })
+      } catch {
+        // Fallback: Use PowerShell with System.IO.Compression
+        execSync(`powershell -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${tarballPath}', '${config.buildDir}')"`, {
+          stdio: 'inherit',
+          cwd: config.buildDir
+        })
+      }
+    } else {
+      // macOS/Linux: Use tar
+      execSync(`tar -xzf php.tar.gz`, {
+        stdio: 'inherit',
+        cwd: config.buildDir
+      })
+    }
 
     return phpSourceDir
   } catch (error) {
