@@ -866,7 +866,7 @@ exec "$@"
     
     // Install PHP dependencies using Launchpad
     try {
-      execSync('launchpad install php --deps-only', {
+      execSync('bun ./launchpad install php --deps-only', {
         stdio: 'inherit',
         cwd: process.cwd()
       })
