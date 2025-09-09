@@ -232,15 +232,14 @@ jobs:
             
             # Test phar extension specifically
             echo "🧪 Testing phar extension..."
-            if binaries/$BINARY_NAME/bin/php -m | grep -q "phar"; then
+            PHAR_LOADED=$(binaries/$BINARY_NAME/bin/php -r 'echo extension_loaded("phar") ? "1" : "0";')
+            if [ "$PHAR_LOADED" = "1" ]; then
               echo "✅ Phar extension is loaded"
-              
               # Test phar functionality
               echo "🧪 Testing phar functionality..."
               echo '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";' > test_phar.php
               binaries/$BINARY_NAME/bin/php test_phar.php
               rm test_phar.php
-              
               # Test creating a simple phar
               echo "🧪 Testing phar creation..."
               echo '<?php 
@@ -262,7 +261,7 @@ jobs:
               binaries/$BINARY_NAME/bin/php -d phar.readonly=0 test_phar_create.php
               rm test_phar_create.php
             else
-              echo "❌ Phar extension not found in loaded modules"
+              echo "❌ Phar extension not loaded (runtime check)"
               echo "Available modules:"
               binaries/$BINARY_NAME/bin/php -m
               exit 1
