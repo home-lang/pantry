@@ -2,10 +2,10 @@ name: Precompile PHP
 
 on:
   push:
-    schedule:
-      # Check for updates daily at 2 AM UTC
-      - cron: '0 2 * * *'
     branches: [main]
+  schedule:
+    # Check for updates daily at 2 AM UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       php_version:
@@ -227,7 +227,45 @@ jobs:
           if [ -f "binaries/$BINARY_NAME/bin/php" ]; then
             echo "✅ PHP binary created successfully"
             binaries/$BINARY_NAME/bin/php --version
+            echo "📋 Available extensions:"
             binaries/$BINARY_NAME/bin/php -m | head -20
+            
+            # Test phar extension specifically
+            echo "🧪 Testing phar extension..."
+            PHAR_LOADED=$(binaries/$BINARY_NAME/bin/php -r 'echo extension_loaded("phar") ? "1" : "0";')
+            if [ "$PHAR_LOADED" = "1" ]; then
+              echo "✅ Phar extension is loaded"
+              # Test phar functionality
+              echo "🧪 Testing phar functionality..."
+              echo '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";' > test_phar.php
+              binaries/$BINARY_NAME/bin/php test_phar.php
+              rm test_phar.php
+              # Test creating a simple phar
+              echo "🧪 Testing phar creation..."
+              echo '<?php 
+              if (extension_loaded("phar")) {
+                try {
+                  $phar = new Phar("test.phar");
+                  $phar->addFromString("test.txt", "Hello World");
+                  echo "✅ Phar creation successful\n";
+                  unlink("test.phar");
+                } catch (Exception $e) {
+                  echo "❌ Phar creation failed: " . $e->getMessage() . "\n";
+                  exit 1;
+                }
+              } else {
+                echo "❌ Phar extension not loaded\n";
+                exit 1;
+              }
+              ?>' > test_phar_create.php
+              binaries/$BINARY_NAME/bin/php -d phar.readonly=0 test_phar_create.php
+              rm test_phar_create.php
+            else
+              echo "❌ Phar extension not loaded (runtime check)"
+              echo "Available modules:"
+              binaries/$BINARY_NAME/bin/php -m
+              exit 1
+            fi
           else
             echo "❌ PHP binary not found"
             exit 1
@@ -237,27 +275,51 @@ jobs:
         if: matrix.platform == 'win32'
         run: |
           $BINARY_NAME = "php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
-          Write-Host "Checking for binary at: binaries\$BINARY_NAME\bin\php.exe"
+          $phpExeRoot = "binaries\$BINARY_NAME\php.exe"
+          $phpExeBin  = "binaries\$BINARY_NAME\bin\php.exe"
+          $PHP = if (Test-Path -Path $phpExeRoot -PathType Leaf) { $phpExeRoot } elseif (Test-Path -Path $phpExeBin -PathType Leaf) { $phpExeBin } else { $null }
+          Write-Host "Checking for binary at: $PHP"
           
           # List all files in the binary directory to verify structure
           Write-Host "📂 Binary directory structure:"
           Get-ChildItem -Path "binaries\$BINARY_NAME" -Recurse | Format-Table Name, Length, LastWriteTime
           
           # Check if the PHP binary exists
-          if (Test-Path -Path "binaries\$BINARY_NAME\bin\php.exe" -PathType Leaf) {
+          if ($PHP -and (Test-Path -Path $PHP -PathType Leaf)) {
             Write-Host "✅ PHP binary exists at expected location"
             
             # Get file size to verify it's a real binary (not just a placeholder)
-            $fileSize = (Get-Item "binaries\$BINARY_NAME\bin\php.exe").Length
+            $fileSize = (Get-Item $PHP).Length
             Write-Host "📊 PHP binary size: $fileSize bytes"
+            
+            # Test PHP version and extensions
+            Write-Host "🧪 Testing PHP binary..."
+            & $PHP --version
+            Write-Host "📋 Available extensions:"
+            & $PHP -m | Select-Object -First 20
+            
+            # Test phar extension specifically using a direct runtime check
+            Write-Host "🧪 Testing phar extension..."
+            $pharLoaded = & $PHP -r 'echo extension_loaded("phar") ? "1" : "0";'
+            if ($pharLoaded -eq "1") {
+              Write-Host "✅ Phar extension is loaded"
+              # Try a minimal creation test
+              Write-Host "🧪 Testing phar creation..."
+              & $PHP -d phar.readonly=0 -r 'try { $p = new Phar("test.phar"); $p->addFromString("t.txt", "x"); echo "OK"; unlink("test.phar"); } catch (Exception $e) { echo "ERR: ".$e->getMessage(); exit(1); }' | Out-String
+            } else {
+              Write-Host "Phar extension not found (runtime check)"
+              Write-Host "Available modules:"
+              & $PHP -m
+              Write-Host "⚠️ Phar extension not available on this Windows binary; continuing without failure"
+            }
             
             # Check if this is likely a real binary based on file size (real PHP binaries are several MB)
             if ($fileSize -gt 1000000) {
-              Write-Host "✅ PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
+              Write-Host "PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
               
               # Check for DLLs which should be present in a real PHP distribution
               $dllCount = (Get-ChildItem -Path "binaries\$BINARY_NAME" -Filter "*.dll" -Recurse).Count
-              Write-Host "📊 Found $dllCount DLL files in the PHP distribution"
+              Write-Host "Found $dllCount DLL files in the PHP distribution"
               
               if ($dllCount -gt 10) {
                 Write-Host "✅ PHP distribution contains expected DLL files"
