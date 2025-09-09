@@ -259,7 +259,7 @@ jobs:
                 exit 1;
               }
               ?>' > test_phar_create.php
-              binaries/$BINARY_NAME/bin/php test_phar_create.php
+              binaries/$BINARY_NAME/bin/php -d phar.readonly=0 test_phar_create.php
               rm test_phar_create.php
             else
               echo "❌ Phar extension not found in loaded modules"

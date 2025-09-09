@@ -260,7 +260,9 @@ async function buildPhp(config: BuildConfig): Promise<void> {
       '--disable-cgi',
       '--disable-fpm',
       '--without-pear',
-      '--without-pcre-jit'
+      '--without-pcre-jit',
+      // Enable phar explicitly since --disable-all turns off defaults
+      '--enable-phar'
     ]
 
     log(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)
