@@ -772,7 +772,15 @@ exec "$@"
 
   // Source the Launchpad environment and run configure in the same shell
   const buildEnvScript = `${homeDir}/.local/build-env.sh`
-  const configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
+  let configureCommand: string
+  
+  // Check if Launchpad environment script exists, otherwise use manual environment
+  if (existsSync(buildEnvScript)) {
+    configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
+  } else {
+    log('⚠️  Launchpad build-env.sh not found, using manual environment setup')
+    configureCommand = `./configure ${configureArgs.join(' ')}`
+  }
 
   execSync(configureCommand, {
     cwd: phpSourceDir,
