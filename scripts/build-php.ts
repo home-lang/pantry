@@ -292,7 +292,9 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
-      '--without-iconv', // Disable iconv on macOS due to GNU libiconv compatibility issues
+      '--with-iconv', // Re-enable iconv with Launchpad dependencies
+      '--enable-opcache',
+      '--with-bz2',
       '--with-kerberos',
       '--with-libedit',
       '--with-zip',
@@ -304,6 +306,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...baseArgs,
       ...dependencyArgs,
       '--with-iconv', // Use system iconv on Linux
+      '--enable-opcache',
+      '--with-bz2',
       '--with-kerberos',
       '--with-readline',
       '--with-zip',
@@ -421,13 +425,13 @@ function createWindowsPhpIni(phpDir: string): void {
     extensions.push(...extFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
   }
 
-  // Essential extensions that should be prioritized
+  // Essential extensions that should always be enabled (Windows-compatible)
   const essentialExtensions = [
-    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip',
-    'ftp', 'sockets', 'exif', 'bz2', 'gettext', 'gd', 'intl',
-    'pdo_sqlite', 'sqlite3', 'xml', 'xmlreader', 'xmlwriter',
-    'dom', 'simplexml', 'json', 'filter', 'hash', 'ctype'
+    'mbstring', 'fileinfo', 'curl', 'openssl', 'zip', 'ftp',
+    'sockets', 'exif', 'bz2', 'gettext'
   ]
+
+  extensions.push(...essentialExtensions)
 
   // Create comprehensive php.ini content
   const phpIniContent = `; PHP Configuration File
@@ -482,15 +486,19 @@ max_file_uploads = 20
 ; Extensions
 extension_dir = "ext"
 
+; Zend Extensions (must be loaded first)
+zend_extension=opcache
+
 ; Enable essential extensions
 ${essentialExtensions
   .filter(ext => extensions.includes(ext))
   .map(ext => `extension=${ext}`)
   .join('\n')}
 
-; Enable additional available extensions
+; Enable additional available extensions (excluding problematic ones)
 ${extensions
-  .filter(ext => !essentialExtensions.includes(ext))
+  .filter(ext => !essentialExtensions.includes(ext) && 
+    !['opcache', 'pdo_firebird', 'snmp', 'pcntl', 'posix'].includes(ext))
   .map(ext => `extension=${ext}`)
   .join('\n')}
 
