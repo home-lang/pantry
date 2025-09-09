@@ -2,10 +2,10 @@ name: Precompile PHP
 
 on:
   push:
-    schedule:
-      # Check for updates daily at 2 AM UTC
-      - cron: '0 2 * * *'
     branches: [main]
+  schedule:
+    # Check for updates daily at 2 AM UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       php_version:
@@ -304,30 +304,31 @@ jobs:
               
               # Test phar functionality
               Write-Host "🧪 Testing phar functionality..."
-              '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";' | Out-File -FilePath "test_phar.php" -Encoding UTF8
+              '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";'
+              | Out-File -FilePath "test_phar.php" -Encoding UTF8
               & "binaries\$BINARY_NAME\bin\php.exe" test_phar.php
               Remove-Item "test_phar.php"
               
               # Test creating a simple phar
               Write-Host "🧪 Testing phar creation..."
-              $pharScript = @"
-<?php 
-if (extension_loaded(`"phar`")) {
+              $pharScript = @'
+<?php
+if (extension_loaded("phar")) {
   try {
-    `$phar = new Phar(`"test.phar`");
-    `$phar->addFromString(`"test.txt`", `"Hello World`");
-    echo `"Phar creation successful\n`";
-    unlink(`"test.phar`");
-  } catch (Exception `$e) {
-    echo `"Phar creation failed: `" . `$e->getMessage() . `"\n`";
+    $phar = new Phar("test.phar");
+    $phar->addFromString("test.txt", "Hello World");
+    echo "Phar creation successful\n";
+    unlink("test.phar");
+  } catch (Exception $e) {
+    echo "Phar creation failed: " . $e->getMessage() . "\n";
     exit(1);
   }
 } else {
-  echo `"Phar extension not loaded\n`";
+  echo "Phar extension not loaded\n";
   exit(1);
 }
 ?>
-"@
+'@
               $pharScript | Out-File -FilePath "test_phar_create.php" -Encoding UTF8
               & "binaries\$BINARY_NAME\bin\php.exe" test_phar_create.php
               Remove-Item "test_phar_create.php"
