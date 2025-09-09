@@ -314,6 +314,97 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
   return baseArgs
 }
 
+function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): string[] {
+  // CI-compatible configure arguments with conditional database support
+  const ciArgs = [
+    `--prefix=${installPrefix}`,
+    '--enable-bcmath',
+    '--enable-calendar',
+    '--enable-dba',
+    '--enable-exif',
+    '--enable-ftp',
+    '--enable-fpm',
+    '--enable-gd',
+    '--enable-mbregex',
+    '--enable-mbstring',
+    '--enable-mysqlnd',
+    '--enable-pcntl',
+    '--disable-phpdbg',
+    '--enable-shmop',
+    '--enable-soap',
+    '--enable-sockets',
+    '--enable-sysvmsg',
+    '--enable-sysvsem',
+    '--enable-sysvshm',
+    '--with-pear',
+    '--with-pcre-jit',
+    '--with-layout=GNU',
+    '--with-libxml',
+    '--with-pdo-sqlite',
+    '--with-pic',
+    '--with-sqlite3',
+    '--with-zlib',
+    '--without-gettext', // Disable gettext to avoid libintl.h dependency
+    '--without-iconv',   // Disable iconv to avoid compatibility issues
+    '--disable-dtrace',
+    '--without-ndbm',
+    '--without-gdbm',
+    '--without-ldap-sasl'
+  ]
+
+  // Add database-specific extensions based on config
+  if (config.config.includes('mysql') || config.config.includes('laravel')) {
+    ciArgs.push(
+      '--with-pdo-mysql',
+      '--with-mysqli'
+    )
+  }
+
+  if (config.config.includes('postgres') || config.config.includes('laravel')) {
+    // Try to use system PostgreSQL if available, otherwise disable
+    if (config.platform === 'darwin') {
+      // macOS might have PostgreSQL via Homebrew or system
+      ciArgs.push('--with-pdo-pgsql')
+    } else if (config.platform === 'linux') {
+      // Ubuntu/Linux typically has libpq-dev available
+      ciArgs.push('--with-pdo-pgsql')
+    } else {
+      ciArgs.push('--without-pgsql')
+    }
+  }
+
+  // Add essential extensions that work with system libraries
+  ciArgs.push(
+    '--with-curl',    // Try system curl
+    '--with-openssl', // Try system OpenSSL
+    '--with-zip'      // Enable ZIP support
+  )
+
+  // Platform-specific arguments for CI
+  if (config.platform === 'darwin') {
+    ciArgs.push(
+      '--with-kerberos',
+      '--with-libedit'
+    )
+  } else if (config.platform === 'linux') {
+    ciArgs.push(
+      '--with-readline'
+    )
+  }
+
+  // Add optional extensions that might work with system libraries
+  const optionalExtensions = [
+    '--enable-intl',  // Try system ICU
+    '--with-gmp',     // Try system GMP
+    '--with-sodium'   // Try system libsodium
+  ]
+
+  // Add optional extensions (they'll be skipped if dependencies aren't found)
+  ciArgs.push(...optionalExtensions)
+
+  return ciArgs
+}
+
 function createWindowsPhpIni(phpDir: string): void {
   const extDir = join(phpDir, 'ext')
   const mainDir = phpDir
@@ -778,8 +869,11 @@ exec "$@"
   if (existsSync(buildEnvScript)) {
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
   } else {
-    log('⚠️  Launchpad build-env.sh not found, using manual environment setup')
-    configureCommand = `./configure ${configureArgs.join(' ')}`
+    log('⚠️  Launchpad build-env.sh not found, using CI-compatible configuration')
+    
+    // In CI environments without Launchpad dependencies, use a minimal build
+    const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
+    configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
   }
 
   execSync(configureCommand, {
