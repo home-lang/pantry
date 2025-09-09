@@ -262,7 +262,11 @@ async function buildPhp(config: BuildConfig): Promise<void> {
       '--without-pear',
       '--without-pcre-jit',
       // Enable phar explicitly since --disable-all turns off defaults
-      '--enable-phar'
+      '--enable-phar',
+      // Extra robustness for minimal build: required by many apps and Phar
+      '--enable-hash',
+      '--enable-spl',
+      '--with-zlib'
     ]
 
     log(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)

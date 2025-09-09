@@ -60,9 +60,7 @@ export class PhpPrecompiler {
         '--with-zip',
         '--with-libxml',
         '--with-zlib',
-        '--with-iconv',
-        // Ensure phar.readonly is disabled for full phar functionality
-        '--enable-phar'
+        '--with-iconv'
       ],
       mysql: [
         '--enable-exif',
