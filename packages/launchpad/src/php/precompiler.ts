@@ -41,6 +41,7 @@ export class PhpPrecompiler {
         '--enable-fpm',
         '--enable-mbstring',
         '--enable-opcache',
+        // Phar is enabled by default in PHP, but we explicitly ensure it's not disabled
         '--enable-phar',
         '--enable-filter',
         '--enable-hash',
@@ -59,7 +60,9 @@ export class PhpPrecompiler {
         '--with-zip',
         '--with-libxml',
         '--with-zlib',
-        '--with-iconv'
+        '--with-iconv',
+        // Ensure phar.readonly is disabled for full phar functionality
+        '--with-phar'
       ],
       mysql: [
         '--enable-exif',

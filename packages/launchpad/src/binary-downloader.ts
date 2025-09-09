@@ -1897,6 +1897,11 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
       'display_errors = On',
       'error_reporting = E_ALL',
       '',
+      '; Phar extension configuration',
+      'extension=phar',
+      'phar.readonly = Off',
+      'phar.require_hash = On',
+      '',
     ]
 
     // Detect extension_dir from installed package

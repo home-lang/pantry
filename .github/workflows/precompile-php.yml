@@ -227,7 +227,46 @@ jobs:
           if [ -f "binaries/$BINARY_NAME/bin/php" ]; then
             echo "✅ PHP binary created successfully"
             binaries/$BINARY_NAME/bin/php --version
+            echo "📋 Available extensions:"
             binaries/$BINARY_NAME/bin/php -m | head -20
+            
+            # Test phar extension specifically
+            echo "🧪 Testing phar extension..."
+            if binaries/$BINARY_NAME/bin/php -m | grep -q "phar"; then
+              echo "✅ Phar extension is loaded"
+              
+              # Test phar functionality
+              echo "🧪 Testing phar functionality..."
+              echo '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";' > test_phar.php
+              binaries/$BINARY_NAME/bin/php test_phar.php
+              rm test_phar.php
+              
+              # Test creating a simple phar
+              echo "🧪 Testing phar creation..."
+              echo '<?php 
+              if (extension_loaded("phar")) {
+                try {
+                  $phar = new Phar("test.phar");
+                  $phar->addFromString("test.txt", "Hello World");
+                  echo "✅ Phar creation successful\n";
+                  unlink("test.phar");
+                } catch (Exception $e) {
+                  echo "❌ Phar creation failed: " . $e->getMessage() . "\n";
+                  exit 1;
+                }
+              } else {
+                echo "❌ Phar extension not loaded\n";
+                exit 1;
+              }
+              ?>' > test_phar_create.php
+              binaries/$BINARY_NAME/bin/php test_phar_create.php
+              rm test_phar_create.php
+            else
+              echo "❌ Phar extension not found in loaded modules"
+              echo "Available modules:"
+              binaries/$BINARY_NAME/bin/php -m
+              exit 1
+            fi
           else
             echo "❌ PHP binary not found"
             exit 1
@@ -250,6 +289,54 @@ jobs:
             # Get file size to verify it's a real binary (not just a placeholder)
             $fileSize = (Get-Item "binaries\$BINARY_NAME\bin\php.exe").Length
             Write-Host "📊 PHP binary size: $fileSize bytes"
+            
+            # Test PHP version and extensions
+            Write-Host "🧪 Testing PHP binary..."
+            & "binaries\$BINARY_NAME\bin\php.exe" --version
+            Write-Host "📋 Available extensions:"
+            & "binaries\$BINARY_NAME\bin\php.exe" -m | Select-Object -First 20
+            
+            # Test phar extension specifically
+            Write-Host "🧪 Testing phar extension..."
+            $pharCheck = & "binaries\$BINARY_NAME\bin\php.exe" -m | Select-String "phar"
+            if ($pharCheck) {
+              Write-Host "✅ Phar extension is loaded"
+              
+              # Test phar functionality
+              Write-Host "🧪 Testing phar functionality..."
+              '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";' | Out-File -FilePath "test_phar.php" -Encoding UTF8
+              & "binaries\$BINARY_NAME\bin\php.exe" test_phar.php
+              Remove-Item "test_phar.php"
+              
+              # Test creating a simple phar
+              Write-Host "🧪 Testing phar creation..."
+              $pharTestScript = @"
+<?php 
+if (extension_loaded("phar")) {
+  try {
+    `$phar = new Phar("test.phar");
+    `$phar->addFromString("test.txt", "Hello World");
+    echo "✅ Phar creation successful\n";
+    unlink("test.phar");
+  } catch (Exception `$e) {
+    echo "❌ Phar creation failed: " . `$e->getMessage() . "\n";
+    exit(1);
+  }
+} else {
+  echo "❌ Phar extension not loaded\n";
+  exit(1);
+}
+?>
+"@
+              $pharTestScript | Out-File -FilePath "test_phar_create.php" -Encoding UTF8
+              & "binaries\$BINARY_NAME\bin\php.exe" test_phar_create.php
+              Remove-Item "test_phar_create.php"
+            } else {
+              Write-Host "❌ Phar extension not found in loaded modules"
+              Write-Host "Available modules:"
+              & "binaries\$BINARY_NAME\bin\php.exe" -m
+              exit 1
+            }
             
             # Check if this is likely a real binary based on file size (real PHP binaries are several MB)
             if ($fileSize -gt 1000000) {
