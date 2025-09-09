@@ -1965,7 +1965,7 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
 
     const enableIfExists = (ext: string) => {
       if (!extDir && !isWindows) return // Skip if no extension dir on Unix
-      if (existing.has(ext) || (!extDir && isWindows)) {
+      if (existing.has(ext)) {
         iniLines.push(`extension=${ext}`)
       }
     }
@@ -1991,12 +1991,12 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
     enableIfExists('soap')
     enableIfExists('intl')
     enableIfExists('bcmath')
+    enableIfExists('shmop') // Available on Windows too
     
     // Process control (Unix only)
     if (!isWindows) {
       enableIfExists('pcntl')
       enableIfExists('posix')
-      enableIfExists('shmop')
     }
 
     iniLines.push('')
