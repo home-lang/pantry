@@ -463,25 +463,32 @@ export class PhpPrecompiler {
 
     // Platform-specific library paths
     if (this.config.platform === 'darwin') {
-      // macOS: Use existing PKG_CONFIG_PATH from Launchpad environment
-      configureEnv.PKG_CONFIG_PATH = process.env.PKG_CONFIG_PATH || ''
+      // macOS: Set up proper environment for Launchpad dependencies
+      const homeDir = process.env.HOME || '/Users/runner'
+      const launchpadLibs = `${homeDir}/.local`
       
-      // Use existing CPPFLAGS and LDFLAGS from environment if available
-      // The Launchpad build environment script sets these correctly
+      // Use existing environment variables from Launchpad
+      if (process.env.PKG_CONFIG_PATH) {
+        configureEnv.PKG_CONFIG_PATH = process.env.PKG_CONFIG_PATH
+      }
       if (process.env.CPPFLAGS) {
-        configureEnv.CPPFLAGS = process.env.CPPFLAGS
+        configureEnv.CPPFLAGS = process.env.CPPFLAGS.trim()
       }
       if (process.env.LDFLAGS) {
-        configureEnv.LDFLAGS = process.env.LDFLAGS
+        // Add resolver library for DNS functions on macOS
+        const baseFlags = process.env.LDFLAGS.trim()
+        configureEnv.LDFLAGS = `${baseFlags} -lresolv`
+      } else {
+        configureEnv.LDFLAGS = '-lresolv'
       }
       if (process.env.DYLD_LIBRARY_PATH) {
         configureEnv.DYLD_LIBRARY_PATH = process.env.DYLD_LIBRARY_PATH
       }
     } else {
-      // Linux: Use system paths
-      configureEnv.PKG_CONFIG_PATH = '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig'
-      configureEnv.CPPFLAGS = '-I/usr/include -I/usr/include/libxml2'
-      configureEnv.LDFLAGS = '-L/usr/lib -L/usr/lib/x86_64-linux-gnu'
+      // Linux: Use standard pkg-config paths
+      configureEnv.PKG_CONFIG_PATH = '/usr/lib/pkgconfig:/usr/share/pkgconfig:/usr/local/lib/pkgconfig'
+      configureEnv.CPPFLAGS = '-I/usr/include -I/usr/local/include'
+      configureEnv.LDFLAGS = '-L/usr/lib -L/usr/local/lib'
     }
 
     try {
