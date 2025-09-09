@@ -392,15 +392,8 @@ function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): st
     )
   }
 
-  // Add optional extensions that might work with system libraries
-  const optionalExtensions = [
-    '--enable-intl',  // Try system ICU
-    '--with-gmp',     // Try system GMP
-    '--with-sodium'   // Try system libsodium
-  ]
-
-  // Add optional extensions (they'll be skipped if dependencies aren't found)
-  ciArgs.push(...optionalExtensions)
+  // Only add extensions that are likely to work in CI environments
+  // Avoid problematic extensions that require external dependencies
 
   return ciArgs
 }
@@ -865,15 +858,31 @@ exec "$@"
   const buildEnvScript = `${homeDir}/.local/build-env.sh`
   let configureCommand: string
   
-  // Check if Launchpad environment script exists, otherwise use manual environment
+  // Check if Launchpad environment script exists, otherwise install dependencies first
   if (existsSync(buildEnvScript)) {
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
   } else {
-    log('⚠️  Launchpad build-env.sh not found, using CI-compatible configuration')
+    log('⚠️  Launchpad build-env.sh not found, installing PHP dependencies first')
     
-    // In CI environments without Launchpad dependencies, use a minimal build
-    const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
-    configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
+    // Install PHP dependencies using Launchpad
+    try {
+      execSync('launchpad install php --deps-only', {
+        stdio: 'inherit',
+        cwd: process.cwd()
+      })
+      log('✅ Launchpad dependencies installed successfully')
+      
+      // Now try to source the environment script
+      if (existsSync(buildEnvScript)) {
+        configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
+      } else {
+        throw new Error('build-env.sh still not found after dependency installation')
+      }
+    } catch (error) {
+      log('❌ Failed to install Launchpad dependencies, falling back to system libraries')
+      const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
+      configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
+    }
   }
 
   execSync(configureCommand, {
