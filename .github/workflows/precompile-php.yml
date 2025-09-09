@@ -406,38 +406,8 @@ jobs:
             
             # Test Composer compatibility
             Write-Host "🧪 Testing Composer compatibility..."
-            $composerTest = @'
-<?php
-// Test essential functions for Composer
-$required_functions = [
-    "iconv", "mb_strlen", "filter_var", "hash", "json_encode",
-    "curl_init", "openssl_get_cert_locations", "file_get_contents"
-];
-
-foreach ($required_functions as $func) {
-    if (function_exists($func)) {
-        echo "✅ Function $func: Available\n";
-    } else {
-        echo "❌ Function $func: Missing\n";
-        exit(1);
-    }
-}
-
-// Test essential classes
-$required_classes = ["Phar", "DOMDocument", "XMLReader", "ZipArchive"];
-foreach ($required_classes as $class) {
-    if (class_exists($class)) {
-        echo "✅ Class $class: Available\n";
-    } else {
-        echo "❌ Class $class: Missing\n";
-        exit(1);
-    }
-}
-
-echo "✅ All Composer compatibility checks passed\n";
-?>
-'@
-            $composerTest | Out-File -FilePath "test_composer_compat.php" -Encoding UTF8
+            $composerTestContent = "<?php`n// Test essential functions for Composer`n`$required_functions = [`n    `"iconv`", `"mb_strlen`", `"filter_var`", `"hash`", `"json_encode`",`n    `"curl_init`", `"openssl_get_cert_locations`", `"file_get_contents`"`n];`n`nforeach (`$required_functions as `$func) {`n    if (function_exists(`$func)) {`n        echo `"✅ Function `$func: Available\n`";`n    } else {`n        echo `"❌ Function `$func: Missing\n`";`n        exit(1);`n    }`n}`n`n// Test essential classes`n`$required_classes = [`"Phar`", `"DOMDocument`", `"XMLReader`", `"ZipArchive`"];`nforeach (`$required_classes as `$class) {`n    if (class_exists(`$class)) {`n        echo `"✅ Class `$class: Available\n`";`n    } else {`n        echo `"❌ Class `$class: Missing\n`";`n        exit(1);`n    }`n}`n`necho `"✅ All Composer compatibility checks passed\n`";`n?>"
+            $composerTestContent | Out-File -FilePath "test_composer_compat.php" -Encoding UTF8
             & $PHP "test_composer_compat.php"
             Remove-Item "test_composer_compat.php"
             
