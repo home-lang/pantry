@@ -251,11 +251,11 @@ jobs:
                   unlink("test.phar");
                 } catch (Exception $e) {
                   echo "❌ Phar creation failed: " . $e->getMessage() . "\n";
-                  exit 1;
+                  exit(1);
                 }
               } else {
                 echo "❌ Phar extension not loaded\n";
-                exit 1;
+                exit(1);
               }
               ?>' > test_phar_create.php
               binaries/$BINARY_NAME/bin/php -d phar.readonly=0 test_phar_create.php
