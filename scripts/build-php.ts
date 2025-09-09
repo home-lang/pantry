@@ -238,9 +238,9 @@ echo This is not a real PHP binary. The download of the Windows PHP binary faile
 }
 
 function generateConfigureArgs(config: BuildConfig, installPrefix: string): string[] {
-  const homeDir = process.env.HOME || '/Users/chrisbreuer'
+  const homeDir = process.env.HOME || process.env.USERPROFILE
   const launchpadPath = `${homeDir}/.local`
-  
+
   // Base configure arguments for all platforms
   const baseArgs = [
     `--prefix=${installPrefix}`,
@@ -317,34 +317,34 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
 function createWindowsPhpIni(phpDir: string): void {
   const extDir = join(phpDir, 'ext')
   const mainDir = phpDir
-  
+
   // Scan for available extensions
   const extensions: string[] = []
-  
+
   // Check main directory for php_*.dll files
   if (existsSync(mainDir)) {
-    const mainFiles = readdirSync(mainDir).filter((file: string) => 
+    const mainFiles = readdirSync(mainDir).filter((file: string) =>
       file.startsWith('php_') && file.endsWith('.dll')
     )
     extensions.push(...mainFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
   }
-  
+
   // Check ext directory for php_*.dll files
   if (existsSync(extDir)) {
-    const extFiles = readdirSync(extDir).filter((file: string) => 
+    const extFiles = readdirSync(extDir).filter((file: string) =>
       file.startsWith('php_') && file.endsWith('.dll')
     )
     extensions.push(...extFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
   }
-  
+
   // Essential extensions that should be prioritized
   const essentialExtensions = [
-    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip', 
+    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip',
     'ftp', 'sockets', 'exif', 'bz2', 'gettext', 'gd', 'intl',
     'pdo_sqlite', 'sqlite3', 'xml', 'xmlreader', 'xmlwriter',
     'dom', 'simplexml', 'json', 'filter', 'hash', 'ctype'
   ]
-  
+
   // Create comprehensive php.ini content
   const phpIniContent = `; PHP Configuration File
 ; Generated automatically for Launchpad PHP build
@@ -593,83 +593,85 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   // Set up build environment with selective Launchpad dependencies
   let buildEnv = { ...process.env }
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '/Users/chrisbreuer'
+  const launchpadRoot = `${homeDir}/.local`
   
   // Add essential Launchpad paths to PATH
   const launchpadBinPaths = [
-    '/Users/chrisbreuer/.local/gnu.org/autoconf/v2.72.0/bin',
-    '/Users/chrisbreuer/.local/gnu.org/m4/v1.4.20/bin',
-    '/Users/chrisbreuer/.local/gnu.org/bison/v3.8.2/bin',
-    '/Users/chrisbreuer/.local/gnu.org/automake/v1.18.1/bin',
-    '/Users/chrisbreuer/.local/freedesktop.org/pkg-config/v0.29.2/bin'
+    `${launchpadRoot}/gnu.org/autoconf/v2.72.0/bin`,
+    `${launchpadRoot}/gnu.org/m4/v1.4.20/bin`,
+    `${launchpadRoot}/gnu.org/bison/v3.8.2/bin`,
+    `${launchpadRoot}/gnu.org/automake/v1.18.1/bin`,
+    `${launchpadRoot}/freedesktop.org/pkg-config/v0.29.2/bin`
   ]
   
   buildEnv.PATH = `${launchpadBinPaths.join(':')}:${buildEnv.PATH}`
   
   // Set up targeted PKG_CONFIG_PATH for essential libraries
   const pkgConfigPaths = [
-    '/Users/chrisbreuer/.local/gnu.org/libiconv/v1.18.0/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/sourceware.org/bzip2/v1.0.8/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/zlib.net/v1.3.1/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/curl.se/v8.15.0/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/openssl.org/v1.1.1w/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/gnu.org/readline/v8.3.0/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/gnome.org/libxml2/v2.14.5/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/postgresql.org/v17.2.0/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/libsodium.org/v1.0.18/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2/lib/pkgconfig',
-    '/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43/lib/pkgconfig'
+    `${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib/pkgconfig`,
+    `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib/pkgconfig`,
+    `${launchpadRoot}/zlib.net/v1.3.1/lib/pkgconfig`,
+    `${launchpadRoot}/curl.se/v8.15.0/lib/pkgconfig`,
+    `${launchpadRoot}/openssl.org/v1.1.1w/lib/pkgconfig`,
+    `${launchpadRoot}/gnu.org/readline/v8.3.0/lib/pkgconfig`,
+    `${launchpadRoot}/gnu.org/gettext/v0.22.5/lib/pkgconfig`,
+    `${launchpadRoot}/gnome.org/libxml2/v2.14.5/lib/pkgconfig`,
+    `${launchpadRoot}/postgresql.org/v17.2.0/lib/pkgconfig`,
+    `${launchpadRoot}/gnu.org/gmp/v6.3.0/lib/pkgconfig`,
+    `${launchpadRoot}/libsodium.org/v1.0.18/lib/pkgconfig`,
+    `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib/pkgconfig`,
+    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`
   ]
-  
+
   buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
-  
+
   // Set up targeted library and include paths
   const libPaths = [
-    '/Users/chrisbreuer/.local/gnu.org/libiconv/v1.18.0/lib',
-    '/Users/chrisbreuer/.local/sourceware.org/bzip2/v1.0.8/lib',
-    '/Users/chrisbreuer/.local/zlib.net/v1.3.1/lib',
-    '/Users/chrisbreuer/.local/curl.se/v8.15.0/lib',
-    '/Users/chrisbreuer/.local/openssl.org/v1.1.1w/lib',
-    '/Users/chrisbreuer/.local/gnu.org/readline/v8.3.0/lib',
-    '/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/lib',
-    '/Users/chrisbreuer/.local/gnome.org/libxml2/v2.14.5/lib',
-    '/Users/chrisbreuer/.local/postgresql.org/v17.2.0/lib',
-    '/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0/lib',
-    '/Users/chrisbreuer/.local/libsodium.org/v1.0.18/lib',
-    '/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2/lib',
-    '/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43/lib'
+    `${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib`,
+    `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib`,
+    `${launchpadRoot}/zlib.net/v1.3.1/lib`,
+    `${launchpadRoot}/curl.se/v8.15.0/lib`,
+    `${launchpadRoot}/openssl.org/v1.1.1w/lib`,
+    `${launchpadRoot}/gnu.org/readline/v8.3.0/lib`,
+    `${launchpadRoot}/gnu.org/gettext/v0.22.5/lib`,
+    `${launchpadRoot}/gnome.org/libxml2/v2.14.5/lib`,
+    `${launchpadRoot}/postgresql.org/v17.2.0/lib`,
+    `${launchpadRoot}/gnu.org/gmp/v6.3.0/lib`,
+    `${launchpadRoot}/libsodium.org/v1.0.18/lib`,
+    `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib`,
+    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`
   ]
-  
+
   const includePaths = [
-    '/Users/chrisbreuer/.local/gnu.org/libiconv/v1.18.0/include',
-    '/Users/chrisbreuer/.local/sourceware.org/bzip2/v1.0.8/include',
-    '/Users/chrisbreuer/.local/zlib.net/v1.3.1/include',
-    '/Users/chrisbreuer/.local/curl.se/v8.15.0/include',
-    '/Users/chrisbreuer/.local/openssl.org/v1.1.1w/include',
-    '/Users/chrisbreuer/.local/gnu.org/readline/v8.3.0/include',
-    '/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/include',
-    '/Users/chrisbreuer/.local/gnome.org/libxml2/v2.14.5/include',
-    '/Users/chrisbreuer/.local/postgresql.org/v17.2.0/include',
-    '/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0/include',
-    '/Users/chrisbreuer/.local/libsodium.org/v1.0.18/include',
-    '/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2/include',
-    '/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43/include'
+    `${launchpadRoot}/gnu.org/libiconv/v1.18.0/include`,
+    `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/include`,
+    `${launchpadRoot}/zlib.net/v1.3.1/include`,
+    `${launchpadRoot}/curl.se/v8.15.0/include`,
+    `${launchpadRoot}/openssl.org/v1.1.1w/include`,
+    `${launchpadRoot}/gnu.org/readline/v8.3.0/include`,
+    `${launchpadRoot}/gnu.org/gettext/v0.22.5/include`,
+    `${launchpadRoot}/gnome.org/libxml2/v2.14.5/include`,
+    `${launchpadRoot}/postgresql.org/v17.2.0/include`,
+    `${launchpadRoot}/gnu.org/gmp/v6.3.0/include`,
+    `${launchpadRoot}/libsodium.org/v1.0.18/include`,
+    `${launchpadRoot}/sourceware.org/libffi/v3.5.2/include`,
+    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`
   ]
-  
+
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
-  
+
   // Add macOS-specific linker flags for DNS resolver functions
   if (config.platform === 'darwin') {
-    buildEnv.LDFLAGS += ' -lresolv -Wl,-rpath,/Users/chrisbreuer/.local,-headerpad_max_install_names'
+    buildEnv.LDFLAGS += ` -lresolv -Wl,-rpath,${launchpadRoot},-headerpad_max_install_names`
     // Set up runtime library path for macOS
     buildEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
   } else {
-    buildEnv.LDFLAGS += ' -Wl,-rpath,/Users/chrisbreuer/.local'
+    buildEnv.LDFLAGS += ` -Wl,-rpath,${launchpadRoot}`
   }
-  
+
   log('✅ Configured targeted Launchpad dependencies')
 
   // Platform-specific compiler setup
@@ -690,13 +692,13 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   }
 
   log('Running buildconf...')
-  
+
   // Fix m4 compatibility issue on macOS
   if (config.platform === 'darwin') {
     // Force use of system m4 and disable GNU-specific options
     buildEnv.M4 = '/usr/bin/m4'
     buildEnv.AUTOM4TE_M4 = '/usr/bin/m4'
-    
+
     // Create a wrapper script for autom4te that uses system m4
     const wrapperScript = `#!/bin/bash
 export M4=/usr/bin/m4
@@ -706,11 +708,11 @@ exec "$@"
     const wrapperPath = join(phpSourceDir, 'autom4te-wrapper.sh')
     writeFileSync(wrapperPath, wrapperScript)
     execSync(`chmod +x ${wrapperPath}`, { cwd: phpSourceDir })
-    
+
     // Update PATH to use our wrapper
     buildEnv.PATH = `${phpSourceDir}:${buildEnv.PATH}`
   }
-  
+
   // Check if configure already exists (some PHP releases include it)
   const configurePath = join(phpSourceDir, 'configure')
   if (existsSync(configurePath)) {
@@ -724,7 +726,7 @@ exec "$@"
       })
     } catch (error) {
       log('buildconf failed, trying alternative approach...')
-      
+
       // Try running autoconf directly with system m4
       try {
         const autoconfEnv = { ...buildEnv }
@@ -732,22 +734,22 @@ exec "$@"
           autoconfEnv.M4 = '/usr/bin/m4'
           autoconfEnv.AUTOM4TE_M4 = '/usr/bin/m4'
         }
-        
+
         execSync('autoconf', {
           stdio: 'inherit',
           cwd: phpSourceDir,
           env: autoconfEnv
         })
-        
+
         log('Successfully generated configure script with autoconf')
       } catch (autoconfError) {
         log('autoconf also failed, trying to download pre-built configure...')
-        
+
         // As a last resort, try to use a different PHP version or approach
         throw new Error(`Unable to generate configure script. The autotools on this system are incompatible with PHP ${config.phpVersion}. Consider:\n1. Installing GNU autotools via a package manager\n2. Using a different PHP version\n3. Using pre-compiled PHP binaries`)
       }
     }
-    
+
     // Verify configure script was created
     if (!existsSync(configurePath)) {
       throw new Error('Configure script was not generated successfully')
@@ -763,15 +765,15 @@ exec "$@"
       '--with-ldap-sasl'
     )
   }
-  
+
   log('Using Launchpad-managed dependencies for all extensions')
 
   log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
 
   // Source the Launchpad environment and run configure in the same shell
-  const buildEnvScript = '/Users/chrisbreuer/.local/build-env.sh'
+  const buildEnvScript = `${homeDir}/.local/build-env.sh`
   const configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
-  
+
   execSync(configureCommand, {
     cwd: phpSourceDir,
     stdio: 'inherit',
@@ -881,7 +883,7 @@ exec "$@"
     const phpBinary = join(installPrefix, 'bin', 'php')
     if (existsSync(phpBinary)) {
       log('Testing PHP binary...')
-      execSync(`"${phpBinary}" --version`, { 
+      execSync(`"${phpBinary}" --version`, {
         stdio: 'inherit',
         env: {
           ...process.env,
@@ -890,7 +892,7 @@ exec "$@"
       })
     }
   }
-  
+
   return installPrefix
 }
 
