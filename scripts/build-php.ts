@@ -328,7 +328,7 @@ async function buildPhp(config: BuildConfig): Promise<void> {
       version: config.phpVersion,
       config: config.config as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack',
       platform: config.platform as 'darwin' | 'linux' | 'win32',
-      arch: config.arch as 'arm64' | 'x64',
+      arch: config.arch === 'x86_64' ? 'x64' : config.arch as 'arm64' | 'x64', // Fix arch mapping
       outputDir: config.outputDir,
       buildDir: config.buildDir
     })
@@ -338,13 +338,45 @@ async function buildPhp(config: BuildConfig): Promise<void> {
     
     log('✅ PHP precompilation completed with all extensions')
   } catch (error) {
-    log(`❌ Precompiler failed, falling back to basic build: ${error}`)
+    log(`❌ Precompiler failed with error: ${error}`)
+    log(`Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`)
     
-    // Fallback to basic build for Unix systems only
+    // For Windows, fall back to pre-compiled binaries
     if (config.platform === 'win32') {
       log('Windows fallback: downloading pre-compiled binary')
       await downloadWindowsPhpBinary(config)
       return
+    }
+    
+    // For Unix systems, the precompiler should work - this is likely a configuration issue
+    log('❌ Precompiler failed on Unix system - this should not happen')
+    log('Attempting to fix precompiler configuration and retry...')
+    
+    // Try to fix common precompiler issues
+    try {
+      const { PhpPrecompiler } = await import('../packages/launchpad/src/php/precompiler.ts')
+      
+      // Ensure build and output directories exist
+      mkdirSync(config.buildDir, { recursive: true })
+      mkdirSync(config.outputDir, { recursive: true })
+      
+      const precompiler = new PhpPrecompiler({
+        version: config.phpVersion,
+        config: config.config as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack',
+        platform: config.platform as 'darwin' | 'linux' | 'win32',
+        arch: config.arch === 'x86_64' ? 'x64' : config.arch as 'arm64' | 'x64', // Fix arch mapping
+        outputDir: config.outputDir,
+        buildDir: config.buildDir
+      })
+      
+      log(`Retrying precompiler with fixed configuration...`)
+      await precompiler.buildPhp()
+      
+      log('✅ PHP precompilation completed successfully on retry')
+      return
+    } catch (retryError) {
+      log(`❌ Precompiler retry also failed: ${retryError}`)
+      log('Falling back to basic build as last resort')
     }
     
     // Unix fallback: basic source build
@@ -368,24 +400,61 @@ async function buildPhp(config: BuildConfig): Promise<void> {
       env: buildEnv
     })
 
-    // Use minimal configure approach that works reliably
+    // Use comprehensive configure approach with all essential extensions
     const configureArgs = [
       `--prefix=${installPrefix}`,
-      '--disable-all',
       '--enable-cli',
       '--disable-cgi',
       '--disable-fpm',
       '--without-pear',
-      '--without-pcre-jit',
-      // Enable phar explicitly since --disable-all turns off defaults
+      
+      // Essential string and encoding extensions
+      '--enable-mbstring',
+      '--with-iconv',
+      '--enable-iconv',
+      
+      // Core extensions required by Composer and Laravel
+      '--enable-opcache',
       '--enable-phar',
-      // Extra robustness for minimal build: required by many apps and Phar
+      '--enable-filter',
+      '--enable-ctype',
+      '--enable-tokenizer',
+      '--enable-session',
+      '--enable-fileinfo',
+      
+      // XML extensions
+      '--enable-dom',
+      '--enable-xml',
+      '--enable-xmlreader',
+      '--enable-xmlwriter',
+      '--enable-simplexml',
+      
+      // Network and crypto
+      '--with-curl',
+      '--with-openssl',
+      '--enable-zip',
+      '--with-zlib',
+      
+      // Additional useful extensions
+      '--enable-calendar',
+      '--enable-ftp',
+      '--enable-pcntl',
+      '--enable-posix',
+      '--enable-shmop',
+      '--enable-sockets',
+      '--enable-exif',
+      '--enable-bcmath',
+      '--with-bz2',
+      '--with-gettext',
+      '--with-readline',
+      
+      // Required core extensions
       '--enable-hash',
       '--enable-spl',
-      '--with-zlib'
+      '--enable-json'
     ]
 
-    log(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)
+    log(`Configuring PHP with comprehensive extensions: ${configureArgs.join(' ')}`)
 
     const compiler = config.platform === 'darwin' ? 'clang' : 'gcc'
     
