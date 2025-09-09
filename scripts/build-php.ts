@@ -285,7 +285,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     `--with-sodium=${launchpadPath}/libsodium.org/v1.0.18`,
     `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
     `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`,
-    `--with-bz2=${launchpadPath}/bzip.org/v1.0.8`
+    `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`,
+    `--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`
   ]
 
   // Platform-specific arguments
@@ -293,7 +294,6 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
-      '--with-iconv',
       '--enable-opcache',
       '--with-kerberos',
       '--with-libedit',
@@ -305,7 +305,6 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
-      '--with-iconv', // Use system iconv on Linux
       '--enable-opcache',
       '--with-kerberos',
       '--with-readline',
@@ -486,7 +485,7 @@ max_file_uploads = 20
 extension_dir = "ext"
 
 ; Zend Extensions (must be loaded first)
-zend_extension=opcache
+zend_extension=php_opcache
 
 ; Enable essential extensions
 ${essentialExtensions
