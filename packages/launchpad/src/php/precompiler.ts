@@ -1,5 +1,6 @@
 import { execSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
+import * as fs from 'node:fs'
 import { join, dirname } from 'node:path'
 import { homedir, platform, arch } from 'node:os'
 import { logUniqueMessage } from '../logging'
@@ -374,18 +375,74 @@ export class PhpPrecompiler {
       '--disable-cgi',
       '--without-pear',
       '--without-pcre-jit',
+      // Force enable essential extensions that might be auto-disabled
+      '--enable-mbstring',
+      '--enable-filter',
+      '--enable-ctype',
+      '--enable-tokenizer',
+      '--enable-session',
+      '--enable-fileinfo',
+      '--enable-opcache',
+      '--enable-dom',
+      '--enable-xml',
+      '--enable-xmlreader',
+      '--enable-xmlwriter',
+      '--enable-simplexml',
+      '--enable-calendar',
+      '--enable-ftp',
+      '--enable-pcntl',
+      '--enable-posix',
+      '--enable-shmop',
+      '--enable-sockets',
+      '--enable-exif',
+      '--enable-bcmath',
+      '--with-readline',
+      '--with-iconv',
+      '--with-curl',
+      '--with-openssl',
+      '--with-zip',
+      '--with-zlib',
+      '--with-bz2',
+      '--with-gettext',
       ...extensions.split(' ')
     ]
 
-    logUniqueMessage(`Configuring PHP with minimal approach: ${configureArgs.join(' ')}`)
+    logUniqueMessage(`Configuring PHP with comprehensive extensions: ${configureArgs.join(' ')}`)
+
+    // Set up environment for configure
+    const configureEnv = {
+      ...process.env,
+      CC: 'clang',
+      CXX: 'clang++',
+      // Ensure configure can find system libraries
+      PKG_CONFIG_PATH: '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig',
+      CPPFLAGS: '-I/usr/include -I/usr/include/libxml2',
+      LDFLAGS: '-L/usr/lib -L/usr/lib/x86_64-linux-gnu'
+    }
 
     try {
-      // Use simple CC=clang configure without complex environment variables
-      execSync(`CC=clang ./configure ${configureArgs.join(' ')}`, {
+      execSync(`./configure ${configureArgs.join(' ')}`, {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: { ...process.env, CC: 'clang' }
+        env: configureEnv
       })
+      
+      // Verify that extensions were actually configured
+      logUniqueMessage('Verifying configured extensions...')
+      try {
+        const makefileContent = fs.readFileSync(join(phpSourceDir, 'Makefile'), 'utf-8')
+        const essentialExts = ['mbstring', 'iconv', 'filter', 'ctype', 'tokenizer', 'session', 'fileinfo', 'opcache', 'dom', 'xml']
+        const missingExts = essentialExts.filter(ext => !makefileContent.includes(ext))
+        
+        if (missingExts.length > 0) {
+          logUniqueMessage(`⚠️ Warning: Some extensions may not be configured: ${missingExts.join(', ')}`)
+        } else {
+          logUniqueMessage('✅ All essential extensions appear to be configured')
+        }
+      } catch (verifyError) {
+        logUniqueMessage('⚠️ Could not verify extension configuration')
+      }
+      
     } catch (error) {
       // Show config.log on failure
       try {

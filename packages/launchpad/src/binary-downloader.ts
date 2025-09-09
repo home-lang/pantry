@@ -1922,15 +1922,84 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
       iniLines.push('')
     }
 
-    // Basic detection using .env, but only enable extensions that exist in extDir
-    const existing = new Set<string>(extDir && fs.existsSync(extDir) ? fs.readdirSync(extDir) : [])
+    // Detect platform to handle Windows vs Unix extension loading
+    const isWindows = process.platform === 'win32'
+    
+    // For Windows, check for DLL files in the main directory and ext/ subdirectory
+    const existing = new Set<string>()
+    if (isWindows) {
+      // Check main directory for php_*.dll files
+      const mainDir = result.packageDir
+      if (fs.existsSync(mainDir)) {
+        const files = fs.readdirSync(mainDir)
+        files.forEach(file => {
+          if (file.startsWith('php_') && file.endsWith('.dll')) {
+            const extName = file.slice(4, -4) // Remove 'php_' prefix and '.dll' suffix
+            existing.add(extName)
+          }
+        })
+      }
+      
+      // Check ext/ subdirectory for additional DLLs
+      const extSubDir = path.join(result.packageDir, 'ext')
+      if (fs.existsSync(extSubDir)) {
+        const files = fs.readdirSync(extSubDir)
+        files.forEach(file => {
+          if (file.startsWith('php_') && file.endsWith('.dll')) {
+            const extName = file.slice(4, -4)
+            existing.add(extName)
+          }
+        })
+      }
+    } else {
+      // Unix: check for .so files in extension directory
+      if (extDir && fs.existsSync(extDir)) {
+        const files = fs.readdirSync(extDir)
+        files.forEach(file => {
+          if (file.endsWith('.so')) {
+            existing.add(file.slice(0, -3)) // Remove .so extension
+          }
+        })
+      }
+    }
+
     const enableIfExists = (ext: string) => {
-      const so = `${ext}.so`
-      if (!extDir || existing.has(so)) {
+      if (!extDir && !isWindows) return // Skip if no extension dir on Unix
+      if (existing.has(ext) || (!extDir && isWindows)) {
         iniLines.push(`extension=${ext}`)
       }
     }
 
+    // Enable all essential extensions for Composer and Laravel
+    iniLines.push('; Enable essential extensions for Composer and Laravel')
+    
+    // Core extensions required by Composer
+    enableIfExists('mbstring')
+    enableIfExists('fileinfo')
+    enableIfExists('opcache')
+    enableIfExists('curl')
+    enableIfExists('openssl')
+    enableIfExists('zip')
+    
+    // Additional useful extensions
+    enableIfExists('gd')
+    enableIfExists('exif')
+    enableIfExists('bz2')
+    enableIfExists('gettext')
+    enableIfExists('sockets')
+    enableIfExists('ftp')
+    enableIfExists('soap')
+    enableIfExists('intl')
+    enableIfExists('bcmath')
+    
+    // Process control (Unix only)
+    if (!isWindows) {
+      enableIfExists('pcntl')
+      enableIfExists('posix')
+      enableIfExists('shmop')
+    }
+
+    iniLines.push('')
     iniLines.push('; Enable database extensions based on project detection')
     try {
       const envPath = path.join(process.cwd(), '.env')
