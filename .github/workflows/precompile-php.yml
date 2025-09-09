@@ -174,9 +174,12 @@ jobs:
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'
         run: |
-          # Windows: Use pre-compiled PHP binaries instead of building from source
-          # This is the standard approach for Windows PHP distributions
-          echo "Windows builds will use pre-compiled PHP binaries"
+          # Windows: Install Visual Studio Build Tools and dependencies for PHP compilation
+          choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --passive"
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+          choco install git
+          # Install additional dependencies needed for PHP extensions
+          echo "Windows build dependencies installed for PHP compilation"
 
       - name: Build PHP
         env:
