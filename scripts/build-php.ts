@@ -28,86 +28,6 @@ function log(message: string): void {
   console.log(`🔧 ${message}`)
 }
 
-async function createWindowsPhpIni(installPrefix: string): Promise<void> {
-  const phpIniPath = join(installPrefix, 'php.ini')
-
-  // Scan for available DLL extensions
-  const availableExtensions = new Set<string>()
-
-  // Check main directory for php_*.dll files
-  if (existsSync(installPrefix)) {
-    const files = require('node:fs').readdirSync(installPrefix)
-    files.forEach((file: string) => {
-      if (file.startsWith('php_') && file.endsWith('.dll')) {
-        const extName = file.slice(4, -4) // Remove 'php_' prefix and '.dll' suffix
-        availableExtensions.add(extName)
-      }
-    })
-  }
-
-  // Check ext/ subdirectory for additional DLLs
-  const extDir = join(installPrefix, 'ext')
-  if (existsSync(extDir)) {
-    const files = require('node:fs').readdirSync(extDir)
-    files.forEach((file: string) => {
-      if (file.startsWith('php_') && file.endsWith('.dll')) {
-        const extName = file.slice(4, -4)
-        availableExtensions.add(extName)
-      }
-    })
-  }
-
-  log(`Found ${availableExtensions.size} available extensions: ${Array.from(availableExtensions).join(', ')}`)
-
-  // Create comprehensive php.ini
-  const iniLines = [
-    '; Launchpad php.ini for Windows (auto-generated)',
-    'memory_limit = 512M',
-    'max_execution_time = 300',
-    'max_input_time = 300',
-    'post_max_size = 100M',
-    'upload_max_filesize = 100M',
-    'max_file_uploads = 20',
-    '',
-    '; Extension directory',
-    'extension_dir = "ext"',
-    '',
-    '; Enable all available extensions for Laravel and Composer compatibility',
-  ]
-
-  // Essential extensions that should be enabled if available
-  const essentialExtensions = [
-    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip',
-    'gd', 'exif', 'bz2', 'gettext', 'sockets', 'ftp', 'soap',
-    'intl', 'bcmath', 'shmop', 'pdo_mysql', 'pdo_pgsql', 'pdo_sqlite',
-    'mysqli', 'pgsql', 'sqlite3', 'xml', 'xmlreader', 'xmlwriter',
-    'simplexml', 'dom', 'json', 'hash', 'filter', 'ctype', 'tokenizer',
-    'session', 'pcre', 'reflection', 'spl', 'standard', 'date',
-    'calendar', 'iconv', 'phar'
-  ]
-
-  // Enable essential extensions first
-  essentialExtensions.forEach(ext => {
-    if (availableExtensions.has(ext)) {
-      iniLines.push(`extension=${ext}`)
-    }
-  })
-
-  // Enable any remaining extensions
-  Array.from(availableExtensions).forEach(ext => {
-    if (!essentialExtensions.includes(ext)) {
-      iniLines.push(`extension=${ext}`)
-    }
-  })
-
-  iniLines.push('')
-  iniLines.push('; Phar configuration')
-  iniLines.push('phar.readonly = Off')
-  iniLines.push('phar.require_hash = On')
-
-  writeFileSync(phpIniPath, iniLines.join('\n'))
-  log(`Created php.ini with ${availableExtensions.size} extensions enabled`)
-}
 
 function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
@@ -247,6 +167,10 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
         stdio: 'inherit'
       })
 
+      // Create comprehensive php.ini with all available extensions
+      log('Creating comprehensive php.ini for Windows PHP...')
+      createWindowsPhpIni(installPrefix)
+
       // Ensure php.exe is in the bin directory
       const phpExePath = join(phpSourceDir, 'php.exe')
       const targetPhpExePath = join(installPrefix, 'bin', 'php.exe')
@@ -311,6 +235,346 @@ echo This is not a real PHP binary. The download of the Windows PHP binary faile
 
     return phpSourceDir
   }
+}
+
+function generateConfigureArgs(config: BuildConfig, installPrefix: string): string[] {
+  const homeDir = process.env.HOME || '/Users/chrisbreuer'
+  const launchpadPath = `${homeDir}/.local`
+  
+  // Base configure arguments for all platforms
+  const baseArgs = [
+    `--prefix=${installPrefix}`,
+    '--enable-bcmath',
+    '--enable-calendar',
+    '--enable-dba',
+    '--enable-exif',
+    '--enable-ftp',
+    '--enable-fpm',
+    '--enable-gd',
+    '--enable-intl',
+    '--enable-mbregex',
+    '--enable-mbstring',
+    '--enable-mysqlnd',
+    '--enable-pcntl',
+    '--disable-phpdbg',
+    '--enable-shmop',
+    '--enable-soap',
+    '--enable-sockets',
+    '--enable-sysvmsg',
+    '--enable-sysvsem',
+    '--enable-sysvshm',
+    '--with-pear',
+    '--with-pcre-jit',
+    '--with-layout=GNU',
+    '--with-libxml',
+    '--with-pdo-sqlite',
+    '--with-pic',
+    '--with-sqlite3',
+    '--disable-dtrace',
+    '--without-ndbm',
+    '--without-gdbm'
+  ]
+
+  // Add Launchpad dependency paths
+  const dependencyArgs = [
+    `--with-curl=${launchpadPath}/curl.se/v8.15.0`,
+    `--with-ffi=${launchpadPath}/sourceware.org/libffi/v3.5.2`,
+    `--with-gettext=${launchpadPath}/gnu.org/gettext/v0.22.5`,
+    `--with-gmp=${launchpadPath}/gnu.org/gmp/v6.3.0`,
+    `--with-openssl=${launchpadPath}/openssl.org/v1.1.1w`,
+    `--with-sodium=${launchpadPath}/libsodium.org/v1.0.18`,
+    `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
+    `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`
+  ]
+
+  // Platform-specific arguments
+  if (config.platform === 'darwin') {
+    return [
+      ...baseArgs,
+      ...dependencyArgs,
+      '--without-iconv', // Disable iconv on macOS due to GNU libiconv compatibility issues
+      '--with-kerberos',
+      '--with-libedit',
+      '--with-zip',
+      '--enable-dtrace',
+      '--with-ldap-sasl'
+    ]
+  } else if (config.platform === 'linux') {
+    return [
+      ...baseArgs,
+      ...dependencyArgs,
+      '--with-iconv', // Use system iconv on Linux
+      '--with-kerberos',
+      '--with-readline',
+      '--with-zip',
+      '--without-ldap-sasl'
+    ]
+  }
+
+  return baseArgs
+}
+
+function createWindowsPhpIni(phpDir: string): void {
+  const extDir = join(phpDir, 'ext')
+  const mainDir = phpDir
+  
+  // Scan for available extensions
+  const extensions: string[] = []
+  
+  // Check main directory for php_*.dll files
+  if (existsSync(mainDir)) {
+    const mainFiles = readdirSync(mainDir).filter((file: string) => 
+      file.startsWith('php_') && file.endsWith('.dll')
+    )
+    extensions.push(...mainFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
+  }
+  
+  // Check ext directory for php_*.dll files
+  if (existsSync(extDir)) {
+    const extFiles = readdirSync(extDir).filter((file: string) => 
+      file.startsWith('php_') && file.endsWith('.dll')
+    )
+    extensions.push(...extFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
+  }
+  
+  // Essential extensions that should be prioritized
+  const essentialExtensions = [
+    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip', 
+    'ftp', 'sockets', 'exif', 'bz2', 'gettext', 'gd', 'intl',
+    'pdo_sqlite', 'sqlite3', 'xml', 'xmlreader', 'xmlwriter',
+    'dom', 'simplexml', 'json', 'filter', 'hash', 'ctype'
+  ]
+  
+  // Create comprehensive php.ini content
+  const phpIniContent = `; PHP Configuration File
+; Generated automatically for Launchpad PHP build
+
+[PHP]
+; Basic settings
+engine = On
+short_open_tag = Off
+precision = 14
+output_buffering = 4096
+zlib.output_compression = Off
+implicit_flush = Off
+unserialize_callback_func =
+serialize_precision = -1
+disable_functions =
+disable_classes =
+zend.enable_gc = On
+zend.exception_ignore_args = On
+zend.exception_string_param_max_len = 0
+
+; Resource Limits
+max_execution_time = 30
+max_input_time = 60
+memory_limit = 128M
+
+; Error handling and logging
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+ignore_repeated_errors = Off
+ignore_repeated_source = Off
+report_memleaks = On
+
+; Data Handling
+variables_order = "GPCS"
+request_order = "GP"
+register_argc_argv = Off
+auto_globals_jit = On
+post_max_size = 8M
+auto_prepend_file =
+auto_append_file =
+default_mimetype = "text/html"
+default_charset = "UTF-8"
+
+; File Uploads
+file_uploads = On
+upload_max_filesize = 2M
+max_file_uploads = 20
+
+; Extensions
+extension_dir = "ext"
+
+; Enable essential extensions
+${essentialExtensions
+  .filter(ext => extensions.includes(ext))
+  .map(ext => `extension=${ext}`)
+  .join('\n')}
+
+; Enable additional available extensions
+${extensions
+  .filter(ext => !essentialExtensions.includes(ext))
+  .map(ext => `extension=${ext}`)
+  .join('\n')}
+
+; Phar settings
+[Phar]
+phar.readonly = Off
+phar.require_hash = On
+
+; Module Settings
+[Date]
+date.timezone = UTC
+
+[filter]
+filter.default = unsafe_raw
+filter.default_flags =
+
+[iconv]
+iconv.input_encoding = UTF-8
+iconv.internal_encoding = UTF-8
+iconv.output_encoding = UTF-8
+
+[intl]
+intl.default_locale = en_US.UTF-8
+
+[sqlite3]
+sqlite3.extension_dir =
+
+[Pcre]
+pcre.backtrack_limit = 100000
+pcre.recursion_limit = 100000
+
+[Pdo]
+pdo_mysql.default_socket =
+
+[Pdo_mysql]
+pdo_mysql.default_socket =
+
+[mail function]
+SMTP = localhost
+smtp_port = 25
+mail.add_x_header = Off
+
+[ODBC]
+odbc.allow_persistent = On
+odbc.check_persistent = On
+odbc.max_persistent = -1
+odbc.max_links = -1
+odbc.defaultlrl = 4096
+odbc.defaultbinmode = 1
+
+[Interbase]
+ibase.allow_persistent = 1
+ibase.max_persistent = -1
+ibase.max_links = -1
+
+[MySQLi]
+mysqli.max_persistent = -1
+mysqli.allow_persistent = On
+mysqli.max_links = -1
+mysqli.default_port = 3306
+mysqli.default_socket =
+mysqli.default_host =
+mysqli.default_user =
+mysqli.default_pw =
+mysqli.reconnect = Off
+
+[mysqlnd]
+mysqlnd.collect_statistics = On
+mysqlnd.collect_memory_statistics = Off
+
+[OCI8]
+
+[PostgreSQL]
+pgsql.allow_persistent = On
+pgsql.auto_reset_persistent = Off
+pgsql.max_persistent = -1
+pgsql.max_links = -1
+pgsql.ignore_notice = 0
+pgsql.log_notice = 0
+
+[bcmath]
+bcmath.scale = 0
+
+[browscap]
+
+[Session]
+session.save_handler = files
+session.use_strict_mode = 0
+session.use_cookies = 1
+session.use_only_cookies = 1
+session.name = PHPSESSID
+session.auto_start = 0
+session.cookie_lifetime = 0
+session.cookie_path = /
+session.cookie_domain =
+session.cookie_httponly =
+session.cookie_samesite =
+session.serialize_handler = php
+session.gc_probability = 0
+session.gc_divisor = 1000
+session.gc_maxlifetime = 1440
+session.referer_check =
+session.cache_limiter = nocache
+session.cache_expire = 180
+session.use_trans_sid = 0
+session.sid_length = 26
+session.trans_sid_tags = "a=href,area=href,frame=src,form="
+session.sid_bits_per_character = 5
+
+[Assertion]
+zend.assertions = -1
+
+[COM]
+
+[mbstring]
+mbstring.language = English
+mbstring.internal_encoding = UTF-8
+mbstring.http_input = UTF-8
+mbstring.http_output = UTF-8
+mbstring.encoding_translation = Off
+mbstring.detect_order = auto
+mbstring.substitute_character = none
+
+[gd]
+gd.jpeg_ignore_warning = 1
+
+[exif]
+exif.encode_unicode = ISO-8859-15
+exif.decode_unicode_motorola = UCS-2BE
+exif.decode_unicode_intel = UCS-2LE
+exif.encode_jis =
+exif.decode_jis_motorola = JIS
+exif.decode_jis_intel = JIS
+
+[Tidy]
+tidy.clean_output = Off
+
+[soap]
+soap.wsdl_cache_enabled = 1
+soap.wsdl_cache_dir = "/tmp"
+soap.wsdl_cache_ttl = 86400
+soap.wsdl_cache_limit = 5
+
+[sysvshm]
+
+[ldap]
+ldap.max_links = -1
+
+[dba]
+
+[opcache]
+opcache.enable = 1
+opcache.enable_cli = 1
+opcache.memory_consumption = 128
+opcache.interned_strings_buffer = 8
+opcache.max_accelerated_files = 4000
+opcache.revalidate_freq = 2
+opcache.fast_shutdown = 1
+
+[curl]
+curl.cainfo =
+
+[openssl]
+openssl.cafile =
+openssl.capath =
+`
+
+  writeFileSync(join(phpDir, 'php.ini'), phpIniContent)
 }
 
 async function buildPhp(config: BuildConfig): Promise<string> {
@@ -410,14 +674,19 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   // Platform-specific compiler setup
   if (config.platform === 'darwin') {
+    buildEnv.CC = 'clang'
     buildEnv.CXX = 'clang++'
     buildEnv.LD = '/usr/bin/ld'
     // Ensure we use system C++ standard library, not GCC's
     buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -stdlib=libc++'
     buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '') + ' -stdlib=libc++'
-  } else {
+  } else if (config.platform === 'linux') {
     buildEnv.CC = 'gcc'
     buildEnv.CXX = 'g++'
+    buildEnv.CFLAGS = (buildEnv.CFLAGS || '') + ' -O2 -fPIC'
+    buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -O2 -fPIC'
+    // Set preprocessor to avoid traditional-cpp issues
+    buildEnv.CPP = 'gcc -E'
   }
 
   log('Running buildconf...')
@@ -485,53 +754,8 @@ exec "$@"
     }
   }
 
-  // Use comprehensive configure with Launchpad-managed dependencies (based on pkgx build)
-  const configureArgs = [
-    `--prefix=${installPrefix}`,
-    '--enable-bcmath',
-    '--enable-calendar',
-    '--enable-dba',
-    '--enable-exif',
-    '--enable-ftp',
-    '--enable-fpm',
-    '--enable-gd',
-    '--enable-intl',
-    '--enable-mbregex',
-    '--enable-mbstring',
-    '--enable-mysqlnd',
-    '--enable-pcntl',
-    '--disable-phpdbg',
-    '--enable-shmop',
-    '--enable-soap',
-    '--enable-sockets',
-    '--enable-sysvmsg',
-    '--enable-sysvsem',
-    '--enable-sysvshm',
-    '--with-pear',
-    '--with-curl=/Users/chrisbreuer/.local/curl.se/v8.15.0',
-    '--with-pcre-jit',
-    '--with-ffi=/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2',
-    '--with-gettext=/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5',
-    '--with-gmp=/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0',
-    '--without-iconv',
-    '--with-kerberos',
-    '--with-layout=GNU',
-    '--with-libxml',
-    '--with-libedit',
-    '--with-openssl=/Users/chrisbreuer/.local/openssl.org/v1.1.1w',
-    '--with-pdo-sqlite',
-    '--with-pic',
-    '--with-sodium=/Users/chrisbreuer/.local/libsodium.org/v1.0.18',
-    '--with-sqlite3',
-    '--with-xsl=/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43',
-    '--with-zlib=/Users/chrisbreuer/.local/zlib.net/v1.3.1',
-    '--disable-dtrace',
-    '--without-ldap-sasl',
-    '--without-ndbm',
-    '--without-gdbm'
-  ]
-
-  // Add macOS-specific configure options
+  // Generate platform-specific configure arguments with Launchpad dependencies
+  const configureArgs = generateConfigureArgs(config, installPrefix)
   if (config.platform === 'darwin') {
     configureArgs.push(
       '--with-zip',
