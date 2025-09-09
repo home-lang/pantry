@@ -312,13 +312,20 @@ export class PhpPrecompiler {
     logUniqueMessage(`Downloading PHP ${this.config.version} from ${tarballUrl}`)
 
     try {
-      // Use the Launchpad-installed wget directly with SSL bypass
-      const wgetPath = `${process.env.HOME}/.local/gnu.org/wget/v1.25.0/bin/wget`
-
-      execSync(`"${wgetPath}" --no-check-certificate -O "${tarballPath}" "${tarballUrl}"`, {
-        stdio: 'inherit',
-        cwd: this.config.buildDir
-      })
+      // Try curl first (available by default on macOS/Linux), then fallback to wget
+      try {
+        execSync(`curl -L -k -o "${tarballPath}" "${tarballUrl}"`, {
+          stdio: 'inherit',
+          cwd: this.config.buildDir
+        })
+      } catch (curlError) {
+        // Fallback to wget if curl fails
+        const wgetPath = `${process.env.HOME}/.local/gnu.org/wget/v1.25.0/bin/wget`
+        execSync(`"${wgetPath}" --no-check-certificate -O "${tarballPath}" "${tarballUrl}"`, {
+          stdio: 'inherit',
+          cwd: this.config.buildDir
+        })
+      }
 
       logUniqueMessage('Extracting PHP source...')
       execSync(`tar -xzf php.tar.gz`, {
@@ -405,54 +412,61 @@ export class PhpPrecompiler {
     ]
 
     // Platform-specific dependency paths
-    const configureArgs = [...baseArgs]
+    // Platform-specific configure arguments
     if (this.config.platform === 'darwin') {
-      // macOS: Add explicit paths for problematic dependencies
-      const homeDir = process.env.HOME || '/Users/runner'
-      const launchpadLibs = `${homeDir}/.local`
+      // macOS: Use Homebrew paths if available, otherwise system paths
+      const brewPrefix = '/opt/homebrew'
+      const brewPrefixIntel = '/usr/local'
       
-      // Helper function to find actual version directory
-      const findVersionDir = (basePath: string): string | null => {
-        try {
-          if (!fs.existsSync(basePath)) return null
-          const dirs = fs.readdirSync(basePath).filter(d => d.startsWith('v'))
-          if (dirs.length === 0) return null
-          // Sort versions and take the latest
-          dirs.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
-          return join(basePath, dirs[0])
-        } catch {
-          return null
+      // Helper function to find Homebrew or system paths
+      const findLibPath = (libName: string): string | null => {
+        const paths = [
+          `${brewPrefix}/opt/${libName}`,
+          `${brewPrefixIntel}/opt/${libName}`,
+          `/usr/local/opt/${libName}`,
+          `/usr/local`
+        ]
+        
+        for (const path of paths) {
+          if (existsSync(path)) {
+            return path
+          }
         }
+        return null
       }
       
-      // Add specific paths for dependencies that need them
-      const iconvDir = findVersionDir(`${launchpadLibs}/gnu.org/libiconv`)
-      if (iconvDir) {
-        configureArgs.push(`--with-iconv=${iconvDir}`)
+      // Add explicit paths for dependencies that need them
+      const iconvPath = findLibPath('libiconv')
+      if (iconvPath) {
+        baseArgs.push(`--with-iconv=${iconvPath}`)
       } else {
-        configureArgs.push('--with-iconv')
+        baseArgs.push('--with-iconv')
       }
       
-      // Only add gettext and bz2 if they exist (they often cause issues)
-      const gettextDir = findVersionDir(`${launchpadLibs}/gnu.org/gettext`)
-      if (gettextDir) {
-        configureArgs.push(`--with-gettext=${gettextDir}`)
+      const gettextPath = findLibPath('gettext')
+      if (gettextPath) {
+        baseArgs.push(`--with-gettext=${gettextPath}`)
       } else {
-        configureArgs.push('--without-gettext')
+        baseArgs.push('--with-gettext')
       }
       
-      const bz2Dir = findVersionDir(`${launchpadLibs}/sourceware.org/bzip2`)
-      if (bz2Dir) {
-        configureArgs.push(`--with-bz2=${bz2Dir}`)
+      const bz2Path = findLibPath('bzip2')
+      if (bz2Path) {
+        baseArgs.push(`--with-bz2=${bz2Path}`)
       } else {
-        configureArgs.push('--without-bz2')
+        // Try system bz2
+        if (existsSync('/usr/lib/libbz2.dylib') || existsSync('/usr/local/lib/libbz2.dylib')) {
+          baseArgs.push('--with-bz2')
+        } else {
+          baseArgs.push('--without-bz2')
+        }
       }
     } else {
       // Linux: Use standard flags
-      configureArgs.push('--with-iconv', '--with-bz2', '--with-gettext')
+      baseArgs.push('--with-iconv', '--with-bz2', '--with-gettext')
     }
 
-    logUniqueMessage(`Configuring PHP with comprehensive extensions: ${configureArgs.join(' ')}`)
+    logUniqueMessage(`Configuring PHP with comprehensive extensions: ${baseArgs.join(' ')}`)
 
     // Set up environment for configure
     const configureEnv: Record<string, string> = {
@@ -492,7 +506,7 @@ export class PhpPrecompiler {
     }
 
     try {
-      execSync(`./configure ${configureArgs.join(' ')}`, {
+      execSync(`./configure ${baseArgs.join(' ')}`, {
         stdio: 'inherit',
         cwd: phpSourceDir,
         env: configureEnv

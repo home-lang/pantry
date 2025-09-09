@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+const { execSync } = require('node:child_process')
+const { mkdirSync, existsSync, writeFileSync, readdirSync } = require('node:fs')
+const { join } = require('node:path')
 
 interface BuildConfig {
   phpVersion: string
@@ -30,10 +30,10 @@ function log(message: string): void {
 
 async function createWindowsPhpIni(installPrefix: string): Promise<void> {
   const phpIniPath = join(installPrefix, 'php.ini')
-  
+
   // Scan for available DLL extensions
   const availableExtensions = new Set<string>()
-  
+
   // Check main directory for php_*.dll files
   if (existsSync(installPrefix)) {
     const files = require('node:fs').readdirSync(installPrefix)
@@ -44,7 +44,7 @@ async function createWindowsPhpIni(installPrefix: string): Promise<void> {
       }
     })
   }
-  
+
   // Check ext/ subdirectory for additional DLLs
   const extDir = join(installPrefix, 'ext')
   if (existsSync(extDir)) {
@@ -56,9 +56,9 @@ async function createWindowsPhpIni(installPrefix: string): Promise<void> {
       }
     })
   }
-  
+
   log(`Found ${availableExtensions.size} available extensions: ${Array.from(availableExtensions).join(', ')}`)
-  
+
   // Create comprehensive php.ini
   const iniLines = [
     '; Launchpad php.ini for Windows (auto-generated)',
@@ -74,44 +74,44 @@ async function createWindowsPhpIni(installPrefix: string): Promise<void> {
     '',
     '; Enable all available extensions for Laravel and Composer compatibility',
   ]
-  
+
   // Essential extensions that should be enabled if available
   const essentialExtensions = [
-    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip', 
-    'gd', 'exif', 'bz2', 'gettext', 'sockets', 'ftp', 'soap', 
+    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip',
+    'gd', 'exif', 'bz2', 'gettext', 'sockets', 'ftp', 'soap',
     'intl', 'bcmath', 'shmop', 'pdo_mysql', 'pdo_pgsql', 'pdo_sqlite',
     'mysqli', 'pgsql', 'sqlite3', 'xml', 'xmlreader', 'xmlwriter',
     'simplexml', 'dom', 'json', 'hash', 'filter', 'ctype', 'tokenizer',
     'session', 'pcre', 'reflection', 'spl', 'standard', 'date',
     'calendar', 'iconv', 'phar'
   ]
-  
+
   // Enable essential extensions first
   essentialExtensions.forEach(ext => {
     if (availableExtensions.has(ext)) {
       iniLines.push(`extension=${ext}`)
     }
   })
-  
+
   // Enable any remaining extensions
   Array.from(availableExtensions).forEach(ext => {
     if (!essentialExtensions.includes(ext)) {
       iniLines.push(`extension=${ext}`)
     }
   })
-  
+
   iniLines.push('')
   iniLines.push('; Phar configuration')
   iniLines.push('phar.readonly = Off')
   iniLines.push('phar.require_hash = On')
-  
+
   writeFileSync(phpIniPath, iniLines.join('\n'))
   log(`Created php.ini with ${availableExtensions.size} extensions enabled`)
 }
 
 function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
-  
+
   if (existsSync(phpSourceDir)) {
     log(`PHP source already exists at ${phpSourceDir}`)
     return phpSourceDir
@@ -156,7 +156,7 @@ function downloadPhpSource(config: BuildConfig): string {
 async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
   const installPrefix = join(config.outputDir, binaryName)
-  
+
   // Create the directory structure that the main build function expects
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
   mkdirSync(phpSourceDir, { recursive: true })
@@ -166,7 +166,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   // Determine the correct Windows PHP download URL
   // PHP.net provides pre-compiled Windows binaries
   const majorMinor = config.phpVersion.split('.').slice(0, 2).join('.')
-  
+
   // Determine Visual Studio version based on PHP version
   let vsVersion = 'vs16' // Default for PHP 8.0-8.3
   if (majorMinor === '7.4') {
@@ -174,7 +174,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   } else if (majorMinor === '8.4') {
     vsVersion = 'vs17'
   }
-  
+
   // Try multiple URL patterns and fallback options
   const zipPath = join(config.buildDir, 'php-windows.zip')
   const urlsToTry = [
@@ -187,7 +187,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
     // Try archives folder with Non-Thread Safe
     `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-nts-Win32-${vsVersion}-x64.zip`
   ]
-  
+
   // Try to get the releases.json to find latest patch version if needed
   let latestPatchVersion: string | undefined = undefined
   try {
@@ -196,7 +196,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
       `powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://windows.php.net/downloads/releases/releases.json' -OutFile '${config.buildDir}/releases.json'"`,
       { stdio: 'pipe', encoding: 'utf8' }
     )
-    
+
     // Read the releases.json file if it was downloaded successfully
     if (existsSync(join(config.buildDir, 'releases.json'))) {
       try {
@@ -206,7 +206,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
         const matchingVersions = Object.keys(releasesJson)
           .filter(v => v.startsWith(majorMinor + '.'))
           .sort((a, b) => releasesJson[b].date.localeCompare(releasesJson[a].date))
-        
+
         if (matchingVersions.length > 0) {
           latestPatchVersion = matchingVersions[0]
           log(`Found latest ${majorMinor}.x version: ${latestPatchVersion}`)
@@ -220,12 +220,12 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   } catch (e) {
     log(`Could not fetch releases.json: ${e}`)
   }
-  
+
   // Try each URL until one works
   let downloadSuccess = false
   let downloadedVersion = config.phpVersion
   let usedUrl = ''
-  
+
   for (const url of urlsToTry) {
     log(`Trying to download Windows PHP from ${url}`)
     try {
@@ -235,7 +235,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
       })
 
       log('Extracting Windows PHP binary...')
-      
+
       // Extract the ZIP file
       execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${phpSourceDir}' -Force"`, {
         stdio: 'inherit',
@@ -250,7 +250,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
       // Ensure php.exe is in the bin directory
       const phpExePath = join(phpSourceDir, 'php.exe')
       const targetPhpExePath = join(installPrefix, 'bin', 'php.exe')
-      
+
       if (existsSync(phpExePath)) {
         execSync(`powershell -Command "Copy-Item -Path '${phpExePath}' -Destination '${targetPhpExePath}' -Force"`, {
           stdio: 'inherit'
@@ -259,7 +259,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
 
       // Create comprehensive php.ini that enables all available extensions
       await createWindowsPhpIni(installPrefix)
-      
+
       log('✅ Created comprehensive php.ini with all available extensions enabled')
 
       // If we downloaded a different version than requested, update the metadata
@@ -269,7 +269,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
         // Update the config to use the downloaded version
         config.phpVersion = downloadedVersion
       }
-      
+
       downloadSuccess = true
       usedUrl = url
       break
@@ -284,7 +284,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   } else {
     log(`Failed to download Windows PHP binary from any source`)
     log('Creating fallback minimal PHP structure (ONLY USED WHEN DOWNLOAD FAILS)')
-    
+
     // Fallback: Create a minimal PHP structure
     const phpStubContent = `@echo off
 if "%1"=="--version" (
@@ -305,181 +305,290 @@ if "%1"=="-m" (
 echo PHP ${config.phpVersion} CLI - PLACEHOLDER (Download Failed)
 echo This is not a real PHP binary. The download of the Windows PHP binary failed.
 `
-    
+
     writeFileSync(join(installPrefix, 'bin', 'php.bat'), phpStubContent)
     writeFileSync(join(installPrefix, 'bin', 'php.exe'), Buffer.from([0x4D, 0x5A])) // Minimal exe header
-    
+
     return phpSourceDir
   }
 }
 
-async function buildPhp(config: BuildConfig): Promise<void> {
-  const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
-  const installPrefix = join(config.outputDir, binaryName)
+async function buildPhp(config: BuildConfig): Promise<string> {
+  const installPrefix = join(config.outputDir, `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`)
 
-  // Use our precompiler for ALL platforms to ensure consistent extension support
-  log('Using Launchpad PHP precompiler for consistent extension support')
-  
-  try {
-    // Import and use the precompiler
-    const { PhpPrecompiler } = await import('../packages/launchpad/src/php/precompiler.ts')
-    
-    const precompiler = new PhpPrecompiler({
-      version: config.phpVersion,
-      config: config.config as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack',
-      platform: config.platform as 'darwin' | 'linux' | 'win32',
-      arch: config.arch === 'x86_64' ? 'x64' : config.arch as 'arm64' | 'x64', // Fix arch mapping
-      outputDir: config.outputDir,
-      buildDir: config.buildDir
-    })
-    
-    log(`Precompiling PHP ${config.phpVersion} with all essential extensions...`)
-    await precompiler.buildPhp()
-    
-    log('✅ PHP precompilation completed with all extensions')
-  } catch (error) {
-    log(`❌ Precompiler failed with error: ${error}`)
-    log(`Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`)
-    
-    // For Windows, fall back to pre-compiled binaries
-    if (config.platform === 'win32') {
-      log('Windows fallback: downloading pre-compiled binary')
-      await downloadWindowsPhpBinary(config)
-      return
-    }
-    
-    // For Unix systems, the precompiler should work - this is likely a configuration issue
-    log('❌ Precompiler failed on Unix system - this should not happen')
-    log('Attempting to fix precompiler configuration and retry...')
-    
-    // Try to fix common precompiler issues
-    try {
-      const { PhpPrecompiler } = await import('../packages/launchpad/src/php/precompiler.ts')
-      
-      // Ensure build and output directories exist
-      mkdirSync(config.buildDir, { recursive: true })
-      mkdirSync(config.outputDir, { recursive: true })
-      
-      const precompiler = new PhpPrecompiler({
-        version: config.phpVersion,
-        config: config.config as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack',
-        platform: config.platform as 'darwin' | 'linux' | 'win32',
-        arch: config.arch === 'x86_64' ? 'x64' : config.arch as 'arm64' | 'x64', // Fix arch mapping
-        outputDir: config.outputDir,
-        buildDir: config.buildDir
-      })
-      
-      log(`Retrying precompiler with fixed configuration...`)
-      await precompiler.buildPhp()
-      
-      log('✅ PHP precompilation completed successfully on retry')
-      return
-    } catch (retryError) {
-      log(`❌ Precompiler retry also failed: ${retryError}`)
-      log('Falling back to basic build as last resort')
-    }
-    
-    // Unix fallback: basic source build
-    const phpSourceDir = downloadPhpSource(config)
-    
-    // Set up environment for macOS builds
-    let buildEnv = { ...process.env }
-    if (config.platform === 'darwin') {
-      buildEnv.PATH = `/opt/homebrew/bin:/usr/local/bin:${buildEnv.PATH || ''}`
-      buildEnv.PKG_CONFIG_PATH = `/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
-    }
-    
-    mkdirSync(installPrefix, { recursive: true })
-    
-    // Unix-like systems: Build from source
-
-    log('Running buildconf...')
-    execSync('./buildconf --force', {
-      stdio: 'inherit',
-      cwd: phpSourceDir,
-      env: buildEnv
-    })
-
-    // Use comprehensive configure approach with all essential extensions
-    const configureArgs = [
-      `--prefix=${installPrefix}`,
-      '--enable-cli',
-      '--disable-cgi',
-      '--disable-fpm',
-      '--without-pear',
-      
-      // Essential string and encoding extensions
-      '--enable-mbstring',
-      '--with-iconv',
-      '--enable-iconv',
-      
-      // Core extensions required by Composer and Laravel
-      '--enable-opcache',
-      '--enable-phar',
-      '--enable-filter',
-      '--enable-ctype',
-      '--enable-tokenizer',
-      '--enable-session',
-      '--enable-fileinfo',
-      
-      // XML extensions
-      '--enable-dom',
-      '--enable-xml',
-      '--enable-xmlreader',
-      '--enable-xmlwriter',
-      '--enable-simplexml',
-      
-      // Network and crypto
-      '--with-curl',
-      '--with-openssl',
-      '--enable-zip',
-      '--with-zlib',
-      
-      // Additional useful extensions
-      '--enable-calendar',
-      '--enable-ftp',
-      '--enable-pcntl',
-      '--enable-posix',
-      '--enable-shmop',
-      '--enable-sockets',
-      '--enable-exif',
-      '--enable-bcmath',
-      '--with-bz2',
-      '--with-gettext',
-      '--with-readline',
-      
-      // Required core extensions
-      '--enable-hash',
-      '--enable-spl',
-      '--enable-json'
-    ]
-
-    log(`Configuring PHP with comprehensive extensions: ${configureArgs.join(' ')}`)
-
-    const compiler = config.platform === 'darwin' ? 'clang' : 'gcc'
-    
-    execSync(`CC=${compiler} ./configure ${configureArgs.join(' ')}`, {
-      stdio: 'inherit',
-      cwd: phpSourceDir,
-      env: { ...buildEnv, CC: compiler }
-    })
-
-    log('Building PHP...')
-    const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
-    
-    execSync(`make -j${jobs}`, {
-      stdio: 'inherit',
-      cwd: phpSourceDir,
-      env: buildEnv
-    })
-
-    log('Installing PHP...')
-    execSync('make install', {
-      stdio: 'inherit',
-      cwd: phpSourceDir,
-      env: buildEnv
-    })
+  // For Windows, use pre-compiled binaries
+  if (config.platform === 'win32') {
+    return await downloadWindowsPhpBinary(config)
   }
+
+  // For Unix systems, use Launchpad dependency management
+  log('Using Launchpad-managed dependencies for PHP build')
+
+  const phpSourceDir = downloadPhpSource(config)
+  mkdirSync(installPrefix, { recursive: true })
+
+  // Set up build environment with selective Launchpad dependencies
+  let buildEnv = { ...process.env }
+  
+  // Add essential Launchpad paths to PATH
+  const launchpadBinPaths = [
+    '/Users/chrisbreuer/.local/gnu.org/autoconf/v2.72.0/bin',
+    '/Users/chrisbreuer/.local/gnu.org/m4/v1.4.20/bin',
+    '/Users/chrisbreuer/.local/gnu.org/bison/v3.8.2/bin',
+    '/Users/chrisbreuer/.local/gnu.org/automake/v1.18.1/bin',
+    '/Users/chrisbreuer/.local/freedesktop.org/pkg-config/v0.29.2/bin'
+  ]
+  
+  buildEnv.PATH = `${launchpadBinPaths.join(':')}:${buildEnv.PATH}`
+  
+  // Set up targeted PKG_CONFIG_PATH for essential libraries
+  const pkgConfigPaths = [
+    '/Users/chrisbreuer/.local/gnu.org/libiconv/v1.18.0/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/sourceware.org/bzip2/v1.0.8/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/zlib.net/v1.3.1/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/curl.se/v8.15.0/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/openssl.org/v1.1.1w/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/gnu.org/readline/v8.3.0/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/gnome.org/libxml2/v2.14.5/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/postgresql.org/v17.2.0/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/libsodium.org/v1.0.18/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2/lib/pkgconfig',
+    '/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43/lib/pkgconfig'
+  ]
+  
+  buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
+  
+  // Set up targeted library and include paths
+  const libPaths = [
+    '/Users/chrisbreuer/.local/gnu.org/libiconv/v1.18.0/lib',
+    '/Users/chrisbreuer/.local/sourceware.org/bzip2/v1.0.8/lib',
+    '/Users/chrisbreuer/.local/zlib.net/v1.3.1/lib',
+    '/Users/chrisbreuer/.local/curl.se/v8.15.0/lib',
+    '/Users/chrisbreuer/.local/openssl.org/v1.1.1w/lib',
+    '/Users/chrisbreuer/.local/gnu.org/readline/v8.3.0/lib',
+    '/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/lib',
+    '/Users/chrisbreuer/.local/gnome.org/libxml2/v2.14.5/lib',
+    '/Users/chrisbreuer/.local/postgresql.org/v17.2.0/lib',
+    '/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0/lib',
+    '/Users/chrisbreuer/.local/libsodium.org/v1.0.18/lib',
+    '/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2/lib',
+    '/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43/lib'
+  ]
+  
+  const includePaths = [
+    '/Users/chrisbreuer/.local/gnu.org/libiconv/v1.18.0/include',
+    '/Users/chrisbreuer/.local/sourceware.org/bzip2/v1.0.8/include',
+    '/Users/chrisbreuer/.local/zlib.net/v1.3.1/include',
+    '/Users/chrisbreuer/.local/curl.se/v8.15.0/include',
+    '/Users/chrisbreuer/.local/openssl.org/v1.1.1w/include',
+    '/Users/chrisbreuer/.local/gnu.org/readline/v8.3.0/include',
+    '/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/include',
+    '/Users/chrisbreuer/.local/gnome.org/libxml2/v2.14.5/include',
+    '/Users/chrisbreuer/.local/postgresql.org/v17.2.0/include',
+    '/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0/include',
+    '/Users/chrisbreuer/.local/libsodium.org/v1.0.18/include',
+    '/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2/include',
+    '/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43/include'
+  ]
+  
+  buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
+  buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
+  
+  // Add macOS-specific linker flags for DNS resolver functions
+  if (config.platform === 'darwin') {
+    buildEnv.LDFLAGS += ' -lresolv -Wl,-rpath,/Users/chrisbreuer/.local,-headerpad_max_install_names'
+    // Set up runtime library path for macOS
+    buildEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
+    buildEnv.LD = '/usr/bin/ld'
+  } else {
+    buildEnv.LDFLAGS += ' -Wl,-rpath,/Users/chrisbreuer/.local'
+  }
+  
+  log('✅ Configured targeted Launchpad dependencies')
+
+  // Platform-specific compiler setup
+  if (config.platform === 'darwin') {
+    buildEnv.CXX = 'clang++'
+    buildEnv.LD = '/usr/bin/ld'
+    // Ensure we use system C++ standard library, not GCC's
+    buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -stdlib=libc++'
+    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '') + ' -stdlib=libc++'
+  } else {
+    buildEnv.CC = 'gcc'
+    buildEnv.CXX = 'g++'
+  }
+
+  log('Running buildconf...')
+  
+  // Fix m4 compatibility issue on macOS
+  if (config.platform === 'darwin') {
+    // Force use of system m4 and disable GNU-specific options
+    buildEnv.M4 = '/usr/bin/m4'
+    buildEnv.AUTOM4TE_M4 = '/usr/bin/m4'
+    
+    // Create a wrapper script for autom4te that uses system m4
+    const wrapperScript = `#!/bin/bash
+export M4=/usr/bin/m4
+export AUTOM4TE_M4=/usr/bin/m4
+exec "$@"
+`
+    const wrapperPath = join(phpSourceDir, 'autom4te-wrapper.sh')
+    writeFileSync(wrapperPath, wrapperScript)
+    execSync(`chmod +x ${wrapperPath}`, { cwd: phpSourceDir })
+    
+    // Update PATH to use our wrapper
+    buildEnv.PATH = `${phpSourceDir}:${buildEnv.PATH}`
+  }
+  
+  // Check if configure already exists (some PHP releases include it)
+  const configurePath = join(phpSourceDir, 'configure')
+  if (existsSync(configurePath)) {
+    log('Found existing configure script, skipping buildconf')
+  } else {
+    try {
+      execSync('./buildconf --force', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv
+      })
+    } catch (error) {
+      log('buildconf failed, trying alternative approach...')
+      
+      // Try running autoconf directly with system m4
+      try {
+        const autoconfEnv = { ...buildEnv }
+        if (config.platform === 'darwin') {
+          autoconfEnv.M4 = '/usr/bin/m4'
+          autoconfEnv.AUTOM4TE_M4 = '/usr/bin/m4'
+        }
+        
+        execSync('autoconf', {
+          stdio: 'inherit',
+          cwd: phpSourceDir,
+          env: autoconfEnv
+        })
+        
+        log('Successfully generated configure script with autoconf')
+      } catch (autoconfError) {
+        log('autoconf also failed, trying to download pre-built configure...')
+        
+        // As a last resort, try to use a different PHP version or approach
+        throw new Error(`Unable to generate configure script. The autotools on this system are incompatible with PHP ${config.phpVersion}. Consider:\n1. Installing GNU autotools via a package manager\n2. Using a different PHP version\n3. Using pre-compiled PHP binaries`)
+      }
+    }
+    
+    // Verify configure script was created
+    if (!existsSync(configurePath)) {
+      throw new Error('Configure script was not generated successfully')
+    }
+  }
+
+  // Use comprehensive configure with Launchpad-managed dependencies (based on pkgx build)
+  const configureArgs = [
+    `--prefix=${installPrefix}`,
+    '--enable-bcmath',
+    '--enable-calendar',
+    '--enable-dba',
+    '--enable-exif',
+    '--enable-ftp',
+    '--enable-fpm',
+    '--enable-gd',
+    '--enable-intl',
+    '--enable-mbregex',
+    '--enable-mbstring',
+    '--enable-mysqlnd',
+    '--enable-pcntl',
+    '--disable-phpdbg',
+    '--enable-shmop',
+    '--enable-soap',
+    '--enable-sockets',
+    '--enable-sysvmsg',
+    '--enable-sysvsem',
+    '--enable-sysvshm',
+    '--with-pear',
+    '--with-curl=/Users/chrisbreuer/.local/curl.se/v8.15.0',
+    '--with-pcre-jit',
+    '--with-ffi=/Users/chrisbreuer/.local/sourceware.org/libffi/v3.5.2',
+    '--with-gettext=/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5',
+    '--with-gmp=/Users/chrisbreuer/.local/gnu.org/gmp/v6.3.0',
+    '--without-iconv',
+    '--with-kerberos',
+    '--with-layout=GNU',
+    '--with-libxml',
+    '--with-libedit',
+    '--with-openssl=/Users/chrisbreuer/.local/openssl.org/v1.1.1w',
+    '--with-pdo-sqlite',
+    '--with-pic',
+    '--with-sodium=/Users/chrisbreuer/.local/libsodium.org/v1.0.18',
+    '--with-sqlite3',
+    '--with-xsl=/Users/chrisbreuer/.local/gnome.org/libxslt/v1.1.43',
+    '--with-zlib=/Users/chrisbreuer/.local/zlib.net/v1.3.1',
+    '--disable-dtrace',
+    '--without-ldap-sasl',
+    '--without-ndbm',
+    '--without-gdbm'
+  ]
+
+  // Add macOS-specific configure options
+  if (config.platform === 'darwin') {
+    configureArgs.push(
+      '--with-zip',
+      '--enable-dtrace',
+      '--with-ldap-sasl'
+    )
+  }
+  
+  log('Using Launchpad-managed dependencies for all extensions')
+
+  log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
+
+  // Source the Launchpad environment and run configure in the same shell
+  const buildEnvScript = '/Users/chrisbreuer/.local/build-env.sh'
+  const configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
+  
+  execSync(configureCommand, {
+    cwd: phpSourceDir,
+    stdio: 'inherit',
+    shell: '/bin/bash',
+    env: {
+      ...process.env,
+      ...buildEnv,
+      M4: '/usr/bin/m4',
+      ac_cv_path_M4: '/usr/bin/m4',
+      ac_cv_prog_M4: '/usr/bin/m4',
+      AUTOCONF_M4: '/usr/bin/m4',
+      // Add autoconf cache variables to prevent header detection failures
+      ac_cv_header_stdc: 'yes',
+      ac_cv_header_sys_types_h: 'yes',
+      ac_cv_header_sys_stat_h: 'yes',
+      ac_cv_header_stdlib_h: 'yes',
+      ac_cv_header_string_h: 'yes',
+      ac_cv_header_memory_h: 'yes',
+      ac_cv_header_strings_h: 'yes',
+      ac_cv_header_inttypes_h: 'yes',
+      ac_cv_header_stdint_h: 'yes',
+      ac_cv_header_unistd_h: 'yes',
+      ac_cv_header_ac_nonexistent_h: 'no',
+    },
+  })
+
+  log('Building PHP...')
+  const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
+
+  execSync(`make -j${jobs}`, {
+    stdio: 'inherit',
+    cwd: phpSourceDir,
+    env: buildEnv
+  })
+
+  log('Installing PHP...')
+  execSync('make install', {
+    stdio: 'inherit',
+    cwd: phpSourceDir,
+    env: buildEnv
+  })
 
   // Create metadata file
   const metadata = {
@@ -494,21 +603,21 @@ async function buildPhp(config: BuildConfig): Promise<void> {
   writeFileSync(join(installPrefix, 'metadata.json'), JSON.stringify(metadata, null, 2))
 
   log(`✅ PHP ${config.phpVersion} built successfully at ${installPrefix}`)
-  
+
   // Test the binary (platform-specific)
   if (config.platform === 'win32') {
     const phpBinary = join(installPrefix, 'bin', 'php.exe')
     if (existsSync(phpBinary)) {
       log('Verifying Windows PHP binary...')
-      
+
       // Check file size to verify it's a real binary
       try {
         const stats = Bun.file(phpBinary).size
         log(`PHP binary size: ${stats} bytes`)
-        
+
         if (stats > 1000000) {
           log('✅ PHP binary appears to be a real Windows binary')
-          
+
           // Count DLL files to verify it's a complete distribution
           const binDir = join(installPrefix, 'bin')
           if (existsSync(binDir)) {
@@ -518,7 +627,7 @@ async function buildPhp(config: BuildConfig): Promise<void> {
               const files = readdirSync(binDir)
               const dllFiles = files.filter((file: string) => file.toLowerCase().endsWith('.dll'))
               log(`Found ${dllFiles.length} DLL files in the PHP distribution`)
-              
+
               if (dllFiles.length > 10) {
                 log('✅ PHP distribution contains expected DLL files')
               } else {
@@ -528,7 +637,7 @@ async function buildPhp(config: BuildConfig): Promise<void> {
               log(`Could not read bin directory: ${e}`)
             }
           }
-          
+
           // Try to run the binary, but don't fail if it doesn't work
           try {
             execSync(`"${phpBinary}" --version`, { stdio: 'inherit' })
@@ -548,9 +657,17 @@ async function buildPhp(config: BuildConfig): Promise<void> {
     const phpBinary = join(installPrefix, 'bin', 'php')
     if (existsSync(phpBinary)) {
       log('Testing PHP binary...')
-      execSync(`"${phpBinary}" --version`, { stdio: 'inherit' })
+      execSync(`"${phpBinary}" --version`, { 
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          ...buildEnv
+        }
+      })
     }
   }
+  
+  return installPrefix
 }
 
 async function main(): Promise<void> {
@@ -558,9 +675,9 @@ async function main(): Promise<void> {
     const config = getConfig()
     log(`Build Script Version: 2.1 (Windows Binary Support)`)
     log(`Building PHP ${config.phpVersion} for ${config.platform}-${config.arch} with ${config.config} config`)
-    
+
     await buildPhp(config)
-    
+
     log('🎉 Build completed successfully!')
   } catch (error) {
     console.error('❌ Build failed:', error)
