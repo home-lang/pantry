@@ -284,7 +284,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     `--with-openssl=${launchpadPath}/openssl.org/v1.1.1w`,
     `--with-sodium=${launchpadPath}/libsodium.org/v1.0.18`,
     `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
-    `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`
+    `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`,
+    `--with-bz2=${launchpadPath}/bzip.org/v1.0.8`
   ]
 
   // Platform-specific arguments
@@ -292,9 +293,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
-      '--with-iconv', // Re-enable iconv with Launchpad dependencies
+      '--with-iconv',
       '--enable-opcache',
-      '--with-bz2',
       '--with-kerberos',
       '--with-libedit',
       '--with-zip',
@@ -307,7 +307,6 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...dependencyArgs,
       '--with-iconv', // Use system iconv on Linux
       '--enable-opcache',
-      '--with-bz2',
       '--with-kerberos',
       '--with-readline',
       '--with-zip',
@@ -497,7 +496,7 @@ ${essentialExtensions
 
 ; Enable additional available extensions (excluding problematic ones)
 ${extensions
-  .filter(ext => !essentialExtensions.includes(ext) && 
+  .filter(ext => !essentialExtensions.includes(ext) &&
     !['opcache', 'pdo_firebird', 'snmp', 'pcntl', 'posix'].includes(ext))
   .map(ext => `extension=${ext}`)
   .join('\n')}
@@ -687,7 +686,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   let buildEnv = { ...process.env }
   const homeDir = process.env.HOME || process.env.USERPROFILE || '/Users/chrisbreuer'
   const launchpadRoot = `${homeDir}/.local`
-  
+
   // Add essential Launchpad paths to PATH
   const launchpadBinPaths = [
     `${launchpadRoot}/gnu.org/autoconf/v2.72.0/bin`,
@@ -696,9 +695,9 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnu.org/automake/v1.18.1/bin`,
     `${launchpadRoot}/freedesktop.org/pkg-config/v0.29.2/bin`
   ]
-  
+
   buildEnv.PATH = `${launchpadBinPaths.join(':')}:${buildEnv.PATH}`
-  
+
   // Set up targeted PKG_CONFIG_PATH for essential libraries
   const pkgConfigPaths = [
     `${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib/pkgconfig`,
@@ -865,13 +864,13 @@ exec "$@"
   // Source the Launchpad environment and run configure in the same shell
   const buildEnvScript = `${homeDir}/.local/build-env.sh`
   let configureCommand: string
-  
+
   // Check if Launchpad environment script exists, otherwise install dependencies first
   if (existsSync(buildEnvScript)) {
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
   } else {
     log('⚠️  Launchpad build-env.sh not found, installing PHP dependencies first')
-    
+
     // Install PHP dependencies using Launchpad
     try {
       execSync('bun ./launchpad install php --deps-only', {
@@ -879,7 +878,7 @@ exec "$@"
         cwd: process.cwd()
       })
       log('✅ Launchpad dependencies installed successfully')
-      
+
       // Now try to source the environment script
       if (existsSync(buildEnvScript)) {
         configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
