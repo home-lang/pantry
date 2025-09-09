@@ -227,20 +227,44 @@ jobs:
           if [ -f "binaries/$BINARY_NAME/bin/php" ]; then
             echo "✅ PHP binary created successfully"
             binaries/$BINARY_NAME/bin/php --version
-            echo "📋 Available extensions:"
-            binaries/$BINARY_NAME/bin/php -m | head -20
+            echo "📋 All available extensions:"
+            binaries/$BINARY_NAME/bin/php -m
             
-            # Test phar extension specifically
-            echo "🧪 Testing phar extension..."
+            # Define essential extensions that MUST be present
+            REQUIRED_EXTENSIONS=(
+              "Core" "date" "hash" "json" "pcre" "Reflection" "SPL" "standard"
+              "mbstring" "iconv" "filter" "ctype" "tokenizer" "session" "fileinfo"
+              "opcache" "phar" "dom" "xml" "xmlreader" "xmlwriter" "simplexml"
+              "curl" "openssl" "zip" "zlib" "calendar" "ftp" "pcntl" "posix"
+              "shmop" "sockets" "exif" "bcmath" "bz2" "gettext" "readline"
+            )
+            
+            # Test each required extension
+            echo "🧪 Testing essential extensions..."
+            MISSING_EXTENSIONS=()
+            for ext in "${REQUIRED_EXTENSIONS[@]}"; do
+              EXT_LOADED=$(binaries/$BINARY_NAME/bin/php -r "echo extension_loaded('$ext') ? '1' : '0';")
+              if [ "$EXT_LOADED" = "1" ]; then
+                echo "✅ $ext: LOADED"
+              else
+                echo "❌ $ext: MISSING"
+                MISSING_EXTENSIONS+=("$ext")
+              fi
+            done
+            
+            # Check if any essential extensions are missing
+            if [ ${#MISSING_EXTENSIONS[@]} -gt 0 ]; then
+              echo "❌ Critical extensions missing: ${MISSING_EXTENSIONS[*]}"
+              echo "This build is incomplete and will cause issues with Composer and Laravel."
+              exit 1
+            fi
+            
+            # Test phar extension functionality specifically
+            echo "🧪 Testing phar extension functionality..."
             PHAR_LOADED=$(binaries/$BINARY_NAME/bin/php -r 'echo extension_loaded("phar") ? "1" : "0";')
             if [ "$PHAR_LOADED" = "1" ]; then
               echo "✅ Phar extension is loaded"
-              # Test phar functionality
-              echo "🧪 Testing phar functionality..."
-              echo '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";' > test_phar.php
-              binaries/$BINARY_NAME/bin/php test_phar.php
-              rm test_phar.php
-              # Test creating a simple phar
+              # Test phar creation (essential for Composer)
               echo "🧪 Testing phar creation..."
               echo '<?php 
               if (extension_loaded("phar")) {
@@ -261,11 +285,45 @@ jobs:
               binaries/$BINARY_NAME/bin/php -d phar.readonly=0 test_phar_create.php
               rm test_phar_create.php
             else
-              echo "❌ Phar extension not loaded (runtime check)"
-              echo "Available modules:"
-              binaries/$BINARY_NAME/bin/php -m
+              echo "❌ Phar extension not loaded - this will break Composer!"
               exit 1
             fi
+            
+            # Test Composer compatibility
+            echo "🧪 Testing Composer compatibility..."
+            echo '<?php
+            // Test essential functions for Composer
+            $required_functions = [
+                "iconv", "mb_strlen", "filter_var", "hash", "json_encode",
+                "curl_init", "openssl_get_cert_locations", "file_get_contents"
+            ];
+            
+            foreach ($required_functions as $func) {
+                if (function_exists($func)) {
+                    echo "✅ Function $func: Available\n";
+                } else {
+                    echo "❌ Function $func: Missing\n";
+                    exit(1);
+                }
+            }
+            
+            // Test essential classes
+            $required_classes = ["Phar", "DOMDocument", "XMLReader", "ZipArchive"];
+            foreach ($required_classes as $class) {
+                if (class_exists($class)) {
+                    echo "✅ Class $class: Available\n";
+                } else {
+                    echo "❌ Class $class: Missing\n";
+                    exit(1);
+                }
+            }
+            
+            echo "✅ All Composer compatibility checks passed\n";
+            ?>' > test_composer_compat.php
+            binaries/$BINARY_NAME/bin/php test_composer_compat.php
+            rm test_composer_compat.php
+            
+            echo "✅ All PHP binary tests passed successfully!"
           else
             echo "❌ PHP binary not found"
             exit 1
@@ -295,27 +353,97 @@ jobs:
             # Test PHP version and extensions
             Write-Host "🧪 Testing PHP binary..."
             & $PHP --version
-            Write-Host "📋 Available extensions:"
-            & $PHP -m | Select-Object -First 20
+            Write-Host "📋 All available extensions:"
+            & $PHP -m
             
-            # Test phar extension specifically using a direct runtime check
-            Write-Host "🧪 Testing phar extension..."
+            # Define essential extensions that MUST be present
+            $REQUIRED_EXTENSIONS = @(
+              "Core", "date", "hash", "json", "pcre", "Reflection", "SPL", "standard",
+              "mbstring", "iconv", "filter", "ctype", "tokenizer", "session", "fileinfo",
+              "opcache", "phar", "dom", "xml", "xmlreader", "xmlwriter", "simplexml",
+              "curl", "openssl", "zip", "zlib", "calendar", "ftp", "pcntl", "posix",
+              "shmop", "sockets", "exif", "bcmath", "bz2", "gettext", "readline"
+            )
+            
+            # Test each required extension
+            Write-Host "🧪 Testing essential extensions..."
+            $MISSING_EXTENSIONS = @()
+            foreach ($ext in $REQUIRED_EXTENSIONS) {
+              $extLoaded = & $PHP -r "echo extension_loaded('$ext') ? '1' : '0';"
+              if ($extLoaded -eq "1") {
+                Write-Host "✅ $ext`: LOADED"
+              } else {
+                Write-Host "❌ $ext`: MISSING"
+                $MISSING_EXTENSIONS += $ext
+              }
+            }
+            
+            # Check if any essential extensions are missing
+            if ($MISSING_EXTENSIONS.Count -gt 0) {
+              Write-Host "❌ Critical extensions missing: $($MISSING_EXTENSIONS -join ', ')"
+              Write-Host "This build is incomplete and will cause issues with Composer and Laravel."
+              exit 1
+            }
+            
+            # Test phar extension functionality specifically
+            Write-Host "🧪 Testing phar extension functionality..."
             $pharLoaded = & $PHP -r 'echo extension_loaded("phar") ? "1" : "0";'
             if ($pharLoaded -eq "1") {
               Write-Host "✅ Phar extension is loaded"
-              # Try a minimal creation test
+              # Test phar creation (essential for Composer)
               Write-Host "🧪 Testing phar creation..."
-              & $PHP -d phar.readonly=0 -r 'try { $p = new Phar("test.phar"); $p->addFromString("t.txt", "x"); echo "OK"; unlink("test.phar"); } catch (Exception $e) { echo "ERR: ".$e->getMessage(); exit(1); }' | Out-String
+              $pharTest = & $PHP -d phar.readonly=0 -r 'try { $p = new Phar("test.phar"); $p->addFromString("t.txt", "x"); echo "OK"; unlink("test.phar"); } catch (Exception $e) { echo "ERR: ".$e->getMessage(); exit(1); }'
+              if ($pharTest -eq "OK") {
+                Write-Host "✅ Phar creation successful"
+              } else {
+                Write-Host "❌ Phar creation failed: $pharTest"
+                exit 1
+              }
             } else {
-              Write-Host "Phar extension not found (runtime check)"
-              Write-Host "Available modules:"
-              & $PHP -m
-              Write-Host "⚠️ Phar extension not available on this Windows binary; continuing without failure"
+              Write-Host "❌ Phar extension not loaded - this will break Composer!"
+              exit 1
             }
             
-            # Check if this is likely a real binary based on file size (real PHP binaries are several MB)
+            # Test Composer compatibility
+            Write-Host "🧪 Testing Composer compatibility..."
+            $composerTest = @'
+<?php
+// Test essential functions for Composer
+$required_functions = [
+    "iconv", "mb_strlen", "filter_var", "hash", "json_encode",
+    "curl_init", "openssl_get_cert_locations", "file_get_contents"
+];
+
+foreach ($required_functions as $func) {
+    if (function_exists($func)) {
+        echo "✅ Function $func: Available\n";
+    } else {
+        echo "❌ Function $func: Missing\n";
+        exit(1);
+    }
+}
+
+// Test essential classes
+$required_classes = ["Phar", "DOMDocument", "XMLReader", "ZipArchive"];
+foreach ($required_classes as $class) {
+    if (class_exists($class)) {
+        echo "✅ Class $class: Available\n";
+    } else {
+        echo "❌ Class $class: Missing\n";
+        exit(1);
+    }
+}
+
+echo "✅ All Composer compatibility checks passed\n";
+?>
+'@
+            $composerTest | Out-File -FilePath "test_composer_compat.php" -Encoding UTF8
+            & $PHP "test_composer_compat.php"
+            Remove-Item "test_composer_compat.php"
+            
+            # Check if this is likely a real binary based on file size
             if ($fileSize -gt 1000000) {
-              Write-Host "PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
+              Write-Host "✅ PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
               
               # Check for DLLs which should be present in a real PHP distribution
               $dllCount = (Get-ChildItem -Path "binaries\$BINARY_NAME" -Filter "*.dll" -Recurse).Count
@@ -330,8 +458,7 @@ jobs:
               Write-Host "⚠️ PHP binary is smaller than expected, might be a placeholder"
             }
             
-            # Note: We don't try to execute the binary as it may not be executable in the GitHub Actions environment
-            Write-Host "ℹ️ Skipping execution test as the binary may not be executable in this environment"
+            Write-Host "✅ All PHP binary tests passed successfully!"
           } else {
             Write-Host "❌ PHP binary not found at expected location"
             Write-Host "Directory contents:"

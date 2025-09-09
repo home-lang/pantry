@@ -37,12 +37,16 @@ export class PhpPrecompiler {
   private getExtensionsForConfig(): PhpExtensions {
     return {
       base: [
+        // Core CLI and FPM
         '--enable-cli',
         '--enable-fpm',
+        
+        // Essential string and encoding extensions
         '--enable-mbstring',
-        '--enable-opcache',
-        // Phar is enabled by default in PHP, but we explicitly ensure it's not disabled
-        '--enable-phar',
+        '--with-iconv',
+        '--enable-iconv',
+        
+        // Core extensions required by Composer and Laravel
         '--enable-filter',
         '--enable-hash',
         '--enable-json',
@@ -50,78 +54,87 @@ export class PhpPrecompiler {
         '--enable-tokenizer',
         '--enable-session',
         '--enable-fileinfo',
+        '--enable-opcache',
+        
+        // Phar support (essential for Composer)
+        '--enable-phar',
+        
+        // XML processing (required by many packages)
         '--enable-dom',
         '--enable-xml',
         '--enable-xmlreader',
         '--enable-xmlwriter',
         '--enable-simplexml',
+        '--enable-libxml',
+        '--with-libxml',
+        
+        // Network and crypto
         '--with-curl',
         '--with-openssl',
+        '--enable-openssl',
+        
+        // Compression
         '--with-zip',
-        '--with-libxml',
         '--with-zlib',
-        '--with-iconv'
-      ],
-      mysql: [
-        '--enable-exif',
-        '--enable-bcmath',
-        '--with-pdo-mysql',
-        '--with-mysqli',
-        '--enable-gd',
-        '--with-readline'
-      ],
-      postgres: [
-        '--enable-exif',
-        '--enable-bcmath',
-        '--with-pdo-pgsql',
-        '--with-pgsql',
-        '--enable-gd',
-        '--with-readline'
-      ],
-      sqlite: [
-        '--enable-exif',
-        '--enable-bcmath',
-        '--with-pdo-sqlite',
-        '--with-sqlite3',
-        '--enable-gd',
-        '--with-readline'
-      ],
-      enterprise: [
-        '--enable-exif',
-        '--enable-bcmath',
-        '--with-pdo-mysql',
-        '--with-pdo-pgsql',
-        '--with-pdo-sqlite',
-        '--with-mysqli',
-        '--with-pgsql',
-        '--with-sqlite3',
-        '--enable-gd',
-        '--enable-soap',
-        '--enable-sockets',
-        '--with-bz2',
-        '--with-readline',
+        '--enable-zlib',
+        
+        // PCRE (Perl Compatible Regular Expressions)
+        '--enable-pcre',
+        
+        // Date and time
+        '--enable-calendar',
+        
+        // File operations
+        '--enable-ftp',
+        
+        // Process control (useful for Laravel queues)
         '--enable-pcntl',
         '--enable-posix',
-        '--with-gettext',
-        '--with-gmp',
-        '--with-ldap',
-        '--with-xsl',
-        '--with-sodium'
-      ],
-      wordpress: [
-        '--enable-exif',
-        '--with-pdo-mysql',
-        '--with-mysqli',
-        '--enable-gd'
-      ],
-      fullStack: [
-        '--enable-exif',
-        '--enable-bcmath',
-        '--enable-calendar',
-        '--enable-ftp',
+        
+        // Shared memory (useful for caching)
+        '--enable-shmop',
         '--enable-sysvmsg',
         '--enable-sysvsem',
         '--enable-sysvshm',
+        
+        // Socket support
+        '--enable-sockets',
+        
+        // Additional useful extensions
+        '--enable-exif',
+        '--enable-bcmath',
+        '--with-bz2',
+        '--with-gettext',
+        '--with-readline'
+      ],
+      mysql: [
+        '--with-pdo-mysql',
+        '--with-mysqli',
+        '--enable-gd',
+        '--with-jpeg',
+        '--with-png',
+        '--with-webp',
+        '--with-freetype'
+      ],
+      postgres: [
+        '--with-pdo-pgsql',
+        '--with-pgsql',
+        '--enable-gd',
+        '--with-jpeg',
+        '--with-png',
+        '--with-webp',
+        '--with-freetype'
+      ],
+      sqlite: [
+        '--with-pdo-sqlite',
+        '--with-sqlite3',
+        '--enable-gd',
+        '--with-jpeg',
+        '--with-png',
+        '--with-webp',
+        '--with-freetype'
+      ],
+      enterprise: [
         '--with-pdo-mysql',
         '--with-pdo-pgsql',
         '--with-pdo-sqlite',
@@ -129,18 +142,50 @@ export class PhpPrecompiler {
         '--with-pgsql',
         '--with-sqlite3',
         '--enable-gd',
+        '--with-jpeg',
+        '--with-png',
+        '--with-webp',
+        '--with-freetype',
         '--enable-soap',
-        '--enable-sockets',
-        '--with-bz2',
-        '--with-readline',
-        '--enable-pcntl',
-        '--enable-posix',
-        '--with-gettext',
         '--with-gmp',
         '--with-ldap',
         '--with-xsl',
         '--with-sodium',
-        '--enable-shmop'
+        '--enable-intl',
+        '--with-tidy'
+      ],
+      wordpress: [
+        '--with-pdo-mysql',
+        '--with-mysqli',
+        '--enable-gd',
+        '--with-jpeg',
+        '--with-png',
+        '--with-webp',
+        '--with-freetype',
+        '--enable-soap'
+      ],
+      fullStack: [
+        '--with-pdo-mysql',
+        '--with-pdo-pgsql',
+        '--with-pdo-sqlite',
+        '--with-mysqli',
+        '--with-pgsql',
+        '--with-sqlite3',
+        '--enable-gd',
+        '--with-jpeg',
+        '--with-png',
+        '--with-webp',
+        '--with-freetype',
+        '--enable-soap',
+        '--with-gmp',
+        '--with-ldap',
+        '--with-xsl',
+        '--with-sodium',
+        '--enable-intl',
+        '--with-tidy',
+        '--enable-dba',
+        '--with-enchant',
+        '--with-snmp'
       ]
     }
   }
