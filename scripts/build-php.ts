@@ -28,6 +28,87 @@ function log(message: string): void {
   console.log(`🔧 ${message}`)
 }
 
+async function createWindowsPhpIni(installPrefix: string): Promise<void> {
+  const phpIniPath = join(installPrefix, 'php.ini')
+  
+  // Scan for available DLL extensions
+  const availableExtensions = new Set<string>()
+  
+  // Check main directory for php_*.dll files
+  if (existsSync(installPrefix)) {
+    const files = require('node:fs').readdirSync(installPrefix)
+    files.forEach((file: string) => {
+      if (file.startsWith('php_') && file.endsWith('.dll')) {
+        const extName = file.slice(4, -4) // Remove 'php_' prefix and '.dll' suffix
+        availableExtensions.add(extName)
+      }
+    })
+  }
+  
+  // Check ext/ subdirectory for additional DLLs
+  const extDir = join(installPrefix, 'ext')
+  if (existsSync(extDir)) {
+    const files = require('node:fs').readdirSync(extDir)
+    files.forEach((file: string) => {
+      if (file.startsWith('php_') && file.endsWith('.dll')) {
+        const extName = file.slice(4, -4)
+        availableExtensions.add(extName)
+      }
+    })
+  }
+  
+  log(`Found ${availableExtensions.size} available extensions: ${Array.from(availableExtensions).join(', ')}`)
+  
+  // Create comprehensive php.ini
+  const iniLines = [
+    '; Launchpad php.ini for Windows (auto-generated)',
+    'memory_limit = 512M',
+    'max_execution_time = 300',
+    'max_input_time = 300',
+    'post_max_size = 100M',
+    'upload_max_filesize = 100M',
+    'max_file_uploads = 20',
+    '',
+    '; Extension directory',
+    'extension_dir = "ext"',
+    '',
+    '; Enable all available extensions for Laravel and Composer compatibility',
+  ]
+  
+  // Essential extensions that should be enabled if available
+  const essentialExtensions = [
+    'mbstring', 'fileinfo', 'opcache', 'curl', 'openssl', 'zip', 
+    'gd', 'exif', 'bz2', 'gettext', 'sockets', 'ftp', 'soap', 
+    'intl', 'bcmath', 'shmop', 'pdo_mysql', 'pdo_pgsql', 'pdo_sqlite',
+    'mysqli', 'pgsql', 'sqlite3', 'xml', 'xmlreader', 'xmlwriter',
+    'simplexml', 'dom', 'json', 'hash', 'filter', 'ctype', 'tokenizer',
+    'session', 'pcre', 'reflection', 'spl', 'standard', 'date',
+    'calendar', 'iconv', 'phar'
+  ]
+  
+  // Enable essential extensions first
+  essentialExtensions.forEach(ext => {
+    if (availableExtensions.has(ext)) {
+      iniLines.push(`extension=${ext}`)
+    }
+  })
+  
+  // Enable any remaining extensions
+  Array.from(availableExtensions).forEach(ext => {
+    if (!essentialExtensions.includes(ext)) {
+      iniLines.push(`extension=${ext}`)
+    }
+  })
+  
+  iniLines.push('')
+  iniLines.push('; Phar configuration')
+  iniLines.push('phar.readonly = Off')
+  iniLines.push('phar.require_hash = On')
+  
+  writeFileSync(phpIniPath, iniLines.join('\n'))
+  log(`Created php.ini with ${availableExtensions.size} extensions enabled`)
+}
+
 function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
   
@@ -97,10 +178,14 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   // Try multiple URL patterns and fallback options
   const zipPath = join(config.buildDir, 'php-windows.zip')
   const urlsToTry = [
-    // Try exact version first
+    // Try Thread Safe version first (has more extensions enabled)
     `https://windows.php.net/downloads/releases/php-${config.phpVersion}-Win32-${vsVersion}-x64.zip`,
-    // Try archives folder as fallback
-    `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-Win32-${vsVersion}-x64.zip`
+    // Try Non-Thread Safe as fallback
+    `https://windows.php.net/downloads/releases/php-${config.phpVersion}-nts-Win32-${vsVersion}-x64.zip`,
+    // Try archives folder with Thread Safe
+    `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-Win32-${vsVersion}-x64.zip`,
+    // Try archives folder with Non-Thread Safe
+    `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-nts-Win32-${vsVersion}-x64.zip`
   ]
   
   // Try to get the releases.json to find latest patch version if needed
@@ -172,6 +257,11 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
         })
       }
 
+      // Create comprehensive php.ini that enables all available extensions
+      await createWindowsPhpIni(installPrefix)
+      
+      log('✅ Created comprehensive php.ini with all available extensions enabled')
+
       // If we downloaded a different version than requested, update the metadata
       if (latestPatchVersion && url.includes(latestPatchVersion)) {
         downloadedVersion = latestPatchVersion
@@ -224,26 +314,52 @@ echo This is not a real PHP binary. The download of the Windows PHP binary faile
 }
 
 async function buildPhp(config: BuildConfig): Promise<void> {
-  const phpSourceDir = downloadPhpSource(config)
-  
-  // Set up environment for macOS builds
-  let buildEnv = { ...process.env }
-  if (config.platform === 'darwin') {
-    buildEnv.PATH = `/opt/homebrew/bin:/usr/local/bin:${buildEnv.PATH || ''}`
-    buildEnv.PKG_CONFIG_PATH = `/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
-  }
-  
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
   const installPrefix = join(config.outputDir, binaryName)
 
-  // Windows: Download and extract pre-compiled binary
-  if (config.platform === 'win32') {
-    log('Setting up Windows PHP binary')
-    // We need to download the Windows PHP binary here
-    await downloadWindowsPhpBinary(config)
-  } else {
-    // Unix-like systems: Build from source
+  // Use our precompiler for ALL platforms to ensure consistent extension support
+  log('Using Launchpad PHP precompiler for consistent extension support')
+  
+  try {
+    // Import and use the precompiler
+    const { PhpPrecompiler } = await import('../packages/launchpad/src/php/precompiler.ts')
+    
+    const precompiler = new PhpPrecompiler({
+      version: config.phpVersion,
+      config: config.config as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack',
+      platform: config.platform as 'darwin' | 'linux' | 'win32',
+      arch: config.arch as 'arm64' | 'x64',
+      outputDir: config.outputDir,
+      buildDir: config.buildDir
+    })
+    
+    log(`Precompiling PHP ${config.phpVersion} with all essential extensions...`)
+    await precompiler.buildPhp()
+    
+    log('✅ PHP precompilation completed with all extensions')
+  } catch (error) {
+    log(`❌ Precompiler failed, falling back to basic build: ${error}`)
+    
+    // Fallback to basic build for Unix systems only
+    if (config.platform === 'win32') {
+      log('Windows fallback: downloading pre-compiled binary')
+      await downloadWindowsPhpBinary(config)
+      return
+    }
+    
+    // Unix fallback: basic source build
+    const phpSourceDir = downloadPhpSource(config)
+    
+    // Set up environment for macOS builds
+    let buildEnv = { ...process.env }
+    if (config.platform === 'darwin') {
+      buildEnv.PATH = `/opt/homebrew/bin:/usr/local/bin:${buildEnv.PATH || ''}`
+      buildEnv.PKG_CONFIG_PATH = `/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:${buildEnv.PKG_CONFIG_PATH || ''}`
+    }
+    
     mkdirSync(installPrefix, { recursive: true })
+    
+    // Unix-like systems: Build from source
 
     log('Running buildconf...')
     execSync('./buildconf --force', {
