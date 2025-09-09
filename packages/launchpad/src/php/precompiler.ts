@@ -370,7 +370,7 @@ export class PhpPrecompiler {
 
     // Use proper configure approach with required extensions
     const extensions = this.getConfigureExtensions()
-    const configureArgs = [
+    const baseArgs = [
       `--prefix=${installPrefix}`,
       '--disable-cgi',
       '--without-pear',
@@ -397,27 +397,91 @@ export class PhpPrecompiler {
       '--enable-exif',
       '--enable-bcmath',
       '--with-readline',
-      '--with-iconv',
       '--with-curl',
       '--with-openssl',
       '--with-zip',
       '--with-zlib',
-      '--with-bz2',
-      '--with-gettext',
       ...extensions.split(' ')
     ]
+
+    // Platform-specific dependency paths
+    const configureArgs = [...baseArgs]
+    if (this.config.platform === 'darwin') {
+      // macOS: Add explicit paths for problematic dependencies
+      const homeDir = process.env.HOME || '/Users/runner'
+      const launchpadLibs = `${homeDir}/.local`
+      
+      // Helper function to find actual version directory
+      const findVersionDir = (basePath: string): string | null => {
+        try {
+          if (!fs.existsSync(basePath)) return null
+          const dirs = fs.readdirSync(basePath).filter(d => d.startsWith('v'))
+          if (dirs.length === 0) return null
+          // Sort versions and take the latest
+          dirs.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
+          return join(basePath, dirs[0])
+        } catch {
+          return null
+        }
+      }
+      
+      // Add specific paths for dependencies that need them
+      const iconvDir = findVersionDir(`${launchpadLibs}/gnu.org/libiconv`)
+      if (iconvDir) {
+        configureArgs.push(`--with-iconv=${iconvDir}`)
+      } else {
+        configureArgs.push('--with-iconv')
+      }
+      
+      // Only add gettext and bz2 if they exist (they often cause issues)
+      const gettextDir = findVersionDir(`${launchpadLibs}/gnu.org/gettext`)
+      if (gettextDir) {
+        configureArgs.push(`--with-gettext=${gettextDir}`)
+      } else {
+        configureArgs.push('--without-gettext')
+      }
+      
+      const bz2Dir = findVersionDir(`${launchpadLibs}/sourceware.org/bzip2`)
+      if (bz2Dir) {
+        configureArgs.push(`--with-bz2=${bz2Dir}`)
+      } else {
+        configureArgs.push('--without-bz2')
+      }
+    } else {
+      // Linux: Use standard flags
+      configureArgs.push('--with-iconv', '--with-bz2', '--with-gettext')
+    }
 
     logUniqueMessage(`Configuring PHP with comprehensive extensions: ${configureArgs.join(' ')}`)
 
     // Set up environment for configure
-    const configureEnv = {
+    const configureEnv: Record<string, string> = {
       ...process.env,
       CC: 'clang',
       CXX: 'clang++',
-      // Ensure configure can find system libraries
-      PKG_CONFIG_PATH: '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig',
-      CPPFLAGS: '-I/usr/include -I/usr/include/libxml2',
-      LDFLAGS: '-L/usr/lib -L/usr/lib/x86_64-linux-gnu'
+    }
+
+    // Platform-specific library paths
+    if (this.config.platform === 'darwin') {
+      // macOS: Use existing PKG_CONFIG_PATH from Launchpad environment
+      configureEnv.PKG_CONFIG_PATH = process.env.PKG_CONFIG_PATH || ''
+      
+      // Use existing CPPFLAGS and LDFLAGS from environment if available
+      // The Launchpad build environment script sets these correctly
+      if (process.env.CPPFLAGS) {
+        configureEnv.CPPFLAGS = process.env.CPPFLAGS
+      }
+      if (process.env.LDFLAGS) {
+        configureEnv.LDFLAGS = process.env.LDFLAGS
+      }
+      if (process.env.DYLD_LIBRARY_PATH) {
+        configureEnv.DYLD_LIBRARY_PATH = process.env.DYLD_LIBRARY_PATH
+      }
+    } else {
+      // Linux: Use system paths
+      configureEnv.PKG_CONFIG_PATH = '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig'
+      configureEnv.CPPFLAGS = '-I/usr/include -I/usr/include/libxml2'
+      configureEnv.LDFLAGS = '-L/usr/lib -L/usr/lib/x86_64-linux-gnu'
     }
 
     try {
