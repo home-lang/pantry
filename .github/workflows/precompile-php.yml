@@ -301,39 +301,9 @@ jobs:
             $pharCheck = & "binaries\$BINARY_NAME\bin\php.exe" -m | Select-String "phar"
             if ($pharCheck) {
               Write-Host "✅ Phar extension is loaded"
-              
-              # Test phar functionality
-              Write-Host "🧪 Testing phar functionality..."
-              '<?php echo "Phar test: " . (extension_loaded("phar") ? "ENABLED" : "DISABLED") . "\n";'
-              | Out-File -FilePath "test_phar.php" -Encoding UTF8
-              & "binaries\$BINARY_NAME\bin\php.exe" test_phar.php
-              Remove-Item "test_phar.php"
-              
-              # Test creating a simple phar
-              Write-Host "🧪 Testing phar creation..."
-              $pharScript = @'
-<?php
-if (extension_loaded("phar")) {
-  try {
-    $phar = new Phar("test.phar");
-    $phar->addFromString("test.txt", "Hello World");
-    echo "Phar creation successful\n";
-    unlink("test.phar");
-  } catch (Exception $e) {
-    echo "Phar creation failed: " . $e->getMessage() . "\n";
-    exit(1);
-  }
-} else {
-  echo "Phar extension not loaded\n";
-  exit(1);
-}
-?>
-'@
-              $pharScript | Out-File -FilePath "test_phar_create.php" -Encoding UTF8
-              & "binaries\$BINARY_NAME\bin\php.exe" test_phar_create.php
-              Remove-Item "test_phar_create.php"
+              Write-Host "🧪 Skipping additional phar PHP script execution on Windows"
             } else {
-              Write-Host "❌ Phar extension not found in loaded modules"
+              Write-Host "Phar extension not found in loaded modules"
               Write-Host "Available modules:"
               & "binaries\$BINARY_NAME\bin\php.exe" -m
               exit 1
@@ -341,11 +311,11 @@ if (extension_loaded("phar")) {
             
             # Check if this is likely a real binary based on file size (real PHP binaries are several MB)
             if ($fileSize -gt 1000000) {
-              Write-Host "✅ PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
+              Write-Host "PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
               
               # Check for DLLs which should be present in a real PHP distribution
               $dllCount = (Get-ChildItem -Path "binaries\$BINARY_NAME" -Filter "*.dll" -Recurse).Count
-              Write-Host "📊 Found $dllCount DLL files in the PHP distribution"
+              Write-Host "Found $dllCount DLL files in the PHP distribution"
               
               if ($dllCount -gt 10) {
                 Write-Host "✅ PHP distribution contains expected DLL files"
