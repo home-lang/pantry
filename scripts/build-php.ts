@@ -1209,7 +1209,15 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   // Install required system packages for extensions
   log('Installing required system packages...')
   try {
-    execSync('apt-get update && apt-get install -y libbz2-dev libzip-dev gettext libgettextpo-dev', { stdio: 'inherit' })
+    execSync('apt-get update && apt-get install -y libbz2-dev libzip-dev gettext libgettextpo-dev pkg-config', { stdio: 'inherit' })
+    
+    // Verify libzip installation
+    try {
+      const libzipVersion = execSync('pkg-config --modversion libzip', { encoding: 'utf8' }).trim()
+      log(`✅ libzip ${libzipVersion} detected`)
+    } catch (e) {
+      log('⚠️ libzip pkg-config not found, zip extension may fail')
+    }
   } catch (e) {
     log('Warning: Could not install system packages, continuing with available libraries')
   }
@@ -1222,8 +1230,8 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     CPP: 'gcc -E',
     CFLAGS: '-O2 -fPIC',
     CXXFLAGS: '-O2 -fPIC',
-    // Clear any paths that might contain libstdc++
-    PKG_CONFIG_PATH: '',
+    // Set system pkg-config path for extension detection, but exclude Launchpad paths
+    PKG_CONFIG_PATH: '/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig',
     LDFLAGS: '',
     CPPFLAGS: '',
     LD_LIBRARY_PATH: '',
@@ -1287,7 +1295,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   // Try to configure with all critical extensions first
   const fullConfigureArgs = [
     ...baseConfigureArgs,
-    '--enable-zip',
+    '--with-zip',
     '--with-iconv',
     '--with-bz2',
     '--with-gettext'
@@ -1308,9 +1316,9 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     // Try with individual extensions to see which ones work
     const workingArgs = [...baseConfigureArgs]
     
-    // Test each extension individually
+    // Test each extension individually with proper configuration
     const extensionsToTest = [
-      { flag: '--enable-zip', name: 'zip' },
+      { flag: '--with-zip', name: 'zip' }, // Use --with-zip instead of --enable-zip
       { flag: '--with-iconv', name: 'iconv' },
       { flag: '--with-bz2', name: 'bz2' },
       { flag: '--with-gettext', name: 'gettext' }
