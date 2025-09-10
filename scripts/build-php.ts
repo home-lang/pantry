@@ -1206,6 +1206,14 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   const phpSourceDir = downloadPhpSource(config)
   mkdirSync(installPrefix, { recursive: true })
 
+  // Install required system packages for extensions
+  log('Installing required system packages...')
+  try {
+    execSync('apt-get update && apt-get install -y libbz2-dev libzip-dev gettext libgettextpo-dev', { stdio: 'inherit' })
+  } catch (e) {
+    log('Warning: Could not install system packages, continuing with available libraries')
+  }
+
   // Use clean system environment without any Launchpad paths
   const buildEnv = {
     ...process.env,
@@ -1237,7 +1245,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   })
 
   log('Configuring PHP with system libraries...')
-  const configureArgs = [
+  const baseConfigureArgs = [
     `--prefix=${installPrefix}`,
     '--enable-bcmath',
     '--enable-calendar',
@@ -1273,18 +1281,70 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     '--with-zlib',
     '--enable-opcache=shared',
     '--with-readline',
-    '--without-zip',
-    '--without-iconv',
     '--without-ldap-sasl'
   ]
 
-  execSync(`./configure ${configureArgs.join(' ')}`, {
-    cwd: phpSourceDir,
-    env: buildEnv,
-    stdio: 'inherit'
-  })
+  // Try to configure with all critical extensions first
+  const fullConfigureArgs = [
+    ...baseConfigureArgs,
+    '--enable-zip',
+    '--with-iconv',
+    '--with-bz2',
+    '--with-gettext'
+  ]
 
-  log('Building PHP...')
+  let configureSuccess = false
+  try {
+    log('Attempting full configure with all extensions...')
+    execSync(`./configure ${fullConfigureArgs.join(' ')}`, {
+      cwd: phpSourceDir,
+      env: buildEnv,
+      stdio: 'inherit'
+    })
+    configureSuccess = true
+  } catch (error) {
+    log('Full configure failed, trying individual extensions...')
+    
+    // Try with individual extensions to see which ones work
+    const workingArgs = [...baseConfigureArgs]
+    
+    // Test each extension individually
+    const extensionsToTest = [
+      { flag: '--enable-zip', name: 'zip' },
+      { flag: '--with-iconv', name: 'iconv' },
+      { flag: '--with-bz2', name: 'bz2' },
+      { flag: '--with-gettext', name: 'gettext' }
+    ]
+    
+    for (const ext of extensionsToTest) {
+      try {
+        const testArgs = [...baseConfigureArgs, ext.flag]
+        execSync(`./configure ${testArgs.join(' ')}`, {
+          cwd: phpSourceDir,
+          env: buildEnv,
+          stdio: 'pipe'
+        })
+        workingArgs.push(ext.flag)
+        log(`✅ ${ext.name} extension: Available`)
+      } catch (e) {
+        log(`❌ ${ext.name} extension: Not available, skipping`)
+      }
+    }
+    
+    // Final configure with working extensions
+    execSync(`./configure ${workingArgs.join(' ')}`, {
+      cwd: phpSourceDir,
+      env: buildEnv,
+      stdio: 'inherit'
+    })
+    configureSuccess = true
+  }
+  
+  if (!configureSuccess) {
+    throw new Error('Configure failed even with minimal extensions')
+  }
+
+  log('Configure completed successfully, building PHP...')
   const jobs = execSync('nproc 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
   execSync(`make -j${jobs}`, {
     cwd: phpSourceDir,
