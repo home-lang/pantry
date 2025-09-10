@@ -683,7 +683,7 @@ openssl.capath =
 
 function createUnixPhpIni(installPrefix: string, config: BuildConfig): void {
   const phpIniPath = join(installPrefix, 'lib', 'php.ini')
-  
+
   // Create comprehensive php.ini content for Unix builds
   const phpIniContent = `; PHP Configuration File
 ; Generated automatically for Launchpad PHP build (Unix)
@@ -766,7 +766,7 @@ openssl.capath =
 `
 
   writeFileSync(phpIniPath, phpIniContent)
-  
+
   // Also create a copy in the etc directory if it exists
   const etcPhpIniPath = join(installPrefix, 'etc', 'php.ini')
   const etcDir = join(installPrefix, 'etc')
@@ -788,7 +788,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     log('Using system libraries for Linux PHP build to avoid libstdc++ conflicts')
     return buildPhpWithSystemLibraries(config, installPrefix)
   }
-  
+
   log('Using Launchpad-managed dependencies for PHP build')
 
   const phpSourceDir = downloadPhpSource(config)
@@ -827,11 +827,11 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sqlite.org/v3.47.2/lib/pkgconfig`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`
   ]
-  
+
   // Completely exclude libstdcxx and gcc paths on Linux
   if (config.platform === 'linux') {
-    pkgConfigPaths = pkgConfigPaths.filter(path => 
-      !path.includes('libstdcxx') && 
+    pkgConfigPaths = pkgConfigPaths.filter(path =>
+      !path.includes('libstdcxx') &&
       !path.includes('gcc') &&
       !path.includes('gnu.org/gcc')
     )
@@ -856,11 +856,11 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sqlite.org/v3.47.2/lib`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib`
   ]
-  
+
   // Completely exclude libstdcxx and gcc paths on Linux
   if (config.platform === 'linux') {
-    libPaths = libPaths.filter(path => 
-      !path.includes('libstdcxx') && 
+    libPaths = libPaths.filter(path =>
+      !path.includes('libstdcxx') &&
       !path.includes('gcc') &&
       !path.includes('gnu.org/gcc')
     )
@@ -1102,17 +1102,24 @@ exec "$@"
   log('Building PHP...')
   const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
 
-  execSync(`make -j${jobs}`, {
+  // Limit parallel jobs on macOS to prevent compilation hangs
+  const maxJobs = config.platform === 'darwin' ? Math.min(parseInt(jobs), 2) : parseInt(jobs)
+  log(`Using ${maxJobs} parallel jobs for compilation`)
+
+  execSync(`make -j${maxJobs}`, {
     stdio: 'inherit',
     cwd: phpSourceDir,
-    env: buildEnv
+    env: buildEnv,
+    // Add timeout to prevent infinite hangs
+    timeout: 45 * 60 * 1000 // 45 minutes
   })
 
   log('Installing PHP...')
   execSync('make install', {
     stdio: 'inherit',
     cwd: phpSourceDir,
-    env: buildEnv
+    env: buildEnv,
+    timeout: 15 * 60 * 1000 // 15 minutes timeout for install
   })
 
   // Create php.ini for Unix builds to enable OPcache and other extensions
@@ -1202,7 +1209,7 @@ exec "$@"
 
 function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string): string {
   log('Building PHP with system libraries only (Linux)')
-  
+
   const phpSourceDir = downloadPhpSource(config)
   mkdirSync(installPrefix, { recursive: true })
 
@@ -1210,7 +1217,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   log('Installing required system packages...')
   try {
     execSync('apt-get update && apt-get install -y libbz2-dev libzip-dev gettext libgettextpo-dev pkg-config', { stdio: 'inherit' })
-    
+
     // Verify libzip installation
     try {
       const libzipVersion = execSync('pkg-config --modversion libzip', { encoding: 'utf8' }).trim()
@@ -1312,10 +1319,10 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     configureSuccess = true
   } catch (error) {
     log('Full configure failed, trying individual extensions...')
-    
+
     // Try with individual extensions to see which ones work
     const workingArgs = [...baseConfigureArgs]
-    
+
     // Test each extension individually with proper configuration
     const extensionsToTest = [
       { flag: '--with-zip', name: 'zip' }, // Use --with-zip instead of --enable-zip
@@ -1323,7 +1330,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
       { flag: '--with-bz2', name: 'bz2' },
       { flag: '--with-gettext', name: 'gettext' }
     ]
-    
+
     for (const ext of extensionsToTest) {
       try {
         const testArgs = [...baseConfigureArgs, ext.flag]
@@ -1338,7 +1345,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
         log(`❌ ${ext.name} extension: Not available, skipping`)
       }
     }
-    
+
     // Final configure with working extensions
     execSync(`./configure ${workingArgs.join(' ')}`, {
       cwd: phpSourceDir,
@@ -1347,24 +1354,29 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     })
     configureSuccess = true
   }
-  
+
   if (!configureSuccess) {
     throw new Error('Configure failed even with minimal extensions')
   }
 
   log('Configure completed successfully, building PHP...')
   const jobs = execSync('nproc 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
-  execSync(`make -j${jobs}`, {
+  const maxJobs = Math.min(parseInt(jobs), 4) // Limit to 4 jobs max to prevent resource issues
+  log(`Using ${maxJobs} parallel jobs for compilation`)
+
+  execSync(`make -j${maxJobs}`, {
     cwd: phpSourceDir,
     env: buildEnv,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    timeout: 45 * 60 * 1000 // 45 minutes timeout
   })
 
   log('Installing PHP...')
   execSync('make install', {
     cwd: phpSourceDir,
     env: buildEnv,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    timeout: 30 * 60 * 1000 // 30 minutes timeout for install
   })
 
   // Create php.ini for Unix builds
