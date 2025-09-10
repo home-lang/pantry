@@ -281,8 +281,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     `--with-sodium=${launchpadPath}/libsodium.org/v1.0.18`,
     `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
     `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`,
-    `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`,
-    `--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`
+    `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`
   ]
 
   // Platform-specific arguments
@@ -303,6 +302,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       '--enable-opcache=shared',
       '--with-readline',
       '--without-zip',
+      '--with-iconv',
       '--without-ldap-sasl'
     ]
   }
@@ -799,7 +799,6 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   // Set up targeted PKG_CONFIG_PATH for essential libraries
   const pkgConfigPaths = [
-    `${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib/pkgconfig`,
     `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib/pkgconfig`,
     `${launchpadRoot}/zlib.net/v1.3.1/lib/pkgconfig`,
     `${launchpadRoot}/curl.se/v8.15.0/lib/pkgconfig`,
@@ -820,7 +819,6 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   // Set up targeted library and include paths
   const libPaths = [
-    `${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib`,
     `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib`,
     `${launchpadRoot}/zlib.net/v1.3.1/lib`,
     `${launchpadRoot}/curl.se/v8.15.0/lib`,
@@ -838,7 +836,6 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   ]
 
   const includePaths = [
-    `${launchpadRoot}/gnu.org/libiconv/v1.18.0/include`,
     `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/include`,
     `${launchpadRoot}/zlib.net/v1.3.1/include`,
     `${launchpadRoot}/curl.se/v8.15.0/include`,
@@ -883,8 +880,13 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.CXX = 'g++'
     buildEnv.CFLAGS = (buildEnv.CFLAGS || '') + ' -O2 -fPIC'
     buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -O2 -fPIC'
+    // Use system libstdc++ and iconv instead of Launchpad's to avoid linking issues
+    buildEnv.LDFLAGS = buildEnv.LDFLAGS.replace(/-L[^\s]*libstdcxx[^\s]*/g, '')
     // Set preprocessor to avoid traditional-cpp issues
     buildEnv.CPP = 'gcc -E'
+    // Force use of system iconv to avoid Launchpad libiconv linking issues
+    buildEnv.ICONV_CFLAGS = ''
+    buildEnv.ICONV_LIBS = '-liconv'
   }
 
   log('Running buildconf...')
