@@ -286,7 +286,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
     `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`,
     `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`,
-    `--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`
+    `--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`,
+    `--with-libzip=${launchpadPath}/libzip.org/v1.11.4`
   ]
 
   // Platform-specific arguments
@@ -294,7 +295,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
-      '--enable-opcache',
+      '--enable-opcache=shared',
       '--with-kerberos',
       '--with-libedit',
       '--with-zip',
@@ -305,7 +306,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
-      '--enable-opcache',
+      '--enable-opcache=shared',
       '--with-kerberos',
       '--with-readline',
       '--with-zip',
@@ -648,13 +649,25 @@ ldap.max_links = -1
 [dba]
 
 [opcache]
+; Basic OPcache settings
 opcache.enable = 1
 opcache.enable_cli = 1
 opcache.memory_consumption = 128
 opcache.interned_strings_buffer = 8
 opcache.max_accelerated_files = 4000
-opcache.revalidate_freq = 2
-opcache.fast_shutdown = 1
+opcache.revalidate_freq = 60
+opcache.validate_timestamps = 1
+opcache.save_comments = 1
+opcache.enable_file_override = 0
+
+; JIT settings for PHP 8.0+
+opcache.jit = tracing
+opcache.jit_buffer_size = 64M
+
+; Performance optimizations
+opcache.max_wasted_percentage = 5
+opcache.use_cwd = 1
+opcache.optimization_level = 0x7FFEBFFF
 
 [curl]
 curl.cainfo =
