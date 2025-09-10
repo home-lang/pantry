@@ -284,11 +284,18 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`
   ]
 
+  // Platform-specific dependency paths
+  const platformDependencyArgs = []
+  if (config.platform === 'darwin') {
+    platformDependencyArgs.push(`--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`)
+  }
+
   // Platform-specific arguments
   if (config.platform === 'darwin') {
     return [
       ...baseArgs,
       ...dependencyArgs,
+      ...platformDependencyArgs,
       '--enable-opcache=shared',
       '--with-libedit',
       '--with-zip',
@@ -299,10 +306,11 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     return [
       ...baseArgs,
       ...dependencyArgs,
+      ...platformDependencyArgs,
       '--enable-opcache=shared',
       '--with-readline',
       '--without-zip',
-      '--with-iconv',
+      '--without-iconv',
       '--without-ldap-sasl'
     ]
   }
@@ -852,6 +860,14 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/libzip.org/v1.11.4/include`
   ]
 
+  // Add iconv paths for macOS only (Linux uses system iconv)
+  if (config.platform === 'darwin') {
+    libPaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib`)
+    includePaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/include`)
+    pkgConfigPaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib/pkgconfig`)
+    buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
+  }
+
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
@@ -884,9 +900,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.LDFLAGS = buildEnv.LDFLAGS.replace(/-L[^\s]*libstdcxx[^\s]*/g, '')
     // Set preprocessor to avoid traditional-cpp issues
     buildEnv.CPP = 'gcc -E'
-    // Force use of system iconv to avoid Launchpad libiconv linking issues
-    buildEnv.ICONV_CFLAGS = ''
-    buildEnv.ICONV_LIBS = '-liconv'
+    // Disable iconv completely on Linux due to glibc errno check failure
   }
 
   log('Running buildconf...')
