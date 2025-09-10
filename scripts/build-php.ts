@@ -815,6 +815,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/libsodium.org/v1.0.18/lib/pkgconfig`,
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib/pkgconfig`,
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`,
+    `${launchpadRoot}/sqlite.org/v3.47.2/lib/pkgconfig`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`
   ]
 
@@ -835,6 +836,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/libsodium.org/v1.0.18/lib`,
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib`,
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`,
+    `${launchpadRoot}/sqlite.org/v3.47.2/lib`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib`
   ]
 
@@ -852,6 +854,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/libsodium.org/v1.0.18/include`,
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/include`,
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`,
+    `${launchpadRoot}/sqlite.org/v3.47.2/include`,
     `${launchpadRoot}/libzip.org/v1.11.4/include`
   ]
 
