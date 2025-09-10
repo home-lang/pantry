@@ -783,7 +783,12 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     return await downloadWindowsPhpBinary(config)
   }
 
-  // For Unix systems, use Launchpad dependency management
+  // For Unix systems, use different strategies based on platform
+  if (config.platform === 'linux') {
+    log('Using system libraries for Linux PHP build to avoid libstdc++ conflicts')
+    return buildPhpWithSystemLibraries(config, installPrefix)
+  }
+  
   log('Using Launchpad-managed dependencies for PHP build')
 
   const phpSourceDir = downloadPhpSource(config)
@@ -915,10 +920,24 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.CXX = 'g++'
     buildEnv.CFLAGS = (buildEnv.CFLAGS || '') + ' -O2 -fPIC'
     buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -O2 -fPIC'
-    // Use system libstdc++ instead of Launchpad's to avoid linking issues
+    // Force system libstdc++ and clear any cached paths
+    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '').replace(/-L[^\s]*gnu\.org\/gcc[^\s]*/g, '')
+    buildEnv.LDFLAGS = buildEnv.LDFLAGS.replace(/-L[^\s]*libstdcxx[^\s]*/g, '')
     // Set preprocessor to avoid traditional-cpp issues
     buildEnv.CPP = 'gcc -E'
+    // Clear any environment variables that might contain gcc paths
+    delete buildEnv.LIBRARY_PATH
+    delete buildEnv.LD_LIBRARY_PATH
     // Disable iconv completely on Linux due to glibc errno check failure
+  }
+
+  // Clear any configure cache that might contain libstdc++ paths
+  if (config.platform === 'linux') {
+    try {
+      execSync('rm -rf autom4te.cache config.cache', { cwd: phpSourceDir, stdio: 'ignore' })
+    } catch (e) {
+      // Ignore if cache files don't exist
+    }
   }
 
   log('Running buildconf...')
@@ -1022,7 +1041,30 @@ exec "$@"
       if (existsSync(buildEnvScript)) {
         configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
       } else {
-        throw new Error('build-env.sh still not found after dependency installation')
+        log('Configuring PHP build...')
+
+        // Force clean environment for Linux to prevent libstdc++ injection
+        if (config.platform === 'linux') {
+          // Clear any remaining gcc/libstdc++ references from environment
+          Object.keys(buildEnv).forEach(key => {
+            if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('gnu.org/gcc')) {
+              buildEnv[key] = buildEnv[key].replace(/[^\s]*gnu\.org\/gcc[^\s]*/g, '')
+            }
+            if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('libstdcxx')) {
+              buildEnv[key] = buildEnv[key].replace(/[^\s]*libstdcxx[^\s]*/g, '')
+            }
+          })
+        }
+
+        if (config.config === 'ci') {
+          // Use CI-specific configure for GitHub Actions
+          const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
+          configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
+        } else {
+          // Use standard configure for local builds
+          const configureArgs = generateConfigureArgs(config, installPrefix)
+          configureCommand = `./configure ${configureArgs.join(' ')}`
+        }
       }
     } catch (error) {
       log('❌ Failed to install Launchpad dependencies, falling back to system libraries')
@@ -1155,6 +1197,112 @@ exec "$@"
     }
   }
 
+  return installPrefix
+}
+
+function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string): string {
+  log('Building PHP with system libraries only (Linux)')
+  
+  const phpSourceDir = downloadPhpSource(config)
+  mkdirSync(installPrefix, { recursive: true })
+
+  // Use clean system environment without any Launchpad paths
+  const buildEnv = {
+    ...process.env,
+    CC: 'gcc',
+    CXX: 'g++',
+    CPP: 'gcc -E',
+    CFLAGS: '-O2 -fPIC',
+    CXXFLAGS: '-O2 -fPIC',
+    // Clear any paths that might contain libstdc++
+    PKG_CONFIG_PATH: '',
+    LDFLAGS: '',
+    CPPFLAGS: '',
+    LD_LIBRARY_PATH: '',
+    LIBRARY_PATH: ''
+  }
+
+  // Clear configure cache
+  try {
+    execSync('rm -rf autom4te.cache config.cache', { cwd: phpSourceDir, stdio: 'ignore' })
+  } catch (e) {
+    // Ignore if cache files don't exist
+  }
+
+  log('Running buildconf...')
+  execSync('./buildconf --force', {
+    cwd: phpSourceDir,
+    env: buildEnv,
+    stdio: 'inherit'
+  })
+
+  log('Configuring PHP with system libraries...')
+  const configureArgs = [
+    `--prefix=${installPrefix}`,
+    '--enable-bcmath',
+    '--enable-calendar',
+    '--enable-dba',
+    '--enable-exif',
+    '--enable-ftp',
+    '--enable-fpm',
+    '--enable-gd',
+    '--enable-intl',
+    '--enable-mbregex',
+    '--enable-mbstring',
+    '--enable-mysqlnd',
+    '--enable-pcntl',
+    '--disable-phpdbg',
+    '--enable-shmop',
+    '--enable-soap',
+    '--enable-sockets',
+    '--enable-sysvmsg',
+    '--enable-sysvsem',
+    '--enable-sysvshm',
+    '--with-pear',
+    '--with-pcre-jit',
+    '--with-layout=GNU',
+    '--with-libxml',
+    '--with-pdo-sqlite',
+    '--with-pic',
+    '--with-sqlite3',
+    '--disable-dtrace',
+    '--without-ndbm',
+    '--without-gdbm',
+    '--with-curl',
+    '--with-openssl',
+    '--with-zlib',
+    '--enable-opcache=shared',
+    '--with-readline',
+    '--without-zip',
+    '--without-iconv',
+    '--without-ldap-sasl'
+  ]
+
+  execSync(`./configure ${configureArgs.join(' ')}`, {
+    cwd: phpSourceDir,
+    env: buildEnv,
+    stdio: 'inherit'
+  })
+
+  log('Building PHP...')
+  const jobs = execSync('nproc 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
+  execSync(`make -j${jobs}`, {
+    cwd: phpSourceDir,
+    env: buildEnv,
+    stdio: 'inherit'
+  })
+
+  log('Installing PHP...')
+  execSync('make install', {
+    cwd: phpSourceDir,
+    env: buildEnv,
+    stdio: 'inherit'
+  })
+
+  // Create php.ini for Unix builds
+  createUnixPhpIni(installPrefix, config)
+
+  log(`✅ PHP ${config.phpVersion} built successfully with system libraries`)
   return installPrefix
 }
 
