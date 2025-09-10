@@ -823,7 +823,12 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`
   ]
 
-  buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
+  // Filter out libstdcxx paths from PKG_CONFIG_PATH on Linux
+  const filteredPkgConfigPaths = config.platform === 'linux'
+    ? pkgConfigPaths.filter(path => !path.includes('libstdcxx'))
+    : pkgConfigPaths
+  
+  buildEnv.PKG_CONFIG_PATH = filteredPkgConfigPaths.join(':')
 
   // Set up targeted library and include paths
   const libPaths = [
@@ -865,18 +870,16 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     libPaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib`)
     includePaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/include`)
     pkgConfigPaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib/pkgconfig`)
+    // Re-apply filtering with iconv added (no libstdcxx on macOS)
     buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
   }
 
-  // Filter out libstdcxx and gcc paths on Linux to avoid linking issues
+  // Filter out libstdcxx paths on Linux to avoid linking issues
   const filteredLibPaths = config.platform === 'linux' 
-    ? libPaths.filter(path => !path.includes('libstdcxx') && !path.includes('gcc'))
+    ? libPaths.filter(path => !path.includes('libstdcxx'))
     : libPaths
   
-  const ldflags = filteredLibPaths.map(path => `-L${path}`).join(' ')
-  buildEnv.LDFLAGS = config.platform === 'linux' 
-    ? `${ldflags} -lstdc++`
-    : ldflags
+  buildEnv.LDFLAGS = filteredLibPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
   // Add macOS-specific linker flags for DNS resolver functions
@@ -904,12 +907,9 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.CXX = 'g++'
     buildEnv.CFLAGS = (buildEnv.CFLAGS || '') + ' -O2 -fPIC'
     buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -O2 -fPIC'
-    // Force use of system libstdc++ and prevent Launchpad gcc paths
-    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '') + ' -lstdc++'
+    // Use system libstdc++ instead of Launchpad's to avoid linking issues
     // Set preprocessor to avoid traditional-cpp issues
     buildEnv.CPP = 'gcc -E'
-    // Clear any existing PKG_CONFIG_PATH that might include gcc paths
-    buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.filter(path => !path.includes('gcc')).join(':')
     // Disable iconv completely on Linux due to glibc errno check failure
   }
 
