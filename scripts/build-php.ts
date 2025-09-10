@@ -167,10 +167,6 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
         stdio: 'inherit'
       })
 
-      // Create comprehensive php.ini with all available extensions
-      log('Creating comprehensive php.ini for Windows PHP...')
-      createWindowsPhpIni(installPrefix)
-
       // Ensure php.exe is in the bin directory
       const phpExePath = join(phpSourceDir, 'php.exe')
       const targetPhpExePath = join(installPrefix, 'bin', 'php.exe')
@@ -182,8 +178,8 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
       }
 
       // Create comprehensive php.ini that enables all available extensions
-      await createWindowsPhpIni(installPrefix)
-
+      log('Creating comprehensive php.ini for Windows PHP...')
+      createWindowsPhpIni(installPrefix, config)
       log('✅ Created comprehensive php.ini with all available extensions enabled')
 
       // If we downloaded a different version than requested, update the metadata
@@ -401,7 +397,7 @@ function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): st
   return ciArgs
 }
 
-function createWindowsPhpIni(phpDir: string): void {
+function createWindowsPhpIni(phpDir: string, config: BuildConfig): void {
   const extDir = join(phpDir, 'ext')
   const mainDir = phpDir
 
@@ -680,6 +676,100 @@ openssl.capath =
   writeFileSync(join(phpDir, 'php.ini'), phpIniContent)
 }
 
+function createUnixPhpIni(installPrefix: string, config: BuildConfig): void {
+  const phpIniPath = join(installPrefix, 'lib', 'php.ini')
+  
+  // Create comprehensive php.ini content for Unix builds
+  const phpIniContent = `; PHP Configuration File
+; Generated automatically for Launchpad PHP build (Unix)
+
+[PHP]
+; Basic settings
+engine = On
+short_open_tag = Off
+precision = 14
+output_buffering = 4096
+zlib.output_compression = Off
+implicit_flush = Off
+unserialize_callback_func =
+serialize_precision = -1
+disable_functions =
+disable_classes =
+zend.enable_gc = On
+zend.exception_ignore_args = On
+zend.exception_string_param_max_len = 0
+
+; Resource Limits
+max_execution_time = 30
+max_input_time = 60
+memory_limit = 128M
+
+; Error handling and logging
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+ignore_repeated_errors = Off
+ignore_repeated_source = Off
+report_memleaks = On
+
+; Data Handling
+variables_order = "GPCS"
+request_order = "GP"
+register_argc_argv = Off
+auto_globals_jit = On
+post_max_size = 8M
+auto_prepend_file =
+auto_append_file =
+default_mimetype = "text/html"
+default_charset = "UTF-8"
+
+; File Uploads
+file_uploads = On
+upload_max_filesize = 2M
+max_file_uploads = 20
+
+; Extensions
+; Let PHP auto-detect the extension directory
+; extension_dir will be set automatically by PHP
+
+; Zend Extensions (must be loaded first)
+; Use full path to ensure OPcache loads correctly
+zend_extension=opcache.so
+
+; OPcache Configuration
+opcache.enable=1
+opcache.enable_cli=1
+opcache.memory_consumption=128
+opcache.interned_strings_buffer=8
+opcache.max_accelerated_files=4000
+opcache.revalidate_freq=2
+opcache.fast_shutdown=1
+opcache.save_comments=1
+opcache.enable_file_override=0
+opcache.validate_timestamps=1
+opcache.jit_buffer_size=100M
+opcache.jit=tracing
+
+; Phar
+phar.readonly = Off
+phar.require_hash = On
+
+; OpenSSL
+openssl.cafile =
+openssl.capath =
+`
+
+  writeFileSync(phpIniPath, phpIniContent)
+  
+  // Also create a copy in the etc directory if it exists
+  const etcPhpIniPath = join(installPrefix, 'etc', 'php.ini')
+  const etcDir = join(installPrefix, 'etc')
+  if (existsSync(etcDir)) {
+    writeFileSync(etcPhpIniPath, phpIniContent)
+  }
+}
+
 async function buildPhp(config: BuildConfig): Promise<string> {
   const installPrefix = join(config.outputDir, `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`)
 
@@ -948,6 +1038,11 @@ exec "$@"
     cwd: phpSourceDir,
     env: buildEnv
   })
+
+  // Create php.ini for Unix builds to enable OPcache and other extensions
+  log('Creating php.ini for Unix PHP build...')
+  createUnixPhpIni(installPrefix, config)
+  log('✅ Created php.ini with OPcache and extensions enabled')
 
   // Create metadata file
   const metadata = {
