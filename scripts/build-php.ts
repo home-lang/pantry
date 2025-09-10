@@ -868,12 +868,15 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
   }
 
-  // Filter out libstdcxx paths on Linux to avoid linking issues
+  // Filter out libstdcxx and gcc paths on Linux to avoid linking issues
   const filteredLibPaths = config.platform === 'linux' 
-    ? libPaths.filter(path => !path.includes('libstdcxx'))
+    ? libPaths.filter(path => !path.includes('libstdcxx') && !path.includes('gcc'))
     : libPaths
   
-  buildEnv.LDFLAGS = filteredLibPaths.map(path => `-L${path}`).join(' ')
+  const ldflags = filteredLibPaths.map(path => `-L${path}`).join(' ')
+  buildEnv.LDFLAGS = config.platform === 'linux' 
+    ? `${ldflags} -lstdc++`
+    : ldflags
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
   // Add macOS-specific linker flags for DNS resolver functions
@@ -901,9 +904,12 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.CXX = 'g++'
     buildEnv.CFLAGS = (buildEnv.CFLAGS || '') + ' -O2 -fPIC'
     buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -O2 -fPIC'
-    // Use system libstdc++ instead of Launchpad's to avoid linking issues
+    // Force use of system libstdc++ and prevent Launchpad gcc paths
+    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '') + ' -lstdc++'
     // Set preprocessor to avoid traditional-cpp issues
     buildEnv.CPP = 'gcc -E'
+    // Clear any existing PKG_CONFIG_PATH that might include gcc paths
+    buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.filter(path => !path.includes('gcc')).join(':')
     // Disable iconv completely on Linux due to glibc errno check failure
   }
 
