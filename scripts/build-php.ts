@@ -282,8 +282,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
     `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`,
     `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`,
-    `--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`,
-    `--with-libzip=${launchpadPath}/libzip.org/v1.11.4`
+    `--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`
   ]
 
   // Platform-specific arguments
@@ -292,7 +291,6 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...baseArgs,
       ...dependencyArgs,
       '--enable-opcache=shared',
-      '--with-kerberos',
       '--with-libedit',
       '--with-zip',
       '--enable-dtrace',
@@ -303,9 +301,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...baseArgs,
       ...dependencyArgs,
       '--enable-opcache=shared',
-      '--with-kerberos',
       '--with-readline',
-      '--with-zip',
+      '--without-zip',
       '--without-ldap-sasl'
     ]
   }
