@@ -486,7 +486,7 @@ max_file_uploads = 20
 extension_dir = "ext"
 
 ; Zend Extensions (must be loaded first)
-zend_extension=php_opcache
+${config.platform === 'win32' ? 'zend_extension=php_opcache' : 'zend_extension=opcache'}
 
 ; Enable essential extensions
 ${essentialExtensions
@@ -724,7 +724,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnu.org/gmp/v6.3.0/lib/pkgconfig`,
     `${launchpadRoot}/libsodium.org/v1.0.18/lib/pkgconfig`,
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib/pkgconfig`,
-    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`
+    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`,
+    `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`
   ]
 
   buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
@@ -743,7 +744,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnu.org/gmp/v6.3.0/lib`,
     `${launchpadRoot}/libsodium.org/v1.0.18/lib`,
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib`,
-    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`
+    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`,
+    `${launchpadRoot}/libzip.org/v1.11.4/lib`
   ]
 
   const includePaths = [
@@ -759,7 +761,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnu.org/gmp/v6.3.0/include`,
     `${launchpadRoot}/libsodium.org/v1.0.18/include`,
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/include`,
-    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`
+    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`,
+    `${launchpadRoot}/libzip.org/v1.11.4/include`
   ]
 
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
