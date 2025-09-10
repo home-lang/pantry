@@ -805,8 +805,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   buildEnv.PATH = `${launchpadBinPaths.join(':')}:${buildEnv.PATH}`
 
-  // Set up targeted PKG_CONFIG_PATH for essential libraries
-  const pkgConfigPaths = [
+  // Set up targeted PKG_CONFIG_PATH for essential libraries (exclude libstdcxx on Linux)
+  let pkgConfigPaths = [
     `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib/pkgconfig`,
     `${launchpadRoot}/zlib.net/v1.3.1/lib/pkgconfig`,
     `${launchpadRoot}/curl.se/v8.15.0/lib/pkgconfig`,
@@ -822,16 +822,20 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sqlite.org/v3.47.2/lib/pkgconfig`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`
   ]
-
-  // Filter out libstdcxx paths from PKG_CONFIG_PATH on Linux
-  const filteredPkgConfigPaths = config.platform === 'linux'
-    ? pkgConfigPaths.filter(path => !path.includes('libstdcxx'))
-    : pkgConfigPaths
   
-  buildEnv.PKG_CONFIG_PATH = filteredPkgConfigPaths.join(':')
+  // Completely exclude libstdcxx and gcc paths on Linux
+  if (config.platform === 'linux') {
+    pkgConfigPaths = pkgConfigPaths.filter(path => 
+      !path.includes('libstdcxx') && 
+      !path.includes('gcc') &&
+      !path.includes('gnu.org/gcc')
+    )
+  }
 
-  // Set up targeted library and include paths
-  const libPaths = [
+  buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
+
+  // Set up targeted library and include paths (exclude libstdcxx on Linux)
+  let libPaths = [
     `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib`,
     `${launchpadRoot}/zlib.net/v1.3.1/lib`,
     `${launchpadRoot}/curl.se/v8.15.0/lib`,
@@ -847,6 +851,15 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sqlite.org/v3.47.2/lib`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib`
   ]
+  
+  // Completely exclude libstdcxx and gcc paths on Linux
+  if (config.platform === 'linux') {
+    libPaths = libPaths.filter(path => 
+      !path.includes('libstdcxx') && 
+      !path.includes('gcc') &&
+      !path.includes('gnu.org/gcc')
+    )
+  }
 
   const includePaths = [
     `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/include`,
@@ -874,12 +887,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
   }
 
-  // Filter out libstdcxx paths on Linux to avoid linking issues
-  const filteredLibPaths = config.platform === 'linux' 
-    ? libPaths.filter(path => !path.includes('libstdcxx'))
-    : libPaths
-  
-  buildEnv.LDFLAGS = filteredLibPaths.map(path => `-L${path}`).join(' ')
+  buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
   // Add macOS-specific linker flags for DNS resolver functions
