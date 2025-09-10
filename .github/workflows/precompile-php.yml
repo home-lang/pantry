@@ -248,16 +248,30 @@ jobs:
             REQUIRED_EXTENSIONS=(
               "Core" "date" "hash" "json" "pcre" "Reflection" "SPL" "standard"
               "mbstring" "iconv" "filter" "ctype" "tokenizer" "session" "fileinfo"
-              "opcache" "phar" "dom" "xml" "xmlreader" "xmlwriter" "simplexml"
+              "phar" "dom" "xml" "xmlreader" "xmlwriter" "simplexml"
               "curl" "openssl" "zip" "zlib" "calendar" "ftp" "pcntl" "posix"
               "shmop" "sockets" "exif" "bcmath" "bz2" "gettext" "readline"
             )
+            
+            # Define Zend extensions that need special checking
+            ZEND_EXTENSIONS=("opcache")
             
             # Test each required extension
             echo "🧪 Testing essential extensions..."
             MISSING_EXTENSIONS=()
             for ext in "${REQUIRED_EXTENSIONS[@]}"; do
               EXT_LOADED=$(binaries/$BINARY_NAME/bin/php -r "echo extension_loaded('$ext') ? '1' : '0';")
+              if [ "$EXT_LOADED" = "1" ]; then
+                echo "✅ $ext: LOADED"
+              else
+                echo "❌ $ext: MISSING"
+                MISSING_EXTENSIONS+=("$ext")
+              fi
+            done
+            
+            # Test Zend extensions separately
+            for ext in "${ZEND_EXTENSIONS[@]}"; do
+              EXT_LOADED=$(binaries/$BINARY_NAME/bin/php -r "echo function_exists('opcache_get_status') ? '1' : '0';")
               if [ "$EXT_LOADED" = "1" ]; then
                 echo "✅ $ext: LOADED"
               else
@@ -374,16 +388,30 @@ jobs:
             $REQUIRED_EXTENSIONS = @(
               "Core", "date", "hash", "json", "pcre", "Reflection", "SPL", "standard",
               "mbstring", "iconv", "filter", "ctype", "tokenizer", "session", "fileinfo",
-              "opcache", "phar", "dom", "xml", "xmlreader", "xmlwriter", "simplexml",
-              "curl", "openssl", "zip", "zlib", "calendar", "ftp", "pcntl", "posix",
+              "phar", "dom", "xml", "xmlreader", "xmlwriter", "simplexml",
+              "curl", "openssl", "zip", "zlib", "calendar", "ftp",
               "shmop", "sockets", "exif", "bcmath", "bz2", "gettext", "readline"
             )
+            
+            # Define Zend extensions that need special checking
+            $ZEND_EXTENSIONS = @("opcache")
             
             # Test each required extension
             Write-Host "🧪 Testing essential extensions..."
             $MISSING_EXTENSIONS = @()
             foreach ($ext in $REQUIRED_EXTENSIONS) {
               $extLoaded = & $PHP -r "echo extension_loaded('$ext') ? '1' : '0';"
+              if ($extLoaded -eq "1") {
+                Write-Host "✅ $ext`: LOADED"
+              } else {
+                Write-Host "❌ $ext`: MISSING"
+                $MISSING_EXTENSIONS += $ext
+              }
+            }
+            
+            # Test Zend extensions separately
+            foreach ($ext in $ZEND_EXTENSIONS) {
+              $extLoaded = & $PHP -r "echo function_exists('opcache_get_status') ? '1' : '0';"
               if ($extLoaded -eq "1") {
                 Write-Host "✅ $ext`: LOADED"
               } else {
@@ -665,7 +693,7 @@ jobs:
           echo "  - Manifest file size: $(stat -c%s manifest.json 2>/dev/null || stat -f%z manifest.json) bytes"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.3.3
         with:
           tag_name: binaries-${{ github.run_number }}
           name: PHP Binaries - Build ${{ github.run_number }}

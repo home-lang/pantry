@@ -2,7 +2,7 @@
   "name": "@stacksjs/launchpad",
   "type": "module",
   "version": "0.6.4",
-  "packageManager": "bun@1.2.21",
+  "packageManager": "bun",
   "description": "Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
@@ -64,7 +64,7 @@
     "typecheck": "bun --bun tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "bunfig": "^0.15.0",
+    "bunfig": "^0.11.1",
     "cac": "^6.7.14",
     "ts-pkgx": "^0.4.65"
   },
