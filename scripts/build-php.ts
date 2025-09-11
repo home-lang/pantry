@@ -1033,7 +1033,8 @@ exec "$@"
     try {
       execSync('bun ./launchpad install php --deps-only', {
         stdio: 'inherit',
-        cwd: process.cwd()
+        cwd: process.cwd(),
+        timeout: 30 * 60 * 1000 // 30 minutes timeout for dependency installation
       })
       log('✅ Launchpad dependencies installed successfully')
 
