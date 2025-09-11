@@ -1103,16 +1103,16 @@ exec "$@"
   log('Building PHP...')
   const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
 
-  // Limit parallel jobs on macOS to prevent compilation hangs
-  const maxJobs = config.platform === 'darwin' ? Math.min(parseInt(jobs), 2) : parseInt(jobs)
-  log(`Using ${maxJobs} parallel jobs for compilation`)
+  // Disable parallel compilation on macOS to prevent hangs on mbstring and other extensions
+  const maxJobs = config.platform === 'darwin' ? 1 : parseInt(jobs)
+  log(`Using ${maxJobs} parallel jobs for compilation (${config.platform === 'darwin' ? 'sequential build for macOS stability' : 'parallel build'})`)
 
   execSync(`make -j${maxJobs}`, {
     stdio: 'inherit',
     cwd: phpSourceDir,
     env: buildEnv,
-    // Add timeout to prevent infinite hangs
-    timeout: 45 * 60 * 1000 // 45 minutes
+    // Add timeout to prevent infinite hangs - longer for sequential macOS builds
+    timeout: config.platform === 'darwin' ? 90 * 60 * 1000 : 45 * 60 * 1000 // 90 min for macOS, 45 min for others
   })
 
   log('Installing PHP...')
