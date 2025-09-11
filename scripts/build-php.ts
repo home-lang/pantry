@@ -1103,17 +1103,57 @@ exec "$@"
   log('Building PHP...')
   const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
 
-  // Disable parallel compilation on macOS to prevent hangs on mbstring and other extensions
-  const maxJobs = config.platform === 'darwin' ? 1 : parseInt(jobs)
-  log(`Using ${maxJobs} parallel jobs for compilation (${config.platform === 'darwin' ? 'sequential build for macOS stability' : 'parallel build'})`)
-
-  execSync(`make -j${maxJobs}`, {
-    stdio: 'inherit',
-    cwd: phpSourceDir,
-    env: buildEnv,
-    // Add timeout to prevent infinite hangs - longer for sequential macOS builds
-    timeout: config.platform === 'darwin' ? 90 * 60 * 1000 : 45 * 60 * 1000 // 90 min for macOS, 45 min for others
-  })
+  if (config.platform === 'darwin') {
+    // macOS: Use chunked compilation to prevent hangs
+    log('Using chunked compilation for macOS stability')
+    
+    try {
+      // First, try to build core components with shorter timeout
+      log('Building core PHP components...')
+      execSync('make -j1 Zend/zend_language_scanner.lo', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv,
+        timeout: 10 * 60 * 1000 // 10 minutes for individual components
+      })
+      
+      log('Building Zend engine...')
+      execSync('make -j1 libphp.la', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv,
+        timeout: 20 * 60 * 1000 // 20 minutes for Zend engine
+      })
+      
+      log('Building remaining components...')
+      execSync('make -j1', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv,
+        timeout: 60 * 60 * 1000 // 60 minutes for remaining build
+      })
+    } catch (error) {
+      log('Chunked compilation failed, falling back to standard build with extended timeout...')
+      // Fallback to standard build with very long timeout
+      execSync('make -j1', {
+        stdio: 'inherit',
+        cwd: phpSourceDir,
+        env: buildEnv,
+        timeout: 120 * 60 * 1000 // 2 hours timeout as last resort
+      })
+    }
+  } else {
+    // Linux/other platforms: Use parallel compilation
+    const maxJobs = Math.min(parseInt(jobs), 4) // Limit to 4 jobs max for stability
+    log(`Using ${maxJobs} parallel jobs for compilation`)
+    
+    execSync(`make -j${maxJobs}`, {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: buildEnv,
+      timeout: 45 * 60 * 1000 // 45 minutes timeout
+    })
+  }
 
   log('Installing PHP...')
   execSync('make install', {
