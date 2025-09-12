@@ -525,10 +525,10 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
-      // Should import our new installation system - checking for both index and direct imports
-      const hasInstallImport = content.includes('from \'../src/install\'')
-        || (content.includes('from \'../src\'') && content.includes('install'))
-      expect(hasInstallImport).toBe(true)
+      // Should import command resolution system which handles installation
+      const hasCommandImport = content.includes('from \'../src/commands\'')
+        || content.includes('resolveCommand')
+      expect(hasCommandImport).toBe(true)
     })
 
     it('should handle package arrays correctly', () => {
@@ -595,7 +595,10 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
-      expect(content).toContain('from \'../src/dev\'')
+      // Should have dev commands defined
+      expect(content).toContain('dev [dir]')
+      expect(content).toContain('dev:shellcode')
+      expect(content).toContain('dev:integrate')
     })
   })
 

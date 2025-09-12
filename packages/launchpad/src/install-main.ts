@@ -21,6 +21,27 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   // Clear message cache at start of installation to avoid stale duplicates
   clearMessageCache()
 
+  // Add global timeout to prevent infinite hangs
+  const globalTimeout = setTimeout(() => {
+    console.error('❌ Installation process timed out after 10 minutes, forcing exit')
+    process.exit(1)
+  }, 10 * 60 * 1000) // 10 minute global timeout
+
+  try {
+    const result = await installInternal(packageList, installPath)
+    clearTimeout(globalTimeout)
+    return result
+  } catch (error) {
+    clearTimeout(globalTimeout)
+    throw error
+  }
+}
+
+/**
+ * Internal installation function
+ */
+async function installInternal(packageList: PackageSpec[], installPath: string): Promise<string[]> {
+
   // Create installation directory even if no packages to install
   await fs.promises.mkdir(installPath, { recursive: true })
 
@@ -141,8 +162,17 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       try {
         const parsed = parsePackageSpec(pkg)
         packageName = parsed.name
-        // Direct installation without dependency resolution
-        const packageFiles = await installPackage(packageName, pkg, installPath)
+        
+        // Add timeout to individual package installation to prevent hangs
+        const installPromise = installPackage(packageName, pkg, installPath)
+        const timeoutPromise = new Promise<string[]>((_, reject) => {
+          setTimeout(() => {
+            console.warn(`⚠️  Package installation timeout after 5 minutes: ${pkg}`)
+            reject(new Error(`Package installation timeout: ${pkg}`))
+          }, 5 * 60 * 1000) // 5 minute timeout
+        })
+        
+        const packageFiles = await Promise.race([installPromise, timeoutPromise])
         allInstalledFiles.push(...packageFiles)
       }
       catch (error) {

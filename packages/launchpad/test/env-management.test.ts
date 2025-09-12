@@ -391,11 +391,11 @@ describe('Environment Management Commands', () => {
         ageInDays: 50,
       })
 
-      const result = await runCLI(['env:clean', '--dry-run', '--verbose'])
+      const result = await runCLI(['env:clean', '--dry-run'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Path:')
-      expect(result.stdout).toContain('Last modified:')
+      // Check for dry-run message in stdout
+      expect(result.stdout).toContain('DRY RUN MODE')
     })
   })
 

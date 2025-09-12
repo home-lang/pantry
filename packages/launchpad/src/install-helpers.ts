@@ -113,6 +113,17 @@ export async function createShims(packageDir: string, installPath: string, domai
               for (const libDir of depLibDirs) {
                 if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
                   libraryPaths.push(libDir)
+                  
+                  // Special handling for ncurses - check for specific library files
+                  if (entry.name.includes('ncurses') || entry.name.includes('invisible-island.net')) {
+                    const ncursesLibs = ['libncurses.dylib', 'libncursesw.dylib', 'libncurses.6.dylib', 'libncursesw.6.dylib']
+                    for (const lib of ncursesLibs) {
+                      const libPath = path.join(libDir, lib)
+                      if (fs.existsSync(libPath)) {
+                        console.log(`🔗 Found ncurses library: ${libPath}`)
+                      }
+                    }
+                  }
                 }
               }
             }

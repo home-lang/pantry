@@ -66,13 +66,13 @@ dependencies:
       'utf8',
     )
 
-    // Act: run CLI with --global-deps in dry-run + verbose to capture listing
+    // Act: run CLI with --global in dry-run + verbose to capture listing
     const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
 
     return new Promise<void>((resolve, reject) => {
       const proc = spawn(
         'bun',
-        [cliPath, 'install', '--global-deps', '--dry-run', '--verbose'],
+        [cliPath, 'install', '--global', '--dry-run', '--verbose'],
         {
           stdio: ['ignore', 'pipe', 'pipe'],
           env: getTestEnv({ HOME: tempHome }),

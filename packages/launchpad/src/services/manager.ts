@@ -82,7 +82,8 @@ export async function startService(serviceName: string): Promise<boolean> {
   }
 
   // In test mode, still validate service exists but mock the actual operation
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+  // Skip test mode for E2E validation tests
+  if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_E2E_TEST) {
     try {
       const service = await getOrCreateServiceInstance(serviceName)
       console.warn(`🧪 Test mode: Mocking start of service ${serviceName}`)
@@ -271,16 +272,18 @@ export async function startService(serviceName: string): Promise<boolean> {
       void checkServiceHealth(service)
     }, 2000)
 
-    // Mark operation success
+    // Mark operation success and update service status
+    service.status = 'running'
+    service.lastCheckedAt = new Date()
     operation.result = 'success'
     operation.duration = 0
     manager.operations.push(operation)
     return true
   }
   catch (error) {
-    console.error(`❌ Failed to start service ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
+    console.error(`❌ Failed to start service ${serviceName}: ${error}`)
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = error
     operation.duration = 0
     manager.operations.push(operation)
     return false
@@ -304,7 +307,8 @@ export async function stopService(serviceName: string): Promise<boolean> {
   }
 
   // In test mode, still validate and track operations
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+  // Skip test mode for E2E validation tests
+  if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_E2E_TEST) {
     const service = manager.services.get(serviceName)
 
     if (!service) {
@@ -379,19 +383,19 @@ export async function stopService(serviceName: string): Promise<boolean> {
     manager.operations.push(operation)
 
     console.error(`❌ Failed to stop ${serviceName}: ${operation.error}`)
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
 }
 
 /**
  * Restart a service
  */
-export async function restartService(serviceName: string): Promise<boolean> {
+export async function restartService(serviceName: string): Promise<{ success: boolean, error?: string }> {
   console.warn(`🔄 Restarting ${serviceName}...`)
 
   const stopSuccess = await stopService(serviceName)
   if (!stopSuccess) {
-    return false
+    return { success: false, error: 'Failed to stop service for restart' }
   }
 
   // Wait a moment before starting
@@ -436,7 +440,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
       operation.error = error instanceof Error ? error.message : String(error)
       operation.duration = 0
       manager.operations.push(operation)
-      return false
+      return { success: false, error: 'Service stop failed' }
     }
   }
 
@@ -480,7 +484,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
     manager.operations.push(operation)
 
     console.error(`❌ Failed to enable ${serviceName}: ${operation.error}`)
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
 }
 
@@ -501,7 +505,8 @@ export async function disableService(serviceName: string): Promise<boolean> {
   }
 
   // In test mode, still validate and track operations
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+  // Skip test mode for E2E validation tests
+  if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_E2E_TEST) {
     const service = manager.services.get(serviceName)
 
     if (!service) {
@@ -569,7 +574,7 @@ export async function disableService(serviceName: string): Promise<boolean> {
     manager.operations.push(operation)
 
     console.error(`❌ Failed to disable ${serviceName}: ${operation.error}`)
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
 }
 
@@ -650,7 +655,7 @@ async function isServiceInitialized(service: ServiceInstance): Promise<boolean> 
   if (definition?.dataDirectory) {
     const dataDir = service.dataDir || definition.dataDirectory
     if (!fs.existsSync(dataDir)) {
-      return false
+      return { success: false, error: 'Service stop failed' }
     }
 
     // For databases, check if data directory has initialization files
@@ -867,54 +872,53 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
       throw new Error(`Invalid package domain for ${definition.displayName}: ${definition.packageDomain}`)
     }
 
-    // Try multiple import strategies for the install function
+    // Import the install function with proper error handling
     let install: any
     try {
-      // First try the main install module
-      const installModule = await import('../install-main')
-      install = installModule.install
+      const { install: installFn } = await import('../install-main')
+      install = installFn
       if (typeof install !== 'function') {
-        throw new Error('install function not found in install-main')
+        throw new Error('install function not found or not a function')
       }
     } catch (importError) {
-      try {
-        // Fallback to the install index
-        const installModule = await import('../install')
-        install = installModule.install
-        if (typeof install !== 'function') {
-          throw new Error('install function not found in install index')
-        }
-      } catch (fallbackError) {
-        console.error(`❌ Failed to import install function from both modules:`)
-        console.error(`  - install-main: ${importError instanceof Error ? importError.message : String(importError)}`)
-        console.error(`  - install: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`)
-        return false
-      }
+      console.error(`❌ Failed to import install function: ${importError instanceof Error ? importError.message : String(importError)}`)
+      return { success: false, error: 'Service stop failed' }
     }
 
     // Install the main service package - this will automatically install all dependencies
-    // thanks to our fixed dependency resolution
     const installPath = `${process.env.HOME}/.local`
 
-    // Call install with proper error handling
+    // Call install with proper error handling and shorter timeout
     try {
-      await install([definition.packageDomain], installPath)
-    } catch (installError) {
-      // If the install fails, provide detailed error information
-      console.error(`❌ Package installation failed for ${definition.displayName}:`)
-      console.error(`  - Package domain: ${definition.packageDomain}`)
-      console.error(`  - Install path: ${installPath}`)
-      console.error(`  - Error: ${installError instanceof Error ? installError.message : String(installError)}`)
-
-      if (installError instanceof Error && installError.stack) {
-        console.error(`  - Stack trace: ${installError.stack}`)
+      if (config.verbose) {
+        console.warn(`📦 Installing ${definition.displayName} package (${definition.packageDomain})...`)
       }
-
-      return false
+      
+      // Add shorter timeout to prevent hanging - 5 minutes should be enough
+      const installPromise = install([definition.packageDomain], installPath)
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error(`Package installation timeout after 5 minutes`)), 5 * 60 * 1000)
+      })
+      
+      await Promise.race([installPromise, timeoutPromise])
+      
+      if (config.verbose) {
+        console.log(`✅ ${definition.displayName} package installed successfully`)
+      }
+    } catch (installError) {
+      // If installation fails or times out, try to continue without the package
+      console.warn(`⚠️  Package installation failed for ${definition.displayName}, continuing without it`)
+      console.warn(`  - Error: ${installError instanceof Error ? installError.message : String(installError)}`)
+      
+      // Check if binary is already available in system PATH as fallback
+      const { findBinaryInPath } = await import('../utils')
+      if (findBinaryInPath(definition.executable)) {
+        console.warn(`✅ Found ${definition.executable} in system PATH, using system version`)
+        return true
+      }
+      
+      return { success: false, error: 'Service stop failed' }
     }
-
-    if (config.verbose)
-      console.log(`✅ ${definition.displayName} package installed successfully`)
 
     // Verify installation worked by checking in the Launchpad environment
     const binaryPath = findBinaryInEnvironment(definition.executable, installPath)
@@ -926,7 +930,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
   }
   catch (error) {
     console.error(`❌ Failed to install ${definition.displayName}: ${error instanceof Error ? error.message : String(error)}`)
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
 }
 
@@ -969,7 +973,7 @@ async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<b
     })
 
     if (!checkResult) {
-      return false
+      return { success: false, error: 'Service stop failed' }
     }
 
     const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
@@ -987,11 +991,11 @@ async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<b
     if (config.verbose)
       console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
     // Do not attempt PECL here. Let binary-downloader pick the right PHP and shims load the project php.ini
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
   catch (error) {
     console.error(`❌ Failed to check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
 }
 
@@ -1091,7 +1095,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
   }
   catch (error) {
     console.warn(`⚠️  Could not set up SQLite automatically: ${error instanceof Error ? error.message : String(error)}`)
-    return false
+    return { success: false, error: 'Service stop failed' }
   }
 }
 
@@ -1211,7 +1215,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
     }
     catch (error) {
       console.error(`❌ Failed to initialize PostgreSQL: ${error instanceof Error ? error.message : String(error)}`)
-      return false
+      return { success: false, error: 'Service stop failed' }
     }
   }
 
@@ -1243,7 +1247,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
     }
     catch (error) {
       console.error(`❌ Failed to initialize MySQL: ${error instanceof Error ? error.message : String(error)}`)
-      return false
+      return { success: false, error: 'Service stop failed' }
     }
   }
 

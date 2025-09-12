@@ -32,17 +32,17 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should include message checking logic (values are resolved at build time)
-      expect(shell).toContain('if [[ "true" == "true" ]]; then')
-      expect(shell).toContain('printf "🚀 Project activated:')
-      expect(shell).toContain('printf "👋 Project deactivated')
+      expect(shell).toContain('showMessages="true"')
+      expect(shell).toContain('printf "${activationMessage}\\n"')
+      expect(shell).toContain('printf "${deactivationMessage}\\n"')
     })
 
     it('should enable messages when set to true', () => {
       process.env.LAUNCHPAD_SHOW_ENV_MESSAGES = 'true'
       const shell = shellcode(true)
 
-      expect(shell).toContain('if [[ "true" == "true" ]]; then')
-      expect(shell).toContain('printf "🚀 Project activated:')
+      expect(shell).toContain('showMessages="true"')
+      expect(shell).toContain('printf "${activationMessage}\\n"')
     })
 
     it('should disable messages when set to false', () => {
@@ -50,7 +50,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should contain the conditional logic with false value
-      expect(shell).toContain('if [[ "false" == "true" ]]; then')
+      expect(shell).toContain('showMessages="false"')
       // Messages should not be executed since condition is false
     })
   })
@@ -61,7 +61,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should contain the default activation message
-      expect(shell).toContain('✅ Environment activated for')
+      expect(shell).toContain('activationMessage=')
       expect(shell).toContain('$(basename "$project_dir")')
     })
 
@@ -70,7 +70,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should contain the custom message
-      expect(shell).toContain('🚀 Custom activation: $(basename "$project_dir")')
+      expect(shell).toContain('activationMessage="🚀 Custom activation: $(basename "$project_dir")"')
     })
 
     it('should handle activation message with special characters', () => {
@@ -78,7 +78,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should properly escape and include the message
-      expect(shell).toContain('🎉 Project "$(basename "$project_dir")" is ready!')
+      expect(shell).toContain('activationMessage="🎉 Project "$(basename "$project_dir")" is ready!"')
     })
 
     it('should replace {path} placeholder with project directory basename', () => {
@@ -86,7 +86,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should replace {path} with $(basename "$project_dir")
-      expect(shell).toContain('Activated: $(basename "$project_dir")')
+      expect(shell).toContain('activationMessage="Activated: $(basename "$project_dir")"')
       expect(shell).not.toContain('{path}')
     })
   })
@@ -97,7 +97,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should contain the default deactivation message
-      expect(shell).toContain('Environment deactivated')
+      expect(shell).toContain('deactivationMessage="Environment deactivated"')
     })
 
     it('should use custom deactivation message when set', () => {
@@ -105,7 +105,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should contain the custom message
-      expect(shell).toContain('👋 Custom deactivation')
+      expect(shell).toContain('deactivationMessage="👋 Custom deactivation"')
     })
 
     it('should handle deactivation message with special characters', () => {
@@ -113,7 +113,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should properly escape and include the message
-      expect(shell).toContain('🔄 Project "deactivated" successfully!')
+      expect(shell).toContain('deactivationMessage="🔄 Project "deactivated" successfully!"')
     })
   })
 
@@ -122,7 +122,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should have activation messages in the shell code
-      expect(shell).toContain('printf "🚀 Project activated:')
+      expect(shell).toContain('printf "${activationMessage}\\n"')
       expect(shell).toContain('>&2') // Should use stderr
     })
 
@@ -130,7 +130,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Should have deactivation messages in the shell code
-      expect(shell).toContain('printf "👋 Project deactivated')
+      expect(shell).toContain('printf "${deactivationMessage}\\n"')
       expect(shell).toContain('>&2') // Should use stderr
     })
 
