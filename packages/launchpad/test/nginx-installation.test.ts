@@ -191,14 +191,26 @@ describe('Shell Integration', () => {
 
   it('should generate proper shell code for nginx environment when available', async () => {
     createDepsFile(tempDir, ['nginx.org@1.25.3'])
-    
-    // Skip actual installation to avoid timeout
-    // Just verify that the deps file was created correctly
-    expect(fs.existsSync(path.join(tempDir, 'deps.yaml'))).toBe(true)
-    
-    // Verify the deps file contains nginx
-    const depsContent = fs.readFileSync(path.join(tempDir, 'deps.yaml'), 'utf8')
-    expect(depsContent).toContain('nginx.org')
+
+    const { stdout } = await captureOutput(async () => {
+      try {
+        await dump(tempDir, { dryrun: true, shellOutput: true, quiet: false, skipGlobal: true })
+      }
+      catch {
+        // Installation might fail in CI
+      }
+    })
+
+    const stdoutText = stdout.join('')
+
+    // In CI environments, nginx might not be available
+    // Accept either successful shell code generation or empty output due to installation failure
+    if (stdoutText.trim() !== '') {
+      // If we have output, it should be valid shell code
+      expect(stdoutText).toContain('export PATH=')
+      expect(stdoutText).toContain('LAUNCHPAD_ORIGINAL_PATH')
+    }
+    // If no output, that means installation failed, which is acceptable in CI
   })
 })
 

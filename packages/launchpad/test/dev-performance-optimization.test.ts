@@ -95,21 +95,15 @@ describe('Dev Performance Optimization Tests', () => {
       createDependenciesYaml(tempDir, { 'gnu.org/wget': '^1.21' })
 
       // Run initial setup to create environment (may fail, but that's ok for this test)
-      const setupResult = await runCLIWithTiming(['dev', tempDir])
+      await runCLIWithTiming(['dev', tempDir])
 
       // Now test the fast path with --shell flag on a ready environment
       const fastPathResult = await runCLIWithTiming(['dev', tempDir, '--shell'])
 
-      // Fast path should complete and return shell code
+      // Fast path should complete very quickly (under 1 second)
+      expect(fastPathResult.duration).toBeLessThan(1000)
       expect(fastPathResult.exitCode).toBe(0)
-      
-      // Should be faster than initial setup (if setup succeeded)
-      if (setupResult.exitCode === 0 && setupResult.duration > 0) {
-        expect(fastPathResult.duration).toBeLessThan(setupResult.duration * 2)
-      }
-      
-      // Should output shell environment setup
-      expect(fastPathResult.stdout).toContain('export')
+      expect(fastPathResult.stdout).toContain('export PATH=')
       expect(fastPathResult.stdout).toContain('Launchpad environment setup')
     }, TEST_CONFIG.DEFAULT_TIMEOUT)
 
@@ -124,24 +118,19 @@ describe('Dev Performance Optimization Tests', () => {
         const result = await runCLIWithTiming(['dev', tempDir, '--shell'])
         results.push(result.duration)
 
-        // Each run should be successful
+        // Each run should be fast
+        expect(result.duration).toBeLessThan(1000)
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('export')
       }
 
-      // Calculate performance metrics - should be reasonably consistent
+      // Performance should be consistent (no gradual slowdown)
       const avgTime = results.reduce((a, b) => a + b, 0) / results.length
       const maxTime = Math.max(...results)
-      const minTime = Math.min(...results)
 
-      // Performance should be consistent (max shouldn't be more than 10x min)
-      expect(maxTime).toBeLessThan(minTime * 10)
-      
-      // All runs should complete in reasonable time
-      expect(avgTime).toBeLessThan(30000) // 30 seconds average
-      expect(maxTime).toBeLessThan(60000) // 60 seconds max
+      expect(avgTime).toBeLessThan(600) // Average should be very fast
+      expect(maxTime).toBeLessThan(1000) // No single run should be slow
 
-      console.warn(`📊 Fast path timing - avg: ${avgTime.toFixed(1)}ms, max: ${maxTime}ms, min: ${minTime}ms`)
+      console.warn(`📊 Fast path timing - avg: ${avgTime.toFixed(1)}ms, max: ${maxTime}ms`)
     }, TEST_CONFIG.SLOW_TIMEOUT)
   })
 
@@ -155,15 +144,8 @@ describe('Dev Performance Optimization Tests', () => {
       // Test regular mode (may be slower due to installation attempts)
       const regularResult = await runCLIWithTiming(['dev', tempDir])
 
-      // Shell mode should complete successfully
-      expect(shellResult.exitCode).toBe(0)
-      expect(shellResult.stdout).toContain('export')
-      
-      // Regular mode should also complete successfully
-      expect(regularResult.exitCode).toBe(0)
-      
-      // Shell mode should be faster than or equal to regular mode
-      expect(shellResult.duration).toBeLessThanOrEqual(regularResult.duration * 2)
+      // Shell mode should be significantly faster or at least not slower
+      expect(shellResult.duration).toBeLessThan(2000) // Under 2 seconds
       expect(shellResult.exitCode).toBe(0)
       expect(shellResult.stdout).toContain('export PATH=')
 
@@ -181,41 +163,43 @@ describe('Dev Performance Optimization Tests', () => {
         const testDir = path.join(tempDir, testCase.name)
         fs.mkdirSync(testDir, { recursive: true })
 
-        createDependenciesYaml(testDir, testCase.deps)
+        if (Object.keys(testCase.deps).length > 0) {
+          createDependenciesYaml(testDir, testCase.deps)
+        }
+        else {
+          // Create empty deps file
+          fs.writeFileSync(path.join(testDir, 'dependencies.yaml'), 'dependencies:\n')
+        }
 
         const result = await runCLIWithTiming(['dev', testDir, '--shell'])
 
-        // Should complete successfully regardless of directory type
+        // All should be reasonably fast and successful (allowing for network/package variations)
+        expect(result.duration).toBeLessThan(3000)
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('export')
 
-        // Should complete in reasonable time
-        expect(result.duration).toBeLessThan(60000) // 60 seconds max
-
-        console.log(`${testCase.name} directory: ${result.duration}ms`)
+        if (Object.keys(testCase.deps).length > 0) {
+          expect(result.stdout).toContain('export PATH=')
+        }
       }
     }, TEST_CONFIG.SLOW_TIMEOUT)
   })
 
   describe('Performance Regression Prevention', () => {
-    it('should never take longer than reasonable time for shell output on ready environments', async () => {
+    it('should never take longer than 2 seconds for shell output on ready environments', async () => {
       createDependenciesYaml(tempDir, { 'gnu.org/wget': '^1.21' })
 
       // Run setup first
-      const setupResult = await runCLIWithTiming(['dev', tempDir])
+      await runCLIWithTiming(['dev', tempDir])
 
       // Test multiple times to ensure consistency
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 5; i++) {
         const result = await runCLIWithTiming(['dev', tempDir, '--shell'])
 
-        // Should complete successfully
+        // This is the critical test - should NEVER exceed 2 seconds
+        expect(result.duration).toBeLessThan(2000)
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('export')
 
-        // Should be reasonably fast (within 30 seconds)
-        expect(result.duration).toBeLessThan(30000)
-
-        if (result.duration > 5000) {
+        if (result.duration > 1000) {
           console.warn(`⚠️  Shell output took ${result.duration}ms (iteration ${i + 1})`)
         }
       }
@@ -235,12 +219,12 @@ describe('Dev Performance Optimization Tests', () => {
       // Run setup (may fail, but that's ok)
       await runCLIWithTiming(['dev', tempDir])
 
-      // Shell output should still work despite complex file
+      // Shell output should still be fast despite complex file
       const result = await runCLIWithTiming(['dev', tempDir, '--shell'])
 
+      expect(result.duration).toBeLessThan(2000)
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('export')
-      expect(result.duration).toBeLessThan(60000) // Should complete within 60 seconds
+      expect(result.stdout).toContain('export PATH=')
     }, TEST_CONFIG.DEFAULT_TIMEOUT)
   })
 
@@ -248,16 +232,13 @@ describe('Dev Performance Optimization Tests', () => {
     it('should not load heavy modules when taking fast path', async () => {
       createDependenciesYaml(tempDir, { 'gnu.org/wget': '^1.21' })
 
-      // The key insight: Fast path should complete successfully
-      // without loading heavy modules unnecessarily
+      // The key insight: Fast path should complete quickly because
+      // it doesn't load the heavy sniff module (838 lines with file operations)
       const result = await runCLIWithTiming(['dev', tempDir, '--shell'])
 
-      // Should complete successfully
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('export')
-      
-      // Should complete in reasonable time (not strict timing)
-      expect(result.duration).toBeLessThan(30000) // 30 seconds
+      // If this test fails (takes too long), it likely means the
+      // dynamic import optimization isn't working properly
+      expect(result.duration).toBeLessThan(800) // Very strict timing
       expect(result.exitCode).toBe(0)
 
       // Verify we get proper shell output without loading heavy modules
@@ -275,18 +256,17 @@ describe('Dev Performance Optimization Tests', () => {
       // Test regular mode (may load heavier modules)
       const unoptimizedResult = await runCLIWithTiming(['dev', tempDir])
 
-      // Both paths should complete successfully
-      expect(optimizedResult.exitCode).toBe(0)
-      expect(unoptimizedResult.exitCode).toBe(0)
-      expect(optimizedResult.stdout).toContain('export')
+      // Optimized path should be faster or at least not significantly slower
+      expect(optimizedResult.duration).toBeLessThan(1000)
 
+      // Log for visibility in CI/testing
       console.warn(`📊 Performance comparison:`)
       console.warn(`   Optimized (shell): ${optimizedResult.duration}ms`)
       console.warn(`   Unoptimized (regular): ${unoptimizedResult.duration}ms`)
 
-      // Optimized path should be reasonably fast
-      expect(optimizedResult.duration).toBeLessThan(60000) // 60 seconds
-      expect(unoptimizedResult.duration).toBeLessThan(120000) // 2 minutes
+      // The key insight: optimized should complete quickly
+      expect(optimizedResult.exitCode).toBe(0)
+      expect(optimizedResult.stdout).toContain('export PATH=')
     }, TEST_CONFIG.DEFAULT_TIMEOUT)
   })
 
@@ -295,14 +275,12 @@ describe('Dev Performance Optimization Tests', () => {
       createDependenciesYaml(tempDir, { 'gnu.org/wget': '^1.21' })
 
       // First run might be slow (setting up environment)
-      const setupResult = await runCLIWithTiming(['dev', tempDir])
+      const _setupResult = await runCLIWithTiming(['dev', tempDir])
 
-      // Subsequent shell runs should work (environment ready)
+      // Subsequent shell runs should be fast (environment ready)
       const fastResult = await runCLIWithTiming(['dev', tempDir, '--shell'])
 
-      expect(fastResult.exitCode).toBe(0)
-      expect(fastResult.stdout).toContain('export')
-      expect(fastResult.duration).toBeLessThan(60000) // 60 seconds
+      expect(fastResult.duration).toBeLessThan(1000)
       expect(fastResult.exitCode).toBe(0)
       expect(fastResult.stdout).toContain('export PATH=')
 
@@ -333,16 +311,20 @@ describe('Dev Performance Optimization Tests', () => {
       }
 
       // Simulate rapid directory switching (common developer workflow)
+      const timings: number[] = []
+
       for (const dir of dirs) {
         const result = await runCLIWithTiming(['dev', dir, '--shell'])
+        timings.push(result.duration)
 
-        // Each directory switch should complete successfully
+        expect(result.duration).toBeLessThan(1500)
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('export')
-        expect(result.duration).toBeLessThan(60000) // 60 seconds max
       }
 
-      console.warn(`📊 Directory switching completed for ${dirs.length} directories`)
+      const avgTime = timings.reduce((a, b) => a + b, 0) / timings.length
+      expect(avgTime).toBeLessThan(1000) // Average should be very fast
+
+      console.warn(`📊 Rapid switching - avg: ${avgTime.toFixed(1)}ms, individual: [${timings.map(t => t.toFixed(0)).join(', ')}]ms`)
     }, TEST_CONFIG.SLOW_TIMEOUT)
 
     it('should maintain performance under sequential access', async () => {
@@ -350,21 +332,19 @@ describe('Dev Performance Optimization Tests', () => {
 
       // Run multiple sequential shell commands (simulating multiple terminals)
       // Sequential instead of concurrent to avoid race conditions and timeouts
-      const timings: number[] = []
+      const results: Array<{ duration: number, exitCode: number, stdout: string }> = []
 
       for (let i = 0; i < 3; i++) {
         const result = await runCLIWithTiming(['dev', tempDir, '--shell'])
-        timings.push(result.duration)
+        results.push(result)
 
+        expect(result.duration).toBeLessThan(2000)
         expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain('export')
-        expect(result.duration).toBeLessThan(60000) // 60 seconds max
+        expect(result.stdout).toContain('export PATH=')
       }
 
-      const avgTime = timings.reduce((a, b) => a + b, 0) / timings.length
-      expect(avgTime).toBeLessThan(60000) // Average should be reasonable
-
-      console.warn(`📊 Sequential access - avg: ${avgTime.toFixed(1)}ms, individual: [${timings.map(t => t.toFixed(0)).join(', ')}]ms`)
-    }, TEST_CONFIG.SLOW_TIMEOUT)
+      const avgTime = results.reduce((sum, r) => sum + r.duration, 0) / results.length
+      console.warn(`📊 Sequential access - avg: ${avgTime.toFixed(1)}ms`)
+    }, TEST_CONFIG.DEFAULT_TIMEOUT)
   })
 })

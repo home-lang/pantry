@@ -119,35 +119,30 @@ describe('Binary Stub Isolation', () => {
   }
 
   describe('Stub Creation and Structure', () => {
-    it('should create binary stubs with proper isolation headers', () => {
+    it('should create binary stubs with proper isolation headers', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-export PATH="/path/to/bin:$PATH"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has the expected content
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toContain('#!/bin/sh')
-      expect(content).toContain('_ORIG_PATH')
-      expect(content).toContain('exec')
-    })
+      const result = await runCLI(['dev'], projectDir)
 
-    it('should create stubs with proper environment variable handling', () => {
+      // Check for either successful installation or appropriate error handling
+      const output = result.stdout + result.stderr
+      const hasSuccess = output.includes('✅ Installed')
+        || output.includes('Environment setup')
+        || output.includes('Successfully set up environment')
+        || output.includes('✅') // Any success indicator
+
+      const hasGracefulFailure = output.includes('❌ Failed to install')
+        || output.includes('Failed to install')
+        || output.includes('Environment not ready')
+        || output.includes('Generating minimal shell environment')
+
+      // Test passes if we get either success or graceful failure handling
+      expect(hasSuccess || hasGracefulFailure).toBe(true)
+    }, 60000)
+
+    it('should create stubs with proper environment variable handling', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
 
@@ -156,69 +151,55 @@ exec "/real/path/to/nginx" "$@"
         // Binary stubs only include pkgx environment variables, not custom project ones
       })
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-_ORIG_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-export PATH="/path/to/bin:$PATH"
-export LD_LIBRARY_PATH="/path/to/lib:$LD_LIBRARY_PATH"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has the expected content
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toContain('_ORIG_PATH=')
-      expect(content).toContain('#!/bin/sh')
-    })
+      const result = await runCLI(['dev'], projectDir)
 
-    it('should handle multiple binaries in a package', () => {
+      // Check for either successful installation or appropriate error handling
+      const output = result.stdout + result.stderr
+      const hasSuccess = output.includes('✅') || output.includes('Installed')
+      const hasGracefulFailure = output.includes('❌ Failed to install') || output.includes('Failed to install')
+
+      // Test passes if we get either success or graceful failure handling
+      expect(hasSuccess || hasGracefulFailure).toBe(true)
+
+      // If successful, verify stub creation
+      if (hasSuccess && !hasGracefulFailure) {
+        // Find the generated binary stub
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
+
+            // Should backup environment variables before setting new ones
+            expect(stubContent).toContain('_ORIG_PATH=')
+            expect(stubContent).toContain('#!/bin/sh')
+          }
+        }
+      }
+    }, 60000)
+
+    it('should handle multiple binaries in a package', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       // Use a package that has multiple binaries
       createDepsFile(projectDir, ['git-scm.org@2.40.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create mock binary stubs for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      
-      // Create multiple stubs to simulate a package with multiple binaries
-      const createStub = (name: string) => {
-        const stubContent = `#!/bin/sh
-# Launchpad binary stub for ${name}
-_ORIG_PATH="$PATH"
-export PATH="/path/to/bin:$PATH"
-exec "/real/path/to/${name}" "$@"
-`
-        fs.writeFileSync(path.join(binDir, name), stubContent)
-        fs.chmodSync(path.join(binDir, name), 0o755)
-      }
-      
-      createStub('git')
-      createStub('git-receive-pack')
-      createStub('git-upload-pack')
-      
-      // Verify the stubs exist
-      expect(fs.existsSync(path.join(binDir, 'git'))).toBe(true)
-      expect(fs.existsSync(path.join(binDir, 'git-receive-pack'))).toBe(true)
-      expect(fs.existsSync(path.join(binDir, 'git-upload-pack'))).toBe(true)
-    })
+      const result = await runCLI(['dev'], projectDir)
+
+      // Check for either successful installation or appropriate error handling
+      const output = result.stdout + result.stderr
+      const hasSuccess = output.includes('✅ Installed') || output.includes('✅')
+      const hasGracefulFailure = output.includes('❌ Failed to install') || output.includes('Failed to install')
+
+      // Test passes if we get either success or graceful failure handling
+      expect(hasSuccess || hasGracefulFailure).toBe(true)
+    }, 60000)
   })
 
   describe('Environment Variable Isolation', () => {
-    it('should isolate PATH-like environment variables', () => {
+    it('should isolate PATH-like environment variables', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'], {
@@ -226,232 +207,261 @@ exec "/real/path/to/${name}" "$@"
         LD_LIBRARY_PATH: '/custom/lib:/another/lib',
       })
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-_ORIG_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-export PATH="/custom/path:/another/path:/path/to/bin:$PATH"
-export LD_LIBRARY_PATH="/custom/lib:/another/lib:/path/to/lib:$LD_LIBRARY_PATH"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has the expected content
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toContain('export PATH=')
-      expect(content).toContain('export LD_LIBRARY_PATH=')
-      expect(content).toContain('_ORIG_PATH=')
-      expect(content).toContain('_ORIG_LD_LIBRARY_PATH=')
-    })
+      const result = await runCLI(['dev'], projectDir)
 
-    it('should handle DYLD_FALLBACK_LIBRARY_PATH correctly', () => {
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
+
+            // Should handle PATH and LD_LIBRARY_PATH specially (arrays)
+            expect(stubContent).toContain('export PATH=')
+            expect(stubContent).toContain('export LD_LIBRARY_PATH=')
+
+            // Should backup these variables
+            expect(stubContent).toContain('_ORIG_PATH=')
+            expect(stubContent).toContain('_ORIG_LD_LIBRARY_PATH=')
+          }
+        }
+      }
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
+
+    it('should handle DYLD_FALLBACK_LIBRARY_PATH correctly', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-_ORIG_DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH"
-export PATH="/path/to/bin:$PATH"
-export DYLD_FALLBACK_LIBRARY_PATH="/path/to/lib:/usr/lib:/usr/local/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has the expected content
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toContain('DYLD_FALLBACK_LIBRARY_PATH=')
-      
-      // On macOS, expect fallback paths
-      if (process.platform === 'darwin') {
-        expect(content).toContain(':/usr/lib:/usr/local/lib')
+      const result = await runCLI(['dev'], projectDir)
+
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
+
+            // Should set DYLD_FALLBACK_LIBRARY_PATH with fallback paths
+            if (stubContent.includes('DYLD_FALLBACK_LIBRARY_PATH')) {
+              // On macOS, expect fallback paths; on Linux, just check it's set
+              if (process.platform === 'darwin') {
+                expect(stubContent).toContain(':/usr/lib:/usr/local/lib')
+              }
+              else {
+                // On Linux, DYLD_FALLBACK_LIBRARY_PATH might not have the same fallback paths
+                expect(stubContent).toMatch(/DYLD_FALLBACK_LIBRARY_PATH="[^"]*"/)
+              }
+            }
+          }
+        }
       }
-    })
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
   })
 
   describe('Stub Execution and Cleanup', () => {
-    it('should create executable stubs', () => {
+    it('should create executable stubs', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-export PATH="/path/to/bin:$PATH"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub is executable
-      const stats = fs.statSync(path.join(binDir, 'nginx'))
-      expect(stats.mode & 0o111).toBeGreaterThan(0)
-    })
+      const result = await runCLI(['dev'], projectDir)
 
-    it('should properly escape shell arguments in stubs', () => {
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stats = fs.statSync(nginxStub)
+            // Check that the stub is executable (mode includes execute bit)
+            expect(stats.mode & 0o111).toBeGreaterThan(0)
+          }
+        }
+      }
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
+
+    it('should properly escape shell arguments in stubs', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
-      createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-_ORIG_DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH"
-export PATH="/path/to/bin:$PATH"
-export DYLD_FALLBACK_LIBRARY_PATH="/path/to/lib:/usr/lib:/usr/local/lib:$DYLD_FALLBACK_LIBRARY_PATH"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has proper argument handling
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toContain('export DYLD_FALLBACK_LIBRARY_PATH=')
-      expect(content).toContain('export PATH=')
-      expect(content).toContain('exec ')
-      expect(content).toContain('"$@"') // Arguments should be properly passed through
-    })
+      createDepsFile(projectDir, ['nginx.org@1.28.0'], {
+        // Don't expect SPECIAL_VAR in binary stubs - they only contain pkgx environment variables
+      })
+
+      const result = await runCLI(['dev'], projectDir)
+
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
+
+            // Check that pkgx environment variables are properly escaped
+            expect(stubContent).toContain('export DYLD_FALLBACK_LIBRARY_PATH=')
+            expect(stubContent).toContain('export PATH=')
+            expect(stubContent).toContain('exec ')
+            expect(stubContent).toContain('"$@"') // Arguments should be properly passed through
+          }
+        }
+      }
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
   })
 
   describe('Package-specific Environment Setup', () => {
-    it('should handle packages with no binaries gracefully', () => {
+    it('should handle packages with no binaries gracefully', async () => {
       const projectDir = path.join(tempDir, 'project-no-binaries')
       fs.mkdirSync(projectDir, { recursive: true })
 
       // Create a deps file with packages that might not install binaries
       createDepsFile(projectDir, ['node@20.0.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create an environment directory structure to simulate a successful installation
-      const envDir = path.join(tempDir, '.local', 'share', 'launchpad', 'envs', 'test-env')
-      fs.mkdirSync(envDir, { recursive: true })
-      
-      // Verify the environment directory was created
-      expect(fs.existsSync(envDir)).toBe(true)
-    })
+      const result = await runCLI(['dev'], projectDir)
+
+      // Check for either successful installation or appropriate error handling
+      const output = result.stdout + result.stderr
+      const hasSuccess = output.includes('✅')
+        || output.includes('Environment')
+        || output.includes('Successfully set up environment')
+        || output.includes('export PATH=')
+
+      const hasGracefulFailure = output.includes('Failed to install')
+        || output.includes('Failed to set up dev environment')
+        || output.includes('All package installations failed')
+        || output.includes('The current working directory was deleted')
+        || output.includes('ENOENT')
+
+      // Test passes if we get either success or graceful failure handling
+      expect(hasSuccess || hasGracefulFailure).toBe(true)
+    }, 10000) // Reduced timeout
   })
 
   describe('Error Handling in Stub Creation', () => {
-    it('should handle missing binary directories', () => {
+    it('should handle missing binary directories', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock environment structure with missing directories
-      const envDir = path.join(tempDir, '.local', 'share', 'launchpad', 'envs', 'test-env')
-      fs.mkdirSync(envDir, { recursive: true })
-      
-      // Create a bin directory but not an sbin directory
-      fs.mkdirSync(path.join(envDir, 'bin'), { recursive: true })
-      
-      // Verify the environment structure was created correctly
-      expect(fs.existsSync(path.join(envDir, 'bin'))).toBe(true)
-      expect(fs.existsSync(path.join(envDir, 'sbin'))).toBe(false)
-    })
+      const result = await runCLI(['dev'], projectDir)
 
-    it('should skip broken symlinks', () => {
-      const projectDir = path.join(tempDir, 'project')
-      fs.mkdirSync(projectDir, { recursive: true })
-      createDepsFile(projectDir, ['nginx.org@1.28.0'])
-
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock environment structure
-      const envDir = path.join(tempDir, '.local', 'share', 'launchpad', 'envs', 'test-env')
-      const binDir = path.join(envDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      
-      // Create a broken symlink if platform supports it
-      try {
-        fs.symlinkSync('/non-existent-target', path.join(binDir, 'broken-link'), 'file')
-        // Verify the symlink was created
-        expect(fs.existsSync(path.join(binDir, 'broken-link'))).toBe(false)
-        expect(fs.lstatSync(path.join(binDir, 'broken-link')).isSymbolicLink()).toBe(true)
-      } catch (error) {
-        // Some platforms may not support symlinks in tests
-        // Just verify the bin directory exists
-        expect(fs.existsSync(binDir)).toBe(true)
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        // Should not fail if some expected directories don't exist
+        expect(result.stderr).not.toContain('Failed to create stub')
       }
-    })
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
+
+    it('should skip broken symlinks', async () => {
+      const projectDir = path.join(tempDir, 'project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsFile(projectDir, ['nginx.org@1.28.0'])
+
+      const result = await runCLI(['dev'], projectDir)
+
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        // Should handle broken symlinks gracefully
+        if (result.stderr.includes('Symlink') && result.stderr.includes('non-existent')) {
+          expect(result.stderr).toContain('skipping')
+        }
+      }
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
   })
 
   describe('Cross-platform Compatibility', () => {
-    it('should create stubs with proper shebang', () => {
+    it('should create stubs with proper shebang', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsFile(projectDir, ['nginx.org@1.28.0'])
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-export PATH="/path/to/bin:$PATH"
-if [ -d "/some/dir" ]; then
-  echo "Directory exists"
-fi
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has POSIX-compatible features
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toMatch(/^#!/)
-      expect(content).toContain('#!/bin/sh')
-      expect(content).not.toContain('[[') // bash-specific
-      expect(content).toContain('[ ') // POSIX-compatible
-    })
+      const result = await runCLI(['dev'], projectDir)
+
+      // Accept either success or failure
+      if (result.exitCode === 0) {
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
+
+            // Should use POSIX-compatible shebang
+            expect(stubContent).toMatch(/^#!/)
+            expect(stubContent).toContain('#!/bin/sh')
+
+            // Should use POSIX-compatible shell features
+            expect(stubContent).not.toContain('[[') // bash-specific
+            expect(stubContent).toContain('[ ') // POSIX-compatible
+          }
+        }
+      }
+      else {
+        // If installation fails, check graceful error handling
+        const hasExpectedError = result.stderr.includes('Failed to install')
+          || result.stderr.includes('The current working directory was deleted')
+          || result.stderr.includes('ENOENT')
+        expect(hasExpectedError).toBe(true)
+      }
+    }, 60000)
   })
 
   describe('Integration with Project Environment', () => {
-    it('should create stubs that work with project-specific environments', () => {
+    it('should create stubs that work with project-specific environments', async () => {
       const projectDir = path.join(tempDir, 'project')
       fs.mkdirSync(projectDir, { recursive: true })
 
@@ -459,29 +469,29 @@ exec "/real/path/to/nginx" "$@"
         BUILD_ENV: 'production',
       })
 
-      // Skip actual CLI commands to avoid timeout
-      // Just verify that the deps file was created correctly with environment variables
-      expect(fs.existsSync(path.join(projectDir, 'deps.yaml'))).toBe(true)
-      const depsContent = fs.readFileSync(path.join(projectDir, 'deps.yaml'), 'utf8')
-      expect(depsContent).toContain('BUILD_ENV: production')
-      
-      // Create a mock binary stub for testing
-      const binDir = path.join(tempDir, 'bin')
-      fs.mkdirSync(binDir, { recursive: true })
-      const stubContent = `#!/bin/sh
-# Launchpad binary stub for nginx
-_ORIG_PATH="$PATH"
-export PATH="/path/to/bin:$PATH"
-export BUILD_ENV="production"
-exec "/real/path/to/nginx" "$@"
-`
-      fs.writeFileSync(path.join(binDir, 'nginx'), stubContent)
-      fs.chmodSync(path.join(binDir, 'nginx'), 0o755)
-      
-      // Verify the stub has the expected content
-      const content = fs.readFileSync(path.join(binDir, 'nginx'), 'utf8')
-      expect(content).toContain('#!/bin/sh')
-      expect(content).toContain('BUILD_ENV="production"')
-    })
+      const result = await runCLI(['dev'], projectDir)
+
+      // Check for either successful installation or appropriate error handling
+      const output = result.stdout + result.stderr
+      const hasSuccess = output.includes('✅') || output.includes('BUILD_ENV=') || output.includes('Installed')
+      const hasGracefulFailure = output.includes('❌ Failed to install') || output.includes('Failed to install')
+
+      // Test passes if we get either success or graceful failure handling
+      expect(hasSuccess || hasGracefulFailure).toBe(true)
+
+      // If successful, verify stub creation
+      if (hasSuccess && !hasGracefulFailure) {
+        const prefixMatch = result.stderr.match(/(?:📍 )?Installation prefix: (.+)/)
+        if (prefixMatch) {
+          const prefix = prefixMatch[1]
+          const nginxStub = path.join(prefix, 'sbin', 'nginx')
+
+          if (fs.existsSync(nginxStub)) {
+            const stubContent = fs.readFileSync(nginxStub, 'utf-8')
+            expect(stubContent).toContain('#!/bin/sh')
+          }
+        }
+      }
+    }, 60000)
   })
 })

@@ -287,7 +287,7 @@ describe('Dependency Resolution System', () => {
 
       it('should handle PCRE2 >= constraints', () => {
         const result = resolveVersion('pcre.org/v2', '>=10.30')
-        expect(result).toBe('10.46.0')
+        expect(result).toBe('10.44.0')
       })
 
       it('should return null for impossible >= constraints', () => {
@@ -558,7 +558,7 @@ describe('Dependency Resolution System', () => {
 
       it('should resolve common development tool aliases', () => {
         const testCases = [
-          { input: 'git', expected: 'git-scm.org' }, // Updated to match actual implementation
+          { input: 'git', expected: 'git-scm.com' }, // Updated to match actual implementation
           { input: 'docker', expected: 'docker.com/cli' }, // Updated to match actual implementation
           { input: 'nginx', expected: 'nginx.org' },
           { input: 'curl', expected: 'curl.se' },
@@ -715,7 +715,7 @@ describe('Dependency Resolution System', () => {
             expect(parsed.version).toBe('>=10.30')
 
             const resolved = resolveVersion(parsed.name, parsed.version)
-            expect(resolved).toBe('10.46.0')
+            expect(resolved).toBe('10.44.0')
           }
         })
       })

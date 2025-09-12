@@ -2,11 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-// Helper function to check if a string contains any of the given substrings
-function containsAny(str: string, substrings: string[]): boolean {
-  return substrings.some(substring => str.includes(substring))
-}
-
 describe('Shell Message Configuration', () => {
   describe('Default Configuration', () => {
     it('should have sensible default shell message settings', async () => {
@@ -59,9 +54,8 @@ describe('Shell Message Configuration', () => {
       const code = shellcode()
 
       // Should have conditional logic for message display
-      // Just check that the code has printf statements for messages
-      expect(code).toContain('printf') 
-      expect(code).toContain('Environment activated')
+      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
+      expect(code).toContain('false')
     })
 
     it('should handle path placeholder replacement', async () => {
@@ -73,13 +67,13 @@ describe('Shell Message Configuration', () => {
       expect(code).toContain('project_dir')
     })
 
-    it('should handle shell special characters', async () => {
+    it('should escape shell special characters', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
       // Should properly escape shell characters in messages
-      // Just check that the code has proper shell syntax
-      expect(code).toContain('printf')
+      expect(code).toContain('\\033[') // ANSI escape codes should be properly escaped
+      expect(code).toContain('\\n') // Newlines should be escaped
     })
 
     it('should generate valid shell syntax', async () => {
@@ -95,12 +89,13 @@ describe('Shell Message Configuration', () => {
   })
 
   describe('Message Customization', () => {
-    it('should support message display configuration', async () => {
+    it('should support disabling all messages', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should have message display configuration
-      expect(code).toContain('printf')
+      // Should have conditional logic for message display
+      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
+      expect(code).toContain('false')
     })
 
     it('should support custom activation messages', async () => {
@@ -135,13 +130,12 @@ describe('Shell Message Configuration', () => {
       expect(code).toContain('✅') // Check individual emojis instead of regex
     })
 
-    it('should handle ANSI escape codes in messages', async () => {
+    it('should preserve ANSI escape codes in messages', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should have ANSI escape codes for styling or use other formatting
-      expect(code).toContain('printf')
-      expect(code).toContain('Environment')
+      // Should have ANSI escape codes for styling
+      expect(code).toContain('\\033[')
     })
   })
 
@@ -235,11 +229,12 @@ packages:
       expect(code).toContain('launchpad')
     })
 
-    it('should maintain project tracking across environment switches', async () => {
+    it('should maintain configuration across environment switches', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should track current project when switching environments
+      // Should preserve message settings when switching projects
+      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
       expect(code).toContain('LAUNCHPAD_CURRENT_PROJECT')
     })
   })

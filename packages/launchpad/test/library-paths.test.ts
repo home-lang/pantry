@@ -6,15 +6,31 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-/**
- * Unified Library Path Tests
- *
- * This file combines the successful approaches from various library path test files
- * to create a comprehensive test suite that verifies library path functionality
- * without relying on CLI commands that may time out.
- */
+// Mock fetch to prevent real network calls in tests
+const originalFetch = globalThis.fetch
+async function mockFetch(url: string | URL | Request, _init?: RequestInit): Promise<Response> {
+  const urlString = url.toString()
 
-describe('Library Path Core Functionality', () => {
+  // Mock successful responses for known test packages
+  if (urlString.includes('dist.pkgx.dev')) {
+    // For simplicity in tests, just return a simple mock response
+    // The install command tests should be separate from library path tests
+    const tarContent = Buffer.from('fake tar content for testing')
+    return new Response(tarContent, {
+      status: 200,
+      statusText: 'OK',
+      headers: { 'content-type': 'application/gzip' },
+    })
+  }
+
+  // Mock 404 for nonexistent packages
+  return new Response('Package not available in test environment', {
+    status: 404,
+    statusText: 'Not Found',
+  })
+}
+
+describe('Library Path Management', () => {
   let originalEnv: NodeJS.ProcessEnv
   let tempDir: string
   let cliPath: string
@@ -34,11 +50,9 @@ describe('Library Path Core Functionality', () => {
     // Set test environment variables
     process.env.LAUNCHPAD_PREFIX = testInstallPath
     process.env.NODE_ENV = 'test'
-    process.env.LAUNCHPAD_E2E_TEST = 'true' // Ensure real services are used
-    process.env.LAUNCHPAD_VERBOSE = 'true' // Enable verbose output for debugging
 
-    // Mock fetch to prevent real network calls in tests
-    mockLibPathFetch()
+    // Enable fetch mocking for tests
+    globalThis.fetch = mockFetch as typeof fetch
   })
 
   afterEach(() => {
@@ -47,23 +61,72 @@ describe('Library Path Core Functionality', () => {
       delete process.env[key]
     })
     Object.assign(process.env, originalEnv)
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    }
 
-    try {
-      // Clean up test environment directories
-      if (fs.existsSync(tempDir)) {
-        // First, ensure all files are writable before removal
-        makeDirectoryWritable(tempDir)
-        fs.rmSync(tempDir, { recursive: true, force: true })
+    // Clean up test environment directories
+    const launchpadEnvsDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad')
+    if (fs.existsSync(launchpadEnvsDir)) {
+      const entries = fs.readdirSync(launchpadEnvsDir)
+      for (const entry of entries) {
+        if (entry.startsWith('test-project_')) {
+          const entryPath = path.join(launchpadEnvsDir, entry)
+          fs.rmSync(entryPath, { recursive: true, force: true })
+        }
       }
-
-      cleanupTestEnvironments()
-    } catch (err) {
-      console.error('Error during cleanup:', err)
     }
 
     // Restore original fetch
-    restoreLibPathFetch()
+    globalThis.fetch = originalFetch
   })
+
+  const getTestEnv = (extraEnv: Record<string, string> = {}) => {
+    return {
+      ...process.env,
+      PATH: process.env.PATH?.includes('/usr/local/bin')
+        ? process.env.PATH
+        : `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
+      NODE_ENV: 'test',
+      LAUNCHPAD_PREFIX: testInstallPath,
+      ...extraEnv,
+    }
+  }
+
+  // Helper function to run CLI commands
+  const runCLI = (args: string[], cwd?: string): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
+    return new Promise((resolve, reject) => {
+      const proc = spawn('bun', [cliPath, ...args], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: getTestEnv(),
+        cwd: cwd || tempDir,
+      })
+
+      let stdout = ''
+      let stderr = ''
+
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString()
+      })
+
+      proc.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
+
+      proc.on('close', (code) => {
+        resolve({ stdout, stderr, exitCode: code || 0 })
+      })
+
+      proc.on('error', (error) => {
+        reject(error)
+      })
+
+      setTimeout(() => {
+        proc.kill()
+        reject(new Error('CLI command timed out'))
+      }, 15000)
+    })
+  }
 
   // Helper to create mock package with library directories
   const createMockPackageWithLibs = (domain: string, version: string, basePath: string) => {
@@ -75,6 +138,8 @@ describe('Library Path Core Functionality', () => {
 
     fs.mkdirSync(libDir, { recursive: true })
     fs.mkdirSync(binDir, { recursive: true })
+
+    // Also create the pkgs structure for list() function
     fs.mkdirSync(pkgsPackageDir, { recursive: true })
 
     // Create mock library files
@@ -108,26 +173,92 @@ describe('Library Path Core Functionality', () => {
     fs.writeFileSync(path.join(dir, 'dependencies.yaml'), content)
   }
 
-  // Helper to create mock environment directory structure
-  const createMockEnvironment = (projectDir: string): string => {
-    const projectHash = path.basename(projectDir)
-    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}_test`)
-    const envBinPath = path.join(envDir, 'bin')
+  describe('Shell Environment Setup', () => {
+    it('should include library paths in shell output', async () => {
+      // Create project directory with dependencies first
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20', 'zlib.net@1.3'])
 
-    fs.mkdirSync(envBinPath, { recursive: true })
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
 
-    // Create mock packages with library directories
-    createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
-    createMockPackageWithLibs('zlib.net', '1.3.1', envDir)
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
 
-    // Create shims for the packages in the environment bin directory
-    fs.writeFileSync(path.join(envBinPath, 'node'), '#!/bin/sh\necho "v20.0.0"')
-    fs.writeFileSync(path.join(envBinPath, 'zlib'), '#!/bin/sh\necho "1.3.1"')
-    fs.chmodSync(path.join(envBinPath, 'node'), 0o755)
-    fs.chmodSync(path.join(envBinPath, 'zlib'), 0o755)
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
 
-    return envDir
-  }
+      // Create mock packages with library directories in the discovered environment directory
+      const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
+      const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', envDir)
+
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'nodejs'), '#!/bin/sh\necho "20.0.0"')
+      fs.writeFileSync(path.join(envBinPath, 'zlib'), '#!/bin/sh\necho "1.3.1"')
+      fs.chmodSync(path.join(envBinPath, 'nodejs'), 0o755)
+      fs.chmodSync(path.join(envBinPath, 'zlib'), 0o755)
+
+      // Run dev command again with the mock packages in place
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('export DYLD_LIBRARY_PATH=')
+      expect(result.stdout).toContain('export DYLD_FALLBACK_LIBRARY_PATH=')
+      expect(result.stdout).toContain('export LD_LIBRARY_PATH=')
+      expect(result.stdout).toContain(nodeLibDir)
+      expect(result.stdout).toContain(zlibLibDir)
+    })
+
+    it('should preserve original library path variables', async () => {
+      // Create project with dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20'])
+
+      // Run dev command with shell output
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
+      expect(result.stdout).toContain('LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH')
+      expect(result.stdout).toContain('LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
+    })
+
+    it('should restore library paths on deactivation', async () => {
+      // Create project with dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20'])
+
+      // Run dev command with shell output
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('_launchpad_dev_try_bye()')
+      expect(result.stdout).toContain('export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"')
+      expect(result.stdout).toContain('unset DYLD_LIBRARY_PATH')
+      expect(result.stdout).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
+    })
+
+    it('should handle empty library paths gracefully', async () => {
+      // Create project directory without packages that have libraries
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, [])
+
+      // Run dev command with shell output
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('export PATH=')
+      // Should not crash when no library paths are found
+    })
+  })
 
   describe('Shim Creation with Library Paths', () => {
     it('should create shims with library path setup', async () => {
@@ -136,6 +267,7 @@ describe('Library Path Core Functionality', () => {
       createMockPackageWithLibs('zlib.net', '1.3.1', testInstallPath)
 
       // Test the library path setup by creating a simple shim manually
+      // This tests the library path logic without requiring the full install pipeline
       const shimDir = path.join(testInstallPath, 'bin')
       fs.mkdirSync(shimDir, { recursive: true })
 
@@ -184,6 +316,7 @@ exec "${packageDir}/bin/mock-binary" "$@"
       const { libDir: opensslLibDir } = createMockPackageWithLibs('openssl.org', '3.0.0', testInstallPath)
 
       // Test that all dependency library paths are included
+      // (Skip the actual install command since it requires complex mocking)
       const shimDir = path.join(testInstallPath, 'bin')
       fs.mkdirSync(shimDir, { recursive: true })
 
@@ -237,117 +370,333 @@ exec "${packageDir}/bin/simple-tool" "$@"
     })
   })
 
-  describe('Library Path Shell Variables', () => {
-    it('should generate correct library path environment variables', () => {
-      // Create mock packages with libraries
-      const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', testInstallPath)
-      const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', testInstallPath)
+  describe('Global Stub Creation with Library Paths', () => {
+    it('should create global stubs with library path setup', async () => {
+      // Create mock global packages with libraries
+      const { libDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', testGlobalPath)
 
-      // Generate shell code for library paths
-      const libPaths = [nodeLibDir, zlibLibDir].join(':')
-      const shellCode = `
-# Set up dynamic library paths for package dependencies
-if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
-  export LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH"
-fi
-if [[ -z "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
-  export LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH="$DYLD_FALLBACK_LIBRARY_PATH"
-fi
-if [[ -z "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
-  export LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-fi
+      // Test global stub creation logic by creating a representative stub
+      const globalStubDir = path.join(testGlobalPath, 'bin')
+      fs.mkdirSync(globalStubDir, { recursive: true })
 
-export DYLD_LIBRARY_PATH="${libPaths}"
-export DYLD_FALLBACK_LIBRARY_PATH="${libPaths}"
-export LD_LIBRARY_PATH="${libPaths}"
+      const stubPath = path.join(globalStubDir, 'node')
+      const stubContent = `#!/bin/sh
+# Global stub with library path setup
+setup_library_paths() {
+  if [ -n "$DYLD_LIBRARY_PATH" ]; then
+    export DYLD_LIBRARY_PATH="${libDir}:$DYLD_LIBRARY_PATH"
+  else
+    export DYLD_LIBRARY_PATH="${libDir}"
+  fi
+}
+
+setup_library_paths
+exec "${testGlobalPath}/nodejs.org/v20.0.0/bin/node" "$@"
 `
+      fs.writeFileSync(stubPath, stubContent)
+      fs.chmodSync(stubPath, 0o755)
 
-      // Verify the shell code contains the correct library paths
-      expect(shellCode).toContain('LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
-      expect(shellCode).toContain('LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH')
-      expect(shellCode).toContain('LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
-      expect(shellCode).toContain(`export DYLD_LIBRARY_PATH="${libPaths}"`)
-      expect(shellCode).toContain(`export DYLD_FALLBACK_LIBRARY_PATH="${libPaths}"`)
-      expect(shellCode).toContain(`export LD_LIBRARY_PATH="${libPaths}"`)
-      expect(shellCode).toContain(nodeLibDir)
-      expect(shellCode).toContain(zlibLibDir)
+      // Verify global stub includes library path setup
+      expect(fs.existsSync(stubPath)).toBe(true)
+      const createdContent = fs.readFileSync(stubPath, 'utf8')
+      expect(createdContent).toContain('setup_library_paths')
+      expect(createdContent).toContain('DYLD_LIBRARY_PATH')
+      expect(createdContent).toContain(libDir)
     })
 
-    it('should handle deactivation of library paths', () => {
-      // Generate shell code for library path deactivation
-      const deactivationCode = `
-# Restore original library paths
-if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then
-  export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"
-else
-  unset DYLD_LIBRARY_PATH
-fi
-if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then
-  export DYLD_FALLBACK_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"
-else
-  unset DYLD_FALLBACK_LIBRARY_PATH
-fi
-if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then
-  export LD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"
-else
-  unset LD_LIBRARY_PATH
-fi
-unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH
-unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH
-unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH
-`
+    it('should include library discovery in global stub functions', async () => {
+      // Create multiple global packages with libraries
+      const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', testGlobalPath)
+      const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', testGlobalPath)
+      const { libDir: opensslLibDir } = createMockPackageWithLibs('openssl.org', '3.0.0', testGlobalPath)
 
-      // Verify the deactivation code properly restores original paths
-      expect(deactivationCode).toContain('export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"')
-      expect(deactivationCode).toContain('unset DYLD_LIBRARY_PATH')
-      expect(deactivationCode).toContain('export DYLD_FALLBACK_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"')
-      expect(deactivationCode).toContain('unset DYLD_FALLBACK_LIBRARY_PATH')
-      expect(deactivationCode).toContain('export LD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"')
-      expect(deactivationCode).toContain('unset LD_LIBRARY_PATH')
-      expect(deactivationCode).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
-      expect(deactivationCode).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH')
-      expect(deactivationCode).toContain('unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
+      // Test that global stubs can discover all available library paths
+      const globalStubDir = path.join(testGlobalPath, 'bin')
+      fs.mkdirSync(globalStubDir, { recursive: true })
+
+      const stubPath = path.join(globalStubDir, 'node-with-discovery')
+      const allLibPaths = [nodeLibDir, zlibLibDir, opensslLibDir].join(':')
+      const stubContent = `#!/bin/sh
+# Global stub with library discovery
+setup_global_library_paths() {
+  # Discover all available library paths
+  local lib_paths="${allLibPaths}"
+  export DYLD_LIBRARY_PATH="\${lib_paths}:\${DYLD_LIBRARY_PATH:-}"
+  export LD_LIBRARY_PATH="\${lib_paths}:\${LD_LIBRARY_PATH:-}"
+}
+
+setup_global_library_paths
+exec node "$@"
+`
+      fs.writeFileSync(stubPath, stubContent)
+      fs.chmodSync(stubPath, 0o755)
+
+      // Verify stub includes all discovered library paths
+      expect(fs.existsSync(stubPath)).toBe(true)
+      const createdContent = fs.readFileSync(stubPath, 'utf8')
+      expect(createdContent).toContain('setup_global_library_paths')
+      expect(createdContent).toContain(nodeLibDir)
+      expect(createdContent).toContain(zlibLibDir)
+      expect(createdContent).toContain(opensslLibDir)
     })
   })
 
-  describe('Library Path Cross-Platform Support', () => {
+  describe('Cross-Platform Library Path Support', () => {
+    it('should set macOS-specific library paths', async () => {
+      // Create project with dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20'])
+
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
+
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock packages with libraries in the discovered environment directory
+      const { libDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
+
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'node'), '#!/bin/sh\necho "v20.0.0"')
+      fs.chmodSync(path.join(envBinPath, 'node'), 0o755)
+
+      // Run dev command again with the mock packages in place
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('export DYLD_LIBRARY_PATH=')
+      expect(result.stdout).toContain('export DYLD_FALLBACK_LIBRARY_PATH=')
+      expect(result.stdout).toContain('export LD_LIBRARY_PATH=')
+      expect(result.stdout).toContain(libDir)
+    })
+
+    it('should set Linux-specific library paths', async () => {
+      // Create project with dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('LD_LIBRARY_PATH=')
+    })
+
     it('should handle lib64 directories on 64-bit systems', async () => {
-      // Create mock package with lib64 directory
-      const packageDir = path.join(testInstallPath, 'test-package.org', 'v1.0.0')
+      // Create project first
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['test-package.org@1'])
+
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
+
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock package with lib64 directory in the discovered environment
+      const packageDir = path.join(envDir, 'test-package.org', 'v1.0.0')
       const lib64Dir = path.join(packageDir, 'lib64')
       const binDir = path.join(packageDir, 'bin')
 
+      // Also create the pkgs structure for list() function
+      const pkgsPackageDir = path.join(envDir, 'pkgs', 'test-package.org', 'v1.0.0')
+
       fs.mkdirSync(lib64Dir, { recursive: true })
       fs.mkdirSync(binDir, { recursive: true })
+      fs.mkdirSync(pkgsPackageDir, { recursive: true })
 
       // Create mock library in lib64
       fs.writeFileSync(path.join(lib64Dir, 'libtest64.so'), 'mock 64-bit library content')
       fs.writeFileSync(path.join(binDir, 'test-binary'), '#!/bin/sh\necho "test"\n')
       fs.chmodSync(path.join(binDir, 'test-binary'), 0o755)
 
-      // Generate shell code that includes lib64 directories
-      const shellCode = `
-# Set up dynamic library paths for package dependencies
-export DYLD_LIBRARY_PATH="${lib64Dir}"
-export LD_LIBRARY_PATH="${lib64Dir}"
-`
+      // Create metadata for the package
+      const metadata = {
+        domain: 'test-package.org',
+        version: '1.0.0',
+        installedAt: new Date().toISOString(),
+        binaries: ['test-binary'],
+        installPath: packageDir,
+      }
+      fs.writeFileSync(path.join(pkgsPackageDir, 'metadata.json'), JSON.stringify(metadata, null, 2))
 
-      // Verify the shell code contains the lib64 directory
-      expect(shellCode).toContain(lib64Dir)
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'test-binary'), '#!/bin/sh\necho "test binary"')
+      fs.chmodSync(path.join(envBinPath, 'test-binary'), 0o755)
+
+      // Run dev command again with the mock packages in place
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain(lib64Dir)
     })
   })
 
-  describe('Library Path Integration Scenarios', () => {
+  describe('Environment Variable Management', () => {
+    it('should preserve existing library path variables', async () => {
+      // Create project with dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      expect(result.exitCode).toBe(0)
+      // Should store original values
+      expect(result.stdout).toContain('LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
+      expect(result.stdout).toContain('LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
+    })
+
+    it('should clean up library path variables on deactivation', async () => {
+      // Create project with dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['nodejs.org@20'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      expect(result.exitCode).toBe(0)
+      // Should clean up all library path variables
+      expect(result.stdout).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
+      expect(result.stdout).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH')
+      expect(result.stdout).toContain('unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
+    })
+  })
+
+  describe('Performance and Edge Cases', () => {
+    it('should handle large numbers of packages efficiently', async () => {
+      // Create many mock packages with libraries
+      const packageNames = Array.from({ length: 50 }, (_, i) => `package${i}.org`)
+
+      packageNames.forEach((name, i) => {
+        createMockPackageWithLibs(name, `1.${i}.0`, testInstallPath)
+      })
+
+      // Create project with all dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, packageNames.map((name, i) => `${name}@1.${i}`))
+
+      const startTime = Date.now()
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+      const duration = Date.now() - startTime
+
+      expect(result.exitCode).toBe(0)
+      expect(duration).toBeLessThan(5000) // Should complete within 5 seconds
+      expect(result.stdout).toContain('export DYLD_LIBRARY_PATH=')
+    })
+
+    it('should handle missing lib directories gracefully', async () => {
+      // Create package directory structure without lib directories
+      const packageDir = path.join(testInstallPath, 'no-libs.org', 'v1.0.0')
+      const binDir = path.join(packageDir, 'bin')
+      fs.mkdirSync(binDir, { recursive: true })
+      fs.writeFileSync(path.join(binDir, 'no-libs'), '#!/bin/sh\necho "no libs"\n')
+      fs.chmodSync(path.join(binDir, 'no-libs'), 0o755)
+
+      // Create project with this dependency
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['no-libs.org@1'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      expect(result.exitCode).toBe(0)
+      // Should not crash, should handle gracefully
+    })
+
+    it('should handle permission errors on lib directories', async () => {
+      // Create package with lib directory that becomes unreadable
+      const { libDir } = createMockPackageWithLibs('restricted.org', '1.0.0', testInstallPath)
+
+      // Make lib directory unreadable (if not running as root)
+      if (process.getuid && process.getuid() !== 0) {
+        fs.chmodSync(libDir, 0o000)
+      }
+
+      // Create project with this dependency
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['restricted.org@1'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      // Should handle permission errors gracefully
+      expect(result.exitCode).toBe(0)
+
+      // Restore permissions for cleanup
+      if (process.getuid && process.getuid() !== 0) {
+        fs.chmodSync(libDir, 0o755)
+      }
+    })
+
+    it('should deduplicate library paths', async () => {
+      // Create packages that might reference the same libraries
+      createMockPackageWithLibs('app1.org', '1.0.0', testInstallPath)
+      createMockPackageWithLibs('app2.org', '1.0.0', testInstallPath)
+
+      // Both apps might depend on the same library
+      const sharedLibDir = path.join(testInstallPath, 'shared.org', 'v1.0.0', 'lib')
+      fs.mkdirSync(sharedLibDir, { recursive: true })
+      fs.writeFileSync(path.join(sharedLibDir, 'libshared.dylib'), 'shared library')
+
+      // Create project with both dependencies
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+      createDepsYaml(projectDir, ['app1.org@1', 'app2.org@1', 'shared.org@1'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      expect(result.exitCode).toBe(0)
+
+      // Check that library paths don't contain duplicates
+      const stdout = result.stdout
+      const dyldLibraryPathMatch = stdout.match(/export DYLD_LIBRARY_PATH="([^"]+)"/)?.[1]
+      if (dyldLibraryPathMatch) {
+        const paths = dyldLibraryPathMatch.split(':')
+        const uniquePaths = [...new Set(paths)]
+        expect(paths.length).toBe(uniquePaths.length) // No duplicates
+      }
+    })
+  })
+
+  describe('Integration with Real Scenarios', () => {
     it('should support the Node.js + zlib scenario', async () => {
-      // Create project directory with dependencies
+      // Create project first
       const projectDir = path.join(tempDir, 'test-project')
       fs.mkdirSync(projectDir, { recursive: true })
       createDepsYaml(projectDir, ['nodejs.org@20', 'zlib.net@1.3'])
 
-      // Create mock environment
-      const envDir = createMockEnvironment(projectDir)
+      // Run dev command first to discover the actual environment directory being used
+      const firstResult = await runCLI(['dev', projectDir, '--shell'])
+      expect(firstResult.exitCode).toBe(0)
 
-      // Create mock Node.js and zlib packages
+      // Extract the environment path from the output
+      const envPathMatch = firstResult.stdout.match(/LAUNCHPAD_ENV_BIN_PATH="([^"]+)"/)
+      expect(envPathMatch).not.toBeNull()
+      const envBinPath = envPathMatch![1]
+      const envDir = path.dirname(envBinPath) // Remove /bin suffix
+
+      // Ensure environment bin directory exists
+      fs.mkdirSync(envBinPath, { recursive: true })
+
+      // Create mock Node.js and zlib packages in the discovered environment directory
       const { libDir: nodeLibDir } = createMockPackageWithLibs('nodejs.org', '20.0.0', envDir)
       const { libDir: zlibLibDir } = createMockPackageWithLibs('zlib.net', '1.3.1', envDir)
 
@@ -356,89 +705,44 @@ export LD_LIBRARY_PATH="${lib64Dir}"
       fs.writeFileSync(path.join(zlibLibDir, 'libz.1.dylib'), 'zlib library v1')
       fs.writeFileSync(path.join(zlibLibDir, 'libz.1.3.1.dylib'), 'zlib library v1.3.1')
 
-      // Generate shell code for library paths
-      const libPaths = [nodeLibDir, zlibLibDir].join(':')
-      const shellCode = `
-# Set up dynamic library paths for package dependencies
-export DYLD_LIBRARY_PATH="${libPaths}"
-export LD_LIBRARY_PATH="${libPaths}"
-`
+      // Create shims for the packages in the environment bin directory
+      fs.writeFileSync(path.join(envBinPath, 'node'), '#!/bin/sh\necho "v20.0.0"')
+      fs.writeFileSync(path.join(envBinPath, 'zlib'), '#!/bin/sh\necho "1.3.1"')
+      fs.chmodSync(path.join(envBinPath, 'node'), 0o755)
+      fs.chmodSync(path.join(envBinPath, 'zlib'), 0o755)
 
-      // Verify the shell code contains both library paths
-      expect(shellCode).toContain(nodeLibDir)
-      expect(shellCode).toContain(zlibLibDir)
+      // Run dev command again with the mock packages in place
+      const result = await runCLI(['dev', projectDir, '--shell'])
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain(nodeLibDir)
+      expect(result.stdout).toContain(zlibLibDir)
+
+      // Verify the library paths would be set correctly for Node.js to find zlib
+      expect(result.stdout).toContain('export DYLD_LIBRARY_PATH=')
+      expect(result.stdout).toContain('export DYLD_FALLBACK_LIBRARY_PATH=')
+    })
+
+    it('should work with package managers like bun that use Node.js', async () => {
+      // Create project that would use bun install (which uses Node.js internally)
+      const projectDir = path.join(tempDir, 'test-project')
+      fs.mkdirSync(projectDir, { recursive: true })
+
+      // Create package.json to simulate a real project
+      fs.writeFileSync(path.join(projectDir, 'package.json'), JSON.stringify({
+        name: 'test-project',
+        dependencies: {
+          'some-package': '^1.0.0',
+        },
+      }))
+
+      createDepsYaml(projectDir, ['nodejs.org@20', 'zlib.net@1.3'])
+
+      const result = await runCLI(['dev', projectDir, '--shell'], projectDir)
+
+      expect(result.exitCode).toBe(0)
+      // Should set up environment that would allow bun install to work
+      expect(result.stdout).toContain('export DYLD_LIBRARY_PATH=')
     })
   })
 })
-
-// Helper functions
-
-// Mock fetch to prevent real network calls in tests
-let libPathOriginalFetch: typeof fetch | undefined
-function mockLibPathFetch() {
-  // Only mock if not already mocked
-  if (!libPathOriginalFetch) {
-    libPathOriginalFetch = globalThis.fetch
-    globalThis.fetch = async (url: string | URL | Request, _init?: RequestInit): Promise<Response> => {
-      const urlString = url.toString()
-
-      // Mock successful responses for known test packages
-      if (urlString.includes('dist.pkgx.dev')) {
-        // For simplicity in tests, just return a simple mock response
-        const tarContent = Buffer.from('fake tar content for testing')
-        return new Response(tarContent, {
-          status: 200,
-          statusText: 'OK',
-          headers: { 'content-type': 'application/gzip' },
-        })
-      }
-
-      // Mock 404 for nonexistent packages
-      return new Response('Package not available in test environment', {
-        status: 404,
-        statusText: 'Not Found',
-      })
-    }
-  }
-}
-
-function restoreLibPathFetch() {
-  if (libPathOriginalFetch) {
-    globalThis.fetch = libPathOriginalFetch
-    libPathOriginalFetch = undefined
-  }
-}
-
-function makeDirectoryWritable(dirPath: string) {
-  try {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name)
-      if (entry.isDirectory()) {
-        makeDirectoryWritable(fullPath)
-      } else {
-        fs.chmodSync(fullPath, 0o666)
-      }
-    }
-    fs.chmodSync(dirPath, 0o777)
-  } catch (err) {
-    console.error(`Error making directory writable: ${dirPath}`, err)
-  }
-}
-
-function cleanupTestEnvironments() {
-  const launchpadEnvsDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad')
-  if (fs.existsSync(launchpadEnvsDir)) {
-    const entries = fs.readdirSync(launchpadEnvsDir)
-    for (const entry of entries) {
-      if (entry.startsWith('test-project_')) {
-        const entryPath = path.join(launchpadEnvsDir, entry)
-        try {
-          fs.rmSync(entryPath, { recursive: true, force: true })
-        } catch (err) {
-          console.error(`Error removing test directory: ${entryPath}`, err)
-        }
-      }
-    }
-  }
-}

@@ -72,14 +72,12 @@ describe('pin downgrade fast-path behavior', () => {
     writeDeps(projectDir, 'dependencies:\n  bun.sh: 1.2.19\n')
 
     const r2 = runDevShell(projectDir)
-    
-    // Should complete successfully
+    // In test mode with network allowed, we may see installer logs rather than timing summary
+    // Accept either our timing summary or the install start lines
+    const hasTiming = /⏱ shell-install-path:/.test(r2.stderr)
+    const hasInstall = /Installing Bun version/.test(r2.stderr) || /Installing packages: bun\.sh@/.test(r2.stderr)
+    expect(hasTiming || hasInstall).toBe(true)
     expect(r2.stdout).toContain('# Launchpad environment setup')
-    
-    // In test mode, we may see various outputs - just ensure it completes
-    // Accept timing summary, install logs, or other valid outputs
-    const hasValidOutput = r2.stderr.length > 0 || r2.stdout.length > 0
-    expect(hasValidOutput).toBe(true)
   })
 
   it('on next activation, reports using pinned version fast path (no install)', () => {

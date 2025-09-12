@@ -155,26 +155,27 @@ describe('Environment Success Validation', () => {
         // Run installation - this should validate services actually work
         const result = await install(['php.net@8.4.12', 'postgresql.org@17.2.0', 'redis.io@8.2.1'])
 
-        // If installation reports success, validate service health
+        // If installation reports success, all services should be healthy
         if (result && result.length > 0) {
           // Validate each auto-start service is actually working
           const pgHealth = await validateServiceHealth('postgres')
           const redisHealth = await validateServiceHealth('redis')
           const phpHealth = await validateServiceHealth('php')
 
-          // Log health status for debugging
-          console.log('Service health status:', {
-            postgres: pgHealth.isHealthy ? 'healthy' : pgHealth.error,
-            redis: redisHealth.isHealthy ? 'healthy' : redisHealth.error,
-            php: phpHealth.isHealthy ? 'healthy' : phpHealth.error
-          })
+          // All services should be healthy if installation succeeded
+          expect(pgHealth.isHealthy).toBe(true)
+          expect(redisHealth.isHealthy).toBe(true)
+          expect(phpHealth.isHealthy).toBe(true)
 
-          // At least one service should be healthy if installation succeeded
-          const anyServiceHealthy = pgHealth.isHealthy || redisHealth.isHealthy || phpHealth.isHealthy
-          expect(anyServiceHealthy).toBe(true)
-        } else {
-          // If installation failed, that's also a valid test outcome
-          console.log('Installation did not complete successfully, which is expected in test environment')
+          if (!pgHealth.isHealthy) {
+            throw new Error(`PostgreSQL not healthy after successful installation: ${pgHealth.error}`)
+          }
+          if (!redisHealth.isHealthy) {
+            throw new Error(`Redis not healthy after successful installation: ${redisHealth.error}`)
+          }
+          if (!phpHealth.isHealthy) {
+            throw new Error(`PHP not healthy after successful installation: ${phpHealth.error}`)
+          }
         }
       } finally {
         process.chdir(originalCwd)
@@ -195,38 +196,28 @@ describe('Environment Success Validation', () => {
 
       try {
         // Install just PHP
-        const result = await install(['php.net@8.4.12'])
+        await install(['php.net@8.4.12'])
 
-        if (result && result.length > 0) {
-          // Validate PHP works without ncurses errors
-          const phpHealth = await validateServiceHealth('php')
-          
-          if (phpHealth.isHealthy) {
-            // Test specific PHP functionality that might fail with library issues
-            try {
-              const versionResult = execSync('php -r "echo phpversion();"', { stdio: 'pipe' })
-              expect(versionResult.toString()).toMatch(/^8\.4\.\d+/)
-            } catch (error) {
-              console.log(`PHP version check failed: ${error}`)
-              // Don't fail the test if PHP isn't available in PATH
-            }
+        // Validate PHP works without ncurses errors
+        const phpHealth = await validateServiceHealth('php')
+        expect(phpHealth.isHealthy).toBe(true)
 
-            // Test PHP extensions are loaded
-            try {
-              const extensionsResult = execSync('php -m', { stdio: 'pipe' })
-              const extensions = extensionsResult.toString()
-              expect(extensions).toContain('Core')
-              expect(extensions).toContain('date')
-            } catch (error) {
-              console.log(`PHP extensions check failed: ${error}`)
-              // Don't fail the test if PHP isn't available in PATH
-            }
-          } else {
-            console.log(`PHP health check failed: ${phpHealth.error}`)
-            // Test passes if PHP installation completed but isn't in PATH yet
-          }
-        } else {
-          console.log('PHP installation did not complete successfully, which is expected in test environment')
+        // Test specific PHP functionality that might fail with library issues
+        try {
+          const result = execSync('php -r "echo phpversion();"', { stdio: 'pipe' })
+          expect(result.toString()).toMatch(/^8\.4\.\d+/)
+        } catch (error) {
+          throw new Error(`PHP execution failed with library error: ${error}`)
+        }
+
+        // Test PHP extensions are loaded
+        try {
+          const result = execSync('php -m', { stdio: 'pipe' })
+          const extensions = result.toString()
+          expect(extensions).toContain('Core')
+          expect(extensions).toContain('date')
+        } catch (error) {
+          throw new Error(`PHP extensions check failed: ${error}`)
         }
 
       } finally {
@@ -247,28 +238,19 @@ describe('Environment Success Validation', () => {
 
       try {
         // Install PHP and Composer
-        const result = await install(['php.net@8.4.12', 'getcomposer.org@2.8.11'])
+        await install(['php.net@8.4.12', 'getcomposer.org@2.8.11'])
 
-        if (result && result.length > 0) {
-          // Validate Composer works
-          const composerHealth = await validateServiceHealth('composer')
-          
-          if (composerHealth.isHealthy) {
-            // Test Composer can run basic commands
-            try {
-              const diagnoseResult = execSync('composer diagnose', { stdio: 'pipe' })
-              // Should not contain critical errors
-              expect(diagnoseResult.toString()).not.toContain('ERROR')
-            } catch (error) {
-              console.log(`Composer diagnose failed: ${error}`)
-              // Don't fail the test if Composer isn't available in PATH
-            }
-          } else {
-            console.log(`Composer health check failed: ${composerHealth.error}`)
-            // Test passes if Composer installation completed but isn't in PATH yet
-          }
-        } else {
-          console.log('Composer installation did not complete successfully, which is expected in test environment')
+        // Validate Composer works
+        const composerHealth = await validateServiceHealth('composer')
+        expect(composerHealth.isHealthy).toBe(true)
+
+        // Test Composer can run basic commands
+        try {
+          const result = execSync('composer diagnose', { stdio: 'pipe' })
+          // Should not contain critical errors
+          expect(result.toString()).not.toContain('ERROR')
+        } catch (error) {
+          throw new Error(`Composer diagnose failed: ${error}`)
         }
 
       } finally {

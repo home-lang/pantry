@@ -124,7 +124,7 @@ describe('CLI Cleanup Commands - Functional Tests', () => {
       const result = await runCLI(['cache:clean', '--help'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('cache:clean')
+      expect(result.stdout).toContain('cache:clear')
     })
 
     it('should show cache statistics in dry-run mode', async () => {
@@ -261,6 +261,7 @@ describe('CLI Cleanup Commands - Functional Tests', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('This will remove ALL Launchpad-installed packages and environments')
+      expect(result.stdout).toContain('This includes package metadata, binaries, and libraries:')
       expect(result.stdout).toContain('Use --force to skip confirmation')
     })
 
