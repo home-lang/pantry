@@ -97,9 +97,7 @@ __launchpad_switch_environment() {
     fi
     export __LAUNCHPAD_LAST_VERBOSE_KEY="$__lp_verbose_key"
 
-    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-        printf "⏱️  [0ms] Shell integration started for PWD=%s\\n" "$PWD" >&2
-    fi
+    # Removed verbose shell integration start message
 
     # Known dependency filenames (keep in sync with DEPENDENCY_FILE_NAMES in src/env.ts)
     local _dep_names=(
@@ -150,14 +148,7 @@ __launchpad_switch_environment() {
         done
     fi
 
-    # Verbose: show project detection result
-    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-        if [[ -n "$project_dir" ]]; then
-            printf "📁 Project detected: %s\n" "$project_dir" >&2
-        else
-            printf "📁 No project detected (global mode)\n" >&2
-        fi
-    fi
+    # Removed verbose project detection message
 
     # Step 2: Always ensure global paths are available (even in projects)
     # Use ~/.local/bin first, then launchpad global bin to ensure proper path priority
@@ -178,9 +169,7 @@ __launchpad_switch_environment() {
     local ready_cache_marker="$HOME/.cache/launchpad/global_ready"
     local ready_global_marker="$HOME/.local/share/launchpad/global/.ready"
     if [[ -f "$ready_cache_marker" || -f "$ready_global_marker" ]]; then
-        if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-            printf "♻️  Reusing existing global tools (ready marker found)\n" >&2
-        fi
+        # Removed verbose reuse message
         # No-op: presence of the marker simply informs reuse; installs remain on-demand per env needs
 
         # TTL-based background update check to keep globals fresh without blocking the prompt
@@ -260,10 +249,7 @@ __launchpad_switch_environment() {
             fi
         fi
 
-        # Show refresh message if verbose
-        if [[ "$verbose_mode" == "true" ]]; then
-            printf "🔄 Shell environment refreshed for newly installed tools\n" >&2
-        fi
+        # Removed verbose refresh message
     fi
 
     # Step 2.2: If a global update notice is present, display it once and remove
@@ -324,9 +310,7 @@ __launchpad_switch_environment() {
             fi
         fi
 
-        if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-            printf "🔎 dep_file=%q dep_short=%s env_dir=%q\n" "$dep_file" "$dep_short" "$env_dir" >&2
-        fi
+        # Removed verbose dependency file info message
 
         # Check if we're switching projects
         if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$LAUNCHPAD_CURRENT_PROJECT" != "$project_dir" ]]; then
@@ -350,15 +334,12 @@ __launchpad_switch_environment() {
             # Show activation message if enabled (only when env changes)
             if [[ "${showMessages}" == "true" ]]; then
                 if [[ "$__LAUNCHPAD_LAST_ACTIVATION_KEY" != "$env_dir" ]]; then
-                    printf "${activationMessage}\\n" >&2
+                    printf "${activationMessage} " >&2
                 fi
             fi
             export __LAUNCHPAD_LAST_ACTIVATION_KEY="$env_dir"
 
-            # Verbose: show activated env path
-            if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                printf "✅ Activated environment: %s\n" "$env_dir" >&2
-            fi
+            # Removed verbose activated environment path message
 
             # Ensure dynamic linker can find Launchpad-managed libraries (macOS/Linux)
             # Build a list of library directories from the active environment and global install
@@ -410,79 +391,12 @@ __launchpad_switch_environment() {
                 fi
             done
         else
-            # Non-blocking on-demand install with retry backoff (no artificial timeout)
-            local cache_dir="$HOME/.cache/launchpad/shell_cache"
-            mkdir -p "$cache_dir" 2>/dev/null || true
-            local backoff_marker="$cache_dir/install_backoff_$(echo "$env_dir" | tr '/' '_')"
-
-            local now_s=$(date +%s 2>/dev/null || echo 0)
-            local retry_after=600  # 10 minutes
-            local should_attempt=1
-            if [[ -f "$backoff_marker" ]]; then
-                local mtime=$(date -r "$backoff_marker" +%s 2>/dev/null || echo 0)
-                if [[ $(( now_s - mtime )) -lt $retry_after ]]; then
-                    should_attempt=0
-                fi
-            fi
-
-            if [[ "$should_attempt" -eq 1 ]]; then
-                # Run installer; show output if verbose, otherwise suppress to keep prompt clean
-                if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                    printf "🚀 Starting on-demand install for %q\n" "$project_dir" >&2
-                fi
-
-                if [[ "$verbose_mode" == "true" ]]; then
-                    # In verbose mode, avoid LAUNCHPAD_SHELL_INTEGRATION=1 so installer prints logs
-                    LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir"
-                    install_status=$?
-                else
-                    LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} install "$project_dir" >/dev/null 2>&1
-                    install_status=$?
-                fi
-
-                if [[ $install_status -eq 0 ]]; then
-                    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                        printf "📦 Installed project dependencies (on-demand)\n" >&2
-                    fi
-                    if [[ -d "$env_dir/bin" ]]; then
-                        export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
-                        export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-                        export PATH="$env_dir/bin:$PATH"
-                        if [[ "${showMessages}" == "true" ]]; then
-                            printf "${activationMessage}\\n" >&2
-                        fi
-                        if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                            printf "✅ Activated environment after install: %s\n" "$env_dir" >&2
-                        fi
-                        # Clear any backoff marker after successful install
-                        rm -f "$backoff_marker" 2>/dev/null || true
-                    fi
-                else
-                    # Touch backoff marker only on failure to avoid repeated attempts
-                    : > "$backoff_marker" 2>/dev/null || true
-                    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                        printf "❌ On-demand install failed (exit %d). Run 'launchpad install %q' manually.\n" "$install_status" "$project_dir" >&2
-                    fi
-                fi
-            else
-                if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                    printf "⏳ Install backoff active; not attempting on-demand install.\n" >&2
-                fi
-            fi
+            # Environment not ready - skip setup during shell integration to prevent hanging
+            # User can run 'launchpad install <project>' manually when needed
         fi
     fi
 
-    # Show completion time if verbose
-    if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-        local end_time=$(lp_now_ms)
-        # Only print if both are integers
-        if [[ "$start_time" =~ ^[0-9]+$ && "$end_time" =~ ^[0-9]+$ ]]; then
-            local elapsed=$(( end_time - start_time ))
-            if [[ "$elapsed" -ge 0 ]]; then
-                printf "⏱️  [%sms] Shell integration completed\n" "$elapsed" >&2
-            fi
-        fi
-    fi
+    # Removed verbose shell integration completion message
 }
 
 # CRITICAL: Prevent infinite loops - if we're already processing, exit immediately
@@ -548,6 +462,7 @@ fi
 # Clean up processing flag before exit
 unset __LAUNCHPAD_PROCESSING 2>/dev/null || true
 
+# Ensure we exit cleanly and don't hang the shell
 return 0 2>/dev/null || exit 0`
 }
 

@@ -110,7 +110,8 @@ function getShellFiles(): [string, string][] {
     }
 
     console.error('no `.shellrc` files found')
-    process.exit(1)
+    // Don't exit - just return empty array to prevent hanging
+    return []
   }
 
   return viable_candidates

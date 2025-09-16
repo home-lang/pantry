@@ -1,7 +1,7 @@
 import type { LaunchpadConfig } from './packages/launchpad/src'
 
 const config: Partial<LaunchpadConfig> = {
-  verbose: true,
+  verbose: false,
   showShellMessages: true,
 }
 

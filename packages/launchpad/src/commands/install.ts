@@ -91,11 +91,22 @@ async function ensureShellIntegrationInstalled(): Promise<void> {
       }
     }
     if (!found) {
-      const { default: integrate } = await import('../dev/integrate')
-      await integrate('install', { dryrun: false })
+      // Run shell integration installation with timeout to prevent hanging
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error('Shell integration timeout')), 5000)
+      })
+      
+      const integrationPromise = (async () => {
+        const { default: integrate } = await import('../dev/integrate')
+        await integrate('install', { dryrun: false })
+      })()
+      
+      await Promise.race([integrationPromise, timeoutPromise])
     }
   }
-  catch {}
+  catch {
+    // Silently fail - shell integration is not critical for functionality
+  }
 }
 
 async function installPackagesGlobally(packages: string[], options: { verbose?: boolean, quiet?: boolean, noInteractive?: boolean }) {
@@ -134,10 +145,15 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
       console.log('✅ All specified packages were already installed globally')
     }
   }
+  
+  // Force exit after successful completion to prevent hanging
+  if (process.env.LAUNCHPAD_CLI_MODE === '1') {
+    process.exit(0)
+  }
 }
 
 async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: boolean, verbose?: boolean, noInteractive?: boolean }) {
-  if (!options.quiet)
+  if (options.verbose)
     console.log('🔍 Scanning machine for dependency files...')
 
   const overallStartTime = Date.now()
@@ -284,7 +300,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
           console.log(`  ✓ Found ${fileCount} files matching ${pattern} in ${location} (${Date.now() - startTime}ms)`)
       }
       const time = Date.now() - locationStart
-      if (options.verbose || time > 1000)
+      if (options.verbose)
         console.log(`📍 Completed ${location} in ${time}ms`)
     }
     catch (error) {
@@ -295,7 +311,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
   }
 
   const overallTime = Date.now() - overallStartTime
-  if (!options.quiet)
+  if (options.verbose)
     console.log(`📁 Found ${foundFiles.length} dependency files in ${overallTime}ms`)
 
   const { default: sniff } = await import('../dev/sniff')
@@ -325,8 +341,10 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
     return !isFake
   })
 
-  if (!options.quiet) {
+  if (options.verbose) {
     console.log(`📦 Found ${filteredPackages.length} unique global dependencies`)
+  }
+  if (!options.quiet) {
     if (options.dryRun) {
       console.log('🔍 Packages that would be installed:')
       filteredPackages.forEach(pkg => console.log(`  • ${pkg}`))
@@ -418,6 +436,11 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
       if (results.length > 0)
         console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies (${results.length} binaries)`)
       else console.log('✅ All global dependencies were already installed')
+    }
+    
+    // Force exit after successful completion to prevent hanging
+    if (process.env.LAUNCHPAD_CLI_MODE === '1') {
+      process.exit(0)
     }
   }
   catch (error) {
@@ -522,6 +545,11 @@ const command: Command = {
         else {
           console.log('⚠️  No binaries were installed')
         }
+      }
+      
+      // Force exit after successful completion to prevent hanging
+      if (process.env.LAUNCHPAD_CLI_MODE === '1') {
+        process.exit(0)
       }
       return 0
     }
