@@ -138,7 +138,7 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
 
   if (!options.quiet) {
     if (results.length > 0) {
-      console.log(`🎉 Successfully installed ${packages.join(', ')} globally (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
+      console.log(`🎉 Successfully installed ${packages.join(', ')} globally \x1B[3m\x1B[2m(${results.length} ${results.length === 1 ? 'binary' : 'binaries'})\x1B[0m`)
       results.forEach(f => console.log(`  ${f}`))
     }
     else {
@@ -434,7 +434,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
 
     if (!options.quiet) {
       if (results.length > 0)
-        console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies (${results.length} binaries)`)
+        console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies \x1B[3m\x1B[2m(${results.length} binaries)\x1B[0m`)
       else console.log('✅ All global dependencies were already installed')
     }
     
@@ -539,7 +539,7 @@ const command: Command = {
       triggerShellGlobalRefresh()
       if (!opts.quiet) {
         if (results.length > 0) {
-          console.log(`🎉 Successfully installed ${pkgs.join(', ')} (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
+          console.log(`🎉 Successfully installed ${pkgs.join(', ')} \x1B[3m\x1B[2m(${results.length} ${results.length === 1 ? 'binary' : 'binaries'})\x1B[0m`)
           results.forEach(f => console.log(`  ${f}`))
         }
         else {

@@ -15,9 +15,10 @@ export function shellcode(_testMode: boolean = false): string {
 
   // Use config-backed shell message configuration with {path} substitution
   const showMessages = config.showShellMessages ? 'true' : 'false'
-  // Replace {path} with shell-evaluated basename
+  // Replace {path} with shell-evaluated basename (italic)
   const activationMessage = (config.shellActivationMessage || '✅ Environment activated for {path}')
-    .replace('{path}', '$(basename "$project_dir")')
+    .replace('{path}', '\\x1B[3m$(basename "$project_dir")\\x1B[0m')
+    .replace(/\n$/, '')
   const deactivationMessage = config.shellDeactivationMessage || 'Environment deactivated'
 
   // Verbosity: default to verbose for shell integration unless explicitly disabled
@@ -263,18 +264,15 @@ __launchpad_switch_environment() {
     # If no project found, check if we need to deactivate current project
     if [[ -z "$project_dir" ]]; then
         # If we were in a project but now we're not, deactivate it
-        if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
-            # Remove project-specific paths from PATH
-            export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
-
-            # Show deactivation message if enabled (only once per deactivation)
-            if [[ "${showMessages}" == "true" && -n "$__LAUNCHPAD_LAST_ACTIVATION_KEY" ]]; then
-                printf "${deactivationMessage}\\n" >&2
+        if [[ -n "$__LAUNCHPAD_LAST_ACTIVATION_KEY" ]]; then
+            # Remove project-specific paths from PATH if they exist
+            if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+                export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
             fi
 
-            # Verbose: deactivated environment
-            if [[ "$verbose_mode" == "true" && "$__lp_should_verbose_print" == "1" ]]; then
-                printf "⚪ Deactivated environment\n" >&2
+            # Show deactivation message if enabled
+            if [[ "${showMessages}" == "true" ]]; then
+                printf "${deactivationMessage}\\n" >&2
             fi
 
             unset LAUNCHPAD_CURRENT_PROJECT
@@ -325,22 +323,20 @@ __launchpad_switch_environment() {
             fi
         fi
 
+        # Show activation message if enabled (when project changes)
+        if [[ "${showMessages}" == "true" ]]; then
+            if [[ "$__LAUNCHPAD_LAST_ACTIVATION_KEY" != "$project_dir" ]]; then
+                printf "${activationMessage}\n" >&2
+            fi
+        fi
+        export __LAUNCHPAD_LAST_ACTIVATION_KEY="$project_dir"
+
         # If environment exists, activate it
         if [[ -d "$env_dir/bin" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
-                    export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+            export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
             export PATH="$env_dir/bin:$PATH"
-
-            # Show activation message if enabled (only when env changes)
-            if [[ "${showMessages}" == "true" ]]; then
-                if [[ "$__LAUNCHPAD_LAST_ACTIVATION_KEY" != "$env_dir" ]]; then
-                    printf "${activationMessage} " >&2
-                fi
-            fi
-            export __LAUNCHPAD_LAST_ACTIVATION_KEY="$env_dir"
-
             # Removed verbose activated environment path message
-
             # Ensure dynamic linker can find Launchpad-managed libraries (macOS/Linux)
             # Build a list of library directories from the active environment and global install
             __lp_add_unique_colon_path() {
@@ -391,8 +387,8 @@ __launchpad_switch_environment() {
                 fi
             done
         else
-            # Environment not ready - skip setup during shell integration to prevent hanging
-            # User can run 'launchpad install <project>' manually when needed
+            # Environment not ready - user can run 'launchpad install <project>' manually when needed
+            :
         fi
     fi
 
