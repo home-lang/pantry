@@ -29,8 +29,6 @@ export function shellcode(_testMode: boolean = false): string {
 
   return `
 # MINIMAL LAUNCHPAD SHELL INTEGRATION - DEBUGGING VERSION
-# This is a minimal version to isolate the hanging issue
-
 # Exit early if shell integration is disabled or explicit test mode
 if [[ "$LAUNCHPAD_DISABLE_SHELL_INTEGRATION" == "1" || "$LAUNCHPAD_TEST_MODE" == "1" ]]; then
     return 0 2>/dev/null || exit 0
@@ -98,8 +96,6 @@ __launchpad_switch_environment() {
     fi
     export __LAUNCHPAD_LAST_VERBOSE_KEY="$__lp_verbose_key"
 
-    # Removed verbose shell integration start message
-
     # Known dependency filenames (keep in sync with DEPENDENCY_FILE_NAMES in src/env.ts)
     local _dep_names=(
         # Launchpad-specific files (highest priority)
@@ -123,7 +119,7 @@ __launchpad_switch_environment() {
         # Version control files
         ".nvmrc" ".node-version" ".ruby-version" ".python-version" ".terraform-version"
         # Package manager files
-        "yarn.lock" "bun.lockb" ".yarnrc"
+        "yarn.lock" "bun.lock" "bun.lockb" ".yarnrc"
     )
 
     # Step 1: Find project directory using our fast binary (no artificial timeout)
@@ -151,20 +147,10 @@ __launchpad_switch_environment() {
 
     # Removed verbose project detection message
 
-    # Step 2: Always ensure global paths are available (even in projects)
-    # Use ~/.local/bin first, then launchpad global bin to ensure proper path priority
+    # Step 2: Prepare global paths but don't add them yet
+    # We'll add them after project-specific paths to ensure proper precedence
     local local_bin="$HOME/.local/bin"
     local global_bin="$HOME/.local/share/launchpad/global/bin"
-
-    # Add ~/.local/bin to PATH if not already there
-    if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
-        export PATH="$local_bin:$PATH"
-    fi
-
-    # Add launchpad global bin to PATH if not already there
-    if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
-        export PATH="$global_bin:$PATH"
-    fi
 
     # Step 2.0: Detect global ready markers (persistent) to skip redundant global setup
     local ready_cache_marker="$HOME/.cache/launchpad/global_ready"
@@ -279,6 +265,18 @@ __launchpad_switch_environment() {
             unset LAUNCHPAD_ENV_BIN_PATH
             unset __LAUNCHPAD_LAST_ACTIVATION_KEY
         fi
+        
+        # Ensure global paths are still available when not in a project
+        # Add ~/.local/bin to PATH if not already there
+        if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
+            export PATH="$local_bin:$PATH"
+        fi
+        
+        # Add launchpad global bin to PATH if not already there
+        if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
+            export PATH="$global_bin:$PATH"
+        fi
+        
         return 0
     fi
 
@@ -335,7 +333,23 @@ __launchpad_switch_environment() {
         if [[ -d "$env_dir/bin" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
             export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+            
+            # Remove project-specific path if it was already in PATH
+            export PATH=$(echo "$PATH" | sed "s|$env_dir/bin:||g" | sed "s|:$env_dir/bin||g" | sed "s|^$env_dir/bin$||g")
+            
+            # Add project-specific path first (highest priority)
             export PATH="$env_dir/bin:$PATH"
+            
+            # Now ensure global paths are available but with lower priority
+            # Add ~/.local/bin to PATH if not already there (after project paths)
+            if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
+                export PATH="$PATH:$local_bin"
+            fi
+            
+            # Add launchpad global bin to PATH if not already there (after project and ~/.local/bin)
+            if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
+                export PATH="$PATH:$global_bin"
+            fi
             # Removed verbose activated environment path message
             # Ensure dynamic linker can find Launchpad-managed libraries (macOS/Linux)
             # Build a list of library directories from the active environment and global install
@@ -387,8 +401,16 @@ __launchpad_switch_environment() {
                 fi
             done
         else
-            # Environment not ready - user can run 'launchpad install <project>' manually when needed
-            :
+            # Environment not ready - still ensure global paths are available
+            # Add ~/.local/bin to PATH if not already there
+            if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
+                export PATH="$local_bin:$PATH"
+            fi
+            
+            # Add launchpad global bin to PATH if not already there
+            if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
+                export PATH="$global_bin:$PATH"
+            fi
         fi
     fi
 
@@ -417,14 +439,14 @@ if [[ -n "$ZSH_VERSION" ]]; then
             return 0
         fi
         export __LAUNCHPAD_IN_HOOK=1
-        
+
         # Only run the environment switching logic, not the full shell integration
         __launchpad_switch_environment
-        
+
         # Clean up hook flag explicitly
         unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
     }
-    
+
     # Ensure hook arrays exist
     if ! typeset -p chpwd_functions >/dev/null 2>&1; then
         typeset -ga chpwd_functions
@@ -441,14 +463,14 @@ elif [[ -n "$BASH_VERSION" ]]; then
             return 0
         fi
         export __LAUNCHPAD_IN_HOOK=1
-        
+
         # Only run the environment switching logic, not the full shell integration
         __launchpad_switch_environment
-        
+
         # Clean up hook flag explicitly
         unset __LAUNCHPAD_IN_HOOK 2>/dev/null || true
     }
-    
+
     # Add to PROMPT_COMMAND if not already there
     if [[ "$PROMPT_COMMAND" != *"__launchpad_prompt_command"* ]]; then
         PROMPT_COMMAND="__launchpad_prompt_command;\$PROMPT_COMMAND"
