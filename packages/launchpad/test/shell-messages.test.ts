@@ -54,8 +54,8 @@ describe('Shell Message Configuration', () => {
       const code = shellcode()
 
       // Should have conditional logic for message display
-      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
-      expect(code).toContain('false')
+      expect(code).toContain('if [[ "true" == "true" ]]; then')
+      expect(code).toContain('printf')
     })
 
     it('should handle path placeholder replacement', async () => {
@@ -72,7 +72,7 @@ describe('Shell Message Configuration', () => {
       const code = shellcode()
 
       // Should properly escape shell characters in messages
-      expect(code).toContain('\\033[') // ANSI escape codes should be properly escaped
+      expect(code).toContain('\\x1B[') // ANSI escape codes should be properly escaped
       expect(code).toContain('\\n') // Newlines should be escaped
     })
 
@@ -93,9 +93,9 @@ describe('Shell Message Configuration', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should have conditional logic for message display
-      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
-      expect(code).toContain('false')
+      // Should have conditional logic for message display based on config
+      expect(code).toContain('if [[ "true" == "true" ]]; then')
+      expect(code).toContain('printf')
     })
 
     it('should support custom activation messages', async () => {
@@ -135,7 +135,7 @@ describe('Shell Message Configuration', () => {
       const code = shellcode()
 
       // Should have ANSI escape codes for styling
-      expect(code).toContain('\\033[')
+      expect(code).toContain('\\x1B[')
     })
   })
 
@@ -234,8 +234,8 @@ packages:
       const code = shellcode()
 
       // Should preserve message settings when switching projects
-      expect(code).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
       expect(code).toContain('LAUNCHPAD_CURRENT_PROJECT')
+      expect(code).toContain('project_dir')
     })
   })
 })

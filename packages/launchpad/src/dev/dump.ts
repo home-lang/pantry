@@ -1609,8 +1609,14 @@ async function installPackagesOptimized(
     }
 
     try {
-      // For both shell integration and regular calls, use standard install
-      await install(globalPackages, globalEnvDir)
+      if (dryrun) {
+        if (!quiet) {
+          console.log(`Would install global packages: ${globalPackages.join(', ')}`)
+        }
+      } else {
+        // For both shell integration and regular calls, use standard install
+        await install(globalPackages, globalEnvDir)
+      }
     }
     catch (error) {
       globalInstallSuccess = false
@@ -1653,8 +1659,14 @@ async function installPackagesOptimized(
     }
 
     try {
-      // For both shell integration and regular calls, use standard install
-      await install(localPackages, envDir)
+      if (dryrun) {
+        if (!quiet) {
+          console.log(`Would install local packages: ${localPackages.join(', ')}`)
+        }
+      } else {
+        // For both shell integration and regular calls, use standard install
+        await install(localPackages, envDir)
+      }
     }
     catch (error) {
       localInstallSuccess = false
