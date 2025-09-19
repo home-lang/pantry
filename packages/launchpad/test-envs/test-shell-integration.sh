@@ -11,8 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCHPAD_BIN=""
 if command -v launchpad >/dev/null 2>&1; then
     LAUNCHPAD_BIN="launchpad"
-elif [[ -f "/Users/chrisbreuer/.bun/bin/launchpad" ]]; then
-    LAUNCHPAD_BIN="/Users/chrisbreuer/.bun/bin/launchpad"
+elif [[ -f "$HOME/.bun/bin/launchpad" ]]; then
+    LAUNCHPAD_BIN="$HOME/.bun/bin/launchpad"
 elif [[ -f "/usr/local/bin/launchpad" ]]; then
     LAUNCHPAD_BIN="/usr/local/bin/launchpad"
 elif [[ -f "$SCRIPT_DIR/../bin/launchpad" ]]; then

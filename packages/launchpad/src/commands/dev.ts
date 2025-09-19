@@ -28,6 +28,11 @@ const cmd: Command = {
       skipGlobal: env.NODE_ENV === 'test' || env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true',
     })
 
+    // In shell mode, force exit to prevent hanging on async operations
+    if (isShellIntegration) {
+      process.exit(0)
+    }
+
     return 0
   },
 }

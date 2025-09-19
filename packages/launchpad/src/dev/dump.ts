@@ -1769,6 +1769,13 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
     pathComponents.push(envSbinPath)
   }
 
+  // Add bun global bin directory for this environment (high priority for global installs)
+  const envRoot = fs.existsSync(envBinPath) ? path.dirname(envBinPath) : ''
+  const bunGlobalBinPath = path.join(envRoot, '.bun', 'bin')
+  if (envRoot && fs.existsSync(bunGlobalBinPath)) {
+    pathComponents.push(bunGlobalBinPath)
+  }
+
   // Add global paths second (fallback for tools not in project environment)
   if (globalBinPath && fs.existsSync(globalBinPath)) {
     pathComponents.push(globalBinPath)

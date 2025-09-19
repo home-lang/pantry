@@ -2,7 +2,7 @@
 
 echo "🧪 Testing PHP Build - Simplified Approach..."
 
-cd /Users/chrisbreuer/Code/launchpad
+cd "$(dirname "$0")"
 
 echo "1. Testing basic compilation with libintl..."
 mkdir -p /tmp/simple-test
@@ -12,10 +12,17 @@ echo '#include <libintl.h>' > test.c
 echo 'int main() { bindtextdomain("test", "."); return 0; }' >> test.c
 
 echo "2. Testing libintl compilation..."
-clang -I/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/include \
-      -L/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/lib \
-      -Wl,-rpath,/Users/chrisbreuer/.local/gnu.org/gettext/v0.22.5/lib \
-      -lintl test.c -o test
+# Use dynamic paths instead of hardcoded ones
+GETTEXT_DIR="$HOME/.local/gnu.org/gettext/v0.22.5"
+if [ ! -d "$GETTEXT_DIR" ]; then
+  echo "⚠️ Gettext not found at $GETTEXT_DIR, using system libraries"
+  clang -lintl test.c -o test
+else
+  clang -I"$GETTEXT_DIR/include" \
+        -L"$GETTEXT_DIR/lib" \
+        -Wl,-rpath,"$GETTEXT_DIR/lib" \
+        -lintl test.c -o test
+fi
 
 if [ $? -eq 0 ]; then
   echo "✅ libintl compilation successful"
@@ -29,7 +36,8 @@ mkdir -p /tmp/minimal-php
 cd /tmp/minimal-php
 
 echo "4. Downloading PHP source..."
-/Users/chrisbreuer/.local/gnu.org/wget/v1.25.0/bin/wget --no-check-certificate -O php-8.3.13.tar.gz https://www.php.net/distributions/php-8.3.13.tar.gz
+# Use curl instead of hardcoded wget path
+curl -L -k -o php-8.3.13.tar.gz https://www.php.net/distributions/php-8.3.13.tar.gz
 
 echo "5. Extracting and configuring..."
 tar -xzf php-8.3.13.tar.gz

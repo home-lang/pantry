@@ -478,7 +478,10 @@ export class PhpPrecompiler {
     // Platform-specific library paths
     if (this.config.platform === 'darwin') {
       // macOS: Set up proper environment for Launchpad dependencies
-      const homeDir = process.env.HOME || '/Users/runner'
+      const homeDir = process.env.HOME
+      if (!homeDir) {
+        throw new Error('HOME environment variable must be set for macOS builds')
+      }
       const launchpadLibs = `${homeDir}/.local`
       
       // Use existing environment variables from Launchpad

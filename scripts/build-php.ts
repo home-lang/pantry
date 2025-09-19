@@ -234,9 +234,6 @@ echo This is not a real PHP binary. The download of the Windows PHP binary faile
 }
 
 function generateConfigureArgs(config: BuildConfig, installPrefix: string): string[] {
-  const homeDir = process.env.HOME || process.env.USERPROFILE
-  const launchpadPath = `${homeDir}/.local`
-
   // Base configure arguments for all platforms
   const baseArgs = [
     `--prefix=${installPrefix}`,
@@ -271,23 +268,23 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     '--without-gdbm'
   ]
 
-  // Add Launchpad dependency paths
+  // Use Launchpad libraries without hardcoded paths - rely on PKG_CONFIG_PATH and environment
   const dependencyArgs = [
-    `--with-curl=${launchpadPath}/curl.se/v8.15.0`,
-    `--with-ffi=${launchpadPath}/sourceware.org/libffi/v3.5.2`,
-    `--with-gettext=${launchpadPath}/gnu.org/gettext/v0.22.5`,
-    `--with-gmp=${launchpadPath}/gnu.org/gmp/v6.3.0`,
-    `--with-openssl=${launchpadPath}/openssl.org/v1.1.1w`,
-    `--with-sodium=${launchpadPath}/libsodium.org/v1.0.18`,
-    `--with-xsl=${launchpadPath}/gnome.org/libxslt/v1.1.43`,
-    `--with-zlib=${launchpadPath}/zlib.net/v1.3.1`,
-    `--with-bz2=${launchpadPath}/sourceware.org/bzip2/v1.0.8`
+    '--with-curl',      // Will use PKG_CONFIG_PATH to find curl
+    '--with-ffi',       // Will use PKG_CONFIG_PATH to find libffi
+    '--with-gettext',   // Will use PKG_CONFIG_PATH to find gettext
+    '--with-gmp',       // Will use PKG_CONFIG_PATH to find gmp
+    '--with-openssl',   // Will use PKG_CONFIG_PATH to find openssl
+    '--with-sodium',    // Will use PKG_CONFIG_PATH to find sodium
+    '--with-xsl',       // Will use PKG_CONFIG_PATH to find xsl
+    '--with-zlib',      // Will use PKG_CONFIG_PATH to find zlib
+    '--with-bz2'        // Will use PKG_CONFIG_PATH to find bz2
   ]
 
   // Platform-specific dependency paths
   const platformDependencyArgs = []
   if (config.platform === 'darwin') {
-    platformDependencyArgs.push(`--with-iconv=${launchpadPath}/gnu.org/libiconv/v1.18.0`)
+    platformDependencyArgs.push('--with-iconv')  // Will use PKG_CONFIG_PATH to find iconv
   }
 
   // Platform-specific arguments
@@ -796,7 +793,10 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   // Set up build environment with selective Launchpad dependencies
   let buildEnv = { ...process.env }
-  const homeDir = process.env.HOME || process.env.USERPROFILE || '/Users/chrisbreuer'
+  const homeDir = process.env.HOME || process.env.USERPROFILE
+  if (!homeDir) {
+    throw new Error('HOME or USERPROFILE environment variable must be set')
+  }
   const launchpadRoot = `${homeDir}/.local`
 
   // Add essential Launchpad paths to PATH
@@ -825,7 +825,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib/pkgconfig`,
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`,
     `${launchpadRoot}/sqlite.org/v3.47.2/lib/pkgconfig`,
-    `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`
+    `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`,
+    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib/pkgconfig`
   ]
 
   // Completely exclude libstdcxx and gcc paths on Linux
@@ -854,7 +855,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib`,
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`,
     `${launchpadRoot}/sqlite.org/v3.47.2/lib`,
-    `${launchpadRoot}/libzip.org/v1.11.4/lib`
+    `${launchpadRoot}/libzip.org/v1.11.4/lib`,
+    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib`
   ]
 
   // Completely exclude libstdcxx and gcc paths on Linux
@@ -880,7 +882,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/sourceware.org/libffi/v3.5.2/include`,
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`,
     `${launchpadRoot}/sqlite.org/v3.47.2/include`,
-    `${launchpadRoot}/libzip.org/v1.11.4/include`
+    `${launchpadRoot}/libzip.org/v1.11.4/include`,
+    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/include`
   ]
 
   // Add iconv paths for macOS only (Linux uses system iconv)
@@ -895,14 +898,16 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
-  // Add macOS-specific linker flags for DNS resolver functions
+  // Add platform-specific linker flags without hardcoded rpaths
   if (config.platform === 'darwin') {
-    buildEnv.LDFLAGS += ` -lresolv -Wl,-rpath,${launchpadRoot},-headerpad_max_install_names`
-    // Set up runtime library path for macOS
+    // macOS: Use standard system paths only, rely on shim scripts for dynamic library loading
+    buildEnv.LDFLAGS += ` -lresolv -Wl,-rpath,/usr/local/lib,-rpath,/opt/homebrew/lib,-headerpad_max_install_names`
+    // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
   } else {
-    buildEnv.LDFLAGS += ` -Wl,-rpath,${launchpadRoot}`
+    // Linux: Use standard system paths only, rely on shim scripts for dynamic library loading
+    buildEnv.LDFLAGS += ` -Wl,-rpath,/usr/local/lib,-rpath,/usr/lib`
   }
 
   log('✅ Configured targeted Launchpad dependencies')
