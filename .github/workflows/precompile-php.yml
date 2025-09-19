@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       php_version:
-        description: 'PHP version to build (leave empty for auto-detection)'
+        description: PHP version to build (leave empty for auto-detection)
         required: false
         type: string
       php_config:
-        description: 'PHP build configuration'
+        description: PHP build configuration
         required: true
-        default: 'laravel-mysql'
+        default: laravel-mysql
         type: choice
         options:
           - laravel-mysql
@@ -26,7 +26,7 @@ on:
           - wordpress
           - full-stack
       force_rebuild:
-        description: 'Force rebuild even if no updates'
+        description: Force rebuild even if no updates
         required: false
         default: false
         type: boolean
@@ -243,7 +243,7 @@ jobs:
             binaries/$BINARY_NAME/bin/php --version
             echo "📋 All available extensions:"
             binaries/$BINARY_NAME/bin/php -m
-            
+
             # Define essential extensions that MUST be present
             REQUIRED_EXTENSIONS=(
               "Core" "date" "hash" "json" "pcre" "Reflection" "SPL" "standard"
@@ -252,10 +252,10 @@ jobs:
               "curl" "openssl" "zip" "zlib" "calendar" "ftp" "pcntl" "posix"
               "shmop" "sockets" "exif" "bcmath" "bz2" "gettext" "readline"
             )
-            
+
             # Define Zend extensions that need special checking
             ZEND_EXTENSIONS=("opcache")
-            
+
             # Test each required extension
             echo "🧪 Testing essential extensions..."
             MISSING_EXTENSIONS=()
@@ -268,7 +268,7 @@ jobs:
                 MISSING_EXTENSIONS+=("$ext")
               fi
             done
-            
+
             # Test Zend extensions separately
             for ext in "${ZEND_EXTENSIONS[@]}"; do
               EXT_LOADED=$(binaries/$BINARY_NAME/bin/php -r "echo function_exists('opcache_get_status') ? '1' : '0';")
@@ -279,14 +279,14 @@ jobs:
                 MISSING_EXTENSIONS+=("$ext")
               fi
             done
-            
+
             # Check if any essential extensions are missing
             if [ ${#MISSING_EXTENSIONS[@]} -gt 0 ]; then
               echo "❌ Critical extensions missing: ${MISSING_EXTENSIONS[*]}"
               echo "This build is incomplete and will cause issues with Composer and Laravel."
               exit 1
             fi
-            
+
             # Test phar extension functionality specifically
             echo "🧪 Testing phar extension functionality..."
             PHAR_LOADED=$(binaries/$BINARY_NAME/bin/php -r 'echo extension_loaded("phar") ? "1" : "0";')
@@ -294,7 +294,7 @@ jobs:
               echo "✅ Phar extension is loaded"
               # Test phar creation (essential for Composer)
               echo "🧪 Testing phar creation..."
-              echo '<?php 
+              echo '<?php
               if (extension_loaded("phar")) {
                 try {
                   $phar = new Phar("test.phar");
@@ -316,7 +316,7 @@ jobs:
               echo "❌ Phar extension not loaded - this will break Composer!"
               exit 1
             fi
-            
+
             # Test Composer compatibility
             echo "🧪 Testing Composer compatibility..."
             echo '<?php
@@ -325,7 +325,7 @@ jobs:
                 "iconv", "mb_strlen", "filter_var", "hash", "json_encode",
                 "curl_init", "openssl_get_cert_locations", "file_get_contents"
             ];
-            
+
             foreach ($required_functions as $func) {
                 if (function_exists($func)) {
                     echo "✅ Function $func: Available\n";
@@ -334,7 +334,7 @@ jobs:
                     exit(1);
                 }
             }
-            
+
             // Test essential classes
             $required_classes = ["Phar", "DOMDocument", "XMLReader", "ZipArchive"];
             foreach ($required_classes as $class) {
@@ -345,12 +345,12 @@ jobs:
                     exit(1);
                 }
             }
-            
+
             echo "✅ All Composer compatibility checks passed\n";
             ?>' > test_composer_compat.php
             binaries/$BINARY_NAME/bin/php test_composer_compat.php
             rm test_composer_compat.php
-            
+
             echo "✅ All PHP binary tests passed successfully!"
           else
             echo "❌ PHP binary not found"
@@ -365,25 +365,25 @@ jobs:
           $phpExeBin  = "binaries\$BINARY_NAME\bin\php.exe"
           $PHP = if (Test-Path -Path $phpExeRoot -PathType Leaf) { $phpExeRoot } elseif (Test-Path -Path $phpExeBin -PathType Leaf) { $phpExeBin } else { $null }
           Write-Host "Checking for binary at: $PHP"
-          
+
           # List all files in the binary directory to verify structure
           Write-Host "📂 Binary directory structure:"
           Get-ChildItem -Path "binaries\$BINARY_NAME" -Recurse | Format-Table Name, Length, LastWriteTime
-          
+
           # Check if the PHP binary exists
           if ($PHP -and (Test-Path -Path $PHP -PathType Leaf)) {
             Write-Host "✅ PHP binary exists at expected location"
-            
+
             # Get file size to verify it's a real binary (not just a placeholder)
             $fileSize = (Get-Item $PHP).Length
             Write-Host "📊 PHP binary size: $fileSize bytes"
-            
+
             # Test PHP version and extensions
             Write-Host "🧪 Testing PHP binary..."
             & $PHP --version
             Write-Host "📋 All available extensions:"
             & $PHP -m
-            
+
             # Define essential extensions that MUST be present
             $REQUIRED_EXTENSIONS = @(
               "Core", "date", "hash", "json", "pcre", "Reflection", "SPL", "standard",
@@ -392,10 +392,10 @@ jobs:
               "curl", "openssl", "zip", "zlib", "calendar", "ftp",
               "shmop", "sockets", "exif", "bcmath", "bz2", "gettext", "readline"
             )
-            
+
             # Define Zend extensions that need special checking
             $ZEND_EXTENSIONS = @("opcache")
-            
+
             # Test each required extension
             Write-Host "🧪 Testing essential extensions..."
             $MISSING_EXTENSIONS = @()
@@ -408,7 +408,7 @@ jobs:
                 $MISSING_EXTENSIONS += $ext
               }
             }
-            
+
             # Test Zend extensions separately
             foreach ($ext in $ZEND_EXTENSIONS) {
               $extLoaded = & $PHP -r "echo function_exists('opcache_get_status') ? '1' : '0';"
@@ -419,14 +419,14 @@ jobs:
                 $MISSING_EXTENSIONS += $ext
               }
             }
-            
+
             # Check if any essential extensions are missing
             if ($MISSING_EXTENSIONS.Count -gt 0) {
               Write-Host "❌ Critical extensions missing: $($MISSING_EXTENSIONS -join ', ')"
               Write-Host "This build is incomplete and will cause issues with Composer and Laravel."
               exit 1
             }
-            
+
             # Test phar extension functionality specifically
             Write-Host "🧪 Testing phar extension functionality..."
             $pharLoaded = & $PHP -r 'echo extension_loaded("phar") ? "1" : "0";'
@@ -445,22 +445,22 @@ jobs:
               Write-Host "❌ Phar extension not loaded - this will break Composer!"
               exit 1
             }
-            
+
             # Test Composer compatibility
             Write-Host "🧪 Testing Composer compatibility..."
             $composerTestContent = "<?php`n// Test essential functions for Composer`n`$required_functions = [`n    `"iconv`", `"mb_strlen`", `"filter_var`", `"hash`", `"json_encode`",`n    `"curl_init`", `"openssl_get_cert_locations`", `"file_get_contents`"`n];`n`nforeach (`$required_functions as `$func) {`n    if (function_exists(`$func)) {`n        echo `"✅ Function `$func: Available\n`";`n    } else {`n        echo `"❌ Function `$func: Missing\n`";`n        exit(1);`n    }`n}`n`n// Test essential classes`n`$required_classes = [`"Phar`", `"DOMDocument`", `"XMLReader`", `"ZipArchive`"];`nforeach (`$required_classes as `$class) {`n    if (class_exists(`$class)) {`n        echo `"✅ Class `$class: Available\n`";`n    } else {`n        echo `"❌ Class `$class: Missing\n`";`n        exit(1);`n    }`n}`n`necho `"✅ All Composer compatibility checks passed\n`";`n?>"
             $composerTestContent | Out-File -FilePath "test_composer_compat.php" -Encoding UTF8
             & $PHP "test_composer_compat.php"
             Remove-Item "test_composer_compat.php"
-            
+
             # Check if this is likely a real binary based on file size
             if ($fileSize -gt 1000000) {
               Write-Host "✅ PHP binary appears to be a real Windows binary (file size: $fileSize bytes)"
-              
+
               # Check for DLLs which should be present in a real PHP distribution
               $dllCount = (Get-ChildItem -Path "binaries\$BINARY_NAME" -Filter "*.dll" -Recurse).Count
               Write-Host "Found $dllCount DLL files in the PHP distribution"
-              
+
               if ($dllCount -gt 10) {
                 Write-Host "✅ PHP distribution contains expected DLL files"
               } else {
@@ -469,7 +469,7 @@ jobs:
             } else {
               Write-Host "⚠️ PHP binary is smaller than expected, might be a placeholder"
             }
-            
+
             Write-Host "✅ All PHP binary tests passed successfully!"
           } else {
             Write-Host "❌ PHP binary not found at expected location"
@@ -603,7 +603,7 @@ jobs:
             jq --argjson binary "$binary_json" '. += [$binary]' binaries_array.json > temp_array.json
             mv temp_array.json binaries_array.json
           done
-          
+
           # Process zip files (Windows binaries)
           echo "Processing Windows binaries (.zip files)..."
           for zipfile in $(find . -name "*.zip" -type f); do
@@ -635,10 +635,10 @@ jobs:
             # Create a temporary directory
             temp_dir="temp_extract_$RANDOM"
             mkdir -p "$temp_dir"
-            
+
             # Try to extract just the metadata file
             unzip -q -j "$zipfile" "*/metadata.json" -d "$temp_dir" 2>/dev/null || echo '{}' > "$temp_dir/metadata.json"
-            
+
             # Create JSON object for this binary
             binary_json=$(jq -n \
               --arg filename "$filename" \
@@ -663,7 +663,7 @@ jobs:
             # Add this binary to the array using jq
             jq --argjson binary "$binary_json" '. += [$binary]' binaries_array.json > temp_array.json
             mv temp_array.json binaries_array.json
-            
+
             # Clean up temp directory
             rm -rf "$temp_dir"
           done
@@ -693,7 +693,7 @@ jobs:
           echo "  - Manifest file size: $(stat -c%s manifest.json 2>/dev/null || stat -f%z manifest.json) bytes"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.3.3
         with:
           tag_name: binaries-${{ github.run_number }}
           name: PHP Binaries - Build ${{ github.run_number }}
