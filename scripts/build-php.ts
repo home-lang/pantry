@@ -28,6 +28,32 @@ function log(message: string): void {
   console.log(`🔧 ${message}`)
 }
 
+function findLatestVersion(basePath: string): string | null {
+  try {
+    if (!existsSync(basePath)) {
+      return null
+    }
+
+    const versions = readdirSync(basePath)
+      .filter(dir => dir.startsWith('v'))
+      .sort((a, b) => {
+        // Simple version comparison - extract version numbers and compare
+        const aVersion = a.slice(1) // Remove 'v' prefix
+        const bVersion = b.slice(1) // Remove 'v' prefix
+        return bVersion.localeCompare(aVersion, undefined, { numeric: true, sensitivity: 'base' })
+      })
+
+    if (versions.length === 0) {
+      return null
+    }
+
+    return join(basePath, versions[0])
+  } catch (error) {
+    log(`Warning: Could not find version in ${basePath}: ${error}`)
+    return null
+  }
+}
+
 function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
 
@@ -915,17 +941,19 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
-  // Add platform-specific linker flags without hardcoded rpaths
+  // Add platform-specific linker flags with dynamic rpaths
   if (config.platform === 'darwin') {
-    // macOS: Use standard system paths only, rely on shim scripts for dynamic library loading
-    buildEnv.LDFLAGS += ` -lresolv -Wl,-rpath,/usr/local/lib,-rpath,/opt/homebrew/lib,-headerpad_max_install_names`
+    // macOS: Use dynamic rpaths based on actual library locations
+    const rpathFlags = libPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
+    buildEnv.LDFLAGS += ` -lresolv ${rpathFlags} -Wl,-headerpad_max_install_names`
     // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
   }
   else {
-    // Linux: Use standard system paths only, rely on shim scripts for dynamic library loading
-    buildEnv.LDFLAGS += ` -Wl,-rpath,/usr/local/lib,-rpath,/usr/lib`
+    // Linux: Use dynamic rpaths based on actual library locations
+    const rpathFlags = libPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
+    buildEnv.LDFLAGS += ` ${rpathFlags}`
   }
 
   log('✅ Configured targeted Launchpad dependencies')
@@ -1045,21 +1073,26 @@ exec "$@"
 
   log('Using Launchpad-managed dependencies for all extensions')
 
+  // Find the latest installed versions dynamically for all dependencies
+  const bz2Path = findLatestVersion(`${homeDir}/.local/sourceware.org/bzip2`)
+  const gettextPath = findLatestVersion(`${homeDir}/.local/gnu.org/gettext`)
+  const iconvPath = findLatestVersion(`${homeDir}/.local/gnu.org/libiconv`)
+
   // Replace generic dependency flags with Launchpad-specific paths for libraries without pkg-config
   const bz2Index = configureArgs.findIndex(arg => arg === '--with-bz2')
-  if (bz2Index !== -1) {
-    configureArgs[bz2Index] = `--with-bz2=${homeDir}/.local/sourceware.org/bzip2/v1.0.8`
+  if (bz2Index !== -1 && bz2Path) {
+    configureArgs[bz2Index] = `--with-bz2=${bz2Path}`
   }
 
   const gettextIndex = configureArgs.findIndex(arg => arg === '--with-gettext')
-  if (gettextIndex !== -1) {
-    configureArgs[gettextIndex] = `--with-gettext=${homeDir}/.local/gnu.org/gettext/v0.22.5`
+  if (gettextIndex !== -1 && gettextPath) {
+    configureArgs[gettextIndex] = `--with-gettext=${gettextPath}`
   }
 
-  // Try macOS system iconv path
+  // Use Launchpad iconv with proper path
   const iconvIndex = configureArgs.findIndex(arg => arg === '--with-iconv')
-  if (iconvIndex !== -1) {
-    configureArgs[iconvIndex] = '--with-iconv=/usr'
+  if (iconvIndex !== -1 && iconvPath) {
+    configureArgs[iconvIndex] = `--with-iconv=${iconvPath}`
   }
 
   log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
@@ -1150,6 +1183,9 @@ exec "$@"
       ac_cv_header_stdint_h: 'yes',
       ac_cv_header_unistd_h: 'yes',
       ac_cv_header_ac_nonexistent_h: 'no',
+      // Force iconv to work by setting cache variables
+      php_cv_iconv_errno: 'yes',
+      php_cv_iconv_implementation: 'GNU libiconv',
     },
   })
 
@@ -1188,12 +1224,13 @@ exec "$@"
     }
     catch (error) {
       log('Chunked compilation failed, falling back to standard build with extended timeout...')
-      // Fallback to standard build with very long timeout
-      execSync('make -j1', {
+      // Fallback to standard build with very long timeout and better parallelization
+      const jobs = 2 // Use 2 jobs to speed up but avoid overwhelming the system
+      execSync(`make -j${jobs}`, {
         stdio: 'inherit',
         cwd: phpSourceDir,
         env: buildEnv,
-        timeout: 120 * 60 * 1000, // 2 hours timeout as last resort
+        timeout: 180 * 60 * 1000, // 3 hours timeout as last resort
       })
     }
   }

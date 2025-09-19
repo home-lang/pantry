@@ -16,3 +16,4 @@ packages/launchpad/bin/launchpad*
 packages/launchpad/test/clean-integration-*
 *.bun-build
 /.local
+/binaries-test
