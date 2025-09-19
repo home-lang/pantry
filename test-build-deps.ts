@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import process from 'node:process'
 import { logUniqueMessage } from './packages/launchpad/src/logging'
 import { BuildDependencyManager } from './packages/launchpad/src/php/build-dependencies'
 

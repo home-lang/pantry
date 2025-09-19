@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
-
-const { execSync } = require('node:child_process')
-const { mkdirSync, existsSync, writeFileSync, readdirSync } = require('node:fs')
-const { join } = require('node:path')
+import { execSync } from 'node:child_process'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import process from 'node:process'
 
 interface BuildConfig {
   phpVersion: string
@@ -75,7 +75,7 @@ function downloadPhpSource(config: BuildConfig): string {
 
 async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
-  const installPrefix = join(config.outputDir, binaryName)
+  const installPrefix = join(process.cwd(), config.outputDir, binaryName)
 
   // Create the directory structure that the main build function expects
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
@@ -790,7 +790,7 @@ openssl.capath =
 }
 
 async function buildPhp(config: BuildConfig): Promise<string> {
-  const installPrefix = join(config.outputDir, `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`)
+  const installPrefix = join(process.cwd(), config.outputDir, `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`)
 
   // For Windows, use pre-compiled binaries
   if (config.platform === 'win32') {
@@ -809,7 +809,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   mkdirSync(installPrefix, { recursive: true })
 
   // Set up build environment with selective Launchpad dependencies
-  let buildEnv = { ...process.env }
+  const buildEnv = { ...process.env }
   const homeDir = process.env.HOME || process.env.USERPROFILE
   if (!homeDir) {
     throw new Error('HOME or USERPROFILE environment variable must be set')
@@ -1045,129 +1045,86 @@ exec "$@"
 
   log('Using Launchpad-managed dependencies for all extensions')
 
+  // Replace generic dependency flags with Launchpad-specific paths for libraries without pkg-config
+  const bz2Index = configureArgs.findIndex(arg => arg === '--with-bz2')
+  if (bz2Index !== -1) {
+    configureArgs[bz2Index] = `--with-bz2=${homeDir}/.local/sourceware.org/bzip2/v1.0.8`
+  }
+
+  const gettextIndex = configureArgs.findIndex(arg => arg === '--with-gettext')
+  if (gettextIndex !== -1) {
+    configureArgs[gettextIndex] = `--with-gettext=${homeDir}/.local/gnu.org/gettext/v0.22.5`
+  }
+
+  // Try macOS system iconv path
+  const iconvIndex = configureArgs.findIndex(arg => arg === '--with-iconv')
+  if (iconvIndex !== -1) {
+    configureArgs[iconvIndex] = '--with-iconv=/usr'
+  }
+
   log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
 
   // Source the Launchpad environment and run configure in the same shell
   const buildEnvScript = `${homeDir}/.local/build-env.sh`
   let configureCommand: string
 
-  // Check if Launchpad environment script exists, otherwise install dependencies first
+  // Always use Launchpad for dependency management - install dependencies first if needed
+  if (!existsSync(buildEnvScript)) {
+    log('📦 Installing PHP dependencies via Launchpad...')
+
+    try {
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+
+      const launchpadEnv = {
+        ...process.env,
+        LAUNCHPAD_SHOW_ENV_MESSAGES: 'false',
+        LAUNCHPAD_SHELL_ACTIVATION_MESSAGE: '',
+        LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
+        LAUNCHPAD_NETWORK_MAX_CONCURRENT: isCI ? '3' : '6', // More conservative in CI
+        LAUNCHPAD_CACHE_ENABLED: 'true', // Enable caching
+        LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
+      }
+
+      // Install PHP dependencies
+      execSync('bun ./launchpad install php --deps-only', {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        timeout: 20 * 60 * 1000, // 20 minutes timeout
+        env: launchpadEnv,
+      })
+      log('✅ Launchpad dependencies installed successfully')
+    }
+    catch (error) {
+      throw new Error(`Failed to install PHP dependencies via Launchpad: ${error}`)
+    }
+  }
+
+  // Source the Launchpad environment and run configure
   if (existsSync(buildEnvScript)) {
+    log('✅ Using Launchpad build environment')
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
   }
   else {
-    log('⚠️  Launchpad build-env.sh not found')
+    log('🔧 Launchpad build-env.sh still not found after installation - using fallback environment')
 
-    // Check if we're in CI environment - skip Launchpad dependencies if system dependencies are available
-    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+    // Fallback configuration without Launchpad environment
+    configureCommand = `./configure ${configureArgs.join(' ')}`
 
-    // Check if essential build tools are available (installed via the CI workflow)
-    const checkSystemDeps = () => {
-      try {
-        execSync('which pkg-config && which autoconf && which bison', { stdio: 'pipe' })
-        return true
-      }
-      catch {
-        return false
-      }
+    // Force clean environment for Linux to prevent libstdc++ injection
+    if (config.platform === 'linux') {
+      // Clear any remaining gcc/libstdc++ references from environment
+      Object.keys(buildEnv).forEach((key) => {
+        if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('gnu.org/gcc')) {
+          buildEnv[key] = buildEnv[key].replace(/\S*gnu\.org\/gcc\S*/g, '')
+        }
+        if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('libstdcxx')) {
+          buildEnv[key] = buildEnv[key].replace(/\S*libstdcxx\S*/g, '')
+        }
+      })
     }
 
-    let useSystemDeps = false
-
-    if (isCI) {
-      log('🏗️  CI environment detected - checking for system dependencies...')
-
-      if (checkSystemDeps()) {
-        log('✅ System dependencies found - skipping Launchpad dependency installation')
-        log('🚀 Using system-provided dependencies for faster CI builds')
-
-        // Set up environment for system dependencies
-        const systemEnv = {
-          ...buildEnv,
-          // Add common system paths for macOS (Homebrew) and Linux
-          PKG_CONFIG_PATH: [
-            '/opt/homebrew/lib/pkgconfig',
-            '/usr/local/lib/pkgconfig',
-            '/usr/lib/pkgconfig',
-            buildEnv.PKG_CONFIG_PATH,
-          ].filter(Boolean).join(':'),
-          PATH: [
-            '/opt/homebrew/bin',
-            '/usr/local/bin',
-            buildEnv.PATH,
-          ].filter(Boolean).join(':'),
-        }
-
-        configureCommand = `./configure ${configureArgs.join(' ')}`
-        buildEnv = systemEnv
-        useSystemDeps = true
-      }
-      else {
-        log('⚠️  System dependencies not found - falling back to Launchpad installation')
-      }
-    }
-
-    // Install PHP dependencies using Launchpad (only if not using system deps)
-    if (!useSystemDeps) {
-      try {
-        const launchpadEnv = {
-          ...process.env,
-          LAUNCHPAD_SHOW_ENV_MESSAGES: 'false',
-          LAUNCHPAD_SHELL_ACTIVATION_MESSAGE: '',
-          LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
-          LAUNCHPAD_NETWORK_MAX_CONCURRENT: '6', // Increase concurrent downloads
-          LAUNCHPAD_CACHE_ENABLED: 'true', // Enable caching
-          CI: 'true', // Ensure CI mode
-        }
-
-        // Install PHP dependencies with optimized CI settings
-        log('📦 Installing PHP dependencies with optimized settings...')
-        execSync('bun ./launchpad install php --deps-only', {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-          timeout: 15 * 60 * 1000, // 15 minutes timeout
-          env: launchpadEnv,
-        })
-        log('✅ Launchpad dependencies installed successfully')
-
-        // Now try to source the environment script
-        if (existsSync(buildEnvScript)) {
-          configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
-        }
-        else {
-          log('Configuring PHP build...')
-
-          // Force clean environment for Linux to prevent libstdc++ injection
-          if (config.platform === 'linux') {
-            // Clear any remaining gcc/libstdc++ references from environment
-            Object.keys(buildEnv).forEach((key) => {
-              if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('gnu.org/gcc')) {
-                buildEnv[key] = buildEnv[key].replace(/\S*gnu\.org\/gcc\S*/g, '')
-              }
-              if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('libstdcxx')) {
-                buildEnv[key] = buildEnv[key].replace(/\S*libstdcxx\S*/g, '')
-              }
-            })
-          }
-
-          if (config.config === 'ci') {
-            // Use CI-specific configure for GitHub Actions
-            const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
-            configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
-          }
-          else {
-            // Use standard configure for local builds
-            const configureArgs = generateConfigureArgs(config, installPrefix)
-            configureCommand = `./configure ${configureArgs.join(' ')}`
-          }
-        }
-      }
-      catch (error) {
-        log('❌ Failed to install Launchpad dependencies, falling back to system libraries')
-        const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
-        configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
-      }
-    }
+    // Use standard configure args for fallback
+    configureCommand = `./configure ${configureArgs.join(' ')}`
   }
 
   execSync(configureCommand, {

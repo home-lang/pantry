@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import type { Command } from '../cli/types'
+import process from 'node:process'
 import { config } from '../config'
 
 const cmd: Command = {

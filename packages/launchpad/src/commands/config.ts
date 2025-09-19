@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { Command } from '../cli/types'
 import type { ValidationResult } from '../config-validation'
 import fs from 'node:fs'

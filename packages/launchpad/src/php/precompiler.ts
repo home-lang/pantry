@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, rmSync } from 'node:fs'
 import * as fs from 'node:fs'
 import { join } from 'node:path'
+import process from 'node:process'
 import { logUniqueMessage } from '../logging'
 
 export interface PhpBuildConfig {

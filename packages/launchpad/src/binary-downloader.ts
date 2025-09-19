@@ -4,6 +4,7 @@ import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import process from 'node:process'
 import { config } from './config'
 import { createShims } from './install-helpers'
 import { logUniqueMessage } from './logging'
@@ -1508,7 +1509,7 @@ exec "${originalBinary}" "$@"
             const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
             if (metadata.icu_version && metadata.icu_version !== 'unknown') {
               const icuMajor = Number.parseInt(metadata.icu_version, 10)
-              if (!isNaN(icuMajor)) {
+              if (!Number.isNaN(icuMajor)) {
                 if (config.verbose) {
                   console.log(`🔍 Detected ICU v${icuMajor} from binary metadata`)
                 }
