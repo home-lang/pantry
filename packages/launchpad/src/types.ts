@@ -80,6 +80,105 @@ export interface LaunchpadConfig {
   shellDeactivationMessage?: string
   useRegistry?: boolean
   installMethod?: string
+  /** Cache configuration */
+  cache?: {
+    enabled?: boolean
+    /** Maximum cache size in MB (default: 1024) */
+    maxSize?: number
+    /** Cache TTL in hours (default: 168 = 1 week) */
+    ttlHours?: number
+    /** Auto-cleanup when cache exceeds maxSize (default: true) */
+    autoCleanup?: boolean
+    /** Directory for cache storage */
+    directory?: string
+    /** Compression for cached files (default: true) */
+    compression?: boolean
+  }
+  /** Network and download configuration */
+  network?: {
+    /** Connection timeout in ms (default: 30000) */
+    timeout?: number
+    /** Max concurrent downloads (default: 3) */
+    maxConcurrent?: number
+    /** Max retries for failed downloads (default: 3) */
+    retries?: number
+    /** Proxy configuration */
+    proxy?: {
+      http?: string
+      https?: string
+      /** Comma-separated list of hosts to bypass proxy */
+      bypass?: string
+    }
+    /** User agent string for HTTP requests */
+    userAgent?: string
+    /** Follow redirects (default: true) */
+    followRedirects?: boolean
+  }
+  /** Security configuration */
+  security?: {
+    /** Verify package signatures (default: true) */
+    verifySignatures?: boolean
+    /** Trusted package sources */
+    trustedSources?: string[]
+    /** Allow packages from untrusted sources (default: false) */
+    allowUntrusted?: boolean
+    /** Check for package vulnerabilities (default: true) */
+    checkVulnerabilities?: boolean
+  }
+  /** Logging configuration */
+  logging?: {
+    /** Log level: debug, info, warn, error (default: info) */
+    level?: 'debug' | 'info' | 'warn' | 'error'
+    /** Log to file (default: false) */
+    toFile?: boolean
+    /** Log file path */
+    filePath?: string
+    /** Max log file size in MB (default: 10) */
+    maxFileSize?: number
+    /** Number of log files to keep (default: 5) */
+    keepFiles?: number
+    /** Include timestamps in logs (default: true) */
+    timestamps?: boolean
+    /** JSON format logs (default: false) */
+    json?: boolean
+  }
+  /** Update policies */
+  updates?: {
+    /** Check for package updates (default: true) */
+    checkForUpdates?: boolean
+    /** Auto-update packages (default: false) */
+    autoUpdate?: boolean
+    /** Update check frequency in hours (default: 24) */
+    checkFrequency?: number
+    /** Include pre-release versions (default: false) */
+    includePrereleases?: boolean
+    /** Channels to check: stable, beta, nightly */
+    channels?: ('stable' | 'beta' | 'nightly')[]
+  }
+  /** Resource management */
+  resources?: {
+    /** Max disk space for packages in MB */
+    maxDiskUsage?: number
+    /** Max memory usage for operations in MB */
+    maxMemoryUsage?: number
+    /** Cleanup old versions automatically (default: true) */
+    autoCleanup?: boolean
+    /** Keep N latest versions of each package (default: 3) */
+    keepVersions?: number
+  }
+  /** Environment profiles */
+  profiles?: {
+    /** Current active profile */
+    active?: string
+    /** Development profile settings */
+    development?: Partial<LaunchpadConfig>
+    /** Production profile settings */
+    production?: Partial<LaunchpadConfig>
+    /** CI profile settings */
+    ci?: Partial<LaunchpadConfig>
+    /** Custom profiles */
+    custom?: Record<string, Partial<LaunchpadConfig>>
+  }
   /** Project-level post-setup commands (run after environment is prepared) */
   postSetup?: {
     enabled?: boolean

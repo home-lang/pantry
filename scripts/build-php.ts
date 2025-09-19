@@ -1032,50 +1032,112 @@ exec "$@"
   if (existsSync(buildEnvScript)) {
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
   } else {
-    log('⚠️  Launchpad build-env.sh not found, installing PHP dependencies first')
+    log('⚠️  Launchpad build-env.sh not found')
 
-    // Install PHP dependencies using Launchpad
-    try {
-      execSync('bun ./launchpad install php --deps-only', {
-        stdio: 'inherit',
-        cwd: process.cwd(),
-        timeout: 30 * 60 * 1000 // 30 minutes timeout for dependency installation
-      })
-      log('✅ Launchpad dependencies installed successfully')
+    // Check if we're in CI environment - skip Launchpad dependencies if system dependencies are available
+    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
 
-      // Now try to source the environment script
-      if (existsSync(buildEnvScript)) {
-        configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
-      } else {
-        log('Configuring PHP build...')
-
-        // Force clean environment for Linux to prevent libstdc++ injection
-        if (config.platform === 'linux') {
-          // Clear any remaining gcc/libstdc++ references from environment
-          Object.keys(buildEnv).forEach(key => {
-            if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('gnu.org/gcc')) {
-              buildEnv[key] = buildEnv[key].replace(/[^\s]*gnu\.org\/gcc[^\s]*/g, '')
-            }
-            if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('libstdcxx')) {
-              buildEnv[key] = buildEnv[key].replace(/[^\s]*libstdcxx[^\s]*/g, '')
-            }
-          })
-        }
-
-        if (config.config === 'ci') {
-          // Use CI-specific configure for GitHub Actions
-          const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
-          configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
-        } else {
-          // Use standard configure for local builds
-          const configureArgs = generateConfigureArgs(config, installPrefix)
-          configureCommand = `./configure ${configureArgs.join(' ')}`
-        }
+    // Check if essential build tools are available (installed via the CI workflow)
+    const checkSystemDeps = () => {
+      try {
+        execSync('which pkg-config && which autoconf && which bison', { stdio: 'pipe' })
+        return true
+      } catch {
+        return false
       }
-    } catch (error) {
-      log('❌ Failed to install Launchpad dependencies, falling back to system libraries')
-      const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
-      configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
+    }
+
+    let useSystemDeps = false
+
+    if (isCI) {
+      log('🏗️  CI environment detected - checking for system dependencies...')
+
+      if (checkSystemDeps()) {
+        log('✅ System dependencies found - skipping Launchpad dependency installation')
+        log('🚀 Using system-provided dependencies for faster CI builds')
+
+        // Set up environment for system dependencies
+        const systemEnv = {
+          ...buildEnv,
+          // Add common system paths for macOS (Homebrew) and Linux
+          PKG_CONFIG_PATH: [
+            '/opt/homebrew/lib/pkgconfig',
+            '/usr/local/lib/pkgconfig',
+            '/usr/lib/pkgconfig',
+            buildEnv.PKG_CONFIG_PATH
+          ].filter(Boolean).join(':'),
+          PATH: [
+            '/opt/homebrew/bin',
+            '/usr/local/bin',
+            buildEnv.PATH
+          ].filter(Boolean).join(':')
+        }
+
+        configureCommand = `./configure ${configureArgs.join(' ')}`
+        buildEnv = systemEnv
+        useSystemDeps = true
+      } else {
+        log('⚠️  System dependencies not found - falling back to Launchpad installation')
+      }
+    }
+
+    // Install PHP dependencies using Launchpad (only if not using system deps)
+    if (!useSystemDeps) {
+      try {
+        const launchpadEnv = {
+          ...process.env,
+          LAUNCHPAD_SHOW_ENV_MESSAGES: 'false',
+          LAUNCHPAD_SHELL_ACTIVATION_MESSAGE: '',
+          LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
+          LAUNCHPAD_NETWORK_MAX_CONCURRENT: '6', // Increase concurrent downloads
+          LAUNCHPAD_CACHE_ENABLED: 'true', // Enable caching
+          CI: 'true' // Ensure CI mode
+        }
+
+        // Install PHP dependencies with optimized CI settings
+        log('📦 Installing PHP dependencies with optimized settings...')
+        execSync('bun ./launchpad install php --deps-only', {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+          timeout: 15 * 60 * 1000, // 15 minutes timeout
+          env: launchpadEnv
+        })
+        log('✅ Launchpad dependencies installed successfully')
+
+        // Now try to source the environment script
+        if (existsSync(buildEnvScript)) {
+          configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
+        } else {
+          log('Configuring PHP build...')
+
+          // Force clean environment for Linux to prevent libstdc++ injection
+          if (config.platform === 'linux') {
+            // Clear any remaining gcc/libstdc++ references from environment
+            Object.keys(buildEnv).forEach(key => {
+              if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('gnu.org/gcc')) {
+                buildEnv[key] = buildEnv[key].replace(/[^\s]*gnu\.org\/gcc[^\s]*/g, '')
+              }
+              if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('libstdcxx')) {
+                buildEnv[key] = buildEnv[key].replace(/[^\s]*libstdcxx[^\s]*/g, '')
+              }
+            })
+          }
+
+          if (config.config === 'ci') {
+            // Use CI-specific configure for GitHub Actions
+            const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
+            configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
+          } else {
+            // Use standard configure for local builds
+            const configureArgs = generateConfigureArgs(config, installPrefix)
+            configureCommand = `./configure ${configureArgs.join(' ')}`
+          }
+        }
+      } catch (error) {
+        log('❌ Failed to install Launchpad dependencies, falling back to system libraries')
+        const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
+        configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
+      }
     }
   }
 
