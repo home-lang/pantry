@@ -54,6 +54,56 @@ function findLatestVersion(basePath: string): string | null {
   }
 }
 
+function fixMacOSLibraryPaths(installPrefix: string, homeDir: string): void {
+  const phpBinary = join(installPrefix, 'bin', 'php')
+
+  if (!existsSync(phpBinary)) {
+    log(`Warning: PHP binary not found at ${phpBinary}`)
+    return
+  }
+
+  try {
+    // Find the actual ncurses library path
+    const ncursesPath = findLatestVersion(`${homeDir}/.local/invisible-island.net/ncurses`)
+    if (!ncursesPath) {
+      log('Warning: Could not find ncurses installation')
+      return
+    }
+
+    const ncursesLib = join(ncursesPath, 'lib', 'libncursesw.6.dylib')
+    if (!existsSync(ncursesLib)) {
+      log(`Warning: ncurses library not found at ${ncursesLib}`)
+      return
+    }
+
+    // Get the current library dependencies
+    const otoolOutput = execSync(`otool -L "${phpBinary}"`, { encoding: 'utf8' })
+
+    // Look for ncurses references that need fixing
+    const lines = otoolOutput.split('\n')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.includes('libncursesw.6.dylib') && !trimmed.startsWith(ncursesLib)) {
+        // Extract the current path (first part before parentheses)
+        const match = trimmed.match(/^(.+?)\s+\(/)
+        if (match) {
+          const currentPath = match[1]
+          log(`Fixing ncurses path: ${currentPath} -> ${ncursesLib}`)
+
+          // Use install_name_tool to fix the path
+          execSync(`install_name_tool -change "${currentPath}" "${ncursesLib}" "${phpBinary}"`, {
+            stdio: 'inherit'
+          })
+        }
+      }
+    }
+
+    log('✅ Fixed library paths for PHP binary')
+  } catch (error) {
+    log(`Warning: Could not fix library paths: ${error}`)
+  }
+}
+
 function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
 
@@ -325,7 +375,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...dependencyArgs,
       ...platformDependencyArgs,
       '--enable-opcache=shared',
-      '--with-libedit',
+      '--with-readline',
       '--with-zip',
       '--enable-dtrace',
       '--with-ldap-sasl',
@@ -419,7 +469,7 @@ function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): st
   if (config.platform === 'darwin') {
     ciArgs.push(
       '--with-kerberos',
-      '--with-libedit',
+      '--with-readline',  // Use readline instead of libedit to avoid ncurses dependency issues
     )
   }
   else if (config.platform === 'linux') {
@@ -1077,6 +1127,7 @@ exec "$@"
   const bz2Path = findLatestVersion(`${homeDir}/.local/sourceware.org/bzip2`)
   const gettextPath = findLatestVersion(`${homeDir}/.local/gnu.org/gettext`)
   const iconvPath = findLatestVersion(`${homeDir}/.local/gnu.org/libiconv`)
+  const readlinePath = findLatestVersion(`${homeDir}/.local/gnu.org/readline`)
 
   // Replace generic dependency flags with Launchpad-specific paths for libraries without pkg-config
   const bz2Index = configureArgs.findIndex(arg => arg === '--with-bz2')
@@ -1093,6 +1144,12 @@ exec "$@"
   const iconvIndex = configureArgs.findIndex(arg => arg === '--with-iconv')
   if (iconvIndex !== -1 && iconvPath) {
     configureArgs[iconvIndex] = `--with-iconv=${iconvPath}`
+  }
+
+  // Use Launchpad readline with proper path
+  const readlineIndex = configureArgs.findIndex(arg => arg === '--with-readline')
+  if (readlineIndex !== -1 && readlinePath) {
+    configureArgs[readlineIndex] = `--with-readline=${readlinePath}`
   }
 
   log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
@@ -1254,6 +1311,12 @@ exec "$@"
     env: buildEnv,
     timeout: 15 * 60 * 1000, // 15 minutes timeout for install
   })
+
+  // Fix library paths on macOS after installation
+  if (config.platform === 'darwin') {
+    log('Fixing library paths for macOS PHP binary...')
+    fixMacOSLibraryPaths(installPrefix, homeDir)
+  }
 
   // Create php.ini for Unix builds to enable OPcache and other extensions
   log('Creating php.ini for Unix PHP build...')
