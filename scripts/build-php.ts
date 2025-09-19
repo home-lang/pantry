@@ -54,51 +54,60 @@ function findLatestVersion(basePath: string): string | null {
   }
 }
 
-function fixMacOSLibraryPaths(installPrefix: string, homeDir: string): void {
-  const phpBinary = join(installPrefix, 'bin', 'php')
-
-  if (!existsSync(phpBinary)) {
-    log(`Warning: PHP binary not found at ${phpBinary}`)
+function fixMacOSLibraryPaths(phpBinaryPath: string, homeDir: string): void {
+  if (!existsSync(phpBinaryPath)) {
+    log(`Warning: PHP binary not found at ${phpBinaryPath}`)
     return
   }
 
   try {
-    // Find the actual ncurses library path
-    const ncursesPath = findLatestVersion(`${homeDir}/.local/invisible-island.net/ncurses`)
-    if (!ncursesPath) {
-      log('Warning: Could not find ncurses installation')
-      return
-    }
-
-    const ncursesLib = join(ncursesPath, 'lib', 'libncursesw.6.dylib')
-    if (!existsSync(ncursesLib)) {
-      log(`Warning: ncurses library not found at ${ncursesLib}`)
-      return
-    }
-
     // Get the current library dependencies
-    const otoolOutput = execSync(`otool -L "${phpBinary}"`, { encoding: 'utf8' })
+    const otoolOutput = execSync(`otool -L "${phpBinaryPath}"`, { encoding: 'utf8' })
+    log('Current library dependencies:')
+    log(otoolOutput)
 
-    // Look for ncurses references that need fixing
+    // Find and fix problematic library paths
+    const librariesToFix = [
+      { name: 'ncurses', pattern: 'libncursesw.6.dylib', path: findLatestVersion(`${homeDir}/.local/invisible-island.net/ncurses`), lib: 'libncursesw.6.dylib' },
+      { name: 'readline', pattern: 'libreadline.8.', path: findLatestVersion(`${homeDir}/.local/gnu.org/readline`), lib: 'libreadline.8.3.dylib' }
+    ]
+
+    let fixedCount = 0
     const lines = otoolOutput.split('\n')
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (trimmed.includes('libncursesw.6.dylib') && !trimmed.startsWith(ncursesLib)) {
-        // Extract the current path (first part before parentheses)
-        const match = trimmed.match(/^(.+?)\s+\(/)
-        if (match) {
-          const currentPath = match[1]
-          log(`Fixing ncurses path: ${currentPath} -> ${ncursesLib}`)
 
-          // Use install_name_tool to fix the path
-          execSync(`install_name_tool -change "${currentPath}" "${ncursesLib}" "${phpBinary}"`, {
-            stdio: 'inherit'
-          })
+    for (const library of librariesToFix) {
+      if (!library.path) {
+        log(`Warning: Could not find ${library.name} installation`)
+        continue
+      }
+
+      const correctLib = join(library.path, 'lib', library.lib)
+      if (!existsSync(correctLib)) {
+        log(`Warning: ${library.name} library not found at ${correctLib}`)
+        continue
+      }
+
+      // Look for references that need fixing
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.includes(library.pattern) && !trimmed.startsWith(correctLib)) {
+          // Extract the current path (first part before parentheses)
+          const match = trimmed.match(/^(.+?)\s+\(/)
+          if (match) {
+            const currentPath = match[1]
+            log(`Fixing ${library.name} path: ${currentPath} -> ${correctLib}`)
+
+            // Use install_name_tool to fix the path
+            execSync(`install_name_tool -change "${currentPath}" "${correctLib}" "${phpBinaryPath}"`, {
+              stdio: 'inherit'
+            })
+            fixedCount++
+          }
         }
       }
     }
 
-    log('✅ Fixed library paths for PHP binary')
+    log(`✅ Fixed ${fixedCount} library paths for PHP binary`)
   } catch (error) {
     log(`Warning: Could not fix library paths: ${error}`)
   }
@@ -1129,6 +1138,23 @@ exec "$@"
   const iconvPath = findLatestVersion(`${homeDir}/.local/gnu.org/libiconv`)
   const readlinePath = findLatestVersion(`${homeDir}/.local/gnu.org/readline`)
 
+  // Update DYLD_LIBRARY_PATH to include dynamically detected library paths for runtime
+  if (config.platform === 'darwin') {
+    const dynamicLibPaths = []
+    if (readlinePath) dynamicLibPaths.push(join(readlinePath, 'lib'))
+    if (iconvPath) dynamicLibPaths.push(join(iconvPath, 'lib'))
+    if (gettextPath) dynamicLibPaths.push(join(gettextPath, 'lib'))
+    if (bz2Path) dynamicLibPaths.push(join(bz2Path, 'lib'))
+
+    // Add dynamic paths to existing library paths
+    if (dynamicLibPaths.length > 0) {
+      const currentDyld = buildEnv.DYLD_LIBRARY_PATH || ''
+      const allPaths = currentDyld ? [currentDyld, ...dynamicLibPaths] : dynamicLibPaths
+      buildEnv.DYLD_LIBRARY_PATH = allPaths.join(':')
+      log(`Updated DYLD_LIBRARY_PATH with dynamic library paths: ${buildEnv.DYLD_LIBRARY_PATH}`)
+    }
+  }
+
   // Replace generic dependency flags with Launchpad-specific paths for libraries without pkg-config
   const bz2Index = configureArgs.findIndex(arg => arg === '--with-bz2')
   if (bz2Index !== -1 && bz2Path) {
@@ -1151,6 +1177,7 @@ exec "$@"
   if (readlineIndex !== -1 && readlinePath) {
     configureArgs[readlineIndex] = `--with-readline=${readlinePath}`
   }
+
 
   log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
 
@@ -1304,6 +1331,15 @@ exec "$@"
     })
   }
 
+  // Fix library paths in build-time PHP binary before installation
+  if (config.platform === 'darwin') {
+    const buildTimePhpBinary = join(phpSourceDir, 'sapi', 'cli', 'php')
+    if (existsSync(buildTimePhpBinary)) {
+      log('Fixing library paths for build-time PHP binary...')
+      fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
+    }
+  }
+
   log('Installing PHP...')
   execSync('make install', {
     stdio: 'inherit',
@@ -1314,8 +1350,9 @@ exec "$@"
 
   // Fix library paths on macOS after installation
   if (config.platform === 'darwin') {
-    log('Fixing library paths for macOS PHP binary...')
-    fixMacOSLibraryPaths(installPrefix, homeDir)
+    log('Fixing library paths for installed PHP binary...')
+    const installedPhpBinary = join(installPrefix, 'bin', 'php')
+    fixMacOSLibraryPaths(installedPhpBinary, homeDir)
   }
 
   // Create php.ini for Unix builds to enable OPcache and other extensions
