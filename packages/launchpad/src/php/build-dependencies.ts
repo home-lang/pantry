@@ -1,9 +1,9 @@
 import { execSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
 import { homedir, platform } from 'node:os'
-import { logUniqueMessage } from '../logging'
+import { join } from 'node:path'
 import { install } from '../install'
+import { logUniqueMessage } from '../logging'
 
 export interface DependencyPaths {
   includeDirs: string[]
@@ -23,7 +23,8 @@ export class BuildDependencyManager {
   async installBuildDependencies(): Promise<void> {
     if (this.currentPlatform === 'darwin') {
       await this.installMacOSDependencies()
-    } else if (this.currentPlatform === 'linux') {
+    }
+    else if (this.currentPlatform === 'linux') {
       await this.installLinuxDependencies()
     }
   }
@@ -46,7 +47,7 @@ export class BuildDependencyManager {
       'github.com/kkos/oniguruma',
       'sqlite.org',
       'postgresql.org',
-      'mysql.com'
+      'mysql.com',
     ]
 
     try {
@@ -59,7 +60,8 @@ export class BuildDependencyManager {
       }
 
       logUniqueMessage('✅ macOS dependencies installed successfully')
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Failed to install macOS dependencies: ${error}`)
     }
   }
@@ -83,7 +85,7 @@ export class BuildDependencyManager {
       'github.com/kkos/oniguruma',
       'sqlite.org',
       'postgresql.org',
-      'mysql.com'
+      'mysql.com',
     ]
 
     try {
@@ -96,7 +98,8 @@ export class BuildDependencyManager {
       }
 
       logUniqueMessage('✅ Linux dependencies installed successfully')
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Failed to install Linux dependencies: ${error}`)
     }
   }
@@ -104,7 +107,8 @@ export class BuildDependencyManager {
   getDependencyPaths(): DependencyPaths {
     if (this.currentPlatform === 'darwin') {
       return this.findLaunchpadPaths()
-    } else if (this.currentPlatform === 'linux') {
+    }
+    else if (this.currentPlatform === 'linux') {
       return this.getLinuxDependencyPaths()
     }
 
@@ -149,8 +153,8 @@ export class BuildDependencyManager {
       }
 
       logUniqueMessage(`Found ${includeDirs.length} include dirs, ${libDirs.length} lib dirs, ${pkgConfigDirs.length} pkgconfig dirs`)
-
-    } catch (error) {
+    }
+    catch (error) {
       logUniqueMessage(`⚠️ Failed to scan Launchpad directories: ${error}`)
     }
 
@@ -161,7 +165,7 @@ export class BuildDependencyManager {
     return {
       includeDirs: ['/usr/include', '/usr/local/include'],
       libDirs: ['/usr/lib', '/usr/local/lib', '/usr/lib/x86_64-linux-gnu'],
-      pkgConfigDirs: ['/usr/lib/pkgconfig', '/usr/local/lib/pkgconfig', '/usr/lib/x86_64-linux-gnu/pkgconfig']
+      pkgConfigDirs: ['/usr/lib/pkgconfig', '/usr/local/lib/pkgconfig', '/usr/lib/x86_64-linux-gnu/pkgconfig'],
     }
   }
 
@@ -172,7 +176,7 @@ export class BuildDependencyManager {
       '/usr/lib/postgresql/15',
       '/usr/lib/postgresql/14',
       '/usr/lib/postgresql/13',
-      '/usr/local/pgsql'
+      '/usr/local/pgsql',
     ]
 
     for (const path of possiblePaths) {
@@ -184,7 +188,8 @@ export class BuildDependencyManager {
             if (versions && existsSync(versions)) {
               return versions
             }
-          } catch (error) {
+          }
+          catch (error) {
             continue
           }
         }
@@ -205,7 +210,8 @@ export class BuildDependencyManager {
         if (versions && existsSync(versions)) {
           return versions
         }
-      } catch (error) {
+      }
+      catch (error) {
         // Continue to system paths
       }
     }
@@ -215,7 +221,7 @@ export class BuildDependencyManager {
       `/usr/local/opt/${library}`,
       `/usr/lib/${library}`,
       `/usr/local/lib/${library}`,
-      `/opt/${library}`
+      `/opt/${library}`,
     ]
 
     for (const path of systemPaths) {

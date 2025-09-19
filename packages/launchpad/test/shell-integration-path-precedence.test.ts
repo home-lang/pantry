@@ -33,7 +33,7 @@ describe('Shell Integration PATH Precedence', () => {
     // Hook function definition
     expect(code).toContain('__launchpad_chpwd()')
     expect(code).toContain('__launchpad_switch_environment')
-    
+
     // Bash hook registration
     expect(code).toContain('PROMPT_COMMAND="__launchpad_prompt_command;$PROMPT_COMMAND"')
     expect(code).toContain('__launchpad_prompt_command()')

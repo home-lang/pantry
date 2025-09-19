@@ -29,7 +29,7 @@ const command: Command = {
   description: 'List installed packages',
   async run({ argv, options }) {
     // Strongly type options and merge with argv-parsed fallback
-    interface Opts { path?: string; verbose?: boolean }
+    interface Opts { path?: string, verbose?: boolean }
     const opts = (options ?? {}) as Opts
     const parsed = parseArgs(argv)
     const pathOpt = typeof opts.path === 'string' ? opts.path : parsed.path

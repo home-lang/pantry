@@ -1,5 +1,5 @@
-import { type Command } from '../cli/types'
-import { runDoctorChecks, formatDoctorReport } from '../doctor'
+import type { Command } from '../cli/types'
+import { formatDoctorReport, runDoctorChecks } from '../doctor'
 
 const command: Command = {
   name: 'doctor',

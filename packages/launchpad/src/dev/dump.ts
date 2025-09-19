@@ -1613,7 +1613,8 @@ async function installPackagesOptimized(
         if (!quiet) {
           console.log(`Would install global packages: ${globalPackages.join(', ')}`)
         }
-      } else {
+      }
+      else {
         // For both shell integration and regular calls, use standard install
         await install(globalPackages, globalEnvDir)
       }
@@ -1663,7 +1664,8 @@ async function installPackagesOptimized(
         if (!quiet) {
           console.log(`Would install local packages: ${localPackages.join(', ')}`)
         }
-      } else {
+      }
+      else {
         // For both shell integration and regular calls, use standard install
         await install(localPackages, envDir)
       }

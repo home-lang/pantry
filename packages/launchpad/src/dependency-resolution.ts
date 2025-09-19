@@ -21,9 +21,10 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
       const tsPkgx = await import('ts-pkgx')
       resolveDependencies = tsPkgx.resolveDependencies
       if (typeof resolveDependencies !== 'function') {
-        throw new Error('resolveDependencies is not available or not a function')
+        throw new TypeError('resolveDependencies is not available or not a function')
       }
-    } catch (importError) {
+    }
+    catch (importError) {
       console.warn(`⚠️  ts-pkgx import failed: ${importError instanceof Error ? importError.message : String(importError)}`)
       console.warn('Falling back to simple deduplication...')
       return deduplicatePackagesByVersion(packages)

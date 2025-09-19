@@ -941,7 +941,7 @@ cli
   .example('launchpad reinstall php --force')
   .example('launchpad reinstall node --global')
   .example('launchpad reinstall --dry-run')
-  .action(async (packages: string[], options?: { 
+  .action(async (packages: string[], options?: {
     verbose?: boolean
     force?: boolean
     dryRun?: boolean

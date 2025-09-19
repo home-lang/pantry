@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../src/config'
-import { startService, stopService, getServiceStatus } from '../src/services/manager'
+import { getServiceStatus, startService, stopService } from '../src/services/manager'
 
 // Helper function to detect if we're in a CI environment where services aren't available
 function isRunningInCI(): boolean {
@@ -28,7 +28,8 @@ async function waitForService(host: string, port: number, timeout = 30000): Prom
       if (result) {
         return true
       }
-    } catch {
+    }
+    catch {
       // Service not ready yet
     }
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -42,10 +43,11 @@ async function testPostgreSQLConnection(host: string, port: number, username: st
     // Test basic connection
     const result = execSync(`psql -h ${host} -p ${port} -U ${username} -d ${database} -c "SELECT 1;" 2>/dev/null`, {
       stdio: 'pipe',
-      env: { ...process.env, PGPASSWORD: '' }
+      env: { ...process.env, PGPASSWORD: '' },
     })
     return result.toString().includes('1')
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -55,7 +57,8 @@ async function testRedisConnection(host: string, port: number): Promise<boolean>
   try {
     const result = execSync(`redis-cli -h ${host} -p ${port} ping 2>/dev/null`, { stdio: 'pipe' })
     return result.toString().trim() === 'PONG'
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -86,7 +89,8 @@ describe('Service E2E Validation', () => {
     try {
       await stopService('postgres')
       await stopService('redis')
-    } catch {
+    }
+    catch {
       // Ignore cleanup errors
     }
 
@@ -102,7 +106,8 @@ describe('Service E2E Validation', () => {
     // Clean up temp directory
     try {
       fs.rmSync(tempDir, { recursive: true, force: true })
-    } catch {
+    }
+    catch {
       // Ignore cleanup errors
     }
   })
@@ -161,7 +166,7 @@ describe('Service E2E Validation', () => {
       // Test that we can create a test database
       try {
         execSync(`createdb -h 127.0.0.1 -p 5432 -U postgres test_db 2>/dev/null`, {
-          env: { ...process.env, PGPASSWORD: '' }
+          env: { ...process.env, PGPASSWORD: '' },
         })
 
         const testDbExists = await testPostgreSQLConnection('127.0.0.1', 5432, 'postgres', 'test_db')
@@ -169,9 +174,10 @@ describe('Service E2E Validation', () => {
 
         // Clean up test database
         execSync(`dropdb -h 127.0.0.1 -p 5432 -U postgres test_db 2>/dev/null`, {
-          env: { ...process.env, PGPASSWORD: '' }
+          env: { ...process.env, PGPASSWORD: '' },
         })
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Database creation test failed:', error)
         throw error
       }
@@ -208,7 +214,8 @@ describe('Service E2E Validation', () => {
         execSync(`redis-cli -h 127.0.0.1 -p 6379 set test_key "test_value"`, { stdio: 'pipe' })
         const result = execSync(`redis-cli -h 127.0.0.1 -p 6379 get test_key`, { stdio: 'pipe' })
         expect(result.toString().trim()).toBe('test_value')
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Redis operations test failed:', error)
         throw error
       }

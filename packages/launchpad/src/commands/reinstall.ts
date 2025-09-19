@@ -67,7 +67,7 @@ const cmd: Command = {
         // Step 1: Uninstall the package
         if (!quiet)
           console.log(`Uninstalling ${pkg}...`)
-        
+
         const uninstallSuccess = await uninstall(pkg)
         if (!uninstallSuccess) {
           console.error(`Failed to uninstall ${pkg}. Skipping reinstallation.`)
@@ -79,25 +79,27 @@ const cmd: Command = {
         // Step 2: Reinstall the package
         if (!quiet)
           console.log(`Installing ${pkg}...`)
-        
+
         // Determine the installation path
         const installPath = customPath || (global ? undefined : process.cwd())
-        
+
         // Install the package
         let installSuccess = false
         try {
           const result = await install(pkg, installPath)
           installSuccess = Array.isArray(result) && result.length > 0
-        } catch (error) {
+        }
+        catch (error) {
           console.error(`Installation error: ${error instanceof Error ? error.message : String(error)}`)
           installSuccess = false
         }
-        
+
         if (installSuccess) {
           results.push({ package: pkg, success: true })
           if (!quiet)
             console.log(`Successfully reinstalled ${pkg}`)
-        } else {
+        }
+        else {
           results.push({ package: pkg, success: false, message: 'Installation failed' })
           allSuccess = false
           console.error(`Failed to reinstall ${pkg}`)

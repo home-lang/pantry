@@ -37,7 +37,7 @@ const command: Command = {
   description: 'Install packages and create shims into the shim directory',
   async run({ argv, options }) {
     // Strongly type options and merge with argv-parsed fallback
-    interface Opts { verbose?: boolean; force?: boolean; ['no-auto-path']?: boolean; ['shim-path']?: string }
+    interface Opts { verbose?: boolean, force?: boolean, ['no-auto-path']?: boolean, ['shim-path']?: string }
     const optsFromOptions = (options ?? {}) as Opts
     const { pkgs, opts } = parseArgs(argv)
     if (pkgs.length === 0) {

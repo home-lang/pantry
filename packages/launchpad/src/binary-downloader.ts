@@ -3,7 +3,6 @@ import type { GitHubRelease } from './types'
 import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import * as fs from 'node:fs'
-import * as os from 'node:os'
 import * as path from 'node:path'
 import { config } from './config'
 import { createShims } from './install-helpers'
@@ -83,7 +82,7 @@ export class PrecompiledBinaryDownloader {
         // Also check for environment-specific installations (scan all envs)
         const launchpadEnvsDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs')
         if (fs.existsSync(launchpadEnvsDir)) {
-          const envDirs = fs.readdirSync(launchpadEnvsDir).filter(entry => {
+          const envDirs = fs.readdirSync(launchpadEnvsDir).filter((entry) => {
             try {
               const full = path.join(launchpadEnvsDir, entry)
               return fs.statSync(full).isDirectory()
@@ -111,11 +110,13 @@ export class PrecompiledBinaryDownloader {
       const genericRoots = [this.installPath, path.join(homeLocal), path.join(homeLocal, 'share', 'launchpad', 'global')]
       for (const root of genericRoots) {
         try {
-          if (!fs.existsSync(root)) continue
+          if (!fs.existsSync(root))
+            continue
           const domains = fs.readdirSync(root).filter(d => !d.startsWith('.') && d.includes('.'))
           for (const domain of domains) {
             const domainPath = path.join(root, domain)
-            if (!fs.statSync(domainPath).isDirectory()) continue
+            if (!fs.statSync(domainPath).isDirectory())
+              continue
             const versions = fs.readdirSync(domainPath).filter(v => v.startsWith('v'))
             for (const v of versions) {
               const libDir = path.join(domainPath, v, 'lib')
@@ -1100,7 +1101,8 @@ exec "${originalBinary}" "$@"
         if (config.verbose) {
           console.log(`🔍 Found ${detectedDylibs.length} dylib dependencies in PHP binary`)
         }
-      } catch (error) {
+      }
+      catch (error) {
         if (config.verbose) {
           console.warn(`⚠️ Could not analyze PHP binary dependencies: ${error instanceof Error ? error.message : String(error)}`)
         }
@@ -1121,11 +1123,13 @@ exec "${originalBinary}" "$@"
               console.log(`🔗 Created symlink: ${dylibName} -> ${envLibPath}`)
             }
           }
-        } else {
+        }
+        else {
           // Try to create version-generic symlinks for versioned libraries
           await this.createVersionGenericSymlink(dylibName, packageDir, libDir)
         }
-      } catch (error) {
+      }
+      catch (error) {
         if (config.verbose) {
           console.warn(`⚠️ Failed to create symlink for ${path.basename(dylibPath)}: ${error instanceof Error ? error.message : String(error)}`)
         }
@@ -1166,7 +1170,7 @@ exec "${originalBinary}" "$@"
     // Common version patterns to look for
     const versionPatterns = [
       new RegExp(`${baseLibName}\\.(\\d+)\\.(\\d+)\\.dylib$`),
-      new RegExp(`${baseLibName}\\.(\\d+)\\.dylib$`)
+      new RegExp(`${baseLibName}\\.(\\d+)\\.dylib$`),
     ]
 
     // Search through all installed packages for versioned libraries
@@ -1195,7 +1199,8 @@ exec "${originalBinary}" "$@"
                             console.log(`🔗 Created version-generic symlink: ${dylibName} -> ${libFile}`)
                           }
                           return
-                        } catch (error) {
+                        }
+                        catch (error) {
                           if (config.verbose) {
                             console.warn(`⚠️ Failed to create version-generic symlink: ${error instanceof Error ? error.message : String(error)}`)
                           }
@@ -1214,32 +1219,32 @@ exec "${originalBinary}" "$@"
 
   private getLibraryMappings(): Record<string, string[]> {
     return {
-      'libicu': ['unicode.org'],
-      'libssl': ['openssl.org'],
-      'libcrypto': ['openssl.org'],
-      'libpq': ['postgresql.org'],
-      'libzip': ['libzip.org'],
-      'libxml2': ['gnome.org/libxml2'],
-      'libpng': ['libpng.org'],
-      'libz': ['zlib.net'],
-      'libgmp': ['gnu.org/gmp'],
-      'libiconv': ['gnu.org/libiconv'],
-      'libintl': ['gnu.org/gettext'],
-      'libonig': ['github.com/kkos/oniguruma'],
-      'libldap': ['openldap.org'],
-      'liblber': ['openldap.org'],
-      'libreadline': ['gnu.org/readline'],
-      'libhistory': ['gnu.org/readline'],
-      'libncurses': ['gnu.org/ncurses'],
-      'libtinfo': ['gnu.org/ncurses'],
-      'libcurl': ['curl.se'],
-      'libbz2': ['sourceware.org/bzip2'],
-      'libffi': ['sourceware.org/libffi']
+      libicu: ['unicode.org'],
+      libssl: ['openssl.org'],
+      libcrypto: ['openssl.org'],
+      libpq: ['postgresql.org'],
+      libzip: ['libzip.org'],
+      libxml2: ['gnome.org/libxml2'],
+      libpng: ['libpng.org'],
+      libz: ['zlib.net'],
+      libgmp: ['gnu.org/gmp'],
+      libiconv: ['gnu.org/libiconv'],
+      libintl: ['gnu.org/gettext'],
+      libonig: ['github.com/kkos/oniguruma'],
+      libldap: ['openldap.org'],
+      liblber: ['openldap.org'],
+      libreadline: ['gnu.org/readline'],
+      libhistory: ['gnu.org/readline'],
+      libncurses: ['gnu.org/ncurses'],
+      libtinfo: ['gnu.org/ncurses'],
+      libcurl: ['curl.se'],
+      libbz2: ['sourceware.org/bzip2'],
+      libffi: ['sourceware.org/libffi'],
     }
   }
 
-  private findIcuInstallations(): Array<{ path: string; major: number; version: number }> {
-    const installations: Array<{ path: string; major: number; version: number }> = []
+  private findIcuInstallations(): Array<{ path: string, major: number, version: number }> {
+    const installations: Array<{ path: string, major: number, version: number }> = []
 
     // Look in the environment directory
     const envDir = path.dirname(path.dirname(this.installPath))
@@ -1254,8 +1259,8 @@ exec "${originalBinary}" "$@"
       for (const versionDir of versions) {
         const versionMatch = versionDir.match(/^v(\d+)\.(\d+)/)
         if (versionMatch) {
-          const majorVersion = parseInt(versionMatch[1], 10)
-          const version = parseInt(versionMatch[2], 10)
+          const majorVersion = Number.parseInt(versionMatch[1], 10)
+          const version = Number.parseInt(versionMatch[2], 10)
           const installPath = path.join(unicodeOrgPath, versionDir)
           installations.push({ path: installPath, major: majorVersion, version })
         }
@@ -1278,7 +1283,8 @@ exec "${originalBinary}" "$@"
         if (config.verbose) {
           console.log(`📦 Adding ICU v${icuMajor} dependency for PHP compatibility`)
         }
-      } else {
+      }
+      else {
         // Install latest ICU version if we can't detect the required version
         depsSet.add('unicode.org')
         if (config.verbose) {
@@ -1415,10 +1421,11 @@ exec "${originalBinary}" "$@"
       // First try exact match
       if (availableIcuVersions.includes(requiredIcuMajor)) {
         targetIcuMajor = requiredIcuMajor
-      } else {
+      }
+      else {
         // Use the closest available version
         targetIcuMajor = availableIcuVersions.reduce((prev, curr) =>
-          Math.abs(curr - requiredIcuMajor) < Math.abs(prev - requiredIcuMajor) ? curr : prev
+          Math.abs(curr - requiredIcuMajor) < Math.abs(prev - requiredIcuMajor) ? curr : prev,
         )
       }
 
@@ -1470,7 +1477,8 @@ exec "${originalBinary}" "$@"
               console.log(`  🔗 Created ICU symlink: ${lib}.${requiredIcuMajor}.dylib -> ${lib}.${targetIcuMajor}.dylib`)
             }
           }
-        } catch (error) {
+        }
+        catch (error) {
           if (config.verbose) {
             console.warn(`  ⚠️ Could not create ${lib} symlink: ${error instanceof Error ? error.message : String(error)}`)
           }
@@ -1478,7 +1486,8 @@ exec "${originalBinary}" "$@"
       }
 
       return true
-    } catch (error) {
+    }
+    catch (error) {
       if (config.verbose) {
         console.warn(`⚠️ Error fixing PHP ICU references: ${error instanceof Error ? error.message : String(error)}`)
       }
@@ -1531,10 +1540,12 @@ exec "${originalBinary}" "$@"
           const versions = fs.readdirSync(phpNetDir).filter(d => d.startsWith('v')).sort().reverse()
           if (versions.length > 0) {
             phpOriginalPath = path.join(phpNetDir, versions[0], 'bin', 'php.original')
-          } else {
+          }
+          else {
             return null
           }
-        } else {
+        }
+        else {
           return null
         }
       }
@@ -1924,7 +1935,7 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
 
     // Detect platform to handle Windows vs Unix extension loading
     const isWindows = process.platform === 'win32'
-    
+
     // For Windows, check for DLL files in the main directory and ext/ subdirectory
     const existing = new Set<string>()
     if (isWindows) {
@@ -1932,30 +1943,31 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
       const mainDir = result.packageDir
       if (fs.existsSync(mainDir)) {
         const files = fs.readdirSync(mainDir)
-        files.forEach(file => {
+        files.forEach((file) => {
           if (file.startsWith('php_') && file.endsWith('.dll')) {
             const extName = file.slice(4, -4) // Remove 'php_' prefix and '.dll' suffix
             existing.add(extName)
           }
         })
       }
-      
+
       // Check ext/ subdirectory for additional DLLs
       const extSubDir = path.join(result.packageDir, 'ext')
       if (fs.existsSync(extSubDir)) {
         const files = fs.readdirSync(extSubDir)
-        files.forEach(file => {
+        files.forEach((file) => {
           if (file.startsWith('php_') && file.endsWith('.dll')) {
             const extName = file.slice(4, -4)
             existing.add(extName)
           }
         })
       }
-    } else {
+    }
+    else {
       // Unix: check for .so files in extension directory
       if (extDir && fs.existsSync(extDir)) {
         const files = fs.readdirSync(extDir)
-        files.forEach(file => {
+        files.forEach((file) => {
           if (file.endsWith('.so')) {
             existing.add(file.slice(0, -3)) // Remove .so extension
           }
@@ -1964,7 +1976,8 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
     }
 
     const enableIfExists = (ext: string) => {
-      if (!extDir && !isWindows) return // Skip if no extension dir on Unix
+      if (!extDir && !isWindows)
+        return // Skip if no extension dir on Unix
       if (existing.has(ext)) {
         iniLines.push(`extension=${ext}`)
       }
@@ -1972,7 +1985,7 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
 
     // Enable all essential extensions for Composer and Laravel
     iniLines.push('; Enable essential extensions for Composer and Laravel')
-    
+
     // Core extensions required by Composer
     enableIfExists('mbstring')
     enableIfExists('fileinfo')
@@ -1980,7 +1993,7 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
     enableIfExists('curl')
     enableIfExists('openssl')
     enableIfExists('zip')
-    
+
     // Additional useful extensions
     enableIfExists('gd')
     enableIfExists('exif')
@@ -1992,7 +2005,7 @@ export async function downloadPhpBinary(installPath: string, requestedVersion?: 
     enableIfExists('intl')
     enableIfExists('bcmath')
     enableIfExists('shmop') // Available on Windows too
-    
+
     // Process control (Unix only)
     if (!isWindows) {
       enableIfExists('pcntl')

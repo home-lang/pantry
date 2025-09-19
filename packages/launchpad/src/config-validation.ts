@@ -19,7 +19,7 @@ export interface ConfigValidationOptions {
  */
 export function validateConfig(
   config: Partial<LaunchpadConfig>,
-  options: ConfigValidationOptions = {}
+  options: ConfigValidationOptions = {},
 ): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
@@ -203,7 +203,7 @@ function validatePath(
   fieldName: string,
   errors: string[],
   warnings: string[],
-  checkPermissions: boolean
+  checkPermissions: boolean,
 ): void {
   if (!path.isAbsolute(pathToCheck)) {
     warnings.push(`${fieldName} should be an absolute path: ${pathToCheck}`)
@@ -215,17 +215,20 @@ function validatePath(
       const dir = fs.statSync(pathToCheck).isDirectory() ? pathToCheck : path.dirname(pathToCheck)
       if (!fs.existsSync(dir)) {
         warnings.push(`${fieldName} directory does not exist: ${dir}`)
-      } else {
+      }
+      else {
         // Try to create a test file to check write permissions
         const testFile = path.join(dir, '.launchpad-write-test')
         try {
           fs.writeFileSync(testFile, 'test', { flag: 'wx' })
           fs.unlinkSync(testFile)
-        } catch {
+        }
+        catch {
           warnings.push(`${fieldName} directory may not be writable: ${dir}`)
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       warnings.push(`${fieldName} path validation failed: ${(error as Error).message}`)
     }
   }
@@ -238,7 +241,8 @@ function isValidUrl(url: string): boolean {
   try {
     new URL(url)
     return true
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -247,7 +251,7 @@ function isValidUrl(url: string): boolean {
  * Validates if a string is a valid domain name
  */
 function isValidDomain(domain: string): boolean {
-  const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+  const domainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i
   return domainRegex.test(domain)
 }
 
@@ -256,7 +260,7 @@ function isValidDomain(domain: string): boolean {
  */
 export function applyProfile(
   config: LaunchpadConfig,
-  profileName: string
+  profileName: string,
 ): LaunchpadConfig {
   if (!config.profiles) {
     return config
@@ -266,11 +270,14 @@ export function applyProfile(
 
   if (profileName === 'development') {
     profileConfig = config.profiles.development
-  } else if (profileName === 'production') {
+  }
+  else if (profileName === 'production') {
     profileConfig = config.profiles.production
-  } else if (profileName === 'ci') {
+  }
+  else if (profileName === 'ci') {
     profileConfig = config.profiles.ci
-  } else if (config.profiles.custom && config.profiles.custom[profileName]) {
+  }
+  else if (config.profiles.custom && config.profiles.custom[profileName]) {
     profileConfig = config.profiles.custom[profileName]
   }
 
@@ -292,10 +299,11 @@ function deepMerge<T>(target: T, source: Partial<T>): T {
     const sourceValue = source[key]
     const targetValue = result[key]
 
-    if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue) &&
-        targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+    if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue)
+      && targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
       result[key] = deepMerge(targetValue, sourceValue)
-    } else if (sourceValue !== undefined) {
+    }
+    else if (sourceValue !== undefined) {
       result[key] = sourceValue as T[Extract<keyof T, string>]
     }
   }

@@ -26,10 +26,11 @@ async function validateServiceHealth(serviceName: string): Promise<{ isHealthy: 
           // Also test actual connection
           execSync('psql -h 127.0.0.1 -p 5432 -U root -d postgres -c "SELECT 1;" 2>/dev/null', {
             stdio: 'pipe',
-            env: { ...process.env, PGPASSWORD: '' }
+            env: { ...process.env, PGPASSWORD: '' },
           })
           return { isHealthy: true }
-        } catch (error) {
+        }
+        catch (error) {
           return { isHealthy: false, error: `PostgreSQL connection failed: ${error}` }
         }
 
@@ -41,7 +42,8 @@ async function validateServiceHealth(serviceName: string): Promise<{ isHealthy: 
             return { isHealthy: true }
           }
           return { isHealthy: false, error: 'Redis ping failed' }
-        } catch (error) {
+        }
+        catch (error) {
           return { isHealthy: false, error: `Redis connection failed: ${error}` }
         }
 
@@ -53,7 +55,8 @@ async function validateServiceHealth(serviceName: string): Promise<{ isHealthy: 
             return { isHealthy: true }
           }
           return { isHealthy: false, error: 'PHP version check failed' }
-        } catch (error) {
+        }
+        catch (error) {
           return { isHealthy: false, error: `PHP execution failed: ${error}` }
         }
 
@@ -65,14 +68,16 @@ async function validateServiceHealth(serviceName: string): Promise<{ isHealthy: 
             return { isHealthy: true }
           }
           return { isHealthy: false, error: 'Composer version check failed' }
-        } catch (error) {
+        }
+        catch (error) {
           return { isHealthy: false, error: `Composer execution failed: ${error}` }
         }
 
       default:
         return { isHealthy: false, error: `Unknown service: ${serviceName}` }
     }
-  } catch (error) {
+  }
+  catch (error) {
     return { isHealthy: false, error: `Service validation failed: ${error}` }
   }
 }
@@ -132,7 +137,8 @@ describe('Environment Success Validation', () => {
     // Clean up temp directory
     try {
       fs.rmSync(tempDir, { recursive: true, force: true })
-    } catch {
+    }
+    catch {
       // Ignore cleanup errors
     }
   })
@@ -177,7 +183,8 @@ describe('Environment Success Validation', () => {
             throw new Error(`PHP not healthy after successful installation: ${phpHealth.error}`)
           }
         }
-      } finally {
+      }
+      finally {
         process.chdir(originalCwd)
       }
     }, 300000) // 5 minute timeout for full installation
@@ -206,7 +213,8 @@ describe('Environment Success Validation', () => {
         try {
           const result = execSync('php -r "echo phpversion();"', { stdio: 'pipe' })
           expect(result.toString()).toMatch(/^8\.4\.\d+/)
-        } catch (error) {
+        }
+        catch (error) {
           throw new Error(`PHP execution failed with library error: ${error}`)
         }
 
@@ -216,11 +224,12 @@ describe('Environment Success Validation', () => {
           const extensions = result.toString()
           expect(extensions).toContain('Core')
           expect(extensions).toContain('date')
-        } catch (error) {
+        }
+        catch (error) {
           throw new Error(`PHP extensions check failed: ${error}`)
         }
-
-      } finally {
+      }
+      finally {
         process.chdir(originalCwd)
       }
     }, 180000) // 3 minute timeout
@@ -249,11 +258,12 @@ describe('Environment Success Validation', () => {
           const result = execSync('composer diagnose', { stdio: 'pipe' })
           // Should not contain critical errors
           expect(result.toString()).not.toContain('ERROR')
-        } catch (error) {
+        }
+        catch (error) {
           throw new Error(`Composer diagnose failed: ${error}`)
         }
-
-      } finally {
+      }
+      finally {
         process.chdir(originalCwd)
       }
     }, 180000) // 3 minute timeout
@@ -274,7 +284,8 @@ describe('Environment Success Validation', () => {
         // This is expected if PostgreSQL isn't running or configured properly
         expect(pgHealth.error).toBeDefined()
         console.log('PostgreSQL health check failed as expected:', pgHealth.error)
-      } else {
+      }
+      else {
         // If PostgreSQL is healthy, it should be fully functional
         expect(pgHealth.isHealthy).toBe(true)
       }
@@ -292,7 +303,8 @@ describe('Environment Success Validation', () => {
         // This is expected if Redis isn't running
         expect(redisHealth.error).toBeDefined()
         console.log('Redis health check failed as expected:', redisHealth.error)
-      } else {
+      }
+      else {
         // If Redis is healthy, it should be fully functional
         expect(redisHealth.isHealthy).toBe(true)
       }

@@ -5,8 +5,9 @@
   },
   "include": [
     "src/**/*.ts",
-    "test/version.ts"
-, "test/update-check.test.ts"  ],
+    "test/version.ts",
+    "test/update-check.test.ts"
+  ],
   "exclude": [
     "node_modules",
     "dist"

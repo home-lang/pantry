@@ -31,7 +31,8 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     const result = await installInternal(packageList, installPath)
     clearTimeout(globalTimeout)
     return result
-  } catch (error) {
+  }
+  catch (error) {
     clearTimeout(globalTimeout)
     throw error
   }
@@ -41,7 +42,6 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
  * Internal installation function
  */
 async function installInternal(packageList: PackageSpec[], installPath: string): Promise<string[]> {
-
   // Create installation directory even if no packages to install
   await fs.promises.mkdir(installPath, { recursive: true })
 
@@ -118,7 +118,7 @@ async function installInternal(packageList: PackageSpec[], installPath: string):
         const normalized = resolvePackageName(compName)
 
         // Avoid duplicates if already present either as alias, domain, or any versioned spec
-        const alreadyPresent = Array.from(seen).some(p => {
+        const alreadyPresent = Array.from(seen).some((p) => {
           const n = parsePackageSpec(p).name
           const r = resolvePackageName(n)
           return r === normalized
@@ -162,7 +162,7 @@ async function installInternal(packageList: PackageSpec[], installPath: string):
       try {
         const parsed = parsePackageSpec(pkg)
         packageName = parsed.name
-        
+
         // Add timeout to individual package installation to prevent hangs
         const installPromise = installPackage(packageName, pkg, installPath)
         const timeoutPromise = new Promise<string[]>((_, reject) => {
@@ -171,7 +171,7 @@ async function installInternal(packageList: PackageSpec[], installPath: string):
             reject(new Error(`Package installation timeout: ${pkg}`))
           }, 5 * 60 * 1000) // 5 minute timeout
         })
-        
+
         const packageFiles = await Promise.race([installPromise, timeoutPromise])
         allInstalledFiles.push(...packageFiles)
       }

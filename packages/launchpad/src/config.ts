@@ -5,6 +5,9 @@ import path from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
 
+// Apply profile and validation
+import { getEffectiveConfig, validateConfig } from './config-validation'
+
 function getDefaultInstallPath(): string {
   // Check for environment variable first
   if (process.env.LAUNCHPAD_INSTALL_PATH) {
@@ -65,7 +68,7 @@ export const defaultConfig: LaunchpadConfig = {
   installMethod: 'curl',
   installPath: getDefaultInstallPath(),
   // By default, install runtime dependencies - they are needed for packages to work properly
-  installDependencies: process.env.LAUNCHPAD_INSTALL_DEPS === '0' || process.env.LAUNCHPAD_INSTALL_DEPS === 'false' ? false : true,
+  installDependencies: !(process.env.LAUNCHPAD_INSTALL_DEPS === '0' || process.env.LAUNCHPAD_INSTALL_DEPS === 'false'),
   // By default, do NOT install build-time dependencies (pantry/build deps)
   installBuildDeps: process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1' || process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === 'true' || false,
   cache: {
@@ -205,9 +208,6 @@ const rawConfig = await loadConfig({
   name: 'launchpad',
   defaultConfig,
 })
-
-// Apply profile and validation
-import { getEffectiveConfig, validateConfig } from './config-validation'
 
 export const config: LaunchpadConfig = getEffectiveConfig(rawConfig)
 

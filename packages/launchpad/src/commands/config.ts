@@ -1,9 +1,10 @@
 import type { Command } from '../cli/types'
-import { config, defaultConfig } from '../config'
-import { validateConfig, getEffectiveConfig, applyProfile, type ValidationResult } from '../config-validation'
+import type { ValidationResult } from '../config-validation'
 import fs from 'node:fs'
-import path from 'node:path'
 import { homedir } from 'node:os'
+import path from 'node:path'
+import { config, defaultConfig } from '../config'
+import { applyProfile, getEffectiveConfig, validateConfig } from '../config-validation'
 
 interface ConfigArgs {
   get?: string
@@ -23,13 +24,27 @@ function parseArgs(argv: string[]): ConfigArgs {
   const opts: ConfigArgs = {}
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    if (a === '--help' || a === '-h') opts.help = true
-    else if (a === '--json') opts.json = true
-    else if (a === '--validate') opts.validate = true
-    else if (a === '--list') opts.list = true
-    else if (a === '--reset') opts.reset = true
-    else if (a.startsWith('--get=')) opts.get = a.slice('--get='.length)
-    else if (a === '--get' && i + 1 < argv.length) opts.get = argv[++i]
+    if (a === '--help' || a === '-h') {
+      opts.help = true
+    }
+    else if (a === '--json') {
+      opts.json = true
+    }
+    else if (a === '--validate') {
+      opts.validate = true
+    }
+    else if (a === '--list') {
+      opts.list = true
+    }
+    else if (a === '--reset') {
+      opts.reset = true
+    }
+    else if (a.startsWith('--get=')) {
+      opts.get = a.slice('--get='.length)
+    }
+    else if (a === '--get' && i + 1 < argv.length) {
+      opts.get = argv[++i]
+    }
     else if (a.startsWith('--set=')) {
       const parts = a.slice('--set='.length).split('=', 2)
       opts.set = parts[0]
@@ -39,23 +54,46 @@ function parseArgs(argv: string[]): ConfigArgs {
       opts.set = argv[++i]
       opts.value = argv[++i]
     }
-    else if (a.startsWith('--unset=')) opts.unset = a.slice('--unset='.length)
-    else if (a === '--unset' && i + 1 < argv.length) opts.unset = argv[++i]
-    else if (a.startsWith('--profile=')) opts.profile = a.slice('--profile='.length)
-    else if (a === '--profile' && i + 1 < argv.length) opts.profile = argv[++i]
-    else if (a === 'get' && !opts.action) opts.action = 'get'
-    else if (a === 'set' && !opts.action) opts.action = 'set'
-    else if (a === 'unset' && !opts.action) opts.action = 'unset'
-    else if (a === 'validate' && !opts.action) opts.action = 'validate'
-    else if (a === 'list' && !opts.action) opts.action = 'list'
-    else if (a === 'reset' && !opts.action) opts.action = 'reset'
-    else if (a === 'profiles' && !opts.action) opts.action = 'profiles'
+    else if (a.startsWith('--unset=')) {
+      opts.unset = a.slice('--unset='.length)
+    }
+    else if (a === '--unset' && i + 1 < argv.length) {
+      opts.unset = argv[++i]
+    }
+    else if (a.startsWith('--profile=')) {
+      opts.profile = a.slice('--profile='.length)
+    }
+    else if (a === '--profile' && i + 1 < argv.length) {
+      opts.profile = argv[++i]
+    }
+    else if (a === 'get' && !opts.action) {
+      opts.action = 'get'
+    }
+    else if (a === 'set' && !opts.action) {
+      opts.action = 'set'
+    }
+    else if (a === 'unset' && !opts.action) {
+      opts.action = 'unset'
+    }
+    else if (a === 'validate' && !opts.action) {
+      opts.action = 'validate'
+    }
+    else if (a === 'list' && !opts.action) {
+      opts.action = 'list'
+    }
+    else if (a === 'reset' && !opts.action) {
+      opts.action = 'reset'
+    }
+    else if (a === 'profiles' && !opts.action) {
+      opts.action = 'profiles'
+    }
     else if (!opts.action && (opts.get || opts.set || opts.validate || opts.list || opts.reset)) {
       // Legacy support - action inferred from flags
     }
     else if (!opts.action && !opts.get && !opts.set && !opts.unset) {
       // Positional argument for get
-      if (a && !a.startsWith('-')) opts.get = a
+      if (a && !a.startsWith('-'))
+        opts.get = a
     }
   }
   return opts
@@ -65,7 +103,8 @@ function getByPath(obj: any, path: string): any {
   const parts = path.split('.').filter(Boolean)
   let cur: any = obj
   for (const p of parts) {
-    if (cur && typeof cur === 'object' && p in cur) cur = cur[p]
+    if (cur && typeof cur === 'object' && p in cur)
+      cur = cur[p]
     else return undefined
   }
   return cur
@@ -74,10 +113,12 @@ function getByPath(obj: any, path: string): any {
 function printValidationResult(result: ValidationResult, json: boolean): void {
   if (json) {
     console.log(JSON.stringify(result, null, 2))
-  } else {
+  }
+  else {
     if (result.valid) {
       console.log('✅ Configuration is valid')
-    } else {
+    }
+    else {
       console.log('❌ Configuration has errors:')
       for (const error of result.errors) {
         console.log(`  • ${error}`)
@@ -106,19 +147,31 @@ function setByPath(obj: any, path: string, value: any): boolean {
   }
 
   const lastPart = parts[parts.length - 1]
-  if (!lastPart) return false
+  if (!lastPart)
+    return false
 
   // Try to parse the value appropriately
   let parsedValue = value
-  if (value === 'true') parsedValue = true
-  else if (value === 'false') parsedValue = false
-  else if (value === 'null') parsedValue = null
-  else if (value === 'undefined') parsedValue = undefined
-  else if (!isNaN(Number(value)) && value !== '') parsedValue = Number(value)
+  if (value === 'true') {
+    parsedValue = true
+  }
+  else if (value === 'false') {
+    parsedValue = false
+  }
+  else if (value === 'null') {
+    parsedValue = null
+  }
+  else if (value === 'undefined') {
+    parsedValue = undefined
+  }
+  else if (!isNaN(Number(value)) && value !== '') {
+    parsedValue = Number(value)
+  }
   else if (value.startsWith('[') || value.startsWith('{')) {
     try {
       parsedValue = JSON.parse(value)
-    } catch {
+    }
+    catch {
       // Keep as string if JSON parsing fails
     }
   }
@@ -133,12 +186,14 @@ function unsetByPath(obj: any, path: string): boolean {
 
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i]
-    if (!(part in current)) return false
+    if (!(part in current))
+      return false
     current = current[part]
   }
 
   const lastPart = parts[parts.length - 1]
-  if (!lastPart || !(lastPart in current)) return false
+  if (!lastPart || !(lastPart in current))
+    return false
 
   delete current[lastPart]
   return true
@@ -154,7 +209,8 @@ function loadUserConfig(): any {
     if (fs.existsSync(configPath)) {
       return JSON.parse(fs.readFileSync(configPath, 'utf8'))
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error(`Warning: Failed to load user config: ${(error as Error).message}`)
   }
   return {}
@@ -166,7 +222,8 @@ function saveUserConfig(config: any): boolean {
     fs.mkdirSync(path.dirname(configPath), { recursive: true })
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
     return true
-  } catch (error) {
+  }
+  catch (error) {
     console.error(`Error saving config: ${(error as Error).message}`)
     return false
   }
@@ -225,7 +282,8 @@ const command: Command = {
 
       if (args.json) {
         console.log(JSON.stringify(profiles, null, 2))
-      } else {
+      }
+      else {
         console.log(`Active profile: ${profiles.active}`)
         console.log(`Available profiles: ${profiles.available.join(', ')}`)
         if (profiles.custom.length > 0) {
@@ -241,10 +299,12 @@ const command: Command = {
         if (fs.existsSync(configPath)) {
           fs.unlinkSync(configPath)
           console.log('✅ Configuration reset to defaults')
-        } else {
+        }
+        else {
           console.log('ℹ️ No user configuration found, already using defaults')
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error(`Error resetting config: ${(error as Error).message}`)
         return 1
       }
@@ -311,9 +371,11 @@ const command: Command = {
 
       if (args.json) {
         console.log(JSON.stringify(out))
-      } else if (typeof out === 'object') {
+      }
+      else if (typeof out === 'object') {
         console.log(JSON.stringify(out, null, 2))
-      } else {
+      }
+      else {
         console.log(String(out))
       }
       return 0
@@ -322,7 +384,8 @@ const command: Command = {
     if (args.action === 'list' || args.list) {
       if (args.json) {
         console.log(JSON.stringify(effectiveConfig))
-      } else {
+      }
+      else {
         console.log(JSON.stringify(effectiveConfig, null, 2))
       }
       return 0
@@ -331,7 +394,8 @@ const command: Command = {
     // Default: show effective config
     if (args.json) {
       console.log(JSON.stringify(effectiveConfig))
-    } else {
+    }
+    else {
       console.log(JSON.stringify(effectiveConfig, null, 2))
     }
     return 0

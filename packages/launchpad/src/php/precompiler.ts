@@ -1,8 +1,7 @@
-import { execSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
+import { existsSync, mkdirSync, rmSync } from 'node:fs'
 import * as fs from 'node:fs'
-import { join, dirname } from 'node:path'
-import { homedir, platform, arch } from 'node:os'
+import { join } from 'node:path'
 import { logUniqueMessage } from '../logging'
 
 export interface PhpBuildConfig {
@@ -41,12 +40,12 @@ export class PhpPrecompiler {
         // Core CLI and FPM
         '--enable-cli',
         '--enable-fpm',
-        
+
         // Essential string and encoding extensions
         '--enable-mbstring',
         '--with-iconv',
         '--enable-iconv',
-        
+
         // Core extensions required by Composer and Laravel
         '--enable-filter',
         '--enable-hash',
@@ -56,10 +55,10 @@ export class PhpPrecompiler {
         '--enable-session',
         '--enable-fileinfo',
         '--enable-opcache',
-        
+
         // Phar support (essential for Composer)
         '--enable-phar',
-        
+
         // XML processing (required by many packages)
         '--enable-dom',
         '--enable-xml',
@@ -68,45 +67,45 @@ export class PhpPrecompiler {
         '--enable-simplexml',
         '--enable-libxml',
         '--with-libxml',
-        
+
         // Network and crypto
         '--with-curl',
         '--with-openssl',
         '--enable-openssl',
-        
+
         // Compression
         '--with-zip',
         '--with-zlib',
         '--enable-zlib',
-        
+
         // PCRE (Perl Compatible Regular Expressions)
         '--enable-pcre',
-        
+
         // Date and time
         '--enable-calendar',
-        
+
         // File operations
         '--enable-ftp',
-        
+
         // Process control (useful for Laravel queues)
         '--enable-pcntl',
         '--enable-posix',
-        
+
         // Shared memory (useful for caching)
         '--enable-shmop',
         '--enable-sysvmsg',
         '--enable-sysvsem',
         '--enable-sysvshm',
-        
+
         // Socket support
         '--enable-sockets',
-        
+
         // Additional useful extensions
         '--enable-exif',
         '--enable-bcmath',
         '--with-bz2',
         '--with-gettext',
-        '--with-readline'
+        '--with-readline',
       ],
       mysql: [
         '--with-pdo-mysql',
@@ -115,7 +114,7 @@ export class PhpPrecompiler {
         '--with-jpeg',
         '--with-png',
         '--with-webp',
-        '--with-freetype'
+        '--with-freetype',
       ],
       postgres: [
         '--with-pdo-pgsql',
@@ -124,7 +123,7 @@ export class PhpPrecompiler {
         '--with-jpeg',
         '--with-png',
         '--with-webp',
-        '--with-freetype'
+        '--with-freetype',
       ],
       sqlite: [
         '--with-pdo-sqlite',
@@ -133,7 +132,7 @@ export class PhpPrecompiler {
         '--with-jpeg',
         '--with-png',
         '--with-webp',
-        '--with-freetype'
+        '--with-freetype',
       ],
       enterprise: [
         '--with-pdo-mysql',
@@ -153,7 +152,7 @@ export class PhpPrecompiler {
         '--with-xsl',
         '--with-sodium',
         '--enable-intl',
-        '--with-tidy'
+        '--with-tidy',
       ],
       wordpress: [
         '--with-pdo-mysql',
@@ -163,7 +162,7 @@ export class PhpPrecompiler {
         '--with-png',
         '--with-webp',
         '--with-freetype',
-        '--enable-soap'
+        '--enable-soap',
       ],
       fullStack: [
         '--with-pdo-mysql',
@@ -186,8 +185,8 @@ export class PhpPrecompiler {
         '--with-tidy',
         '--enable-dba',
         '--with-enchant',
-        '--with-snmp'
-      ]
+        '--with-snmp',
+      ],
     }
   }
 
@@ -196,9 +195,11 @@ export class PhpPrecompiler {
 
     if (currentPlatform === 'darwin') {
       this.setupMacOSEnvironment()
-    } else if (currentPlatform === 'linux') {
+    }
+    else if (currentPlatform === 'linux') {
       this.setupLinuxEnvironment()
-    } else if (currentPlatform === 'win32') {
+    }
+    else if (currentPlatform === 'win32') {
       this.setupWindowsEnvironment()
     }
   }
@@ -208,7 +209,7 @@ export class PhpPrecompiler {
     this.env = {
       CC: 'clang',
       CXX: 'clang++',
-      CPP: 'clang -E'
+      CPP: 'clang -E',
     }
   }
 
@@ -217,7 +218,7 @@ export class PhpPrecompiler {
     this.env = {
       CC: 'gcc',
       CXX: 'g++',
-      CPP: 'gcc -E'
+      CPP: 'gcc -E',
     }
   }
 
@@ -290,7 +291,7 @@ export class PhpPrecompiler {
       'api-only': this.extensions.base,
       'enterprise': [...this.extensions.base, ...this.extensions.enterprise!],
       'wordpress': [...this.extensions.base, ...this.extensions.wordpress!],
-      'full-stack': [...this.extensions.base, ...this.extensions.fullStack!]
+      'full-stack': [...this.extensions.base, ...this.extensions.fullStack!],
     }
 
     return configExtensions[this.config.config].join(' ')
@@ -316,25 +317,27 @@ export class PhpPrecompiler {
       try {
         execSync(`curl -L -k -o "${tarballPath}" "${tarballUrl}"`, {
           stdio: 'inherit',
-          cwd: this.config.buildDir
+          cwd: this.config.buildDir,
         })
-      } catch (curlError) {
+      }
+      catch (curlError) {
         // Fallback to wget if curl fails
         const wgetPath = `${process.env.HOME}/.local/gnu.org/wget/v1.25.0/bin/wget`
         execSync(`"${wgetPath}" --no-check-certificate -O "${tarballPath}" "${tarballUrl}"`, {
           stdio: 'inherit',
-          cwd: this.config.buildDir
+          cwd: this.config.buildDir,
         })
       }
 
       logUniqueMessage('Extracting PHP source...')
       execSync(`tar -xzf php.tar.gz`, {
         stdio: 'inherit',
-        cwd: this.config.buildDir
+        cwd: this.config.buildDir,
       })
 
       return phpSourceDir
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Failed to download PHP source: ${error}`)
     }
   }
@@ -359,14 +362,15 @@ export class PhpPrecompiler {
       execSync('./buildconf --force', {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: { ...process.env, ...this.env }
+        env: { ...process.env, ...this.env },
       })
-    } catch (error) {
+    }
+    catch (error) {
       logUniqueMessage('⚠️ buildconf --force failed, trying without --force')
       execSync('./buildconf', {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: { ...process.env, ...this.env }
+        env: { ...process.env, ...this.env },
       })
     }
   }
@@ -408,7 +412,7 @@ export class PhpPrecompiler {
       '--with-openssl',
       '--with-zip',
       '--with-zlib',
-      ...extensions.split(' ')
+      ...extensions.split(' '),
     ]
 
     // Platform-specific dependency paths
@@ -417,16 +421,16 @@ export class PhpPrecompiler {
       // macOS: Use Homebrew paths if available, otherwise system paths
       const brewPrefix = '/opt/homebrew'
       const brewPrefixIntel = '/usr/local'
-      
+
       // Helper function to find Homebrew or system paths
       const findLibPath = (libName: string): string | null => {
         const paths = [
           `${brewPrefix}/opt/${libName}`,
           `${brewPrefixIntel}/opt/${libName}`,
           `/usr/local/opt/${libName}`,
-          `/usr/local`
+          `/usr/local`,
         ]
-        
+
         for (const path of paths) {
           if (existsSync(path)) {
             return path
@@ -434,34 +438,39 @@ export class PhpPrecompiler {
         }
         return null
       }
-      
+
       // Add explicit paths for dependencies that need them
       const iconvPath = findLibPath('libiconv')
       if (iconvPath) {
         baseArgs.push(`--with-iconv=${iconvPath}`)
-      } else {
+      }
+      else {
         baseArgs.push('--with-iconv')
       }
-      
+
       const gettextPath = findLibPath('gettext')
       if (gettextPath) {
         baseArgs.push(`--with-gettext=${gettextPath}`)
-      } else {
+      }
+      else {
         baseArgs.push('--with-gettext')
       }
-      
+
       const bz2Path = findLibPath('bzip2')
       if (bz2Path) {
         baseArgs.push(`--with-bz2=${bz2Path}`)
-      } else {
+      }
+      else {
         // Try system bz2
         if (existsSync('/usr/lib/libbz2.dylib') || existsSync('/usr/local/lib/libbz2.dylib')) {
           baseArgs.push('--with-bz2')
-        } else {
+        }
+        else {
           baseArgs.push('--without-bz2')
         }
       }
-    } else {
+    }
+    else {
       // Linux: Use standard flags
       baseArgs.push('--with-iconv', '--with-bz2', '--with-gettext')
     }
@@ -483,7 +492,7 @@ export class PhpPrecompiler {
         throw new Error('HOME environment variable must be set for macOS builds')
       }
       const launchpadLibs = `${homeDir}/.local`
-      
+
       // Use existing environment variables from Launchpad
       if (process.env.PKG_CONFIG_PATH) {
         configureEnv.PKG_CONFIG_PATH = process.env.PKG_CONFIG_PATH
@@ -495,13 +504,15 @@ export class PhpPrecompiler {
         // Add resolver library for DNS functions on macOS
         const baseFlags = process.env.LDFLAGS.trim()
         configureEnv.LDFLAGS = `${baseFlags} -lresolv`
-      } else {
+      }
+      else {
         configureEnv.LDFLAGS = '-lresolv'
       }
       if (process.env.DYLD_LIBRARY_PATH) {
         configureEnv.DYLD_LIBRARY_PATH = process.env.DYLD_LIBRARY_PATH
       }
-    } else {
+    }
+    else {
       // Linux: Use standard pkg-config paths
       configureEnv.PKG_CONFIG_PATH = '/usr/lib/pkgconfig:/usr/share/pkgconfig:/usr/local/lib/pkgconfig'
       configureEnv.CPPFLAGS = '-I/usr/include -I/usr/local/include'
@@ -512,26 +523,28 @@ export class PhpPrecompiler {
       execSync(`./configure ${baseArgs.join(' ')}`, {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: configureEnv
+        env: configureEnv,
       })
-      
+
       // Verify that extensions were actually configured
       logUniqueMessage('Verifying configured extensions...')
       try {
         const makefileContent = fs.readFileSync(join(phpSourceDir, 'Makefile'), 'utf-8')
         const essentialExts = ['mbstring', 'iconv', 'filter', 'ctype', 'tokenizer', 'session', 'fileinfo', 'opcache', 'dom', 'xml']
         const missingExts = essentialExts.filter(ext => !makefileContent.includes(ext))
-        
+
         if (missingExts.length > 0) {
           logUniqueMessage(`⚠️ Warning: Some extensions may not be configured: ${missingExts.join(', ')}`)
-        } else {
+        }
+        else {
           logUniqueMessage('✅ All essential extensions appear to be configured')
         }
-      } catch (verifyError) {
+      }
+      catch (verifyError) {
         logUniqueMessage('⚠️ Could not verify extension configuration')
       }
-      
-    } catch (error) {
+    }
+    catch (error) {
       // Show config.log on failure
       try {
         const configLog = join(phpSourceDir, 'config.log')
@@ -539,7 +552,8 @@ export class PhpPrecompiler {
           logUniqueMessage('❌ Configure failed. Config.log contents:')
           execSync(`tail -n 100 config.log`, { stdio: 'inherit', cwd: phpSourceDir })
         }
-      } catch {}
+      }
+      catch {}
       throw new Error(`Configure failed: ${error}`)
     }
   }
@@ -555,9 +569,10 @@ export class PhpPrecompiler {
       execSync(`make -j${jobs}`, {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: { ...process.env, ...this.env }
+        env: { ...process.env, ...this.env },
       })
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Build failed: ${error}`)
     }
   }
@@ -569,9 +584,10 @@ export class PhpPrecompiler {
       execSync('make install', {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: { ...process.env, ...this.env }
+        env: { ...process.env, ...this.env },
       })
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Install failed: ${error}`)
     }
   }
@@ -594,7 +610,8 @@ export class PhpPrecompiler {
       const binaryPath = join(this.config.outputDir, this.getBinaryName())
       logUniqueMessage(`PHP build completed successfully: ${binaryPath}`)
       return binaryPath
-    } catch (error) {
+    }
+    catch (error) {
       logUniqueMessage(`❌ PHP build failed: ${error}`)
       throw error
     }

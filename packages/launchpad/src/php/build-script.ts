@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
 
-import { join } from 'node:path'
-import { platform, arch, homedir } from 'node:os'
+import type { PhpBuildConfig } from './precompiler'
 import { existsSync, mkdirSync } from 'node:fs'
-import { PhpPrecompiler, type PhpBuildConfig } from './precompiler'
-import { BuildDependencyManager } from './build-dependencies'
+import { arch, platform } from 'node:os'
+import { join } from 'node:path'
 import { logUniqueMessage } from '../logging'
+import { BuildDependencyManager } from './build-dependencies'
+import { PhpPrecompiler } from './precompiler'
 
 interface BuildOptions {
   version?: string
@@ -67,7 +68,7 @@ async function main(): Promise<void> {
     platform: (options.platform as any) || platform(),
     arch: (options.arch as any) || (arch() === 'arm64' ? 'arm64' : 'x86_64'),
     buildDir: options.buildDir || join(process.cwd(), 'build'),
-    outputDir: options.outputDir || join(process.cwd(), 'binaries')
+    outputDir: options.outputDir || join(process.cwd(), 'binaries'),
   }
 
   logUniqueMessage('PHP Precompilation Build Script')
@@ -90,7 +91,8 @@ async function main(): Promise<void> {
       logUniqueMessage('Installing build dependencies...')
       const depManager = new BuildDependencyManager()
       await depManager.installBuildDependencies()
-    } else {
+    }
+    else {
       logUniqueMessage('Skipping dependency installation')
     }
 
@@ -104,8 +106,8 @@ async function main(): Promise<void> {
 
     // Test the binary
     await testPhpBinary(binaryPath)
-
-  } catch (error) {
+  }
+  catch (error) {
     logUniqueMessage('❌ PHP build failed!')
     logUniqueMessage(error instanceof Error ? error.message : String(error))
     process.exit(1)
@@ -126,13 +128,13 @@ async function testPhpBinary(binaryPath: string): Promise<void> {
     logUniqueMessage('Testing PHP binary...')
     const version = execSync(`"${phpBinary}" --version`, { encoding: 'utf8' })
     logUniqueMessage(`PHP Version: ${version.split('\n')[0]}`)
-    
+
     const modules = execSync(`"${phpBinary}" -m`, { encoding: 'utf8' })
     const moduleList = modules.split('\n').filter(m => m.trim() && !m.startsWith('['))
     logUniqueMessage(`Loaded modules (${moduleList.length}): ${moduleList.slice(0, 10).join(', ')}${moduleList.length > 10 ? '...' : ''}`)
-
-  } catch (error) {
-    logUniqueMessage('⚠️ Failed to test PHP binary: ' + String(error))
+  }
+  catch (error) {
+    logUniqueMessage(`⚠️ Failed to test PHP binary: ${String(error)}`)
   }
 }
 

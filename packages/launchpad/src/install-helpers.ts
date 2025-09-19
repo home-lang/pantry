@@ -113,7 +113,7 @@ export async function createShims(packageDir: string, installPath: string, domai
               for (const libDir of depLibDirs) {
                 if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
                   libraryPaths.push(libDir)
-                  
+
                   // Special handling for ncurses - check for specific library files
                   if (entry.name.includes('ncurses') || entry.name.includes('invisible-island.net')) {
                     const ncursesLibs = ['libncurses.dylib', 'libncursesw.dylib', 'libncurses.6.dylib', 'libncursesw.6.dylib']
@@ -418,16 +418,39 @@ exec "${binaryPath}" "$@"
             const officialBunxBinPath = path.join(officialBinDir, 'bunx')
 
             // Remove existing symlinks if they exist
-            if (fs.existsSync(officialBunBinPath)) {
-              fs.unlinkSync(officialBunBinPath)
+            try {
+              if (fs.existsSync(officialBunBinPath)) {
+                fs.unlinkSync(officialBunBinPath)
+              }
             }
-            if (fs.existsSync(officialBunxBinPath)) {
-              fs.unlinkSync(officialBunxBinPath)
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Warning: Could not remove existing bun symlink: ${error instanceof Error ? error.message : String(error)}`)
+              }
+            }
+
+            try {
+              if (fs.existsSync(officialBunxBinPath)) {
+                fs.unlinkSync(officialBunxBinPath)
+              }
+            }
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Warning: Could not remove existing bunx symlink: ${error instanceof Error ? error.message : String(error)}`)
+              }
             }
 
             // Create symlinks to the actual binaries
-            fs.symlinkSync(binaryPath, officialBunBinPath)
-            fs.symlinkSync(officialBunBinPath, officialBunxBinPath)
+            try {
+              fs.symlinkSync(binaryPath, officialBunBinPath)
+              // Create bunx as a symlink to the actual bun binary (not to the bun symlink)
+              fs.symlinkSync(binaryPath, officialBunxBinPath)
+            }
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Warning: Could not create Bun symlinks: ${error instanceof Error ? error.message : String(error)}`)
+              }
+            }
 
             // Create a node symlink to bun to handle packages that expect node
             // Only create if no node binary/shim already exists (avoids conflict with actual Node.js)

@@ -95,12 +95,12 @@ async function ensureShellIntegrationInstalled(): Promise<void> {
       const timeoutPromise = new Promise<void>((_, reject) => {
         setTimeout(() => reject(new Error('Shell integration timeout')), 5000)
       })
-      
+
       const integrationPromise = (async () => {
         const { default: integrate } = await import('../dev/integrate')
         await integrate('install', { dryrun: false })
       })()
-      
+
       await Promise.race([integrationPromise, timeoutPromise])
     }
   }
@@ -145,7 +145,7 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
       console.log('✅ All specified packages were already installed globally')
     }
   }
-  
+
   // Force exit after successful completion to prevent hanging
   if (process.env.LAUNCHPAD_CLI_MODE === '1') {
     process.exit(0)
@@ -374,11 +374,11 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
     const excludedDeps = (config as any).excludeDependencies || []
     const globalExcludedDeps = (config as any).excludeGlobalDependencies || []
     const phpExcludedDeps = (config.services?.php as any)?.excludeDependencies || []
-    
+
     const allExcludedDeps = new Set([
       ...excludedDeps,
-      ...globalExcludedDeps, 
-      ...phpExcludedDeps
+      ...globalExcludedDeps,
+      ...phpExcludedDeps,
     ])
 
     // Always install PHP dependencies by default - they are runtime dependencies, not build dependencies
@@ -398,7 +398,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
           name = name.replace(/[~^<>=].*$/, '')
           return name
         }).filter(Boolean)
-        
+
         if (phpDeps.length > 0) {
           const before = filteredPackages.length
           filteredPackages = filteredPackages.filter(pkg => !allExcludedDeps.has(pkg))
@@ -437,7 +437,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
         console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies \x1B[3m\x1B[2m(${results.length} binaries)\x1B[0m`)
       else console.log('✅ All global dependencies were already installed')
     }
-    
+
     // Force exit after successful completion to prevent hanging
     if (process.env.LAUNCHPAD_CLI_MODE === '1') {
       process.exit(0)
@@ -546,7 +546,7 @@ const command: Command = {
           console.log('⚠️  No binaries were installed')
         }
       }
-      
+
       // Force exit after successful completion to prevent hanging
       if (process.env.LAUNCHPAD_CLI_MODE === '1') {
         process.exit(0)

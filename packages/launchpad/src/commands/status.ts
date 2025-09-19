@@ -29,7 +29,7 @@ const cmd: Command = {
   description: 'Show service status',
   async run({ argv, options }): Promise<number> {
     // Prefer options with argv fallback
-    interface Opts { service?: string; format?: 'table' | 'json' | 'simple' }
+    interface Opts { service?: string, format?: 'table' | 'json' | 'simple' }
     const o = (options ?? {}) as Opts
     const { service: parsedService, opts } = parse(argv)
     const service = typeof o.service === 'string' ? o.service : parsedService

@@ -20,14 +20,13 @@ function getConfig(): BuildConfig {
     platform: process.env.TARGET_PLATFORM || 'darwin',
     arch: process.env.TARGET_ARCH || 'arm64',
     buildDir: process.env.BUILD_DIR || '/tmp/php-build',
-    outputDir: process.env.OUTPUT_DIR || './binaries'
+    outputDir: process.env.OUTPUT_DIR || './binaries',
   }
 }
 
 function log(message: string): void {
   console.log(`🔧 ${message}`)
 }
-
 
 function downloadPhpSource(config: BuildConfig): string {
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
@@ -58,17 +57,18 @@ function downloadPhpSource(config: BuildConfig): string {
     // macOS/Linux: Use curl (available by default)
     execSync(`curl -L -k -o "${tarballPath}" "${tarballUrl}"`, {
       stdio: 'inherit',
-      cwd: config.buildDir
+      cwd: config.buildDir,
     })
 
     log('Extracting PHP source...')
     execSync(`tar -xzf php.tar.gz`, {
       stdio: 'inherit',
-      cwd: config.buildDir
+      cwd: config.buildDir,
     })
 
     return phpSourceDir
-  } catch (error) {
+  }
+  catch (error) {
     throw new Error(`Failed to download PHP source: ${error}`)
   }
 }
@@ -91,7 +91,8 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   let vsVersion = 'vs16' // Default for PHP 8.0-8.3
   if (majorMinor === '7.4') {
     vsVersion = 'vc15'
-  } else if (majorMinor === '8.4') {
+  }
+  else if (majorMinor === '8.4') {
     vsVersion = 'vs17'
   }
 
@@ -105,16 +106,16 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
     // Try archives folder with Thread Safe
     `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-Win32-${vsVersion}-x64.zip`,
     // Try archives folder with Non-Thread Safe
-    `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-nts-Win32-${vsVersion}-x64.zip`
+    `https://windows.php.net/downloads/releases/archives/php-${config.phpVersion}-nts-Win32-${vsVersion}-x64.zip`,
   ]
 
   // Try to get the releases.json to find latest patch version if needed
-  let latestPatchVersion: string | undefined = undefined
+  let latestPatchVersion: string | undefined
   try {
     log('Checking for available Windows PHP versions...')
     execSync(
       `powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://windows.php.net/downloads/releases/releases.json' -OutFile '${config.buildDir}/releases.json'"`,
-      { stdio: 'pipe', encoding: 'utf8' }
+      { stdio: 'pipe', encoding: 'utf8' },
     )
 
     // Read the releases.json file if it was downloaded successfully
@@ -124,7 +125,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
         const releasesJson = JSON.parse(releasesJsonText)
         // Find latest version with same major.minor
         const matchingVersions = Object.keys(releasesJson)
-          .filter(v => v.startsWith(majorMinor + '.'))
+          .filter(v => v.startsWith(`${majorMinor}.`))
           .sort((a, b) => releasesJson[b].date.localeCompare(releasesJson[a].date))
 
         if (matchingVersions.length > 0) {
@@ -133,11 +134,13 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
           // Add the latest patch version URL to our try list
           urlsToTry.push(`https://windows.php.net/downloads/releases/php-${latestPatchVersion}-Win32-${vsVersion}-x64.zip`)
         }
-      } catch (e) {
+      }
+      catch (e) {
         log(`Error parsing releases.json: ${e}`)
       }
     }
-  } catch (e) {
+  }
+  catch (e) {
     log(`Could not fetch releases.json: ${e}`)
   }
 
@@ -151,7 +154,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
     try {
       execSync(`powershell -Command "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '${url}' -OutFile '${zipPath}'"`, {
         stdio: 'inherit',
-        cwd: config.buildDir
+        cwd: config.buildDir,
       })
 
       log('Extracting Windows PHP binary...')
@@ -159,12 +162,12 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
       // Extract the ZIP file
       execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${phpSourceDir}' -Force"`, {
         stdio: 'inherit',
-        cwd: config.buildDir
+        cwd: config.buildDir,
       })
 
       // Copy the extracted PHP to our install directory
       execSync(`powershell -Command "Copy-Item -Path '${phpSourceDir}\\*' -Destination '${installPrefix}' -Recurse -Force"`, {
-        stdio: 'inherit'
+        stdio: 'inherit',
       })
 
       // Ensure php.exe is in the bin directory
@@ -173,7 +176,7 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
 
       if (existsSync(phpExePath)) {
         execSync(`powershell -Command "Copy-Item -Path '${phpExePath}' -Destination '${targetPhpExePath}' -Force"`, {
-          stdio: 'inherit'
+          stdio: 'inherit',
         })
       }
 
@@ -193,7 +196,8 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
       downloadSuccess = true
       usedUrl = url
       break
-    } catch (error) {
+    }
+    catch (error) {
       log(`Failed to download from ${url}: ${error}`)
     }
   }
@@ -201,7 +205,8 @@ async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   if (downloadSuccess) {
     log(`✅ Windows PHP binary downloaded and extracted successfully from ${usedUrl}`)
     return phpSourceDir
-  } else {
+  }
+  else {
     log(`Failed to download Windows PHP binary from any source`)
     log('Creating fallback minimal PHP structure (ONLY USED WHEN DOWNLOAD FAILS)')
 
@@ -265,26 +270,26 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
     '--with-sqlite3',
     '--disable-dtrace',
     '--without-ndbm',
-    '--without-gdbm'
+    '--without-gdbm',
   ]
 
   // Use Launchpad libraries without hardcoded paths - rely on PKG_CONFIG_PATH and environment
   const dependencyArgs = [
-    '--with-curl',      // Will use PKG_CONFIG_PATH to find curl
-    '--with-ffi',       // Will use PKG_CONFIG_PATH to find libffi
-    '--with-gettext',   // Will use PKG_CONFIG_PATH to find gettext
-    '--with-gmp',       // Will use PKG_CONFIG_PATH to find gmp
-    '--with-openssl',   // Will use PKG_CONFIG_PATH to find openssl
-    '--with-sodium',    // Will use PKG_CONFIG_PATH to find sodium
-    '--with-xsl',       // Will use PKG_CONFIG_PATH to find xsl
-    '--with-zlib',      // Will use PKG_CONFIG_PATH to find zlib
-    '--with-bz2'        // Will use PKG_CONFIG_PATH to find bz2
+    '--with-curl', // Will use PKG_CONFIG_PATH to find curl
+    '--with-ffi', // Will use PKG_CONFIG_PATH to find libffi
+    '--with-gettext', // Will use PKG_CONFIG_PATH to find gettext
+    '--with-gmp', // Will use PKG_CONFIG_PATH to find gmp
+    '--with-openssl', // Will use PKG_CONFIG_PATH to find openssl
+    '--with-sodium', // Will use PKG_CONFIG_PATH to find sodium
+    '--with-xsl', // Will use PKG_CONFIG_PATH to find xsl
+    '--with-zlib', // Will use PKG_CONFIG_PATH to find zlib
+    '--with-bz2', // Will use PKG_CONFIG_PATH to find bz2
   ]
 
   // Platform-specific dependency paths
   const platformDependencyArgs = []
   if (config.platform === 'darwin') {
-    platformDependencyArgs.push('--with-iconv')  // Will use PKG_CONFIG_PATH to find iconv
+    platformDependencyArgs.push('--with-iconv') // Will use PKG_CONFIG_PATH to find iconv
   }
 
   // Platform-specific arguments
@@ -297,9 +302,10 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       '--with-libedit',
       '--with-zip',
       '--enable-dtrace',
-      '--with-ldap-sasl'
+      '--with-ldap-sasl',
     ]
-  } else if (config.platform === 'linux') {
+  }
+  else if (config.platform === 'linux') {
     return [
       ...baseArgs,
       ...dependencyArgs,
@@ -308,7 +314,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       '--with-readline',
       '--without-zip',
       '--without-iconv',
-      '--without-ldap-sasl'
+      '--without-ldap-sasl',
     ]
   }
 
@@ -346,18 +352,18 @@ function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): st
     '--with-sqlite3',
     '--with-zlib',
     '--without-gettext', // Disable gettext to avoid libintl.h dependency
-    '--without-iconv',   // Disable iconv to avoid compatibility issues
+    '--without-iconv', // Disable iconv to avoid compatibility issues
     '--disable-dtrace',
     '--without-ndbm',
     '--without-gdbm',
-    '--without-ldap-sasl'
+    '--without-ldap-sasl',
   ]
 
   // Add database-specific extensions based on config
   if (config.config.includes('mysql') || config.config.includes('laravel')) {
     ciArgs.push(
       '--with-pdo-mysql',
-      '--with-mysqli'
+      '--with-mysqli',
     )
   }
 
@@ -366,30 +372,33 @@ function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): st
     if (config.platform === 'darwin') {
       // macOS might have PostgreSQL via Homebrew or system
       ciArgs.push('--with-pdo-pgsql')
-    } else if (config.platform === 'linux') {
+    }
+    else if (config.platform === 'linux') {
       // Ubuntu/Linux typically has libpq-dev available
       ciArgs.push('--with-pdo-pgsql')
-    } else {
+    }
+    else {
       ciArgs.push('--without-pgsql')
     }
   }
 
   // Add essential extensions that work with system libraries
   ciArgs.push(
-    '--with-curl',    // Try system curl
+    '--with-curl', // Try system curl
     '--with-openssl', // Try system OpenSSL
-    '--with-zip'      // Enable ZIP support
+    '--with-zip', // Enable ZIP support
   )
 
   // Platform-specific arguments for CI
   if (config.platform === 'darwin') {
     ciArgs.push(
       '--with-kerberos',
-      '--with-libedit'
+      '--with-libedit',
     )
-  } else if (config.platform === 'linux') {
+  }
+  else if (config.platform === 'linux') {
     ciArgs.push(
-      '--with-readline'
+      '--with-readline',
     )
   }
 
@@ -409,7 +418,7 @@ function createWindowsPhpIni(phpDir: string, config: BuildConfig): void {
   // Check main directory for php_*.dll files
   if (existsSync(mainDir)) {
     const mainFiles = readdirSync(mainDir).filter((file: string) =>
-      file.startsWith('php_') && file.endsWith('.dll')
+      file.startsWith('php_') && file.endsWith('.dll'),
     )
     extensions.push(...mainFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
   }
@@ -417,15 +426,23 @@ function createWindowsPhpIni(phpDir: string, config: BuildConfig): void {
   // Check ext directory for php_*.dll files
   if (existsSync(extDir)) {
     const extFiles = readdirSync(extDir).filter((file: string) =>
-      file.startsWith('php_') && file.endsWith('.dll')
+      file.startsWith('php_') && file.endsWith('.dll'),
     )
     extensions.push(...extFiles.map((file: string) => file.replace('php_', '').replace('.dll', '')))
   }
 
   // Essential extensions that should always be enabled (Windows-compatible)
   const essentialExtensions = [
-    'mbstring', 'fileinfo', 'curl', 'openssl', 'zip', 'ftp',
-    'sockets', 'exif', 'bz2', 'gettext'
+    'mbstring',
+    'fileinfo',
+    'curl',
+    'openssl',
+    'zip',
+    'ftp',
+    'sockets',
+    'exif',
+    'bz2',
+    'gettext',
   ]
 
   extensions.push(...essentialExtensions)
@@ -494,8 +511,8 @@ ${essentialExtensions
 
 ; Enable additional available extensions (excluding problematic ones)
 ${extensions
-  .filter(ext => !essentialExtensions.includes(ext) &&
-    !['opcache', 'pdo_firebird', 'snmp', 'pcntl', 'posix'].includes(ext))
+  .filter(ext => !essentialExtensions.includes(ext)
+    && !['opcache', 'pdo_firebird', 'snmp', 'pcntl', 'posix'].includes(ext))
   .map(ext => `extension=${ext}`)
   .join('\n')}
 
@@ -805,7 +822,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnu.org/m4/v1.4.20/bin`,
     `${launchpadRoot}/gnu.org/bison/v3.8.2/bin`,
     `${launchpadRoot}/gnu.org/automake/v1.18.1/bin`,
-    `${launchpadRoot}/freedesktop.org/pkg-config/v0.29.2/bin`
+    `${launchpadRoot}/freedesktop.org/pkg-config/v0.29.2/bin`,
   ]
 
   buildEnv.PATH = `${launchpadBinPaths.join(':')}:${buildEnv.PATH}`
@@ -826,15 +843,15 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`,
     `${launchpadRoot}/sqlite.org/v3.47.2/lib/pkgconfig`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`,
-    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib/pkgconfig`
+    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib/pkgconfig`,
   ]
 
   // Completely exclude libstdcxx and gcc paths on Linux
   if (config.platform === 'linux') {
     pkgConfigPaths = pkgConfigPaths.filter(path =>
-      !path.includes('libstdcxx') &&
-      !path.includes('gcc') &&
-      !path.includes('gnu.org/gcc')
+      !path.includes('libstdcxx')
+      && !path.includes('gcc')
+      && !path.includes('gnu.org/gcc'),
     )
   }
 
@@ -856,15 +873,15 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`,
     `${launchpadRoot}/sqlite.org/v3.47.2/lib`,
     `${launchpadRoot}/libzip.org/v1.11.4/lib`,
-    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib`
+    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib`,
   ]
 
   // Completely exclude libstdcxx and gcc paths on Linux
   if (config.platform === 'linux') {
     libPaths = libPaths.filter(path =>
-      !path.includes('libstdcxx') &&
-      !path.includes('gcc') &&
-      !path.includes('gnu.org/gcc')
+      !path.includes('libstdcxx')
+      && !path.includes('gcc')
+      && !path.includes('gnu.org/gcc'),
     )
   }
 
@@ -883,7 +900,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`,
     `${launchpadRoot}/sqlite.org/v3.47.2/include`,
     `${launchpadRoot}/libzip.org/v1.11.4/include`,
-    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/include`
+    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/include`,
   ]
 
   // Add iconv paths for macOS only (Linux uses system iconv)
@@ -905,7 +922,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
-  } else {
+  }
+  else {
     // Linux: Use standard system paths only, rely on shim scripts for dynamic library loading
     buildEnv.LDFLAGS += ` -Wl,-rpath,/usr/local/lib,-rpath,/usr/lib`
   }
@@ -918,16 +936,17 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     buildEnv.CXX = 'clang++'
     buildEnv.LD = '/usr/bin/ld'
     // Ensure we use system C++ standard library, not GCC's
-    buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -stdlib=libc++'
-    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '') + ' -stdlib=libc++'
-  } else if (config.platform === 'linux') {
+    buildEnv.CXXFLAGS = `${buildEnv.CXXFLAGS || ''} -stdlib=libc++`
+    buildEnv.LDFLAGS = `${buildEnv.LDFLAGS || ''} -stdlib=libc++`
+  }
+  else if (config.platform === 'linux') {
     buildEnv.CC = 'gcc'
     buildEnv.CXX = 'g++'
-    buildEnv.CFLAGS = (buildEnv.CFLAGS || '') + ' -O2 -fPIC'
-    buildEnv.CXXFLAGS = (buildEnv.CXXFLAGS || '') + ' -O2 -fPIC'
+    buildEnv.CFLAGS = `${buildEnv.CFLAGS || ''} -O2 -fPIC`
+    buildEnv.CXXFLAGS = `${buildEnv.CXXFLAGS || ''} -O2 -fPIC`
     // Force system libstdc++ and clear any cached paths
-    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '').replace(/-L[^\s]*gnu\.org\/gcc[^\s]*/g, '')
-    buildEnv.LDFLAGS = buildEnv.LDFLAGS.replace(/-L[^\s]*libstdcxx[^\s]*/g, '')
+    buildEnv.LDFLAGS = (buildEnv.LDFLAGS || '').replace(/-L\S*gnu\.org\/gcc\S*/g, '')
+    buildEnv.LDFLAGS = buildEnv.LDFLAGS.replace(/-L\S*libstdcxx\S*/g, '')
     // Set preprocessor to avoid traditional-cpp issues
     buildEnv.CPP = 'gcc -E'
     // Clear any environment variables that might contain gcc paths
@@ -940,7 +959,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   if (config.platform === 'linux') {
     try {
       execSync('rm -rf autom4te.cache config.cache', { cwd: phpSourceDir, stdio: 'ignore' })
-    } catch (e) {
+    }
+    catch (e) {
       // Ignore if cache files don't exist
     }
   }
@@ -971,14 +991,16 @@ exec "$@"
   const configurePath = join(phpSourceDir, 'configure')
   if (existsSync(configurePath)) {
     log('Found existing configure script, skipping buildconf')
-  } else {
+  }
+  else {
     try {
       execSync('./buildconf --force', {
         stdio: 'inherit',
         cwd: phpSourceDir,
-        env: buildEnv
+        env: buildEnv,
       })
-    } catch (error) {
+    }
+    catch (error) {
       log('buildconf failed, trying alternative approach...')
 
       // Try running autoconf directly with system m4
@@ -992,11 +1014,12 @@ exec "$@"
         execSync('autoconf', {
           stdio: 'inherit',
           cwd: phpSourceDir,
-          env: autoconfEnv
+          env: autoconfEnv,
         })
 
         log('Successfully generated configure script with autoconf')
-      } catch (autoconfError) {
+      }
+      catch (autoconfError) {
         log('autoconf also failed, trying to download pre-built configure...')
 
         // As a last resort, try to use a different PHP version or approach
@@ -1016,7 +1039,7 @@ exec "$@"
     configureArgs.push(
       '--with-zip',
       '--enable-dtrace',
-      '--with-ldap-sasl'
+      '--with-ldap-sasl',
     )
   }
 
@@ -1031,7 +1054,8 @@ exec "$@"
   // Check if Launchpad environment script exists, otherwise install dependencies first
   if (existsSync(buildEnvScript)) {
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
-  } else {
+  }
+  else {
     log('⚠️  Launchpad build-env.sh not found')
 
     // Check if we're in CI environment - skip Launchpad dependencies if system dependencies are available
@@ -1042,7 +1066,8 @@ exec "$@"
       try {
         execSync('which pkg-config && which autoconf && which bison', { stdio: 'pipe' })
         return true
-      } catch {
+      }
+      catch {
         return false
       }
     }
@@ -1064,19 +1089,20 @@ exec "$@"
             '/opt/homebrew/lib/pkgconfig',
             '/usr/local/lib/pkgconfig',
             '/usr/lib/pkgconfig',
-            buildEnv.PKG_CONFIG_PATH
+            buildEnv.PKG_CONFIG_PATH,
           ].filter(Boolean).join(':'),
           PATH: [
             '/opt/homebrew/bin',
             '/usr/local/bin',
-            buildEnv.PATH
-          ].filter(Boolean).join(':')
+            buildEnv.PATH,
+          ].filter(Boolean).join(':'),
         }
 
         configureCommand = `./configure ${configureArgs.join(' ')}`
         buildEnv = systemEnv
         useSystemDeps = true
-      } else {
+      }
+      else {
         log('⚠️  System dependencies not found - falling back to Launchpad installation')
       }
     }
@@ -1091,7 +1117,7 @@ exec "$@"
           LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
           LAUNCHPAD_NETWORK_MAX_CONCURRENT: '6', // Increase concurrent downloads
           LAUNCHPAD_CACHE_ENABLED: 'true', // Enable caching
-          CI: 'true' // Ensure CI mode
+          CI: 'true', // Ensure CI mode
         }
 
         // Install PHP dependencies with optimized CI settings
@@ -1100,25 +1126,26 @@ exec "$@"
           stdio: 'inherit',
           cwd: process.cwd(),
           timeout: 15 * 60 * 1000, // 15 minutes timeout
-          env: launchpadEnv
+          env: launchpadEnv,
         })
         log('✅ Launchpad dependencies installed successfully')
 
         // Now try to source the environment script
         if (existsSync(buildEnvScript)) {
           configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
-        } else {
+        }
+        else {
           log('Configuring PHP build...')
 
           // Force clean environment for Linux to prevent libstdc++ injection
           if (config.platform === 'linux') {
             // Clear any remaining gcc/libstdc++ references from environment
-            Object.keys(buildEnv).forEach(key => {
+            Object.keys(buildEnv).forEach((key) => {
               if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('gnu.org/gcc')) {
-                buildEnv[key] = buildEnv[key].replace(/[^\s]*gnu\.org\/gcc[^\s]*/g, '')
+                buildEnv[key] = buildEnv[key].replace(/\S*gnu\.org\/gcc\S*/g, '')
               }
               if (typeof buildEnv[key] === 'string' && buildEnv[key].includes('libstdcxx')) {
-                buildEnv[key] = buildEnv[key].replace(/[^\s]*libstdcxx[^\s]*/g, '')
+                buildEnv[key] = buildEnv[key].replace(/\S*libstdcxx\S*/g, '')
               }
             })
           }
@@ -1127,13 +1154,15 @@ exec "$@"
             // Use CI-specific configure for GitHub Actions
             const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
             configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
-          } else {
+          }
+          else {
             // Use standard configure for local builds
             const configureArgs = generateConfigureArgs(config, installPrefix)
             configureCommand = `./configure ${configureArgs.join(' ')}`
           }
         }
-      } catch (error) {
+      }
+      catch (error) {
         log('❌ Failed to install Launchpad dependencies, falling back to system libraries')
         const ciConfigureArgs = generateCIConfigureArgs(config, installPrefix)
         configureCommand = `./configure ${ciConfigureArgs.join(' ')}`
@@ -1173,7 +1202,7 @@ exec "$@"
   if (config.platform === 'darwin') {
     // macOS: Use chunked compilation to prevent hangs
     log('Using chunked compilation for macOS stability')
-    
+
     try {
       // First, try to build core components with shorter timeout
       log('Building core PHP components...')
@@ -1181,44 +1210,46 @@ exec "$@"
         stdio: 'inherit',
         cwd: phpSourceDir,
         env: buildEnv,
-        timeout: 10 * 60 * 1000 // 10 minutes for individual components
+        timeout: 10 * 60 * 1000, // 10 minutes for individual components
       })
-      
+
       log('Building Zend engine...')
       execSync('make -j1 libphp.la', {
         stdio: 'inherit',
         cwd: phpSourceDir,
         env: buildEnv,
-        timeout: 20 * 60 * 1000 // 20 minutes for Zend engine
+        timeout: 20 * 60 * 1000, // 20 minutes for Zend engine
       })
-      
+
       log('Building remaining components...')
       execSync('make -j1', {
         stdio: 'inherit',
         cwd: phpSourceDir,
         env: buildEnv,
-        timeout: 60 * 60 * 1000 // 60 minutes for remaining build
+        timeout: 60 * 60 * 1000, // 60 minutes for remaining build
       })
-    } catch (error) {
+    }
+    catch (error) {
       log('Chunked compilation failed, falling back to standard build with extended timeout...')
       // Fallback to standard build with very long timeout
       execSync('make -j1', {
         stdio: 'inherit',
         cwd: phpSourceDir,
         env: buildEnv,
-        timeout: 120 * 60 * 1000 // 2 hours timeout as last resort
+        timeout: 120 * 60 * 1000, // 2 hours timeout as last resort
       })
     }
-  } else {
+  }
+  else {
     // Linux/other platforms: Use parallel compilation
-    const maxJobs = Math.min(parseInt(jobs), 4) // Limit to 4 jobs max for stability
+    const maxJobs = Math.min(Number.parseInt(jobs), 4) // Limit to 4 jobs max for stability
     log(`Using ${maxJobs} parallel jobs for compilation`)
-    
+
     execSync(`make -j${maxJobs}`, {
       stdio: 'inherit',
       cwd: phpSourceDir,
       env: buildEnv,
-      timeout: 45 * 60 * 1000 // 45 minutes timeout
+      timeout: 45 * 60 * 1000, // 45 minutes timeout
     })
   }
 
@@ -1227,7 +1258,7 @@ exec "$@"
     stdio: 'inherit',
     cwd: phpSourceDir,
     env: buildEnv,
-    timeout: 15 * 60 * 1000 // 15 minutes timeout for install
+    timeout: 15 * 60 * 1000, // 15 minutes timeout for install
   })
 
   // Create php.ini for Unix builds to enable OPcache and other extensions
@@ -1242,7 +1273,7 @@ exec "$@"
     arch: config.arch,
     config: config.config,
     built_at: new Date().toISOString(),
-    build_approach: 'minimal'
+    build_approach: 'minimal',
   }
 
   writeFileSync(join(installPrefix, 'metadata.json'), JSON.stringify(metadata, null, 2))
@@ -1275,10 +1306,12 @@ exec "$@"
 
               if (dllFiles.length > 10) {
                 log('✅ PHP distribution contains expected DLL files')
-              } else {
+              }
+              else {
                 log('⚠️ PHP distribution contains fewer DLL files than expected')
               }
-            } catch (e) {
+            }
+            catch (e) {
               log(`Could not read bin directory: ${e}`)
             }
           }
@@ -1287,18 +1320,22 @@ exec "$@"
           try {
             execSync(`"${phpBinary}" --version`, { stdio: 'inherit' })
             log('✅ Windows PHP binary is executable in this environment')
-          } catch (error) {
+          }
+          catch (error) {
             log(`Note: PHP binary exists but is not executable in this environment`)
             log('This is expected in some CI environments and does not indicate a problem')
           }
-        } else {
+        }
+        else {
           log('⚠️ PHP binary is smaller than expected, might be a placeholder')
         }
-      } catch (error) {
+      }
+      catch (error) {
         log(`Could not check binary size: ${error}`)
       }
     }
-  } else {
+  }
+  else {
     const phpBinary = join(installPrefix, 'bin', 'php')
     if (existsSync(phpBinary)) {
       log('Testing PHP binary...')
@@ -1306,8 +1343,8 @@ exec "$@"
         stdio: 'inherit',
         env: {
           ...process.env,
-          ...buildEnv
-        }
+          ...buildEnv,
+        },
       })
     }
   }
@@ -1330,10 +1367,12 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     try {
       const libzipVersion = execSync('pkg-config --modversion libzip', { encoding: 'utf8' }).trim()
       log(`✅ libzip ${libzipVersion} detected`)
-    } catch (e) {
+    }
+    catch (e) {
       log('⚠️ libzip pkg-config not found, zip extension may fail')
     }
-  } catch (e) {
+  }
+  catch (e) {
     log('Warning: Could not install system packages, continuing with available libraries')
   }
 
@@ -1350,13 +1389,14 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     LDFLAGS: '',
     CPPFLAGS: '',
     LD_LIBRARY_PATH: '',
-    LIBRARY_PATH: ''
+    LIBRARY_PATH: '',
   }
 
   // Clear configure cache
   try {
     execSync('rm -rf autom4te.cache config.cache', { cwd: phpSourceDir, stdio: 'ignore' })
-  } catch (e) {
+  }
+  catch (e) {
     // Ignore if cache files don't exist
   }
 
@@ -1364,7 +1404,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   execSync('./buildconf --force', {
     cwd: phpSourceDir,
     env: buildEnv,
-    stdio: 'inherit'
+    stdio: 'inherit',
   })
 
   log('Configuring PHP with system libraries...')
@@ -1404,7 +1444,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     '--with-zlib',
     '--enable-opcache=shared',
     '--with-readline',
-    '--without-ldap-sasl'
+    '--without-ldap-sasl',
   ]
 
   // Try to configure with all critical extensions first
@@ -1413,7 +1453,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     '--with-zip',
     '--with-iconv',
     '--with-bz2',
-    '--with-gettext'
+    '--with-gettext',
   ]
 
   let configureSuccess = false
@@ -1422,10 +1462,11 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     execSync(`./configure ${fullConfigureArgs.join(' ')}`, {
       cwd: phpSourceDir,
       env: buildEnv,
-      stdio: 'inherit'
+      stdio: 'inherit',
     })
     configureSuccess = true
-  } catch (error) {
+  }
+  catch (error) {
     log('Full configure failed, trying individual extensions...')
 
     // Try with individual extensions to see which ones work
@@ -1436,7 +1477,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
       { flag: '--with-zip', name: 'zip' }, // Use --with-zip instead of --enable-zip
       { flag: '--with-iconv', name: 'iconv' },
       { flag: '--with-bz2', name: 'bz2' },
-      { flag: '--with-gettext', name: 'gettext' }
+      { flag: '--with-gettext', name: 'gettext' },
     ]
 
     for (const ext of extensionsToTest) {
@@ -1445,11 +1486,12 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
         execSync(`./configure ${testArgs.join(' ')}`, {
           cwd: phpSourceDir,
           env: buildEnv,
-          stdio: 'pipe'
+          stdio: 'pipe',
         })
         workingArgs.push(ext.flag)
         log(`✅ ${ext.name} extension: Available`)
-      } catch (e) {
+      }
+      catch (e) {
         log(`❌ ${ext.name} extension: Not available, skipping`)
       }
     }
@@ -1458,7 +1500,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     execSync(`./configure ${workingArgs.join(' ')}`, {
       cwd: phpSourceDir,
       env: buildEnv,
-      stdio: 'inherit'
+      stdio: 'inherit',
     })
     configureSuccess = true
   }
@@ -1469,14 +1511,14 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
 
   log('Configure completed successfully, building PHP...')
   const jobs = execSync('nproc 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
-  const maxJobs = Math.min(parseInt(jobs), 4) // Limit to 4 jobs max to prevent resource issues
+  const maxJobs = Math.min(Number.parseInt(jobs), 4) // Limit to 4 jobs max to prevent resource issues
   log(`Using ${maxJobs} parallel jobs for compilation`)
 
   execSync(`make -j${maxJobs}`, {
     cwd: phpSourceDir,
     env: buildEnv,
     stdio: 'inherit',
-    timeout: 45 * 60 * 1000 // 45 minutes timeout
+    timeout: 45 * 60 * 1000, // 45 minutes timeout
   })
 
   log('Installing PHP...')
@@ -1484,7 +1526,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     cwd: phpSourceDir,
     env: buildEnv,
     stdio: 'inherit',
-    timeout: 30 * 60 * 1000 // 30 minutes timeout for install
+    timeout: 30 * 60 * 1000, // 30 minutes timeout for install
   })
 
   // Create php.ini for Unix builds
@@ -1503,7 +1545,8 @@ async function main(): Promise<void> {
     await buildPhp(config)
 
     log('🎉 Build completed successfully!')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('❌ Build failed:', error)
     process.exit(1)
   }
