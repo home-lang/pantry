@@ -131,7 +131,11 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
   }
 
   await createGlobalBinarySymlinks(globalEnvDir)
-  if (!options.quiet && !options.noInteractive) {
+  // Skip shell integration in CI environments or if explicitly disabled
+  const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true' ||
+                                process.env.CI === 'true' ||
+                                process.env.GITHUB_ACTIONS === 'true'
+  if (!options.quiet && !options.noInteractive && !skipShellIntegration) {
     await ensureShellIntegrationInstalled()
     triggerShellGlobalRefresh()
   }

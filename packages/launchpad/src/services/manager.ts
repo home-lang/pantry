@@ -895,10 +895,12 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
         console.warn(`📦 Installing ${definition.displayName} package (${definition.packageDomain})...`)
       }
 
-      // Add shorter timeout to prevent hanging - 5 minutes should be enough
+      // Add timeout to prevent hanging - use longer timeout in CI environments
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      const timeoutMinutes = isCI ? 15 : 5 // 15 minutes for CI, 5 for local
       const installPromise = install([definition.packageDomain], installPath)
       const timeoutPromise = new Promise<boolean>((_, reject) => {
-        setTimeout(() => reject(new Error(`Package installation timeout after 5 minutes`)), 5 * 60 * 1000)
+        setTimeout(() => reject(new Error(`Package installation timeout after ${timeoutMinutes} minutes`)), timeoutMinutes * 60 * 1000)
       })
 
       await Promise.race([installPromise, timeoutPromise])

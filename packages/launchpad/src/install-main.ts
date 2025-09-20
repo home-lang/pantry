@@ -164,12 +164,15 @@ async function installInternal(packageList: PackageSpec[], installPath: string):
         packageName = parsed.name
 
         // Add timeout to individual package installation to prevent hangs
+        // Use longer timeout in CI environments
+        const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+        const timeoutMinutes = isCI ? 15 : 5 // 15 minutes for CI, 5 for local
         const installPromise = installPackage(packageName, pkg, installPath)
         const timeoutPromise = new Promise<string[]>((_, reject) => {
           setTimeout(() => {
-            console.warn(`⚠️  Package installation timeout after 5 minutes: ${pkg}`)
+            console.warn(`⚠️  Package installation timeout after ${timeoutMinutes} minutes: ${pkg}`)
             reject(new Error(`Package installation timeout: ${pkg}`))
-          }, 5 * 60 * 1000) // 5 minute timeout
+          }, timeoutMinutes * 60 * 1000)
         })
 
         const packageFiles = await Promise.race([installPromise, timeoutPromise])

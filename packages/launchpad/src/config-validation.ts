@@ -71,8 +71,12 @@ export function validateConfig(
   // Validate network configuration
   if (config.network) {
     if (config.network.timeout !== undefined) {
-      if (!Number.isInteger(config.network.timeout) || config.network.timeout < 1000 || config.network.timeout > 300000) {
-        errors.push('network.timeout must be an integer between 1000ms and 300000ms (5 minutes)')
+      // Allow longer timeouts in CI environments (up to 15 minutes)
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      const maxTimeout = isCI ? 900000 : 300000 // 15 minutes for CI, 5 minutes for local
+      if (!Number.isInteger(config.network.timeout) || config.network.timeout < 1000 || config.network.timeout > maxTimeout) {
+        const maxTimeoutText = isCI ? '900000ms (15 minutes)' : '300000ms (5 minutes)'
+        errors.push(`network.timeout must be an integer between 1000ms and ${maxTimeoutText}`)
       }
     }
     if (config.network.maxConcurrent !== undefined) {

@@ -1145,6 +1145,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
           LAUNCHPAD_NETWORK_MAX_CONCURRENT: '3', // Conservative for all environments
           LAUNCHPAD_CACHE_ENABLED: 'true',
           LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
+          LAUNCHPAD_SKIP_SHELL_INTEGRATION: 'true', // Skip shell integration in CI
+          LAUNCHPAD_NO_INTERACTIVE: 'true', // Disable interactive prompts
         }
 
         execSync('bun ./launchpad install php --deps-only', {
@@ -1383,6 +1385,8 @@ exec "$@"
         LAUNCHPAD_NETWORK_MAX_CONCURRENT: isCI ? '3' : '6', // More conservative in CI
         LAUNCHPAD_CACHE_ENABLED: 'true', // Enable caching
         LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
+        LAUNCHPAD_SKIP_SHELL_INTEGRATION: 'true', // Skip shell integration in CI
+        LAUNCHPAD_NO_INTERACTIVE: 'true', // Disable interactive prompts
       }
 
       // Install PHP dependencies
