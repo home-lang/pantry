@@ -1149,7 +1149,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
           LAUNCHPAD_NO_INTERACTIVE: 'true', // Disable interactive prompts
         }
 
-        execSync('bun ./launchpad install php --deps-only', {
+        execSync('bun ./launchpad install php --deps-only --quiet', {
           stdio: 'inherit',
           cwd: process.cwd(),
           timeout: 20 * 60 * 1000,

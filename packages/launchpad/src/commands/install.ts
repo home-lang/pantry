@@ -74,6 +74,15 @@ function triggerShellGlobalRefresh(): void {
 }
 
 async function ensureShellIntegrationInstalled(): Promise<void> {
+  // Skip shell integration entirely in CI environments
+  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || process.env.CONTINUOUS_INTEGRATION === 'true'
+  const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+
+  if (isCI || skipShellIntegration) {
+    console.log('✅ Skipping shell integration in CI environment')
+    return
+  }
+
   try {
     const home = homedir()
     const zshrc = path.join(process.env.ZDOTDIR || home, '.zshrc')
@@ -499,8 +508,14 @@ const command: Command = {
       if (basePath === defaultGlobalPath) {
         await createGlobalBinarySymlinks(basePath)
       }
-      await ensureShellIntegrationInstalled()
-      triggerShellGlobalRefresh()
+      // Skip shell integration in CI environments or if explicitly disabled
+      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true' ||
+                                    process.env.CI === 'true' ||
+                                    process.env.GITHUB_ACTIONS === 'true'
+      if (!skipShellIntegration) {
+        await ensureShellIntegrationInstalled()
+        triggerShellGlobalRefresh()
+      }
       if (!opts.quiet && opts.verbose && results.length > 0)
         results.forEach(f => console.log(`  ${f}`))
       return 0
@@ -539,8 +554,14 @@ const command: Command = {
       if (basePath === defaultGlobalPath) {
         await createGlobalBinarySymlinks(basePath)
       }
-      await ensureShellIntegrationInstalled()
-      triggerShellGlobalRefresh()
+      // Skip shell integration in CI environments or if explicitly disabled
+      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true' ||
+                                    process.env.CI === 'true' ||
+                                    process.env.GITHUB_ACTIONS === 'true'
+      if (!skipShellIntegration) {
+        await ensureShellIntegrationInstalled()
+        triggerShellGlobalRefresh()
+      }
       if (!opts.quiet) {
         if (results.length > 0) {
           console.log(`🎉 Successfully installed ${pkgs.join(', ')} \x1B[3m\x1B[2m(${results.length} ${results.length === 1 ? 'binary' : 'binaries'})\x1B[0m`)
