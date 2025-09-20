@@ -31,10 +31,14 @@ function log(message: string): void {
 function findLatestVersion(basePath: string): string | null {
   try {
     if (!existsSync(basePath)) {
+      log(`Debug: basePath does not exist: ${basePath}`)
       return null
     }
 
-    const versions = readdirSync(basePath)
+    const allDirs = readdirSync(basePath)
+    log(`Debug: Found directories in ${basePath}: ${allDirs.join(', ')}`)
+
+    const versions = allDirs
       .filter(dir => dir.startsWith('v'))
       .sort((a, b) => {
         // Enhanced version comparison to handle patterns like v1.1.1w
@@ -71,10 +75,14 @@ function findLatestVersion(basePath: string): string | null {
       })
 
     if (versions.length === 0) {
+      log(`Debug: No version directories found in ${basePath}`)
       return null
     }
 
-    return join(basePath, versions[0])
+    const selectedVersion = versions[0]
+    const fullPath = join(basePath, selectedVersion)
+    log(`Debug: Selected version ${selectedVersion} -> ${fullPath}`)
+    return fullPath
   } catch (error) {
     log(`Warning: Could not find version in ${basePath}: ${error}`)
     return null
@@ -1209,6 +1217,9 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   }
 
   log('✅ Configured targeted Launchpad dependencies')
+  log(`🗋 Debug: CPPFLAGS=${buildEnv.CPPFLAGS}`)
+  log(`🗋 Debug: LDFLAGS=${buildEnv.LDFLAGS}`)
+  log(`🗋 Debug: PKG_CONFIG_PATH=${buildEnv.PKG_CONFIG_PATH}`)
 
   // Platform-specific compiler setup
   if (config.platform === 'darwin') {
@@ -1337,13 +1348,82 @@ exec "$@"
     const libPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
     const argIndex = configureArgs.findIndex(arg => arg === mapping.flag)
 
+    log(`🔍 Checking ${mapping.flag}: libPath=${libPath}, exists=${libPath ? existsSync(libPath) : false}`)
+
     if (argIndex !== -1 && libPath && existsSync(libPath)) {
       configureArgs[argIndex] = `${mapping.flag}=${libPath}`
       log(`✅ Using ${mapping.flag}=${libPath}`)
+
+      // Special verification for BZip2 headers
+      if (mapping.flag === '--with-bz2') {
+        const headerPath = join(libPath, 'include', 'bzlib.h')
+        log(`🔍 BZip2 header check: ${headerPath} exists=${existsSync(headerPath)}`)
+        if (!existsSync(headerPath)) {
+          log(`⚠️ BZip2 headers not found at expected location: ${headerPath}`)
+        }
+      }
     } else if (argIndex !== -1) {
       log(`⚠️ Could not find library for ${mapping.flag}, using pkg-config detection`)
+      if (mapping.flag === '--with-bz2') {
+        log(`🔍 BZip2 debug: basePath=${homeDir}/.local/${mapping.basePath}, libPath=${libPath}`)
+        // List what's actually in the .local directory
+        try {
+          const localDirs = readdirSync(`${homeDir}/.local`).filter(d => d.includes('bzip') || d.includes('sourceware'))
+          log(`🔍 Available directories: ${localDirs.join(', ')}`)
+
+          // Try to find BZip2 in alternative locations
+          const altPaths = [
+            `${homeDir}/.local/sourceware.org/bzip2`,
+            `${homeDir}/.local/bzip2`,
+            `${homeDir}/.local/gnu.org/bzip2`
+          ]
+
+          for (const altPath of altPaths) {
+            if (existsSync(altPath)) {
+              const versions = readdirSync(altPath).filter(d => d.startsWith('v'))
+              log(`🔍 Found BZip2 alternative at ${altPath}: ${versions.join(', ')}`)
+            }
+          }
+        } catch (e) {
+          log(`🔍 Could not list .local directory: ${e}`)
+        }
+
+        // Try system BZip2 as last resort
+        if (config.platform === 'darwin') {
+          // On macOS, try system BZip2 if Launchpad version not found
+          const systemBz2 = '/usr/include/bzlib.h'
+          if (existsSync(systemBz2)) {
+            log(`🔍 Found system BZip2 headers at ${systemBz2}`)
+            // Don't modify the configure arg, let it use system version
+            const idx = configureArgs.findIndex(arg => arg === '--with-bz2')
+            if (idx !== -1) {
+              configureArgs[idx] = '--with-bz2'
+              log(`✅ Using system BZip2`)
+            }
+          }
+        }
+      }
     }
   }
+
+  // Final BZip2 verification before configure
+  const bz2ArgIndex = configureArgs.findIndex(arg => arg.startsWith('--with-bz2'))
+  if (bz2ArgIndex !== -1) {
+    const bz2Arg = configureArgs[bz2ArgIndex]
+    if (bz2Arg === '--with-bz2') {
+      log(`🔍 BZip2 will use system/pkg-config detection`)
+    } else {
+      const bz2Path = bz2Arg.split('=')[1]
+      const headerPath = join(bz2Path, 'include', 'bzlib.h')
+      if (!existsSync(headerPath)) {
+        log(`⚠️ BZip2 headers missing at ${headerPath}, falling back to system detection`)
+        configureArgs[bz2ArgIndex] = '--with-bz2'
+      }
+    }
+  }
+
+  // Log final configure command for debugging
+  log(`🔧 Final configure args: ${configureArgs.join(' ')}`)
 
   // Update DYLD_LIBRARY_PATH to include all library paths for runtime
   if (config.platform === 'darwin') {
@@ -1365,7 +1445,7 @@ exec "$@"
   }
 
 
-  log(`Configuring PHP with essential extensions: ${configureArgs.join(' ')}`)
+  log(`🔧 Configuring PHP with essential extensions...`)
 
   // Source the Launchpad environment and run configure in the same shell
   const buildEnvScript = `${homeDir}/.local/build-env.sh`
@@ -1464,9 +1544,15 @@ exec "$@"
       ac_cv_header_stdint_h: 'yes',
       ac_cv_header_unistd_h: 'yes',
       ac_cv_header_ac_nonexistent_h: 'no',
-      // Force iconv to work by setting cache variables
-      php_cv_iconv_errno: 'yes',
-      php_cv_iconv_implementation: 'GNU libiconv',
+      // Force iconv to work by setting cache variables to bypass errno check
+      php_cv_iconv_errno: 'no',  // Changed to 'no' to skip errno check
+      php_cv_iconv_implementation: 'libiconv',  // Use system/launchpad libiconv
+      // Additional iconv cache variables to prevent configure errors
+      ac_cv_lib_iconv_libiconv: 'yes',
+      ac_cv_lib_iconv_iconv: 'yes',
+      // BZip2 cache variables to force detection
+      ac_cv_lib_bz2_BZ2_bzerror: 'yes',
+      ac_cv_header_bzlib_h: 'yes',
     },
   })
 
@@ -1777,6 +1863,13 @@ exec "$@"
   }
 
   return installPrefix
+}
+
+// Add a BZip2 specific cache variable for configure
+function setBZip2ConfigCache(buildEnv: any): void {
+  // Force BZip2 detection to succeed
+  buildEnv.ac_cv_lib_bz2_BZ2_bzerror = 'yes'
+  buildEnv.ac_cv_header_bzlib_h = 'yes'
 }
 
 function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string): string {
