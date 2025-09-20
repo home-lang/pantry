@@ -64,52 +64,131 @@ function fixMacOSLibraryPaths(phpBinaryPath: string, homeDir: string): void {
     // Get the current library dependencies
     const otoolOutput = execSync(`otool -L "${phpBinaryPath}"`, { encoding: 'utf8' })
     log('Current library dependencies:')
-    log(otoolOutput)
+    log(`🔧 ${phpBinaryPath}:`)
+    otoolOutput.split('\n').forEach(line => {
+      if (line.trim() && !line.includes(phpBinaryPath)) {
+        log(`🔧 ${line.trim()}`)
+      }
+    })
 
-    // Find and fix problematic library paths
-    const librariesToFix = [
-      { name: 'ncurses', pattern: 'libncursesw.6.dylib', path: findLatestVersion(`${homeDir}/.local/invisible-island.net/ncurses`), lib: 'libncursesw.6.dylib' },
-      { name: 'readline', pattern: 'libreadline.8.', path: findLatestVersion(`${homeDir}/.local/gnu.org/readline`), lib: 'libreadline.8.3.dylib' }
+    // Comprehensive library mapping for all possible libraries used by PHP
+    const libraryMappings = [
+      { name: 'ncurses', patterns: ['libncursesw.6.dylib', 'libncurses.6.dylib'], basePath: 'invisible-island.net/ncurses' },
+      { name: 'readline', patterns: ['libreadline.8.3.dylib', 'libreadline.8.dylib'], basePath: 'gnu.org/readline' },
+      { name: 'libiconv', patterns: ['libiconv.2.dylib'], basePath: 'gnu.org/libiconv' },
+      { name: 'gettext', patterns: ['libintl.8.dylib'], basePath: 'gnu.org/gettext' },
+      { name: 'bz2', patterns: ['libbz2.1.0.8.dylib', 'libbz2.1.dylib'], basePath: 'sourceware.org/bzip2' },
+      { name: 'libxml2', patterns: ['libxml2.2.dylib'], basePath: 'gnome.org/libxml2' },
+      { name: 'openssl', patterns: ['libssl.1.1.dylib', 'libcrypto.1.1.dylib'], basePath: 'openssl.org' },
+      { name: 'sqlite', patterns: ['libsqlite3.3.50.4.dylib', 'libsqlite3.dylib'], basePath: 'sqlite.org' },
+      { name: 'zlib', patterns: ['libz.1.3.1.dylib', 'libz.1.dylib'], basePath: 'zlib.net' },
+      { name: 'curl', patterns: ['libcurl.4.dylib'], basePath: 'curl.se' },
+      { name: 'libffi', patterns: ['libffi.8.dylib'], basePath: 'sourceware.org/libffi' },
+      { name: 'libpng', patterns: ['libpng16.16.dylib'], basePath: 'libpng.org' },
+      { name: 'gmp', patterns: ['libgmp.10.dylib'], basePath: 'gnu.org/gmp' },
+      { name: 'icu', patterns: ['libicuio.73.2.dylib', 'libicui18n.73.2.dylib', 'libicuuc.73.2.dylib', 'libicudata.73.2.dylib'], basePath: 'unicode.org' },
+      { name: 'oniguruma', patterns: ['libonig.5.dylib'], basePath: 'github.com/kkos/oniguruma' },
+      { name: 'sodium', patterns: ['libsodium.23.dylib'], basePath: 'libsodium.org' },
+      { name: 'xslt', patterns: ['libxslt.1.dylib', 'libexslt.0.dylib'], basePath: 'gnome.org/libxslt' },
+      { name: 'zip', patterns: ['libzip.5.5.dylib'], basePath: 'libzip.org' }
     ]
 
     let fixedCount = 0
     const lines = otoolOutput.split('\n')
 
-    for (const library of librariesToFix) {
-      if (!library.path) {
-        log(`Warning: Could not find ${library.name} installation`)
-        continue
-      }
+    // First pass: Fix all @rpath references comprehensively
+    log('🔧 Checking for @rpath issues...')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      const rpathMatch = trimmed.match(/^@rpath\/(.+?)\s+\(/)
+      if (rpathMatch) {
+        const libPath = rpathMatch[1] // e.g., "gnu.org/gettext/v0.22.5/lib/libintl.8.dylib"
+        log(`🔧 Found @rpath reference: ${libPath}`)
 
-      const correctLib = join(library.path, 'lib', library.lib)
-      if (!existsSync(correctLib)) {
-        log(`Warning: ${library.name} library not found at ${correctLib}`)
-        continue
-      }
+        // Extract library filename from the path
+        const libFileName = libPath.split('/').pop()
+        if (!libFileName) continue
 
-      // Look for references that need fixing
-      for (const line of lines) {
-        const trimmed = line.trim()
-        if (trimmed.includes(library.pattern) && !trimmed.startsWith(correctLib)) {
-          // Extract the current path (first part before parentheses)
-          const match = trimmed.match(/^(.+?)\s+\(/)
-          if (match) {
-            const currentPath = match[1]
-            log(`Fixing ${library.name} path: ${currentPath} -> ${correctLib}`)
+        // Find the correct mapping based on the library filename
+        const mapping = libraryMappings.find(m =>
+          m.patterns.some(pattern => libFileName.includes(pattern.replace('.dylib', '')) || pattern === libFileName)
+        )
 
-            // Use install_name_tool to fix the path
-            execSync(`install_name_tool -change "${currentPath}" "${correctLib}" "${phpBinaryPath}"`, {
-              stdio: 'inherit'
-            })
-            fixedCount++
+        if (mapping) {
+          // Find the latest version of this library
+          const latestPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
+          if (latestPath) {
+            const correctLibPath = join(latestPath, 'lib', libFileName)
+            if (existsSync(correctLibPath)) {
+              log(`🔧 Fixing @rpath reference: @rpath/${libPath} -> ${correctLibPath}`)
+              try {
+                execSync(`install_name_tool -change "@rpath/${libPath}" "${correctLibPath}" "${phpBinaryPath}"`, {
+                  stdio: 'inherit'
+                })
+                fixedCount++
+              } catch (e) {
+                log(`🔧 Warning: Could not fix @rpath/${libPath}: ${e}`)
+              }
+            } else {
+              log(`🔧 Warning: Library not found at ${correctLibPath}`)
+            }
+          } else {
+            log(`🔧 Warning: Could not find ${mapping.name} installation`)
+          }
+        } else {
+          // Try generic search for unmapped libraries
+          try {
+            const findResult = execSync(`find ${homeDir}/.local -name "${libFileName}" -type f 2>/dev/null | head -1`, { encoding: 'utf8' }).trim()
+            if (findResult && existsSync(findResult)) {
+              log(`🔧 Fixing unmapped @rpath reference: @rpath/${libPath} -> ${findResult}`)
+              execSync(`install_name_tool -change "@rpath/${libPath}" "${findResult}" "${phpBinaryPath}"`, {
+                stdio: 'inherit'
+              })
+              fixedCount++
+            } else {
+              log(`🔧 Warning: Could not find library ${libFileName} in ${homeDir}/.local`)
+            }
+          } catch (e) {
+            log(`🔧 Warning: Search failed for ${libFileName}: ${e}`)
           }
         }
       }
     }
 
-    log(`✅ Fixed ${fixedCount} library paths for PHP binary`)
+    // Second pass: Fix any remaining direct references that aren't using correct paths
+    for (const mapping of libraryMappings) {
+      const latestPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
+      if (!latestPath) continue
+
+      for (const pattern of mapping.patterns) {
+        const correctLibPath = join(latestPath, 'lib', pattern)
+        if (!existsSync(correctLibPath)) continue
+
+        // Look for any references to this library that don't use the correct path
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (trimmed.includes(pattern) && !trimmed.startsWith(correctLibPath) && !trimmed.startsWith('@rpath/')) {
+            const match = trimmed.match(/^(.+?)\s+\(/)
+            if (match) {
+              const currentPath = match[1]
+              log(`🔧 Fixing ${mapping.name} path: ${currentPath} -> ${correctLibPath}`)
+              try {
+                execSync(`install_name_tool -change "${currentPath}" "${correctLibPath}" "${phpBinaryPath}"`, {
+                  stdio: 'inherit'
+                })
+                fixedCount++
+              } catch (e) {
+                log(`🔧 Warning: Could not fix ${currentPath}: ${e}`)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    log(`🔧 ✅ Fixed ${fixedCount} library paths for PHP binary`)
   } catch (error) {
-    log(`Warning: Could not fix library paths: ${error}`)
+    log(`🔧 Warning: Could not fix library paths: ${error}`)
   }
 }
 
@@ -1335,24 +1414,160 @@ exec "$@"
   if (config.platform === 'darwin') {
     const buildTimePhpBinary = join(phpSourceDir, 'sapi', 'cli', 'php')
     if (existsSync(buildTimePhpBinary)) {
-      log('Fixing library paths for build-time PHP binary...')
+      log('🔧 Fixing library paths for build-time PHP binary...')
       fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
+
+      // Verify the fix worked by testing the binary
+      try {
+        log('🔧 Verifying build-time PHP binary works...')
+        execSync(`"${buildTimePhpBinary}" --version`, {
+          stdio: 'pipe',
+          env: {
+            ...process.env,
+            DYLD_LIBRARY_PATH: libPaths.join(':'),
+            DYLD_FALLBACK_LIBRARY_PATH: libPaths.join(':')
+          }
+        })
+        log('🔧 ✅ Build-time PHP binary is working correctly')
+      } catch (error) {
+        log('🔧 ❌ Build-time PHP binary still has issues, attempting additional fixes...')
+
+        // Try additional comprehensive fixing
+        const otoolOutput = execSync(`otool -L "${buildTimePhpBinary}"`, { encoding: 'utf8' })
+        log('🔧 Current dependencies after first fix:')
+        log(otoolOutput)
+
+        // Apply fixes again in case some were missed
+        fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
+      }
+    }
+
+    // Also fix any other PHP binaries that might be used during install
+    const cgiBinary = join(phpSourceDir, 'sapi', 'cgi', 'php-cgi')
+    if (existsSync(cgiBinary)) {
+      log('🔧 Fixing library paths for build-time PHP CGI binary...')
+      fixMacOSLibraryPaths(cgiBinary, homeDir)
+    }
+
+    const fpmBinary = join(phpSourceDir, 'sapi', 'fpm', 'php-fpm')
+    if (existsSync(fpmBinary)) {
+      log('🔧 Fixing library paths for build-time PHP FPM binary...')
+      fixMacOSLibraryPaths(fpmBinary, homeDir)
     }
   }
 
-  log('Installing PHP...')
-  execSync('make install', {
-    stdio: 'inherit',
-    cwd: phpSourceDir,
-    env: buildEnv,
-    timeout: 15 * 60 * 1000, // 15 minutes timeout for install
-  })
+  log('🔧 Installing PHP...')
+  // Enhanced environment for make install to ensure library paths work
+  const installEnv = { ...buildEnv }
+  if (config.platform === 'darwin') {
+    // Make sure DYLD_LIBRARY_PATH includes all our library paths during install
+    installEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
+    installEnv.DYLD_FALLBACK_LIBRARY_PATH = libPaths.join(':')
+
+    // Also ensure that any PHP scripts run during installation can find libraries
+    const dynamicLibPaths = []
+    const bz2Path = findLatestVersion(`${homeDir}/.local/sourceware.org/bzip2`)
+    const gettextPath = findLatestVersion(`${homeDir}/.local/gnu.org/gettext`)
+    const iconvPath = findLatestVersion(`${homeDir}/.local/gnu.org/libiconv`)
+    const readlinePath = findLatestVersion(`${homeDir}/.local/gnu.org/readline`)
+
+    if (readlinePath) dynamicLibPaths.push(join(readlinePath, 'lib'))
+    if (iconvPath) dynamicLibPaths.push(join(iconvPath, 'lib'))
+    if (gettextPath) dynamicLibPaths.push(join(gettextPath, 'lib'))
+    if (bz2Path) dynamicLibPaths.push(join(bz2Path, 'lib'))
+
+    if (dynamicLibPaths.length > 0) {
+      const allLibPaths = [...libPaths, ...dynamicLibPaths]
+      installEnv.DYLD_LIBRARY_PATH = allLibPaths.join(':')
+      installEnv.DYLD_FALLBACK_LIBRARY_PATH = allLibPaths.join(':')
+      log(`🔧 Enhanced library paths for installation: ${installEnv.DYLD_LIBRARY_PATH}`)
+    }
+  }
+
+  try {
+    execSync('make install', {
+      stdio: 'inherit',
+      cwd: phpSourceDir,
+      env: installEnv,
+      timeout: 15 * 60 * 1000, // 15 minutes timeout for install
+    })
+  } catch (error) {
+    if (config.platform === 'darwin') {
+      log('🔧 ❌ Installation failed, checking build-time PHP binary again...')
+
+      const buildTimePhpBinary = join(phpSourceDir, 'sapi', 'cli', 'php')
+      if (existsSync(buildTimePhpBinary)) {
+        // Check what's wrong with the binary
+        try {
+          const otoolOutput = execSync(`otool -L "${buildTimePhpBinary}"`, { encoding: 'utf8' })
+          log('🔧 Build-time PHP binary dependencies:')
+          log(otoolOutput)
+
+          // Try one more comprehensive fix
+          log('🔧 Attempting final library path fix...')
+          fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
+
+          // Test the binary one more time
+          execSync(`"${buildTimePhpBinary}" --version`, {
+            stdio: 'inherit',
+            env: installEnv
+          })
+
+          log('🔧 Binary is now working, retrying installation...')
+          execSync('make install', {
+            stdio: 'inherit',
+            cwd: phpSourceDir,
+            env: installEnv,
+            timeout: 15 * 60 * 1000,
+          })
+        } catch (finalError) {
+          log(`🔧 Final installation attempt failed: ${finalError}`)
+          throw error
+        }
+      } else {
+        throw error
+      }
+    } else {
+      throw error
+    }
+  }
 
   // Fix library paths on macOS after installation
   if (config.platform === 'darwin') {
-    log('Fixing library paths for installed PHP binary...')
+    log('🔧 Fixing library paths for installed PHP binary...')
     const installedPhpBinary = join(installPrefix, 'bin', 'php')
-    fixMacOSLibraryPaths(installedPhpBinary, homeDir)
+    if (existsSync(installedPhpBinary)) {
+      fixMacOSLibraryPaths(installedPhpBinary, homeDir)
+
+      // Test the final installed binary
+      try {
+        log('🔧 Testing final installed PHP binary...')
+        execSync(`"${installedPhpBinary}" --version`, {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            DYLD_LIBRARY_PATH: '',
+            DYLD_FALLBACK_LIBRARY_PATH: ''
+          }
+        })
+        log('🔧 ✅ Final PHP binary is working correctly without environment variables')
+      } catch (error) {
+        log('🔧 ⚠️ Final PHP binary requires environment variables to work')
+      }
+    }
+
+    // Also fix other installed binaries
+    const installedCgiBinary = join(installPrefix, 'bin', 'php-cgi')
+    if (existsSync(installedCgiBinary)) {
+      log('🔧 Fixing library paths for installed PHP CGI binary...')
+      fixMacOSLibraryPaths(installedCgiBinary, homeDir)
+    }
+
+    const installedFpmBinary = join(installPrefix, 'sbin', 'php-fpm')
+    if (existsSync(installedFpmBinary)) {
+      log('🔧 Fixing library paths for installed PHP FPM binary...')
+      fixMacOSLibraryPaths(installedFpmBinary, homeDir)
+    }
   }
 
   // Create php.ini for Unix builds to enable OPcache and other extensions
