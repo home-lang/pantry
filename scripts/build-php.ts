@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path, { join } from 'node:path'
 import process from 'node:process'
 
 interface BuildConfig {
@@ -37,10 +37,37 @@ function findLatestVersion(basePath: string): string | null {
     const versions = readdirSync(basePath)
       .filter(dir => dir.startsWith('v'))
       .sort((a, b) => {
-        // Simple version comparison - extract version numbers and compare
+        // Enhanced version comparison to handle patterns like v1.1.1w
         const aVersion = a.slice(1) // Remove 'v' prefix
         const bVersion = b.slice(1) // Remove 'v' prefix
-        return bVersion.localeCompare(aVersion, undefined, { numeric: true, sensitivity: 'base' })
+
+        // Split on dots and handle letters at the end
+        const aParts = aVersion.split('.').map(part => {
+          const match = part.match(/^(\d+)(.*)$/)
+          return match ? { num: parseInt(match[1]), suffix: match[2] } : { num: 0, suffix: part }
+        })
+
+        const bParts = bVersion.split('.').map(part => {
+          const match = part.match(/^(\d+)(.*)$/)
+          return match ? { num: parseInt(match[1]), suffix: match[2] } : { num: 0, suffix: part }
+        })
+
+        // Compare each part
+        const maxLen = Math.max(aParts.length, bParts.length)
+        for (let i = 0; i < maxLen; i++) {
+          const aPart = aParts[i] || { num: 0, suffix: '' }
+          const bPart = bParts[i] || { num: 0, suffix: '' }
+
+          if (aPart.num !== bPart.num) {
+            return bPart.num - aPart.num // Descending order
+          }
+
+          if (aPart.suffix !== bPart.suffix) {
+            return bPart.suffix.localeCompare(aPart.suffix)
+          }
+        }
+
+        return 0
       })
 
     if (versions.length === 0) {
@@ -90,7 +117,7 @@ function fixMacOSLibraryPaths(phpBinaryPath: string, homeDir: string): void {
       { name: 'oniguruma', patterns: ['libonig.5.dylib'], basePath: 'github.com/kkos/oniguruma' },
       { name: 'sodium', patterns: ['libsodium.23.dylib'], basePath: 'libsodium.org' },
       { name: 'xslt', patterns: ['libxslt.1.dylib', 'libexslt.0.dylib'], basePath: 'gnome.org/libxslt' },
-      { name: 'zip', patterns: ['libzip.5.5.dylib'], basePath: 'libzip.org' }
+      { name: 'zip', patterns: ['libzip.5.5.dylib', 'libzip.5.dylib'], basePath: 'libzip.org' }
     ]
 
     let fixedCount = 0
@@ -111,7 +138,11 @@ function fixMacOSLibraryPaths(phpBinaryPath: string, homeDir: string): void {
 
         // Find the correct mapping based on the library filename
         const mapping = libraryMappings.find(m =>
-          m.patterns.some(pattern => libFileName.includes(pattern.replace('.dylib', '')) || pattern === libFileName)
+          m.patterns.some(pattern => {
+            const basePattern = pattern.replace('.dylib', '')
+            return libFileName.includes(basePattern) || pattern === libFileName ||
+                   libFileName.match(new RegExp(basePattern.replace(/\d+/g, '\\d+')))
+          })
         )
 
         if (mapping) {
@@ -187,6 +218,16 @@ function fixMacOSLibraryPaths(phpBinaryPath: string, homeDir: string): void {
     }
 
     log(`🔧 ✅ Fixed ${fixedCount} library paths for PHP binary`)
+
+    // Try to fix mprotect permission issues on macOS
+    try {
+      log('🔧 Fixing potential mprotect permission issues...')
+      execSync(`codesign --remove-signature "${phpBinaryPath}" 2>/dev/null || true`, { stdio: 'pipe' })
+      execSync(`codesign --force --deep --sign - "${phpBinaryPath}" 2>/dev/null || true`, { stdio: 'pipe' })
+      log('🔧 ✅ Applied code signing to prevent mprotect errors')
+    } catch (signError) {
+      log('🔧 Note: Could not apply code signing (may require developer tools)')
+    }
   } catch (error) {
     log(`🔧 Warning: Could not fix library paths: ${error}`)
   }
@@ -239,7 +280,9 @@ function downloadPhpSource(config: BuildConfig): string {
 
 async function downloadWindowsPhpBinary(config: BuildConfig): Promise<string> {
   const binaryName = `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`
-  const installPrefix = join(process.cwd(), config.outputDir, binaryName)
+  // Resolve output directory to handle both relative and absolute paths
+  const outputDir = path.isAbsolute(config.outputDir) ? config.outputDir : join(process.cwd(), config.outputDir)
+  const installPrefix = join(outputDir, binaryName)
 
   // Create the directory structure that the main build function expects
   const phpSourceDir = join(config.buildDir, `php-${config.phpVersion}`)
@@ -954,7 +997,12 @@ openssl.capath =
 }
 
 async function buildPhp(config: BuildConfig): Promise<string> {
-  const installPrefix = join(process.cwd(), config.outputDir, `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`)
+  // Resolve output directory to handle both relative and absolute paths
+  const outputDir = path.isAbsolute(config.outputDir) ? config.outputDir : join(process.cwd(), config.outputDir)
+  const installPrefix = join(outputDir, `php-${config.phpVersion}-${config.platform}-${config.arch}-${config.config}`)
+
+  // Ensure output directory exists early
+  mkdirSync(outputDir, { recursive: true })
 
   // For Windows, use pre-compiled binaries
   if (config.platform === 'win32') {
@@ -992,23 +1040,30 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   buildEnv.PATH = `${launchpadBinPaths.join(':')}:${buildEnv.PATH}`
 
   // Set up targeted PKG_CONFIG_PATH for essential libraries (exclude libstdcxx on Linux)
-  let pkgConfigPaths = [
-    `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib/pkgconfig`,
-    `${launchpadRoot}/zlib.net/v1.3.1/lib/pkgconfig`,
-    `${launchpadRoot}/curl.se/v8.15.0/lib/pkgconfig`,
-    `${launchpadRoot}/openssl.org/v1.1.1w/lib/pkgconfig`,
-    `${launchpadRoot}/gnu.org/readline/v8.3.0/lib/pkgconfig`,
-    `${launchpadRoot}/gnu.org/gettext/v0.22.5/lib/pkgconfig`,
-    `${launchpadRoot}/gnome.org/libxml2/v2.14.5/lib/pkgconfig`,
-    `${launchpadRoot}/postgresql.org/v17.2.0/lib/pkgconfig`,
-    `${launchpadRoot}/gnu.org/gmp/v6.3.0/lib/pkgconfig`,
-    `${launchpadRoot}/libsodium.org/v1.0.18/lib/pkgconfig`,
-    `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib/pkgconfig`,
-    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib/pkgconfig`,
-    `${launchpadRoot}/sqlite.org/v3.47.2/lib/pkgconfig`,
-    `${launchpadRoot}/libzip.org/v1.11.4/lib/pkgconfig`,
-    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib/pkgconfig`,
+  // Build pkg-config paths dynamically using latest versions
+  const libraryBasePaths = [
+    'sourceware.org/bzip2',
+    'zlib.net',
+    'curl.se',
+    'openssl.org',
+    'gnu.org/readline',
+    'gnu.org/gettext',
+    'gnome.org/libxml2',
+    'postgresql.org',
+    'gnu.org/gmp',
+    'libsodium.org',
+    'sourceware.org/libffi',
+    'gnome.org/libxslt',
+    'sqlite.org',
+    'libzip.org',
+    'invisible-island.net/ncurses',
   ]
+
+  let pkgConfigPaths = libraryBasePaths
+    .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+    .filter(path => path && existsSync(path))
+    .map(path => join(path, 'lib', 'pkgconfig'))
+    .filter(path => existsSync(path))
 
   // Completely exclude libstdcxx and gcc paths on Linux
   if (config.platform === 'linux') {
@@ -1022,23 +1077,12 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
 
   // Set up targeted library and include paths (exclude libstdcxx on Linux)
-  let libPaths = [
-    `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/lib`,
-    `${launchpadRoot}/zlib.net/v1.3.1/lib`,
-    `${launchpadRoot}/curl.se/v8.15.0/lib`,
-    `${launchpadRoot}/openssl.org/v1.1.1w/lib`,
-    `${launchpadRoot}/gnu.org/readline/v8.3.0/lib`,
-    `${launchpadRoot}/gnu.org/gettext/v0.22.5/lib`,
-    `${launchpadRoot}/gnome.org/libxml2/v2.14.5/lib`,
-    `${launchpadRoot}/postgresql.org/v17.2.0/lib`,
-    `${launchpadRoot}/gnu.org/gmp/v6.3.0/lib`,
-    `${launchpadRoot}/libsodium.org/v1.0.18/lib`,
-    `${launchpadRoot}/sourceware.org/libffi/v3.5.2/lib`,
-    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/lib`,
-    `${launchpadRoot}/sqlite.org/v3.47.2/lib`,
-    `${launchpadRoot}/libzip.org/v1.11.4/lib`,
-    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/lib`,
-  ]
+  // Build library paths dynamically using latest versions
+  let libPaths = libraryBasePaths
+    .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+    .filter(path => path && existsSync(path))
+    .map(path => join(path, 'lib'))
+    .filter(path => existsSync(path))
 
   // Completely exclude libstdcxx and gcc paths on Linux
   if (config.platform === 'linux') {
@@ -1049,31 +1093,90 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     )
   }
 
-  const includePaths = [
-    `${launchpadRoot}/sourceware.org/bzip2/v1.0.8/include`,
-    `${launchpadRoot}/zlib.net/v1.3.1/include`,
-    `${launchpadRoot}/curl.se/v8.15.0/include`,
-    `${launchpadRoot}/openssl.org/v1.1.1w/include`,
-    `${launchpadRoot}/gnu.org/readline/v8.3.0/include`,
-    `${launchpadRoot}/gnu.org/gettext/v0.22.5/include`,
-    `${launchpadRoot}/gnome.org/libxml2/v2.14.5/include`,
-    `${launchpadRoot}/postgresql.org/v17.2.0/include`,
-    `${launchpadRoot}/gnu.org/gmp/v6.3.0/include`,
-    `${launchpadRoot}/libsodium.org/v1.0.18/include`,
-    `${launchpadRoot}/sourceware.org/libffi/v3.5.2/include`,
-    `${launchpadRoot}/gnome.org/libxslt/v1.1.43/include`,
-    `${launchpadRoot}/sqlite.org/v3.47.2/include`,
-    `${launchpadRoot}/libzip.org/v1.11.4/include`,
-    `${launchpadRoot}/invisible-island.net/ncurses/v6.5.0/include`,
-  ]
+  // Build include paths dynamically using latest versions
+  const includePaths = libraryBasePaths
+    .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+    .filter(path => path && existsSync(path))
+    .map(path => join(path, 'include'))
+    .filter(path => existsSync(path))
 
   // Add iconv paths for macOS only (Linux uses system iconv)
   if (config.platform === 'darwin') {
-    libPaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib`)
-    includePaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/include`)
-    pkgConfigPaths.push(`${launchpadRoot}/gnu.org/libiconv/v1.18.0/lib/pkgconfig`)
-    // Re-apply filtering with iconv added (no libstdcxx on macOS)
-    buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
+    const iconvPath = findLatestVersion(`${launchpadRoot}/gnu.org/libiconv`)
+    if (iconvPath && existsSync(iconvPath)) {
+      const iconvLibPath = join(iconvPath, 'lib')
+      const iconvIncPath = join(iconvPath, 'include')
+      const iconvPkgPath = join(iconvPath, 'lib', 'pkgconfig')
+
+      if (existsSync(iconvLibPath)) libPaths.push(iconvLibPath)
+      if (existsSync(iconvIncPath)) includePaths.push(iconvIncPath)
+      if (existsSync(iconvPkgPath)) pkgConfigPaths.push(iconvPkgPath)
+    }
+  }
+
+  buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
+
+  // Validate that we have essential libraries before proceeding
+  const essentialLibraries = ['openssl', 'zlib', 'curl']
+  const missingLibraries = essentialLibraries.filter(lib => {
+    const basePath = libraryBasePaths.find(path => path.includes(lib))
+    if (!basePath) return true
+    const latestPath = findLatestVersion(`${launchpadRoot}/${basePath}`)
+    return !latestPath || !existsSync(join(latestPath, 'lib'))
+  })
+
+  if (missingLibraries.length > 0) {
+    log(`❌ Missing essential libraries: ${missingLibraries.join(', ')}`)
+    log('Installing missing dependencies via Launchpad...')
+
+    try {
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+
+      const launchpadEnv = {
+        ...process.env,
+        LAUNCHPAD_SHOW_ENV_MESSAGES: 'false',
+        LAUNCHPAD_SHELL_ACTIVATION_MESSAGE: '',
+        LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
+        LAUNCHPAD_NETWORK_MAX_CONCURRENT: isCI ? '3' : '6',
+        LAUNCHPAD_CACHE_ENABLED: 'true',
+        LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
+      }
+
+      execSync('bun ./launchpad install php --deps-only', {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        timeout: 20 * 60 * 1000,
+        env: launchpadEnv,
+      })
+
+      log('✅ Dependencies installed successfully. Rechecking...')
+
+      // Re-build paths after installation
+      const updatedPkgConfigPaths = libraryBasePaths
+        .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+        .filter(path => path && existsSync(path))
+        .map(path => join(path, 'lib', 'pkgconfig'))
+        .filter(path => existsSync(path))
+
+      const updatedLibPaths = libraryBasePaths
+        .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+        .filter(path => path && existsSync(path))
+        .map(path => join(path, 'lib'))
+        .filter(path => existsSync(path))
+
+      // Update the environment with new paths
+      buildEnv.PKG_CONFIG_PATH = updatedPkgConfigPaths.join(':')
+      buildEnv.LDFLAGS = updatedLibPaths.map(path => `-L${path}`).join(' ')
+
+      log(`✅ Updated paths after dependency installation`)
+      log(`✅ Found ${updatedLibPaths.length} library paths and ${includePaths.length} include paths`)
+    } catch (error) {
+      log(`⚠️ Could not auto-install dependencies: ${error}`)
+      log('Please ensure all required dependencies are installed via Launchpad.')
+      log('Run: bun ./launchpad install php --deps-only')
+    }
+  } else {
+    log(`✅ Found ${libPaths.length} library paths and ${includePaths.length} include paths`)
   }
 
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
@@ -1081,16 +1184,18 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   // Add platform-specific linker flags with dynamic rpaths
   if (config.platform === 'darwin') {
-    // macOS: Use dynamic rpaths based on actual library locations
-    const rpathFlags = libPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
+    // macOS: Use dynamic rpaths based on actual library locations, removing duplicates
+    const uniqueLibPaths = [...new Set(libPaths)]
+    const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
     buildEnv.LDFLAGS += ` -lresolv ${rpathFlags} -Wl,-headerpad_max_install_names`
     // Set up runtime library path for macOS (build-time only)
-    buildEnv.DYLD_LIBRARY_PATH = libPaths.join(':')
+    buildEnv.DYLD_LIBRARY_PATH = uniqueLibPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
   }
   else {
-    // Linux: Use dynamic rpaths based on actual library locations
-    const rpathFlags = libPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
+    // Linux: Use dynamic rpaths based on actual library locations, removing duplicates
+    const uniqueLibPaths = [...new Set(libPaths)]
+    const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
     buildEnv.LDFLAGS += ` ${rpathFlags}`
   }
 
@@ -1211,50 +1316,43 @@ exec "$@"
 
   log('Using Launchpad-managed dependencies for all extensions')
 
-  // Find the latest installed versions dynamically for all dependencies
-  const bz2Path = findLatestVersion(`${homeDir}/.local/sourceware.org/bzip2`)
-  const gettextPath = findLatestVersion(`${homeDir}/.local/gnu.org/gettext`)
-  const iconvPath = findLatestVersion(`${homeDir}/.local/gnu.org/libiconv`)
-  const readlinePath = findLatestVersion(`${homeDir}/.local/gnu.org/readline`)
+  // Update configure args to use dynamic library paths
+  const libraryMappings = [
+    { flag: '--with-bz2', basePath: 'sourceware.org/bzip2' },
+    { flag: '--with-gettext', basePath: 'gnu.org/gettext' },
+    { flag: '--with-iconv', basePath: 'gnu.org/libiconv' },
+    { flag: '--with-readline', basePath: 'gnu.org/readline' },
+  ]
 
-  // Update DYLD_LIBRARY_PATH to include dynamically detected library paths for runtime
-  if (config.platform === 'darwin') {
-    const dynamicLibPaths = []
-    if (readlinePath) dynamicLibPaths.push(join(readlinePath, 'lib'))
-    if (iconvPath) dynamicLibPaths.push(join(iconvPath, 'lib'))
-    if (gettextPath) dynamicLibPaths.push(join(gettextPath, 'lib'))
-    if (bz2Path) dynamicLibPaths.push(join(bz2Path, 'lib'))
+  for (const mapping of libraryMappings) {
+    const libPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
+    const argIndex = configureArgs.findIndex(arg => arg === mapping.flag)
 
-    // Add dynamic paths to existing library paths
-    if (dynamicLibPaths.length > 0) {
-      const currentDyld = buildEnv.DYLD_LIBRARY_PATH || ''
-      const allPaths = currentDyld ? [currentDyld, ...dynamicLibPaths] : dynamicLibPaths
-      buildEnv.DYLD_LIBRARY_PATH = allPaths.join(':')
-      log(`Updated DYLD_LIBRARY_PATH with dynamic library paths: ${buildEnv.DYLD_LIBRARY_PATH}`)
+    if (argIndex !== -1 && libPath && existsSync(libPath)) {
+      configureArgs[argIndex] = `${mapping.flag}=${libPath}`
+      log(`✅ Using ${mapping.flag}=${libPath}`)
+    } else if (argIndex !== -1) {
+      log(`⚠️ Could not find library for ${mapping.flag}, using pkg-config detection`)
     }
   }
 
-  // Replace generic dependency flags with Launchpad-specific paths for libraries without pkg-config
-  const bz2Index = configureArgs.findIndex(arg => arg === '--with-bz2')
-  if (bz2Index !== -1 && bz2Path) {
-    configureArgs[bz2Index] = `--with-bz2=${bz2Path}`
-  }
+  // Update DYLD_LIBRARY_PATH to include all library paths for runtime
+  if (config.platform === 'darwin') {
+    const allLibPaths = [...libPaths]
 
-  const gettextIndex = configureArgs.findIndex(arg => arg === '--with-gettext')
-  if (gettextIndex !== -1 && gettextPath) {
-    configureArgs[gettextIndex] = `--with-gettext=${gettextPath}`
-  }
+    // Add any additional library paths from the mappings
+    for (const mapping of libraryMappings) {
+      const libPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
+      if (libPath && existsSync(libPath)) {
+        const libDir = join(libPath, 'lib')
+        if (existsSync(libDir) && !allLibPaths.includes(libDir)) {
+          allLibPaths.push(libDir)
+        }
+      }
+    }
 
-  // Use Launchpad iconv with proper path
-  const iconvIndex = configureArgs.findIndex(arg => arg === '--with-iconv')
-  if (iconvIndex !== -1 && iconvPath) {
-    configureArgs[iconvIndex] = `--with-iconv=${iconvPath}`
-  }
-
-  // Use Launchpad readline with proper path
-  const readlineIndex = configureArgs.findIndex(arg => arg === '--with-readline')
-  if (readlineIndex !== -1 && readlinePath) {
-    configureArgs[readlineIndex] = `--with-readline=${readlinePath}`
+    buildEnv.DYLD_LIBRARY_PATH = allLibPaths.join(':')
+    log(`Updated DYLD_LIBRARY_PATH with all library paths: ${buildEnv.DYLD_LIBRARY_PATH}`)
   }
 
 
@@ -1663,6 +1761,12 @@ exec "$@"
 
 function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string): string {
   log('Building PHP with system libraries only (Linux)')
+
+  // Resolve output directory to handle both relative and absolute paths
+  const outputDir = path.isAbsolute(config.outputDir) ? config.outputDir : join(process.cwd(), config.outputDir)
+
+  // Ensure output directory exists early
+  mkdirSync(outputDir, { recursive: true })
 
   const phpSourceDir = downloadPhpSource(config)
   mkdirSync(installPrefix, { recursive: true })
