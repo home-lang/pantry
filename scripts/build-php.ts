@@ -1127,53 +1127,59 @@ async function buildPhp(config: BuildConfig): Promise<string> {
 
   if (missingLibraries.length > 0) {
     log(`❌ Missing essential libraries: ${missingLibraries.join(', ')}`)
-    log('Installing missing dependencies via Launchpad...')
 
-    try {
-      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
 
-      const launchpadEnv = {
-        ...process.env,
-        LAUNCHPAD_SHOW_ENV_MESSAGES: 'false',
-        LAUNCHPAD_SHELL_ACTIVATION_MESSAGE: '',
-        LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
-        LAUNCHPAD_NETWORK_MAX_CONCURRENT: isCI ? '3' : '6',
-        LAUNCHPAD_CACHE_ENABLED: 'true',
-        LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
+    if (isCI) {
+      log('⚠️ Running in CI environment - attempting to use system libraries for missing dependencies')
+      log('If this fails, consider pre-installing dependencies in the CI workflow')
+    } else {
+      log('Installing missing dependencies via Launchpad...')
+
+      try {
+        const launchpadEnv = {
+          ...process.env,
+          LAUNCHPAD_SHOW_ENV_MESSAGES: 'false',
+          LAUNCHPAD_SHELL_ACTIVATION_MESSAGE: '',
+          LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE: '',
+          LAUNCHPAD_NETWORK_MAX_CONCURRENT: '3', // Conservative for all environments
+          LAUNCHPAD_CACHE_ENABLED: 'true',
+          LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
+        }
+
+        execSync('bun ./launchpad install php --deps-only', {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+          timeout: 20 * 60 * 1000,
+          env: launchpadEnv,
+        })
+
+        log('✅ Dependencies installed successfully. Rechecking...')
+
+        // Re-build paths after installation
+        const updatedPkgConfigPaths = libraryBasePaths
+          .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+          .filter(path => path && existsSync(path))
+          .map(path => join(path, 'lib', 'pkgconfig'))
+          .filter(path => existsSync(path))
+
+        const updatedLibPaths = libraryBasePaths
+          .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+          .filter(path => path && existsSync(path))
+          .map(path => join(path, 'lib'))
+          .filter(path => existsSync(path))
+
+        // Update the environment with new paths
+        buildEnv.PKG_CONFIG_PATH = updatedPkgConfigPaths.join(':')
+        buildEnv.LDFLAGS = updatedLibPaths.map(path => `-L${path}`).join(' ')
+
+        log(`✅ Updated paths after dependency installation`)
+        log(`✅ Found ${updatedLibPaths.length} library paths and ${includePaths.length} include paths`)
+      } catch (error) {
+        log(`⚠️ Could not auto-install dependencies: ${error}`)
+        log('Please ensure all required dependencies are installed via Launchpad.')
+        log('Run: bun ./launchpad install php --deps-only')
       }
-
-      execSync('bun ./launchpad install php --deps-only', {
-        stdio: 'inherit',
-        cwd: process.cwd(),
-        timeout: 20 * 60 * 1000,
-        env: launchpadEnv,
-      })
-
-      log('✅ Dependencies installed successfully. Rechecking...')
-
-      // Re-build paths after installation
-      const updatedPkgConfigPaths = libraryBasePaths
-        .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
-        .filter(path => path && existsSync(path))
-        .map(path => join(path, 'lib', 'pkgconfig'))
-        .filter(path => existsSync(path))
-
-      const updatedLibPaths = libraryBasePaths
-        .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
-        .filter(path => path && existsSync(path))
-        .map(path => join(path, 'lib'))
-        .filter(path => existsSync(path))
-
-      // Update the environment with new paths
-      buildEnv.PKG_CONFIG_PATH = updatedPkgConfigPaths.join(':')
-      buildEnv.LDFLAGS = updatedLibPaths.map(path => `-L${path}`).join(' ')
-
-      log(`✅ Updated paths after dependency installation`)
-      log(`✅ Found ${updatedLibPaths.length} library paths and ${includePaths.length} include paths`)
-    } catch (error) {
-      log(`⚠️ Could not auto-install dependencies: ${error}`)
-      log('Please ensure all required dependencies are installed via Launchpad.')
-      log('Run: bun ./launchpad install php --deps-only')
     }
   } else {
     log(`✅ Found ${libPaths.length} library paths and ${includePaths.length} include paths`)
