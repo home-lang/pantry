@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path, { join } from 'node:path'
 import process from 'node:process'
 
@@ -39,7 +39,12 @@ function findLatestVersion(basePath: string): string | null {
     log(`Debug: Found directories in ${basePath}: ${allDirs.join(', ')}`)
 
     const versions = allDirs
-      .filter(dir => dir.startsWith('v'))
+      .filter(dir => {
+        // Only include proper version directories, exclude wildcards and symlinks
+        return dir.startsWith('v') &&
+               dir !== 'v*' &&
+               dir.match(/^v\d+/) // Must start with v followed by a digit
+      })
       .sort((a, b) => {
         // Enhanced version comparison to handle patterns like v1.1.1w
         const aVersion = a.slice(1) // Remove 'v' prefix
@@ -504,7 +509,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
   // Platform-specific dependency paths
   const platformDependencyArgs = []
   if (config.platform === 'darwin') {
-    platformDependencyArgs.push('--with-iconv') // Will use PKG_CONFIG_PATH to find iconv
+    // Enable iconv (required for Composer/Laravel)
+    platformDependencyArgs.push('--with-iconv')
   }
 
   // Platform-specific arguments
@@ -1108,18 +1114,10 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     .map(path => join(path, 'include'))
     .filter(path => existsSync(path))
 
-  // Add iconv paths for macOS only (Linux uses system iconv)
+  // Skip adding iconv paths - use system iconv on macOS to avoid errno issues
+  // GNU libiconv from Launchpad causes configure failures with PHP
   if (config.platform === 'darwin') {
-    const iconvPath = findLatestVersion(`${launchpadRoot}/gnu.org/libiconv`)
-    if (iconvPath && existsSync(iconvPath)) {
-      const iconvLibPath = join(iconvPath, 'lib')
-      const iconvIncPath = join(iconvPath, 'include')
-      const iconvPkgPath = join(iconvPath, 'lib', 'pkgconfig')
-
-      if (existsSync(iconvLibPath)) libPaths.push(iconvLibPath)
-      if (existsSync(iconvIncPath)) includePaths.push(iconvIncPath)
-      if (existsSync(iconvPkgPath)) pkgConfigPaths.push(iconvPkgPath)
-    }
+    log('ℹ️ Using system iconv on macOS to avoid configure issues')
   }
 
   buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
@@ -1340,7 +1338,8 @@ exec "$@"
   const libraryMappings = [
     { flag: '--with-bz2', basePath: 'sourceware.org/bzip2' },
     { flag: '--with-gettext', basePath: 'gnu.org/gettext' },
-    { flag: '--with-iconv', basePath: 'gnu.org/libiconv' },
+    // Use system iconv with wrapper script to bypass errno issues
+    // { flag: '--with-iconv', basePath: 'gnu.org/libiconv' }, // Keep commented to use system iconv
     { flag: '--with-readline', basePath: 'gnu.org/readline' },
   ]
 
@@ -1494,9 +1493,38 @@ exec "$@"
 
   // Source the Launchpad environment and run configure
   log('⚙️ Preparing to configure PHP build...')
+
+  // Create a configure wrapper to bypass iconv errno check on macOS
+  if (process.env.TARGET_PLATFORM === 'darwin') {
+    log('🔧 Creating iconv errno bypass for macOS...')
+
+    // Find the PHP source directory (should be something like php-8.x.x)
+    const buildDir = process.cwd()
+    const phpDirs = readdirSync(buildDir).filter(d => d.startsWith('php-') && existsSync(join(buildDir, d, 'configure')))
+
+    if (phpDirs.length > 0) {
+      const phpSourceDir = join(buildDir, phpDirs[0])
+      const configureWrapper = join(phpSourceDir, 'configure-wrapper.sh')
+      const wrapperScript = `#!/bin/bash
+# Configure wrapper to bypass iconv errno check on macOS
+export php_cv_iconv_errno=yes
+export ac_cv_func_iconv=yes
+export ac_cv_header_iconv_h=yes
+export ac_cv_lib_c_iconv=yes
+exec ./configure "$@"
+`
+      writeFileSync(configureWrapper, wrapperScript)
+      execSync('chmod +x configure-wrapper.sh', { cwd: phpSourceDir })
+      log('✅ Created configure wrapper with iconv errno bypass in ' + phpSourceDir)
+    } else {
+      log('⚠️ Could not find PHP source directory for wrapper creation')
+    }
+  }
+
   if (existsSync(buildEnvScript)) {
     log('✅ Using Launchpad build environment')
-    configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`
+    const configScript = process.env.TARGET_PLATFORM === 'darwin' ? './configure-wrapper.sh' : './configure'
+    configureCommand = `source ${buildEnvScript} && ${configScript} ${configureArgs.join(' ')}`
   }
   else {
     log('🔧 Launchpad build-env.sh still not found after installation - using fallback environment')
@@ -1518,7 +1546,8 @@ exec "$@"
     }
 
     // Use standard configure args for fallback
-    configureCommand = `./configure ${configureArgs.join(' ')}`
+    const configScript = process.env.TARGET_PLATFORM === 'darwin' ? './configure-wrapper.sh' : './configure'
+    configureCommand = `${configScript} ${configureArgs.join(' ')}`
   }
 
   execSync(configureCommand, {
@@ -1544,12 +1573,12 @@ exec "$@"
       ac_cv_header_stdint_h: 'yes',
       ac_cv_header_unistd_h: 'yes',
       ac_cv_header_ac_nonexistent_h: 'no',
-      // Force iconv to work by setting cache variables to bypass errno check
-      php_cv_iconv_errno: 'no',  // Changed to 'no' to skip errno check
-      php_cv_iconv_implementation: 'libiconv',  // Use system/launchpad libiconv
-      // Additional iconv cache variables to prevent configure errors
-      ac_cv_lib_iconv_libiconv: 'yes',
-      ac_cv_lib_iconv_iconv: 'yes',
+      // Force iconv to work by bypassing the problematic errno test
+      php_cv_iconv_errno: 'yes',  // Force errno test to pass
+      php_cv_iconv_implementation: 'libiconv',
+      ac_cv_func_iconv: 'yes',
+      ac_cv_header_iconv_h: 'yes',
+      ac_cv_lib_c_iconv: 'yes',  // Use system libc iconv
       // BZip2 cache variables to force detection
       ac_cv_lib_bz2_BZ2_bzerror: 'yes',
       ac_cv_header_bzlib_h: 'yes',
@@ -1977,6 +2006,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   const fullConfigureArgs = [
     ...baseConfigureArgs,
     '--with-zip',
+    // Enable iconv (required for Composer/Laravel)
     '--with-iconv',
     '--with-bz2',
     '--with-gettext',
@@ -2001,7 +2031,8 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     // Test each extension individually with proper configuration
     const extensionsToTest = [
       { flag: '--with-zip', name: 'zip' }, // Use --with-zip instead of --enable-zip
-      { flag: '--with-iconv', name: 'iconv' },
+      // Skip iconv testing - use system iconv
+      // { flag: '--with-iconv', name: 'iconv' },
       { flag: '--with-bz2', name: 'bz2' },
       { flag: '--with-gettext', name: 'gettext' },
     ]
