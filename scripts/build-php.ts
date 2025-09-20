@@ -1147,6 +1147,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
           LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
           LAUNCHPAD_SKIP_SHELL_INTEGRATION: 'true', // Skip shell integration in CI
           LAUNCHPAD_NO_INTERACTIVE: 'true', // Disable interactive prompts
+          LAUNCHPAD_CLI_MODE: '1', // Force exit after completion
         }
 
         execSync('bun ./launchpad install php --deps-only --quiet', {
@@ -1387,16 +1388,24 @@ exec "$@"
         LAUNCHPAD_VERBOSE: process.env.LAUNCHPAD_VERBOSE || 'false',
         LAUNCHPAD_SKIP_SHELL_INTEGRATION: 'true', // Skip shell integration in CI
         LAUNCHPAD_NO_INTERACTIVE: 'true', // Disable interactive prompts
+        LAUNCHPAD_CLI_MODE: '1', // Force exit after completion
       }
 
       // Install PHP dependencies
-      execSync('bun ./launchpad install php --deps-only', {
-        stdio: 'inherit',
-        cwd: process.cwd(),
-        timeout: 20 * 60 * 1000, // 20 minutes timeout
-        env: launchpadEnv,
-      })
-      log('✅ Launchpad dependencies installed successfully')
+      log('📦 Starting PHP dependency installation...')
+      try {
+        execSync('bun ./launchpad install php --deps-only', {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+          timeout: 20 * 60 * 1000, // 20 minutes timeout
+          env: launchpadEnv,
+        })
+        log('✅ Launchpad dependencies installed successfully')
+        log('➡️ Proceeding to PHP configuration phase...')
+      } catch (installError) {
+        log(`❌ Dependency installation process error: ${installError}`)
+        throw installError
+      }
     }
     catch (error) {
       throw new Error(`Failed to install PHP dependencies via Launchpad: ${error}`)
@@ -1404,6 +1413,7 @@ exec "$@"
   }
 
   // Source the Launchpad environment and run configure
+  log('⚙️ Preparing to configure PHP build...')
   if (existsSync(buildEnvScript)) {
     log('✅ Using Launchpad build environment')
     configureCommand = `source ${buildEnvScript} && ./configure ${configureArgs.join(' ')}`

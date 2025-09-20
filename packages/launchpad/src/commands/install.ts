@@ -518,6 +518,12 @@ const command: Command = {
       }
       if (!opts.quiet && opts.verbose && results.length > 0)
         results.forEach(f => console.log(`  ${f}`))
+
+      // Force exit in CI environments to prevent hanging
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      if (isCI) {
+        process.exit(0)
+      }
       return 0
     }
 
