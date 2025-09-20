@@ -192,11 +192,24 @@ jobs:
       - name: Create tarball (Unix)
         if: matrix.platform != 'win32'
         run: |
+          # Ensure binaries directory exists and check for builds
+          if [ ! -d "binaries" ]; then
+            echo "❌ Binaries directory not found"
+            ls -la
+            exit 1
+          fi
+
           cd binaries
           BINARY_NAME="php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
+
+          echo "🔍 Looking for binary directory: $BINARY_NAME"
+          ls -la
+
           if [ -d "$BINARY_NAME" ]; then
-            # Create metadata file
-            echo '{"php_version":"${{ matrix.php_version }}","platform":"${{ matrix.platform }}","arch":"${{ matrix.arch }}","config":"${{ matrix.config }}","built_at":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$BINARY_NAME/metadata.json"
+            # Create metadata file if it doesn't exist
+            if [ ! -f "$BINARY_NAME/metadata.json" ]; then
+              echo '{"php_version":"${{ matrix.php_version }}","platform":"${{ matrix.platform }}","arch":"${{ matrix.arch }}","config":"${{ matrix.config }}","built_at":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$BINARY_NAME/metadata.json"
+            fi
 
             # Create tarball
             tar -czf "$BINARY_NAME.tar.gz" "$BINARY_NAME"
@@ -204,24 +217,39 @@ jobs:
             ls -lh "$BINARY_NAME.tar.gz"
           else
             echo "❌ Binary directory not found: $BINARY_NAME"
+            echo "Available directories:"
+            ls -la
             exit 1
           fi
 
       - name: Create tarball (Windows)
         if: matrix.platform == 'win32'
         run: |
+          # Ensure binaries directory exists and check for builds
+          if (-not (Test-Path -Path "binaries" -PathType Container)) {
+            Write-Host "❌ Binaries directory not found"
+            Get-ChildItem
+            exit 1
+          }
+
           cd binaries
           $BINARY_NAME = "php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}"
+
+          Write-Host "🔍 Looking for binary directory: $BINARY_NAME"
+          Get-ChildItem
+
           if (Test-Path -Path $BINARY_NAME -PathType Container) {
-            # Create metadata file
-            $metadata = @{
-              php_version = "${{ matrix.php_version }}"
-              platform = "${{ matrix.platform }}"
-              arch = "${{ matrix.arch }}"
-              config = "${{ matrix.config }}"
-              built_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
-            } | ConvertTo-Json
-            $metadata | Out-File -FilePath "$BINARY_NAME\metadata.json" -Encoding UTF8
+            # Create metadata file if it doesn't exist
+            if (-not (Test-Path -Path "$BINARY_NAME\metadata.json")) {
+              $metadata = @{
+                php_version = "${{ matrix.php_version }}"
+                platform = "${{ matrix.platform }}"
+                arch = "${{ matrix.arch }}"
+                config = "${{ matrix.config }}"
+                built_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+              } | ConvertTo-Json
+              $metadata | Out-File -FilePath "$BINARY_NAME\metadata.json" -Encoding UTF8
+            }
 
             # Create zip archive (Windows equivalent of tarball)
             Compress-Archive -Path $BINARY_NAME -DestinationPath "$BINARY_NAME.zip" -Force
@@ -229,6 +257,8 @@ jobs:
             Get-ChildItem "$BINARY_NAME.zip" | Format-List Name, Length
           } else {
             Write-Host "❌ Binary directory not found: $BINARY_NAME"
+            Write-Host "Available directories:"
+            Get-ChildItem
             exit 1
           }
 
@@ -691,7 +721,7 @@ jobs:
           echo "  - Manifest file size: $(stat -c%s manifest.json 2>/dev/null || stat -f%z manifest.json) bytes"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.3.3
         with:
           tag_name: binaries-${{ github.run_number }}
           name: PHP Binaries - Build ${{ github.run_number }}
