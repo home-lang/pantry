@@ -1398,17 +1398,47 @@ exec "$@"
           log(`🔍 Could not list .local directory: ${e}`)
         }
 
-        // Try system BZip2 as last resort
-        if (config.platform === 'darwin') {
-          // On macOS, try system BZip2 if Launchpad version not found
-          const systemBz2 = '/usr/include/bzlib.h'
-          if (existsSync(systemBz2)) {
-            log(`🔍 Found system BZip2 headers at ${systemBz2}`)
-            // Don't modify the configure arg, let it use system version
-            const idx = configureArgs.findIndex(arg => arg === '--with-bz2')
-            if (idx !== -1) {
-              configureArgs[idx] = '--with-bz2'
-              log(`✅ Using system BZip2`)
+        // Try to install BZip2 via Launchpad if not found
+        log(`🔧 BZip2 not found, attempting to install via Launchpad...`)
+        try {
+          execSync('launchpad install bzip2', {
+            stdio: 'inherit',
+            timeout: 5 * 60 * 1000 // 5 minute timeout for installation
+          })
+
+          // Re-check if BZip2 is now available after installation
+          const newLibPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
+          if (newLibPath && existsSync(newLibPath)) {
+            const headerPath = join(newLibPath, 'include', 'bzlib.h')
+            if (existsSync(headerPath)) {
+              log(`✅ Successfully installed BZip2, using ${newLibPath}`)
+              configureArgs[argIndex] = `${mapping.flag}=${newLibPath}`
+              log(`🔍 BZip2 header check: ${headerPath} exists=${existsSync(headerPath)}`)
+            }
+          } else {
+            throw new Error('BZip2 installation did not create expected files')
+          }
+        } catch (installError) {
+          log(`⚠️ Failed to install BZip2 via Launchpad: ${installError}`)
+
+          // Try system BZip2 as final fallback
+          if (config.platform === 'darwin') {
+            const systemBz2 = '/usr/include/bzlib.h'
+            if (existsSync(systemBz2)) {
+              log(`🔍 Found system BZip2 headers at ${systemBz2}`)
+              const idx = configureArgs.findIndex(arg => arg === '--with-bz2')
+              if (idx !== -1) {
+                configureArgs[idx] = '--with-bz2'
+                log(`✅ Using system BZip2`)
+              }
+            } else {
+              // As final resort, remove BZip2 extension to prevent build failure
+              log(`⚠️ No BZip2 available, disabling BZip2 extension`)
+              const idx = configureArgs.findIndex(arg => arg.startsWith('--with-bz2'))
+              if (idx !== -1) {
+                configureArgs.splice(idx, 1)
+                log(`⚠️ Removed --with-bz2 from configure arguments`)
+              }
             }
           }
         }
