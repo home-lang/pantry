@@ -1512,16 +1512,11 @@ exec "$@"
 
     // Create configure wrapper for macOS iconv fix right before execution
     let configScript = './configure'
-    if (process.env.TARGET_PLATFORM === 'darwin') {
+    if (config.platform === 'darwin') {
       try {
-        // Note: phpSourceDir will be defined later, so we need to get it here
-        const buildDir = process.cwd()
-        const phpDirs = readdirSync(buildDir).filter(d => d.startsWith('php-') && existsSync(join(buildDir, d, 'configure')))
-
-        if (phpDirs.length > 0) {
-          const sourceDir = join(buildDir, phpDirs[0])
-          const wrapperPath = join(sourceDir, 'configure-wrapper.sh')
-          const wrapperScript = `#!/bin/bash
+        // Use the phpSourceDir that we already have available
+        const wrapperPath = join(phpSourceDir, 'configure-wrapper.sh')
+        const wrapperScript = `#!/bin/bash
 # Configure wrapper to bypass iconv errno check on macOS
 export php_cv_iconv_errno=yes
 export ac_cv_func_iconv=yes
@@ -1529,13 +1524,10 @@ export ac_cv_header_iconv_h=yes
 export ac_cv_lib_c_iconv=yes
 exec ./configure "$@"
 `
-          writeFileSync(wrapperPath, wrapperScript)
-          execSync('chmod +x configure-wrapper.sh', { cwd: sourceDir })
-          configScript = './configure-wrapper.sh'
-          log('✅ Created configure wrapper for iconv errno bypass')
-        } else {
-          log('⚠️ Could not find PHP source directory, using direct configure')
-        }
+        writeFileSync(wrapperPath, wrapperScript)
+        execSync('chmod +x configure-wrapper.sh', { cwd: phpSourceDir })
+        configScript = './configure-wrapper.sh'
+        log('✅ Created configure wrapper for iconv errno bypass')
       } catch (error) {
         log(`⚠️ Failed to create wrapper, using direct configure: ${error}`)
         configScript = './configure'
@@ -1565,15 +1557,11 @@ exec ./configure "$@"
 
     // Use standard configure args for fallback
     let configScript = './configure'
-    if (process.env.TARGET_PLATFORM === 'darwin') {
+    if (config.platform === 'darwin') {
       try {
-        const buildDir = process.cwd()
-        const phpDirs = readdirSync(buildDir).filter(d => d.startsWith('php-') && existsSync(join(buildDir, d, 'configure')))
-
-        if (phpDirs.length > 0) {
-          const sourceDir = join(buildDir, phpDirs[0])
-          const wrapperPath = join(sourceDir, 'configure-wrapper.sh')
-          const wrapperScript = `#!/bin/bash
+        // Use the phpSourceDir that we already have available
+        const wrapperPath = join(phpSourceDir, 'configure-wrapper.sh')
+        const wrapperScript = `#!/bin/bash
 # Configure wrapper to bypass iconv errno check on macOS
 export php_cv_iconv_errno=yes
 export ac_cv_func_iconv=yes
@@ -1581,13 +1569,10 @@ export ac_cv_header_iconv_h=yes
 export ac_cv_lib_c_iconv=yes
 exec ./configure "$@"
 `
-          writeFileSync(wrapperPath, wrapperScript)
-          execSync('chmod +x configure-wrapper.sh', { cwd: sourceDir })
-          configScript = './configure-wrapper.sh'
-          log('✅ Created configure wrapper for iconv errno bypass')
-        } else {
-          log('⚠️ Could not find PHP source directory, using direct configure')
-        }
+        writeFileSync(wrapperPath, wrapperScript)
+        execSync('chmod +x configure-wrapper.sh', { cwd: phpSourceDir })
+        configScript = './configure-wrapper.sh'
+        log('✅ Created configure wrapper for iconv errno bypass')
       } catch (error) {
         log(`⚠️ Failed to create wrapper, using direct configure: ${error}`)
         configScript = './configure'
