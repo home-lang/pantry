@@ -1114,10 +1114,21 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     .map(path => join(path, 'include'))
     .filter(path => existsSync(path))
 
-  // Skip adding iconv paths - use system iconv on macOS to avoid errno issues
-  // GNU libiconv from Launchpad causes configure failures with PHP
+  // Add iconv paths back - we need the actual library for linking
   if (config.platform === 'darwin') {
-    log('ℹ️ Using system iconv on macOS to avoid configure issues')
+    const iconvPath = findLatestVersion(`${launchpadRoot}/gnu.org/libiconv`)
+    if (iconvPath && existsSync(iconvPath)) {
+      const iconvLibPath = join(iconvPath, 'lib')
+      const iconvIncPath = join(iconvPath, 'include')
+      const iconvPkgPath = join(iconvPath, 'lib', 'pkgconfig')
+
+      if (existsSync(iconvLibPath)) libPaths.push(iconvLibPath)
+      if (existsSync(iconvIncPath)) includePaths.push(iconvIncPath)
+      if (existsSync(iconvPkgPath)) pkgConfigPaths.push(iconvPkgPath)
+      log(`✅ Added iconv library paths: ${iconvPath}`)
+    } else {
+      log('⚠️ iconv library not found, may cause linking issues')
+    }
   }
 
   buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
@@ -1338,8 +1349,8 @@ exec "$@"
   const libraryMappings = [
     { flag: '--with-bz2', basePath: 'sourceware.org/bzip2' },
     { flag: '--with-gettext', basePath: 'gnu.org/gettext' },
-    // Use system iconv with wrapper script to bypass errno issues
-    // { flag: '--with-iconv', basePath: 'gnu.org/libiconv' }, // Keep commented to use system iconv
+    // Re-enable iconv library mapping for proper linking
+    { flag: '--with-iconv', basePath: 'gnu.org/libiconv' },
     { flag: '--with-readline', basePath: 'gnu.org/readline' },
   ]
 
@@ -1614,7 +1625,7 @@ exec ./configure "$@"
       php_cv_iconv_implementation: 'libiconv',
       ac_cv_func_iconv: 'yes',
       ac_cv_header_iconv_h: 'yes',
-      ac_cv_lib_c_iconv: 'yes',  // Use system libc iconv
+      ac_cv_lib_iconv_libiconv: 'yes',  // Use launchpad libiconv
       // BZip2 cache variables to force detection
       ac_cv_lib_bz2_BZ2_bzerror: 'yes',
       ac_cv_header_bzlib_h: 'yes',
