@@ -1224,6 +1224,45 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     log(`✅ Found ${libPaths.length} library paths and ${includePaths.length} include paths`)
   }
 
+  // Debug: Check for ICU libraries specifically
+  const icuPkgConfigPaths = pkgConfigPaths.filter(path => path.includes('unicode.org'))
+  const icuLibPaths = libPaths.filter(path => path.includes('unicode.org'))
+  const icuIncludePaths = includePaths.filter(path => path.includes('unicode.org'))
+
+  log(`🔍 ICU Debug Information:`)
+  log(`  - ICU PKG_CONFIG paths: ${icuPkgConfigPaths.length} found`)
+  icuPkgConfigPaths.forEach(path => log(`    ${path}`))
+  log(`  - ICU Library paths: ${icuLibPaths.length} found`)
+  icuLibPaths.forEach(path => log(`    ${path}`))
+  log(`  - ICU Include paths: ${icuIncludePaths.length} found`)
+  icuIncludePaths.forEach(path => log(`    ${path}`))
+
+  if (icuPkgConfigPaths.length > 0) {
+    // Check if ICU pkgconfig files actually exist
+    icuPkgConfigPaths.forEach(pkgPath => {
+      const icuPcFiles = ['icu-uc.pc', 'icu-io.pc', 'icu-i18n.pc']
+      icuPcFiles.forEach(pcFile => {
+        const fullPath = join(pkgPath, pcFile)
+        if (existsSync(fullPath)) {
+          log(`    ✅ Found: ${fullPath}`)
+        } else {
+          log(`    ❌ Missing: ${fullPath}`)
+        }
+      })
+    })
+  } else {
+    log(`  ❌ No ICU libraries found in PKG_CONFIG_PATH`)
+    log(`  🔍 Checking if unicode.org directory exists at all...`)
+    const possibleIcuPath = join(launchpadRoot, 'unicode.org')
+    if (existsSync(possibleIcuPath)) {
+      log(`  ✅ Found unicode.org directory: ${possibleIcuPath}`)
+      const versions = readdirSync(possibleIcuPath).filter(f => f.startsWith('v'))
+      log(`  📋 Available versions: ${versions.join(', ')}`)
+    } else {
+      log(`  ❌ No unicode.org directory found at: ${possibleIcuPath}`)
+    }
+  }
+
   buildEnv.LDFLAGS = libPaths.map(path => `-L${path}`).join(' ')
   buildEnv.CPPFLAGS = includePaths.map(path => `-I${path}`).join(' ')
 
@@ -1611,6 +1650,23 @@ EOF
 # Always exit successfully for iconv errno test compilation
 export CC_FOR_ERRNO_TEST="true"
 
+# OPcache shared memory cache variables for cross-compilation on macOS
+# macOS supports all these shared memory mechanisms, so bypass runtime tests
+export ac_cv_func_shm_open=yes
+export ac_cv_func_shm_unlink=yes
+export ac_cv_func_mmap=yes
+export ac_cv_func_munmap=yes
+export ac_cv_func_shmget=yes
+export ac_cv_func_shmat=yes
+export ac_cv_func_shmdt=yes
+export ac_cv_func_shmctl=yes
+# Tell configure that mmap with MAP_ANON works (it does on macOS)
+export php_cv_func_mmap_anon=yes
+export php_cv_func_mmap_anon_ok=yes
+# Tell configure that shm_open works (it does on macOS)
+export php_cv_func_shm_open=yes
+export php_cv_func_shm_open_ok=yes
+
 exec ./configure "$@"
 `
         writeFileSync(wrapperPath, wrapperScript)
@@ -1703,6 +1759,23 @@ EOF
 
 # Always exit successfully for iconv errno test compilation
 export CC_FOR_ERRNO_TEST="true"
+
+# OPcache shared memory cache variables for cross-compilation on macOS
+# macOS supports all these shared memory mechanisms, so bypass runtime tests
+export ac_cv_func_shm_open=yes
+export ac_cv_func_shm_unlink=yes
+export ac_cv_func_mmap=yes
+export ac_cv_func_munmap=yes
+export ac_cv_func_shmget=yes
+export ac_cv_func_shmat=yes
+export ac_cv_func_shmdt=yes
+export ac_cv_func_shmctl=yes
+# Tell configure that mmap with MAP_ANON works (it does on macOS)
+export php_cv_func_mmap_anon=yes
+export php_cv_func_mmap_anon_ok=yes
+# Tell configure that shm_open works (it does on macOS)
+export php_cv_func_shm_open=yes
+export php_cv_func_shm_open_ok=yes
 
 exec ./configure "$@"
 `

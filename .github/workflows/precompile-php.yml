@@ -167,7 +167,31 @@ jobs:
         run: |
           # macOS: Let Launchpad handle all dependencies
           echo "📦 macOS build will use Launchpad for all dependencies"
-          echo "🚀 No system package installation needed - Launchpad will provide everything"
+          echo "🚀 Installing PHP dependencies via Launchpad first..."
+
+          # Pre-install dependencies to ensure they're available
+          echo "🔧 Pre-installing dependencies via Launchpad..."
+          bun run launchpad install php --deps-only || echo "⚠️ Dependency installation had issues, continuing anyway"
+
+          # Debug: Check if ICU libraries are available
+          echo "🔍 Checking for ICU libraries..."
+          if [ -d "$HOME/.local/unicode.org" ]; then
+            echo "✅ ICU libraries found at: $HOME/.local/unicode.org"
+            ls -la "$HOME/.local/unicode.org/"
+            if [ -f "$HOME/.local/unicode.org"/*/lib/pkgconfig/icu-uc.pc ]; then
+              echo "✅ ICU pkgconfig files found"
+              find "$HOME/.local/unicode.org" -name "*.pc" -type f | head -5
+            else
+              echo "❌ ICU pkgconfig files not found"
+            fi
+          else
+            echo "❌ ICU libraries not found"
+          fi
+
+          # Debug: Check PATH and PKG_CONFIG_PATH
+          echo "🔍 Environment check:"
+          echo "PATH includes unicode.org: $(echo $PATH | grep -o unicode.org || echo 'NO')"
+          echo "PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
 
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'
