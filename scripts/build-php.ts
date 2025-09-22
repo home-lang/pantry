@@ -1203,7 +1203,10 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     // macOS: Use dynamic rpaths based on actual library locations, removing duplicates
     const uniqueLibPaths = [...new Set(libPaths)]
     const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
-    buildEnv.LDFLAGS += ` -lresolv -libiconv ${rpathFlags} -Wl,-headerpad_max_install_names`
+    // Handle libiconv with absolute path instead of problematic @rpath reference
+    const iconvLibPath = uniqueLibPaths.find(p => p.includes('libiconv'))
+    const iconvFlag = iconvLibPath ? ` ${iconvLibPath}/libiconv.2.dylib` : ' -liconv'
+    buildEnv.LDFLAGS += ` -lresolv${iconvFlag} ${rpathFlags} -Wl,-headerpad_max_install_names`
     // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = uniqueLibPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
@@ -1213,6 +1216,24 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     const uniqueLibPaths = [...new Set(libPaths)]
     const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
     buildEnv.LDFLAGS += ` ${rpathFlags}`
+  }
+
+  // Add Launchpad PATH to buildEnv if we're using Launchpad dependencies
+  if (existsSync(`${homeDir}/.local/build-env.sh`)) {
+    // Read PATH from build-env.sh to ensure we have all Launchpad tools
+    const buildEnvContent = readFileSync(`${homeDir}/.local/build-env.sh`, 'utf8')
+    const pathMatch = buildEnvContent.match(/export PATH="([^"]+)\$PATH"?/)
+    if (pathMatch) {
+      // Extract the Launchpad paths and add system paths
+      const launchpadPaths = pathMatch[1].replace(/:$/, '') // Remove trailing colon
+      buildEnv.PATH = `${launchpadPaths}:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin`
+    } else {
+      // Fallback: try to extract the full PATH without $PATH suffix
+      const fullPathMatch = buildEnvContent.match(/export PATH="([^"]+)"/)
+      if (fullPathMatch) {
+        buildEnv.PATH = fullPathMatch[1]
+      }
+    }
   }
 
   log('✅ Configured targeted Launchpad dependencies')
@@ -1418,6 +1439,12 @@ exec "$@"
   }
 
   // Log final configure command for debugging
+  // Add --host flag on macOS to force cross-compilation and skip problematic runtime tests
+  if (config.platform === 'darwin') {
+    const hostArch = config.arch === 'arm64' ? 'aarch64' : 'x86_64'
+    configureArgs.push(`--host=${hostArch}-apple-darwin`)
+  }
+
   log(`🔧 Final configure args: ${configureArgs.join(' ')}`)
 
   // Update DYLD_LIBRARY_PATH to include all library paths for runtime
@@ -1511,8 +1538,7 @@ export ac_cv_header_iconv_h=yes
 export ac_cv_lib_c_iconv=yes
 export ac_cv_lib_iconv_iconv=yes
 export ac_cv_lib_iconv_libiconv=yes
-# Force cross-compilation mode to skip runtime tests
-export cross_compiling=yes
+# Skip problematic runtime tests by setting cache variables
 # Additional cache variables for different autoconf versions
 export ac_cv_iconv_errno=yes
 export ac_cv_working_iconv=yes
@@ -1567,7 +1593,7 @@ exec ./configure "$@"
       }
     }
 
-    configureCommand = `source ${buildEnvScript} && ${configScript} ${configureArgs.join(' ')}`
+    configureCommand = `${configScript} ${configureArgs.join(' ')}`
   }
   else {
     log('🔧 Launchpad build-env.sh still not found after installation - using fallback environment')
@@ -1604,8 +1630,7 @@ export ac_cv_header_iconv_h=yes
 export ac_cv_lib_c_iconv=yes
 export ac_cv_lib_iconv_iconv=yes
 export ac_cv_lib_iconv_libiconv=yes
-# Force cross-compilation mode to skip runtime tests
-export cross_compiling=yes
+# Skip problematic runtime tests by setting cache variables
 # Additional cache variables for different autoconf versions
 export ac_cv_iconv_errno=yes
 export ac_cv_working_iconv=yes
