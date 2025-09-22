@@ -1551,6 +1551,7 @@ export php_cv_func_iconv_works=yes
 export ac_cv_iconv_supports_errno=yes
 export php_cv_iconv_errno_support=yes
 # Ensure the configure script thinks it's in cross-compilation mode
+export cross_compiling=yes
 export host_alias=\${host_alias:-\$(uname -m)-apple-darwin}
 export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
 
@@ -1643,6 +1644,7 @@ export php_cv_func_iconv_works=yes
 export ac_cv_iconv_supports_errno=yes
 export php_cv_iconv_errno_support=yes
 # Ensure the configure script thinks it's in cross-compilation mode
+export cross_compiling=yes
 export host_alias=\${host_alias:-\$(uname -m)-apple-darwin}
 export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
 
