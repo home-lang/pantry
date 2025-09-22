@@ -1688,6 +1688,31 @@ export php_cv_func_shm_open_ok=yes
 export php_cv_shm_ipc=yes
 export php_cv_shm_mmap_anon=yes
 export php_cv_shm_mmap_posix=yes
+# Additional library-specific cache variables for older PHP versions (8.2.x, 8.3.x)
+# On macOS, shm_open is in the system C library, not in separate -lrt or -lroot libraries
+# Skip the problematic library tests entirely by setting function tests to yes
+export ac_cv_lib_rt_shm_open=no
+export ac_cv_lib_rt___shm_open=no
+export ac_cv_lib_rt_shm_unlink=no
+export ac_cv_lib_root_shm_open=no
+export ac_cv_lib_root___shm_open=no
+# For PHP 8.2.x, patch the configure script to fix shared memory detection
+# Since environment variables are overridden, we need to patch the actual checks
+if [ ! -f configure.patched ]; then
+  # Backup original configure script
+  cp configure configure.original
+
+  # Patch the configure script to override shared memory detection results
+  # Replace the cross-compilation fallbacks with forced "yes" values
+  sed -i.bak \\
+    -e 's/have_shm_ipc=no/have_shm_ipc=yes/g' \\
+    -e 's/have_shm_mmap_anon=no/have_shm_mmap_anon=yes/g' \\
+    -e 's/have_shm_mmap_posix=no/have_shm_mmap_posix=yes/g' \\
+    configure
+
+  # Mark as patched
+  touch configure.patched
+fi
 
 exec ./configure "$@"
 `
@@ -1820,6 +1845,31 @@ export php_cv_func_shm_open_ok=yes
 export php_cv_shm_ipc=yes
 export php_cv_shm_mmap_anon=yes
 export php_cv_shm_mmap_posix=yes
+# Additional library-specific cache variables for older PHP versions (8.2.x, 8.3.x)
+# On macOS, shm_open is in the system C library, not in separate -lrt or -lroot libraries
+# Skip the problematic library tests entirely by setting function tests to yes
+export ac_cv_lib_rt_shm_open=no
+export ac_cv_lib_rt___shm_open=no
+export ac_cv_lib_rt_shm_unlink=no
+export ac_cv_lib_root_shm_open=no
+export ac_cv_lib_root___shm_open=no
+# For PHP 8.2.x, patch the configure script to fix shared memory detection
+# Since environment variables are overridden, we need to patch the actual checks
+if [ ! -f configure.patched ]; then
+  # Backup original configure script
+  cp configure configure.original
+
+  # Patch the configure script to override shared memory detection results
+  # Replace the cross-compilation fallbacks with forced "yes" values
+  sed -i.bak \\
+    -e 's/have_shm_ipc=no/have_shm_ipc=yes/g' \\
+    -e 's/have_shm_mmap_anon=no/have_shm_mmap_anon=yes/g' \\
+    -e 's/have_shm_mmap_posix=no/have_shm_mmap_posix=yes/g' \\
+    configure
+
+  # Mark as patched
+  touch configure.patched
+fi
 
 exec ./configure "$@"
 `
