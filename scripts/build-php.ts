@@ -1203,7 +1203,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     // macOS: Use dynamic rpaths based on actual library locations, removing duplicates
     const uniqueLibPaths = [...new Set(libPaths)]
     const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
-    buildEnv.LDFLAGS += ` -lresolv ${rpathFlags} -Wl,-headerpad_max_install_names`
+    buildEnv.LDFLAGS += ` -lresolv -libiconv ${rpathFlags} -Wl,-headerpad_max_install_names`
     // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = uniqueLibPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
@@ -1503,11 +1503,23 @@ exec "$@"
         const wrapperPath = join(phpSourceDir, 'configure-wrapper.sh')
         const wrapperScript = `#!/bin/bash
 # Configure wrapper to bypass iconv errno check on macOS
+# Set comprehensive iconv cache variables for all PHP versions
 export php_cv_iconv_errno=yes
+export php_cv_iconv_errno_val=yes
 export ac_cv_func_iconv=yes
 export ac_cv_header_iconv_h=yes
 export ac_cv_lib_c_iconv=yes
+export ac_cv_lib_iconv_iconv=yes
+export ac_cv_lib_iconv_libiconv=yes
+# Force cross-compilation mode to skip runtime tests
 export cross_compiling=yes
+# Additional cache variables for different autoconf versions
+export ac_cv_iconv_errno=yes
+export ac_cv_working_iconv=yes
+export php_cv_iconv_supports_errno=yes
+# Ensure the configure script thinks it's in cross-compilation mode
+export host_alias=\${host_alias:-\$(uname -m)-apple-darwin}
+export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
 exec ./configure "$@"
 `
         writeFileSync(wrapperPath, wrapperScript)
@@ -1549,11 +1561,23 @@ exec ./configure "$@"
         const wrapperPath = join(phpSourceDir, 'configure-wrapper.sh')
         const wrapperScript = `#!/bin/bash
 # Configure wrapper to bypass iconv errno check on macOS
+# Set comprehensive iconv cache variables for all PHP versions
 export php_cv_iconv_errno=yes
+export php_cv_iconv_errno_val=yes
 export ac_cv_func_iconv=yes
 export ac_cv_header_iconv_h=yes
 export ac_cv_lib_c_iconv=yes
+export ac_cv_lib_iconv_iconv=yes
+export ac_cv_lib_iconv_libiconv=yes
+# Force cross-compilation mode to skip runtime tests
 export cross_compiling=yes
+# Additional cache variables for different autoconf versions
+export ac_cv_iconv_errno=yes
+export ac_cv_working_iconv=yes
+export php_cv_iconv_supports_errno=yes
+# Ensure the configure script thinks it's in cross-compilation mode
+export host_alias=\${host_alias:-\$(uname -m)-apple-darwin}
+export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
 exec ./configure "$@"
 `
         writeFileSync(wrapperPath, wrapperScript)
@@ -1569,17 +1593,18 @@ exec ./configure "$@"
     configureCommand = `${configScript} ${configureArgs.join(' ')}`
   }
 
-  execSync(configureCommand, {
-    cwd: phpSourceDir,
-    stdio: 'inherit',
-    shell: '/bin/bash',
-    env: {
-      ...process.env,
-      ...buildEnv,
-      M4: '/usr/bin/m4',
-      ac_cv_path_M4: '/usr/bin/m4',
-      ac_cv_prog_M4: '/usr/bin/m4',
-      AUTOCONF_M4: '/usr/bin/m4',
+  try {
+    execSync(configureCommand, {
+      cwd: phpSourceDir,
+      stdio: 'inherit',
+      shell: '/bin/bash',
+      env: {
+        ...process.env,
+        ...buildEnv,
+        M4: '/usr/bin/m4',
+        ac_cv_path_M4: '/usr/bin/m4',
+        ac_cv_prog_M4: '/usr/bin/m4',
+        AUTOCONF_M4: '/usr/bin/m4',
       // Add autoconf cache variables to prevent header detection failures
       ac_cv_header_stdc: 'yes',
       ac_cv_header_sys_types_h: 'yes',
@@ -1603,6 +1628,53 @@ exec ./configure "$@"
       ac_cv_header_bzlib_h: 'yes',
     },
   })
+  } catch (configureError: any) {
+    // Check if this is an iconv errno error
+    const errorOutput = configureError.toString()
+    if (errorOutput.includes('iconv does not support errno') || errorOutput.includes('checking if iconv supports errno... no')) {
+      log('❌ iconv errno test failed, retrying without iconv extension')
+      log('⚠️ PHP will be built without iconv support')
+
+      // Remove iconv-related flags from configure arguments
+      const filteredArgs = configureArgs.filter(arg => !arg.startsWith('--with-iconv'))
+
+      // Retry configure without iconv
+      const retryCommand = `${configScript} ${filteredArgs.join(' ')}`
+      log(`🔄 Retrying configure without iconv: ${retryCommand}`)
+
+      execSync(retryCommand, {
+        cwd: phpSourceDir,
+        stdio: 'inherit',
+        shell: '/bin/bash',
+        env: {
+          ...process.env,
+          ...buildEnv,
+          M4: '/usr/bin/m4',
+          ac_cv_path_M4: '/usr/bin/m4',
+          ac_cv_prog_M4: '/usr/bin/m4',
+          AUTOCONF_M4: '/usr/bin/m4',
+          // Add autoconf cache variables to prevent header detection failures
+          ac_cv_header_stdc: 'yes',
+          ac_cv_header_sys_types_h: 'yes',
+          ac_cv_header_sys_stat_h: 'yes',
+          ac_cv_header_stdlib_h: 'yes',
+          ac_cv_header_string_h: 'yes',
+          ac_cv_header_memory_h: 'yes',
+          ac_cv_header_strings_h: 'yes',
+          ac_cv_header_inttypes_h: 'yes',
+          ac_cv_header_stdint_h: 'yes',
+          ac_cv_header_unistd_h: 'yes',
+          ac_cv_header_ac_nonexistent_h: 'no',
+          // BZip2 cache variables to force detection
+          ac_cv_lib_bz2_BZ2_bzerror: 'yes',
+          ac_cv_header_bzlib_h: 'yes',
+        },
+      })
+    } else {
+      // Re-throw if it's not an iconv error
+      throw configureError
+    }
+  }
 
   log('Building PHP...')
   const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
