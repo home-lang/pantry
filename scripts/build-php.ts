@@ -1099,7 +1099,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   }
 
   // Build include paths dynamically using latest versions
-  const includePaths = libraryBasePaths
+  let includePaths = libraryBasePaths
     .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
     .filter(path => path && existsSync(path))
     .map(path => join(path, 'include'))
