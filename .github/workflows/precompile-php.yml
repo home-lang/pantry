@@ -253,35 +253,42 @@ jobs:
           # Find and setup Launchpad environment variables
           echo "🔧 Setting up Launchpad environment for macOS build..."
 
-          # Find all binary directories that should be in PATH
-          BINARY_PATHS=""
+          # Store original PATH to preserve system tools
+          echo "ORIGINAL_PATH=$PATH" >> $GITHUB_ENV
 
-          # Find pkg-config binary
-          PKG_CONFIG_BINARY=$(find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -1)
+          # Find all Launchpad binary directories that should be added to PATH
+          LAUNCHPAD_PATHS=""
+
+          # Find pkg-config binary (from freedesktop.org)
+          PKG_CONFIG_BINARY=$(find "$HOME/.local" -path "*/freedesktop.org/*/bin/pkg-config" -type f 2>/dev/null | head -1)
           if [ -n "$PKG_CONFIG_BINARY" ]; then
             PKG_CONFIG_DIR=$(dirname "$PKG_CONFIG_BINARY")
             echo "✅ Found pkg-config at: $PKG_CONFIG_DIR"
-            BINARY_PATHS="$PKG_CONFIG_DIR"
+            LAUNCHPAD_PATHS="$PKG_CONFIG_DIR"
           else
-            echo "❌ pkg-config binary not found"
+            echo "❌ pkg-config binary not found in freedesktop.org paths"
+            echo "🔍 Searching all .local paths for pkg-config..."
+            find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -3 || echo "No pkg-config found anywhere"
           fi
 
-          # Find sed binary
+          # Find other essential Launchpad tools that might override system tools
+          # We'll be more selective to avoid overriding system tools
           SED_BINARY=$(find "$HOME/.local" -path "*/gnu.org/sed/*/bin/sed" -type f 2>/dev/null | head -1)
           if [ -n "$SED_BINARY" ]; then
             SED_DIR=$(dirname "$SED_BINARY")
             echo "✅ Found sed at: $SED_DIR"
-            if [ -n "$BINARY_PATHS" ]; then
-              BINARY_PATHS="$BINARY_PATHS:$SED_DIR"
-            else
-              BINARY_PATHS="$SED_DIR"
+            # Only add sed if we have other tools too, to avoid conflicts
+            if [ -n "$LAUNCHPAD_PATHS" ]; then
+              LAUNCHPAD_PATHS="$LAUNCHPAD_PATHS:$SED_DIR"
             fi
           fi
 
-          # Set the combined binary paths
-          if [ -n "$BINARY_PATHS" ]; then
-            echo "LAUNCHPAD_BINARY_PATHS=$BINARY_PATHS" >> $GITHUB_ENV
-            echo "✅ Binary paths setup: $BINARY_PATHS"
+          # Set the combined Launchpad paths (these will be prepended to PATH later)
+          if [ -n "$LAUNCHPAD_PATHS" ]; then
+            echo "LAUNCHPAD_BINARY_PATHS=$LAUNCHPAD_PATHS" >> $GITHUB_ENV
+            echo "✅ Launchpad binary paths: $LAUNCHPAD_PATHS"
+          else
+            echo "❌ No Launchpad binary paths found"
           fi
 
           # Setup comprehensive PKG_CONFIG_PATH
@@ -301,7 +308,8 @@ jobs:
           BUILD_DIR: ${{ github.workspace }}/build
           OUTPUT_DIR: ${{ github.workspace }}/binaries
           # Ensure Launchpad environment is available for all macOS builds
-          PATH: ${{ matrix.platform == 'darwin' && format('{0}:{1}', env.LAUNCHPAD_BINARY_PATHS, env.PATH) || env.PATH }}
+          # Prepend Launchpad paths while preserving system tools
+          PATH: ${{ matrix.platform == 'darwin' && env.LAUNCHPAD_BINARY_PATHS && format('{0}:{1}', env.LAUNCHPAD_BINARY_PATHS, env.ORIGINAL_PATH) || env.PATH }}
           PKG_CONFIG_PATH: ${{ matrix.platform == 'darwin' && env.LAUNCHPAD_PKG_CONFIG_PATH || env.PKG_CONFIG_PATH }}
         run: |
           # Verify environment setup for macOS
