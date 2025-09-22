@@ -1666,6 +1666,10 @@ export php_cv_func_mmap_anon_ok=yes
 # Tell configure that shm_open works (it does on macOS)
 export php_cv_func_shm_open=yes
 export php_cv_func_shm_open_ok=yes
+# Critical PHP-specific OPcache shared memory cache variables
+export php_cv_shm_ipc=yes
+export php_cv_shm_mmap_anon=yes
+export php_cv_shm_mmap_posix=yes
 
 exec ./configure "$@"
 `
@@ -1776,6 +1780,10 @@ export php_cv_func_mmap_anon_ok=yes
 # Tell configure that shm_open works (it does on macOS)
 export php_cv_func_shm_open=yes
 export php_cv_func_shm_open_ok=yes
+# Critical PHP-specific OPcache shared memory cache variables
+export php_cv_shm_ipc=yes
+export php_cv_shm_mmap_anon=yes
+export php_cv_shm_mmap_posix=yes
 
 exec ./configure "$@"
 `

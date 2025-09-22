@@ -171,7 +171,22 @@ jobs:
 
           # Pre-install dependencies to ensure they're available
           echo "🔧 Pre-installing dependencies via Launchpad..."
-          bun run launchpad install php --deps-only || echo "⚠️ Dependency installation had issues, continuing anyway"
+          bun run launchpad install php --deps-only
+
+          # Wait for dependencies to be fully installed
+          echo "⏳ Waiting for dependency installation to complete..."
+          sleep 5
+
+          # Debug: Check if pkg-config is available
+          echo "🔍 Checking for pkg-config..."
+          if command -v pkg-config >/dev/null 2>&1; then
+            echo "✅ pkg-config found: $(which pkg-config)"
+            echo "📋 pkg-config version: $(pkg-config --version)"
+          else
+            echo "❌ pkg-config not found in PATH"
+            echo "🔍 Searching for pkg-config in .local..."
+            find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null || echo "No pkg-config found in .local"
+          fi
 
           # Debug: Check if ICU libraries are available
           echo "🔍 Checking for ICU libraries..."
@@ -188,10 +203,38 @@ jobs:
             echo "❌ ICU libraries not found"
           fi
 
+          # Debug: Check libxml2 libraries
+          echo "🔍 Checking for libxml2 libraries..."
+          if [ -d "$HOME/.local/gnome.org/libxml2" ]; then
+            echo "✅ libxml2 libraries found at: $HOME/.local/gnome.org/libxml2"
+            ls -la "$HOME/.local/gnome.org/libxml2/"
+            if [ -f "$HOME/.local/gnome.org/libxml2"/*/lib/pkgconfig/libxml-2.0.pc ]; then
+              echo "✅ libxml2 pkgconfig files found"
+              find "$HOME/.local/gnome.org/libxml2" -name "libxml-2.0.pc" -type f
+            else
+              echo "❌ libxml2 pkgconfig files not found"
+            fi
+          else
+            echo "❌ libxml2 libraries not found"
+          fi
+
           # Debug: Check PATH and PKG_CONFIG_PATH
           echo "🔍 Environment check:"
           echo "PATH includes unicode.org: $(echo $PATH | grep -o unicode.org || echo 'NO')"
+          echo "PATH includes freedesktop.org: $(echo $PATH | grep -o freedesktop.org || echo 'NO')"
           echo "PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
+
+          # Debug: Check if Launchpad environment script exists
+          echo "🔍 Checking for Launchpad environment..."
+          if [ -f "$HOME/.local/launchpad.sh" ]; then
+            echo "✅ Launchpad environment script found"
+            echo "📋 Sourcing environment to check paths..."
+            source "$HOME/.local/launchpad.sh"
+            echo "PATH after sourcing: ${PATH:0:200}..."
+            echo "PKG_CONFIG_PATH after sourcing: ${PKG_CONFIG_PATH:-'NOT SET'}"
+          else
+            echo "❌ Launchpad environment script not found"
+          fi
 
       - name: Install build dependencies (Windows)
         if: matrix.platform == 'win32'
@@ -211,7 +254,24 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
           BUILD_DIR: ${{ github.workspace }}/build
           OUTPUT_DIR: ${{ github.workspace }}/binaries
-        run: bun run scripts/build-php.ts
+        run: |
+          # Source Launchpad environment if available (macOS only)
+          if [ "${{ matrix.platform }}" = "darwin" ] && [ -f "$HOME/.local/launchpad.sh" ]; then
+            echo "🔧 Sourcing Launchpad environment for macOS build..."
+            source "$HOME/.local/launchpad.sh"
+            echo "✅ Environment sourced. PATH includes freedesktop.org: $(echo $PATH | grep -o freedesktop.org || echo 'NO')"
+            echo "✅ PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
+
+            # Verify pkg-config is accessible
+            if command -v pkg-config >/dev/null 2>&1; then
+              echo "✅ pkg-config is accessible: $(which pkg-config)"
+            else
+              echo "❌ pkg-config still not accessible after sourcing environment"
+            fi
+          fi
+
+          # Run the build script
+          bun run scripts/build-php.ts
 
       - name: Create tarball (Unix)
         if: matrix.platform != 'win32'
