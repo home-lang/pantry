@@ -175,7 +175,18 @@ jobs:
 
           # Wait for dependencies to be fully installed
           echo "⏳ Waiting for dependency installation to complete..."
-          sleep 5
+          sleep 10
+
+          # Debug: Check what was actually installed
+          echo "🔍 Checking installed dependencies..."
+          echo "📁 .local directory structure (first level):"
+          find "$HOME/.local" -maxdepth 2 -type d | sort | head -20
+
+          echo "🔍 Looking for pkg-config specifically..."
+          find "$HOME/.local" -name "*pkg*" -type f 2>/dev/null | head -10 || echo "No pkg-related files found"
+
+          echo "🔍 Looking for freedesktop.org directory..."
+          find "$HOME/.local" -path "*freedesktop*" -type d 2>/dev/null | head -5 || echo "No freedesktop.org directories found"
 
           # Debug: Check if pkg-config is available
           echo "🔍 Checking for pkg-config..."
@@ -259,16 +270,21 @@ jobs:
           # Find all Launchpad binary directories that should be added to PATH
           LAUNCHPAD_PATHS=""
 
-          # Find pkg-config binary (from freedesktop.org)
-          PKG_CONFIG_BINARY=$(find "$HOME/.local" -path "*/freedesktop.org/*/bin/pkg-config" -type f 2>/dev/null | head -1)
+          # Find pkg-config binary - search broadly first
+          echo "🔍 Searching for pkg-config binary..."
+          PKG_CONFIG_BINARY=$(find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -1)
           if [ -n "$PKG_CONFIG_BINARY" ]; then
             PKG_CONFIG_DIR=$(dirname "$PKG_CONFIG_BINARY")
             echo "✅ Found pkg-config at: $PKG_CONFIG_DIR"
             LAUNCHPAD_PATHS="$PKG_CONFIG_DIR"
           else
-            echo "❌ pkg-config binary not found in freedesktop.org paths"
-            echo "🔍 Searching all .local paths for pkg-config..."
-            find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -3 || echo "No pkg-config found anywhere"
+            echo "❌ pkg-config binary not found in .local"
+            echo "🔍 Checking if pkg-config exists in system PATH..."
+            if command -v pkg-config >/dev/null 2>&1; then
+              echo "✅ pkg-config found in system PATH: $(which pkg-config)"
+            else
+              echo "❌ pkg-config not found anywhere"
+            fi
           fi
 
           # Find other essential Launchpad tools that might override system tools
@@ -288,7 +304,8 @@ jobs:
             echo "LAUNCHPAD_BINARY_PATHS=$LAUNCHPAD_PATHS" >> $GITHUB_ENV
             echo "✅ Launchpad binary paths: $LAUNCHPAD_PATHS"
           else
-            echo "❌ No Launchpad binary paths found"
+            echo "LAUNCHPAD_BINARY_PATHS=" >> $GITHUB_ENV
+            echo "❌ No Launchpad binary paths found - PATH will not be modified"
           fi
 
           # Setup comprehensive PKG_CONFIG_PATH
@@ -307,22 +324,31 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
           BUILD_DIR: ${{ github.workspace }}/build
           OUTPUT_DIR: ${{ github.workspace }}/binaries
-          # Ensure Launchpad environment is available for all macOS builds
-          # Prepend Launchpad paths while preserving system tools
-          PATH: ${{ matrix.platform == 'darwin' && env.LAUNCHPAD_BINARY_PATHS && format('{0}:{1}', env.LAUNCHPAD_BINARY_PATHS, env.ORIGINAL_PATH) || env.PATH }}
+          # Environment for all platforms - will handle PATH logic in shell script
           PKG_CONFIG_PATH: ${{ matrix.platform == 'darwin' && env.LAUNCHPAD_PKG_CONFIG_PATH || env.PKG_CONFIG_PATH }}
         run: |
-          # Verify environment setup for macOS
+          # Setup PATH for macOS with Launchpad tools
           if [ "${{ matrix.platform }}" = "darwin" ]; then
-            echo "🔧 Verifying Launchpad environment setup..."
-            echo "✅ LAUNCHPAD_BINARY_PATHS: ${LAUNCHPAD_BINARY_PATHS:-'NOT SET'}"
+            echo "🔧 Setting up macOS environment..."
+
+            # Preserve original PATH
+            ORIGINAL_PATH="$PATH"
+            echo "✅ Original PATH: ${ORIGINAL_PATH:0:100}..."
+
+            # Add Launchpad binary paths to PATH if they exist
+            if [ -n "${LAUNCHPAD_BINARY_PATHS:-}" ] && [ "${LAUNCHPAD_BINARY_PATHS}" != "NOT SET" ]; then
+              export PATH="$LAUNCHPAD_BINARY_PATHS:$ORIGINAL_PATH"
+              echo "✅ Updated PATH with Launchpad binaries: ${LAUNCHPAD_BINARY_PATHS}"
+            else
+              echo "❌ No Launchpad binary paths found - using original PATH"
+            fi
+
+            echo "✅ Final PATH: ${PATH:0:100}..."
             echo "✅ PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
-            echo "✅ Current PATH length: $(echo "$PATH" | wc -c) characters"
-            echo "✅ PATH first 300 chars: ${PATH:0:300}..."
 
             # Verify essential system tools are available
             echo "🔧 Checking essential system tools..."
-            for tool in curl tar gzip grep tr find; do
+            for tool in curl tar gzip grep tr find wc head; do
               if command -v $tool >/dev/null 2>&1; then
                 echo "✅ $tool: $(which $tool)"
               else
