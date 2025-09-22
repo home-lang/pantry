@@ -1062,6 +1062,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     'libzip.org',
     'invisible-island.net/ncurses',
     'unicode.org',
+    'libpng.org',
+    'github.com/kkos/oniguruma',
   ]
 
   let pkgConfigPaths = libraryBasePaths
