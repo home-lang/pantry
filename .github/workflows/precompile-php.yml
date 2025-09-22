@@ -175,7 +175,18 @@ jobs:
 
           # Wait for dependencies to be fully installed
           echo "⏳ Waiting for dependency installation to complete..."
-          sleep 5
+          sleep 10
+
+          # Debug: Check what was actually installed
+          echo "🔍 Checking installed dependencies..."
+          echo "📁 .local directory structure (first level):"
+          find "$HOME/.local" -maxdepth 2 -type d | sort | head -20
+
+          echo "🔍 Looking for pkg-config specifically..."
+          find "$HOME/.local" -name "*pkg*" -type f 2>/dev/null | head -10 || echo "No pkg-related files found"
+
+          echo "🔍 Looking for freedesktop.org directory..."
+          find "$HOME/.local" -path "*freedesktop*" -type d 2>/dev/null | head -5 || echo "No freedesktop.org directories found"
 
           # Debug: Check if pkg-config is available
           echo "🔍 Checking for pkg-config..."
@@ -246,6 +257,64 @@ jobs:
           # Install additional dependencies needed for PHP extensions
           echo "Windows build dependencies installed for PHP compilation"
 
+      - name: Setup Launchpad Environment (macOS)
+        if: matrix.platform == 'darwin'
+        shell: bash
+        run: |
+          # Find and setup Launchpad environment variables
+          echo "🔧 Setting up Launchpad environment for macOS build..."
+
+          # Store original PATH to preserve system tools
+          echo "ORIGINAL_PATH=$PATH" >> $GITHUB_ENV
+
+          # Find all Launchpad binary directories that should be added to PATH
+          LAUNCHPAD_PATHS=""
+
+          # Find pkg-config binary - search broadly first
+          echo "🔍 Searching for pkg-config binary..."
+          PKG_CONFIG_BINARY=$(find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -1)
+          if [ -n "$PKG_CONFIG_BINARY" ]; then
+            PKG_CONFIG_DIR=$(dirname "$PKG_CONFIG_BINARY")
+            echo "✅ Found pkg-config at: $PKG_CONFIG_DIR"
+            LAUNCHPAD_PATHS="$PKG_CONFIG_DIR"
+          else
+            echo "❌ pkg-config binary not found in .local"
+            echo "🔍 Checking if pkg-config exists in system PATH..."
+            if command -v pkg-config >/dev/null 2>&1; then
+              echo "✅ pkg-config found in system PATH: $(which pkg-config)"
+            else
+              echo "❌ pkg-config not found anywhere"
+            fi
+          fi
+
+          # Find other essential Launchpad tools that might override system tools
+          # We'll be more selective to avoid overriding system tools
+          SED_BINARY=$(find "$HOME/.local" -path "*/gnu.org/sed/*/bin/sed" -type f 2>/dev/null | head -1)
+          if [ -n "$SED_BINARY" ]; then
+            SED_DIR=$(dirname "$SED_BINARY")
+            echo "✅ Found sed at: $SED_DIR"
+            # Only add sed if we have other tools too, to avoid conflicts
+            if [ -n "$LAUNCHPAD_PATHS" ]; then
+              LAUNCHPAD_PATHS="$LAUNCHPAD_PATHS:$SED_DIR"
+            fi
+          fi
+
+          # Set the combined Launchpad paths (these will be prepended to PATH later)
+          if [ -n "$LAUNCHPAD_PATHS" ]; then
+            echo "LAUNCHPAD_BINARY_PATHS=$LAUNCHPAD_PATHS" >> $GITHUB_ENV
+            echo "✅ Launchpad binary paths: $LAUNCHPAD_PATHS"
+          else
+            echo "LAUNCHPAD_BINARY_PATHS=" >> $GITHUB_ENV
+            echo "❌ No Launchpad binary paths found - PATH will not be modified"
+          fi
+
+          # Setup comprehensive PKG_CONFIG_PATH
+          PKG_PATHS=$(find "$HOME/.local" -name "pkgconfig" -type d 2>/dev/null | tr '\n' ':')
+          if [ -n "$PKG_PATHS" ]; then
+            echo "LAUNCHPAD_PKG_CONFIG_PATH=$PKG_PATHS" >> $GITHUB_ENV
+            echo "✅ PKG_CONFIG_PATH setup with $(echo "$PKG_PATHS" | tr ':' '\n' | wc -l) directories"
+          fi
+
       - name: Build PHP
         shell: bash
         env:
@@ -255,52 +324,43 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
           BUILD_DIR: ${{ github.workspace }}/build
           OUTPUT_DIR: ${{ github.workspace }}/binaries
+          # Environment for all platforms - will handle PATH logic in shell script
+          PKG_CONFIG_PATH: ${{ matrix.platform == 'darwin' && env.LAUNCHPAD_PKG_CONFIG_PATH || env.PKG_CONFIG_PATH }}
         run: |
-          # Source Launchpad environment if available (macOS only)
+          # Setup PATH for macOS with Launchpad tools
           if [ "${{ matrix.platform }}" = "darwin" ]; then
-            # Find and source the best available Launchpad environment
-            if [ -f "$HOME/.local/build-env.sh" ]; then
-              echo "🔧 Sourcing Launchpad build environment for macOS build..."
-              source "$HOME/.local/build-env.sh"
-              echo "✅ Environment sourced from build-env.sh"
-            elif [ -f "$HOME/.local/share/launchpad/global/build-env.sh" ]; then
-              echo "🔧 Sourcing global Launchpad environment for macOS build..."
-              source "$HOME/.local/share/launchpad/global/build-env.sh"
-              echo "✅ Environment sourced from global build-env.sh"
+            echo "🔧 Setting up macOS environment..."
+
+            # Preserve original PATH
+            ORIGINAL_PATH="$PATH"
+            echo "✅ Original PATH: ${ORIGINAL_PATH:0:100}..."
+
+            # Add Launchpad binary paths to PATH if they exist
+            if [ -n "${LAUNCHPAD_BINARY_PATHS:-}" ] && [ "${LAUNCHPAD_BINARY_PATHS}" != "NOT SET" ]; then
+              export PATH="$LAUNCHPAD_BINARY_PATHS:$ORIGINAL_PATH"
+              echo "✅ Updated PATH with Launchpad binaries: ${LAUNCHPAD_BINARY_PATHS}"
             else
-              echo "⚠️ No Launchpad environment file found"
+              echo "❌ No Launchpad binary paths found - using original PATH"
             fi
 
-            # Always ensure pkg-config is available - find it dynamically
-            echo "🔍 Finding and adding pkg-config to PATH..."
-            PKG_CONFIG_PATH_FOUND=$(find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -1)
-            if [ -n "$PKG_CONFIG_PATH_FOUND" ]; then
-              PKG_CONFIG_DIR=$(dirname "$PKG_CONFIG_PATH_FOUND")
-              export PATH="$PKG_CONFIG_DIR:$PATH"
-              echo "✅ Added pkg-config to PATH from: $PKG_CONFIG_DIR"
-            fi
-
-            # Also ensure sed is available
-            SED_PATH_FOUND=$(find "$HOME/.local" -path "*/gnu.org/sed/*/bin/sed" -type f 2>/dev/null | head -1)
-            if [ -n "$SED_PATH_FOUND" ]; then
-              SED_DIR=$(dirname "$SED_PATH_FOUND")
-              export PATH="$SED_DIR:$PATH"
-              echo "✅ Added sed to PATH from: $SED_DIR"
-            fi
-
-            echo "✅ Current PATH includes freedesktop.org: $(echo $PATH | grep -o freedesktop.org || echo 'NO')"
+            echo "✅ Final PATH: ${PATH:0:100}..."
             echo "✅ PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
 
-            # Verify pkg-config is accessible and set up PKG_CONFIG_PATH
+            # Verify essential system tools are available
+            echo "🔧 Checking essential system tools..."
+            for tool in curl tar gzip grep tr find wc head; do
+              if command -v $tool >/dev/null 2>&1; then
+                echo "✅ $tool: $(which $tool)"
+              else
+                echo "❌ $tool: NOT FOUND"
+              fi
+            done
+
+            # Verify pkg-config is accessible
+            echo "🔧 Checking pkg-config..."
             if command -v pkg-config >/dev/null 2>&1; then
               echo "✅ pkg-config is accessible: $(which pkg-config)"
               echo "✅ pkg-config version: $(pkg-config --version)"
-
-              # Ensure PKG_CONFIG_PATH includes all Launchpad library paths
-              echo "🔧 Setting up comprehensive PKG_CONFIG_PATH..."
-              PKG_PATHS=$(find "$HOME/.local" -name "pkgconfig" -type d 2>/dev/null | tr '\n' ':')
-              export PKG_CONFIG_PATH="$PKG_PATHS:${PKG_CONFIG_PATH:-}"
-              echo "✅ PKG_CONFIG_PATH set to: $PKG_CONFIG_PATH"
 
               # Test libxml-2.0 specifically
               if pkg-config --exists libxml-2.0; then
@@ -311,13 +371,13 @@ jobs:
                 echo "🔍 Available packages: $(pkg-config --list-all | head -10)"
               fi
             else
-              echo "❌ pkg-config still not accessible"
-              echo "🔍 All pkg-config instances:"
-              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null
+              echo "❌ pkg-config not accessible"
+              echo "🔍 Searching for pkg-config in .local..."
+              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -3 || echo "No pkg-config binaries found"
             fi
           fi
 
-          # Run the build script with enhanced environment
+          # Run the build script with properly configured environment
           bun run scripts/build-php.ts
 
       - name: Create tarball (Unix)
