@@ -1061,6 +1061,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     'sqlite.org',
     'libzip.org',
     'invisible-island.net/ncurses',
+    'unicode.org',
   ]
 
   let pkgConfigPaths = libraryBasePaths
