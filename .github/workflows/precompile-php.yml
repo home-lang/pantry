@@ -247,6 +247,7 @@ jobs:
           echo "Windows build dependencies installed for PHP compilation"
 
       - name: Build PHP
+        shell: bash
         env:
           PHP_VERSION: ${{ matrix.php_version }}
           PHP_CONFIG: ${{ matrix.config }}
@@ -257,7 +258,7 @@ jobs:
         run: |
           # Source Launchpad environment if available (macOS only)
           if [ "${{ matrix.platform }}" = "darwin" ]; then
-            # Try to source the Launchpad build environment
+            # Find and source the best available Launchpad environment
             if [ -f "$HOME/.local/build-env.sh" ]; then
               echo "🔧 Sourcing Launchpad build environment for macOS build..."
               source "$HOME/.local/build-env.sh"
@@ -267,28 +268,56 @@ jobs:
               source "$HOME/.local/share/launchpad/global/build-env.sh"
               echo "✅ Environment sourced from global build-env.sh"
             else
-              echo "⚠️ No Launchpad environment file found, manually setting PATH..."
-              # Manually add common Launchpad paths
-              export PATH="$HOME/.local/freedesktop.org/pkg-config/v0.29.2/bin:$PATH"
-              export PATH="$HOME/.local/gnu.org/sed/v4.9.0/bin:$PATH"
-              echo "✅ Manually added pkg-config to PATH"
+              echo "⚠️ No Launchpad environment file found"
+            fi
+
+            # Always ensure pkg-config is available - find it dynamically
+            echo "🔍 Finding and adding pkg-config to PATH..."
+            PKG_CONFIG_PATH_FOUND=$(find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -1)
+            if [ -n "$PKG_CONFIG_PATH_FOUND" ]; then
+              PKG_CONFIG_DIR=$(dirname "$PKG_CONFIG_PATH_FOUND")
+              export PATH="$PKG_CONFIG_DIR:$PATH"
+              echo "✅ Added pkg-config to PATH from: $PKG_CONFIG_DIR"
+            fi
+
+            # Also ensure sed is available
+            SED_PATH_FOUND=$(find "$HOME/.local" -path "*/gnu.org/sed/*/bin/sed" -type f 2>/dev/null | head -1)
+            if [ -n "$SED_PATH_FOUND" ]; then
+              SED_DIR=$(dirname "$SED_PATH_FOUND")
+              export PATH="$SED_DIR:$PATH"
+              echo "✅ Added sed to PATH from: $SED_DIR"
             fi
 
             echo "✅ Current PATH includes freedesktop.org: $(echo $PATH | grep -o freedesktop.org || echo 'NO')"
             echo "✅ PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
 
-            # Verify pkg-config is accessible
+            # Verify pkg-config is accessible and set up PKG_CONFIG_PATH
             if command -v pkg-config >/dev/null 2>&1; then
               echo "✅ pkg-config is accessible: $(which pkg-config)"
               echo "✅ pkg-config version: $(pkg-config --version)"
+
+              # Ensure PKG_CONFIG_PATH includes all Launchpad library paths
+              echo "🔧 Setting up comprehensive PKG_CONFIG_PATH..."
+              PKG_PATHS=$(find "$HOME/.local" -name "pkgconfig" -type d 2>/dev/null | tr '\n' ':')
+              export PKG_CONFIG_PATH="$PKG_PATHS:${PKG_CONFIG_PATH:-}"
+              echo "✅ PKG_CONFIG_PATH set to: $PKG_CONFIG_PATH"
+
+              # Test libxml-2.0 specifically
+              if pkg-config --exists libxml-2.0; then
+                echo "✅ libxml-2.0 package found via pkg-config"
+                echo "📋 libxml-2.0 cflags: $(pkg-config --cflags libxml-2.0)"
+              else
+                echo "❌ libxml-2.0 package not found via pkg-config"
+                echo "🔍 Available packages: $(pkg-config --list-all | head -10)"
+              fi
             else
-              echo "❌ pkg-config still not accessible after sourcing environment"
-              echo "🔍 Searching for pkg-config..."
-              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -5
+              echo "❌ pkg-config still not accessible"
+              echo "🔍 All pkg-config instances:"
+              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null
             fi
           fi
 
-          # Run the build script
+          # Run the build script with enhanced environment
           bun run scripts/build-php.ts
 
       - name: Create tarball (Unix)
