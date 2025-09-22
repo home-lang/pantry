@@ -1180,12 +1180,38 @@ async function buildPhp(config: BuildConfig): Promise<string> {
           .map(path => join(path, 'lib'))
           .filter(path => existsSync(path))
 
+        const updatedIncludePaths = libraryBasePaths
+          .map(basePath => findLatestVersion(`${launchpadRoot}/${basePath}`))
+          .filter(path => path && existsSync(path))
+          .map(path => join(path, 'include'))
+          .filter(path => existsSync(path))
+
+        // Add iconv paths after dependency installation on macOS
+        if (config.platform === 'darwin') {
+          const iconvPath = findLatestVersion(`${launchpadRoot}/gnu.org/libiconv`)
+          if (iconvPath && existsSync(iconvPath)) {
+            const iconvLibPath = join(iconvPath, 'lib')
+            const iconvIncPath = join(iconvPath, 'include')
+            const iconvPkgPath = join(iconvPath, 'lib', 'pkgconfig')
+
+            if (existsSync(iconvLibPath)) updatedLibPaths.push(iconvLibPath)
+            if (existsSync(iconvIncPath)) updatedIncludePaths.push(iconvIncPath)
+            if (existsSync(iconvPkgPath)) updatedPkgConfigPaths.push(iconvPkgPath)
+            log(`✅ Added iconv library paths after dependency installation: ${iconvPath}`)
+          }
+        }
+
+        // Update the global variables with new paths
+        pkgConfigPaths = updatedPkgConfigPaths
+        libPaths = updatedLibPaths
+        includePaths = updatedIncludePaths
+
         // Update the environment with new paths
         buildEnv.PKG_CONFIG_PATH = updatedPkgConfigPaths.join(':')
         buildEnv.LDFLAGS = updatedLibPaths.map(path => `-L${path}`).join(' ')
 
         log(`✅ Updated paths after dependency installation`)
-        log(`✅ Found ${updatedLibPaths.length} library paths and ${includePaths.length} include paths`)
+        log(`✅ Found ${updatedLibPaths.length} library paths and ${updatedIncludePaths.length} include paths`)
       } catch (error) {
         log(`⚠️ Could not auto-install dependencies: ${error}`)
         log('Please ensure all required dependencies are installed via Launchpad.')
