@@ -256,17 +256,35 @@ jobs:
           OUTPUT_DIR: ${{ github.workspace }}/binaries
         run: |
           # Source Launchpad environment if available (macOS only)
-          if [ "${{ matrix.platform }}" = "darwin" ] && [ -f "$HOME/.local/launchpad.sh" ]; then
-            echo "🔧 Sourcing Launchpad environment for macOS build..."
-            source "$HOME/.local/launchpad.sh"
-            echo "✅ Environment sourced. PATH includes freedesktop.org: $(echo $PATH | grep -o freedesktop.org || echo 'NO')"
+          if [ "${{ matrix.platform }}" = "darwin" ]; then
+            # Try to source the Launchpad build environment
+            if [ -f "$HOME/.local/build-env.sh" ]; then
+              echo "🔧 Sourcing Launchpad build environment for macOS build..."
+              source "$HOME/.local/build-env.sh"
+              echo "✅ Environment sourced from build-env.sh"
+            elif [ -f "$HOME/.local/share/launchpad/global/build-env.sh" ]; then
+              echo "🔧 Sourcing global Launchpad environment for macOS build..."
+              source "$HOME/.local/share/launchpad/global/build-env.sh"
+              echo "✅ Environment sourced from global build-env.sh"
+            else
+              echo "⚠️ No Launchpad environment file found, manually setting PATH..."
+              # Manually add common Launchpad paths
+              export PATH="$HOME/.local/freedesktop.org/pkg-config/v0.29.2/bin:$PATH"
+              export PATH="$HOME/.local/gnu.org/sed/v4.9.0/bin:$PATH"
+              echo "✅ Manually added pkg-config to PATH"
+            fi
+
+            echo "✅ Current PATH includes freedesktop.org: $(echo $PATH | grep -o freedesktop.org || echo 'NO')"
             echo "✅ PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
 
             # Verify pkg-config is accessible
             if command -v pkg-config >/dev/null 2>&1; then
               echo "✅ pkg-config is accessible: $(which pkg-config)"
+              echo "✅ pkg-config version: $(pkg-config --version)"
             else
               echo "❌ pkg-config still not accessible after sourcing environment"
+              echo "🔍 Searching for pkg-config..."
+              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -5
             fi
           fi
 
