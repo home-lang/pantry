@@ -317,9 +317,21 @@ jobs:
             echo "🔧 Verifying Launchpad environment setup..."
             echo "✅ LAUNCHPAD_BINARY_PATHS: ${LAUNCHPAD_BINARY_PATHS:-'NOT SET'}"
             echo "✅ PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-'NOT SET'}"
-            echo "✅ Current PATH: ${PATH:0:200}..."
+            echo "✅ Current PATH length: $(echo "$PATH" | wc -c) characters"
+            echo "✅ PATH first 300 chars: ${PATH:0:300}..."
+
+            # Verify essential system tools are available
+            echo "🔧 Checking essential system tools..."
+            for tool in curl tar gzip grep tr find; do
+              if command -v $tool >/dev/null 2>&1; then
+                echo "✅ $tool: $(which $tool)"
+              else
+                echo "❌ $tool: NOT FOUND"
+              fi
+            done
 
             # Verify pkg-config is accessible
+            echo "🔧 Checking pkg-config..."
             if command -v pkg-config >/dev/null 2>&1; then
               echo "✅ pkg-config is accessible: $(which pkg-config)"
               echo "✅ pkg-config version: $(pkg-config --version)"
@@ -333,11 +345,9 @@ jobs:
                 echo "🔍 Available packages: $(pkg-config --list-all | head -10)"
               fi
             else
-              echo "❌ pkg-config not accessible (exit code $?)"
-              echo "🔍 All pkg-config instances found during setup:"
-              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null || echo "No pkg-config binaries found"
-              echo "🔍 PATH components containing 'freedesktop':"
-              echo "$PATH" | tr ':' '\n' | grep freedesktop || echo "None found"
+              echo "❌ pkg-config not accessible"
+              echo "🔍 Searching for pkg-config in .local..."
+              find "$HOME/.local" -name "pkg-config" -type f 2>/dev/null | head -3 || echo "No pkg-config binaries found"
             fi
           fi
 
