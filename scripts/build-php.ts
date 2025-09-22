@@ -1627,6 +1627,24 @@ export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
 export CONFIG_SHELL=/bin/bash
 export SHELL=/bin/bash
 
+# Ensure pkg-config is accessible during configure
+# Preserve system PATH and add any found pkg-config to it
+if [ -z "\${PKG_CONFIG:-}" ]; then
+  # Look for pkg-config in Launchpad installation first, then system locations
+  for pkg_path in \$HOME/.local/freedesktop.org/*/bin/pkg-config /opt/homebrew/bin/pkg-config /usr/local/bin/pkg-config /usr/bin/pkg-config; do
+    if [ -x "\$pkg_path" ]; then
+      export PKG_CONFIG="\$pkg_path"
+      break
+    fi
+  done
+fi
+
+# Ensure PATH includes directory containing pkg-config
+if [ -n "\${PKG_CONFIG:-}" ]; then
+  PKG_CONFIG_DIR=\$(dirname "\$PKG_CONFIG")
+  export PATH="\$PKG_CONFIG_DIR:\$PATH"
+fi
+
 # Override the iconv errno test function to always return success
 # This completely bypasses the problematic runtime test
 cat > /tmp/iconv_errno_override.c << 'EOF'
@@ -1740,6 +1758,24 @@ export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
 # Force the configure script to completely skip the errno runtime test
 export CONFIG_SHELL=/bin/bash
 export SHELL=/bin/bash
+
+# Ensure pkg-config is accessible during configure
+# Preserve system PATH and add any found pkg-config to it
+if [ -z "\${PKG_CONFIG:-}" ]; then
+  # Look for pkg-config in Launchpad installation first, then system locations
+  for pkg_path in \$HOME/.local/freedesktop.org/*/bin/pkg-config /opt/homebrew/bin/pkg-config /usr/local/bin/pkg-config /usr/bin/pkg-config; do
+    if [ -x "\$pkg_path" ]; then
+      export PKG_CONFIG="\$pkg_path"
+      break
+    fi
+  done
+fi
+
+# Ensure PATH includes directory containing pkg-config
+if [ -n "\${PKG_CONFIG:-}" ]; then
+  PKG_CONFIG_DIR=\$(dirname "\$PKG_CONFIG")
+  export PATH="\$PKG_CONFIG_DIR:\$PATH"
+fi
 
 # Override the iconv errno test function to always return success
 # This completely bypasses the problematic runtime test
