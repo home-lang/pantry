@@ -117,19 +117,23 @@ jobs:
           - full-stack
         os:
           - ubuntu-latest
-          - macos-13
-          - macos-latest
+          - macos-14
+          - macos-15
+          - macos-15-intel
           - windows-latest
         include:
           - os: ubuntu-latest
             platform: linux
             arch: x86_64
-          - os: macos-13
+          - os: macos-14
             platform: darwin
             arch: x86_64
-          - os: macos-latest
+          - os: macos-15
             platform: darwin
             arch: arm64
+          - os: macos-15-intel
+            platform: darwin
+            arch: x86_64
           - os: windows-latest
             platform: win32
             arch: x86_64
