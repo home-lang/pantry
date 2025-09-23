@@ -1469,7 +1469,26 @@ exec "$@"
     buildEnv.CFLAGS = `${currentCFlags} ${additionalCFlags.join(' ')}`.trim()
     buildEnv.CXXFLAGS = `${currentCXXFlags} ${additionalCFlags.join(' ')}`.trim()
 
+    // Also add flags to EXTRA_CFLAGS and EXTRA_CXXFLAGS for PHP build system
+    buildEnv.EXTRA_CFLAGS = `${buildEnv.EXTRA_CFLAGS || ''} ${additionalCFlags.join(' ')}`.trim()
+    buildEnv.EXTRA_CXXFLAGS = `${buildEnv.EXTRA_CXXFLAGS || ''} ${additionalCFlags.join(' ')}`.trim()
+
+    // Add flags to CC and CXX directly to ensure they're always used
+    const currentCC = buildEnv.CC || 'clang'
+    const currentCXX = buildEnv.CXX || 'clang++'
+    buildEnv.CC = `${currentCC} ${additionalCFlags.join(' ')}`
+    buildEnv.CXX = `${currentCXX} ${additionalCFlags.join(' ')}`
+
+    // Ensure make passes flags to all compilation commands
+    const makeFlags = `CFLAGS="${buildEnv.CFLAGS}" CXXFLAGS="${buildEnv.CXXFLAGS}"`
+    buildEnv.MAKEFLAGS = `${buildEnv.MAKEFLAGS || ''} ${makeFlags}`.trim()
+
     log('✅ Added macOS-specific compiler flags to prevent alignment errors')
+    log(`🔧 CC: ${buildEnv.CC}`)
+    log(`🔧 CFLAGS: ${buildEnv.CFLAGS}`)
+    if (config.arch === 'arm64') {
+      log('🔧 ARM64-specific flags applied: -mno-unaligned-access')
+    }
   }
 
   // Check if configure already exists (some PHP releases include it)
