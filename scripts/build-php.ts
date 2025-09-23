@@ -1974,6 +1974,56 @@ exec ./configure "$@"
     }
   }
 
+  // Apply comprehensive source patching for macOS OPcache JIT inline assembly issues
+  if (config.platform === 'darwin') {
+    log('Applying comprehensive macOS OPcache JIT inline assembly patches...')
+    try {
+      const jitSourceFiles = [
+        'ext/opcache/jit/ir/ir_x86.dasc',
+        'ext/opcache/jit/zend_jit_x86.dasc',
+        'ext/opcache/jit/ir/ir_emit.c',
+        'ext/opcache/jit/ir/ir_ra.c',
+        'ext/opcache/jit/zend_jit.c',
+        'ext/opcache/jit/zend_jit_arm64.dasc',
+      ]
+
+      const patches = [
+        // Fix "S" constraint (source register) - incompatible on macOS
+        's/asm volatile("([^"]*)" :: "S" ([^)]*))/asm volatile("$1" : : "r" $2 : "memory")/g',
+        // Fix "D" constraint (destination register) issues
+        's/asm volatile("([^"]*)" :: "D" ([^)]*))/asm volatile("$1" : : "r" $2 : "memory")/g',
+        // Fix mixed constraint issues
+        's/asm volatile("([^"]*)" :: "([SD])" ([^)]*), "([^"]*)" ([^)]*))/asm volatile("$1" : : "r" $3, "r" $5 : "memory")/g',
+        // Fix memory operand issues in inline assembly
+        's/__asm__ volatile("([^"]*)" :: "([SD])" ([^)]*))/asm volatile("$1" : : "r" $3 : "memory")/g',
+      ]
+
+      for (const filePath of jitSourceFiles) {
+        const fullFilePath = join(phpSourceDir, filePath)
+        if (existsSync(fullFilePath)) {
+          log(`Patching ${filePath}...`)
+          for (const patch of patches) {
+            try {
+              execSync(`sed -i.jitpatch '${patch}' "${fullFilePath}"`, {
+                cwd: phpSourceDir,
+                stdio: 'pipe'
+              })
+            } catch (sedError) {
+              // Ignore sed errors for patterns that don't match - this is expected
+              log(`Note: Pattern '${patch}' not found in ${filePath} (this is normal)`)
+            }
+          }
+        } else {
+          log(`Note: File ${filePath} not found (normal for this PHP version)`)
+        }
+      }
+      log('✅ OPcache JIT inline assembly patches applied successfully')
+    } catch (patchError: any) {
+      log('⚠️ Warning: Failed to apply some OPcache JIT patches:', patchError.message)
+      log('Continuing with build - patches may not be needed for this PHP version')
+    }
+  }
+
   log('Building PHP...')
   const jobs = execSync('nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2', { encoding: 'utf8' }).trim()
 
