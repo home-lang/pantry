@@ -1444,12 +1444,17 @@ exec "$@"
     buildEnv.PATH = `${phpSourceDir}:${buildEnv.PATH}`
 
     // Fix "fixup not sufficiently aligned" errors in OPcache JIT on macOS
-    // Add compiler flags to ensure proper alignment for inline assembly
+    // Add aggressive compiler flags to ensure proper alignment for inline assembly
     const additionalCFlags = [
-      '-falign-functions=16',       // Align functions to 16-byte boundaries
-      '-falign-loops=16',           // Align loops to 16-byte boundaries
+      '-falign-functions=32',       // Align functions to 32-byte boundaries (more aggressive)
+      '-falign-loops=32',           // Align loops to 32-byte boundaries (more aggressive)
+      '-falign-jumps=32',           // Align jump targets to 32-byte boundaries
+      '-falign-labels=32',          // Align labels to 32-byte boundaries
       '-fno-strict-aliasing',       // Prevent strict aliasing optimizations
       '-fno-delete-null-pointer-checks', // Prevent null pointer optimizations
+      '-fno-optimize-sibling-calls', // Prevent tail call optimization that can affect alignment
+      '-fno-reorder-blocks',        // Prevent block reordering that can affect alignment
+      '-mstackrealign',             // Force stack realignment for better alignment guarantees
     ]
 
     // ARM64-specific flags that are not compatible with x86_64
