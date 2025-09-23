@@ -911,6 +911,13 @@ openssl.capath =
 function createUnixPhpIni(installPrefix: string, config: BuildConfig): void {
   const phpIniPath = join(installPrefix, 'lib', 'php.ini')
 
+  // Ensure the lib directory exists
+  const libDir = join(installPrefix, 'lib')
+  if (!existsSync(libDir)) {
+    mkdirSync(libDir, { recursive: true })
+    log(`🔧 Created lib directory: ${libDir}`)
+  }
+
   // Create comprehensive php.ini content for Unix builds
   const phpIniContent = `; PHP Configuration File
 ; Generated automatically for Launchpad PHP build (Unix)
