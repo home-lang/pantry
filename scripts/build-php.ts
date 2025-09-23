@@ -1109,8 +1109,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     .map(path => join(path, 'include'))
     .filter(path => existsSync(path))
 
-  // Add iconv paths back - we need the actual library for linking
-  if (config.platform === 'darwin') {
+  // Add iconv paths back - we need the actual library for linking (except for x86_64)
+  if (config.platform === 'darwin' && config.arch !== 'x86_64') {
     const iconvPath = findLatestVersion(`${launchpadRoot}/gnu.org/libiconv`)
     if (iconvPath && existsSync(iconvPath)) {
       const iconvLibPath = join(iconvPath, 'lib')
@@ -1124,6 +1124,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     } else {
       log('⚠️ iconv library not found, may cause linking issues')
     }
+  } else if (config.platform === 'darwin' && config.arch === 'x86_64') {
+    log(`🔧 ✅ Skipped GNU iconv for x86_64 to prevent dyld conflicts (using system iconv)`)
   }
 
   buildEnv.PKG_CONFIG_PATH = pkgConfigPaths.join(':')
@@ -1190,8 +1192,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
           .map(path => join(path, 'include'))
           .filter(path => existsSync(path))
 
-        // Add iconv paths after dependency installation on macOS
-        if (config.platform === 'darwin') {
+        // Add iconv paths after dependency installation on macOS (except for x86_64)
+        if (config.platform === 'darwin' && config.arch !== 'x86_64') {
           const iconvPath = findLatestVersion(`${launchpadRoot}/gnu.org/libiconv`)
           if (iconvPath && existsSync(iconvPath)) {
             const iconvLibPath = join(iconvPath, 'lib')
@@ -1271,30 +1273,30 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   // Add platform-specific linker flags with dynamic rpaths
   if (config.platform === 'darwin') {
     // macOS: Use dynamic rpaths based on actual library locations, removing duplicates
-    const uniqueLibPaths = [...new Set(libPaths)]
-    const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
+    let uniqueLibPaths = [...new Set(libPaths)]
+    let uniqueIncludePaths = [...new Set(includePaths)]
     // Handle libiconv with architecture-specific linking to avoid dyld symbol conflicts
-    const iconvLibPath = uniqueLibPaths.find(p => p.includes('libiconv'))
     let iconvFlag = ' -liconv' // fallback to system iconv
 
-    if (iconvLibPath) {
-      if (config.arch === 'x86_64') {
-        // For x86_64, use static linking to avoid dyld symbol override conflicts
-        const staticLib = join(iconvLibPath, 'libiconv.a')
-        if (existsSync(staticLib)) {
-          iconvFlag = ` ${staticLib}`
-          log(`🔧 ✅ Using static iconv library for x86_64: ${staticLib}`)
-        } else {
-          // Fallback: use -liconv to link against system library
-          iconvFlag = ' -liconv'
-          log(`🔧 ⚠️ Static iconv not found, using system iconv for x86_64`)
-        }
-      } else {
-        // ARM64 can use dynamic linking without dyld conflicts
+    if (config.arch === 'x86_64') {
+      // For x86_64, completely avoid GNU libiconv to prevent dyld symbol conflicts
+      // Use system iconv only
+      iconvFlag = ' -liconv'
+      log(`🔧 ✅ Using system iconv for x86_64 (avoiding GNU libiconv dyld conflicts)`)
+      // Remove iconv and libcups from library paths for x86_64 to prevent dyld interference
+      uniqueLibPaths = uniqueLibPaths.filter(p => !p.includes('libiconv') && !p.includes('libcups'))
+      uniqueIncludePaths = uniqueIncludePaths.filter(p => !p.includes('libiconv') && !p.includes('libcups'))
+      log(`🔧 ✅ Excluded libcups from x86_64 library paths to prevent dyld conflicts`)
+    } else {
+      // ARM64 can use GNU libiconv without issues
+      const iconvLibPath = uniqueLibPaths.find(p => p.includes('libiconv'))
+      if (iconvLibPath) {
         iconvFlag = ` ${iconvLibPath}/libiconv.2.dylib`
-        log(`🔧 ✅ Using dynamic iconv library for ARM64: ${iconvLibPath}`)
+        log(`🔧 ✅ Using GNU iconv library for ARM64: ${iconvLibPath}`)
       }
     }
+
+    const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
 
     buildEnv.LDFLAGS += ` -lresolv${iconvFlag} ${rpathFlags} -Wl,-headerpad_max_install_names`
     // Set up runtime library path for macOS (build-time only)
@@ -1450,10 +1452,20 @@ exec "$@"
   const libraryMappings = [
     { flag: '--with-bz2', basePath: 'sourceware.org/bzip2' },
     { flag: '--with-gettext', basePath: 'gnu.org/gettext' },
-    // Re-enable iconv library mapping for proper linking
-    { flag: '--with-iconv', basePath: 'gnu.org/libiconv' },
+    // Conditionally include iconv library mapping based on architecture
+    ...(config.arch === 'x86_64' ? [] : [{ flag: '--with-iconv', basePath: 'gnu.org/libiconv' }]),
     { flag: '--with-readline', basePath: 'gnu.org/readline' },
   ]
+
+  // For x86_64, remove --with-iconv=/path/to/gnu/libiconv to use system iconv instead
+  // This prevents GNU libiconv dyld conflicts while still maintaining iconv functionality
+  if (config.arch === 'x86_64') {
+    const iconvIndex = configureArgs.findIndex(arg => arg.startsWith('--with-iconv'))
+    if (iconvIndex !== -1) {
+      configureArgs.splice(iconvIndex, 1)
+      log(`🔧 ✅ Removed GNU --with-iconv for x86_64, will use system iconv (required for Laravel/Composer)`)
+    }
+  }
 
   for (const mapping of libraryMappings) {
     const libPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
@@ -1988,14 +2000,16 @@ exec ./configure "$@"
       ]
 
       const patches = [
-        // Fix "S" constraint (source register) - incompatible on macOS
-        's/asm volatile("([^"]*)" :: "S" ([^)]*))/asm volatile("$1" : : "r" $2 : "memory")/g',
-        // Fix "D" constraint (destination register) issues
-        's/asm volatile("([^"]*)" :: "D" ([^)]*))/asm volatile("$1" : : "r" $2 : "memory")/g',
-        // Fix mixed constraint issues
-        's/asm volatile("([^"]*)" :: "([SD])" ([^)]*), "([^"]*)" ([^)]*))/asm volatile("$1" : : "r" $3, "r" $5 : "memory")/g',
-        // Fix memory operand issues in inline assembly
-        's/__asm__ volatile("([^"]*)" :: "([SD])" ([^)]*))/asm volatile("$1" : : "r" $3 : "memory")/g',
+        // Fix "S" constraint (source register) - incompatible on macOS - handle leading whitespace/tabs
+        's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"S"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix "D" constraint (destination register) issues - handle leading whitespace/tabs
+        's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"D"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix __asm__ variant with "S" constraint - handle leading whitespace/tabs
+        's/^([[:space:]]*)__asm__ volatile\\("([^"]*)"\\s*::\\s*"S"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix __asm__ variant with "D" constraint - handle leading whitespace/tabs
+        's/^([[:space:]]*)__asm__ volatile\\("([^"]*)"\\s*::\\s*"D"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix mixed constraint issues - handle leading whitespace/tabs
+        's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"([SD])"\\s*\\(([^)]*)\\),\\s*"([^"]*)"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\4, "r" \\6 : "memory");/g',
       ]
 
       for (const filePath of jitSourceFiles) {
@@ -2004,7 +2018,7 @@ exec ./configure "$@"
           log(`Patching ${filePath}...`)
           for (const patch of patches) {
             try {
-              execSync(`sed -i.jitpatch '${patch}' "${fullFilePath}"`, {
+              execSync(`sed -E -i.jitpatch '${patch}' "${fullFilePath}"`, {
                 cwd: phpSourceDir,
                 stdio: 'pipe'
               })
@@ -2144,7 +2158,8 @@ exec ./configure "$@"
     const readlinePath = findLatestVersion(`${homeDir}/.local/gnu.org/readline`)
 
     if (readlinePath) dynamicLibPaths.push(join(readlinePath, 'lib'))
-    if (iconvPath) dynamicLibPaths.push(join(iconvPath, 'lib'))
+    // Only add GNU iconv for non-x86_64 builds to prevent dyld conflicts
+    if (iconvPath && config.arch !== 'x86_64') dynamicLibPaths.push(join(iconvPath, 'lib'))
     if (gettextPath) dynamicLibPaths.push(join(gettextPath, 'lib'))
     if (bz2Path) dynamicLibPaths.push(join(bz2Path, 'lib'))
 
