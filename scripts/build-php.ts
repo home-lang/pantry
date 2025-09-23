@@ -519,8 +519,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...baseArgs,
       ...dependencyArgs,
       ...platformDependencyArgs,
-      // Conditionally enable opcache - disable JIT for x86_64 macOS due to inline assembly issues in PHP 8.4+
-      ...(config.arch === 'x86_64' ? ['--enable-opcache=shared', '--disable-opcache-jit'] : ['--enable-opcache=shared']),
+      '--enable-opcache=shared',
       '--with-readline',
       '--with-zip',
       '--enable-dtrace',
@@ -1272,9 +1271,29 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     // macOS: Use dynamic rpaths based on actual library locations, removing duplicates
     const uniqueLibPaths = [...new Set(libPaths)]
     const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
-    // Handle libiconv with absolute path instead of problematic @rpath reference
+    // Handle libiconv with architecture-specific linking to avoid dyld symbol conflicts
     const iconvLibPath = uniqueLibPaths.find(p => p.includes('libiconv'))
-    const iconvFlag = iconvLibPath ? ` ${iconvLibPath}/libiconv.2.dylib` : ' -liconv'
+    let iconvFlag = ' -liconv' // fallback to system iconv
+
+    if (iconvLibPath) {
+      if (config.arch === 'x86_64') {
+        // For x86_64, use static linking to avoid dyld symbol override conflicts
+        const staticLib = join(iconvLibPath, 'libiconv.a')
+        if (existsSync(staticLib)) {
+          iconvFlag = ` ${staticLib}`
+          log(`🔧 ✅ Using static iconv library for x86_64: ${staticLib}`)
+        } else {
+          // Fallback: use -liconv to link against system library
+          iconvFlag = ' -liconv'
+          log(`🔧 ⚠️ Static iconv not found, using system iconv for x86_64`)
+        }
+      } else {
+        // ARM64 can use dynamic linking without dyld conflicts
+        iconvFlag = ` ${iconvLibPath}/libiconv.2.dylib`
+        log(`🔧 ✅ Using dynamic iconv library for ARM64: ${iconvLibPath}`)
+      }
+    }
+
     buildEnv.LDFLAGS += ` -lresolv${iconvFlag} ${rpathFlags} -Wl,-headerpad_max_install_names`
     // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = uniqueLibPaths.join(':')
@@ -2318,6 +2337,27 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     stdio: 'inherit',
   })
 
+  // Apply source patches for macOS x86_64 inline assembly issues
+  if (config.platform === 'darwin' && config.arch === 'x86_64') {
+    log('Applying macOS x86_64 inline assembly patches...')
+    try {
+      const irX86File = join(phpSourceDir, 'ext/opcache/jit/ir/ir_x86.dasc')
+      if (existsSync(irX86File)) {
+        // Fix invalid operand for inline asm constraint 'S' on macOS Intel
+        // The "S" constraint requires a register but sometimes gets an incompatible operand
+        // Replace with "r" (general register) constraint which is more compatible
+        execSync(`sed -i.bak 's/asm volatile(".byte 0x0f, 0x1c, 0x06" :: "S" (p))/asm volatile(".byte 0x0f, 0x1c, 0x06" : : "r" (p) : "memory")/g' "${irX86File}"`, {
+          cwd: phpSourceDir,
+          stdio: 'inherit',
+        })
+        log('✅ Applied inline assembly constraint fix for macOS x86_64')
+      }
+    } catch (patchError) {
+      log(`⚠️ Failed to apply inline assembly patch: ${patchError}`)
+      // Continue anyway - the build might still work
+    }
+  }
+
   log('Configuring PHP with system libraries...')
   const baseConfigureArgs = [
     `--prefix=${installPrefix}`,
@@ -2353,8 +2393,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     '--with-curl',
     '--with-openssl',
     '--with-zlib',
-    // Conditionally enable opcache - disable JIT for x86_64 macOS due to inline assembly issues in PHP 8.4+
-    ...(config.platform === 'darwin' && config.arch === 'x86_64' ? ['--enable-opcache=shared', '--disable-opcache-jit'] : ['--enable-opcache=shared']),
+    '--enable-opcache=shared',
     '--with-readline',
     '--without-ldap-sasl',
   ]
