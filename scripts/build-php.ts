@@ -519,7 +519,8 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...baseArgs,
       ...dependencyArgs,
       ...platformDependencyArgs,
-      '--enable-opcache=shared',
+      // Conditionally enable opcache - disable JIT for x86_64 macOS due to inline assembly issues in PHP 8.4+
+      ...(config.arch === 'x86_64' ? ['--enable-opcache=shared', '--disable-opcache-jit'] : ['--enable-opcache=shared']),
       '--with-readline',
       '--with-zip',
       '--enable-dtrace',
@@ -2352,7 +2353,8 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     '--with-curl',
     '--with-openssl',
     '--with-zlib',
-    '--enable-opcache=shared',
+    // Conditionally enable opcache - disable JIT for x86_64 macOS due to inline assembly issues in PHP 8.4+
+    ...(config.platform === 'darwin' && config.arch === 'x86_64' ? ['--enable-opcache=shared', '--disable-opcache-jit'] : ['--enable-opcache=shared']),
     '--with-readline',
     '--without-ldap-sasl',
   ]
