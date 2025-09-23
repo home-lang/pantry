@@ -2000,6 +2000,8 @@ exec ./configure "$@"
       ]
 
       const patches = [
+        // Fix missing parentheses around operand - critical for macOS compilation
+        's/"r" p :/"r" (p) :/g',
         // Fix "S" constraint (source register) - incompatible on macOS - handle leading whitespace/tabs
         's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"S"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
         // Fix "D" constraint (destination register) issues - handle leading whitespace/tabs
@@ -2437,6 +2439,8 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
           // Fix inline assembly constraint issues comprehensively
           // Replace problematic constraints with more compatible ones
           const patches = [
+            // Fix missing parentheses around operand - critical for macOS compilation
+            's/"r" p :/"r" (p) :/g',
             // Fix "S" constraint (source register) - incompatible on macOS
             's/asm volatile\\("([^"]*)" :: "S" ([^)]*)\\)/asm volatile("$1" : : "r" $2 : "memory")/g',
             // Fix "D" constraint (destination register) issues
