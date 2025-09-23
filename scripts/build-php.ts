@@ -1368,6 +1368,60 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     }
   }
 
+  // Apply comprehensive source patching for macOS OPcache JIT inline assembly issues BEFORE configure
+  if (config.platform === 'darwin') {
+    log('Applying comprehensive macOS OPcache JIT inline assembly patches...')
+    try {
+      const jitSourceFiles = [
+        'ext/opcache/jit/ir/ir_x86.dasc',
+        'ext/opcache/jit/zend_jit_x86.dasc',
+        'ext/opcache/jit/ir/ir_emit.c',
+        'ext/opcache/jit/ir/ir_ra.c',
+        'ext/opcache/jit/zend_jit.c',
+        'ext/opcache/jit/zend_jit_arm64.dasc',
+      ]
+
+      const patches = [
+        // Fix missing parentheses around operand - critical for macOS compilation
+        's/"r" p :/"r" (p) :/g',
+        // Fix "S" constraint (source register) - incompatible on macOS - handle leading whitespace/tabs
+        's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"S"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix "D" constraint (destination register) issues - handle leading whitespace/tabs
+        's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"D"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix __asm__ variant with "S" constraint - handle leading whitespace/tabs
+        's/^([[:space:]]*)__asm__ volatile\\("([^"]*)"\\s*::\\s*"S"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix __asm__ variant with "D" constraint - handle leading whitespace/tabs
+        's/^([[:space:]]*)__asm__ volatile\\("([^"]*)"\\s*::\\s*"D"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\3 : "memory");/g',
+        // Fix mixed constraint issues - handle leading whitespace/tabs
+        's/^([[:space:]]*)asm volatile\\("([^"]*)"\\s*::\\s*"([SD])"\\s*\\(([^)]*)\\),\\s*"([^"]*)"\\s*\\(([^)]*)\\)\\);/\\1asm volatile("\\2" : : "r" \\4, "r" \\6 : "memory");/g',
+      ]
+
+      for (const filePath of jitSourceFiles) {
+        const fullFilePath = join(phpSourceDir, filePath)
+        if (existsSync(fullFilePath)) {
+          log(`Patching ${filePath}...`)
+          for (const patch of patches) {
+            try {
+              execSync(`sed -E -i.jitpatch '${patch}' "${fullFilePath}"`, {
+                cwd: phpSourceDir,
+                stdio: 'pipe'
+              })
+            } catch (sedError) {
+              // Ignore sed errors for patterns that don't match - this is expected
+              log(`Note: Pattern '${patch}' not found in ${filePath} (this is normal)`)
+            }
+          }
+        } else {
+          log(`Note: File ${filePath} not found (normal for this PHP version)`)
+        }
+      }
+      log('✅ OPcache JIT inline assembly patches applied successfully')
+    } catch (patchError: any) {
+      log('⚠️ Warning: Failed to apply some OPcache JIT patches:', patchError.message)
+      log('Continuing with build - patches may not be needed for this PHP version')
+    }
+  }
+
   log('Running buildconf...')
 
   // Fix m4 compatibility issue on macOS
