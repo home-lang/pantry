@@ -1446,12 +1446,16 @@ exec "$@"
     // Fix "fixup not sufficiently aligned" errors in OPcache JIT on macOS
     // Add compiler flags to ensure proper alignment for inline assembly
     const additionalCFlags = [
-      '-mno-unaligned-access',      // ARM64-specific: prevent unaligned access
       '-falign-functions=16',       // Align functions to 16-byte boundaries
       '-falign-loops=16',           // Align loops to 16-byte boundaries
       '-fno-strict-aliasing',       // Prevent strict aliasing optimizations
       '-fno-delete-null-pointer-checks', // Prevent null pointer optimizations
     ]
+
+    // ARM64-specific flags that are not compatible with x86_64
+    if (config.arch === 'arm64') {
+      additionalCFlags.push('-mno-unaligned-access') // ARM64-specific: prevent unaligned access
+    }
 
     // Add these flags to CFLAGS and CXXFLAGS if they don't already exist
     const currentCFlags = buildEnv.CFLAGS || ''
