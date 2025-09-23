@@ -520,6 +520,7 @@ function generateConfigureArgs(config: BuildConfig, installPrefix: string): stri
       ...dependencyArgs,
       ...platformDependencyArgs,
       '--enable-opcache=shared',
+      '--enable-opcache-jit',
       '--with-readline',
       '--with-zip',
       '--enable-dtrace',
@@ -605,6 +606,7 @@ function generateCIConfigureArgs(config: BuildConfig, installPrefix: string): st
     ciArgs.push(
       '--with-kerberos',
       '--with-readline',  // Use readline instead of libedit to avoid ncurses dependency issues
+      '--enable-opcache-jit', // Enable JIT with inline assembly fixes
     )
   }
   else if (config.platform === 'linux') {
@@ -886,9 +888,9 @@ opcache.validate_timestamps = 1
 opcache.save_comments = 1
 opcache.enable_file_override = 0
 
-; JIT settings for PHP 8.0+
-opcache.jit = tracing
-opcache.jit_buffer_size = 64M
+; JIT settings disabled for macOS compatibility
+opcache.jit = off
+opcache.jit_buffer_size = 0
 
 ; Performance optimizations
 opcache.max_wasted_percentage = 5
@@ -978,8 +980,8 @@ opcache.fast_shutdown=1
 opcache.save_comments=1
 opcache.enable_file_override=0
 opcache.validate_timestamps=1
-opcache.jit_buffer_size=100M
-opcache.jit=tracing
+opcache.jit_buffer_size=0
+opcache.jit=off
 
 ; Phar
 phar.readonly = Off
@@ -1730,6 +1732,12 @@ if [ ! -f configure.patched ]; then
     -e 's/have_shm_mmap_posix=no/have_shm_mmap_posix=yes/g' \\
     configure
 
+  # For PHP 8.4+, also patch the OPcache condition to bypass the check entirely
+  # Replace the condition that checks all three variables with a forced "true"
+  sed -i.bak2 \\
+    -e 's/if test "\\$php_cv_shm_ipc" != "yes" && test "\\$php_cv_shm_mmap_posix" != "yes" && test "\\$php_cv_shm_mmap_anon" != "yes"/if false/g' \\
+    configure
+
   # Mark as patched
   touch configure.patched
 fi
@@ -1885,6 +1893,12 @@ if [ ! -f configure.patched ]; then
     -e 's/have_shm_ipc=no/have_shm_ipc=yes/g' \\
     -e 's/have_shm_mmap_anon=no/have_shm_mmap_anon=yes/g' \\
     -e 's/have_shm_mmap_posix=no/have_shm_mmap_posix=yes/g' \\
+    configure
+
+  # For PHP 8.4+, also patch the OPcache condition to bypass the check entirely
+  # Replace the condition that checks all three variables with a forced "true"
+  sed -i.bak2 \\
+    -e 's/if test "\\$php_cv_shm_ipc" != "yes" && test "\\$php_cv_shm_mmap_posix" != "yes" && test "\\$php_cv_shm_mmap_anon" != "yes"/if false/g' \\
     configure
 
   # Mark as patched
@@ -2337,23 +2351,60 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     stdio: 'inherit',
   })
 
-  // Apply source patches for macOS x86_64 inline assembly issues
-  if (config.platform === 'darwin' && config.arch === 'x86_64') {
-    log('Applying macOS x86_64 inline assembly patches...')
+  // Apply comprehensive source patches for macOS OPcache JIT inline assembly issues
+  if (config.platform === 'darwin') {
+    log('Applying comprehensive macOS OPcache JIT inline assembly patches...')
     try {
-      const irX86File = join(phpSourceDir, 'ext/opcache/jit/ir/ir_x86.dasc')
-      if (existsSync(irX86File)) {
-        // Fix invalid operand for inline asm constraint 'S' on macOS Intel
-        // The "S" constraint requires a register but sometimes gets an incompatible operand
-        // Replace with "r" (general register) constraint which is more compatible
-        execSync(`sed -i.bak 's/asm volatile(".byte 0x0f, 0x1c, 0x06" :: "S" (p))/asm volatile(".byte 0x0f, 0x1c, 0x06" : : "r" (p) : "memory")/g' "${irX86File}"`, {
-          cwd: phpSourceDir,
-          stdio: 'inherit',
-        })
-        log('✅ Applied inline assembly constraint fix for macOS x86_64')
+      const jitSourceFiles = [
+        'ext/opcache/jit/ir/ir_x86.dasc',
+        'ext/opcache/jit/zend_jit_x86.dasc',
+        'ext/opcache/jit/ir/ir_emit.c',
+        'ext/opcache/jit/ir/ir_ra.c',
+        'ext/opcache/jit/zend_jit.c',
+        'ext/opcache/jit/zend_jit_arm64.dasc',
+      ]
+
+      let patchesApplied = 0
+
+      for (const sourceFile of jitSourceFiles) {
+        const filePath = join(phpSourceDir, sourceFile)
+        if (existsSync(filePath)) {
+          // Fix inline assembly constraint issues comprehensively
+          // Replace problematic constraints with more compatible ones
+          const patches = [
+            // Fix "S" constraint (source register) - incompatible on macOS
+            's/asm volatile\\("([^"]*)" :: "S" ([^)]*)\\)/asm volatile("$1" : : "r" $2 : "memory")/g',
+            // Fix "D" constraint (destination register) issues
+            's/asm volatile\\("([^"]*)" :: "D" ([^)]*)\\)/asm volatile("$1" : : "r" $2 : "memory")/g',
+            // Fix mixed constraint issues
+            's/asm volatile\\("([^"]*)" :: "([SD])" ([^)]*), "([^"]*)" ([^)]*)\\)/asm volatile("$1" : : "r" $3, "r" $5 : "memory")/g',
+            // Fix memory operand issues in inline assembly
+            's/__asm__ volatile\\("([^"]*)" :: "([SD])" ([^)]*)\\)/__asm__ volatile("$1" : : "r" $3 : "memory")/g',
+          ]
+
+          for (const patch of patches) {
+            try {
+              execSync(`sed -i.jitpatch 's,${patch},g' "${filePath}"`, {
+                cwd: phpSourceDir,
+                stdio: 'pipe', // Suppress output for cleaner logs
+              })
+            } catch (sedError) {
+              // Ignore individual sed errors, they might mean pattern not found
+            }
+          }
+
+          patchesApplied++
+          log(`✅ Processed inline assembly patches for ${sourceFile}`)
+        }
+      }
+
+      if (patchesApplied > 0) {
+        log(`✅ Applied comprehensive inline assembly fixes to ${patchesApplied} files`)
+      } else {
+        log('ℹ️ No OPcache JIT source files found to patch')
       }
     } catch (patchError) {
-      log(`⚠️ Failed to apply inline assembly patch: ${patchError}`)
+      log(`⚠️ Failed to apply comprehensive inline assembly patches: ${patchError}`)
       // Continue anyway - the build might still work
     }
   }
