@@ -1442,6 +1442,25 @@ exec "$@"
 
     // Update PATH to use our wrapper
     buildEnv.PATH = `${phpSourceDir}:${buildEnv.PATH}`
+
+    // Fix "fixup not sufficiently aligned" errors in OPcache JIT on macOS
+    // Add compiler flags to ensure proper alignment for inline assembly
+    const additionalCFlags = [
+      '-mno-unaligned-access',      // ARM64-specific: prevent unaligned access
+      '-falign-functions=16',       // Align functions to 16-byte boundaries
+      '-falign-loops=16',           // Align loops to 16-byte boundaries
+      '-fno-strict-aliasing',       // Prevent strict aliasing optimizations
+      '-fno-delete-null-pointer-checks', // Prevent null pointer optimizations
+    ]
+
+    // Add these flags to CFLAGS and CXXFLAGS if they don't already exist
+    const currentCFlags = buildEnv.CFLAGS || ''
+    const currentCXXFlags = buildEnv.CXXFLAGS || ''
+
+    buildEnv.CFLAGS = `${currentCFlags} ${additionalCFlags.join(' ')}`.trim()
+    buildEnv.CXXFLAGS = `${currentCXXFlags} ${additionalCFlags.join(' ')}`.trim()
+
+    log('✅ Added macOS-specific compiler flags to prevent alignment errors')
   }
 
   // Check if configure already exists (some PHP releases include it)
