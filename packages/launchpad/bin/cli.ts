@@ -751,6 +751,73 @@ cli
     }
   })
 
+// Activate command - user-friendly alias for dev:on
+cli
+  .command('activate [dir]', 'Activate development environment for current or specified directory')
+  .alias('on')
+  .alias('enable')
+  .option('--silent', 'Suppress output messages')
+  .option('--shell-safe', 'Output shell-safe message without ANSI escape sequences')
+  .example('launchpad activate')
+  .example('launchpad on /path/to/project')
+  .example('launchpad enable')
+  .action(async (dir?: string, options?: { silent?: boolean, shellSafe?: boolean }) => {
+    try {
+      const targetDir = dir ? path.resolve(dir) : process.cwd()
+
+      // Show activation message if not explicitly silenced
+      if (!options?.silent) {
+        // Show activation message if configured
+        if (config.showShellMessages && config.shellActivationMessage) {
+          let message = config.shellActivationMessage.replace('{path}', path.basename(targetDir))
+
+          // If called with shell-safe option, strip ANSI escape sequences to prevent shell parsing issues
+          if (options?.shellSafe) {
+            // eslint-disable-next-line no-control-regex
+            message = message.replace(/\u001B\[[0-9;]*m/g, '')
+          }
+
+          console.log(message)
+        }
+      }
+    }
+    catch (error) {
+      if (!options?.silent) {
+        console.error('Failed to activate dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      process.exit(1)
+    }
+  })
+
+// Deactivate command - user-friendly alias for dev:off
+cli
+  .command('deactivate', 'Deactivate current development environment and use system/homebrew dependencies')
+  .alias('off')
+  .alias('disable')
+  .option('--silent', 'Suppress output messages')
+  .example('launchpad deactivate')
+  .example('launchpad off')
+  .example('launchpad disable')
+  .action(async (options?: { silent?: boolean }) => {
+    try {
+      // The actual deactivation is handled by shell functions
+      // This command exists for consistency and user-friendly access
+
+      if (!options?.silent) {
+        // Show deactivation message if configured
+        if (config.showShellMessages && config.shellDeactivationMessage) {
+          console.log(config.shellDeactivationMessage)
+        }
+      }
+    }
+    catch (error) {
+      if (!options?.silent) {
+        console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      process.exit(1)
+    }
+  })
+
 // Environment management commands
 
 // List environments command

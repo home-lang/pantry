@@ -48,21 +48,10 @@ const registry: Record<string, () => Promise<Command>> = {
   'build-env': async () => (await import('./build-env')).default,
 }
 
-// Aliases map to canonical command names
-const aliases: Record<string, string> = {
-  'remove': 'uninstall',
-  'packages': 'tags',
-  'cache:info': 'cache:stats',
-  'up': 'update',
-  'self-update': 'upgrade',
-  'service': 'services',
-}
-
 export async function resolveCommand(name?: string): Promise<Command | undefined> {
   if (!name)
     return undefined
-  const key = aliases[name] || name
-  const loader = registry[key]
+  const loader = registry[name]
   if (!loader)
     return undefined
   return loader()
