@@ -96,153 +96,414 @@ function findLatestVersion(basePath: string): string | null {
 
 function fixMacOSLibraryPaths(phpBinaryPath: string, homeDir: string): void {
   if (!existsSync(phpBinaryPath)) {
-    log(`Warning: PHP binary not found at ${phpBinaryPath}`)
-    return
+    log(`⚠️ PHP binary not found at ${phpBinaryPath}`)
+    throw new Error(`PHP binary not found: ${phpBinaryPath}`)
   }
 
   try {
-    // Get the current library dependencies
-    const otoolOutput = execSync(`otool -L "${phpBinaryPath}"`, { encoding: 'utf8' })
-    log('Current library dependencies:')
+    // Get the current library dependencies with better error handling
+    let otoolOutput: string
+    try {
+      otoolOutput = execSync(`otool -L "${phpBinaryPath}"`, {
+        encoding: 'utf8',
+        timeout: 30000 // 30 second timeout
+      })
+    } catch (error) {
+      log(`❌ Failed to analyze library dependencies: ${error}`)
+      throw new Error(`otool analysis failed: ${error}`)
+    }
+
+    log('🔍 Analyzing current library dependencies:')
     log(`🔧 ${phpBinaryPath}:`)
-    otoolOutput.split('\n').forEach(line => {
-      if (line.trim() && !line.includes(phpBinaryPath)) {
-        log(`🔧 ${line.trim()}`)
-      }
+    const dependencyLines = otoolOutput.split('\n').filter(line => {
+      const trimmed = line.trim()
+      return trimmed && !trimmed.includes(phpBinaryPath) && trimmed.includes('.dylib')
     })
 
-    // Comprehensive library mapping for all possible libraries used by PHP
+    dependencyLines.forEach(line => {
+      log(`🔧   ${line.trim()}`)
+    })
+
+    if (dependencyLines.length === 0) {
+      log('✅ No library dependencies found to fix')
+      return
+    }
+
+    // Enhanced library mapping with more comprehensive patterns
     const libraryMappings = [
-      { name: 'ncurses', patterns: ['libncursesw.6.dylib', 'libncurses.6.dylib'], basePath: 'invisible-island.net/ncurses' },
-      { name: 'readline', patterns: ['libreadline.8.3.dylib', 'libreadline.8.dylib'], basePath: 'gnu.org/readline' },
-      { name: 'libiconv', patterns: ['libiconv.2.dylib'], basePath: 'gnu.org/libiconv' },
-      { name: 'gettext', patterns: ['libintl.8.dylib'], basePath: 'gnu.org/gettext' },
-      { name: 'bz2', patterns: ['libbz2.1.0.8.dylib', 'libbz2.1.dylib'], basePath: 'sourceware.org/bzip2' },
-      { name: 'libxml2', patterns: ['libxml2.2.dylib'], basePath: 'gnome.org/libxml2' },
-      { name: 'openssl', patterns: ['libssl.1.1.dylib', 'libcrypto.1.1.dylib'], basePath: 'openssl.org' },
-      { name: 'sqlite', patterns: ['libsqlite3.3.50.4.dylib', 'libsqlite3.dylib'], basePath: 'sqlite.org' },
-      { name: 'zlib', patterns: ['libz.1.3.1.dylib', 'libz.1.dylib'], basePath: 'zlib.net' },
-      { name: 'curl', patterns: ['libcurl.4.dylib'], basePath: 'curl.se' },
-      { name: 'libffi', patterns: ['libffi.8.dylib'], basePath: 'sourceware.org/libffi' },
-      { name: 'libpng', patterns: ['libpng16.16.dylib'], basePath: 'libpng.org' },
-      { name: 'gmp', patterns: ['libgmp.10.dylib'], basePath: 'gnu.org/gmp' },
-      { name: 'icu', patterns: ['libicuio.73.2.dylib', 'libicui18n.73.2.dylib', 'libicuuc.73.2.dylib', 'libicudata.73.2.dylib'], basePath: 'unicode.org' },
-      { name: 'oniguruma', patterns: ['libonig.5.dylib'], basePath: 'github.com/kkos/oniguruma' },
-      { name: 'sodium', patterns: ['libsodium.23.dylib'], basePath: 'libsodium.org' },
-      { name: 'xslt', patterns: ['libxslt.1.dylib', 'libexslt.0.dylib'], basePath: 'gnome.org/libxslt' },
-      { name: 'zip', patterns: ['libzip.5.5.dylib', 'libzip.5.dylib'], basePath: 'libzip.org' }
+      {
+        name: 'ncurses',
+        patterns: ['libncursesw.6.dylib', 'libncurses.6.dylib', 'libncursesw.dylib', 'libncurses.dylib'],
+        basePath: 'invisible-island.net/ncurses'
+      },
+      {
+        name: 'readline',
+        patterns: ['libreadline.8.3.dylib', 'libreadline.8.dylib', 'libreadline.dylib'],
+        basePath: 'gnu.org/readline'
+      },
+      {
+        name: 'libiconv',
+        patterns: ['libiconv.2.dylib', 'libiconv.dylib'],
+        basePath: 'gnu.org/libiconv'
+      },
+      {
+        name: 'gettext',
+        patterns: ['libintl.8.dylib', 'libintl.dylib'],
+        basePath: 'gnu.org/gettext'
+      },
+      {
+        name: 'bz2',
+        patterns: ['libbz2.1.0.8.dylib', 'libbz2.1.dylib', 'libbz2.dylib'],
+        basePath: 'sourceware.org/bzip2'
+      },
+      {
+        name: 'libxml2',
+        patterns: ['libxml2.2.dylib', 'libxml2.dylib'],
+        basePath: 'gnome.org/libxml2'
+      },
+      {
+        name: 'openssl',
+        patterns: ['libssl.1.1.dylib', 'libcrypto.1.1.dylib', 'libssl.dylib', 'libcrypto.dylib'],
+        basePath: 'openssl.org'
+      },
+      {
+        name: 'sqlite',
+        patterns: ['libsqlite3.3.50.4.dylib', 'libsqlite3.dylib'],
+        basePath: 'sqlite.org'
+      },
+      {
+        name: 'zlib',
+        patterns: ['libz.1.3.1.dylib', 'libz.1.dylib', 'libz.dylib'],
+        basePath: 'zlib.net'
+      },
+      {
+        name: 'curl',
+        patterns: ['libcurl.4.dylib', 'libcurl.dylib'],
+        basePath: 'curl.se'
+      },
+      {
+        name: 'libffi',
+        patterns: ['libffi.8.dylib', 'libffi.dylib'],
+        basePath: 'sourceware.org/libffi'
+      },
+      {
+        name: 'libpng',
+        patterns: ['libpng16.16.dylib', 'libpng16.dylib', 'libpng.dylib'],
+        basePath: 'libpng.org'
+      },
+      {
+        name: 'gmp',
+        patterns: ['libgmp.10.dylib', 'libgmp.dylib'],
+        basePath: 'gnu.org/gmp'
+      },
+      {
+        name: 'icu',
+        patterns: [
+          'libicuio.73.2.dylib', 'libicui18n.73.2.dylib', 'libicuuc.73.2.dylib', 'libicudata.73.2.dylib',
+          'libicuio.dylib', 'libicui18n.dylib', 'libicuuc.dylib', 'libicudata.dylib'
+        ],
+        basePath: 'unicode.org'
+      },
+      {
+        name: 'oniguruma',
+        patterns: ['libonig.5.dylib', 'libonig.dylib'],
+        basePath: 'github.com/kkos/oniguruma'
+      },
+      {
+        name: 'sodium',
+        patterns: ['libsodium.23.dylib', 'libsodium.dylib'],
+        basePath: 'libsodium.org'
+      },
+      {
+        name: 'xslt',
+        patterns: ['libxslt.1.dylib', 'libexslt.0.dylib', 'libxslt.dylib', 'libexslt.dylib'],
+        basePath: 'gnome.org/libxslt'
+      },
+      {
+        name: 'zip',
+        patterns: ['libzip.5.5.dylib', 'libzip.5.dylib', 'libzip.dylib'],
+        basePath: 'libzip.org'
+      }
     ]
 
     let fixedCount = 0
-    const lines = otoolOutput.split('\n')
+    let failedCount = 0
+    const lines = dependencyLines
 
-    // First pass: Fix all @rpath references comprehensively
-    log('🔧 Checking for @rpath issues...')
+    // Enhanced first pass: Fix all @rpath references with better error handling
+    log('🔧 Phase 1: Fixing @rpath references...')
+    const rpathFixPromises = []
     for (const line of lines) {
       const trimmed = line.trim()
       const rpathMatch = trimmed.match(/^@rpath\/(.+?)\s+\(/)
       if (rpathMatch) {
         const libPath = rpathMatch[1] // e.g., "gnu.org/gettext/v0.22.5/lib/libintl.8.dylib"
-        log(`🔧 Found @rpath reference: ${libPath}`)
+        log(`🔧 Processing @rpath reference: ${libPath}`)
 
-        // Extract library filename from the path
-        const libFileName = libPath.split('/').pop()
-        if (!libFileName) continue
+        // Extract library filename from the path with better validation
+        const pathParts = libPath.split('/')
+        const libFileName = pathParts[pathParts.length - 1]
+        if (!libFileName || !libFileName.includes('.dylib')) {
+          log(`🔧 ⚠️ Invalid library filename extracted from ${libPath}`)
+          continue
+        }
 
-        // Find the correct mapping based on the library filename
+        // Enhanced mapping search with fuzzy matching
         const mapping = libraryMappings.find(m =>
           m.patterns.some(pattern => {
-            const basePattern = pattern.replace('.dylib', '')
-            return libFileName.includes(basePattern) || pattern === libFileName ||
-                   libFileName.match(new RegExp(basePattern.replace(/\d+/g, '\\d+')))
+            // Direct match
+            if (pattern === libFileName) return true
+
+            // Base name match (without version numbers)
+            const basePattern = pattern.replace(/\.\d+(\.\d+)*/, '').replace('.dylib', '')
+            const baseLibName = libFileName.replace(/\.\d+(\.\d+)*/, '').replace('.dylib', '')
+            if (basePattern === baseLibName) return true
+
+            // Substring match for versioned libraries
+            return libFileName.includes(basePattern) || baseLibName.includes(basePattern.replace(/\d+/g, ''))
           })
         )
 
         if (mapping) {
-          // Find the latest version of this library
           const latestPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
-          if (latestPath) {
-            const correctLibPath = join(latestPath, 'lib', libFileName)
-            if (existsSync(correctLibPath)) {
-              log(`🔧 Fixing @rpath reference: @rpath/${libPath} -> ${correctLibPath}`)
-              try {
-                execSync(`install_name_tool -change "@rpath/${libPath}" "${correctLibPath}" "${phpBinaryPath}"`, {
-                  stdio: 'inherit'
-                })
-                fixedCount++
-              } catch (e) {
-                log(`🔧 Warning: Could not fix @rpath/${libPath}: ${e}`)
-              }
-            } else {
-              log(`🔧 Warning: Library not found at ${correctLibPath}`)
-            }
-          } else {
-            log(`🔧 Warning: Could not find ${mapping.name} installation`)
+          if (!latestPath) {
+            log(`🔧 ❌ Could not find ${mapping.name} installation directory`)
+            failedCount++
+            continue
           }
-        } else {
-          // Try generic search for unmapped libraries
-          try {
-            const findResult = execSync(`find ${homeDir}/.local -name "${libFileName}" -type f 2>/dev/null | head -1`, { encoding: 'utf8' }).trim()
-            if (findResult && existsSync(findResult)) {
-              log(`🔧 Fixing unmapped @rpath reference: @rpath/${libPath} -> ${findResult}`)
-              execSync(`install_name_tool -change "@rpath/${libPath}" "${findResult}" "${phpBinaryPath}"`, {
-                stdio: 'inherit'
+
+          // Try multiple potential library paths
+          const possiblePaths = [
+            join(latestPath, 'lib', libFileName),
+            ...mapping.patterns.map(pattern => join(latestPath, 'lib', pattern))
+          ]
+
+          let correctLibPath = null
+          for (const path of possiblePaths) {
+            if (existsSync(path)) {
+              correctLibPath = path
+              break
+            }
+          }
+
+          if (correctLibPath) {
+            log(`🔧 ✅ Fixing @rpath reference: @rpath/${libPath} -> ${correctLibPath}`)
+            try {
+              execSync(`install_name_tool -change "@rpath/${libPath}" "${correctLibPath}" "${phpBinaryPath}"`, {
+                stdio: 'pipe',
+                timeout: 10000 // 10 second timeout
               })
               fixedCount++
+              log(`🔧 ✅ Successfully fixed ${mapping.name} library path`)
+            } catch (e) {
+              log(`🔧 ❌ Failed to fix @rpath/${libPath}: ${e}`)
+              failedCount++
+            }
+          } else {
+            log(`🔧 ❌ Library not found in any expected locations for ${mapping.name}`)
+            log(`🔧 📍 Searched paths: ${possiblePaths.join(', ')}`)
+            failedCount++
+          }
+        } else {
+          // Enhanced generic search with multiple strategies
+          log(`🔧 🔍 Searching for unmapped library: ${libFileName}`)
+          let foundLibrary = false
+
+          try {
+            // Strategy 1: Direct filename search
+            const findResult = execSync(
+              `find ${homeDir}/.local -name "${libFileName}" -type f 2>/dev/null | head -1`,
+              { encoding: 'utf8', timeout: 15000 }
+            ).trim()
+
+            if (findResult && existsSync(findResult)) {
+              log(`🔧 ✅ Found unmapped library: ${findResult}`)
+              execSync(`install_name_tool -change "@rpath/${libPath}" "${findResult}" "${phpBinaryPath}"`, {
+                stdio: 'pipe',
+                timeout: 10000
+              })
+              fixedCount++
+              foundLibrary = true
             } else {
-              log(`🔧 Warning: Could not find library ${libFileName} in ${homeDir}/.local`)
+              // Strategy 2: Search by base name without version
+              const baseName = libFileName.replace(/\.\d+(\.\d+)*/, '')
+              if (baseName !== libFileName) {
+                const baseResult = execSync(
+                  `find ${homeDir}/.local -name "${baseName}*" -type f 2>/dev/null | head -1`,
+                  { encoding: 'utf8', timeout: 15000 }
+                ).trim()
+
+                if (baseResult && existsSync(baseResult)) {
+                  log(`🔧 ✅ Found library by base name: ${baseResult}`)
+                  execSync(`install_name_tool -change "@rpath/${libPath}" "${baseResult}" "${phpBinaryPath}"`, {
+                    stdio: 'pipe',
+                    timeout: 10000
+                  })
+                  fixedCount++
+                  foundLibrary = true
+                }
+              }
+            }
+
+            if (!foundLibrary) {
+              log(`🔧 ❌ Could not locate library ${libFileName} anywhere in ${homeDir}/.local`)
+              failedCount++
             }
           } catch (e) {
-            log(`🔧 Warning: Search failed for ${libFileName}: ${e}`)
+            log(`🔧 ❌ Search failed for ${libFileName}: ${e}`)
+            failedCount++
           }
         }
       }
     }
 
-    // Second pass: Fix any remaining direct references that aren't using correct paths
+    // Enhanced second pass: Fix direct path references with better validation
+    log('🔧 Phase 2: Fixing direct library path references...')
     for (const mapping of libraryMappings) {
       const latestPath = findLatestVersion(`${homeDir}/.local/${mapping.basePath}`)
-      if (!latestPath) continue
+      if (!latestPath) {
+        log(`🔧 ⚠️ Skipping ${mapping.name}: no installation found`)
+        continue
+      }
 
       for (const pattern of mapping.patterns) {
         const correctLibPath = join(latestPath, 'lib', pattern)
-        if (!existsSync(correctLibPath)) continue
+        if (!existsSync(correctLibPath)) {
+          continue // Skip non-existent libraries
+        }
 
-        // Look for any references to this library that don't use the correct path
+        // Look for references that need updating
         for (const line of lines) {
           const trimmed = line.trim()
-          if (trimmed.includes(pattern) && !trimmed.startsWith(correctLibPath) && !trimmed.startsWith('@rpath/')) {
-            const match = trimmed.match(/^(.+?)\s+\(/)
-            if (match) {
-              const currentPath = match[1]
-              log(`🔧 Fixing ${mapping.name} path: ${currentPath} -> ${correctLibPath}`)
-              try {
-                execSync(`install_name_tool -change "${currentPath}" "${correctLibPath}" "${phpBinaryPath}"`, {
-                  stdio: 'inherit'
-                })
-                fixedCount++
-              } catch (e) {
-                log(`🔧 Warning: Could not fix ${currentPath}: ${e}`)
-              }
-            }
+          if (!trimmed.includes(pattern) || trimmed.startsWith('@rpath/')) {
+            continue // Skip irrelevant lines
+          }
+
+          const match = trimmed.match(/^(.+?)\s+\(/)
+          if (!match) continue
+
+          const currentPath = match[1]
+          if (currentPath === correctLibPath) {
+            continue // Already correct
+          }
+
+          log(`🔧 ✅ Updating ${mapping.name}: ${currentPath} -> ${correctLibPath}`)
+          try {
+            execSync(`install_name_tool -change "${currentPath}" "${correctLibPath}" "${phpBinaryPath}"`, {
+              stdio: 'pipe',
+              timeout: 10000
+            })
+            fixedCount++
+            log(`🔧 ✅ Successfully updated ${mapping.name} library path`)
+          } catch (e) {
+            log(`🔧 ❌ Failed to update ${currentPath}: ${e}`)
+            failedCount++
           }
         }
       }
     }
 
-    log(`🔧 ✅ Fixed ${fixedCount} library paths for PHP binary`)
-
-    // Try to fix mprotect permission issues on macOS
-    try {
-      log('🔧 Fixing potential mprotect permission issues...')
-      execSync(`codesign --remove-signature "${phpBinaryPath}" 2>/dev/null || true`, { stdio: 'pipe' })
-      execSync(`codesign --force --deep --sign - "${phpBinaryPath}" 2>/dev/null || true`, { stdio: 'pipe' })
-      log('🔧 ✅ Applied code signing to prevent mprotect errors')
-    } catch (signError) {
-      log('🔧 Note: Could not apply code signing (may require developer tools)')
+    // Summary with proper error handling
+    log(`🔧 📊 Library path fixing complete:`)
+    log(`🔧 ✅ Successfully fixed: ${fixedCount} paths`)
+    if (failedCount > 0) {
+      log(`🔧 ❌ Failed to fix: ${failedCount} paths`)
     }
+
+    if (fixedCount === 0 && failedCount === 0) {
+      log(`🔧 ℹ️ No library paths needed fixing`)
+    } else if (failedCount > fixedCount) {
+      log(`🔧 ⚠️ More paths failed than succeeded - this may cause runtime issues`)
+    } else if (fixedCount > 0) {
+      log(`🔧 ✅ Library path fixing completed successfully`)
+    }
+
+    // Enhanced verification step - check that the fixes worked
+    log('🔧 Phase 3: Verifying library path fixes...')
+    try {
+      const verifyOutput = execSync(`otool -L "${phpBinaryPath}"`, {
+        encoding: 'utf8',
+        timeout: 30000
+      })
+
+      const remainingRpathRefs = verifyOutput.split('\n').filter(line =>
+        line.trim().startsWith('@rpath/')
+      )
+
+      if (remainingRpathRefs.length > 0) {
+        log(`🔧 ⚠️ Warning: ${remainingRpathRefs.length} @rpath references still remain:`)
+        remainingRpathRefs.forEach(ref => log(`🔧   ${ref.trim()}`))
+      } else {
+        log(`🔧 ✅ All @rpath references have been resolved`)
+      }
+
+      // Check for any invalid paths
+      const libraryLines = verifyOutput.split('\n').filter(line => {
+        const trimmed = line.trim()
+        return trimmed && trimmed.includes('.dylib') && !trimmed.includes(phpBinaryPath)
+      })
+
+      let invalidPaths = 0
+      for (const line of libraryLines) {
+        const match = line.trim().match(/^(.+?)\s+\(/)
+        if (match) {
+          const libPath = match[1]
+          if (!libPath.startsWith('@') && !existsSync(libPath)) {
+            log(`🔧 ❌ Invalid library path: ${libPath}`)
+            invalidPaths++
+          }
+        }
+      }
+
+      if (invalidPaths === 0) {
+        log(`🔧 ✅ All library paths are valid and accessible`)
+      } else {
+        log(`🔧 ⚠️ Found ${invalidPaths} invalid library paths that may cause runtime issues`)
+      }
+    } catch (verifyError) {
+      log(`🔧 ⚠️ Could not verify library path fixes: ${verifyError}`)
+    }
+
+    // Enhanced code signing with better error handling
+    try {
+      log('🔧 Phase 4: Applying code signing to prevent mprotect errors...')
+
+      // Remove existing signature
+      try {
+        execSync(`codesign --remove-signature "${phpBinaryPath}" 2>/dev/null`, {
+          stdio: 'pipe',
+          timeout: 30000
+        })
+        log('🔧 ✅ Removed existing code signature')
+      } catch (removeError) {
+        log('🔧 ℹ️ No existing signature to remove (this is normal)')
+      }
+
+      // Apply new signature
+      try {
+        execSync(`codesign --force --deep --sign - "${phpBinaryPath}" 2>/dev/null`, {
+          stdio: 'pipe',
+          timeout: 30000
+        })
+        log('🔧 ✅ Successfully applied ad-hoc code signature')
+      } catch (signError) {
+        log(`🔧 ⚠️ Could not apply code signature: ${signError}`)
+        log('🔧 ℹ️ This may cause mprotect issues but the binary should still work')
+      }
+    } catch (signError) {
+      log(`🔧 ⚠️ Code signing phase failed: ${signError}`)
+    }
+
+    // Final status report
+    if (failedCount > 0 && failedCount > fixedCount) {
+      throw new Error(`Library path fixing failed: ${failedCount} failures vs ${fixedCount} successes. This may cause runtime issues.`)
+    }
+
+    log('🔧 ✅ Library path fixing process completed')
+
   } catch (error) {
-    log(`🔧 Warning: Could not fix library paths: ${error}`)
+    log(`🔧 ❌ Critical error during library path fixing: ${error}`)
+    throw error // Re-throw to ensure build fails if library fixing is critical
   }
 }
 
