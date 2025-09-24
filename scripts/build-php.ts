@@ -2386,6 +2386,31 @@ exec ./configure "$@"
 
   log(`✅ PHP ${config.phpVersion} built successfully at ${installPrefix}`)
 
+  // Verify that the binary was actually installed
+  const phpBinaryPath = join(installPrefix, 'bin', 'php')
+  if (existsSync(phpBinaryPath)) {
+    log(`✅ PHP binary verified at: ${phpBinaryPath}`)
+  } else {
+    log(`❌ PHP binary not found at expected location: ${phpBinaryPath}`)
+    log(`🔍 Contents of ${installPrefix}:`)
+    if (existsSync(installPrefix)) {
+      const contents = readdirSync(installPrefix)
+      log(`   ${contents.join(', ')}`)
+
+      // Check if bin directory exists
+      const binDir = join(installPrefix, 'bin')
+      if (existsSync(binDir)) {
+        log(`🔍 Contents of ${binDir}:`)
+        const binContents = readdirSync(binDir)
+        log(`   ${binContents.join(', ')}`)
+      } else {
+        log(`❌ bin directory does not exist at ${binDir}`)
+      }
+    } else {
+      log(`❌ Install prefix directory does not exist: ${installPrefix}`)
+    }
+  }
+
   // Test the binary (platform-specific)
   if (config.platform === 'win32') {
     const phpBinary = join(installPrefix, 'bin', 'php.exe')
@@ -2714,6 +2739,32 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   createUnixPhpIni(installPrefix, config)
 
   log(`✅ PHP ${config.phpVersion} built successfully with system libraries`)
+
+  // Verify that the binary was actually installed
+  const phpBinaryPath = join(installPrefix, 'bin', 'php')
+  if (existsSync(phpBinaryPath)) {
+    log(`✅ PHP binary verified at: ${phpBinaryPath}`)
+  } else {
+    log(`❌ PHP binary not found at expected location: ${phpBinaryPath}`)
+    log(`🔍 Contents of ${installPrefix}:`)
+    if (existsSync(installPrefix)) {
+      const contents = readdirSync(installPrefix)
+      log(`   ${contents.join(', ')}`)
+
+      // Check if bin directory exists
+      const binDir = join(installPrefix, 'bin')
+      if (existsSync(binDir)) {
+        log(`🔍 Contents of ${binDir}:`)
+        const binContents = readdirSync(binDir)
+        log(`   ${binContents.join(', ')}`)
+      } else {
+        log(`❌ bin directory does not exist at ${binDir}`)
+      }
+    } else {
+      log(`❌ Install prefix directory does not exist: ${installPrefix}`)
+    }
+  }
+
   return installPrefix
 }
 
