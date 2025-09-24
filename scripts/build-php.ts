@@ -1222,6 +1222,7 @@ async function buildPhp(config: BuildConfig): Promise<string> {
         // Update the environment with new paths
         buildEnv.PKG_CONFIG_PATH = updatedPkgConfigPaths.join(':')
         buildEnv.LDFLAGS = updatedLibPaths.map(path => `-L${path}`).join(' ')
+        buildEnv.CPPFLAGS = updatedIncludePaths.map(path => `-I${path}`).join(' ')
 
         log(`✅ Updated paths after dependency installation`)
         log(`✅ Found ${updatedLibPaths.length} library paths and ${updatedIncludePaths.length} include paths`)
@@ -1306,6 +1307,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
     const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
 
     buildEnv.LDFLAGS += ` -lresolv${iconvFlag} ${rpathFlags} -Wl,-headerpad_max_install_names`
+    // Update CPPFLAGS to use filtered include paths for consistency
+    buildEnv.CPPFLAGS = uniqueIncludePaths.map(path => `-I${path}`).join(' ')
     // Set up runtime library path for macOS (build-time only)
     buildEnv.DYLD_LIBRARY_PATH = uniqueLibPaths.join(':')
     buildEnv.LD = '/usr/bin/ld'
@@ -1313,8 +1316,11 @@ async function buildPhp(config: BuildConfig): Promise<string> {
   else {
     // Linux: Use dynamic rpaths based on actual library locations, removing duplicates
     const uniqueLibPaths = [...new Set(libPaths)]
+    const uniqueIncludePaths = [...new Set(includePaths)]
     const rpathFlags = uniqueLibPaths.map(path => `-Wl,-rpath,${path}`).join(' ')
     buildEnv.LDFLAGS += ` ${rpathFlags}`
+    // Update CPPFLAGS to use unique include paths for consistency
+    buildEnv.CPPFLAGS = uniqueIncludePaths.map(path => `-I${path}`).join(' ')
   }
 
   // Add Launchpad PATH to buildEnv if we're using Launchpad dependencies
