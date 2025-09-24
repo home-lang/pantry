@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync, statSync } from 'node:fs'
 import path, { join } from 'node:path'
 import process from 'node:process'
 
@@ -2313,6 +2313,23 @@ exec ./configure "$@"
       chmodSync(phpBinaryPath, '755') // Make executable
       log(`🔧 ✅ Manually copied PHP binary from ${buildTimePhpBinary} to ${phpBinaryPath}`)
 
+      // Helper function to safely copy files (skip sockets, pipes, etc.)
+      const safeCopyFile = (source: string, target: string): boolean => {
+        try {
+          const stats = statSync(source)
+          if (!stats.isFile()) {
+            log(`🔧 ⚠️ Skipping ${source} - not a regular file (type: ${stats.isSocket() ? 'socket' : stats.isFIFO() ? 'pipe' : stats.isDirectory() ? 'directory' : 'other'})`)
+            return false
+          }
+          copyFileSync(source, target)
+          chmodSync(target, '755')
+          return true
+        } catch (error) {
+          log(`🔧 ⚠️ Failed to copy ${source}: ${error}`)
+          return false
+        }
+      }
+
       // Also copy other important binaries if they exist and weren't installed
       const otherBinaries = ['php-cgi', 'php-config', 'phpize', 'pear', 'pecl']
       for (const binary of otherBinaries) {
@@ -2322,17 +2339,11 @@ exec ./configure "$@"
         const targetBinary = join(installPrefix, 'bin', binary)
 
         if (!existsSync(targetBinary)) {
-          if (existsSync(sourceBinary)) {
-            copyFileSync(sourceBinary, targetBinary)
-            chmodSync(targetBinary, '755')
+          if (existsSync(sourceBinary) && safeCopyFile(sourceBinary, targetBinary)) {
             log(`🔧 ✅ Manually copied ${binary}`)
-          } else if (existsSync(altSourceBinary)) {
-            copyFileSync(altSourceBinary, targetBinary)
-            chmodSync(targetBinary, '755')
+          } else if (existsSync(altSourceBinary) && safeCopyFile(altSourceBinary, targetBinary)) {
             log(`🔧 ✅ Manually copied ${binary} from scripts`)
-          } else if (existsSync(altSource2Binary)) {
-            copyFileSync(altSource2Binary, targetBinary)
-            chmodSync(targetBinary, '755')
+          } else if (existsSync(altSource2Binary) && safeCopyFile(altSource2Binary, targetBinary)) {
             log(`🔧 ✅ Manually copied ${binary} from root`)
           }
         }
@@ -2341,9 +2352,7 @@ exec ./configure "$@"
       // Copy CGI binary specifically
       const cgiBinarySource = join(phpSourceDir, 'sapi', 'cgi', 'php-cgi')
       const cgiBinaryTarget = join(installPrefix, 'bin', 'php-cgi')
-      if (!existsSync(cgiBinaryTarget) && existsSync(cgiBinarySource)) {
-        copyFileSync(cgiBinarySource, cgiBinaryTarget)
-        chmodSync(cgiBinaryTarget, '755')
+      if (!existsSync(cgiBinaryTarget) && existsSync(cgiBinarySource) && safeCopyFile(cgiBinarySource, cgiBinaryTarget)) {
         log(`🔧 ✅ Manually copied php-cgi binary`)
       }
 
@@ -2352,9 +2361,9 @@ exec ./configure "$@"
       const fpmBinaryTarget = join(installPrefix, 'sbin', 'php-fpm')
       if (!existsSync(fpmBinaryTarget) && existsSync(fpmBinarySource)) {
         mkdirSync(join(installPrefix, 'sbin'), { recursive: true })
-        copyFileSync(fpmBinarySource, fpmBinaryTarget)
-        chmodSync(fpmBinaryTarget, '755')
-        log(`🔧 ✅ Manually copied php-fpm binary`)
+        if (safeCopyFile(fpmBinarySource, fpmBinaryTarget)) {
+          log(`🔧 ✅ Manually copied php-fpm binary`)
+        }
       }
     }
 
