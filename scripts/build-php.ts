@@ -2232,7 +2232,8 @@ exec ./configure "$@"
         })
         log('🔧 ✅ Build-time PHP binary is working correctly')
       } catch (error) {
-        log('🔧 ❌ Build-time PHP binary still has issues, attempting additional fixes...')
+        log('💥 ❌ CRITICAL: Build-time PHP binary validation failed')
+        log('💥 This indicates a fundamental compilation issue that cannot be resolved with fallbacks')
 
         // Try additional comprehensive fixing
         const otoolOutput = execSync(`otool -L "${buildTimePhpBinary}"`, { encoding: 'utf8' })
@@ -2240,7 +2241,24 @@ exec ./configure "$@"
         log(otoolOutput)
 
         // Apply fixes again in case some were missed
-        fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
+        try {
+          fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
+
+          // Test the binary one more time after fixes
+          execSync(`"${buildTimePhpBinary}" --version`, {
+            stdio: 'pipe',
+            env: {
+              ...process.env,
+              DYLD_LIBRARY_PATH: libPaths.join(':'),
+              DYLD_FALLBACK_LIBRARY_PATH: libPaths.join(':')
+            }
+          })
+          log('🔧 ✅ Build-time PHP binary fixed successfully')
+        } catch (retryError) {
+          log('💥 ❌ CRITICAL: Build-time PHP binary cannot be fixed')
+          log('💥 This indicates a fundamental compilation failure')
+          throw new Error('Build failed: PHP binary compilation produced non-functional binary despite fixes')
+        }
       }
     }
 
@@ -2307,12 +2325,27 @@ exec ./configure "$@"
       timeout: 15 * 60 * 1000, // 15 minutes timeout for install
     })
 
-    // Fallback: if make install didn't create the binary, manually copy it
+    // Verify make install succeeded - it should have created the PHP binary
     const phpBinaryPath = join(installPrefix, 'bin', 'php')
     const buildTimePhpBinary = join(phpSourceDir, 'sapi', 'cli', 'php')
 
-    if (!existsSync(phpBinaryPath) && existsSync(buildTimePhpBinary)) {
-      log('🔧 ⚠️ make install did not create PHP binary, manually copying...')
+    if (!existsSync(phpBinaryPath)) {
+      log('💥 ❌ CRITICAL: make install failed to create PHP binary')
+      log(`💥 Expected PHP binary at: ${phpBinaryPath}`)
+      log(`💥 Build-time binary exists: ${existsSync(buildTimePhpBinary)}`)
+
+      if (existsSync(buildTimePhpBinary)) {
+        log('💥 This indicates make install failed during the installation phase')
+        log('💥 Check the make install logs above for errors')
+      } else {
+        log('💥 This indicates make compilation failed to produce a working binary')
+        log('💥 Check the make logs above for compilation errors')
+      }
+
+      throw new Error('Build failed: make install did not create PHP binary. This is a critical build failure.')
+    }
+
+    log('✅ make install successfully created PHP binary')
 
       // Copy the main PHP binary
       copyFileSync(buildTimePhpBinary, phpBinaryPath)
@@ -2412,6 +2445,54 @@ exec ./configure "$@"
     } else {
       throw error
     }
+  }
+
+  // Additional post-build validation
+  log('🔍 Performing post-build validation...')
+
+  // Verify final PHP binary works correctly
+  try {
+    const phpBinaryPath = join(installPrefix, 'bin', 'php')
+    const versionOutput = execSync(`"${phpBinaryPath}" --version`, {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        DYLD_LIBRARY_PATH: libPaths.join(':'),
+        DYLD_FALLBACK_LIBRARY_PATH: libPaths.join(':')
+      }
+    })
+
+    log('✅ Final PHP binary validation successful')
+    log(`📋 PHP Version: ${versionOutput.split('\n')[0]}`)
+
+    // Check for required extensions
+    const extensionsOutput = execSync(`"${phpBinaryPath}" -m`, {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        DYLD_LIBRARY_PATH: libPaths.join(':'),
+        DYLD_FALLBACK_LIBRARY_PATH: libPaths.join(':')
+      }
+    })
+
+    const extensions = extensionsOutput.split('\n').filter(ext => ext.trim())
+    log(`📦 Available extensions (${extensions.length}): ${extensions.slice(0, 10).join(', ')}${extensions.length > 10 ? '...' : ''}`)
+
+    // Check for critical extensions required for Laravel/Composer
+    const criticalExtensions = ['Core', 'json', 'mbstring', 'iconv', 'openssl', 'curl']
+    const missingCritical = criticalExtensions.filter(ext => !extensions.includes(ext))
+
+    if (missingCritical.length > 0) {
+      log(`💥 ❌ CRITICAL: Missing required extensions: ${missingCritical.join(', ')}`)
+      throw new Error(`Build failed: Critical extensions missing: ${missingCritical.join(', ')}`)
+    }
+
+    log('✅ All critical extensions present')
+
+  } catch (error) {
+    log('💥 ❌ CRITICAL: Final PHP binary validation failed')
+    log(`💥 Error: ${error}`)
+    throw new Error('Build failed: Final PHP binary is not functional')
   }
 
   // Fix library paths on macOS after installation
