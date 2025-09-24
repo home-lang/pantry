@@ -2994,9 +2994,17 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   ]
 
   let configureSuccess = false
+
+  // Determine which configure script to use (wrapper for macOS)
+  let configScript = './configure'
+  if (config.platform === 'darwin' && existsSync(join(phpSourceDir, 'configure-wrapper.sh'))) {
+    configScript = './configure-wrapper.sh'
+    log('🔧 Using configure wrapper for macOS compatibility')
+  }
+
   try {
     log('Attempting full configure with all extensions...')
-    execSync(`./configure ${fullConfigureArgs.join(' ')}`, {
+    execSync(`${configScript} ${fullConfigureArgs.join(' ')}`, {
       cwd: phpSourceDir,
       env: buildEnv,
       stdio: 'inherit',
@@ -3021,7 +3029,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     for (const ext of extensionsToTest) {
       try {
         const testArgs = [...baseConfigureArgs, ext.flag]
-        execSync(`./configure ${testArgs.join(' ')}`, {
+        execSync(`${configScript} ${testArgs.join(' ')}`, {
           cwd: phpSourceDir,
           env: buildEnv,
           stdio: 'pipe',
@@ -3035,7 +3043,7 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
     }
 
     // Final configure with working extensions
-    execSync(`./configure ${workingArgs.join(' ')}`, {
+    execSync(`${configScript} ${workingArgs.join(' ')}`, {
       cwd: phpSourceDir,
       env: buildEnv,
       stdio: 'inherit',
