@@ -2331,7 +2331,7 @@ exec ./configure "$@"
 
     if (!existsSync(phpBinaryPath)) {
       log('💥 ❌ CRITICAL: make install failed to create PHP binary')
-      log(`💥 Expected PHP binary at: ${phpBinaryPath}`)
+      log(`💥 Expected PHP binary at: ${join(installPrefix, 'bin', 'php')}`)
       log(`💥 Build-time binary exists: ${existsSync(buildTimePhpBinary)}`)
 
       if (existsSync(buildTimePhpBinary)) {
@@ -2347,105 +2347,6 @@ exec ./configure "$@"
 
     log('✅ make install successfully created PHP binary')
 
-      // Copy the main PHP binary
-      copyFileSync(buildTimePhpBinary, phpBinaryPath)
-      chmodSync(phpBinaryPath, '755') // Make executable
-      log(`🔧 ✅ Manually copied PHP binary from ${buildTimePhpBinary} to ${phpBinaryPath}`)
-
-      // Helper function to safely copy files (skip sockets, pipes, etc.)
-      const safeCopyFile = (source: string, target: string): boolean => {
-        try {
-          const stats = statSync(source)
-          if (!stats.isFile()) {
-            log(`🔧 ⚠️ Skipping ${source} - not a regular file (type: ${stats.isSocket() ? 'socket' : stats.isFIFO() ? 'pipe' : stats.isDirectory() ? 'directory' : 'other'})`)
-            return false
-          }
-          copyFileSync(source, target)
-          chmodSync(target, '755')
-          return true
-        } catch (error) {
-          log(`🔧 ⚠️ Failed to copy ${source}: ${error}`)
-          return false
-        }
-      }
-
-      // Also copy other important binaries if they exist and weren't installed
-      const otherBinaries = ['php-cgi', 'php-config', 'phpize', 'pear', 'pecl']
-      for (const binary of otherBinaries) {
-        const sourceBinary = join(phpSourceDir, 'sapi', 'cgi', binary) // Try CGI first
-        const altSourceBinary = join(phpSourceDir, 'scripts', binary) // Try scripts dir
-        const altSource2Binary = join(phpSourceDir, binary) // Try root
-        const targetBinary = join(installPrefix, 'bin', binary)
-
-        if (!existsSync(targetBinary)) {
-          if (existsSync(sourceBinary) && safeCopyFile(sourceBinary, targetBinary)) {
-            log(`🔧 ✅ Manually copied ${binary}`)
-          } else if (existsSync(altSourceBinary) && safeCopyFile(altSourceBinary, targetBinary)) {
-            log(`🔧 ✅ Manually copied ${binary} from scripts`)
-          } else if (existsSync(altSource2Binary) && safeCopyFile(altSource2Binary, targetBinary)) {
-            log(`🔧 ✅ Manually copied ${binary} from root`)
-          }
-        }
-      }
-
-      // Copy CGI binary specifically
-      const cgiBinarySource = join(phpSourceDir, 'sapi', 'cgi', 'php-cgi')
-      const cgiBinaryTarget = join(installPrefix, 'bin', 'php-cgi')
-      if (!existsSync(cgiBinaryTarget) && existsSync(cgiBinarySource) && safeCopyFile(cgiBinarySource, cgiBinaryTarget)) {
-        log(`🔧 ✅ Manually copied php-cgi binary`)
-      }
-
-      // Copy FPM binary specifically
-      const fpmBinarySource = join(phpSourceDir, 'sapi', 'fpm', 'php-fpm')
-      const fpmBinaryTarget = join(installPrefix, 'sbin', 'php-fpm')
-      if (!existsSync(fpmBinaryTarget) && existsSync(fpmBinarySource)) {
-        mkdirSync(join(installPrefix, 'sbin'), { recursive: true })
-        if (safeCopyFile(fpmBinarySource, fpmBinaryTarget)) {
-          log(`🔧 ✅ Manually copied php-fpm binary`)
-        }
-      }
-    }
-
-  } catch (error) {
-    if (config.platform === 'darwin') {
-      log('🔧 ❌ Installation failed, checking build-time PHP binary again...')
-
-      const buildTimePhpBinary = join(phpSourceDir, 'sapi', 'cli', 'php')
-      if (existsSync(buildTimePhpBinary)) {
-        // Check what's wrong with the binary
-        try {
-          const otoolOutput = execSync(`otool -L "${buildTimePhpBinary}"`, { encoding: 'utf8' })
-          log('🔧 Build-time PHP binary dependencies:')
-          log(otoolOutput)
-
-          // Try one more comprehensive fix
-          log('🔧 Attempting final library path fix...')
-          fixMacOSLibraryPaths(buildTimePhpBinary, homeDir)
-
-          // Test the binary one more time
-          execSync(`"${buildTimePhpBinary}" --version`, {
-            stdio: 'inherit',
-            env: installEnv
-          })
-
-          log('🔧 Binary is now working, retrying installation...')
-          execSync('make install', {
-            stdio: 'inherit',
-            cwd: phpSourceDir,
-            env: installEnv,
-            timeout: 15 * 60 * 1000,
-          })
-        } catch (finalError) {
-          log(`🔧 Final installation attempt failed: ${finalError}`)
-          throw error
-        }
-      } else {
-        throw error
-      }
-    } else {
-      throw error
-    }
-  }
 
   // Additional post-build validation
   log('🔍 Performing post-build validation...')
@@ -2453,7 +2354,7 @@ exec ./configure "$@"
   // Verify final PHP binary works correctly
   try {
     const phpBinaryPath = join(installPrefix, 'bin', 'php')
-    const versionOutput = execSync(`"${phpBinaryPath}" --version`, {
+    const versionOutput = execSync(`"${join(installPrefix, 'bin', 'php')}" --version`, {
       encoding: 'utf8',
       env: {
         ...process.env,
@@ -2466,7 +2367,7 @@ exec ./configure "$@"
     log(`📋 PHP Version: ${versionOutput.split('\n')[0]}`)
 
     // Check for required extensions
-    const extensionsOutput = execSync(`"${phpBinaryPath}" -m`, {
+    const extensionsOutput = execSync(`"${join(installPrefix, 'bin', 'php')}" -m`, {
       encoding: 'utf8',
       env: {
         ...process.env,
@@ -2553,11 +2454,10 @@ exec ./configure "$@"
   log(`✅ PHP ${config.phpVersion} built successfully at ${installPrefix}`)
 
   // Verify that the binary was actually installed
-  const phpBinaryPath = join(installPrefix, 'bin', 'php')
-  if (existsSync(phpBinaryPath)) {
-    log(`✅ PHP binary verified at: ${phpBinaryPath}`)
+  if (existsSync(join(installPrefix, 'bin', 'php'))) {
+    log(`✅ PHP binary verified at: ${join(installPrefix, 'bin', 'php')}`)
   } else {
-    log(`❌ PHP binary not found at expected location: ${phpBinaryPath}`)
+    log(`❌ PHP binary not found at expected location: ${join(installPrefix, 'bin', 'php')}`)
     log(`🔍 Contents of ${installPrefix}:`)
     if (existsSync(installPrefix)) {
       const contents = readdirSync(installPrefix)
@@ -2647,6 +2547,11 @@ exec ./configure "$@"
   }
 
   return installPrefix
+} catch (error) {
+  log('💥 ❌ CRITICAL: PHP installation failed')
+  log(`💥 Error: ${error}`)
+  throw new Error(`Build failed during installation: ${error}`)
+}
 }
 
 // Add a BZip2 specific cache variable for configure
@@ -2909,9 +2814,9 @@ function buildPhpWithSystemLibraries(config: BuildConfig, installPrefix: string)
   // Verify that the binary was actually installed
   const phpBinaryPath = join(installPrefix, 'bin', 'php')
   if (existsSync(phpBinaryPath)) {
-    log(`✅ PHP binary verified at: ${phpBinaryPath}`)
+    log(`✅ PHP binary verified at: ${join(installPrefix, 'bin', 'php')}`)
   } else {
-    log(`❌ PHP binary not found at expected location: ${phpBinaryPath}`)
+    log(`❌ PHP binary not found at expected location: ${join(installPrefix, 'bin', 'php')}`)
     log(`🔍 Contents of ${installPrefix}:`)
     if (existsSync(installPrefix)) {
       const contents = readdirSync(installPrefix)
