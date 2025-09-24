@@ -1718,16 +1718,13 @@ exec "$@"
     buildEnv.PATH = `${phpSourceDir}:${buildEnv.PATH}`
 
     // Fix "fixup not sufficiently aligned" errors in OPcache JIT on macOS
-    // Add aggressive compiler flags to ensure proper alignment for inline assembly
+    // Add macOS-compatible compiler flags to ensure proper alignment for inline assembly
     const additionalCFlags = [
-      '-falign-functions=32',       // Align functions to 32-byte boundaries (more aggressive)
-      '-falign-loops=32',           // Align loops to 32-byte boundaries (more aggressive)
-      '-falign-jumps=32',           // Align jump targets to 32-byte boundaries
-      '-falign-labels=32',          // Align labels to 32-byte boundaries
+      '-falign-functions=32',       // Align functions to 32-byte boundaries (supported on macOS)
+      '-falign-loops=32',           // Align loops to 32-byte boundaries (supported on macOS)
       '-fno-strict-aliasing',       // Prevent strict aliasing optimizations
       '-fno-delete-null-pointer-checks', // Prevent null pointer optimizations
       '-fno-optimize-sibling-calls', // Prevent tail call optimization that can affect alignment
-      '-fno-reorder-blocks',        // Prevent block reordering that can affect alignment
       '-mstackrealign',             // Force stack realignment for better alignment guarantees
     ]
 
@@ -1735,6 +1732,11 @@ exec "$@"
     if (config.arch === 'arm64') {
       additionalCFlags.push('-mno-unaligned-access') // ARM64-specific: prevent unaligned access
     }
+
+    // Remove unsupported flags on macOS clang:
+    // - '-falign-jumps=32' (not supported by clang)
+    // - '-falign-labels=32' (not supported by clang)
+    // - '-fno-reorder-blocks' (not supported by clang)
 
     // Add these flags to CFLAGS and CXXFLAGS if they don't already exist
     const currentCFlags = buildEnv.CFLAGS || ''
