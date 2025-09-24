@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync } from 'node:fs'
 import path, { join } from 'node:path'
 import process from 'node:process'
 
@@ -2282,12 +2282,82 @@ exec ./configure "$@"
   }
 
   try {
+    // First, ensure the install directory structure exists
+    mkdirSync(join(installPrefix, 'bin'), { recursive: true })
+    mkdirSync(join(installPrefix, 'lib'), { recursive: true })
+    mkdirSync(join(installPrefix, 'share'), { recursive: true })
+    mkdirSync(join(installPrefix, 'sbin'), { recursive: true })
+
+    // Use DESTDIR to ensure make install targets the correct location
+    // This forces PHP's build system to install to the correct prefix
     execSync('make install', {
       stdio: 'inherit',
       cwd: phpSourceDir,
-      env: installEnv,
+      env: {
+        ...installEnv,
+        DESTDIR: '', // Ensure DESTDIR is empty so prefix is used directly
+        INSTALL_ROOT: '' // Also ensure INSTALL_ROOT doesn't interfere
+      },
       timeout: 15 * 60 * 1000, // 15 minutes timeout for install
     })
+
+    // Fallback: if make install didn't create the binary, manually copy it
+    const phpBinaryPath = join(installPrefix, 'bin', 'php')
+    const buildTimePhpBinary = join(phpSourceDir, 'sapi', 'cli', 'php')
+
+    if (!existsSync(phpBinaryPath) && existsSync(buildTimePhpBinary)) {
+      log('🔧 ⚠️ make install did not create PHP binary, manually copying...')
+
+      // Copy the main PHP binary
+      copyFileSync(buildTimePhpBinary, phpBinaryPath)
+      chmodSync(phpBinaryPath, '755') // Make executable
+      log(`🔧 ✅ Manually copied PHP binary from ${buildTimePhpBinary} to ${phpBinaryPath}`)
+
+      // Also copy other important binaries if they exist and weren't installed
+      const otherBinaries = ['php-cgi', 'php-config', 'phpize', 'pear', 'pecl']
+      for (const binary of otherBinaries) {
+        const sourceBinary = join(phpSourceDir, 'sapi', 'cgi', binary) // Try CGI first
+        const altSourceBinary = join(phpSourceDir, 'scripts', binary) // Try scripts dir
+        const altSource2Binary = join(phpSourceDir, binary) // Try root
+        const targetBinary = join(installPrefix, 'bin', binary)
+
+        if (!existsSync(targetBinary)) {
+          if (existsSync(sourceBinary)) {
+            copyFileSync(sourceBinary, targetBinary)
+            chmodSync(targetBinary, '755')
+            log(`🔧 ✅ Manually copied ${binary}`)
+          } else if (existsSync(altSourceBinary)) {
+            copyFileSync(altSourceBinary, targetBinary)
+            chmodSync(targetBinary, '755')
+            log(`🔧 ✅ Manually copied ${binary} from scripts`)
+          } else if (existsSync(altSource2Binary)) {
+            copyFileSync(altSource2Binary, targetBinary)
+            chmodSync(targetBinary, '755')
+            log(`🔧 ✅ Manually copied ${binary} from root`)
+          }
+        }
+      }
+
+      // Copy CGI binary specifically
+      const cgiBinarySource = join(phpSourceDir, 'sapi', 'cgi', 'php-cgi')
+      const cgiBinaryTarget = join(installPrefix, 'bin', 'php-cgi')
+      if (!existsSync(cgiBinaryTarget) && existsSync(cgiBinarySource)) {
+        copyFileSync(cgiBinarySource, cgiBinaryTarget)
+        chmodSync(cgiBinaryTarget, '755')
+        log(`🔧 ✅ Manually copied php-cgi binary`)
+      }
+
+      // Copy FPM binary specifically
+      const fpmBinarySource = join(phpSourceDir, 'sapi', 'fpm', 'php-fpm')
+      const fpmBinaryTarget = join(installPrefix, 'sbin', 'php-fpm')
+      if (!existsSync(fpmBinaryTarget) && existsSync(fpmBinarySource)) {
+        mkdirSync(join(installPrefix, 'sbin'), { recursive: true })
+        copyFileSync(fpmBinarySource, fpmBinaryTarget)
+        chmodSync(fpmBinaryTarget, '755')
+        log(`🔧 ✅ Manually copied php-fpm binary`)
+      }
+    }
+
   } catch (error) {
     if (config.platform === 'darwin') {
       log('🔧 ❌ Installation failed, checking build-time PHP binary again...')
