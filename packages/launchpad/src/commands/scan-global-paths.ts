@@ -8,6 +8,7 @@ const cmd: Command = {
     const globalDir = argv[0]
     try {
       const paths = await scanGlobalPaths(globalDir)
+      // eslint-disable-next-line no-console
       console.log(paths.join(' '))
       return 0
     }

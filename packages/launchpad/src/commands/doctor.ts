@@ -7,6 +7,7 @@ const command: Command = {
   async run() {
     try {
       const report = await runDoctorChecks()
+      // eslint-disable-next-line no-console
       console.log(formatDoctorReport(report))
       return report.overall === 'healthy' ? 0 : 1
     }
