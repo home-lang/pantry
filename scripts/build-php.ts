@@ -2314,6 +2314,13 @@ exec ./configure "$@"
         ac_cv_path_M4: '/usr/bin/m4',
         ac_cv_prog_M4: '/usr/bin/m4',
         AUTOCONF_M4: '/usr/bin/m4',
+        // Prevent autotools from automatically adding --host flag for cross-compilation
+        TARGET_ARCH: undefined,
+        TARGET_PLATFORM: undefined,
+        host_alias: '',
+        build_alias: '',
+        target_alias: '',
+        cross_compiling: 'no',
       // Add autoconf cache variables to prevent header detection failures
       ac_cv_header_stdc: 'yes',
       ac_cv_header_sys_types_h: 'yes',
