@@ -279,22 +279,7 @@ export class PrecompiledBinaryDownloader {
       return phpConfig.configuration
     }
 
-    // Use auto-detection if enabled
-    if (phpConfig?.strategy === 'auto-detect') {
-      try {
-        const { PHPAutoDetector } = await import('./php/auto-detector')
-        const detector = new PHPAutoDetector()
-        const analysis = await detector.analyzeProject()
-
-        console.log(detector.getConfigurationExplanation(analysis))
-
-        return analysis.recommendedConfig
-      }
-      catch (error) {
-        console.warn(`⚠️ Auto-detection failed: ${error instanceof Error ? error.message : String(error)}`)
-        console.warn('🔄 Falling back to basic detection...')
-      }
-    }
+    // PHP auto-detection has been removed - using fallback detection
 
     // Fallback to basic detection
     try {

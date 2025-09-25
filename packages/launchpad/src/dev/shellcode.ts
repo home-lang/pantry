@@ -40,19 +40,19 @@ if [[ "$LAUNCHPAD_SKIP_INITIAL_INTEGRATION" == "1" ]]; then
     return 0 2>/dev/null || exit 0
 fi
 
-# PATH helper: prepend a directory if not already present
-__lp_prepend_path() {
+# PATH helper: append a directory if not already present
+__lp_append_path() {
     local dir="$1"
     if [[ -n "$dir" && -d "$dir" ]]; then
         case ":$PATH:" in
             *":$dir:"*) : ;;
-            *) PATH="$dir:$PATH"; export PATH ;;
+            *) PATH="$PATH:$dir"; export PATH ;;
         esac
     fi
 }
 
-# Ensure Launchpad global bin is on PATH early (for globally installed tools)
-__lp_prepend_path "$HOME/.local/share/launchpad/global/bin"
+# Ensure Launchpad global bin is on PATH (with lower priority than system tools)
+__lp_append_path "$HOME/.local/share/launchpad/global/bin"
 
 # Portable current time in milliseconds
 lp_now_ms() {
@@ -275,12 +275,12 @@ __launchpad_switch_environment() {
         # Ensure global paths are still available when not in a project
         # Add ~/.local/bin to PATH if not already there
         if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
-            export PATH="$local_bin:$PATH"
+            export PATH="$PATH:$local_bin"
         fi
-        
+
         # Add launchpad global bin to PATH if not already there
         if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
-            export PATH="$global_bin:$PATH"
+            export PATH="$PATH:$global_bin"
         fi
         
         return 0
@@ -365,7 +365,7 @@ __launchpad_switch_environment() {
             if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
                 export PATH="$PATH:$local_bin"
             fi
-            
+
             # Add launchpad global bin to PATH if not already there (after project and ~/.local/bin)
             if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
                 export PATH="$PATH:$global_bin"
@@ -424,12 +424,12 @@ __launchpad_switch_environment() {
             # Environment not ready - still ensure global paths are available
             # Add ~/.local/bin to PATH if not already there
             if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
-                export PATH="$local_bin:$PATH"
+                export PATH="$PATH:$local_bin"
             fi
-            
+
             # Add launchpad global bin to PATH if not already there
             if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
-                export PATH="$global_bin:$PATH"
+                export PATH="$PATH:$global_bin"
             fi
         fi
     fi
