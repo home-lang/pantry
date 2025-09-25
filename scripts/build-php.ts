@@ -1918,11 +1918,7 @@ exec "$@"
   }
 
   // Log final configure command for debugging
-  // Add --host flag on macOS to force cross-compilation and skip problematic runtime tests
-  if (config.platform === 'darwin') {
-    const hostArch = config.arch === 'arm64' ? 'aarch64' : 'x86_64'
-    configureArgs.push(`--host=${hostArch}-apple-darwin`)
-  }
+  // Note: Removed --host flag that was causing cross-compilation issues and corrupted binaries
 
   log(`🔧 Final configure args: ${configureArgs.join(' ')}`)
 
@@ -2028,10 +2024,8 @@ export ac_cv_func_iconv_broken=no
 export php_cv_func_iconv_works=yes
 export ac_cv_iconv_supports_errno=yes
 export php_cv_iconv_errno_support=yes
-# Ensure the configure script thinks it's in cross-compilation mode
-export cross_compiling=yes
-export host_alias=\${host_alias:-\$(uname -m)-apple-darwin}
-export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
+# Note: Removed cross-compilation variables to allow native compilation
+# This prevents the "cannot run C compiled programs" configure error
 
 # iconv is required for Laravel/Composer - must not be disabled
 # Force the configure script to completely skip the errno runtime test
@@ -2191,10 +2185,8 @@ export ac_cv_func_iconv_broken=no
 export php_cv_func_iconv_works=yes
 export ac_cv_iconv_supports_errno=yes
 export php_cv_iconv_errno_support=yes
-# Ensure the configure script thinks it's in cross-compilation mode
-export cross_compiling=yes
-export host_alias=\${host_alias:-\$(uname -m)-apple-darwin}
-export build_alias=\${build_alias:-\$(uname -m)-apple-darwin}
+# Note: Removed cross-compilation variables to allow native compilation
+# This prevents the "cannot run C compiled programs" configure error
 
 # iconv is required for Laravel/Composer - must not be disabled
 # Force the configure script to completely skip the errno runtime test
