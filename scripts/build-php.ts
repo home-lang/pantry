@@ -1560,7 +1560,8 @@ async function buildPhp(config: BuildConfig): Promise<string> {
       // ARM64 can use GNU libiconv without issues
       const iconvLibPath = uniqueLibPaths.find(p => p.includes('libiconv'))
       if (iconvLibPath) {
-        iconvFlag = ` ${iconvLibPath}/libiconv.2.dylib`
+        // Use proper -L and -l flags instead of direct dylib path to prevent runtime linking failures
+        iconvFlag = ` -L${iconvLibPath} -liconv`
         log(`🔧 ✅ Using GNU iconv library for ARM64: ${iconvLibPath}`)
       }
     }
