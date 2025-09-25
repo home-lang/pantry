@@ -59,8 +59,10 @@ for (const file of PROJECT_FILES) {
 ### Bun Glob Approach
 ```typescript
 const glob = new Glob(`{${PROJECT_FILES.join(',')}}`)
+// eslint-disable-next-line no-unreachable-loop
 for await (const file of glob.scan({ cwd: currentDir, onlyFiles: true })) {
-  return currentDir // Found a match
+  // Found a matching project file - return immediately on first match
+  return currentDir
 }
 ```
 

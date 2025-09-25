@@ -165,7 +165,7 @@ function setByPath(obj: any, path: string, value: any): boolean {
   else if (value === 'undefined') {
     parsedValue = undefined
   }
-  else if (!isNaN(Number(value)) && value !== '') {
+  else if (!Number.isNaN(Number(value)) && value !== '') {
     parsedValue = Number(value)
   }
   else if (value.startsWith('[') || value.startsWith('{')) {

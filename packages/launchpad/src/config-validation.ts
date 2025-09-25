@@ -244,6 +244,7 @@ function validatePath(
  */
 function isValidUrl(url: string): boolean {
   try {
+    // eslint-disable-next-line no-new
     new URL(url)
     return true
   }
@@ -256,7 +257,7 @@ function isValidUrl(url: string): boolean {
  * Validates if a string is a valid domain name
  */
 function isValidDomain(domain: string): boolean {
-  const domainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i
+  const domainRegex = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/i
   return domainRegex.test(domain)
 }
 
