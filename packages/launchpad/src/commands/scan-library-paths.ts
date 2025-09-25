@@ -8,6 +8,7 @@ const cmd: Command = {
     const envDir = argv[0]
     try {
       const paths = await scanLibraryPaths(envDir)
+      // eslint-disable-next-line no-console
       console.log(paths.join(':'))
       return 0
     }

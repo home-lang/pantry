@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import type { Command } from '../cli/types'
+import type { Buffer } from 'node:buffer'
 
 const cmd: Command = {
   name: 'md5',

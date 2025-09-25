@@ -1,4 +1,5 @@
 import type { Command } from '../cli/types'
+import process from 'node:process'
 
 const cmd: Command = {
   name: 'find-project-root',
@@ -11,6 +12,7 @@ const cmd: Command = {
     try {
       const result = findProjectRoot(startDir)
       if (result) {
+        // eslint-disable-next-line no-console
         console.log(result)
         return 0
       }

@@ -34,7 +34,7 @@ function parseArgs(argv: string[]): { force: boolean, verbose: boolean, target?:
   return { force, verbose, target, release, dryRun }
 }
 
-async function detectCurrentBinaryPath(verbose: boolean): Promise<string> {
+async function detectCurrentBinaryPath(_verbose: boolean): Promise<string> {
   // Try which launchpad
   try {
     const { execSync } = await import('node:child_process')

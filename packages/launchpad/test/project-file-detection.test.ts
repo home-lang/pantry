@@ -77,7 +77,7 @@ describe('Project File Detection', () => {
       ]
 
       for (const file of expectedFiles) {
-        expect(DEPENDENCY_FILE_NAMES).toContain(file)
+        expect(DEPENDENCY_FILE_NAMES).toContain(file as any)
       }
     })
   })

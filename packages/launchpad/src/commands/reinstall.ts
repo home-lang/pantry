@@ -6,7 +6,7 @@ import { config } from '../config'
 const cmd: Command = {
   name: 'reinstall',
   description: 'Uninstall and reinstall packages',
-  async run({ argv, env }) {
+  async run({ argv, env: _env }) {
     const { uninstall } = await import('../uninstall')
     const { install } = await import('../install')
 
@@ -14,7 +14,7 @@ const cmd: Command = {
     const force = argv.includes('--force')
     const dryRun = argv.includes('--dry-run')
     const global = argv.includes('--global') || argv.includes('-g')
-    const depsOnly = argv.includes('--deps-only')
+    const _depsOnly = argv.includes('--deps-only')
     const quiet = argv.includes('--quiet')
 
     // Extract path option

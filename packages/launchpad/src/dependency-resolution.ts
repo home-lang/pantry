@@ -71,11 +71,11 @@ export async function resolveAllDependencies(packages: string[]): Promise<string
 
       if (config.verbose) {
         console.warn(`🔍 ts-pkgx resolved ${result.totalCount || result.packages.length} total packages from ${packages.length} input packages`)
-        console.warn(`📦 Resolved packages: ${result.packages.map(pkg => `${pkg.name}@${pkg.version || 'latest'}`).join(', ')}`)
+        console.warn(`📦 Resolved packages: ${result.packages.map((pkg: any) => `${pkg.name}@${pkg.version || 'latest'}`).join(', ')}`)
       }
 
       // Convert resolved packages back to package specs
-      const resolvedSpecs = result.packages.map(pkg =>
+      const resolvedSpecs = result.packages.map((pkg: any) =>
         pkg.version ? `${pkg.name}@${pkg.version}` : pkg.name,
       )
 

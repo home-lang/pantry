@@ -80,8 +80,10 @@ export default async function (op: 'install' | 'uninstall', { dryrun }: { dryrun
           const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || process.env.CONTINUOUS_INTEGRATION === 'true'
           if (isCI) {
             // In CI, we can't restart terminal, so just note that hooks are installed
+            // eslint-disable-next-line no-console
             console.log('✅ Launchpad shell hooks installed for CI environment')
-          } else {
+          }
+          else {
             // eslint-disable-next-line no-console
             console.log(
               'now %crestart your terminal%c for `launchpad` hooks to take effect',

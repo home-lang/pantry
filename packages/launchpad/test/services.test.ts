@@ -449,7 +449,7 @@ describe('Service Management', () => {
 
       // Test restart
       const restartResult = await restartService(serviceName)
-      expect(restartResult).toBe(true)
+      expect(restartResult).toEqual({ success: true })
     })
 
     it('should handle multiple service operations concurrently', async () => {

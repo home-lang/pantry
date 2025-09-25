@@ -367,6 +367,10 @@ const command: Command = {
 
     if (args.action === 'get' || args.get) {
       const key = args.get
+      if (!key) {
+        console.error('Key is required for get operation')
+        return 1
+      }
       const val = getByPath(effectiveConfig, key)
       const out = val === undefined ? getByPath(defaultConfig, key) : val
 

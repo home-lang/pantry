@@ -1,4 +1,5 @@
 import type { Command } from '../cli/types'
+import process from 'node:process'
 
 const cmd: Command = {
   name: 'dev',

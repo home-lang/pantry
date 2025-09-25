@@ -355,7 +355,8 @@ describe('Dependency Resolution System', () => {
       it('should resolve range constraints correctly', () => {
         const result = resolveVersion('unicode.org', '71.0.0 - 73.2.0')
         expect(result).toBeTruthy()
-        expect(['71.1.0', '73.2.0']).toContain(result)
+        expect(result).not.toBeNull()
+        expect(['71.1.0', '73.2.0']).toContain(result!)
       })
     })
 

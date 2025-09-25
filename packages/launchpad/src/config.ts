@@ -82,8 +82,8 @@ export const defaultConfig: LaunchpadConfig = {
   network: {
     timeout: Number.parseInt(process.env.LAUNCHPAD_NETWORK_TIMEOUT || '30000', 10),
     // Use slightly higher concurrency in CI to speed up installation
-    maxConcurrent: Number.parseInt(process.env.LAUNCHPAD_NETWORK_MAX_CONCURRENT ||
-                    (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? '4' : '3'), 10),
+    maxConcurrent: Number.parseInt(process.env.LAUNCHPAD_NETWORK_MAX_CONCURRENT
+      || (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? '4' : '3'), 10),
     retries: Number.parseInt(process.env.LAUNCHPAD_NETWORK_RETRIES || '3', 10),
     proxy: {
       http: process.env.HTTP_PROXY || process.env.http_proxy,

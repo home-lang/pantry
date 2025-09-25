@@ -141,9 +141,9 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
 
   await createGlobalBinarySymlinks(globalEnvDir)
   // Skip shell integration in CI environments or if explicitly disabled
-  const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true' ||
-                                process.env.CI === 'true' ||
-                                process.env.GITHUB_ACTIONS === 'true'
+  const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+    || process.env.CI === 'true'
+    || process.env.GITHUB_ACTIONS === 'true'
   if (!options.quiet && !options.noInteractive && !skipShellIntegration) {
     await ensureShellIntegrationInstalled()
     triggerShellGlobalRefresh()
@@ -376,7 +376,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
   try {
     process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
     const pkgNames = ['php', 'php.net']
-    const isListed = (val: unknown): boolean => {
+    const _isListed = (val: unknown): boolean => {
       if (typeof val === 'string')
         return pkgNames.includes(val)
       if (Array.isArray(val))
@@ -509,9 +509,9 @@ const command: Command = {
         await createGlobalBinarySymlinks(basePath)
       }
       // Skip shell integration in CI environments or if explicitly disabled
-      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true' ||
-                                    process.env.CI === 'true' ||
-                                    process.env.GITHUB_ACTIONS === 'true'
+      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+        || process.env.CI === 'true'
+        || process.env.GITHUB_ACTIONS === 'true'
       if (!skipShellIntegration) {
         await ensureShellIntegrationInstalled()
         triggerShellGlobalRefresh()
@@ -561,9 +561,9 @@ const command: Command = {
         await createGlobalBinarySymlinks(basePath)
       }
       // Skip shell integration in CI environments or if explicitly disabled
-      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true' ||
-                                    process.env.CI === 'true' ||
-                                    process.env.GITHUB_ACTIONS === 'true'
+      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+        || process.env.CI === 'true'
+        || process.env.GITHUB_ACTIONS === 'true'
       if (!skipShellIntegration) {
         await ensureShellIntegrationInstalled()
         triggerShellGlobalRefresh()

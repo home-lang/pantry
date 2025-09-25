@@ -1,8 +1,9 @@
+/* eslint-disable no-console */
 import fs from 'node:fs'
 import path from 'node:path'
+import { resolveAllDependencies } from './dependency-resolution'
 import { getPackageInfo, resolvePackageName } from './install'
 import { Path } from './path'
-import { resolveAllDependencies } from './dependency-resolution'
 
 /**
  * Get all possible binary directories where packages might be installed
@@ -16,7 +17,8 @@ function getPossibleBinaryDirectories(isGlobal: boolean = false): Path[] {
     if (globalBin.isDirectory()) {
       directories.push(globalBin)
     }
-  } else {
+  }
+  else {
     // For local uninstalls, check standard locations
     // Add /usr/local/bin if it exists
     const usrLocalBin = new Path('/usr/local/bin')
@@ -74,12 +76,14 @@ function getInstalledGlobalPackages(): string[] {
             installedPackages.push(packageName)
           }
         }
-      } catch {
+      }
+      catch {
         // Skip directories we can't read
         continue
       }
     }
-  } catch {
+  }
+  catch {
     // If we can't read the global directory, return empty array
     return []
   }
@@ -99,7 +103,7 @@ function getPackageNameFromDomain(domain: string): string | null {
     'go.dev': 'go',
     'openjdk.org': 'java',
     'php.net': 'php',
-    'ruby-lang.org': 'ruby'
+    'ruby-lang.org': 'ruby',
   }
 
   return domainToPackage[domain] || domain.replace(/\.(org|com|net|dev)$/, '')
@@ -117,13 +121,14 @@ export async function handleDependencyCleanup(packageName: string, isDryRun: boo
     try {
       packageDependencies = await resolveAllDependencies([packageName])
       // Remove the main package itself from the dependencies list
-      packageDependencies = packageDependencies.filter(dep => {
+      packageDependencies = packageDependencies.filter((dep) => {
         const depName = dep.split('@')[0]
         const resolvedDep = resolvePackageName(depName)
         const resolvedMain = resolvePackageName(packageName)
         return resolvedDep !== resolvedMain
       })
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(`⚠️  Could not resolve dependencies for ${packageName}: ${error instanceof Error ? error.message : String(error)}`)
       console.log(`   Skipping dependency cleanup.`)
       return
@@ -136,7 +141,7 @@ export async function handleDependencyCleanup(packageName: string, isDryRun: boo
 
     // Get all currently installed packages (after removing the main package)
     const installedPackages = getInstalledGlobalPackages()
-    const remainingPackages = installedPackages.filter(pkg => {
+    const remainingPackages = installedPackages.filter((pkg) => {
       const resolvedPkg = resolvePackageName(pkg)
       const resolvedMain = resolvePackageName(packageName)
       return resolvedPkg !== resolvedMain
@@ -159,7 +164,8 @@ export async function handleDependencyCleanup(packageName: string, isDryRun: boo
             isStillNeeded = true
             break
           }
-        } catch {
+        }
+        catch {
           // If we can't resolve dependencies for a remaining package,
           // assume its dependencies might be needed
           isStillNeeded = true
@@ -188,8 +194,8 @@ export async function handleDependencyCleanup(packageName: string, isDryRun: boo
       console.log(`   launchpad uninstall -g ${dep}`)
     }
     console.log(`\n   Or remove all at once: launchpad uninstall -g ${unusedDependencies.join(' ')}`)
-
-  } catch (error) {
+  }
+  catch (error) {
     console.warn(`⚠️  Error during dependency cleanup: ${error instanceof Error ? error.message : String(error)}`)
   }
 }

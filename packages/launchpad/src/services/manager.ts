@@ -100,7 +100,7 @@ export async function startService(serviceName: string): Promise<boolean> {
     catch (error) {
       console.warn(`🧪 Test mode: Failed to start unknown service ${serviceName}`)
       operation.result = 'failure'
-      operation.error = error instanceof Error ? error.message : String(error)
+      operation.error = String(error)
       operation.duration = 0
       manager.operations.push(operation)
       return false
@@ -283,7 +283,7 @@ export async function startService(serviceName: string): Promise<boolean> {
   catch (error) {
     console.error(`❌ Failed to start service ${serviceName}: ${error}`)
     operation.result = 'failure'
-    operation.error = error
+    operation.error = String(error)
     operation.duration = 0
     manager.operations.push(operation)
     return false
@@ -378,12 +378,12 @@ export async function stopService(serviceName: string): Promise<boolean> {
   }
   catch (error) {
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = Date.now() - operation.timestamp.getTime()
     manager.operations.push(operation)
 
     console.error(`❌ Failed to stop ${serviceName}: ${operation.error}`)
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
 }
 
@@ -401,7 +401,8 @@ export async function restartService(serviceName: string): Promise<{ success: bo
   // Wait a moment before starting
   await new Promise(resolve => setTimeout(resolve, 1000))
 
-  return await startService(serviceName)
+  const startSuccess = await startService(serviceName)
+  return { success: startSuccess, error: startSuccess ? undefined : 'Failed to start service after restart' }
 }
 
 /**
@@ -437,10 +438,10 @@ export async function enableService(serviceName: string): Promise<boolean> {
     catch (error) {
       console.warn(`🧪 Test mode: Failed to enable unknown service ${serviceName}`)
       operation.result = 'failure'
-      operation.error = error instanceof Error ? error.message : String(error)
+      operation.error = String(error)
       operation.duration = 0
       manager.operations.push(operation)
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
   }
 
@@ -479,12 +480,12 @@ export async function enableService(serviceName: string): Promise<boolean> {
   }
   catch (error) {
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = Date.now() - operation.timestamp.getTime()
     manager.operations.push(operation)
 
     console.error(`❌ Failed to enable ${serviceName}: ${operation.error}`)
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
 }
 
@@ -569,12 +570,12 @@ export async function disableService(serviceName: string): Promise<boolean> {
   }
   catch (error) {
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = Date.now() - operation.timestamp.getTime()
     manager.operations.push(operation)
 
     console.error(`❌ Failed to disable ${serviceName}: ${operation.error}`)
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
 }
 
@@ -655,7 +656,7 @@ async function isServiceInitialized(service: ServiceInstance): Promise<boolean> 
   if (definition?.dataDirectory) {
     const dataDir = service.dataDir || definition.dataDirectory
     if (!fs.existsSync(dataDir)) {
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
 
     // For databases, check if data directory has initialization files
@@ -883,7 +884,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     }
     catch (importError) {
       console.error(`❌ Failed to import install function: ${importError instanceof Error ? importError.message : String(importError)}`)
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
 
     // Install the main service package - this will automatically install all dependencies
@@ -921,7 +922,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
         return true
       }
 
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
 
     // Verify installation worked by checking in the Launchpad environment
@@ -934,7 +935,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
   }
   catch (error) {
     console.error(`❌ Failed to install ${definition.displayName}: ${error instanceof Error ? error.message : String(error)}`)
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
 }
 
@@ -977,7 +978,7 @@ async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<b
     })
 
     if (!checkResult) {
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
 
     const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
@@ -995,11 +996,11 @@ async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<b
     if (config.verbose)
       console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
     // Do not attempt PECL here. Let binary-downloader pick the right PHP and shims load the project php.ini
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
   catch (error) {
     console.error(`❌ Failed to check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
 }
 
@@ -1099,7 +1100,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
   }
   catch (error) {
     console.warn(`⚠️  Could not set up SQLite automatically: ${error instanceof Error ? error.message : String(error)}`)
-    return { success: false, error: 'Service stop failed' }
+    return false
   }
 }
 
@@ -1219,7 +1220,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
     }
     catch (error) {
       console.error(`❌ Failed to initialize PostgreSQL: ${error instanceof Error ? error.message : String(error)}`)
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
   }
 
@@ -1251,7 +1252,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
     }
     catch (error) {
       console.error(`❌ Failed to initialize MySQL: ${error instanceof Error ? error.message : String(error)}`)
-      return { success: false, error: 'Service stop failed' }
+      return false
     }
   }
 

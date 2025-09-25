@@ -4,7 +4,7 @@ import type { Command } from '../cli/types'
 const cmd: Command = {
   name: 'uninstall',
   description: 'Remove installed packages',
-  async run({ argv, env }) {
+  async run({ argv, env: _env }) {
     const { uninstall } = await import('../uninstall')
     const { config } = await import('../config')
 
