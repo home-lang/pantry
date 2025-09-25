@@ -916,7 +916,7 @@ jobs:
           echo "  - Manifest file size: $(stat -c%s manifest.json 2>/dev/null || stat -f%z manifest.json) bytes"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: binaries-${{ github.run_number }}
           name: PHP Binaries - Build ${{ github.run_number }}
