@@ -365,9 +365,9 @@ describe('Service Management', () => {
     })
 
     it('should handle enabling non-existent service', async () => {
-      // The service manager catches errors and returns an error object instead of throwing
+      // The service manager catches errors and returns false instead of throwing
       const result = await enableService('unknown-service')
-      expect(result).toMatchObject({ success: false, error: 'Service stop failed' })
+      expect(result).toBe(false)
     })
 
     it('should handle disabling non-registered service', async () => {

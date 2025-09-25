@@ -253,12 +253,12 @@ __launchpad_switch_environment() {
         if [[ -n "$__LAUNCHPAD_LAST_ACTIVATION_KEY" ]]; then
             # Remove project-specific paths from PATH if they exist
             if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
-                export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
-                
+                export PATH=$(echo "$PATH" | /usr/bin/sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | /usr/bin/sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | /usr/bin/sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+
                 # Also remove bun global bin directory (derive from env path)
                 local old_env_dir=$(dirname "$LAUNCHPAD_ENV_BIN_PATH")
                 if [[ -n "$old_env_dir" ]]; then
-                    export PATH=$(echo "$PATH" | sed "s|$old_env_dir/.bun/bin:||g" | sed "s|:$old_env_dir/.bun/bin||g" | sed "s|^$old_env_dir/.bun/bin$||g")
+                    export PATH=$(echo "$PATH" | /usr/bin/sed "s|$old_env_dir/.bun/bin:||g" | /usr/bin/sed "s|:$old_env_dir/.bun/bin||g" | /usr/bin/sed "s|^$old_env_dir/.bun/bin$||g")
                 fi
             fi
 
@@ -271,7 +271,7 @@ __launchpad_switch_environment() {
             unset LAUNCHPAD_ENV_BIN_PATH
             unset __LAUNCHPAD_LAST_ACTIVATION_KEY
         fi
-        
+
         # Ensure global paths are still available when not in a project
         # Add ~/.local/bin to PATH if not already there
         if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then
@@ -282,7 +282,7 @@ __launchpad_switch_environment() {
         if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
             export PATH="$PATH:$global_bin"
         fi
-        
+
         return 0
     fi
 
@@ -318,12 +318,12 @@ __launchpad_switch_environment() {
         if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$LAUNCHPAD_CURRENT_PROJECT" != "$project_dir" ]]; then
             # Remove old project paths from PATH
             if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
-                export PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
-                
+                export PATH=$(echo "$PATH" | /usr/bin/sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g" | /usr/bin/sed "s|:$LAUNCHPAD_ENV_BIN_PATH||g" | /usr/bin/sed "s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+
                 # Also remove old bun global bin directory (derive from old env path)
                 local old_env_dir=$(dirname "$LAUNCHPAD_ENV_BIN_PATH")
                 if [[ -n "$old_env_dir" ]]; then
-                    export PATH=$(echo "$PATH" | sed "s|$old_env_dir/.bun/bin:||g" | sed "s|:$old_env_dir/.bun/bin||g" | sed "s|^$old_env_dir/.bun/bin$||g")
+                    export PATH=$(echo "$PATH" | /usr/bin/sed "s|$old_env_dir/.bun/bin:||g" | /usr/bin/sed "s|:$old_env_dir/.bun/bin||g" | /usr/bin/sed "s|^$old_env_dir/.bun/bin$||g")
                 fi
 
                 # Show deactivation message for old project if enabled
@@ -345,21 +345,21 @@ __launchpad_switch_environment() {
         if [[ -d "$env_dir/bin" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
             export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-            
+
             # Remove project-specific path if it was already in PATH
-            export PATH=$(echo "$PATH" | sed "s|$env_dir/bin:||g" | sed "s|:$env_dir/bin||g" | sed "s|^$env_dir/bin$||g")
-            
+            export PATH=$(echo "$PATH" | /usr/bin/sed "s|$env_dir/bin:||g" | /usr/bin/sed "s|:$env_dir/bin||g" | /usr/bin/sed "s|^$env_dir/bin$||g")
+
             # Add project-specific path first (highest priority)
             export PATH="$env_dir/bin:$PATH"
-            
+
             # Add bun global bin directory for this environment (high priority for global installs)
             if [[ -d "$env_dir/.bun/bin" ]]; then
                 # Remove bun global bin path if it was already in PATH
-                export PATH=$(echo "$PATH" | sed "s|$env_dir/.bun/bin:||g" | sed "s|:$env_dir/.bun/bin||g" | sed "s|^$env_dir/.bun/bin$||g")
+                export PATH=$(echo "$PATH" | /usr/bin/sed "s|$env_dir/.bun/bin:||g" | /usr/bin/sed "s|:$env_dir/.bun/bin||g" | /usr/bin/sed "s|^$env_dir/.bun/bin$||g")
                 # Add it with high priority (after project bin but before system paths)
                 export PATH="$PATH:$env_dir/.bun/bin"
             fi
-            
+
             # Now ensure global paths are available but with lower priority
             # Add ~/.local/bin to PATH if not already there (after project paths)
             if [[ -d "$local_bin" && ":$PATH:" != *":$local_bin:"* ]]; then

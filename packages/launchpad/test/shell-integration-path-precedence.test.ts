@@ -13,7 +13,7 @@ describe('Shell Integration PATH Precedence', () => {
     const code = shellcode(true)
 
     // PATH cleanup and setup
-    expect(code).toContain('export PATH=$(echo "$PATH" | sed "s|$env_dir/bin:||g"')
+    expect(code).toContain('export PATH=$(echo "$PATH" | /usr/bin/sed "s|$env_dir/bin:||g"')
     expect(code).toContain('export PATH="$env_dir/bin:$PATH"')
 
     // Environment variables setup
