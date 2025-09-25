@@ -40,7 +40,7 @@
     "@types/bun": "^1.2.22",
     "buddy-bot": "^0.9.7",
     "bun-git-hooks": "^0.2.19",
-    "bun-plugin-dtsx": "0.9.5",
+    "bun-plugin-dtsx": "0.21.12",
     "typescript": "^5.9.2"
   },
   "overrides": {

@@ -707,7 +707,7 @@ jobs:
 
       - name: Upload PHP Binary (Unix)
         if: matrix.platform != 'win32'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
           path: binaries/php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}.tar.gz
@@ -715,7 +715,7 @@ jobs:
 
       - name: Upload PHP Binary (Windows)
         if: matrix.platform == 'win32'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
           path: binaries/php-${{ matrix.php_version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}.zip
