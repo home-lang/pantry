@@ -234,7 +234,6 @@ export async function uninstall(arg: string, isGlobal: boolean = false): Promise
     return false
   }
 
-  // eslint-disable-next-line no-console
   console.log(`🗑️  Uninstalling ${packageName} (\x1B[3m${resolvedDomain}\x1B[0m)...`)
 
   const removedFiles: Array<{ program: string, location: string }> = []
@@ -255,13 +254,12 @@ export async function uninstall(arg: string, isGlobal: boolean = false): Promise
         try {
           await fs.promises.unlink(binaryPath.string)
           removedFiles.push({ program, location: binDir.string })
-          // eslint-disable-next-line no-console
+
           console.log(`  🗑️  Removed ${program} from ${binDir.string}`)
         }
         catch (error) {
           // Check if it's a permission error
           if (error instanceof Error && 'code' in error && error.code === 'EACCES') {
-            // eslint-disable-next-line no-console
             console.log(`  ⚠️  Permission denied: ${program} in ${binDir.string} (try with sudo)`)
           }
           else {
@@ -282,9 +280,8 @@ export async function uninstall(arg: string, isGlobal: boolean = false): Promise
     const binaryWord = removedFiles.length === 1 ? 'binary' : 'binaries'
     const packageDisplay = packageName !== resolvedDomain ? `${packageName} (\x1B[3m${resolvedDomain}\x1B[0m)` : packageName
 
-    // eslint-disable-next-line no-console
     console.log(`✅ Successfully uninstalled ${packageDisplay}`)
-    // eslint-disable-next-line no-console
+
     console.log(`   Removed ${removedFiles.length} ${binaryWord}:`)
 
     // Group by location for cleaner output
@@ -297,23 +294,21 @@ export async function uninstall(arg: string, isGlobal: boolean = false): Promise
     }, {} as Record<string, string[]>)
 
     for (const [location, programs] of Object.entries(locationGroups)) {
-      // eslint-disable-next-line no-console
       console.log(`     • ${location}: ${programs.join(', ')}`)
     }
   }
 
   if (missingFiles.length > 0) {
     const binaryWord = missingFiles.length === 1 ? 'binary was' : 'binaries were'
-    // eslint-disable-next-line no-console
+
     console.log(`⚠️  ${missingFiles.length} expected ${binaryWord} not found: ${missingFiles.join(', ')}`)
-    // eslint-disable-next-line no-console
+
     console.log(`   (May have been previously removed or installed elsewhere)`)
   }
 
   if (!foundAnyBinary) {
-    // eslint-disable-next-line no-console
     console.log(`ℹ️  No binaries were found for ${packageName} - package may not be installed`)
-    // eslint-disable-next-line no-console
+
     console.log(`   (Checked: ${binDirectories.map(d => d.string).join(', ')})`)
     return false
   }
@@ -330,7 +325,6 @@ export async function uninstall(arg: string, isGlobal: boolean = false): Promise
  * Uninstall all packages and remove the entire installation
  */
 export async function uninstall_all(): Promise<void> {
-  // eslint-disable-next-line no-console
   console.log('🗑️  Uninstalling all Launchpad packages and data...')
 
   try {
@@ -360,7 +354,7 @@ export async function uninstall_all(): Promise<void> {
           await fs.promises.rm(dir.string, { recursive: true, force: true })
           locationRemovedCount++
           removedCount++
-          // eslint-disable-next-line no-console
+
           console.log(`  🗑️  Removed ${path.basename(dir.string)} directory from ${root.string}`)
         }
       }
@@ -371,13 +365,11 @@ export async function uninstall_all(): Promise<void> {
     }
 
     if (removedCount > 0) {
-      // eslint-disable-next-line no-console
       console.log(`✅ Successfully uninstalled all Launchpad data (${removedCount} directories removed)`)
-      // eslint-disable-next-line no-console
+
       console.log(`   Cleaned locations: ${removedLocations.join(', ')}`)
     }
     else {
-      // eslint-disable-next-line no-console
       console.log('ℹ️  No Launchpad installations found to remove')
     }
   }
