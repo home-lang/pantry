@@ -279,8 +279,6 @@ export class PrecompiledBinaryDownloader {
       return phpConfig.configuration
     }
 
-    // PHP auto-detection has been removed - using fallback detection
-
     // Fallback to basic detection
     try {
       // eslint-disable-next-line ts/no-require-imports

@@ -954,9 +954,11 @@ cli
   .option('--verbose', 'Enable verbose output')
   .option('--force', 'Skip confirmation prompts')
   .option('--dry-run', 'Show what would be removed without actually removing it')
+  .option('-g, --global', 'Remove packages from global installation directory')
   .example('launchpad uninstall node python')
   .example('launchpad remove node@18 --force')
-  .action(async (packages: string[], options?: { verbose?: boolean, force?: boolean, dryRun?: boolean }) => {
+  .example('launchpad uninstall -g node')
+  .action(async (packages: string[], options?: { verbose?: boolean, force?: boolean, dryRun?: boolean, global?: boolean }) => {
     if (options?.verbose) {
       config.verbose = true
     }
@@ -981,6 +983,8 @@ cli
         argv.push('--force')
       if (options?.dryRun)
         argv.push('--dry-run')
+      if (options?.global)
+        argv.push('--global')
       const cmd = await resolveCommand('uninstall')
       if (!cmd)
         return
