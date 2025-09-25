@@ -2463,7 +2463,20 @@ exec ./configure "$@"
     execSync(`make -j${maxJobs}`, {
       stdio: 'inherit',
       cwd: phpSourceDir,
-      env: buildEnv,
+      env: {
+        ...process.env,
+        ...buildEnv,
+        // Ensure proper working directory context for GitHub Actions
+        PWD: phpSourceDir,
+        // Fix potential permission issues in GitHub Actions
+        TMPDIR: process.env.TMPDIR || '/tmp',
+        // Ensure consistent linker behavior across environments
+        MACOSX_DEPLOYMENT_TARGET: '10.15',
+        // Ensure make has proper paths
+        PATH: buildEnv.PATH || process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
+        // Force proper shell for make commands
+        SHELL: '/bin/bash',
+      },
       timeout: 45 * 60 * 1000, // 45 minutes timeout
     })
   }
@@ -2574,7 +2587,18 @@ exec ./configure "$@"
       stdio: 'inherit',
       cwd: phpSourceDir,
       env: {
+        ...process.env,
         ...installEnv,
+        // Ensure proper working directory context for GitHub Actions
+        PWD: phpSourceDir,
+        // Fix potential permission issues in GitHub Actions
+        TMPDIR: process.env.TMPDIR || '/tmp',
+        // Ensure consistent linker behavior across environments
+        MACOSX_DEPLOYMENT_TARGET: '10.15',
+        // Ensure make has proper paths
+        PATH: installEnv.PATH || process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
+        // Force proper shell for make commands
+        SHELL: '/bin/bash',
         DESTDIR: '', // Ensure DESTDIR is empty so prefix is used directly
         INSTALL_ROOT: '' // Also ensure INSTALL_ROOT doesn't interfere
       },
