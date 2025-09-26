@@ -105,7 +105,7 @@ describe('Shell Message Configuration', () => {
       const shell = shellcode(true)
 
       // Config is loaded at module import time, so test uses default message
-      expect(shell).toContain('dev environment deactivated')
+      expect(shell).toContain('Environment deactivated')
     })
   })
 
@@ -175,7 +175,7 @@ describe('Shell Message Configuration', () => {
 
       // Config is loaded at module import time, so test uses default messages
       expect(shell).toContain('Environment activated')
-      expect(shell).toContain('dev environment deactivated')
+      expect(shell).toContain('Environment deactivated')
       expect(shell).toContain('$(basename "$project_dir")')
       expect(shell).not.toContain('{path}')
     })

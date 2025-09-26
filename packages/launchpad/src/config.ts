@@ -188,19 +188,6 @@ export const defaultConfig: LaunchpadConfig = {
         autoDetect: process.env.LAUNCHPAD_STACKS_AUTO_DETECT !== 'false',
       },
     },
-    php: {
-      enabled: process.env.LAUNCHPAD_PHP_ENABLED !== 'false',
-      strategy: (process.env.LAUNCHPAD_PHP_STRATEGY as 'auto-detect') || 'auto-detect',
-      version: process.env.LAUNCHPAD_PHP_VERSION || '8.4.0',
-      // Smart auto-detection based on project analysis
-      autoDetect: {
-        enabled: process.env.LAUNCHPAD_PHP_AUTO_DETECT !== 'false',
-        includeAllDatabases: process.env.LAUNCHPAD_PHP_ALL_DATABASES === 'true',
-        includeEnterprise: process.env.LAUNCHPAD_PHP_ENTERPRISE === 'true',
-      },
-      // configuration (when auto-detect is disabled)
-      configuration: (process.env.LAUNCHPAD_PHP_CONFIGURATION as 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack') || 'full-stack',
-    },
   },
 }
 

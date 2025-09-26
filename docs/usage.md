@@ -74,6 +74,7 @@ launchpad install node --path ~/.local    # Force user directory
 ```
 
 **Permission Handling**: When installing to `/usr/local` without sufficient permissions, Launchpad will:
+
 - Detect the permission issue
 - Prompt you interactively (if in a terminal)
 - Offer to re-run with `sudo` automatically
@@ -175,6 +176,7 @@ launchpad remove python --verbose
 ```
 
 The `remove` command intelligently finds and removes:
+
 - Binaries from `bin/` and `sbin/` directories
 - Package-specific directories
 - Associated shims
@@ -202,7 +204,7 @@ Once set up, environments automatically activate when you enter a directory with
 cd my-project/  # → Automatically activates environment
 # ✅ Environment activated for /path/to/my-project
 cd ../          # → Automatically deactivates
-# dev environment deactivated
+# Environment deactivated
 ```
 
 Hook lifecycle during activation:
@@ -285,6 +287,7 @@ env:
 Control where packages are installed with the `global` flag:
 
 **Individual Package Global Flags:**
+
 ```yaml
 # dependencies.yaml
 dependencies:
@@ -306,6 +309,7 @@ env:
 ```
 
 **Top-Level Global Flag:**
+
 ```yaml
 # dependencies.yaml
 global: true  # Apply to all dependencies
@@ -324,12 +328,14 @@ env:
 ```
 
 **Global Flag Behavior:**
+
 - `global: true` - Installs to `/usr/local` (or configured global path)
 - `global: false` - Installs to project-specific directories (default)
 - Individual package flags override top-level `global` setting
 - String format dependencies default to local installation
 
 Supported dependency file formats:
+
 - `dependencies.yaml` / `dependencies.yml`
 - `pkgx.yaml` / `pkgx.yml`
 - `.pkgx.yaml` / `.pkgx.yml`
@@ -341,6 +347,7 @@ Supported dependency file formats:
 ### Environment Isolation
 
 Each project gets its own isolated environment:
+
 - Project-specific installation directory: `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
 - Isolated PATH and environment variables
 - Binary stubs with environment isolation
@@ -383,6 +390,7 @@ Launchpad includes 31+ pre-configured services:
 **Caching**: Memcached, Elasticsearch
 
 Each service includes:
+
 - Automatic configuration generation
 - Health monitoring
 - Cross-platform support (macOS/Linux)
@@ -412,6 +420,7 @@ launchpad env:list --format simple
 ```
 
 **Example Output:**
+
 ```
 📦 Development Environments:
 
@@ -483,6 +492,7 @@ Launchpad uses human-readable hash identifiers for environments:
 **Format:** `{project-name}_{8-char-hex-hash}`
 
 **Examples:**
+
 - `final-project_7db6cf06` - Environment for "final-project"
 - `working-test_208a31ec` - Environment for "working-test"
 - `my-app_1a2b3c4d` - Environment for "my-app"
@@ -628,6 +638,7 @@ launchpad clean --keep-global --keep-cache --force
 ```
 
 The `clean` command removes:
+
 - All installed packages and their metadata
 - Project-specific environments
 - Cache directory (unless `--keep-cache` is used)
@@ -648,6 +659,7 @@ launchpad clean --keep-global --dry-run
 **Global dependency detection**: Launchpad automatically detects any dependency file (`deps.yaml`, `dependencies.yaml`, etc.) with `global: true`
 
 **Global dependency formats**:
+
 ```yaml
 # Top-level global flag (all dependencies are global)
 global: true
@@ -687,6 +699,7 @@ launchpad uninstall --keep-packages
 ```
 
 The `uninstall` command removes:
+
 - All installed packages and their files
 - Installation directories (`bin/`, `sbin/`, `pkgs/`)
 - Shell integration from `.zshrc`, `.bashrc`, etc.
@@ -928,6 +941,7 @@ launchpad <command> --help
 If automatic environment activation isn't working:
 
 1. Ensure shell integration is set up:
+
    ```bash
    echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
    source ~/.zshrc
@@ -968,11 +982,13 @@ If shell integration isn't working:
 If you're not seeing environment messages:
 
 1. Check if messages are disabled:
+
    ```bash
    echo $LAUNCHPAD_SHOW_ENV_MESSAGES
    ```
 
 2. Re-enable messages:
+
    ```bash
    export LAUNCHPAD_SHOW_ENV_MESSAGES=true
    ```

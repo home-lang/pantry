@@ -152,31 +152,6 @@ exec "${finalBinaryPath}" "$@"
   }
 }
 
-/**
- * Test if a PHP binary actually works (can run --version without dyld errors)
- */
-export async function testPhpBinary(phpPath: string): Promise<boolean> {
-  try {
-    if (!fs.existsSync(phpPath)) {
-      return false
-    }
-
-    // Test with a short timeout to avoid hanging on broken binaries
-    const { execSync } = await import('node:child_process')
-    execSync(`"${phpPath}" --version`, {
-      stdio: 'pipe',
-      timeout: 5000,
-      env: { ...process.env },
-    })
-    return true
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`PHP binary test failed: ${error instanceof Error ? error.message : String(error)}`)
-    }
-    return false
-  }
-}
 
 /**
  * Build SQLite from source
@@ -280,16 +255,10 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
       const domain = resolvePackageName(packageName)
 
       // Try different ways to find the package in pantry
-      // For PHP, we need to check php.net specifically
       let packageKey: string | undefined
 
       // First, try exact matches
       packageKey = Object.keys(pantry).find(key => key === domain || key === packageName)
-
-      // Handle PHP special case - check phpnet specifically
-      if (!packageKey && (packageName === 'php' || packageName === 'php.net' || domain === 'php.net')) {
-        packageKey = Object.keys(pantry).find(key => key === 'phpnet')
-      }
 
       // Fallback to partial matches only if no exact match found
       if (!packageKey) {
@@ -328,9 +297,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
         const depDomain = dep.split(/[<>=~^]/)[0]
 
         // Skip if this dependency is the same as the main package we're installing deps for
-        if (depDomain === domain || depDomain === packageName
-          || (packageName === 'php' && depDomain === 'php.net')
-          || (domain === 'php.net' && depDomain === 'php.net')) {
+        if (depDomain === domain || depDomain === packageName) {
           if (config.verbose) {
             console.log(`⏭️  Skipping ${dep} (this is the main package, not a dependency)`)
           }

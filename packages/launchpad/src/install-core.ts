@@ -215,30 +215,6 @@ export async function installPackage(packageName: string, packageSpec: string, i
     return await installMeilisearch(installPath, requestedVersion)
   }
 
-  // Special handling for PHP - use precompiled binaries from GitHub
-  if (name === 'php' || domain === 'php.net') {
-    try {
-      // Import the binary downloader
-      const { downloadPhpBinary } = await import('./binary-downloader')
-
-      // Always use precompiled binaries for PHP
-      return await downloadPhpBinary(installPath, requestedVersion)
-    }
-    catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error(`❌ Failed to install PHP from precompiled binaries: ${errorMessage}`)
-
-      // Provide helpful error message
-      console.log('\n💡 Troubleshooting:')
-      console.log('1. Check your internet connection')
-      console.log('2. Verify that the precompile workflow has run recently')
-      console.log('3. Try a different PHP version if available')
-      console.log('4. Join our Discord for help: https://discord.gg/stacksjs')
-
-      throw new Error(`PHP installation failed: ${errorMessage}`)
-    }
-  }
-
   if (config.verbose) {
     console.warn(`Resolved ${name} to domain: ${domain}`)
   }

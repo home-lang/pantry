@@ -595,7 +595,9 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
-      expect(content).toContain('from \'../src/dev\'')
+      expect(content).toContain('resolveCommand(\'dev\')')
+      expect(content).toContain('resolveCommand(\'dev:shellcode\')')
+      expect(content).toContain('resolveCommand(\'dev:integrate\')')
     })
   })
 

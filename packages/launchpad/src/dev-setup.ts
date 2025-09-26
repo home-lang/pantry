@@ -128,7 +128,7 @@ export function getSupportedFrameworks(): ProjectFramework[] {
 }
 
 /**
- * Detect what PHP framework is being used in the current project
+ * Detect what framework is being used in the current project
  */
 export function detectProjectFramework(): ProjectFramework | null {
   const supportedFrameworks = getSupportedFrameworks()
@@ -152,120 +152,7 @@ export function detectProjectFramework(): ProjectFramework | null {
   return null
 }
 
-/**
- * Set up development environment for any PHP project
- * This function detects project type and configures the best database option
- */
-export async function setupPHPDevelopmentEnvironment(options?: {
-  preferredDatabase?: 'postgres' | 'sqlite'
-  framework?: string
-}): Promise<boolean> {
-  try {
-    console.warn(`🚀 Setting up PHP development environment...`)
 
-    // Detect project framework
-    const framework = detectProjectFramework()
-    if (!framework) {
-      console.warn(`⚠️  No supported PHP framework detected`)
-      const supportedFrameworks = getSupportedFrameworks()
-      console.warn(`💡 Supported frameworks: ${supportedFrameworks.map(f => f.name).join(', ')}`)
-      return false
-    }
-
-    console.log(`✅ Detected ${framework.name} project`)
-
-    // Check if PHP is available
-    const phpAvailable = await checkPHPAvailability()
-    if (!phpAvailable) {
-      console.warn(`📦 Installing PHP...`)
-      const { install } = await import('./install')
-      await install(['php.net'], `${process.env.HOME}/.local`)
-    }
-
-    // Check PHP database extensions
-    const extensions = await checkPHPDatabaseExtensions()
-    console.warn(`📊 Available PHP database extensions: ${extensions.available.join(', ')}`)
-
-    if (extensions.missing.length > 0) {
-      console.warn(`⚠️  Missing PHP extensions: ${extensions.missing.join(', ')}`)
-    }
-
-    // Determine best database setup based on available extensions and user preferences
-    const preferredDb = options?.preferredDatabase || 'sqlite'
-    const forceSQLite = process.env.LAUNCHPAD_FORCE_SQLITE === 'true'
-
-    if (forceSQLite || preferredDb === 'sqlite') {
-      console.warn(`🗃️  SQLite selected for database`)
-      return await setupSQLiteEnvironment(framework)
-    }
-
-    if (extensions.available.includes('pdo_pgsql') && extensions.available.includes('pgsql')) {
-      console.warn(`🐘 Setting up PostgreSQL development environment...`)
-      return await setupPostgreSQLEnvironment(framework)
-    }
-    else if (preferredDb === 'postgres') {
-      console.warn(`⚠️  PostgreSQL preferred but extensions not available`)
-      console.warn(`💡 PHP PostgreSQL extensions (pdo_pgsql, pgsql) are core extensions that require PHP to be compiled with PostgreSQL support`)
-      console.warn(`🗃️  Falling back to SQLite for development...`)
-      return await setupSQLiteEnvironment(framework)
-    }
-    else {
-      console.warn(`🗃️  Setting up SQLite environment...`)
-      return await setupSQLiteEnvironment(framework)
-    }
-  }
-  catch (error) {
-    console.error(`❌ Failed to set up development environment: ${error instanceof Error ? error.message : String(error)}`)
-    return false
-  }
-}
-
-/**
- * Check if PHP is available and get version info
- */
-async function checkPHPAvailability(): Promise<boolean> {
-  try {
-    const { findBinaryInPath } = await import('./utils')
-    return findBinaryInPath('php') !== null
-  }
-  catch {
-    return false
-  }
-}
-
-/**
- * Check what PHP database extensions are available
- */
-async function checkPHPDatabaseExtensions(): Promise<{ available: string[], missing: string[] }> {
-  try {
-    const phpProcess = spawn('php', ['-m'], { stdio: ['pipe', 'pipe', 'pipe'] })
-    let output = ''
-
-    phpProcess.stdout.on('data', (data) => {
-      output += data.toString()
-    })
-
-    const success = await new Promise<boolean>((resolve) => {
-      phpProcess.on('close', code => resolve(code === 0))
-    })
-
-    if (!success) {
-      return { available: ['pdo', 'pdo_sqlite', 'sqlite3'], missing: [] }
-    }
-
-    const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
-    const requiredExtensions = ['pdo', 'pdo_sqlite', 'pdo_mysql', 'pdo_pgsql', 'mysqli', 'pgsql', 'sqlite3']
-
-    const available = requiredExtensions.filter(ext => loadedExtensions.includes(ext))
-    const missing = requiredExtensions.filter(ext => !loadedExtensions.includes(ext))
-
-    return { available, missing }
-  }
-  catch (error) {
-    console.warn(`⚠️  Could not check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
-    return { available: ['pdo', 'pdo_sqlite', 'sqlite3'], missing: [] }
-  }
-}
 
 /**
  * Set up PostgreSQL development environment
@@ -483,13 +370,26 @@ export async function setupLaravelEnvironment(options?: {
 
   console.warn(`🚀 Setting up Laravel development environment...`)
 
-  const setupResult = await setupPHPDevelopmentEnvironment({
-    preferredDatabase: options?.preferredDatabase,
-    framework: 'Laravel',
-  })
+  // Set up database based on user preference
+  const preferredDb = options?.preferredDatabase || 'sqlite'
+  const forceSQLite = process.env.LAUNCHPAD_FORCE_SQLITE === 'true'
 
-  if (!setupResult) {
-    return false
+  if (forceSQLite || preferredDb === 'sqlite') {
+    console.warn(`🗃️  Setting up SQLite for Laravel project`)
+    const setupResult = await setupSQLiteEnvironment(framework)
+    if (!setupResult) {
+      return false
+    }
+  } else {
+    console.warn(`🐘 Setting up PostgreSQL for Laravel project`)
+    const setupResult = await setupPostgreSQLEnvironment(framework)
+    if (!setupResult) {
+      console.warn(`🗃️  Falling back to SQLite for development...`)
+      const fallbackResult = await setupSQLiteEnvironment(framework)
+      if (!fallbackResult) {
+        return false
+      }
+    }
   }
 
   if (options?.runMigrations) {

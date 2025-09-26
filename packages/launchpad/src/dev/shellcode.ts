@@ -203,7 +203,7 @@ __launchpad_switch_environment() {
             if (( newest == 0 || now_s - newest > ttl_s )); then
                 : > "$backoff_marker" 2>/dev/null || true
                 # Run update check in background (non-blocking)
-                LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:check-updates >/dev/null 2>&1 &
+                (LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1 ${launchpadBinary} dev:check-updates >/dev/null 2>&1 &) >/dev/null 2>&1
             fi
         }
 
@@ -396,9 +396,6 @@ __launchpad_switch_environment() {
             # Collect candidate lib dirs
             local __lp_libs=()
             # Env-level libs
-            if [[ -d "$env_dir/php.net" ]]; then
-                while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$env_dir/php.net" -maxdepth 2 -type d -name 'v*' 2>/dev/null)
-            fi
             for dom in curl.se openssl.org zlib.net gnu.org/readline; do
                 if [[ -d "$env_dir/$dom" ]]; then
                     while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$env_dir/$dom" -maxdepth 2 -type d -name 'v*' 2>/dev/null)

@@ -48,7 +48,7 @@ export const defaultConfig: LaunchpadConfig = {
   shellActivationMessage: '✅ Environment activated for {path}',
 
   // Custom message to show when environment is deactivated
-  shellDeactivationMessage: 'dev environment deactivated',
+  shellDeactivationMessage: 'Environment deactivated',
 
   // Service management configuration
   services: {

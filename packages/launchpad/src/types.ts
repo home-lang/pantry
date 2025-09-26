@@ -227,24 +227,6 @@ export interface LaunchpadConfig {
         autoDetect?: boolean
       }
     }
-    php?: {
-      enabled?: boolean
-      strategy?: 'auto-detect'
-      version?: string
-      autoDetect?: {
-        enabled?: boolean
-        includeAllDatabases?: boolean
-        includeEnterprise?: boolean
-      }
-      configuration?: 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack'
-      /** If true, auto-install the PHP binary when needed. Default: true in practice. */
-      autoInstall?: boolean
-      /**
-       * Deprecated: prefer global `installBuildDeps` with package list.
-       * If provided here, it will still be honored for PHP only.
-       */
-      installBuildDeps?: boolean | string | string[]
-    }
   }
   verbose?: boolean
 }
@@ -374,21 +356,6 @@ export interface SystemdService {
   }
 }
 
-/**
- * PHP configuration interface
- */
-export interface PHPConfig {
-  version?: string
-  extensions?: string[] | {
-    core?: string[]
-    database?: string[]
-    web?: string[]
-    utility?: string[]
-    optional?: string[]
-  }
-  iniSettings?: Record<string, string>
-  enabled?: boolean
-}
 
 /**
  * Post-setup command interface

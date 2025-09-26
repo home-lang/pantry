@@ -163,36 +163,7 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
       // Remove debug message
 
       if (!appKey || appKey === '' || appKey === 'base64:') {
-        // Check if PHP and Artisan are available before attempting key generation
-        try {
-          // First verify PHP is working
-          execSync('php --version', { cwd: dir, stdio: 'pipe' })
-
-          // Then verify Artisan is available
-          execSync('php artisan --version', { cwd: dir, stdio: 'pipe' })
-
-          // Now generate the key
-          execSync('php artisan key:generate --force', {
-            cwd: dir,
-            stdio: 'pipe',
-          })
-
-          // Verify the key was generated successfully
-          const updatedEnvContent = fs.readFileSync(envFile, 'utf8')
-          const updatedAppKeyMatch = updatedEnvContent.match(/^APP_KEY=(.*)$/m)
-          const updatedAppKey = updatedAppKeyMatch?.[1]?.trim()
-
-          if (updatedAppKey && updatedAppKey !== '' && updatedAppKey !== 'base64:') {
-            suggestions.push('✅ Generated Laravel application encryption key automatically')
-          }
-          else {
-            suggestions.push('⚠️  Run: php artisan key:generate to set application encryption key')
-          }
-        }
-        catch {
-          // If automatic generation fails, suggest manual command
-          suggestions.push('⚠️  Generate application encryption key: php artisan key:generate')
-        }
+        suggestions.push('⚠️  Generate application encryption key: php artisan key:generate')
       }
       else if (appKey && appKey.length > 10) {
         // Key exists and looks valid
@@ -252,53 +223,11 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
   // Execute project-level post-setup commands if enabled (skip in shell integration fast path)
   const projectPostSetup = config.postSetup
   if (projectPostSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
-    // Ensure php.ini exists before running any PHP commands
-    await ensureProjectPhpIni(dir, path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', generateProjectHash(dir)))
     const postSetupResults = await executepostSetup(dir, projectPostSetup.commands || [])
     suggestions.push(...postSetupResults)
   }
 
   return { isLaravel: true, suggestions }
-}
-async function ensureProjectPhpIni(projectDir: string, envDir: string): Promise<void> {
-  try {
-    const fs = await import('node:fs')
-    const path = await import('node:path')
-    const iniPath = path.join(envDir, 'php.ini')
-    if (!fs.existsSync(iniPath)) {
-      const envPath = path.join(projectDir, '.env')
-      let dbConn = ''
-      try {
-        if (fs.existsSync(envPath)) {
-          const envContent = fs.readFileSync(envPath, 'utf8')
-          const match = envContent.match(/^DB_CONNECTION=(.*)$/m)
-          dbConn = match?.[1]?.trim().toLowerCase() || ''
-        }
-      }
-      catch {}
-      const lines: string[] = [
-        '; Launchpad php.ini (auto-generated at activation time)',
-        'memory_limit = 512M',
-        'max_execution_time = 300',
-        'upload_max_filesize = 64M',
-        'post_max_size = 64M',
-        'display_errors = On',
-        'error_reporting = E_ALL',
-        '',
-      ]
-      if (dbConn === 'pgsql' || dbConn === 'postgres' || dbConn === 'postgresql') {
-        lines.push('extension=pdo_pgsql', 'extension=pgsql')
-      }
-      else if (dbConn === 'mysql' || dbConn === 'mariadb') {
-        lines.push('extension=pdo_mysql', 'extension=mysqli')
-      }
-      else if (dbConn === 'sqlite') {
-        lines.push('extension=pdo_sqlite', 'extension=sqlite3')
-      }
-      fs.writeFileSync(iniPath, lines.join('\n'))
-    }
-  }
-  catch {}
 }
 
 /**
@@ -1070,17 +999,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           const tInstallFast = tick()
           await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
           addTiming('install(packages)', tInstallFast)
-          // After installing in shell fast path (upgrade case), ensure PHP shims exist
-          try {
-            if (config.verbose) {
-              console.log('🔍 Fast path: creating PHP shims after upgrade...')
-            }
-            const tShimFast = tick()
-            // In shellOutput mode, do not block activation; fire-and-forget
-            createPhpShimsAfterInstall(envDir).catch(() => {})
-            addTiming('createPhpShims(async)', tShimFast)
-          }
-          catch {}
           const tOutFast = tick()
           outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
           addTiming('outputShellCode', tOutFast)
@@ -1099,8 +1017,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           return
         }
 
-        // In shell integration fast path, ensure php.ini and start services when configured
-        // Only ensure php.ini if already marked ready
+        // In shell integration fast path, start services when configured
+        // Only check if already marked ready
         const readyMarker = path.join(envDir, '.launchpad_ready')
         const isReady = fs.existsSync(readyMarker)
         if (isVerbose) {
@@ -1117,10 +1035,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
         if (isReady) {
           // Skip all expensive operations in shell integration mode for instant activation
-          // Services, PHP ini, and post-setup will be handled by regular dev command when needed
+          // Services and post-setup will be handled by regular dev command when needed
           if (isVerbose) {
             try {
-              process.stderr.write(`🔍 Shell fast path: skipping services/php/post-setup for performance\n`)
+              process.stderr.write(`🔍 Shell fast path: skipping services/post-setup for performance\n`)
             }
             catch {}
           }
@@ -1341,34 +1259,12 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           catch {}
         }
 
-        // Create PHP shims only if environment was just created or updated
-        if (!isEnvReady) {
-          if (config.verbose) {
-            console.log('🔍 Checking for PHP installations to create shims...')
-          }
-          const tShim = tick()
-          if (isShellIntegration) {
-            // Run PHP shim creation in background to avoid blocking shell activation
-            createPhpShimsAfterInstall(envDir).catch(() => {}) // Fire and forget
-            addTiming('createPhpShims(async)', tShim)
-          }
-          else {
-            await createPhpShimsAfterInstall(envDir)
-            addTiming('createPhpShims', tShim)
-          }
-        }
-        else if (isVerbose) {
-          try {
-            process.stderr.write(`🔍 Shell integration: environment ready, skipping PHP shim creation\n`)
-          }
-          catch {}
-        }
 
         // Skip expensive operations in shell integration mode for instant activation
-        // Services, PHP ini, and post-setup will be handled by regular dev command when needed
+        // Services and post-setup will be handled by regular dev command when needed
         if (isVerbose) {
           try {
-            process.stderr.write(`🔍 Shell integration: skipping services/php/post-setup for performance\n`)
+            process.stderr.write(`🔍 Shell integration: skipping services/post-setup for performance\n`)
           }
           catch {}
         }
@@ -1398,16 +1294,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const tInstall3 = tick()
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
       addTiming('install(packages)', tInstall3)
-      // Create PHP shims synchronously in regular path to ensure immediate availability
-      try {
-        if (config.verbose) {
-          console.log('🔍 Regular path: creating PHP shims after install...')
-        }
-        const tShimReg = tick()
-        await createPhpShimsAfterInstall(envDir)
-        addTiming('createPhpShims', tShimReg)
-      }
-      catch {}
       // Visual separator after dependency install list
       try {
         console.log()
@@ -1444,12 +1330,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         process.env.LAUNCHPAD_PROCESSING = prevProcessing
     }
 
-    // Ensure php.ini and Laravel post-setup runs (regular path)
+    // Ensure Laravel post-setup runs (regular path)
     // Skip expensive operations in shell integration mode
     if (!isShellIntegration) {
-      const tIni3 = tick()
-      await ensureProjectPhpIni(projectDir, envDir)
-      addTiming('ensurePhpIni', tIni3)
 
       const tPost3 = tick()
       await maybeRunProjectPostSetup(projectDir, envDir, isShellIntegration)
@@ -1970,62 +1853,14 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH\n`)
   process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH\n`)
   process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH\n`)
-  process.stdout.write(`      echo "dev environment deactivated"\n`)
+  process.stdout.write(`      echo "Environment deactivated"\n`)
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
   // Refresh the command hash so version switches take effect immediately (async, detached)
-  process.stdout.write(`(hash -r 2>/dev/null || true) >/dev/null 2>&1 & disown 2>/dev/null || true\n`)
+  process.stdout.write(`{ (hash -r 2>/dev/null || true) & } >/dev/null 2>&1\n`)
 }
 
-/**
- * Create PHP shims after all dependencies are installed
- */
-async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
-  const path = await import('node:path')
-  const fs = await import('node:fs')
-
-  try {
-    // Check if there's a PHP installation in this environment
-    const phpDir = path.join(envDir, 'php.net')
-    if (!fs.existsSync(phpDir)) {
-      return // No PHP installation, nothing to do
-    }
-
-    // Find PHP version directories
-    const versionDirs = fs.readdirSync(phpDir).filter((item) => {
-      const fullPath = path.join(phpDir, item)
-      return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
-    })
-
-    if (versionDirs.length === 0) {
-      return // No PHP versions found
-    }
-
-    // Import the PrecompiledBinaryDownloader to create shims
-    const { PrecompiledBinaryDownloader } = await import('../binary-downloader.js')
-
-    for (const versionDir of versionDirs) {
-      const packageDir = path.join(phpDir, versionDir)
-      const version = versionDir.replace(/^v/, '') // Remove 'v' prefix
-
-      // Check if this directory has PHP binaries
-      const binDir = path.join(packageDir, 'bin')
-      if (fs.existsSync(binDir)) {
-        const downloader = new PrecompiledBinaryDownloader(envDir)
-        console.log(`🔗 Creating PHP ${version} shims with proper library paths...`)
-        await downloader.createPhpShims(packageDir, version)
-
-        // Now validate that PHP works
-        await downloader.validatePhpInstallation(packageDir, version)
-      }
-    }
-  }
-  catch (error) {
-    // Don't fail the entire setup if shim creation fails
-    console.warn(`⚠️ Failed to create PHP shims: ${error instanceof Error ? error.message : String(error)}`)
-  }
-}
 
 /**
  * Run Laravel post-setup commands once per project activation

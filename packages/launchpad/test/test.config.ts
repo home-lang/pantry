@@ -306,7 +306,7 @@ export class TestUtils {
       'Project-specific environment',
       '_launchpad_dev_try_bye',
       '_LAUNCHPAD_ORIGINAL_PATH',
-      'dev environment deactivated',
+      'Environment deactivated',
     ]
 
     // Check all required patterns exist

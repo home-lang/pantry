@@ -69,44 +69,6 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     },
   },
 
-  php: {
-    name: 'php',
-    displayName: 'PHP',
-    description: 'PHP with database extensions (PostgreSQL, MySQL, SQLite)',
-    packageDomain: 'php.net',
-    executable: 'php',
-    args: [],
-    env: {},
-    dataDirectory: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php'),
-    configFile: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php', 'php.ini'),
-    dependencies: [
-      'postgresql.org/libpq', // PostgreSQL client library for PHP extensions
-    ],
-    supportsGracefulShutdown: false,
-    extensions: {
-      // Extensions that can be installed via PECL
-      pecl: {
-        required: ['pdo_pgsql', 'pgsql'], // These will be installed automatically when PostgreSQL is needed
-        optional: ['redis', 'memcached', 'imagick', 'xdebug'], // These can be installed on demand
-        buildDependencies: {
-          pdo_pgsql: ['postgresql.org/libpq'],
-          pgsql: ['postgresql.org/libpq'],
-          redis: [],
-          memcached: [],
-          imagick: [],
-        },
-      },
-    },
-    config: {
-      extensions: ['pdo', 'pdo_sqlite', 'pdo_mysql', 'pdo_pgsql', 'mysqli', 'pgsql', 'sqlite3'],
-      memory_limit: '512M',
-      max_execution_time: 300,
-      upload_max_filesize: '64M',
-      post_max_size: '64M',
-      display_errors: 'On',
-      error_reporting: 'E_ALL',
-    },
-  },
 
   mysql: {
     name: 'mysql',

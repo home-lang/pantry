@@ -148,15 +148,6 @@ export async function startService(serviceName: string): Promise<boolean> {
       return false
     }
 
-    // For PHP service, ensure database extensions are available (non-blocking)
-    if (service.definition?.name === 'php') {
-      const extensionsResult = await ensurePHPDatabaseExtensions(service)
-      if (!extensionsResult && config.verbose) {
-        console.warn(`⚠️  Some PHP database extensions may not be available; not attempting PECL. Proceeding.`)
-      }
-    }
-
-    // For PostgreSQL service, do not attempt to install PHP extensions via PECL
 
     // Auto-initialize databases first
     const autoInitResult = await autoInitializeDatabase(service)
@@ -939,70 +930,6 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
   }
 }
 
-/**
- * Ensure PHP database extensions are available and configured
- */
-async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<boolean> {
-  // Skip PHP extension checks in test mode
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
-    console.warn(`🧪 Test mode: Skipping PHP database extension checks`)
-    return true
-  }
-
-  const { spawn } = await import('node:child_process')
-
-  try {
-    // Quietly check PHP modules; do not try to install via PECL
-    if (config.verbose)
-      console.warn(`🔧 Checking PHP database extensions...`)
-
-    // Check what extensions are currently loaded
-    const phpProcess = spawn('php', ['-m'], { stdio: ['pipe', 'pipe', 'pipe'] })
-
-    let output = ''
-    let hasError = false
-
-    phpProcess.stdout.on('data', (data) => {
-      output += data.toString()
-    })
-
-    phpProcess.stderr.on('data', (data) => {
-      console.error(`PHP extension check error: ${data.toString()}`)
-      hasError = true
-    })
-
-    const checkResult = await new Promise<boolean>((resolve) => {
-      phpProcess.on('close', (code) => {
-        resolve(code === 0 && !hasError)
-      })
-    })
-
-    if (!checkResult) {
-      return false
-    }
-
-    const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
-    const requiredExtensions = ['pdo', 'pdo_pgsql', 'pgsql', 'pdo_mysql', 'mysqli', 'pdo_sqlite']
-    const missingExtensions = requiredExtensions.filter(ext => !loadedExtensions.includes(ext))
-
-    if (missingExtensions.length === 0) {
-      if (config.verbose)
-        console.log(`✅ All required PHP database extensions are available`)
-      return true
-    }
-
-    if (config.verbose)
-      console.warn(`⚠️  Missing PHP extensions: ${missingExtensions.join(', ')}`)
-    if (config.verbose)
-      console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
-    // Do not attempt PECL here. Let binary-downloader pick the right PHP and shims load the project php.ini
-    return false
-  }
-  catch (error) {
-    console.error(`❌ Failed to check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
-    return false
-  }
-}
 
 /**
  * Automatically set up SQLite for the current project
@@ -1078,23 +1005,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
       }
     }
 
-    // Try to run Laravel configuration cache clear (skip in test mode)
-    if (process.env.NODE_ENV !== 'test' && process.env.LAUNCHPAD_TEST_MODE !== 'true') {
-      try {
-        const { spawn } = await import('node:child_process')
-        await new Promise<void>((resolve) => {
-          const configClear = spawn('php', ['artisan', 'config:clear'], { stdio: 'pipe' })
-          configClear.on('close', () => resolve())
-        })
-        console.log(`✅ Cleared Laravel configuration cache`)
-      }
-      catch {
-        // Ignore errors - config:clear is not critical
-      }
-    }
-    else {
-      console.warn(`🧪 Test mode: Skipping Laravel config cache clear`)
-    }
+    console.log(`✅ Database service started`)
 
     return true
   }
@@ -1441,7 +1352,7 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
  */
 export function detectProjectName(): string {
   try {
-    // Try to read composer.json for Laravel/PHP projects
+    // Try to read composer.json for Laravel projects
     const composerPath = path.join(process.cwd(), 'composer.json')
     if (fs.existsSync(composerPath)) {
       const composer = JSON.parse(fs.readFileSync(composerPath, 'utf-8'))

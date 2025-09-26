@@ -362,7 +362,7 @@ describe('Environment Isolation', () => {
         // Check deactivation function is created with proper directory checking
         expect(result.stdout).toContain('_launchpad_dev_try_bye()')
         expect(result.stdout).toContain('case "$PWD" in')
-        expect(result.stdout).toContain('dev environment deactivated')
+        expect(result.stdout).toContain('Environment deactivated')
 
         // The actual output contains the full path, not just the project name
         expect(result.stdout).toContain(projectA)

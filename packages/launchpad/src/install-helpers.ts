@@ -306,11 +306,6 @@ fi
 `
         }
 
-        // Prefer project-level php.ini for php.net
-        if (domain === 'php.net') {
-          const projectPhpIni = path.join(installPath, 'php.ini')
-          shimContent += `# Prefer project-level php.ini when present\nif [ -f "${projectPhpIni.replace(/"/g, '\\"')}" ]; then\n  export PHPRC="${projectPhpIni.replace(/"/g, '\\"')}"\nfi\n\n`
-        }
 
         // Set up include paths for compilation
         if (includePaths.length > 0) {
@@ -645,10 +640,6 @@ export async function validatePackageInstallation(packageDir: string, domain: st
       'sqlite.org': () => {
         // SQLite can work with just binaries, lib/ is optional
         return hasBin && fs.existsSync(path.join(binDir, 'sqlite3'))
-      },
-      'php.net': () => {
-        // PHP can work with just binaries, especially if source-built
-        return hasBin && fs.existsSync(path.join(binDir, 'php'))
       },
       'gnu.org/bison': () => {
         // Bison is a tool, only needs bin/
