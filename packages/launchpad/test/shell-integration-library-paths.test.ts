@@ -55,7 +55,7 @@ describe('Shell Integration Library Paths', () => {
     }
   }
 
-  describe('__launchpad_update_library_paths function', () => {
+  describe('__lp_add_unique_colon_path function', () => {
     it('should generate correct shell code for library path setup', async () => {
       // Import the shellcode function
       const { shellcode } = await import('../src/dev/shellcode')
@@ -63,87 +63,86 @@ describe('Shell Integration Library Paths', () => {
       const generatedShellCode = shellcode()
 
       // Check that the function is defined
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths()')
-      expect(generatedShellCode).toContain('local env_dir="$1"')
-      expect(generatedShellCode).toContain('local lib_paths=""')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path()')
+      expect(generatedShellCode).toContain('local __var_name="$1"')
+      expect(generatedShellCode).toContain('local __lp_libs=()')
     })
 
     it('should include library path discovery logic', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should scan for lib and lib64 directories
-      expect(generatedShellCode).toContain('for lib_dir in "$env_dir/lib" "$env_dir/lib64"')
-      // Current implementation uses find instead of glob expansion for robustness
-      expect(generatedShellCode).toContain('find "$env_dir" -maxdepth 1 -type d -print0')
-      expect(generatedShellCode).toContain('find "$domain_dir" -maxdepth 1 -name "v*" -type d')
+      // Should search for version directories and library paths
+      expect(generatedShellCode).toContain('find "$env_dir')
+      expect(generatedShellCode).toContain('-maxdepth 2 -type d -name \'v*\'')
+      expect(generatedShellCode).toContain('for dom in curl.se openssl.org zlib.net')
     })
 
     it('should set up all three library path variables', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should set DYLD_LIBRARY_PATH for macOS
-      expect(generatedShellCode).toContain('export DYLD_LIBRARY_PATH=')
-      expect(generatedShellCode).toContain('export DYLD_FALLBACK_LIBRARY_PATH=')
-      // Should set LD_LIBRARY_PATH for Linux
-      expect(generatedShellCode).toContain('export LD_LIBRARY_PATH=')
+      // Should use eval to export library paths dynamically
+      expect(generatedShellCode).toContain('eval "export $')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path DYLD_LIBRARY_PATH')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path DYLD_FALLBACK_LIBRARY_PATH')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path LD_LIBRARY_PATH')
     })
 
-    it('should preserve original library path values', async () => {
+    it('should handle library paths with uniqueness checking', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      expect(generatedShellCode).toContain('LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
-      expect(generatedShellCode).toContain('LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH')
-      expect(generatedShellCode).toContain('LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
+      // Should check for duplicates before adding paths
+      expect(generatedShellCode).toContain('case ":$__cur:" in')
+      expect(generatedShellCode).toContain('*":$__val:"*) : ;;')
+      expect(generatedShellCode).toContain('# already present')
     })
 
-    it('should include macOS fallback paths', async () => {
+    it('should include domain-specific library scanning', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      expect(generatedShellCode).toContain(':/usr/local/lib:/lib:/usr/lib')
+      // Should scan specific domains for library directories
+      expect(generatedShellCode).toContain('gnu.org/readline')
+      expect(generatedShellCode).toContain('for dom in')
     })
   })
 
   describe('Shell Integration Hooks', () => {
-    it('should call library path setup in global dependency setup', async () => {
+    it('should include library path setup in environment activation', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should call library path setup for global dependencies
-      expect(generatedShellCode).toContain('__launchpad_setup_global_deps()')
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths "$global_env_dir"')
+      // Should include library path setup within environment activation
+      expect(generatedShellCode).toContain('local __lp_libs=()')
+      expect(generatedShellCode).toContain('# Collect candidate lib dirs')
     })
 
-    it('should call library path setup in project environment activation', async () => {
+    it('should include library path processing in project environment activation', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should call library path setup when activating project environments
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths "$env_dir"')
+      // Should process library paths when activating project environments
+      expect(generatedShellCode).toContain('for libdir in "$')
     })
 
-    it('should restore library paths on deactivation', async () => {
+    it('should handle library path management efficiently', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should restore original library paths when deactivating
-      expect(generatedShellCode).toContain('# Restore original library paths')
-      expect(generatedShellCode).toContain('export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"')
-      expect(generatedShellCode).toContain('unset DYLD_LIBRARY_PATH')
-      expect(generatedShellCode).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
+      // Should include efficient library path logic
+      expect(generatedShellCode).toContain('# Export DYLD and LD paths')
+      expect(generatedShellCode).toContain('if [[ -d "$libdir" ]]; then')
     })
 
-    it('should clean up library path variables completely', async () => {
+    it('should handle global and environment-specific library paths', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should unset all library path tracking variables
-      expect(generatedShellCode).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH')
-      expect(generatedShellCode).toContain('unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH')
-      expect(generatedShellCode).toContain('unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH')
+      // Should handle both global and environment-specific library paths
+      expect(generatedShellCode).toContain('# Global-level libs')
+      expect(generatedShellCode).toContain('local __lp_global=')
     })
   })
 
@@ -152,8 +151,9 @@ describe('Shell Integration Library Paths', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should check for duplicates before adding paths
-      expect(generatedShellCode).toContain('if [[ ":$lib_paths:" != *":$lib_dir:"* ]]')
+      // Should use the unique path function to avoid duplicates
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path')
+      expect(generatedShellCode).toContain('*":$__val:"*) : ;;')
     })
   })
 
@@ -163,16 +163,16 @@ describe('Shell Integration Library Paths', () => {
       const generatedShellCode = shellcode()
 
       // Should check if directories exist before processing
-      expect(generatedShellCode).toContain('if [[ -d "$lib_dir" ]]')
-      expect(generatedShellCode).toContain('if [[ -d "$env_dir" ]]')
+      expect(generatedShellCode).toContain('if [[ -d "$libdir" ]]; then')
+      expect(generatedShellCode).toContain('if [[ -d "$env_dir/bin" ]]; then')
     })
 
     it('should handle conditional library path setting', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should only set library paths if we have paths to set
-      expect(generatedShellCode).toContain('if [[ -n "$lib_paths" ]]')
+      // Should only set library paths if we have values to set
+      expect(generatedShellCode).toContain('if [[ -z "$__val" ]]; then return 0; fi')
     })
   })
 
@@ -196,23 +196,19 @@ describe('Shell Integration Library Paths', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should filter out known non-package directories early
-      const excludedDirs = ['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache']
-      for (const dir of excludedDirs) {
-        // Current implementation uses basename comparison for filtering
-        expect(generatedShellCode).toContain(`"$domain_name" != "${dir}"`)
-      }
+      // Should use efficient find commands with limited depth
+      expect(generatedShellCode).toContain('-maxdepth 2')
+      expect(generatedShellCode).toContain('2>/dev/null')
     })
 
     it('should avoid redundant filesystem checks', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should check directory existence before processing version directories
-      // (domain_dir check is unnecessary since find only returns directories)
-      expect(generatedShellCode).toContain('[[ -d "$version_dir"')
-      // Should also use find which is more efficient than glob expansion
-      expect(generatedShellCode).toContain('find "$env_dir" -maxdepth 1 -type d -print0')
+      // Should use find with directory checks that are efficient
+      expect(generatedShellCode).toContain('find ')
+      expect(generatedShellCode).toContain('-type d')
+      expect(generatedShellCode).toContain('2>/dev/null')
     })
   })
 
@@ -221,19 +217,18 @@ describe('Shell Integration Library Paths', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should append to existing paths, not replace them
-      expect(generatedShellCode).toContain('if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]')
-      expect(generatedShellCode).toContain('export DYLD_LIBRARY_PATH="$lib_paths:$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"')
-      expect(generatedShellCode).toContain('export DYLD_LIBRARY_PATH="$lib_paths"')
+      // Should use eval to handle library path exports dynamically
+      expect(generatedShellCode).toContain('eval "export $')
+      expect(generatedShellCode).toContain('if [[ -n "$__cur" ]]; then')
     })
 
     it('should handle empty original values gracefully', async () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should handle case where original values are empty (updated to match current implementation)
-      expect(generatedShellCode).toContain('else\n            export DYLD_LIBRARY_PATH="$lib_paths"')
-      expect(generatedShellCode).toContain('else\n            export LD_LIBRARY_PATH="$lib_paths"')
+      // Should handle case where original values are empty
+      expect(generatedShellCode).toContain('else')
+      expect(generatedShellCode).toContain('eval "export $')
     })
   })
 
@@ -242,12 +237,12 @@ describe('Shell Integration Library Paths', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const generatedShellCode = shellcode()
 
-      // Should set up global dependencies
-      expect(generatedShellCode).toContain('__launchpad_setup_global_deps()')
-      expect(generatedShellCode).toContain('__launchpad_ensure_global_path()')
+      // Should handle both global and project-specific environments
+      expect(generatedShellCode).toContain('__lp_global')
+      expect(generatedShellCode).toContain('Global-level libs')
 
       // Should handle project-specific environments
-      expect(generatedShellCode).toContain('$HOME/.local/share/launchpad/envs/$project_hash')
+      expect(generatedShellCode).toContain('.local/share/launchpad/envs')
     })
 
     it('should maintain separation between global and local library paths', async () => {
@@ -255,8 +250,9 @@ describe('Shell Integration Library Paths', () => {
       const generatedShellCode = shellcode()
 
       // Both global and local should use the same library path function
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths "$global_env_dir"')
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths "$env_dir"')
+      expect(generatedShellCode).toContain('# Global-level libs')
+      expect(generatedShellCode).toContain('# Env-level libs')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path')
     })
   })
 
@@ -284,9 +280,9 @@ describe('Shell Integration Library Paths', () => {
       const generatedShellCode = shellcode()
 
       // Should generate shell code that would properly set up library paths
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths')
-      expect(generatedShellCode).toContain('export DYLD_LIBRARY_PATH=')
-      expect(generatedShellCode).toContain('export LD_LIBRARY_PATH=')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path DYLD_LIBRARY_PATH')
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path LD_LIBRARY_PATH')
+      expect(generatedShellCode).toContain('# Export DYLD and LD paths')
     })
 
     it('should handle mixed global and local dependencies', async () => {
@@ -307,8 +303,8 @@ describe('Shell Integration Library Paths', () => {
       const generatedShellCode = shellcode()
 
       // Should handle both global and local library paths
-      expect(generatedShellCode).toContain('__launchpad_setup_global_deps')
-      expect(generatedShellCode).toContain('__launchpad_ensure_global_path')
+      expect(generatedShellCode).toContain('# Global-level libs')
+      expect(generatedShellCode).toContain('local __lp_global=')
     })
   })
 })

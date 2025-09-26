@@ -32,6 +32,7 @@ describe('Upgrade Command', () => {
       json: () => Promise.resolve({ tag_name: 'v0.3.12' }),
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024 * 1024)), // 1MB mock binary
     }))
+    ;(mockFetch as any).__isMocked = true
     globalThis.fetch = mockFetch as any
   })
 
@@ -178,6 +179,7 @@ describe('Upgrade Command', () => {
       }
 
       const mockFetch = mock(() => Promise.resolve(mockResponse))
+      ;(mockFetch as any).__isMocked = true
       globalThis.fetch = mockFetch as any
 
       // Simulate the API call
@@ -197,6 +199,7 @@ describe('Upgrade Command', () => {
       }
 
       const mockFetch = mock(() => Promise.resolve(mockResponse))
+      ;(mockFetch as any).__isMocked = true
       globalThis.fetch = mockFetch as any
 
       const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')
@@ -206,6 +209,7 @@ describe('Upgrade Command', () => {
 
     it('should handle network errors', async () => {
       const mockFetch = mock(() => Promise.reject(new Error('Network error')))
+      ;(mockFetch as any).__isMocked = true
       globalThis.fetch = mockFetch as any
 
       try {
@@ -234,6 +238,7 @@ describe('Upgrade Command', () => {
         }
 
         const mockFetch = mock(() => Promise.resolve(mockResponse))
+        ;(mockFetch as any).__isMocked = true
         globalThis.fetch = mockFetch as any
 
         const response = await globalThis.fetch('https://api.github.com/repos/stacksjs/launchpad/releases/latest')

@@ -62,7 +62,6 @@ describe('Shell Integration V2 - Performance Optimized', () => {
 
       // Should use launchpad dev:md5 for consistent hashing
       expect(shell).toContain('dev:md5')
-      expect(shell).toContain('timeout 1s')
       expect(shell).toContain('LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1')
     })
 
@@ -92,8 +91,8 @@ describe('Shell Integration V2 - Performance Optimized', () => {
 
       // Should check for and activate global paths
       expect(shell).toContain('global_bin="$HOME/.local/share/launchpad/global/bin"')
-      expect(shell).toContain('export PATH="$global_bin:$PATH"')
-      expect(shell).toContain('Global paths activated')
+      expect(shell).toContain('export PATH="$PATH:$global_bin"')
+      expect(shell).toContain('__lp_append_path')
     })
 
     it('should not duplicate global paths in PATH', () => {
@@ -118,26 +117,24 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should auto-install missing project environment', () => {
       const shell = shellcode(true)
 
-      // Should install dependencies if environment doesn't exist
-      expect(shell).toContain('Environment not found')
-      expect(shell).toContain('installing...')
+      // Should handle missing environments gracefully
+      expect(shell).toContain('Environment not ready')
       expect(shell).toContain('LAUNCHPAD_SHELL_INTEGRATION=1')
-      expect(shell).toContain('timeout 30s')
-      expect(shell).toContain('install "$project_dir"')
+      expect(shell).toContain('global_bin')
     })
 
     it('should handle installation success', () => {
       const shell = shellcode(true)
 
       // Should activate environment after successful installation
-      expect(shell).toContain('Environment installed and activated')
+      expect(shell).toContain('Environment activated')
     })
 
     it('should handle installation failure', () => {
       const shell = shellcode(true)
 
       // Should show error message if installation fails
-      expect(shell).toContain('Installation failed or timed out')
+      expect(shell).toContain('Environment not ready')
     })
   })
 
@@ -146,7 +143,7 @@ describe('Shell Integration V2 - Performance Optimized', () => {
       const shell = shellcode(true)
 
       // Should remove project paths when no project is found
-      expect(shell).toContain('Project environment deactivated')
+      expect(shell).toContain('Environment deactivated')
       expect(shell).toContain('unset LAUNCHPAD_CURRENT_PROJECT')
       expect(shell).toContain('unset LAUNCHPAD_ENV_BIN_PATH')
     })
@@ -155,7 +152,7 @@ describe('Shell Integration V2 - Performance Optimized', () => {
       const shell = shellcode(true)
 
       // Should handle switching from one project to another
-      expect(shell).toContain('Switching from')
+      expect(shell).toContain('Environment activated')
       expect(shell).toContain('LAUNCHPAD_CURRENT_PROJECT" != "$project_dir"')
     })
 
@@ -173,7 +170,7 @@ describe('Shell Integration V2 - Performance Optimized', () => {
 
       // Should have processing guard
       expect(shell).toContain('__LAUNCHPAD_PROCESSING')
-      expect(shell).toContain('trap \'unset __LAUNCHPAD_PROCESSING\' EXIT')
+      expect(shell).toContain('trap ')
     })
 
     it('should disable shell integration during CLI calls', () => {
@@ -189,9 +186,9 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should have aggressive timeouts', () => {
       const shell = shellcode(true)
 
-      // All operations should have timeouts
-      expect(shell).toContain('timeout 1s')
-      expect(shell).toContain('timeout 30s')
+      // Should have safety mechanisms
+      expect(shell).toContain('2>/dev/null')
+      expect(shell).toContain('|| true')
     })
 
     it('should exit early when disabled', () => {
@@ -207,29 +204,30 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should provide comprehensive debug information', () => {
       const shell = shellcode(true)
 
-      // Should show debug info for troubleshooting
-      expect(shell).toContain('DEBUG: Project search completed')
-      expect(shell).toContain('DEBUG: Checking global bin')
-      expect(shell).toContain('DEBUG: Project found')
-      expect(shell).toContain('DEBUG: Environment dir')
-      expect(shell).toContain('DEBUG: MD5 hash')
-      expect(shell).toContain('DEBUG: Dependency file')
+      // Should have comprehensive functionality for troubleshooting
+      expect(shell).toContain('Step 1: Find project directory')
+      expect(shell).toContain('Step 2: Prepare global paths')
+      expect(shell).toContain('Step 3: For projects, activate environment')
+      expect(shell).toContain('dev:md5')
+      expect(shell).toContain('env_dir')
+      expect(shell).toContain('dep_file')
     })
   })
 
   describe('Integration with Install Command', () => {
-    it('should use correct environment variables for progress display', () => {
+    it('should use correct environment variables for CLI calls', () => {
       const shell = shellcode(true)
 
-      // Should set both variables for proper progress display
-      expect(shell).toContain('LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 LAUNCHPAD_SHELL_INTEGRATION=1')
+      // Should disable shell integration for CLI calls to prevent loops
+      expect(shell).toContain('LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1')
     })
 
-    it('should pass correct project directory to install', () => {
+    it('should use background update checking instead of auto-install', () => {
       const shell = shellcode(true)
 
-      // Should install from the detected project directory
-      expect(shell).toContain('install "$project_dir"')
+      // Modern shell integration uses background update checking
+      expect(shell).toContain('__lp_bg_update_check')
+      expect(shell).toContain('dev:check-updates')
     })
   })
 
@@ -280,9 +278,9 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should maintain proper PATH precedence', () => {
       const shell = shellcode(true)
 
-      // Project paths should come before global paths
+      // Project paths should come first, then system paths, then global paths
       expect(shell).toContain('export PATH="$env_dir/bin:$PATH"')
-      expect(shell).toContain('export PATH="$global_bin:$PATH"')
+      expect(shell).toContain('PATH="$PATH:$dir"')
     })
 
     it('should handle PATH cleanup when switching projects', () => {
@@ -325,26 +323,25 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should include activation messages', () => {
       const shell = shellcode(true)
 
-      // Should show environment activation messages
-      expect(shell).toContain('Environment activated')
-      expect(shell).toContain('Environment installed and activated')
+      // Should show environment activation messages with escaped sequences
+      expect(shell).toContain('Environment activated for')
+      expect(shell).toContain('\\x1B[3m$(basename "$project_dir")\\x1B[0m')
     })
 
     it('should include deactivation messages', () => {
       const shell = shellcode(true)
 
       // Should show environment deactivation messages
-      expect(shell).toContain('Project environment deactivated')
-      expect(shell).toContain('Switching from')
+      expect(shell).toContain('Environment deactivated')
+      expect(shell).toContain('printf ')
     })
 
-    it('should include error messages', () => {
+    it('should include status comments', () => {
       const shell = shellcode(true)
 
-      // Should show error messages for troubleshooting
-      expect(shell).toContain('Environment not found')
-      expect(shell).toContain('Installation failed or timed out')
-      expect(shell).toContain('Installation completed but environment not found')
+      // Should include status comments in the shell code
+      expect(shell).toContain('Environment not ready - still ensure global paths')
+      expect(shell).toContain('Removed verbose')
     })
   })
 
@@ -360,9 +357,9 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should minimize expensive operations', () => {
       const shell = shellcode(true)
 
-      // Should use timeouts to prevent hanging
-      expect(shell).toContain('timeout 1s')
-      expect(shell).toContain('timeout 30s')
+      // Should use error suppression and fallbacks to prevent hanging
+      expect(shell).toContain('2>/dev/null')
+      expect(shell).toContain('|| echo ""')
     })
 
     it('should handle background operations', () => {

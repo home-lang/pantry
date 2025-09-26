@@ -58,6 +58,7 @@ describe('Download Progress', () => {
 
     // Mock fetch for this test
     // @ts-expect-error - Mock fetch for testing
+    ;(mockFetch as any).__isMocked = true
     globalThis.fetch = mockFetch
 
     // Mock stdout and stderr

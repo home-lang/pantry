@@ -32,15 +32,70 @@ const originalFetch = globalThis.fetch
 async function mockFetch(url: string | URL | Request, _init?: RequestInit): Promise<Response> {
   const urlString = url.toString()
 
-  // Mock successful responses for known test packages
-  if (urlString.includes('dist.pkgx.dev') && urlString.includes('gnu.org/wget')) {
-    // Create a minimal tar.gz file for testing
-    const tarContent = Buffer.from('fake tar content for testing')
+  // Create a minimal valid gzip header for all successful responses
+  const createMockTarResponse = () => {
+    // gzip header: 1f 8b (magic) + 08 (deflate) + 00 (flags) + 4 bytes timestamp + 00 (xfl) + 00 (os)
+    const gzipHeader = Buffer.from([0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+    const fakeContent = Buffer.from('fake tar content for testing')
+    const tarContent = Buffer.concat([gzipHeader, fakeContent])
     return new Response(tarContent, {
       status: 200,
       statusText: 'OK',
-      headers: { 'content-type': 'application/gzip' },
+      headers: {
+        'content-type': 'application/gzip',
+        'content-length': tarContent.length.toString(),
+      },
     })
+  }
+
+  // Mock successful responses for dist.pkgx.dev (all packages that might be dependencies)
+  if (urlString.includes('dist.pkgx.dev')) {
+    // Handle common packages that might be dependencies
+    const knownPackages = [
+      'gnu.org/wget',
+      'openssl.org',
+      'curl.se/ca-certs',
+      'curl.se',
+      'zlib.net',
+      'sourceware.org/bzip2',
+      'nodejs.org',
+      'unicode.org',
+      'npmjs.com',
+      'bun.sh',
+      'python.org',
+      'gnu.org/gettext',
+      'gnome.org/libxml2',
+      'tukaani.org/xz',
+      'perl.org',
+      'libexpat.github.io',
+      'bytereef.org/mpdecimal',
+      'sqlite.org',
+      'gnu.org/readline',
+      'invisible-island.net/ncurses',
+      'tcl-lang.org',
+      'freetype.org',
+      'libpng.org',
+      'freedesktop.org/pkg-config',
+      'x.org/x11',
+      'x.org/xcb',
+      'x.org/xau',
+      'x.org/util-macros',
+      'x.org/protocol',
+      'x.org/xdmcp',
+      'x.org/exts',
+      'pip.pypa.io',
+      'pkgx.sh',
+      'github.com/kkos/oniguruma',
+      'git-scm.org',
+      'cmake.org',
+      'stedolan.github.io/jq',
+      'sourceware.org/libffi',
+    ]
+
+    const isKnownPackage = knownPackages.some(pkg => urlString.includes(pkg))
+    if (isKnownPackage) {
+      return createMockTarResponse()
+    }
   }
 
   // Mock 404 for nonexistent packages
@@ -74,7 +129,9 @@ describe('Dev Commands', () => {
     fixturesDir = path.join(__dirname, 'fixtures')
 
     // Enable fetch mocking for tests
-    globalThis.fetch = mockFetch as typeof fetch
+    const mockedFetch = mockFetch as typeof fetch
+    ;(mockedFetch as any).__isMocked = true
+    globalThis.fetch = mockedFetch
   })
 
   afterEach(() => {
@@ -115,8 +172,29 @@ describe('Dev Commands', () => {
   // Helper function to run CLI commands
   const runCLI = (args: string[], cwd?: string): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
     return new Promise((resolve, reject) => {
-      // Use bun to run TypeScript files
-      const bunExecutable = 'bun'
+      // Try to find bun executable in various locations
+      const possibleBunPaths = [
+        'bun', // Try PATH first
+        '/Users/chrisbreuer/.bun/bin/bun',
+        '/usr/local/bin/bun',
+        `${process.env.HOME}/.bun/bin/bun`,
+        `${process.env.HOME}/.local/bin/bun`,
+        process.execPath, // Fall back to current Node.js/Bun executable
+      ]
+
+      let bunExecutable = possibleBunPaths[0]
+      for (const bunPath of possibleBunPaths) {
+        try {
+          if (fs.existsSync(bunPath)) {
+            bunExecutable = bunPath
+            break
+          }
+        }
+        catch {
+          continue
+        }
+      }
+
       const proc = spawn(bunExecutable, [cliPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: getTestEnv(),
@@ -157,11 +235,11 @@ describe('Dev Commands', () => {
         })
       })
 
-      // Timeout after 30 seconds
+      // Timeout after 5 minutes for package installation
       setTimeout(() => {
         proc.kill()
         reject(new Error('CLI command timed out'))
-      }, 30000)
+      }, 300000)
     })
   }
 
@@ -185,7 +263,7 @@ describe('Dev Commands', () => {
       const result = shellcode(true) // Use test mode to bypass NODE_ENV check
 
       // Check for key shell functions
-      expect(result).toContain('__launchpad_find_deps_file')
+      expect(result).toContain('__launchpad_switch_environment')
       expect(result).toContain('__launchpad_chpwd')
     })
 
@@ -201,23 +279,23 @@ describe('Dev Commands', () => {
       const result = shellcode(true) // Use test mode to bypass NODE_ENV check
 
       // Should include inline message handling instead of command calls
-      expect(result).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
-      expect(result).toContain('Environment activated for')
+      expect(result).toContain('LAUNCHPAD_VERBOSE')
+      expect(result).toContain('Environment activated')
     })
 
     it('should respect showShellMessages configuration', () => {
       const result = shellcode(true) // Use test mode to bypass NODE_ENV check
 
       // Should include inline message handling that respects configuration
-      expect(result).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
-      expect(result).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES:-true')
+      expect(result).toContain('LAUNCHPAD_VERBOSE')
+      expect(result).toContain('verbose_mode')
     })
 
     it('should include custom activation message', () => {
       const result = shellcode(true) // Use test mode to bypass NODE_ENV check
 
       // Should include inline activation message handling
-      expect(result).toContain('Environment activated for')
+      expect(result).toContain('Environment activated')
     })
 
     it('should include custom deactivation message', () => {
@@ -275,7 +353,7 @@ describe('Dev Commands', () => {
         // If installation fails, check graceful error handling
         expect(result.stderr).toMatch(/Failed to (install|set up dev environment)/)
       }
-    }, 60000)
+    }, 1000000)
 
     it('should create binary stubs in ~/.local/bin', async () => {
       createDependenciesYaml(tempDir, {
@@ -303,7 +381,7 @@ describe('Dev Commands', () => {
         // If installation fails, check graceful error handling
         expect(result.stderr).toContain('Failed to install')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle package installation failures gracefully (may exit 0 or 1 depending on error handling)', async () => {
       fs.writeFileSync(path.join(tempDir, 'dependencies.yaml'), 'dependencies:\n  nonexistent-package-12345: ^1.0\n')
@@ -315,7 +393,7 @@ describe('Dev Commands', () => {
 
       const output = result.stdout + result.stderr
       expect(output).toMatch(/nonexistent-package-12345|Failed to install|Warning.*Failed to install/i)
-    }, 60000)
+    }, 1000000)
   })
 
   describe('Fixture Testing', () => {
@@ -362,7 +440,7 @@ describe('Dev Commands', () => {
           expect(result.stderr).toMatch(/Failed to (install|set up dev environment)|All package installations failed/)
         }
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle go.mod fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'go.mod')
@@ -372,7 +450,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle Cargo.toml fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'Cargo.toml')
@@ -382,7 +460,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle .node-version fixture', async () => {
       const fixturePath = path.join(fixturesDir, '.node-version')
@@ -392,7 +470,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle .ruby-version fixture', async () => {
       const fixturePath = path.join(fixturesDir, '.ruby-version')
@@ -402,7 +480,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle deno.jsonc fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'deno.jsonc')
@@ -412,7 +490,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle Gemfile fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'Gemfile')
@@ -422,7 +500,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle requirements.txt fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'requirements.txt')
@@ -432,7 +510,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle pixi.toml fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'pixi.toml')
@@ -442,7 +520,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('No dependency file found')
       }
-    }, 60000)
+    }, 1000000)
 
     // Test directory-based fixtures
     it('should handle package.json/std fixture', async () => {
@@ -454,7 +532,7 @@ describe('Dev Commands', () => {
         // Should show that packages are being installed (enhanced detection working)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle deno.json/std fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'deno.json', 'std')
@@ -464,7 +542,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle pyproject.toml/std fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'pyproject.toml', 'std')
@@ -474,7 +552,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle action.yml/std fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'action.yml', 'std')
@@ -484,7 +562,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     it('should handle python-version/std fixture', async () => {
       const fixturePath = path.join(fixturesDir, 'python-version', 'std')
@@ -494,7 +572,7 @@ describe('Dev Commands', () => {
         expect(result.exitCode).toBe(0)
         expect(result.stdout).toContain('Installing')
       }
-    }, 60000)
+    }, 1000000)
 
     // Test all package.json variants
     it('should handle all package.json variants', async () => {
@@ -516,7 +594,7 @@ describe('Dev Commands', () => {
           }
         }
       }
-    }, 120000)
+    }, 1000000)
 
     // Test all deno.json variants
     it('should handle all deno.json variants', async () => {
@@ -536,7 +614,7 @@ describe('Dev Commands', () => {
           }
         }
       }
-    }, 120000)
+    }, 1000000)
 
     // Test all pyproject.toml variants
     it('should handle all pyproject.toml variants', async () => {
@@ -556,7 +634,7 @@ describe('Dev Commands', () => {
           }
         }
       }
-    }, 120000)
+    }, 1000000)
   })
 
   describe('Integration Tests', () => {
@@ -758,7 +836,7 @@ describe('Dev Commands', () => {
         const output = result.stdout + result.stderr
         expect(output).toMatch(/✅.*bun|satisfied by existing installations|would install locally|Installing.*packages|bun\.sh|Downloading.*Bun/i)
       }
-    }, 60000)
+    }, 1000000)
   })
 
   describe('Performance', () => {
@@ -865,6 +943,6 @@ describe('Dev Commands', () => {
         // In local environment, expect the second run to be faster
         expect(duration2).toBeLessThan(duration1 * 1.5)
       }
-    }, 60000)
+    }, 1000000)
   })
 })

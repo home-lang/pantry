@@ -47,7 +47,7 @@ describe('Library Path Management', () => {
       // Create package-specific library directories
       const nodePackageDir = path.join(envDir, 'nodejs.org', 'v20.0.0', 'lib')
       fs.mkdirSync(nodePackageDir, { recursive: true })
-      fs.writeFileSync(path.join(nodePackageDir, 'libnode.dylib'), 'mock node library content that is longer than 100 bytes to pass validation check')
+      fs.writeFileSync(path.join(nodePackageDir, 'libnode.dylib'), 'mock node library content that is definitely longer than 100 bytes to pass validation check and ensure the test works correctly')
 
       const paths = await scanLibraryPaths(envDir)
 
@@ -79,7 +79,7 @@ describe('Library Path Management', () => {
       fs.writeFileSync(path.join(packageDir, 'libsmall.dylib'), 'tiny')
 
       // Create a valid library file
-      fs.writeFileSync(path.join(packageDir, 'libvalid.dylib'), 'this is a valid library file with enough content to pass the size check')
+      fs.writeFileSync(path.join(packageDir, 'libvalid.dylib'), 'this is a valid library file with enough content to pass the size check and ensure the test works correctly with proper validation')
 
       const paths = await scanLibraryPaths(envDir)
 
@@ -94,8 +94,8 @@ describe('Library Path Management', () => {
       const envDir = path.join(tempDir, 'env-skip')
       fs.mkdirSync(envDir, { recursive: true })
 
-      // Create directories that should be skipped
-      const skipDirs = ['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache']
+      // Create directories that should be skipped (but avoid lib/lib64 since they get added by the scanner directly)
+      const skipDirs = ['bin', 'sbin', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache']
       for (const skipDir of skipDirs) {
         const dir = path.join(envDir, skipDir, 'v1.0.0', 'lib')
         fs.mkdirSync(dir, { recursive: true })
@@ -105,7 +105,7 @@ describe('Library Path Management', () => {
       // Create a valid package directory
       const validDir = path.join(envDir, 'valid.org', 'v1.0.0', 'lib')
       fs.mkdirSync(validDir, { recursive: true })
-      fs.writeFileSync(path.join(validDir, 'libvalid.dylib'), 'mock library content that is longer than 100 bytes')
+      fs.writeFileSync(path.join(validDir, 'libvalid.dylib'), 'mock library content that is definitely longer than 100 bytes to pass validation check and ensure the test works correctly')
 
       const paths = await scanLibraryPaths(envDir)
 

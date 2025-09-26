@@ -410,8 +410,17 @@ export async function downloadPackage(
 
         // Skip actual downloads in test environment unless explicitly allowed
         // Note: Tests use mock fetch, so this only blocks real network calls
-        if (process.env.NODE_ENV === 'test' && process.env.LAUNCHPAD_ALLOW_NETWORK !== '1' && !globalThis.fetch.toString().includes('mockFetch')) {
-          throw new Error('Network calls disabled in test environment')
+        if (process.env.NODE_ENV === 'test' && process.env.LAUNCHPAD_ALLOW_NETWORK !== '1') {
+          // Check if fetch is mocked by looking for our mock marker or function name
+          const fetchStr = globalThis.fetch.toString()
+          const isMocked = fetchStr.includes('mockFetch')
+            || fetchStr.includes('Mock response')
+            || fetchStr.includes('testing.org')
+            || (globalThis.fetch as any).__isMocked === true
+
+          if (!isMocked) {
+            throw new Error('Network calls disabled in test environment')
+          }
         }
 
         const response = await fetch(url, {
@@ -672,7 +681,13 @@ export async function downloadPackage(
     }
 
     // Check if we're in test mode with mock data or if the file is not a valid archive
-    const isMockData = process.env.NODE_ENV === 'test' && globalThis.fetch.toString().includes('mockFetch')
+    const fetchStr = globalThis.fetch.toString()
+    const isMockData = process.env.NODE_ENV === 'test' && (
+      fetchStr.includes('mockFetch')
+      || fetchStr.includes('Mock response')
+      || fetchStr.includes('testing.org')
+      || (globalThis.fetch as any).__isMocked === true
+    )
 
     // Check if the archive file is valid by reading the first few bytes
     let isValidArchive = false

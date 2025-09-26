@@ -36,6 +36,7 @@ describe('Upgrade Binary Detection Logic', () => {
       json: () => Promise.resolve({ tag_name: 'v0.3.12' }),
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024 * 1024)),
     }))
+    ;(mockFetch as any).__isMocked = true
     globalThis.fetch = mockFetch as any
   })
 
