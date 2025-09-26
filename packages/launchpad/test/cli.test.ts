@@ -527,7 +527,7 @@ describe('CLI', () => {
 
       // Should import our new installation system - checking for both index and direct imports
       const hasInstallImport = content.includes('from \'../src/install\'')
-        || (content.includes('from \'../src\'') && content.includes('install'))
+        || (content.includes('from \'../src/commands\'') && content.includes('install'))
       expect(hasInstallImport).toBe(true)
     })
 

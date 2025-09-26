@@ -7,7 +7,7 @@ import { shellcode } from '../src/dev/shellcode'
 describe('Shell Integration V2 - Performance Optimized', () => {
   const testDir = join(process.cwd(), 'test-shell-v2')
   const projectDir = join(testDir, 'test-project')
-  const globalBinDir = join(process.env.HOME!, '.local/share/launchpad/global/bin')
+  const globalBinDir = join(testDir, 'global/bin')
 
   beforeEach(() => {
     // Clean up any existing test directories

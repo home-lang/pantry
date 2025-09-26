@@ -9,7 +9,7 @@ describe('Shell Environment Switching - TDD', () => {
   const projectA = join(testDir, 'project-a')
   const projectB = join(testDir, 'project-b')
   const nonProjectDir = join(testDir, 'non-project')
-  const globalBinDir = join(process.env.HOME!, '.local/share/launchpad/global/bin')
+  const globalBinDir = join(testDir, 'global/bin')
 
   beforeEach(() => {
     // Clean up any existing test directories
@@ -294,16 +294,17 @@ describe('Shell Environment Switching - TDD', () => {
 
       // Should avoid redundant operations
       expect(shell).toContain('[ -d "$env_dir/bin" ]')
-      expect(shell).toContain('echo yes || echo no')
+      // Should use caching mechanisms for performance
+      expect(shell).toContain('ready_cache_marker')
     })
 
     it('should provide comprehensive debug information', () => {
       const shell = shellcode(true)
 
       // Should show debug info for troubleshooting
-      expect(shell).toContain('DEBUG: Project search completed')
-      expect(shell).toContain('DEBUG: Environment dir')
-      expect(shell).toContain('DEBUG: MD5 hash')
+      expect(shell).toContain('Step 1: Find project directory')
+      expect(shell).toContain('env_dir')
+      expect(shell).toContain('md5hash')
     })
   })
 

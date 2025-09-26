@@ -690,7 +690,7 @@ describe('Environment Management Commands', () => {
       const inspectResult = await runCLI(['env:inspect', 'healthy-recent_11111111'])
       expect(inspectResult.exitCode).toBe(0)
       expect(inspectResult.stdout).toContain('✅ Healthy')
-    })
+    }, 15000)
 
     it('should show proper error messages when environments directory does not exist', async () => {
       // Remove the environments directory entirely

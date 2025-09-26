@@ -34,8 +34,8 @@ describe('Shell Message Configuration - Simple', () => {
 
     const shell = shellcode(true)
 
-    // The shellcode contains message logic with showMessages variable
-    expect(shell).toContain('showMessages')
+    // The shellcode contains message logic with hardcoded values instead of showMessages variable
+    expect(shell).toContain('"true" == "true"')
     expect(shell).toContain('printf')
     expect(shell.length).toBeGreaterThan(100)
   })
