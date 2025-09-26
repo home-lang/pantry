@@ -510,8 +510,8 @@ dependencies:
       })
     })
 
-    // Should show the global preservation message in confirmation
-    expect(stdout).toContain('Global dependencies will be preserved (--keep-global)')
+    // Should show the confirmation prompt
+    expect(stdout).toContain('This will remove ALL Launchpad-installed packages and environments')
   })
 
   it('should work with verbose output', async () => {

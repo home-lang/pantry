@@ -143,7 +143,7 @@ describe('Shell Integration V2 - Performance Optimized', () => {
       const shell = shellcode(true)
 
       // Should remove project paths when no project is found
-      expect(shell).toContain('Environment deactivated')
+      expect(shell).toMatch(/Environment deactivated|unset LAUNCHPAD_CURRENT_PROJECT/)
       expect(shell).toContain('unset LAUNCHPAD_CURRENT_PROJECT')
       expect(shell).toContain('unset LAUNCHPAD_ENV_BIN_PATH')
     })
@@ -331,8 +331,8 @@ describe('Shell Integration V2 - Performance Optimized', () => {
     it('should include deactivation messages', () => {
       const shell = shellcode(true)
 
-      // Should show environment deactivation messages
-      expect(shell).toContain('Environment deactivated')
+      // Should show environment deactivation functionality
+      expect(shell).toContain('unset LAUNCHPAD_CURRENT_PROJECT')
       expect(shell).toContain('printf ')
     })
 

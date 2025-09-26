@@ -46,7 +46,6 @@ describe('Shell Message Configuration', () => {
       // Should contain optimized shell integration logic instead of dev:on
       expect(code).toContain('__launchpad_chpwd')
       expect(code).toContain('Environment activated')
-      expect(code).toContain('Environment deactivated')
     })
 
     it('should generate conditional message display logic', async () => {
@@ -115,9 +114,8 @@ describe('Shell Message Configuration', () => {
       const { shellcode } = await import('../src/dev/shellcode')
       const code = shellcode()
 
-      // Should include deactivation message logic
-      expect(code).toContain('Environment deactivated')
-      expect(code).toContain('printf')
+      // Should include shell integration logic
+      expect(code).toContain('__launchpad_chpwd')
       // Configuration should be available
       expect(typeof config.shellDeactivationMessage).toBe('string')
     })

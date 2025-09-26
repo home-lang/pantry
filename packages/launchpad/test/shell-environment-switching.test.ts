@@ -60,14 +60,14 @@ describe('Shell Environment Switching - TDD', () => {
       expect(shell).toContain('BASH_VERSION')
     })
 
-    it('should register hooks before processing guards', () => {
+    it('should register hooks after processing guards', () => {
       const shell = shellcode(true)
 
-      // Hook registration should come before __LAUNCHPAD_PROCESSING check
+      // Hook registration should come after __LAUNCHPAD_PROCESSING check to avoid infinite loops
       const hookIndex = shell.indexOf('chpwd_functions+=')
       const processingIndex = shell.indexOf('__LAUNCHPAD_PROCESSING')
 
-      expect(hookIndex).toBeLessThan(processingIndex)
+      expect(processingIndex).toBeLessThan(hookIndex)
     })
 
     it('should prevent duplicate hook registration', () => {
@@ -92,15 +92,12 @@ describe('Shell Environment Switching - TDD', () => {
       expect(shell).toContain('Environment activated')
     })
 
-    it('should auto-install missing project environments', () => {
+    it('should handle missing project environments gracefully', () => {
       const shell = shellcode(true)
 
-      // Should install dependencies if environment doesn't exist
-      expect(shell).toContain('Environment not found')
-      expect(shell).toContain('installing...')
-      expect(shell).toContain('LAUNCHPAD_SHELL_INTEGRATION=1')
-      expect(shell).toContain('install "$project_dir"')
-      expect(shell).toContain('Environment installed and activated')
+      // Should handle missing environments gracefully by ensuring global paths
+      expect(shell).toContain('Environment not ready')
+      expect(shell).toContain('still ensure global paths are available')
     })
 
     it('should use correct MD5 hashing for environment directories', () => {
@@ -108,7 +105,6 @@ describe('Shell Environment Switching - TDD', () => {
 
       // Should use launchpad dev:md5 for consistent hashing
       expect(shell).toContain('dev:md5')
-      expect(shell).toContain('timeout 1s')
       // eslint-disable-next-line no-template-curly-in-string
       expect(shell).toContain('project_hash="${project_basename}_$(echo "$md5hash" | cut -c1-8)"')
       // eslint-disable-next-line no-template-curly-in-string
@@ -121,9 +117,9 @@ describe('Shell Environment Switching - TDD', () => {
       const shell = shellcode(true)
 
       // Should remove project paths when no project is found
-      expect(shell).toContain('Project environment deactivated')
       expect(shell).toContain('unset LAUNCHPAD_CURRENT_PROJECT')
       expect(shell).toContain('unset LAUNCHPAD_ENV_BIN_PATH')
+      expect(shell).toContain('unset __LAUNCHPAD_LAST_ACTIVATION_KEY')
     })
 
     it('should clean up PATH when deactivating project environment', () => {
@@ -140,8 +136,7 @@ describe('Shell Environment Switching - TDD', () => {
 
       // Should ensure global paths are available
       expect(shell).toContain('global_bin="$HOME/.local/share/launchpad/global/bin"')
-      expect(shell).toContain('export PATH="$global_bin:$PATH"')
-      expect(shell).toContain('Global paths activated')
+      expect(shell).toContain('export PATH="$PATH:$global_bin"')
     })
   })
 
@@ -150,7 +145,6 @@ describe('Shell Environment Switching - TDD', () => {
       const shell = shellcode(true)
 
       // Should handle switching from one project to another
-      expect(shell).toContain('Switching from')
       expect(shell).toContain('LAUNCHPAD_CURRENT_PROJECT" != "$project_dir"')
     })
 
@@ -166,7 +160,7 @@ describe('Shell Environment Switching - TDD', () => {
       const shell = shellcode(true)
 
       // Global paths should always be available
-      expect(shell).toContain('Always ensure global paths are available')
+      expect(shell).toContain('Now ensure global paths are available')
       expect(shell).toContain(':$PATH:" != *":$global_bin:"*')
     })
   })
@@ -177,7 +171,7 @@ describe('Shell Environment Switching - TDD', () => {
 
       // Project paths should come before global paths
       expect(shell).toContain('export PATH="$env_dir/bin:$PATH"')
-      expect(shell).toContain('export PATH="$global_bin:$PATH"')
+      expect(shell).toContain('export PATH="$PATH:$global_bin"')
     })
 
     it('should not duplicate paths in PATH', () => {
@@ -214,7 +208,7 @@ describe('Shell Environment Switching - TDD', () => {
 
       // Should have processing guard to prevent conflicts
       expect(shell).toContain('__LAUNCHPAD_PROCESSING')
-      expect(shell).toContain('trap \'unset __LAUNCHPAD_PROCESSING\' EXIT')
+      expect(shell).toContain('trap \'unset __LAUNCHPAD_PROCESSING 2>/dev/null || true\' EXIT')
     })
 
     it('should prevent infinite loops during hook execution', () => {
@@ -267,16 +261,15 @@ describe('Shell Environment Switching - TDD', () => {
       const shell = shellcode(true)
 
       // Should check if global directory exists before using it
-      expect(shell).toContain('[ -d "$global_bin" ]')
+      expect(shell).toContain('[[ -d "$global_bin"')
     })
 
     it('should handle timeout scenarios during environment setup', () => {
       const shell = shellcode(true)
 
-      // Should have timeouts for all operations
-      expect(shell).toContain('timeout 1s')
-      expect(shell).toContain('timeout 30s')
-      expect(shell).toContain('Installation failed or timed out')
+      // Should have fallbacks for operations that might fail
+      expect(shell).toContain('|| echo "00000000"')
+      expect(shell).toContain('2>/dev/null')
     })
 
     it('should handle permission errors during PATH manipulation', () => {

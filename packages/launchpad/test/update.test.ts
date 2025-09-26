@@ -244,7 +244,7 @@ describe('Update Module', () => {
       })
 
       const installTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Install command timed out after 30 seconds')), 30000)
+        setTimeout(() => reject(new Error('Install command timed out after 10 seconds')), 10000)
       })
 
       const [installOutput, installStderr, installExitCode] = await Promise.race([
