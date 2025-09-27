@@ -4,8 +4,6 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-
-// Apply profile and validation
 import { getEffectiveConfig, validateConfig } from './config-validation'
 
 function getDefaultInstallPath(): string {
@@ -179,12 +177,7 @@ export const defaultConfig: LaunchpadConfig = {
     },
     frameworks: {
       enabled: process.env.LAUNCHPAD_FRAMEWORKS_ENABLED !== 'false',
-      laravel: {
-        enabled: process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false',
-        autoDetect: process.env.LAUNCHPAD_LARAVEL_AUTO_DETECT !== 'false',
-      },
       stacks: {
-        enabled: process.env.LAUNCHPAD_STACKS_ENABLED !== 'false',
         autoDetect: process.env.LAUNCHPAD_STACKS_AUTO_DETECT !== 'false',
       },
     },
@@ -195,6 +188,7 @@ export const defaultConfig: LaunchpadConfig = {
 // eslint-disable-next-line antfu/no-top-level-await
 const rawConfig = await loadConfig({
   name: 'launchpad',
+  alias: 'deps',
   defaultConfig,
 })
 

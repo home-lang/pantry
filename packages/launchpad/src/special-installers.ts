@@ -247,30 +247,30 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
   let totalDepsAlreadyInstalled = 0
 
   try {
-    // Import pantry from ts-pkgx to get package dependencies
-    const { pantry } = await import('ts-pkgx')
+    // Import packages from ts-pkgx to get package dependencies
+    const { packages: pkgxPackages } = await import('ts-pkgx')
 
     for (const packageName of packages) {
       // Resolve package name to domain
       const domain = resolvePackageName(packageName)
 
-      // Try different ways to find the package in pantry
+      // Try different ways to find the package in packages
       let packageKey: string | undefined
 
       // First, try exact matches
-      packageKey = Object.keys(pantry).find(key => key === domain || key === packageName)
+      packageKey = Object.keys(pkgxPackages).find(key => key === domain || key === packageName)
 
       // Fallback to partial matches only if no exact match found
       if (!packageKey) {
-        packageKey = Object.keys(pantry).find(key =>
+        packageKey = Object.keys(pkgxPackages).find(key =>
           key.includes(packageName) || key.includes(domain.split('.')[0]),
         )
       }
 
-      const packageSpec = packageKey ? pantry[packageKey as keyof typeof pantry] : null
+      const packageSpec = packageKey ? pkgxPackages[packageKey as keyof typeof pkgxPackages] : null
 
       if (!packageSpec || !packageSpec.dependencies) {
-        console.warn(`⚠️ Package ${packageName} not found in pantry or has no dependencies`)
+        console.warn(`⚠️ Package ${packageName} not found in pkgxPackages or has no dependencies`)
         continue
       }
 

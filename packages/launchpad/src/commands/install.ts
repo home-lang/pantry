@@ -386,20 +386,18 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
     // Check for excluded dependencies configuration
     const excludedDeps = (config as any).excludeDependencies || []
     const globalExcludedDeps = (config as any).excludeGlobalDependencies || []
-    const phpExcludedDeps = (config.services?.php as any)?.excludeDependencies || []
 
     const allExcludedDeps = new Set([
       ...excludedDeps,
       ...globalExcludedDeps,
-      ...phpExcludedDeps,
     ])
 
     // Always install PHP dependencies by default - they are runtime dependencies, not build dependencies
     // Only exclude if explicitly configured to do so
     if (allExcludedDeps.size > 0) {
       try {
-        const { pantry } = await import('ts-pkgx')
-        const phpPackage = (pantry as any)?.phpnet
+        const { packages } = await import('ts-pkgx')
+        const phpPackage = (packages as any)?.phpnet
         const phpDeps: string[] = (phpPackage?.dependencies || []).map((dep: any) => {
           let name = ''
           if (typeof dep === 'string')

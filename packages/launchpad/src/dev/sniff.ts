@@ -893,7 +893,6 @@ function shouldInferServices(): boolean {
   // LAUNCHPAD_FRAMEWORKS_ENABLED and LAUNCHPAD_SERVICES_INFER
   const frameworksEnabled = process.env.LAUNCHPAD_FRAMEWORKS_ENABLED !== 'false'
   const inferServices = process.env.LAUNCHPAD_SERVICES_INFER !== 'false'
-  const laravelEnabled = process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false'
   const stacksEnabled = process.env.LAUNCHPAD_STACKS_ENABLED !== 'false'
 
   // Skip inference in shell integration mode for performance
@@ -901,7 +900,7 @@ function shouldInferServices(): boolean {
     return false
   }
 
-  return frameworksEnabled && inferServices && (laravelEnabled || stacksEnabled)
+  return frameworksEnabled && inferServices && stacksEnabled
 }
 
 async function inferServicesFromFramework(projectDir: string): Promise<{ autoStart: string[] }> {

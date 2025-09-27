@@ -111,7 +111,7 @@ export function getSupportedFrameworks(): ProjectFramework[] {
     })
   }
 
-  if (frameworksConfig.laravel?.enabled) {
+  if ((frameworksConfig as any).laravel?.enabled) {
     frameworks.push({
       name: 'Laravel',
       detectionFile: 'artisan',

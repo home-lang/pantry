@@ -1,16 +1,94 @@
-import type { aliases, packages } from 'ts-pkgx'
+import type {
+  PackageAlias,
+  PackageDomain,
+  PackageName,
+  Packages,
+  Dependencies
+} from 'ts-pkgx'
+import { createDependencies } from 'ts-pkgx'
 
-// Extract all package alias names from ts-pkgx
-export type PackageAlias = keyof typeof aliases
+// Re-export ts-pkgx types for internal use
+export type {
+  PackageAlias,
+  PackageDomain,
+  PackageName,
+  Packages,
+  Dependencies
+}
 
-// Extract all package domain names from ts-pkgx packages
-export type PackageDomain = keyof typeof packages
+// Re-export ts-pkgx utilities
+export { createDependencies }
 
-// Union type of all valid package identifiers (aliases + domains)
-export type PackageName = PackageAlias | PackageDomain
+/**
+ * Helper function to create a fully typed dependencies configuration with version validation
+ * This provides IntelliSense and type safety for both package names AND versions!
+ */
+export function defineFullyTypedDependencies(deps: FullyTypedDependencies): FullyTypedDependencies {
+  return deps
+}
+
+
+/**
+ * Helper function to create a typed dependencies configuration (backward compatible)
+ * This provides IntelliSense and type safety while maintaining flexibility
+ */
+export function definePackageDependencies(deps: TypedDependencies): TypedDependencies {
+  return deps
+}
+
+/**
+ * Helper function to create a fully typed dependencies array
+ */
+export function definePackageList<T extends readonly PackageName[]>(packages: T): T {
+  return packages
+}
 
 // Type for package with optional version (allowing string for flexibility)
 export type PackageSpec = string
+
+// Type for package dependency specification in config
+export interface PackageDependencySpec {
+  version?: string
+  global?: boolean
+}
+
+// Extract version types from ts-pkgx packages
+type PackageVersions<T extends PackageName> = T extends keyof Packages
+  ? Packages[T] extends { versions: readonly (infer V)[] }
+    ? V extends string
+      ? V
+      : never
+    : never
+  : never
+
+// Version constraint that allows valid versions or version ranges
+type VersionConstraint<T extends PackageName> =
+  | PackageVersions<T>
+  | `^${PackageVersions<T>}`
+  | `~${PackageVersions<T>}`
+  | `>=${PackageVersions<T>}`
+  | `<=${PackageVersions<T>}`
+  | `>${PackageVersions<T>}`
+  | `<${PackageVersions<T>}`
+  | 'latest'
+  | '*'
+
+// Enhanced dependency spec with typed versions
+export interface TypedPackageDependencySpec<T extends PackageName> {
+  version?: VersionConstraint<T>
+  global?: boolean
+}
+
+// Fully typed dependencies with version validation
+// Note: TypeScript will highlight property names for invalid versions (language limitation)
+export type FullyTypedDependencies = {
+  readonly [K in PackageName]?: VersionConstraint<K> | TypedPackageDependencySpec<K>
+}
+
+// Backward compatible typed dependencies (allows string versions for flexibility)
+export type TypedDependencies = {
+  [K in PackageName]?: string | PackageDependencySpec
+}
 
 // Supported distribution formats
 export type SupportedFormat = 'tar.xz' | 'tar.gz'
@@ -65,6 +143,21 @@ export interface LaunchpadConfig {
    * - string | string[]: install only for the listed package name(s)
    */
   installBuildDeps?: boolean | string | string[]
+  /**
+   * Package dependencies to install (similar to deps.yaml)
+   * FULLY TYPED package names AND versions from ts-pkgx
+   *
+   * Supports both domain names ('bun.sh') and aliases ('bun')
+   * Invalid package names and versions will cause TypeScript errors
+   *
+   * Use createDependencies() helper for enhanced developer experience:
+   * dependencies: createDependencies({ 'bun': '^1.2.19' })
+   */
+  dependencies?: Dependencies
+  /**
+   * Global flag for dependencies - when true, all dependencies are installed globally
+   */
+  global?: boolean
   shellMessages?: {
     activation?: string
     deactivation?: string
@@ -209,7 +302,7 @@ export interface LaunchpadConfig {
     autoRestart?: boolean
     startupTimeout?: number
     shutdownTimeout?: number
-    /** Infer services to auto-start from framework config (e.g., Laravel/Stacks .env) */
+    /** Infer services to auto-start from framework config (e.g., Stacks .env) */
     infer?: boolean
     database?: {
       username?: string
@@ -218,10 +311,6 @@ export interface LaunchpadConfig {
     }
     frameworks?: {
       enabled?: boolean
-      laravel?: {
-        enabled?: boolean
-        autoDetect?: boolean
-      }
       stacks?: {
         enabled?: boolean
         autoDetect?: boolean

@@ -64,10 +64,6 @@ export const defaultConfig: LaunchpadConfig = {
       password: 'password',
       authMethod: 'trust',
     },
-    php: {
-      enabled: true,
-      version: '8.4.11',
-    },
   },
 }
 
