@@ -4,7 +4,6 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-
 import { getCachedPackagePath, savePackageToCache } from './cache'
 import { config } from './config'
 import { createBuildEnvironmentScript, createPkgConfigSymlinks, createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation } from './install-helpers'

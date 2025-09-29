@@ -364,8 +364,8 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
 
       // Build PATH that includes project env first, then global env, then original PATH
       const projectHash = generateProjectHash(projectDir)
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
-      const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+      const envDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs', projectHash)
+      const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
       const envBinPath = path.join(envDir, 'bin')
       const envSbinPath = path.join(envDir, 'sbin')
       const globalBinPath = path.join(globalEnvDir, 'bin')
@@ -778,8 +778,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         depSuffix = `-d${depHash}`
       }
       catch {}
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
-      const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+      const envDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
+      const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
       // Check if environments exist first (quick filesystem check)
       const hasLocalEnv = fs.existsSync(path.join(envDir, 'bin'))
@@ -1203,8 +1203,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       depSuffix = `-d${depHash}`
     }
     catch {}
-    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
-    const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+    const envDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
+    const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
     // For shell output mode, check if we can skip expensive operations
     if (shellOutput) {

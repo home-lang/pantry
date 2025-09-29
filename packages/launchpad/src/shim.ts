@@ -2,11 +2,10 @@
 import fs from 'node:fs'
 import { EOL } from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 import { config } from './config'
 import { install } from './install'
 import { Path } from './path'
-import { addToPath, getUserShell, isInPath, isTemporaryDirectory } from './utils'
+import { addToPath, expandTildePath, getUserShell, isInPath, isTemporaryDirectory } from './utils'
 
 /**
  * Create a shim for a package
@@ -175,12 +174,9 @@ function isExecutable(filePath: string): boolean {
 export function shim_dir(): Path {
   // Use the configured shimPath if available
   if (config.shimPath) {
-    // Handle ~ in the path
-    if (config.shimPath.startsWith('~')) {
-      const homePath = process.env.HOME || process.env.USERPROFILE || ''
-      return new Path(config.shimPath.replace(/^~/, homePath))
-    }
-    return new Path(config.shimPath)
+    // Properly expand tilde in the path using Node.js homedir()
+    const expandedPath = expandTildePath(config.shimPath)
+    return new Path(expandedPath)
   }
 
   // Fall back to default ~/.local/bin

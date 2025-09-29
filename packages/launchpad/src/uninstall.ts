@@ -228,8 +228,8 @@ export async function uninstall(arg: string, isGlobal: boolean = false): Promise
 
   if (binDirectories.length === 0) {
     const checkedPaths = isGlobal
-      ? '~/.local/share/launchpad/global/bin'
-      : '/usr/local/bin, ~/.local/bin, and ~/.local/share/launchpad/global/bin'
+      ? `${Path.home().string}/.local/share/launchpad/global/bin`
+      : `/usr/local/bin, ${Path.home().string}/.local/bin, and ${Path.home().string}/.local/share/launchpad/global/bin`
     console.error(`❌ No binary directories found (checked ${checkedPaths})`)
     return false
   }

@@ -2,7 +2,7 @@
 import type { ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
-import { platform } from 'node:os'
+import { homedir, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
@@ -879,7 +879,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     }
 
     // Install the main service package - this will automatically install all dependencies
-    const installPath = `${process.env.HOME}/.local`
+    const installPath = path.join(homedir(), '.local')
 
     // Call install with proper error handling and shorter timeout
     try {
@@ -1028,7 +1028,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
   // PostgreSQL auto-initialization
   if (definition.name === 'postgres' || definition.name === 'postgresql') {
     // Use the definition's dataDirectory for consistency with runtime
-    const dataDir = service.dataDir || definition.dataDirectory || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'services', 'postgres', 'data')
+    const dataDir = service.dataDir || definition.dataDirectory || path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'postgres', 'data')
     const pgVersionFile = path.join(dataDir, 'PG_VERSION')
 
     // Check if already initialized
@@ -1137,7 +1137,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
   // MySQL auto-initialization
   if (definition.name === 'mysql' || definition.name === 'mariadb') {
-    const dataDir = service.dataDir || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'mysql-data')
+    const dataDir = service.dataDir || path.join(homedir(), '.local', 'share', 'launchpad', 'mysql-data')
     const mysqlDir = path.join(dataDir, 'mysql')
 
     // Check if already initialized

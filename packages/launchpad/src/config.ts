@@ -20,8 +20,7 @@ function getDefaultInstallPath(): string {
     return '/usr/local'
   }
   catch {
-    const homePath = process.env.HOME || process.env.USERPROFILE || '~'
-    return path.join(homePath, '.local')
+    return path.join(homedir(), '.local')
   }
 }
 
@@ -31,18 +30,15 @@ function getDefaultShimPath(): string {
     return process.env.LAUNCHPAD_SHIM_PATH
   }
 
-  const homePath = process.env.HOME || process.env.USERPROFILE || '~'
-  return path.join(homePath, '.local', 'bin')
+  return path.join(homedir(), '.local', 'bin')
 }
 
 function getDefaultCacheDir(): string {
-  const homePath = process.env.HOME || process.env.USERPROFILE || '~'
-  return path.join(homePath, '.local', 'share', 'launchpad', 'cache')
+  return path.join(homedir(), '.local', 'share', 'launchpad', 'cache')
 }
 
 function getDefaultLogDir(): string {
-  const homePath = process.env.HOME || process.env.USERPROFILE || '~'
-  return path.join(homePath, '.local', 'share', 'launchpad', 'logs')
+  return path.join(homedir(), '.local', 'share', 'launchpad', 'logs')
 }
 
 function isCI(): boolean {

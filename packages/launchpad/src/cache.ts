@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 import type { CacheMetadata } from './types'
 import fs from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 import { config } from './config'
 
 // Cache configuration for packages
-const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
+const CACHE_DIR = path.join(homedir(), '.cache', 'launchpad')
 const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'packages')
 const CACHE_METADATA_FILE = path.join(CACHE_DIR, 'cache-metadata.json')
 

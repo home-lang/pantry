@@ -1,13 +1,5 @@
-import type {
-  PackageAlias,
-  PackageDomain,
-  PackageName,
-  Packages,
-  Dependencies
-} from 'ts-pkgx'
-import { createDependencies } from 'ts-pkgx'
+import type { PackageAlias, PackageDomain, PackageName, Packages, Dependencies} from 'ts-pkgx'
 
-// Re-export ts-pkgx types for internal use
 export type {
   PackageAlias,
   PackageDomain,
@@ -16,23 +8,11 @@ export type {
   Dependencies
 }
 
-// Re-export ts-pkgx utilities
-export { createDependencies }
-
 /**
  * Helper function to create a fully typed dependencies configuration with version validation
  * This provides IntelliSense and type safety for both package names AND versions!
  */
-export function defineFullyTypedDependencies(deps: FullyTypedDependencies): FullyTypedDependencies {
-  return deps
-}
-
-
-/**
- * Helper function to create a typed dependencies configuration (backward compatible)
- * This provides IntelliSense and type safety while maintaining flexibility
- */
-export function definePackageDependencies(deps: TypedDependencies): TypedDependencies {
+export function defineDependencies(deps: Dependencies): Dependencies {
   return deps
 }
 
@@ -72,23 +52,6 @@ type VersionConstraint<T extends PackageName> =
   | `<${PackageVersions<T>}`
   | 'latest'
   | '*'
-
-// Enhanced dependency spec with typed versions
-export interface TypedPackageDependencySpec<T extends PackageName> {
-  version?: VersionConstraint<T>
-  global?: boolean
-}
-
-// Fully typed dependencies with version validation
-// Note: TypeScript will highlight property names for invalid versions (language limitation)
-export type FullyTypedDependencies = {
-  readonly [K in PackageName]?: VersionConstraint<K> | TypedPackageDependencySpec<K>
-}
-
-// Backward compatible typed dependencies (allows string versions for flexibility)
-export type TypedDependencies = {
-  [K in PackageName]?: string | PackageDependencySpec
-}
 
 // Supported distribution formats
 export type SupportedFormat = 'tar.xz' | 'tar.gz'

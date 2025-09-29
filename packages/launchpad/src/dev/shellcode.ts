@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
@@ -506,5 +507,5 @@ export function datadir(): string {
 }
 
 function platform_data_home_default(): string {
-  return join(process.env.HOME || '~', '.local', 'share', 'launchpad')
+  return join(homedir(), '.local', 'share', 'launchpad')
 }

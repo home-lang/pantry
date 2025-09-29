@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import type { Command } from '../cli/types'
 import fs from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
@@ -50,9 +51,9 @@ async function detectCurrentBinaryPath(_verbose: boolean): Promise<string> {
     const realBinaryPaths = [
       '/usr/local/bin/launchpad',
       '/usr/bin/launchpad',
-      path.join(process.env.HOME || '~', '.local/bin/launchpad'),
-      path.join(process.env.HOME || '~', '.bun/bin/launchpad'),
-      path.join(process.env.HOME || '~', 'bin/launchpad'),
+      path.join(homedir(), '.local/bin/launchpad'),
+      path.join(homedir(), '.bun/bin/launchpad'),
+      path.join(homedir(), 'bin/launchpad'),
     ]
 
     for (const realPath of realBinaryPaths) {
@@ -86,9 +87,9 @@ async function detectCurrentBinaryPath(_verbose: boolean): Promise<string> {
     const commonPaths = [
       '/usr/local/bin/launchpad',
       '/usr/bin/launchpad',
-      path.join(process.env.HOME || '~', '.local/bin/launchpad'),
-      path.join(process.env.HOME || '~', '.bun/bin/launchpad'),
-      path.join(process.env.HOME || '~', 'bin/launchpad'),
+      path.join(homedir(), '.local/bin/launchpad'),
+      path.join(homedir(), '.bun/bin/launchpad'),
+      path.join(homedir(), 'bin/launchpad'),
     ]
 
     for (const p of commonPaths) {

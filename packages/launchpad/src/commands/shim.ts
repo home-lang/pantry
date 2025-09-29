@@ -1,5 +1,6 @@
 import type { Command } from '../cli/types'
-import process from 'node:process'
+import { homedir } from 'node:os'
+import path from 'node:path'
 import { config, defaultConfig } from '../config'
 import { create_shim } from '../shim'
 
@@ -64,7 +65,7 @@ const command: Command = {
       config.shimPath = shimPath
 
     try {
-      const basePath = (config.installPath ?? defaultConfig.installPath) ?? (process.env.HOME ? `${process.env.HOME}/.local` : '/usr/local')
+      const basePath = (config.installPath ?? defaultConfig.installPath) ?? path.join(homedir(), '.local')
       const created = await create_shim(pkgs, basePath)
       if (created.length > 0) {
         console.warn(`Created ${created.length} shims`)
