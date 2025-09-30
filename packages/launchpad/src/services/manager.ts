@@ -322,23 +322,22 @@ export async function stopService(serviceName: string): Promise<boolean> {
   }
 
   try {
-    const service = manager.services.get(serviceName)
+    // Get or create service instance (ensures service is registered)
+    const service = await getOrCreateServiceInstance(serviceName)
 
-    if (!service) {
-      console.warn(`⚠️  Service ${serviceName} is not registered`)
-      operation.result = 'success'
-      operation.duration = 0
-      manager.operations.push(operation)
-      return true
-    }
-
-    if (service.status === 'stopped') {
+    // Check actual service health to determine if it's really running
+    const isActuallyRunning = await checkServiceHealth(service)
+    if (!isActuallyRunning) {
+      service.status = 'stopped'
       console.log(`✅ Service ${serviceName} is already stopped`)
       operation.result = 'success'
       operation.duration = 0
       manager.operations.push(operation)
       return true
     }
+
+    // Update status based on health check
+    service.status = 'running'
 
     console.warn(`🛑 Stopping ${service.definition?.displayName || serviceName}...`)
 
@@ -575,22 +574,20 @@ export async function disableService(serviceName: string): Promise<boolean> {
  * Get the status of a service
  */
 export async function getServiceStatus(serviceName: string): Promise<ServiceStatus> {
-  const manager = await getServiceManager()
-  const service = manager.services.get(serviceName)
+  try {
+    // Get or create service instance to ensure it's registered
+    const service = await getOrCreateServiceInstance(serviceName)
 
-  if (!service) {
+    // Always check actual health to get real-time status
+    const isActuallyRunning = await checkServiceHealth(service)
+    service.status = isActuallyRunning ? 'running' : 'stopped'
+
+    return service.status
+  }
+  catch {
+    // If service definition not found, return stopped
     return 'stopped'
   }
-
-  // Check if the service is actually running
-  if (service.status === 'running') {
-    const isActuallyRunning = await checkServiceHealth(service)
-    if (!isActuallyRunning) {
-      service.status = 'stopped'
-    }
-  }
-
-  return service.status
 }
 
 /**
@@ -1150,7 +1147,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
   // MySQL auto-initialization
   if (definition.name === 'mysql' || definition.name === 'mariadb') {
-    const dataDir = service.dataDir || definition.dataDirectory || path.join(homedir(), '.local', 'share', 'launchpad', 'mysql-data')
+    const dataDir = service.dataDir || definition.dataDirectory || path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'mysql', 'data')
     const mysqlDir = path.join(dataDir, 'mysql')
 
     // Check if already initialized
@@ -1264,7 +1261,9 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
         console.log(`DYLD_LIBRARY_PATH: ${env.DYLD_LIBRARY_PATH}`)
       }
 
-      execSync(`mysqld --initialize-insecure --datadir="${dataDir}" --basedir="${basedir}" --user=$(whoami)`, {
+      // Use the real mysqld binary path instead of shim
+      const mysqldBin = path.join(basedir, 'bin', 'mysqld')
+      execSync(`"${mysqldBin}" --initialize-insecure --datadir="${dataDir}" --basedir="${basedir}" --user=$(whoami)`, {
         stdio: config.verbose ? 'inherit' : 'pipe',
         timeout: 120000,
         env,

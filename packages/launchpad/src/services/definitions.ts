@@ -76,7 +76,7 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     description: 'MySQL database server',
     packageDomain: 'mysql.com',
     executable: 'mysqld',
-    args: ['--datadir={dataDir}', '--pid-file={pidFile}', '--port=3306', '--bind-address=127.0.0.1', '--skip-grant-tables', '--default-authentication-plugin=mysql_native_password'],
+    args: ['--datadir={dataDir}', '--pid-file={pidFile}', '--port=3306', '--bind-address=127.0.0.1'],
     env: {},
     dataDirectory: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'mysql', 'data'),
     logFile: path.join(homedir(), '.local', 'share', 'launchpad', 'logs', 'mysql.log'),
@@ -93,10 +93,10 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     initCommand: ['mysqld', '--initialize-insecure', '--datadir={dataDir}', '--user={currentUser}'],
     postStartCommands: [
       // Create application database and user for any project type
-      ['mysql', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS {projectDatabase};'],
-      ['mysql', '-u', 'root', '-e', 'CREATE USER IF NOT EXISTS \'{dbUsername}\'@\'localhost\' IDENTIFIED BY \'{dbPassword}\';'],
-      ['mysql', '-u', 'root', '-e', 'GRANT ALL PRIVILEGES ON {projectDatabase}.* TO \'{dbUsername}\'@\'localhost\';'],
-      ['mysql', '-u', 'root', '-e', 'FLUSH PRIVILEGES;'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS {projectDatabase};'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'CREATE USER IF NOT EXISTS \'{dbUsername}\'@\'localhost\' IDENTIFIED BY \'{dbPassword}\';'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'GRANT ALL PRIVILEGES ON {projectDatabase}.* TO \'{dbUsername}\'@\'localhost\';'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'FLUSH PRIVILEGES;'],
     ],
     supportsGracefulShutdown: true,
     config: {
