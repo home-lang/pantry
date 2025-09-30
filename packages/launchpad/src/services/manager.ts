@@ -6,6 +6,7 @@ import { homedir, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
+import { install } from '../install-main'
 import { logUniqueMessage } from '../logging'
 import { findBinaryInEnvironment, findBinaryInPath } from '../utils'
 import { createDefaultServiceConfig, getServiceDefinition } from './definitions'
@@ -693,16 +694,36 @@ async function initializeService(service: ServiceInstance): Promise<void> {
   const resolvedArgs = definition.initCommand.map(arg =>
     arg
       .replace('{dataDir}', dataDir || '')
-      .replace('{configFile}', service.configFile || definition.configFile || ''),
+      .replace('{configFile}', service.configFile || definition.configFile || '')
+      .replace('{currentUser}', process.env.USER || 'root'),
   )
 
   const [command, ...args] = resolvedArgs
   const executablePath = findBinaryInPath(command) || command
 
   return new Promise((resolve, reject) => {
+    // Set up environment for MySQL dependencies
+    let serviceEnv = { ...process.env, ...definition.env }
+    if (definition.name === 'mysql') {
+      const mysqlBinPath = process.env.PATH?.split(':').find(path => path.includes('mysql.com'))
+      if (mysqlBinPath) {
+        const envPath = mysqlBinPath.replace(/\/mysql\.com\/v\d+\.\d+\.\d+\/bin/, '').replace('/bin', '')
+        serviceEnv.DYLD_LIBRARY_PATH = [
+          `${envPath}/unicode.org/v71/lib`,
+          `${envPath}/libevent.org/v2/lib`,
+          `${envPath}/openssl.org/v3/lib`, // Updated for OpenSSL v3 which is more common in MySQL 9.x
+          `${envPath}/openssl.org/v1/lib`, // Keep v1 for backward compatibility
+          `${envPath}/facebook.com/zstd/v1/lib`,
+          `${envPath}/protobuf.dev/v21/lib`,
+          `${envPath}/lz4.org/v1/lib`,
+          serviceEnv.DYLD_LIBRARY_PATH
+        ].filter(Boolean).join(':')
+      }
+    }
+
     const proc = spawn(executablePath, args, {
       stdio: config.verbose ? 'inherit' : 'pipe',
-      env: { ...process.env, ...definition.env },
+      env: serviceEnv,
       cwd: definition.workingDirectory || dataDir,
     })
 
@@ -864,17 +885,9 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
       throw new Error(`Invalid package domain for ${definition.displayName}: ${definition.packageDomain}`)
     }
 
-    // Import the install function with proper error handling
-    let install: any
-    try {
-      const { install: installFn } = await import('../install-main')
-      install = installFn
-      if (typeof install !== 'function') {
-        throw new TypeError('install function not found or not a function')
-      }
-    }
-    catch (importError) {
-      console.error(`❌ Failed to import install function: ${importError instanceof Error ? importError.message : String(importError)}`)
+    // Use the statically imported install function
+    if (typeof install !== 'function') {
+      console.error(`❌ Install function not available`)
       return false
     }
 
@@ -889,7 +902,7 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
 
       // Add timeout to prevent hanging - use longer timeout in CI environments
       const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-      const timeoutMinutes = isCI ? 15 : 5 // 15 minutes for CI, 5 for local
+      const timeoutMinutes = isCI ? 15 : 10 // 15 minutes for CI, 10 for local
       const installPromise = install([definition.packageDomain], installPath)
       const timeoutPromise = new Promise<boolean>((_, reject) => {
         setTimeout(() => reject(new Error(`Package installation timeout after ${timeoutMinutes} minutes`)), timeoutMinutes * 60 * 1000)
@@ -1137,7 +1150,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
   // MySQL auto-initialization
   if (definition.name === 'mysql' || definition.name === 'mariadb') {
-    const dataDir = service.dataDir || path.join(homedir(), '.local', 'share', 'launchpad', 'mysql-data')
+    const dataDir = service.dataDir || definition.dataDirectory || path.join(homedir(), '.local', 'share', 'launchpad', 'mysql-data')
     const mysqlDir = path.join(dataDir, 'mysql')
 
     // Check if already initialized
@@ -1153,9 +1166,108 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
       // Initialize database
       const { execSync } = await import('node:child_process')
-      execSync(`mysql_install_db --datadir="${dataDir}" --auth-root-authentication-method=normal`, {
+      // Find MySQL installation path - try multiple methods
+      let basedir = '/usr/local/mysql'
+
+      // Method 1: Look for mysql.com in PATH
+      const mysqlBinPath = process.env.PATH?.split(':').find(p => p.includes('mysql.com'))
+      if (mysqlBinPath) {
+        basedir = mysqlBinPath.replace('/bin', '')
+      }
+      else {
+        // Method 2: Try to find mysqld via which command
+        try {
+          const mysqldPath = execSync('which mysqld', { encoding: 'utf-8' }).trim()
+          if (mysqldPath && fs.existsSync(mysqldPath)) {
+            // Check if it's a shim script (text file)
+            const content = fs.readFileSync(mysqldPath, 'utf-8')
+            if (content.startsWith('#!/bin/sh') || content.startsWith('#!/usr/bin/env bash')) {
+              // It's a shim - extract the real path from the exec line
+              const execMatch = content.match(/exec\s+"([^"]+)"/)
+              if (execMatch && execMatch[1]) {
+                const realMysqldPath = execMatch[1]
+                basedir = path.dirname(path.dirname(realMysqldPath)) // Up two levels from bin/mysqld
+              }
+            }
+            else {
+              // It's a binary - follow symlinks if needed
+              const realPath = fs.realpathSync(mysqldPath)
+              basedir = path.dirname(path.dirname(realPath)) // Up two levels from bin/mysqld
+            }
+          }
+        }
+        catch {
+          // Fall back to checking known locations
+          const knownLocations = [
+            path.join(homedir(), '.local', 'mysql.com', 'v9.4.0'),
+            path.join(homedir(), '.local', 'mysql.com', 'v9'),
+            path.join(homedir(), '.local', 'mysql.com', 'v8'),
+          ]
+
+          for (const dir of knownLocations) {
+            if (fs.existsSync(path.join(dir, 'bin', 'mysqld'))) {
+              basedir = dir
+              break
+            }
+          }
+        }
+      }
+
+      // Handle both MySQL 8.x and 9.x paths
+      const isMySQL9 = mysqlBinPath && mysqlBinPath.includes('/v9.')
+      const mysqlVersion = isMySQL9 ? 'v9' : 'v8'
+
+      // Set up environment for MySQL dependencies - handle both MySQL 8.x and 9.x
+      const envPath = basedir.replace(/\/mysql\.com\/v\d+\.\d+\.\d+/, '')
+
+      // Dynamically discover library versions by scanning directories
+      const findLibraryPath = (domain: string): string[] => {
+        try {
+          const domainPath = path.join(envPath, domain)
+          if (!fs.existsSync(domainPath)) return []
+
+          const versions = fs.readdirSync(domainPath)
+            .filter(name => name.startsWith('v'))
+            .sort((a, b) => b.localeCompare(a)) // Sort descending to get latest first
+
+          return versions.map(version => path.join(domainPath, version, 'lib')).filter(libPath => fs.existsSync(libPath))
+        } catch {
+          return []
+        }
+      }
+
+      const libraryPaths = [
+        ...findLibraryPath('unicode.org'),
+        ...findLibraryPath('libevent.org'),
+        ...findLibraryPath('openssl.org'),
+        ...findLibraryPath('facebook.com/zstd'),
+        ...findLibraryPath('protobuf.dev'),
+        ...findLibraryPath('lz4.org'),
+        ...findLibraryPath('abseil.io'),
+        ...findLibraryPath('curl.se'),
+        ...findLibraryPath('zlib.net'),
+        ...findLibraryPath('tukaani.org/xz'),
+        ...findLibraryPath('invisible-island.net/ncurses')
+      ]
+
+      const env = {
+        ...process.env,
+        DYLD_LIBRARY_PATH: [
+          ...libraryPaths,
+          process.env.DYLD_LIBRARY_PATH
+        ].filter(Boolean).join(':')
+      }
+
+      if (config.verbose) {
+        console.log(`Using MySQL basedir: ${basedir}`)
+        console.log(`Using datadir: ${dataDir}`)
+        console.log(`DYLD_LIBRARY_PATH: ${env.DYLD_LIBRARY_PATH}`)
+      }
+
+      execSync(`mysqld --initialize-insecure --datadir="${dataDir}" --basedir="${basedir}" --user=$(whoami)`, {
         stdio: config.verbose ? 'inherit' : 'pipe',
-        timeout: 60000,
+        timeout: 120000,
+        env,
       })
 
       console.log('✅ MySQL database initialized')
@@ -1335,8 +1447,8 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
     .replace('{port}', String(port || 5432))
     .replace('{projectName}', projectName)
     .replace('{projectDatabase}', databaseName) // Use env database name or project name
-    .replace('{dbUsername}', config.services?.database?.username || 'root')
-    .replace('{dbPassword}', config.services?.database?.password || 'password')
+    .replace('{dbUsername}', getDatabaseUsernameFromEnv() || config.services?.database?.username || 'root')
+    .replace('{dbPassword}', getDatabasePasswordFromEnv() || config.services?.database?.password || 'password')
     .replace('{authMethod}', config.services?.database?.authMethod || 'trust')
 
   // Replace service-specific config variables
@@ -1384,27 +1496,164 @@ export function detectProjectName(): string {
 }
 
 /**
- * Get database name from Laravel .env file
+ * Get database username from environment files
+ */
+export function getDatabaseUsernameFromEnv(): string | null {
+  try {
+    // Check .env file first
+    const envPath = path.join(process.cwd(), '.env')
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8')
+      const dbUsernameMatch = envContent.match(/^DB_USERNAME=(.*)$/m)
+
+      if (dbUsernameMatch && dbUsernameMatch[1]) {
+        let username = dbUsernameMatch[1].trim()
+        // Remove quotes if present
+        if ((username.startsWith('"') && username.endsWith('"'))
+          || (username.startsWith('\'') && username.endsWith('\''))) {
+          username = username.slice(1, -1)
+        }
+        return username
+      }
+    }
+
+    // Check deps.yaml file
+    const depsPath = path.join(process.cwd(), 'deps.yaml')
+    if (fs.existsSync(depsPath)) {
+      const content = fs.readFileSync(depsPath, 'utf-8')
+      const lines = content.split('\n')
+      let inDatabase = false
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed === 'database:') {
+          inDatabase = true
+          continue
+        }
+        if (inDatabase && trimmed.startsWith('  ')) {
+          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          if (key === 'username' && valueParts.length > 0) {
+            return valueParts.join(':').trim()
+          }
+        } else if (inDatabase && !trimmed.startsWith('  ')) {
+          break // End of database section
+        }
+      }
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Get database password from environment files
+ */
+export function getDatabasePasswordFromEnv(): string | null {
+  try {
+    // Check .env file first
+    const envPath = path.join(process.cwd(), '.env')
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8')
+      const dbPasswordMatch = envContent.match(/^DB_PASSWORD=(.*)$/m)
+
+      if (dbPasswordMatch && dbPasswordMatch[1]) {
+        let password = dbPasswordMatch[1].trim()
+        // Remove quotes if present
+        if ((password.startsWith('"') && password.endsWith('"'))
+          || (password.startsWith('\'') && password.endsWith('\''))) {
+          password = password.slice(1, -1)
+        }
+        return password
+      }
+    }
+
+    // Check deps.yaml file
+    const depsPath = path.join(process.cwd(), 'deps.yaml')
+    if (fs.existsSync(depsPath)) {
+      const content = fs.readFileSync(depsPath, 'utf-8')
+      const lines = content.split('\n')
+      let inDatabase = false
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed === 'database:') {
+          inDatabase = true
+          continue
+        }
+        if (inDatabase && trimmed.startsWith('  ')) {
+          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          if (key === 'password' && valueParts.length > 0) {
+            return valueParts.join(':').trim()
+          }
+        } else if (inDatabase && !trimmed.startsWith('  ')) {
+          break // End of database section
+        }
+      }
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Get database name from environment files
  */
 export function getDatabaseNameFromEnv(): string | null {
   try {
+    // Check .env file first
     const envPath = path.join(process.cwd(), '.env')
-    if (!fs.existsSync(envPath)) {
-      return null
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8')
+
+      // Try DB_DATABASE first (Laravel standard)
+      let dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.*)$/m)
+
+      // If not found, try DB_NAME (common alternative)
+      if (!dbDatabaseMatch || !dbDatabaseMatch[1]) {
+        dbDatabaseMatch = envContent.match(/^DB_NAME=(.*)$/m)
+      }
+
+      if (dbDatabaseMatch && dbDatabaseMatch[1]) {
+        let dbName = dbDatabaseMatch[1].trim()
+        // Remove quotes if present
+        if ((dbName.startsWith('"') && dbName.endsWith('"'))
+          || (dbName.startsWith('\'') && dbName.endsWith('\''))) {
+          dbName = dbName.slice(1, -1)
+        }
+        // Convert to valid database name (remove special characters)
+        return dbName.replace(/\W/g, '_')
+      }
     }
 
-    const envContent = fs.readFileSync(envPath, 'utf-8')
-    const dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.*)$/m)
+    // Check deps.yaml file
+    const depsPath = path.join(process.cwd(), 'deps.yaml')
+    if (fs.existsSync(depsPath)) {
+      const content = fs.readFileSync(depsPath, 'utf-8')
+      const lines = content.split('\n')
+      let inDatabase = false
 
-    if (dbDatabaseMatch && dbDatabaseMatch[1]) {
-      let dbName = dbDatabaseMatch[1].trim()
-      // Remove quotes if present
-      if ((dbName.startsWith('"') && dbName.endsWith('"'))
-        || (dbName.startsWith('\'') && dbName.endsWith('\''))) {
-        dbName = dbName.slice(1, -1)
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed === 'database:') {
+          inDatabase = true
+          continue
+        }
+        if (inDatabase && trimmed.startsWith('  ')) {
+          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          if (key === 'name' && valueParts.length > 0) {
+            const value = valueParts.join(':').trim()
+            return value.replace(/\W/g, '_')
+          }
+        } else if (inDatabase && !trimmed.startsWith('  ')) {
+          break // End of database section
+        }
       }
-      // Convert to valid database name (remove special characters)
-      return dbName.replace(/\W/g, '_')
     }
 
     return null

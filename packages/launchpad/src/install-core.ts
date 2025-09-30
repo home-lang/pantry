@@ -6,7 +6,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { getCachedPackagePath, savePackageToCache } from './cache'
 import { config } from './config'
-import { createBuildEnvironmentScript, createPkgConfigSymlinks, createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, validatePackageInstallation } from './install-helpers'
+import { createBuildEnvironmentScript, createPkgConfigSymlinks, createShims, createVersionCompatibilitySymlinks, createVersionSymlinks, fixMacOSLibraryPaths, validatePackageInstallation } from './install-helpers'
 import { cleanupSpinner, logUniqueMessage } from './logging'
 import { getLatestVersion, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
 import { installMeilisearch } from './special-installers'
@@ -19,7 +19,7 @@ const hasTemporaryProcessingMessage = false
 /**
  * Create missing library symlinks for dynamic linking
  */
-async function createLibrarySymlinks(packageDir: string, _domain: string): Promise<void> {
+async function createLibrarySymlinks(packageDir: string, domain: string): Promise<void> {
   const libDir = path.join(packageDir, 'lib')
 
   if (!fs.existsSync(libDir)) {
@@ -177,6 +177,93 @@ async function createLibrarySymlinks(packageDir: string, _domain: string): Promi
 }
 
 /**
+ * Create cross-package library symlinks for dependencies
+ */
+async function createCrossPackageLibrarySymlinks(packageDir: string, installPath: string, domain: string): Promise<void> {
+  // MySQL-specific dependency resolution
+  if (domain === 'mysql.com') {
+    const libDir = path.join(packageDir, 'lib')
+
+    if (!fs.existsSync(libDir)) {
+      return
+    }
+
+    // Find libevent libraries from other installed packages
+    const eventLibraries = await findLibrariesInEnvironment(installPath, ['libevent', 'libevent_core', 'libevent_extra'])
+
+    for (const { libPath, libName } of eventLibraries) {
+      const targetPath = path.join(libDir, path.basename(libPath))
+
+      if (!fs.existsSync(targetPath)) {
+        try {
+          await fs.promises.symlink(libPath, targetPath)
+          if (config.verbose) {
+            console.warn(`Created cross-package library symlink for MySQL: ${path.basename(libPath)} -> ${libPath}`)
+          }
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`Failed to create cross-package symlink ${path.basename(libPath)}:`, error)
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Find specific libraries in the installation environment
+ */
+async function findLibrariesInEnvironment(installPath: string, libraryNames: string[]): Promise<Array<{ libPath: string, libName: string }>> {
+  const foundLibraries: Array<{ libPath: string, libName: string }> = []
+
+  try {
+    // Scan all package directories for the specified libraries
+    const entries = fs.readdirSync(installPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory() && !['bin', 'sbin', 'lib', 'lib64', 'share', 'include', 'etc', 'pkgs', '.tmp', '.cache'].includes(dirent.name))
+
+    for (const entry of entries) {
+      const packagePath = path.join(installPath, entry.name)
+
+      try {
+        // Check if this directory contains version directories (v*)
+        const versionEntries = fs.readdirSync(packagePath, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('v'))
+
+        for (const versionEntry of versionEntries) {
+          const versionPath = path.join(packagePath, versionEntry.name)
+          const libDir = path.join(versionPath, 'lib')
+
+          if (fs.existsSync(libDir)) {
+            const libFiles = fs.readdirSync(libDir)
+
+            for (const libFile of libFiles) {
+              for (const libName of libraryNames) {
+                if (libFile.includes(libName) && (libFile.endsWith('.dylib') || libFile.endsWith('.so'))) {
+                  foundLibraries.push({
+                    libPath: path.join(libDir, libFile),
+                    libName: libFile
+                  })
+                }
+              }
+            }
+          }
+        }
+      }
+      catch {
+        // Skip directories we can't read
+        continue
+      }
+    }
+  }
+  catch {
+    // If we can't read the install path, return empty array
+  }
+
+  return foundLibraries
+}
+
+/**
  * Install a single package with all its dependencies
  */
 export async function installPackage(packageName: string, packageSpec: string, installPath: string): Promise<string[]> {
@@ -264,6 +351,11 @@ export async function installPackage(packageName: string, packageSpec: string, i
     const packageDir = path.join(installPath, domain, `v${version}`)
     await createLibrarySymlinks(packageDir, domain)
 
+    // Fix macOS library paths for packages with dylib dependencies
+    if (domain === 'mysql.com') {
+      await fixMacOSLibraryPaths(packageDir, domain)
+    }
+
     // Per-package success is logged once later with consistent formatting
 
     return installedFiles
@@ -284,6 +376,11 @@ export async function installPackage(packageName: string, packageSpec: string, i
           // Create common library symlinks for better compatibility
           const packageDir = path.join(installPath, domain, `v${fallbackVersion}`)
           await createLibrarySymlinks(packageDir, domain)
+
+          // Fix macOS library paths for packages with dylib dependencies
+          if (domain === 'mysql.com') {
+            await fixMacOSLibraryPaths(packageDir, domain)
+          }
 
           if (config.verbose) {
             console.log(`✅ Successfully installed ${domain} v${fallbackVersion} (fallback from v${version})`)
@@ -842,6 +939,14 @@ export async function downloadPackage(
 
     // Create missing library symlinks for dynamic linking
     await createLibrarySymlinks(packageDir, domain)
+
+    // Fix macOS library paths for packages with dylib dependencies
+    if (domain === 'mysql.com') {
+      await fixMacOSLibraryPaths(packageDir, domain)
+    }
+
+    // Create cross-package library symlinks for dependencies
+    await createCrossPackageLibrarySymlinks(packageDir, installPath, domain)
 
     // Create pkg-config symlinks for common naming mismatches
     await createPkgConfigSymlinks(packageDir, domain)

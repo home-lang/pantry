@@ -75,8 +75,8 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     displayName: 'MySQL',
     description: 'MySQL database server',
     packageDomain: 'mysql.com',
-    executable: 'mysqld_safe',
-    args: ['--datadir={dataDir}', '--pid-file={pidFile}'],
+    executable: 'mysqld',
+    args: ['--datadir={dataDir}', '--pid-file={pidFile}', '--port=3306', '--bind-address=127.0.0.1', '--skip-grant-tables', '--default-authentication-plugin=mysql_native_password'],
     env: {},
     dataDirectory: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'mysql', 'data'),
     logFile: path.join(homedir(), '.local', 'share', 'launchpad', 'logs', 'mysql.log'),
@@ -84,13 +84,13 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     port: 3306,
     dependencies: [],
     healthCheck: {
-      command: ['mysqladmin', 'ping', '-h', '127.0.0.1', '-P', '3306'],
+      command: ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'SELECT 1'],
       expectedExitCode: 0,
       timeout: 5,
       interval: 30,
       retries: 3,
     },
-    initCommand: ['mysqld', '--initialize-insecure', '--datadir={dataDir}', '--user=mysql'],
+    initCommand: ['mysqld', '--initialize-insecure', '--datadir={dataDir}', '--user={currentUser}'],
     postStartCommands: [
       // Create application database and user for any project type
       ['mysql', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS {projectDatabase};'],

@@ -32,6 +32,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       .replace('{logFile}', service.logFile || definition.logFile || '')
       .replace('{pidFile}', definition.pidFile || '')
       .replace('{port}', String(definition.port || 5432))
+      .replace('{currentUser}', process.env.USER || 'root')
 
     // Replace service-specific config variables
     if (service.config) {
@@ -132,6 +133,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
           .replace('{logFile}', service.logFile || definition.logFile || '')
           .replace('{pidFile}', definition.pidFile || '')
           .replace('{port}', String(definition.port || 5432))
+      .replace('{currentUser}', process.env.USER || 'root')
 
         // Replace service-specific config variables
         if (service.config) {
@@ -178,6 +180,7 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
       .replace('{logFile}', service.logFile || definition.logFile || '')
       .replace('{pidFile}', definition.pidFile || '')
       .replace('{port}', String(definition.port || 5432))
+      .replace('{currentUser}', process.env.USER || 'root')
 
     // Replace service-specific config variables
     if (service.config) {
@@ -201,6 +204,7 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
         .replace('{logFile}', service.logFile || definition.logFile || '')
         .replace('{pidFile}', definition.pidFile || '')
         .replace('{port}', String(definition.port || 5432))
+      .replace('{currentUser}', process.env.USER || 'root')
 
       // Replace service-specific config variables
       if (service.config) {

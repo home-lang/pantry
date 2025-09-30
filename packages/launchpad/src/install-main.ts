@@ -9,6 +9,7 @@ import { resolveAllDependencies } from './dependency-resolution'
 import { installPackage } from './install-core'
 import { clearMessageCache, logUniqueMessage } from './logging'
 import { getPackageInfo, parsePackageSpec, resolvePackageName } from './package-resolution'
+import { startService } from './services/manager'
 import { install_prefix } from './utils'
 
 /**
@@ -284,7 +285,81 @@ async function installInternal(packageList: PackageSpec[], installPath: string):
     }
   }
 
+  // Auto-initialize and start services for newly installed packages
+  if (allInstalledFiles.length > 0) {
+    await autoInitializeServicesForPackages(deduplicatedPackages)
+  }
+
   return allInstalledFiles
+}
+
+/**
+ * Auto-initialize and start services for newly installed packages
+ */
+async function autoInitializeServicesForPackages(packageList: PackageSpec[]): Promise<void> {
+  if (!config.services?.autoStart) {
+    return // Auto-start is disabled
+  }
+
+  // Map package names to potential services
+  const servicePackageMap = new Map([
+    ['mysql.com', 'mysql'],
+    ['mysql', 'mysql'],
+    ['postgres', 'postgres'],
+    ['postgresql.org', 'postgres'],
+    ['redis', 'redis'],
+    ['redis.io', 'redis'],
+    ['nginx', 'nginx'],
+    ['nginx.org', 'nginx'],
+    ['apache', 'apache'],
+    ['httpd.apache.org', 'apache'],
+  ])
+
+  const servicesToStart: string[] = []
+
+  for (const pkg of packageList) {
+    const { name } = parsePackageSpec(pkg)
+    const domain = resolvePackageName(name)
+
+    // Check if this package has an associated service
+    if (servicePackageMap.has(name)) {
+      servicesToStart.push(servicePackageMap.get(name)!)
+    } else if (servicePackageMap.has(domain)) {
+      servicesToStart.push(servicePackageMap.get(domain)!)
+    }
+  }
+
+  if (servicesToStart.length === 0) {
+    return // No services to start
+  }
+
+  // Remove duplicates
+  const uniqueServices = [...new Set(servicesToStart)]
+
+  try {
+    console.log(`🔧 Initializing services for installed packages...`)
+
+    for (const serviceName of uniqueServices) {
+      try {
+        const success = await startService(serviceName)
+        if (success) {
+          console.log(`✅ Service ${serviceName} initialized and started`)
+        } else {
+          console.warn(`⚠️ Service ${serviceName} failed to start`)
+        }
+      } catch (error) {
+        if (config.verbose) {
+          console.warn(`⚠️ Failed to auto-start service ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+        // Don't fail the entire installation if service start fails
+      }
+    }
+  } catch (error) {
+    if (config.verbose) {
+      console.warn(`⚠️ Error during service auto-initialization: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    // Don't fail the installation if service initialization fails
+  }
 }
 
 /**

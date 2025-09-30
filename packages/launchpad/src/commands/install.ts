@@ -17,6 +17,10 @@ function parseArgs(argv: string[]): { pkgs: string[], opts: Record<string, strin
       opts.global = true
       continue
     }
+    if (a === '--global-deps') {
+      opts['global-deps'] = true
+      continue
+    }
     if (a === '-v') {
       opts.verbose = true
       continue
@@ -482,6 +486,12 @@ const command: Command = {
 
     // Dry run only prints plan if not combined with special modes handled below
     const dryRun = Boolean(opts['dry-run'])
+
+    // Handle global dependencies installation
+    if (opts['global-deps']) {
+      await installGlobalDependencies({ dryRun, quiet: Boolean(opts.quiet), verbose: Boolean(opts.verbose) })
+      return 0
+    }
 
     // Handle global installation
     if (opts.global) {

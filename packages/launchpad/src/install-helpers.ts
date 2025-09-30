@@ -1104,3 +1104,147 @@ export async function createPkgConfigSymlinks(packageDir: string, domain: string
     }
   }
 }
+
+/**
+ * Fix library paths for macOS dylib dependencies using install_name_tool
+ */
+export async function fixMacOSLibraryPaths(packageDir: string, domain: string): Promise<void> {
+  const platform = process.platform
+
+  // Only run on macOS
+  if (platform !== "darwin") {
+    return
+  }
+
+  const libDir = path.join(packageDir, "lib")
+  const binDir = path.join(packageDir, "bin")
+
+  if (!fs.existsSync(libDir)) {
+    return
+  }
+
+  try {
+    // Get all dylib files in the lib directory
+    const libFiles = await fs.promises.readdir(libDir)
+    const dylibFiles = libFiles.filter(file => file.endsWith(".dylib"))
+
+    if (dylibFiles.length === 0) {
+      return
+    }
+
+    if (config.verbose) {
+      console.warn(`🔧 Fixing library paths for ${domain}...`)
+    }
+
+    // For each binary in bin directory, fix its library dependencies
+    if (fs.existsSync(binDir)) {
+      const binFiles = await fs.promises.readdir(binDir, { withFileTypes: true })
+      const executables = binFiles.filter(dirent => !dirent.isDirectory()).map(dirent => dirent.name)
+
+      for (const executable of executables) {
+        const executablePath = path.join(binDir, executable)
+        await fixExecutableLibraryPaths(executablePath, libDir, domain)
+      }
+    }
+
+    // Also fix library dependencies between dylibs
+    for (const dylibFile of dylibFiles) {
+      const dylibPath = path.join(libDir, dylibFile)
+      await fixExecutableLibraryPaths(dylibPath, libDir, domain)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to fix library paths for ${domain}:`, error)
+    }
+  }
+}
+
+/**
+ * Fix library paths for a specific executable or library
+ */
+async function fixExecutableLibraryPaths(executablePath: string, libDir: string, domain: string): Promise<void> {
+  try {
+    // Use otool to get current library dependencies
+    const { spawn } = await import("node:child_process")
+
+    // Get current library dependencies
+    const otoolProcess = spawn("otool", ["-L", executablePath], { stdio: ["ignore", "pipe", "pipe"] })
+    let output = ""
+    let errorOutput = ""
+
+    otoolProcess.stdout.on("data", (data) => {
+      output += data.toString()
+    })
+
+    otoolProcess.stderr.on("data", (data) => {
+      errorOutput += data.toString()
+    })
+
+    await new Promise((resolve, reject) => {
+      otoolProcess.on("close", (code) => {
+        if (code === 0) resolve(code)
+        else reject(new Error(`otool failed: ${errorOutput}`))
+      })
+    })
+
+    // Parse otool output to find @rpath dependencies
+    const lines = output.split("\n")
+    const rpathDeps: string[] = []
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.includes("@rpath/") && trimmed.includes(".dylib")) {
+        const match = trimmed.match(/@rpath\/([^\s]+\.dylib)/)
+        if (match) {
+          rpathDeps.push(match[1])
+        }
+      }
+    }
+
+    // Fix each @rpath dependency
+    for (const depLibrary of rpathDeps) {
+      const absoluteLibPath = path.join(libDir, depLibrary)
+
+      // Check if the library exists in our lib directory
+      if (fs.existsSync(absoluteLibPath)) {
+        try {
+          const installNameToolProcess = spawn("install_name_tool", [
+            "-change",
+            `@rpath/${depLibrary}`,
+            absoluteLibPath,
+            executablePath
+          ], { stdio: "pipe" })
+
+          await new Promise<void>((resolve, reject) => {
+            let stderr = ""
+            installNameToolProcess.stderr.on("data", (data) => {
+              stderr += data.toString()
+            })
+
+            installNameToolProcess.on("close", (code) => {
+              if (code === 0) {
+                if (config.verbose) {
+                  console.warn(`  Fixed ${path.basename(executablePath)}: @rpath/${depLibrary} -> ${absoluteLibPath}`)
+                }
+                resolve()
+              } else {
+                reject(new Error(`install_name_tool failed: ${stderr}`))
+              }
+            })
+          })
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`  Failed to fix ${depLibrary} for ${path.basename(executablePath)}:`, error)
+          }
+        }
+      }
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to analyze/fix library paths for ${path.basename(executablePath)}:`, error)
+    }
+  }
+}

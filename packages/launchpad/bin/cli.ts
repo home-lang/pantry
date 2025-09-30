@@ -61,6 +61,7 @@ cli
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
   .option('-g, --global', 'Install packages globally (or scan for all global dependencies if no packages specified)')
+  .option('--global-deps', 'Scan for and install all global dependencies from dependency files')
   .option('--deps-only', 'Install only the dependencies of packages, not the packages themselves')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')
@@ -71,12 +72,14 @@ cli
   .example('launchpad install')
   .example('launchpad install ./my-project')
   .example('launchpad install -g')
+  .example('launchpad install --global-deps')
   .example('launchpad install starship -g')
   .example('launchpad add node python')
   .action(async (packages: string[], options: {
     verbose?: boolean
     path?: string
     global?: boolean
+    globalDeps?: boolean
     depsOnly?: boolean
     dryRun?: boolean
     quiet?: boolean
@@ -92,6 +95,8 @@ cli
         argv.push('--path', options.path)
       if (options.global)
         argv.push('--global')
+      if (options.globalDeps)
+        argv.push('--global-deps')
       if (options.depsOnly)
         argv.push('--deps-only')
       if (options.dryRun)
