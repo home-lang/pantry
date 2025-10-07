@@ -31,24 +31,19 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       'unicode.org^73',
     ],
     healthCheck: {
-      command: ['pg_isready', '-h', '127.0.0.1', '-p', '5432'],
+      command: ['pg_isready', '-h', '127.0.0.1', '-p', '5432', '-U', '{dbUsername}'],
       expectedExitCode: 0,
       timeout: 5,
       interval: 30,
       retries: 3,
     },
-    initCommand: ['initdb', '-D', '{dataDir}', '--auth-local={authMethod}', '--auth-host={authMethod}', '--encoding=UTF8'],
+    initCommand: ['initdb', '-D', '{dataDir}', '-U', '{dbUsername}', '--auth-local={authMethod}', '--auth-host={authMethod}', '--encoding=UTF8'],
     postStartCommands: [
       // Create application database and user for any project type
-      ['createdb', '-h', '127.0.0.1', '-p', '5432', '{projectDatabase}'],
+      ['createdb', '-h', '127.0.0.1', '-p', '5432', '-U', '{dbUsername}', '{projectDatabase}'],
       // Ensure default postgres role exists for framework defaults
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'postgres\') THEN CREATE ROLE postgres SUPERUSER LOGIN; END IF; END $$;'],
-      // Create project-specific user idempotently
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'{dbUsername}\') THEN CREATE ROLE {dbUsername} LOGIN PASSWORD \'{dbPassword}\'; ELSE ALTER ROLE {dbUsername} WITH PASSWORD \'{dbPassword}\'; END IF; END $$;'],
-      // Grant permissions and set ownership
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'ALTER DATABASE {projectDatabase} OWNER TO {dbUsername}; GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {dbUsername};'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO {dbUsername};'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO {dbUsername};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', '{dbUsername}', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'postgres\') THEN CREATE ROLE postgres SUPERUSER LOGIN; END IF; END $$;'],
+      // Note: Additional users can be created by applications as needed
     ],
     supportsGracefulShutdown: true,
     config: {

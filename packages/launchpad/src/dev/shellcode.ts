@@ -271,6 +271,7 @@ __launchpad_switch_environment() {
             unset LAUNCHPAD_CURRENT_PROJECT
             unset LAUNCHPAD_ENV_BIN_PATH
             unset __LAUNCHPAD_LAST_ACTIVATION_KEY
+            unset BUN_INSTALL
         fi
 
         # Ensure global paths are still available when not in a project
@@ -331,6 +332,9 @@ __launchpad_switch_environment() {
                 if [[ "${showMessages}" == "true" ]]; then
                     printf "${deactivationMessage}\\n" >&2
                 fi
+
+                # Unset old BUN_INSTALL when switching projects
+                unset BUN_INSTALL
             fi
         fi
 
@@ -353,8 +357,15 @@ __launchpad_switch_environment() {
             # Add project-specific path first (highest priority)
             export PATH="$env_dir/bin:$PATH"
 
-            # Add bun global bin directory for this environment (high priority for global installs)
-            if [[ -d "$env_dir/.bun/bin" ]]; then
+            # Set up Bun environment for this environment (if bun is present)
+            # This ensures 'bun install -g' installs to the environment-specific directory
+            if [[ -x "$env_dir/bin/bun" ]]; then
+                export BUN_INSTALL="$env_dir/.bun"
+
+                # Create .bun/bin directory if it doesn't exist
+                mkdir -p "$env_dir/.bun/bin" 2>/dev/null || true
+
+                # Add bun global bin directory to PATH (high priority for global installs)
                 # Remove bun global bin path if it was already in PATH
                 export PATH=$(echo "$PATH" | /usr/bin/sed "s|$env_dir/.bun/bin:||g" | /usr/bin/sed "s|:$env_dir/.bun/bin||g" | /usr/bin/sed "s|^$env_dir/.bun/bin$||g")
                 # Add it with high priority (after project bin but before system paths)

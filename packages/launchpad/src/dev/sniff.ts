@@ -282,7 +282,7 @@ function setCachedResult(dir: string, result: string | null): void {
   cacheTimestamps.set(dir, Date.now())
 }
 
-export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string>, services?: { enabled?: boolean, autoStart?: string[] } }> {
+export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string>, services?: any }> {
   const dirPath = dir instanceof SimplePath ? dir : new SimplePath(dir.string)
 
   if (!dirPath.isDirectory()) {
@@ -303,7 +303,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const pkgs: PackageRequirement[] = []
   const env: Record<string, string> = {}
-  let services: { enabled?: boolean, autoStart?: string[] } | undefined
+  let services: any
 
   for await (
     const [path, { name, isFile, isSymlink, isDirectory }] of dirPath.ls()
@@ -404,6 +404,25 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           has_deps_file = true
           await parse_well_formatted_node(await path.readYAML())
           break
+        case 'launchpad.config.ts':
+        case 'launchpad.config.js':
+        case '.launchpad.config.ts':
+        case '.launchpad.config.js':
+          has_deps_file = true
+          try {
+            const { loadConfig } = await import('bunfig')
+            const config = await loadConfig({
+              name: 'launchpad',
+              cwd: dirPath.string,
+            })
+            if (config) {
+              await parse_well_formatted_node(config)
+            }
+          }
+          catch (err) {
+            console.warn(`Failed to load ${name}: ${err instanceof Error ? err.message : String(err)}`)
+          }
+          break
         case 'cdk.json':
           pkgs.push({ project: 'aws.amazon.com/cdk', constraint, source: 'inferred' })
           break
@@ -434,6 +453,25 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           pkgs.push({ project: 'apache.org/subversion', constraint, source: 'inferred' })
           break
       }
+    }
+  }
+
+  // Always try to load config via bunfig (handles config/ subdirectory and TypeScript configs)
+  if (!has_deps_file) {
+    try {
+      const { loadConfig } = await import('bunfig')
+      const config = await loadConfig({
+        name: 'launchpad',
+        alias: 'deps',
+        cwd: dirPath.string,
+      })
+      if (config) {
+        has_deps_file = true
+        await parse_well_formatted_node(config)
+      }
+    }
+    catch {
+      // No config found via bunfig, that's ok
     }
   }
 
@@ -1010,12 +1048,9 @@ function extract_well_formatted_entries(
   const env = isPlainObject(yaml.env) ? yaml.env : {}
 
   // Extract services configuration
-  let services: { enabled?: boolean, autoStart?: string[] } | undefined
+  let services: any
   if (isPlainObject(yaml.services)) {
-    services = {
-      enabled: yaml.services.enabled === true,
-      autoStart: Array.isArray(yaml.services.autoStart) ? yaml.services.autoStart : undefined,
-    }
+    services = yaml.services
   }
 
   return { deps, env, services }

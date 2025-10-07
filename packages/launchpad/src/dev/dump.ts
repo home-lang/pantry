@@ -657,6 +657,7 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
   const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
   const effectiveQuiet = quiet || isShellIntegration
 
+
   // For shell integration, only suppress output if in quiet mode
   if (isShellIntegration && quiet) {
     const originalStderrWrite = process.stderr.write.bind(process.stderr)
@@ -1952,15 +1953,48 @@ async function maybeRunProjectPostSetup(projectDir: string, envDir: string, isSh
  */
 async function setupProjectServices(projectDir: string, sniffResult: any, showMessages: boolean): Promise<void> {
   try {
-    // Check services.autoStart configuration from deps.yaml
-    if (!sniffResult?.services?.enabled || !sniffResult.services.autoStart || sniffResult.services.autoStart.length === 0) {
+    // Check services configuration
+    if (!sniffResult?.services?.enabled) {
       if (showMessages && process.env.LAUNCHPAD_VERBOSE === 'true') {
-        console.log('🔍 No services configured in deps.yaml - skipping service setup')
+        console.log('🔍 Services not enabled - skipping service setup')
       }
-      return // No services to auto-start
+      return
     }
 
-    const autoStartServices = sniffResult.services.autoStart || []
+    // Determine which services to start
+    let autoStartServices: string[] = []
+
+    // If autoStart is a boolean true, infer services from database connection
+    if (sniffResult.services.autoStart === true) {
+      const dbConnection = sniffResult.services.database?.connection
+      if (dbConnection && dbConnection !== 'sqlite') {
+        // Map database connection to service name
+        const serviceMap: Record<string, string> = {
+          'mysql': 'mysql',
+          'postgres': 'postgres',
+          'postgresql': 'postgres',
+          'mariadb': 'mariadb',
+          'redis': 'redis',
+          'mongodb': 'mongodb',
+        }
+        const serviceName = serviceMap[dbConnection]
+        if (serviceName) {
+          autoStartServices = [serviceName]
+        }
+      }
+    }
+    // If autoStart is an array, use it directly
+    else if (Array.isArray(sniffResult.services.autoStart)) {
+      autoStartServices = sniffResult.services.autoStart
+    }
+    // Otherwise, no services to auto-start
+    else {
+      if (showMessages && process.env.LAUNCHPAD_VERBOSE === 'true') {
+        console.log('🔍 No services configured to auto-start')
+      }
+      return
+    }
+
     if (showMessages && autoStartServices.length > 0) {
       console.log(`🚀 Auto-starting services: ${autoStartServices.join(', ')}`)
     }
@@ -2006,8 +2040,76 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
         }
       }
     }
+
+    // For SQLite or other file-based databases, run postDatabaseSetup if configured
+    // (since they don't have a service to start)
+    const dbConnection = sniffResult?.services?.database?.connection
+    if (dbConnection === 'sqlite' && sniffResult?.services?.postDatabaseSetup) {
+      try {
+        if (showMessages) {
+          console.log(`🌱 Running post-database setup for SQLite...`)
+        }
+        await runPostDatabaseSetupCommands(projectDir, sniffResult.services.postDatabaseSetup, showMessages)
+        if (showMessages) {
+          console.log(`✅ SQLite post-database setup completed`)
+        }
+      }
+      catch (error) {
+        if (showMessages) {
+          console.warn(`⚠️  Post-database setup failed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    }
   }
   catch {
     // non-fatal
+  }
+}
+
+/**
+ * Run post-database setup commands (migrations, seeding, etc.)
+ */
+async function runPostDatabaseSetupCommands(projectDir: string, commands: string | string[], showMessages: boolean): Promise<void> {
+  const { spawn } = await import('node:child_process')
+  const cmdList = Array.isArray(commands) ? commands : [commands]
+
+  for (const cmdString of cmdList) {
+    const parts = cmdString.trim().split(/\s+/)
+    const [command, ...args] = parts
+
+    if (showMessages) {
+      console.log(`📋 Executing: ${cmdString}`)
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(command, args, {
+        stdio: 'inherit',
+        cwd: projectDir,
+        shell: true,
+      })
+
+      const timeout = setTimeout(() => {
+        proc.kill('SIGTERM')
+        reject(new Error(`Command timed out after 5 minutes: ${cmdString}`))
+      }, 300000)
+
+      proc.on('close', (code) => {
+        clearTimeout(timeout)
+        if (code === 0) {
+          if (showMessages) {
+            console.log(`✅ Successfully executed: ${cmdString}`)
+          }
+          resolve()
+        }
+        else {
+          reject(new Error(`Command failed with exit code ${code}: ${cmdString}`))
+        }
+      })
+
+      proc.on('error', (error) => {
+        clearTimeout(timeout)
+        reject(error)
+      })
+    })
   }
 }

@@ -268,10 +268,16 @@ export interface LaunchpadConfig {
     /** Infer services to auto-start from framework config (e.g., Stacks .env) */
     infer?: boolean
     database?: {
+      /** Database connection type - required when multiple database services are configured */
+      connection?: 'mysql' | 'postgres' | 'postgresql' | 'mariadb' | 'redis' | 'mongodb' | 'sqlite'
+      /** Database name to create */
+      name?: string
       username?: string
       password?: string
       authMethod?: 'trust' | 'md5' | 'scram-sha-256'
     }
+    /** Command(s) to run after database is created and ready - e.g., migrations, seeding */
+    postDatabaseSetup?: string | string[]
     frameworks?: {
       enabled?: boolean
       stacks?: {
