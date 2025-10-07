@@ -244,21 +244,77 @@ async function* readLines(filePath: string): AsyncGenerator<string> {
   }
 }
 
-// Memoization cache for dependency detection
-const dependencyCache = new Map<string, string | null>()
-const cacheTimestamps = new Map<string, number>()
-const CACHE_TTL = 5000 // 5 seconds cache TTL
+// Memoization cache for dependency detection with mtime tracking
+interface CacheEntry {
+  result: string | null
+  timestamp: number
+  depFileMtime?: number // Track dependency file modification time
+  depFilePath?: string
+}
+
+const dependencyCache = new Map<string, CacheEntry>()
+const CACHE_TTL = 60000 // 60 seconds cache TTL (increased for better performance)
+
+/**
+ * Get file modification time
+ */
+function getFileMtime(filePath: string): number {
+  try {
+    const stat = statSync(filePath)
+    return stat.mtimeMs
+  }
+  catch {
+    return 0
+  }
+}
+
+/**
+ * Find the primary dependency file for a directory
+ */
+function findDependencyFile(dirPath: string): string | undefined {
+  const priorityFiles = [
+    'dependencies.yaml',
+    'dependencies.yml',
+    'deps.yaml',
+    'deps.yml',
+    'launchpad.yaml',
+    'launchpad.yml',
+    'package.json',
+    'pyproject.toml',
+    'Cargo.toml',
+    'go.mod',
+  ]
+
+  for (const file of priorityFiles) {
+    const fullPath = join(dirPath, file)
+    try {
+      if (statSync(fullPath).isFile()) {
+        return fullPath
+      }
+    }
+    catch {
+      // File doesn't exist, continue
+    }
+  }
+
+  return undefined
+}
 
 /**
  * Clear stale cache entries
  */
 function clearStaleCache(): void {
   const now = Date.now()
-  for (const [key, timestamp] of cacheTimestamps) {
-    if (now - timestamp > CACHE_TTL) {
-      dependencyCache.delete(key)
-      cacheTimestamps.delete(key)
+  const toDelete: string[] = []
+
+  for (const [key, entry] of dependencyCache) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      toDelete.push(key)
     }
+  }
+
+  for (const key of toDelete) {
+    dependencyCache.delete(key)
   }
 }
 
@@ -268,18 +324,39 @@ function clearStaleCache(): void {
 function getCachedResult(dir: string): string | null | undefined {
   clearStaleCache()
   const cached = dependencyCache.get(dir)
+
   if (cached !== undefined) {
-    return cached
+    // If we have a dependency file tracked, verify it hasn't changed
+    if (cached.depFilePath) {
+      const currentMtime = getFileMtime(cached.depFilePath)
+      if (currentMtime !== cached.depFileMtime) {
+        // Dependency file changed, invalidate cache
+        dependencyCache.delete(dir)
+        return undefined
+      }
+    }
+    return cached.result
   }
+
   return undefined
 }
 
 /**
- * Cache a result
+ * Cache a result with mtime tracking
  */
 function setCachedResult(dir: string, result: string | null): void {
-  dependencyCache.set(dir, result)
-  cacheTimestamps.set(dir, Date.now())
+  const depFile = findDependencyFile(dir)
+  const entry: CacheEntry = {
+    result,
+    timestamp: Date.now(),
+  }
+
+  if (depFile) {
+    entry.depFilePath = depFile
+    entry.depFileMtime = getFileMtime(depFile)
+  }
+
+  dependencyCache.set(dir, entry)
 }
 
 export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string>, services?: any }> {

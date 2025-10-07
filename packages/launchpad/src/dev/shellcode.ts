@@ -78,8 +78,85 @@ PY
 
 # Hook functions will be defined and registered after initial processing
 
+# Cache helper functions
+__lp_file_mtime_cached() {
+    local f="$1"
+    if [[ -z "$f" || ! -e "$f" ]]; then echo 0; return; fi
+    if stat -f %m "$f" >/dev/null 2>&1; then
+        stat -f %m "$f"
+    elif stat -c %Y "$f" >/dev/null 2>&1; then
+        stat -c %Y "$f"
+    else
+        echo 0
+    fi
+}
+
+__lp_read_cache() {
+    local cache_file="$HOME/.cache/launchpad/shell_cache/env_cache"
+    local lookup_dir="$1"
+
+    if [[ ! -f "$cache_file" ]]; then
+        return 1
+    fi
+
+    # Read cache line by line and find matching project directory
+    while IFS='|' read -r proj_dir dep_file dep_mtime env_dir; do
+        if [[ "$proj_dir" == "$lookup_dir" ]]; then
+            # Verify dependency file hasn't changed
+            if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+                local current_mtime=$(__lp_file_mtime_cached "$dep_file")
+                if [[ "$current_mtime" == "$dep_mtime" ]]; then
+                    echo "$env_dir|$dep_file"
+                    return 0
+                fi
+            elif [[ -z "$dep_file" ]]; then
+                # No dependency file case
+                echo "$env_dir|"
+                return 0
+            fi
+        fi
+    done < "$cache_file"
+
+    return 1
+}
+
+__lp_write_cache() {
+    local cache_dir="$HOME/.cache/launchpad/shell_cache"
+    local cache_file="$cache_dir/env_cache"
+    local proj_dir="$1"
+    local dep_file="$2"
+    local env_dir="$3"
+
+    mkdir -p "$cache_dir" 2>/dev/null || true
+
+    local dep_mtime=0
+    if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+        dep_mtime=$(__lp_file_mtime_cached "$dep_file")
+    fi
+
+    # Create temp file for atomic write
+    local temp_file="$cache_file.tmp.$$"
+
+    # Copy existing entries except the one we're updating
+    if [[ -f "$cache_file" ]]; then
+        grep -v "^$proj_dir|" "$cache_file" > "$temp_file" 2>/dev/null || true
+    fi
+
+    # Add new entry
+    echo "$proj_dir|$dep_file|$dep_mtime|$env_dir" >> "$temp_file"
+
+    # Atomic replace
+    mv "$temp_file" "$cache_file" 2>/dev/null || rm -f "$temp_file"
+}
+
 # Environment switching function (called by hooks)
 __launchpad_switch_environment() {
+    # SUPER FAST PATH: If PWD hasn't changed, return immediately (0 syscalls)
+    if [[ "$__LAUNCHPAD_LAST_PWD" == "$PWD" ]]; then
+        return 0
+    fi
+    export __LAUNCHPAD_LAST_PWD="$PWD"
+
     # Start timer for performance tracking (portable)
     local start_time=$(lp_now_ms)
 
@@ -123,27 +200,40 @@ __launchpad_switch_environment() {
         "yarn.lock" "bun.lock" "bun.lockb" ".yarnrc"
     )
 
-    # Step 1: Find project directory using our fast binary (no artificial timeout)
+    # Step 1: Try cache first for instant project detection
     local project_dir=""
-    if ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
-        project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
-    fi
+    local cached_env_dir=""
+    local cached_dep_file=""
 
-    # Fallback: If binary didn't detect a project, scan upwards for known dependency files
-    if [[ -z "$project_dir" ]]; then
-        local __dir="$PWD"
-        while [[ "$__dir" != "/" ]]; do
-            for name in "\${_dep_names[@]}"; do
-                if [[ -f "$__dir/$name" ]]; then
-                    project_dir="$__dir"
-                    break
-                fi
-            done
-            if [[ -n "$project_dir" ]]; then
-                break
+    # First, try to find project root by walking up from PWD
+    local __dir="$PWD"
+    while [[ "$__dir" != "/" && -z "$project_dir" ]]; do
+        # Check cache for this directory
+        local cache_result=$(__lp_read_cache "$__dir")
+        if [[ $? -eq 0 && -n "$cache_result" ]]; then
+            # Cache hit! Extract env_dir and dep_file
+            cached_env_dir="\${cache_result%|*}"
+            cached_dep_file="\${cache_result#*|}"
+            project_dir="$__dir"
+            break
+        fi
+
+        # Check if this directory has any dependency files
+        for name in "\${_dep_names[@]}"; do
+            if [[ -f "$__dir/$name" ]]; then
+                project_dir="$__dir"
+                break 2
             fi
-            __dir="$(dirname "$__dir")"
         done
+
+        __dir="$(dirname "$__dir")"
+    done
+
+    # If cache miss and no project found yet, use fast binary detection
+    if [[ -z "$project_dir" ]]; then
+        if ${launchpadBinary} dev:find-project-root "$PWD" >/dev/null 2>&1; then
+            project_dir=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:find-project-root "$PWD" 2>/dev/null || echo "")
+        fi
     fi
 
     # Removed verbose project detection message
@@ -270,6 +360,7 @@ __launchpad_switch_environment() {
 
             unset LAUNCHPAD_CURRENT_PROJECT
             unset LAUNCHPAD_ENV_BIN_PATH
+            unset LAUNCHPAD_ENV_DIR
             unset __LAUNCHPAD_LAST_ACTIVATION_KEY
             unset BUN_INSTALL
         fi
@@ -290,28 +381,46 @@ __launchpad_switch_environment() {
 
     # Step 3: For projects, activate environment (using proper MD5 hashing)
     if [[ -n "$project_dir" ]]; then
-        local project_basename=$(basename "$project_dir")
-        # Use proper MD5 hash to match existing environments
-        local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
-        local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
+        # FAST PATH: Check if we're in the same project with cached environment
+        if [[ "$LAUNCHPAD_CURRENT_PROJECT" == "$project_dir" && -n "$LAUNCHPAD_ENV_DIR" ]]; then
+            # We're already in this project and environment is set - skip expensive operations
+            return 0
+        fi
 
-        # Check for dependency file to add dependency hash
-        # IMPORTANT: keep this list in sync with DEPENDENCY_FILE_NAMES in src/env.ts
+        local env_dir=""
         local dep_file=""
-        for name in "\${_dep_names[@]}"; do
-            if [[ -f "$project_dir/$name" ]]; then
-                dep_file="$project_dir/$name"
-                break
-            fi
-        done
 
-        local env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
-        local dep_short=""
-        if [[ -n "$dep_file" ]]; then
-            dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
-            if [[ -n "$dep_short" ]]; then
-                env_dir="\${env_dir}-d\${dep_short}"
+        # Use cached environment if available (avoids MD5 computation)
+        if [[ -n "$cached_env_dir" ]]; then
+            env_dir="$cached_env_dir"
+            dep_file="$cached_dep_file"
+        else
+            # Cache miss - compute environment directory
+            local project_basename=$(basename "$project_dir")
+            # Use proper MD5 hash to match existing environments
+            local md5hash=$(printf "%s" "$project_dir" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+            local project_hash="\${project_basename}_$(echo "$md5hash" | cut -c1-8)"
+
+            # Check for dependency file to add dependency hash
+            # IMPORTANT: keep this list in sync with DEPENDENCY_FILE_NAMES in src/env.ts
+            for name in "\${_dep_names[@]}"; do
+                if [[ -f "$project_dir/$name" ]]; then
+                    dep_file="$project_dir/$name"
+                    break
+                fi
+            done
+
+            env_dir="$HOME/.local/share/launchpad/envs/$project_hash"
+            local dep_short=""
+            if [[ -n "$dep_file" ]]; then
+                dep_short=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 "$dep_file" 2>/dev/null | cut -c1-8 || echo "")
+                if [[ -n "$dep_short" ]]; then
+                    env_dir="\${env_dir}-d\${dep_short}"
+                fi
             fi
+
+            # Write to cache for next time
+            __lp_write_cache "$project_dir" "$dep_file" "$env_dir"
         fi
 
         # Removed verbose dependency file info message
@@ -350,6 +459,7 @@ __launchpad_switch_environment() {
         if [[ -d "$env_dir/bin" ]]; then
             export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
             export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+            export LAUNCHPAD_ENV_DIR="$env_dir"
 
             # Remove project-specific path if it was already in PATH
             export PATH=$(echo "$PATH" | /usr/bin/sed "s|$env_dir/bin:||g" | /usr/bin/sed "s|:$env_dir/bin||g" | /usr/bin/sed "s|^$env_dir/bin$||g")
@@ -382,53 +492,11 @@ __launchpad_switch_environment() {
             if [[ -d "$global_bin" && ":$PATH:" != *":$global_bin:"* ]]; then
                 export PATH="$PATH:$global_bin"
             fi
-            # Removed verbose activated environment path message
-            # Ensure dynamic linker can find Launchpad-managed libraries (macOS/Linux)
-            # Build a list of library directories from the active environment and global install
-            __lp_add_unique_colon_path() {
-                # $1=varname $2=value
-                local __var_name="$1"; shift
-                local __val="$1"; shift
-                if [[ -z "$__val" ]]; then return 0; fi
-                local __cur=""
-                # Portable indirection via eval (works in bash and zsh)
-                eval "__cur=\\$\${__var_name}"
-                case ":$__cur:" in
-                    *":$__val:"*) : ;; # already present
-                    *)
-                        if [[ -n "$__cur" ]]; then
-                            eval "export \${__var_name}=\"$__val:\\$\${__var_name}\""
-                        else
-                            eval "export \${__var_name}=\"$__val\""
-                        fi
-                    ;;
-                esac
-            }
 
-            # Collect candidate lib dirs
-            local __lp_libs=()
-            # Env-level libs
-            for dom in curl.se openssl.org zlib.net gnu.org/readline; do
-                if [[ -d "$env_dir/$dom" ]]; then
-                    while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$env_dir/$dom" -maxdepth 2 -type d -name 'v*' 2>/dev/null)
-                fi
-            done
-            # Global-level libs
-            local __lp_global="$HOME/.local/share/launchpad/global"
-            for dom in curl.se openssl.org zlib.net gnu.org/readline; do
-                if [[ -d "$__lp_global/$dom" ]]; then
-                    while IFS= read -r d; do __lp_libs+=("$d/lib"); done < <(find "$__lp_global/$dom" -maxdepth 2 -type d -name 'v*' 2>/dev/null)
-                fi
-            done
-
-            # Export DYLD and LD paths (prepend Launchpad libs)
-            for libdir in "\${__lp_libs[@]}"; do
-                if [[ -d "$libdir" ]]; then
-                    __lp_add_unique_colon_path DYLD_LIBRARY_PATH "$libdir"
-                    __lp_add_unique_colon_path DYLD_FALLBACK_LIBRARY_PATH "$libdir"
-                    __lp_add_unique_colon_path LD_LIBRARY_PATH "$libdir"
-                fi
-            done
+            # NOTE: We do NOT set DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH globally
+            # Setting these globally causes issues with system Python and other binaries due to macOS SIP
+            # Instead, our binary wrapper scripts set these variables only for binaries that need them
+            # This prevents dyld errors while still allowing our managed binaries to find their libraries
         else
             # Environment not ready - still ensure global paths are available
             # Add ~/.local/bin to PATH if not already there
