@@ -5,11 +5,11 @@
   "description": "Test environment for Bun package manager with conflicting Node.js engines",
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "npm": ">=11.6.2"
   },
   "volta": {
     "node": "20.10.0",
-    "npm": "10.2.3"
+    "npm": "11.6.2"
   },
   "scripts": {
     "dev": "echo 'Should use Bun, not Node!'",

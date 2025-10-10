@@ -5,7 +5,7 @@
   "description": "Test environment for Bun and Node.js coexistence",
   "engines": {
     "node": ">=20.0.0",
-    "npm": ">=9.0.0"
+    "npm": ">=11.6.2"
   },
   "scripts": {
     "dev": "echo 'Testing Bun + Node.js coexistence'",
