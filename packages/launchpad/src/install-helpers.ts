@@ -447,28 +447,6 @@ exec "${binaryPath}" "$@"
               }
             }
 
-            // Create a node symlink to bun to handle packages that expect node
-            // Only create if no node binary/shim already exists (avoids conflict with actual Node.js)
-            const nodeShimPath = path.join(targetShimDir, 'node')
-            if (!fs.existsSync(nodeShimPath)) {
-              try {
-                fs.symlinkSync('bun', nodeShimPath)
-                if (config.verbose) {
-                  console.warn(`Created node symlink: node -> bun (to handle packages that expect node)`)
-                }
-                installedBinaries.push('node')
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create node symlink: ${error instanceof Error ? error.message : String(error)}`)
-                }
-                // Don't fail the installation if node symlink creation fails
-              }
-            }
-            else if (config.verbose) {
-              console.warn(`Skipped creating node symlink: node binary/shim already exists`)
-            }
-
             // Create a custom shim for Bun with BUN_INSTALL environment variable
             const bunShimContent = `#!/bin/sh
 # Launchpad shim for ${binary} (${domain} v${version})

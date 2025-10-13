@@ -1786,7 +1786,10 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
     }
   }
 
-  if (libraryPathComponents.length > 0) {
+  // DISABLED: Setting DYLD paths globally breaks system binaries (e.g., Homebrew node picking up wrong OpenSSL)
+  // Instead, wrapper scripts set these variables only for binaries that need them
+  // See: shellcode.ts line 599 for details
+  if (false && libraryPathComponents.length > 0) {
     const libraryPath = libraryPathComponents.join(':')
 
     // macOS uses DYLD_LIBRARY_PATH and DYLD_FALLBACK_LIBRARY_PATH
@@ -1832,34 +1835,16 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
   process.stdout.write(`        export PATH="$LAUNCHPAD_ORIGINAL_PATH"\n`)
   process.stdout.write(`      fi\n`)
-  process.stdout.write(`      # Restore original library paths\n`)
-  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then\n`)
-  process.stdout.write(`        export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"\n`)
-  process.stdout.write(`      else\n`)
-  process.stdout.write(`        unset DYLD_LIBRARY_PATH\n`)
-  process.stdout.write(`      fi\n`)
-  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then\n`)
-  process.stdout.write(`        export DYLD_FALLBACK_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"\n`)
-  process.stdout.write(`      else\n`)
-  process.stdout.write(`        unset DYLD_FALLBACK_LIBRARY_PATH\n`)
-  process.stdout.write(`      fi\n`)
-  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then\n`)
-  process.stdout.write(`        export LD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"\n`)
-  process.stdout.write(`      else\n`)
-  process.stdout.write(`        unset LD_LIBRARY_PATH\n`)
-  process.stdout.write(`      fi\n`)
+  // DYLD paths are not set globally (see line 1789), so no need to restore them
   process.stdout.write(`      unset LAUNCHPAD_ENV_BIN_PATH\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_DIR\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_HASH\n`)
-  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH\n`)
-  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH\n`)
-  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH\n`)
   process.stdout.write(`      echo "Environment deactivated"\n`)
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
-  // Refresh the command hash so version switches take effect immediately (async, detached)
-  process.stdout.write(`{ (hash -r 2>/dev/null || true) & } >/dev/null 2>&1\n`)
+  // Refresh the command hash so version switches take effect immediately (silent, no job notification)
+  process.stdout.write(`(hash -r 2>/dev/null || true) >/dev/null 2>&1 &!\n`)
 }
 
 

@@ -1,4 +1,4 @@
-import type { PackageAlias, PackageDomain, PackageName, Packages, Dependencies} from 'ts-pkgx'
+import type { PackageAlias, PackageDomain, PackageName, Packages, Dependencies } from 'ts-pkgx'
 
 export type {
   PackageAlias,

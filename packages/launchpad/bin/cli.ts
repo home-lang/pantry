@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import path from 'node:path'
 import process from 'node:process'
-import { CAC } from 'cac'
+import { CLI } from '@stacksjs/clapp'
 import { resolveCommand } from '../src/commands'
 import { config } from '../src/config'
 
@@ -20,7 +20,7 @@ if (process.env.LAUNCHPAD_USE_ROUTER === '1') {
 // Default version for setup command (derived from package.json version)
 const DEFAULT_SETUP_VERSION = `v${version}`
 
-const cli = new CAC('launchpad')
+const cli = new CLI('launchpad')
 
 cli.version(version)
 cli.help()

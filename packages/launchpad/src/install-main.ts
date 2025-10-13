@@ -15,7 +15,11 @@ import { install_prefix } from './utils'
 /**
  * Main installation function with type-safe package specifications
  */
-export async function install(packages: PackageSpec | PackageSpec[], basePath?: string): Promise<string[]> {
+export async function install(
+  packages: PackageSpec | PackageSpec[],
+  basePath?: string,
+  options?: { skipServiceInit?: boolean }
+): Promise<string[]> {
   const packageList = Array.isArray(packages) ? packages : [packages]
   const installPath = basePath || install_prefix().string
 
@@ -29,7 +33,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
   }, 10 * 60 * 1000) // 10 minute global timeout
 
   try {
-    const result = await installInternal(packageList, installPath)
+    const result = await installInternal(packageList, installPath, options?.skipServiceInit ?? false)
     clearTimeout(globalTimeout)
     return result
   }
@@ -42,7 +46,7 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
 /**
  * Internal installation function
  */
-async function installInternal(packageList: PackageSpec[], installPath: string): Promise<string[]> {
+async function installInternal(packageList: PackageSpec[], installPath: string, skipServiceInit: boolean = false): Promise<string[]> {
   // Create installation directory even if no packages to install
   await fs.promises.mkdir(installPath, { recursive: true })
 
@@ -286,7 +290,7 @@ async function installInternal(packageList: PackageSpec[], installPath: string):
   }
 
   // Auto-initialize and start services for newly installed packages
-  if (allInstalledFiles.length > 0) {
+  if (allInstalledFiles.length > 0 && !skipServiceInit) {
     await autoInitializeServicesForPackages(deduplicatedPackages)
   }
 

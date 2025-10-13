@@ -9,6 +9,7 @@ changelogen
 changelogithub
 chpwd
 chrisbbreuer
+clapp
 codecov
 commitlint
 commitlintrc
