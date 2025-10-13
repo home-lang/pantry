@@ -2,7 +2,6 @@
   "name": "@stacksjs/launchpad",
   "type": "module",
   "version": "0.6.4",
-  "packageManager": "bun@1.2.21",
   "description": "Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
@@ -63,13 +62,11 @@
     "test": "bun test",
     "typecheck": "bun --bun tsc --noEmit --skipLibCheck"
   },
-  "dependencies": {
-    "bunfig": "^0.15.0",
-    "cac": "^6.7.14",
-    "ts-pkgx": "^0.4.84"
-  },
   "devDependencies": {
-    "bun-plugin-dtsx": "0.9.5"
+    "@stacksjs/clapp": "0.2.0",
+    "bun-plugin-dtsx": "0.9.5",
+    "bunfig": "^0.15.0",
+    "ts-pkgx": "^0.4.95"
   },
   "lint-staged": {
     "*.{js,ts}": "bunx --bun eslint . --fix"
