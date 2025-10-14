@@ -1,10 +1,31 @@
-import type { PlainObject } from 'is-what'
 import { semver } from 'bun'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
-import { isArray, isNumber, isPlainObject, isString } from 'is-what'
+
+// Type utilities
+type PlainObject = Record<string, any>
+
+// Type guard utilities
+function isString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !Number.isNaN(value)
+}
+
+function isArray(value: unknown): value is any[] {
+  return Array.isArray(value)
+}
+
+function isPlainObject(value: unknown): value is PlainObject {
+  if (typeof value !== 'object' || value === null)
+    return false
+  const proto = Object.getPrototypeOf(value)
+  return proto === null || proto === Object.prototype
+}
 
 export interface PackageRequirement {
   project: string
