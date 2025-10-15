@@ -35,6 +35,7 @@ const registry: Record<string, () => Promise<Command>> = {
   'update': async () => (await import('./update')).default,
   'debug:deps': async () => (await import('./debug/deps')).default,
   'benchmark:file-detection': async () => (await import('./benchmark/file-detection')).default,
+  'benchmark:cache': async () => (await import('./benchmark/cache')).default,
   'db:create': async () => (await import('./db/create')).default,
   // services
   'start': async () => (await import('./start')).default,

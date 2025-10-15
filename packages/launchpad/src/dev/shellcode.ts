@@ -91,27 +91,107 @@ __lp_file_mtime_cached() {
     fi
 }
 
+# MD5 Hash caching - avoid spawning processes for repeated hash computations
+# Store MD5 hashes in memory using associative arrays (zsh) or pattern matching (bash)
+__lp_md5_hash() {
+    local input="$1"
+    local is_file="$2"  # "file" or "string"
+
+    # Create cache key based on input and type
+    local cache_key="__LP_MD5_\${is_file}_$(echo "$input" | sed 's/[^a-zA-Z0-9]/_/g')"
+
+    # Check memory cache first
+    if [[ -n "\${!cache_key}" ]]; then
+        echo "\${!cache_key}"
+        return 0
+    fi
+
+    # Compute MD5 hash
+    local hash=""
+    if [[ "$is_file" == "file" ]]; then
+        # For files, also check if we've already computed it and file hasn't changed
+        if [[ -f "$input" ]]; then
+            local mtime=$(__lp_file_mtime_cached "$input")
+            local mtime_key="\${cache_key}_mtime"
+
+            # If we have cached hash and mtime matches, use it
+            if [[ -n "\${!cache_key}" && "\${!mtime_key}" == "$mtime" ]]; then
+                echo "\${!cache_key}"
+                return 0
+            fi
+
+            # Compute new hash
+            hash=$(LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 "$input" 2>/dev/null || echo "00000000")
+
+            # Cache both hash and mtime
+            eval "$cache_key=\"$hash\""
+            eval "$mtime_key=\"$mtime\""
+        else
+            echo "00000000"
+            return 1
+        fi
+    else
+        # For strings
+        hash=$(printf "%s" "$input" | LAUNCHPAD_DISABLE_SHELL_INTEGRATION=1 ${launchpadBinary} dev:md5 /dev/stdin 2>/dev/null || echo "00000000")
+        eval "$cache_key=\"$hash\""
+    fi
+
+    echo "$hash"
+    return 0
+}
+
+# ENHANCED CACHE SYSTEM: Multi-tier caching with efficient lookups
+# Tier 1: In-memory hash map (instant lookups)
+# Tier 2: Indexed cache file (fast disk lookups)
+# Tier 3: Directory walk fallback (only when cache miss)
+
+# Initialize associative array for cache (zsh) or use pattern matching (bash)
+if [[ -n "$ZSH_VERSION" ]]; then
+    # ZSH has native associative arrays
+    typeset -gA __LP_CACHE_MAP 2>/dev/null || true
+fi
+
 __lp_read_cache() {
     local cache_file="$HOME/.cache/launchpad/shell_cache/env_cache"
     local lookup_dir="$1"
 
     [[ -f "$cache_file" ]] || return 1
 
-    # FAST: Use grep with -F (fixed string) to avoid regex issues
-    local cache_line=$(grep -m1 -F "$lookup_dir|" "$cache_file" 2>/dev/null)
+    # TIER 1: Check in-memory hash map (0 syscalls, instant)
+    if [[ -n "$ZSH_VERSION" ]]; then
+        # ZSH: use native associative array
+        if [[ -n "\${__LP_CACHE_MAP[$lookup_dir]}" ]]; then
+            echo "\${__LP_CACHE_MAP[$lookup_dir]}"
+            return 0
+        fi
+    else
+        # Bash: use pattern-based variable lookup
+        local cache_key="__LP_CACHE_$(echo "$lookup_dir" | sed 's/[^a-zA-Z0-9]/_/g')"
+        if [[ -n "\${!cache_key}" ]]; then
+            echo "\${!cache_key}"
+            return 0
+        fi
+    fi
+
+    # TIER 2: Read from indexed cache file (1 syscall with optimized grep)
+    # Use awk for faster parsing (single process vs multiple greps)
+    local cache_line=$(awk -F'|' -v dir="$lookup_dir" '
+        $1 == dir {
+            print $0
+            exit
+        }
+    ' "$cache_file" 2>/dev/null)
+
     [[ -z "$cache_line" ]] && return 1
 
-    # Verify it's an exact match at start of line (not a substring match)
-    [[ "$cache_line" == "$lookup_dir|"* ]] || return 1
-
-    # Parse the cache line
+    # Parse the cache line (single operation, no subshells)
     local proj_dir dep_file dep_mtime env_dir
     IFS='|' read -r proj_dir dep_file dep_mtime env_dir <<< "$cache_line"
 
-    # Validate: env directory must exist
+    # Quick validation: env directory must exist (1 syscall)
     [[ -d "$env_dir" ]] || return 1
 
-    # If dependency file is tracked, verify it hasn't changed
+    # If dependency file is tracked, verify it hasn't changed (2 syscalls max)
     if [[ -n "$dep_file" && -n "$dep_mtime" ]]; then
         [[ -f "$dep_file" ]] || return 1
         # Quick mtime check - if different, cache is stale
@@ -119,10 +199,20 @@ __lp_read_cache() {
         [[ "$current_mtime" == "$dep_mtime" ]] || return 1
     fi
 
-    echo "$env_dir|$dep_file"
+    local result="$env_dir|$dep_file"
+
+    # Store in memory cache for instant future lookups
+    if [[ -n "$ZSH_VERSION" ]]; then
+        __LP_CACHE_MAP[$lookup_dir]="$result"
+    else
+        eval "$cache_key=\"$result\""
+    fi
+
+    echo "$result"
     return 0
 }
 
+# Enhanced cache writing with atomic operations and minimal overhead
 __lp_write_cache() {
     local cache_dir="$HOME/.cache/launchpad/shell_cache"
     local cache_file="$cache_dir/env_cache"
@@ -137,19 +227,60 @@ __lp_write_cache() {
         dep_mtime=$(__lp_file_mtime_cached "$dep_file")
     fi
 
-    # Create temp file for atomic write
-    local temp_file="$cache_file.tmp.$$"
+    local cache_entry="$proj_dir|$dep_file|$dep_mtime|$env_dir"
 
-    # Copy existing entries except the one we're updating
-    if [[ -f "$cache_file" ]]; then
-        grep -v "^$proj_dir|" "$cache_file" > "$temp_file" 2>/dev/null || true
+    # Update in-memory cache immediately (instant for next lookups)
+    if [[ -n "$ZSH_VERSION" ]]; then
+        __LP_CACHE_MAP[$proj_dir]="$env_dir|$dep_file"
+    else
+        local cache_key="__LP_CACHE_$(echo "$proj_dir" | sed 's/[^a-zA-Z0-9]/_/g')"
+        eval "$cache_key=\"$env_dir|$dep_file\""
     fi
 
-    # Add new entry
-    echo "$proj_dir|$dep_file|$dep_mtime|$env_dir" >> "$temp_file"
+    # Write to disk cache asynchronously to avoid blocking
+    # Use atomic write with temp file
+    (
+        local temp_file="$cache_file.tmp.$$"
 
-    # Atomic replace
-    mv "$temp_file" "$cache_file" 2>/dev/null || rm -f "$temp_file"
+        # Use awk for efficient filtering (faster than grep -v for large files)
+        if [[ -f "$cache_file" ]]; then
+            awk -F'|' -v dir="$proj_dir" '$1 != dir' "$cache_file" > "$temp_file" 2>/dev/null || true
+        fi
+
+        # Append new entry
+        echo "$cache_entry" >> "$temp_file"
+
+        # Atomic replace
+        mv "$temp_file" "$cache_file" 2>/dev/null || rm -f "$temp_file"
+    ) &
+}
+
+# Cache preloader: Load entire cache into memory on shell startup
+# This eliminates disk I/O for all subsequent cache lookups
+__lp_load_cache() {
+    local cache_file="$HOME/.cache/launchpad/shell_cache/env_cache"
+
+    [[ -f "$cache_file" ]] || return 0
+
+    # Only load if we haven't already loaded in this shell session
+    [[ -n "$__LP_CACHE_LOADED" ]] && return 0
+
+    if [[ -n "$ZSH_VERSION" ]]; then
+        # ZSH: Use associative array for O(1) lookups
+        while IFS='|' read -r proj_dir dep_file dep_mtime env_dir; do
+            [[ -z "$proj_dir" ]] && continue
+            __LP_CACHE_MAP[$proj_dir]="$env_dir|$dep_file"
+        done < "$cache_file"
+    else
+        # Bash: Use eval for variable-based storage
+        while IFS='|' read -r proj_dir dep_file dep_mtime env_dir; do
+            [[ -z "$proj_dir" ]] && continue
+            local cache_key="__LP_CACHE_$(echo "$proj_dir" | sed 's/[^a-zA-Z0-9]/_/g')"
+            eval "$cache_key=\"$env_dir|$dep_file\""
+        done < "$cache_file"
+    fi
+
+    export __LP_CACHE_LOADED=1
 }
 
 # Environment switching function (called by hooks)
@@ -657,6 +788,9 @@ export __LAUNCHPAD_PROCESSING=1
 
 # Ensure we clean up the processing flag on exit (use a more robust approach)
 trap 'unset __LAUNCHPAD_PROCESSING 2>/dev/null || true' EXIT
+
+# Load cache into memory for instant lookups (happens once per shell session)
+__lp_load_cache
 
 # Basic shell integration with aggressive safeguards
 # Run the environment switching logic (which handles its own timing)

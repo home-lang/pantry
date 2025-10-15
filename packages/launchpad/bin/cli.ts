@@ -1539,6 +1539,33 @@ cli
     }
   })
 
+cli
+  .command('benchmark:cache', 'Benchmark cache lookup performance (in-memory vs disk)')
+  .option('--iterations <number>', 'Number of iterations per test (default: 10000)')
+  .option('--verbose', 'Show detailed output')
+  .option('--json', 'Output results as JSON')
+  .example('launchpad benchmark:cache')
+  .example('launchpad benchmark:cache --iterations 50000')
+  .example('launchpad benchmark:cache --json')
+  .action(async (options?: {
+    iterations?: string
+    verbose?: boolean
+    json?: boolean
+  }) => {
+    try {
+      const cmd = await resolveCommand('benchmark:cache')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv: [], options, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
+    }
+    catch (error) {
+      console.error('Benchmark failed:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
 // NOTE: cli.parse() moved to the end of the file to ensure all commands are registered
 
 // Database management commands
