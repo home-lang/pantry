@@ -24,7 +24,6 @@
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
     "release": "bun run changelog:generate && bunx bumpx prompt --recursive",
-    "postinstall": "bunx git-hooks",
     "dev:docs": "bun vitepress dev docs",
     "build:docs": "bun vitepress build docs",
     "preview:docs": "bun vitepress preview docs",
