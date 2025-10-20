@@ -69,7 +69,7 @@ function readDepsYamlConfig(): { type?: string, name?: string, username?: string
       return config
     }
   }
-  catch (error) {
+  catch {
     // Ignore errors reading deps.yaml
   }
   return {}

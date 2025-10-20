@@ -3,6 +3,7 @@ import type { CacheMetadata } from './types'
 import fs from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 import { config } from './config'
 
 // Cache configuration for packages
@@ -229,7 +230,7 @@ class EnvCacheManager {
 }
 
 // Singleton instance
-export const envCache = new EnvCacheManager()
+export const envCache: EnvCacheManager = new EnvCacheManager()
 
 /**
  * Load cache metadata

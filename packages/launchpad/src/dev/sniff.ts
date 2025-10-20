@@ -512,6 +512,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
             const config = await loadConfig({
               name: 'launchpad',
               cwd: dirPath.string,
+              defaultConfig: {},
             })
             if (config) {
               await parse_well_formatted_node(config)
@@ -562,6 +563,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
         name: 'launchpad',
         alias: 'deps',
         cwd: dirPath.string,
+        defaultConfig: {},
       })
       if (config) {
         has_deps_file = true

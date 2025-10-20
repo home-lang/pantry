@@ -4,9 +4,9 @@ export const config: LaunchpadConfig = {
   dependencies: {
     'bun': '^1.2.19', // Bun runtime (alias)
     // 'bun.sh': '^1.2.19',         // Bun runtime (domain)
-    'redis': '^8.0.0', // Redis server (alias)
+    'redis.io': '^8.0.0', // Redis server (domain)
     'postgresql.org': '^17.2.0', // PostgreSQL database (domain)
-  },
+  } as any,
 
   // Or as an array (uses latest versions)
   // dependencies: ['bun.com', 'redisio', 'postgresqlorg'],

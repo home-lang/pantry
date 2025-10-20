@@ -155,6 +155,8 @@ DB_PASSWORD=secure_password123
 
       // Test template variable resolution with actual service definition
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -195,6 +197,8 @@ DB_PASSWORD=app_pass
 
       // Template resolution should use project name as fallback
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -275,6 +279,8 @@ DB_PASSWORD=test_pass
       const { SERVICE_DEFINITIONS } = await import('../src/services/definitions')
 
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -344,6 +350,8 @@ DB_PASSWORD=test_pass
       const { SERVICE_DEFINITIONS } = await import('../src/services/definitions')
 
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -530,7 +538,7 @@ DB_PASSWORD=normal_value
     })
 
     it('should validate service definition completeness', async () => {
-      const { SERVICE_DEFINITIONS, getServiceDefinition } = await import('../src/services/definitions')
+      const { getServiceDefinition } = await import('../src/services/definitions')
 
       const postgres = getServiceDefinition('postgres')
       expect(postgres).toBeDefined()
@@ -544,7 +552,7 @@ DB_PASSWORD=normal_value
         expect(postgres.initCommand).toBeDefined()
         expect(postgres.postStartCommands).toBeDefined()
         expect(Array.isArray(postgres.dependencies)).toBe(true)
-        expect(postgres.dependencies.length).toBeGreaterThan(0)
+        expect(postgres.dependencies?.length).toBeGreaterThan(0)
       }
     })
   })
@@ -570,6 +578,8 @@ DB_PASSWORD=template_pass
       const { SERVICE_DEFINITIONS } = await import('../src/services/definitions')
 
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {
           customValue: 'custom_config_value',

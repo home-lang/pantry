@@ -16,7 +16,7 @@ Launchpad is a modern dependency manager for both system and project environment
 
 ## Project Structure
 
-```
+```text
 launchpad/                     # Monorepo root
 ├── packages/
 │   ├── launchpad/            # Main CLI package
@@ -59,7 +59,8 @@ launchpad/                     # Monorepo root
 ### Installation Architecture
 
 The installation flow is modular:
-```
+
+```text
 install-main.ts (main install() function)
   → package-resolution.ts (resolve package names/versions via ts-pkgx)
   → dependency-resolution.ts (resolve dependency graphs)
@@ -72,6 +73,7 @@ install-main.ts (main install() function)
 ### Configuration Loading
 
 Configuration is loaded via `bunfig` with this precedence:
+
 1. CLI flags (highest priority)
 2. Environment variables (e.g., `LAUNCHPAD_DB_USERNAME`)
 3. `launchpad.config.ts` in project root
@@ -80,7 +82,8 @@ Configuration is loaded via `bunfig` with this precedence:
 ### Service Management
 
 Services follow a lifecycle:
-```
+
+```text
 src/services/definitions.ts (service definitions)
   → src/services/manager.ts (lifecycle management)
   → src/services/platform.ts (platform-specific control)
@@ -115,6 +118,7 @@ src/services/definitions.ts (service definitions)
 ### Key Modules & Their Purpose
 
 **Core Installation:**
+
 - `src/install.ts` - Main entry point for package installation (re-exports from sub-modules)
 - `src/install-main.ts` - Core `install()` function implementation
 - `src/install-core.ts` - Package download and extraction logic
@@ -123,12 +127,14 @@ src/services/definitions.ts (service definitions)
 - `src/uninstall.ts` - Package removal logic
 
 **Package Management:**
+
 - `src/package-resolution.ts` - Package name/version resolution, leverages ts-pkgx
 - `src/dependency-resolution.ts` - Resolves package dependency graphs
 - `src/cache.ts` - Package download caching with metadata
 - `src/symlink.ts` - Symlink management for installed packages
 
 **Configuration & Environment:**
+
 - `src/config.ts` - Configuration management with bunfig
 - `src/config-validation.ts` - Config validation logic
 - `src/types.ts` - Type definitions (extends ts-pkgx types)
@@ -136,6 +142,7 @@ src/services/definitions.ts (service definitions)
 - `src/dev-setup.ts` - Development environment setup
 
 **CLI & Commands:**
+
 - `src/cli/router.ts` - Lightweight modular CLI router (experimental)
 - `src/cli/parse.ts` - Argument parsing utilities
 - `src/cli/types.ts` - CLI type definitions (Command interface)
@@ -143,12 +150,14 @@ src/services/definitions.ts (service definitions)
 - `src/commands/*.ts` - Individual command implementations
 
 **Services:**
+
 - `src/services/definitions.ts` - Service definitions (PostgreSQL, Redis, etc.)
 - `src/services/manager.ts` - Service lifecycle management
 - `src/services/platform.ts` - Platform-specific service control (launchd/systemd)
 - `src/services/database.ts` - Database service configuration
 
 **Development Tools:**
+
 - `src/dev/index.ts` - Development utilities entry point
 - `src/dev/shellcode.ts` - Shell integration code generation
 - `src/dev/sniff.ts` - Project detection and analysis
@@ -156,6 +165,7 @@ src/services/definitions.ts (service definitions)
 - `src/dev/benchmark.ts` - Performance benchmarking utilities
 
 **Utilities:**
+
 - `src/utils.ts` - General utilities (PATH management, etc.)
 - `src/path.ts` - Path resolution utilities
 - `src/logging.ts` - Logging and progress display
@@ -221,6 +231,7 @@ bun scripts/check-php-updates.ts       # Check for PHP version updates
 ```
 
 **Build Process**:
+
 1. `bun run build` → Runs `build.ts` which uses `bun-plugin-dtsx`
 2. TypeScript files in `src/` are compiled to `dist/`
 3. Type declarations are bundled into `dist/index.d.ts`
@@ -255,6 +266,7 @@ bun scripts/check-php-updates.ts       # Check for PHP version updates
 Commands use a lazy-loading pattern for performance. Here's how to add one:
 
 1. **Create command file** in `src/commands/<name>.ts`:
+
    ```typescript
    import type { Command } from '../cli/types'
 
@@ -273,6 +285,7 @@ Commands use a lazy-loading pattern for performance. Here's how to add one:
    ```
 
 2. **Register command** in `src/commands/index.ts`:
+
    ```typescript
    const registry: Record<string, () => Promise<Command>> = {
      // ... existing commands
@@ -281,13 +294,14 @@ Commands use a lazy-loading pattern for performance. Here's how to add one:
    ```
 
 3. **Add CLI definition** in `bin/cli.ts` (if using clapp framework):
+
    ```typescript
    cli
      .command('my-command [args...]', 'Description')
      .option('--flag', 'Flag description')
      .action(async (args, options) => {
        const cmd = await resolveCommand('my-command')
-       const code = await cmd.run({ argv: [...], env: process.env })
+       const code = await cmd.run({ argv: args, env: process.env })
        process.exit(code)
      })
    ```
@@ -315,6 +329,7 @@ Commands use a lazy-loading pattern for performance. Here's how to add one:
 **Test Location**: `packages/launchpad/test/*.test.ts`
 
 **Test Patterns**:
+
 ```typescript
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 
@@ -334,6 +349,7 @@ describe('Feature', () => {
 ```
 
 **Quality Checklist**:
+
 - All code must pass `bun run typecheck` (strict TypeScript)
 - All code must pass `bun run lint` (ESLint with `@stacksjs/eslint-config`)
 - Tests should clean up after themselves (temp files, env vars)
@@ -342,21 +358,25 @@ describe('Feature', () => {
 - Mock filesystem operations when testing without side effects
 
 **Pre-commit Hooks**:
+
 - Staged files are automatically linted via `git-hooks` (see root `package.json`)
 - Commit messages are validated with `gitlint`
 
 ## Dependencies & Ecosystem
 
 **Core Dependencies**:
+
 - **ts-pkgx** (v0.4.93+): Provides typed package definitions from pkgx ecosystem - all package names and versions are fully typed
 - **@stacksjs/clapp** (v0.2.0): CAC-based CLI framework for command parsing
 - **bunfig** (v0.15.0+): Configuration file loading with TypeScript support
 
 **Build Tools**:
+
 - **bun-plugin-dtsx** (v0.9.5): TypeScript declaration bundler for build process
 - **TypeScript** (v5.9.2+): Strict type checking
 
 **Development Tools**:
+
 - **@stacksjs/eslint-config**: Shared ESLint configuration
 - **bun-git-hooks**: Git hook management
 

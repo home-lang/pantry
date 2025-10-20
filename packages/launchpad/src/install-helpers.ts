@@ -1149,7 +1149,7 @@ export async function fixMacOSLibraryPaths(packageDir: string, domain: string): 
 /**
  * Fix library paths for a specific executable or library
  */
-async function fixExecutableLibraryPaths(executablePath: string, libDir: string, domain: string): Promise<void> {
+async function fixExecutableLibraryPaths(executablePath: string, libDir: string, _domain: string): Promise<void> {
   try {
     // Use otool to get current library dependencies
     const { spawn } = await import('node:child_process')

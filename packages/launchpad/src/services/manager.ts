@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
+import type { LaunchpadConfig, ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { homedir, platform } from 'node:os'
@@ -192,7 +192,7 @@ export async function startService(serviceName: string): Promise<boolean> {
         console.warn('⚠️  launchd/system start failed; falling back to pg_ctl start')
         await new Promise<void>((resolve, reject) => {
           // Use -l to redirect logs, don't use -w to avoid hanging
-          const logFile = service.logFile || service.definition.logFile
+          const logFile = service.logFile || service.definition?.logFile
           const proc = spawn(pgCtl, ['-D', String(dataDir), '-o', extraArgs, '-l', logFile || '/dev/null', 'start'], {
             stdio: config.verbose ? 'inherit' : 'pipe',
           })
@@ -223,7 +223,6 @@ export async function startService(serviceName: string): Promise<boolean> {
     if (!startSuccess && (service.definition?.name === 'mysql' || service.definition?.name === 'mariadb')) {
       // Fallback: start mysqld directly with explicit DYLD_LIBRARY_PATH
       try {
-        const { findBinaryInPath } = await import('../utils')
         // Use the actual mysqld binary, not the shim
         const mysqldPath = service.definition.executable.includes('mysql.com')
           ? service.definition.executable
@@ -1262,10 +1261,11 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
       // Load project-specific config from current directory
       const { loadConfig: loadProjectConfig } = await import('bunfig')
-      const projectConfig = await loadProjectConfig({
+      const projectConfig = await loadProjectConfig<LaunchpadConfig>({
         name: 'launchpad',
         alias: 'deps',
         cwd: process.cwd(),
+        defaultConfig: {},
       })
 
       // Get database username and auth method from project config, env vars, or defaults
@@ -1361,9 +1361,6 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
       }
 
       // Handle both MySQL 8.x and 9.x paths
-      const isMySQL9 = mysqlBinPath && mysqlBinPath.includes('/v9.')
-      const mysqlVersion = isMySQL9 ? 'v9' : 'v8'
-
       // Set up environment for MySQL dependencies - handle both MySQL 8.x and 9.x
       const envPath = basedir.replace(/\/mysql\.com\/v\d+\.\d+\.\d+/, '')
 
@@ -1613,7 +1610,6 @@ async function executePostDatabaseSetupCommands(): Promise<void> {
       }
 
       await new Promise<void>((resolve, reject) => {
-        let stdout = ''
         let stderr = ''
         const proc = spawn(executablePath, args, {
           stdio: config.verbose ? 'inherit' : 'pipe',
@@ -1622,8 +1618,8 @@ async function executePostDatabaseSetupCommands(): Promise<void> {
 
         if (!config.verbose) {
           if (proc.stdout) {
-            proc.stdout.on('data', (data) => {
-              stdout += data.toString()
+            proc.stdout.on('data', () => {
+              // Capture stdout but don't store it
             })
           }
           if (proc.stderr) {
@@ -1719,27 +1715,6 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
   }
 
   return resolved
-}
-
-/**
- * Get database name from environment variables
- */
-function getDatabaseNameFromEnv(): string | null {
-  return process.env.DB_NAME || process.env.DB_DATABASE || null
-}
-
-/**
- * Get database username from environment variables
- */
-function getDatabaseUsernameFromEnv(): string | null {
-  return process.env.DB_USERNAME || process.env.DB_USER || null
-}
-
-/**
- * Get database password from environment variables
- */
-function getDatabasePasswordFromEnv(): string | null {
-  return process.env.DB_PASSWORD || null
 }
 
 /**
@@ -2210,7 +2185,8 @@ async function checkServiceHealth(service: ServiceInstance): Promise<boolean> {
 
   return new Promise((resolve) => {
     // Resolve template variables in health check command
-    const resolvedCommand = command.map(arg => resolveServiceTemplateVariables(arg, service))
+    const commandArray = Array.isArray(command) ? command : [command]
+    const resolvedCommand = commandArray.map((arg: string) => resolveServiceTemplateVariables(arg, service))
     const [cmd, ...args] = resolvedCommand
     const executablePath = findBinaryInPath(cmd) || cmd
 

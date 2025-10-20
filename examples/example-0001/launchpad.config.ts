@@ -2,10 +2,10 @@ import type { LaunchpadConfig } from '@stacksjs/launchpad'
 
 export const config: LaunchpadConfig = {
   dependencies: {
-    bun: '1.2.21',
-    redis: '7.2.10',
-    postgresql: '17.2.0',
-  },
+    'bun': '1.2.21',
+    'redis.io': '7.2.10',
+    'postgresql.org': '17.2.0',
+  } as any,
 
   services: {
     enabled: true,
