@@ -138,8 +138,6 @@ dependencies:
         expect(importError).toBeUndefined()
       }
     }, 60000) // Reduced timeout for test mode
-
-
   })
 
   describe('Laravel Project Detection and Setup', () => {

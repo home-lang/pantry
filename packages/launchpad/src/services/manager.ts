@@ -149,7 +149,6 @@ export async function startService(serviceName: string): Promise<boolean> {
       return false
     }
 
-
     // Auto-initialize databases first
     const autoInitResult = await autoInitializeDatabase(service)
     if (!autoInitResult) {
@@ -239,8 +238,8 @@ export async function startService(serviceName: string): Promise<boolean> {
         // Get the library path from MySQL's installation directory
         const mysqlLibDir = path.join(path.dirname(path.dirname(mysqldPath)), 'lib')
 
-        const { exec } = await import('child_process')
-        const { promisify } = await import('util')
+        const { exec } = await import('node:child_process')
+        const { promisify } = await import('node:util')
         const execAsync = promisify(exec)
 
         // Start mysqld with DYLD_LIBRARY_PATH set explicitly
@@ -432,8 +431,8 @@ export async function stopService(serviceName: string): Promise<boolean> {
         const mysqladmin = findBinaryInPath('mysqladmin') || 'mysqladmin'
         console.warn('⚠️  Platform stop failed; trying mysqladmin shutdown')
 
-        const { exec } = await import('child_process')
-        const { promisify } = await import('util')
+        const { exec } = await import('node:child_process')
+        const { promisify } = await import('node:util')
         const execAsync = promisify(exec)
 
         await execAsync(`"${mysqladmin}" -h 127.0.0.1 -P ${service.definition.port || 3306} -u root shutdown`, {
@@ -814,7 +813,7 @@ async function initializeService(service: ServiceInstance): Promise<void> {
 
   return new Promise((resolve, reject) => {
     // Set up environment for MySQL dependencies
-    let serviceEnv = { ...process.env, ...definition.env }
+    const serviceEnv = { ...process.env, ...definition.env }
     if (definition.name === 'mysql') {
       const mysqlBinPath = process.env.PATH?.split(':').find(path => path.includes('mysql.com'))
       if (mysqlBinPath) {
@@ -827,7 +826,7 @@ async function initializeService(service: ServiceInstance): Promise<void> {
           `${envPath}/facebook.com/zstd/v1/lib`,
           `${envPath}/protobuf.dev/v21/lib`,
           `${envPath}/lz4.org/v1/lib`,
-          serviceEnv.DYLD_LIBRARY_PATH
+          serviceEnv.DYLD_LIBRARY_PATH,
         ].filter(Boolean).join(':')
       }
     }
@@ -1054,7 +1053,6 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     return false
   }
 }
-
 
 /**
  * Automatically set up SQLite for the current project
@@ -1373,14 +1371,16 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
       const findLibraryPath = (domain: string): string[] => {
         try {
           const domainPath = path.join(envPath, domain)
-          if (!fs.existsSync(domainPath)) return []
+          if (!fs.existsSync(domainPath))
+            return []
 
           const versions = fs.readdirSync(domainPath)
             .filter(name => name.startsWith('v'))
             .sort((a, b) => b.localeCompare(a)) // Sort descending to get latest first
 
           return versions.map(version => path.join(domainPath, version, 'lib')).filter(libPath => fs.existsSync(libPath))
-        } catch {
+        }
+        catch {
           return []
         }
       }
@@ -1396,15 +1396,15 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
         ...findLibraryPath('curl.se'),
         ...findLibraryPath('zlib.net'),
         ...findLibraryPath('tukaani.org/xz'),
-        ...findLibraryPath('invisible-island.net/ncurses')
+        ...findLibraryPath('invisible-island.net/ncurses'),
       ]
 
       const env = {
         ...process.env,
         DYLD_LIBRARY_PATH: [
           ...libraryPaths,
-          process.env.DYLD_LIBRARY_PATH
-        ].filter(Boolean).join(':')
+          process.env.DYLD_LIBRARY_PATH,
+        ].filter(Boolean).join(':'),
       }
 
       if (config.verbose) {
@@ -1595,7 +1595,8 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
  */
 async function executePostDatabaseSetupCommands(): Promise<void> {
   const commands = config.services?.postDatabaseSetup
-  if (!commands) return
+  if (!commands)
+    return
 
   const commandList = Array.isArray(commands) ? commands : [commands]
 
@@ -1813,11 +1814,12 @@ export function getDatabaseUsernameFromEnv(): string | null {
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key === 'username' && valueParts.length > 0) {
             return valueParts.join(':').trim()
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }
@@ -1866,11 +1868,12 @@ export function getDatabasePasswordFromEnv(): string | null {
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key === 'password' && valueParts.length > 0) {
             return valueParts.join(':').trim()
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }
@@ -1927,12 +1930,13 @@ export function getDatabaseNameFromEnv(): string | null {
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key === 'name' && valueParts.length > 0) {
             const value = valueParts.join(':').trim()
             return value.replace(/\W/g, '_')
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }

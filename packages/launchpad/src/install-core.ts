@@ -242,7 +242,7 @@ async function findLibrariesInEnvironment(installPath: string, libraryNames: str
                 if (libFile.includes(libName) && (libFile.endsWith('.dylib') || libFile.endsWith('.so'))) {
                   foundLibraries.push({
                     libPath: path.join(libDir, libFile),
-                    libName: libFile
+                    libName: libFile,
                   })
                 }
               }

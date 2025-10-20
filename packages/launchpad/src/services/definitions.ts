@@ -64,7 +64,6 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     },
   },
 
-
   mysql: {
     name: 'mysql',
     displayName: 'MySQL',

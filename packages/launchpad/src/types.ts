@@ -1,11 +1,11 @@
-import type { PackageAlias, PackageDomain, PackageName, Packages, Dependencies } from 'ts-pkgx'
+import type { Dependencies, PackageAlias, PackageDomain, PackageName, Packages } from 'ts-pkgx'
 
 export type {
+  Dependencies,
   PackageAlias,
   PackageDomain,
   PackageName,
   Packages,
-  Dependencies
 }
 
 /**
@@ -413,7 +413,6 @@ export interface SystemdService {
     WantedBy: string[]
   }
 }
-
 
 /**
  * Post-setup command interface

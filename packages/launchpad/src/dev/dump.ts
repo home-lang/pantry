@@ -657,7 +657,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
   const isShellIntegration = process.env.LAUNCHPAD_SHELL_INTEGRATION === '1'
   const effectiveQuiet = quiet || isShellIntegration
 
-
   // For shell integration, only suppress output if in quiet mode
   if (isShellIntegration && quiet) {
     const originalStderrWrite = process.stderr.write.bind(process.stderr)
@@ -1260,7 +1259,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           catch {}
         }
 
-
         // Skip expensive operations in shell integration mode for instant activation
         // Services and post-setup will be handled by regular dev command when needed
         if (isVerbose) {
@@ -1334,7 +1332,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
     // Ensure Laravel post-setup runs (regular path)
     // Skip expensive operations in shell integration mode
     if (!isShellIntegration) {
-
       const tPost3 = tick()
       await maybeRunProjectPostSetup(projectDir, envDir, isShellIntegration)
       addTiming('postSetup', tPost3)
@@ -1847,7 +1844,6 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`(hash -r 2>/dev/null || true) >/dev/null 2>&1 &!\n`)
 }
 
-
 /**
  * Run Laravel post-setup commands once per project activation
  */
@@ -1955,12 +1951,12 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
       if (dbConnection && dbConnection !== 'sqlite') {
         // Map database connection to service name
         const serviceMap: Record<string, string> = {
-          'mysql': 'mysql',
-          'postgres': 'postgres',
-          'postgresql': 'postgres',
-          'mariadb': 'mariadb',
-          'redis': 'redis',
-          'mongodb': 'mongodb',
+          mysql: 'mysql',
+          postgres: 'postgres',
+          postgresql: 'postgres',
+          mariadb: 'mariadb',
+          redis: 'redis',
+          mongodb: 'mongodb',
         }
         const serviceName = serviceMap[dbConnection]
         if (serviceName) {

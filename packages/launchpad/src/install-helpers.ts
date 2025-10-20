@@ -306,7 +306,6 @@ fi
 `
         }
 
-
         // Set up include paths for compilation
         if (includePaths.length > 0) {
           const includePathString = includePaths.join(' ')
@@ -323,6 +322,15 @@ if [ -n "$LDFLAGS" ]; then
 else
   export LDFLAGS="-L${libraryPaths.join(' -L')}"
 fi
+
+`
+        }
+
+        // Special handling for ncurses binaries: set TERMINFO path
+        if (domain === 'invisible-island.net/ncurses') {
+          const terminfoPath = path.join(packageDir, 'share', 'terminfo')
+          shimContent += `# Set TERMINFO path for ncurses binaries (fixes "terminals database is inaccessible" error)
+export TERMINFO="${terminfoPath}"
 
 `
         }
@@ -1090,12 +1098,12 @@ export async function fixMacOSLibraryPaths(packageDir: string, domain: string): 
   const platform = process.platform
 
   // Only run on macOS
-  if (platform !== "darwin") {
+  if (platform !== 'darwin') {
     return
   }
 
-  const libDir = path.join(packageDir, "lib")
-  const binDir = path.join(packageDir, "bin")
+  const libDir = path.join(packageDir, 'lib')
+  const binDir = path.join(packageDir, 'bin')
 
   if (!fs.existsSync(libDir)) {
     return
@@ -1104,7 +1112,7 @@ export async function fixMacOSLibraryPaths(packageDir: string, domain: string): 
   try {
     // Get all dylib files in the lib directory
     const libFiles = await fs.promises.readdir(libDir)
-    const dylibFiles = libFiles.filter(file => file.endsWith(".dylib"))
+    const dylibFiles = libFiles.filter(file => file.endsWith('.dylib'))
 
     if (dylibFiles.length === 0) {
       return
@@ -1144,36 +1152,37 @@ export async function fixMacOSLibraryPaths(packageDir: string, domain: string): 
 async function fixExecutableLibraryPaths(executablePath: string, libDir: string, domain: string): Promise<void> {
   try {
     // Use otool to get current library dependencies
-    const { spawn } = await import("node:child_process")
+    const { spawn } = await import('node:child_process')
 
     // Get current library dependencies
-    const otoolProcess = spawn("otool", ["-L", executablePath], { stdio: ["ignore", "pipe", "pipe"] })
-    let output = ""
-    let errorOutput = ""
+    const otoolProcess = spawn('otool', ['-L', executablePath], { stdio: ['ignore', 'pipe', 'pipe'] })
+    let output = ''
+    let errorOutput = ''
 
-    otoolProcess.stdout.on("data", (data) => {
+    otoolProcess.stdout.on('data', (data) => {
       output += data.toString()
     })
 
-    otoolProcess.stderr.on("data", (data) => {
+    otoolProcess.stderr.on('data', (data) => {
       errorOutput += data.toString()
     })
 
     await new Promise((resolve, reject) => {
-      otoolProcess.on("close", (code) => {
-        if (code === 0) resolve(code)
+      otoolProcess.on('close', (code) => {
+        if (code === 0)
+          resolve(code)
         else reject(new Error(`otool failed: ${errorOutput}`))
       })
     })
 
     // Parse otool output to find @rpath dependencies
-    const lines = output.split("\n")
+    const lines = output.split('\n')
     const rpathDeps: string[] = []
 
     for (const line of lines) {
       const trimmed = line.trim()
-      if (trimmed.includes("@rpath/") && trimmed.includes(".dylib")) {
-        const match = trimmed.match(/@rpath\/([^\s]+\.dylib)/)
+      if (trimmed.includes('@rpath/') && trimmed.includes('.dylib')) {
+        const match = trimmed.match(/@rpath\/(\S+\.dylib)/)
         if (match) {
           rpathDeps.push(match[1])
         }
@@ -1187,26 +1196,27 @@ async function fixExecutableLibraryPaths(executablePath: string, libDir: string,
       // Check if the library exists in our lib directory
       if (fs.existsSync(absoluteLibPath)) {
         try {
-          const installNameToolProcess = spawn("install_name_tool", [
-            "-change",
+          const installNameToolProcess = spawn('install_name_tool', [
+            '-change',
             `@rpath/${depLibrary}`,
             absoluteLibPath,
-            executablePath
-          ], { stdio: "pipe" })
+            executablePath,
+          ], { stdio: 'pipe' })
 
           await new Promise<void>((resolve, reject) => {
-            let stderr = ""
-            installNameToolProcess.stderr.on("data", (data) => {
+            let stderr = ''
+            installNameToolProcess.stderr.on('data', (data) => {
               stderr += data.toString()
             })
 
-            installNameToolProcess.on("close", (code) => {
+            installNameToolProcess.on('close', (code) => {
               if (code === 0) {
                 if (config.verbose) {
                   console.warn(`  Fixed ${path.basename(executablePath)}: @rpath/${depLibrary} -> ${absoluteLibPath}`)
                 }
                 resolve()
-              } else {
+              }
+              else {
                 reject(new Error(`install_name_tool failed: ${stderr}`))
               }
             })

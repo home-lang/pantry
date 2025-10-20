@@ -135,7 +135,7 @@ class EnvCacheManager {
 
       // Write atomically using temp file
       const tempFile = `${ENV_CACHE_FILE}.tmp.${process.pid}`
-      fs.writeFileSync(tempFile, lines.join('\n') + '\n')
+      fs.writeFileSync(tempFile, `${lines.join('\n')}\n`)
       fs.renameSync(tempFile, ENV_CACHE_FILE)
     }
     catch (error) {

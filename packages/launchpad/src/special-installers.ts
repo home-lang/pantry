@@ -3,7 +3,6 @@ import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 import { config } from './config'
 import { install } from './install'
 import { logUniqueMessage } from './logging'
@@ -151,7 +150,6 @@ exec "${finalBinaryPath}" "$@"
     throw error
   }
 }
-
 
 /**
  * Build SQLite from source

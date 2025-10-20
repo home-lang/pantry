@@ -77,7 +77,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   }
 
   // Track library directories for wrapper script generation
-  let libraryDirs: string[] = []
+  const libraryDirs: string[] = []
 
   try {
     const binDir = path.dirname(executablePath)
@@ -112,11 +112,13 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       // Scan domain/version directories for lib folders
       // Recursively search up to 2 levels deep for version directories
       const scanForLibraries = (dir: string, depth: number = 0) => {
-        if (depth > 2) return
+        if (depth > 2)
+          return
         try {
           const entries = fs.readdirSync(dir, { withFileTypes: true })
           for (const entry of entries) {
-            if (!entry.isDirectory()) continue
+            if (!entry.isDirectory())
+              continue
 
             const entryPath = path.join(dir, entry.name)
 
@@ -137,8 +139,10 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       try {
         const entries = fs.readdirSync(envRoot, { withFileTypes: true })
         for (const entry of entries) {
-          if (!entry.isDirectory()) continue
-          if (['bin', 'sbin', 'share', 'include', 'etc', 'pkgs'].includes(entry.name)) continue
+          if (!entry.isDirectory())
+            continue
+          if (['bin', 'sbin', 'share', 'include', 'etc', 'pkgs'].includes(entry.name))
+            continue
           scanForLibraries(path.join(envRoot, entry.name), 0)
         }
       }
@@ -187,7 +191,7 @@ exec env DYLD_LIBRARY_PATH="${libraryDirs.join(':')}" "${executablePath}" "$@"
           .replace('{logFile}', service.logFile || definition.logFile || '')
           .replace('{pidFile}', definition.pidFile || '')
           .replace('{port}', String(definition.port || 5432))
-      .replace('{currentUser}', process.env.USER || 'root')
+          .replace('{currentUser}', process.env.USER || 'root')
 
         // Replace service-specific config variables
         if (service.config) {
@@ -258,7 +262,7 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
         .replace('{logFile}', service.logFile || definition.logFile || '')
         .replace('{pidFile}', definition.pidFile || '')
         .replace('{port}', String(definition.port || 5432))
-      .replace('{currentUser}', process.env.USER || 'root')
+        .replace('{currentUser}', process.env.USER || 'root')
 
       // Replace service-specific config variables
       if (service.config) {

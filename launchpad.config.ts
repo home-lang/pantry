@@ -2,10 +2,10 @@ import type { LaunchpadConfig } from '@stacksjs/launchpad'
 
 export const config: LaunchpadConfig = {
   dependencies: {
-    'bun': '^1.2.199',           // Bun runtime (alias)
+    'bun': '^1.2.19', // Bun runtime (alias)
     // 'bun.sh': '^1.2.19',         // Bun runtime (domain)
-    'redis': '^8.0.0',          // Redis server (alias)
-    'postgresql.org': '^17.0.0', // PostgreSQL database (domain)
+    'redis': '^8.0.0', // Redis server (alias)
+    'postgresql.org': '^17.2.0', // PostgreSQL database (domain)
   },
 
   // Or as an array (uses latest versions)

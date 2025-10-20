@@ -152,8 +152,6 @@ export function detectProjectFramework(): ProjectFramework | null {
   return null
 }
 
-
-
 /**
  * Set up PostgreSQL development environment
  */
@@ -380,7 +378,8 @@ export async function setupLaravelEnvironment(options?: {
     if (!setupResult) {
       return false
     }
-  } else {
+  }
+  else {
     console.warn(`🐘 Setting up PostgreSQL for Laravel project`)
     const setupResult = await setupPostgreSQLEnvironment(framework)
     if (!setupResult) {
