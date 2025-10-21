@@ -476,10 +476,24 @@ pub fn outdatedCommand(allocator: std.mem.Allocator) !CommandResult {
 pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     std.debug.print("Available services:\n\n", .{});
 
-    // TODO: Access service definitions and list them
-    std.debug.print("  PostgreSQL (postgresql)\n", .{});
-    std.debug.print("  Redis (redis)\n", .{});
-    std.debug.print("  MySQL (mysql)\n", .{});
+    // List all available services with their default ports
+    const services = [_]struct { name: []const u8, display: []const u8, port: u16 }{
+        .{ .name = "postgres", .display = "PostgreSQL", .port = 5432 },
+        .{ .name = "mysql", .display = "MySQL", .port = 3306 },
+        .{ .name = "redis", .display = "Redis", .port = 6379 },
+        .{ .name = "nginx", .display = "Nginx", .port = 80 },
+        .{ .name = "mongodb", .display = "MongoDB", .port = 27017 },
+    };
+
+    for (services) |svc| {
+        std.debug.print("  {s: <12} {s} (default port: {d})\n", .{ svc.name, svc.display, svc.port });
+    }
+
+    std.debug.print("\nUsage:\n", .{});
+    std.debug.print("  launchpad start <service>    Start a service\n", .{});
+    std.debug.print("  launchpad stop <service>     Stop a service\n", .{});
+    std.debug.print("  launchpad restart <service>  Restart a service\n", .{});
+    std.debug.print("  launchpad status [service]   Show service status\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -495,10 +509,70 @@ pub fn startCommand(allocator: std.mem.Allocator, args: []const []const u8) !Com
 
     const service_name = args[0];
     std.debug.print("Starting {s}...\n", .{service_name});
-    // TODO: Implement actual service start logic
-    std.debug.print("Done.\n", .{});
 
-    return .{ .exit_code = 0 };
+    // Use platform-specific service management
+    const platform = lib.Platform.current();
+
+    switch (platform) {
+        .darwin => {
+            // macOS: use brew services
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "brew", "services", "start", service_name },
+            }) catch |err| {
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Failed to start {s}: {}",
+                    .{ service_name, err },
+                );
+                return .{
+                    .exit_code = 1,
+                    .message = msg,
+                };
+            };
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+
+            if (result.term.Exited == 0) {
+                std.debug.print("✓ Started {s}\n", .{service_name});
+                return .{ .exit_code = 0 };
+            } else {
+                std.debug.print("Error: {s}\n", .{result.stderr});
+                return .{ .exit_code = 1 };
+            }
+        },
+        .linux => {
+            // Linux: use systemctl
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "systemctl", "start", service_name },
+            }) catch |err| {
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Failed to start {s}: {}",
+                    .{ service_name, err },
+                );
+                return .{
+                    .exit_code = 1,
+                    .message = msg,
+                };
+            };
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+
+            if (result.term.Exited == 0) {
+                std.debug.print("✓ Started {s}\n", .{service_name});
+                return .{ .exit_code = 0 };
+            } else {
+                std.debug.print("Error: {s}\n", .{result.stderr});
+                return .{ .exit_code = 1 };
+            }
+        },
+        .windows => {
+            std.debug.print("Service management not yet supported on Windows\n", .{});
+            return .{ .exit_code = 1 };
+        },
+    }
 }
 
 /// Stop service command
@@ -512,10 +586,67 @@ pub fn stopCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     const service_name = args[0];
     std.debug.print("Stopping {s}...\n", .{service_name});
-    // TODO: Implement actual service stop logic
-    std.debug.print("Done.\n", .{});
 
-    return .{ .exit_code = 0 };
+    const platform = lib.Platform.current();
+
+    switch (platform) {
+        .darwin => {
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "brew", "services", "stop", service_name },
+            }) catch |err| {
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Failed to stop {s}: {}",
+                    .{ service_name, err },
+                );
+                return .{
+                    .exit_code = 1,
+                    .message = msg,
+                };
+            };
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+
+            if (result.term.Exited == 0) {
+                std.debug.print("✓ Stopped {s}\n", .{service_name});
+                return .{ .exit_code = 0 };
+            } else {
+                std.debug.print("Error: {s}\n", .{result.stderr});
+                return .{ .exit_code = 1 };
+            }
+        },
+        .linux => {
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "systemctl", "stop", service_name },
+            }) catch |err| {
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Failed to stop {s}: {}",
+                    .{ service_name, err },
+                );
+                return .{
+                    .exit_code = 1,
+                    .message = msg,
+                };
+            };
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+
+            if (result.term.Exited == 0) {
+                std.debug.print("✓ Stopped {s}\n", .{service_name});
+                return .{ .exit_code = 0 };
+            } else {
+                std.debug.print("Error: {s}\n", .{result.stderr});
+                return .{ .exit_code = 1 };
+            }
+        },
+        .windows => {
+            std.debug.print("Service management not yet supported on Windows\n", .{});
+            return .{ .exit_code = 1 };
+        },
+    }
 }
 
 /// Restart service command
@@ -529,27 +660,159 @@ pub fn restartCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
     const service_name = args[0];
     std.debug.print("Restarting {s}...\n", .{service_name});
-    // TODO: Implement actual service restart logic
-    std.debug.print("Done.\n", .{});
 
-    return .{ .exit_code = 0 };
+    const platform = lib.Platform.current();
+
+    switch (platform) {
+        .darwin => {
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "brew", "services", "restart", service_name },
+            }) catch |err| {
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Failed to restart {s}: {}",
+                    .{ service_name, err },
+                );
+                return .{
+                    .exit_code = 1,
+                    .message = msg,
+                };
+            };
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+
+            if (result.term.Exited == 0) {
+                std.debug.print("✓ Restarted {s}\n", .{service_name});
+                return .{ .exit_code = 0 };
+            } else {
+                std.debug.print("Error: {s}\n", .{result.stderr});
+                return .{ .exit_code = 1 };
+            }
+        },
+        .linux => {
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "systemctl", "restart", service_name },
+            }) catch |err| {
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Failed to restart {s}: {}",
+                    .{ service_name, err },
+                );
+                return .{
+                    .exit_code = 1,
+                    .message = msg,
+                };
+            };
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+
+            if (result.term.Exited == 0) {
+                std.debug.print("✓ Restarted {s}\n", .{service_name});
+                return .{ .exit_code = 0 };
+            } else {
+                std.debug.print("Error: {s}\n", .{result.stderr});
+                return .{ .exit_code = 1 };
+            }
+        },
+        .windows => {
+            std.debug.print("Service management not yet supported on Windows\n", .{});
+            return .{ .exit_code = 1 };
+        },
+    }
 }
 
 /// Status service command
-pub fn statusCommand(_: std.mem.Allocator, args: []const []const u8) !CommandResult {
+pub fn statusCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    const platform = lib.Platform.current();
+
     if (args.len == 0) {
-        // Show status of all services
-        std.debug.print("Service status:\n\n", .{});
-        std.debug.print("  PostgreSQL: not running\n", .{});
-        std.debug.print("  Redis: not running\n", .{});
-        std.debug.print("  MySQL: not running\n", .{});
+        // Show status of all services using brew services list
+        switch (platform) {
+            .darwin => {
+                std.debug.print("Service status:\n\n", .{});
+                const result = std.process.Child.run(.{
+                    .allocator = allocator,
+                    .argv = &[_][]const u8{ "brew", "services", "list" },
+                }) catch {
+                    std.debug.print("Error: Could not get service status\n", .{});
+                    return .{ .exit_code = 1 };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+
+                std.debug.print("{s}\n", .{result.stdout});
+                return .{ .exit_code = 0 };
+            },
+            .linux => {
+                std.debug.print("Service status:\n\n", .{});
+                const services_list = [_][]const u8{ "postgresql", "redis", "mysql", "nginx", "mongodb" };
+                for (services_list) |svc| {
+                    const result = std.process.Child.run(.{
+                        .allocator = allocator,
+                        .argv = &[_][]const u8{ "systemctl", "is-active", svc },
+                    }) catch {
+                        std.debug.print("  {s}: unknown\n", .{svc});
+                        continue;
+                    };
+                    defer allocator.free(result.stdout);
+                    defer allocator.free(result.stderr);
+
+                    const status = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
+                    std.debug.print("  {s}: {s}\n", .{ svc, status });
+                }
+                return .{ .exit_code = 0 };
+            },
+            .windows => {
+                std.debug.print("Service management not yet supported on Windows\n", .{});
+                return .{ .exit_code = 1 };
+            },
+        }
     } else {
         // Show status of specific service
         const service_name = args[0];
-        std.debug.print("{s}: not running\n", .{service_name});
-    }
 
-    return .{ .exit_code = 0 };
+        switch (platform) {
+            .darwin => {
+                const result = std.process.Child.run(.{
+                    .allocator = allocator,
+                    .argv = &[_][]const u8{ "brew", "services", "list" },
+                }) catch {
+                    std.debug.print("{s}: unknown\n", .{service_name});
+                    return .{ .exit_code = 1 };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+
+                // Parse output for the specific service
+                if (std.mem.indexOf(u8, result.stdout, service_name)) |_| {
+                    std.debug.print("{s}\n", .{result.stdout});
+                } else {
+                    std.debug.print("{s}: not installed\n", .{service_name});
+                }
+                return .{ .exit_code = 0 };
+            },
+            .linux => {
+                const result = std.process.Child.run(.{
+                    .allocator = allocator,
+                    .argv = &[_][]const u8{ "systemctl", "status", service_name },
+                }) catch {
+                    std.debug.print("{s}: not found\n", .{service_name});
+                    return .{ .exit_code = 1 };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+
+                std.debug.print("{s}\n", .{result.stdout});
+                return .{ .exit_code = 0 };
+            },
+            .windows => {
+                std.debug.print("Service management not yet supported on Windows\n", .{});
+                return .{ .exit_code = 1 };
+            },
+        }
+    }
 }
 
 /// Shell lookup command (for shell integration)
