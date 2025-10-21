@@ -18,6 +18,8 @@ pub const Environment = struct {
     env_vars: std.StringHashMap([]const u8),
     /// Installed packages
     packages: std.ArrayList([]const u8),
+    /// Allocator for internal use
+    _allocator: std.mem.Allocator,
 
     pub fn init(allocator: std.mem.Allocator) Environment {
         return .{
@@ -25,7 +27,8 @@ pub const Environment = struct {
             .dep_file = "",
             .path = "",
             .env_vars = std.StringHashMap([]const u8).init(allocator),
-            .packages = std.ArrayList([]const u8).init(allocator),
+            .packages = std.ArrayList([]const u8).init(),
+            ._allocator = allocator,
         };
     }
 
@@ -43,7 +46,7 @@ pub const Environment = struct {
         for (self.packages.items) |pkg| {
             allocator.free(pkg);
         }
-        self.packages.deinit();
+        self.packages.deinit(self._allocator);
     }
 };
 
@@ -121,16 +124,14 @@ pub const EnvManager = struct {
         defer self.allocator.free(env_dir);
 
         // Remove environment directory
-        std.fs.cwd().deleteTree(env_dir) catch |err| switch (err) {
-            error.FileNotFound => return,
-            else => return err,
-        };
+        std.fs.cwd().deleteTree(env_dir) catch {};
+        // Ignore errors - environment may not exist
     }
 
     /// List all environments
     pub fn list(self: *EnvManager) !std.ArrayList([16]u8) {
-        var envs = std.ArrayList([16]u8).init(self.allocator);
-        errdefer envs.deinit();
+        var envs = try std.ArrayList([16]u8).initCapacity(self.allocator, 16);
+        errdefer envs.deinit(self.allocator);
 
         const envs_dir = try std.fmt.allocPrint(
             self.allocator,
@@ -153,7 +154,7 @@ pub const EnvManager = struct {
             // Parse hex string back to hash
             var hash: [16]u8 = undefined;
             _ = try std.fmt.hexToBytes(&hash, entry.name);
-            try envs.append(hash);
+            try envs.append(self.allocator, hash);
         }
 
         return envs;

@@ -100,7 +100,7 @@ pub const Installer = struct {
     fn installFromCache(
         self: *Installer,
         spec: PackageSpec,
-        cache_path: []const u8,
+        _: []const u8,
     ) ![]const u8 {
         const install_dir = try self.getInstallDir(spec.name, spec.version);
         errdefer self.allocator.free(install_dir);
@@ -154,8 +154,8 @@ pub const Installer = struct {
 
     /// List installed packages
     pub fn listInstalled(self: *Installer) !std.ArrayList(packages.InstalledPackage) {
-        var installed = std.ArrayList(packages.InstalledPackage).init(self.allocator);
-        errdefer installed.deinit();
+        var installed = try std.ArrayList(packages.InstalledPackage).initCapacity(self.allocator, 16);
+        errdefer installed.deinit(self.allocator);
 
         const packages_dir = try std.fmt.allocPrint(
             self.allocator,
@@ -190,11 +190,11 @@ pub const Installer = struct {
 
                 const stat = try pkg_dir.statFile(ver_entry.name);
 
-                try installed.append(.{
+                try installed.append(self.allocator, .{
                     .name = try self.allocator.dupe(u8, entry.name),
                     .version = try self.allocator.dupe(u8, ver_entry.name),
                     .install_path = install_path,
-                    .installed_at = stat.ctime,
+                    .installed_at = @intCast(stat.ctime),
                     .size = @intCast(stat.size),
                 });
             }

@@ -1,5 +1,6 @@
 const std = @import("std");
 const lib = @import("lib.zig");
+const commands = @import("cli/commands.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -15,16 +16,48 @@ pub fn main() !void {
     }
 
     const command = args[1];
+    const command_args = if (args.len > 2) args[2..] else &[_][]const u8{};
 
+    var result: commands.CommandResult = undefined;
+
+    // Route commands
     if (std.mem.eql(u8, command, "--version") or std.mem.eql(u8, command, "-v")) {
         try printVersion();
+        return;
     } else if (std.mem.eql(u8, command, "--help") or std.mem.eql(u8, command, "-h")) {
         try printHelp();
+        return;
+    } else if (std.mem.eql(u8, command, "install")) {
+        result = try commands.installCommand(allocator, command_args);
+    } else if (std.mem.eql(u8, command, "list")) {
+        result = try commands.listCommand(allocator);
+    } else if (std.mem.eql(u8, command, "cache:stats")) {
+        result = try commands.cacheStatsCommand(allocator);
+    } else if (std.mem.eql(u8, command, "cache:clear")) {
+        result = try commands.cacheClearCommand(allocator);
+    } else if (std.mem.eql(u8, command, "env:list")) {
+        result = try commands.envListCommand(allocator);
+    } else if (std.mem.eql(u8, command, "env:remove")) {
+        if (command_args.len == 0) {
+            std.debug.print("Error: env:remove requires a hash argument\n", .{});
+            std.process.exit(1);
+        }
+        result = try commands.envRemoveCommand(allocator, command_args[0]);
+    } else if (std.mem.eql(u8, command, "shell:integrate")) {
+        result = try commands.shellIntegrateCommand(allocator);
     } else {
         std.debug.print("Unknown command: {s}\n", .{command});
         std.debug.print("Run 'launchpad --help' for usage\n", .{});
         std.process.exit(1);
     }
+
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
 }
 
 fn printVersion() !void {

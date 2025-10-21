@@ -7,6 +7,8 @@ pub const errors = @import("core/error.zig");
 pub const cache = @import("cache.zig");
 pub const packages = @import("packages.zig");
 pub const env = @import("env.zig");
+pub const shell = @import("shell.zig");
+pub const install = @import("install.zig");
 
 // Re-export commonly used types
 pub const Platform = core.Platform;
