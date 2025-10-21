@@ -9,6 +9,7 @@ pub const packages = @import("packages.zig");
 pub const env = @import("env.zig");
 pub const shell = @import("shell.zig");
 pub const install = @import("install.zig");
+pub const config = @import("config.zig");
 
 // Re-export commonly used types
 pub const Platform = core.Platform;
@@ -18,6 +19,8 @@ pub const LaunchpadError = errors.LaunchpadError;
 pub const ErrorContext = errors.ErrorContext;
 pub const EnvCache = cache.EnvCache;
 pub const PackageCache = cache.PackageCache;
+pub const ConfigResult = config.ConfigResult;
+pub const loadLaunchpadConfig = config.loadLaunchpadConfig;
 
 test {
     @import("std").testing.refAllDecls(@This());

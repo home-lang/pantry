@@ -19,3 +19,4 @@ packages/launchpad/test/clean-integration-*
 /binaries-test
 /packages/zig/.zig-cache
 /packages/zig/zig-out
+/packages/zonfig/.zig-cache

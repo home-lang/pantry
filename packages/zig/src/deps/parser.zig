@@ -4,6 +4,7 @@ const detector = @import("detector.zig");
 pub const PackageDependency = struct {
     name: []const u8,
     version: []const u8,
+    global: bool = false,
 
     pub fn deinit(self: *PackageDependency, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -29,10 +30,13 @@ pub fn inferDependencies(
 }
 
 /// Parse a deps.yaml or similar file to extract package dependencies
-/// Handles simple format like:
+/// Handles both simple format and object format with global flags:
+/// global: true          # Top-level global flag
 /// dependencies:
-///   nodejs.org: 20.11.0
-///   python.org: ~3.12
+///   nodejs.org: 20.11.0     # Simple format (inherits top-level global)
+///   python.org:             # Object format with explicit global
+///     version: ~3.12
+///     global: true
 pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
     // Read file contents
     const file = try std.fs.openFileAbsolute(file_path, .{});
@@ -47,9 +51,33 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
         deps.deinit(allocator);
     }
 
-    // Simple line-by-line parser
+    // Parse top-level global flag
+    var top_level_global = false;
+    var lines_iter = std.mem.tokenizeScalar(u8, content, '\n');
+    while (lines_iter.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+        // Check for top-level "global: true"
+        if (std.mem.startsWith(u8, trimmed, "global:")) {
+            const value = std.mem.trim(u8, trimmed[7..], " \t");
+            if (std.mem.eql(u8, value, "true")) {
+                top_level_global = true;
+            }
+        }
+
+        // Stop at dependencies section
+        if (std.mem.eql(u8, trimmed, "dependencies:")) {
+            break;
+        }
+    }
+
+    // Parse dependencies
     var lines = std.mem.tokenizeScalar(u8, content, '\n');
     var in_dependencies = false;
+    var current_package: ?[]const u8 = null;
+    var current_version: ?[]const u8 = null;
+    var current_global: ?bool = null;
 
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r");
@@ -63,36 +91,92 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
             continue;
         }
 
-        // If we're in dependencies section and line starts with whitespace, it's a dependency
         if (in_dependencies) {
-            // Check if line starts with whitespace (indented)
-            if (line.len > 0 and (line[0] == ' ' or line[0] == '\t')) {
-                // Parse dependency line: "  package.name: version"
-                if (std.mem.indexOf(u8, trimmed, ":")) |colon_pos| {
-                    const name_part = std.mem.trim(u8, trimmed[0..colon_pos], " \t");
-                    const version_part = std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t");
-
-                    // Skip if either part is empty
-                    if (name_part.len == 0 or version_part.len == 0) continue;
-
-                    // Remove version constraint prefix if present (^, ~, >=, etc.)
-                    var version = version_part;
-                    if (version[0] == '^' or version[0] == '~' or version[0] == '=') {
-                        version = version[1..];
-                    }
-                    if (std.mem.startsWith(u8, version, ">=")) {
-                        version = version[2..];
-                    }
-
-                    try deps.append(allocator, .{
-                        .name = try allocator.dupe(u8, name_part),
-                        .version = try allocator.dupe(u8, version),
-                    });
-                }
-            } else {
-                // Left-aligned text means we've left the dependencies section
-                in_dependencies = false;
+            // Count leading spaces to determine indentation level
+            var indent_level: usize = 0;
+            for (line) |c| {
+                if (c == ' ') indent_level += 1
+                else if (c == '\t') indent_level += 2
+                else break;
             }
+
+            // Level 0 = end of dependencies section
+            if (indent_level == 0) {
+                // Save pending package if any
+                if (current_package) |pkg| {
+                    if (current_version) |ver| {
+                        try deps.append(allocator, .{
+                            .name = try allocator.dupe(u8, pkg),
+                            .version = try allocator.dupe(u8, ver),
+                            .global = current_global orelse top_level_global,
+                        });
+                    }
+                }
+                in_dependencies = false;
+                continue;
+            }
+
+            if (std.mem.indexOf(u8, trimmed, ":")) |colon_pos| {
+                const key = std.mem.trim(u8, trimmed[0..colon_pos], " \t");
+                const value = std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t");
+
+                // Level 1 = package name
+                if (indent_level <= 4) {
+                    // Save previous package if any
+                    if (current_package) |pkg| {
+                        if (current_version) |ver| {
+                            try deps.append(allocator, .{
+                                .name = try allocator.dupe(u8, pkg),
+                                .version = try allocator.dupe(u8, ver),
+                                .global = current_global orelse top_level_global,
+                            });
+                        }
+                    }
+
+                    // Start new package
+                    current_package = key;
+                    current_version = null;
+                    current_global = null;
+
+                    // If value is present, it's simple format: "package: version"
+                    if (value.len > 0) {
+                        var version = value;
+                        // Remove version constraint prefix
+                        if (version.len > 0 and (version[0] == '^' or version[0] == '~' or version[0] == '=')) {
+                            version = version[1..];
+                        }
+                        if (std.mem.startsWith(u8, version, ">=")) {
+                            version = version[2..];
+                        }
+                        current_version = version;
+                    }
+                } else {
+                    // Level 2+ = package properties (version, global)
+                    if (std.mem.eql(u8, key, "version")) {
+                        var version = value;
+                        if (version.len > 0 and (version[0] == '^' or version[0] == '~' or version[0] == '=')) {
+                            version = version[1..];
+                        }
+                        if (std.mem.startsWith(u8, version, ">=")) {
+                            version = version[2..];
+                        }
+                        current_version = version;
+                    } else if (std.mem.eql(u8, key, "global")) {
+                        current_global = std.mem.eql(u8, value, "true");
+                    }
+                }
+            }
+        }
+    }
+
+    // Save last package if any
+    if (current_package) |pkg| {
+        if (current_version) |ver| {
+            try deps.append(allocator, .{
+                .name = try allocator.dupe(u8, pkg),
+                .version = try allocator.dupe(u8, ver),
+                .global = current_global orelse top_level_global,
+            });
         }
     }
 

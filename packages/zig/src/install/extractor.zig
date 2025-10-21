@@ -13,6 +13,13 @@ pub fn extractArchive(
     dest_dir: []const u8,
     format: []const u8,
 ) !void {
+    // ANSI codes: dim + italic
+    const dim_italic = "\x1b[2;3m";
+    const reset = "\x1b[0m";
+
+    // Show extracting message
+    std.debug.print("{s}  extracting...{s}", .{ dim_italic, reset });
+
     // Ensure destination directory exists
     try std.fs.cwd().makePath(dest_dir);
 
@@ -45,9 +52,14 @@ pub fn extractArchive(
     defer allocator.free(result.stderr);
 
     if (result.term.Exited != 0) {
+        // Clear the extracting message
+        std.debug.print("\r                    \r", .{});
         std.debug.print("Extraction failed: {s}\n", .{result.stderr});
         return error.ExtractionFailed;
     }
+
+    // Clear the extracting message
+    std.debug.print("\r                    \r", .{});
 }
 
 /// Check if a file is a valid archive

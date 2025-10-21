@@ -4,11 +4,20 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Add zonfig module (from ../zonfig)
+    const zonfig_mod = b.addModule("zonfig", .{
+        .root_source_file = b.path("../zonfig/src/zonfig.zig"),
+        .target = target,
+    });
+
     // Create the library module
     const lib_mod = b.addModule("launchpad", .{
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
     });
+
+    // Add zonfig as an import to the library
+    lib_mod.addImport("zonfig", zonfig_mod);
 
     // Executable
     const exe = b.addExecutable(.{

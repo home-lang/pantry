@@ -21,7 +21,31 @@ pub const CommandResult = struct {
 
 /// Install command
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    if (args.len == 0) {
+    // Parse flags and filter out non-package arguments
+    var is_global = false;
+    var package_args = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
+    defer package_args.deinit(allocator);
+
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "-g") or std.mem.eql(u8, arg, "--global")) {
+            is_global = true;
+        } else if (!std.mem.startsWith(u8, arg, "-")) {
+            try package_args.append(allocator, arg);
+        }
+    }
+
+    // If -g flag is set with no packages, scan for global dependencies
+    if (is_global and package_args.items.len == 0) {
+        return try installGlobalDepsCommand(allocator);
+    }
+
+    // If -g flag is set with packages, install those packages globally
+    if (is_global and package_args.items.len > 0) {
+        return try installPackagesGloballyCommand(allocator, package_args.items);
+    }
+
+    // Otherwise, normal install flow
+    if (package_args.items.len == 0) {
         // No args - check if we're in a project directory
         const detector = @import("../deps/detector.zig");
         const parser = @import("../deps/parser.zig");
@@ -1398,6 +1422,126 @@ pub fn devFindProjectRootCommand(allocator: std.mem.Allocator, start_dir: []cons
 pub fn devCheckUpdatesCommand(_: std.mem.Allocator) !CommandResult {
     // Placeholder - just exit successfully without output
     // This is called in background by shell integration
+    return .{ .exit_code = 0 };
+}
+
+/// Install global dependencies by scanning common locations
+fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
+    const global_scanner = @import("../deps/global_scanner.zig");
+
+    std.debug.print("Scanning for global dependencies...\n", .{});
+
+    const global_deps = try global_scanner.scanForGlobalDeps(allocator);
+    defer {
+        for (global_deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(global_deps);
+    }
+
+    if (global_deps.len == 0) {
+        std.debug.print("No global dependencies found.\n", .{});
+        return .{ .exit_code = 0 };
+    }
+
+    std.debug.print("Found {d} global package(s).\n", .{global_deps.len});
+
+    // Install to global location
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+
+    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home});
+    defer allocator.free(global_dir);
+
+    try std.fs.cwd().makePath(global_dir);
+
+    std.debug.print("Installing to {s}...\n", .{global_dir});
+
+    var pkg_cache = try cache.PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+
+    for (global_deps) |dep| {
+        std.debug.print("  → {s}@{s}", .{ dep.name, dep.version });
+
+        const spec = lib.packages.PackageSpec{
+            .name = dep.name,
+            .version = dep.version,
+        };
+
+        var custom_installer = try install.Installer.init(allocator, &pkg_cache);
+        allocator.free(custom_installer.data_dir);
+        custom_installer.data_dir = try allocator.dupe(u8, global_dir);
+        defer custom_installer.deinit();
+
+        var result = custom_installer.install(spec, .{}) catch |err| {
+            std.debug.print(" failed: {}\n", .{err});
+            continue;
+        };
+        defer result.deinit(allocator);
+
+        std.debug.print("... done ({s}, {d}ms)\n", .{
+            if (result.from_cache) "cached" else "installed",
+            result.install_time_ms,
+        });
+    }
+
+    std.debug.print("\n✅ Global packages installed to: {s}\n", .{global_dir});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Install specific packages globally
+fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []const []const u8) !CommandResult {
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+
+    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home});
+    defer allocator.free(global_dir);
+
+    try std.fs.cwd().makePath(global_dir);
+
+    std.debug.print("Installing {d} package(s) globally to {s}...\n", .{ packages.len, global_dir });
+
+    var pkg_cache = try cache.PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+
+    for (packages) |pkg_str| {
+        // Parse package string (format: "name" or "name@version")
+        var name = pkg_str;
+        var version: []const u8 = "latest";
+
+        if (std.mem.indexOf(u8, pkg_str, "@")) |at_pos| {
+            name = pkg_str[0..at_pos];
+            version = pkg_str[at_pos + 1 ..];
+        }
+
+        std.debug.print("  → {s}@{s}", .{ name, version });
+
+        const spec = lib.packages.PackageSpec{
+            .name = name,
+            .version = version,
+        };
+
+        var custom_installer = try install.Installer.init(allocator, &pkg_cache);
+        allocator.free(custom_installer.data_dir);
+        custom_installer.data_dir = try allocator.dupe(u8, global_dir);
+        defer custom_installer.deinit();
+
+        var result = custom_installer.install(spec, .{}) catch |err| {
+            std.debug.print(" failed: {}\n", .{err});
+            continue;
+        };
+        defer result.deinit(allocator);
+
+        std.debug.print("... done ({s}, {d}ms)\n", .{
+            if (result.from_cache) "cached" else "installed",
+            result.install_time_ms,
+        });
+    }
+
+    std.debug.print("\n✅ Packages installed globally to: {s}\n", .{global_dir});
+
     return .{ .exit_code = 0 };
 }
 
