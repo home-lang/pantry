@@ -58,7 +58,7 @@ pub const ServiceStatus = enum {
 pub const Services = struct {
     /// PostgreSQL service
     pub fn postgresql(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("PGPORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
         try env_vars.put("PGDATA", try allocator.dupe(u8, "/usr/local/var/postgres"));
 
@@ -76,7 +76,7 @@ pub const Services = struct {
 
     /// Redis service
     pub fn redis(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "redis"),
@@ -96,7 +96,7 @@ pub const Services = struct {
 
     /// MySQL service
     pub fn mysql(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("MYSQL_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
 
         return ServiceConfig{
@@ -117,7 +117,7 @@ pub const Services = struct {
 
     /// Nginx service
     pub fn nginx(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "nginx"),
@@ -133,7 +133,7 @@ pub const Services = struct {
 
     /// MongoDB service
     pub fn mongodb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "mongodb"),
