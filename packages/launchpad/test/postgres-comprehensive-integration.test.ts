@@ -139,8 +139,8 @@ DB_PASSWORD=secure_password123
         type: 'project',
         require: {
           'php': '^8.1',
-          'laravel/framework': '^10.0'
-        }
+          'laravel/framework': '^10.0',
+        },
       }))
 
       const { getDatabaseNameFromEnv, detectProjectName, resolveServiceTemplateVariables } = await import('../src/services/manager')
@@ -155,6 +155,8 @@ DB_PASSWORD=secure_password123
 
       // Test template variable resolution with actual service definition
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -181,7 +183,7 @@ DB_PASSWORD=app_pass
       fs.writeFileSync('.env', envContent.trim())
       fs.writeFileSync('composer.json', JSON.stringify({
         name: 'vendor/fallback-test-app',
-        type: 'project'
+        type: 'project',
       }))
 
       const { getDatabaseNameFromEnv, detectProjectName, resolveServiceTemplateVariables } = await import('../src/services/manager')
@@ -195,6 +197,8 @@ DB_PASSWORD=app_pass
 
       // Template resolution should use project name as fallback
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -243,7 +247,7 @@ DB_PORT=5432
       fs.writeFileSync('package.json', JSON.stringify({
         name: 'generic-node-app',
         version: '1.0.0',
-        description: 'A generic Node.js application'
+        description: 'A generic Node.js application',
       }))
 
       const { getDatabaseNameFromEnv, detectProjectName } = await import('../src/services/manager')
@@ -268,13 +272,15 @@ DB_PASSWORD=test_pass
       fs.writeFileSync('.env', envContent.trim())
       fs.writeFileSync('composer.json', JSON.stringify({
         name: 'vendor/auto-db-test',
-        type: 'project'
+        type: 'project',
       }))
 
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
       const { SERVICE_DEFINITIONS } = await import('../src/services/definitions')
 
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -286,7 +292,7 @@ DB_PASSWORD=test_pass
       if (postStartCommands) {
         // Resolve all template variables in post-start commands
         const resolvedCommands = postStartCommands.map(cmd =>
-          cmd.map(arg => resolveServiceTemplateVariables(arg, mockService))
+          cmd.map(arg => resolveServiceTemplateVariables(arg, mockService)),
         )
 
         // Verify database creation command
@@ -299,33 +305,33 @@ DB_PASSWORD=test_pass
         expect(createDbCmd).toContain('5432')
 
         // Verify user creation command (using DO $$ block for idempotency)
-        const createUserCmd = resolvedCommands.find(cmd => {
+        const createUserCmd = resolvedCommands.find((cmd) => {
           const cmdStr = cmd.join(' ')
           return cmdStr.includes('CREATE ROLE') && cmdStr.includes('DO $$')
         })
         expect(createUserCmd).toBeDefined()
 
         // Verify database ownership and permissions
-        const grantOwnershipCmd = resolvedCommands.find(cmd => {
+        const grantOwnershipCmd = resolvedCommands.find((cmd) => {
           const cmdStr = cmd.join(' ')
           return cmdStr.includes('ALTER DATABASE') && cmdStr.includes('OWNER TO')
         })
         expect(grantOwnershipCmd).toBeDefined()
 
-        const grantPrivilegesCmd = resolvedCommands.find(cmd => {
+        const grantPrivilegesCmd = resolvedCommands.find((cmd) => {
           const cmdStr = cmd.join(' ')
           return cmdStr.includes('GRANT ALL PRIVILEGES ON DATABASE')
         })
         expect(grantPrivilegesCmd).toBeDefined()
 
         // Verify schema permissions
-        const schemaCreateCmd = resolvedCommands.find(cmd => {
+        const schemaCreateCmd = resolvedCommands.find((cmd) => {
           const cmdStr = cmd.join(' ')
           return cmdStr.includes('GRANT CREATE ON SCHEMA public')
         })
         expect(schemaCreateCmd).toBeDefined()
 
-        const schemaUsageCmd = resolvedCommands.find(cmd => {
+        const schemaUsageCmd = resolvedCommands.find((cmd) => {
           const cmdStr = cmd.join(' ')
           return cmdStr.includes('GRANT USAGE ON SCHEMA public')
         })
@@ -337,13 +343,15 @@ DB_PASSWORD=test_pass
       // Create minimal project without specific database config
       fs.writeFileSync('package.json', JSON.stringify({
         name: 'minimal-app',
-        version: '1.0.0'
+        version: '1.0.0',
       }))
 
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
       const { SERVICE_DEFINITIONS } = await import('../src/services/definitions')
 
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {},
       }
@@ -398,7 +406,7 @@ DB_PASSWORD=test_pass
 
       if (serviceManagerState) {
         const operations = serviceManagerState.operations.filter((op: any) =>
-          op.serviceName === 'postgres'
+          op.serviceName === 'postgres',
         )
 
         expect(operations.length).toBeGreaterThanOrEqual(3)
@@ -442,7 +450,7 @@ DB_PASSWORD=integration_pass
           host: '127.0.0.1',
           port: 5432,
           user: 'integration_user',
-          password: 'integration_pass'
+          password: 'integration_pass',
         })
 
         expect(dbInfo.type).toBe('postgres')
@@ -451,7 +459,8 @@ DB_PASSWORD=integration_pass
         expect(dbInfo.port).toBe(5432)
         expect(dbInfo.username).toBe('integration_user')
         expect(dbInfo.password).toBe('integration_pass')
-      } catch (error) {
+      }
+      catch (error) {
         // Database creation may fail in test environment without actual PostgreSQL
         // This is expected and acceptable for unit testing
         expect(error).toBeInstanceOf(Error)
@@ -467,7 +476,7 @@ DB_PASSWORD=integration_pass
         port: 5432,
         database: 'test_laravel_db',
         username: 'laravel_user',
-        password: 'laravel_pass'
+        password: 'laravel_pass',
       }
 
       const config = generateLaravelConfig(dbInfo, true)
@@ -490,7 +499,7 @@ DB_PASSWORD=integration_pass
       // No .env file created
       fs.writeFileSync('package.json', JSON.stringify({
         name: 'no-env-app',
-        version: '1.0.0'
+        version: '1.0.0',
       }))
 
       const { getDatabaseNameFromEnv, detectProjectName } = await import('../src/services/manager')
@@ -529,7 +538,7 @@ DB_PASSWORD=normal_value
     })
 
     it('should validate service definition completeness', async () => {
-      const { SERVICE_DEFINITIONS, getServiceDefinition } = await import('../src/services/definitions')
+      const { getServiceDefinition } = await import('../src/services/definitions')
 
       const postgres = getServiceDefinition('postgres')
       expect(postgres).toBeDefined()
@@ -543,7 +552,7 @@ DB_PASSWORD=normal_value
         expect(postgres.initCommand).toBeDefined()
         expect(postgres.postStartCommands).toBeDefined()
         expect(Array.isArray(postgres.dependencies)).toBe(true)
-        expect(postgres.dependencies.length).toBeGreaterThan(0)
+        expect(postgres.dependencies?.length).toBeGreaterThan(0)
       }
     })
   })
@@ -562,16 +571,18 @@ DB_PASSWORD=template_pass
       fs.writeFileSync('.env', envContent.trim())
       fs.writeFileSync('composer.json', JSON.stringify({
         name: 'vendor/template-test-project',
-        type: 'project'
+        type: 'project',
       }))
 
       const { resolveServiceTemplateVariables } = await import('../src/services/manager')
       const { SERVICE_DEFINITIONS } = await import('../src/services/definitions')
 
       const mockService = {
+        name: 'postgres',
+        status: 'running' as const,
         definition: SERVICE_DEFINITIONS.postgres,
         config: {
-          customValue: 'custom_config_value'
+          customValue: 'custom_config_value',
         },
       }
 
@@ -587,12 +598,12 @@ DB_PASSWORD=template_pass
         '{logFile}',
         '{pidFile}',
         '{authMethod}',
-        '{customValue}' // Custom config value
+        '{customValue}', // Custom config value
       ]
 
       const resolved = templates.map(template => ({
         template,
-        resolved: resolveServiceTemplateVariables(template, mockService)
+        resolved: resolveServiceTemplateVariables(template, mockService),
       }))
 
       // Verify each template resolves to a non-empty value

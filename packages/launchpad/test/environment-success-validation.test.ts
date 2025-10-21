@@ -164,15 +164,16 @@ describe('Environment Success Validation', () => {
         try {
           // Use more stable package versions to avoid GitHub API issues
           result = await install(['postgresql.org@17.2.0', 'redis.io@8.2.1'])
-        } catch (error) {
+        }
+        catch (error) {
           // Installation failed (e.g., network issues), skip service validation
-          console.log('Installation failed, skipping service validation:', error?.message || error)
+          console.log('Installation failed, skipping service validation:', (error as Error)?.message || error)
           return
         }
 
         // If installation reports success, all services should be healthy
         if (result && result.length > 0) {
-          const installedNames = result.map(r => r.name || '').filter(n => n.length > 0)
+          const installedNames = result.map(r => (typeof r === 'object' && r !== null && 'name' in r ? (r as any).name : '') || '').filter(n => n.length > 0)
           console.log('Installation result:', installedNames.join(', '))
 
           // If installation returned empty names, it indicates a systemic failure
@@ -195,7 +196,8 @@ describe('Environment Success Validation', () => {
               execSync('which pg_isready', { stdio: 'pipe' })
               execSync('which postgres', { stdio: 'pipe' })
               return true
-            } catch {
+            }
+            catch {
               return false
             }
           })()
@@ -205,7 +207,8 @@ describe('Environment Success Validation', () => {
               execSync('which redis-cli', { stdio: 'pipe' })
               execSync('which redis-server', { stdio: 'pipe' })
               return true
-            } catch {
+            }
+            catch {
               return false
             }
           })()
@@ -233,8 +236,9 @@ describe('Environment Success Validation', () => {
               // If binaries work, consider this a successful test
               console.log('Binaries are working correctly - installation test passed')
               return
-            } catch (error) {
-              console.log('Binary version checks failed:', error?.message || error)
+            }
+            catch (error) {
+              console.log('Binary version checks failed:', (error as Error)?.message || error)
               console.log('Falling back to service health checks which may fail if services are not auto-started')
             }
           }
@@ -273,14 +277,15 @@ describe('Environment Success Validation', () => {
         let installResult
         try {
           installResult = await install(['php.net@8.4.12'])
-        } catch (error) {
-          console.log('PHP installation failed, skipping PHP validation:', error?.message || error)
+        }
+        catch (error) {
+          console.log('PHP installation failed, skipping PHP validation:', (error as Error)?.message || error)
           return
         }
 
         // Only validate if installation succeeded
         if (installResult && installResult.length > 0) {
-          const installedNames = installResult.map(r => r.name || '').filter(n => n.length > 0)
+          const installedNames = installResult.map(r => (typeof r === 'object' && r !== null && 'name' in r ? (r as any).name : '') || '').filter(n => n.length > 0)
           console.log('PHP installation result:', installedNames.join(', '))
 
           // If installation returned empty names, it indicates a systemic failure
@@ -293,7 +298,8 @@ describe('Environment Success Validation', () => {
           const phpHealth = await validateServiceHealth('php')
           console.log('PHP health:', phpHealth)
           expect(phpHealth.isHealthy).toBe(true)
-        } else {
+        }
+        else {
           console.log('PHP installation did not succeed, skipping validation')
           return
         }
@@ -339,14 +345,15 @@ describe('Environment Success Validation', () => {
         let installResult
         try {
           installResult = await install(['php.net@8.4.12', 'getcomposer.org@2.8.11'])
-        } catch (error) {
-          console.log('PHP/Composer installation failed, skipping validation:', error?.message || error)
+        }
+        catch (error) {
+          console.log('PHP/Composer installation failed, skipping validation:', (error as Error)?.message || error)
           return
         }
 
         // Only validate if installation succeeded
         if (installResult && installResult.length > 0) {
-          const installedNames = installResult.map(r => r.name || '').filter(n => n.length > 0)
+          const installedNames = installResult.map(r => (typeof r === 'object' && r !== null && 'name' in r ? (r as any).name : '') || '').filter(n => n.length > 0)
           console.log('PHP/Composer installation result:', installedNames.join(', '))
 
           // If installation returned empty names, it indicates a systemic failure
@@ -354,7 +361,8 @@ describe('Environment Success Validation', () => {
             console.log('PHP/Composer installation reported success but no packages were actually installed successfully')
             return
           }
-        } else {
+        }
+        else {
           console.log('PHP/Composer installation did not succeed, skipping validation')
           return
         }

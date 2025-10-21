@@ -49,21 +49,27 @@ function readDepsYamlConfig(): { type?: string, name?: string, username?: string
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key && valueParts.length > 0) {
             const value = valueParts.join(':').trim()
-            if (key === 'type') config.type = value
-            if (key === 'name') config.name = value
-            if (key === 'username') config.username = value
-            if (key === 'password') config.password = value
+            if (key === 'type')
+              config.type = value
+            if (key === 'name')
+              config.name = value
+            if (key === 'username')
+              config.username = value
+            if (key === 'password')
+              config.password = value
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }
       return config
     }
-  } catch (error) {
+  }
+  catch {
     // Ignore errors reading deps.yaml
   }
   return {}

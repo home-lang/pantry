@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
+import type { LaunchpadConfig, ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { homedir, platform } from 'node:os'
@@ -149,7 +149,6 @@ export async function startService(serviceName: string): Promise<boolean> {
       return false
     }
 
-
     // Auto-initialize databases first
     const autoInitResult = await autoInitializeDatabase(service)
     if (!autoInitResult) {
@@ -193,7 +192,7 @@ export async function startService(serviceName: string): Promise<boolean> {
         console.warn('⚠️  launchd/system start failed; falling back to pg_ctl start')
         await new Promise<void>((resolve, reject) => {
           // Use -l to redirect logs, don't use -w to avoid hanging
-          const logFile = service.logFile || service.definition.logFile
+          const logFile = service.logFile || service.definition?.logFile
           const proc = spawn(pgCtl, ['-D', String(dataDir), '-o', extraArgs, '-l', logFile || '/dev/null', 'start'], {
             stdio: config.verbose ? 'inherit' : 'pipe',
           })
@@ -224,7 +223,6 @@ export async function startService(serviceName: string): Promise<boolean> {
     if (!startSuccess && (service.definition?.name === 'mysql' || service.definition?.name === 'mariadb')) {
       // Fallback: start mysqld directly with explicit DYLD_LIBRARY_PATH
       try {
-        const { findBinaryInPath } = await import('../utils')
         // Use the actual mysqld binary, not the shim
         const mysqldPath = service.definition.executable.includes('mysql.com')
           ? service.definition.executable
@@ -239,8 +237,8 @@ export async function startService(serviceName: string): Promise<boolean> {
         // Get the library path from MySQL's installation directory
         const mysqlLibDir = path.join(path.dirname(path.dirname(mysqldPath)), 'lib')
 
-        const { exec } = await import('child_process')
-        const { promisify } = await import('util')
+        const { exec } = await import('node:child_process')
+        const { promisify } = await import('node:util')
         const execAsync = promisify(exec)
 
         // Start mysqld with DYLD_LIBRARY_PATH set explicitly
@@ -432,8 +430,8 @@ export async function stopService(serviceName: string): Promise<boolean> {
         const mysqladmin = findBinaryInPath('mysqladmin') || 'mysqladmin'
         console.warn('⚠️  Platform stop failed; trying mysqladmin shutdown')
 
-        const { exec } = await import('child_process')
-        const { promisify } = await import('util')
+        const { exec } = await import('node:child_process')
+        const { promisify } = await import('node:util')
         const execAsync = promisify(exec)
 
         await execAsync(`"${mysqladmin}" -h 127.0.0.1 -P ${service.definition.port || 3306} -u root shutdown`, {
@@ -814,7 +812,7 @@ async function initializeService(service: ServiceInstance): Promise<void> {
 
   return new Promise((resolve, reject) => {
     // Set up environment for MySQL dependencies
-    let serviceEnv = { ...process.env, ...definition.env }
+    const serviceEnv = { ...process.env, ...definition.env }
     if (definition.name === 'mysql') {
       const mysqlBinPath = process.env.PATH?.split(':').find(path => path.includes('mysql.com'))
       if (mysqlBinPath) {
@@ -827,7 +825,7 @@ async function initializeService(service: ServiceInstance): Promise<void> {
           `${envPath}/facebook.com/zstd/v1/lib`,
           `${envPath}/protobuf.dev/v21/lib`,
           `${envPath}/lz4.org/v1/lib`,
-          serviceEnv.DYLD_LIBRARY_PATH
+          serviceEnv.DYLD_LIBRARY_PATH,
         ].filter(Boolean).join(':')
       }
     }
@@ -1055,7 +1053,6 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
   }
 }
 
-
 /**
  * Automatically set up SQLite for the current project
  */
@@ -1264,10 +1261,11 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
       // Load project-specific config from current directory
       const { loadConfig: loadProjectConfig } = await import('bunfig')
-      const projectConfig = await loadProjectConfig({
+      const projectConfig = await loadProjectConfig<LaunchpadConfig>({
         name: 'launchpad',
         alias: 'deps',
         cwd: process.cwd(),
+        defaultConfig: {},
       })
 
       // Get database username and auth method from project config, env vars, or defaults
@@ -1363,9 +1361,6 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
       }
 
       // Handle both MySQL 8.x and 9.x paths
-      const isMySQL9 = mysqlBinPath && mysqlBinPath.includes('/v9.')
-      const mysqlVersion = isMySQL9 ? 'v9' : 'v8'
-
       // Set up environment for MySQL dependencies - handle both MySQL 8.x and 9.x
       const envPath = basedir.replace(/\/mysql\.com\/v\d+\.\d+\.\d+/, '')
 
@@ -1373,14 +1368,16 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
       const findLibraryPath = (domain: string): string[] => {
         try {
           const domainPath = path.join(envPath, domain)
-          if (!fs.existsSync(domainPath)) return []
+          if (!fs.existsSync(domainPath))
+            return []
 
           const versions = fs.readdirSync(domainPath)
             .filter(name => name.startsWith('v'))
             .sort((a, b) => b.localeCompare(a)) // Sort descending to get latest first
 
           return versions.map(version => path.join(domainPath, version, 'lib')).filter(libPath => fs.existsSync(libPath))
-        } catch {
+        }
+        catch {
           return []
         }
       }
@@ -1396,15 +1393,15 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
         ...findLibraryPath('curl.se'),
         ...findLibraryPath('zlib.net'),
         ...findLibraryPath('tukaani.org/xz'),
-        ...findLibraryPath('invisible-island.net/ncurses')
+        ...findLibraryPath('invisible-island.net/ncurses'),
       ]
 
       const env = {
         ...process.env,
         DYLD_LIBRARY_PATH: [
           ...libraryPaths,
-          process.env.DYLD_LIBRARY_PATH
-        ].filter(Boolean).join(':')
+          process.env.DYLD_LIBRARY_PATH,
+        ].filter(Boolean).join(':'),
       }
 
       if (config.verbose) {
@@ -1595,7 +1592,8 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
  */
 async function executePostDatabaseSetupCommands(): Promise<void> {
   const commands = config.services?.postDatabaseSetup
-  if (!commands) return
+  if (!commands)
+    return
 
   const commandList = Array.isArray(commands) ? commands : [commands]
 
@@ -1612,7 +1610,6 @@ async function executePostDatabaseSetupCommands(): Promise<void> {
       }
 
       await new Promise<void>((resolve, reject) => {
-        let stdout = ''
         let stderr = ''
         const proc = spawn(executablePath, args, {
           stdio: config.verbose ? 'inherit' : 'pipe',
@@ -1621,8 +1618,8 @@ async function executePostDatabaseSetupCommands(): Promise<void> {
 
         if (!config.verbose) {
           if (proc.stdout) {
-            proc.stdout.on('data', (data) => {
-              stdout += data.toString()
+            proc.stdout.on('data', () => {
+              // Capture stdout but don't store it
             })
           }
           if (proc.stderr) {
@@ -1721,27 +1718,6 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
 }
 
 /**
- * Get database name from environment variables
- */
-function getDatabaseNameFromEnv(): string | null {
-  return process.env.DB_NAME || process.env.DB_DATABASE || null
-}
-
-/**
- * Get database username from environment variables
- */
-function getDatabaseUsernameFromEnv(): string | null {
-  return process.env.DB_USERNAME || process.env.DB_USER || null
-}
-
-/**
- * Get database password from environment variables
- */
-function getDatabasePasswordFromEnv(): string | null {
-  return process.env.DB_PASSWORD || null
-}
-
-/**
  * Detect project name from current directory or composer.json
  */
 export function detectProjectName(): string {
@@ -1813,11 +1789,12 @@ export function getDatabaseUsernameFromEnv(): string | null {
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key === 'username' && valueParts.length > 0) {
             return valueParts.join(':').trim()
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }
@@ -1866,11 +1843,12 @@ export function getDatabasePasswordFromEnv(): string | null {
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key === 'password' && valueParts.length > 0) {
             return valueParts.join(':').trim()
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }
@@ -1927,12 +1905,13 @@ export function getDatabaseNameFromEnv(): string | null {
           continue
         }
         if (inDatabase && trimmed.startsWith('  ')) {
-          const [key, ...valueParts] = trimmed.replace(/^  /, '').split(':')
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
           if (key === 'name' && valueParts.length > 0) {
             const value = valueParts.join(':').trim()
             return value.replace(/\W/g, '_')
           }
-        } else if (inDatabase && !trimmed.startsWith('  ')) {
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
           break // End of database section
         }
       }
@@ -2206,7 +2185,8 @@ async function checkServiceHealth(service: ServiceInstance): Promise<boolean> {
 
   return new Promise((resolve) => {
     // Resolve template variables in health check command
-    const resolvedCommand = command.map(arg => resolveServiceTemplateVariables(arg, service))
+    const commandArray = Array.isArray(command) ? command : [command]
+    const resolvedCommand = commandArray.map((arg: string) => resolveServiceTemplateVariables(arg, service))
     const [cmd, ...args] = resolvedCommand
     const executablePath = findBinaryInPath(cmd) || cmd
 

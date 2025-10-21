@@ -18,7 +18,7 @@ import { install_prefix } from './utils'
 export async function install(
   packages: PackageSpec | PackageSpec[],
   basePath?: string,
-  options?: { skipServiceInit?: boolean }
+  options?: { skipServiceInit?: boolean },
 ): Promise<string[]> {
   const packageList = Array.isArray(packages) ? packages : [packages]
   const installPath = basePath || install_prefix().string
@@ -328,7 +328,8 @@ async function autoInitializeServicesForPackages(packageList: PackageSpec[]): Pr
     // Check if this package has an associated service
     if (servicePackageMap.has(name)) {
       servicesToStart.push(servicePackageMap.get(name)!)
-    } else if (servicePackageMap.has(domain)) {
+    }
+    else if (servicePackageMap.has(domain)) {
       servicesToStart.push(servicePackageMap.get(domain)!)
     }
   }
@@ -348,17 +349,20 @@ async function autoInitializeServicesForPackages(packageList: PackageSpec[]): Pr
         const success = await startService(serviceName)
         if (success) {
           console.log(`✅ Service ${serviceName} initialized and started`)
-        } else {
+        }
+        else {
           console.warn(`⚠️ Service ${serviceName} failed to start`)
         }
-      } catch (error) {
+      }
+      catch (error) {
         if (config.verbose) {
           console.warn(`⚠️ Failed to auto-start service ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
         }
         // Don't fail the entire installation if service start fails
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     if (config.verbose) {
       console.warn(`⚠️ Error during service auto-initialization: ${error instanceof Error ? error.message : String(error)}`)
     }

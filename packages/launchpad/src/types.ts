@@ -1,11 +1,11 @@
-import type { PackageAlias, PackageDomain, PackageName, Packages, Dependencies } from 'ts-pkgx'
+import type { Dependencies, PackageAlias, PackageDomain, PackageName, Packages } from 'ts-pkgx'
 
 export type {
+  Dependencies,
   PackageAlias,
   PackageDomain,
   PackageName,
   Packages,
-  Dependencies
 }
 
 /**
@@ -42,7 +42,7 @@ type PackageVersions<T extends PackageName> = T extends keyof Packages
   : never
 
 // Version constraint that allows valid versions or version ranges
-type VersionConstraint<T extends PackageName> =
+export type VersionConstraint<T extends PackageName> =
   | PackageVersions<T>
   | `^${PackageVersions<T>}`
   | `~${PackageVersions<T>}`
@@ -413,7 +413,6 @@ export interface SystemdService {
     WantedBy: string[]
   }
 }
-
 
 /**
  * Post-setup command interface
