@@ -54,9 +54,31 @@ pub fn build(b: *std.Build) void {
     });
     const run_core_tests = b.addRunArtifact(core_tests);
 
+    // Integration tests
+    const integration_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/integration_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+        },
+    });
+    const integration_tests = b.addTest(.{
+        .root_module = integration_test_mod,
+    });
+    const run_integration_tests = b.addRunArtifact(integration_tests);
+
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_tests.step);
     test_step.dependOn(&run_core_tests.step);
+
+    const integration_step = b.step("test:integration", "Run integration tests");
+    integration_step.dependOn(&run_integration_tests.step);
+
+    const test_all_step = b.step("test:all", "Run all tests");
+    test_all_step.dependOn(&run_lib_tests.step);
+    test_all_step.dependOn(&run_core_tests.step);
+    test_all_step.dependOn(&run_integration_tests.step);
 
     // Benchmarks
     const bench_mod = b.createModule(.{
