@@ -17,3 +17,5 @@ packages/launchpad/test/clean-integration-*
 *.bun-build
 /.local
 /binaries-test
+/packages/zig/.zig-cache
+/packages/zig/zig-out
