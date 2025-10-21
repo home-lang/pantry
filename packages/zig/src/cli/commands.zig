@@ -101,7 +101,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         defer pkg_cache.deinit();
 
         for (deps) |dep| {
-            std.debug.print("  → {s}@{s}...", .{ dep.name, dep.version });
+            std.debug.print("  → {s}@{s}", .{ dep.name, dep.version });
 
             const spec = lib.packages.PackageSpec{
                 .name = dep.name,
@@ -122,9 +122,9 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             defer result.deinit(allocator);
 
             if (result.from_cache) {
-                std.debug.print(" done (cached, {d}ms)\n", .{result.install_time_ms});
+                std.debug.print("... done (cached, {d}ms)\n", .{result.install_time_ms});
             } else {
-                std.debug.print(" done ({d}ms)\n", .{result.install_time_ms});
+                std.debug.print("... done ({d}ms)\n", .{result.install_time_ms});
             }
         }
 
@@ -1164,7 +1164,10 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\# Find dependency file in current directory or parents
         \\__lp_find_dep_file() {
         \\  local dir="$1"
-        \\  while [[ "$dir" != "/" ]]; do
+        \\  local depth=0
+        \\  local max_depth=10  # Don't search more than 10 levels up
+        \\
+        \\  while [[ "$dir" != "/" && $depth -lt $max_depth ]]; do
         \\    for fname in "${__LP_DEP_FILES[@]}"; do
         \\      if [[ -f "$dir/$fname" ]]; then
         \\        echo "$dir/$fname"
@@ -1172,6 +1175,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\      fi
         \\    done
         \\    dir=$(dirname "$dir")
+        \\    ((depth++))
         \\  done
         \\  return 1
         \\}
@@ -1205,6 +1209,8 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\        export PATH
         \\      fi
         \\      unset LAUNCHPAD_CURRENT_PROJECT LAUNCHPAD_ENV_BIN_PATH LAUNCHPAD_DEP_FILE LAUNCHPAD_DEP_MTIME
+        \\      # IMPORTANT: Return immediately after deactivation - don't search for new projects!
+        \\      # Only search when entering a directory, not when leaving
         \\      return 0
         \\    fi
         \\
@@ -1229,7 +1235,25 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\    fi
         \\  fi
         \\
-        \\  # FAST PATH: Check if we have a dependency file first (avoid slow TS binary call)
+        \\  # If we're not in a project, do a quick check before expensive file search
+        \\  # Only search for dependency files if we're likely in a project directory
+        \\  if [[ -z "$LAUNCHPAD_CURRENT_PROJECT" ]]; then
+        \\    # Not in any project - do a fast single-directory check first
+        \\    local has_dep_file=0
+        \\    for fname in "${__LP_DEP_FILES[@]}"; do
+        \\      if [[ -f "$PWD/$fname" ]]; then
+        \\        has_dep_file=1
+        \\        break
+        \\      fi
+        \\    done
+        \\
+        \\    # If no dep file in current dir, don't bother searching parents
+        \\    if [[ $has_dep_file -eq 0 ]]; then
+        \\      return 0
+        \\    fi
+        \\  fi
+        \\
+        \\  # FAST PATH: Check if we have a dependency file (only if needed)
         \\  local dep_file=$(__lp_find_dep_file "$PWD")
         \\  if [[ -z "$dep_file" ]]; then
         \\    # No dependency file found - skip expensive lookup
@@ -1253,6 +1277,25 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\      export LAUNCHPAD_CURRENT_PROJECT="$PWD"
         \\      export LAUNCHPAD_DEP_FILE="$dep_file"
         \\      export LAUNCHPAD_DEP_MTIME=$(__lp_mtime "$dep_file")
+        \\    fi
+        \\  else
+        \\    # No environment found - auto-install if we have a dep file
+        \\    if [[ -n "$dep_file" ]]; then
+        \\      if launchpad install; then
+        \\        # Retry lookup after install
+        \\        env_lookup=$(launchpad env:lookup "$PWD" 2>/dev/null)
+        \\        if [[ -n "$env_lookup" ]]; then
+        \\          local env_dir env_dep_file
+        \\          IFS='|' read -r env_dir env_dep_file <<< "$env_lookup"
+        \\          if [[ -d "$env_dir/bin" ]]; then
+        \\            export PATH="$env_dir/bin:$PATH"
+        \\            export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+        \\            export LAUNCHPAD_CURRENT_PROJECT="$PWD"
+        \\            export LAUNCHPAD_DEP_FILE="$dep_file"
+        \\            export LAUNCHPAD_DEP_MTIME=$(__lp_mtime "$dep_file")
+        \\          fi
+        \\        fi
+        \\      fi
         \\    fi
         \\  fi
         \\}

@@ -74,17 +74,27 @@ pub const Installer = struct {
     ) !InstallResult {
         const start_time = std.time.milliTimestamp();
 
-        // Check cache first
-        const from_cache = !options.force and try self.cache.has(spec.name, spec.version);
+        // Check if package exists in global cache (filesystem check, not in-memory cache)
+        const pkg_registry = @import("../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(spec.name);
+        const domain = if (pkg_info) |info| info.domain else spec.name;
+
+        const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
+        defer self.allocator.free(global_pkg_dir);
+
+        const from_cache = !options.force and blk: {
+            var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch break :blk false;
+            check_dir.close();
+            break :blk true;
+        };
 
         var install_path: []const u8 = undefined;
 
         if (from_cache) {
-            // Use cached package
-            const meta = (try self.cache.get(spec.name, spec.version)).?;
-            install_path = try self.installFromCache(spec, meta.cache_path);
+            // Use cached package (from global location)
+            install_path = try self.installFromCache(spec, "");
         } else {
-            // Download and install
+            // Download and install to global cache
             install_path = try self.installFromNetwork(spec);
         }
 
@@ -99,48 +109,145 @@ pub const Installer = struct {
         };
     }
 
-    /// Install from cached package
+    /// Install from cached package (global cache location)
     fn installFromCache(
         self: *Installer,
         spec: PackageSpec,
         _: []const u8,
     ) ![]const u8 {
-        const install_dir = try self.getInstallDir(spec.name, spec.version);
-        errdefer self.allocator.free(install_dir);
-
-        // Create install directory
-        try std.fs.cwd().makePath(install_dir);
-
-        // For now, just return the install path
-        // In a real implementation, we would extract the archive here
-        return install_dir;
-    }
-
-    /// Install from network (download)
-    fn installFromNetwork(self: *Installer, spec: PackageSpec) ![]const u8 {
-        // Create temp directory for download
-        const temp_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/.tmp/{s}-{s}",
-            .{ self.data_dir, spec.name, spec.version },
-        );
-        defer self.allocator.free(temp_dir);
-
-        try std.fs.cwd().makePath(temp_dir);
-        defer std.fs.cwd().deleteTree(temp_dir) catch {};
-
         // Resolve package name to domain
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
         const domain = if (pkg_info) |info| info.domain else spec.name;
 
-        // Base packages directory
-        const packages_dir = try std.fmt.allocPrint(
+        // Check if package exists in global cache
+        const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
+        defer self.allocator.free(global_pkg_dir);
+
+        // Verify it exists
+        var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch {
+            // Not in global cache - shouldn't happen if cache.has() returned true
+            return error.CacheInconsistent;
+        };
+        check_dir.close();
+
+        // Create symlinks in environment bin directory
+        try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
+
+        // Return the global package directory (not env-specific)
+        return try self.allocator.dupe(u8, global_pkg_dir);
+    }
+
+    /// Get global package directory (shared across all environments)
+    fn getGlobalPackageDir(self: *Installer, domain: []const u8, version: []const u8) ![]const u8 {
+        const home = try Paths.home(self.allocator);
+        defer self.allocator.free(home);
+
+        return std.fmt.allocPrint(
             self.allocator,
-            "{s}/packages",
+            "{s}/.local/share/launchpad/global/packages/{s}/v{s}",
+            .{ home, domain, version },
+        );
+    }
+
+    /// Create symlinks in environment bin directory to global package
+    fn createEnvSymlinks(self: *Installer, domain: []const u8, version: []const u8, global_pkg_dir: []const u8) !void {
+        // Get package info to find which programs to symlink
+        const pkg_registry = @import("../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(domain) orelse return;
+
+        if (pkg_info.programs.len == 0) return;
+
+        // Environment bin directory
+        const env_bin_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/bin",
             .{self.data_dir},
         );
-        defer self.allocator.free(packages_dir);
+        defer self.allocator.free(env_bin_dir);
+
+        try std.fs.cwd().makePath(env_bin_dir);
+
+        // Global package bin directory
+        const global_bin_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/bin",
+            .{global_pkg_dir},
+        );
+        defer self.allocator.free(global_bin_dir);
+
+        // Create symlinks for each program
+        for (pkg_info.programs) |program| {
+            const source = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ global_bin_dir, program },
+            );
+            defer self.allocator.free(source);
+
+            const link = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ env_bin_dir, program },
+            );
+            defer self.allocator.free(link);
+
+            // Check if source exists
+            std.fs.accessAbsolute(source, .{}) catch |err| {
+                if (err == error.FileNotFound) {
+                    std.debug.print("Warning: Program not found: {s}\n", .{source});
+                    continue;
+                }
+                return err;
+            };
+
+            // Remove existing symlink if it exists
+            std.fs.deleteFileAbsolute(link) catch {};
+
+            // Create symlink
+            std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
+                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+            };
+        }
+
+        _ = version; // not used in current implementation
+    }
+
+    /// Install from network (download)
+    fn installFromNetwork(self: *Installer, spec: PackageSpec) ![]const u8 {
+        // Resolve package name to domain
+        const pkg_registry = @import("../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(spec.name);
+        const domain = if (pkg_info) |info| info.domain else spec.name;
+
+        // Check if already exists in global cache
+        const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
+        errdefer self.allocator.free(global_pkg_dir);
+
+        var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch |err| blk: {
+            if (err != error.FileNotFound) return err;
+            break :blk null;
+        };
+        if (check_dir) |*dir| {
+            dir.close();
+            // Already downloaded to global cache - just create env symlinks
+            try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
+            return global_pkg_dir;
+        }
+
+        // Not in global cache - download and install to global location
+        const home = try Paths.home(self.allocator);
+        defer self.allocator.free(home);
+
+        const temp_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/.local/share/launchpad/.tmp/{s}-{s}",
+            .{ home, spec.name, spec.version },
+        );
+        defer self.allocator.free(temp_dir);
+
+        try std.fs.cwd().makePath(temp_dir);
+        defer std.fs.cwd().deleteTree(temp_dir) catch {};
 
         // Try different archive formats
         const formats = [_][]const u8{ "tar.xz", "tar.gz" };
@@ -199,31 +306,18 @@ pub const Installer = struct {
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
         defer self.allocator.free(package_source);
 
-        // Create final install directory
-        const final_install_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/{s}/v{s}",
-            .{ packages_dir, domain, spec.version },
-        );
-        defer self.allocator.free(final_install_dir);
-
-        try std.fs.cwd().makePath(final_install_dir);
-
-        // Copy/move package contents to final location
-        try self.copyDirectoryStructure(package_source, final_install_dir);
+        // Copy/move package contents to global cache location
+        try std.fs.cwd().makePath(global_pkg_dir);
+        try self.copyDirectoryStructure(package_source, global_pkg_dir);
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
-        try libfixer.fixDirectoryLibraryPaths(self.allocator, final_install_dir);
+        try libfixer.fixDirectoryLibraryPaths(self.allocator, global_pkg_dir);
 
-        // Create symlinks for package binaries
-        try self.createBinSymlinks(domain, spec.version, packages_dir);
+        // Now create symlinks in the environment bin directory
+        try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
 
-        // Return the package directory path
-        return try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/{s}/v{s}",
-            .{ packages_dir, domain, spec.version },
-        );
+        // Return the global package directory path
+        return global_pkg_dir;
     }
 
     /// Create symlinks for package binaries in the global bin directory
