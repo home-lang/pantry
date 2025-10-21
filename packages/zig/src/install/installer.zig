@@ -5,6 +5,7 @@ const packages = @import("../packages.zig");
 const errors = @import("../core/error.zig");
 const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
+const libfixer = @import("libfixer.zig");
 
 const LaunchpadError = errors.LaunchpadError;
 const Paths = core.Paths;
@@ -117,9 +118,6 @@ pub const Installer = struct {
 
     /// Install from network (download)
     fn installFromNetwork(self: *Installer, spec: PackageSpec) ![]const u8 {
-        const install_dir = try self.getInstallDir(spec.name, spec.version);
-        errdefer self.allocator.free(install_dir);
-
         // Create temp directory for download
         const temp_dir = try std.fmt.allocPrint(
             self.allocator,
@@ -135,6 +133,14 @@ pub const Installer = struct {
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
         const domain = if (pkg_info) |info| info.domain else spec.name;
+
+        // Base packages directory
+        const packages_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/packages",
+            .{self.data_dir},
+        );
+        defer self.allocator.free(packages_dir);
 
         // Try different archive formats
         const formats = [_][]const u8{ "tar.xz", "tar.gz" };
@@ -178,14 +184,46 @@ pub const Installer = struct {
         }
         defer self.allocator.free(archive_path);
 
-        // Extract archive to install directory
-        try std.fs.cwd().makePath(install_dir);
-        try extractor.extractArchive(self.allocator, archive_path, install_dir, used_format);
+        // Extract archive to temp directory
+        const extract_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/extracted",
+            .{temp_dir},
+        );
+        defer self.allocator.free(extract_dir);
+
+        try std.fs.cwd().makePath(extract_dir);
+        try extractor.extractArchive(self.allocator, archive_path, extract_dir, used_format);
+
+        // Find the actual package root (might be nested like domain/v{version}/)
+        const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
+        defer self.allocator.free(package_source);
+
+        // Create final install directory
+        const final_install_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/v{s}",
+            .{ packages_dir, domain, spec.version },
+        );
+        defer self.allocator.free(final_install_dir);
+
+        try std.fs.cwd().makePath(final_install_dir);
+
+        // Copy/move package contents to final location
+        try self.copyDirectoryStructure(package_source, final_install_dir);
+
+        // Fix library paths for macOS (especially for Node.js OpenSSL issue)
+        try libfixer.fixDirectoryLibraryPaths(self.allocator, final_install_dir);
 
         // Create symlinks for package binaries
-        try self.createBinSymlinks(domain, spec.version, install_dir);
+        try self.createBinSymlinks(domain, spec.version, packages_dir);
 
-        return install_dir;
+        // Return the package directory path
+        return try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/v{s}",
+            .{ packages_dir, domain, spec.version },
+        );
     }
 
     /// Create symlinks for package binaries in the global bin directory
@@ -319,6 +357,106 @@ pub const Installer = struct {
         }
 
         return installed;
+    }
+
+    /// Find the actual package root in the extracted directory
+    fn findPackageRoot(self: *Installer, extract_dir: []const u8, domain: []const u8, version: []const u8) ![]const u8 {
+        // Try common package layouts:
+        // 1. Direct pkgx format: {domain}/v{version}/
+        const pkgx_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/v{s}",
+            .{ extract_dir, domain, version },
+        );
+
+        // Check if this path has the package structure (bin, lib, etc.)
+        if (self.hasPackageStructure(pkgx_path)) {
+            return pkgx_path;
+        }
+        self.allocator.free(pkgx_path);
+
+        // 2. Try just the extract directory itself
+        if (self.hasPackageStructure(extract_dir)) {
+            return try self.allocator.dupe(u8, extract_dir);
+        }
+
+        // 3. Try first subdirectory
+        var dir = try std.fs.openDirAbsolute(extract_dir, .{ .iterate = true });
+        defer dir.close();
+
+        var it = dir.iterate();
+        while (try it.next()) |entry| {
+            if (entry.kind != .directory) continue;
+
+            const subdir_path = try std.fs.path.join(
+                self.allocator,
+                &[_][]const u8{ extract_dir, entry.name },
+            );
+            defer self.allocator.free(subdir_path);
+
+            if (self.hasPackageStructure(subdir_path)) {
+                return try self.allocator.dupe(u8, subdir_path);
+            }
+        }
+
+        // Fallback to extract directory
+        return try self.allocator.dupe(u8, extract_dir);
+    }
+
+    /// Check if a directory has package structure (bin, lib, include, share, etc.)
+    fn hasPackageStructure(self: *Installer, dir_path: []const u8) bool {
+        _ = self;
+        var dir = std.fs.openDirAbsolute(dir_path, .{ .iterate = true }) catch return false;
+        defer dir.close();
+
+        var it = dir.iterate();
+        while (it.next() catch return false) |entry| {
+            if (entry.kind != .directory) continue;
+
+            // Check for common package directories
+            if (std.mem.eql(u8, entry.name, "bin") or
+                std.mem.eql(u8, entry.name, "lib") or
+                std.mem.eql(u8, entry.name, "include") or
+                std.mem.eql(u8, entry.name, "share") or
+                std.mem.eql(u8, entry.name, "sbin"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// Copy directory structure from source to destination
+    fn copyDirectoryStructure(self: *Installer, source: []const u8, dest: []const u8) !void {
+        var src_dir = try std.fs.openDirAbsolute(source, .{ .iterate = true });
+        defer src_dir.close();
+
+        // Ensure destination exists
+        try std.fs.cwd().makePath(dest);
+
+        var it = src_dir.iterate();
+        while (try it.next()) |entry| {
+            const src_path = try std.fs.path.join(
+                self.allocator,
+                &[_][]const u8{ source, entry.name },
+            );
+            defer self.allocator.free(src_path);
+
+            const dst_path = try std.fs.path.join(
+                self.allocator,
+                &[_][]const u8{ dest, entry.name },
+            );
+            defer self.allocator.free(dst_path);
+
+            if (entry.kind == .directory) {
+                // Recursively copy directory
+                try self.copyDirectoryStructure(src_path, dst_path);
+            } else {
+                // Copy file
+                try std.fs.copyFileAbsolute(src_path, dst_path, .{});
+            }
+        }
     }
 };
 

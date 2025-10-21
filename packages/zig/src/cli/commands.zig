@@ -835,11 +835,108 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
 }
 
 /// Shell activate command (for shell integration)
-pub fn shellActivateCommand(_: std.mem.Allocator, dir: []const u8) !CommandResult {
-    std.debug.print("Activating environment for {s}...\n", .{dir});
+pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
+    const detector = @import("../deps/detector.zig");
+    const parser = @import("../deps/parser.zig");
 
-    // TODO: Detect dependency files, install packages, generate shell code
-    // For now, return success
+    // Find dependency file
+    const deps_file = (try detector.findDepsFile(allocator, dir)) orelse {
+        // No dependency file found
+        return .{ .exit_code = 1 };
+    };
+    defer allocator.free(deps_file.path);
+
+    // Calculate environment hash from dependency file path
+    const hash = string.hashDependencyFile(deps_file.path);
+    const hash_hex = try string.hashToHex(hash, allocator);
+    defer allocator.free(hash_hex);
+
+    // Check environment cache first
+    var env_cache = cache.EnvCache.init(allocator);
+    defer env_cache.deinit();
+
+    if (try env_cache.get(hash)) |entry| {
+        // Cache hit - output cached shell code
+        std.debug.print("export PATH=\"{s}:$PATH\"\n", .{entry.path});
+        return .{ .exit_code = 0 };
+    }
+
+    std.debug.print("Found dependency file: {s} (hash: {s})\n", .{ deps_file.path, hash_hex });
+
+    // Parse dependency file (auto-detects format)
+    const deps = try parser.inferDependencies(allocator, deps_file);
+    defer {
+        for (deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(deps);
+    }
+
+    if (deps.len == 0) {
+        std.debug.print("No dependencies found\n", .{});
+        return .{ .exit_code = 0 };
+    }
+
+    // Initialize package cache and installer
+    var pkg_cache = try cache.PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+
+    var installer = try install.Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+
+    std.debug.print("Installing {d} package(s)...\n", .{deps.len});
+
+    // Install each dependency
+    for (deps) |dep| {
+        std.debug.print("  → {s}@{s}...", .{ dep.name, dep.version });
+
+        const spec = lib.packages.PackageSpec{
+            .name = dep.name,
+            .version = dep.version,
+        };
+
+        var result = installer.install(spec, .{}) catch |err| {
+            std.debug.print(" failed: {}\n", .{err});
+            continue;
+        };
+        defer result.deinit(allocator);
+
+        if (result.from_cache) {
+            std.debug.print(" done (cached, {d}ms)\n", .{result.install_time_ms});
+        } else {
+            std.debug.print(" done ({d}ms)\n", .{result.install_time_ms});
+        }
+    }
+
+    // Output shell code to add bin directory to PATH
+    const bin_dir = try std.fmt.allocPrint(
+        allocator,
+        "{s}/bin",
+        .{installer.data_dir},
+    );
+    defer allocator.free(bin_dir);
+
+    // Cache this environment for fast lookup next time
+    const mtime = blk: {
+        const file_stat = std.fs.cwd().statFile(deps_file.path) catch break :blk 0;
+        break :blk @as(i64, @intCast(file_stat.mtime));
+    };
+
+    const entry = try allocator.create(cache.env_cache.Entry);
+    const env_vars = std.StringHashMap([]const u8).init(allocator);
+    entry.* = .{
+        .hash = hash,
+        .dep_file = try allocator.dupe(u8, deps_file.path),
+        .dep_mtime = @as(i128, @intCast(mtime)),
+        .path = try allocator.dupe(u8, bin_dir),
+        .env_vars = env_vars,
+        .created_at = std.time.timestamp(),
+    };
+    try env_cache.put(entry);
+
+    std.debug.print("\nexport PATH=\"{s}:$PATH\"\n", .{bin_dir});
+
     return .{ .exit_code = 0 };
 }
 
