@@ -22,10 +22,114 @@ pub const CommandResult = struct {
 /// Install command
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: No packages specified"),
+        // No args - check if we're in a project directory
+        const detector = @import("../deps/detector.zig");
+        const parser = @import("../deps/parser.zig");
+
+        const cwd = try std.process.getCwdAlloc(allocator);
+        defer allocator.free(cwd);
+
+        const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
+            return .{
+                .exit_code = 1,
+                .message = try allocator.dupe(u8, "Error: No packages specified and no dependency file found"),
+            };
         };
+        defer allocator.free(deps_file.path);
+
+        // Parse dependencies from file
+        const deps = try parser.inferDependencies(allocator, deps_file);
+        defer {
+            for (deps) |*dep| {
+                var d = dep.*;
+                d.deinit(allocator);
+            }
+            allocator.free(deps);
+        }
+
+        if (deps.len == 0) {
+            std.debug.print("No dependencies found in {s}\n", .{deps_file.path});
+            return .{ .exit_code = 0 };
+        }
+
+        // Create project-specific environment
+        const proj_dir = std.fs.path.dirname(deps_file.path) orelse cwd;
+        const proj_basename = std.fs.path.basename(proj_dir);
+
+        // Hash project directory for short hash
+        var proj_hasher = std.crypto.hash.Md5.init(.{});
+        proj_hasher.update(proj_dir);
+        var proj_hash: [16]u8 = undefined;
+        proj_hasher.final(&proj_hash);
+        const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
+        defer allocator.free(proj_hash_short);
+
+        // Hash dependency file contents
+        const dep_file_contents = try std.fs.cwd().readFileAlloc(allocator, deps_file.path, 1024 * 1024);
+        defer allocator.free(dep_file_contents);
+
+        var dep_hasher = std.crypto.hash.Md5.init(.{});
+        dep_hasher.update(dep_file_contents);
+        var dep_hash: [16]u8 = undefined;
+        dep_hasher.final(&dep_hash);
+        const dep_hash_hex = try string.hashToHex(dep_hash, allocator);
+        defer allocator.free(dep_hash_hex);
+        const dep_hash_short = try std.fmt.allocPrint(allocator, "d{s}", .{dep_hash_hex[0..8]});
+        defer allocator.free(dep_hash_short);
+
+        // Create environment directory
+        const home = try lib.Paths.home(allocator);
+        defer allocator.free(home);
+
+        const env_dir = try std.fmt.allocPrint(
+            allocator,
+            "{s}/.local/share/launchpad/envs/{s}_{s}-{s}",
+            .{ home, proj_basename, proj_hash_short, dep_hash_short },
+        );
+        defer allocator.free(env_dir);
+
+        // Create environment directory structure
+        try std.fs.cwd().makePath(env_dir);
+        const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
+        defer allocator.free(bin_dir);
+        try std.fs.cwd().makePath(bin_dir);
+
+        std.debug.print("Installing {d} package(s) to {s}...\n", .{ deps.len, env_dir });
+
+        // Install each dependency
+        var pkg_cache = try cache.PackageCache.init(allocator);
+        defer pkg_cache.deinit();
+
+        for (deps) |dep| {
+            std.debug.print("  → {s}@{s}...", .{ dep.name, dep.version });
+
+            const spec = lib.packages.PackageSpec{
+                .name = dep.name,
+                .version = dep.version,
+            };
+
+            // Create custom installer that installs to env dir
+            var custom_installer = try install.Installer.init(allocator, &pkg_cache);
+            // Override data_dir to point to our env dir
+            allocator.free(custom_installer.data_dir);
+            custom_installer.data_dir = try allocator.dupe(u8, env_dir);
+            defer custom_installer.deinit();
+
+            var result = custom_installer.install(spec, .{}) catch |err| {
+                std.debug.print(" failed: {}\n", .{err});
+                continue;
+            };
+            defer result.deinit(allocator);
+
+            if (result.from_cache) {
+                std.debug.print(" done (cached, {d}ms)\n", .{result.install_time_ms});
+            } else {
+                std.debug.print(" done ({d}ms)\n", .{result.install_time_ms});
+            }
+        }
+
+        std.debug.print("\n✅ Environment created at: {s}\n", .{env_dir});
+        return .{ .exit_code = 0 };
     }
 
     // Initialize package cache and installer
@@ -383,6 +487,108 @@ pub fn envCleanCommand(allocator: std.mem.Allocator) !CommandResult {
     std.debug.print("Removed 0 environment(s)\n", .{});
 
     return .{ .exit_code = 0 };
+}
+
+/// Environment lookup command - find environment for a project directory
+pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !CommandResult {
+    const detector = @import("../deps/detector.zig");
+
+    // Find dependency file in project directory
+    const deps_file = (try detector.findDepsFile(allocator, project_dir)) orelse {
+        // No dependency file found - not a launchpad project
+        return .{ .exit_code = 1 };
+    };
+    defer allocator.free(deps_file.path);
+
+    // Get project directory (parent of deps file)
+    const proj_dir = std.fs.path.dirname(deps_file.path) orelse project_dir;
+
+    // Calculate environment directory name from project path
+    // Format: projectname_shorthash-depshash
+    const proj_basename = std.fs.path.basename(proj_dir);
+
+    // Hash the project directory for short hash
+    var proj_hasher = std.crypto.hash.Md5.init(.{});
+    proj_hasher.update(proj_dir);
+    var proj_hash: [16]u8 = undefined;
+    proj_hasher.final(&proj_hash);
+    const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
+    defer allocator.free(proj_hash_short);
+
+    // Hash the dependency file contents for dep hash (last 9 chars of hex MD5 with 'd' prefix)
+    const dep_file_contents = try std.fs.cwd().readFileAlloc(allocator, deps_file.path, 1024 * 1024);
+    defer allocator.free(dep_file_contents);
+
+    var dep_hasher = std.crypto.hash.Md5.init(.{});
+    dep_hasher.update(dep_file_contents);
+    var dep_hash: [16]u8 = undefined;
+    dep_hasher.final(&dep_hash);
+    const dep_hash_hex = try string.hashToHex(dep_hash, allocator);
+    defer allocator.free(dep_hash_hex);
+    const dep_hash_short = try std.fmt.allocPrint(allocator, "d{s}", .{dep_hash_hex[0..8]});
+    defer allocator.free(dep_hash_short);
+
+    // List all environments and find one matching projectname-dephash pattern
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+
+    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/envs", .{home});
+    defer allocator.free(envs_dir_path);
+
+    var envs_dir = try std.fs.cwd().openDir(envs_dir_path, .{ .iterate = true });
+    defer envs_dir.close();
+
+    var env_iterator = envs_dir.iterate();
+    var found_env_dir: ?[]const u8 = null;
+
+    while (try env_iterator.next()) |entry| {
+        if (entry.kind != .directory) continue;
+
+        // Check if this environment matches our pattern: {proj_basename}_{any_hash}-{dep_hash}
+        // Example: zyte_0012a253-d6b20b83a
+        const name = entry.name;
+
+        // Check if it starts with project name + underscore
+        const expected_prefix = try std.fmt.allocPrint(allocator, "{s}_", .{proj_basename});
+        defer allocator.free(expected_prefix);
+
+        if (!std.mem.startsWith(u8, name, expected_prefix)) continue;
+
+        // Check if it ends with our dep hash
+        const expected_suffix = try std.fmt.allocPrint(allocator, "-{s}", .{dep_hash_short});
+        defer allocator.free(expected_suffix);
+
+        if (!std.mem.endsWith(u8, name, expected_suffix)) continue;
+
+        // Match found!
+        const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ envs_dir_path, name });
+        found_env_dir = full_path;
+        break;
+    }
+
+    if (found_env_dir) |env_dir| {
+        defer allocator.free(env_dir);
+
+        // Check that bin directory exists
+        const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
+        defer allocator.free(bin_dir);
+
+        var bin_dir_handle = std.fs.cwd().openDir(bin_dir, .{}) catch {
+            return .{ .exit_code = 1 };
+        };
+        bin_dir_handle.close();
+
+        // Output: env_dir|dep_file_path
+        const stdout_file = std.fs.File{ .handle = std.posix.STDOUT_FILENO };
+        const output = try std.fmt.allocPrint(allocator, "{s}|{s}\n", .{ env_dir, deps_file.path });
+        defer allocator.free(output);
+        try stdout_file.writeAll(output);
+
+        return .{ .exit_code = 0 };
+    }
+
+    // No matching environment found
+    return .{ .exit_code = 1 };
 }
 
 /// Cache clean command (different from clear - removes unused/old entries)
@@ -825,7 +1031,8 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
     defer env_cache.deinit();
 
     if (try env_cache.get(hash)) |entry| {
-        // Cache hit - output shell code with PATH
+        // Cache hit - output shell code with PATH and tracking variables
+        std.debug.print("export LAUNCHPAD_ENV_BIN_PATH=\"{s}\"\n", .{entry.path});
         std.debug.print("export PATH=\"{s}:$PATH\"\n", .{entry.path});
         return .{ .exit_code = 0 };
     }
@@ -937,6 +1144,217 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
 
     std.debug.print("\nexport PATH=\"{s}:$PATH\"\n", .{bin_dir});
 
+    return .{ .exit_code = 0 };
+}
+
+/// Dev: shellcode command - generate shell integration code
+pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
+    // Generate minimal, performant shell integration code with instant deactivation
+    const shellcode =
+        \\
+        \\# Launchpad shell integration - minimal and performant
+        \\
+        \\# Dependency file names to check (keep in sync with Zig detector)
+        \\__LP_DEP_FILES=(
+        \\  "launchpad.config.ts" "launchpad.config.js" "dependencies.yaml" "dependencies.yml"
+        \\  "deps.yaml" "deps.yml" "pkgx.yaml" "pkgx.yml" "package.json"
+        \\  "pyproject.toml" "requirements.txt" "Cargo.toml" "go.mod" "Gemfile" "deno.json"
+        \\)
+        \\
+        \\# Find dependency file in current directory or parents
+        \\__lp_find_dep_file() {
+        \\  local dir="$1"
+        \\  while [[ "$dir" != "/" ]]; do
+        \\    for fname in "${__LP_DEP_FILES[@]}"; do
+        \\      if [[ -f "$dir/$fname" ]]; then
+        \\        echo "$dir/$fname"
+        \\        return 0
+        \\      fi
+        \\    done
+        \\    dir=$(dirname "$dir")
+        \\  done
+        \\  return 1
+        \\}
+        \\
+        \\# Get file modification time (cross-platform)
+        \\__lp_mtime() {
+        \\  local f="$1"
+        \\  if stat -f %m "$f" >/dev/null 2>&1; then
+        \\    stat -f %m "$f"  # macOS/BSD
+        \\  elif stat -c %Y "$f" >/dev/null 2>&1; then
+        \\    stat -c %Y "$f"  # Linux
+        \\  else
+        \\    echo 0
+        \\  fi
+        \\}
+        \\
+        \\launchpad_chpwd() {
+        \\  # SUPER FAST: Skip if PWD hasn't changed
+        \\  if [[ "$__LP_LAST_PWD" == "$PWD" ]]; then
+        \\    return 0
+        \\  fi
+        \\  export __LP_LAST_PWD="$PWD"
+        \\
+        \\  # INSTANT DEACTIVATION: Check if we've left a project
+        \\  if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" ]]; then
+        \\    # We had a project - check if we've left it
+        \\    if [[ "$PWD" != "$LAUNCHPAD_CURRENT_PROJECT"* ]]; then
+        \\      # Left the project - deactivate instantly (no subprocess calls!)
+        \\      if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+        \\        PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g; s|:$LAUNCHPAD_ENV_BIN_PATH||g; s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+        \\        export PATH
+        \\      fi
+        \\      unset LAUNCHPAD_CURRENT_PROJECT LAUNCHPAD_ENV_BIN_PATH LAUNCHPAD_DEP_FILE LAUNCHPAD_DEP_MTIME
+        \\      return 0
+        \\    fi
+        \\
+        \\    # Still in same project - check if dependency file changed
+        \\    if [[ -n "$LAUNCHPAD_DEP_FILE" && -f "$LAUNCHPAD_DEP_FILE" ]]; then
+        \\      local current_mtime=$(__lp_mtime "$LAUNCHPAD_DEP_FILE")
+        \\      if [[ "$current_mtime" != "$LAUNCHPAD_DEP_MTIME" ]]; then
+        \\        # Dependency file changed! Force re-activation
+        \\        # Deactivate first
+        \\        if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
+        \\          PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g; s|:$LAUNCHPAD_ENV_BIN_PATH||g; s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+        \\        fi
+        \\        unset LAUNCHPAD_CURRENT_PROJECT LAUNCHPAD_ENV_BIN_PATH LAUNCHPAD_DEP_FILE LAUNCHPAD_DEP_MTIME
+        \\        # Fall through to re-activation below
+        \\      else
+        \\        # No changes - skip lookup
+        \\        return 0
+        \\      fi
+        \\    else
+        \\      # No dependency file tracked or file deleted - skip lookup
+        \\      return 0
+        \\    fi
+        \\  fi
+        \\
+        \\  # FAST PATH: Check if we have a dependency file first (avoid slow TS binary call)
+        \\  local dep_file=$(__lp_find_dep_file "$PWD")
+        \\  if [[ -z "$dep_file" ]]; then
+        \\    # No dependency file found - skip expensive lookup
+        \\    return 0
+        \\  fi
+        \\
+        \\  # Not in a project (or dep file changed) - find environment by hash
+        \\  # Call Zig binary to get environment path for this project
+        \\  local env_lookup
+        \\  env_lookup=$(launchpad env:lookup "$PWD" 2>/dev/null)
+        \\
+        \\  if [[ -n "$env_lookup" ]]; then
+        \\    # env_lookup format: "env_dir|dep_file"
+        \\    local env_dir env_dep_file
+        \\    IFS='|' read -r env_dir env_dep_file <<< "$env_lookup"
+        \\
+        \\    if [[ -d "$env_dir/bin" ]]; then
+        \\      # Activate environment
+        \\      export PATH="$env_dir/bin:$PATH"
+        \\      export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
+        \\      export LAUNCHPAD_CURRENT_PROJECT="$PWD"
+        \\      export LAUNCHPAD_DEP_FILE="$dep_file"
+        \\      export LAUNCHPAD_DEP_MTIME=$(__lp_mtime "$dep_file")
+        \\    fi
+        \\  fi
+        \\}
+        \\
+        \\# Add to chpwd hooks for zsh
+        \\if [[ -n "$ZSH_VERSION" ]]; then
+        \\  if [[ -z "${chpwd_functions[(r)launchpad_chpwd]}" ]]; then
+        \\    chpwd_functions+=(launchpad_chpwd)
+        \\  fi
+        \\elif [[ -n "$BASH_VERSION" ]]; then
+        \\  # Bash: use PROMPT_COMMAND
+        \\  if [[ "$PROMPT_COMMAND" != *"launchpad_chpwd"* ]]; then
+        \\    PROMPT_COMMAND="launchpad_chpwd;$PROMPT_COMMAND"
+        \\  fi
+        \\fi
+        \\
+        \\# Run on shell start
+        \\launchpad_chpwd
+        \\
+    ;
+
+    // Write to stdout (not stderr!) so eval can capture it
+    const stdout_file = std.fs.File{ .handle = std.posix.STDOUT_FILENO };
+    try stdout_file.writeAll(shellcode);
+    try stdout_file.writeAll("\n");
+    _ = allocator;
+    return .{ .exit_code = 0 };
+}
+
+/// Dev: MD5 command - compute MD5 hash of a file or stdin
+pub fn devMd5Command(allocator: std.mem.Allocator, path: []const u8) !CommandResult {
+    const is_stdin = std.mem.eql(u8, path, "/dev/stdin");
+
+    var hasher = std.crypto.hash.Md5.init(.{});
+
+    if (is_stdin) {
+        // Read from stdin (Zig 0.15 API)
+        const stdin_file = std.fs.File{ .handle = std.posix.STDIN_FILENO };
+        var buf: [4096]u8 = undefined;
+        while (true) {
+            const bytes_read = try stdin_file.read(&buf);
+            if (bytes_read == 0) break;
+            hasher.update(buf[0..bytes_read]);
+        }
+    } else {
+        // Read from file
+        const file = std.fs.cwd().openFile(path, .{}) catch |err| {
+            const msg = try std.fmt.allocPrint(
+                allocator,
+                "Error: Failed to open file {s}: {}",
+                .{ path, err },
+            );
+            return .{
+                .exit_code = 1,
+                .message = msg,
+            };
+        };
+        defer file.close();
+
+        var buf: [4096]u8 = undefined;
+        while (true) {
+            const bytes_read = try file.read(&buf);
+            if (bytes_read == 0) break;
+            hasher.update(buf[0..bytes_read]);
+        }
+    }
+
+    var digest: [16]u8 = undefined;
+    hasher.final(&digest);
+
+    // Convert to hex string
+    const hex = try string.hashToHex(digest, allocator);
+    defer allocator.free(hex);
+
+    std.debug.print("{s}\n", .{hex});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Dev: find-project-root command - find project root from a directory
+pub fn devFindProjectRootCommand(allocator: std.mem.Allocator, start_dir: []const u8) !CommandResult {
+    const detector = @import("../deps/detector.zig");
+
+    // Try to find a dependency file
+    const deps_file = (try detector.findDepsFile(allocator, start_dir)) orelse {
+        // No project found
+        return .{ .exit_code = 1 };
+    };
+    defer allocator.free(deps_file.path);
+
+    // Get the directory of the dependency file
+    const project_dir = std.fs.path.dirname(deps_file.path) orelse start_dir;
+
+    std.debug.print("{s}\n", .{project_dir});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Dev: check-updates command - check for updates (placeholder)
+pub fn devCheckUpdatesCommand(_: std.mem.Allocator) !CommandResult {
+    // Placeholder - just exit successfully without output
+    // This is called in background by shell integration
     return .{ .exit_code = 0 };
 }
 

@@ -69,6 +69,12 @@ pub fn main() !void {
         result = try commands.envRemoveCommand(allocator, command_args[0]);
     } else if (std.mem.eql(u8, command, "env:clean")) {
         result = try commands.envCleanCommand(allocator);
+    } else if (std.mem.eql(u8, command, "env:lookup")) {
+        if (command_args.len == 0) {
+            std.debug.print("Error: env:lookup requires a directory argument\n", .{});
+            std.process.exit(1);
+        }
+        result = try commands.envLookupCommand(allocator, command_args[0]);
     }
     // Shell commands
     else if (std.mem.eql(u8, command, "shell:integrate")) {
@@ -85,6 +91,24 @@ pub fn main() !void {
             std.process.exit(1);
         }
         result = try commands.shellActivateCommand(allocator, command_args[0]);
+    }
+    // Dev commands
+    else if (std.mem.eql(u8, command, "dev:shellcode")) {
+        result = try commands.devShellcodeCommand(allocator);
+    } else if (std.mem.eql(u8, command, "dev:md5")) {
+        if (command_args.len == 0) {
+            std.debug.print("Error: dev:md5 requires a file path argument\n", .{});
+            std.process.exit(1);
+        }
+        result = try commands.devMd5Command(allocator, command_args[0]);
+    } else if (std.mem.eql(u8, command, "dev:find-project-root")) {
+        if (command_args.len == 0) {
+            std.debug.print("Error: dev:find-project-root requires a directory argument\n", .{});
+            std.process.exit(1);
+        }
+        result = try commands.devFindProjectRootCommand(allocator, command_args[0]);
+    } else if (std.mem.eql(u8, command, "dev:check-updates")) {
+        result = try commands.devCheckUpdatesCommand(allocator);
     }
     // Service commands
     else if (std.mem.eql(u8, command, "services")) {
@@ -158,6 +182,12 @@ fn printHelp() !void {
         \\  shell:integrate          Install shell integration
         \\  shell:lookup <dir>       Cache lookup (internal)
         \\  shell:activate <dir>     Activate environment (internal)
+        \\
+        \\Development:
+        \\  dev:shellcode            Generate shell integration code
+        \\  dev:md5 <file>           Compute MD5 hash
+        \\  dev:find-project-root    Find project root directory
+        \\  dev:check-updates        Check for updates
         \\
         \\Utilities:
         \\  doctor                   Verify installation
