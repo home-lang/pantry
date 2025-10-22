@@ -8,6 +8,6 @@
     "file-detection": "bun run file-detection-comparison.ts"
   },
   "dependencies": {
-    "bun-types": "latest1.3.0"
+    "bun-types": "latest1.3.1"
   }
 }
