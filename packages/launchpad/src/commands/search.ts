@@ -52,9 +52,11 @@ const command: Command = {
       return 1
     }
 
-    const limit = typeof optsFromOptions.limit === 'number' ? optsFromOptions.limit
-      : typeof optsFromOptions.limit === 'string' ? Number(optsFromOptions.limit)
-      : opts.limit ? Number(opts.limit) : 50
+    const limit = typeof optsFromOptions.limit === 'number'
+      ? optsFromOptions.limit
+      : typeof optsFromOptions.limit === 'string'
+        ? Number(optsFromOptions.limit)
+        : opts.limit ? Number(opts.limit) : 50
     const includePrograms = optsFromOptions['no-programs'] === true ? false : !opts['no-programs']
     const caseSensitive = typeof optsFromOptions['case-sensitive'] === 'boolean' ? optsFromOptions['case-sensitive'] : Boolean(opts['case-sensitive'])
     const compact = typeof optsFromOptions.compact === 'boolean' ? optsFromOptions.compact : Boolean(opts.compact)

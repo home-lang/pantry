@@ -57,8 +57,8 @@ describe('Download Progress', () => {
     originalEnv = { ...process.env }
 
     // Mock fetch for this test
-    // @ts-expect-error - Mock fetch for testing
-    globalThis.fetch = mockFetch
+    ;(mockFetch as any).__isMocked = true
+    globalThis.fetch = mockFetch as any
 
     // Mock stdout and stderr
     mockStdout = jest.fn()

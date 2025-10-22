@@ -1,6 +1,6 @@
 import type { SupportedArchitecture, SupportedPlatform } from './types'
 import fs from 'node:fs'
-import { arch, platform } from 'node:os'
+import { arch, homedir, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
@@ -9,6 +9,25 @@ import { Path } from './path'
 
 // Cache for binary path lookups
 const binaryPathCache = new Map<string, string | null>()
+
+/**
+ * Expand tilde (~) in path to the user's home directory
+ * Properly handles cross-platform home directory resolution
+ */
+export function expandTildePath(inputPath: string): string {
+  if (!inputPath.startsWith('~')) {
+    return inputPath
+  }
+
+  // Handle ~/ or just ~
+  if (inputPath === '~' || inputPath.startsWith('~/')) {
+    const homeDir = homedir()
+    return inputPath.replace(/^~/, homeDir)
+  }
+
+  // Return unchanged if it doesn't match our pattern
+  return inputPath
+}
 
 /**
  * Get the installation prefix
@@ -131,7 +150,7 @@ export function addToPath(dirPath: string): boolean {
  * Get the shell configuration file path
  */
 function getShellConfigFile(shell: string): string | null {
-  const home = process.env.HOME || process.env.USERPROFILE
+  const home = homedir()
   if (!home)
     return null
 

@@ -3,7 +3,6 @@ import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 import { config } from './config'
 import { install } from './install'
 import { logUniqueMessage } from './logging'
@@ -153,32 +152,6 @@ exec "${finalBinaryPath}" "$@"
 }
 
 /**
- * Test if a PHP binary actually works (can run --version without dyld errors)
- */
-export async function testPhpBinary(phpPath: string): Promise<boolean> {
-  try {
-    if (!fs.existsSync(phpPath)) {
-      return false
-    }
-
-    // Test with a short timeout to avoid hanging on broken binaries
-    const { execSync } = await import('node:child_process')
-    execSync(`"${phpPath}" --version`, {
-      stdio: 'pipe',
-      timeout: 5000,
-      env: { ...process.env },
-    })
-    return true
-  }
-  catch (error) {
-    if (config.verbose) {
-      console.warn(`PHP binary test failed: ${error instanceof Error ? error.message : String(error)}`)
-    }
-    return false
-  }
-}
-
-/**
  * Build SQLite from source
  */
 export async function buildSqliteFromSource(installPath: string, requestedVersion?: string): Promise<string[]> {
@@ -272,36 +245,30 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
   let totalDepsAlreadyInstalled = 0
 
   try {
-    // Import pantry from ts-pkgx to get package dependencies
-    const { pantry } = await import('ts-pkgx')
+    // Import packages from ts-pkgx to get package dependencies
+    const { packages: pkgxPackages } = await import('ts-pkgx')
 
     for (const packageName of packages) {
       // Resolve package name to domain
       const domain = resolvePackageName(packageName)
 
-      // Try different ways to find the package in pantry
-      // For PHP, we need to check php.net specifically
+      // Try different ways to find the package in packages
       let packageKey: string | undefined
 
       // First, try exact matches
-      packageKey = Object.keys(pantry).find(key => key === domain || key === packageName)
-
-      // Handle PHP special case - check phpnet specifically
-      if (!packageKey && packageName === 'php') {
-        packageKey = Object.keys(pantry).find(key => key === 'phpnet')
-      }
+      packageKey = Object.keys(pkgxPackages).find(key => key === domain || key === packageName)
 
       // Fallback to partial matches only if no exact match found
       if (!packageKey) {
-        packageKey = Object.keys(pantry).find(key =>
+        packageKey = Object.keys(pkgxPackages).find(key =>
           key.includes(packageName) || key.includes(domain.split('.')[0]),
         )
       }
 
-      const packageSpec = packageKey ? pantry[packageKey as keyof typeof pantry] : null
+      const packageSpec = packageKey ? pkgxPackages[packageKey as keyof typeof pkgxPackages] : null
 
       if (!packageSpec || !packageSpec.dependencies) {
-        console.warn(`⚠️ Package ${packageName} not found in pantry or has no dependencies`)
+        console.warn(`⚠️ Package ${packageName} not found in pkgxPackages or has no dependencies`)
         continue
       }
 
@@ -328,9 +295,7 @@ export async function installDependenciesOnly(packages: string[], installPath?: 
         const depDomain = dep.split(/[<>=~^]/)[0]
 
         // Skip if this dependency is the same as the main package we're installing deps for
-        if (depDomain === domain || depDomain === packageName
-          || (packageName === 'php' && depDomain === 'php.net')
-          || (domain === 'php.net' && depDomain === 'php.net')) {
+        if (depDomain === domain || depDomain === packageName) {
           if (config.verbose) {
             console.log(`⏭️  Skipping ${dep} (this is the main package, not a dependency)`)
           }

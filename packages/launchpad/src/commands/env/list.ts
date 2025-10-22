@@ -7,7 +7,7 @@ const cmd: Command = {
     const { listEnvironments } = await import('../../env')
 
     // Strongly type options
-    interface Opts { verbose?: boolean; format?: string }
+    interface Opts { verbose?: boolean, format?: string }
     const opts = (options ?? {}) as Opts
 
     // Prefer structured options, fallback to argv flags
@@ -15,7 +15,8 @@ const cmd: Command = {
     let format = typeof opts.format === 'string' ? opts.format : 'table'
     if (!opts.format) {
       const fmtIdx = argv.indexOf('--format')
-      if (fmtIdx !== -1 && argv[fmtIdx + 1]) format = argv[fmtIdx + 1]
+      if (fmtIdx !== -1 && argv[fmtIdx + 1])
+        format = argv[fmtIdx + 1]
     }
 
     try {

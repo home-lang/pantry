@@ -1,5 +1,5 @@
-import { type Command } from '../cli/types'
-import { runDoctorChecks, formatDoctorReport } from '../doctor'
+import type { Command } from '../cli/types'
+import { formatDoctorReport, runDoctorChecks } from '../doctor'
 
 const command: Command = {
   name: 'doctor',
@@ -7,6 +7,7 @@ const command: Command = {
   async run() {
     try {
       const report = await runDoctorChecks()
+      // eslint-disable-next-line no-console
       console.log(formatDoctorReport(report))
       return report.overall === 'healthy' ? 0 : 1
     }

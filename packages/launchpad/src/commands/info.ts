@@ -58,9 +58,11 @@ const command: Command = {
     }
 
     const includeVersions = optsFromOptions['no-versions'] === true ? false : !parsed['no-versions']
-    const maxVersions = typeof optsFromOptions['max-versions'] === 'number' ? optsFromOptions['max-versions']
-      : typeof optsFromOptions['max-versions'] === 'string' ? Number(optsFromOptions['max-versions'])
-      : parsed['max-versions'] ? Number(parsed['max-versions']) : 10
+    const maxVersions = typeof optsFromOptions['max-versions'] === 'number'
+      ? optsFromOptions['max-versions']
+      : typeof optsFromOptions['max-versions'] === 'string'
+        ? Number(optsFromOptions['max-versions'])
+        : parsed['max-versions'] ? Number(parsed['max-versions']) : 10
     const showPrograms = optsFromOptions['no-programs'] === true ? false : !parsed['no-programs']
     const showDependencies = optsFromOptions['no-dependencies'] === true ? false : !parsed['no-dependencies']
     const showCompanions = optsFromOptions['no-companions'] === true ? false : !parsed['no-companions']

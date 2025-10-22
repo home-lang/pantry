@@ -7,7 +7,7 @@ const cmd: Command = {
     const { removeEnvironment, removeAllEnvironments } = await import('../../env')
 
     // Strongly type options
-    interface Opts { hash?: string; force?: boolean; verbose?: boolean; all?: boolean }
+    interface Opts { hash?: string, force?: boolean, verbose?: boolean, all?: boolean }
     const opts = (options ?? {}) as Opts
 
     const nonFlags = argv.filter(a => !a.startsWith('--'))

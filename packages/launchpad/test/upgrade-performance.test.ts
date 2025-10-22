@@ -36,6 +36,7 @@ describe('Upgrade Command Performance and Integration', () => {
       json: () => Promise.resolve({ tag_name: 'v0.3.12' }),
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024 * 1024)),
     }))
+    ;(mockFetch as any).__isMocked = true
     globalThis.fetch = mockFetch as any
   })
 
@@ -224,9 +225,9 @@ describe('Upgrade Command Performance and Integration', () => {
       expect(result.duration).toBeLessThan(3000) // Should be fast since no actual download
 
       const output = result.stdout + result.stderr
-      expect(output).toContain('Would upgrade from')
-      expect(output).toContain('Would download:')
-      expect(output).toContain('Would install to:')
+      expect(output).toContain('DRY RUN MODE')
+      expect(output).toContain('Current version:')
+      expect(output).toContain('Target version:')
       // Should NOT contain actual setup/download messages
       expect(output).not.toContain('Downloading')
       expect(output).not.toContain('Installing')

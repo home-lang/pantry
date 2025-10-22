@@ -33,6 +33,7 @@ describe('Setup Command', () => {
       statusText: 'OK',
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024 * 1024)), // 1MB mock binary
     }))
+    ;(mockFetch as any).__isMocked = true
     globalThis.fetch = mockFetch
   })
 

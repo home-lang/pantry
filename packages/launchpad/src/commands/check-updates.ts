@@ -15,6 +15,7 @@ const cmd: Command = {
 
     if (env.CI === 'true' || env.GITHUB_ACTIONS === 'true') {
       // Minimal CI output for diagnostics, same shape as existing implementation
+      // eslint-disable-next-line no-console
       console.log(JSON.stringify(result))
     }
 

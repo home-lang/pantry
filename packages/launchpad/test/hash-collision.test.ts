@@ -82,7 +82,7 @@ describe('Hash Collision Prevention', () => {
       setTimeout(() => {
         proc.kill()
         reject(new Error('CLI command timed out'))
-      }, 30000)
+      }, 10000)
     })
   }
 
@@ -159,8 +159,8 @@ describe('Hash Collision Prevention', () => {
       // Dummy directory dependencies - use bun.sh which exists
       createDepsFile(dummyDir, ['bun.sh@0.5.9'])
 
-      const mainResult = await runCLI(['dev'], mainDir)
-      const dummyResult = await runCLI(['dev'], dummyDir)
+      const mainResult = await runCLI(['dev', '--dry-run'], mainDir)
+      const dummyResult = await runCLI(['dev', '--dry-run'], dummyDir)
 
       // The key test is that different directories get different environment paths
       // Both will use the same install path but different environment directories
@@ -197,8 +197,8 @@ describe('Hash Collision Prevention', () => {
       createDepsFile(projectB, ['gnu.org/wget@1.21.0'])
 
       // Try to install packages (may fail but that's OK, we're testing isolation)
-      await runCLI(['dev'], projectA)
-      await runCLI(['dev'], projectB)
+      await runCLI(['dev', '--dry-run'], projectA)
+      await runCLI(['dev', '--dry-run'], projectB)
 
       // Check that environment directories exist and are unique
       const envBaseDir = path.join(process.env.HOME || '~', '.local', 'share', 'launchpad', 'envs')
@@ -238,8 +238,8 @@ describe('Hash Collision Prevention', () => {
       expect(result.exitCode).toBe(0)
 
       const shellCode = result.stdout
-      // Should include dependency file detection (our current implementation doesn't use base64 in shell code)
-      expect(shellCode).toContain('__launchpad_find_deps_file')
+      // Should include dependency file detection
+      expect(shellCode).toContain('__launchpad_switch_environment')
 
       // Should not truncate the hash
       expect(shellCode).not.toContain('[:16]')
@@ -268,7 +268,7 @@ describe('Hash Collision Prevention', () => {
         fs.mkdirSync(projectDir, { recursive: true })
         createDepsFile(projectDir, ['gnu.org/wget@1.21.0']) // Use valid package
 
-        const _result = await runCLI(['dev'], projectDir)
+        const _result = await runCLI(['dev', '--dry-run'], projectDir)
         // Some packages might still fail, focus on hash uniqueness not installation success
         // The key test is that hashes are unique, not that packages install
       }

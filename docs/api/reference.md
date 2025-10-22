@@ -267,7 +267,7 @@ interface LaunchpadConfig {
   showShellMessages: boolean
   /** Custom message to show when environment is activated (default: "✅ Environment activated for {path}") */
   shellActivationMessage: string
-  /** Custom message to show when environment is deactivated (default: "dev environment deactivated") */
+  /** Custom message to show when environment is deactivated (default: "Environment deactivated") */
   shellDeactivationMessage: string
 }
 

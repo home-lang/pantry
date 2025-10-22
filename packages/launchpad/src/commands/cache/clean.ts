@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { Command } from '../../cli/types'
 
 const cmd: Command = {
@@ -7,21 +8,26 @@ const cmd: Command = {
     const { getCacheStats, cleanupCache } = await import('../../cache')
 
     // Strongly type options
-    interface Opts { maxAge?: number | string; maxSize?: number | string; dryRun?: boolean }
+    interface Opts { maxAge?: number | string, maxSize?: number | string, dryRun?: boolean }
     const opts = (options ?? {}) as Opts
 
     const getArgValue = (flag: string): string | undefined => {
       const idx = argv.indexOf(flag)
-      if (idx !== -1 && idx + 1 < argv.length) return argv[idx + 1]
+      if (idx !== -1 && idx + 1 < argv.length)
+        return argv[idx + 1]
       return undefined
     }
 
-    const maxAge = typeof opts.maxAge === 'number' ? String(opts.maxAge)
-      : typeof opts.maxAge === 'string' ? opts.maxAge
-      : getArgValue('--max-age')
-    const maxSize = typeof opts.maxSize === 'number' ? String(opts.maxSize)
-      : typeof opts.maxSize === 'string' ? opts.maxSize
-      : getArgValue('--max-size')
+    const maxAge = typeof opts.maxAge === 'number'
+      ? String(opts.maxAge)
+      : typeof opts.maxAge === 'string'
+        ? opts.maxAge
+        : getArgValue('--max-age')
+    const maxSize = typeof opts.maxSize === 'number'
+      ? String(opts.maxSize)
+      : typeof opts.maxSize === 'string'
+        ? opts.maxSize
+        : getArgValue('--max-size')
     const dryRun = typeof opts.dryRun === 'boolean' ? opts.dryRun : argv.includes('--dry-run')
 
     const maxAgeDays = maxAge ? Number.parseInt(maxAge, 10) : 30

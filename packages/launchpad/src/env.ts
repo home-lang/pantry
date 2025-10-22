@@ -610,6 +610,8 @@ export async function removeAllEnvironments(options: RemoveEnvironmentOptions): 
 
 export const DEPENDENCY_FILE_NAMES = [
   // Launchpad-specific files (highest priority)
+  'launchpad.config.ts',
+  'launchpad.config.js',
   'dependencies.yaml',
   'dependencies.yml',
   'deps.yaml',

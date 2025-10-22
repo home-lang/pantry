@@ -4,7 +4,7 @@ import { downloadPackage } from './install-core'
 import { install } from './install-main'
 import { cleanupSpinner, resetInstalledTracker } from './logging'
 import { getAllPackageAliases, getAllPackageDomains, getAllPackageNames, getAvailableVersions, getLatestVersion, getPackageInfo, isPackageAlias, isPackageDomain, isValidPackageName, isVersionAvailable, listAvailablePackages, parsePackageSpec, resolvePackageName, resolveVersion } from './package-resolution'
-import { buildSqliteFromSource, installDependenciesOnly, testPhpBinary } from './special-installers'
+import { buildSqliteFromSource, installDependenciesOnly } from './special-installers'
 import { DISTRIBUTION_CONFIG } from './types'
 import { install_prefix } from './utils'
 
@@ -35,5 +35,4 @@ export {
   resolveAllDependencies,
   resolvePackageName,
   resolveVersion,
-  testPhpBinary,
 }

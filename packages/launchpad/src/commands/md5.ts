@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+import type { Buffer } from 'node:buffer'
 import type { Command } from '../cli/types'
 
 const cmd: Command = {

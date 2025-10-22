@@ -90,7 +90,8 @@ describe('Config', () => {
         path.join(process.env.USERPROFILE || '', '.local'),
       ]
 
-      expect(expectedPaths).toContain(defaultConfig.installPath)
+      expect(defaultConfig.installPath).toBeDefined()
+      expect(expectedPaths).toContain(defaultConfig.installPath!)
       expect(defaultConfig.installPath).not.toBe('/opt/homebrew')
       expect(defaultConfig.installPath).not.toContain('/opt/homebrew')
     })
@@ -140,7 +141,8 @@ describe('Config', () => {
       // The installation path should be either /usr/local or ~/.local
       const homePath = process.env.HOME || process.env.USERPROFILE || '~'
       const expectedPaths = ['/usr/local', path.join(homePath, '.local')]
-      expect(expectedPaths).toContain(defaultConfig.installPath)
+      expect(defaultConfig.installPath).toBeDefined()
+      expect(expectedPaths).toContain(defaultConfig.installPath!)
     })
 
     it('should never use /opt/homebrew as installation path', () => {

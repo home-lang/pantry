@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { Command } from '../../cli/types'
 
 const cmd: Command = {

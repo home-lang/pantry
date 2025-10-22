@@ -5,35 +5,37 @@ describe('Shell Integration PATH Precedence', () => {
   it('includes env path precedence helper and sets LAUNCHPAD_ENV_BIN_PATH', () => {
     const code = shellcode(true)
 
-    expect(code).toContain('__launchpad_ensure_env_path_priority()')
     expect(code).toContain('export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"')
+    expect(code).toContain('export PATH="$env_dir/bin:$PATH"')
   })
 
   it('calls precedence helper after each activation path', () => {
     const code = shellcode(true)
 
-    // Cached fast path
-    expect(code).toContain('export PATH="$env_dir/bin:$LAUNCHPAD_ORIGINAL_PATH"')
-    expect(code).toContain('__launchpad_ensure_env_path_priority')
+    // PATH cleanup and setup
+    expect(code).toContain('export PATH=$(echo "$PATH" | /usr/bin/sed "s|$env_dir/bin:||g"')
+    expect(code).toContain('export PATH="$env_dir/bin:$PATH"')
 
-    // Fast activation path when env exists
+    // Environment variables setup
     expect(code).toContain('export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"')
+    expect(code).toContain('export LAUNCHPAD_CURRENT_PROJECT="$project_dir"')
 
-    // Post-setup success path
-    expect(code).toContain('export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"')
-
-    // Fallback activation on setup failure
-    expect(code).toContain('__launchpad_update_path "$env_dir/bin"')
-    expect(code).toContain('__launchpad_ensure_env_path_priority')
+    // Global paths added with lower priority
+    expect(code).toContain('export PATH="$PATH:$local_bin"')
+    expect(code).toContain('export PATH="$PATH:$global_bin"')
   })
 
   it('reasserts precedence on each prompt via precmd/PROMPT_COMMAND hook', () => {
     const code = shellcode(true)
 
-    // Hook registration present
-    expect(code).toContain('add-zsh-hook precmd __launchpad_auto_refresh_check')
-    // Auto-refresh function should invoke path precedence helper
-    expect(code).toContain('__launchpad_auto_refresh_check()')
-    expect(code).toContain('__launchpad_ensure_env_path_priority')
+    // Hook registration present for zsh
+    expect(code).toContain('chpwd_functions+=(__launchpad_chpwd)')
+    // Hook function definition
+    expect(code).toContain('__launchpad_chpwd()')
+    expect(code).toContain('__launchpad_switch_environment')
+
+    // Bash hook registration
+    expect(code).toContain('PROMPT_COMMAND="__launchpad_prompt_command;$PROMPT_COMMAND"')
+    expect(code).toContain('__launchpad_prompt_command()')
   })
 })

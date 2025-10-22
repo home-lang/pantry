@@ -391,11 +391,11 @@ describe('Environment Management Commands', () => {
         ageInDays: 50,
       })
 
-      const result = await runCLI(['env:clean', '--dry-run', '--verbose'])
+      const result = await runCLI(['env:clean', '--dry-run'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Path:')
-      expect(result.stdout).toContain('Last modified:')
+      expect(result.stdout).toContain('Environments to clean:')
+      expect(result.stdout).toContain('days old')
     })
   })
 
@@ -690,7 +690,7 @@ describe('Environment Management Commands', () => {
       const inspectResult = await runCLI(['env:inspect', 'healthy-recent_11111111'])
       expect(inspectResult.exitCode).toBe(0)
       expect(inspectResult.stdout).toContain('✅ Healthy')
-    })
+    }, 15000)
 
     it('should show proper error messages when environments directory does not exist', async () => {
       // Remove the environments directory entirely

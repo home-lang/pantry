@@ -8,19 +8,45 @@ import { config } from './config'
 import { resolveAllDependencies } from './dependency-resolution'
 import { installPackage } from './install-core'
 import { clearMessageCache, logUniqueMessage } from './logging'
-import { parsePackageSpec } from './package-resolution'
+import { getPackageInfo, parsePackageSpec, resolvePackageName } from './package-resolution'
+import { startService } from './services/manager'
 import { install_prefix } from './utils'
 
 /**
  * Main installation function with type-safe package specifications
  */
-export async function install(packages: PackageSpec | PackageSpec[], basePath?: string): Promise<string[]> {
+export async function install(
+  packages: PackageSpec | PackageSpec[],
+  basePath?: string,
+  options?: { skipServiceInit?: boolean },
+): Promise<string[]> {
   const packageList = Array.isArray(packages) ? packages : [packages]
   const installPath = basePath || install_prefix().string
 
   // Clear message cache at start of installation to avoid stale duplicates
   clearMessageCache()
 
+  // Add global timeout to prevent infinite hangs
+  const globalTimeout = setTimeout(() => {
+    console.error('❌ Installation process timed out after 10 minutes, forcing exit')
+    process.exit(1)
+  }, 10 * 60 * 1000) // 10 minute global timeout
+
+  try {
+    const result = await installInternal(packageList, installPath, options?.skipServiceInit ?? false)
+    clearTimeout(globalTimeout)
+    return result
+  }
+  catch (error) {
+    clearTimeout(globalTimeout)
+    throw error
+  }
+}
+
+/**
+ * Internal installation function
+ */
+async function installInternal(packageList: PackageSpec[], installPath: string, skipServiceInit: boolean = false): Promise<string[]> {
   // Create installation directory even if no packages to install
   await fs.promises.mkdir(installPath, { recursive: true })
 
@@ -79,6 +105,50 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     }
   }
 
+  // Expand with companion packages (e.g., npm for node) using ts-pkgx metadata
+  try {
+    const seen = new Set<string>(deduplicatedPackages)
+    const companionsToAdd: string[] = []
+
+    // Only guarantee companions for the user-requested packages
+    for (const requested of packageList) {
+      const { name } = parsePackageSpec(requested)
+      const info = getPackageInfo(name)
+      if (!info || !info.companions || info.companions.length === 0)
+        continue
+
+      for (const comp of info.companions) {
+        // Normalize companion identifier: allow aliases or domains
+        const compName = parsePackageSpec(comp).name
+        const normalized = resolvePackageName(compName)
+
+        // Avoid duplicates if already present either as alias, domain, or any versioned spec
+        const alreadyPresent = Array.from(seen).some((p) => {
+          const n = parsePackageSpec(p).name
+          const r = resolvePackageName(n)
+          return r === normalized
+        })
+
+        if (!alreadyPresent) {
+          companionsToAdd.push(comp)
+          seen.add(comp)
+        }
+      }
+    }
+
+    if (companionsToAdd.length > 0) {
+      if (config.verbose) {
+        console.warn(`➕ Adding companion packages: ${companionsToAdd.join(', ')}`)
+      }
+      deduplicatedPackages.push(...companionsToAdd)
+    }
+  }
+  catch (e) {
+    if (config.verbose) {
+      console.warn(`Failed to expand companions: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
+
   if (config.verbose) {
     console.warn(`Installing packages: ${deduplicatedPackages.join(', ')}`)
     console.warn(`Install path: ${installPath}`)
@@ -97,8 +167,20 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
       try {
         const parsed = parsePackageSpec(pkg)
         packageName = parsed.name
-        // Direct installation without dependency resolution
-        const packageFiles = await installPackage(packageName, pkg, installPath)
+
+        // Add timeout to individual package installation to prevent hangs
+        // Use longer timeout in CI environments
+        const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+        const timeoutMinutes = isCI ? 15 : 5 // 15 minutes for CI, 5 for local
+        const installPromise = installPackage(packageName, pkg, installPath)
+        const timeoutPromise = new Promise<string[]>((_, reject) => {
+          setTimeout(() => {
+            console.warn(`⚠️  Package installation timeout after ${timeoutMinutes} minutes: ${pkg}`)
+            reject(new Error(`Package installation timeout: ${pkg}`))
+          }, timeoutMinutes * 60 * 1000)
+        })
+
+        const packageFiles = await Promise.race([installPromise, timeoutPromise])
         allInstalledFiles.push(...packageFiles)
       }
       catch (error) {
@@ -207,7 +289,85 @@ export async function install(packages: PackageSpec | PackageSpec[], basePath?: 
     }
   }
 
+  // Auto-initialize and start services for newly installed packages
+  if (allInstalledFiles.length > 0 && !skipServiceInit) {
+    await autoInitializeServicesForPackages(deduplicatedPackages)
+  }
+
   return allInstalledFiles
+}
+
+/**
+ * Auto-initialize and start services for newly installed packages
+ */
+async function autoInitializeServicesForPackages(packageList: PackageSpec[]): Promise<void> {
+  if (!config.services?.autoStart) {
+    return // Auto-start is disabled
+  }
+
+  // Map package names to potential services
+  const servicePackageMap = new Map([
+    ['mysql.com', 'mysql'],
+    ['mysql', 'mysql'],
+    ['postgres', 'postgres'],
+    ['postgresql.org', 'postgres'],
+    ['redis', 'redis'],
+    ['redis.io', 'redis'],
+    ['nginx', 'nginx'],
+    ['nginx.org', 'nginx'],
+    ['apache', 'apache'],
+    ['httpd.apache.org', 'apache'],
+  ])
+
+  const servicesToStart: string[] = []
+
+  for (const pkg of packageList) {
+    const { name } = parsePackageSpec(pkg)
+    const domain = resolvePackageName(name)
+
+    // Check if this package has an associated service
+    if (servicePackageMap.has(name)) {
+      servicesToStart.push(servicePackageMap.get(name)!)
+    }
+    else if (servicePackageMap.has(domain)) {
+      servicesToStart.push(servicePackageMap.get(domain)!)
+    }
+  }
+
+  if (servicesToStart.length === 0) {
+    return // No services to start
+  }
+
+  // Remove duplicates
+  const uniqueServices = [...new Set(servicesToStart)]
+
+  try {
+    console.log(`🔧 Initializing services for installed packages...`)
+
+    for (const serviceName of uniqueServices) {
+      try {
+        const success = await startService(serviceName)
+        if (success) {
+          console.log(`✅ Service ${serviceName} initialized and started`)
+        }
+        else {
+          console.warn(`⚠️ Service ${serviceName} failed to start`)
+        }
+      }
+      catch (error) {
+        if (config.verbose) {
+          console.warn(`⚠️ Failed to auto-start service ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+        // Don't fail the entire installation if service start fails
+      }
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`⚠️ Error during service auto-initialization: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    // Don't fail the installation if service initialization fails
+  }
 }
 
 /**

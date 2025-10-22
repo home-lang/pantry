@@ -1,10 +1,31 @@
-import type { PlainObject } from 'is-what'
 import { semver } from 'bun'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
-import { isArray, isNumber, isPlainObject, isString } from 'is-what'
+
+// Type utilities
+type PlainObject = Record<string, any>
+
+// Type guard utilities
+function isString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !Number.isNaN(value)
+}
+
+function isArray(value: unknown): value is any[] {
+  return Array.isArray(value)
+}
+
+function isPlainObject(value: unknown): value is PlainObject {
+  if (typeof value !== 'object' || value === null)
+    return false
+  const proto = Object.getPrototypeOf(value)
+  return proto === null || proto === Object.prototype
+}
 
 export interface PackageRequirement {
   project: string
@@ -244,21 +265,77 @@ async function* readLines(filePath: string): AsyncGenerator<string> {
   }
 }
 
-// Memoization cache for dependency detection
-const dependencyCache = new Map<string, string | null>()
-const cacheTimestamps = new Map<string, number>()
-const CACHE_TTL = 5000 // 5 seconds cache TTL
+// Memoization cache for dependency detection with mtime tracking
+interface CacheEntry {
+  result: string | null
+  timestamp: number
+  depFileMtime?: number // Track dependency file modification time
+  depFilePath?: string
+}
+
+const dependencyCache = new Map<string, CacheEntry>()
+const CACHE_TTL = 60000 // 60 seconds cache TTL (increased for better performance)
+
+/**
+ * Get file modification time
+ */
+function getFileMtime(filePath: string): number {
+  try {
+    const stat = statSync(filePath)
+    return stat.mtimeMs
+  }
+  catch {
+    return 0
+  }
+}
+
+/**
+ * Find the primary dependency file for a directory
+ */
+function findDependencyFile(dirPath: string): string | undefined {
+  const priorityFiles = [
+    'dependencies.yaml',
+    'dependencies.yml',
+    'deps.yaml',
+    'deps.yml',
+    'launchpad.yaml',
+    'launchpad.yml',
+    'package.json',
+    'pyproject.toml',
+    'Cargo.toml',
+    'go.mod',
+  ]
+
+  for (const file of priorityFiles) {
+    const fullPath = join(dirPath, file)
+    try {
+      if (statSync(fullPath).isFile()) {
+        return fullPath
+      }
+    }
+    catch {
+      // File doesn't exist, continue
+    }
+  }
+
+  return undefined
+}
 
 /**
  * Clear stale cache entries
  */
 function clearStaleCache(): void {
   const now = Date.now()
-  for (const [key, timestamp] of cacheTimestamps) {
-    if (now - timestamp > CACHE_TTL) {
-      dependencyCache.delete(key)
-      cacheTimestamps.delete(key)
+  const toDelete: string[] = []
+
+  for (const [key, entry] of dependencyCache) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      toDelete.push(key)
     }
+  }
+
+  for (const key of toDelete) {
+    dependencyCache.delete(key)
   }
 }
 
@@ -268,21 +345,42 @@ function clearStaleCache(): void {
 function getCachedResult(dir: string): string | null | undefined {
   clearStaleCache()
   const cached = dependencyCache.get(dir)
+
   if (cached !== undefined) {
-    return cached
+    // If we have a dependency file tracked, verify it hasn't changed
+    if (cached.depFilePath) {
+      const currentMtime = getFileMtime(cached.depFilePath)
+      if (currentMtime !== cached.depFileMtime) {
+        // Dependency file changed, invalidate cache
+        dependencyCache.delete(dir)
+        return undefined
+      }
+    }
+    return cached.result
   }
+
   return undefined
 }
 
 /**
- * Cache a result
+ * Cache a result with mtime tracking
  */
 function setCachedResult(dir: string, result: string | null): void {
-  dependencyCache.set(dir, result)
-  cacheTimestamps.set(dir, Date.now())
+  const depFile = findDependencyFile(dir)
+  const entry: CacheEntry = {
+    result,
+    timestamp: Date.now(),
+  }
+
+  if (depFile) {
+    entry.depFilePath = depFile
+    entry.depFileMtime = getFileMtime(depFile)
+  }
+
+  dependencyCache.set(dir, entry)
 }
 
-export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string>, services?: { enabled?: boolean, autoStart?: string[] } }> {
+export default async function sniff(dir: SimplePath | { string: string }): Promise<{ pkgs: PackageRequirement[], env: Record<string, string>, services?: any }> {
   const dirPath = dir instanceof SimplePath ? dir : new SimplePath(dir.string)
 
   if (!dirPath.isDirectory()) {
@@ -303,7 +401,7 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
 
   const pkgs: PackageRequirement[] = []
   const env: Record<string, string> = {}
-  let services: { enabled?: boolean, autoStart?: string[] } | undefined
+  let services: any
 
   for await (
     const [path, { name, isFile, isSymlink, isDirectory }] of dirPath.ls()
@@ -404,6 +502,26 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           has_deps_file = true
           await parse_well_formatted_node(await path.readYAML())
           break
+        case 'launchpad.config.ts':
+        case 'launchpad.config.js':
+        case '.launchpad.config.ts':
+        case '.launchpad.config.js':
+          has_deps_file = true
+          try {
+            const { loadConfig } = await import('bunfig')
+            const config = await loadConfig({
+              name: 'launchpad',
+              cwd: dirPath.string,
+              defaultConfig: {},
+            })
+            if (config) {
+              await parse_well_formatted_node(config)
+            }
+          }
+          catch (err) {
+            console.warn(`Failed to load ${name}: ${err instanceof Error ? err.message : String(err)}`)
+          }
+          break
         case 'cdk.json':
           pkgs.push({ project: 'aws.amazon.com/cdk', constraint, source: 'inferred' })
           break
@@ -434,6 +552,26 @@ export default async function sniff(dir: SimplePath | { string: string }): Promi
           pkgs.push({ project: 'apache.org/subversion', constraint, source: 'inferred' })
           break
       }
+    }
+  }
+
+  // Always try to load config via bunfig (handles config/ subdirectory and TypeScript configs)
+  if (!has_deps_file) {
+    try {
+      const { loadConfig } = await import('bunfig')
+      const config = await loadConfig({
+        name: 'launchpad',
+        alias: 'deps',
+        cwd: dirPath.string,
+        defaultConfig: {},
+      })
+      if (config) {
+        has_deps_file = true
+        await parse_well_formatted_node(config)
+      }
+    }
+    catch {
+      // No config found via bunfig, that's ok
     }
   }
 
@@ -893,7 +1031,6 @@ function shouldInferServices(): boolean {
   // LAUNCHPAD_FRAMEWORKS_ENABLED and LAUNCHPAD_SERVICES_INFER
   const frameworksEnabled = process.env.LAUNCHPAD_FRAMEWORKS_ENABLED !== 'false'
   const inferServices = process.env.LAUNCHPAD_SERVICES_INFER !== 'false'
-  const laravelEnabled = process.env.LAUNCHPAD_LARAVEL_ENABLED !== 'false'
   const stacksEnabled = process.env.LAUNCHPAD_STACKS_ENABLED !== 'false'
 
   // Skip inference in shell integration mode for performance
@@ -901,7 +1038,7 @@ function shouldInferServices(): boolean {
     return false
   }
 
-  return frameworksEnabled && inferServices && (laravelEnabled || stacksEnabled)
+  return frameworksEnabled && inferServices && stacksEnabled
 }
 
 async function inferServicesFromFramework(projectDir: string): Promise<{ autoStart: string[] }> {
@@ -1011,12 +1148,9 @@ function extract_well_formatted_entries(
   const env = isPlainObject(yaml.env) ? yaml.env : {}
 
   // Extract services configuration
-  let services: { enabled?: boolean, autoStart?: string[] } | undefined
+  let services: any
   if (isPlainObject(yaml.services)) {
-    services = {
-      enabled: yaml.services.enabled === true,
-      autoStart: Array.isArray(yaml.services.autoStart) ? yaml.services.autoStart : undefined,
-    }
+    services = yaml.services
   }
 
   return { deps, env, services }

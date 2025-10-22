@@ -7,16 +7,18 @@ const cmd: Command = {
     const { cleanEnvironments } = await import('../../env')
 
     // Strongly type options
-    interface Opts { dryRun?: boolean; force?: boolean; verbose?: boolean; olderThan?: number | string }
+    interface Opts { dryRun?: boolean, force?: boolean, verbose?: boolean, olderThan?: number | string }
     const opts = (options ?? {}) as Opts
 
     const dryRun = typeof opts.dryRun === 'boolean' ? opts.dryRun : argv.includes('--dry-run')
     const force = typeof opts.force === 'boolean' ? opts.force : argv.includes('--force')
     const verbose = typeof opts.verbose === 'boolean' ? opts.verbose : argv.includes('--verbose')
 
-    let olderThan = typeof opts.olderThan === 'number' ? String(opts.olderThan)
-      : typeof opts.olderThan === 'string' ? opts.olderThan
-      : '30'
+    let olderThan = typeof opts.olderThan === 'number'
+      ? String(opts.olderThan)
+      : typeof opts.olderThan === 'string'
+        ? opts.olderThan
+        : '30'
     if (!opts.olderThan) {
       const idx = argv.indexOf('--older-than')
       if (idx !== -1 && argv[idx + 1])

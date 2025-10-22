@@ -18,6 +18,7 @@ const registry: Record<string, () => Promise<Command>> = {
   'env:clean': async () => (await import('./env/clean')).default,
   'env:remove': async () => (await import('./env/remove')).default,
   'uninstall': async () => (await import('./uninstall')).default,
+  'reinstall': async () => (await import('./reinstall')).default,
   'cache:clear': async () => (await import('./cache/clear')).default,
   'cache:stats': async () => (await import('./cache/stats')).default,
   'cache:clean': async () => (await import('./cache/clean')).default,
@@ -34,6 +35,7 @@ const registry: Record<string, () => Promise<Command>> = {
   'update': async () => (await import('./update')).default,
   'debug:deps': async () => (await import('./debug/deps')).default,
   'benchmark:file-detection': async () => (await import('./benchmark/file-detection')).default,
+  'benchmark:cache': async () => (await import('./benchmark/cache')).default,
   'db:create': async () => (await import('./db/create')).default,
   // services
   'start': async () => (await import('./start')).default,
@@ -47,21 +49,10 @@ const registry: Record<string, () => Promise<Command>> = {
   'build-env': async () => (await import('./build-env')).default,
 }
 
-// Aliases map to canonical command names
-const aliases: Record<string, string> = {
-  'remove': 'uninstall',
-  'packages': 'tags',
-  'cache:info': 'cache:stats',
-  'up': 'update',
-  'self-update': 'upgrade',
-  'service': 'services',
-}
-
 export async function resolveCommand(name?: string): Promise<Command | undefined> {
   if (!name)
     return undefined
-  const key = aliases[name] || name
-  const loader = registry[key]
+  const loader = registry[name]
   if (!loader)
     return undefined
   return loader()

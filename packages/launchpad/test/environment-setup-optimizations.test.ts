@@ -66,7 +66,7 @@ describe('Environment Setup Optimizations', () => {
       // Should generate the deactivation function that tests expect
       expect(dumpSource).toContain('_launchpad_dev_try_bye')
       expect(dumpSource).toContain('case "$PWD"')
-      expect(dumpSource).toContain('dev environment deactivated')
+      expect(dumpSource).toContain('Environment deactivated')
     })
   })
 

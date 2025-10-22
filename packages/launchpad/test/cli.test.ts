@@ -527,7 +527,7 @@ describe('CLI', () => {
 
       // Should import our new installation system - checking for both index and direct imports
       const hasInstallImport = content.includes('from \'../src/install\'')
-        || (content.includes('from \'../src\'') && content.includes('install'))
+        || (content.includes('from \'../src/commands\'') && content.includes('install'))
       expect(hasInstallImport).toBe(true)
     })
 
@@ -595,7 +595,9 @@ describe('CLI', () => {
       const cliPath = path.join(__dirname, '..', 'bin', 'cli.ts')
       const content = fs.readFileSync(cliPath, 'utf-8')
 
-      expect(content).toContain('from \'../src/dev\'')
+      expect(content).toContain('resolveCommand(\'dev\')')
+      expect(content).toContain('resolveCommand(\'dev:shellcode\')')
+      expect(content).toContain('resolveCommand(\'dev:integrate\')')
     })
   })
 
