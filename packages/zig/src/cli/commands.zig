@@ -184,9 +184,9 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             defer result.deinit(allocator);
 
             if (result.from_cache) {
-                std.debug.print("... done (cached, {d}ms)\n", .{result.install_time_ms});
+                std.debug.print(" ... done (cached, {d}ms)\n", .{result.install_time_ms});
             } else {
-                std.debug.print("... done ({d}ms)\n", .{result.install_time_ms});
+                std.debug.print(" ... done ({d}ms)\n", .{result.install_time_ms});
             }
         }
 
@@ -1518,7 +1518,7 @@ fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
         };
         defer result.deinit(allocator);
 
-        std.debug.print("... done ({s}, {d}ms)\n", .{
+        std.debug.print(" ... done ({s}, {d}ms)\n", .{
             if (result.from_cache) "cached" else "installed",
             result.install_time_ms,
         });
@@ -1572,7 +1572,7 @@ fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []cons
         };
         defer result.deinit(allocator);
 
-        std.debug.print("... done ({s}, {d}ms)\n", .{
+        std.debug.print(" ... done ({s}, {d}ms)\n", .{
             if (result.from_cache) "cached" else "installed",
             result.install_time_ms,
         });
