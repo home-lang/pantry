@@ -1,8 +1,0 @@
-dependencies:
-  bun: ^1.2.18
-  php: ^8.4.0
-  node: ^24.0.0
-  redis: ^8.0.0
-  postgres: ^17.0.0
-  composer: ^2.8.10
-  # meilisearch: ^1.15.0 doesnt exist yet

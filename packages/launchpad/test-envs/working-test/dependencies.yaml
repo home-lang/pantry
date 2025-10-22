@@ -1,6 +1,0 @@
-dependencies:
-  # Packages that work well in pkgx
-  python.org: ~3.12
-  curl.se: ^8.5
-  cmake.org: ^3.28
-  stedolan.github.io/jq: ^1.7

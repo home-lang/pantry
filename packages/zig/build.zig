@@ -4,9 +4,9 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Add zonfig module (from ../zonfig)
+    // Add zonfig module (from external repository)
     const zonfig_mod = b.addModule("zonfig", .{
-        .root_source_file = b.path("../zonfig/src/zonfig.zig"),
+        .root_source_file = b.path("../../../zonfig/src/zonfig.zig"),
         .target = target,
     });
 

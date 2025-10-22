@@ -1,0 +1,138 @@
+/* eslint-disable no-console */
+import fs from 'node:fs'
+import process from 'node:process'
+
+// Global message deduplication for shell mode
+const shellModeMessageCache = new Set<string>()
+let hasTemporaryProcessingMessage = false
+let spinnerInterval: Timer | null = null
+// Global tracker for completed packages (by domain only) to prevent duplicate success messages
+const globalCompletedPackages = new Set<string>()
+
+// Reset all global state for a new environment setup (critical for test isolation)
+export function resetInstalledTracker(): void {
+  // Only reset tracking state, NOT installed packages
+  // This prevents tests from accidentally uninstalling system dependencies
+  globalCompletedPackages.clear()
+  shellModeMessageCache.clear()
+  cleanupSpinner()
+
+  // Add safety check to prevent actual package removal during tests
+  if (process.env.NODE_ENV === 'test') {
+    // Log warning if test tries to reset package installations
+    console.warn('Test environment detected: resetInstalledTracker only clears tracking state, not actual packages')
+  }
+}
+
+// Centralized cleanup function for spinner and processing messages
+export function cleanupSpinner(): void {
+  if (spinnerInterval) {
+    clearInterval(spinnerInterval)
+    spinnerInterval = null
+  }
+  // Clear any spinner line
+  if (hasTemporaryProcessingMessage) {
+    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+      process.stderr.write('\x1B[1A\r\x1B[K')
+    }
+    else {
+      process.stdout.write('\x1B[1A\r\x1B[K')
+    }
+    hasTemporaryProcessingMessage = false
+  }
+}
+
+// Function to clean up all lingering processing messages at the end
+export function cleanupAllProcessingMessages(): void {
+  cleanupSpinner()
+  // Additional cleanup can be added here if needed
+}
+
+// Setup signal handlers for clean exit
+function setupSignalHandlers(): void {
+  process.on('SIGINT', () => {
+    cleanupSpinner()
+    process.exit(130) // Standard exit code for SIGINT
+  })
+
+  process.on('SIGTERM', () => {
+    cleanupSpinner()
+    process.exit(143) // Standard exit code for SIGTERM
+  })
+
+  process.on('beforeExit', () => {
+    cleanupSpinner()
+  })
+
+  process.on('exit', () => {
+    cleanupSpinner()
+  })
+}
+
+// Initialize signal handlers
+setupSignalHandlers()
+
+// Show success messages and temporary processing messages immediately after
+export function logUniqueMessage(message: string, forceLog = false): void {
+  // Clear any temporary processing message before showing any new message
+  if (hasTemporaryProcessingMessage && (message.startsWith('✅') || message.startsWith('⚠️') || message.startsWith('❌'))) {
+    // Stop spinner
+    if (spinnerInterval) {
+      clearInterval(spinnerInterval)
+      spinnerInterval = null
+    }
+
+    // Clear the current spinner line by moving cursor up and clearing the line
+    if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+      process.stderr.write('\x1B[1A\r\x1B[K') // Move up and clear line
+    }
+    else {
+      process.stdout.write('\x1B[1A\r\x1B[K') // Move up and clear line
+    }
+    hasTemporaryProcessingMessage = false
+  }
+
+  // In shell mode, deduplicate messages to avoid spam and suppress confusing warnings
+  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1' && !forceLog) {
+    const messageKey = message.replace(/\r.*/, '').trim() // Remove progress overwrite chars
+    if (shellModeMessageCache.has(messageKey)) {
+      return // Skip duplicate message
+    }
+
+    // Suppress confusing warning messages in shell integration mode
+    if (message.includes('Warning: Failed to install') && !message.includes('(tried multiple fallbacks)')) {
+      return // Skip individual package failure warnings - they're often followed by success
+    }
+
+    shellModeMessageCache.add(messageKey)
+  }
+
+  // Global deduplication for package completion messages to prevent x.org/x11 duplicates
+  if (message.startsWith('✅') && message.includes('(v')) {
+    const domainMatch = message.match(/✅\s+(\S+)\s+/)
+    if (domainMatch) {
+      const domain = domainMatch[1]
+      if (globalCompletedPackages.has(domain)) {
+        return // Skip duplicate completion message for this domain
+      }
+      globalCompletedPackages.add(domain)
+    }
+  }
+
+  // In shell mode, always use stderr for progress indicators and force flush
+  if (process.env.LAUNCHPAD_SHELL_INTEGRATION === '1') {
+    process.stderr.write(`${message}\n`)
+    // Force flush to ensure real-time display
+    if (process.stderr.isTTY) {
+      // Use sync write for TTY to avoid buffering
+      fs.writeSync(process.stderr.fd, '')
+    }
+  }
+  else {
+    console.log(message)
+  }
+}
+
+export function clearMessageCache(): void {
+  shellModeMessageCache.clear()
+}
