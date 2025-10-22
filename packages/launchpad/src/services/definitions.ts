@@ -31,24 +31,19 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       'unicode.org^73',
     ],
     healthCheck: {
-      command: ['pg_isready', '-h', '127.0.0.1', '-p', '5432'],
+      command: ['pg_isready', '-h', '127.0.0.1', '-p', '5432', '-U', '{dbUsername}'],
       expectedExitCode: 0,
       timeout: 5,
       interval: 30,
       retries: 3,
     },
-    initCommand: ['initdb', '-D', '{dataDir}', '--auth-local={authMethod}', '--auth-host={authMethod}', '--encoding=UTF8'],
+    initCommand: ['initdb', '-D', '{dataDir}', '-U', '{dbUsername}', '--auth-local={authMethod}', '--auth-host={authMethod}', '--encoding=UTF8'],
     postStartCommands: [
       // Create application database and user for any project type
-      ['createdb', '-h', '127.0.0.1', '-p', '5432', '{projectDatabase}'],
+      ['createdb', '-h', '127.0.0.1', '-p', '5432', '-U', '{dbUsername}', '{projectDatabase}'],
       // Ensure default postgres role exists for framework defaults
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'postgres\') THEN CREATE ROLE postgres SUPERUSER LOGIN; END IF; END $$;'],
-      // Create project-specific user idempotently
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'{dbUsername}\') THEN CREATE ROLE {dbUsername} LOGIN PASSWORD \'{dbPassword}\'; ELSE ALTER ROLE {dbUsername} WITH PASSWORD \'{dbPassword}\'; END IF; END $$;'],
-      // Grant permissions and set ownership
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'ALTER DATABASE {projectDatabase} OWNER TO {dbUsername}; GRANT ALL PRIVILEGES ON DATABASE {projectDatabase} TO {dbUsername};'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT CREATE ON SCHEMA public TO {dbUsername};'],
-      ['psql', '-h', '127.0.0.1', '-p', '5432', '-d', 'postgres', '-c', 'GRANT USAGE ON SCHEMA public TO {dbUsername};'],
+      ['psql', '-h', '127.0.0.1', '-p', '5432', '-U', '{dbUsername}', '-d', 'postgres', '-c', 'DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = \'postgres\') THEN CREATE ROLE postgres SUPERUSER LOGIN; END IF; END $$;'],
+      // Note: Additional users can be created by applications as needed
     ],
     supportsGracefulShutdown: true,
     config: {
@@ -69,52 +64,13 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     },
   },
 
-  php: {
-    name: 'php',
-    displayName: 'PHP',
-    description: 'PHP with database extensions (PostgreSQL, MySQL, SQLite)',
-    packageDomain: 'php.net',
-    executable: 'php',
-    args: [],
-    env: {},
-    dataDirectory: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php'),
-    configFile: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'php', 'php.ini'),
-    dependencies: [
-      'postgresql.org/libpq', // PostgreSQL client library for PHP extensions
-    ],
-    supportsGracefulShutdown: false,
-    extensions: {
-      // Extensions that can be installed via PECL
-      pecl: {
-        required: ['pdo_pgsql', 'pgsql'], // These will be installed automatically when PostgreSQL is needed
-        optional: ['redis', 'memcached', 'imagick', 'xdebug'], // These can be installed on demand
-        buildDependencies: {
-          pdo_pgsql: ['postgresql.org/libpq'],
-          pgsql: ['postgresql.org/libpq'],
-          redis: [],
-          memcached: [],
-          imagick: [],
-        },
-      },
-    },
-    config: {
-      extensions: ['pdo', 'pdo_sqlite', 'pdo_mysql', 'pdo_pgsql', 'mysqli', 'pgsql', 'sqlite3'],
-      memory_limit: '512M',
-      max_execution_time: 300,
-      upload_max_filesize: '64M',
-      post_max_size: '64M',
-      display_errors: 'On',
-      error_reporting: 'E_ALL',
-    },
-  },
-
   mysql: {
     name: 'mysql',
     displayName: 'MySQL',
     description: 'MySQL database server',
     packageDomain: 'mysql.com',
-    executable: 'mysqld_safe',
-    args: ['--datadir={dataDir}', '--pid-file={pidFile}'],
+    executable: 'mysqld',
+    args: ['--datadir={dataDir}', '--pid-file={pidFile}', '--port=3306', '--bind-address=127.0.0.1'],
     env: {},
     dataDirectory: path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'mysql', 'data'),
     logFile: path.join(homedir(), '.local', 'share', 'launchpad', 'logs', 'mysql.log'),
@@ -122,19 +78,19 @@ export const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
     port: 3306,
     dependencies: [],
     healthCheck: {
-      command: ['mysqladmin', 'ping', '-h', '127.0.0.1', '-P', '3306'],
+      command: ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'SELECT 1'],
       expectedExitCode: 0,
       timeout: 5,
       interval: 30,
       retries: 3,
     },
-    initCommand: ['mysqld', '--initialize-insecure', '--datadir={dataDir}', '--user=mysql'],
+    initCommand: ['mysqld', '--initialize-insecure', '--datadir={dataDir}', '--user={currentUser}'],
     postStartCommands: [
       // Create application database and user for any project type
-      ['mysql', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS {projectDatabase};'],
-      ['mysql', '-u', 'root', '-e', 'CREATE USER IF NOT EXISTS \'{dbUsername}\'@\'localhost\' IDENTIFIED BY \'{dbPassword}\';'],
-      ['mysql', '-u', 'root', '-e', 'GRANT ALL PRIVILEGES ON {projectDatabase}.* TO \'{dbUsername}\'@\'localhost\';'],
-      ['mysql', '-u', 'root', '-e', 'FLUSH PRIVILEGES;'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'CREATE DATABASE IF NOT EXISTS {projectDatabase};'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'CREATE USER IF NOT EXISTS \'{dbUsername}\'@\'localhost\' IDENTIFIED BY \'{dbPassword}\';'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'GRANT ALL PRIVILEGES ON {projectDatabase}.* TO \'{dbUsername}\'@\'localhost\';'],
+      ['mysql', '-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-e', 'FLUSH PRIVILEGES;'],
     ],
     supportsGracefulShutdown: true,
     config: {

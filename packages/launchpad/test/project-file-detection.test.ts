@@ -77,7 +77,7 @@ describe('Project File Detection', () => {
       ]
 
       for (const file of expectedFiles) {
-        expect(DEPENDENCY_FILE_NAMES).toContain(file)
+        expect(DEPENDENCY_FILE_NAMES).toContain(file as any)
       }
     })
   })
@@ -194,12 +194,19 @@ describe('Project File Detection', () => {
       expect(code).toContain('pyproject.toml')
       expect(code).toContain('requirements.txt')
       expect(code).toContain('Cargo.toml')
-      expect(code).toContain('go.(mod|sum)')
+      expect(code).toContain('go.mod')
+      expect(code).toContain('go.sum')
       expect(code).toContain('Gemfile')
       expect(code).toContain('deno.json')
-      expect(code).toContain('action.ya?ml')
-      expect(code).toContain('skaffold.ya?ml')
-      expect(code).toContain('.(nvmrc|node-version|ruby-version|python-version|terraform-version)')
+      expect(code).toContain('action.yml')
+      expect(code).toContain('action.yaml')
+      expect(code).toContain('skaffold.yaml')
+      expect(code).toContain('skaffold.yml')
+      expect(code).toContain('.nvmrc')
+      expect(code).toContain('.node-version')
+      expect(code).toContain('.ruby-version')
+      expect(code).toContain('.python-version')
+      expect(code).toContain('.terraform-version')
       expect(code).toContain('yarn.lock')
       expect(code).toContain('bun.lockb')
     })

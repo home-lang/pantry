@@ -32,6 +32,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       .replace('{logFile}', service.logFile || definition.logFile || '')
       .replace('{pidFile}', definition.pidFile || '')
       .replace('{port}', String(definition.port || 5432))
+      .replace('{currentUser}', process.env.USER || 'root')
 
     // Replace service-specific config variables
     if (service.config) {
@@ -44,7 +45,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
   })
 
   // Find the executable path
-  const executablePath = findBinaryInPath(definition.executable) || definition.executable
+  let executablePath = findBinaryInPath(definition.executable) || definition.executable
 
   // Compute runtime PATH and dynamic library search paths for packages started by launchd
   // launchd does not inherit shell env, so we must include env-specific paths here.
@@ -57,6 +58,26 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       : ((config.services && 'shouldAutoStart' in config.services)
           ? Boolean(config.services.shouldAutoStart)
           : Boolean(service.enabled))
+
+  // For MySQL/MariaDB: resolve real binary path from shim to get proper library paths
+  if ((definition.name === 'mysql' || definition.name === 'mariadb') && executablePath && fs.existsSync(executablePath)) {
+    try {
+      const content = fs.readFileSync(executablePath, 'utf-8')
+      if (content.startsWith('#!/bin/sh') || content.startsWith('#!/usr/bin/env bash')) {
+        // Extract real path from shim's exec line
+        const execMatch = content.match(/exec\s+"([^"]+)"/)
+        if (execMatch && execMatch[1]) {
+          executablePath = execMatch[1]
+        }
+      }
+    }
+    catch {
+      // Continue with original path if we can't read it
+    }
+  }
+
+  // Track library directories for wrapper script generation
+  const libraryDirs: string[] = []
 
   try {
     const binDir = path.dirname(executablePath)
@@ -75,7 +96,6 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       envVars.PATH = [envBin, envSbin, basePath].filter(Boolean).join(':')
 
       // Discover all package lib directories under this env root
-      const libraryDirs: string[] = []
 
       const pushIfExists = (p: string) => {
         try {
@@ -90,6 +110,32 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
       pushIfExists(path.join(envRoot, 'lib64'))
 
       // Scan domain/version directories for lib folders
+      // Recursively search up to 2 levels deep for version directories
+      const scanForLibraries = (dir: string, depth: number = 0) => {
+        if (depth > 2)
+          return
+        try {
+          const entries = fs.readdirSync(dir, { withFileTypes: true })
+          for (const entry of entries) {
+            if (!entry.isDirectory())
+              continue
+
+            const entryPath = path.join(dir, entry.name)
+
+            // If this is a version directory (starts with 'v'), check for lib
+            if (entry.name.startsWith('v')) {
+              pushIfExists(path.join(entryPath, 'lib'))
+              pushIfExists(path.join(entryPath, 'lib64'))
+            }
+            // Otherwise recurse into subdirectories (unless it's a common system dir)
+            else if (!['bin', 'sbin', 'share', 'include', 'etc', 'pkgs', '.tmp'].includes(entry.name)) {
+              scanForLibraries(entryPath, depth + 1)
+            }
+          }
+        }
+        catch {}
+      }
+
       try {
         const entries = fs.readdirSync(envRoot, { withFileTypes: true })
         for (const entry of entries) {
@@ -97,12 +143,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
             continue
           if (['bin', 'sbin', 'share', 'include', 'etc', 'pkgs'].includes(entry.name))
             continue
-          const domainPath = path.join(envRoot, entry.name)
-          const versions = fs.readdirSync(domainPath, { withFileTypes: true }).filter(v => v.isDirectory() && v.name.startsWith('v'))
-          for (const ver of versions) {
-            pushIfExists(path.join(domainPath, ver.name, 'lib'))
-            pushIfExists(path.join(domainPath, ver.name, 'lib64'))
-          }
+          scanForLibraries(path.join(envRoot, entry.name), 0)
         }
       }
       catch {}
@@ -120,9 +161,27 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
     // Best-effort only
   }
 
+  // For macOS: launchd strips DYLD_* variables, so we need a wrapper script for databases
+  // that explicitly sets DYLD_LIBRARY_PATH before executing the binary
+  let finalExecutablePath = executablePath
+  if ((definition.name === 'mysql' || definition.name === 'mariadb' || definition.name === 'postgres') && platform() === 'darwin') {
+    if (libraryDirs && libraryDirs.length > 0) {
+      // Generate wrapper script
+      const wrapperDir = path.join(homedir(), '.local', 'share', 'launchpad', 'wrappers')
+      fs.mkdirSync(wrapperDir, { recursive: true })
+      const wrapperPath = path.join(wrapperDir, `${definition.name}-wrapper.sh`)
+
+      const wrapperContent = `#!/bin/bash
+exec env DYLD_LIBRARY_PATH="${libraryDirs.join(':')}" "${executablePath}" "$@"
+`
+      fs.writeFileSync(wrapperPath, wrapperContent, { mode: 0o755 })
+      finalExecutablePath = wrapperPath
+    }
+  }
+
   return {
     Label: `com.launchpad.${definition.name || service.name}`,
-    ProgramArguments: [executablePath, ...resolvedArgs],
+    ProgramArguments: [finalExecutablePath, ...resolvedArgs],
     WorkingDirectory: definition.workingDirectory || dataDir || '',
     EnvironmentVariables: {
       ...Object.fromEntries(Object.entries(definition.env || {}).map(([k, v]) => {
@@ -132,6 +191,7 @@ export function generateLaunchdPlist(service: ServiceInstance): LaunchdPlist {
           .replace('{logFile}', service.logFile || definition.logFile || '')
           .replace('{pidFile}', definition.pidFile || '')
           .replace('{port}', String(definition.port || 5432))
+          .replace('{currentUser}', process.env.USER || 'root')
 
         // Replace service-specific config variables
         if (service.config) {
@@ -178,6 +238,7 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
       .replace('{logFile}', service.logFile || definition.logFile || '')
       .replace('{pidFile}', definition.pidFile || '')
       .replace('{port}', String(definition.port || 5432))
+      .replace('{currentUser}', process.env.USER || 'root')
 
     // Replace service-specific config variables
     if (service.config) {
@@ -201,6 +262,7 @@ export function generateSystemdService(service: ServiceInstance): SystemdService
         .replace('{logFile}', service.logFile || definition.logFile || '')
         .replace('{pidFile}', definition.pidFile || '')
         .replace('{port}', String(definition.port || 5432))
+        .replace('{currentUser}', process.env.USER || 'root')
 
       // Replace service-specific config variables
       if (service.config) {

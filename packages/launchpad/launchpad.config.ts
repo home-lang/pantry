@@ -48,7 +48,7 @@ export const defaultConfig: LaunchpadConfig = {
   shellActivationMessage: '✅ Environment activated for {path}',
 
   // Custom message to show when environment is deactivated
-  shellDeactivationMessage: 'dev environment deactivated',
+  shellDeactivationMessage: 'Environment deactivated',
 
   // Service management configuration
   services: {
@@ -64,11 +64,43 @@ export const defaultConfig: LaunchpadConfig = {
       password: 'password',
       authMethod: 'trust',
     },
-    php: {
-      enabled: true,
-      version: '8.4.11',
-    },
   },
+
+  // Package dependencies (similar to deps.yaml functionality)
+  // Uncomment to declare dependencies directly in the config file
+  // This eliminates the need for a separate deps.yaml file
+  //
+  // ✨ FULLY TYPED with ts-pkgx package names and versions!
+  //
+  // Option 1: Simple object format (works but limited type safety)
+  // dependencies: {
+  //   'bun.com': '^1.2.19',
+  //   'redisio': '^8.0.0',
+  //   'postgresqlorg': '^17.0.0',
+  // },
+  //
+  // Option 2: Fully typed with helper function (RECOMMENDED)
+  // import { defineDependencies, dep } from '@stacksjs/launchpad'
+  // dependencies: defineDependencies({
+  //   'bun.com': dep('^1.2.19'),        // Full IntelliSense + precise error highlighting!
+  //   'nodejsorg': dep('^22.0.0'),      // Node.js (note: 'nodejsorg' not 'nodejs.org')
+  //   'pythonorg': dep('^3.12.0'),      // Python
+  //   'redisio': {
+  //     version: '^8.0.0',              // Object format also works
+  //     global: true,                   // Install this package globally
+  //   },
+  //   'postgresqlorg': dep('^17.0.0'),  // PostgreSQL
+  // }),
+  //
+  // Option 3: Array format (uses latest versions) - fully typed!
+  // import { definePackageList } from '@stacksjs/launchpad'
+  // dependencies: definePackageList(['bun.com', 'nodejsorg', 'pythonorg']),
+  //
+  // Example 3: String format (space-separated, uses latest versions)
+  // dependencies: 'bun.com nodejsorg pythonorg',
+  //
+  // Global flag (applies to all dependencies unless overridden individually)
+  // global: false,
 }
 
 /**

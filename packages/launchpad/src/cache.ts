@@ -1,14 +1,236 @@
 /* eslint-disable no-console */
 import type { CacheMetadata } from './types'
 import fs from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from './config'
 
 // Cache configuration for packages
-const CACHE_DIR = path.join(process.env.HOME || '.', '.cache', 'launchpad')
+const CACHE_DIR = path.join(homedir(), '.cache', 'launchpad')
 const BINARY_CACHE_DIR = path.join(CACHE_DIR, 'binaries', 'packages')
 const CACHE_METADATA_FILE = path.join(CACHE_DIR, 'cache-metadata.json')
+
+// Shell environment cache configuration
+const SHELL_CACHE_DIR = path.join(CACHE_DIR, 'shell_cache')
+const ENV_CACHE_FILE = path.join(SHELL_CACHE_DIR, 'env_cache')
+
+// In-memory cache for fast lookups (singleton pattern)
+interface EnvCacheEntry {
+  projectDir: string
+  depFile: string
+  depMtime: number
+  envDir: string
+}
+
+class EnvCacheManager {
+  private cache: Map<string, EnvCacheEntry> = new Map()
+  private loaded: boolean = false
+
+  /**
+   * Load the entire cache file into memory for O(1) lookups
+   */
+  load(): void {
+    if (this.loaded)
+      return
+
+    try {
+      if (fs.existsSync(ENV_CACHE_FILE)) {
+        const content = fs.readFileSync(ENV_CACHE_FILE, 'utf-8')
+        const lines = content.trim().split('\n')
+
+        for (const line of lines) {
+          if (!line)
+            continue
+
+          const [projectDir, depFile, depMtime, envDir] = line.split('|')
+          if (projectDir && envDir) {
+            this.cache.set(projectDir, {
+              projectDir,
+              depFile: depFile || '',
+              depMtime: Number.parseInt(depMtime || '0', 10),
+              envDir,
+            })
+          }
+        }
+      }
+
+      this.loaded = true
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn('Failed to load environment cache:', error)
+      }
+    }
+  }
+
+  /**
+   * Get cached environment for a project directory
+   */
+  get(projectDir: string): EnvCacheEntry | null {
+    if (!this.loaded)
+      this.load()
+
+    return this.cache.get(projectDir) || null
+  }
+
+  /**
+   * Set cached environment for a project directory
+   */
+  set(projectDir: string, depFile: string, envDir: string): void {
+    if (!this.loaded)
+      this.load()
+
+    // Get mtime of dependency file if it exists
+    let depMtime = 0
+    if (depFile && fs.existsSync(depFile)) {
+      const stats = fs.statSync(depFile)
+      depMtime = Math.floor(stats.mtimeMs / 1000)
+    }
+
+    const entry: EnvCacheEntry = {
+      projectDir,
+      depFile,
+      depMtime,
+      envDir,
+    }
+
+    // Update in-memory cache immediately (instant for next lookups)
+    this.cache.set(projectDir, entry)
+
+    // Schedule async disk write (don't block)
+    this.schedulePersist()
+  }
+
+  private persistTimer: NodeJS.Timeout | null = null
+  private persistPending: boolean = false
+
+  /**
+   * Schedule a persist operation (debounced to batch multiple writes)
+   */
+  private schedulePersist(): void {
+    if (this.persistTimer) {
+      // Already scheduled, just mark as pending
+      this.persistPending = true
+      return
+    }
+
+    // Schedule persist after a short delay to batch multiple writes
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null
+      this.persist()
+    }, 10) // 10ms debounce
+  }
+
+  /**
+   * Persist cache to disk
+   */
+  private persist(): void {
+    try {
+      fs.mkdirSync(SHELL_CACHE_DIR, { recursive: true })
+
+      const lines: string[] = []
+      for (const entry of this.cache.values()) {
+        lines.push(`${entry.projectDir}|${entry.depFile}|${entry.depMtime}|${entry.envDir}`)
+      }
+
+      // Write atomically using temp file
+      const tempFile = `${ENV_CACHE_FILE}.tmp.${process.pid}`
+      fs.writeFileSync(tempFile, `${lines.join('\n')}\n`)
+      fs.renameSync(tempFile, ENV_CACHE_FILE)
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn('Failed to persist environment cache:', error)
+      }
+    }
+  }
+
+  /**
+   * Clear the cache
+   */
+  clear(): void {
+    this.cache.clear()
+    this.loaded = false
+
+    try {
+      if (fs.existsSync(ENV_CACHE_FILE)) {
+        fs.unlinkSync(ENV_CACHE_FILE)
+      }
+    }
+    catch (error) {
+      if (config.verbose) {
+        console.warn('Failed to clear environment cache:', error)
+      }
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats(): { entries: number, size: number } {
+    if (!this.loaded)
+      this.load()
+
+    let size = 0
+    try {
+      if (fs.existsSync(ENV_CACHE_FILE)) {
+        const stats = fs.statSync(ENV_CACHE_FILE)
+        size = stats.size
+      }
+    }
+    catch {
+      // Ignore errors
+    }
+
+    return {
+      entries: this.cache.size,
+      size,
+    }
+  }
+
+  /**
+   * Validate cache entries and remove stale ones
+   */
+  validate(): number {
+    if (!this.loaded)
+      this.load()
+
+    let removed = 0
+    const toRemove: string[] = []
+
+    for (const [projectDir, entry] of this.cache.entries()) {
+      // Check if environment directory still exists
+      if (!fs.existsSync(entry.envDir)) {
+        toRemove.push(projectDir)
+        continue
+      }
+
+      // Check if dependency file mtime has changed
+      if (entry.depFile && fs.existsSync(entry.depFile)) {
+        const stats = fs.statSync(entry.depFile)
+        const currentMtime = Math.floor(stats.mtimeMs / 1000)
+        if (currentMtime !== entry.depMtime) {
+          toRemove.push(projectDir)
+        }
+      }
+    }
+
+    for (const projectDir of toRemove) {
+      this.cache.delete(projectDir)
+      removed++
+    }
+
+    if (removed > 0) {
+      this.persist()
+    }
+
+    return removed
+  }
+}
+
+// Singleton instance
+export const envCache: EnvCacheManager = new EnvCacheManager()
 
 /**
  * Load cache metadata

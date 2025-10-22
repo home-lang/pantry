@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import path from 'node:path'
 import process from 'node:process'
-import { CAC } from 'cac'
+import { CLI } from '@stacksjs/clapp'
 import { resolveCommand } from '../src/commands'
 import { config } from '../src/config'
 
@@ -20,7 +20,7 @@ if (process.env.LAUNCHPAD_USE_ROUTER === '1') {
 // Default version for setup command (derived from package.json version)
 const DEFAULT_SETUP_VERSION = `v${version}`
 
-const cli = new CAC('launchpad')
+const cli = new CLI('launchpad')
 
 cli.version(version)
 cli.help()
@@ -61,6 +61,7 @@ cli
   .option('--verbose', 'Enable verbose output')
   .option('--path <path>', 'Custom installation path')
   .option('-g, --global', 'Install packages globally (or scan for all global dependencies if no packages specified)')
+  .option('--global-deps', 'Scan for and install all global dependencies from dependency files')
   .option('--deps-only', 'Install only the dependencies of packages, not the packages themselves')
   .option('--dry-run', 'Show packages that would be installed without installing them')
   .option('--quiet', 'Suppress non-error output')
@@ -71,12 +72,14 @@ cli
   .example('launchpad install')
   .example('launchpad install ./my-project')
   .example('launchpad install -g')
+  .example('launchpad install --global-deps')
   .example('launchpad install starship -g')
   .example('launchpad add node python')
   .action(async (packages: string[], options: {
     verbose?: boolean
     path?: string
     global?: boolean
+    globalDeps?: boolean
     depsOnly?: boolean
     dryRun?: boolean
     quiet?: boolean
@@ -92,6 +95,8 @@ cli
         argv.push('--path', options.path)
       if (options.global)
         argv.push('--global')
+      if (options.globalDeps)
+        argv.push('--global-deps')
       if (options.depsOnly)
         argv.push('--deps-only')
       if (options.dryRun)
@@ -751,6 +756,73 @@ cli
     }
   })
 
+// Activate command - user-friendly alias for dev:on
+cli
+  .command('activate [dir]', 'Activate development environment for current or specified directory')
+  .alias('on')
+  .alias('enable')
+  .option('--silent', 'Suppress output messages')
+  .option('--shell-safe', 'Output shell-safe message without ANSI escape sequences')
+  .example('launchpad activate')
+  .example('launchpad on /path/to/project')
+  .example('launchpad enable')
+  .action(async (dir?: string, options?: { silent?: boolean, shellSafe?: boolean }) => {
+    try {
+      const targetDir = dir ? path.resolve(dir) : process.cwd()
+
+      // Show activation message if not explicitly silenced
+      if (!options?.silent) {
+        // Show activation message if configured
+        if (config.showShellMessages && config.shellActivationMessage) {
+          let message = config.shellActivationMessage.replace('{path}', path.basename(targetDir))
+
+          // If called with shell-safe option, strip ANSI escape sequences to prevent shell parsing issues
+          if (options?.shellSafe) {
+            // eslint-disable-next-line no-control-regex
+            message = message.replace(/\u001B\[[0-9;]*m/g, '')
+          }
+
+          console.log(message)
+        }
+      }
+    }
+    catch (error) {
+      if (!options?.silent) {
+        console.error('Failed to activate dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      process.exit(1)
+    }
+  })
+
+// Deactivate command - user-friendly alias for dev:off
+cli
+  .command('deactivate', 'Deactivate current development environment and use system/homebrew dependencies')
+  .alias('off')
+  .alias('disable')
+  .option('--silent', 'Suppress output messages')
+  .example('launchpad deactivate')
+  .example('launchpad off')
+  .example('launchpad disable')
+  .action(async (options?: { silent?: boolean }) => {
+    try {
+      // The actual deactivation is handled by shell functions
+      // This command exists for consistency and user-friendly access
+
+      if (!options?.silent) {
+        // Show deactivation message if configured
+        if (config.showShellMessages && config.shellDeactivationMessage) {
+          console.log(config.shellDeactivationMessage)
+        }
+      }
+    }
+    catch (error) {
+      if (!options?.silent) {
+        console.error('Failed to deactivate dev environment:', error instanceof Error ? error.message : String(error))
+      }
+      process.exit(1)
+    }
+  })
+
 // Environment management commands
 
 // List environments command
@@ -887,9 +959,11 @@ cli
   .option('--verbose', 'Enable verbose output')
   .option('--force', 'Skip confirmation prompts')
   .option('--dry-run', 'Show what would be removed without actually removing it')
+  .option('-g, --global', 'Remove packages from global installation directory')
   .example('launchpad uninstall node python')
   .example('launchpad remove node@18 --force')
-  .action(async (packages: string[], options?: { verbose?: boolean, force?: boolean, dryRun?: boolean }) => {
+  .example('launchpad uninstall -g node')
+  .action(async (packages: string[], options?: { verbose?: boolean, force?: boolean, dryRun?: boolean, global?: boolean }) => {
     if (options?.verbose) {
       config.verbose = true
     }
@@ -914,6 +988,8 @@ cli
         argv.push('--force')
       if (options?.dryRun)
         argv.push('--dry-run')
+      if (options?.global)
+        argv.push('--global')
       const cmd = await resolveCommand('uninstall')
       if (!cmd)
         return
@@ -923,6 +999,75 @@ cli
     }
     catch (error) {
       console.error('Failed to uninstall:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+// Reinstall command - uninstall and reinstall packages
+cli
+  .command('reinstall [packages...]', 'Uninstall and reinstall packages')
+  .option('--verbose', 'Enable verbose output')
+  .option('--force', 'Skip confirmation prompts')
+  .option('--dry-run', 'Show what would be reinstalled without actually doing it')
+  .option('--path <path>', 'Custom installation path')
+  .option('-g, --global', 'Reinstall packages globally')
+  .option('--deps-only', 'Reinstall only the dependencies of packages, not the packages themselves')
+  .option('--quiet', 'Suppress non-error output')
+  .example('launchpad reinstall node python')
+  .example('launchpad reinstall php --force')
+  .example('launchpad reinstall node --global')
+  .example('launchpad reinstall --dry-run')
+  .action(async (packages: string[], options?: {
+    verbose?: boolean
+    force?: boolean
+    dryRun?: boolean
+    path?: string
+    global?: boolean
+    depsOnly?: boolean
+    quiet?: boolean
+  }) => {
+    if (options?.verbose) {
+      config.verbose = true
+    }
+
+    // Ensure packages is an array
+    const packageList = Array.isArray(packages) ? packages : [packages].filter(Boolean)
+
+    if (packageList.length === 0) {
+      console.error('No packages specified for reinstallation')
+      console.log('')
+      console.log('Usage examples:')
+      console.log('  launchpad reinstall node python')
+      console.log('  launchpad reinstall php --force')
+      console.log('  launchpad reinstall node --global')
+      process.exit(1)
+    }
+
+    try {
+      const argv: string[] = [...packageList]
+      if (options?.verbose)
+        argv.push('--verbose')
+      if (options?.force)
+        argv.push('--force')
+      if (options?.dryRun)
+        argv.push('--dry-run')
+      if (options?.path)
+        argv.push('--path', options.path)
+      if (options?.global)
+        argv.push('--global')
+      if (options?.depsOnly)
+        argv.push('--deps-only')
+      if (options?.quiet)
+        argv.push('--quiet')
+      const cmd = await resolveCommand('reinstall')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
+    }
+    catch (error) {
+      console.error('Failed to reinstall:', error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   })
@@ -1382,6 +1527,33 @@ cli
   }) => {
     try {
       const cmd = await resolveCommand('benchmark:file-detection')
+      if (!cmd)
+        return
+      const code = await cmd.run({ argv: [], options, env: process.env })
+      if (typeof code === 'number' && code !== 0)
+        process.exit(code)
+    }
+    catch (error) {
+      console.error('Benchmark failed:', error instanceof Error ? error.message : String(error))
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('benchmark:cache', 'Benchmark cache lookup performance (in-memory vs disk)')
+  .option('--iterations <number>', 'Number of iterations per test (default: 10000)')
+  .option('--verbose', 'Show detailed output')
+  .option('--json', 'Output results as JSON')
+  .example('launchpad benchmark:cache')
+  .example('launchpad benchmark:cache --iterations 50000')
+  .example('launchpad benchmark:cache --json')
+  .action(async (options?: {
+    iterations?: string
+    verbose?: boolean
+    json?: boolean
+  }) => {
+    try {
+      const cmd = await resolveCommand('benchmark:cache')
       if (!cmd)
         return
       const code = await cmd.run({ argv: [], options, env: process.env })

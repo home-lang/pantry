@@ -1,16 +1,57 @@
-import type { aliases, packages } from 'ts-pkgx'
+import type { Dependencies, PackageAlias, PackageDomain, PackageName, Packages } from 'ts-pkgx'
 
-// Extract all package alias names from ts-pkgx
-export type PackageAlias = keyof typeof aliases
+export type {
+  Dependencies,
+  PackageAlias,
+  PackageDomain,
+  PackageName,
+  Packages,
+}
 
-// Extract all package domain names from ts-pkgx packages
-export type PackageDomain = keyof typeof packages
+/**
+ * Helper function to create a fully typed dependencies configuration with version validation
+ * This provides IntelliSense and type safety for both package names AND versions!
+ */
+export function defineDependencies(deps: Dependencies): Dependencies {
+  return deps
+}
 
-// Union type of all valid package identifiers (aliases + domains)
-export type PackageName = PackageAlias | PackageDomain
+/**
+ * Helper function to create a fully typed dependencies array
+ */
+export function definePackageList<T extends readonly PackageName[]>(packages: T): T {
+  return packages
+}
 
 // Type for package with optional version (allowing string for flexibility)
 export type PackageSpec = string
+
+// Type for package dependency specification in config
+export interface PackageDependencySpec {
+  version?: string
+  global?: boolean
+}
+
+// Extract version types from ts-pkgx packages
+type PackageVersions<T extends PackageName> = T extends keyof Packages
+  ? Packages[T] extends { versions: readonly (infer V)[] }
+    ? V extends string
+      ? V
+      : never
+    : never
+  : never
+
+// Version constraint that allows valid versions or version ranges
+export type VersionConstraint<T extends PackageName> =
+  | PackageVersions<T>
+  | `^${PackageVersions<T>}`
+  | `~${PackageVersions<T>}`
+  | `>=${PackageVersions<T>}`
+  | `<=${PackageVersions<T>}`
+  | `>${PackageVersions<T>}`
+  | `<${PackageVersions<T>}`
+  | 'latest'
+  | '*'
 
 // Supported distribution formats
 export type SupportedFormat = 'tar.xz' | 'tar.gz'
@@ -65,6 +106,21 @@ export interface LaunchpadConfig {
    * - string | string[]: install only for the listed package name(s)
    */
   installBuildDeps?: boolean | string | string[]
+  /**
+   * Package dependencies to install (similar to deps.yaml)
+   * FULLY TYPED package names AND versions from ts-pkgx
+   *
+   * Supports both domain names ('bun.sh') and aliases ('bun')
+   * Invalid package names and versions will cause TypeScript errors
+   *
+   * Use createDependencies() helper for enhanced developer experience:
+   * dependencies: createDependencies({ 'bun': '^1.2.19' })
+   */
+  dependencies?: Dependencies
+  /**
+   * Global flag for dependencies - when true, all dependencies are installed globally
+   */
+  global?: boolean
   shellMessages?: {
     activation?: string
     deactivation?: string
@@ -80,6 +136,105 @@ export interface LaunchpadConfig {
   shellDeactivationMessage?: string
   useRegistry?: boolean
   installMethod?: string
+  /** Cache configuration */
+  cache?: {
+    enabled?: boolean
+    /** Maximum cache size in MB (default: 1024) */
+    maxSize?: number
+    /** Cache TTL in hours (default: 168 = 1 week) */
+    ttlHours?: number
+    /** Auto-cleanup when cache exceeds maxSize (default: true) */
+    autoCleanup?: boolean
+    /** Directory for cache storage */
+    directory?: string
+    /** Compression for cached files (default: true) */
+    compression?: boolean
+  }
+  /** Network and download configuration */
+  network?: {
+    /** Connection timeout in ms (default: 30000) */
+    timeout?: number
+    /** Max concurrent downloads (default: 3) */
+    maxConcurrent?: number
+    /** Max retries for failed downloads (default: 3) */
+    retries?: number
+    /** Proxy configuration */
+    proxy?: {
+      http?: string
+      https?: string
+      /** Comma-separated list of hosts to bypass proxy */
+      bypass?: string
+    }
+    /** User agent string for HTTP requests */
+    userAgent?: string
+    /** Follow redirects (default: true) */
+    followRedirects?: boolean
+  }
+  /** Security configuration */
+  security?: {
+    /** Verify package signatures (default: true) */
+    verifySignatures?: boolean
+    /** Trusted package sources */
+    trustedSources?: string[]
+    /** Allow packages from untrusted sources (default: false) */
+    allowUntrusted?: boolean
+    /** Check for package vulnerabilities (default: true) */
+    checkVulnerabilities?: boolean
+  }
+  /** Logging configuration */
+  logging?: {
+    /** Log level: debug, info, warn, error (default: info) */
+    level?: 'debug' | 'info' | 'warn' | 'error'
+    /** Log to file (default: false) */
+    toFile?: boolean
+    /** Log file path */
+    filePath?: string
+    /** Max log file size in MB (default: 10) */
+    maxFileSize?: number
+    /** Number of log files to keep (default: 5) */
+    keepFiles?: number
+    /** Include timestamps in logs (default: true) */
+    timestamps?: boolean
+    /** JSON format logs (default: false) */
+    json?: boolean
+  }
+  /** Update policies */
+  updates?: {
+    /** Check for package updates (default: true) */
+    checkForUpdates?: boolean
+    /** Auto-update packages (default: false) */
+    autoUpdate?: boolean
+    /** Update check frequency in hours (default: 24) */
+    checkFrequency?: number
+    /** Include pre-release versions (default: false) */
+    includePrereleases?: boolean
+    /** Channels to check: stable, beta, nightly */
+    channels?: ('stable' | 'beta' | 'nightly')[]
+  }
+  /** Resource management */
+  resources?: {
+    /** Max disk space for packages in MB */
+    maxDiskUsage?: number
+    /** Max memory usage for operations in MB */
+    maxMemoryUsage?: number
+    /** Cleanup old versions automatically (default: true) */
+    autoCleanup?: boolean
+    /** Keep N latest versions of each package (default: 3) */
+    keepVersions?: number
+  }
+  /** Environment profiles */
+  profiles?: {
+    /** Current active profile */
+    active?: string
+    /** Development profile settings */
+    development?: Partial<LaunchpadConfig>
+    /** Production profile settings */
+    production?: Partial<LaunchpadConfig>
+    /** CI profile settings */
+    ci?: Partial<LaunchpadConfig>
+    /** Custom profiles */
+    custom?: Record<string, Partial<LaunchpadConfig>>
+  }
   /** Project-level post-setup commands (run after environment is prepared) */
   postSetup?: {
     enabled?: boolean
@@ -110,41 +265,25 @@ export interface LaunchpadConfig {
     autoRestart?: boolean
     startupTimeout?: number
     shutdownTimeout?: number
-    /** Infer services to auto-start from framework config (e.g., Laravel/Stacks .env) */
+    /** Infer services to auto-start from framework config (e.g., Stacks .env) */
     infer?: boolean
     database?: {
+      /** Database connection type - required when multiple database services are configured */
+      connection?: 'mysql' | 'postgres' | 'postgresql' | 'mariadb' | 'redis' | 'mongodb' | 'sqlite'
+      /** Database name to create */
+      name?: string
       username?: string
       password?: string
       authMethod?: 'trust' | 'md5' | 'scram-sha-256'
     }
+    /** Command(s) to run after database is created and ready - e.g., migrations, seeding */
+    postDatabaseSetup?: string | string[]
     frameworks?: {
       enabled?: boolean
-      laravel?: {
-        enabled?: boolean
-        autoDetect?: boolean
-      }
       stacks?: {
         enabled?: boolean
         autoDetect?: boolean
       }
-    }
-    php?: {
-      enabled?: boolean
-      strategy?: 'auto-detect'
-      version?: string
-      autoDetect?: {
-        enabled?: boolean
-        includeAllDatabases?: boolean
-        includeEnterprise?: boolean
-      }
-      configuration?: 'laravel-mysql' | 'laravel-postgres' | 'laravel-sqlite' | 'api-only' | 'enterprise' | 'wordpress' | 'full-stack'
-      /** If true, auto-install the PHP binary when needed. Default: true in practice. */
-      autoInstall?: boolean
-      /**
-       * Deprecated: prefer global `installBuildDeps` with package list.
-       * If provided here, it will still be honored for PHP only.
-       */
-      installBuildDeps?: boolean | string | string[]
     }
   }
   verbose?: boolean
@@ -273,22 +412,6 @@ export interface SystemdService {
   Install: {
     WantedBy: string[]
   }
-}
-
-/**
- * PHP configuration interface
- */
-export interface PHPConfig {
-  version?: string
-  extensions?: string[] | {
-    core?: string[]
-    database?: string[]
-    web?: string[]
-    utility?: string[]
-    optional?: string[]
-  }
-  iniSettings?: Record<string, string>
-  enabled?: boolean
 }
 
 /**

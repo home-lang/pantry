@@ -138,60 +138,6 @@ dependencies:
         expect(importError).toBeUndefined()
       }
     }, 60000) // Reduced timeout for test mode
-
-    it('should test PHP binary functionality', async () => {
-      try {
-        // Import the PHP testing function
-        const installModule = await import('../src/install')
-
-        if (typeof installModule.testPhpBinary === 'function') {
-          // Test with a non-existent binary
-          const nonExistentPhp = '/path/to/nonexistent/php'
-          const result1 = await installModule.testPhpBinary(nonExistentPhp)
-          expect(result1).toBe(false)
-
-          // Test the function structure
-          expect(typeof installModule.testPhpBinary).toBe('function')
-        }
-        else {
-          // Function not exported yet, test the module structure
-          expect(typeof installModule).toBe('object')
-        }
-      }
-      catch (error) {
-        // If import fails, check if it's a known issue
-        expect(error instanceof Error).toBe(true)
-      }
-    })
-
-    it('should build PHP with comprehensive Homebrew-style configuration', async () => {
-      // Test that PHP source building includes all necessary features
-      const envDir = path.join(testHome, '.local', 'share', 'launchpad', 'envs', 'test-env')
-      const packageDir = path.join(envDir, 'php.net', 'v8.4.0')
-
-      fs.mkdirSync(packageDir, { recursive: true })
-
-      // Test configuration includes essential PHP features
-      const expectedFeatures = [
-        'mbstring',
-        'bcmath',
-        'opcache',
-        'intl',
-        'gd',
-        'mysqli',
-        'pdo-mysql',
-        'pdo-pgsql',
-        'sqlite3',
-      ]
-
-      // Since we can't actually build in tests, verify the configuration would include these
-      for (const feature of expectedFeatures) {
-        expect(typeof feature).toBe('string')
-      }
-
-      // Verify package directory structure can be created
-      expect(fs.existsSync(packageDir)).toBe(true)
-    })
   })
 
   describe('Laravel Project Detection and Setup', () => {
@@ -322,7 +268,7 @@ dependencies:
 
         // Test that deactivation function is included in shell code
         expect(shellOutput).toContain('_launchpad_dev_try_bye')
-        expect(shellOutput).toContain('dev environment deactivated')
+        expect(shellOutput).toContain('Environment deactivated')
         expect(shellOutput).toContain('unset LAUNCHPAD_ENV_BIN_PATH')
         expect(shellOutput).toContain('unset LAUNCHPAD_PROJECT_DIR')
         expect(shellOutput).toContain('unset LAUNCHPAD_PROJECT_HASH')

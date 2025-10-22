@@ -113,6 +113,17 @@ export async function createShims(packageDir: string, installPath: string, domai
               for (const libDir of depLibDirs) {
                 if (fs.existsSync(libDir) && !libraryPaths.includes(libDir)) {
                   libraryPaths.push(libDir)
+
+                  // Special handling for ncurses - check for specific library files
+                  if (entry.name.includes('ncurses') || entry.name.includes('invisible-island.net')) {
+                    const ncursesLibs = ['libncurses.dylib', 'libncursesw.dylib', 'libncurses.6.dylib', 'libncursesw.6.dylib']
+                    for (const lib of ncursesLibs) {
+                      const libPath = path.join(libDir, lib)
+                      if (fs.existsSync(libPath)) {
+                        console.log(`🔗 Found ncurses library: ${libPath}`)
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -295,12 +306,6 @@ fi
 `
         }
 
-        // Prefer project-level php.ini for php.net
-        if (domain === 'php.net') {
-          const projectPhpIni = path.join(installPath, 'php.ini')
-          shimContent += `# Prefer project-level php.ini when present\nif [ -f "${projectPhpIni.replace(/"/g, '\\"')}" ]; then\n  export PHPRC="${projectPhpIni.replace(/"/g, '\\"')}"\nfi\n\n`
-        }
-
         // Set up include paths for compilation
         if (includePaths.length > 0) {
           const includePathString = includePaths.join(' ')
@@ -317,6 +322,15 @@ if [ -n "$LDFLAGS" ]; then
 else
   export LDFLAGS="-L${libraryPaths.join(' -L')}"
 fi
+
+`
+        }
+
+        // Special handling for ncurses binaries: set TERMINFO path
+        if (domain === 'invisible-island.net/ncurses') {
+          const terminfoPath = path.join(packageDir, 'share', 'terminfo')
+          shimContent += `# Set TERMINFO path for ncurses binaries (fixes "terminals database is inaccessible" error)
+export TERMINFO="${terminfoPath}"
 
 `
         }
@@ -407,37 +421,38 @@ exec "${binaryPath}" "$@"
             const officialBunxBinPath = path.join(officialBinDir, 'bunx')
 
             // Remove existing symlinks if they exist
-            if (fs.existsSync(officialBunBinPath)) {
-              fs.unlinkSync(officialBunBinPath)
+            try {
+              if (fs.existsSync(officialBunBinPath)) {
+                fs.unlinkSync(officialBunBinPath)
+              }
             }
-            if (fs.existsSync(officialBunxBinPath)) {
-              fs.unlinkSync(officialBunxBinPath)
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Warning: Could not remove existing bun symlink: ${error instanceof Error ? error.message : String(error)}`)
+              }
+            }
+
+            try {
+              if (fs.existsSync(officialBunxBinPath)) {
+                fs.unlinkSync(officialBunxBinPath)
+              }
+            }
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Warning: Could not remove existing bunx symlink: ${error instanceof Error ? error.message : String(error)}`)
+              }
             }
 
             // Create symlinks to the actual binaries
-            fs.symlinkSync(binaryPath, officialBunBinPath)
-            fs.symlinkSync(officialBunBinPath, officialBunxBinPath)
-
-            // Create a node symlink to bun to handle packages that expect node
-            // Only create if no node binary/shim already exists (avoids conflict with actual Node.js)
-            const nodeShimPath = path.join(targetShimDir, 'node')
-            if (!fs.existsSync(nodeShimPath)) {
-              try {
-                fs.symlinkSync('bun', nodeShimPath)
-                if (config.verbose) {
-                  console.warn(`Created node symlink: node -> bun (to handle packages that expect node)`)
-                }
-                installedBinaries.push('node')
-              }
-              catch (error) {
-                if (config.verbose) {
-                  console.warn(`Failed to create node symlink: ${error instanceof Error ? error.message : String(error)}`)
-                }
-                // Don't fail the installation if node symlink creation fails
-              }
+            try {
+              fs.symlinkSync(binaryPath, officialBunBinPath)
+              // Create bunx as a symlink to the actual bun binary (not to the bun symlink)
+              fs.symlinkSync(binaryPath, officialBunxBinPath)
             }
-            else if (config.verbose) {
-              console.warn(`Skipped creating node symlink: node binary/shim already exists`)
+            catch (error) {
+              if (config.verbose) {
+                console.warn(`Warning: Could not create Bun symlinks: ${error instanceof Error ? error.message : String(error)}`)
+              }
             }
 
             // Create a custom shim for Bun with BUN_INSTALL environment variable
@@ -611,10 +626,6 @@ export async function validatePackageInstallation(packageDir: string, domain: st
       'sqlite.org': () => {
         // SQLite can work with just binaries, lib/ is optional
         return hasBin && fs.existsSync(path.join(binDir, 'sqlite3'))
-      },
-      'php.net': () => {
-        // PHP can work with just binaries, especially if source-built
-        return hasBin && fs.existsSync(path.join(binDir, 'php'))
       },
       'gnu.org/bison': () => {
         // Bison is a tool, only needs bin/
@@ -1076,6 +1087,152 @@ export async function createPkgConfigSymlinks(packageDir: string, domain: string
           console.warn(`Failed to create pkg-config symlink ${link} -> ${target}:`, error)
         }
       }
+    }
+  }
+}
+
+/**
+ * Fix library paths for macOS dylib dependencies using install_name_tool
+ */
+export async function fixMacOSLibraryPaths(packageDir: string, domain: string): Promise<void> {
+  const platform = process.platform
+
+  // Only run on macOS
+  if (platform !== 'darwin') {
+    return
+  }
+
+  const libDir = path.join(packageDir, 'lib')
+  const binDir = path.join(packageDir, 'bin')
+
+  if (!fs.existsSync(libDir)) {
+    return
+  }
+
+  try {
+    // Get all dylib files in the lib directory
+    const libFiles = await fs.promises.readdir(libDir)
+    const dylibFiles = libFiles.filter(file => file.endsWith('.dylib'))
+
+    if (dylibFiles.length === 0) {
+      return
+    }
+
+    if (config.verbose) {
+      console.warn(`🔧 Fixing library paths for ${domain}...`)
+    }
+
+    // For each binary in bin directory, fix its library dependencies
+    if (fs.existsSync(binDir)) {
+      const binFiles = await fs.promises.readdir(binDir, { withFileTypes: true })
+      const executables = binFiles.filter(dirent => !dirent.isDirectory()).map(dirent => dirent.name)
+
+      for (const executable of executables) {
+        const executablePath = path.join(binDir, executable)
+        await fixExecutableLibraryPaths(executablePath, libDir, domain)
+      }
+    }
+
+    // Also fix library dependencies between dylibs
+    for (const dylibFile of dylibFiles) {
+      const dylibPath = path.join(libDir, dylibFile)
+      await fixExecutableLibraryPaths(dylibPath, libDir, domain)
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to fix library paths for ${domain}:`, error)
+    }
+  }
+}
+
+/**
+ * Fix library paths for a specific executable or library
+ */
+async function fixExecutableLibraryPaths(executablePath: string, libDir: string, _domain: string): Promise<void> {
+  try {
+    // Use otool to get current library dependencies
+    const { spawn } = await import('node:child_process')
+
+    // Get current library dependencies
+    const otoolProcess = spawn('otool', ['-L', executablePath], { stdio: ['ignore', 'pipe', 'pipe'] })
+    let output = ''
+    let errorOutput = ''
+
+    otoolProcess.stdout.on('data', (data) => {
+      output += data.toString()
+    })
+
+    otoolProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString()
+    })
+
+    await new Promise((resolve, reject) => {
+      otoolProcess.on('close', (code) => {
+        if (code === 0)
+          resolve(code)
+        else reject(new Error(`otool failed: ${errorOutput}`))
+      })
+    })
+
+    // Parse otool output to find @rpath dependencies
+    const lines = output.split('\n')
+    const rpathDeps: string[] = []
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.includes('@rpath/') && trimmed.includes('.dylib')) {
+        const match = trimmed.match(/@rpath\/(\S+\.dylib)/)
+        if (match) {
+          rpathDeps.push(match[1])
+        }
+      }
+    }
+
+    // Fix each @rpath dependency
+    for (const depLibrary of rpathDeps) {
+      const absoluteLibPath = path.join(libDir, depLibrary)
+
+      // Check if the library exists in our lib directory
+      if (fs.existsSync(absoluteLibPath)) {
+        try {
+          const installNameToolProcess = spawn('install_name_tool', [
+            '-change',
+            `@rpath/${depLibrary}`,
+            absoluteLibPath,
+            executablePath,
+          ], { stdio: 'pipe' })
+
+          await new Promise<void>((resolve, reject) => {
+            let stderr = ''
+            installNameToolProcess.stderr.on('data', (data) => {
+              stderr += data.toString()
+            })
+
+            installNameToolProcess.on('close', (code) => {
+              if (code === 0) {
+                if (config.verbose) {
+                  console.warn(`  Fixed ${path.basename(executablePath)}: @rpath/${depLibrary} -> ${absoluteLibPath}`)
+                }
+                resolve()
+              }
+              else {
+                reject(new Error(`install_name_tool failed: ${stderr}`))
+              }
+            })
+          })
+        }
+        catch (error) {
+          if (config.verbose) {
+            console.warn(`  Failed to fix ${depLibrary} for ${path.basename(executablePath)}:`, error)
+          }
+        }
+      }
+    }
+  }
+  catch (error) {
+    if (config.verbose) {
+      console.warn(`Failed to analyze/fix library paths for ${path.basename(executablePath)}:`, error)
     }
   }
 }

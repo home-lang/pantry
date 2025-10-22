@@ -4,13 +4,14 @@ import type { Command } from '../cli/types'
 const cmd: Command = {
   name: 'uninstall',
   description: 'Remove installed packages',
-  async run({ argv, env }) {
+  async run({ argv, env: _env }) {
     const { uninstall } = await import('../uninstall')
     const { config } = await import('../config')
 
     const verbose = argv.includes('--verbose')
     const force = argv.includes('--force')
     const dryRun = argv.includes('--dry-run')
+    const global = argv.includes('--global')
 
     if (verbose)
       config.verbose = true
@@ -44,9 +45,14 @@ const cmd: Command = {
         if (dryRun) {
           console.log(`Would uninstall: ${pkg}`)
           results.push({ package: pkg, success: true, message: 'dry run' })
+          // Still check dependencies in dry-run mode
+          if (global) {
+            const { handleDependencyCleanup } = await import('../uninstall')
+            await handleDependencyCleanup(pkg, true) // Pass true for dry-run mode
+          }
         }
         else {
-          const success = await uninstall(pkg)
+          const success = await uninstall(pkg, global)
           results.push({ package: pkg, success })
           if (!success)
             allSuccess = false

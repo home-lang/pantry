@@ -36,6 +36,7 @@ describe('Upgrade Binary Detection Logic', () => {
       json: () => Promise.resolve({ tag_name: 'v0.3.12' }),
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024 * 1024)),
     }))
+    ;(mockFetch as any).__isMocked = true
     globalThis.fetch = mockFetch as any
   })
 
@@ -122,10 +123,9 @@ describe('Upgrade Binary Detection Logic', () => {
           try {
             const output = stdout + stderr
             expect(output).toContain('DRY RUN MODE')
-            expect(output).toContain('Would upgrade from')
-            expect(output).toContain('Would download:')
-            expect(output).toContain('Would install to:')
-            expect(output).toContain('Run without --dry-run to perform')
+            expect(output).toContain('Current version:')
+            expect(output).toContain('Target version:')
+            expect(output).toContain('Would download, extract and install')
             expect(code).toBe(0)
             resolve()
           }

@@ -170,6 +170,84 @@ function createTestStructure(baseDir: string, depth: number = 10): string {
 }
 
 /**
+ * Benchmark cache operations
+ */
+export async function runCacheBenchmark(options: {
+  iterations?: number
+  verbose?: boolean
+  json?: boolean
+} = {}): Promise<void> {
+  const { iterations = 10000, json = false } = options
+
+  if (!json) {
+    console.log('🚀 Cache Performance Benchmark\n')
+    console.log('Testing in-memory cache lookup performance...\n')
+  }
+
+  // Import cache module
+  const { envCache } = await import('../cache')
+
+  // Populate cache with test data
+  const testDirs: string[] = []
+  for (let i = 0; i < 100; i++) {
+    const dir = `/home/user/projects/test-project-${i}`
+    testDirs.push(dir)
+    envCache.set(dir, `${dir}/package.json`, `/home/user/.local/share/launchpad/envs/test-${i}`)
+  }
+
+  const results: Record<string, number> = {}
+
+  // Benchmark cache lookups (warm cache)
+  const lookupTime = await benchmark(
+    json ? '' : 'Cache lookup (hit)     ',
+    () => {
+      // Random cache hit
+      const dir = testDirs[Math.floor(Math.random() * testDirs.length)]
+      envCache.get(dir)
+    },
+    iterations,
+  )
+  results['Cache Hit'] = lookupTime
+
+  // Benchmark cache misses
+  const missTime = await benchmark(
+    json ? '' : 'Cache lookup (miss)    ',
+    () => {
+      envCache.get('/nonexistent/path/that/does/not/exist')
+    },
+    iterations,
+  )
+  results['Cache Miss'] = missTime
+
+  // Benchmark cache writes
+  const writeTime = await benchmark(
+    json ? '' : 'Cache write            ',
+    () => {
+      const randomDir = `/home/user/projects/bench-${Math.random()}`
+      envCache.set(randomDir, `${randomDir}/deps.yaml`, `/home/user/.local/share/launchpad/envs/bench-${Math.random()}`)
+    },
+    Math.floor(iterations / 10), // Fewer iterations for writes
+  )
+  results['Cache Write'] = writeTime
+
+  if (json) {
+    console.log(JSON.stringify(results, null, 2))
+  }
+  else {
+    console.log('\n📊 Cache Performance Summary:')
+    console.log('─'.repeat(50))
+    console.log(`Cache Hit:  ${lookupTime.toFixed(3)}ms avg`)
+    console.log(`Cache Miss: ${missTime.toFixed(3)}ms avg`)
+    console.log(`Cache Write: ${writeTime.toFixed(3)}ms avg`)
+    console.log(`\n🎯 Target: <0.001ms for cache hits (sub-microsecond)`)
+    console.log(`✅ Status: ${lookupTime < 0.001 ? 'PASSED' : 'NEEDS IMPROVEMENT'}`)
+  }
+
+  // Cleanup
+  envCache.clear()
+}
+
+/**
  * Run file detection benchmark
  */
 export async function runFileDetectionBenchmark(options: {

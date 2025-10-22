@@ -163,36 +163,7 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
       // Remove debug message
 
       if (!appKey || appKey === '' || appKey === 'base64:') {
-        // Check if PHP and Artisan are available before attempting key generation
-        try {
-          // First verify PHP is working
-          execSync('php --version', { cwd: dir, stdio: 'pipe' })
-
-          // Then verify Artisan is available
-          execSync('php artisan --version', { cwd: dir, stdio: 'pipe' })
-
-          // Now generate the key
-          execSync('php artisan key:generate --force', {
-            cwd: dir,
-            stdio: 'pipe',
-          })
-
-          // Verify the key was generated successfully
-          const updatedEnvContent = fs.readFileSync(envFile, 'utf8')
-          const updatedAppKeyMatch = updatedEnvContent.match(/^APP_KEY=(.*)$/m)
-          const updatedAppKey = updatedAppKeyMatch?.[1]?.trim()
-
-          if (updatedAppKey && updatedAppKey !== '' && updatedAppKey !== 'base64:') {
-            suggestions.push('✅ Generated Laravel application encryption key automatically')
-          }
-          else {
-            suggestions.push('⚠️  Run: php artisan key:generate to set application encryption key')
-          }
-        }
-        catch {
-          // If automatic generation fails, suggest manual command
-          suggestions.push('⚠️  Generate application encryption key: php artisan key:generate')
-        }
+        suggestions.push('⚠️  Generate application encryption key: php artisan key:generate')
       }
       else if (appKey && appKey.length > 10) {
         // Key exists and looks valid
@@ -252,53 +223,11 @@ export async function detectLaravelProject(dir: string): Promise<{ isLaravel: bo
   // Execute project-level post-setup commands if enabled (skip in shell integration fast path)
   const projectPostSetup = config.postSetup
   if (projectPostSetup?.enabled && process.env.LAUNCHPAD_SHELL_INTEGRATION !== '1') {
-    // Ensure php.ini exists before running any PHP commands
-    await ensureProjectPhpIni(dir, path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', generateProjectHash(dir)))
     const postSetupResults = await executepostSetup(dir, projectPostSetup.commands || [])
     suggestions.push(...postSetupResults)
   }
 
   return { isLaravel: true, suggestions }
-}
-async function ensureProjectPhpIni(projectDir: string, envDir: string): Promise<void> {
-  try {
-    const fs = await import('node:fs')
-    const path = await import('node:path')
-    const iniPath = path.join(envDir, 'php.ini')
-    if (!fs.existsSync(iniPath)) {
-      const envPath = path.join(projectDir, '.env')
-      let dbConn = ''
-      try {
-        if (fs.existsSync(envPath)) {
-          const envContent = fs.readFileSync(envPath, 'utf8')
-          const match = envContent.match(/^DB_CONNECTION=(.*)$/m)
-          dbConn = match?.[1]?.trim().toLowerCase() || ''
-        }
-      }
-      catch {}
-      const lines: string[] = [
-        '; Launchpad php.ini (auto-generated at activation time)',
-        'memory_limit = 512M',
-        'max_execution_time = 300',
-        'upload_max_filesize = 64M',
-        'post_max_size = 64M',
-        'display_errors = On',
-        'error_reporting = E_ALL',
-        '',
-      ]
-      if (dbConn === 'pgsql' || dbConn === 'postgres' || dbConn === 'postgresql') {
-        lines.push('extension=pdo_pgsql', 'extension=pgsql')
-      }
-      else if (dbConn === 'mysql' || dbConn === 'mariadb') {
-        lines.push('extension=pdo_mysql', 'extension=mysqli')
-      }
-      else if (dbConn === 'sqlite') {
-        lines.push('extension=pdo_sqlite', 'extension=sqlite3')
-      }
-      fs.writeFileSync(iniPath, lines.join('\n'))
-    }
-  }
-  catch {}
 }
 
 /**
@@ -435,8 +364,8 @@ async function executepostSetup(projectDir: string, commands: PostSetupCommand[]
 
       // Build PATH that includes project env first, then global env, then original PATH
       const projectHash = generateProjectHash(projectDir)
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', projectHash)
-      const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+      const envDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs', projectHash)
+      const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
       const envBinPath = path.join(envDir, 'bin')
       const envSbinPath = path.join(envDir, 'sbin')
       const globalBinPath = path.join(globalEnvDir, 'bin')
@@ -849,8 +778,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         depSuffix = `-d${depHash}`
       }
       catch {}
-      const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
-      const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+      const envDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
+      const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
       // Check if environments exist first (quick filesystem check)
       const hasLocalEnv = fs.existsSync(path.join(envDir, 'bin'))
@@ -1070,17 +999,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           const tInstallFast = tick()
           await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
           addTiming('install(packages)', tInstallFast)
-          // After installing in shell fast path (upgrade case), ensure PHP shims exist
-          try {
-            if (config.verbose) {
-              console.log('🔍 Fast path: creating PHP shims after upgrade...')
-            }
-            const tShimFast = tick()
-            // In shellOutput mode, do not block activation; fire-and-forget
-            createPhpShimsAfterInstall(envDir).catch(() => {})
-            addTiming('createPhpShims(async)', tShimFast)
-          }
-          catch {}
           const tOutFast = tick()
           outputShellCode(dir, envBinPath, envSbinPath, projectHash, sniffResult, globalBinPath, globalSbinPath)
           addTiming('outputShellCode', tOutFast)
@@ -1099,8 +1017,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           return
         }
 
-        // In shell integration fast path, ensure php.ini and start services when configured
-        // Only ensure php.ini if already marked ready
+        // In shell integration fast path, start services when configured
+        // Only check if already marked ready
         const readyMarker = path.join(envDir, '.launchpad_ready')
         const isReady = fs.existsSync(readyMarker)
         if (isVerbose) {
@@ -1117,10 +1035,10 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         }
         if (isReady) {
           // Skip all expensive operations in shell integration mode for instant activation
-          // Services, PHP ini, and post-setup will be handled by regular dev command when needed
+          // Services and post-setup will be handled by regular dev command when needed
           if (isVerbose) {
             try {
-              process.stderr.write(`🔍 Shell fast path: skipping services/php/post-setup for performance\n`)
+              process.stderr.write(`🔍 Shell fast path: skipping services/post-setup for performance\n`)
             }
             catch {}
           }
@@ -1285,8 +1203,8 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       depSuffix = `-d${depHash}`
     }
     catch {}
-    const envDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
-    const globalEnvDir = path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'global')
+    const envDir = path.join(homedir(), '.local', 'share', 'launchpad', 'envs', `${projectHash}${depSuffix}`)
+    const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
 
     // For shell output mode, check if we can skip expensive operations
     if (shellOutput) {
@@ -1341,34 +1259,11 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
           catch {}
         }
 
-        // Create PHP shims only if environment was just created or updated
-        if (!isEnvReady) {
-          if (config.verbose) {
-            console.log('🔍 Checking for PHP installations to create shims...')
-          }
-          const tShim = tick()
-          if (isShellIntegration) {
-            // Run PHP shim creation in background to avoid blocking shell activation
-            createPhpShimsAfterInstall(envDir).catch(() => {}) // Fire and forget
-            addTiming('createPhpShims(async)', tShim)
-          }
-          else {
-            await createPhpShimsAfterInstall(envDir)
-            addTiming('createPhpShims', tShim)
-          }
-        }
-        else if (isVerbose) {
-          try {
-            process.stderr.write(`🔍 Shell integration: environment ready, skipping PHP shim creation\n`)
-          }
-          catch {}
-        }
-
         // Skip expensive operations in shell integration mode for instant activation
-        // Services, PHP ini, and post-setup will be handled by regular dev command when needed
+        // Services and post-setup will be handled by regular dev command when needed
         if (isVerbose) {
           try {
-            process.stderr.write(`🔍 Shell integration: skipping services/php/post-setup for performance\n`)
+            process.stderr.write(`🔍 Shell integration: skipping services/post-setup for performance\n`)
           }
           catch {}
         }
@@ -1398,16 +1293,6 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
       const tInstall3 = tick()
       await installPackagesOptimized(localPackages, globalPackages, envDir, globalEnvDir, dryrun, quiet)
       addTiming('install(packages)', tInstall3)
-      // Create PHP shims synchronously in regular path to ensure immediate availability
-      try {
-        if (config.verbose) {
-          console.log('🔍 Regular path: creating PHP shims after install...')
-        }
-        const tShimReg = tick()
-        await createPhpShimsAfterInstall(envDir)
-        addTiming('createPhpShims', tShimReg)
-      }
-      catch {}
       // Visual separator after dependency install list
       try {
         console.log()
@@ -1444,13 +1329,9 @@ export async function dump(dir: string, options: DumpOptions = {}): Promise<void
         process.env.LAUNCHPAD_PROCESSING = prevProcessing
     }
 
-    // Ensure php.ini and Laravel post-setup runs (regular path)
+    // Ensure Laravel post-setup runs (regular path)
     // Skip expensive operations in shell integration mode
     if (!isShellIntegration) {
-      const tIni3 = tick()
-      await ensureProjectPhpIni(projectDir, envDir)
-      addTiming('ensurePhpIni', tIni3)
-
       const tPost3 = tick()
       await maybeRunProjectPostSetup(projectDir, envDir, isShellIntegration)
       addTiming('postSetup', tPost3)
@@ -1609,8 +1490,15 @@ async function installPackagesOptimized(
     }
 
     try {
-      // For both shell integration and regular calls, use standard install
-      await install(globalPackages, globalEnvDir)
+      if (dryrun) {
+        if (!quiet) {
+          console.log(`Would install global packages: ${globalPackages.join(', ')}`)
+        }
+      }
+      else {
+        // For both shell integration and regular calls, use standard install
+        await install(globalPackages, globalEnvDir)
+      }
     }
     catch (error) {
       globalInstallSuccess = false
@@ -1653,8 +1541,15 @@ async function installPackagesOptimized(
     }
 
     try {
-      // For both shell integration and regular calls, use standard install
-      await install(localPackages, envDir)
+      if (dryrun) {
+        if (!quiet) {
+          console.log(`Would install local packages: ${localPackages.join(', ')}`)
+        }
+      }
+      else {
+        // For both shell integration and regular calls, use standard install
+        await install(localPackages, envDir)
+      }
     }
     catch (error) {
       localInstallSuccess = false
@@ -1755,6 +1650,13 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   }
   if (fs.existsSync(envSbinPath)) {
     pathComponents.push(envSbinPath)
+  }
+
+  // Add bun global bin directory for this environment (high priority for global installs)
+  const envRoot = fs.existsSync(envBinPath) ? path.dirname(envBinPath) : ''
+  const bunGlobalBinPath = path.join(envRoot, '.bun', 'bin')
+  if (envRoot && fs.existsSync(bunGlobalBinPath)) {
+    pathComponents.push(bunGlobalBinPath)
   }
 
   // Add global paths second (fallback for tools not in project environment)
@@ -1881,7 +1783,10 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
     }
   }
 
-  if (libraryPathComponents.length > 0) {
+  // DISABLED: Setting DYLD paths globally breaks system binaries (e.g., Homebrew node picking up wrong OpenSSL)
+  // Instead, wrapper scripts set these variables only for binaries that need them
+  // See: shellcode.ts line 599 for details
+  if (false && libraryPathComponents.length > 0) {
     const libraryPath = libraryPathComponents.join(':')
 
     // macOS uses DYLD_LIBRARY_PATH and DYLD_FALLBACK_LIBRARY_PATH
@@ -1927,83 +1832,16 @@ function outputShellCode(dir: string, envBinPath: string, envSbinPath: string, p
   process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_PATH" ]]; then\n`)
   process.stdout.write(`        export PATH="$LAUNCHPAD_ORIGINAL_PATH"\n`)
   process.stdout.write(`      fi\n`)
-  process.stdout.write(`      # Restore original library paths\n`)
-  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH" ]]; then\n`)
-  process.stdout.write(`        export DYLD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH"\n`)
-  process.stdout.write(`      else\n`)
-  process.stdout.write(`        unset DYLD_LIBRARY_PATH\n`)
-  process.stdout.write(`      fi\n`)
-  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH" ]]; then\n`)
-  process.stdout.write(`        export DYLD_FALLBACK_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH"\n`)
-  process.stdout.write(`      else\n`)
-  process.stdout.write(`        unset DYLD_FALLBACK_LIBRARY_PATH\n`)
-  process.stdout.write(`      fi\n`)
-  process.stdout.write(`      if [[ -n "$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH" ]]; then\n`)
-  process.stdout.write(`        export LD_LIBRARY_PATH="$LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH"\n`)
-  process.stdout.write(`      else\n`)
-  process.stdout.write(`        unset LD_LIBRARY_PATH\n`)
-  process.stdout.write(`      fi\n`)
+  // DYLD paths are not set globally (see line 1789), so no need to restore them
   process.stdout.write(`      unset LAUNCHPAD_ENV_BIN_PATH\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_DIR\n`)
   process.stdout.write(`      unset LAUNCHPAD_PROJECT_HASH\n`)
-  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_LIBRARY_PATH\n`)
-  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_DYLD_FALLBACK_LIBRARY_PATH\n`)
-  process.stdout.write(`      unset LAUNCHPAD_ORIGINAL_LD_LIBRARY_PATH\n`)
-  process.stdout.write(`      echo "dev environment deactivated"\n`)
+  process.stdout.write(`      echo "Environment deactivated"\n`)
   process.stdout.write(`      ;;\n`)
   process.stdout.write(`  esac\n`)
   process.stdout.write(`}\n`)
-  // Refresh the command hash so version switches take effect immediately (async, detached)
-  process.stdout.write(`(hash -r 2>/dev/null || true) >/dev/null 2>&1 & disown 2>/dev/null || true\n`)
-}
-
-/**
- * Create PHP shims after all dependencies are installed
- */
-async function createPhpShimsAfterInstall(envDir: string): Promise<void> {
-  const path = await import('node:path')
-  const fs = await import('node:fs')
-
-  try {
-    // Check if there's a PHP installation in this environment
-    const phpDir = path.join(envDir, 'php.net')
-    if (!fs.existsSync(phpDir)) {
-      return // No PHP installation, nothing to do
-    }
-
-    // Find PHP version directories
-    const versionDirs = fs.readdirSync(phpDir).filter((item) => {
-      const fullPath = path.join(phpDir, item)
-      return fs.statSync(fullPath).isDirectory() && item.startsWith('v')
-    })
-
-    if (versionDirs.length === 0) {
-      return // No PHP versions found
-    }
-
-    // Import the PrecompiledBinaryDownloader to create shims
-    const { PrecompiledBinaryDownloader } = await import('../binary-downloader.js')
-
-    for (const versionDir of versionDirs) {
-      const packageDir = path.join(phpDir, versionDir)
-      const version = versionDir.replace(/^v/, '') // Remove 'v' prefix
-
-      // Check if this directory has PHP binaries
-      const binDir = path.join(packageDir, 'bin')
-      if (fs.existsSync(binDir)) {
-        const downloader = new PrecompiledBinaryDownloader(envDir)
-        console.log(`🔗 Creating PHP ${version} shims with proper library paths...`)
-        await downloader.createPhpShims(packageDir, version)
-
-        // Now validate that PHP works
-        await downloader.validatePhpInstallation(packageDir, version)
-      }
-    }
-  }
-  catch (error) {
-    // Don't fail the entire setup if shim creation fails
-    console.warn(`⚠️ Failed to create PHP shims: ${error instanceof Error ? error.message : String(error)}`)
-  }
+  // Refresh the command hash so version switches take effect immediately (silent, no job notification)
+  process.stdout.write(`(hash -r 2>/dev/null || true) >/dev/null 2>&1 &!\n`)
 }
 
 /**
@@ -2096,15 +1934,48 @@ async function maybeRunProjectPostSetup(projectDir: string, envDir: string, isSh
  */
 async function setupProjectServices(projectDir: string, sniffResult: any, showMessages: boolean): Promise<void> {
   try {
-    // Check services.autoStart configuration from deps.yaml
-    if (!sniffResult?.services?.enabled || !sniffResult.services.autoStart || sniffResult.services.autoStart.length === 0) {
+    // Check services configuration
+    if (!sniffResult?.services?.enabled) {
       if (showMessages && process.env.LAUNCHPAD_VERBOSE === 'true') {
-        console.log('🔍 No services configured in deps.yaml - skipping service setup')
+        console.log('🔍 Services not enabled - skipping service setup')
       }
-      return // No services to auto-start
+      return
     }
 
-    const autoStartServices = sniffResult.services.autoStart || []
+    // Determine which services to start
+    let autoStartServices: string[] = []
+
+    // If autoStart is a boolean true, infer services from database connection
+    if (sniffResult.services.autoStart === true) {
+      const dbConnection = sniffResult.services.database?.connection
+      if (dbConnection && dbConnection !== 'sqlite') {
+        // Map database connection to service name
+        const serviceMap: Record<string, string> = {
+          mysql: 'mysql',
+          postgres: 'postgres',
+          postgresql: 'postgres',
+          mariadb: 'mariadb',
+          redis: 'redis',
+          mongodb: 'mongodb',
+        }
+        const serviceName = serviceMap[dbConnection]
+        if (serviceName) {
+          autoStartServices = [serviceName]
+        }
+      }
+    }
+    // If autoStart is an array, use it directly
+    else if (Array.isArray(sniffResult.services.autoStart)) {
+      autoStartServices = sniffResult.services.autoStart
+    }
+    // Otherwise, no services to auto-start
+    else {
+      if (showMessages && process.env.LAUNCHPAD_VERBOSE === 'true') {
+        console.log('🔍 No services configured to auto-start')
+      }
+      return
+    }
+
     if (showMessages && autoStartServices.length > 0) {
       console.log(`🚀 Auto-starting services: ${autoStartServices.join(', ')}`)
     }
@@ -2150,8 +2021,76 @@ async function setupProjectServices(projectDir: string, sniffResult: any, showMe
         }
       }
     }
+
+    // For SQLite or other file-based databases, run postDatabaseSetup if configured
+    // (since they don't have a service to start)
+    const dbConnection = sniffResult?.services?.database?.connection
+    if (dbConnection === 'sqlite' && sniffResult?.services?.postDatabaseSetup) {
+      try {
+        if (showMessages) {
+          console.log(`🌱 Running post-database setup for SQLite...`)
+        }
+        await runPostDatabaseSetupCommands(projectDir, sniffResult.services.postDatabaseSetup, showMessages)
+        if (showMessages) {
+          console.log(`✅ SQLite post-database setup completed`)
+        }
+      }
+      catch (error) {
+        if (showMessages) {
+          console.warn(`⚠️  Post-database setup failed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    }
   }
   catch {
     // non-fatal
+  }
+}
+
+/**
+ * Run post-database setup commands (migrations, seeding, etc.)
+ */
+async function runPostDatabaseSetupCommands(projectDir: string, commands: string | string[], showMessages: boolean): Promise<void> {
+  const { spawn } = await import('node:child_process')
+  const cmdList = Array.isArray(commands) ? commands : [commands]
+
+  for (const cmdString of cmdList) {
+    const parts = cmdString.trim().split(/\s+/)
+    const [command, ...args] = parts
+
+    if (showMessages) {
+      console.log(`📋 Executing: ${cmdString}`)
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(command, args, {
+        stdio: 'inherit',
+        cwd: projectDir,
+        shell: true,
+      })
+
+      const timeout = setTimeout(() => {
+        proc.kill('SIGTERM')
+        reject(new Error(`Command timed out after 5 minutes: ${cmdString}`))
+      }, 300000)
+
+      proc.on('close', (code) => {
+        clearTimeout(timeout)
+        if (code === 0) {
+          if (showMessages) {
+            console.log(`✅ Successfully executed: ${cmdString}`)
+          }
+          resolve()
+        }
+        else {
+          reject(new Error(`Command failed with exit code ${code}: ${cmdString}`))
+        }
+      })
+
+      proc.on('error', (error) => {
+        clearTimeout(timeout)
+        reject(error)
+      })
+    })
   }
 }

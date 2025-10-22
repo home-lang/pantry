@@ -1,5 +1,6 @@
 import type { Command } from '../cli/types'
-import process from 'node:process'
+import { homedir } from 'node:os'
+import path from 'node:path'
 import { config, defaultConfig } from '../config'
 import { create_shim } from '../shim'
 
@@ -37,7 +38,7 @@ const command: Command = {
   description: 'Install packages and create shims into the shim directory',
   async run({ argv, options }) {
     // Strongly type options and merge with argv-parsed fallback
-    interface Opts { verbose?: boolean; force?: boolean; ['no-auto-path']?: boolean; ['shim-path']?: string }
+    interface Opts { verbose?: boolean, force?: boolean, ['no-auto-path']?: boolean, ['shim-path']?: string }
     const optsFromOptions = (options ?? {}) as Opts
     const { pkgs, opts } = parseArgs(argv)
     if (pkgs.length === 0) {
@@ -64,7 +65,7 @@ const command: Command = {
       config.shimPath = shimPath
 
     try {
-      const basePath = (config.installPath ?? defaultConfig.installPath) ?? (process.env.HOME ? `${process.env.HOME}/.local` : '/usr/local')
+      const basePath = (config.installPath ?? defaultConfig.installPath) ?? path.join(homedir(), '.local')
       const created = await create_shim(pkgs, basePath)
       if (created.length > 0) {
         console.warn(`Created ${created.length} shims`)

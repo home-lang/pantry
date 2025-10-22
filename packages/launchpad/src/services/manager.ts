@@ -1,11 +1,12 @@
 /* eslint-disable no-console */
-import type { ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
+import type { LaunchpadConfig, ServiceInstance, ServiceManagerState, ServiceOperation, ServiceStatus } from '../types'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
-import { platform } from 'node:os'
+import { homedir, platform } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { config } from '../config'
+import { install } from '../install-main'
 import { logUniqueMessage } from '../logging'
 import { findBinaryInEnvironment, findBinaryInPath } from '../utils'
 import { createDefaultServiceConfig, getServiceDefinition } from './definitions'
@@ -82,7 +83,8 @@ export async function startService(serviceName: string): Promise<boolean> {
   }
 
   // In test mode, still validate service exists but mock the actual operation
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+  // Skip test mode for E2E validation tests
+  if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_E2E_TEST) {
     try {
       const service = await getOrCreateServiceInstance(serviceName)
       console.warn(`🧪 Test mode: Mocking start of service ${serviceName}`)
@@ -99,7 +101,7 @@ export async function startService(serviceName: string): Promise<boolean> {
     catch (error) {
       console.warn(`🧪 Test mode: Failed to start unknown service ${serviceName}`)
       operation.result = 'failure'
-      operation.error = error instanceof Error ? error.message : String(error)
+      operation.error = String(error)
       operation.duration = 0
       manager.operations.push(operation)
       return false
@@ -147,16 +149,6 @@ export async function startService(serviceName: string): Promise<boolean> {
       return false
     }
 
-    // For PHP service, ensure database extensions are available (non-blocking)
-    if (service.definition?.name === 'php') {
-      const extensionsResult = await ensurePHPDatabaseExtensions(service)
-      if (!extensionsResult && config.verbose) {
-        console.warn(`⚠️  Some PHP database extensions may not be available; not attempting PECL. Proceeding.`)
-      }
-    }
-
-    // For PostgreSQL service, do not attempt to install PHP extensions via PECL
-
     // Auto-initialize databases first
     const autoInitResult = await autoInitializeDatabase(service)
     if (!autoInitResult) {
@@ -199,16 +191,64 @@ export async function startService(serviceName: string): Promise<boolean> {
         const extraArgs = `-p ${port} -c listen_addresses=127.0.0.1`
         console.warn('⚠️  launchd/system start failed; falling back to pg_ctl start')
         await new Promise<void>((resolve, reject) => {
-          const proc = spawn(pgCtl, ['-D', String(dataDir), '-o', extraArgs, '-w', 'start'], {
+          // Use -l to redirect logs, don't use -w to avoid hanging
+          const logFile = service.logFile || service.definition?.logFile
+          const proc = spawn(pgCtl, ['-D', String(dataDir), '-o', extraArgs, '-l', logFile || '/dev/null', 'start'], {
             stdio: config.verbose ? 'inherit' : 'pipe',
           })
+
+          // Add timeout for pg_ctl start (5 seconds should be enough without -w)
+          const timeout = setTimeout(() => {
+            proc.kill('SIGTERM')
+            reject(new Error('pg_ctl start timed out after 5s'))
+          }, 5000)
+
           proc.on('close', (code) => {
+            clearTimeout(timeout)
             if (code === 0)
               resolve()
             else reject(new Error(`pg_ctl start failed with exit ${code}`))
           })
-          proc.on('error', reject)
+          proc.on('error', (err) => {
+            clearTimeout(timeout)
+            reject(err)
+          })
         })
+        startSuccess = true
+      }
+      catch (e) {
+        console.error(`❌ Fallback start failed: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
+    if (!startSuccess && (service.definition?.name === 'mysql' || service.definition?.name === 'mariadb')) {
+      // Fallback: start mysqld directly with explicit DYLD_LIBRARY_PATH
+      try {
+        // Use the actual mysqld binary, not the shim
+        const mysqldPath = service.definition.executable.includes('mysql.com')
+          ? service.definition.executable
+          : path.join(homedir(), '.local', 'mysql.com', 'v8.4.6', 'bin', 'mysqld')
+
+        const dataDir = service.dataDir || service.definition.dataDirectory
+        const pidFile = service.definition.pidFile
+        const port = service.definition.port || 3306
+
+        console.warn('⚠️  launchd/system start failed; falling back to direct mysqld start')
+
+        // Get the library path from MySQL's installation directory
+        const mysqlLibDir = path.join(path.dirname(path.dirname(mysqldPath)), 'lib')
+
+        const { exec } = await import('node:child_process')
+        const { promisify } = await import('node:util')
+        const execAsync = promisify(exec)
+
+        // Start mysqld with DYLD_LIBRARY_PATH set explicitly
+        const command = `DYLD_LIBRARY_PATH="${mysqlLibDir}" "${mysqldPath}" --daemonize --datadir="${dataDir}" --pid-file="${pidFile}" --port=${port} --bind-address=127.0.0.1`
+
+        await execAsync(command, { shell: '/bin/bash' })
+
+        // Wait for MySQL to start
+        await new Promise(r => setTimeout(r, 2000))
+
         startSuccess = true
       }
       catch (e) {
@@ -237,7 +277,9 @@ export async function startService(serviceName: string): Promise<boolean> {
           const dataDir = service.dataDir || service.definition.dataDirectory
           const port = service.definition.port || 5432
           const extraArgs = `-p ${port} -c listen_addresses=127.0.0.1`
-          console.warn('⚠️  Service unhealthy after start; attempting pg_ctl restart')
+          if (config.verbose) {
+            console.warn('⚠️  Service unhealthy after start; attempting pg_ctl restart')
+          }
           const stop = spawn(pgCtl, ['-D', String(dataDir), '-m', 'fast', 'stop'], { stdio: 'ignore' })
           await new Promise(res => stop.on('close', () => res(null)))
           await new Promise<void>((resolve, reject) => {
@@ -271,16 +313,18 @@ export async function startService(serviceName: string): Promise<boolean> {
       void checkServiceHealth(service)
     }, 2000)
 
-    // Mark operation success
+    // Mark operation success and update service status
+    service.status = 'running'
+    service.lastCheckedAt = new Date()
     operation.result = 'success'
     operation.duration = 0
     manager.operations.push(operation)
     return true
   }
   catch (error) {
-    console.error(`❌ Failed to start service ${serviceName}: ${error instanceof Error ? error.message : String(error)}`)
+    console.error(`❌ Failed to start service ${serviceName}: ${error}`)
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = 0
     manager.operations.push(operation)
     return false
@@ -304,7 +348,8 @@ export async function stopService(serviceName: string): Promise<boolean> {
   }
 
   // In test mode, still validate and track operations
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+  // Skip test mode for E2E validation tests
+  if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_E2E_TEST) {
     const service = manager.services.get(serviceName)
 
     if (!service) {
@@ -326,23 +371,22 @@ export async function stopService(serviceName: string): Promise<boolean> {
   }
 
   try {
-    const service = manager.services.get(serviceName)
+    // Get or create service instance (ensures service is registered)
+    const service = await getOrCreateServiceInstance(serviceName)
 
-    if (!service) {
-      console.warn(`⚠️  Service ${serviceName} is not registered`)
-      operation.result = 'success'
-      operation.duration = 0
-      manager.operations.push(operation)
-      return true
-    }
-
-    if (service.status === 'stopped') {
+    // Check actual service health to determine if it's really running
+    const isActuallyRunning = await checkServiceHealth(service)
+    if (!isActuallyRunning) {
+      service.status = 'stopped'
       console.log(`✅ Service ${serviceName} is already stopped`)
       operation.result = 'success'
       operation.duration = 0
       manager.operations.push(operation)
       return true
     }
+
+    // Update status based on health check
+    service.status = 'running'
 
     console.warn(`🛑 Stopping ${service.definition?.displayName || serviceName}...`)
 
@@ -351,7 +395,68 @@ export async function stopService(serviceName: string): Promise<boolean> {
     service.lastCheckedAt = new Date()
 
     // Stop the service using platform-specific method
-    const success = await stopServicePlatform(service)
+    let success = await stopServicePlatform(service)
+
+    // Fallback for PostgreSQL if platform stop failed
+    if (!success && service.definition?.name === 'postgres') {
+      try {
+        const { findBinaryInPath } = await import('../utils')
+        const pgCtl = findBinaryInPath('pg_ctl') || 'pg_ctl'
+        const dataDir = service.dataDir || service.definition.dataDirectory
+        console.warn('⚠️  Platform stop failed; trying pg_ctl stop')
+
+        await new Promise<void>((resolve, reject) => {
+          const proc = spawn(pgCtl, ['-D', String(dataDir), 'stop'], {
+            stdio: config.verbose ? 'inherit' : 'pipe',
+          })
+          proc.on('close', (code) => {
+            if (code === 0 || code === null)
+              resolve()
+            else reject(new Error(`pg_ctl stop failed with exit ${code}`))
+          })
+          proc.on('error', reject)
+        })
+        success = true
+      }
+      catch {
+        // pg_ctl failed too
+      }
+    }
+
+    // Fallback for MySQL if platform stop failed
+    if (!success && (service.definition?.name === 'mysql' || service.definition?.name === 'mariadb')) {
+      try {
+        const { findBinaryInPath } = await import('../utils')
+        const mysqladmin = findBinaryInPath('mysqladmin') || 'mysqladmin'
+        console.warn('⚠️  Platform stop failed; trying mysqladmin shutdown')
+
+        const { exec } = await import('node:child_process')
+        const { promisify } = await import('node:util')
+        const execAsync = promisify(exec)
+
+        await execAsync(`"${mysqladmin}" -h 127.0.0.1 -P ${service.definition.port || 3306} -u root shutdown`, {
+          shell: '/bin/bash',
+        })
+
+        success = true
+      }
+      catch {
+        // mysqladmin failed, try killing via PID file
+        try {
+          const pidFile = service.definition?.pidFile
+          if (pidFile && fs.existsSync(pidFile)) {
+            const pid = fs.readFileSync(pidFile, 'utf8').trim()
+            if (pid) {
+              process.kill(Number.parseInt(pid), 'SIGTERM')
+              success = true
+            }
+          }
+        }
+        catch {
+          // Kill failed too
+        }
+      }
+    }
 
     if (success) {
       service.status = 'stopped'
@@ -374,7 +479,7 @@ export async function stopService(serviceName: string): Promise<boolean> {
   }
   catch (error) {
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = Date.now() - operation.timestamp.getTime()
     manager.operations.push(operation)
 
@@ -386,18 +491,19 @@ export async function stopService(serviceName: string): Promise<boolean> {
 /**
  * Restart a service
  */
-export async function restartService(serviceName: string): Promise<boolean> {
+export async function restartService(serviceName: string): Promise<{ success: boolean, error?: string }> {
   console.warn(`🔄 Restarting ${serviceName}...`)
 
   const stopSuccess = await stopService(serviceName)
   if (!stopSuccess) {
-    return false
+    return { success: false, error: 'Failed to stop service for restart' }
   }
 
   // Wait a moment before starting
   await new Promise(resolve => setTimeout(resolve, 1000))
 
-  return await startService(serviceName)
+  const startSuccess = await startService(serviceName)
+  return { success: startSuccess, error: startSuccess ? undefined : 'Failed to start service after restart' }
 }
 
 /**
@@ -433,7 +539,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
     catch (error) {
       console.warn(`🧪 Test mode: Failed to enable unknown service ${serviceName}`)
       operation.result = 'failure'
-      operation.error = error instanceof Error ? error.message : String(error)
+      operation.error = String(error)
       operation.duration = 0
       manager.operations.push(operation)
       return false
@@ -475,7 +581,7 @@ export async function enableService(serviceName: string): Promise<boolean> {
   }
   catch (error) {
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = Date.now() - operation.timestamp.getTime()
     manager.operations.push(operation)
 
@@ -501,7 +607,8 @@ export async function disableService(serviceName: string): Promise<boolean> {
   }
 
   // In test mode, still validate and track operations
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
+  // Skip test mode for E2E validation tests
+  if ((process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') && !process.env.LAUNCHPAD_E2E_TEST) {
     const service = manager.services.get(serviceName)
 
     if (!service) {
@@ -564,7 +671,7 @@ export async function disableService(serviceName: string): Promise<boolean> {
   }
   catch (error) {
     operation.result = 'failure'
-    operation.error = error instanceof Error ? error.message : String(error)
+    operation.error = String(error)
     operation.duration = Date.now() - operation.timestamp.getTime()
     manager.operations.push(operation)
 
@@ -577,22 +684,20 @@ export async function disableService(serviceName: string): Promise<boolean> {
  * Get the status of a service
  */
 export async function getServiceStatus(serviceName: string): Promise<ServiceStatus> {
-  const manager = await getServiceManager()
-  const service = manager.services.get(serviceName)
+  try {
+    // Get or create service instance to ensure it's registered
+    const service = await getOrCreateServiceInstance(serviceName)
 
-  if (!service) {
+    // Always check actual health to get real-time status
+    const isActuallyRunning = await checkServiceHealth(service)
+    service.status = isActuallyRunning ? 'running' : 'stopped'
+
+    return service.status
+  }
+  catch {
+    // If service definition not found, return stopped
     return 'stopped'
   }
-
-  // Check if the service is actually running
-  if (service.status === 'running') {
-    const isActuallyRunning = await checkServiceHealth(service)
-    if (!isActuallyRunning) {
-      service.status = 'stopped'
-    }
-  }
-
-  return service.status
 }
 
 /**
@@ -696,16 +801,38 @@ async function initializeService(service: ServiceInstance): Promise<void> {
   const resolvedArgs = definition.initCommand.map(arg =>
     arg
       .replace('{dataDir}', dataDir || '')
-      .replace('{configFile}', service.configFile || definition.configFile || ''),
+      .replace('{configFile}', service.configFile || definition.configFile || '')
+      .replace('{currentUser}', process.env.USER || 'root')
+      .replace('{dbUsername}', getDatabaseUsernameFromEnv() || config.services?.database?.username || 'root')
+      .replace('{authMethod}', config.services?.database?.authMethod || 'trust'),
   )
 
   const [command, ...args] = resolvedArgs
   const executablePath = findBinaryInPath(command) || command
 
   return new Promise((resolve, reject) => {
+    // Set up environment for MySQL dependencies
+    const serviceEnv = { ...process.env, ...definition.env }
+    if (definition.name === 'mysql') {
+      const mysqlBinPath = process.env.PATH?.split(':').find(path => path.includes('mysql.com'))
+      if (mysqlBinPath) {
+        const envPath = mysqlBinPath.replace(/\/mysql\.com\/v\d+\.\d+\.\d+\/bin/, '').replace('/bin', '')
+        serviceEnv.DYLD_LIBRARY_PATH = [
+          `${envPath}/unicode.org/v71/lib`,
+          `${envPath}/libevent.org/v2/lib`,
+          `${envPath}/openssl.org/v3/lib`, // Updated for OpenSSL v3 which is more common in MySQL 9.x
+          `${envPath}/openssl.org/v1/lib`, // Keep v1 for backward compatibility
+          `${envPath}/facebook.com/zstd/v1/lib`,
+          `${envPath}/protobuf.dev/v21/lib`,
+          `${envPath}/lz4.org/v1/lib`,
+          serviceEnv.DYLD_LIBRARY_PATH,
+        ].filter(Boolean).join(':')
+      }
+    }
+
     const proc = spawn(executablePath, args, {
       stdio: config.verbose ? 'inherit' : 'pipe',
-      env: { ...process.env, ...definition.env },
+      env: serviceEnv,
       cwd: definition.workingDirectory || dataDir,
     })
 
@@ -862,16 +989,55 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
     console.warn(`📦 Installing ${definition.displayName} package...`)
 
   try {
-    // Import install function to install service package with dependencies
-    const { install } = await import('../install')
+    // Validate packageDomain before calling install to prevent JavaScript errors
+    if (!definition.packageDomain || typeof definition.packageDomain !== 'string') {
+      throw new Error(`Invalid package domain for ${definition.displayName}: ${definition.packageDomain}`)
+    }
+
+    // Use the statically imported install function
+    if (typeof install !== 'function') {
+      console.error(`❌ Install function not available`)
+      return false
+    }
 
     // Install the main service package - this will automatically install all dependencies
-    // thanks to our fixed dependency resolution
-    const installPath = `${process.env.HOME}/.local`
-    await install([definition.packageDomain], installPath)
+    const installPath = path.join(homedir(), '.local')
 
-    if (config.verbose)
-      console.log(`✅ ${definition.displayName} package installed successfully`)
+    // Call install with proper error handling and shorter timeout
+    try {
+      if (config.verbose) {
+        console.warn(`📦 Installing ${definition.displayName} package (${definition.packageDomain})...`)
+      }
+
+      // Add timeout to prevent hanging - use longer timeout in CI environments
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      const timeoutMinutes = isCI ? 15 : 10 // 15 minutes for CI, 10 for local
+      // IMPORTANT: Skip service initialization to prevent infinite recursion
+      const installPromise = install([definition.packageDomain], installPath, { skipServiceInit: true })
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error(`Package installation timeout after ${timeoutMinutes} minutes`)), timeoutMinutes * 60 * 1000)
+      })
+
+      await Promise.race([installPromise, timeoutPromise])
+
+      if (config.verbose) {
+        console.log(`✅ ${definition.displayName} package installed successfully`)
+      }
+    }
+    catch (installError) {
+      // If installation fails or times out, try to continue without the package
+      console.warn(`⚠️  Package installation failed for ${definition.displayName}, continuing without it`)
+      console.warn(`  - Error: ${installError instanceof Error ? installError.message : String(installError)}`)
+
+      // Check if binary is already available in system PATH as fallback
+      const { findBinaryInPath } = await import('../utils')
+      if (findBinaryInPath(definition.executable)) {
+        console.warn(`✅ Found ${definition.executable} in system PATH, using system version`)
+        return true
+      }
+
+      return false
+    }
 
     // Verify installation worked by checking in the Launchpad environment
     const binaryPath = findBinaryInEnvironment(definition.executable, installPath)
@@ -883,71 +1049,6 @@ async function ensureServicePackageInstalled(service: ServiceInstance): Promise<
   }
   catch (error) {
     console.error(`❌ Failed to install ${definition.displayName}: ${error instanceof Error ? error.message : String(error)}`)
-    return false
-  }
-}
-
-/**
- * Ensure PHP database extensions are available and configured
- */
-async function ensurePHPDatabaseExtensions(_service: ServiceInstance): Promise<boolean> {
-  // Skip PHP extension checks in test mode
-  if (process.env.NODE_ENV === 'test' || process.env.LAUNCHPAD_TEST_MODE === 'true') {
-    console.warn(`🧪 Test mode: Skipping PHP database extension checks`)
-    return true
-  }
-
-  const { spawn } = await import('node:child_process')
-
-  try {
-    // Quietly check PHP modules; do not try to install via PECL
-    if (config.verbose)
-      console.warn(`🔧 Checking PHP database extensions...`)
-
-    // Check what extensions are currently loaded
-    const phpProcess = spawn('php', ['-m'], { stdio: ['pipe', 'pipe', 'pipe'] })
-
-    let output = ''
-    let hasError = false
-
-    phpProcess.stdout.on('data', (data) => {
-      output += data.toString()
-    })
-
-    phpProcess.stderr.on('data', (data) => {
-      console.error(`PHP extension check error: ${data.toString()}`)
-      hasError = true
-    })
-
-    const checkResult = await new Promise<boolean>((resolve) => {
-      phpProcess.on('close', (code) => {
-        resolve(code === 0 && !hasError)
-      })
-    })
-
-    if (!checkResult) {
-      return false
-    }
-
-    const loadedExtensions = output.toLowerCase().split('\n').map(line => line.trim())
-    const requiredExtensions = ['pdo', 'pdo_pgsql', 'pgsql', 'pdo_mysql', 'mysqli', 'pdo_sqlite']
-    const missingExtensions = requiredExtensions.filter(ext => !loadedExtensions.includes(ext))
-
-    if (missingExtensions.length === 0) {
-      if (config.verbose)
-        console.log(`✅ All required PHP database extensions are available`)
-      return true
-    }
-
-    if (config.verbose)
-      console.warn(`⚠️  Missing PHP extensions: ${missingExtensions.join(', ')}`)
-    if (config.verbose)
-      console.warn(`💡 Launchpad ships precompiled PHP binaries with common DB extensions. We'll select the correct binary for your project automatically.`)
-    // Do not attempt PECL here. Let binary-downloader pick the right PHP and shims load the project php.ini
-    return false
-  }
-  catch (error) {
-    console.error(`❌ Failed to check PHP extensions: ${error instanceof Error ? error.message : String(error)}`)
     return false
   }
 }
@@ -1026,23 +1127,7 @@ export async function setupSQLiteForProject(): Promise<boolean> {
       }
     }
 
-    // Try to run Laravel configuration cache clear (skip in test mode)
-    if (process.env.NODE_ENV !== 'test' && process.env.LAUNCHPAD_TEST_MODE !== 'true') {
-      try {
-        const { spawn } = await import('node:child_process')
-        await new Promise<void>((resolve) => {
-          const configClear = spawn('php', ['artisan', 'config:clear'], { stdio: 'pipe' })
-          configClear.on('close', () => resolve())
-        })
-        console.log(`✅ Cleared Laravel configuration cache`)
-      }
-      catch {
-        // Ignore errors - config:clear is not critical
-      }
-    }
-    else {
-      console.warn(`🧪 Test mode: Skipping Laravel config cache clear`)
-    }
+    console.log(`✅ Database service started`)
 
     return true
   }
@@ -1065,7 +1150,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
   // PostgreSQL auto-initialization
   if (definition.name === 'postgres' || definition.name === 'postgresql') {
     // Use the definition's dataDirectory for consistency with runtime
-    const dataDir = service.dataDir || definition.dataDirectory || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'services', 'postgres', 'data')
+    const dataDir = service.dataDir || definition.dataDirectory || path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'postgres', 'data')
     const pgVersionFile = path.join(dataDir, 'PG_VERSION')
 
     // Check if already initialized
@@ -1157,7 +1242,45 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
         }
       }
 
-      execSync(`${command} -D "${dataDir}" --auth-local=trust --auth-host=trust`, {
+      // Load .env file from current directory if it exists
+      const envPath = path.join(process.cwd(), '.env')
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf-8')
+        const envLines = envContent.split('\n')
+        for (const line of envLines) {
+          const trimmed = line.trim()
+          if (trimmed && !trimmed.startsWith('#')) {
+            const [key, ...valueParts] = trimmed.split('=')
+            if (key && valueParts.length > 0) {
+              const value = valueParts.join('=').trim()
+              process.env[key.trim()] = value
+            }
+          }
+        }
+      }
+
+      // Load project-specific config from current directory
+      const { loadConfig: loadProjectConfig } = await import('bunfig')
+      const projectConfig = await loadProjectConfig<LaunchpadConfig>({
+        name: 'launchpad',
+        alias: 'deps',
+        cwd: process.cwd(),
+        defaultConfig: {},
+      })
+
+      // Get database username and auth method from project config, env vars, or defaults
+      const dbUsername = projectConfig?.services?.database?.username || process.env.DB_USERNAME || 'root'
+      const authMethod = projectConfig?.services?.database?.authMethod || process.env.DB_AUTH_METHOD || 'trust'
+
+      // Always log the username being used for initialization (important for debugging)
+      console.log(`🔧 Initializing PostgreSQL with username: ${dbUsername}, auth: ${authMethod}`)
+      if (config.verbose) {
+        console.log(`Project config database:`, projectConfig?.services?.database)
+        console.log(`Current directory:`, process.cwd())
+        console.log(`DB_USERNAME from env:`, process.env.DB_USERNAME)
+      }
+
+      execSync(`${command} -D "${dataDir}" -U "${dbUsername}" --auth-local=${authMethod} --auth-host=${authMethod} --encoding=UTF8`, {
         stdio: config.verbose ? 'inherit' : 'pipe',
         timeout: 60000,
         env,
@@ -1174,7 +1297,7 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
   // MySQL auto-initialization
   if (definition.name === 'mysql' || definition.name === 'mariadb') {
-    const dataDir = service.dataDir || path.join(process.env.HOME || '', '.local', 'share', 'launchpad', 'mysql-data')
+    const dataDir = service.dataDir || definition.dataDirectory || path.join(homedir(), '.local', 'share', 'launchpad', 'services', 'mysql', 'data')
     const mysqlDir = path.join(dataDir, 'mysql')
 
     // Check if already initialized
@@ -1190,9 +1313,109 @@ async function autoInitializeDatabase(service: ServiceInstance): Promise<boolean
 
       // Initialize database
       const { execSync } = await import('node:child_process')
-      execSync(`mysql_install_db --datadir="${dataDir}" --auth-root-authentication-method=normal`, {
+      // Find MySQL installation path - try multiple methods
+      let basedir = '/usr/local/mysql'
+
+      // Method 1: Look for mysql.com in PATH
+      const mysqlBinPath = process.env.PATH?.split(':').find(p => p.includes('mysql.com'))
+      if (mysqlBinPath) {
+        basedir = mysqlBinPath.replace('/bin', '')
+      }
+      else {
+        // Method 2: Try to find mysqld via which command
+        try {
+          const mysqldPath = execSync('which mysqld', { encoding: 'utf-8' }).trim()
+          if (mysqldPath && fs.existsSync(mysqldPath)) {
+            // Check if it's a shim script (text file)
+            const content = fs.readFileSync(mysqldPath, 'utf-8')
+            if (content.startsWith('#!/bin/sh') || content.startsWith('#!/usr/bin/env bash')) {
+              // It's a shim - extract the real path from the exec line
+              const execMatch = content.match(/exec\s+"([^"]+)"/)
+              if (execMatch && execMatch[1]) {
+                const realMysqldPath = execMatch[1]
+                basedir = path.dirname(path.dirname(realMysqldPath)) // Up two levels from bin/mysqld
+              }
+            }
+            else {
+              // It's a binary - follow symlinks if needed
+              const realPath = fs.realpathSync(mysqldPath)
+              basedir = path.dirname(path.dirname(realPath)) // Up two levels from bin/mysqld
+            }
+          }
+        }
+        catch {
+          // Fall back to checking known locations
+          const knownLocations = [
+            path.join(homedir(), '.local', 'mysql.com', 'v9.4.0'),
+            path.join(homedir(), '.local', 'mysql.com', 'v9'),
+            path.join(homedir(), '.local', 'mysql.com', 'v8'),
+          ]
+
+          for (const dir of knownLocations) {
+            if (fs.existsSync(path.join(dir, 'bin', 'mysqld'))) {
+              basedir = dir
+              break
+            }
+          }
+        }
+      }
+
+      // Handle both MySQL 8.x and 9.x paths
+      // Set up environment for MySQL dependencies - handle both MySQL 8.x and 9.x
+      const envPath = basedir.replace(/\/mysql\.com\/v\d+\.\d+\.\d+/, '')
+
+      // Dynamically discover library versions by scanning directories
+      const findLibraryPath = (domain: string): string[] => {
+        try {
+          const domainPath = path.join(envPath, domain)
+          if (!fs.existsSync(domainPath))
+            return []
+
+          const versions = fs.readdirSync(domainPath)
+            .filter(name => name.startsWith('v'))
+            .sort((a, b) => b.localeCompare(a)) // Sort descending to get latest first
+
+          return versions.map(version => path.join(domainPath, version, 'lib')).filter(libPath => fs.existsSync(libPath))
+        }
+        catch {
+          return []
+        }
+      }
+
+      const libraryPaths = [
+        ...findLibraryPath('unicode.org'),
+        ...findLibraryPath('libevent.org'),
+        ...findLibraryPath('openssl.org'),
+        ...findLibraryPath('facebook.com/zstd'),
+        ...findLibraryPath('protobuf.dev'),
+        ...findLibraryPath('lz4.org'),
+        ...findLibraryPath('abseil.io'),
+        ...findLibraryPath('curl.se'),
+        ...findLibraryPath('zlib.net'),
+        ...findLibraryPath('tukaani.org/xz'),
+        ...findLibraryPath('invisible-island.net/ncurses'),
+      ]
+
+      const env = {
+        ...process.env,
+        DYLD_LIBRARY_PATH: [
+          ...libraryPaths,
+          process.env.DYLD_LIBRARY_PATH,
+        ].filter(Boolean).join(':'),
+      }
+
+      if (config.verbose) {
+        console.log(`Using MySQL basedir: ${basedir}`)
+        console.log(`Using datadir: ${dataDir}`)
+        console.log(`DYLD_LIBRARY_PATH: ${env.DYLD_LIBRARY_PATH}`)
+      }
+
+      // Use the real mysqld binary path instead of shim
+      const mysqldBin = path.join(basedir, 'bin', 'mysqld')
+      execSync(`"${mysqldBin}" --initialize-insecure --datadir="${dataDir}" --basedir="${basedir}" --user=$(whoami)`, {
         stdio: config.verbose ? 'inherit' : 'pipe',
-        timeout: 60000,
+        timeout: 120000,
+        env,
       })
 
       console.log('✅ MySQL database initialized')
@@ -1225,42 +1448,44 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
   if (definition.name === 'postgres' || definition.name === 'mysql') {
     // Immediate feedback so it doesn't look frozen after the "started successfully" line
     logUniqueMessage(`⏳ Waiting for ${definition.displayName} to be ready...`, true)
-    // For databases, wait longer in CI environments and check if they're actually ready
+    // For databases, minimal initial wait to allow server to start accepting connections
     const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-    const waitTime = isCI ? 15000 : 8000 // 15s in CI, 8s locally to allow first cold start
+    const waitTime = isCI ? 2000 : 800 // 2s in CI, 800ms locally for initial startup
     await new Promise(resolve => setTimeout(resolve, waitTime))
 
     // Try to verify the service is responding before running post-start commands
     if (definition.healthCheck) {
-      // Try up to 10 times with exponential backoff
-      for (let i = 0; i < 10; i++) {
+      // Try up to 5 times with shorter backoff
+      for (let i = 0; i < 5; i++) {
         try {
           const healthResult = await checkServiceHealth(service)
-          if (healthResult)
+          if (healthResult) {
+            logUniqueMessage(`✅ ${definition.displayName} is accepting connections`, true)
             break
+          }
         }
         catch {
           // Health check failed, wait a bit more
-          const backoff = Math.min(1000 * (i + 1), 5000)
+          const backoff = Math.min(500 * (i + 1), 2000)
           await new Promise(resolve => setTimeout(resolve, backoff))
         }
       }
-      logUniqueMessage(`✅ ${definition.displayName} is accepting connections`, true)
     }
 
-    // Additional verification for postgres using psql
+    // Additional verification for postgres using psql with configured username
     if (definition.name === 'postgres') {
       const { findBinaryInPath } = await import('../utils')
       const psql = findBinaryInPath('psql') || 'psql'
-      for (let i = 0; i < 8; i++) {
+      const dbUsername = getDatabaseUsernameFromEnv() || config.services?.database?.username || 'root'
+      for (let i = 0; i < 5; i++) {
         const ok = await new Promise<boolean>((resolve) => {
-          const proc = spawn(psql, ['-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-tAc', 'SELECT 1'], { stdio: 'ignore' })
+          const proc = spawn(psql, ['-h', '127.0.0.1', '-p', '5432', '-U', dbUsername, '-tAc', 'SELECT 1'], { stdio: 'ignore' })
           proc.on('close', code => resolve(code === 0))
           proc.on('error', () => resolve(false))
         })
         if (ok)
           break
-        await new Promise(r => setTimeout(r, 300 + i * 200))
+        await new Promise(r => setTimeout(r, 200 + i * 100))
       }
     }
 
@@ -1286,29 +1511,46 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
       }
 
       await new Promise<void>((resolve, _reject) => {
+        let stderr = ''
         const proc = spawn(executablePath, args, {
           stdio: config.verbose ? 'inherit' : 'pipe',
           env: { ...process.env, ...definition.env },
         })
 
-        // Add timeout for post-start commands (30 seconds max)
+        // Capture stderr to check for "already exists" errors
+        if (!config.verbose && proc.stderr) {
+          proc.stderr.on('data', (data) => {
+            stderr += data.toString()
+          })
+        }
+
+        // Reduce timeout for post-start commands to 10 seconds
         const timeout = setTimeout(() => {
           if (config.verbose) {
-            console.warn(`⚠️ Post-start command timed out after 30s: ${resolvedCommand.join(' ')}`)
+            console.warn(`⚠️ Post-start command timed out after 10s: ${resolvedCommand.join(' ')}`)
           }
           proc.kill('SIGTERM')
           allOk = false
           resolve()
-        }, 30000)
+        }, 10000)
 
         proc.on('close', (code) => {
           clearTimeout(timeout)
-          if (code === 0) {
+          // Treat "already exists" errors as success for createdb
+          const isAlreadyExistsError = stderr.includes('already exists') || stderr.includes('duplicate')
+
+          if (code === 0 || isAlreadyExistsError) {
+            if (config.verbose && isAlreadyExistsError) {
+              console.warn(`✓ Database/resource already exists (skipped): ${resolvedCommand.join(' ')}`)
+            }
             resolve()
           }
           else {
             if (config.verbose) {
               console.warn(`⚠️ Post-start command failed with exit code ${code}: ${resolvedCommand.join(' ')}`)
+              if (stderr) {
+                console.warn(`   stderr: ${stderr.trim()}`)
+              }
             }
             allOk = false
             resolve()
@@ -1338,6 +1580,92 @@ async function executePostStartCommands(service: ServiceInstance): Promise<void>
       logUniqueMessage(`✅ ${definition.displayName} post-start setup completed`, true)
     else logUniqueMessage(`⚠️ ${definition.displayName} post-start setup completed with warnings`, true)
   }
+
+  // Execute postDatabaseSetup commands if configured
+  if (allOk && config.services?.postDatabaseSetup) {
+    await executePostDatabaseSetupCommands()
+  }
+}
+
+/**
+ * Execute post-database setup commands (e.g., migrations, seeding)
+ */
+async function executePostDatabaseSetupCommands(): Promise<void> {
+  const commands = config.services?.postDatabaseSetup
+  if (!commands)
+    return
+
+  const commandList = Array.isArray(commands) ? commands : [commands]
+
+  logUniqueMessage(`🌱 Running post-database setup...`, true)
+
+  for (const cmdString of commandList) {
+    try {
+      const parts = cmdString.trim().split(/\s+/)
+      const [command, ...args] = parts
+      const executablePath = findBinaryInPath(command) || command
+
+      if (config.verbose) {
+        console.warn(`📋 Executing: ${cmdString}`)
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        let stderr = ''
+        const proc = spawn(executablePath, args, {
+          stdio: config.verbose ? 'inherit' : 'pipe',
+          cwd: process.cwd(),
+        })
+
+        if (!config.verbose) {
+          if (proc.stdout) {
+            proc.stdout.on('data', () => {
+              // Capture stdout but don't store it
+            })
+          }
+          if (proc.stderr) {
+            proc.stderr.on('data', (data) => {
+              stderr += data.toString()
+            })
+          }
+        }
+
+        // Timeout for setup commands (5 minutes max for migrations/seeding)
+        const timeout = setTimeout(() => {
+          proc.kill('SIGTERM')
+          reject(new Error(`Post-database setup command timed out after 5 minutes: ${cmdString}`))
+        }, 300000)
+
+        proc.on('close', (code) => {
+          clearTimeout(timeout)
+          if (code === 0) {
+            if (config.verbose) {
+              console.log(`✅ Successfully executed: ${cmdString}`)
+            }
+            resolve()
+          }
+          else {
+            const errorMsg = `Post-database setup command failed with exit code ${code}: ${cmdString}`
+            if (!config.verbose && stderr) {
+              console.error(`❌ ${errorMsg}`)
+              console.error(`   stderr: ${stderr.trim()}`)
+            }
+            reject(new Error(errorMsg))
+          }
+        })
+
+        proc.on('error', (error) => {
+          clearTimeout(timeout)
+          reject(new Error(`Failed to execute ${cmdString}: ${error.message}`))
+        })
+      })
+    }
+    catch (error) {
+      console.error(`❌ Post-database setup failed: ${error instanceof Error ? error.message : String(error)}`)
+      throw error // Propagate error so setup is retried on next cd
+    }
+  }
+
+  logUniqueMessage(`✅ Post-database setup completed`, true)
 }
 
 /**
@@ -1364,6 +1692,11 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
   // Get service config with defaults
   const serviceConfig = { ...definition.config, ...service.config }
 
+  // Get username and password, preferring env vars, then config, then defaults
+  const dbUsername = getDatabaseUsernameFromEnv() || config.services?.database?.username || 'root'
+  const dbPassword = getDatabasePasswordFromEnv() || config.services?.database?.password || ''
+  const authMethod = config.services?.database?.authMethod || 'trust'
+
   let resolved = template
     .replace('{dataDir}', dataDir || '')
     .replace('{configFile}', configFile || '')
@@ -1372,9 +1705,9 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
     .replace('{port}', String(port || 5432))
     .replace('{projectName}', projectName)
     .replace('{projectDatabase}', databaseName) // Use env database name or project name
-    .replace('{dbUsername}', config.services?.database?.username || 'root')
-    .replace('{dbPassword}', config.services?.database?.password || 'password')
-    .replace('{authMethod}', config.services?.database?.authMethod || 'trust')
+    .replace('{dbUsername}', dbUsername)
+    .replace('{dbPassword}', dbPassword)
+    .replace('{authMethod}', authMethod)
 
   // Replace service-specific config variables
   for (const [key, value] of Object.entries(serviceConfig)) {
@@ -1389,7 +1722,7 @@ export function resolveServiceTemplateVariables(template: string, service: Servi
  */
 export function detectProjectName(): string {
   try {
-    // Try to read composer.json for Laravel/PHP projects
+    // Try to read composer.json for Laravel projects
     const composerPath = path.join(process.cwd(), 'composer.json')
     if (fs.existsSync(composerPath)) {
       const composer = JSON.parse(fs.readFileSync(composerPath, 'utf-8'))
@@ -1421,27 +1754,167 @@ export function detectProjectName(): string {
 }
 
 /**
- * Get database name from Laravel .env file
+ * Get database username from environment files
+ */
+export function getDatabaseUsernameFromEnv(): string | null {
+  try {
+    // Check .env file first
+    const envPath = path.join(process.cwd(), '.env')
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8')
+      const dbUsernameMatch = envContent.match(/^DB_USERNAME=(.*)$/m)
+
+      if (dbUsernameMatch && dbUsernameMatch[1]) {
+        let username = dbUsernameMatch[1].trim()
+        // Remove quotes if present
+        if ((username.startsWith('"') && username.endsWith('"'))
+          || (username.startsWith('\'') && username.endsWith('\''))) {
+          username = username.slice(1, -1)
+        }
+        return username
+      }
+    }
+
+    // Check deps.yaml file
+    const depsPath = path.join(process.cwd(), 'deps.yaml')
+    if (fs.existsSync(depsPath)) {
+      const content = fs.readFileSync(depsPath, 'utf-8')
+      const lines = content.split('\n')
+      let inDatabase = false
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed === 'database:') {
+          inDatabase = true
+          continue
+        }
+        if (inDatabase && trimmed.startsWith('  ')) {
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
+          if (key === 'username' && valueParts.length > 0) {
+            return valueParts.join(':').trim()
+          }
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
+          break // End of database section
+        }
+      }
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Get database password from environment files
+ */
+export function getDatabasePasswordFromEnv(): string | null {
+  try {
+    // Check .env file first
+    const envPath = path.join(process.cwd(), '.env')
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8')
+      const dbPasswordMatch = envContent.match(/^DB_PASSWORD=(.*)$/m)
+
+      if (dbPasswordMatch && dbPasswordMatch[1]) {
+        let password = dbPasswordMatch[1].trim()
+        // Remove quotes if present
+        if ((password.startsWith('"') && password.endsWith('"'))
+          || (password.startsWith('\'') && password.endsWith('\''))) {
+          password = password.slice(1, -1)
+        }
+        return password
+      }
+    }
+
+    // Check deps.yaml file
+    const depsPath = path.join(process.cwd(), 'deps.yaml')
+    if (fs.existsSync(depsPath)) {
+      const content = fs.readFileSync(depsPath, 'utf-8')
+      const lines = content.split('\n')
+      let inDatabase = false
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed === 'database:') {
+          inDatabase = true
+          continue
+        }
+        if (inDatabase && trimmed.startsWith('  ')) {
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
+          if (key === 'password' && valueParts.length > 0) {
+            return valueParts.join(':').trim()
+          }
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
+          break // End of database section
+        }
+      }
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Get database name from environment files
  */
 export function getDatabaseNameFromEnv(): string | null {
   try {
+    // Check .env file first
     const envPath = path.join(process.cwd(), '.env')
-    if (!fs.existsSync(envPath)) {
-      return null
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8')
+
+      // Try DB_DATABASE first (Laravel standard)
+      let dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.*)$/m)
+
+      // If not found, try DB_NAME (common alternative)
+      if (!dbDatabaseMatch || !dbDatabaseMatch[1]) {
+        dbDatabaseMatch = envContent.match(/^DB_NAME=(.*)$/m)
+      }
+
+      if (dbDatabaseMatch && dbDatabaseMatch[1]) {
+        let dbName = dbDatabaseMatch[1].trim()
+        // Remove quotes if present
+        if ((dbName.startsWith('"') && dbName.endsWith('"'))
+          || (dbName.startsWith('\'') && dbName.endsWith('\''))) {
+          dbName = dbName.slice(1, -1)
+        }
+        // Convert to valid database name (remove special characters)
+        return dbName.replace(/\W/g, '_')
+      }
     }
 
-    const envContent = fs.readFileSync(envPath, 'utf-8')
-    const dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.*)$/m)
+    // Check deps.yaml file
+    const depsPath = path.join(process.cwd(), 'deps.yaml')
+    if (fs.existsSync(depsPath)) {
+      const content = fs.readFileSync(depsPath, 'utf-8')
+      const lines = content.split('\n')
+      let inDatabase = false
 
-    if (dbDatabaseMatch && dbDatabaseMatch[1]) {
-      let dbName = dbDatabaseMatch[1].trim()
-      // Remove quotes if present
-      if ((dbName.startsWith('"') && dbName.endsWith('"'))
-        || (dbName.startsWith('\'') && dbName.endsWith('\''))) {
-        dbName = dbName.slice(1, -1)
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed === 'database:') {
+          inDatabase = true
+          continue
+        }
+        if (inDatabase && trimmed.startsWith('  ')) {
+          const [key, ...valueParts] = trimmed.replace(/^ {2}/, '').split(':')
+          if (key === 'name' && valueParts.length > 0) {
+            const value = valueParts.join(':').trim()
+            return value.replace(/\W/g, '_')
+          }
+        }
+        else if (inDatabase && !trimmed.startsWith('  ')) {
+          break // End of database section
+        }
       }
-      // Convert to valid database name (remove special characters)
-      return dbName.replace(/\W/g, '_')
     }
 
     return null
@@ -1478,11 +1951,20 @@ async function startServiceLaunchd(service: ServiceInstance): Promise<boolean> {
         stderr += d.toString()
       })
     }
+
+    // Add timeout for launchctl load (5 seconds max)
+    const timeout = setTimeout(() => {
+      proc.kill('SIGTERM')
+      resolve(false)
+    }, 5000)
+
     proc.on('close', (code) => {
+      clearTimeout(timeout)
       const ok = code === 0 && !(stderr.includes('Load failed') || stderr.includes('Input/output error'))
       resolve(ok)
     })
     proc.on('error', () => {
+      clearTimeout(timeout)
       resolve(false)
     })
   })
@@ -1503,7 +1985,7 @@ async function stopServiceLaunchd(service: ServiceInstance): Promise<boolean> {
     throw new Error(`Could not determine service file path for ${service.definition.name}`)
   }
 
-  return new Promise((resolve) => {
+  const launchctlSuccess = await new Promise<boolean>((resolve) => {
     const proc = spawn('launchctl', ['unload', '-w', serviceFilePath], {
       stdio: config.verbose ? 'inherit' : 'pipe',
     })
@@ -1516,6 +1998,16 @@ async function stopServiceLaunchd(service: ServiceInstance): Promise<boolean> {
       resolve(false)
     })
   })
+
+  if (!launchctlSuccess) {
+    return false
+  }
+
+  // Verify the service actually stopped by checking health
+  await new Promise(r => setTimeout(r, 500))
+  const stillRunning = await checkServiceHealth(service)
+
+  return !stillRunning
 }
 
 async function enableServiceLaunchd(_service: ServiceInstance): Promise<boolean> {
@@ -1525,8 +2017,37 @@ async function enableServiceLaunchd(_service: ServiceInstance): Promise<boolean>
 }
 
 async function disableServiceLaunchd(service: ServiceInstance): Promise<boolean> {
-  // Stop and unload the service
-  return await stopServiceLaunchd(service)
+  // First stop the service using unload
+  await stopServiceLaunchd(service)
+
+  // Then fully unregister from launchd using bootout
+  const serviceFilePath = getServiceFilePath(service.definition?.name || service.name)
+  if (!serviceFilePath || !fs.existsSync(serviceFilePath)) {
+    return true // Already unregistered
+  }
+
+  const userId = process.getuid?.() || 501
+  const domain = `gui/${userId}`
+
+  const bootoutSuccess = await new Promise<boolean>((resolve) => {
+    const proc = spawn('launchctl', ['bootout', domain, serviceFilePath], {
+      stdio: config.verbose ? 'inherit' : 'pipe',
+    })
+
+    proc.on('close', (code) => {
+      resolve(code === 0)
+    })
+
+    proc.on('error', () => {
+      resolve(false)
+    })
+  })
+
+  if (config.verbose && bootoutSuccess) {
+    console.log(`✅ Unregistered ${service.definition?.name || service.name} from launchd`)
+  }
+
+  return bootoutSuccess
 }
 
 // Linux systemd implementations
@@ -1663,7 +2184,10 @@ async function checkServiceHealth(service: ServiceInstance): Promise<boolean> {
   const { command, expectedExitCode, timeout } = definition.healthCheck
 
   return new Promise((resolve) => {
-    const [cmd, ...args] = command
+    // Resolve template variables in health check command
+    const commandArray = Array.isArray(command) ? command : [command]
+    const resolvedCommand = commandArray.map((arg: string) => resolveServiceTemplateVariables(arg, service))
+    const [cmd, ...args] = resolvedCommand
     const executablePath = findBinaryInPath(cmd) || cmd
 
     const proc = spawn(executablePath, args, {

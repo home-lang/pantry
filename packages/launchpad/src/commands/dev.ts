@@ -1,4 +1,5 @@
 import type { Command } from '../cli/types'
+import process from 'node:process'
 
 const cmd: Command = {
   name: 'dev',
@@ -27,6 +28,11 @@ const cmd: Command = {
       shellOutput: isShellIntegration,
       skipGlobal: env.NODE_ENV === 'test' || env.LAUNCHPAD_SKIP_GLOBAL_AUTO_SCAN === 'true',
     })
+
+    // In shell mode, force exit to prevent hanging on async operations
+    if (isShellIntegration) {
+      process.exit(0)
+    }
 
     return 0
   },

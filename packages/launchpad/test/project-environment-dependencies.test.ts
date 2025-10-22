@@ -44,7 +44,9 @@ async function mockFetch(url: string | URL | Request, _init?: RequestInit): Prom
 
 // Set up test environment
 process.env.NODE_ENV = 'test'
-globalThis.fetch = mockFetch as typeof fetch
+const mockedFetch = mockFetch as typeof fetch
+;(mockedFetch as any).__isMocked = true
+globalThis.fetch = mockedFetch
 
 // Cleanup function to restore original fetch
 function _restoreOriginalFetch() {

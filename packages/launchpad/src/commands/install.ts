@@ -17,6 +17,10 @@ function parseArgs(argv: string[]): { pkgs: string[], opts: Record<string, strin
       opts.global = true
       continue
     }
+    if (a === '--global-deps') {
+      opts['global-deps'] = true
+      continue
+    }
     if (a === '-v') {
       opts.verbose = true
       continue
@@ -74,6 +78,15 @@ function triggerShellGlobalRefresh(): void {
 }
 
 async function ensureShellIntegrationInstalled(): Promise<void> {
+  // Skip shell integration entirely in CI environments
+  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || process.env.CONTINUOUS_INTEGRATION === 'true'
+  const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+
+  if (isCI || skipShellIntegration) {
+    console.log('✅ Skipping shell integration in CI environment')
+    return
+  }
+
   try {
     const home = homedir()
     const zshrc = path.join(process.env.ZDOTDIR || home, '.zshrc')
@@ -91,14 +104,25 @@ async function ensureShellIntegrationInstalled(): Promise<void> {
       }
     }
     if (!found) {
-      const { default: integrate } = await import('../dev/integrate')
-      await integrate('install', { dryrun: false })
+      // Run shell integration installation with timeout to prevent hanging
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error('Shell integration timeout')), 5000)
+      })
+
+      const integrationPromise = (async () => {
+        const { default: integrate } = await import('../dev/integrate')
+        await integrate('install', { dryrun: false })
+      })()
+
+      await Promise.race([integrationPromise, timeoutPromise])
     }
   }
-  catch {}
+  catch {
+    // Silently fail - shell integration is not critical for functionality
+  }
 }
 
-async function installPackagesGlobally(packages: string[], options: { verbose?: boolean, quiet?: boolean }) {
+async function installPackagesGlobally(packages: string[], options: { verbose?: boolean, quiet?: boolean, noInteractive?: boolean }) {
   const { install } = await import('../install-main')
   const globalEnvDir = path.join(homedir(), '.local', 'share', 'launchpad', 'global')
   if (!options.quiet)
@@ -120,22 +144,33 @@ async function installPackagesGlobally(packages: string[], options: { verbose?: 
   }
 
   await createGlobalBinarySymlinks(globalEnvDir)
-  await ensureShellIntegrationInstalled()
-  triggerShellGlobalRefresh()
+  // Skip shell integration in CI environments or if explicitly disabled
+  const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+    || process.env.CI === 'true'
+    || process.env.GITHUB_ACTIONS === 'true'
+  if (!options.quiet && !options.noInteractive && !skipShellIntegration) {
+    await ensureShellIntegrationInstalled()
+    triggerShellGlobalRefresh()
+  }
 
   if (!options.quiet) {
     if (results.length > 0) {
-      console.log(`🎉 Successfully installed ${packages.join(', ')} globally (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
+      console.log(`🎉 Successfully installed ${packages.join(', ')} globally \x1B[3m\x1B[2m(${results.length} ${results.length === 1 ? 'binary' : 'binaries'})\x1B[0m`)
       results.forEach(f => console.log(`  ${f}`))
     }
     else {
       console.log('✅ All specified packages were already installed globally')
     }
   }
+
+  // Force exit after successful completion to prevent hanging
+  if (process.env.LAUNCHPAD_CLI_MODE === '1') {
+    process.exit(0)
+  }
 }
 
-async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: boolean, verbose?: boolean }) {
-  if (!options.quiet)
+async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: boolean, verbose?: boolean, noInteractive?: boolean }) {
+  if (options.verbose)
     console.log('🔍 Scanning machine for dependency files...')
 
   const overallStartTime = Date.now()
@@ -282,7 +317,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
           console.log(`  ✓ Found ${fileCount} files matching ${pattern} in ${location} (${Date.now() - startTime}ms)`)
       }
       const time = Date.now() - locationStart
-      if (options.verbose || time > 1000)
+      if (options.verbose)
         console.log(`📍 Completed ${location} in ${time}ms`)
     }
     catch (error) {
@@ -293,7 +328,7 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
   }
 
   const overallTime = Date.now() - overallStartTime
-  if (!options.quiet)
+  if (options.verbose)
     console.log(`📁 Found ${foundFiles.length} dependency files in ${overallTime}ms`)
 
   const { default: sniff } = await import('../dev/sniff')
@@ -323,8 +358,10 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
     return !isFake
   })
 
-  if (!options.quiet) {
+  if (options.verbose) {
     console.log(`📦 Found ${filteredPackages.length} unique global dependencies`)
+  }
+  if (!options.quiet) {
     if (options.dryRun) {
       console.log('🔍 Packages that would be installed:')
       filteredPackages.forEach(pkg => console.log(`  • ${pkg}`))
@@ -343,27 +380,28 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
   try {
     process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY = 'true'
     const pkgNames = ['php', 'php.net']
-    const isListed = (val: unknown): boolean => {
+    const _isListed = (val: unknown): boolean => {
       if (typeof val === 'string')
         return pkgNames.includes(val)
       if (Array.isArray(val))
         return val.some(v => typeof v === 'string' && pkgNames.includes(v))
       return false
     }
-    const globalBuildDeps = (config as any).installBuildDeps
-    const phpBuildDeps = (config.services?.php as any)?.installBuildDeps
-    const shouldInstallBuildDeps = (
-      process.env.LAUNCHPAD_INSTALL_BUILD_DEPS === '1'
-      || globalBuildDeps === true
-      || isListed(globalBuildDeps)
-      || phpBuildDeps === true
-      || isListed(phpBuildDeps)
-    )
+    // Check for excluded dependencies configuration
+    const excludedDeps = (config as any).excludeDependencies || []
+    const globalExcludedDeps = (config as any).excludeGlobalDependencies || []
 
-    if (!shouldInstallBuildDeps) {
+    const allExcludedDeps = new Set([
+      ...excludedDeps,
+      ...globalExcludedDeps,
+    ])
+
+    // Always install PHP dependencies by default - they are runtime dependencies, not build dependencies
+    // Only exclude if explicitly configured to do so
+    if (allExcludedDeps.size > 0) {
       try {
-        const { pantry } = await import('ts-pkgx')
-        const phpPackage = (pantry as any)?.phpnet
+        const { packages } = await import('ts-pkgx')
+        const phpPackage = (packages as any)?.phpnet
         const phpDeps: string[] = (phpPackage?.dependencies || []).map((dep: any) => {
           let name = ''
           if (typeof dep === 'string')
@@ -375,13 +413,13 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
           name = name.replace(/[~^<>=].*$/, '')
           return name
         }).filter(Boolean)
+
         if (phpDeps.length > 0) {
-          const phpDepSet = new Set(phpDeps)
           const before = filteredPackages.length
-          filteredPackages = filteredPackages.filter(pkg => !phpDepSet.has(pkg))
+          filteredPackages = filteredPackages.filter(pkg => !allExcludedDeps.has(pkg))
           const removed = before - filteredPackages.length
           if (options.verbose && removed > 0)
-            console.log(`ℹ️  Skipping ${removed} PHP build-time dependencies during global auto-install. Set LAUNCHPAD_INSTALL_BUILD_DEPS=1 to include them.`)
+            console.log(`ℹ️  Excluded ${removed} dependencies from global install based on configuration.`)
         }
       }
       catch {}
@@ -404,13 +442,20 @@ async function installGlobalDependencies(options: { dryRun?: boolean, quiet?: bo
     delete process.env.LAUNCHPAD_SUPPRESS_INSTALL_SUMMARY
 
     await createGlobalBinarySymlinks(globalEnvDir)
-    await ensureShellIntegrationInstalled()
-    triggerShellGlobalRefresh()
+    if (!options.noInteractive) {
+      await ensureShellIntegrationInstalled()
+      triggerShellGlobalRefresh()
+    }
 
     if (!options.quiet) {
       if (results.length > 0)
-        console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies (${results.length} binaries)`)
+        console.log(`🎉 Successfully installed ${filteredPackages.length} global dependencies \x1B[3m\x1B[2m(${results.length} binaries)\x1B[0m`)
       else console.log('✅ All global dependencies were already installed')
+    }
+
+    // Force exit after successful completion to prevent hanging
+    if (process.env.LAUNCHPAD_CLI_MODE === '1') {
+      process.exit(0)
     }
   }
   catch (error) {
@@ -442,6 +487,12 @@ const command: Command = {
     // Dry run only prints plan if not combined with special modes handled below
     const dryRun = Boolean(opts['dry-run'])
 
+    // Handle global dependencies installation
+    if (opts['global-deps']) {
+      await installGlobalDependencies({ dryRun, quiet: Boolean(opts.quiet), verbose: Boolean(opts.verbose) })
+      return 0
+    }
+
     // Handle global installation
     if (opts.global) {
       const list = pkgs
@@ -465,10 +516,22 @@ const command: Command = {
       if (basePath === defaultGlobalPath) {
         await createGlobalBinarySymlinks(basePath)
       }
-      await ensureShellIntegrationInstalled()
-      triggerShellGlobalRefresh()
+      // Skip shell integration in CI environments or if explicitly disabled
+      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+        || process.env.CI === 'true'
+        || process.env.GITHUB_ACTIONS === 'true'
+      if (!skipShellIntegration) {
+        await ensureShellIntegrationInstalled()
+        triggerShellGlobalRefresh()
+      }
       if (!opts.quiet && opts.verbose && results.length > 0)
         results.forEach(f => console.log(`  ${f}`))
+
+      // Force exit in CI environments to prevent hanging
+      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      if (isCI) {
+        process.exit(0)
+      }
       return 0
     }
 
@@ -505,16 +568,27 @@ const command: Command = {
       if (basePath === defaultGlobalPath) {
         await createGlobalBinarySymlinks(basePath)
       }
-      await ensureShellIntegrationInstalled()
-      triggerShellGlobalRefresh()
+      // Skip shell integration in CI environments or if explicitly disabled
+      const skipShellIntegration = process.env.LAUNCHPAD_SKIP_SHELL_INTEGRATION === 'true'
+        || process.env.CI === 'true'
+        || process.env.GITHUB_ACTIONS === 'true'
+      if (!skipShellIntegration) {
+        await ensureShellIntegrationInstalled()
+        triggerShellGlobalRefresh()
+      }
       if (!opts.quiet) {
         if (results.length > 0) {
-          console.log(`🎉 Successfully installed ${pkgs.join(', ')} (${results.length} ${results.length === 1 ? 'binary' : 'binaries'})`)
+          console.log(`🎉 Successfully installed ${pkgs.join(', ')} \x1B[3m\x1B[2m(${results.length} ${results.length === 1 ? 'binary' : 'binaries'})\x1B[0m`)
           results.forEach(f => console.log(`  ${f}`))
         }
         else {
           console.log('⚠️  No binaries were installed')
         }
+      }
+
+      // Force exit after successful completion to prevent hanging
+      if (process.env.LAUNCHPAD_CLI_MODE === '1') {
+        process.exit(0)
       }
       return 0
     }

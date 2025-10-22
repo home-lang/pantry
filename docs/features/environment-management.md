@@ -32,10 +32,12 @@ Launchpad uses a human-readable hash format for environment directories:
 **Format:** `{project-name}_{8-char-hex-hash}-d{8-char-dep-hash}`
 
 **Examples:**
+
 - `my-web-app_1a2b3c4d-d9f1a2b3` - Project `/home/user/projects/my-web-app`, dependency fingerprint `d9f1a2b3`
 - `api-server_5e6f7g8h-d0c1e2f3` - Project `/work/api-server`, dependency fingerprint `d0c1e2f3`
 
 **Benefits:**
+
 - **Human-readable** - Easy to identify which project an environment belongs to
 - **Version-aware** - Dependency changes always map to a distinct environment
 - **Unique** - 8-character hex hash prevents collisions between projects
@@ -53,10 +55,12 @@ Launchpad automatically detects these dependency files:
 - `.deps.yml` / `.deps.yaml`
 
 For pkgx compatibility, Launchpad also supports:
+
 - `pkgx.yaml` / `pkgx.yml`
 - `.pkgx.yaml` / `.pkgx.yml`
 
 **Example dependency file:**
+
 ```yaml
 dependencies:
   - node@22
@@ -74,6 +78,7 @@ env:
 Control where packages are installed using the `global` flag:
 
 **Individual Package Control:**
+
 ```yaml
 # dependencies.yaml
 dependencies:
@@ -98,6 +103,7 @@ env:
 ```
 
 **Top-Level Global Flag:**
+
 ```yaml
 # dependencies.yaml
 global: true  # Install all packages globally by default
@@ -116,6 +122,7 @@ env:
 ```
 
 **Global Installation Behavior:**
+
 - **Global packages** (`global: true`): Installed system-wide, available in all environments
 - **Local packages** (`global: false` or default): Installed per-project, isolated from other environments
 - **Mixed approach**: Combine global tools with project-specific dependencies
@@ -137,7 +144,7 @@ Once set up, environments automatically activate:
 
 ```bash
 cd my-project/  # → ✅ Environment activated for /path/to/my-project
-cd ../          # → dev environment deactivated
+cd ../          # → Environment deactivated
 ```
 
 ### Customizing Shell Messages
@@ -219,6 +226,7 @@ launchpad env:ls --format simple
 **Output formats:**
 
 **Table (default):**
+
 ```
 📦 Development Environments:
 
@@ -233,6 +241,7 @@ Total: 3 environment(s)
 ```
 
 **JSON:**
+
 ```json
 [
   {
@@ -247,6 +256,7 @@ Total: 3 environment(s)
 ```
 
 **Simple:**
+
 ```
 final-project (final-project_7db6cf06)
 working-test (working-test_208a31ec)
@@ -269,6 +279,7 @@ launchpad env:inspect dummy_6d7cf1d6 --show-stubs
 ```
 
 **Example output:**
+
 ```
 🔍 Inspecting environment: working-test_208a31ec
 
@@ -306,6 +317,7 @@ Overall Status: ✅ Healthy
 ```
 
 **Health Check Criteria:**
+
 - **Binaries present** - Environment has executable binaries
 - **Packages installed** - Package directories exist and contain files
 - **Directory structure** - Required directories (bin, pkgs) exist
@@ -332,6 +344,7 @@ launchpad env:clean --verbose
 ```
 
 **Cleanup Criteria:**
+
 - Environments with no binaries (failed installations)
 - Environments older than specified days (default: 30)
 - Empty or corrupted environment directories
@@ -380,6 +393,7 @@ fi
 Environments work seamlessly with development tools:
 
 **Node.js project example:**
+
 ```yaml
 dependencies:
   - node@22
@@ -392,6 +406,7 @@ env:
 ```
 
 **Python project example:**
+
 ```yaml
 dependencies:
   - python@3.12
@@ -408,16 +423,19 @@ env:
 #### Environment Not Activating
 
 1. Check shell integration:
+
    ```bash
    type _pkgx_chpwd_hook
    ```
 
 2. Verify dependency file:
+
    ```bash
    launchpad dev:dump --dryrun
    ```
 
 3. Check file detection:
+
    ```bash
    ls -la dependencies.yaml
    ```
@@ -425,16 +443,19 @@ env:
 #### Environment Messages Not Showing
 
 1. Check message settings:
+
    ```bash
    echo $LAUNCHPAD_SHOW_ENV_MESSAGES
    ```
 
 2. Verify shell integration:
+
    ```bash
    grep "launchpad dev:shellcode" ~/.zshrc
    ```
 
 3. Test manual activation:
+
 ```bash
    eval "$(launchpad dev:shellcode)"
    ```
@@ -442,16 +463,19 @@ env:
 #### Performance Issues
 
 1. Clean old environments:
+
    ```bash
    launchpad env:clean --older-than 7
    ```
 
 2. Check disk usage:
+
    ```bash
    du -sh ~/.local/share/launchpad/envs/*
    ```
 
 3. Monitor activation time:
+
   ```bash
   time (cd my-project && cd ..)
   ```
@@ -479,16 +503,19 @@ env:
 ### Troubleshooting
 
 **Environment not activating:**
+
 1. Check shell integration: `echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc`
 2. Verify dependency file exists and has correct syntax
 3. Reload shell configuration: `source ~/.zshrc`
 
 **Package installation failures:**
+
 1. Check internet connectivity
 2. Verify package names and versions exist in pkgx
 3. Use `launchpad dev:dump --verbose` for detailed error information
 
 **Hash collisions (rare):**
+
 1. Different projects with same name get different hashes based on full path
 2. If collision occurs, rename one of the project directories
 3. Remove old environment: `launchpad env:remove {hash}`

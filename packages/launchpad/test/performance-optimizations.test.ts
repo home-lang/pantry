@@ -28,46 +28,43 @@ describe('Performance Optimizations', () => {
   })
 
   describe('Global Path Caching', () => {
-    it('should include global path caching variables in shell integration', () => {
+    it('should include global path caching logic in shell integration', () => {
       const generatedShellCode = shellcode()
 
-      // Should include cache variables
-      expect(generatedShellCode).toContain('__launchpad_global_paths_cache=""')
-      expect(generatedShellCode).toContain('__launchpad_global_paths_timestamp=0')
+      // Should include TTL-based background update check logic
+      expect(generatedShellCode).toContain('__lp_bg_update_check')
+      expect(generatedShellCode).toContain('LAUNCHPAD_GLOBAL_UPDATE_TTL_HOURS')
     })
 
-    it('should include caching logic in __launchpad_ensure_global_path function', () => {
+    it('should include modern TTL-based update checking logic', () => {
       const generatedShellCode = shellcode()
 
-      // Should check cache age and use cached paths if recent
-      expect(generatedShellCode).toContain('Use cached global paths if they\'re less than 10 minutes old')
-      expect(generatedShellCode).toContain('$((current_time - __launchpad_global_paths_timestamp)) -lt 600')
+      // Should include TTL-based background update checking
+      expect(generatedShellCode).toContain('TTL-based background update check')
+      expect(generatedShellCode).toContain('ttl_hours')
+      expect(generatedShellCode).toContain('backoff_marker')
 
-      // Should rebuild cache when expired
-      expect(generatedShellCode).toContain('Rebuild global paths cache (expensive operation)')
-
-      // Should cache the discovered paths
-      expect(generatedShellCode).toContain('Cache the discovered paths for future use')
-      expect(generatedShellCode).toContain('__launchpad_global_paths_cache="$global_paths"')
-      expect(generatedShellCode).toContain('__launchpad_global_paths_timestamp="$current_time"')
+      // Should use ready markers to avoid redundant setup
+      expect(generatedShellCode).toContain('ready_cache_marker')
+      expect(generatedShellCode).toContain('ready_global_marker')
     })
 
-    it('should use cached paths when available', () => {
+    it('should use ready markers to avoid expensive operations', () => {
       const generatedShellCode = shellcode()
 
-      // Should have fast path that applies cached paths without filesystem operations
-      expect(generatedShellCode).toContain('Apply cached paths quickly without expensive filesystem operations')
-      expect(generatedShellCode).toContain('for cached_path in $__launchpad_global_paths_cache')
-      expect(generatedShellCode).toContain('__launchpad_update_path "$cached_path"')
+      // Should use ready markers to skip redundant setup
+      expect(generatedShellCode).toContain('Detect global ready markers (persistent) to skip redundant global setup')
+      expect(generatedShellCode).toContain('ready_cache_marker')
+      expect(generatedShellCode).toContain('ready_global_marker')
     })
 
-    it('should avoid expensive find operations when cache is valid', () => {
+    it('should use efficient library path management', () => {
       const generatedShellCode = shellcode()
 
-      // The expensive find operations should only happen in the cache rebuild section
-      const findOperations = (generatedShellCode.match(/find.*-print0/g) || []).length
+      // Should use efficient library path collection
+      const findOperations = (generatedShellCode.match(/find.*-maxdepth/g) || []).length
 
-      // Should have find operations for rebuilding cache, but not in the fast path
+      // Should have some find operations for library path discovery
       expect(findOperations).toBeGreaterThan(0)
 
       // The fast path (cached section) should not contain find operations
@@ -83,36 +80,35 @@ describe('Performance Optimizations', () => {
     it('should include fast path condition for environment readiness', () => {
       const generatedShellCode = shellcode()
 
-      // Should check for bin directory, files, and readiness markers
+      // Should check for bin directory and environment existence
       expect(generatedShellCode).toContain('[[ -d "$env_dir/bin" ]]')
-      expect(generatedShellCode).toContain('$(echo "$env_dir/bin"/*)')
-      expect(generatedShellCode).toContain('[[ -d "$env_dir/pkgs" || -f "$env_dir/.launchpad_ready" ]]')
+      expect(generatedShellCode).toContain('If environment exists, activate it')
     })
 
-    it('should include marker file creation logic', () => {
+    it('should include ready marker detection logic', () => {
       const generatedShellCode = shellcode()
 
-      // Should create .launchpad_ready marker files for caching
-      expect(generatedShellCode).toContain('.launchpad_ready')
+      // Should check for ready markers to optimize performance
+      expect(generatedShellCode).toContain('.ready')
     })
 
-    it('should include persistent cache file logic', () => {
+    it('should include cache directory logic', () => {
       const generatedShellCode = shellcode()
 
-      // Should create persistent cache files
-      expect(generatedShellCode).toContain('env_cache_')
-      expect(generatedShellCode).toContain('$HOME/.cache/launchpad/')
-      expect(generatedShellCode).toContain('mkdir -p "$(dirname "$cache_file")"')
-      expect(generatedShellCode).toContain('touch "$cache_file"')
+      // Should use cache directories for optimization
+      expect(generatedShellCode).toContain('cache_dir')
+      expect(generatedShellCode).toContain('$HOME/.cache/launchpad')
+      expect(generatedShellCode).toContain('shell_cache_dir')
     })
 
     it('should check persistent cache before slow operations', () => {
       const generatedShellCode = shellcode()
 
-      // Should check persistent cache file timestamps
-      expect(generatedShellCode).toContain('cache_file_time=')
+      // Should check file modification times for optimization
+      expect(generatedShellCode).toContain('__lp_file_mtime')
       expect(generatedShellCode).toContain('stat ')
-      expect(generatedShellCode).toContain('$((current_time - cache_file_time))')
+      expect(generatedShellCode).toContain('mtime_a')
+      expect(generatedShellCode).toContain('now_s - newest')
     })
   })
 
@@ -120,22 +116,19 @@ describe('Performance Optimizations', () => {
     it('should return early when environment is ready', () => {
       const generatedShellCode = shellcode()
 
-      // Fast path should return 0 immediately when conditions are met
-      // Look for the ultra-fast path activation logic
-      expect(generatedShellCode).toContain('Ultra-fast path activation completed')
+      // Fast path should return early when conditions are met
       expect(generatedShellCode).toContain('return 0')
 
-      // Should have instant activation logic
-      expect(generatedShellCode).toContain('Instant activation - no external commands, no file operations')
+      // Should have early exit logic for disabled shell integration
+      expect(generatedShellCode).toContain('LAUNCHPAD_DISABLE_SHELL_INTEGRATION')
     })
 
     it('should include optimized binary existence check', () => {
       const generatedShellCode = shellcode()
 
       // Should have directory existence checks for fast path
-      expect(generatedShellCode).toContain('-d "$env_dir/bin"')
-      expect(generatedShellCode).toContain('Ultra-fast path')
-      expect(generatedShellCode).toContain('ready=true')
+      expect(generatedShellCode).toContain('[[ -d "$env_dir/bin" ]]')
+      expect(generatedShellCode).toContain('If environment exists, activate it')
     })
 
     it('should use optimized printf instead of slow commands in fast path', () => {
@@ -144,8 +137,7 @@ describe('Performance Optimizations', () => {
       // Should use printf for activation messages
       expect(generatedShellCode).toContain('printf "✅ Environment activated')
 
-      // Should have fast path logic with return 0
-      expect(generatedShellCode).toContain('Ultra-fast path')
+      // Should have early return logic
       expect(generatedShellCode).toContain('return 0')
     })
   })
@@ -161,22 +153,21 @@ describe('Performance Optimizations', () => {
   })
 
   describe('Cache Duration Configuration', () => {
-    it('should use longer cache durations for test environments', () => {
+    it('should use TTL-based cache management', () => {
       const generatedShellCode = shellcode()
 
-      // Should have different cache durations based on environment type
-      expect(generatedShellCode).toContain('cache_duration=')
-      expect(generatedShellCode).toContain('3600') // 1 hour for test environments
-      expect(generatedShellCode).toContain('1800') // 30 minutes for shell integration
+      // Should have TTL-based cache management
+      expect(generatedShellCode).toContain('ttl_hours')
+      expect(generatedShellCode).toContain('3600') // 1 hour calculations
+      expect(generatedShellCode).toContain('60 * 60') // 60 minutes backoff
     })
 
     it('should extend cache for test and development environments', () => {
       const generatedShellCode = shellcode()
 
-      // Should detect test environments and extend cache
-      const hasTestEnv = generatedShellCode.includes('"test"') || generatedShellCode.includes('"launchpad"')
-      expect(hasTestEnv).toBe(true)
-      expect(generatedShellCode).toContain('test/development environments')
+      // Should have development environment cache settings
+      expect(generatedShellCode).toContain('LAUNCHPAD_GLOBAL_UPDATE_TTL_HOURS')
+      expect(generatedShellCode).toContain('default 24')
     })
   })
 
@@ -184,24 +175,20 @@ describe('Performance Optimizations', () => {
     it('should include system path ensuring after global paths', () => {
       const generatedShellCode = shellcode()
 
-      // Should call system path ensuring in both cached and uncached paths
-      expect(generatedShellCode).toContain('__launchpad_ensure_system_path')
+      // Should use the append helper for path management
+      expect(generatedShellCode).toContain('__lp_append_path')
 
-      // Should be called in the fast cached path
-      const cachedSection = generatedShellCode.substring(
-        generatedShellCode.indexOf('Use cached global paths'),
-        generatedShellCode.indexOf('Rebuild global paths cache'),
-      )
-      expect(cachedSection).toContain('__launchpad_ensure_system_path')
+      // Should handle global bin path management
+      expect(generatedShellCode).toContain('global_bin')
     })
 
-    it('should include bash path validation and recovery', () => {
+    it('should include shell compatibility checks', () => {
       const generatedShellCode = shellcode()
 
-      // Should check for working bash and prioritize system bash if needed
-      expect(generatedShellCode).toContain('ensure system bash is accessible')
-      expect(generatedShellCode).toContain('bash --version')
-      expect(generatedShellCode).toContain('/bin/bash /usr/bin/bash /usr/local/bin/bash')
+      // Should handle different shell types
+      expect(generatedShellCode).toContain('ZSH_VERSION')
+      expect(generatedShellCode).toContain('BASH_VERSION')
+      expect(generatedShellCode).toContain('chpwd_functions')
     })
   })
 
@@ -220,27 +207,24 @@ describe('Performance Optimizations', () => {
 
       // Should have background operations to avoid blocking
       expect(generatedShellCode).toContain('>/dev/null 2>&1 &')
-      expect(generatedShellCode).toContain('disown 2>/dev/null || true')
 
-      // Should have ultra-fast path that returns early
-      expect(generatedShellCode).toContain('Ultra-fast path activation completed')
+      // Should have fast path that returns early
       expect(generatedShellCode).toContain('return 0')
 
-      // Should have instant activation logic
-      expect(generatedShellCode).toContain('Instant activation - no external commands')
+      // Should have background processing
+      expect(generatedShellCode).toContain('background')
 
       // Should use efficient caching mechanisms
-      expect(generatedShellCode).toContain('persistent_cache_dir')
+      expect(generatedShellCode).toContain('cache_dir')
     })
 
     it('should ensure cache variables are properly initialized', () => {
       const generatedShellCode = shellcode()
 
-      // All cache variables should be initialized to prevent errors
-      expect(generatedShellCode).toContain('__launchpad_global_paths_cache=""')
-      expect(generatedShellCode).toContain('__launchpad_global_paths_timestamp=0')
-      expect(generatedShellCode).toContain('__launchpad_env_ready_cache=""')
-      expect(generatedShellCode).toContain('__launchpad_env_ready_timestamp=0')
+      // Modern cache uses marker files instead of variables
+      expect(generatedShellCode).toContain('ready_cache_marker')
+      expect(generatedShellCode).toContain('ready_global_marker')
+      expect(generatedShellCode).toContain('backoff_marker')
     })
   })
 
@@ -249,28 +233,27 @@ describe('Performance Optimizations', () => {
       const generatedShellCode = shellcode()
 
       // Should work with existing directory-based cache
-      expect(generatedShellCode).toContain('__launchpad_cache_dir')
-      expect(generatedShellCode).toContain('__launchpad_cache_timestamp')
+      expect(generatedShellCode).toContain('cache_dir')
+      expect(generatedShellCode).toContain('shell_cache_dir')
 
       // Should not interfere with timeout handling
-      expect(generatedShellCode).toContain('__launchpad_timeout_count')
+      expect(generatedShellCode).toContain('LAUNCHPAD_DISABLE_SHELL_INTEGRATION')
     })
 
     it('should preserve existing environment variable handling', () => {
       const generatedShellCode = shellcode()
 
       // Should still handle all the standard environment variables
-      expect(generatedShellCode).toContain('LAUNCHPAD_ORIGINAL_PATH')
       expect(generatedShellCode).toContain('LAUNCHPAD_ENV_BIN_PATH')
-      expect(generatedShellCode).toContain('LAUNCHPAD_PROJECT_DIR')
-      expect(generatedShellCode).toContain('LAUNCHPAD_SHOW_ENV_MESSAGES')
+      expect(generatedShellCode).toContain('LAUNCHPAD_CURRENT_PROJECT')
+      expect(generatedShellCode).toContain('LAUNCHPAD_VERBOSE')
     })
 
     it('should maintain library path updates', () => {
       const generatedShellCode = shellcode()
 
-      // Should still call library path updates in fast path
-      expect(generatedShellCode).toContain('__launchpad_update_library_paths')
+      // Should still include library path functionality
+      expect(generatedShellCode).toContain('__lp_add_unique_colon_path')
 
       // Should handle all library path variables
       expect(generatedShellCode).toContain('DYLD_LIBRARY_PATH')
