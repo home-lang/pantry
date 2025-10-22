@@ -13,6 +13,10 @@ pub const LaunchpadConfigLoader = loader.LaunchpadConfigLoader;
 pub const LoadOptions = loader.LoadOptions;
 pub const loadLaunchpadConfig = loader.loadLaunchpadConfig;
 
+// Dependency extraction from config
+pub const dependencies = @import("config/dependencies.zig");
+pub const extractDependencies = dependencies.extractDependencies;
+
 // Re-export core zonfig functions
 pub const loadConfig = zonfig.loadConfig;
 pub const tryLoadConfig = zonfig.tryLoadConfig;
@@ -22,4 +26,5 @@ test {
     // Run all config tests
     std.testing.refAllDecls(@This());
     std.testing.refAllDecls(loader);
+    std.testing.refAllDecls(dependencies);
 }

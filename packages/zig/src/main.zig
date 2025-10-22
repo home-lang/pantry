@@ -1,6 +1,6 @@
 const std = @import("std");
-const lib = @import("lib.zig");
-const commands = @import("cli/commands.zig");
+const lib = @import("lib");
+const commands = lib.commands;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

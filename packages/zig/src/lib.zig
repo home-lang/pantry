@@ -10,6 +10,7 @@ pub const env = @import("env.zig");
 pub const shell = @import("shell.zig");
 pub const install = @import("install.zig");
 pub const config = @import("config.zig");
+pub const commands = @import("cli/commands.zig");
 
 // Re-export commonly used types
 pub const Platform = core.Platform;

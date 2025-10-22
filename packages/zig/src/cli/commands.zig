@@ -53,31 +53,66 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         const cwd = try std.process.getCwdAlloc(allocator);
         defer allocator.free(cwd);
 
-        const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
-            return .{
-                .exit_code = 1,
-                .message = try allocator.dupe(u8, "Error: No packages specified and no dependency file found"),
-            };
-        };
-        defer allocator.free(deps_file.path);
+        // Try to load dependencies from config file first (launchpad.config.ts, etc.)
+        const config_deps = try loadDependenciesFromConfig(allocator, cwd);
+        defer {
+            if (config_deps) |deps_list| {
+                for (deps_list) |*dep| {
+                    var d = dep.*;
+                    d.deinit(allocator);
+                }
+                allocator.free(deps_list);
+            }
+        }
 
-        // Parse dependencies from file
-        const deps = try parser.inferDependencies(allocator, deps_file);
+        // If config file had dependencies, use those
+        var deps: []parser.PackageDependency = undefined;
+        var deps_file_path: ?[]const u8 = null;
+        defer if (deps_file_path) |path| allocator.free(path);
+
+        if (config_deps) |config_dep_list| {
+            // Use dependencies from config file
+            deps = config_dep_list;
+            // Don't set deps_file_path since we're using config
+        } else {
+            // Fall back to dependency file detection
+            const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
+                return .{
+                    .exit_code = 1,
+                    .message = try allocator.dupe(u8, "Error: No packages specified and no dependency file found"),
+                };
+            };
+            deps_file_path = deps_file.path;
+
+            // Parse dependencies from file
+            deps = try parser.inferDependencies(allocator, deps_file);
+        }
+
         defer {
             for (deps) |*dep| {
                 var d = dep.*;
                 d.deinit(allocator);
             }
-            allocator.free(deps);
+            // Only free deps if we allocated it (not if it came from config_deps)
+            if (config_deps == null) {
+                allocator.free(deps);
+            }
         }
 
         if (deps.len == 0) {
-            std.debug.print("No dependencies found in {s}\n", .{deps_file.path});
+            if (deps_file_path) |path| {
+                std.debug.print("No dependencies found in {s}\n", .{path});
+            } else {
+                std.debug.print("No dependencies found in config file\n", .{});
+            }
             return .{ .exit_code = 0 };
         }
 
         // Create project-specific environment
-        const proj_dir = std.fs.path.dirname(deps_file.path) orelse cwd;
+        const proj_dir = if (deps_file_path) |path|
+            std.fs.path.dirname(path) orelse cwd
+        else
+            cwd;
         const proj_basename = std.fs.path.basename(proj_dir);
 
         // Hash project directory for short hash
@@ -88,12 +123,15 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
         defer allocator.free(proj_hash_short);
 
-        // Hash dependency file contents
-        const dep_file_contents = try std.fs.cwd().readFileAlloc(allocator, deps_file.path, 1024 * 1024);
-        defer allocator.free(dep_file_contents);
+        // Hash dependency file contents (or project dir if using config)
+        const hash_input = if (deps_file_path) |path|
+            try std.fs.cwd().readFileAlloc(allocator, path, 1024 * 1024)
+        else
+            try allocator.dupe(u8, proj_dir);
+        defer allocator.free(hash_input);
 
         var dep_hasher = std.crypto.hash.Md5.init(.{});
-        dep_hasher.update(dep_file_contents);
+        dep_hasher.update(hash_input);
         var dep_hash: [16]u8 = undefined;
         dep_hasher.final(&dep_hash);
         const dep_hash_hex = try string.hashToHex(dep_hash, allocator);
@@ -1543,6 +1581,41 @@ fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []cons
     std.debug.print("\n✅ Packages installed globally to: {s}\n", .{global_dir});
 
     return .{ .exit_code = 0 };
+}
+
+/// Try to load dependencies from a config file (launchpad.config.ts, etc.)
+/// Returns null if no config file found or if config has no dependencies
+fn loadDependenciesFromConfig(
+    allocator: std.mem.Allocator,
+    cwd: []const u8,
+) !?[]@import("../deps/parser.zig").PackageDependency {
+    // Try to load launchpad config
+    var config = lib.config.loadLaunchpadConfig(allocator, .{
+        .name = "launchpad",
+        .cwd = cwd,
+    }) catch {
+        // No config file found or failed to load
+        return null;
+    };
+    defer config.deinit();
+
+    // Extract dependencies from config
+    const deps = lib.config.extractDependencies(allocator, config) catch {
+        // Failed to extract dependencies
+        return null;
+    };
+
+    if (deps.len == 0) {
+        // No dependencies in config
+        for (deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(deps);
+        return null;
+    }
+
+    return deps;
 }
 
 test "Command structures" {
