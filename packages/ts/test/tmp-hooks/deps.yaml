@@ -1,0 +1,19 @@
+pkgs:
+  - bun.sh
+
+preSetup:
+  enabled: true
+  commands:
+    - {command: "bash -lc 'echo preSetup >> hooks.log'"}
+postSetup:
+  enabled: true
+  commands:
+    - {command: "bash -lc 'echo postSetup >> hooks.log'"}
+preActivation:
+  enabled: true
+  commands:
+    - {command: "bash -lc 'echo preActivation >> hooks.log'"}
+postActivation:
+  enabled: true
+  commands:
+    - {command: "bash -lc 'echo postActivation >> hooks.log'"}

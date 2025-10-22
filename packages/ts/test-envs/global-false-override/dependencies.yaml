@@ -1,0 +1,24 @@
+global: false
+dependencies:
+  # Uses top-level global: false (local installation)
+  node@22: 22.1.0
+  typescript@5.0: 5.0.4
+
+  # Override to global despite top-level global: false
+  python@3.12:
+    version: 3.12.1
+    global: true
+
+  git@2.42:
+    version: 2.42.0
+    global: true
+
+  # Explicit local (same as top-level)
+  eslint@8.50:
+    version: 8.50.0
+    global: false
+
+env:
+  NODE_ENV: development
+  PROJECT_TYPE: global-false-override
+  DESCRIPTION: 'Top-level global: false with selective global overrides'

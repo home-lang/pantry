@@ -1,0 +1,3 @@
+dependencies:
+  # Simple wget installation
+  gnu.org/wget: ^1.21

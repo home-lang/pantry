@@ -1,0 +1,19 @@
+{
+  "name": "bun-package-manager-versioned",
+  "version": "1.0.0",
+  "packageManager": "bun@1.2.20",
+  "description": "Test environment for versioned Bun package manager",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "test": "bun test",
+    "lint": "bunx eslint src/ --fix"
+  },
+  "dependencies": {
+    "fastify": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0"
+  }
+}

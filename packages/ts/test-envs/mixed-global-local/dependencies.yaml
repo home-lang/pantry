@@ -1,0 +1,18 @@
+global: true
+dependencies:
+  # This will be global (uses top-level setting)
+  bun.sh: 1.2.3
+
+  # This overrides to local installation
+  python.org:
+    version: ^3.11
+    global: false # Override top-level global for project-local installation
+
+  # These use top-level global: true
+  node@22: 22.1.0
+  git@2.42: 2.42.0
+
+env:
+  NODE_ENV: development
+  PROJECT_TYPE: mixed-global-local
+  DESCRIPTION: Mix of global and local packages with override
