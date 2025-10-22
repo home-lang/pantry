@@ -4,7 +4,7 @@
   "packageManager": "bun@1.2.0",
   "description": "Test environment for Bun and Node.js coexistence",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.21.0",
     "npm": ">=9.0.0"
   },
   "scripts": {
