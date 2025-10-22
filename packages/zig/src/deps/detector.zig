@@ -73,6 +73,42 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
     return null;
 }
 
+/// Check if a filename is a recognized deps file
+pub fn isDepsFile(filename: []const u8) bool {
+    const deps_files = [_][]const u8{
+        "deps.yaml",
+        "deps.yml",
+        "dependencies.yaml",
+        "dependencies.yml",
+        "pkgx.yaml",
+        "pkgx.yml",
+        "launchpad.config.ts",
+        "launchpad.config.js",
+    };
+
+    for (deps_files) |deps_file| {
+        if (std.mem.eql(u8, filename, deps_file)) return true;
+    }
+
+    return false;
+}
+
+/// Infer format from filename
+pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
+    if (std.mem.eql(u8, filename, "deps.yaml")) return .deps_yaml;
+    if (std.mem.eql(u8, filename, "deps.yml")) return .deps_yml;
+    if (std.mem.eql(u8, filename, "dependencies.yaml")) return .dependencies_yaml;
+    if (std.mem.eql(u8, filename, "pkgx.yaml")) return .pkgx_yaml;
+    if (std.mem.eql(u8, filename, "package.json")) return .package_json;
+    if (std.mem.eql(u8, filename, "Cargo.toml")) return .cargo_toml;
+    if (std.mem.eql(u8, filename, "pyproject.toml")) return .pyproject_toml;
+    if (std.mem.eql(u8, filename, "requirements.txt")) return .requirements_txt;
+    if (std.mem.eql(u8, filename, "Gemfile")) return .gemfile;
+    if (std.mem.eql(u8, filename, "go.mod")) return .go_mod;
+    if (std.mem.eql(u8, filename, "composer.json")) return .composer_json;
+    return null;
+}
+
 test "findDepsFile" {
     const allocator = std.testing.allocator;
 

@@ -1,6 +1,6 @@
 const std = @import("std");
-const lib = @import("lib.zig");
-const commands = @import("cli/commands.zig");
+const lib = @import("lib");
+const commands = lib.commands;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -47,7 +47,7 @@ pub fn main() !void {
     // Cache commands
     else if (std.mem.eql(u8, command, "cache:stats")) {
         result = try commands.cacheStatsCommand(allocator);
-    } else if (std.mem.eql(u8, command, "cache:clear")) {
+    } else if (std.mem.eql(u8, command, "cache:clear") or std.mem.eql(u8, command, "clean")) {
         result = try commands.cacheClearCommand(allocator);
     } else if (std.mem.eql(u8, command, "cache:clean")) {
         result = try commands.cacheCleanCommand(allocator);
@@ -167,6 +167,7 @@ fn printHelp() !void {
         \\  env:remove <hash>        Remove environment
         \\
         \\Cache Management:
+        \\  clean                    Clear all cache (alias for cache:clear)
         \\  cache:clear              Clear all cache
         \\  cache:clean              Clean unused cache entries
         \\  cache:stats              Show cache statistics

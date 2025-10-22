@@ -21,7 +21,31 @@ pub const CommandResult = struct {
 
 /// Install command
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    if (args.len == 0) {
+    // Parse flags and filter out non-package arguments
+    var is_global = false;
+    var package_args = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
+    defer package_args.deinit(allocator);
+
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "-g") or std.mem.eql(u8, arg, "--global")) {
+            is_global = true;
+        } else if (!std.mem.startsWith(u8, arg, "-")) {
+            try package_args.append(allocator, arg);
+        }
+    }
+
+    // If -g flag is set with no packages, scan for global dependencies
+    if (is_global and package_args.items.len == 0) {
+        return try installGlobalDepsCommand(allocator);
+    }
+
+    // If -g flag is set with packages, install those packages globally
+    if (is_global and package_args.items.len > 0) {
+        return try installPackagesGloballyCommand(allocator, package_args.items);
+    }
+
+    // Otherwise, normal install flow
+    if (package_args.items.len == 0) {
         // No args - check if we're in a project directory
         const detector = @import("../deps/detector.zig");
         const parser = @import("../deps/parser.zig");
@@ -29,31 +53,66 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         const cwd = try std.process.getCwdAlloc(allocator);
         defer allocator.free(cwd);
 
-        const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
-            return .{
-                .exit_code = 1,
-                .message = try allocator.dupe(u8, "Error: No packages specified and no dependency file found"),
-            };
-        };
-        defer allocator.free(deps_file.path);
+        // Try to load dependencies from config file first (launchpad.config.ts, etc.)
+        const config_deps = try loadDependenciesFromConfig(allocator, cwd);
+        defer {
+            if (config_deps) |deps_list| {
+                for (deps_list) |*dep| {
+                    var d = dep.*;
+                    d.deinit(allocator);
+                }
+                allocator.free(deps_list);
+            }
+        }
 
-        // Parse dependencies from file
-        const deps = try parser.inferDependencies(allocator, deps_file);
+        // If config file had dependencies, use those
+        var deps: []parser.PackageDependency = undefined;
+        var deps_file_path: ?[]const u8 = null;
+        defer if (deps_file_path) |path| allocator.free(path);
+
+        if (config_deps) |config_dep_list| {
+            // Use dependencies from config file
+            deps = config_dep_list;
+            // Don't set deps_file_path since we're using config
+        } else {
+            // Fall back to dependency file detection
+            const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
+                return .{
+                    .exit_code = 1,
+                    .message = try allocator.dupe(u8, "Error: No packages specified and no dependency file found"),
+                };
+            };
+            deps_file_path = deps_file.path;
+
+            // Parse dependencies from file
+            deps = try parser.inferDependencies(allocator, deps_file);
+        }
+
         defer {
             for (deps) |*dep| {
                 var d = dep.*;
                 d.deinit(allocator);
             }
-            allocator.free(deps);
+            // Only free deps if we allocated it (not if it came from config_deps)
+            if (config_deps == null) {
+                allocator.free(deps);
+            }
         }
 
         if (deps.len == 0) {
-            std.debug.print("No dependencies found in {s}\n", .{deps_file.path});
+            if (deps_file_path) |path| {
+                std.debug.print("No dependencies found in {s}\n", .{path});
+            } else {
+                std.debug.print("No dependencies found in config file\n", .{});
+            }
             return .{ .exit_code = 0 };
         }
 
         // Create project-specific environment
-        const proj_dir = std.fs.path.dirname(deps_file.path) orelse cwd;
+        const proj_dir = if (deps_file_path) |path|
+            std.fs.path.dirname(path) orelse cwd
+        else
+            cwd;
         const proj_basename = std.fs.path.basename(proj_dir);
 
         // Hash project directory for short hash
@@ -64,12 +123,15 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
         defer allocator.free(proj_hash_short);
 
-        // Hash dependency file contents
-        const dep_file_contents = try std.fs.cwd().readFileAlloc(allocator, deps_file.path, 1024 * 1024);
-        defer allocator.free(dep_file_contents);
+        // Hash dependency file contents (or project dir if using config)
+        const hash_input = if (deps_file_path) |path|
+            try std.fs.cwd().readFileAlloc(allocator, path, 1024 * 1024)
+        else
+            try allocator.dupe(u8, proj_dir);
+        defer allocator.free(hash_input);
 
         var dep_hasher = std.crypto.hash.Md5.init(.{});
-        dep_hasher.update(dep_file_contents);
+        dep_hasher.update(hash_input);
         var dep_hash: [16]u8 = undefined;
         dep_hasher.final(&dep_hash);
         const dep_hash_hex = try string.hashToHex(dep_hash, allocator);
@@ -1399,6 +1461,161 @@ pub fn devCheckUpdatesCommand(_: std.mem.Allocator) !CommandResult {
     // Placeholder - just exit successfully without output
     // This is called in background by shell integration
     return .{ .exit_code = 0 };
+}
+
+/// Install global dependencies by scanning common locations
+fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
+    const global_scanner = @import("../deps/global_scanner.zig");
+
+    std.debug.print("Scanning for global dependencies...\n", .{});
+
+    const global_deps = try global_scanner.scanForGlobalDeps(allocator);
+    defer {
+        for (global_deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(global_deps);
+    }
+
+    if (global_deps.len == 0) {
+        std.debug.print("No global dependencies found.\n", .{});
+        return .{ .exit_code = 0 };
+    }
+
+    std.debug.print("Found {d} global package(s).\n", .{global_deps.len});
+
+    // Install to global location
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+
+    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home});
+    defer allocator.free(global_dir);
+
+    try std.fs.cwd().makePath(global_dir);
+
+    std.debug.print("Installing to {s}...\n", .{global_dir});
+
+    var pkg_cache = try cache.PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+
+    for (global_deps) |dep| {
+        std.debug.print("  → {s}@{s}", .{ dep.name, dep.version });
+
+        const spec = lib.packages.PackageSpec{
+            .name = dep.name,
+            .version = dep.version,
+        };
+
+        var custom_installer = try install.Installer.init(allocator, &pkg_cache);
+        allocator.free(custom_installer.data_dir);
+        custom_installer.data_dir = try allocator.dupe(u8, global_dir);
+        defer custom_installer.deinit();
+
+        var result = custom_installer.install(spec, .{}) catch |err| {
+            std.debug.print(" failed: {}\n", .{err});
+            continue;
+        };
+        defer result.deinit(allocator);
+
+        std.debug.print("... done ({s}, {d}ms)\n", .{
+            if (result.from_cache) "cached" else "installed",
+            result.install_time_ms,
+        });
+    }
+
+    std.debug.print("\n✅ Global packages installed to: {s}\n", .{global_dir});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Install specific packages globally
+fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []const []const u8) !CommandResult {
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+
+    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home});
+    defer allocator.free(global_dir);
+
+    try std.fs.cwd().makePath(global_dir);
+
+    std.debug.print("Installing {d} package(s) globally to {s}...\n", .{ packages.len, global_dir });
+
+    var pkg_cache = try cache.PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+
+    for (packages) |pkg_str| {
+        // Parse package string (format: "name" or "name@version")
+        var name = pkg_str;
+        var version: []const u8 = "latest";
+
+        if (std.mem.indexOf(u8, pkg_str, "@")) |at_pos| {
+            name = pkg_str[0..at_pos];
+            version = pkg_str[at_pos + 1 ..];
+        }
+
+        std.debug.print("  → {s}@{s}", .{ name, version });
+
+        const spec = lib.packages.PackageSpec{
+            .name = name,
+            .version = version,
+        };
+
+        var custom_installer = try install.Installer.init(allocator, &pkg_cache);
+        allocator.free(custom_installer.data_dir);
+        custom_installer.data_dir = try allocator.dupe(u8, global_dir);
+        defer custom_installer.deinit();
+
+        var result = custom_installer.install(spec, .{}) catch |err| {
+            std.debug.print(" failed: {}\n", .{err});
+            continue;
+        };
+        defer result.deinit(allocator);
+
+        std.debug.print("... done ({s}, {d}ms)\n", .{
+            if (result.from_cache) "cached" else "installed",
+            result.install_time_ms,
+        });
+    }
+
+    std.debug.print("\n✅ Packages installed globally to: {s}\n", .{global_dir});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Try to load dependencies from a config file (launchpad.config.ts, etc.)
+/// Returns null if no config file found or if config has no dependencies
+fn loadDependenciesFromConfig(
+    allocator: std.mem.Allocator,
+    cwd: []const u8,
+) !?[]@import("../deps/parser.zig").PackageDependency {
+    // Try to load launchpad config
+    var config = lib.config.loadLaunchpadConfig(allocator, .{
+        .name = "launchpad",
+        .cwd = cwd,
+    }) catch {
+        // No config file found or failed to load
+        return null;
+    };
+    defer config.deinit();
+
+    // Extract dependencies from config
+    const deps = lib.config.extractDependencies(allocator, config) catch {
+        // Failed to extract dependencies
+        return null;
+    };
+
+    if (deps.len == 0) {
+        // No dependencies in config
+        for (deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(deps);
+        return null;
+    }
+
+    return deps;
 }
 
 test "Command structures" {
