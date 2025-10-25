@@ -10,10 +10,10 @@
     "lint": "bunx eslint src/ --fix"
   },
   "dependencies": {
-    "fastify": "^4.0.0"
+    "fastify": "^4.29.1"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "eslint": "^8.0.0"
+    "@types/node": "^20.19.23",
+    "eslint": "^8.57.1"
   }
 }

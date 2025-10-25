@@ -4,12 +4,12 @@
   "packageManager": "bun",
   "description": "Test environment for Bun package manager with conflicting Node.js engines",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=18.20.8",
+    "npm": ">=9.9.4"
   },
   "volta": {
-    "node": "20.10.0",
-    "npm": "10.2.3"
+    "node": "20.19.5",
+    "npm": "10.9.4"
   },
   "scripts": {
     "dev": "echo 'Should use Bun, not Node!'",
@@ -17,9 +17,9 @@
     "check-runtime": "bunx node --version"
   },
   "dependencies": {
-    "lodash": "^4.17.0"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "eslint": "^8.0.0"
+    "eslint": "^8.57.1"
   }
 }

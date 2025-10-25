@@ -4,8 +4,8 @@
   "packageManager": "bun@1.2.0",
   "description": "Test environment for Bun and Node.js coexistence",
   "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=20.19.5",
+    "npm": ">=9.9.4"
   },
   "scripts": {
     "dev": "echo 'Testing Bun + Node.js coexistence'",
@@ -14,9 +14,9 @@
     "test-npm": "npm --version"
   },
   "dependencies": {
-    "lodash": "^4.17.0"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }

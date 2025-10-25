@@ -38,6 +38,6 @@
   },
   "devDependencies": {
     "bun-plugin-dtsx": "^0.9.5",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }
