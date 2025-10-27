@@ -25,8 +25,15 @@ test "EnvScanner and EnvCommands integration" {
     defer allocator.free(test_env2);
 
     // Create directories with bin subdirectories
-    std.fs.cwd().makePath(try std.fs.path.join(allocator, &[_][]const u8{ test_env1, "bin" })) catch {};
-    std.fs.cwd().makePath(try std.fs.path.join(allocator, &[_][]const u8{ test_env2, "bin" })) catch {};
+    {
+        const bin_path1 = try std.fs.path.join(allocator, &[_][]const u8{ test_env1, "bin" });
+        defer allocator.free(bin_path1);
+        std.fs.cwd().makePath(bin_path1) catch {};
+
+        const bin_path2 = try std.fs.path.join(allocator, &[_][]const u8{ test_env2, "bin" });
+        defer allocator.free(bin_path2);
+        std.fs.cwd().makePath(bin_path2) catch {};
+    }
 
     // Create some test binaries
     {

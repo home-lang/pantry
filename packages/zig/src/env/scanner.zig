@@ -45,7 +45,7 @@ pub const EnvScanner = struct {
         };
         defer dir.close();
 
-        var envs = std.ArrayList(EnvironmentInfo).init(self.allocator);
+        var envs = std.ArrayList(EnvironmentInfo){};
         errdefer {
             for (envs.items) |*env| {
                 env.deinit(self.allocator);
@@ -59,10 +59,10 @@ pub const EnvScanner = struct {
             if (std.mem.indexOf(u8, entry.name, "_") == null) continue;
 
             const env_info = try self.scanEnvironment(envs_dir, entry.name);
-            try envs.append(env_info);
+            try envs.append(self.allocator, env_info);
         }
 
-        return try envs.toOwnedSlice();
+        return try envs.toOwnedSlice(self.allocator);
     }
 
     fn scanEnvironment(self: *EnvScanner, envs_dir: []const u8, hash: []const u8) !EnvironmentInfo {
@@ -75,7 +75,7 @@ pub const EnvScanner = struct {
         const stat = try std.fs.cwd().statFile(env_path);
 
         // Parse project name from hash (format: project_hash-dhash)
-        var parts = std.mem.split(u8, hash, "_");
+        var parts = std.mem.splitScalar(u8, hash, '_');
         const project_name = parts.next() orelse hash;
 
         const size_bytes = try self.calculateSize(env_path);
@@ -89,8 +89,8 @@ pub const EnvScanner = struct {
             .size_bytes = size_bytes,
             .packages = packages,
             .binaries = binaries,
-            .created = @divFloor(stat.ctime, std.time.ns_per_s),
-            .modified = @divFloor(stat.mtime, std.time.ns_per_s),
+            .created = @intCast(@divFloor(stat.ctime, std.time.ns_per_s)),
+            .modified = @intCast(@divFloor(stat.mtime, std.time.ns_per_s)),
         };
     }
 
