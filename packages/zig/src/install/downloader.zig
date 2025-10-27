@@ -175,8 +175,8 @@ pub fn downloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []
         var speed_buf: [64]u8 = undefined;
         const speed_str = try formatSpeed(@intFromFloat(avg_speed), &speed_buf);
 
-        // Clear line and show final summary with newline
-        std.debug.print("\r{s}  ✓ {s} ({s} avg){s}\n", .{ dim_italic, final_str, speed_str, reset });
+        // Clear line completely and show final summary (no newline - let caller add it)
+        std.debug.print("\r{s}  ✓ {s} ({s} avg){s}\x1b[K", .{ dim_italic, final_str, speed_str, reset });
     }
 
     if (term.Exited != 0) {
