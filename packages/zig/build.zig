@@ -119,16 +119,27 @@ pub fn build(b: *std.Build) void {
     const compile_all_step = b.step("compile-all", "Compile for all platforms");
 
     for (targets) |t| {
+        const resolved_target = b.resolveTargetQuery(t);
+
+        // Create zonfig module for this target
+        const cross_zonfig_mod = b.addModule("zonfig", .{
+            .root_source_file = b.path("../../../zonfig/src/zonfig.zig"),
+            .target = resolved_target,
+        });
+
         const cross_lib_mod = b.addModule("launchpad", .{
             .root_source_file = b.path("src/lib.zig"),
-            .target = b.resolveTargetQuery(t),
+            .target = resolved_target,
         });
+
+        // Add zonfig to the cross-compiled library
+        cross_lib_mod.addImport("zonfig", cross_zonfig_mod);
 
         const cross_exe = b.addExecutable(.{
             .name = "pantry",
             .root_module = b.createModule(.{
                 .root_source_file = b.path("src/main.zig"),
-                .target = b.resolveTargetQuery(t),
+                .target = resolved_target,
                 .optimize = .ReleaseFast,
                 .imports = &.{
                     .{ .name = "lib", .module = cross_lib_mod },

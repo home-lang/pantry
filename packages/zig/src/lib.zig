@@ -12,6 +12,8 @@ pub const shell = @import("shell.zig");
 pub const install = @import("install.zig");
 pub const config = @import("config.zig");
 pub const commands = @import("cli/commands.zig");
+pub const deps = @import("deps.zig");
+pub const benchmark = @import("benchmark.zig");
 
 // Re-export commonly used types
 pub const Platform = core.Platform;

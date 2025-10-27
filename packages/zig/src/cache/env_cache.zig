@@ -20,11 +20,15 @@ pub const Entry = struct {
     env_vars: std.StringHashMap([]const u8),
     /// Timestamp when entry was created
     created_at: i64,
+    /// Timestamp when entry was cached (might differ from created_at after updates)
+    cached_at: i64,
+    /// Timestamp when entry was last validated
+    last_validated: i64,
     /// TTL in seconds (default 30 minutes)
     ttl: i64 = 1800,
 
     /// Check if cache entry is still valid
-    pub fn isValid(self: *const Entry, _: std.mem.Allocator) !bool {
+    pub fn isValid(self: *Entry, _: std.mem.Allocator) !bool {
         const now = std.time.timestamp();
 
         // Check TTL expiration
@@ -41,6 +45,9 @@ pub const Entry = struct {
         if (current_mtime != self.dep_mtime) {
             return false; // File has been modified
         }
+
+        // Update last_validated timestamp
+        self.last_validated = now;
 
         return true;
     }
@@ -276,13 +283,16 @@ test "EnvCache basic operations" {
 
     const hash = string.md5Hash("test");
     const entry = try allocator.create(Entry);
+    const now = std.time.timestamp();
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, tmp_file),
         .dep_mtime = stat.mtime,
         .path = try allocator.dupe(u8, "/usr/bin"),
         .env_vars = env_vars,
-        .created_at = std.time.timestamp(),
+        .created_at = now,
+        .cached_at = now,
+        .last_validated = now,
     };
 
     // Put entry
@@ -325,13 +335,16 @@ test "EnvCache fast cache" {
         const hash = string.md5Hash(key);
 
         const entry = try allocator.create(Entry);
+        const now = std.time.timestamp();
         entry.* = .{
             .hash = hash,
             .dep_file = try allocator.dupe(u8, tmp_file),
             .dep_mtime = stat.mtime,
             .path = try allocator.dupe(u8, "/usr/bin"),
             .env_vars = env_vars,
-            .created_at = std.time.timestamp(),
+            .created_at = now,
+            .cached_at = now,
+            .last_validated = now,
         };
 
         try cache.put(entry);

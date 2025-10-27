@@ -1286,13 +1286,16 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
 
     const entry = try allocator.create(cache.env_cache.Entry);
     const env_vars = std.StringHashMap([]const u8).init(allocator);
+    const now = std.time.timestamp();
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, deps_file.path),
         .dep_mtime = @as(i128, @intCast(mtime)),
         .path = try allocator.dupe(u8, bin_dir),
         .env_vars = env_vars,
-        .created_at = std.time.timestamp(),
+        .created_at = now,
+        .cached_at = now,
+        .last_validated = now,
     };
     try env_cache.put(entry);
 
