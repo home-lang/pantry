@@ -7,6 +7,7 @@ pub const DownloadError = error{
     FileWriteFailed,
     NetworkError,
     MaxRetriesExceeded,
+    ChecksumMismatch,
 };
 
 pub const DownloadOptions = struct {
@@ -218,6 +219,57 @@ pub fn buildPackageUrl(
     );
 }
 
+/// Verify file checksum (SHA256)
+pub fn verifyChecksum(
+    allocator: std.mem.Allocator,
+    file_path: []const u8,
+    expected_checksum: []const u8,
+) !bool {
+    // Read file contents
+    const file = try std.fs.cwd().openFile(file_path, .{});
+    defer file.close();
+
+    const file_size = (try file.stat()).size;
+    const contents = try file.readToEndAlloc(allocator, file_size);
+    defer allocator.free(contents);
+
+    // Compute SHA256 hash
+    var hash: [32]u8 = undefined;
+    std.crypto.hash.sha2.Sha256.hash(contents, &hash, .{});
+
+    // Convert to hex string
+    var hex_buf: [64]u8 = undefined;
+    const hex = try std.fmt.bufPrint(&hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&hash)});
+
+    // Compare with expected
+    if (!std.mem.eql(u8, hex, expected_checksum)) {
+        std.debug.print("  ✗ Checksum mismatch:\n", .{});
+        std.debug.print("    Expected: {s}\n", .{expected_checksum});
+        std.debug.print("    Got:      {s}\n", .{hex});
+        return error.ChecksumMismatch;
+    }
+
+    return true;
+}
+
+/// Download file and verify checksum
+pub fn downloadFileWithChecksum(
+    allocator: std.mem.Allocator,
+    url: []const u8,
+    dest_path: []const u8,
+    expected_checksum: ?[]const u8,
+) !void {
+    // Download file
+    try downloadFile(allocator, url, dest_path);
+
+    // Verify checksum if provided
+    if (expected_checksum) |checksum| {
+        std.debug.print("\n  Verifying checksum...", .{});
+        _ = try verifyChecksum(allocator, dest_path, checksum);
+        std.debug.print(" ✓\n", .{});
+    }
+}
+
 /// Download a file with retry logic and exponential backoff
 pub fn downloadFileWithRetry(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, options: DownloadOptions) !void {
     var attempt: u32 = 0;
@@ -266,4 +318,31 @@ test "buildPackageUrl" {
             url,
         );
     }
+}
+
+test "verifyChecksum" {
+    const allocator = std.testing.allocator;
+
+    // Create a test file
+    const test_file = "test_checksum.txt";
+    const test_content = "Hello, World!";
+
+    {
+        const file = try std.fs.cwd().createFile(test_file, .{});
+        defer file.close();
+        try file.writeAll(test_content);
+    }
+    defer std.fs.cwd().deleteFile(test_file) catch {};
+
+    // Expected SHA256 of "Hello, World!"
+    const expected = "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f";
+
+    // Should pass with correct checksum
+    const valid = try verifyChecksum(allocator, test_file, expected);
+    try std.testing.expect(valid);
+
+    // Should fail with incorrect checksum
+    const wrong_checksum = "0000000000000000000000000000000000000000000000000000000000000000";
+    const result = verifyChecksum(allocator, test_file, wrong_checksum);
+    try std.testing.expectError(error.ChecksumMismatch, result);
 }

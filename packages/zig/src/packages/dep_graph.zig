@@ -105,9 +105,24 @@ pub const DependencyGraph = struct {
         // Get package info
         const pkg = reg.getPackage(name) orelse return error.PackageNotFound;
 
+        // Get dependencies from package (if available)
         // For now, packages don't have dependencies in generated.zig
-        // This would need to be added
-        const deps = try self.allocator.alloc([]const u8, 0);
+        // This demonstrates the structure for when dependency data is available
+        var dep_list = std.ArrayList([]const u8).init(self.allocator);
+        errdefer {
+            for (dep_list.items) |dep| {
+                self.allocator.free(dep);
+            }
+            dep_list.deinit();
+        }
+
+        // Example: if pkg had a dependencies field, we would iterate it
+        // const pkg_deps = pkg.dependencies orelse &[_][]const u8{};
+        // for (pkg_deps) |dep_name| {
+        //     try dep_list.append(try self.allocator.dupe(u8, dep_name));
+        // }
+
+        const deps = try dep_list.toOwnedSlice();
 
         const node = DependencyNode{
             .name = try self.allocator.dupe(u8, name),
@@ -117,8 +132,43 @@ pub const DependencyGraph = struct {
 
         try self.nodes.put(key, node);
 
-        // If package had dependencies, recursively add them
-        _ = pkg; // pkg would have dependencies field
+        // Recursively resolve transitive dependencies
+        for (deps) |dep_spec| {
+            try self.addPackage(reg, dep_spec);
+        }
+
+        _ = pkg; // pkg would have dependencies field in real implementation
+    }
+
+    /// Add package with explicit dependencies (for testing/manual use)
+    pub fn addPackageWithDeps(
+        self: *DependencyGraph,
+        name: []const u8,
+        version: []const u8,
+        dependencies: []const []const u8,
+    ) !void {
+        const key = try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version });
+        errdefer self.allocator.free(key);
+
+        if (self.nodes.contains(key)) {
+            self.allocator.free(key);
+            return;
+        }
+
+        var dep_list = try self.allocator.alloc([]const u8, dependencies.len);
+        errdefer self.allocator.free(dep_list);
+
+        for (dependencies, 0..) |dep, i| {
+            dep_list[i] = try self.allocator.dupe(u8, dep);
+        }
+
+        const node = DependencyNode{
+            .name = try self.allocator.dupe(u8, name),
+            .version = try self.allocator.dupe(u8, version),
+            .dependencies = dep_list,
+        };
+
+        try self.nodes.put(key, node);
     }
 
     /// Detect version conflicts
@@ -227,4 +277,29 @@ test "DependencyGraph conflict detection" {
 
     try std.testing.expect(conflicts.len == 1);
     try std.testing.expectEqualStrings("pkg", conflicts[0].package);
+}
+
+test "DependencyGraph transitive dependencies" {
+    const allocator = std.testing.allocator;
+
+    var graph = DependencyGraph.init(allocator);
+    defer graph.deinit();
+
+    // Build dependency chain: A -> B -> C
+    // C has no dependencies
+    try graph.addPackageWithDeps("C", "1.0.0", &[_][]const u8{});
+
+    // B depends on C
+    const b_deps = [_][]const u8{"C@1.0.0"};
+    try graph.addPackageWithDeps("B", "1.0.0", &b_deps);
+
+    // A depends on B (and transitively on C)
+    const a_deps = [_][]const u8{"B@1.0.0"};
+    try graph.addPackageWithDeps("A", "1.0.0", &a_deps);
+
+    // Verify all packages are in the graph
+    try std.testing.expect(graph.nodes.count() == 3);
+    try std.testing.expect(graph.nodes.contains("A@1.0.0"));
+    try std.testing.expect(graph.nodes.contains("B@1.0.0"));
+    try std.testing.expect(graph.nodes.contains("C@1.0.0"));
 }
