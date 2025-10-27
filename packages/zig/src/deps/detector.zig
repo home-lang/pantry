@@ -10,6 +10,10 @@ pub const DepsFile = struct {
         dependencies_yaml,
         pkgx_yaml,
         package_json,
+        package_jsonc,     // Zig package.jsonc
+        pantry_json,       // pantry.json
+        pantry_jsonc,      // pantry.jsonc
+        zig_json,          // zig.json
         cargo_toml,
         pyproject_toml,
         requirements_txt,
@@ -22,11 +26,15 @@ pub const DepsFile = struct {
 /// Find dependency file in directory or parent directories
 pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsFile {
     const file_names = [_][]const u8{
+        "pantry.json",        // pantry.json (highest priority)
+        "pantry.jsonc",       // pantry.jsonc
         "deps.yaml",
         "deps.yml",
         "dependencies.yaml",
         "pkgx.yaml",
         "package.json",
+        "package.jsonc",      // Zig package.jsonc
+        "zig.json",           // zig.json
         "Cargo.toml",
         "pyproject.toml",
         "requirements.txt",
@@ -95,11 +103,15 @@ pub fn isDepsFile(filename: []const u8) bool {
 
 /// Infer format from filename
 pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
+    if (std.mem.eql(u8, filename, "pantry.json")) return .pantry_json;
+    if (std.mem.eql(u8, filename, "pantry.jsonc")) return .pantry_jsonc;
     if (std.mem.eql(u8, filename, "deps.yaml")) return .deps_yaml;
     if (std.mem.eql(u8, filename, "deps.yml")) return .deps_yml;
     if (std.mem.eql(u8, filename, "dependencies.yaml")) return .dependencies_yaml;
     if (std.mem.eql(u8, filename, "pkgx.yaml")) return .pkgx_yaml;
     if (std.mem.eql(u8, filename, "package.json")) return .package_json;
+    if (std.mem.eql(u8, filename, "package.jsonc")) return .package_jsonc;
+    if (std.mem.eql(u8, filename, "zig.json")) return .zig_json;
     if (std.mem.eql(u8, filename, "Cargo.toml")) return .cargo_toml;
     if (std.mem.eql(u8, filename, "pyproject.toml")) return .pyproject_toml;
     if (std.mem.eql(u8, filename, "requirements.txt")) return .requirements_txt;
