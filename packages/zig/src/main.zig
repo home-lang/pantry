@@ -36,11 +36,9 @@ pub fn main() !void {
     } else if (std.mem.eql(u8, command, "list")) {
         result = try commands.listCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "search")) {
-        std.debug.print("search command not yet implemented\n", .{});
-        std.process.exit(1);
+        result = try commands.searchCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "info")) {
-        std.debug.print("info command not yet implemented\n", .{});
-        std.process.exit(1);
+        result = try commands.infoCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "update")) {
         std.debug.print("update command not yet implemented\n", .{});
         std.process.exit(1);

@@ -1061,7 +1061,7 @@ pub const PackageCache = struct {
 
 - [x] Implement PackageCache with metadata management
 - [x] Add file validation (size, checksum)
-- [ ] Implement LRU eviction strategy
+- [x] Implement LRU eviction strategy
 - [ ] Add concurrent access protection
 - [x] Add cache statistics tracking
 - [ ] Add tests for cache operations
