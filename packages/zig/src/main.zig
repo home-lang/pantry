@@ -141,15 +141,15 @@ pub fn main() !void {
 }
 
 fn printVersion() !void {
-    std.debug.print("launchpad 1.0.0-alpha (Zig)\n", .{});
+    std.debug.print("pantry 1.0.0-alpha (Zig)\n", .{});
 }
 
 fn printHelp() !void {
     std.debug.print(
-        \\launchpad - Modern dependency manager
+        \\pantry - Modern dependency manager
         \\
         \\Usage:
-        \\  launchpad <command> [options]
+        \\  pantry <command> [options]
         \\
         \\Package Management:
         \\  install [packages...]    Install packages
@@ -197,7 +197,7 @@ fn printHelp() !void {
         \\  --version, -v            Show version
         \\  --help, -h               Show this help
         \\
-        \\For more information, visit: https://github.com/stacksjs/launchpad
+        \\For more information, visit: https://github.com/stacksjs/pantry
         \\
     , .{});
 }

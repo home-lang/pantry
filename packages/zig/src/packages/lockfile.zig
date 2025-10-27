@@ -2,64 +2,104 @@ const std = @import("std");
 const types = @import("types.zig");
 
 /// Write lockfile to disk in JSON format
-pub fn writeLockfile(_: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
+pub fn writeLockfile(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
     const file = try std.fs.createFileAbsolute(file_path, .{});
     defer file.close();
 
-    var buffered = std.io.bufferedWriter(file.writer());
-    const writer = buffered.writer();
+    // Use std.json.stringify instead of manual JSON writing
+    var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
+    defer buf.deinit(allocator);
 
-    try writer.writeAll("{\n");
-    try writer.print("  \"version\": \"{s}\",\n", .{lockfile.version});
-    try writer.print("  \"lockfileVersion\": {d},\n", .{lockfile.lockfile_version});
-    try writer.print("  \"generatedAt\": \"{d}\",\n", .{lockfile.generated_at});
-    try writer.writeAll("  \"packages\": {\n");
+    // Manually build JSON structure
+    try buf.appendSlice(allocator, "{\n");
+    {
+        const line = try std.fmt.allocPrint(allocator, "  \"version\": \"{s}\",\n", .{lockfile.version});
+        defer allocator.free(line);
+        try buf.appendSlice(allocator, line);
+    }
+    {
+        const line = try std.fmt.allocPrint(allocator, "  \"lockfileVersion\": {d},\n", .{lockfile.lockfile_version});
+        defer allocator.free(line);
+        try buf.appendSlice(allocator, line);
+    }
+    {
+        const line = try std.fmt.allocPrint(allocator, "  \"generatedAt\": \"{d}\",\n", .{lockfile.generated_at});
+        defer allocator.free(line);
+        try buf.appendSlice(allocator, line);
+    }
+    try buf.appendSlice(allocator, "  \"packages\": {\n");
 
     var it = lockfile.packages.iterator();
     var first = true;
     while (it.next()) |entry| {
         if (!first) {
-            try writer.writeAll(",\n");
+            try buf.appendSlice(allocator, ",\n");
         }
         first = false;
 
-        try writer.print("    \"{s}\": {{\n", .{entry.key_ptr.*});
-        try writer.print("      \"name\": \"{s}\",\n", .{entry.value_ptr.name});
-        try writer.print("      \"version\": \"{s}\",\n", .{entry.value_ptr.version});
-        try writer.print("      \"source\": \"{s}\"", .{entry.value_ptr.source.toString()});
+        {
+            const line = try std.fmt.allocPrint(allocator, "    \"{s}\": {{\n", .{entry.key_ptr.*});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
+        {
+            const line = try std.fmt.allocPrint(allocator, "      \"name\": \"{s}\",\n", .{entry.value_ptr.name});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
+        {
+            const line = try std.fmt.allocPrint(allocator, "      \"version\": \"{s}\",\n", .{entry.value_ptr.version});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
+        {
+            const line = try std.fmt.allocPrint(allocator, "      \"source\": \"{s}\"", .{entry.value_ptr.source.toString()});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
 
         if (entry.value_ptr.url) |url| {
-            try writer.print(",\n      \"url\": \"{s}\"", .{url});
+            const line = try std.fmt.allocPrint(allocator, ",\n      \"url\": \"{s}\"", .{url});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
         }
         if (entry.value_ptr.resolved) |resolved| {
-            try writer.print(",\n      \"resolved\": \"{s}\"", .{resolved});
+            const line = try std.fmt.allocPrint(allocator, ",\n      \"resolved\": \"{s}\"", .{resolved});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
         }
         if (entry.value_ptr.integrity) |integrity| {
-            try writer.print(",\n      \"integrity\": \"{s}\"", .{integrity});
+            const line = try std.fmt.allocPrint(allocator, ",\n      \"integrity\": \"{s}\"", .{integrity});
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
         }
 
         // Write dependencies if any
         if (entry.value_ptr.dependencies) |*deps| {
             if (deps.count() > 0) {
-                try writer.writeAll(",\n      \"dependencies\": {\n");
+                try buf.appendSlice(allocator, ",\n      \"dependencies\": {\n");
                 var deps_it = deps.iterator();
                 var first_dep = true;
                 while (deps_it.next()) |dep_entry| {
                     if (!first_dep) {
-                        try writer.writeAll(",\n");
+                        try buf.appendSlice(allocator, ",\n");
                     }
                     first_dep = false;
-                    try writer.print("        \"{s}\": \"{s}\"", .{ dep_entry.key_ptr.*, dep_entry.value_ptr.* });
+                    const line = try std.fmt.allocPrint(allocator, "        \"{s}\": \"{s}\"", .{ dep_entry.key_ptr.*, dep_entry.value_ptr.* });
+                    defer allocator.free(line);
+                    try buf.appendSlice(allocator, line);
                 }
-                try writer.writeAll("\n      }");
+                try buf.appendSlice(allocator, "\n      }");
             }
         }
 
-        try writer.writeAll("\n    }");
+        try buf.appendSlice(allocator, "\n    }");
     }
 
-    try writer.writeAll("\n  }\n}\n");
-    try buffered.flush();
+    try buf.appendSlice(allocator, "\n  }\n}\n");
+
+    // Write to file
+    try file.writeAll(buf.items);
 }
 
 /// Read lockfile from disk
@@ -83,15 +123,18 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
 
     const version = if (root.object.get("version")) |v|
         if (v == .string) v.string else "unknown"
-    else "unknown";
+    else
+        "unknown";
 
     const lockfile_version = if (root.object.get("lockfileVersion")) |v|
         if (v == .integer) @as(u32, @intCast(v.integer)) else 1
-    else 1;
+    else
+        1;
 
     const generated_at = if (root.object.get("generatedAt")) |v|
         if (v == .string) std.fmt.parseInt(i64, v.string, 10) catch std.time.timestamp() else std.time.timestamp()
-    else std.time.timestamp();
+    else
+        std.time.timestamp();
 
     var lockfile = types.Lockfile{
         .version = try allocator.dupe(u8, version),
@@ -105,23 +148,26 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
     if (root.object.get("packages")) |packages_value| {
         if (packages_value != .object) return error.InvalidLockfile;
 
-        var it = packages_value.object.iterator();
-        while (it.next()) |entry| {
+        var pkg_it = packages_value.object.iterator();
+        while (pkg_it.next()) |entry| {
             const pkg_key = entry.key_ptr.*;
             const pkg_value = entry.value_ptr.*;
             if (pkg_value != .object) continue;
 
             const name = if (pkg_value.object.get("name")) |v|
                 if (v == .string) v.string else pkg_key
-            else pkg_key;
+            else
+                pkg_key;
 
             const pkg_version = if (pkg_value.object.get("version")) |v|
                 if (v == .string) v.string else "unknown"
-            else "unknown";
+            else
+                "unknown";
 
             const source_str = if (pkg_value.object.get("source")) |v|
                 if (v == .string) v.string else "pkgx"
-            else "pkgx";
+            else
+                "pkgx";
 
             const source = types.PackageSource.fromString(source_str) orelse .pkgx;
 
