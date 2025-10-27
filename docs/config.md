@@ -63,8 +63,8 @@ const config: LaunchpadConfig = {
   // Use {path} placeholder to include the project path (default: "✅ Environment activated for {path}")
   shellActivationMessage: '✅ Environment activated for {path}',
 
-  // Custom message to show when environment is deactivated (default: "dev environment deactivated")
-  shellDeactivationMessage: 'dev environment deactivated',
+  // Custom message to show when environment is deactivated (default: "Environment deactivated")
+  shellDeactivationMessage: 'Environment deactivated',
 
   // Service Management Configuration
   services: {
@@ -124,7 +124,7 @@ JavaScript format (`.launchpadrc`):
   "autoAddToPath": true,
   "showShellMessages": true,
   "shellActivationMessage": "✅ Environment activated for {path}",
-  "shellDeactivationMessage": "dev environment deactivated",
+  "shellDeactivationMessage": "Environment deactivated",
   "services": {
     "enabled": true,
     "dataDir": "~/.local/share/launchpad/services",
@@ -206,12 +206,14 @@ Services use these configurable template variables:
 ### Examples
 
 #### Development Setup (Default)
+
 ```bash
 # Uses: username=root, password=password, authMethod=trust
 launchpad start postgres
 ```
 
 #### Custom Development Setup
+
 ```bash
 export LAUNCHPAD_DB_USERNAME="dev_user"
 export LAUNCHPAD_DB_PASSWORD="dev_password"
@@ -219,6 +221,7 @@ launchpad start postgres
 ```
 
 #### Production-like Setup
+
 ```bash
 export LAUNCHPAD_DB_AUTH_METHOD="md5"
 export LAUNCHPAD_DB_PASSWORD="secure_password123"
@@ -323,9 +326,11 @@ launchpad clean --keep-global --dry-run
 ```
 
 **Global dependency detection**:
+
 - Any dependency file (`deps.yaml`, `dependencies.yaml`, etc.) with `global: true`
 
 **Example global dependency file** (`~/.dotfiles/deps.yaml`):
+
 ```yaml
 global: true
 dependencies:
@@ -360,6 +365,7 @@ services:
 ```
 
 Behavior:
+
 - **enabled**: toggles service management for the project.
 - **autoStart**: array of service names to start automatically on environment activation.
 - Service names must match those in the Supported Services list (e.g. `postgres`, `redis`, `nginx`).
@@ -380,12 +386,14 @@ services:
 ```
 
 When enabled and a Laravel app is detected (`artisan` present), Launchpad will read `.env` and infer services:
+
 - `DB_CONNECTION=pgsql` → `postgres`
 - `DB_CONNECTION=mysql|mariadb` → `mysql`
 - `CACHE_DRIVER=redis` or `CACHE_STORE=redis` → `redis`
 - `CACHE_DRIVER=memcached` or `CACHE_STORE=memcached` → `memcached`
 
 Environment toggles:
+
 - `LAUNCHPAD_FRAMEWORKS_ENABLED` (default: true)
 - `LAUNCHPAD_SERVICES_INFER` (default: true)
 - `LAUNCHPAD_LARAVEL_ENABLED` (default: true)
@@ -424,7 +432,7 @@ Environment toggles:
 |--------|------|---------|-------------|
 | `showShellMessages` | boolean | `true` | Whether to display environment activation/deactivation messages |
 | `shellActivationMessage` | string | `"✅ Environment activated for {path}"` | Custom message shown when environment is activated. Use `{path}` placeholder for project path |
-| `shellDeactivationMessage` | string | `"dev environment deactivated"` | Custom message shown when environment is deactivated |
+| `shellDeactivationMessage` | string | `"Environment deactivated"` | Custom message shown when environment is deactivated |
 
 ### Path Management
 
@@ -538,6 +546,7 @@ postActivation:
 ```
 
 Notes:
+
 - Inline hooks in `deps.yaml` run alongside config hooks of the same phase.
 - preSetup runs before dependency installation and service auto-start.
 - preActivation runs after installation/services and before printing the activation message.
@@ -583,7 +592,9 @@ When you cd into a project directory that contains a dependency file (e.g. `deps
 The target environment directory is derived as:
 
 ```
+
 ~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>
+
 ```
 
 This guarantees that editing dependency versions switches to a distinct environment on the next `cd`, ensuring the correct tools are active immediately.
@@ -751,6 +762,7 @@ launchpad --verbose install --dry-run node
 ### Configuration Not Loading
 
 1. Check file syntax:
+
    ```bash
    # For TypeScript files
    bunx tsc --noEmit launchpad.config.ts
@@ -760,6 +772,7 @@ launchpad --verbose install --dry-run node
    ```
 
 2. Verify file location:
+
    ```bash
    # Check current directory
    ls -la launchpad.config.*
@@ -769,6 +782,7 @@ launchpad --verbose install --dry-run node
    ```
 
 3. Test with verbose mode:
+
    ```bash
    launchpad --verbose list
    ```
@@ -776,11 +790,13 @@ launchpad --verbose install --dry-run node
 ### Environment Variables Not Working
 
 1. Check if variables are set:
+
    ```bash
    env | grep LAUNCHPAD
    ```
 
 2. Export variables properly:
+
    ```bash
    export LAUNCHPAD_VERBOSE=true
    export LAUNCHPAD_INSTALL_PATH=/custom/path
@@ -790,6 +806,7 @@ launchpad --verbose install --dry-run node
    ```
 
 3. Verify shell configuration:
+
    ```bash
    echo $SHELL
    source ~/.zshrc  # or ~/.bashrc

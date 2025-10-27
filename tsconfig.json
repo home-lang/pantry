@@ -9,10 +9,10 @@
     "moduleResolution": "bundler",
     "paths": {
       "@stacksjs/launchpad": [
-        "./packages/launchpad/src"
+        "./packages/ts/src/index.ts"
       ],
       "@stacksjs/launchpad/*": [
-        "./packages/launchpad/src/*"
+        "./packages/ts/src/*"
       ]
     },
     "resolveJsonModule": true,
