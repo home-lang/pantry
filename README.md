@@ -15,30 +15,36 @@
 Launchpad is a comprehensive dependency management solution that bridges the gap between system-wide package management and project-specific environments. Whether you're setting up a new development machine, managing system tools, or working on projects with specific dependency requirements, Launchpad provides a unified interface for all your dependency needs.
 
 **System Management:**
+
 - Install and manage development tools system-wide
 - Automatic PATH configuration and shell integration
 - Cross-platform compatibility _(macOS, Linux, Windows)_
 - Smart permission handling and installation paths
 
 **Project Management:**
+
 - Automatic project environment detection and activation
 - Isolated dependency environments per project
 - Version-specific tool installation
 - Seamless switching between project contexts
 
-At its core, Launchpad leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows. Learn more in the docs: [Why Launchpad](https://stacks-launchpad.netlify.app/why), [Quickstart](https://stacks-launchpad.netlify.app/quickstart).
+At its core, Launchpad leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows.
+
+Learn more in the docs: [Why Launchpad](https://stacks-launchpad.netlify.app/why), [Quick Start](https://stacks-launchpad.netlify.app/quickstart).
 
 ## Features
 
 Launchpad transforms how you manage dependencies across your entire development workflow:
 
 ### System-Wide Dependency Management
+
 - 📦 **Global Tool Installation** — Install development tools and runtimes system-wide with automatic PATH management
 - 🔧 **Smart Installation Paths** — Automatically chooses `/usr/local` for system-wide access or `~/.local` for user-specific installs (pkgm compatible)
 - 🔌 **Shell Integration** — Seamless integration with your shell for immediate tool availability
 - 🪟 **Cross-Platform Support** — Consistent experience across macOS, Linux, and Windows
 
 ### Service Management
+
 - ⚡ **30+ Pre-configured Services** — PostgreSQL, Redis, Kafka, Prometheus, Grafana, Vault, and more
 - 🚀 **One-Command Service Control** — Start, stop, restart services with automatic configuration
 - 🏥 **Health Monitoring** — Built-in health checks with automatic status detection
@@ -47,6 +53,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🖥️ **Cross-Platform Service Management** — Uses launchd on macOS, systemd on Linux
 
 ### Project-Aware Environment Management
+
 - 🌍 **Automatic Environment Isolation** — Project-specific environments that activate when you enter a project directory
 - 🎯 **Dependency Detection** — Automatically reads `deps.yaml`, `dependencies.yaml`, `package.json`, `pyproject.toml`, and other project files
 - 🔄 **Context Switching** — Seamlessly switch between different project environments
@@ -54,6 +61,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🗂️ **Environment Management** — List, inspect, clean, and remove project environments with readable identifiers
 
 ### Developer Experience
+
 - ⚡ **Fast Operations** — Leverage pkgx for efficient package management
 - 🗑️ **Clean Removal** — Remove packages or completely uninstall with proper cleanup
 - 🔄 **Auto-Updates** — Configure automatic updates for your dependency management tools
@@ -64,18 +72,21 @@ Launchpad transforms how you manage dependencies across your entire development 
 Modern development requires managing dependencies at multiple levels - from system tools to project-specific requirements. Traditional approaches fall short:
 
 **Traditional Package Managers (Homebrew, apt, etc.):**
+
 - ❌ **Global conflicts** — Different projects need different versions
 - ❌ **Slow operations** — Installing or updating can take minutes
 - ❌ **Manual environment management** — Switching between project contexts is manual
 - ❌ **PATH pollution** — All tools are globally available, causing conflicts
 
 **Manual Dependency Management:**
+
 - ❌ **Inconsistent setups** — Different team members have different environments
 - ❌ **Complex PATH management** — Manual shell configuration is error-prone
 - ❌ **Version drift** — Hard to maintain consistent tool versions
 - ❌ **Platform differences** — Different setup procedures for each OS
 
 **Launchpad's Solution:**
+
 - ✅ **Unified Management** — Single tool for both system and project dependencies
 - ✅ **Automatic Isolation** — Project environments activate automatically
 - ✅ **Fast Operations** — Efficient package management with intelligent caching
@@ -91,6 +102,7 @@ Modern development requires managing dependencies at multiple levels - from syst
 Launchpad includes several utility scripts for development and maintenance:
 
 #### Dynamic PHP Version Management
+
 ```bash
 # Get latest PHP versions from ts-pkgx registry
 bun scripts/get-php-versions.ts
@@ -174,6 +186,7 @@ launchpad i node@22 typescript@5.7
 ```
 
 **Smart Installation Behavior:**
+
 - **Default**: Installs to `/usr/local` if writable, otherwise `~/.local`
 - **System-wide**: Use `--system` for explicit system installation (same as default)
 - **Custom paths**: Use `--path <directory>` for any location
@@ -206,6 +219,7 @@ cd ..
 Learn more: [Environment Management](https://stacks-launchpad.netlify.app/features/environment-management), [Package Management](https://stacks-launchpad.netlify.app/features/package-management), [Configuration](https://stacks-launchpad.netlify.app/config), [FAQ](https://stacks-launchpad.netlify.app/faq).
 
 **Supported Project Files:**
+
 - `deps.yaml` / `deps.yml`
 - `dependencies.yaml` / `dependencies.yml`
 - `launchpad.yaml` / `launchpad.yml`
@@ -234,6 +248,7 @@ launchpad env:remove old-project_5e6f7g8h --force
 ```
 
 **Environment Hash Format:** `{project-name}_{8-char-hex}-d{8-char-dep-hash}`
+
 - `final-project_7db6cf06-d89abc12` - Project path hash plus dependency fingerprint
 - `working-test_208a31ec-d1029a7b` - Human-readable with version-aware suffix
 - `my-app_1a2b3c4d-deadbeef` - Collision-resistant, version-switching on cd
@@ -279,6 +294,7 @@ launchpad service enable postgres redis
 ```
 
 **Available Services (31+):**
+
 - **Databases**: PostgreSQL, MySQL, MongoDB, Redis, InfluxDB, CockroachDB, Neo4j, ClickHouse
 - **Web Servers**: Nginx, Caddy
 - **Message Queues**: Kafka, RabbitMQ, Apache Pulsar, NATS
@@ -321,11 +337,13 @@ launchpad service start postgres mysql
 ```
 
 **Default Credentials** (secure for development):
+
 - Username: `root`
 - Password: `password`
 - Auth Method: `trust` (PostgreSQL)
 
 **Configuration Options:**
+
 - Environment variables: `LAUNCHPAD_DB_USERNAME`, `LAUNCHPAD_DB_PASSWORD`, `LAUNCHPAD_DB_AUTH_METHOD`
 - Config file: `launchpad.config.ts` → `services.database`
 - Per-project databases automatically created with your credentials
