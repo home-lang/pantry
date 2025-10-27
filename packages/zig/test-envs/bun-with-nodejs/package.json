@@ -1,0 +1,22 @@
+{
+  "name": "bun-with-nodejs",
+  "version": "1.0.0",
+  "packageManager": "bun@1.2.0",
+  "description": "Test environment for Bun and Node.js coexistence",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "echo 'Testing Bun + Node.js coexistence'",
+    "test-bun": "bun --version",
+    "test-node": "node --version",
+    "test-npm": "npm --version"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

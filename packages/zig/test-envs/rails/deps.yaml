@@ -1,0 +1,8 @@
+dependencies:
+  ruby: ^3.4.7
+  node: ^24.0.0
+  redis: ^8.0.0
+  postgres: ^17.0.0
+  rubygems.org: ^3.7.2 # Provides bundler, gem commands
+  # sqlite: ^3.40.0  # Alternative to postgres for development
+  # yarn: ^1.22.0    # Alternative to npm
