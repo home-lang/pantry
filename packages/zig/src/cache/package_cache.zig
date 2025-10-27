@@ -18,6 +18,8 @@ pub const PackageMetadata = struct {
     checksum: [32]u8,
     /// Download timestamp
     downloaded_at: i64,
+    /// Last accessed timestamp (for LRU)
+    last_accessed: i64,
     /// File size in bytes
     size: usize,
     /// Cached file path
@@ -41,6 +43,8 @@ pub const PackageCache = struct {
     allocator: std.mem.Allocator,
     /// Lock for thread safety
     lock: std.Thread.RwLock,
+    /// Maximum cache size in bytes (0 = unlimited)
+    max_size_bytes: usize,
 
     pub fn init(allocator: std.mem.Allocator) !PackageCache {
         const cache_dir = try Paths.cache(allocator);
@@ -54,7 +58,14 @@ pub const PackageCache = struct {
             .metadata = std.StringHashMap(PackageMetadata).init(allocator),
             .allocator = allocator,
             .lock = .{},
+            .max_size_bytes = 5 * 1024 * 1024 * 1024, // 5GB default
         };
+    }
+
+    pub fn initWithMaxSize(allocator: std.mem.Allocator, max_size_bytes: usize) !PackageCache {
+        var cache = try init(allocator);
+        cache.max_size_bytes = max_size_bytes;
+        return cache;
     }
 
     pub fn deinit(self: *PackageCache) void {
@@ -118,15 +129,19 @@ pub const PackageCache = struct {
         const key = try getCacheKey(self.allocator, name, version);
         defer self.allocator.free(key);
 
-        self.lock.lockShared();
-        defer self.lock.unlockShared();
+        self.lock.lock();
+        defer self.lock.unlock();
 
-        if (self.metadata.get(key)) |meta| {
+        if (self.metadata.getPtr(key)) |meta| {
             // Verify file exists
             std.fs.cwd().access(meta.cache_path, .{}) catch {
                 return null;
             };
-            return meta;
+
+            // Update last accessed time (for LRU)
+            meta.last_accessed = std.time.timestamp();
+
+            return meta.*;
         }
 
         return null;
@@ -162,12 +177,14 @@ pub const PackageCache = struct {
         const key = try getCacheKey(self.allocator, name, version);
         errdefer self.allocator.free(key);
 
+        const now = std.time.timestamp();
         const metadata = PackageMetadata{
             .name = try self.allocator.dupe(u8, name),
             .version = try self.allocator.dupe(u8, version),
             .url = try self.allocator.dupe(u8, url),
             .checksum = checksum,
-            .downloaded_at = std.time.timestamp(),
+            .downloaded_at = now,
+            .last_accessed = now,
             .size = data.len,
             .cache_path = cache_path,
         };
@@ -219,6 +236,65 @@ pub const PackageCache = struct {
         }
 
         self.metadata.clearRetainingCapacity();
+    }
+
+    /// Evict least recently used packages to stay under max_size_bytes
+    pub fn evictLRU(self: *PackageCache) !void {
+        if (self.max_size_bytes == 0) return; // Unlimited
+
+        self.lock.lock();
+        defer self.lock.unlock();
+
+        // Calculate current size
+        var current_size: usize = 0;
+        var it = self.metadata.valueIterator();
+        while (it.next()) |meta| {
+            current_size += meta.size;
+        }
+
+        if (current_size <= self.max_size_bytes) {
+            return; // Under limit
+        }
+
+        // Build list of packages sorted by last_accessed (oldest first)
+        var packages = try std.ArrayList(struct {
+            key: []const u8,
+            last_accessed: i64,
+            size: usize,
+        }).initCapacity(self.allocator, self.metadata.count());
+        defer packages.deinit(self.allocator);
+
+        var entry_it = self.metadata.iterator();
+        while (entry_it.next()) |entry| {
+            try packages.append(self.allocator, .{
+                .key = entry.key_ptr.*,
+                .last_accessed = entry.value_ptr.last_accessed,
+                .size = entry.value_ptr.size,
+            });
+        }
+
+        // Sort by last_accessed (oldest first)
+        std.mem.sort(@TypeOf(packages.items[0]), packages.items, {}, struct {
+            fn lessThan(_: void, a: @TypeOf(packages.items[0]), b: @TypeOf(packages.items[0])) bool {
+                return a.last_accessed < b.last_accessed;
+            }
+        }.lessThan);
+
+        // Evict oldest packages until we're under the limit
+        for (packages.items) |pkg| {
+            if (current_size <= self.max_size_bytes) break;
+
+            if (self.metadata.fetchRemove(pkg.key)) |kv| {
+                // Delete cached file
+                std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+
+                current_size -= pkg.size;
+
+                self.allocator.free(kv.key);
+                var meta = kv.value;
+                meta.deinit(self.allocator);
+            }
+        }
     }
 
     /// Get cache statistics

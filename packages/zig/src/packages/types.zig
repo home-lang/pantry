@@ -1,11 +1,54 @@
 const std = @import("std");
 
+/// Package source types
+pub const PackageSource = enum {
+    pkgx,   // Default: pkgx.dev ecosystem
+    github, // GitHub releases or repositories
+    npm,    // npm registry
+    http,   // Direct HTTP download
+    git,    // Git repository
+    local,  // Local filesystem path (linked package)
+
+    pub fn toString(self: PackageSource) []const u8 {
+        return switch (self) {
+            .pkgx => "pkgx",
+            .github => "github",
+            .npm => "npm",
+            .http => "http",
+            .git => "git",
+            .local => "local",
+        };
+    }
+
+    pub fn fromString(s: []const u8) ?PackageSource {
+        if (std.mem.eql(u8, s, "pkgx")) return .pkgx;
+        if (std.mem.eql(u8, s, "github")) return .github;
+        if (std.mem.eql(u8, s, "npm")) return .npm;
+        if (std.mem.eql(u8, s, "http")) return .http;
+        if (std.mem.eql(u8, s, "git")) return .git;
+        if (std.mem.eql(u8, s, "local")) return .local;
+        return null;
+    }
+};
+
 /// Package specification
 pub const PackageSpec = struct {
     /// Package name
     name: []const u8,
     /// Package version (semantic version)
     version: []const u8,
+    /// Package source (default: pkgx)
+    source: PackageSource = .pkgx,
+    /// Source-specific URL (for http/git sources)
+    url: ?[]const u8 = null,
+    /// GitHub repository (owner/repo format for github source)
+    repo: ?[]const u8 = null,
+    /// Git branch (for git source)
+    branch: ?[]const u8 = null,
+    /// Release tag (for github source)
+    tag: ?[]const u8 = null,
+    /// npm registry URL (for custom npm registries)
+    registry: ?[]const u8 = null,
     /// Platform override (optional)
     platform: ?[]const u8 = null,
     /// Architecture override (optional)
@@ -14,6 +57,11 @@ pub const PackageSpec = struct {
     pub fn deinit(self: *PackageSpec, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
         allocator.free(self.version);
+        if (self.url) |u| allocator.free(u);
+        if (self.repo) |r| allocator.free(r);
+        if (self.branch) |b| allocator.free(b);
+        if (self.tag) |t| allocator.free(t);
+        if (self.registry) |r| allocator.free(r);
         if (self.platform) |p| allocator.free(p);
         if (self.arch) |a| allocator.free(a);
     }
@@ -65,6 +113,65 @@ pub const InstalledPackage = struct {
     }
 };
 
+/// Lockfile entry for a single package
+pub const LockfileEntry = struct {
+    name: []const u8,
+    version: []const u8,
+    source: PackageSource,
+    url: ?[]const u8 = null,
+    resolved: ?[]const u8 = null, // Actual download URL
+    integrity: ?[]const u8 = null, // SHA256 checksum
+    dependencies: ?std.StringHashMap([]const u8) = null,
+
+    pub fn deinit(self: *LockfileEntry, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.version);
+        if (self.url) |u| allocator.free(u);
+        if (self.resolved) |r| allocator.free(r);
+        if (self.integrity) |i| allocator.free(i);
+        if (self.dependencies) |*deps| {
+            var it = deps.iterator();
+            while (it.next()) |entry| {
+                allocator.free(entry.key_ptr.*);
+                allocator.free(entry.value_ptr.*);
+            }
+            deps.deinit();
+        }
+    }
+};
+
+/// Complete lockfile structure
+pub const Lockfile = struct {
+    version: []const u8,
+    lockfile_version: u32 = 1,
+    packages: std.StringHashMap(LockfileEntry),
+    generated_at: i64,
+
+    pub fn init(allocator: std.mem.Allocator, version: []const u8) !Lockfile {
+        return Lockfile{
+            .version = try allocator.dupe(u8, version),
+            .lockfile_version = 1,
+            .packages = std.StringHashMap(LockfileEntry).init(allocator),
+            .generated_at = std.time.timestamp(),
+        };
+    }
+
+    pub fn deinit(self: *Lockfile, allocator: std.mem.Allocator) void {
+        allocator.free(self.version);
+        var it = self.packages.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            var lock_entry = entry.value_ptr.*;
+            lock_entry.deinit(allocator);
+        }
+        self.packages.deinit();
+    }
+
+    pub fn addEntry(self: *Lockfile, allocator: std.mem.Allocator, key: []const u8, entry: LockfileEntry) !void {
+        try self.packages.put(try allocator.dupe(u8, key), entry);
+    }
+};
+
 test "PackageSpec lifecycle" {
     const allocator = std.testing.allocator;
 
@@ -76,4 +183,13 @@ test "PackageSpec lifecycle" {
 
     try std.testing.expectEqualStrings("node", spec.name);
     try std.testing.expectEqualStrings("20.0.0", spec.version);
+}
+
+test "PackageSource string conversion" {
+    try std.testing.expectEqualStrings("github", PackageSource.github.toString());
+    try std.testing.expectEqualStrings("npm", PackageSource.npm.toString());
+
+    try std.testing.expect(PackageSource.fromString("github") == .github);
+    try std.testing.expect(PackageSource.fromString("npm") == .npm);
+    try std.testing.expect(PackageSource.fromString("invalid") == null);
 }

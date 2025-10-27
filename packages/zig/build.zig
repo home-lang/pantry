@@ -21,7 +21,7 @@ pub fn build(b: *std.Build) void {
 
     // Executable
     const exe = b.addExecutable(.{
-        .name = "launchpad",
+        .name = "pantry",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -125,7 +125,7 @@ pub fn build(b: *std.Build) void {
         });
 
         const cross_exe = b.addExecutable(.{
-            .name = "launchpad",
+            .name = "pantry",
             .root_module = b.createModule(.{
                 .root_source_file = b.path("src/main.zig"),
                 .target = b.resolveTargetQuery(t),

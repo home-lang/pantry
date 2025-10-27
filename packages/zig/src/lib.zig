@@ -4,6 +4,7 @@
 pub const core = @import("core/platform.zig");
 pub const string = @import("core/string.zig");
 pub const errors = @import("core/error.zig");
+pub const path = @import("core/path.zig");
 pub const cache = @import("cache.zig");
 pub const packages = @import("packages.zig");
 pub const env = @import("env.zig");
