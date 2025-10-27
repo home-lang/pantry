@@ -77,6 +77,20 @@ pub fn build(b: *std.Build) void {
     });
     const run_integration_tests = b.addRunArtifact(integration_tests);
 
+    // Environment management tests
+    const env_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/env_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+        },
+    });
+    const env_tests = b.addTest(.{
+        .root_module = env_test_mod,
+    });
+    const run_env_tests = b.addRunArtifact(env_tests);
+
     // Shell integration benchmark
     const shell_bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/shell_bench.zig"),
@@ -97,6 +111,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_tests.step);
     test_step.dependOn(&run_core_tests.step);
+    test_step.dependOn(&run_env_tests.step);
 
     const integration_step = b.step("test:integration", "Run integration tests");
     integration_step.dependOn(&run_integration_tests.step);
