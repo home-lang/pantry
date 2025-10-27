@@ -165,6 +165,53 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         for (deps) |dep| {
             std.debug.print("  → {s}@{s}", .{ dep.name, dep.version });
 
+            // Check if this is a local/auto package
+            const is_local = std.mem.startsWith(u8, dep.name, "local:") or
+                std.mem.startsWith(u8, dep.name, "auto:");
+
+            if (is_local) {
+                // Handle local packages by creating symlinks
+                const local_path = if (std.mem.startsWith(u8, dep.version, "~/"))
+                    blk: {
+                        const home_path = try lib.Paths.home(allocator);
+                        defer allocator.free(home_path);
+                        const rel_path = dep.version[2..]; // Remove "~/"
+                        break :blk try std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, rel_path });
+                    }
+                else if (std.mem.startsWith(u8, dep.version, "/"))
+                    try allocator.dupe(u8, dep.version)
+                else
+                    try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dep.version });
+                defer allocator.free(local_path);
+
+                // Check if local path exists
+                std.fs.accessAbsolute(local_path, .{}) catch {
+                    std.debug.print(" ... skipped (path not found: {s})\n", .{local_path});
+                    continue;
+                };
+
+                // Create symlink in env bin directory
+                const pkg_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
+                    dep.name[colon_pos + 1 ..]
+                else
+                    dep.name;
+
+                const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
+                defer allocator.free(link_path);
+
+                // Remove existing symlink if present
+                std.fs.deleteFileAbsolute(link_path) catch {};
+
+                // Create symlink
+                std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch |err| {
+                    std.debug.print(" ... failed to create symlink: {}\n", .{err});
+                    continue;
+                };
+
+                std.debug.print(" ... done (linked)\n", .{});
+                continue;
+            }
+
             const spec = lib.packages.PackageSpec{
                 .name = dep.name,
                 .version = dep.version,
@@ -190,7 +237,52 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             }
         }
 
+        // Generate lockfile
+        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
+        defer allocator.free(lockfile_path);
+
+        var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
+        defer lockfile.deinit(allocator);
+
+        // Add entries for all installed packages
+        for (deps) |dep| {
+            const source = if (std.mem.startsWith(u8, dep.name, "local:") or std.mem.startsWith(u8, dep.name, "auto:"))
+                lib.packages.PackageSource.local
+            else if (std.mem.startsWith(u8, dep.name, "github:"))
+                lib.packages.PackageSource.github
+            else if (std.mem.startsWith(u8, dep.name, "npm:"))
+                lib.packages.PackageSource.npm
+            else
+                lib.packages.PackageSource.pkgx;
+
+            const clean_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
+                dep.name[colon_pos + 1 ..]
+            else
+                dep.name;
+
+            const entry = lib.packages.LockfileEntry{
+                .name = try allocator.dupe(u8, clean_name),
+                .version = try allocator.dupe(u8, dep.version),
+                .source = source,
+                .url = if (source == .local) try allocator.dupe(u8, dep.version) else null,
+                .resolved = null,
+                .integrity = null,
+                .dependencies = null,
+            };
+
+            const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, dep.version });
+            defer allocator.free(key);
+            try lockfile.addEntry(allocator, key, entry);
+        }
+
+        // Write lockfile
+        const lockfile_writer = @import("../packages/lockfile.zig");
+        lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+            std.debug.print("\n⚠️  Warning: Failed to write lockfile: {}\n", .{err});
+        };
+
         std.debug.print("\n✅ Environment created at: {s}\n", .{env_dir});
+        std.debug.print("📝 Lockfile written to: {s}\n", .{lockfile_path});
         return .{ .exit_code = 0 };
     }
 

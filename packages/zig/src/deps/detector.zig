@@ -5,14 +5,14 @@ pub const DepsFile = struct {
     format: FileFormat,
 
     pub const FileFormat = enum {
+        pantry_json,       // pantry.json
+        pantry_jsonc,      // pantry.jsonc
         deps_yaml,
         deps_yml,
         dependencies_yaml,
         pkgx_yaml,
         package_json,
         package_jsonc,     // Zig package.jsonc
-        pantry_json,       // pantry.json
-        pantry_jsonc,      // pantry.jsonc
         zig_json,          // zig.json
         cargo_toml,
         pyproject_toml,
