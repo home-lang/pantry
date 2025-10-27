@@ -325,7 +325,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 }
 
 /// List command
-pub fn listCommand(allocator: std.mem.Allocator) !CommandResult {
+pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
 
@@ -356,7 +356,7 @@ pub fn listCommand(allocator: std.mem.Allocator) !CommandResult {
 }
 
 /// Cache stats command
-pub fn cacheStatsCommand(allocator: std.mem.Allocator) !CommandResult {
+pub fn cacheStatsCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
 
@@ -373,7 +373,7 @@ pub fn cacheStatsCommand(allocator: std.mem.Allocator) !CommandResult {
 }
 
 /// Cache clear command
-pub fn cacheClearCommand(allocator: std.mem.Allocator) !CommandResult {
+pub fn cacheClearCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
 
@@ -391,7 +391,7 @@ pub fn cacheClearCommand(allocator: std.mem.Allocator) !CommandResult {
 }
 
 /// Environment list command
-pub fn envListCommand(allocator: std.mem.Allocator) !CommandResult {
+pub fn envListCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var manager = try env.EnvManager.init(allocator);
     defer manager.deinit();
 
@@ -632,7 +632,7 @@ pub fn envInspectCommand(allocator: std.mem.Allocator, hash_str: []const u8) !Co
 }
 
 /// Environment clean command
-pub fn envCleanCommand(allocator: std.mem.Allocator) !CommandResult {
+pub fn envCleanCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var manager = try env.EnvManager.init(allocator);
     defer manager.deinit();
 
