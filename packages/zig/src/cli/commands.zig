@@ -171,14 +171,12 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
             if (is_local) {
                 // Handle local packages by creating symlinks
-                const local_path = if (std.mem.startsWith(u8, dep.version, "~/"))
-                    blk: {
-                        const home_path = try lib.Paths.home(allocator);
-                        defer allocator.free(home_path);
-                        const rel_path = dep.version[2..]; // Remove "~/"
-                        break :blk try std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, rel_path });
-                    }
-                else if (std.mem.startsWith(u8, dep.version, "/"))
+                const local_path = if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
+                    const home_path = try lib.Paths.home(allocator);
+                    defer allocator.free(home_path);
+                    const rel_path = dep.version[2..]; // Remove "~/"
+                    break :blk try std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, rel_path });
+                } else if (std.mem.startsWith(u8, dep.version, "/"))
                     try allocator.dupe(u8, dep.version)
                 else
                     try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dep.version });
@@ -733,10 +731,7 @@ pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !
         bin_dir_handle.close();
 
         // Output: env_dir|dep_file_path
-        const stdout_file = std.fs.File{ .handle = std.posix.STDOUT_FILENO };
-        const output = try std.fmt.allocPrint(allocator, "{s}|{s}\n", .{ env_dir, deps_file.path });
-        defer allocator.free(output);
-        try stdout_file.writeAll(output);
+        std.debug.print("{s}|{s}\n", .{ env_dir, deps_file.path });
 
         return .{ .exit_code = 0 };
     }

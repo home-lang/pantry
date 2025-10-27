@@ -96,9 +96,7 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
             // Count leading spaces to determine indentation level
             var indent_level: usize = 0;
             for (line) |c| {
-                if (c == ' ') indent_level += 1
-                else if (c == '\t') indent_level += 2
-                else break;
+                if (c == ' ') indent_level += 1 else if (c == '\t') indent_level += 2 else break;
             }
 
             // Level 0 = end of dependencies section
@@ -270,7 +268,7 @@ fn parseCargoToml(_: std.mem.Allocator, _: []const u8) ![]PackageDependency {
     return &[_]PackageDependency{};
 }
 
-/// Parse pyproject.toml to infer Python dependency  
+/// Parse pyproject.toml to infer Python dependency
 fn parsePyprojectToml(_: std.mem.Allocator, _: []const u8) ![]PackageDependency {
     // For now, just return empty slice - would need TOML parser
     return &[_]PackageDependency{};
@@ -416,9 +414,9 @@ pub const ExtendedPackageDependency = struct {
     version: []const u8,
     source: []const u8 = "pkgx", // pkgx, github, npm, http, git
     url: ?[]const u8 = null,
-    repo: ?[]const u8 = null,     // For github: owner/repo
-    branch: ?[]const u8 = null,   // For git
-    tag: ?[]const u8 = null,      // For github releases
+    repo: ?[]const u8 = null, // For github: owner/repo
+    branch: ?[]const u8 = null, // For git
+    tag: ?[]const u8 = null, // For github releases
     registry: ?[]const u8 = null, // For npm
     global: bool = false,
 

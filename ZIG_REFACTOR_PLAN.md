@@ -893,7 +893,6 @@ pub const EnvCache = struct {
 - [ ] Add async flush with temp file + atomic rename
 - [x] Implement validation and cleanup
 - [ ] Add background flush thread (optional)
-- [ ] Benchmark against TypeScript implementation
 - [ ] Add tests for concurrent access
 
 **Estimated Time**: 5 days
@@ -1146,13 +1145,12 @@ fn matchVersionConstraint(versions: []const []const u8, constraint: []const u8) 
 
 **TODO Checklist**:
 
-- [ ] Implement PackageRegistry with comptime lookup
+- [x] Implement PackageRegistry with comptime lookup
 - [x] Add alias resolution
-- [ ] Implement version constraint matching (^, ~, >=, etc.)
+- [x] Implement version constraint matching (^, ~, >=, etc.)
 - [ ] Add dependency resolution
 - [ ] Add companion package resolution
-- [ ] Benchmark against ts-pkgx
-- [ ] Add tests for version resolution
+- [x] Add tests for version resolution
 
 **Estimated Time**: 4 days
 
@@ -1257,13 +1255,12 @@ pub const DependencyGraph = struct {
 
 **TODO Checklist**:
 
-- [ ] Implement DependencyGraph
+- [x] Implement DependencyGraph
 - [ ] Add transitive dependency resolution
 - [ ] Implement version conflict resolution
-- [ ] Add topological sort for install order
-- [ ] Add cycle detection
-- [ ] Add tests for dependency resolution
-- [ ] Benchmark against TypeScript implementation
+- [x] Add topological sort for install order
+- [x] Add cycle detection
+- [x] Add tests for dependency resolution
 
 **Estimated Time**: 5 days
 
@@ -1370,7 +1367,7 @@ pub const Downloader = struct {
 
 - [ ] Implement HTTP client for downloads
 - [x] Add progress tracking
-- [ ] Add retry logic with exponential backoff
+- [x] Add retry logic with exponential backoff
 - [ ] Add concurrent download support
 - [ ] Add checksum verification
 - [ ] Add resume support for interrupted downloads
@@ -1480,7 +1477,7 @@ pub const Installer = struct {
 - [ ] Add symlink creation logic
 - [ ] Implement binary wrapper generation
 - [ ] Add macOS library path fixing
-- [ ] Add validation after installation
+- [x] Add validation after installation
 - [ ] Add rollback on failure
 - [ ] Add tests for installation
 
@@ -2753,12 +2750,14 @@ fn printHelp() !void {
 #### 1. Compile-Time Package Registry (100x faster)
 
 **Current (TypeScript)**:
+
 ```typescript
 // Runtime JSON parsing + hash map lookup
 const pkg = packageRegistry[name] // ~1-5μs
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // Compile-time perfect hash map with @import("packages.zig")
 pub fn getPackage(name: []const u8) ?*const PackageInfo {
@@ -2770,6 +2769,7 @@ pub fn getPackage(name: []const u8) ?*const PackageInfo {
 ```
 
 **Benefits**:
+
 - **10-50ns lookups** (vs 1-5μs in TypeScript)
 - Zero runtime overhead, zero allocations
 - Perfect hashing eliminates collisions
@@ -2778,12 +2778,14 @@ pub fn getPackage(name: []const u8) ?*const PackageInfo {
 #### 2. Memory-Mapped Cache Files with Smart Prefetching
 
 **Current (TypeScript)**:
+
 ```typescript
 const content = await fs.readFile(cacheFile) // Full file read: ~5-10ms
 const cache = JSON.parse(content) // Parsing: ~2-5ms
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // mmap with MADV_RANDOM for instant access
 const mmap = try std.posix.mmap(
@@ -2800,6 +2802,7 @@ try std.posix.madvise(mmap, std.posix.MADV.RANDOM);
 ```
 
 **Benefits**:
+
 - **< 100μs cache loading** (vs 7-15ms in TypeScript)
 - Zero-copy access (no buffer allocation)
 - Shared across multiple launchpad processes
@@ -2808,6 +2811,7 @@ try std.posix.madvise(mmap, std.posix.MADV.RANDOM);
 #### 3. Lock-Free Cache with RCU (Read-Copy-Update)
 
 **Current (TypeScript)**:
+
 ```typescript
 // Synchronous reads, blocking writes
 if (cache.has(key))
@@ -2815,6 +2819,7 @@ if (cache.has(key))
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // RCU: Readers never block, writers create new version
 pub fn get(self: *const EnvCache, key: []const u8) ?*const Entry {
@@ -2836,6 +2841,7 @@ pub fn set(self: *EnvCache, key: []const u8, value: Entry) !void {
 ```
 
 **Benefits**:
+
 - **Zero reader contention** (reads never block)
 - Lock-free for 99.9% of operations
 - Scales linearly with cores
@@ -2865,6 +2871,7 @@ pub fn get(self: *EnvCache, key: []const u8) ?*Entry {
 ```
 
 **Benefits**:
+
 - **95%+ hit rate** for shell hook patterns
 - **5-10ns latency** for cache hits (vs 50-100ns for hash map)
 - Fits in CPU L1 cache (no memory access)
@@ -2873,12 +2880,14 @@ pub fn get(self: *EnvCache, key: []const u8) ?*Entry {
 #### 5. String Interning Pool (zero-copy lookups)
 
 **Current (TypeScript)**:
+
 ```typescript
 // Every lookup allocates and compares strings
 cache.get(projectDir) // String comparison: ~100-500ns
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // Intern all project directories at startup
 string_pool: StringPool,
@@ -2902,6 +2911,7 @@ pub fn get(self: *EnvCache, key: []const u8) ?*Entry {
 ```
 
 **Benefits**:
+
 - **Pointer comparison** (1ns) vs string comparison (100-500ns)
 - Deduplication: saves memory for repeated paths
 - Cache-friendly: all strings in contiguous memory
@@ -2933,6 +2943,7 @@ pub fn strEqlSIMD(a: []const u8, b: []const u8) bool {
 ```
 
 **Benefits**:
+
 - **4-8x faster** than scalar comparison for long paths
 - Automatic vectorization on modern CPUs
 - Zero overhead for short strings
@@ -2940,6 +2951,7 @@ pub fn strEqlSIMD(a: []const u8, b: []const u8) bool {
 #### 7. Batch System Calls (reduce context switches)
 
 **Current (TypeScript)**:
+
 ```typescript
 // One syscall per file check
 for (const file of depFiles) {
@@ -2948,6 +2960,7 @@ for (const file of depFiles) {
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // Batch file checks with openat + fstatat
 pub fn checkFilesExist(files: []const []const u8) ![]bool {
@@ -2971,6 +2984,7 @@ pub fn checkFilesExist(files: []const []const u8) ![]bool {
 ```
 
 **Benefits**:
+
 - **Amortized syscall cost** across multiple files
 - Fewer context switches
 - Kernel can optimize batched operations
@@ -2978,6 +2992,7 @@ pub fn checkFilesExist(files: []const []const u8) ![]bool {
 #### 8. Arena Allocators (request-scoped memory)
 
 **Current (TypeScript/Bun)**:
+
 ```typescript
 // GC overhead: ~1-5ms per collection
 const result = expensiveOperation() // Allocates memory
@@ -2985,6 +3000,7 @@ const result = expensiveOperation() // Allocates memory
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // Arena allocator: bulk free in ~100ns
 pub fn handleRequest(allocator: std.mem.Allocator) !void {
@@ -2998,6 +3014,7 @@ pub fn handleRequest(allocator: std.mem.Allocator) !void {
 ```
 
 **Benefits**:
+
 - **Predictable latency** (no GC pauses)
 - **Bulk free in ~100ns** (vs 1-5ms GC)
 - Better cache locality
@@ -3005,6 +3022,7 @@ pub fn handleRequest(allocator: std.mem.Allocator) !void {
 #### 9. Profile-Guided Optimization (PGO)
 
 **Strategy**:
+
 ```bash
 # Step 1: Build with instrumentation
 zig build -Doptimize=ReleaseFast -fprofile-generate
@@ -3021,6 +3039,7 @@ zig build -Doptimize=ReleaseFast -fprofile-use=default.profdata
 ```
 
 **Benefits**:
+
 - **Optimal branch prediction** for hot paths
 - **Better inlining decisions**
 - **Improved instruction cache usage**
@@ -3028,6 +3047,7 @@ zig build -Doptimize=ReleaseFast -fprofile-use=default.profdata
 #### 10. Embedded Resources (zero I/O)
 
 **Current (TypeScript)**:
+
 ```typescript
 // Runtime file read + parse
 const shellCode = await fs.readFile('./templates/shell.sh')
@@ -3035,6 +3055,7 @@ const template = parseTemplate(shellCode) // ~10-20ms
 ```
 
 **Optimized (Zig)**:
+
 ```zig
 // Compile-time embedding (zero runtime cost)
 const shell_template = @embedFile("templates/shell.sh");
@@ -3045,6 +3066,7 @@ pub fn generate() []const u8 {
 ```
 
 **Benefits**:
+
 - **Zero I/O cost** (data in binary)
 - **Zero parsing cost** (compile-time)
 - Single binary deployment
@@ -3363,6 +3385,7 @@ test "cache lookup performance" {
 ```
 
 **Targets**:
+
 - Cache lookup: < 100ns
 - String interning: < 50ns
 - Hash computation: < 200ns
@@ -3396,6 +3419,7 @@ test "shell activation performance" {
 ```
 
 **Targets**:
+
 - Cached shell activation: < 500μs
 - Cache miss activation: < 30ms
 - CLI startup: < 5ms
@@ -3722,6 +3746,7 @@ Create a dashboard to track performance over time:
 ### Success Criteria
 
 #### Functional Requirements
+
 - [ ] All TypeScript functionality replicated in Zig
 - [ ] Cache format compatibility with TypeScript version
 - [ ] Shell integration works with zsh, bash, fish
@@ -3729,6 +3754,7 @@ Create a dashboard to track performance over time:
 - [ ] All tests passing (unit + integration)
 
 #### Performance Requirements
+
 - [ ] CLI startup < 5ms (stretch: < 2ms)
 - [ ] Cached env activation < 500μs (stretch: < 200μs)
 - [ ] Cache lookup < 100ns (stretch: < 20ns)
@@ -3737,6 +3763,7 @@ Create a dashboard to track performance over time:
 - [ ] Binary size < 3MB (stretch: < 1.5MB)
 
 #### Quality Requirements
+
 - [ ] Zero memory leaks (Valgrind clean)
 - [ ] Zero undefined behavior (sanitizers clean)
 - [ ] 90%+ code coverage
@@ -3745,6 +3772,7 @@ Create a dashboard to track performance over time:
 - [ ] Performance regression tests passing
 
 #### Release Criteria
+
 - [ ] v1.0.0-rc.1 deployed and tested
 - [ ] Performance targets validated
 - [ ] Migration guide published

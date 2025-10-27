@@ -5,15 +5,15 @@ pub const DepsFile = struct {
     format: FileFormat,
 
     pub const FileFormat = enum {
-        pantry_json,       // pantry.json
-        pantry_jsonc,      // pantry.jsonc
+        pantry_json, // pantry.json
+        pantry_jsonc, // pantry.jsonc
         deps_yaml,
         deps_yml,
         dependencies_yaml,
         pkgx_yaml,
         package_json,
-        package_jsonc,     // Zig package.jsonc
-        zig_json,          // zig.json
+        package_jsonc, // Zig package.jsonc
+        zig_json, // zig.json
         cargo_toml,
         pyproject_toml,
         requirements_txt,
@@ -26,15 +26,15 @@ pub const DepsFile = struct {
 /// Find dependency file in directory or parent directories
 pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsFile {
     const file_names = [_][]const u8{
-        "pantry.json",        // pantry.json (highest priority)
-        "pantry.jsonc",       // pantry.jsonc
+        "pantry.json", // pantry.json (highest priority)
+        "pantry.jsonc", // pantry.jsonc
         "deps.yaml",
         "deps.yml",
         "dependencies.yaml",
         "pkgx.yaml",
         "package.json",
-        "package.jsonc",      // Zig package.jsonc
-        "zig.json",           // zig.json
+        "package.jsonc", // Zig package.jsonc
+        "zig.json", // zig.json
         "Cargo.toml",
         "pyproject.toml",
         "requirements.txt",

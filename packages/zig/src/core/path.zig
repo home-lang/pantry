@@ -22,7 +22,7 @@ pub fn basename(path: []const u8) []const u8 {
     while (i > 0) {
         i -= 1;
         if (path[i] == '/') {
-            return path[i + 1..end];
+            return path[i + 1 .. end];
         }
     }
 

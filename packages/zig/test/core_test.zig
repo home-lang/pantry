@@ -13,11 +13,9 @@ test "Platform detection is compile-time" {
     const name = platform.name();
 
     try std.testing.expect(name.len > 0);
-    try std.testing.expect(
-        std.mem.eql(u8, name, "darwin") or
+    try std.testing.expect(std.mem.eql(u8, name, "darwin") or
         std.mem.eql(u8, name, "linux") or
-        std.mem.eql(u8, name, "windows")
-    );
+        std.mem.eql(u8, name, "windows"));
 }
 
 test "Architecture detection is compile-time" {
@@ -25,10 +23,8 @@ test "Architecture detection is compile-time" {
     const name = arch.name();
 
     try std.testing.expect(name.len > 0);
-    try std.testing.expect(
-        std.mem.eql(u8, name, "aarch64") or
-        std.mem.eql(u8, name, "x86_64")
-    );
+    try std.testing.expect(std.mem.eql(u8, name, "aarch64") or
+        std.mem.eql(u8, name, "x86_64"));
 }
 
 test "Path resolution returns valid paths" {
@@ -103,10 +99,8 @@ test "hashToHex produces valid hex string" {
 
     // Verify all characters are valid hex
     for (hex) |c| {
-        try std.testing.expect(
-            (c >= '0' and c <= '9') or
-            (c >= 'a' and c <= 'f')
-        );
+        try std.testing.expect((c >= '0' and c <= '9') or
+            (c >= 'a' and c <= 'f'));
     }
 }
 

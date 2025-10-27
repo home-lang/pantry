@@ -2,12 +2,12 @@ const std = @import("std");
 
 /// Package source types
 pub const PackageSource = enum {
-    pkgx,   // Default: pkgx.dev ecosystem
+    pkgx, // Default: pkgx.dev ecosystem
     github, // GitHub releases or repositories
-    npm,    // npm registry
-    http,   // Direct HTTP download
-    git,    // Git repository
-    local,  // Local filesystem path (linked package)
+    npm, // npm registry
+    http, // Direct HTTP download
+    git, // Git repository
+    local, // Local filesystem path (linked package)
 
     pub fn toString(self: PackageSource) []const u8 {
         return switch (self) {

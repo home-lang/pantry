@@ -8,7 +8,7 @@ pub fn scanForGlobalDeps(allocator: std.mem.Allocator) ![]parser.PackageDependen
 
     // Common locations to search
     const search_locations = [_][]const u8{
-        "",               // Home directory root
+        "", // Home directory root
         ".dotfiles",
         ".config",
         "Code",
