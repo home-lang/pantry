@@ -6,6 +6,12 @@ pub const DownloadError = error{
     InvalidUrl,
     FileWriteFailed,
     NetworkError,
+    MaxRetriesExceeded,
+};
+
+pub const DownloadOptions = struct {
+    max_retries: u32 = 3,
+    initial_retry_delay_ms: u64 = 1000,
 };
 
 /// Format bytes to human readable format (e.g., "12.3 MB")
@@ -210,6 +216,39 @@ pub fn buildPackageUrl(
         "https://dist.pkgx.dev/{s}/{s}/{s}/v{s}.{s}",
         .{ domain, platform_str, arch_str, version, format },
     );
+}
+
+/// Download a file with retry logic and exponential backoff
+pub fn downloadFileWithRetry(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, options: DownloadOptions) !void {
+    var attempt: u32 = 0;
+    var delay_ms = options.initial_retry_delay_ms;
+
+    while (attempt < options.max_retries) {
+        attempt += 1;
+
+        if (attempt > 1) {
+            std.debug.print("  Retry {d}/{d} after {d}ms...\n", .{ attempt - 1, options.max_retries - 1, delay_ms });
+            std.Thread.sleep(delay_ms * std.time.ns_per_ms);
+        }
+
+        downloadFile(allocator, url, dest_path) catch |err| {
+            if (attempt >= options.max_retries) {
+                std.debug.print("\n  ✗ Download failed after {d} attempts: {}\n", .{ options.max_retries, err });
+                return error.MaxRetriesExceeded;
+            }
+
+            std.debug.print("\n  ⚠ Download failed (attempt {d}): {}\n", .{ attempt, err });
+
+            // Exponential backoff: double the delay each time
+            delay_ms *= 2;
+            continue;
+        };
+
+        // Success
+        return;
+    }
+
+    return error.MaxRetriesExceeded;
 }
 
 test "buildPackageUrl" {
