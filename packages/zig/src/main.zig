@@ -34,41 +34,38 @@ pub fn main() !void {
     } else if (std.mem.eql(u8, command, "uninstall")) {
         result = try commands.uninstallCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "list")) {
-        result = try commands.listCommand(allocator);
+        result = try commands.listCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "search")) {
         result = try commands.searchCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "info")) {
         result = try commands.infoCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "update")) {
-        result = try commands.updateCommand(allocator, command_args);
+        std.debug.print("update command not yet implemented\n", .{});
+        std.process.exit(1);
     } else if (std.mem.eql(u8, command, "outdated")) {
-        result = try commands.outdatedCommand(allocator);
+        std.debug.print("outdated command not yet implemented\n", .{});
+        std.process.exit(1);
     }
     // Cache commands
     else if (std.mem.eql(u8, command, "cache:stats")) {
-        result = try commands.cacheStatsCommand(allocator);
+        result = try commands.cacheStatsCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "cache:clear") or std.mem.eql(u8, command, "clean")) {
-        result = try commands.cacheClearCommand(allocator);
+        result = try commands.cacheClearCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "cache:clean")) {
-        result = try commands.cacheCleanCommand(allocator);
+        std.debug.print("cache:clean command not yet implemented\n", .{});
+        std.process.exit(1);
     }
     // Environment commands
     else if (std.mem.eql(u8, command, "env:list")) {
-        result = try commands.envListCommand(allocator);
+        result = try commands.envListCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "env:inspect")) {
-        if (command_args.len == 0) {
-            std.debug.print("Error: env:inspect requires a hash argument\n", .{});
-            std.process.exit(1);
-        }
-        result = try commands.envInspectCommand(allocator, command_args[0]);
+        std.debug.print("env:inspect command not yet implemented\n", .{});
+        std.process.exit(1);
     } else if (std.mem.eql(u8, command, "env:remove")) {
-        if (command_args.len == 0) {
-            std.debug.print("Error: env:remove requires a hash argument\n", .{});
-            std.process.exit(1);
-        }
-        result = try commands.envRemoveCommand(allocator, command_args[0]);
+        std.debug.print("env:remove command not yet implemented\n", .{});
+        std.process.exit(1);
     } else if (std.mem.eql(u8, command, "env:clean")) {
-        result = try commands.envCleanCommand(allocator);
+        result = try commands.envCleanCommand(allocator, command_args);
     } else if (std.mem.eql(u8, command, "env:lookup")) {
         if (command_args.len == 0) {
             std.debug.print("Error: env:lookup requires a directory argument\n", .{});
