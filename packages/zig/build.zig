@@ -77,6 +77,23 @@ pub fn build(b: *std.Build) void {
     });
     const run_integration_tests = b.addRunArtifact(integration_tests);
 
+    // Shell integration benchmark
+    const shell_bench_mod = b.createModule(.{
+        .root_source_file = b.path("bench/shell_bench.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+        },
+    });
+    const shell_bench = b.addExecutable(.{
+        .name = "shell_bench",
+        .root_module = shell_bench_mod,
+    });
+    const run_shell_bench = b.addRunArtifact(shell_bench);
+    const shell_bench_step = b.step("bench:shell", "Run shell integration benchmarks");
+    shell_bench_step.dependOn(&run_shell_bench.step);
+
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_tests.step);
     test_step.dependOn(&run_core_tests.step);
