@@ -591,7 +591,7 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
     return deps.toOwnedSlice(allocator);
 }
 
-/// Strip JSON comments (// and /* */) for JSONC support
+/// Strip JSON comments (// and /* */) and trailing commas for JSONC support
 fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const u8 {
     var result = try std.ArrayList(u8).initCapacity(allocator, content.len);
     errdefer result.deinit(allocator);
@@ -627,7 +627,31 @@ fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const
         i += 1;
     }
 
-    return result.toOwnedSlice(allocator);
+    // Strip trailing commas (e.g., ",}" or ",]")
+    const raw_json = result.items;
+    var cleaned = try std.ArrayList(u8).initCapacity(allocator, raw_json.len);
+    defer result.deinit(allocator);
+    errdefer cleaned.deinit(allocator);
+
+    var j: usize = 0;
+    while (j < raw_json.len) {
+        if (raw_json[j] == ',') {
+            // Look ahead to see if this is a trailing comma
+            var k = j + 1;
+            while (k < raw_json.len and (raw_json[k] == ' ' or raw_json[k] == '\t' or raw_json[k] == '\n' or raw_json[k] == '\r')) : (k += 1) {}
+
+            // If next non-whitespace is } or ], skip the comma
+            if (k < raw_json.len and (raw_json[k] == '}' or raw_json[k] == ']')) {
+                j += 1;
+                continue;
+            }
+        }
+
+        try cleaned.append(allocator, raw_json[j]);
+        j += 1;
+    }
+
+    return cleaned.toOwnedSlice(allocator);
 }
 
 test "stripJsonComments" {
