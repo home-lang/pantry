@@ -20,6 +20,8 @@ pub const InstallOptions = struct {
     verbose: bool = false,
     /// Dry run (don't actually install)
     dry_run: bool = false,
+    /// Project root path for local installations (if null, install globally)
+    project_root: ?[]const u8 = null,
 };
 
 /// Installation result
@@ -79,6 +81,30 @@ pub const Installer = struct {
         const pkg_info = pkg_registry.getPackageByName(spec.name);
         const domain = if (pkg_info) |info| info.domain else spec.name;
 
+        // Determine install location based on whether we have a project root
+        const install_path = if (options.project_root) |project_root|
+            try self.installToProject(spec, domain, project_root, options)
+        else
+            try self.installGlobal(spec, domain, options);
+
+        const end_time = std.time.milliTimestamp();
+
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, spec.version),
+            .install_path = install_path,
+            .from_cache = false, // TODO: track cache hits properly
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install package globally (old behavior)
+    fn installGlobal(
+        self: *Installer,
+        spec: PackageSpec,
+        domain: []const u8,
+        options: InstallOptions,
+    ) ![]const u8 {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
 
@@ -88,25 +114,142 @@ pub const Installer = struct {
             break :blk true;
         };
 
-        var install_path: []const u8 = undefined;
-
         if (from_cache) {
             // Use cached package (from global location)
-            install_path = try self.installFromCache(spec, "");
+            return try self.installFromCache(spec, "");
         } else {
             // Download and install to global cache
-            install_path = try self.installFromNetwork(spec);
+            return try self.installFromNetwork(spec);
+        }
+    }
+
+    /// Install package to project's pantry_modules directory
+    fn installToProject(
+        self: *Installer,
+        spec: PackageSpec,
+        domain: []const u8,
+        project_root: []const u8,
+        options: InstallOptions,
+    ) ![]const u8 {
+        const project_pkg_dir = try self.getProjectPackageDir(project_root, domain, spec.version);
+        errdefer self.allocator.free(project_pkg_dir);
+
+        // Check if already installed in project
+        const already_installed = !options.force and blk: {
+            var check_dir = std.fs.cwd().openDir(project_pkg_dir, .{}) catch break :blk false;
+            check_dir.close();
+            break :blk true;
+        };
+
+        if (already_installed) {
+            // Already in pantry_modules - create symlinks and return
+            try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
+            return project_pkg_dir;
         }
 
-        const end_time = std.time.milliTimestamp();
+        // Check if package exists in global cache first
+        const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
+        defer self.allocator.free(global_pkg_dir);
 
-        return InstallResult{
-            .name = try self.allocator.dupe(u8, spec.name),
-            .version = try self.allocator.dupe(u8, spec.version),
-            .install_path = install_path,
-            .from_cache = from_cache,
-            .install_time_ms = @intCast(end_time - start_time),
+        var global_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch |err| blk: {
+            if (err != error.FileNotFound) return err;
+            break :blk null;
         };
+
+        if (global_dir) |*dir| {
+            dir.close();
+            // Copy from global cache to project's pantry_modules
+            try std.fs.cwd().makePath(project_pkg_dir);
+            try self.copyDirectoryStructure(global_pkg_dir, project_pkg_dir);
+            try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
+            return project_pkg_dir;
+        }
+
+        // Not in global cache - download directly to project's pantry_modules
+        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir);
+        try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
+
+        return project_pkg_dir;
+    }
+
+    /// Download and install package directly to project directory (bypassing global cache)
+    fn downloadAndInstallToProject(self: *Installer, spec: PackageSpec, domain: []const u8, project_pkg_dir: []const u8) !void {
+        const home = try Paths.home(self.allocator);
+        defer self.allocator.free(home);
+
+        const temp_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/.local/share/pantry/.tmp/{s}-{s}",
+            .{ home, spec.name, spec.version },
+        );
+        defer self.allocator.free(temp_dir);
+
+        try std.fs.cwd().makePath(temp_dir);
+        defer std.fs.cwd().deleteTree(temp_dir) catch {};
+
+        // Try different archive formats
+        const formats = [_][]const u8{ "tar.xz", "tar.gz" };
+        var downloaded = false;
+        var archive_path: []const u8 = undefined;
+        var used_format: []const u8 = undefined;
+
+        for (formats) |format| {
+            // Build download URL
+            const url = try downloader.buildPackageUrl(
+                self.allocator,
+                domain,
+                spec.version,
+                format,
+            );
+            defer self.allocator.free(url);
+
+            // Create archive path
+            const temp_archive_path = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/package.{s}",
+                .{ temp_dir, format },
+            );
+
+            // Try to download
+            downloader.downloadFile(self.allocator, url, temp_archive_path) catch |err| {
+                self.allocator.free(temp_archive_path);
+                std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                continue;
+            };
+
+            // Success!
+            downloaded = true;
+            archive_path = temp_archive_path;
+            used_format = format;
+            break;
+        }
+
+        if (!downloaded) {
+            return error.DownloadFailed;
+        }
+        defer self.allocator.free(archive_path);
+
+        // Extract archive to temp directory
+        const extract_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/extracted",
+            .{temp_dir},
+        );
+        defer self.allocator.free(extract_dir);
+
+        try std.fs.cwd().makePath(extract_dir);
+        try extractor.extractArchive(self.allocator, archive_path, extract_dir, used_format);
+
+        // Find the actual package root
+        const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
+        defer self.allocator.free(package_source);
+
+        // Copy package contents to project directory
+        try std.fs.cwd().makePath(project_pkg_dir);
+        try self.copyDirectoryStructure(package_source, project_pkg_dir);
+
+        // Fix library paths for macOS
+        try libfixer.fixDirectoryLibraryPaths(self.allocator, project_pkg_dir);
     }
 
     /// Install from cached package (global cache location)
@@ -139,14 +282,21 @@ pub const Installer = struct {
     }
 
     /// Get global package directory (shared across all environments)
+    /// Uses /usr/local/share/pantry/packages/ for global installations
     fn getGlobalPackageDir(self: *Installer, domain: []const u8, version: []const u8) ![]const u8 {
-        const home = try Paths.home(self.allocator);
-        defer self.allocator.free(home);
-
         return std.fmt.allocPrint(
             self.allocator,
-            "{s}/.local/share/pantry/global/packages/{s}/v{s}",
-            .{ home, domain, version },
+            "/usr/local/share/pantry/packages/{s}/v{s}",
+            .{ domain, version },
+        );
+    }
+
+    /// Get project-local package directory (pantry_modules)
+    fn getProjectPackageDir(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8) ![]const u8 {
+        return std.fmt.allocPrint(
+            self.allocator,
+            "{s}/pantry_modules/{s}/v{s}",
+            .{ project_root, domain, version },
         );
     }
 
@@ -189,6 +339,69 @@ pub const Installer = struct {
                 self.allocator,
                 "{s}/{s}",
                 .{ env_bin_dir, program },
+            );
+            defer self.allocator.free(link);
+
+            // Check if source exists
+            std.fs.accessAbsolute(source, .{}) catch |err| {
+                if (err == error.FileNotFound) {
+                    std.debug.print("Warning: Program not found: {s}\n", .{source});
+                    continue;
+                }
+                return err;
+            };
+
+            // Remove existing symlink if it exists
+            std.fs.deleteFileAbsolute(link) catch {};
+
+            // Create symlink
+            std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
+                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+            };
+        }
+
+        _ = version; // not used in current implementation
+    }
+
+    /// Create symlinks in project's pantry_modules/.bin directory
+    fn createProjectSymlinks(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8, package_dir: []const u8) !void {
+        // Get package info to find which programs to symlink
+        const pkg_registry = @import("../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(domain) orelse return;
+
+        if (pkg_info.programs.len == 0) return;
+
+        // Project bin directory (pantry_modules/.bin)
+        const project_bin_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/pantry_modules/.bin",
+            .{project_root},
+        );
+        defer self.allocator.free(project_bin_dir);
+
+        try std.fs.cwd().makePath(project_bin_dir);
+
+        // Package bin directory
+        const pkg_bin_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/bin",
+            .{package_dir},
+        );
+        defer self.allocator.free(pkg_bin_dir);
+
+        // Create symlinks for each program
+        for (pkg_info.programs) |program| {
+            const source = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ pkg_bin_dir, program },
+            );
+            defer self.allocator.free(source);
+
+            const link = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ project_bin_dir, program },
             );
             defer self.allocator.free(link);
 

@@ -19,13 +19,13 @@ pub const services = @import("services.zig");
 // Re-export commonly used types
 pub const Platform = core.Platform;
 pub const Architecture = core.Architecture;
-pub const pantryore.Paths;pantry
-pub const LaunchpadError = errors.LaunchpadError;
+pub const Paths = core.Paths;
+pub const pantryError = errors.pantryError;
 pub const ErrorContext = errors.ErrorContext;
 pub const EnvCache = cache.EnvCache;
 pub const PackageCache = cache.PackageCache;
-pub const Confpantry= config.ConfigResulpantry
-pub const loadLaunchpadConfig = config.loadLaunchpadConfig;
+pub const ConfigResult = config.ConfigResult;
+pub const loadpantryConfig = config.loadpantryConfig;
 
 test {
     @import("std").testing.refAllDecls(@This());

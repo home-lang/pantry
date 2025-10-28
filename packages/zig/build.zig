@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
     });
 
     // Add zig-cli module (from external repository)
-    const cli_mod = b.addModule("pantry .{
+    const cli_mod = b.addModule("zig-cli", .{
         .root_source_file = b.path("../../../zig-cli/src/root.zig"),
         .target = target,
     });
@@ -159,7 +159,7 @@ pub fn build(b: *std.Build) void {
 
     const run_bench = b.addRunArtifact(bench_exe);
     const bench_step = b.step("bench", "Run benchmarks");
-    bench_step.dependOn(&run_bench.step);pantry
+    bench_step.dependOn(&run_bench.step);
 
     // Cross-compilation targets
     const targets = [_]std.Target.Query{

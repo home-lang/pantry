@@ -215,14 +215,17 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
                 .version = dep.version,
             };
 
-            // Create custom installer that installs to env dir
+            // Create installer with project_root option for local installs
             var custom_installer = try install.Installer.init(allocator, &pkg_cache);
-            // Override data_dir to point to our env dir
+            // Override data_dir to point to our env dir for environment-based symlinks
             allocator.free(custom_installer.data_dir);
             custom_installer.data_dir = try allocator.dupe(u8, env_dir);
             defer custom_installer.deinit();
 
-            var result = custom_installer.install(spec, .{}) catch |err| {
+            // Install to project's pantry_modules directory
+            var result = custom_installer.install(spec, .{
+                .project_root = proj_dir,
+            }) catch |err| {
                 std.debug.print(" failed: {}\n", .{err});
                 continue;
             };
@@ -284,6 +287,21 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         return .{ .exit_code = 0 };
     }
 
+    // Detect if we're in a project directory
+    const detector = @import("../deps/detector.zig");
+    const cwd = try std.process.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    const project_root = blk: {
+        const deps_file = try detector.findDepsFile(allocator, cwd);
+        if (deps_file) |df| {
+            defer allocator.free(df.path);
+            break :blk try allocator.dupe(u8, std.fs.path.dirname(df.path) orelse cwd);
+        }
+        break :blk null;
+    };
+    defer if (project_root) |pr| allocator.free(pr);
+
     // Initialize package cache and installer
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
@@ -291,7 +309,13 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    std.debug.print("Installing {d} package(s)...\n", .{args.len});
+    if (project_root) |pr| {
+        std.debug.print("Installing {d} package(s) to project at {s}...\n", .{ args.len, pr });
+    } else {
+        std.debug.print("Installing {d} package(s) globally to /usr/local...\n", .{args.len});
+        std.debug.print("⚠️  Note: You may need to run with sudo for /usr/local write access\n", .{});
+        std.debug.print("    Many tools expect packages in /usr/local rather than ~/.local\n\n", .{});
+    }
 
     for (args) |pkg_spec_str| {
         // Parse package spec (name@version)
@@ -306,7 +330,9 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             .version = version,
         };
 
-        var result = installer.install(spec, .{}) catch |err| {
+        var result = installer.install(spec, .{
+            .project_root = project_root,
+        }) catch |err| {
             std.debug.print(" failed: {}\n", .{err});
             continue;
         };
@@ -1621,15 +1647,13 @@ fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
 
 /// Install specific packages globally
 fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []const []const u8) !CommandResult {
-    const home = try lib.Paths.home(allocator);
-    defer allocator.free(home);
-
-    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home});
-    defer allocator.free(global_dir);
-
-    try std.fs.cwd().makePath(global_dir);
+    const global_dir = "/usr/local/share/pantry";
 
     std.debug.print("Installing {d} package(s) globally to {s}...\n", .{ packages.len, global_dir });
+    std.debug.print("⚠️  Note: You may need to run with sudo for /usr/local write access\n", .{});
+    std.debug.print("    Many tools expect packages in /usr/local rather than ~/.local\n\n", .{});
+
+    try std.fs.cwd().makePath(global_dir);
 
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();

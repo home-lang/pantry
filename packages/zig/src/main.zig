@@ -128,7 +128,7 @@ fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
 }
 
 fn cacheClearAction(ctx: *cli.BaseCommand.ParseContext) !void {
-    const allocator = ctx.allopantry
+    const allocator = ctx.allocator;
 
     const force = ctx.hasOption("force");
     _ = force;
