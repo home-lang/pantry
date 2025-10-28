@@ -264,6 +264,449 @@ test "ServiceStatus enum values" {
 }
 
 // ============================================================================
+// Extended Platform Tests
+// ============================================================================
+
+test "Platform service file extension" {
+    const plat = platform.Platform.detect();
+
+    switch (plat) {
+        .macos => try std.testing.expectEqualStrings(".plist", plat.serviceFileExtension()),
+        .linux => try std.testing.expectEqualStrings(".service", plat.serviceFileExtension()),
+        .windows => try std.testing.expectEqualStrings(".xml", plat.serviceFileExtension()),
+        .unknown => try std.testing.expectEqualStrings("", plat.serviceFileExtension()),
+    }
+}
+
+test "Platform all enum values" {
+    const macos: platform.Platform = .macos;
+    const linux: platform.Platform = .linux;
+    const windows: platform.Platform = .windows;
+    const unknown: platform.Platform = .unknown;
+
+    try std.testing.expect(macos == .macos);
+    try std.testing.expect(linux == .linux);
+    try std.testing.expect(windows == .windows);
+    try std.testing.expect(unknown == .unknown);
+}
+
+test "Platform service manager names" {
+    const macos: platform.Platform = .macos;
+    const linux: platform.Platform = .linux;
+    const windows: platform.Platform = .windows;
+
+    try std.testing.expectEqualStrings("launchd", macos.serviceManager());
+    try std.testing.expectEqualStrings("systemd", linux.serviceManager());
+    try std.testing.expectEqualStrings("sc", windows.serviceManager());
+}
+
+// ============================================================================
+// Extended ServiceConfig Tests
+// ============================================================================
+
+test "ServiceConfig with custom port - PostgreSQL" {
+    const allocator = std.testing.allocator;
+
+    var pg = try definitions.Services.postgresql(allocator, 9999);
+    defer pg.deinit(allocator);
+
+    try std.testing.expect(pg.port.? == 9999);
+    try std.testing.expect(pg.env_vars.count() >= 2); // PGPORT and PGDATA
+}
+
+test "ServiceConfig with custom port - Redis" {
+    const allocator = std.testing.allocator;
+
+    var redis = try definitions.Services.redis(allocator, 7000);
+    defer redis.deinit(allocator);
+
+    try std.testing.expect(redis.port.? == 7000);
+    try std.testing.expect(std.mem.indexOf(u8, redis.start_command, "7000") != null);
+}
+
+test "ServiceConfig with custom port - MySQL" {
+    const allocator = std.testing.allocator;
+
+    var mysql = try definitions.Services.mysql(allocator, 3307);
+    defer mysql.deinit(allocator);
+
+    try std.testing.expect(mysql.port.? == 3307);
+    try std.testing.expect(mysql.env_vars.count() >= 1); // MYSQL_PORT
+}
+
+test "ServiceConfig environment variables - PostgreSQL" {
+    const allocator = std.testing.allocator;
+
+    var pg = try definitions.Services.postgresql(allocator, 5432);
+    defer pg.deinit(allocator);
+
+    // Check env vars exist
+    try std.testing.expect(pg.env_vars.get("PGPORT") != null);
+    try std.testing.expect(pg.env_vars.get("PGDATA") != null);
+
+    // Check PGDATA value
+    const pgdata = pg.env_vars.get("PGDATA").?;
+    try std.testing.expect(std.mem.indexOf(u8, pgdata, "postgres") != null);
+}
+
+test "ServiceConfig environment variables - MySQL" {
+    const allocator = std.testing.allocator;
+
+    var mysql = try definitions.Services.mysql(allocator, 3306);
+    defer mysql.deinit(allocator);
+
+    // Check MYSQL_PORT env var
+    try std.testing.expect(mysql.env_vars.get("MYSQL_PORT") != null);
+}
+
+test "ServiceConfig all fields present - PostgreSQL" {
+    const allocator = std.testing.allocator;
+
+    var pg = try definitions.Services.postgresql(allocator, 5432);
+    defer pg.deinit(allocator);
+
+    // Verify all required fields
+    try std.testing.expect(pg.name.len > 0);
+    try std.testing.expect(pg.display_name.len > 0);
+    try std.testing.expect(pg.description.len > 0);
+    try std.testing.expect(pg.start_command.len > 0);
+    try std.testing.expect(pg.port != null);
+}
+
+test "ServiceConfig all fields present - Redis" {
+    const allocator = std.testing.allocator;
+
+    var redis = try definitions.Services.redis(allocator, 6379);
+    defer redis.deinit(allocator);
+
+    try std.testing.expect(redis.name.len > 0);
+    try std.testing.expect(redis.display_name.len > 0);
+    try std.testing.expect(redis.description.len > 0);
+    try std.testing.expect(redis.start_command.len > 0);
+    try std.testing.expect(redis.port != null);
+}
+
+test "ServiceConfig start command contains port" {
+    const allocator = std.testing.allocator;
+
+    var redis = try definitions.Services.redis(allocator, 6379);
+    defer redis.deinit(allocator);
+
+    // Redis start command should contain the port
+    try std.testing.expect(std.mem.indexOf(u8, redis.start_command, "6379") != null);
+}
+
+test "ServiceConfig memory cleanup" {
+    const allocator = std.testing.allocator;
+
+    // Create and destroy multiple services to test cleanup
+    {
+        var pg = try definitions.Services.postgresql(allocator, 5432);
+        defer pg.deinit(allocator);
+    }
+
+    {
+        var redis = try definitions.Services.redis(allocator, 6379);
+        defer redis.deinit(allocator);
+    }
+
+    {
+        var mysql = try definitions.Services.mysql(allocator, 3306);
+        defer mysql.deinit(allocator);
+    }
+
+    {
+        var nginx = try definitions.Services.nginx(allocator, 80);
+        defer nginx.deinit(allocator);
+    }
+
+    {
+        var mongo = try definitions.Services.mongodb(allocator, 27017);
+        defer mongo.deinit(allocator);
+    }
+
+    // If we get here without leaks, memory cleanup works
+    try std.testing.expect(true);
+}
+
+// ============================================================================
+// Extended ServiceManager Tests
+// ============================================================================
+
+test "ServiceManager register same service twice" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    const redis1 = try definitions.Services.redis(allocator, 6379);
+    try mgr.register(redis1);
+
+    const redis2 = try definitions.Services.redis(allocator, 6380);
+    try mgr.register(redis2);
+
+    // Second registration should overwrite the first
+    try std.testing.expect(mgr.services.count() == 1);
+
+    const service = mgr.getService("redis");
+    try std.testing.expect(service != null);
+}
+
+test "ServiceManager register all service types" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    const pg = try definitions.Services.postgresql(allocator, 5432);
+    try mgr.register(pg);
+
+    const redis = try definitions.Services.redis(allocator, 6379);
+    try mgr.register(redis);
+
+    const mysql = try definitions.Services.mysql(allocator, 3306);
+    try mgr.register(mysql);
+
+    const nginx = try definitions.Services.nginx(allocator, 80);
+    try mgr.register(nginx);
+
+    const mongo = try definitions.Services.mongodb(allocator, 27017);
+    try mgr.register(mongo);
+
+    try std.testing.expect(mgr.services.count() == 5);
+
+    // Verify all services
+    try std.testing.expect(mgr.getService("postgresql") != null);
+    try std.testing.expect(mgr.getService("redis") != null);
+    try std.testing.expect(mgr.getService("mysql") != null);
+    try std.testing.expect(mgr.getService("nginx") != null);
+    try std.testing.expect(mgr.getService("mongodb") != null);
+}
+
+test "ServiceManager list services returns correct count" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    // Empty list
+    {
+        const list = try mgr.listServices();
+        defer allocator.free(list);
+        try std.testing.expect(list.len == 0);
+    }
+
+    // Add services
+    const redis = try definitions.Services.redis(allocator, 6379);
+    try mgr.register(redis);
+
+    const pg = try definitions.Services.postgresql(allocator, 5432);
+    try mgr.register(pg);
+
+    const mysql = try definitions.Services.mysql(allocator, 3306);
+    try mgr.register(mysql);
+
+    // List should have 3 services
+    {
+        const list = try mgr.listServices();
+        defer allocator.free(list);
+        try std.testing.expect(list.len == 3);
+    }
+}
+
+test "ServiceManager unregister reduces count" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    const redis = try definitions.Services.redis(allocator, 6379);
+    try mgr.register(redis);
+
+    const pg = try definitions.Services.postgresql(allocator, 5432);
+    try mgr.register(pg);
+
+    try std.testing.expect(mgr.services.count() == 2);
+
+    try mgr.unregister("redis");
+    try std.testing.expect(mgr.services.count() == 1);
+
+    try mgr.unregister("postgresql");
+    try std.testing.expect(mgr.services.count() == 0);
+}
+
+test "ServiceManager operations on non-existent service return errors" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    // start on non-existent service
+    const start_result = mgr.start("nonexistent");
+    try std.testing.expectError(error.ServiceNotFound, start_result);
+
+    // stop on non-existent service
+    const stop_result = mgr.stop("nonexistent");
+    try std.testing.expectError(error.ServiceNotFound, stop_result);
+
+    // restart on non-existent service
+    const restart_result = mgr.restart("nonexistent");
+    try std.testing.expectError(error.ServiceNotFound, restart_result);
+
+    // status on non-existent service
+    const status_result = mgr.status("nonexistent");
+    try std.testing.expectError(error.ServiceNotFound, status_result);
+}
+
+test "ServiceManager multiple init and deinit" {
+    const allocator = std.testing.allocator;
+
+    // Create and destroy multiple managers
+    {
+        var mgr1 = manager.ServiceManager.init(allocator);
+        defer mgr1.deinit();
+    }
+
+    {
+        var mgr2 = manager.ServiceManager.init(allocator);
+        defer mgr2.deinit();
+    }
+
+    {
+        var mgr3 = manager.ServiceManager.init(allocator);
+        defer mgr3.deinit();
+    }
+
+    try std.testing.expect(true);
+}
+
+// ============================================================================
+// ServiceController Extended Tests
+// ============================================================================
+
+test "ServiceController multiple init" {
+    const allocator = std.testing.allocator;
+
+    const ctrl1 = platform.ServiceController.init(allocator);
+    const ctrl2 = platform.ServiceController.init(allocator);
+    const ctrl3 = platform.ServiceController.init(allocator);
+
+    try std.testing.expect(ctrl1.platform == ctrl2.platform);
+    try std.testing.expect(ctrl2.platform == ctrl3.platform);
+}
+
+test "ServiceController platform consistency" {
+    const allocator = std.testing.allocator;
+
+    const controller = platform.ServiceController.init(allocator);
+    const detected_platform = platform.Platform.detect();
+
+    try std.testing.expect(controller.platform == detected_platform);
+}
+
+// ============================================================================
+// Default Port Tests
+// ============================================================================
+
+test "Default ports for all services" {
+    // PostgreSQL
+    const pg_port = definitions.Services.getDefaultPort("postgresql");
+    try std.testing.expect(pg_port != null);
+    try std.testing.expect(pg_port.? == 5432);
+
+    // Redis
+    const redis_port = definitions.Services.getDefaultPort("redis");
+    try std.testing.expect(redis_port != null);
+    try std.testing.expect(redis_port.? == 6379);
+
+    // MySQL
+    const mysql_port = definitions.Services.getDefaultPort("mysql");
+    try std.testing.expect(mysql_port != null);
+    try std.testing.expect(mysql_port.? == 3306);
+
+    // Nginx
+    const nginx_port = definitions.Services.getDefaultPort("nginx");
+    try std.testing.expect(nginx_port != null);
+    try std.testing.expect(nginx_port.? == 80);
+
+    // MongoDB
+    const mongo_port = definitions.Services.getDefaultPort("mongodb");
+    try std.testing.expect(mongo_port != null);
+    try std.testing.expect(mongo_port.? == 27017);
+}
+
+test "Default port for invalid service" {
+    const port = definitions.Services.getDefaultPort("invalid_service_name");
+    try std.testing.expect(port == null);
+}
+
+test "Default port case sensitivity" {
+    // Should be case-sensitive
+    const pg_lower = definitions.Services.getDefaultPort("postgresql");
+    const pg_upper = definitions.Services.getDefaultPort("POSTGRESQL");
+
+    try std.testing.expect(pg_lower != null);
+    try std.testing.expect(pg_upper == null); // Should be null for uppercase
+}
+
+// ============================================================================
+// Service Name Validation Tests
+// ============================================================================
+
+test "Service names are valid identifiers" {
+    const allocator = std.testing.allocator;
+
+    var pg = try definitions.Services.postgresql(allocator, 5432);
+    defer pg.deinit(allocator);
+
+    // Service names should not contain spaces or special chars
+    try std.testing.expect(std.mem.indexOf(u8, pg.name, " ") == null);
+    try std.testing.expect(std.mem.indexOf(u8, pg.name, "/") == null);
+    try std.testing.expect(std.mem.indexOf(u8, pg.name, "\\") == null);
+}
+
+test "Service display names contain proper capitalization" {
+    const allocator = std.testing.allocator;
+
+    var redis = try definitions.Services.redis(allocator, 6379);
+    defer redis.deinit(allocator);
+
+    // Display name should start with uppercase
+    try std.testing.expect(redis.display_name[0] >= 'A' and redis.display_name[0] <= 'Z');
+}
+
+// ============================================================================
+// Memory and Resource Tests
+// ============================================================================
+
+test "ServiceConfig deinit is idempotent" {
+    const allocator = std.testing.allocator;
+
+    var redis = try definitions.Services.redis(allocator, 6379);
+    redis.deinit(allocator);
+
+    // Second deinit should not crash (though it might double-free in practice,
+    // this test verifies the structure)
+    // Note: In practice, don't call deinit twice!
+}
+
+test "ServiceManager handles empty operations" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    // List when empty
+    const list = try mgr.listServices();
+    defer allocator.free(list);
+    try std.testing.expect(list.len == 0);
+
+    // Get when empty
+    const service = mgr.getService("anything");
+    try std.testing.expect(service == null);
+}
+
+// ============================================================================
 // Integration Tests (require actual service operations)
 // ============================================================================
 

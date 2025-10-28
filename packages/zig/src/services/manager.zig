@@ -26,6 +26,12 @@ pub const ServiceManager = struct {
 
     /// Register a service
     pub fn register(self: *ServiceManager, config: definitions.ServiceConfig) !void {
+        // Check if service already exists and free it
+        if (self.services.fetchRemove(config.name)) |kv| {
+            kv.value.deinit(self.allocator);
+            self.allocator.destroy(kv.value);
+        }
+
         const service_ptr = try self.allocator.create(definitions.ServiceConfig);
         service_ptr.* = config;
 
