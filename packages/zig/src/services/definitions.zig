@@ -30,7 +30,8 @@ pub const ServiceConfig = struct {
 
         var it = self.env_vars.iterator();
         while (it.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
+            // Keys are string literals, don't free them
+            // Only free the values which are allocated
             allocator.free(entry.value_ptr.*);
         }
         self.env_vars.deinit();
@@ -58,7 +59,7 @@ pub const ServiceStatus = enum {
 pub const Services = struct {
     /// PostgreSQL service
     pub fn postgresql(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("PGPORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
         try env_vars.put("PGDATA", try allocator.dupe(u8, "/usr/local/var/postgres"));
 
@@ -96,7 +97,7 @@ pub const Services = struct {
 
     /// MySQL service
     pub fn mysql(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("MYSQL_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
 
         return ServiceConfig{

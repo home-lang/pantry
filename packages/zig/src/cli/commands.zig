@@ -1708,6 +1708,329 @@ fn loadDependenciesFromConfig(
     return deps;
 }
 
+// ============================================================================
+// Service Management Commands
+// ============================================================================
+
+/// List available services
+pub fn servicesListCommand(allocator: std.mem.Allocator) !CommandResult {
+    _ = allocator;
+    const services = lib.services;
+
+    std.debug.print("\n📋 Available Services:\n\n", .{});
+
+    const available_services = [_]struct {
+        name: []const u8,
+        description: []const u8,
+        default_port: u16,
+    }{
+        .{ .name = "postgresql", .description = "PostgreSQL database server", .default_port = 5432 },
+        .{ .name = "redis", .description = "Redis in-memory data store", .default_port = 6379 },
+        .{ .name = "mysql", .description = "MySQL database server", .default_port = 3306 },
+        .{ .name = "nginx", .description = "Nginx web server", .default_port = 80 },
+        .{ .name = "mongodb", .description = "MongoDB database server", .default_port = 27017 },
+    };
+
+    for (available_services) |svc| {
+        std.debug.print("  {s:<15}  {s:<40}  (port {d})\n", .{
+            svc.name,
+            svc.description,
+            svc.default_port,
+        });
+    }
+
+    std.debug.print("\nUsage:\n", .{});
+    std.debug.print("  pantry start <service>     Start a service\n", .{});
+    std.debug.print("  pantry stop <service>      Stop a service\n", .{});
+    std.debug.print("  pantry restart <service>   Restart a service\n", .{});
+    std.debug.print("  pantry status [service]    Show service status\n", .{});
+    std.debug.print("\n", .{});
+
+    _ = services;
+
+    return .{ .exit_code = 0 };
+}
+
+/// Start a service
+pub fn serviceStartCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Service name required. Usage: pantry start <service>"),
+        };
+    }
+
+    const service_name = args[0];
+    const services = lib.services;
+
+    // Create service manager
+    var manager = services.ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    // Get default port
+    const port = services.Services.getDefaultPort(service_name) orelse {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    };
+
+    // Create service config
+    var config: services.ServiceConfig = undefined;
+    if (std.mem.eql(u8, service_name, "postgresql")) {
+        config = try services.Services.postgresql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "redis")) {
+        config = try services.Services.redis(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mysql")) {
+        config = try services.Services.mysql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "nginx")) {
+        config = try services.Services.nginx(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mongodb")) {
+        config = try services.Services.mongodb(allocator, port);
+    } else {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    }
+
+    // Register and start service
+    try manager.register(config);
+
+    std.debug.print("Starting {s}...\n", .{service_name});
+    manager.start(service_name) catch |err| {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error starting service: {any}", .{err}),
+        };
+    };
+
+    std.debug.print("✓ {s} started successfully\n", .{service_name});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Stop a service
+pub fn serviceStopCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Service name required. Usage: pantry stop <service>"),
+        };
+    }
+
+    const service_name = args[0];
+    const services = lib.services;
+
+    // Create service manager
+    var manager = services.ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    // Get default port (to create config)
+    const port = services.Services.getDefaultPort(service_name) orelse {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    };
+
+    // Create service config
+    var config: services.ServiceConfig = undefined;
+    if (std.mem.eql(u8, service_name, "postgresql")) {
+        config = try services.Services.postgresql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "redis")) {
+        config = try services.Services.redis(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mysql")) {
+        config = try services.Services.mysql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "nginx")) {
+        config = try services.Services.nginx(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mongodb")) {
+        config = try services.Services.mongodb(allocator, port);
+    } else {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    }
+
+    // Register and stop service
+    try manager.register(config);
+
+    std.debug.print("Stopping {s}...\n", .{service_name});
+    manager.stop(service_name) catch |err| {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error stopping service: {any}", .{err}),
+        };
+    };
+
+    std.debug.print("✓ {s} stopped successfully\n", .{service_name});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Restart a service
+pub fn serviceRestartCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Service name required. Usage: pantry restart <service>"),
+        };
+    }
+
+    const service_name = args[0];
+    const services = lib.services;
+
+    // Create service manager
+    var manager = services.ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    // Get default port
+    const port = services.Services.getDefaultPort(service_name) orelse {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    };
+
+    // Create service config
+    var config: services.ServiceConfig = undefined;
+    if (std.mem.eql(u8, service_name, "postgresql")) {
+        config = try services.Services.postgresql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "redis")) {
+        config = try services.Services.redis(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mysql")) {
+        config = try services.Services.mysql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "nginx")) {
+        config = try services.Services.nginx(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mongodb")) {
+        config = try services.Services.mongodb(allocator, port);
+    } else {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    }
+
+    // Register and restart service
+    try manager.register(config);
+
+    std.debug.print("Restarting {s}...\n", .{service_name});
+    manager.restart(service_name) catch |err| {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error restarting service: {any}", .{err}),
+        };
+    };
+
+    std.debug.print("✓ {s} restarted successfully\n", .{service_name});
+
+    return .{ .exit_code = 0 };
+}
+
+/// Get service status
+pub fn serviceStatusCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    const services = lib.services;
+
+    // If no service name provided, show status of all services
+    if (args.len == 0) {
+        std.debug.print("\n📊 Service Status:\n\n", .{});
+
+        const service_names = [_][]const u8{
+            "postgresql",
+            "redis",
+            "mysql",
+            "nginx",
+            "mongodb",
+        };
+
+        var manager = services.ServiceManager.init(allocator);
+        defer manager.deinit();
+
+        for (service_names) |service_name| {
+            const port = services.Services.getDefaultPort(service_name) orelse continue;
+
+            // Create service config
+            var config: services.ServiceConfig = undefined;
+            if (std.mem.eql(u8, service_name, "postgresql")) {
+                config = try services.Services.postgresql(allocator, port);
+            } else if (std.mem.eql(u8, service_name, "redis")) {
+                config = try services.Services.redis(allocator, port);
+            } else if (std.mem.eql(u8, service_name, "mysql")) {
+                config = try services.Services.mysql(allocator, port);
+            } else if (std.mem.eql(u8, service_name, "nginx")) {
+                config = try services.Services.nginx(allocator, port);
+            } else if (std.mem.eql(u8, service_name, "mongodb")) {
+                config = try services.Services.mongodb(allocator, port);
+            } else {
+                continue;
+            }
+
+            try manager.register(config);
+
+            const status = manager.status(service_name) catch services.ServiceStatus.unknown;
+            const status_str = status.toString();
+            const indicator = if (status == .running) "●" else if (status == .stopped) "○" else "?";
+
+            std.debug.print("  {s} {s:<15}  {s}\n", .{
+                indicator,
+                service_name,
+                status_str,
+            });
+        }
+
+        std.debug.print("\n", .{});
+        return .{ .exit_code = 0 };
+    }
+
+    // Show status for specific service
+    const service_name = args[0];
+
+    // Create service manager
+    var manager = services.ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    // Get default port
+    const port = services.Services.getDefaultPort(service_name) orelse {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    };
+
+    // Create service config
+    var config: services.ServiceConfig = undefined;
+    if (std.mem.eql(u8, service_name, "postgresql")) {
+        config = try services.Services.postgresql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "redis")) {
+        config = try services.Services.redis(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mysql")) {
+        config = try services.Services.mysql(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "nginx")) {
+        config = try services.Services.nginx(allocator, port);
+    } else if (std.mem.eql(u8, service_name, "mongodb")) {
+        config = try services.Services.mongodb(allocator, port);
+    } else {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
+        };
+    }
+
+    // Register service
+    try manager.register(config);
+
+    const status = manager.status(service_name) catch services.ServiceStatus.unknown;
+
+    std.debug.print("\n{s} Status: {s}\n", .{service_name, status.toString()});
+    if (config.port) |p| {
+        std.debug.print("Port: {d}\n", .{p});
+    }
+    std.debug.print("\n", .{});
+
+    return .{ .exit_code = 0 };
+}
+
 test "Command structures" {
     const result = CommandResult{
         .exit_code = 0,
