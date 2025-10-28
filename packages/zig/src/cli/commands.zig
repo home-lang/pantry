@@ -504,21 +504,22 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    if (project_root) |pr| {
-        std.debug.print("Installing {d} package(s) to project at {s}...\n", .{ args.len, pr });
-    } else {
-        std.debug.print("Installing {d} package(s) globally to /usr/local...\n", .{args.len});
-        std.debug.print("⚠️  Note: You may need to run with sudo for /usr/local write access\n", .{});
-        std.debug.print("    Many tools expect packages in /usr/local rather than ~/.local\n\n", .{});
-    }
+    // Clean Yarn/Bun-style output
+    const green = "\x1b[32m";
+    const red = "\x1b[31m";
+    const dim = "\x1b[2m";
+    const reset = "\x1b[0m";
+
+    std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, args.len });
+
+    var success_count: usize = 0;
+    var failed_count: usize = 0;
 
     for (args) |pkg_spec_str| {
         // Parse package spec (name@version)
         const at_pos = std.mem.indexOf(u8, pkg_spec_str, "@");
         const name = if (at_pos) |pos| pkg_spec_str[0..pos] else pkg_spec_str;
         const version = if (at_pos) |pos| pkg_spec_str[pos + 1 ..] else "latest";
-
-        std.debug.print("  → {s}@{s}...", .{ name, version });
 
         const spec = lib.packages.PackageSpec{
             .name = name,
@@ -527,18 +528,24 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
         var result = installer.install(spec, .{
             .project_root = project_root,
+            .quiet = true, // Enable quiet mode for clean output
         }) catch |err| {
-            std.debug.print(" failed: {}\n", .{err});
+            std.debug.print("{s}✗{s} {s}@{s} {s}({any}){s}\n", .{ red, reset, name, version, dim, err, reset });
+            failed_count += 1;
             continue;
         };
         defer result.deinit(allocator);
 
-        if (result.from_cache) {
-            std.debug.print(" done (cached, {d}ms)\n", .{result.install_time_ms});
-        } else {
-            std.debug.print(" done ({d}ms)\n", .{result.install_time_ms});
-        }
+        std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, name, version });
+        success_count += 1;
     }
+
+    // Clean summary
+    std.debug.print("\n{s}✓{s} Installed {d} package(s)", .{ green, reset, success_count });
+    if (failed_count > 0) {
+        std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+    }
+    std.debug.print("\n", .{});
 
     return .{ .exit_code = 0 };
 }
