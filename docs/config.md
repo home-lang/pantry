@@ -1,22 +1,22 @@
 # Configuration
 
-Launchpad can be configured using a configuration file or through command-line options. This guide explains all available configuration options and how to use them.
+pantry can be configured using a configuration file or through command-line options. This guide explains all available configuration options and how to use them.
 
 ## Configuration File
 
-Launchpad looks for configuration in these locations (in order of precedence):
+pantry looks for configuration in these locations (in order of precedence):
 
-1. `launchpad.config.ts` or `launchpad.config.js` in the current directory
-2. `~/.launchpadrc` or `~/.config/launchpad/config.json` in your home directory
+1. `pantry.config.ts` or `pantry.config.js` in the current directory
+2. `~/.pantryrc` or `~/.config/pantry/config.json` in your home directory
 
-Example configuration file (`launchpad.config.ts`):
+Example configuration file (`pantry.config.ts`):
 
 ```ts
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+import type { pantryConfig } from '@stacksjs/pantry'
 import os from 'node:os'
 import path from 'node:path'
 
-const config: LaunchpadConfig = {
+const config: pantryConfig = {
   // Enable verbose logging (default: false)
   verbose: true,
 
@@ -71,14 +71,14 @@ const config: LaunchpadConfig = {
     // Enable service management functionality (default: true)
     enabled: true,
 
-    // Default services data directory (default: ~/.local/share/launchpad/services)
-    dataDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'services'),
+    // Default services data directory (default: ~/.local/share/pantry/services)
+    dataDir: path.join(os.homedir(), '.local', 'share', 'pantry', 'services'),
 
-    // Default services log directory (default: ~/.local/share/launchpad/logs)
-    logDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'logs'),
+    // Default services log directory (default: ~/.local/share/pantry/logs)
+    logDir: path.join(os.homedir(), '.local', 'share', 'pantry', 'logs'),
 
-    // Default services configuration directory (default: ~/.local/share/launchpad/services/config)
-    configDir: path.join(os.homedir(), '.local', 'share', 'launchpad', 'services', 'config'),
+    // Default services configuration directory (default: ~/.local/share/pantry/services/config)
+    configDir: path.join(os.homedir(), '.local', 'share', 'pantry', 'services', 'config'),
 
     // Auto-restart failed services (default: true)
     autoRestart: true,
@@ -106,7 +106,7 @@ const config: LaunchpadConfig = {
 export default config
 ```
 
-JavaScript format (`.launchpadrc`):
+JavaScript format (`.pantryrc`):
 
 ```json
 {
@@ -127,9 +127,9 @@ JavaScript format (`.launchpadrc`):
   "shellDeactivationMessage": "Environment deactivated",
   "services": {
     "enabled": true,
-    "dataDir": "~/.local/share/launchpad/services",
-    "logDir": "~/.local/share/launchpad/logs",
-    "configDir": "~/.local/share/launchpad/services/config",
+    "dataDir": "~/.local/share/pantry/services",
+    "logDir": "~/.local/share/pantry/logs",
+    "configDir": "~/.local/share/pantry/services/config",
     "autoRestart": true,
     "startupTimeout": 30,
     "shutdownTimeout": 10,
@@ -144,7 +144,7 @@ JavaScript format (`.launchpadrc`):
 
 ## Database Configuration
 
-Launchpad provides configurable database credentials for all database services. This allows you to customize authentication while maintaining secure defaults.
+pantry provides configurable database credentials for all database services. This allows you to customize authentication while maintaining secure defaults.
 
 ### Configuration Options
 
@@ -154,20 +154,20 @@ Database credentials can be configured through environment variables or configur
 
 ```bash
 # Database username (default: 'root')
-export LAUNCHPAD_DB_USERNAME="myuser"
+export pantry_DB_USERNAME="myuser"
 
 # Database password (default: 'password')
-export LAUNCHPAD_DB_PASSWORD="mypassword"
+export pantry_DB_PASSWORD="mypassword"
 
 # Database authentication method (default: 'trust')
-export LAUNCHPAD_DB_AUTH_METHOD="md5"  # 'trust' | 'md5' | 'scram-sha-256'
+export pantry_DB_AUTH_METHOD="md5"  # 'trust' | 'md5' | 'scram-sha-256'
 ```
 
 #### Configuration File
 
 ```ts
-// launchpad.config.ts
-const config: LaunchpadConfig = {
+// pantry.config.ts
+const config: pantryConfig = {
   services: {
     database: {
       username: 'myuser',
@@ -209,23 +209,23 @@ Services use these configurable template variables:
 
 ```bash
 # Uses: username=root, password=password, authMethod=trust
-launchpad start postgres
+pantry start postgres
 ```
 
 #### Custom Development Setup
 
 ```bash
-export LAUNCHPAD_DB_USERNAME="dev_user"
-export LAUNCHPAD_DB_PASSWORD="dev_password"
-launchpad start postgres
+export pantry_DB_USERNAME="dev_user"
+export pantry_DB_PASSWORD="dev_password"
+pantry start postgres
 ```
 
 #### Production-like Setup
 
 ```bash
-export LAUNCHPAD_DB_AUTH_METHOD="md5"
-export LAUNCHPAD_DB_PASSWORD="secure_password123"
-launchpad start postgres
+export pantry_DB_AUTH_METHOD="md5"
+export pantry_DB_PASSWORD="secure_password123"
+pantry start postgres
 ```
 
 ### Security Considerations
@@ -237,7 +237,7 @@ launchpad start postgres
 
 ## Dependency File Configuration
 
-Launchpad supports flexible dependency configuration with global installation options:
+pantry supports flexible dependency configuration with global installation options:
 
 ### Basic Dependency Format
 
@@ -315,14 +315,14 @@ dependencies:
 
 ### Global Dependencies and Cleanup
 
-When using the `launchpad clean` command, you can preserve global dependencies to avoid accidentally removing essential system tools:
+When using the `pantry clean` command, you can preserve global dependencies to avoid accidentally removing essential system tools:
 
 ```bash
 # Safe cleanup that preserves global dependencies
-launchpad clean --keep-global --force
+pantry clean --keep-global --force
 
 # Preview what would be preserved
-launchpad clean --keep-global --dry-run
+pantry clean --keep-global --dry-run
 ```
 
 **Global dependency detection**:
@@ -385,7 +385,7 @@ services:
   infer: true
 ```
 
-When enabled and a Laravel app is detected (`artisan` present), Launchpad will read `.env` and infer services:
+When enabled and a Laravel app is detected (`artisan` present), pantry will read `.env` and infer services:
 
 - `DB_CONNECTION=pgsql` → `postgres`
 - `DB_CONNECTION=mysql|mariadb` → `mysql`
@@ -394,9 +394,9 @@ When enabled and a Laravel app is detected (`artisan` present), Launchpad will r
 
 Environment toggles:
 
-- `LAUNCHPAD_FRAMEWORKS_ENABLED` (default: true)
-- `LAUNCHPAD_SERVICES_INFER` (default: true)
-- `LAUNCHPAD_LARAVEL_ENABLED` (default: true)
+- `pantry_FRAMEWORKS_ENABLED` (default: true)
+- `pantry_SERVICES_INFER` (default: true)
+- `pantry_LARAVEL_ENABLED` (default: true)
 
 ## Configuration Options
 
@@ -445,9 +445,9 @@ Environment toggles:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `services.enabled` | boolean | `true` | Enable service management functionality |
-| `services.dataDir` | string | `~/.local/share/launchpad/services` | Default services data directory |
-| `services.logDir` | string | `~/.local/share/launchpad/logs` | Default services log directory |
-| `services.configDir` | string | `~/.local/share/launchpad/services/config` | Default services configuration directory |
+| `services.dataDir` | string | `~/.local/share/pantry/services` | Default services data directory |
+| `services.logDir` | string | `~/.local/share/pantry/logs` | Default services log directory |
+| `services.configDir` | string | `~/.local/share/pantry/services/config` | Default services configuration directory |
 | `services.autoRestart` | boolean | `true` | Auto-restart failed services |
 | `services.startupTimeout` | number | `30` | Service startup timeout in seconds |
 | `services.shutdownTimeout` | number | `10` | Service shutdown timeout in seconds |
@@ -458,10 +458,10 @@ Environment toggles:
 Configure commands to run after the environment is prepared (independent of services):
 
 ```ts
-// launchpad.config.ts
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+// pantry.config.ts
+import type { pantryConfig } from '@stacksjs/pantry'
 
-const config: LaunchpadConfig = {
+const config: pantryConfig = {
   postSetup: {
     enabled: true,
     commands: [
@@ -482,21 +482,21 @@ export default config
 
 ### Lifecycle Hooks (preSetup, preActivation, postActivation)
 
-In addition to `postSetup`, Launchpad provides three more lifecycle hooks for fine-grained control:
+In addition to `postSetup`, pantry provides three more lifecycle hooks for fine-grained control:
 
 - preSetup: runs before any installation/services start
 - preActivation: runs after installs/services, just before activation
 - postActivation: runs immediately after activation completes
 
-You can configure them in `launchpad.config.ts` or inline in your dependency file (e.g., `deps.yaml`).
+You can configure them in `pantry.config.ts` or inline in your dependency file (e.g., `deps.yaml`).
 
 Config file example:
 
 ```ts
-// launchpad.config.ts
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+// pantry.config.ts
+import type { pantryConfig } from '@stacksjs/pantry'
 
-const config: LaunchpadConfig = {
+const config: pantryConfig = {
   preSetup: {
     enabled: true,
     commands: [
@@ -554,37 +554,37 @@ Notes:
 
 ## Environment Variables
 
-You can also configure Launchpad using environment variables:
+You can also configure pantry using environment variables:
 
 | Environment Variable | Description |
 |----------------------|-------------|
-| `LAUNCHPAD_VERBOSE` | Enable verbose logging |
-| `LAUNCHPAD_INSTALL_PATH` | Set installation path |
-| `LAUNCHPAD_SHIM_PATH` | Set shim path |
-| `LAUNCHPAD_AUTO_SUDO` | Enable/disable auto sudo |
-| `LAUNCHPAD_AUTO_ADD_PATH` | Enable/disable auto PATH modification |
-| `LAUNCHPAD_SHOW_ENV_MESSAGES` | Enable/disable environment activation messages |
-| `LAUNCHPAD_SHELL_ACTIVATION_MESSAGE` | Custom shell activation message |
-| `LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE` | Custom shell deactivation message |
-| `LAUNCHPAD_CHECK_UPDATES` | Enable/disable update checking |
-| `LAUNCHPAD_PROMPT_BEFORE_UPDATE` | Enable/disable update prompts |
-| `LAUNCHPAD_SERVICES_ENABLED` | Enable/disable service management |
-| `LAUNCHPAD_SERVICES_DATA_DIR` | Set services data directory |
-| `LAUNCHPAD_SERVICES_LOG_DIR` | Set services log directory |
-| `LAUNCHPAD_SERVICES_CONFIG_DIR` | Set services configuration directory |
-| `LAUNCHPAD_SERVICES_AUTO_RESTART` | Enable/disable auto-restart for failed services |
-| `LAUNCHPAD_SERVICES_STARTUP_TIMEOUT` | Service startup timeout in seconds |
-| `LAUNCHPAD_SERVICES_SHUTDOWN_TIMEOUT` | Service shutdown timeout in seconds |
+| `pantry_VERBOSE` | Enable verbose logging |
+| `pantry_INSTALL_PATH` | Set installation path |
+| `pantry_SHIM_PATH` | Set shim path |
+| `pantry_AUTO_SUDO` | Enable/disable auto sudo |
+| `pantry_AUTO_ADD_PATH` | Enable/disable auto PATH modification |
+| `pantry_SHOW_ENV_MESSAGES` | Enable/disable environment activation messages |
+| `pantry_SHELL_ACTIVATION_MESSAGE` | Custom shell activation message |
+| `pantry_SHELL_DEACTIVATION_MESSAGE` | Custom shell deactivation message |
+| `pantry_CHECK_UPDATES` | Enable/disable update checking |
+| `pantry_PROMPT_BEFORE_UPDATE` | Enable/disable update prompts |
+| `pantry_SERVICES_ENABLED` | Enable/disable service management |
+| `pantry_SERVICES_DATA_DIR` | Set services data directory |
+| `pantry_SERVICES_LOG_DIR` | Set services log directory |
+| `pantry_SERVICES_CONFIG_DIR` | Set services configuration directory |
+| `pantry_SERVICES_AUTO_RESTART` | Enable/disable auto-restart for failed services |
+| `pantry_SERVICES_STARTUP_TIMEOUT` | Service startup timeout in seconds |
+| `pantry_SERVICES_SHUTDOWN_TIMEOUT` | Service shutdown timeout in seconds |
 | `SUDO_PASSWORD` | Password for sudo operations |
 
 Example:
 
 ```bash
-LAUNCHPAD_VERBOSE=true LAUNCHPAD_INSTALL_PATH=~/apps launchpad install node@22
+pantry_VERBOSE=true pantry_INSTALL_PATH=~/apps pantry install node@22
 
 ## Environment Activation Model
 
-When you cd into a project directory that contains a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`), Launchpad computes:
+When you cd into a project directory that contains a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `pantry.yml`, `package.json`, `pyproject.toml`), pantry computes:
 
 - A project hash based on the physical path
 - A dependency fingerprint based on the content of the dependency file (md5)
@@ -593,7 +593,7 @@ The target environment directory is derived as:
 
 ```
 
-~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>
+~/.local/share/pantry/envs/<project>_<hash>-d<dep_hash>
 
 ```
 
@@ -602,7 +602,7 @@ This guarantees that editing dependency versions switches to a distinct environm
 To inspect selection and cache behavior, enable verbose logging:
 
 ```bash
-export LAUNCHPAD_VERBOSE=true # or set in .env
+export pantry_VERBOSE=true # or set in .env
 cd my-project
 # 🔍 Env target: env_dir=… dep_file=… dep_hash=…
 # 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
@@ -618,7 +618,7 @@ You can customize the messages shown when environments are activated or deactiva
 
 ```bash
 # Environment variable
-export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+export pantry_SHOW_ENV_MESSAGES=false
 
 # Or in configuration file
 {
@@ -630,7 +630,7 @@ export LAUNCHPAD_SHOW_ENV_MESSAGES=false
 
 ```bash
 # Environment variable with path placeholder
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
+export pantry_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
 
 # Or in configuration file
 {
@@ -642,7 +642,7 @@ export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {pat
 
 ```bash
 # Environment variable
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🔒 Project environment closed"
+export pantry_SHELL_DEACTIVATION_MESSAGE="🔒 Project environment closed"
 
 # Or in configuration file
 {
@@ -684,63 +684,63 @@ Options specified on the command line take precedence over configuration files:
 
 ```bash
 # Override installation path
-launchpad install --path ~/custom-path node@22
+pantry install --path ~/custom-path node@22
 
 # Force reinstallation
-launchpad shim --force node
+pantry shim --force node
 
 # Disable auto PATH modification
-launchpad bootstrap --no-auto-path
+pantry bootstrap --no-auto-path
 
 # Install specific Bun version
-launchpad bun --version 1.0.0
+pantry bun --version 1.0.0
 
 # Bootstrap with custom options
-launchpad bootstrap --skip-bun --verbose
+pantry bootstrap --skip-bun --verbose
 
 # Remove packages with dry-run preview
-launchpad remove python --dry-run
+pantry remove python --dry-run
 
 # Complete removal without confirmation
-launchpad uninstall --force
+pantry uninstall --force
 
 # Update packages with options
-launchpad update --dry-run
-launchpad upgrade bun --latest
+pantry update --dry-run
+pantry upgrade bun --latest
 
 # Generate environment script with options
-launchpad dev:dump --verbose --dryrun
+pantry dev:dump --verbose --dryrun
 
 # Quiet installation
-launchpad install --quiet node@22
+pantry install --quiet node@22
 ```
 
 ## Configuration File Locations
 
-Launchpad uses the `bunfig` library to load configuration files in this order:
+pantry uses the `bunfig` library to load configuration files in this order:
 
-1. `launchpad.config.ts` in current directory
-2. `launchpad.config.js` in current directory
-3. `launchpad.config.json` in current directory
-4. `.launchpadrc` in home directory
-5. `~/.config/launchpad/config.json`
+1. `pantry.config.ts` in current directory
+2. `pantry.config.js` in current directory
+3. `pantry.config.json` in current directory
+4. `.pantryrc` in home directory
+5. `~/.config/pantry/config.json`
 
 ## TypeScript Integration
 
-When using Launchpad as a library, you can import the types:
+When using pantry as a library, you can import the types:
 
 ```ts
-import type { LaunchpadConfig, LaunchpadOptions } from '@stacksjs/launchpad'
+import type { pantryConfig, pantryOptions } from '@stacksjs/pantry'
 
 // Full configuration
-const config: LaunchpadConfig = {
+const config: pantryConfig = {
   verbose: true,
   installationPath: '/usr/local',
   // ... all other required properties
 }
 
 // Partial configuration (useful for runtime overrides)
-const options: LaunchpadOptions = {
+const options: pantryOptions = {
   verbose: true,
   force: true,
 }
@@ -748,11 +748,11 @@ const options: LaunchpadOptions = {
 
 ## Configuration Validation
 
-Launchpad validates configuration at runtime and will show helpful error messages for invalid configurations:
+pantry validates configuration at runtime and will show helpful error messages for invalid configurations:
 
 ```bash
 # Check your current configuration
-launchpad --verbose install --dry-run node
+pantry --verbose install --dry-run node
 
 # This will show the resolved configuration values
 ```
@@ -765,26 +765,26 @@ launchpad --verbose install --dry-run node
 
    ```bash
    # For TypeScript files
-   bunx tsc --noEmit launchpad.config.ts
+   bunx tsc --noEmit pantry.config.ts
 
    # For JSON files
-   bunx jsonlint .launchpadrc
+   bunx jsonlint .pantryrc
    ```
 
 2. Verify file location:
 
    ```bash
    # Check current directory
-   ls -la launchpad.config.*
+   ls -la pantry.config.*
 
    # Check home directory
-   ls -la ~/.launchpadrc ~/.config/launchpad/
+   ls -la ~/.pantryrc ~/.config/pantry/
    ```
 
 3. Test with verbose mode:
 
    ```bash
-   launchpad --verbose list
+   pantry --verbose list
    ```
 
 ### Environment Variables Not Working
@@ -792,17 +792,17 @@ launchpad --verbose install --dry-run node
 1. Check if variables are set:
 
    ```bash
-   env | grep LAUNCHPAD
+   env | grep pantry
    ```
 
 2. Export variables properly:
 
    ```bash
-   export LAUNCHPAD_VERBOSE=true
-   export LAUNCHPAD_INSTALL_PATH=/custom/path
-   export LAUNCHPAD_DB_USERNAME=myuser
-   export LAUNCHPAD_DB_PASSWORD=mypassword
-   export LAUNCHPAD_DB_AUTH_METHOD=md5
+   export pantry_VERBOSE=true
+   export pantry_INSTALL_PATH=/custom/path
+   export pantry_DB_USERNAME=myuser
+   export pantry_DB_PASSWORD=mypassword
+   export pantry_DB_AUTH_METHOD=md5
    ```
 
 3. Verify shell configuration:

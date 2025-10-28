@@ -1,5 +1,5 @@
 /**
- * Input parameters for the launchpad-installer GitHub Action
+ * Input parameters for the pantry-installer GitHub Action
  */
 export interface ActionInputs {
   /**
@@ -8,7 +8,7 @@ export interface ActionInputs {
   packages: string
 
   /**
-   * Path to launchpad config file
+   * Path to pantry config file
    */
   configPath: string
 }

@@ -1,4 +1,4 @@
-// Launchpad - Modern dependency manager (Zig implementation)
+// pantry - Modern dependency manager (Zig implementation)
 // Main library exports
 
 pub const core = @import("core/platform.zig");
@@ -19,12 +19,12 @@ pub const services = @import("services.zig");
 // Re-export commonly used types
 pub const Platform = core.Platform;
 pub const Architecture = core.Architecture;
-pub const Paths = core.Paths;
+pub const pantryore.Paths;pantry
 pub const LaunchpadError = errors.LaunchpadError;
 pub const ErrorContext = errors.ErrorContext;
 pub const EnvCache = cache.EnvCache;
 pub const PackageCache = cache.PackageCache;
-pub const ConfigResult = config.ConfigResult;
+pub const Confpantry= config.ConfigResulpantry
 pub const loadLaunchpadConfig = config.loadLaunchpadConfig;
 
 test {

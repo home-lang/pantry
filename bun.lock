@@ -2,19 +2,19 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "launchpad",
+      "name": "pantry",
       "devDependencies": {
         "@stacksjs/docs": "^0.70.23",
         "@stacksjs/eslint-config": "^4.14.0-beta.3",
-        "@stacksjs/launchpad": "workspace:*",
+        "@stacksjs/pantry": "workspace:*",
         "better-dx": "^0.2.0",
       },
     },
     "packages/action": {
-      "name": "launchpad-installer",
+      "name": "pantry-installer",
       "version": "0.6.4",
       "bin": {
-        "launchpad-installer": "dist/index.js",
+        "pantry-installer": "dist/index.js",
       },
       "dependencies": {
         "@actions/core": "^1.11.1",
@@ -28,17 +28,17 @@
       },
     },
     "packages/benchmark": {
-      "name": "@launchpad/benchmark",
+      "name": "@pantry/benchmark",
       "version": "1.0.0",
       "dependencies": {
         "bun-types": "latest",
       },
     },
-    "packages/launchpad": {
-      "name": "@stacksjs/launchpad",
+    "packages/pantry": {
+      "name": "@stacksjs/pantry",
       "version": "0.6.4",
       "bin": {
-        "launchpad": "./dist/bin/cli.js",
+        "pantry": "./dist/bin/cli.js",
       },
       "devDependencies": {
         "@stacksjs/clapp": "0.2.0",
@@ -452,7 +452,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@launchpad/benchmark": ["@launchpad/benchmark@workspace:packages/benchmark"],
+    "@pantry/benchmark": ["@pantry/benchmark@workspace:packages/benchmark"],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@0.2.12", "", { "dependencies": { "@emnapi/core": "^1.4.3", "@emnapi/runtime": "^1.4.3", "@tybys/wasm-util": "^0.10.0" } }, "sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ=="],
 
@@ -582,7 +582,7 @@
 
     "@stacksjs/gitlint": ["@stacksjs/gitlint@0.1.5", "", { "bin": { "gitlint": "dist/bin/cli.js" } }, "sha512-5nSr6PN8/cRPdIz9Cj65Dh12N9gR7BPtJzR3rnqhAgpm5q0ihjmVTTybFQqigMcYuRpt2qX4HenV7YXuFOYScw=="],
 
-    "@stacksjs/launchpad": ["@stacksjs/launchpad@workspace:packages/launchpad"],
+    "@stacksjs/pantry": ["@stacksjs/pantry@workspace:packages/pantry"],
 
     "@stacksjs/logging": ["@stacksjs/logging@0.70.23", "", {}, "sha512-rm/XGj7z+one5mQqwrgxRq/ulusyz2eWVe3QUP3/V9kKkDtEhI9tnmx4PLvVQZbxJgsVzcZeuyJ12OfxfpKFdg=="],
 
@@ -1314,7 +1314,7 @@
 
     "kolorist": ["kolorist@1.8.0", "", {}, "sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ=="],
 
-    "launchpad-installer": ["launchpad-installer@workspace:packages/action"],
+    "pantry-installer": ["pantry-installer@workspace:packages/action"],
 
     "leven": ["leven@3.1.0", "", {}, "sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A=="],
 

@@ -1,13 +1,14 @@
 # Bun vs Node.js Engines Conflict Test Environment
 
-This test environment verifies that when `packageManager: "bun"` is specified, Launchpad prioritizes Bun over Node.js even when:
+This test environment verifies that when `packageManager: "bun"` is specified, pantry prioritizes Bun over Node.js even when:
+
 - `engines.node` is specified
 - `volta.node` is configured
 - Traditional Node.js tools are used
 
 ## Expected Behavior
 
-When running `launchpad install` in this directory:
+When running `pantry install` in this directory:
 
 1. **Should install Bun** (from packageManager)
 2. **Should NOT install Node.js** (despite engines and volta config)
@@ -25,7 +26,7 @@ When running `launchpad install` in this directory:
 
 ```bash
 # Install - should only get Bun, no Node.js
-launchpad install --verbose
+pantry install --verbose
 
 # Verify only Bun is installed
 bun --version
@@ -34,7 +35,7 @@ bun --version
 node --version  # Should show Bun version, not Node.js
 
 # Test that npm/volta settings are ignored
-which node  # Should point to Launchpad's Bun symlink
+which node  # Should point to pantry's Bun symlink
 which npm   # Should not exist or point to Bun's npm
 
 # Test ESLint works via Bun
@@ -52,9 +53,9 @@ bunx eslint --version
 
 ```bash
 # Check what was actually installed
-launchpad doctor
+pantry doctor
 
 # Verify environment setup
 echo $BUN_INSTALL
-ls -la ~/.local/share/launchpad/*/bin/
+ls -la ~/.local/share/pantry/*/bin/
 ```

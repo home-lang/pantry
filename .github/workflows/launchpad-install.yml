@@ -1,4 +1,4 @@
-name: Launchpad Install
+name: pantry Install
 
 on:
   workflow_call:
@@ -9,10 +9,10 @@ on:
         type: string
         default: ''
       config-path:
-        description: Path to launchpad config file
+        description: Path to pantry config file
         required: false
         type: string
-        default: launchpad.config.ts
+        default: pantry.config.ts
       use-dev:
         description: Whether to install the dev package
         required: false
@@ -38,17 +38,17 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install launchpad
-        run: bun install -g launchpad
+      - name: Install pantry
+        run: bun install -g pantry
 
-      - name: Launchpad Bootstrap
-        run: launchpad bootstrap --verbose
+      - name: pantry Bootstrap
+        run: pantry bootstrap --verbose
 
       - name: Install dev package (if required)
         if: ${{ inputs.use-dev }}
-        run: launchpad dev --verbose
+        run: pantry dev --verbose
         env:
-          LAUNCHPAD_VERBOSE: true
+          pantry_VERBOSE: true
           CONTEXT: ${{ github.context }}
 
       - name: Install dependencies from config (Unix)
@@ -57,12 +57,12 @@ jobs:
           if [ -f "${{ inputs.config-path }}" ]; then
             PACKAGES=$(grep -o '"[^"]*"' "${{ inputs.config-path }}" | tr -d '"' | tr '\n' ' ')
             if [ ! -z "$PACKAGES" ]; then
-              launchpad install --verbose $PACKAGES
+              pantry install --verbose $PACKAGES
             fi
           fi
         shell: bash
         env:
-          LAUNCHPAD_VERBOSE: true
+          pantry_VERBOSE: true
           CONTEXT: ${{ github.context }}
 
       - name: Install dependencies from config (Windows)
@@ -72,17 +72,17 @@ jobs:
             $content = Get-Content "${{ inputs.config-path }}" -Raw
             $packages = [regex]::Matches($content, '"([^"]*)"') | ForEach-Object { $_.Groups[1].Value }
             if ($packages) {
-              launchpad install --verbose $packages
+              pantry install --verbose $packages
             }
           }
         shell: pwsh
         env:
-          LAUNCHPAD_VERBOSE: true
+          pantry_VERBOSE: true
           CONTEXT: ${{ github.context }}
 
       - name: Install specified dependencies
         if: ${{ inputs.packages != '' }}
-        run: launchpad install --verbose ${{ inputs.packages }}
+        run: pantry install --verbose ${{ inputs.packages }}
         env:
-          LAUNCHPAD_VERBOSE: true
+          pantry_VERBOSE: true
           CONTEXT: ${{ github.context }}

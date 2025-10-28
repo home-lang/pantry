@@ -1,6 +1,6 @@
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+import type { pantryConfig } from '@stacksjs/pantry'
 
-export const config: LaunchpadConfig = {
+export const config: pantryConfig = {
   dependencies: {
     'python.org': '3.12',
   } as any,

@@ -1,6 +1,7 @@
 # Bun Package Manager with Dependencies Test Environment
 
-This test environment verifies that Launchpad correctly handles complex scenarios with:
+This test environment verifies that pantry correctly handles complex scenarios with:
+
 - `packageManager: "bun@latest"`
 - Additional dependencies from `dependencies.yaml`
 - React/Next.js toolchain
@@ -8,7 +9,7 @@ This test environment verifies that Launchpad correctly handles complex scenario
 
 ## Expected Behavior
 
-When running `launchpad install` in this directory:
+When running `pantry install` in this directory:
 
 1. **Should install Bun latest** (from packageManager)
 2. **Should install additional tools** (from dependencies.yaml)
@@ -26,7 +27,7 @@ When running `launchpad install` in this directory:
 
 ```bash
 # Install all dependencies
-launchpad install --verbose
+pantry install --verbose
 
 # Verify Bun is latest version
 bun --version

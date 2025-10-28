@@ -1,6 +1,6 @@
-# Launchpad to Zig Refactor - Implementation Plan
+# pantry to Zig Refactor - Implementation Plan
 
-> **Purpose**: Step-by-step implementation plan for refactoring Launchpad from TypeScript/Bun to Zig. This plan is designed to be executed incrementally with each phase testable and deployable independently.
+> **Purpose**: Step-by-step implementation plan for refactoring pantry from TypeScript/Bun to Zig. This plan is designed to be executed incrementally with each phase testable and deployable independently.
 
 **Target Version**: 1.0.0 (Zig)
 **Current Version**: 0.x.x (TypeScript/Bun)
@@ -114,7 +114,7 @@ export function generateZigPackageDefinitions(packages: PackageInfo[]): string {
   // Generate Zig struct definitions for all packages
 
   const zigCode = `
-// Auto-generated package definitions for Launchpad
+// Auto-generated package definitions for pantry
 // Generated: ${new Date().toISOString()}
 // Source: pkgx/pantry
 // Total packages: ${packages.length}
@@ -240,7 +240,7 @@ cli
 **Files to Create**:
 
 ```
-launchpad-zig/
+pantry-zig/
 ├── build.zig              # Build configuration
 ├── build.zig.zon          # Dependencies
 ├── src/
@@ -266,7 +266,7 @@ pub fn build(b: *std.Build) void {
 
     // Library
     const lib = b.addStaticLibrary(.{
-        .name = "launchpad",
+        .name = "pantry",
         .root_source_file = .{ .path = "src/lib.zig" },
         .target = target,
         .optimize = optimize,
@@ -275,7 +275,7 @@ pub fn build(b: *std.Build) void {
 
     // Executable
     const exe = b.addExecutable(.{
-        .name = "launchpad",
+        .name = "pantry",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
@@ -358,10 +358,10 @@ pub const Paths = struct {
 
         return switch (Platform.current()) {
             .darwin, .linux => try std.fs.path.join(allocator, &[_][]const u8{
-                home_dir, ".cache", "launchpad"
+                home_dir, ".cache", "pantry"
             }),
             .windows => try std.fs.path.join(allocator, &[_][]const u8{
-                home_dir, "AppData", "Local", "launchpad", "cache"
+                home_dir, "AppData", "Local", "pantry", "cache"
             }),
         };
     }
@@ -372,10 +372,10 @@ pub const Paths = struct {
 
         return switch (Platform.current()) {
             .darwin, .linux => try std.fs.path.join(allocator, &[_][]const u8{
-                home_dir, ".local", "share", "launchpad"
+                home_dir, ".local", "share", "pantry"
             }),
             .windows => try std.fs.path.join(allocator, &[_][]const u8{
-                home_dir, "AppData", "Local", "launchpad"
+                home_dir, "AppData", "Local", "pantry"
             }),
         };
     }
@@ -505,7 +505,7 @@ pub fn depFileHash(file_path: []const u8, allocator: std.mem.Allocator) ![]const
 **Purpose**: Define all error types used across the application.
 
 ```zig
-pub const LaunchpadError = error{
+pub const pantryError = error{
     // File system errors
     FileNotFound,
     DirectoryNotFound,
@@ -1538,7 +1538,7 @@ pub const ShellCodeGenerator = struct {
         const writer = result.writer();
 
         // Header
-        try writer.writeAll("# Launchpad Shell Integration (Zig)\n");
+        try writer.writeAll("# pantry Shell Integration (Zig)\n");
         try writer.writeAll("# Generated: ");
         try writer.writeAll(@tagName(builtin.os.tag));
         try writer.writeAll("-");
@@ -1571,38 +1571,38 @@ pub const ShellCodeGenerator = struct {
 
 ```bash
 # Fast environment switching function (optimized for Zig backend)
-__launchpad_switch_environment() {
+__pantry_switch_environment() {
     # SUPER FAST PATH: PWD unchanged
-    if [[ "$__LAUNCHPAD_LAST_PWD" == "$PWD" ]]; then
+    if [[ "$__pantry_LAST_PWD" == "$PWD" ]]; then
         return 0
     fi
-    export __LAUNCHPAD_LAST_PWD="$PWD"
+    export __pantry_LAST_PWD="$PWD"
 
     # ULTRA FAST PATH: Still in project subdirectory
-    if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$PWD" == "$LAUNCHPAD_CURRENT_PROJECT"* ]]; then
+    if [[ -n "$pantry_CURRENT_PROJECT" && "$PWD" == "$pantry_CURRENT_PROJECT"* ]]; then
         return 0
     fi
 
     # INSTANT DEACTIVATION PATH: Left project
-    if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" && "$PWD" != "$LAUNCHPAD_CURRENT_PROJECT"* ]]; then
+    if [[ -n "$pantry_CURRENT_PROJECT" && "$PWD" != "$pantry_CURRENT_PROJECT"* ]]; then
         # Show deactivation message
         [[ "$__LP_SHOW_MESSAGES" == "true" ]] && printf "%s\n" "$__LP_DEACTIVATION_MSG" >&2
 
         # Remove project paths from PATH
-        if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
-            PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g; s|:$LAUNCHPAD_ENV_BIN_PATH||g; s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+        if [[ -n "$pantry_ENV_BIN_PATH" ]]; then
+            PATH=$(echo "$PATH" | sed "s|$pantry_ENV_BIN_PATH:||g; s|:$pantry_ENV_BIN_PATH||g; s|^$pantry_ENV_BIN_PATH$||g")
             export PATH
         fi
 
         # Clear environment variables
-        unset LAUNCHPAD_CURRENT_PROJECT LAUNCHPAD_ENV_BIN_PATH LAUNCHPAD_ENV_DIR BUN_INSTALL
+        unset pantry_CURRENT_PROJECT pantry_ENV_BIN_PATH pantry_ENV_DIR BUN_INSTALL
         return 0
     fi
 
     # CACHE LOOKUP: Use Zig binary for fast cache lookup
     # This replaces all the shell-based caching logic with a single binary call
     local env_info
-    env_info=$(launchpad shell:lookup "$PWD" 2>/dev/null)
+    env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
 
     if [[ $? -eq 0 && -n "$env_info" ]]; then
         # Cache hit! Parse env_dir|project_dir
@@ -1611,13 +1611,13 @@ __launchpad_switch_environment() {
 
         # INSTANT ACTIVATION
         if [[ -d "$env_dir/bin" ]]; then
-            [[ "$__LP_SHOW_MESSAGES" == "true" && "$__LAUNCHPAD_LAST_ACTIVATION_KEY" != "$project_dir" ]] && \
+            [[ "$__LP_SHOW_MESSAGES" == "true" && "$__pantry_LAST_ACTIVATION_KEY" != "$project_dir" ]] && \
                 printf "\r\033[K%s\n" "$__LP_ACTIVATION_MSG" >&2
 
-            export __LAUNCHPAD_LAST_ACTIVATION_KEY="$project_dir"
-            export LAUNCHPAD_CURRENT_PROJECT="$project_dir"
-            export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-            export LAUNCHPAD_ENV_DIR="$env_dir"
+            export __pantry_LAST_ACTIVATION_KEY="$project_dir"
+            export pantry_CURRENT_PROJECT="$project_dir"
+            export pantry_ENV_BIN_PATH="$env_dir/bin"
+            export pantry_ENV_DIR="$env_dir"
 
             # Update PATH (remove old, add new)
             PATH=$(echo "$PATH" | sed "s|$env_dir/bin:||g; s|:$env_dir/bin||g; s|^$env_dir/bin$||g")
@@ -1630,7 +1630,7 @@ __launchpad_switch_environment() {
 
     # CACHE MISS: Use Zig binary for project detection and installation
     local install_output
-    install_output=$(launchpad shell:activate "$PWD" 2>&1)
+    install_output=$(pantry shell:activate "$PWD" 2>&1)
 
     if [[ $? -eq 0 ]]; then
         # Eval shell output to activate environment
@@ -1640,29 +1640,29 @@ __launchpad_switch_environment() {
 
 # Hook registration (unchanged from TypeScript version)
 if [[ -n "$ZSH_VERSION" ]]; then
-    __launchpad_chpwd() {
-        [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]] && return 0
-        export __LAUNCHPAD_IN_HOOK=1
-        __launchpad_switch_environment
-        unset __LAUNCHPAD_IN_HOOK
+    __pantry_chpwd() {
+        [[ "$__pantry_IN_HOOK" == "1" ]] && return 0
+        export __pantry_IN_HOOK=1
+        __pantry_switch_environment
+        unset __pantry_IN_HOOK
     }
 
     typeset -ga chpwd_functions 2>/dev/null || true
-    [[ ! " ${chpwd_functions[*]} " =~ " __launchpad_chpwd " ]] && chpwd_functions+=(__launchpad_chpwd)
+    [[ ! " ${chpwd_functions[*]} " =~ " __pantry_chpwd " ]] && chpwd_functions+=(__pantry_chpwd)
 elif [[ -n "$BASH_VERSION" ]]; then
-    __launchpad_prompt_command() {
-        [[ "$__LAUNCHPAD_IN_HOOK" == "1" ]] && return 0
-        export __LAUNCHPAD_IN_HOOK=1
-        __launchpad_switch_environment
-        unset __LAUNCHPAD_IN_HOOK
+    __pantry_prompt_command() {
+        [[ "$__pantry_IN_HOOK" == "1" ]] && return 0
+        export __pantry_IN_HOOK=1
+        __pantry_switch_environment
+        unset __pantry_IN_HOOK
     }
 
-    [[ "$PROMPT_COMMAND" != *"__launchpad_prompt_command"* ]] && \
-        PROMPT_COMMAND="__launchpad_prompt_command;$PROMPT_COMMAND"
+    [[ "$PROMPT_COMMAND" != *"__pantry_prompt_command"* ]] && \
+        PROMPT_COMMAND="__pantry_prompt_command;$PROMPT_COMMAND"
 fi
 
 # Initial environment check
-__launchpad_switch_environment
+__pantry_switch_environment
 ```
 
 **TODO Checklist**:
@@ -1878,9 +1878,9 @@ pub const ShellCommands = struct {
         // 8. Generate shell code for activation
         return try std.fmt.allocPrint(
             self.allocator,
-            \\export LAUNCHPAD_CURRENT_PROJECT="{s}"
-            \\export LAUNCHPAD_ENV_BIN_PATH="{s}"
-            \\export LAUNCHPAD_ENV_DIR="{s}"
+            \\export pantry_CURRENT_PROJECT="{s}"
+            \\export pantry_ENV_BIN_PATH="{s}"
+            \\export pantry_ENV_DIR="{s}"
             \\export PATH="{s}:$PATH"
             ,
             .{ project_root.?, env_bin, env_dir, env_bin }
@@ -1944,7 +1944,7 @@ pub const ShellIntegrator = struct {
         const shell_files = try self.getShellFiles();
         defer shell_files.deinit();
 
-        const hook_line = "command -v launchpad >/dev/null 2>&1 && eval \"$(launchpad dev:shellcode)\"";
+        const hook_line = "command -v pantry >/dev/null 2>&1 && eval \"$(pantry dev:shellcode)\"";
 
         for (shell_files.items) |file| {
             // Check if hook already exists
@@ -2018,8 +2018,8 @@ pub const ShellIntegrator = struct {
         ) catch return false;
         defer self.allocator.free(content);
 
-        return std.mem.indexOf(u8, content, "# Added by launchpad") != null or
-            std.mem.indexOf(u8, content, "launchpad dev:shellcode") != null;
+        return std.mem.indexOf(u8, content, "# Added by pantry") != null or
+            std.mem.indexOf(u8, content, "pantry dev:shellcode") != null;
     }
 
     fn appendHook(self: *ShellIntegrator, file: []const u8, hook_line: []const u8) !void {
@@ -2029,9 +2029,9 @@ pub const ShellIntegrator = struct {
         try f.seekFromEnd(0);
 
         const writer = f.writer();
-        try writer.writeAll("\n# Added by launchpad\n");
+        try writer.writeAll("\n# Added by pantry\n");
         try writer.writeAll(hook_line);
-        try writer.writeAll("  # https://github.com/stacksjs/launchpad\n");
+        try writer.writeAll("  # https://github.com/stacksjs/pantry\n");
     }
 
     fn removeHook(self: *ShellIntegrator, file: []const u8) !void {
@@ -2047,10 +2047,10 @@ pub const ShellIntegrator = struct {
 
         var iter = std.mem.split(u8, content, "\n");
         while (iter.next()) |line| {
-            // Skip launchpad-related lines
-            if (std.mem.indexOf(u8, line, "# Added by launchpad") != null or
-                std.mem.indexOf(u8, line, "# https://github.com/stacksjs/launchpad") != null or
-                std.mem.indexOf(u8, line, "launchpad dev:shellcode") != null)
+            // Skip pantry-related lines
+            if (std.mem.indexOf(u8, line, "# Added by pantry") != null or
+                std.mem.indexOf(u8, line, "# https://github.com/stacksjs/pantry") != null or
+                std.mem.indexOf(u8, line, "pantry dev:shellcode") != null)
             {
                 continue;
             }
@@ -2622,7 +2622,7 @@ pub fn main() !u8 {
     // Find and execute command
     const cmd = registry.CommandRegistry.find(cmd_name) orelse {
         std.debug.print("Error: Unknown command '{s}'\n", .{cmd_name});
-        std.debug.print("Run 'launchpad --help' for usage\n", .{});
+        std.debug.print("Run 'pantry --help' for usage\n", .{});
         return 1;
     };
 
@@ -2632,15 +2632,15 @@ pub fn main() !u8 {
 
 fn printVersion() !void {
     const version = @import("version.zig").VERSION;
-    std.debug.print("launchpad {s}\n", .{version});
+    std.debug.print("pantry {s}\n", .{version});
 }
 
 fn printHelp() !void {
     std.debug.print(
-        \\launchpad - Modern dependency manager
+        \\pantry - Modern dependency manager
         \\
         \\Usage:
-        \\  launchpad <command> [options]
+        \\  pantry <command> [options]
         \\
         \\Commands:
         \\
@@ -2656,7 +2656,7 @@ fn printHelp() !void {
         \\  --version, -v     Show version
         \\  --help, -h        Show this help
         \\
-        \\For more information, visit: https://github.com/stacksjs/launchpad
+        \\For more information, visit: https://github.com/stacksjs/pantry
         \\
     , .{});
 }
@@ -2716,14 +2716,14 @@ fn printHelp() !void {
 **Steps**:
 
 1. **Week 1**: Deploy Zig binaries alongside TypeScript
-   - `launchpad shell:lookup` (Zig)
-   - `launchpad shell:activate` (Zig)
+   - `pantry shell:lookup` (Zig)
+   - `pantry shell:activate` (Zig)
    - TypeScript CLI calls Zig binaries
 
 2. **Week 2**: Migrate core commands to Zig
-   - `launchpad install` (Zig)
-   - `launchpad env:*` (Zig)
-   - `launchpad cache:*` (Zig)
+   - `pantry install` (Zig)
+   - `pantry env:*` (Zig)
+   - `pantry cache:*` (Zig)
 
 3. **Week 3**: Complete migration
    - All commands in Zig
@@ -2805,7 +2805,7 @@ try std.posix.madvise(mmap, std.posix.MADV.RANDOM);
 
 - **< 100μs cache loading** (vs 7-15ms in TypeScript)
 - Zero-copy access (no buffer allocation)
-- Shared across multiple launchpad processes
+- Shared across multiple pantry processes
 - OS handles paging automatically
 
 #### 3. Lock-Free Cache with RCU (Read-Copy-Update)
@@ -3028,8 +3028,8 @@ pub fn handleRequest(allocator: std.mem.Allocator) !void {
 zig build -Doptimize=ReleaseFast -fprofile-generate
 
 # Step 2: Run typical workload
-./launchpad install node python
-./launchpad env:list
+./pantry install node python
+./pantry env:list
 # ... typical operations
 
 # Step 3: Build with profile data
@@ -3242,7 +3242,7 @@ pub fn lookup(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
                     .UpdatesAvailable => |updates| {
                         // Show update notification (to stderr)
                         std.debug.print(
-                            "⬆️  Updates available: {d} package(s). Run 'launchpad update' to upgrade.\n",
+                            "⬆️  Updates available: {d} package(s). Run 'pantry update' to upgrade.\n",
                             .{updates.len}
                         );
 
@@ -3294,7 +3294,7 @@ pub const Config = struct {
 };
 
 pub fn loadConfig(allocator: std.mem.Allocator) !Config {
-    // Load from launchpad.config.zig or environment variables
+    // Load from pantry.config.zig or environment variables
     // ...
     return Config{};
 }
@@ -3438,12 +3438,12 @@ echo "=== Cache Lookup Benchmark ==="
 # TypeScript baseline
 echo "TypeScript (Bun):"
 hyperfine --warmup 10 --min-runs 100 \
-  'bun run packages/launchpad/bin/cli.ts shell:lookup /home/user/project'
+  'bun run packages/pantry/bin/cli.ts shell:lookup /home/user/project'
 
 # Zig implementation
 echo "Zig:"
 hyperfine --warmup 10 --min-runs 100 \
-  './launchpad-zig shell:lookup /home/user/project'
+  './pantry-zig shell:lookup /home/user/project'
 
 echo ""
 echo "=== CLI Startup Benchmark ==="
@@ -3451,12 +3451,12 @@ echo "=== CLI Startup Benchmark ==="
 # TypeScript
 echo "TypeScript (Bun):"
 hyperfine --warmup 5 --min-runs 50 \
-  'bun run packages/launchpad/bin/cli.ts --version'
+  'bun run packages/pantry/bin/cli.ts --version'
 
 # Zig
 echo "Zig:"
 hyperfine --warmup 5 --min-runs 50 \
-  './launchpad-zig --version'
+  './pantry-zig --version'
 
 echo ""
 echo "=== Environment Activation Benchmark ==="
@@ -3468,12 +3468,12 @@ echo '{ "dependencies": { "node": "20" } }' > /tmp/test-project/package.json
 # TypeScript
 echo "TypeScript (Bun):"
 hyperfine --warmup 3 --min-runs 20 \
-  'cd /tmp/test-project && bun run ../launchpad/packages/launchpad/bin/cli.ts dev'
+  'cd /tmp/test-project && bun run ../pantry/packages/pantry/bin/cli.ts dev'
 
 # Zig
 echo "Zig:"
 hyperfine --warmup 3 --min-runs 20 \
-  'cd /tmp/test-project && ../launchpad-zig dev'
+  'cd /tmp/test-project && ../pantry-zig dev'
 
 # Cleanup
 rm -rf /tmp/test-project
@@ -3486,7 +3486,7 @@ rm -rf /tmp/test-project
 ```bash
 # Memory usage profiling
 valgrind --tool=massif --massif-out-file=massif.out \
-  ./launchpad install node python
+  ./pantry install node python
 
 # Analyze results
 ms_print massif.out
@@ -3498,10 +3498,10 @@ ms_print massif.out
 
 ```bash
 # Detailed heap profiling
-heaptrack ./launchpad install node python
+heaptrack ./pantry install node python
 
 # Analyze allocations
-heaptrack_gui heaptrack.launchpad.*.gz
+heaptrack_gui heaptrack.pantry.*.gz
 
 # Goals:
 # - Zero allocations on cache lookup path
@@ -3653,16 +3653,16 @@ if __name__ == "__main__":
 
 ```bash
 # Test 1: Cold start (no cache)
-rm -rf ~/.cache/launchpad
-time ./launchpad dev /path/to/project
+rm -rf ~/.cache/pantry
+time ./pantry dev /path/to/project
 # Target: < 50ms
 
 # Test 2: Warm start (cache hit)
-time ./launchpad dev /path/to/project
+time ./pantry dev /path/to/project
 # Target: < 500μs
 
 # Test 3: Large project (100+ packages)
-time ./launchpad install $(cat large_project_deps.txt)
+time ./pantry install $(cat large_project_deps.txt)
 # Target: < 30s for network-bound operations
 
 # Test 4: Shell integration overhead
@@ -3683,11 +3683,11 @@ Create a dashboard to track performance over time:
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Launchpad Performance Dashboard</title>
+    <title>pantry Performance Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <h1>Launchpad Performance Metrics</h1>
+    <h1>pantry Performance Metrics</h1>
 
     <div id="cli-startup"></div>
     <div id="cache-lookup"></div>
@@ -3780,6 +3780,6 @@ Create a dashboard to track performance over time:
 
 ---
 
-**Maintained by**: Launchpad Team
+**Maintained by**: pantry Team
 **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 **License**: MIT

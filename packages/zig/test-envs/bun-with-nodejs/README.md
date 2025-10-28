@@ -1,10 +1,10 @@
 # Bun + Node.js Coexistence Test Environment
 
-This test environment verifies that Launchpad correctly handles scenarios where both Bun and Node.js need to be installed in the same environment.
+This test environment verifies that pantry correctly handles scenarios where both Bun and Node.js need to be installed in the same environment.
 
 ## Expected Behavior
 
-When running `launchpad install` in this directory:
+When running `pantry install` in this directory:
 
 1. **Should install both Bun and Node.js** (from both packageManager and dependencies.yaml)
 2. **Should NOT create node symlink** (since real Node.js is installed)
@@ -28,7 +28,7 @@ When running `launchpad install` in this directory:
 
 ```bash
 # Install both runtimes
-launchpad install --verbose
+pantry install --verbose
 
 # Verify both are available
 which bun node npm

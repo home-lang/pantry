@@ -1,6 +1,6 @@
-# Launchpad Architecture
+# pantry Architecture
 
-> **Purpose**: This document provides a comprehensive technical overview of Launchpad's architecture, focusing on core system flows, shell integration, caching strategies, and command execution. It serves as a roadmap for understanding the TypeScript implementation and planning future refactoring (e.g., to Zig).
+> **Purpose**: This document provides a comprehensive technical overview of pantry's architecture, focusing on core system flows, shell integration, caching strategies, and command execution. It serves as a roadmap for understanding the TypeScript implementation and planning future refactoring (e.g., to Zig).
 
 **Last Updated**: 2025-10-20
 
@@ -24,7 +24,7 @@
 
 ## System Overview
 
-Launchpad is a modern dependency manager that provides:
+pantry is a modern dependency manager that provides:
 
 - **System-wide and project-specific package installations**
 - **Automatic environment activation on directory changes (via shell hooks)**
@@ -86,21 +86,21 @@ Launchpad is a modern dependency manager that provides:
 
 ### Overview
 
-Shell integration is the **heart of Launchpad's UX**. It enables automatic environment activation when you `cd` into a project directory. This is achieved by injecting shell code into the user's shell initialization files (`.zshrc`, `.bashrc`, etc.).
+Shell integration is the **heart of pantry's UX**. It enables automatic environment activation when you `cd` into a project directory. This is achieved by injecting shell code into the user's shell initialization files (`.zshrc`, `.bashrc`, etc.).
 
 ### Integration Flow
 
 ```
-1. User runs: `launchpad dev:integrate`
+1. User runs: `pantry dev:integrate`
    └─> Adds hook to ~/.zshrc or ~/.bashrc
 
 2. Shell startup:
-   └─> eval "$(launchpad dev:shellcode)"
+   └─> eval "$(pantry dev:shellcode)"
        └─> Generates shell functions and hooks
 
 3. User runs: cd /path/to/project
-   └─> Triggers __launchpad_chpwd (zsh) or __launchpad_prompt_command (bash)
-       └─> Calls __launchpad_switch_environment
+   └─> Triggers __pantry_chpwd (zsh) or __pantry_prompt_command (bash)
+       └─> Calls __pantry_switch_environment
            ├─> Cache lookup (instant if cached)
            ├─> Project detection (if cache miss)
            ├─> Environment activation/deactivation
@@ -120,7 +120,7 @@ The `shellcode()` function generates a complete shell script that:
 
 ### Key Shell Functions
 
-#### `__launchpad_switch_environment()`
+#### `__pantry_switch_environment()`
 
 **Location**: `src/dev/shellcode.ts:287`
 
@@ -171,7 +171,7 @@ Tier 1: In-memory hash map
   - Bash: Dynamic variable names (__LP_CACHE_<encoded_path>)
   - Lookup: O(1), zero syscalls
 
-Tier 2: Disk cache file (~/.cache/launchpad/shell_cache/env_cache)
+Tier 2: Disk cache file (~/.cache/pantry/shell_cache/env_cache)
   - Format: project_dir|dep_file|dep_mtime|env_dir
   - Fast awk-based lookup (single syscall)
   - Validated on read (checks env dir exists, dep file mtime)
@@ -192,7 +192,7 @@ Tier 3: Filesystem walk (fallback)
 
 - Automatic: When dependency file mtime changes
 - Manual: Environment directory deletion
-- Command: `launchpad cache:clear` removes shell cache
+- Command: `pantry cache:clear` removes shell cache
 
 ### Hook Installation
 
@@ -203,15 +203,17 @@ Tier 3: Filesystem walk (fallback)
 1. Detects user's shell (zsh, bash)
 2. Locates shell config files (`~/.zshrc`, `~/.bashrc`, etc.)
 3. Appends integration line:
+
    ```bash
-   # Added by launchpad
-   command -v launchpad >/dev/null 2>&1 && eval "$(launchpad dev:shellcode)"
+   # Added by pantry
+   command -v pantry >/dev/null 2>&1 && eval "$(pantry dev:shellcode)"
    ```
+
 4. User restarts shell to activate
 
-**Uninstallation**: `launchpad dev:integrate --uninstall`
+**Uninstallation**: `pantry dev:integrate --uninstall`
 
-- Removes all lines containing Launchpad markers
+- Removes all lines containing pantry markers
 - Safe removal (preserves rest of config)
 
 ---
@@ -221,7 +223,7 @@ Tier 3: Filesystem walk (fallback)
 ### High-Level Process
 
 ```
-User runs: `launchpad install node python`
+User runs: `pantry install node python`
     │
     ├─> CLI parsing (bin/cli.ts:78)
     │   └─> Resolves to install command
@@ -265,7 +267,7 @@ User runs: `launchpad install node python`
 
 **ts-pkgx Integration**:
 
-Launchpad uses `ts-pkgx` (v0.4.93+) for package metadata:
+pantry uses `ts-pkgx` (v0.4.93+) for package metadata:
 
 - Fully typed package names and versions
 - Access to pkgx package registry
@@ -298,11 +300,13 @@ Launchpad uses `ts-pkgx` (v0.4.93+) for package metadata:
 **Steps**:
 
 1. **Version Resolution**
+
    ```typescript
    const version = await resolveVersion(packageName, versionConstraint)
    ```
 
 2. **Cache Check**
+
    ```typescript
    const cachedPath = getCachedPackagePath(domain, version, format)
    if (cachedPath)
@@ -312,7 +316,7 @@ Launchpad uses `ts-pkgx` (v0.4.93+) for package metadata:
 3. **Download** (if not cached)
    - Fetches from pkgx CDN
    - Uses platform/architecture-specific URLs
-   - Stores in `~/.cache/launchpad/binaries/packages/`
+   - Stores in `~/.cache/pantry/binaries/packages/`
 
 4. **Extraction**
    - Extracts to `<installPath>/pkgs/<domain>/v<version>/`
@@ -347,8 +351,9 @@ Launchpad uses `ts-pkgx` (v0.4.93+) for package metadata:
 ### Installation Paths
 
 **System-wide**:
+
 ```
-~/.local/share/launchpad/global/
+~/.local/share/pantry/global/
   ├── bin/           # Binary wrappers/shims
   ├── pkgs/          # Actual package installations
   │   └── <domain>/
@@ -359,8 +364,9 @@ Launchpad uses `ts-pkgx` (v0.4.93+) for package metadata:
 ```
 
 **Project-specific**:
+
 ```
-~/.local/share/launchpad/envs/<project_hash>/
+~/.local/share/pantry/envs/<project_hash>/
   ├── bin/
   ├── pkgs/
   ├── lib/
@@ -369,15 +375,17 @@ Launchpad uses `ts-pkgx` (v0.4.93+) for package metadata:
 ```
 
 **Environment Hash Format**:
+
 ```
 <project_name>_<dir_hash>[-d<deps_hash>]
 
 Examples:
   - my-app_208a31ec
-  - launchpad_208a31ec-d1a2b3c4  (with dependency file hash)
+  - pantry_208a31ec-d1a2b3c4  (with dependency file hash)
 ```
 
 **Hashing**:
+
 - Directory hash: MD5(full_project_path) truncated to 8 chars
 - Dependency hash: MD5(dependency_file_contents) truncated to 8 chars
 - Purpose: Unique environment per project + dependency combination
@@ -388,26 +396,28 @@ Examples:
 
 ### Overview
 
-Launchpad uses **dual caching**:
+pantry uses **dual caching**:
 
 1. **Package Cache**: Downloaded binary archives
 2. **Environment Cache**: Project → environment directory mappings
 
 ### Package Cache
 
-**Location**: `~/.cache/launchpad/binaries/packages/`
+**Location**: `~/.cache/pantry/binaries/packages/`
 
 **Structure**:
+
 ```
 packages/
   ├── <domain>-<version>/
   │   └── package.<format>  # .tar.gz, .tar.xz, .zip, etc.
   └── ...
 
-Metadata file: ~/.cache/launchpad/cache-metadata.json
+Metadata file: ~/.cache/pantry/cache-metadata.json
 ```
 
 **Metadata Format** (`src/cache.ts:12`):
+
 ```json
 {
   "version": "1.0",
@@ -431,6 +441,7 @@ Metadata file: ~/.cache/launchpad/cache-metadata.json
 **Function**: `getCachedPackagePath(domain, version, format)` - `src/cache.ts:272`
 
 **Logic**:
+
 1. Check if archive file exists
 2. Validate against metadata (size check)
 3. Update last accessed timestamp
@@ -441,6 +452,7 @@ Metadata file: ~/.cache/launchpad/cache-metadata.json
 **Function**: `savePackageToCache(domain, version, format, sourcePath)` - `src/cache.ts:322`
 
 **Logic**:
+
 1. Copy downloaded file to cache directory
 2. Update metadata with file size and timestamps
 3. Return cached path
@@ -450,17 +462,18 @@ Metadata file: ~/.cache/launchpad/cache-metadata.json
 **Function**: `cleanupCache(maxAgeDays, maxSizeGB)` - `src/cache.ts:367`
 
 **Strategy**:
+
 1. Remove packages older than `maxAgeDays` (default: 30)
 2. If total size exceeds `maxSizeGB` (default: 5), remove oldest packages
 3. Sort by last accessed time (LRU eviction)
 
-**Command**: `launchpad cache:clean --max-age 7 --max-size 2`
+**Command**: `pantry cache:clean --max-age 7 --max-size 2`
 
 #### Cache Clearing
 
-**Command**: `launchpad cache:clear --force`
+**Command**: `pantry cache:clear --force`
 
-**Function**: Removes entire cache directory (`~/.cache/launchpad/`)
+**Function**: Removes entire cache directory (`~/.cache/pantry/`)
 
 **File**: `src/commands/cache/clear.ts:107`
 
@@ -468,14 +481,15 @@ Metadata file: ~/.cache/launchpad/cache-metadata.json
 
 **Purpose**: Map project directories to their environment directories for instant activation
 
-**Location**: `~/.cache/launchpad/shell_cache/env_cache`
+**Location**: `~/.cache/pantry/shell_cache/env_cache`
 
 **Format** (pipe-delimited):
+
 ```
 /path/to/project|dependency_file|mtime|environment_directory
 
 Example:
-/Users/chris/dev/myapp|/Users/chris/dev/myapp/package.json|1729425600|/Users/chris/.local/share/launchpad/envs/myapp_208a31ec
+/Users/chris/dev/myapp|/Users/chris/dev/myapp/package.json|1729425600|/Users/chris/.local/share/pantry/envs/myapp_208a31ec
 ```
 
 **Management**: `EnvCacheManager` class - `src/cache.ts:26-230`
@@ -518,7 +532,7 @@ Example:
 
 1. **Environment directory deleted** (manual cleanup or env:remove)
 2. **Dependency file modified** (package.json changed)
-3. **Cache cleared** (`launchpad cache:clear`)
+3. **Cache cleared** (`pantry cache:clear`)
 
 ### Cache Performance
 
@@ -529,6 +543,7 @@ Example:
 - **Tier 3**: Filesystem walk (fallback, many syscalls)
 
 **Typical performance**:
+
 - Cached environment activation: **< 5ms**
 - Cache miss (first activation): **50-200ms**
 - Package download (cache miss): **1-30s** (network dependent)
@@ -576,9 +591,10 @@ interface Command {
 **Entry Point**: `bin/cli.ts`
 
 **Flow**:
+
 ```
 1. CLI definition (using clapp fluent API)
-2. User runs command: `launchpad install node`
+2. User runs command: `pantry install node`
 3. clapp parses arguments and options
 4. Invokes action handler
 5. Action handler resolves command from registry
@@ -609,6 +625,7 @@ cli
 ### Command Categories
 
 **Core Package Management**:
+
 - `install` - Install packages
 - `uninstall` - Remove packages
 - `reinstall` - Reinstall packages
@@ -617,28 +634,33 @@ cli
 - `list` - List installed packages
 
 **Package Discovery**:
+
 - `search` - Search for packages
 - `info` - Show package details
 - `tags` - Browse packages by category
 
 **Environment Management**:
+
 - `env:list` - List all environments
 - `env:inspect` - Inspect environment details
 - `env:clean` - Clean old environments
 - `env:remove` - Remove specific environment
 
 **Cache Management**:
+
 - `cache:clear` - Clear all caches
 - `cache:stats` - Show cache statistics
 - `cache:clean` - Clean up old cached packages
 
 **Service Management**:
+
 - `start <service>` - Start service
 - `stop <service>` - Stop service
 - `restart <service>` - Restart service
 - `status [service]` - Show service status
 
 **Development**:
+
 - `dev` - Set up dev environment for current directory
 - `dev:integrate` - Install shell hooks
 - `dev:shellcode` - Generate shell integration code
@@ -657,14 +679,14 @@ cli
 
 2. ENVIRONMENT CREATION
    └─> Computes environment hash
-   └─> Creates directory: ~/.local/share/launchpad/envs/<hash>/
+   └─> Creates directory: ~/.local/share/pantry/envs/<hash>/
 
 3. DEPENDENCY INSTALLATION
    └─> Installs packages to environment directory
    └─> Creates binary wrappers in env/bin/
 
 4. CACHE REGISTRATION
-   └─> Adds entry to ~/.cache/launchpad/shell_cache/env_cache
+   └─> Adds entry to ~/.cache/pantry/shell_cache/env_cache
    └─> Maps project directory → environment directory
 
 5. ENVIRONMENT ACTIVATION (automatic on cd)
@@ -686,9 +708,9 @@ cli
 
 ```typescript
 const DEPENDENCY_FILE_NAMES = [
-  // Launchpad-specific (highest priority)
-  'launchpad.config.ts',
-  'launchpad.config.js',
+  // pantry-specific (highest priority)
+  'pantry.config.ts',
+  'pantry.config.js',
   'dependencies.yaml',
   'deps.yaml',
   'pkgx.yaml',
@@ -724,7 +746,7 @@ const DEPENDENCY_FILE_NAMES = [
 ### Environment Directory Structure
 
 ```
-~/.local/share/launchpad/envs/<project_hash>/
+~/.local/share/pantry/envs/<project_hash>/
   ├── bin/              # Binary wrappers/shims (added to PATH)
   ├── pkgs/             # Installed packages
   │   └── <domain>/
@@ -746,20 +768,22 @@ const DEPENDENCY_FILE_NAMES = [
 **Purpose**: List all development environments
 
 **Output Formats**:
+
 - `table` (default) - Formatted table with project name, packages, size, created date
 - `json` - JSON array of environment metadata
 - `simple` - One line per environment (name + hash)
 
 **Example**:
+
 ```bash
-$ launchpad env:list
+$ pantry env:list
 
 📦 Development Environments:
 
 │ Project    │ Packages │ Binaries │ Size     │ Created    │
 ├─────────────┼──────────┼──────────┼──────────┼────────────┤
 │ my-app     │ 12       │ 34       │ 234.5 MB │ 10/15/2025 │
-│ launchpad  │ 8        │ 21       │ 156.2 MB │ 10/10/2025 │
+│ pantry  │ 8        │ 21       │ 156.2 MB │ 10/10/2025 │
 └─────────────┴──────────┴──────────┴──────────┴────────────┘
 
 Total: 2 environment(s)
@@ -772,6 +796,7 @@ Total: 2 environment(s)
 **Purpose**: Show detailed information about a specific environment
 
 **Information Displayed**:
+
 - Basic info (project name, hash, path, size, timestamps)
 - Directory structure (bin/, pkgs/, lib/, etc.)
 - Installed packages
@@ -785,11 +810,13 @@ Total: 2 environment(s)
 **Purpose**: Clean up old or broken environments
 
 **Cleanup Criteria**:
+
 - Environments older than X days (default: 30)
 - Environments with no binaries (failed installations)
 - Empty or corrupted environments
 
 **Options**:
+
 - `--dry-run` - Preview what would be cleaned
 - `--older-than <days>` - Custom age threshold
 - `--force` - Skip confirmation
@@ -801,6 +828,7 @@ Total: 2 environment(s)
 **Purpose**: Remove specific environment or all environments
 
 **Safety**:
+
 - Requires `--force` flag to prevent accidental deletion
 - Shows what will be removed before deletion
 - Displays freed disk space after removal
@@ -808,22 +836,25 @@ Total: 2 environment(s)
 ### Environment Variables
 
 **Project Environment**:
-- `LAUNCHPAD_CURRENT_PROJECT` - Current project directory
-- `LAUNCHPAD_ENV_DIR` - Environment directory
-- `LAUNCHPAD_ENV_BIN_PATH` - Environment bin directory (for PATH)
+
+- `pantry_CURRENT_PROJECT` - Current project directory
+- `pantry_ENV_DIR` - Environment directory
+- `pantry_ENV_BIN_PATH` - Environment bin directory (for PATH)
 - `BUN_INSTALL` - Bun installation directory (if bun present)
 
 **Shell Integration**:
-- `LAUNCHPAD_DISABLE_SHELL_INTEGRATION` - Disable shell hooks
-- `LAUNCHPAD_SHELL_INTEGRATION` - Indicates shell integration mode
-- `LAUNCHPAD_VERBOSE` - Enable verbose shell messages
-- `LAUNCHPAD_SHELL_VERBOSE` - Shell-specific verbose mode
+
+- `pantry_DISABLE_SHELL_INTEGRATION` - Disable shell hooks
+- `pantry_SHELL_INTEGRATION` - Indicates shell integration mode
+- `pantry_VERBOSE` - Enable verbose shell messages
+- `pantry_SHELL_VERBOSE` - Shell-specific verbose mode
 
 **Internal**:
-- `__LAUNCHPAD_LAST_PWD` - Last processed directory (avoids duplicate work)
-- `__LAUNCHPAD_LAST_ACTIVATION_KEY` - Last activated project (prevents duplicate messages)
-- `__LAUNCHPAD_PROCESSING` - Lock flag to prevent infinite loops
-- `__LAUNCHPAD_IN_HOOK` - Flag to prevent hook recursion
+
+- `__pantry_LAST_PWD` - Last processed directory (avoids duplicate work)
+- `__pantry_LAST_ACTIVATION_KEY` - Last activated project (prevents duplicate messages)
+- `__pantry_PROCESSING` - Lock flag to prevent infinite loops
+- `__pantry_IN_HOOK` - Flag to prevent hook recursion
 
 ---
 
@@ -831,12 +862,12 @@ Total: 2 environment(s)
 
 ### Overview
 
-Launchpad provides built-in service management for common development services (PostgreSQL, MySQL, Redis, Nginx, etc.). It abstracts platform-specific service managers (launchd on macOS, systemd on Linux).
+pantry provides built-in service management for common development services (PostgreSQL, MySQL, Redis, Nginx, etc.). It abstracts platform-specific service managers (launchd on macOS, systemd on Linux).
 
 ### Service Architecture
 
 ```
-User Command: `launchpad start postgres`
+User Command: `pantry start postgres`
     │
     ├─> src/commands/start.ts
     │   └─> Resolves service name
@@ -858,6 +889,7 @@ User Command: `launchpad start postgres`
 **File**: `src/services/definitions.ts`
 
 **Structure**:
+
 ```typescript
 interface ServiceDefinition {
   name: string
@@ -877,6 +909,7 @@ interface ServiceDefinition {
 **Supported Services** (30+):
 
 **Databases**:
+
 - PostgreSQL (postgres)
 - MySQL (mysql)
 - Redis (redis)
@@ -885,11 +918,13 @@ interface ServiceDefinition {
 - Meilisearch (meilisearch)
 
 **Web Servers**:
+
 - Nginx (nginx)
 - Apache (apache)
 - Caddy (caddy)
 
 **Message Queues**:
+
 - RabbitMQ (rabbitmq)
 - Apache Kafka (kafka)
 
@@ -899,9 +934,10 @@ interface ServiceDefinition {
 
 #### Start Service
 
-**Command**: `launchpad start <service>`
+**Command**: `pantry start <service>`
 
 **Flow**:
+
 1. Resolve service definition
 2. Check if service package installed (install if missing)
 3. Check if service initialized (run init if needed)
@@ -911,36 +947,40 @@ interface ServiceDefinition {
 
 #### Stop Service
 
-**Command**: `launchpad stop <service>`
+**Command**: `pantry stop <service>`
 
 **Flow**:
+
 1. Resolve service definition
 2. Stop service via platform manager
 3. Verify service stopped
 
 #### Restart Service
 
-**Command**: `launchpad restart <service>`
+**Command**: `pantry restart <service>`
 
 **Flow**: Stop → Start (with health check)
 
 #### Enable/Disable Service
 
 **Commands**:
-- `launchpad enable <service>` - Auto-start on boot
-- `launchpad disable <service>` - Disable auto-start
+
+- `pantry enable <service>` - Auto-start on boot
+- `pantry disable <service>` - Disable auto-start
 
 **Implementation**: Uses `launchctl load -w` (macOS) or `systemctl enable` (Linux)
 
 #### Service Status
 
-**Command**: `launchpad status [service]`
+**Command**: `pantry status [service]`
 
 **Output**:
+
 - If service specified: Status of that service
 - If no service specified: Status of all services
 
 **Formats**:
+
 - `table` (default) - Formatted table
 - `json` - JSON output
 - `simple` - One line per service
@@ -949,12 +989,13 @@ interface ServiceDefinition {
 
 #### macOS (launchd)
 
-**Service Files**: `~/Library/LaunchAgents/com.launchpad.<service>.plist`
+**Service Files**: `~/Library/LaunchAgents/com.pantry.<service>.plist`
 
 **Operations**:
-- Start: `launchctl start com.launchpad.<service>`
-- Stop: `launchctl stop com.launchpad.<service>`
-- Status: `launchctl list | grep com.launchpad.<service>`
+
+- Start: `launchctl start com.pantry.<service>`
+- Stop: `launchctl stop com.pantry.<service>`
+- Status: `launchctl list | grep com.pantry.<service>`
 - Enable: `launchctl load -w <plist>`
 - Disable: `launchctl unload -w <plist>`
 
@@ -963,6 +1004,7 @@ interface ServiceDefinition {
 **Service Files**: `~/.config/systemd/user/<service>.service`
 
 **Operations**:
+
 - Start: `systemctl --user start <service>`
 - Stop: `systemctl --user stop <service>`
 - Status: `systemctl --user status <service>`
@@ -976,8 +1018,9 @@ interface ServiceDefinition {
 **Behavior**: When enabled, automatically starts services after installing their packages.
 
 **Example**:
+
 ```bash
-$ launchpad install postgres  # Installs PostgreSQL
+$ pantry install postgres  # Installs PostgreSQL
 # If autoStart=true:
 ✅ Service postgres initialized and started
 ```
@@ -992,7 +1035,7 @@ $ launchpad install postgres  # Installs PostgreSQL
 ~/.local/
   ├── bin/                    # System-wide binaries
   └── share/
-      └── launchpad/
+      └── pantry/
           ├── global/         # Global package installations
           │   ├── bin/
           │   ├── pkgs/
@@ -1005,7 +1048,7 @@ $ launchpad install postgres  # Installs PostgreSQL
               └── ...
 
 ~/.cache/
-  └── launchpad/
+  └── pantry/
       ├── binaries/
       │   └── packages/       # Downloaded package archives
       │       └── <domain>-<version>/
@@ -1024,18 +1067,19 @@ $ launchpad install postgres  # Installs PostgreSQL
 
 ~/Library/
   └── LaunchAgents/           # macOS launchd service files
-      ├── com.launchpad.postgres.plist
-      ├── com.launchpad.redis.plist
+      ├── com.pantry.postgres.plist
+      ├── com.pantry.redis.plist
       └── ...
 ```
 
 ### Project Configuration
 
-**Launchpad Config**: `launchpad.config.ts` (or `.js`)
+**pantry Config**: `pantry.config.ts` (or `.js`)
 
 **Example**:
+
 ```typescript
-import type { LaunchpadConfig } from 'launchpad'
+import type { pantryConfig } from 'pantry'
 
 export default {
   dependencies: {
@@ -1054,7 +1098,7 @@ export default {
 
   verbose: false,
   installDependencies: true,
-} satisfies LaunchpadConfig
+} satisfies pantryConfig
 ```
 
 **Dependency Files**: See [Project Detection](#project-detection) for full list
@@ -1066,11 +1110,11 @@ export default {
 ### Shell Integration Performance
 
 1. **PWD Change Detection** - `src/dev/shellcode.ts:289`
-   - Check: `if ($__LAUNCHPAD_LAST_PWD == $PWD) return 0`
+   - Check: `if ($__pantry_LAST_PWD == $PWD) return 0`
    - Result: **0 syscalls** for unchanged directory
 
 2. **Subdirectory Fast Path** - `src/dev/shellcode.ts:296`
-   - Check: `if ($PWD == $LAUNCHPAD_CURRENT_PROJECT*) return 0`
+   - Check: `if ($PWD == $pantry_CURRENT_PROJECT*) return 0`
    - Result: **0 syscalls** for subdirectories of current project
 
 3. **Instant Deactivation** - `src/dev/shellcode.ts:302`
@@ -1113,11 +1157,13 @@ export default {
 ### Cache Performance
 
 **Environment Cache**:
+
 - **In-memory**: O(1) lookups, instant
 - **Disk cache**: Single awk invocation, 1-3ms
 - **Write**: Async, debounced (10ms), non-blocking
 
 **Package Cache**:
+
 - **Metadata**: Single JSON file, loaded once
 - **Lookup**: O(1) hash map lookup
 - **Validation**: Size check only (fast)
@@ -1131,6 +1177,7 @@ export default {
 **File**: `src/utils.ts`
 
 **Functions**:
+
 - `getPlatform()` - Returns `darwin`, `linux`, `windows`
 - `getArchitecture()` - Returns `x64`, `arm64`, `aarch64`
 
@@ -1139,11 +1186,13 @@ export default {
 #### macOS (Darwin)
 
 **Library Path Handling**:
+
 - Uses `DYLD_LIBRARY_PATH`, `DYLD_FALLBACK_LIBRARY_PATH`
 - Requires fixing install names with `install_name_tool`
 - Binary wrappers set `DYLD_*` variables
 
 **Library Install Names**: `src/install-helpers.ts:fixMacOSLibraryPaths()`
+
 - Updates library dependencies to use `@loader_path/../lib`
 - Enables relocatable binaries
 
@@ -1152,6 +1201,7 @@ export default {
 #### Linux
 
 **Library Path Handling**:
+
 - Uses `LD_LIBRARY_PATH`
 - Binary wrappers set `LD_LIBRARY_PATH`
 
@@ -1168,6 +1218,7 @@ export default {
 **Download URLs**: Platform + architecture specific
 
 **Example** (Node.js):
+
 ```
 darwin-arm64: https://dist.nodejs.org/v20.10.0/node-v20.10.0-darwin-arm64.tar.gz
 darwin-x64:   https://dist.nodejs.org/v20.10.0/node-v20.10.0-darwin-x64.tar.gz
@@ -1211,12 +1262,14 @@ linux-x64:    https://dist.nodejs.org/v20.10.0/node-v20.10.0-linux-x64.tar.gz
 ### Architecture Preservation
 
 **Keep**:
+
 - Multi-tier caching strategy
 - Lazy environment activation
 - Instant deactivation logic
 - Cache invalidation triggers
 
 **Consider**:
+
 - Compile shell code ahead of time (vs. runtime generation)
 - Native library for cache operations (FFI from shell)
 - Standalone binary for project detection (already done)
@@ -1224,11 +1277,13 @@ linux-x64:    https://dist.nodejs.org/v20.10.0/node-v20.10.0-linux-x64.tar.gz
 ### Performance Targets
 
 **Current** (TypeScript/Bun):
+
 - CLI startup: ~100ms
 - Cached environment activation: < 5ms
 - Cache miss activation: 50-200ms
 
 **Target** (Zig):
+
 - CLI startup: < 10ms
 - Cached environment activation: < 1ms
 - Cache miss activation: 20-50ms
@@ -1237,7 +1292,7 @@ linux-x64:    https://dist.nodejs.org/v20.10.0/node-v20.10.0-linux-x64.tar.gz
 
 ## Summary
 
-Launchpad's architecture is built around three core pillars:
+pantry's architecture is built around three core pillars:
 
 1. **Shell Integration**: Seamless environment activation via hooks
 2. **Multi-Tier Caching**: Instant environment switching via aggressive caching
@@ -1246,11 +1301,13 @@ Launchpad's architecture is built around three core pillars:
 The system achieves sub-millisecond environment switching through careful optimization of the shell integration layer, leveraging in-memory caching and minimizing syscalls. The caching system operates at multiple levels (shell, process, disk) to ensure optimal performance.
 
 For a Zig refactor, focus on:
+
 - Shell code generation (performance-critical)
 - Cache system (hot path)
 - File system operations (I/O heavy)
 
 While preserving:
+
 - Multi-tier caching architecture
 - Lazy activation strategy
 - Cache invalidation logic
@@ -1258,6 +1315,6 @@ While preserving:
 
 ---
 
-**Maintained by**: Launchpad Team
+**Maintained by**: pantry Team
 **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 **License**: MIT

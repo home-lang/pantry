@@ -8,10 +8,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {
-      "@stacksjs/launchpad": [
+      "@stacksjs/pantry": [
         "./packages/ts/src/index.ts"
       ],
-      "@stacksjs/launchpad/*": [
+      "@stacksjs/pantry/*": [
         "./packages/ts/src/*"
       ]
     },

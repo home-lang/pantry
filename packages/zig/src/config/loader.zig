@@ -1,12 +1,12 @@
 const std = @import("std");
 const zonfig = @import("zonfig");
 
-/// Launchpad-specific configuration loader
+/// pantry-specific configuration loader
 /// Extends zonfig to support:
 /// - TypeScript config files (.config.ts)
 /// - Alias config files (e.g., buddy-bot.config.ts)
 /// - Multiple config sources with priority
-pub const LaunchpadConfigLoader = struct {
+pub const pantryConfigLoader = struct {
     allocator: std.mem.Allocator,
     zonfig_loader: zonfig.config_loader.ConfigLoader,
 
@@ -16,21 +16,21 @@ pub const LaunchpadConfigLoader = struct {
     /// Common config directory names
     const CONFIG_DIRS = [_][]const u8{ "", "config", ".config" };
 
-    pub fn init(allocator: std.mem.Allocator) !LaunchpadConfigLoader {
-        return LaunchpadConfigLoader{
+    pub fn init(allocator: std.mem.Allocator) !pantryConfigLoader {
+        return pantryConfigLoader{
             .allocator = allocator,
             .zonfig_loader = try zonfig.config_loader.ConfigLoader.init(allocator),
         };
     }
 
-    /// Load configuration with launchpad-specific search paths
+    /// Load configuration with pantry-specific search paths
     /// Searches for:
     /// 1. {name}.config.ts (TypeScript config)
     /// 2. {alias}.config.ts (e.g., buddy-bot.config.ts if alias is buddy-bot)
-    /// 3. launchpad.config.ts (default launchpad config)
+    /// 3. pantry.config.ts (default pantry config)
     /// 4. Standard zonfig search paths
     pub fn load(
-        self: *LaunchpadConfigLoader,
+        self: *pantryConfigLoader,
         options: LoadOptions,
     ) !zonfig.ConfigResult {
         // Determine CWD
@@ -102,7 +102,7 @@ pub const LaunchpadConfigLoader = struct {
 
     /// Execute TypeScript config file using Bun or Node.js
     /// Returns JSON output
-    fn executeTsConfig(self: *LaunchpadConfigLoader, ts_config_path: []const u8) ![]const u8 {
+    fn executeTsConfig(self: *pantryConfigLoader, ts_config_path: []const u8) ![]const u8 {
         // Try Bun first, then Node.js
         const runtimes = [_][]const u8{ "bun", "node" };
 
@@ -143,9 +143,9 @@ pub const LaunchpadConfigLoader = struct {
     /// Searches for:
     /// - {name}.config.ts
     /// - {alias}.config.ts (if provided)
-    /// - launchpad.config.ts (default)
+    /// - pantry.config.ts (default)
     fn findTsConfig(
-        self: *LaunchpadConfigLoader,
+        self: *pantryConfigLoader,
         name: []const u8,
         alias: ?[]const u8,
         cwd: []const u8,
@@ -164,8 +164,8 @@ pub const LaunchpadConfigLoader = struct {
                 }
             }
 
-            // Try default launchpad config
-            if (try self.tryConfigFile(dir, "launchpad", ".config.ts", cwd)) |path| {
+            // Try default pantry config
+            if (try self.tryConfigFile(dir, "pantry", ".config.ts", cwd)) |path| {
                 return path;
             }
         }
@@ -175,7 +175,7 @@ pub const LaunchpadConfigLoader = struct {
 
     /// Try to find a config file with specific directory, name, and extension
     fn tryConfigFile(
-        self: *LaunchpadConfigLoader,
+        self: *pantryConfigLoader,
         dir: []const u8,
         name: []const u8,
         ext: []const u8,
@@ -193,9 +193,9 @@ pub const LaunchpadConfigLoader = struct {
     }
 };
 
-/// Launchpad-specific load options
+/// pantry-specific load options
 pub const LoadOptions = struct {
-    /// Configuration name (e.g., "launchpad")
+    /// Configuration name (e.g., "pantry")
     name: []const u8,
 
     /// Optional alias (e.g., "buddy-bot")
@@ -223,16 +223,16 @@ pub const LoadOptions = struct {
     merge_strategy: zonfig.MergeStrategy = .smart,
 };
 
-/// Load launchpad configuration
-pub fn loadLaunchpadConfig(
+/// Load pantry configuration
+pub fn loadpantryConfig(
     allocator: std.mem.Allocator,
     options: LoadOptions,
 ) !zonfig.ConfigResult {
-    var loader = try LaunchpadConfigLoader.init(allocator);
+    var loader = try pantryConfigLoader.init(allocator);
     return try loader.load(options);
 }
 
-test "LaunchpadConfigLoader.findTsConfig finds config files" {
+test "pantryConfigLoader.findTsConfig finds config files" {
     const allocator = std.testing.allocator;
 
     var tmp = std.testing.tmpDir(.{});
@@ -246,7 +246,7 @@ test "LaunchpadConfigLoader.findTsConfig finds config files" {
     const cwd = try tmp.dir.realpathAlloc(allocator, ".");
     defer allocator.free(cwd);
 
-    var loader = try LaunchpadConfigLoader.init(allocator);
+    var loader = try pantryConfigLoader.init(allocator);
     const found = try loader.findTsConfig("test", null, cwd);
     defer if (found) |path| allocator.free(path);
 
@@ -254,7 +254,7 @@ test "LaunchpadConfigLoader.findTsConfig finds config files" {
     try std.testing.expect(std.mem.endsWith(u8, found.?, "test.config.ts"));
 }
 
-test "LaunchpadConfigLoader.findTsConfig finds alias config" {
+test "pantryConfigLoader.findTsConfig finds alias config" {
     const allocator = std.testing.allocator;
 
     var tmp = std.testing.tmpDir(.{});
@@ -268,8 +268,8 @@ test "LaunchpadConfigLoader.findTsConfig finds alias config" {
     const cwd = try tmp.dir.realpathAlloc(allocator, ".");
     defer allocator.free(cwd);
 
-    var loader = try LaunchpadConfigLoader.init(allocator);
-    const found = try loader.findTsConfig("launchpad", "buddy-bot", cwd);
+    var loader = try pantryConfigLoader.init(allocator);
+    const found = try loader.findTsConfig("pantry", "buddy-bot", cwd);
     defer if (found) |path| allocator.free(path);
 
     try std.testing.expect(found != null);
@@ -280,6 +280,6 @@ test "LaunchpadConfigLoader.findTsConfig finds alias config" {
 // The functionality works in practice - it executes .config.ts files using Bun or Node.js
 // and parses the resulting JSON output.
 //
-// test "LaunchpadConfigLoader parses TypeScript config" {
+// test "pantryConfigLoader parses TypeScript config" {
 //     // Test would require Bun or Node.js to be installed in test environment
 // }

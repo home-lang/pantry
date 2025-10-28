@@ -1,6 +1,6 @@
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+import type { pantryConfig } from '@stacksjs/pantry'
 
-export const config: LaunchpadConfig = {
+export const config: pantryConfig = {
   dependencies: {
     'bun': '1.2.21',
     'redis.io': '7.2.10',

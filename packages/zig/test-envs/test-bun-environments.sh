@@ -25,16 +25,16 @@ run_test() {
     local test_name="$1"
     local test_dir="$2"
     local test_command="$3"
-    
+
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     echo ""
     echo -e "${BLUE}🔍 Testing: $test_name${NC}"
     echo "Directory: $test_dir"
     echo "Command: $test_command"
     echo "----------------------------------------"
-    
+
     cd "$test_dir"
-    
+
     if eval "$test_command"; then
         echo -e "${GREEN}✅ PASSED: $test_name${NC}"
         PASSED_TESTS=$((PASSED_TESTS + 1))
@@ -42,35 +42,35 @@ run_test() {
         echo -e "${RED}❌ FAILED: $test_name${NC}"
         FAILED_TESTS=$((FAILED_TESTS + 1))
     fi
-    
+
     echo ""
 }
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LAUNCHPAD_BIN="$SCRIPT_DIR/../bin/launchpad"
+pantry_BIN="$SCRIPT_DIR/../bin/pantry"
 
-echo "Using Launchpad binary: $LAUNCHPAD_BIN"
+echo "Using pantry binary: $pantry_BIN"
 
 # Test 1: Basic Bun (no version)
 run_test "Basic Bun Package Manager (no version)" \
     "$SCRIPT_DIR/bun-package-manager-basic" \
-    "$LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'bun.sh' && ! $LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
+    "$pantry_BIN install --verbose --dry-run | grep -q 'bun.sh' && ! $pantry_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
 
 # Test 2: Versioned Bun
 run_test "Versioned Bun Package Manager" \
     "$SCRIPT_DIR/bun-package-manager-versioned" \
-    "$LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'bun.sh@1.2.20' && ! $LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
+    "$pantry_BIN install --verbose --dry-run | grep -q 'bun.sh@1.2.20' && ! $pantry_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
 
 # Test 3: Bun with dependencies
 run_test "Bun with Additional Dependencies" \
     "$SCRIPT_DIR/bun-package-manager-with-deps" \
-    "$LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'bun.sh' && $LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'esbuild.github.io' && ! $LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
+    "$pantry_BIN install --verbose --dry-run | grep -q 'bun.sh' && $pantry_BIN install --verbose --dry-run | grep -q 'esbuild.github.io' && ! $pantry_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
 
 # Test 4: Bun vs Node engines conflict
 run_test "Bun Package Manager vs Node Engines Conflict" \
     "$SCRIPT_DIR/bun-vs-node-engines" \
-    "$LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'bun.sh' && ! $LAUNCHPAD_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
+    "$pantry_BIN install --verbose --dry-run | grep -q 'bun.sh' && ! $pantry_BIN install --verbose --dry-run | grep -q 'nodejs.org'"
 
 # Summary
 echo ""

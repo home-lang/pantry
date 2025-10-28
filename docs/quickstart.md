@@ -1,35 +1,35 @@
 # Quick Start
 
-This guide will help you install, configure, and start using Launchpad right away.
+This guide will help you install, configure, and start using pantry right away.
 
-## 1. Install Launchpad
+## 1. Install pantry
 
 Choose your preferred package manager:
 
 ```bash
 # Recommended: Bun (fastest)
-bun add -g @stacksjs/launchpad
+bun add -g @stacksjs/pantry
 
 # Or use npm
-npm install -g @stacksjs/launchpad
+npm install -g @stacksjs/pantry
 
 # Or use yarn
-yarn global add @stacksjs/launchpad
+yarn global add @stacksjs/pantry
 
 # Or use pnpm
-pnpm add -g @stacksjs/launchpad
+pnpm add -g @stacksjs/pantry
 ```
 
 ## 2. Bootstrap Your Environment
 
-Let Launchpad set up everything you need automatically:
+Let pantry set up everything you need automatically:
 
 ```bash
 # One command to rule them all
-launchpad bootstrap
+pantry bootstrap
 
 # See what's happening (recommended for first run)
-launchpad bootstrap --verbose
+pantry bootstrap --verbose
 ```
 
 This command will:
@@ -40,15 +40,15 @@ This command will:
 
 ## 3. (Optional) Set Up Shell Integration
 
-Shell integration is installed automatically when you run `launchpad bootstrap` (unless you pass `--skip-shell-integration`). If you skipped bootstrap or want to set it up manually, run:
+Shell integration is installed automatically when you run `pantry bootstrap` (unless you pass `--skip-shell-integration`). If you skipped bootstrap or want to set it up manually, run:
 
 ```bash
 # Add to your shell configuration (zsh)
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 source ~/.zshrc
 
 # Or for bash users
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.bashrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -56,7 +56,7 @@ source ~/.bashrc
 
 ```bash
 # Install Node.js
-launchpad install node@22
+pantry install node@22
 
 # Verify it works
 node --version
@@ -66,8 +66,8 @@ node --version
 
 ```bash
 # Create a new project
-mkdir my-first-launchpad-project
-cd my-first-launchpad-project
+mkdir my-first-pantry-project
+cd my-first-pantry-project
 
 # Create a dependency file
 cat > dependencies.yaml << EOF
@@ -81,7 +81,7 @@ env:
 EOF
 
 # Environment automatically activates!
-# You should see: ✅ Environment activated for /path/to/my-first-launchpad-project
+# You should see: ✅ Environment activated for /path/to/my-first-pantry-project
 ```
 
 ## 6. Verify Everything Works
@@ -96,36 +96,36 @@ echo $NODE_ENV          # Should show: development
 echo $PROJECT_NAME      # Should show: my-first-project
 
 # List installed packages
-launchpad list
+pantry list
 ```
 
 ## What Just Happened?
 
 🎉 **Congratulations!** You've just:
 
-1. **Installed Launchpad** - A modern package manager that works alongside your existing tools
+1. **Installed pantry** - A modern package manager that works alongside your existing tools
 2. **Bootstrapped your system** - Set up pkgx, Bun, and (optionally) shell integration
 3. **Created your first environment** - Project-specific isolation with automatic activation
 4. **Installed packages** - Node.js and TypeScript are now available in your project
 
 ## Next Steps
 
-Now that you have Launchpad running, here's what you can explore:
+Now that you have pantry running, here's what you can explore:
 
 ### Explore More Commands
 
 ```bash
 # Install multiple packages at once
-launchpad install python@3.12 go@1.21
+pantry install python@3.12 go@1.21
 
 # Remove packages
-launchpad remove python
+pantry remove python
 
 # List all environments
-launchpad env:list
+pantry env:list
 
 # Clean up old environments
-launchpad env:clean --dry-run
+pantry env:clean --dry-run
 ```
 
 ### Create More Projects
@@ -160,40 +160,43 @@ EOF
 
 ```bash
 # Customize shell messages
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Ready to code: {path}"
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 See you later!"
+export pantry_SHELL_ACTIVATION_MESSAGE="🚀 Ready to code: {path}"
+export pantry_SHELL_DEACTIVATION_MESSAGE="👋 See you later!"
 
 # Or disable messages entirely
-export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+export pantry_SHOW_ENV_MESSAGES=false
 ```
 
 ## Common Commands Reference
 
 | Command | Description |
 |---------|-------------|
-| `launchpad install <pkg>` | Install a package |
-| `launchpad remove <pkg>` | Remove a package |
-| `launchpad list` | List installed packages |
-| `launchpad env:list` | List all environments |
-| `launchpad env:clean` | Clean up old environments |
-| `launchpad bootstrap` | Set up everything |
-| `launchpad help` | Show help |
+| `pantry install <pkg>` | Install a package |
+| `pantry remove <pkg>` | Remove a package |
+| `pantry list` | List installed packages |
+| `pantry env:list` | List all environments |
+| `pantry env:clean` | Clean up old environments |
+| `pantry bootstrap` | Set up everything |
+| `pantry help` | Show help |
 
 ## Troubleshooting
 
 ### Environment Not Activating?
 
 1. Make sure shell integration is set up:
+
    ```bash
-   grep "launchpad dev:shellcode" ~/.zshrc
+   grep "pantry dev:shellcode" ~/.zshrc
    ```
 
 2. Reload your shell:
+
    ```bash
    source ~/.zshrc
    ```
 
 3. Check for dependency files:
+
    ```bash
    ls -la dependencies.yaml
    ```
@@ -201,24 +204,26 @@ export LAUNCHPAD_SHOW_ENV_MESSAGES=false
 ### Package Not Found?
 
 1. Check the exact package name:
+
    ```bash
-   launchpad list
+   pantry list
    ```
 
 2. Try verbose installation:
+
    ```bash
-   launchpad install --verbose node@22
+   pantry install --verbose node@22
    ```
 
 ### Need Help?
 
 ```bash
 # Get help for any command
-launchpad help
-launchpad install --help
+pantry help
+pantry install --help
 
 # Check your configuration
-launchpad --version
+pantry --version
 ```
 
 ## Learn More
@@ -226,11 +231,11 @@ launchpad --version
 Ready to dive deeper? Check out these guides:
 
 - **[Basic Usage](./usage.md)** - Comprehensive command reference
-- **[Configuration](./config.md)** - Customize Launchpad to your needs
+- **[Configuration](./config.md)** - Customize pantry to your needs
 - **[Examples](./examples.md)** - Real-world usage examples
 - **[Environment Management](./features/environment-management.md)** - Advanced environment features
 
-## What Makes Launchpad Different?
+## What Makes pantry Different?
 
 - **🚀 Fast** - No waiting around for package installations
 - **🔒 Isolated** - Each project gets its own environment

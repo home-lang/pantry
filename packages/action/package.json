@@ -1,20 +1,20 @@
 {
-  "name": "launchpad-installer",
+  "name": "pantry-installer",
   "version": "0.6.4",
-  "description": "GitHub Action to install packages using Launchpad.",
+  "description": "GitHub Action to install packages using pantry.",
   "author": "Stacks.js <hello@stacks.js.org>",
   "license": "MIT",
-  "homepage": "https://github.com/stacksjs/launchpad#readme",
+  "homepage": "https://github.com/stacksjs/pantry#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stacksjs/launchpad.git"
+    "url": "git+https://github.com/stacksjs/pantry.git"
   },
   "bugs": {
-    "url": "https://github.com/stacksjs/launchpad/issues"
+    "url": "https://github.com/stacksjs/pantry/issues"
   },
   "keywords": [
     "github-action",
-    "launchpad",
+    "pantry",
     "pkgx",
     "package-manager",
     "ci-cd",
@@ -23,7 +23,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "launchpad-installer": "dist/index.js"
+    "pantry-installer": "dist/index.js"
   },
   "scripts": {
     "build": "bun run build.ts",

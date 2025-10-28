@@ -1,17 +1,17 @@
 # Troubleshooting
 
-This guide helps you diagnose and resolve common issues with Launchpad. Most problems can be solved quickly with the right diagnostic commands.
+This guide helps you diagnose and resolve common issues with pantry. Most problems can be solved quickly with the right diagnostic commands.
 
 ## Quick Diagnostics
 
-### Check Launchpad Status
+### Check pantry Status
 
 ```bash
-# Verify Launchpad is installed and working
-launchpad --version
+# Verify pantry is installed and working
+pantry --version
 
 # Check current configuration
-launchpad list --verbose
+pantry list --verbose
 
 # Test shell integration
 type _pkgx_chpwd_hook || echo "Shell integration not working"
@@ -21,14 +21,14 @@ type _pkgx_chpwd_hook || echo "Shell integration not working"
 
 ```bash
 # Check current environment
-echo "Environment hash: $LAUNCHPAD_ENV_HASH"
-echo "Project name: $LAUNCHPAD_PROJECT_NAME"
+echo "Environment hash: $pantry_ENV_HASH"
+echo "Project name: $pantry_PROJECT_NAME"
 
 # List all environments
-launchpad env:list
+pantry env:list
 
 # Check for dependency files
-ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/dev/null
+ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev/null
 ```
 
 ## Installation Issues
@@ -36,33 +36,38 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Package Not Found
 
 **Symptoms:**
+
 - Error: "Package 'xyz' not found"
 - Installation fails immediately
 
 **Solutions:**
 
 1. **Check package name and version:**
+
    ```bash
    # Try different package name formats
-   launchpad install node@22      # Standard format
-   launchpad install nodejs.org@22  # With domain
-   launchpad install node         # Latest version
+   pantry install node@22      # Standard format
+   pantry install nodejs.org@22  # With domain
+   pantry install node         # Latest version
    ```
 
-2. **Verify with Launchpad's search:**
+2. **Verify with pantry's search:**
+
    ```bash
-   launchpad search node
-   launchpad info node
+   pantry search node
+   pantry info node
    ```
 
 3. **Use verbose mode for details:**
+
    ```bash
-   launchpad install --verbose node@22
+   pantry install --verbose node@22
    ```
 
 ### Permission Denied Errors
 
 **Symptoms:**
+
 - "Permission denied" when installing
 - "EACCES" errors
 - Installation fails after asking for password
@@ -70,22 +75,26 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 **Solutions:**
 
 1. **Check installation directory permissions:**
+
    ```bash
    ls -la /usr/local/
    ls -la ~/.local/
    ```
 
 2. **Fix /usr/local permissions:**
+
    ```bash
    sudo chown -R $(whoami) /usr/local/bin /usr/local/sbin
    ```
 
 3. **Use user-local installation:**
+
    ```bash
-   launchpad install --path ~/.local node@22
+   pantry install --path ~/.local node@22
    ```
 
 4. **Verify PATH includes user directories:**
+
    ```bash
    echo $PATH | grep -E "(\.local/bin|\.local/sbin)"
    ```
@@ -93,6 +102,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Network/Download Issues
 
 **Symptoms:**
+
 - Timeouts during installation
 - Download failures
 - "Connection refused" errors
@@ -100,16 +110,19 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 **Solutions:**
 
 1. **Check internet connection:**
+
    ```bash
    curl -I https://pkgx.sh
    ```
 
 2. **Increase timeout:**
+
    ```bash
-   launchpad install --timeout 120000 node@22  # 2 minutes
+   pantry install --timeout 120000 node@22  # 2 minutes
    ```
 
 3. **Try different mirror or later:**
+
    ```bash
    # Sometimes pkgx mirrors are temporarily down
    # Wait a few minutes and try again
@@ -120,6 +133,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Environment Not Activating
 
 **Symptoms:**
+
 - No activation message when entering directories
 - Environment variables not set
 - Wrong package versions in project
@@ -127,35 +141,40 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 **Diagnosis:**
 
 1. **Check shell integration:**
+
    ```bash
    # Should show function definition
    type _pkgx_chpwd_hook
 
    # Check shell config
-   grep "launchpad dev:shellcode" ~/.zshrc ~/.bashrc
+   grep "pantry dev:shellcode" ~/.zshrc ~/.bashrc
    ```
 
 2. **Verify dependency file:**
+
    ```bash
    # Check file exists and has correct syntax
    cat dependencies.yaml
-   launchpad dev:dump --dryrun --verbose
+   pantry dev:dump --dryrun --verbose
    ```
 
 3. **Test manual activation:**
+
    ```bash
-   launchpad dev:on
+   pantry dev:on
    ```
 
 **Solutions:**
 
 1. **Set up shell integration:**
+
    ```bash
-   echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+   echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
    source ~/.zshrc
    ```
 
 2. **Fix dependency file syntax:**
+
    ```yaml
    # Correct format
    dependencies:
@@ -167,6 +186,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
    ```
 
 3. **Reload shell environment:**
+
    ```bash
    source ~/.zshrc
    # Or restart your terminal
@@ -175,48 +195,56 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Shell Messages Not Showing
 
 **Symptoms:**
+
 - Environment activates but no messages appear
 - Silent activation/deactivation
 
 **Solutions:**
 
 1. **Check message settings:**
+
    ```bash
-   echo $LAUNCHPAD_SHOW_ENV_MESSAGES
+   echo $pantry_SHOW_ENV_MESSAGES
    ```
 
 2. **Enable messages:**
+
    ```bash
-   export LAUNCHPAD_SHOW_ENV_MESSAGES=true
+   export pantry_SHOW_ENV_MESSAGES=true
    ```
 
 3. **Test custom messages:**
+
    ```bash
-   export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 Environment ready: {path}"
+   export pantry_SHELL_ACTIVATION_MESSAGE="🔧 Environment ready: {path}"
    cd my-project/  # Should show custom message
    ```
 
 ### Wrong Package Versions
 
 **Symptoms:**
+
 - Project uses global versions instead of project-specific
 - `node --version` shows unexpected version
 
 **Solutions:**
 
 1. **Check environment activation:**
+
    ```bash
-   echo $LAUNCHPAD_ENV_HASH  # Should not be empty
+   echo $pantry_ENV_HASH  # Should not be empty
    which node  # Should point to environment directory
    ```
 
 2. **Verify PATH order:**
+
    ```bash
    echo $PATH
    # Environment directories should come first
    ```
 
 3. **Force environment reload:**
+
    ```bash
    cd .. && cd -  # Exit and re-enter directory
    ```
@@ -226,53 +254,61 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Slow Environment Activation
 
 **Symptoms:**
+
 - Long delay when entering directories
 - Slow command execution
 
 **Solutions:**
 
 1. **Clean up old environments:**
+
    ```bash
-   launchpad env:clean --older-than 7
+   pantry env:clean --older-than 7
    ```
 
 2. **Check environment size:**
+
    ```bash
-   launchpad env:list --verbose
-   du -sh ~/.local/share/launchpad/envs/*
+   pantry env:list --verbose
+   du -sh ~/.local/share/pantry/envs/*
    ```
 
 3. **Remove large/unused environments:**
+
    ```bash
-   launchpad env:remove large_environment_hash --force
+   pantry env:remove large_environment_hash --force
    ```
 
 ### Disk Space Issues
 
 **Symptoms:**
+
 - "No space left on device" errors
 - Installation failures due to disk space
 
 **Solutions:**
 
 1. **Check disk usage:**
+
    ```bash
-   df -h ~/.local/share/launchpad/
-   du -sh ~/.local/share/launchpad/envs/*
+   df -h ~/.local/share/pantry/
+   du -sh ~/.local/share/pantry/envs/*
    ```
 
 2. **Clean up environments:**
+
    ```bash
    # Remove old environments
-   launchpad env:clean --older-than 14 --force
+   pantry env:clean --older-than 14 --force
 
    # Remove failed installations
-   launchpad env:clean --force
+   pantry env:clean --force
    ```
 
 3. **Use custom location with more space:**
+
    ```bash
-   export LAUNCHPAD_ENV_BASE_DIR=/path/to/larger/disk
+   export pantry_ENV_BASE_DIR=/path/to/larger/disk
    ```
 
 ## Configuration Issues
@@ -280,55 +316,63 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Configuration Not Loading
 
 **Symptoms:**
+
 - Custom settings ignored
 - Default behavior despite configuration file
 
 **Solutions:**
 
 1. **Check configuration file location:**
+
    ```bash
-   ls -la launchpad.config.{ts,js,json} .launchpadrc
-   ls -la ~/.config/launchpad/config.json
+   ls -la pantry.config.{ts,js,json} .pantryrc
+   ls -la ~/.config/pantry/config.json
    ```
 
 2. **Validate configuration syntax:**
+
    ```bash
    # For TypeScript files
-   bunx tsc --noEmit launchpad.config.ts
+   bunx tsc --noEmit pantry.config.ts
 
    # For JSON files
-   cat .launchpadrc | python -m json.tool
+   cat .pantryrc | python -m json.tool
    ```
 
 3. **Test configuration loading:**
+
    ```bash
-   launchpad --verbose list  # Should show resolved config
+   pantry --verbose list  # Should show resolved config
    ```
 
 ### Environment Variables Not Working
 
 **Symptoms:**
+
 - Custom environment variables not set
 - Wrong values in project environment
 
 **Solutions:**
 
 1. **Check dependency file:**
+
    ```bash
    cat dependencies.yaml
    # Verify env section syntax
    ```
 
 2. **Test variable expansion:**
+
    ```bash
-   launchpad dev:dump --verbose
+   pantry dev:dump --verbose
    echo $MY_CUSTOM_VAR
    ```
 
 3. **Check for shell conflicts:**
+
    ```bash
    # Temporarily disable other shell customizations
-   # and test Launchpad environment
+   # and test pantry environment
    ```
 
 ## Shell Integration Issues
@@ -336,57 +380,65 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Shell Integration Not Working
 
 **Symptoms:**
+
 - Commands like `cd` don't trigger environment changes
-- Manual `launchpad dev:on` works but automatic doesn't
+- Manual `pantry dev:on` works but automatic doesn't
 
 **Solutions:**
 
 1. **Check shell type:**
+
    ```bash
    echo $SHELL
    ps -p $$
    ```
 
 2. **Verify integration code:**
+
    ```bash
-   launchpad dev:shellcode  # Should output shell functions
+   pantry dev:shellcode  # Should output shell functions
    ```
 
 3. **Check for conflicts:**
+
    ```bash
    # Look for other tools that might interfere
    grep -E "(nvm|rbenv|pyenv)" ~/.zshrc ~/.bashrc
    ```
 
 4. **Reinstall shell integration:**
+
    ```bash
    # Remove old integration
-   sed -i '/launchpad dev:shellcode/d' ~/.zshrc
+   sed -i '/pantry dev:shellcode/d' ~/.zshrc
 
    # Add fresh integration
-   echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+   echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
    source ~/.zshrc
    ```
 
 ### Multiple Shell Conflicts
 
 **Symptoms:**
+
 - Environment doesn't activate in new shells
 - Inconsistent behavior across terminals
 
 **Solutions:**
 
 1. **Check all shell config files:**
+
    ```bash
-   grep "launchpad" ~/.zshrc ~/.bashrc ~/.bash_profile ~/.profile
+   grep "pantry" ~/.zshrc ~/.bashrc ~/.bash_profile ~/.profile
    ```
 
 2. **Ensure consistent integration:**
+
    ```bash
    # Add to all relevant shell configs
    for file in ~/.zshrc ~/.bashrc; do
      if [ -f "$file" ]; then
-       echo 'eval "$(launchpad dev:shellcode)"' >> "$file"
+       echo 'eval "$(pantry dev:shellcode)"' >> "$file"
      fi
    done
    ```
@@ -394,12 +446,13 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{launchpad,pkgx,deps}.{yaml,yml} 2>/
 ### Starship Prompt Timeout Warnings
 
 **Symptoms:**
+
 - Warning messages like: `[WARN] - (starship::utils): Executing command "/.../bin/bun" timed out`
 - Starship suggests: `You can set command_timeout in your config to a higher value`
 - Timeout warnings when changing directories in projects
 
 **Cause:**
-Starship tries to execute Launchpad-managed binaries (like `bun`, `node`, etc.) to detect tool versions for the prompt. When Launchpad's environment is activating, these binaries might take longer to respond than Starship's default timeout allows.
+Starship tries to execute pantry-managed binaries (like `bun`, `node`, etc.) to detect tool versions for the prompt. When pantry's environment is activating, these binaries might take longer to respond than Starship's default timeout allows.
 
 **Solutions:**
 
@@ -420,6 +473,7 @@ Starship tries to execute Launchpad-managed binaries (like `bun`, `node`, etc.) 
    ```
 
 2. **Test the fix:**
+
    ```bash
    # Restart your shell or source your config
    source ~/.zshrc
@@ -447,32 +501,36 @@ Starship tries to execute Launchpad-managed binaries (like `bun`, `node`, etc.) 
 ### Complete Removal
 
 **Symptoms:**
-- Want to completely remove Launchpad
+
+- Want to completely remove pantry
 - Start fresh after problems
 
 **Solutions:**
 
 1. **Use uninstall command:**
+
    ```bash
-   launchpad uninstall --force
+   pantry uninstall --force
    ```
 
 2. **Manual cleanup:**
+
    ```bash
    # Remove packages
    rm -rf ~/.local/bin/pkgx ~/.local/bin/bun
-   rm -rf ~/.local/share/launchpad/
+   rm -rf ~/.local/share/pantry/
 
    # Remove shell integration
-   sed -i '/launchpad/d' ~/.zshrc ~/.bashrc
+   sed -i '/pantry/d' ~/.zshrc ~/.bashrc
 
    # Remove global package
-   npm uninstall -g @stacksjs/launchpad
+   npm uninstall -g @stacksjs/pantry
    ```
 
 3. **Clean PATH:**
+
    ```bash
-   # Edit shell config to remove Launchpad paths
+   # Edit shell config to remove pantry paths
    # Restart terminal
    ```
 
@@ -482,11 +540,11 @@ Starship tries to execute Launchpad-managed binaries (like `bun`, `node`, etc.) 
 
 ```bash
 # Set debug environment variables
-export LAUNCHPAD_DEBUG=true
-export LAUNCHPAD_VERBOSE=true
+export pantry_DEBUG=true
+export pantry_VERBOSE=true
 
 # Run commands with maximum verbosity
-launchpad --verbose install node@22
+pantry --verbose install node@22
 ```
 
 ### Collect System Information
@@ -495,7 +553,7 @@ launchpad --verbose install node@22
 # System info for bug reports
 echo "OS: $(uname -a)"
 echo "Shell: $SHELL ($($SHELL --version))"
-echo "Launchpad: $(launchpad --version)"
+echo "pantry: $(pantry --version)"
 echo "Node: $(node --version 2>/dev/null || echo 'not installed')"
 echo "Bun: $(bun --version 2>/dev/null || echo 'not installed')"
 
@@ -503,24 +561,24 @@ echo "Bun: $(bun --version 2>/dev/null || echo 'not installed')"
 echo "PATH: $PATH"
 echo "HOME: $HOME"
 echo "PWD: $PWD"
-env | grep LAUNCHPAD
+env | grep pantry
 ```
 
 ### Log Analysis
 
 ```bash
-# Check system logs for Launchpad-related errors
-grep -i launchpad /var/log/system.log  # macOS
-journalctl | grep -i launchpad         # Linux systemd
+# Check system logs for pantry-related errors
+grep -i pantry /var/log/system.log  # macOS
+journalctl | grep -i pantry         # Linux systemd
 ```
 
 ## Getting Help
 
 ### Community Support
 
-- **GitHub Discussions**: [stacksjs/launchpad discussions](https://github.com/stacksjs/launchpad/discussions)
+- **GitHub Discussions**: [stacksjs/pantry discussions](https://github.com/stacksjs/pantry/discussions)
 - **Discord**: [Join Stacks Discord](https://discord.gg/stacksjs)
-- **Issues**: [Report bugs](https://github.com/stacksjs/launchpad/issues)
+- **Issues**: [Report bugs](https://github.com/stacksjs/pantry/issues)
 
 ### Reporting Bugs
 
@@ -545,13 +603,14 @@ which postgres
 which redis-server
 
 # Check service logs
-tail -f ~/.local/share/launchpad/logs/postgres.log
+tail -f ~/.local/share/pantry/logs/postgres.log
 
 # Check port availability
 lsof -i :5432  # Check if PostgreSQL port is in use
 ```
 
 **Common Causes**:
+
 1. **Missing binary**: Install the service package first
 2. **Port conflict**: Another service is using the same port
 3. **Permission issues**: Data directory not writable
@@ -561,17 +620,17 @@ lsof -i :5432  # Check if PostgreSQL port is in use
 
 ```bash
 # Install missing service packages
-launchpad install postgresql@15
+pantry install postgresql@15
 
 # Kill conflicting processes
 sudo lsof -ti:5432 | xargs kill -9
 
 # Fix data directory permissions
-chown -R $USER ~/.local/share/launchpad/services/
+chown -R $USER ~/.local/share/pantry/services/
 
 # Reset service configuration
-rm ~/.local/share/launchpad/services/config/postgres.conf
-launchpad service start postgres  # Regenerates default config
+rm ~/.local/share/pantry/services/config/postgres.conf
+pantry service start postgres  # Regenerates default config
 ```
 
 ### Service Health Check Failures
@@ -593,8 +652,8 @@ which redis-cli
 
 ```bash
 # Install missing health check tools
-launchpad install postgresql@15  # Includes pg_isready
-launchpad install redis@7        # Includes redis-cli
+pantry install postgresql@15  # Includes pg_isready
+pantry install redis@7        # Includes redis-cli
 
 # Test service manually
 telnet localhost 5432  # Test basic connectivity
@@ -606,29 +665,31 @@ telnet localhost 5432  # Test basic connectivity
 **Platform-Specific Diagnosis**:
 
 #### macOS (launchd)
+
 ```bash
 # Check launchd status
-launchctl list | grep com.launchpad
+launchctl list | grep com.pantry
 
 # Check plist file
-cat ~/Library/LaunchAgents/com.launchpad.postgres.plist
+cat ~/Library/LaunchAgents/com.pantry.postgres.plist
 
 # Manual launchd operations
-launchctl load ~/Library/LaunchAgents/com.launchpad.postgres.plist
-launchctl start com.launchpad.postgres
+launchctl load ~/Library/LaunchAgents/com.pantry.postgres.plist
+launchctl start com.pantry.postgres
 ```
 
 #### Linux (systemd)
+
 ```bash
 # Check systemd status
-systemctl --user status launchpad-postgres
+systemctl --user status pantry-postgres
 
 # Check service logs
-journalctl --user -u launchpad-postgres
+journalctl --user -u pantry-postgres
 
 # Manual systemd operations
-systemctl --user enable launchpad-postgres
-systemctl --user start launchpad-postgres
+systemctl --user enable pantry-postgres
+systemctl --user start pantry-postgres
 ```
 
 ### Service Configuration Issues
@@ -638,28 +699,29 @@ systemctl --user start launchpad-postgres
 
 ```bash
 # Check generated configuration
-cat ~/.local/share/launchpad/services/config/redis.conf
-cat ~/.local/share/launchpad/services/config/nginx.conf
+cat ~/.local/share/pantry/services/config/redis.conf
+cat ~/.local/share/pantry/services/config/nginx.conf
 
 # Validate configuration syntax
-nginx -t -c ~/.local/share/launchpad/services/config/nginx.conf
+nginx -t -c ~/.local/share/pantry/services/config/nginx.conf
 ```
 
 **Solutions**:
 
 ```bash
 # Regenerate default configuration
-rm ~/.local/share/launchpad/services/config/redis.conf
-launchpad service restart redis
+rm ~/.local/share/pantry/services/config/redis.conf
+pantry service restart redis
 
 # Edit configuration manually
-nano ~/.local/share/launchpad/services/config/redis.conf
-launchpad service restart redis
+nano ~/.local/share/pantry/services/config/redis.conf
+pantry service restart redis
 ```
 
 ### Platform-Specific Service Issues
 
 #### Windows
+
 Service management is not supported on Windows. Services must be run manually:
 
 ```bash
@@ -669,6 +731,7 @@ redis-server redis.conf
 ```
 
 #### macOS Permission Issues
+
 ```bash
 # Grant full disk access to Terminal.app
 # System Preferences > Security & Privacy > Privacy > Full Disk Access
@@ -678,6 +741,7 @@ redis-server redis.conf
 ```
 
 #### Linux systemd Issues
+
 ```bash
 # Enable systemd user services
 sudo systemctl enable systemd-logind
@@ -694,27 +758,27 @@ systemctl --user daemon-reload
 
 ```bash
 # Check data directories
-ls -la ~/.local/share/launchpad/services/
-du -sh ~/.local/share/launchpad/services/*/
+ls -la ~/.local/share/pantry/services/
+du -sh ~/.local/share/pantry/services/*/
 
 # Check log files
-ls -la ~/.local/share/launchpad/logs/
-tail -f ~/.local/share/launchpad/logs/*.log
+ls -la ~/.local/share/pantry/logs/
+tail -f ~/.local/share/pantry/logs/*.log
 ```
 
 **Solutions**:
 
 ```bash
 # Create missing directories
-mkdir -p ~/.local/share/launchpad/services/postgres/data
-mkdir -p ~/.local/share/launchpad/logs
+mkdir -p ~/.local/share/pantry/services/postgres/data
+mkdir -p ~/.local/share/pantry/logs
 
 # Fix permissions
-chown -R $USER ~/.local/share/launchpad/
-chmod -R 755 ~/.local/share/launchpad/
+chown -R $USER ~/.local/share/pantry/
+chmod -R 755 ~/.local/share/pantry/
 
 # Backup data before troubleshooting
-tar -czf services-backup.tar.gz ~/.local/share/launchpad/services/
+tar -czf services-backup.tar.gz ~/.local/share/pantry/services/
 ```
 
 ### Service Network and Port Issues
@@ -746,29 +810,29 @@ sudo lsof -ti:5432 | xargs kill -9
 sudo ufw allow 5432/tcp
 
 # Change service port in configuration
-nano ~/.local/share/launchpad/services/config/postgres.conf
+nano ~/.local/share/pantry/services/config/postgres.conf
 # Change: port = 5433
-launchpad service restart postgres
+pantry service restart postgres
 ```
 
 ### Service Management Commands Not Working
 
-**Symptoms**: `launchpad service` commands fail
+**Symptoms**: `pantry service` commands fail
 **Diagnosis**:
 
 ```bash
 # Check if service management is enabled
-echo $LAUNCHPAD_SERVICES_ENABLED
+echo $pantry_SERVICES_ENABLED
 
 # Check platform support
-launchpad service list  # Should show available services
+pantry service list  # Should show available services
 ```
 
 **Solutions**:
 
 ```bash
 # Enable service management
-export LAUNCHPAD_SERVICES_ENABLED=true
+export pantry_SERVICES_ENABLED=true
 
 # On unsupported platforms, services must be run manually
 # Use Docker or other container solutions for service management
@@ -776,7 +840,7 @@ export LAUNCHPAD_SERVICES_ENABLED=true
 
 ### Self-Help Resources
 
-- **Built-in help**: `launchpad help`, `launchpad <command> --help`
+- **Built-in help**: `pantry help`, `pantry <command> --help`
 - **Service documentation**: [Service Management](./features/service-management.md)
 - **Configuration reference**: [Configuration Guide](./config.md)
 - **Usage examples**: [Examples](./examples.md)

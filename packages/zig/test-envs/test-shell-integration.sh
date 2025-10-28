@@ -1,33 +1,33 @@
 #!/bin/bash
 
 # Comprehensive Shell Integration Test Script
-# Tests that launchpad shell integration works correctly across all environments
+# Tests that pantry shell integration works correctly across all environments
 # and can detect future regressions
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Use the correct launchpad binary - prefer the one in PATH, fallback to common locations
-LAUNCHPAD_BIN=""
-if command -v launchpad >/dev/null 2>&1; then
-    LAUNCHPAD_BIN="launchpad"
-elif [[ -f "$HOME/.bun/bin/launchpad" ]]; then
-    LAUNCHPAD_BIN="$HOME/.bun/bin/launchpad"
-elif [[ -f "/usr/local/bin/launchpad" ]]; then
-    LAUNCHPAD_BIN="/usr/local/bin/launchpad"
-elif [[ -f "$SCRIPT_DIR/../bin/launchpad" ]]; then
-    LAUNCHPAD_BIN="$SCRIPT_DIR/../bin/launchpad"
+# Use the correct pantry binary - prefer the one in PATH, fallback to common locations
+pantry_BIN=""
+if command -v pantry >/dev/null 2>&1; then
+    pantry_BIN="pantry"
+elif [[ -f "$HOME/.bun/bin/pantry" ]]; then
+    pantry_BIN="$HOME/.bun/bin/pantry"
+elif [[ -f "/usr/local/bin/pantry" ]]; then
+    pantry_BIN="/usr/local/bin/pantry"
+elif [[ -f "$SCRIPT_DIR/../bin/pantry" ]]; then
+    pantry_BIN="$SCRIPT_DIR/../bin/pantry"
 else
-    echo "❌ Could not find launchpad binary"
+    echo "❌ Could not find pantry binary"
     exit 1
 fi
 
 FAILED_TESTS=0
 PASSED_TESTS=0
 
-echo "🧪 Running Launchpad Shell Integration Tests"
+echo "🧪 Running pantry Shell Integration Tests"
 echo "============================================="
-echo "Using launchpad binary: $LAUNCHPAD_BIN"
+echo "Using pantry binary: $pantry_BIN"
 
 # Colors for output
 RED='\033[0;31m'
@@ -84,15 +84,15 @@ run_test() {
 # Basic functionality tests
 echo -e "\n${BLUE}=== Basic Functionality Tests ===${NC}"
 
-run_test "Binary execution" "." "$LAUNCHPAD_BIN --version"
-run_test "Help command" "." "$LAUNCHPAD_BIN --help | head -5"
+run_test "Binary execution" "." "$pantry_BIN --version"
+run_test "Help command" "." "$pantry_BIN --help | head -5"
 
 # Shell code generation tests
 echo -e "\n${BLUE}=== Shell Code Generation Tests ===${NC}"
 
-run_test "Shell code generation" "." "$LAUNCHPAD_BIN dev:shellcode >/dev/null"
-run_test "Shell code without ANSI" "." "$LAUNCHPAD_BIN dev:shellcode | od -c | grep -v '\\\\033' >/dev/null"
-run_test "Shell code with env suppression" "." "LAUNCHPAD_SHELL_INTEGRATION=1 $LAUNCHPAD_BIN dev:shellcode >/dev/null"
+run_test "Shell code generation" "." "$pantry_BIN dev:shellcode >/dev/null"
+run_test "Shell code without ANSI" "." "$pantry_BIN dev:shellcode | od -c | grep -v '\\\\033' >/dev/null"
+run_test "Shell code with env suppression" "." "pantry_SHELL_INTEGRATION=1 $pantry_BIN dev:shellcode >/dev/null"
 
 # Environment-specific tests
 echo -e "\n${BLUE}=== Environment-Specific Tests ===${NC}"
@@ -115,8 +115,8 @@ for env_config in "${test_environments[@]}"; do
     IFS=':' read -r env_name dep_file <<< "$env_config"
 
     if [[ -d "$SCRIPT_DIR/$env_name" ]]; then
-        run_test "Dry run: $env_name" "$env_name" "$LAUNCHPAD_BIN dev --dry-run"
-        run_test "Shell code: $env_name" "$env_name" "$LAUNCHPAD_BIN dev:shellcode | head -10 >/dev/null"
+        run_test "Dry run: $env_name" "$env_name" "$pantry_BIN dev --dry-run"
+        run_test "Shell code: $env_name" "$env_name" "$pantry_BIN dev:shellcode | head -10 >/dev/null"
         run_test "Environment detection: $env_name" "$env_name" "test -f $dep_file"
     else
         echo -e "${YELLOW}⚠️  Skipping missing environment:${NC} $env_name"
@@ -126,15 +126,15 @@ done
 # Integration tests with shell evaluation
 echo -e "\n${BLUE}=== Shell Integration Tests ===${NC}"
 
-run_test "Shell integration syntax" "stacks-config" "bash -n <($LAUNCHPAD_BIN dev:shellcode)"
-run_test "Shell integration execution" "stacks-config" "bash -c 'eval \"\$($LAUNCHPAD_BIN dev:shellcode)\" && echo \"Integration successful\"'"
+run_test "Shell integration syntax" "stacks-config" "bash -n <($pantry_BIN dev:shellcode)"
+run_test "Shell integration execution" "stacks-config" "bash -c 'eval \"\$($pantry_BIN dev:shellcode)\" && echo \"Integration successful\"'"
 
 # Suppression effectiveness tests
 echo -e "\n${BLUE}=== Suppression Effectiveness Tests ===${NC}"
 
-run_test "No dotenvx output in shell code" "stacks-config" "$LAUNCHPAD_BIN dev:shellcode | grep -v '\\[dotenvx@' | wc -l | grep -q '[1-9]'"
-run_test "Suppression with env var" "stacks-config" "LAUNCHPAD_SHELL_INTEGRATION=1 $LAUNCHPAD_BIN dev:shellcode | grep -c '\\[dotenvx@' | grep -q '^0\$'"
-run_test "Clean shell code output" "stacks-config" "$LAUNCHPAD_BIN dev:shellcode | sed 's/\\x1b\\[[0-9;]*m//g' | grep -v '^\\[dotenvx@' | wc -l | grep -q '[1-9]'"
+run_test "No dotenvx output in shell code" "stacks-config" "$pantry_BIN dev:shellcode | grep -v '\\[dotenvx@' | wc -l | grep -q '[1-9]'"
+run_test "Suppression with env var" "stacks-config" "pantry_SHELL_INTEGRATION=1 $pantry_BIN dev:shellcode | grep -c '\\[dotenvx@' | grep -q '^0\$'"
+run_test "Clean shell code output" "stacks-config" "$pantry_BIN dev:shellcode | sed 's/\\x1b\\[[0-9;]*m//g' | grep -v '^\\[dotenvx@' | wc -l | grep -q '[1-9]'"
 
 # Safety net filtering tests
 echo -e "\n${BLUE}=== Safety Net Filtering Tests ===${NC}"
@@ -146,15 +146,15 @@ run_test "Dotenvx filtering with grep" "stacks-config" "printf 'normal line\\n[d
 # Combined integration command test
 echo -e "\n${BLUE}=== Full Integration Command Test ===${NC}"
 
-integration_cmd="LAUNCHPAD_SHELL_INTEGRATION=1 eval \"\$($LAUNCHPAD_BIN dev:shellcode 2>/dev/null | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep -v '^\\\\[dotenvx@' | grep -v '^[[:space:]]*\$')\""
+integration_cmd="pantry_SHELL_INTEGRATION=1 eval \"\$($pantry_BIN dev:shellcode 2>/dev/null | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep -v '^\\\\[dotenvx@' | grep -v '^[[:space:]]*\$')\""
 run_test "Full integration command" "stacks-config" "bash -c '$integration_cmd && echo \"Full integration successful\"'"
 
 # Performance and edge case tests
 echo -e "\n${BLUE}=== Performance and Edge Case Tests ===${NC}"
 
-run_test "Empty environment handling" "." "cd /tmp && $LAUNCHPAD_BIN dev:shellcode >/dev/null"
-run_test "Nested directory handling" "deeply-nested/level1/level2/level3/level4/level5/level6/level7/level8/level9/level10/final-project" "$LAUNCHPAD_BIN dev --dry-run"
-run_test "Permission handling" "." "chmod +x \$TMPDIR/test-launchpad-\$\$ 2>/dev/null || echo 'Permission test skipped'"
+run_test "Empty environment handling" "." "cd /tmp && $pantry_BIN dev:shellcode >/dev/null"
+run_test "Nested directory handling" "deeply-nested/level1/level2/level3/level4/level5/level6/level7/level8/level9/level10/final-project" "$pantry_BIN dev --dry-run"
+run_test "Permission handling" "." "chmod +x \$TMPDIR/test-pantry-\$\$ 2>/dev/null || echo 'Permission test skipped'"
 
 # Results summary
 echo -e "\n${BLUE}=== Test Results Summary ===${NC}"

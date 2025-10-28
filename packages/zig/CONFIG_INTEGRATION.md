@@ -1,25 +1,25 @@
-# Zonfig Integration in Launchpad
+# Zonfig Integration in pantry
 
-Zonfig has been successfully integrated into the Launchpad Zig core! This provides powerful, zero-dependency configuration management with support for multiple config sources.
+Zonfig has been successfully integrated into the pantry Zig core! This provides powerful, zero-dependency configuration management with support for multiple config sources.
 
 ## Features
 
 ✅ **Multi-source loading** - Loads from TypeScript configs, JSON, Zig files, env vars, and defaults
 ✅ **TypeScript config support** - Reads `.config.ts` files (parsed as JSON for now)
 ✅ **Alias support** - Loads `{alias}.config.ts` files (e.g., `buddy-bot.config.ts`)
-✅ **Common folder scanning** - Searches in root, `config/`, and `.config/` directories  
+✅ **Common folder scanning** - Searches in root, `config/`, and `.config/` directories
 ✅ **Environment variables** - Type-aware parsing (bool, int, float, arrays, JSON)
 ✅ **Deep merging** - Smart merging with circular reference detection
 
 ## Configuration Search Priority
 
-Launchpad searches for configuration in this order (highest to lowest priority):
+pantry searches for configuration in this order (highest to lowest priority):
 
-1. **Environment variables** (e.g., `LAUNCHPAD_PORT=3000`)
+1. **Environment variables** (e.g., `pantry_PORT=3000`)
 2. **TypeScript configs**:
-   - `{name}.config.ts` (e.g., `launchpad.config.ts`)
+   - `{name}.config.ts` (e.g., `pantry.config.ts`)
    - `{alias}.config.ts` (e.g., `buddy-bot.config.ts`)
-   - `launchpad.config.ts` (default fallback)
+   - `pantry.config.ts` (default fallback)
 3. **JSON configs**:
    - `{name}.config.json`
    - `{name}.json`
@@ -30,6 +30,7 @@ Launchpad searches for configuration in this order (highest to lowest priority):
 6. **Defaults** (provided in code)
 
 Each location is searched in these directories:
+
 - Project root (`./`)
 - Config directory (`./config/`)
 - Hidden config (`./`.config/`)
@@ -47,9 +48,9 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    // Load launchpad configuration
-    var config = try lib.loadLaunchpadConfig(allocator, .{
-        .name = "launchpad",
+    // Load pantry configuration
+    var config = try lib.loadpantryConfig(allocator, .{
+        .name = "pantry",
     });
     defer config.deinit();
 
@@ -64,8 +65,8 @@ pub fn main() !void {
 
 ```zig
 // Load with alias - will search for buddy-bot.config.ts first
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
     .alias = "buddy-bot",
 });
 defer config.deinit();
@@ -80,8 +81,8 @@ defer defaults.deinit();
 try defaults.put("port", .{ .integer = 8080 });
 try defaults.put("global", .{ .bool = false });
 
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
     .defaults = .{ .object = defaults },
 });
 defer config.deinit();
@@ -90,8 +91,8 @@ defer config.deinit();
 ### Custom Working Directory
 
 ```zig
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
     .cwd = "/path/to/project",
 });
 defer config.deinit();
@@ -103,29 +104,29 @@ Environment variables are automatically parsed with type awareness:
 
 ```bash
 # Boolean values
-export LAUNCHPAD_GLOBAL=true
-export LAUNCHPAD_VERBOSE=1
-export LAUNCHPAD_SERVICES_ENABLED=yes
+export pantry_GLOBAL=true
+export pantry_VERBOSE=1
+export pantry_SERVICES_ENABLED=yes
 
 # Numbers
-export LAUNCHPAD_PORT=3000
-export LAUNCHPAD_CACHE_TTL=300000
+export pantry_PORT=3000
+export pantry_CACHE_TTL=300000
 
 # Arrays (comma-separated)
-export LAUNCHPAD_DEPENDENCIES=bun,redis.io,postgresql.org
+export pantry_DEPENDENCIES=bun,redis.io,postgresql.org
 
 # JSON objects
-export LAUNCHPAD_SERVICES='{"enabled":true,"autoStart":true}'
-export LAUNCHPAD_DATABASE='{"username":"postgres","password":"secret"}'
+export pantry_SERVICES='{"enabled":true,"autoStart":true}'
+export pantry_DATABASE='{"username":"postgres","password":"secret"}'
 
 # Nested keys use underscores
-export LAUNCHPAD_SERVICES_DATABASE_USERNAME=postgres
-export LAUNCHPAD_SERVICES_DATABASE_PASSWORD=password
+export pantry_SERVICES_DATABASE_USERNAME=postgres
+export pantry_SERVICES_DATABASE_PASSWORD=password
 ```
 
 ## Configuration Structure
 
-Based on the TypeScript config at `/Users/chrisbreuer/Code/launchpad/launchpad.config.ts`:
+Based on the TypeScript config at `/Users/chrisbreuer/Code/pantry/pantry.config.ts`:
 
 ```zig
 // Example configuration structure (as JSON)
@@ -154,8 +155,8 @@ Based on the TypeScript config at `/Users/chrisbreuer/Code/launchpad/launchpad.c
 ### Merge Strategies
 
 ```zig
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
     .merge_strategy = .smart,  // or .replace, .concat
 });
 ```
@@ -167,8 +168,8 @@ var config = try lib.loadLaunchpadConfig(allocator, .{
 ### Caching
 
 ```zig
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
     .cache = true,
     .cache_ttl = 300_000,  // 5 minutes in milliseconds
 });
@@ -177,24 +178,24 @@ var config = try lib.loadLaunchpadConfig(allocator, .{
 ### Custom Environment Prefix
 
 ```zig
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
-    .env_prefix = "CUSTOM",  // Uses CUSTOM_* instead of LAUNCHPAD_*
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
+    .env_prefix = "CUSTOM",  // Uses CUSTOM_* instead of pantry_*
 });
 ```
 
 ## API Reference
 
-### `loadLaunchpadConfig`
+### `loadpantryConfig`
 
 ```zig
-pub fn loadLaunchpadConfig(
+pub fn loadpantryConfig(
     allocator: std.mem.Allocator,
     options: config.LoadOptions,
 ) !config.ConfigResult
 ```
 
-Load launchpad configuration with all features enabled.
+Load pantry configuration with all features enabled.
 
 ### `LoadOptions`
 
@@ -221,7 +222,7 @@ pub const ConfigResult = struct {
     sources: []SourceInfo,         // All contributing sources
     loaded_at: i64,               // Load timestamp
     allocator: std.mem.Allocator, // Allocator
-    
+
     pub fn deinit(self: *ConfigResult) void;
 };
 ```
@@ -231,14 +232,14 @@ pub const ConfigResult = struct {
 - `build.zig` - Added zonfig module and imports
 - `src/lib.zig` - Exported config module
 - `src/config.zig` - Main config module (new)
-- `src/config/loader.zig` - Launchpad-specific loader (new)
+- `src/config/loader.zig` - pantry-specific loader (new)
 
 ## Testing
 
 Run tests to verify integration:
 
 ```bash
-cd /Users/chrisbreuer/Code/launchpad/packages/zig
+cd /Users/chrisbreuer/Code/pantry/packages/zig
 zig build test
 ```
 
@@ -266,11 +267,11 @@ const json = result.stdout;
 
 ### Schema Validation
 
-Add validation against expected launchpad config schema:
+Add validation against expected pantry config schema:
 
 ```zig
-var config = try lib.loadLaunchpadConfig(allocator, .{
-    .name = "launchpad",
+var config = try lib.loadpantryConfig(allocator, .{
+    .name = "pantry",
     .validate = true,  // Enable schema validation
 });
 ```
@@ -288,12 +289,12 @@ defer watcher.deinit();
 
 ## Summary
 
-✅ Zonfig is fully integrated into Launchpad Zig core  
-✅ Supports TypeScript config detection (.config.ts files)  
-✅ Supports alias configs (e.g., buddy-bot.config.ts)  
-✅ Searches common folders (root, config/, .config/)  
-✅ Environment variable support with type awareness  
-✅ Deep merging with multiple strategies  
-✅ Zero dependencies - pure Zig stdlib  
+✅ Zonfig is fully integrated into pantry Zig core
+✅ Supports TypeScript config detection (.config.ts files)
+✅ Supports alias configs (e.g., buddy-bot.config.ts)
+✅ Searches common folders (root, config/, .config/)
+✅ Environment variable support with type awareness
+✅ Deep merging with multiple strategies
+✅ Zero dependencies - pure Zig stdlib
 
-The integration is **production-ready** and can be used immediately for configuration management in Launchpad!
+The integration is **production-ready** and can be used immediately for configuration management in pantry!

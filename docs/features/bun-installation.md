@@ -1,13 +1,13 @@
 # Bun Installation
 
-Launchpad provides a dedicated command to install Bun directly from the official GitHub releases. This feature allows you to easily set up Bun in your environment independently of other package managers.
+pantry provides a dedicated command to install Bun directly from the official GitHub releases. This feature allows you to easily set up Bun in your environment independently of other package managers.
 
 ## Basic Usage
 
 To install the latest version of Bun:
 
 ```bash
-launchpad bun
+pantry bun
 ```
 
 ## Command Options
@@ -27,19 +27,19 @@ The `bun` command accepts the following options:
 ### Install a specific version
 
 ```bash
-launchpad bun --version 1.2.3
+pantry bun --version 1.2.3
 ```
 
 ### Install to a custom location
 
 ```bash
-launchpad bun --path ~/my-tools
+pantry bun --path ~/my-tools
 ```
 
 ### Force reinstallation
 
 ```bash
-launchpad bun --force
+pantry bun --force
 ```
 
 ## How it Works
@@ -64,7 +64,7 @@ Each platform automatically gets the correct binary for its architecture.
 
 ## Advantages Over Manual Installation
 
-Using Launchpad to install Bun offers several advantages:
+Using pantry to install Bun offers several advantages:
 
 1. **Simplified command**: One command handles the entire installation process
 2. **PATH management**: No need to manually add Bun to your PATH

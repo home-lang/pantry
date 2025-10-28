@@ -1,5 +1,5 @@
-name: Launchpad Installer
-description: Install packages using Launchpad in GitHub Actions
+name: pantry Installer
+description: Install packages using pantry in GitHub Actions
 author: Stacks.js
 branding:
   icon: package
@@ -11,9 +11,9 @@ inputs:
     required: false
     default: ''
   config-path:
-    description: Path to launchpad config file
+    description: Path to pantry config file
     required: false
-    default: launchpad.config.ts
+    default: pantry.config.ts
 
 runs:
   using: node16

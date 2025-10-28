@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: "Launchpad"
+  name: "pantry"
   text: "Modern Package Management"
   tagline: "Fast, isolated, and clean package management that works alongside your existing tools."
   image: /images/logo-white.png
@@ -13,7 +13,7 @@ hero:
       link: /intro
     - theme: alt
       text: View on GitHub
-      link: https://github.com/stacksjs/launchpad
+      link: https://github.com/stacksjs/pantry
 
 features:
   - title: "Package Management"

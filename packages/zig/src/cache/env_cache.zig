@@ -4,7 +4,7 @@ const core = @import("../core/platform.zig");
 const string = @import("../core/string.zig");
 const errors = @import("../core/error.zig");
 
-const LaunchpadError = errors.LaunchpadError;
+const pantryError = errors.pantryError;
 
 /// Cache entry for environment
 pub const Entry = struct {
@@ -266,7 +266,7 @@ test "EnvCache basic operations" {
     defer cache.deinit();
 
     // Create a temporary test file
-    const tmp_file = "/tmp/launchpad_test_deps.yaml";
+    const tmp_file = "/tmp/pantry_test_deps.yaml";
     {
         const file = try std.fs.cwd().createFile(tmp_file, .{});
         defer file.close();
@@ -314,7 +314,7 @@ test "EnvCache fast cache" {
     defer cache.deinit();
 
     // Create a temporary test file
-    const tmp_file = "/tmp/launchpad_test_deps2.yaml";
+    const tmp_file = "/tmp/pantry_test_deps2.yaml";
     {
         const file = try std.fs.cwd().createFile(tmp_file, .{});
         defer file.close();

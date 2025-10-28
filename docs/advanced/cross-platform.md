@@ -1,13 +1,13 @@
 # Cross-platform Compatibility
 
-Launchpad is designed to work seamlessly across different operating systems. This guide explains how Launchpad handles platform-specific nuances and how to optimize your usage for cross-platform scenarios.
+pantry is designed to work seamlessly across different operating systems. This guide explains how pantry handles platform-specific nuances and how to optimize your usage for cross-platform scenarios.
 
 ## Platform Detection
 
-Launchpad automatically detects the operating system it's running on and adjusts its behavior accordingly:
+pantry automatically detects the operating system it's running on and adjusts its behavior accordingly:
 
 ```typescript
-// Example of how Launchpad detects platforms internally
+// Example of how pantry detects platforms internally
 import { platform } from 'node:os'
 
 const isWindows = platform() === 'win32'
@@ -17,15 +17,17 @@ const isLinux = platform() === 'linux'
 
 ## Installation Philosophy Across Platforms
 
-Launchpad follows the **pkgm approach** consistently across all platforms:
+pantry follows the **pkgm approach** consistently across all platforms:
 
 ### Unix-like Systems (macOS, Linux)
+
 - **Primary**: `/usr/local` for system-wide installations
 - **Fallback**: `~/.local` for user-specific installations
 - **Never uses**: `/opt/homebrew` (Homebrew's directory)
 - **Maintains**: Clean separation from package managers like Homebrew
 
 ### Windows
+
 - **Primary**: `%LOCALAPPDATA%` for user-specific installations
 - **Alternative**: `%PROGRAMFILES%` for system-wide (requires elevation)
 - **Avoids**: Conflicting with Windows package managers
@@ -36,7 +38,7 @@ This consistent approach ensures clean coexistence with existing package manager
 
 ### Windows Path Differences
 
-On Windows, paths use backslashes (`\`) rather than forward slashes (`/`). Launchpad normalizes paths internally:
+On Windows, paths use backslashes (`\`) rather than forward slashes (`/`). pantry normalizes paths internally:
 
 ```typescript
 // Example of path normalization
@@ -48,10 +50,10 @@ const normalizedPath = path.normalize('/usr/local/bin')
 
 ### Home Directory Resolution
 
-Launchpad resolves the `~` symbol to the user's home directory across all platforms:
+pantry resolves the `~` symbol to the user's home directory across all platforms:
 
 ```typescript
-// Launchpad's internal approach
+// pantry's internal approach
 const homePath = process.env.HOME || process.env.USERPROFILE || '~'
 ```
 
@@ -63,7 +65,7 @@ Each platform uses different shells by default:
 - **macOS**: Zsh (newer versions) or Bash (older versions)
 - **Linux**: Bash, Zsh, or others
 
-Launchpad adapts its PATH modification strategies accordingly.
+pantry adapts its PATH modification strategies accordingly.
 
 ### Shell Message Customization by Platform
 
@@ -71,14 +73,14 @@ You can customize shell messages differently on each platform:
 
 ```bash
 # macOS/Linux - Using ~/.zshrc or ~/.bashrc
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🍎 macOS environment ready: {path}"
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🍎 macOS environment closed"
+export pantry_SHELL_ACTIVATION_MESSAGE="🍎 macOS environment ready: {path}"
+export pantry_SHELL_DEACTIVATION_MESSAGE="🍎 macOS environment closed"
 ```
 
 ```powershell
 # Windows - Using PowerShell profile
-$env:LAUNCHPAD_SHELL_ACTIVATION_MESSAGE = "🪟 Windows environment ready: {path}"
-$env:LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE = "🪟 Windows environment closed"
+$env:pantry_SHELL_ACTIVATION_MESSAGE = "🪟 Windows environment ready: {path}"
+$env:pantry_SHELL_DEACTIVATION_MESSAGE = "🪟 Windows environment closed"
 ```
 
 ## File System Permissions
@@ -88,7 +90,7 @@ Permission handling differs by platform:
 - **Unix-like Systems** (macOS, Linux): Uses Unix permissions (rwx)
 - **Windows**: Uses ACLs (Access Control Lists)
 
-When creating shims, Launchpad sets the appropriate permissions:
+When creating shims, pantry sets the appropriate permissions:
 
 ```typescript
 // On Unix-like systems
@@ -105,7 +107,7 @@ Elevated privileges are required for certain operations, and the approach varies
 - **Unix-like Systems**: Uses `sudo`
 - **Windows**: Requires running as Administrator
 
-Launchpad's auto-sudo feature automatically adapts to the platform.
+pantry's auto-sudo feature automatically adapts to the platform.
 
 ## Platform-specific Example: PATH Management
 
@@ -117,7 +119,7 @@ echo 'export PATH="~/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 
 # Custom shell messages
-echo 'export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 Dev environment: {path}"' >> ~/.zshrc
+echo 'export pantry_SHELL_ACTIVATION_MESSAGE="🔧 Dev environment: {path}"' >> ~/.zshrc
 ```
 
 ### Windows (PowerShell)
@@ -129,7 +131,7 @@ $newPath = "$env:USERPROFILE\.local\bin;" + $currentPath
 [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
 
 # Custom shell messages
-[Environment]::SetEnvironmentVariable("LAUNCHPAD_SHELL_ACTIVATION_MESSAGE", "🔧 Dev environment: {path}", "User")
+[Environment]::SetEnvironmentVariable("pantry_SHELL_ACTIVATION_MESSAGE", "🔧 Dev environment: {path}", "User")
 ```
 
 ## Executable Detection
@@ -139,40 +141,43 @@ Different platforms use different file extensions for executables:
 - **Unix-like Systems**: No extension required (permissions matter)
 - **Windows**: `.exe`, `.bat`, `.cmd`, etc.
 
-Launchpad handles these differences when creating and detecting executables.
+pantry handles these differences when creating and detecting executables.
 
 ## Platform-specific Installation Paths
 
 Default installation paths vary by platform but follow consistent principles:
 
 ### macOS
+
 - **System-wide**: `/usr/local` (preferred, like pkgm)
 - **User-specific**: `~/.local` (fallback)
 - **Never uses**: `/opt/homebrew` (Homebrew's directory)
 
 ### Linux
+
 - **System-wide**: `/usr/local` (preferred, like pkgm)
 - **User-specific**: `~/.local` (fallback)
 - **Respects**: Existing system package manager directories
 
 ### Windows
-- **User-specific**: `%LOCALAPPDATA%\Programs\Launchpad` (preferred)
-- **System-wide**: `%PROGRAMFILES%\Launchpad` (requires elevation)
+
+- **User-specific**: `%LOCALAPPDATA%\Programs\pantry` (preferred)
+- **System-wide**: `%PROGRAMFILES%\pantry` (requires elevation)
 
 > [!NOTE]
-> Launchpad installs packages to `/usr/local` (like pkgm), not to Homebrew's `/opt/homebrew` directory. This ensures clean separation from Homebrew-managed packages and allows peaceful coexistence.
+> pantry installs packages to `/usr/local` (like pkgm), not to Homebrew's `/opt/homebrew` directory. This ensures clean separation from Homebrew-managed packages and allows peaceful coexistence.
 
 ## Integration with pkgx
 
-pkgx itself is cross-platform, and Launchpad leverages this to provide a consistent experience across operating systems.
+pkgx itself is cross-platform, and pantry leverages this to provide a consistent experience across operating systems.
 
 ## Testing Across Platforms
 
-When developing with Launchpad, it's good practice to test on multiple platforms:
+When developing with pantry, it's good practice to test on multiple platforms:
 
 ```bash
 # Basic testing on Unix-like systems
-launchpad install node@22
+pantry install node@22
 node --version
 
 # Verify shim creation
@@ -185,7 +190,7 @@ cd ../          # Should show deactivation message
 
 ```powershell
 # Basic testing on Windows
-launchpad install node@22
+pantry install node@22
 node --version
 
 # Verify shim creation
@@ -198,7 +203,7 @@ cd ..\         # Should show deactivation message
 
 ## Cross-platform CI/CD Integration
 
-For CI/CD pipelines, you can use Launchpad consistently across platforms:
+For CI/CD pipelines, you can use pantry consistently across platforms:
 
 ```yaml
 # Example GitHub Actions workflow
@@ -210,10 +215,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Launchpad
-        run: npm install -g @stacksjs/launchpad
-      - name: Install dependencies with Launchpad
-        run: launchpad install node@22 python@3.12
+      - name: Install pantry
+        run: npm install -g @stacksjs/pantry
+      - name: Install dependencies with pantry
+        run: pantry install node@22 python@3.12
       - name: Test environment activation
         run: |
           cd test-project
@@ -225,7 +230,7 @@ jobs:
 ### macOS Configuration
 
 ```typescript
-// launchpad.config.ts for macOS
+// pantry.config.ts for macOS
 export default {
   installationPath: '/usr/local', // Preferred on macOS
   shellActivationMessage: '🍎 macOS environment ready: {path}',
@@ -238,7 +243,7 @@ export default {
 ### Linux Configuration
 
 ```typescript
-// launchpad.config.ts for Linux
+// pantry.config.ts for Linux
 export default {
   installationPath: '/usr/local', // Preferred on Linux
   shellActivationMessage: '🐧 Linux environment ready: {path}',
@@ -251,9 +256,9 @@ export default {
 ### Windows Configuration
 
 ```typescript
-// launchpad.config.ts for Windows
+// pantry.config.ts for Windows
 export default {
-  installationPath: `${process.env.LOCALAPPDATA}\\Programs\\Launchpad`,
+  installationPath: `${process.env.LOCALAPPDATA}\\Programs\\pantry`,
   shellActivationMessage: '🪟 Windows environment ready: {path}',
   shellDeactivationMessage: '🪟 Environment closed',
   // Windows-specific paths
@@ -274,20 +279,20 @@ const installPath = path.join(baseDir, 'bin', 'executable')
 
 ```bash
 # Unix-like systems
-export LAUNCHPAD_PATH=/usr/local
+export pantry_PATH=/usr/local
 
 # Windows
-set LAUNCHPAD_PATH=C:\usr\local
+set pantry_PATH=C:\usr\local
 # or in PowerShell
-$env:LAUNCHPAD_PATH = "C:\usr\local"
+$env:pantry_PATH = "C:\usr\local"
 ```
 
 ### Shell Integration Differences
 
 ```bash
 # For Bash/Zsh (Unix-like)
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 
 # For PowerShell (Windows)
-Add-Content $PROFILE 'Invoke-Expression (& launchpad dev:shellcode)'
+Add-Content $PROFILE 'Invoke-Expression (& pantry dev:shellcode)'
 ```

@@ -1,10 +1,10 @@
 # Basic Usage
 
-Launchpad provides a simple yet powerful command-line interface for managing packages and development environments. This guide covers the most common operations.
+pantry provides a simple yet powerful command-line interface for managing packages and development environments. This guide covers the most common operations.
 
 ## Command Overview
 
-Here are the main commands available in Launchpad:
+Here are the main commands available in pantry:
 
 | Command | Description |
 |---------|-------------|
@@ -26,7 +26,7 @@ Here are the main commands available in Launchpad:
 | `zsh` | Install Zsh shell |
 | `bootstrap` | Install all essential tools at once |
 | `list` | List installed packages |
-| `uninstall` | Complete removal of Launchpad and all packages |
+| `uninstall` | Complete removal of pantry and all packages |
 | `env:list` | List all development environments |
 | `env:clean` | Clean up unused development environments |
 | `env:inspect` | Inspect a specific development environment |
@@ -34,7 +34,7 @@ Here are the main commands available in Launchpad:
 | `cache:stats` | Show cache statistics and usage information |
 | `cache:clean` | Clean up old cached packages |
 | `cache:clear` | Clear all cached packages and downloads |
-| `clean` | Remove all Launchpad-installed packages and environments (use `--keep-global` to preserve global dependencies) |
+| `clean` | Remove all pantry-installed packages and environments (use `--keep-global` to preserve global dependencies) |
 | `version` | Show version information |
 | `help` | Display help information |
 
@@ -44,36 +44,36 @@ Install one or more packages using the `install` or `i` command:
 
 ```bash
 # Install a single package (defaults to /usr/local for system-wide)
-launchpad install node@22
+pantry install node@22
 
 # Install multiple packages
-launchpad install python@3.12 ruby@3.3
+pantry install python@3.12 ruby@3.3
 
 # Short form
-launchpad i go
+pantry i go
 
 # Install to a specific location
-launchpad install --path ~/my-packages node
+pantry install --path ~/my-packages node
 ```
 
 ### Installation Locations
 
-Launchpad follows the pkgm philosophy for installation paths, **never installing to Homebrew's directories**:
+pantry follows the pkgm philosophy for installation paths, **never installing to Homebrew's directories**:
 
 - **System-wide installation** (default): `/usr/local` - Used when you have write permissions
 - **User-specific installation**: `~/.local` - Used automatically when `/usr/local` is not writable
 - **Custom path**: Use `--path <path>` to specify any installation directory
 
-> **Important**: Launchpad follows the pkgm approach and **never installs to `/opt/homebrew`** (Homebrew's directory). This ensures clean separation from Homebrew-managed packages and follows the traditional Unix philosophy of using `/usr/local` for system-wide installations.
+> **Important**: pantry follows the pkgm approach and **never installs to `/opt/homebrew`** (Homebrew's directory). This ensures clean separation from Homebrew-managed packages and follows the traditional Unix philosophy of using `/usr/local` for system-wide installations.
 
 ```bash
 # Examples of different installation methods
-launchpad install node                    # Installs to /usr/local (default if writable)
-launchpad install node --path /opt/tools  # Custom directory
-launchpad install node --path ~/.local    # Force user directory
+pantry install node                    # Installs to /usr/local (default if writable)
+pantry install node --path /opt/tools  # Custom directory
+pantry install node --path ~/.local    # Force user directory
 ```
 
-**Permission Handling**: When installing to `/usr/local` without sufficient permissions, Launchpad will:
+**Permission Handling**: When installing to `/usr/local` without sufficient permissions, pantry will:
 
 - Detect the permission issue
 - Prompt you interactively (if in a terminal)
@@ -86,25 +86,25 @@ Install packages using the standard install command:
 
 ```bash
 # Install packages
-launchpad install node@22 python@3.12 git
+pantry install node@22 python@3.12 git
 
-# Launchpad uses the pkgx registry through ts-pkgx for package installation
+# pantry uses the pkgx registry through ts-pkgx for package installation
 ```
 
 ## Updating Packages
 
-Keep your packages up-to-date with Launchpad's intelligent update system:
+Keep your packages up-to-date with pantry's intelligent update system:
 
 ```bash
 # Update all installed packages
-launchpad update
+pantry update
 
 # Update specific packages
-launchpad update node python
+pantry update node python
 
 # Use aliases for convenience
-launchpad upgrade bun
-launchpad up node python
+pantry upgrade bun
+pantry up node python
 ```
 
 ### Update Options
@@ -113,21 +113,21 @@ Control update behavior with various options:
 
 ```bash
 # Preview what would be updated
-launchpad update --dry-run
+pantry update --dry-run
 
 # Force update to latest versions (ignore constraints)
-launchpad upgrade bun --latest
+pantry upgrade bun --latest
 
 # Verbose output showing update details
-launchpad update --verbose node
+pantry update --verbose node
 
 # Update multiple packages with latest flag
-launchpad up node python --latest
+pantry up node python --latest
 ```
 
 ### Update Behavior
 
-Launchpad's update system provides:
+pantry's update system provides:
 
 - **Smart version checking**: Only updates when newer versions are available
 - **Helpful messages**: Provides installation instructions for uninstalled packages
@@ -139,40 +139,40 @@ Launchpad's update system provides:
 
 ```bash
 # Check and update all packages
-launchpad update
+pantry update
 
 # Update Node.js to latest version
-launchpad upgrade node --latest
+pantry upgrade node --latest
 
 # Preview updates for specific packages
-launchpad up bun python --dry-run
+pantry up bun python --dry-run
 
 # Update with verbose output for debugging
-launchpad update --verbose --latest node
+pantry update --verbose --latest node
 ```
 
 ## Removing Packages
 
-Remove specific packages while keeping the rest of your Launchpad setup intact:
+Remove specific packages while keeping the rest of your pantry setup intact:
 
 ```bash
 # Remove a single package
-launchpad remove python
+pantry remove python
 
 # Remove multiple packages
-launchpad remove node python ruby
+pantry remove node python ruby
 
 # Remove a specific version
-launchpad remove node@22
+pantry remove node@22
 
 # Preview what would be removed without actually removing it
-launchpad remove python --dry-run
+pantry remove python --dry-run
 
 # Remove without confirmation prompts
-launchpad remove python --force
+pantry remove python --force
 
 # Remove with verbose output showing all files
-launchpad remove python --verbose
+pantry remove python --verbose
 ```
 
 The `remove` command intelligently finds and removes:
@@ -184,7 +184,7 @@ The `remove` command intelligently finds and removes:
 
 ## Development Environment Management
 
-Launchpad provides powerful project-specific environment management with automatic activation and comprehensive management tools.
+pantry provides powerful project-specific environment management with automatic activation and comprehensive management tools.
 
 ### Auto-Activation with Shell Integration
 
@@ -192,7 +192,7 @@ Set up shell integration to automatically activate environments when entering pr
 
 ```bash
 # Add to your shell configuration
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 
 # Reload your shell
 source ~/.zshrc
@@ -214,32 +214,32 @@ Hook lifecycle during activation:
 - preActivation (after installs/services, before activation message)
 - postActivation (immediately after activation message)
 
-Define hooks in `launchpad.config.ts` or inline in `deps.yaml` (see Configuration → Lifecycle Hooks).
+Define hooks in `pantry.config.ts` or inline in `deps.yaml` (see Configuration → Lifecycle Hooks).
 
 ::: tip Prompt Compatibility
-If you use **Starship prompt** and see timeout warnings like `[WARN] - (starship::utils): Executing command timed out`, add `command_timeout = 5000` to the top of your `~/.config/starship.toml` file. This gives Starship enough time to detect tool versions from Launchpad-managed binaries. See [Troubleshooting](./troubleshooting.md#starship-prompt-timeout-warnings) for details.
+If you use **Starship prompt** and see timeout warnings like `[WARN] - (starship::utils): Executing command timed out`, add `command_timeout = 5000` to the top of your `~/.config/starship.toml` file. This gives Starship enough time to detect tool versions from pantry-managed binaries. See [Troubleshooting](./troubleshooting.md#starship-prompt-timeout-warnings) for details.
 :::
 
 ### Manual Environment Commands
 
 ```bash
 # Activate dev environment for current directory
-launchpad dev:on
+pantry dev:on
 
 # Activate dev environment for specific directory
-launchpad dev:on /path/to/project
+pantry dev:on /path/to/project
 
 # Generate environment script for current directory
-launchpad dev:dump
+pantry dev:dump
 
 # Generate environment script for specific directory
-launchpad dev:dump /path/to/project
+pantry dev:dump /path/to/project
 
 # Preview packages without generating script
-launchpad dev:dump --dryrun
+pantry dev:dump --dryrun
 
 # Generate script with verbose output
-launchpad dev:dump --verbose
+pantry dev:dump --verbose
 ```
 
 ### Customizing Shell Messages
@@ -248,16 +248,16 @@ You can customize or disable the shell activation/deactivation messages:
 
 ```bash
 # Disable all messages
-export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+export pantry_SHOW_ENV_MESSAGES=false
 
 # Custom activation message (use {path} for project path)
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Development environment ready: {path}"
+export pantry_SHELL_ACTIVATION_MESSAGE="🚀 Development environment ready: {path}"
 
 # Custom deactivation message
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Environment deactivated"
+export pantry_SHELL_DEACTIVATION_MESSAGE="👋 Environment deactivated"
 ```
 
-Or configure in your `launchpad.config.ts`:
+Or configure in your `pantry.config.ts`:
 
 ```ts
 export default {
@@ -339,8 +339,8 @@ Supported dependency file formats:
 - `dependencies.yaml` / `dependencies.yml`
 - `pkgx.yaml` / `pkgx.yml`
 - `.pkgx.yaml` / `.pkgx.yml`
-- `.launchpad.yaml` / `launchpad.yaml`
-- `.launchpad.yml` / `launchpad.yml`
+- `.pantry.yaml` / `pantry.yaml`
+- `.pantry.yml` / `pantry.yml`
 - `deps.yml` / `deps.yaml`
 - `.deps.yml` / `.deps.yaml`
 
@@ -348,37 +348,37 @@ Supported dependency file formats:
 
 Each project gets its own isolated environment:
 
-- Project-specific installation directory: `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
+- Project-specific installation directory: `~/.local/share/pantry/envs/<project>_<hash>-d<dep_hash>`
 - Isolated PATH and environment variables
 - Binary stubs with environment isolation
 - Automatic cleanup when leaving project directory
 
 ## Service Management
 
-Launchpad provides comprehensive service management for development services like databases, web servers, and infrastructure tools. See the [Service Management](./features/service-management.md) documentation for complete details.
+pantry provides comprehensive service management for development services like databases, web servers, and infrastructure tools. See the [Service Management](./features/service-management.md) documentation for complete details.
 
 ### Quick Service Examples
 
 ```bash
 # Start a database
-launchpad service start postgres
+pantry service start postgres
 
 # Start multiple services
-launchpad service start redis nginx prometheus
+pantry service start redis nginx prometheus
 
 # Check service status
-launchpad service status postgres
+pantry service status postgres
 
 # List all services
-launchpad service list
+pantry service list
 
 # Stop services
-launchpad service stop postgres redis
+pantry service stop postgres redis
 ```
 
 ### Available Services
 
-Launchpad includes 31+ pre-configured services:
+pantry includes 31+ pre-configured services:
 
 **Databases**: PostgreSQL, MySQL, MongoDB, Redis, InfluxDB, CockroachDB, Neo4j, ClickHouse
 **Web Servers**: Nginx, Caddy
@@ -399,7 +399,7 @@ Each service includes:
 
 ## Environment Management
 
-Launchpad provides comprehensive tools for managing development environments with human-readable identifiers.
+pantry provides comprehensive tools for managing development environments with human-readable identifiers.
 
 ### Listing Environments
 
@@ -407,16 +407,16 @@ View all your development environments:
 
 ```bash
 # List all environments in a table format
-launchpad env:list
+pantry env:list
 
 # Show detailed information including hashes
-launchpad env:list --verbose
+pantry env:list --verbose
 
 # Output as JSON for scripting
-launchpad env:list --format json
+pantry env:list --format json
 
 # Simple format for quick overview
-launchpad env:list --format simple
+pantry env:list --format simple
 ```
 
 **Example Output:**
@@ -440,13 +440,13 @@ Get detailed information about a specific environment:
 
 ```bash
 # Basic inspection
-launchpad env:inspect working-test_208a31ec
+pantry env:inspect working-test_208a31ec
 
 # Detailed inspection with directory structure
-launchpad env:inspect final-project_7db6cf06 --verbose
+pantry env:inspect final-project_7db6cf06 --verbose
 
 # Show binary stub contents
-launchpad env:inspect dummy_6d7cf1d6 --show-stubs
+pantry env:inspect dummy_6d7cf1d6 --show-stubs
 ```
 
 ### Cleaning Up Environments
@@ -455,19 +455,19 @@ Automatically clean up unused or failed environments:
 
 ```bash
 # Preview what would be cleaned
-launchpad env:clean --dry-run
+pantry env:clean --dry-run
 
 # Clean environments older than 30 days (default)
-launchpad env:clean
+pantry env:clean
 
 # Clean environments older than 7 days
-launchpad env:clean --older-than 7
+pantry env:clean --older-than 7
 
 # Force cleanup without confirmation
-launchpad env:clean --force
+pantry env:clean --force
 
 # Verbose cleanup with details
-launchpad env:clean --verbose
+pantry env:clean --verbose
 ```
 
 ### Removing Specific Environments
@@ -476,18 +476,18 @@ Remove individual environments by their hash:
 
 ```bash
 # Remove with confirmation
-launchpad env:remove dummy_6d7cf1d6
+pantry env:remove dummy_6d7cf1d6
 
 # Force removal without confirmation
-launchpad env:remove minimal_3a5dc15d --force
+pantry env:remove minimal_3a5dc15d --force
 
 # Verbose removal showing details
-launchpad env:remove working-test_208a31ec --verbose
+pantry env:remove working-test_208a31ec --verbose
 ```
 
 ### Environment Hash Format
 
-Launchpad uses human-readable hash identifiers for environments:
+pantry uses human-readable hash identifiers for environments:
 
 **Format:** `{project-name}_{8-char-hex-hash}`
 
@@ -511,7 +511,7 @@ To update dependencies in your project, edit your dependency file (e.g. `deps.ya
 cd .. && cd my-project
 
 # Optional: inspect selection decisions
-export LAUNCHPAD_VERBOSE=true
+export pantry_VERBOSE=true
 cd my-project
 # 🔍 Env target: env_dir=… dep_file=… dep_hash=…
 # 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
@@ -527,13 +527,13 @@ Get everything you need with one command:
 
 ```bash
 # Install all essential tools (defaults to /usr/local if writable, ~/.local otherwise)
-launchpad bootstrap
+pantry bootstrap
 
 # Verbose bootstrap showing all operations
-launchpad bootstrap --verbose
+pantry bootstrap --verbose
 
 # Force reinstall everything
-launchpad bootstrap --force
+pantry bootstrap --force
 ```
 
 ### Customized Bootstrap
@@ -542,18 +542,18 @@ Control what gets installed:
 
 ```bash
 # Skip specific components
-launchpad bootstrap --skip-shell-integration
+pantry bootstrap --skip-shell-integration
 
 # Custom installation path (override default /usr/local)
-launchpad bootstrap --path ~/.local
+pantry bootstrap --path ~/.local
 
 # Disable automatic PATH modification
-launchpad bootstrap --no-auto-path
+pantry bootstrap --no-auto-path
 ```
 
 ## Cache Management
 
-Launchpad caches downloaded packages to improve performance. Use these commands to manage cache storage:
+pantry caches downloaded packages to improve performance. Use these commands to manage cache storage:
 
 ### View Cache Statistics
 
@@ -561,7 +561,7 @@ Check cache size and usage information:
 
 ```bash
 # Show cache statistics
-launchpad cache:stats
+pantry cache:stats
 
 # Example output:
 # 📊 Cache Statistics
@@ -578,19 +578,19 @@ Remove old cached packages based on age or size:
 
 ```bash
 # Clean packages older than 30 days (default)
-launchpad cache:clean
+pantry cache:clean
 
 # Clean packages older than 7 days
-launchpad cache:clean --max-age 7
+pantry cache:clean --max-age 7
 
 # Clean if cache exceeds 2GB
-launchpad cache:clean --max-size 2
+pantry cache:clean --max-size 2
 
 # Preview what would be cleaned
-launchpad cache:clean --dry-run
+pantry cache:clean --dry-run
 
 # Clean with custom criteria
-launchpad cache:clean --max-age 14 --max-size 1
+pantry cache:clean --max-age 14 --max-size 1
 ```
 
 ### Clear All Cache
@@ -599,42 +599,42 @@ Remove all cached packages and downloads:
 
 ```bash
 # Preview what would be cleared
-launchpad cache:clear --dry-run
+pantry cache:clear --dry-run
 
 # Clear cache with confirmation
-launchpad cache:clear
+pantry cache:clear
 
 # Clear cache without confirmation
-launchpad cache:clear --force
+pantry cache:clear --force
 
 # Clear with verbose output
-launchpad cache:clear --verbose --force
+pantry cache:clear --verbose --force
 ```
 
 **Note:** You can also use `cache:clean` as an alias for `cache:clear`.
 
 ### Complete System Cleanup
 
-Remove all Launchpad-installed packages, environments, and optionally cache:
+Remove all pantry-installed packages, environments, and optionally cache:
 
 ```bash
 # Preview complete cleanup
-launchpad clean --dry-run
+pantry clean --dry-run
 
 # Complete cleanup (removes everything)
-launchpad clean --force
+pantry clean --force
 
 # Clean packages but keep cache for faster reinstalls
-launchpad clean --keep-cache --force
+pantry clean --keep-cache --force
 
 # Clean but preserve global dependencies
-launchpad clean --keep-global --force
+pantry clean --keep-global --force
 
 # Clean with verbose output
-launchpad clean --verbose --force
+pantry clean --verbose --force
 
 # Combine options for selective cleanup
-launchpad clean --keep-global --keep-cache --force
+pantry clean --keep-global --keep-cache --force
 ```
 
 The `clean` command removes:
@@ -650,13 +650,13 @@ Use the `--keep-global` option to preserve essential global dependencies defined
 
 ```bash
 # Safe cleanup that preserves global tools
-launchpad clean --keep-global --force
+pantry clean --keep-global --force
 
 # Preview what would be preserved
-launchpad clean --keep-global --dry-run
+pantry clean --keep-global --dry-run
 ```
 
-**Global dependency detection**: Launchpad automatically detects any dependency file (`deps.yaml`, `dependencies.yaml`, etc.) with `global: true`
+**Global dependency detection**: pantry automatically detects any dependency file (`deps.yaml`, `dependencies.yaml`, etc.) with `global: true`
 
 **Global dependency formats**:
 
@@ -682,20 +682,20 @@ This prevents accidental removal of essential system tools like shells, package 
 
 ## Complete System Cleanup
 
-For complete removal of Launchpad and all installed packages:
+For complete removal of pantry and all installed packages:
 
 ```bash
 # Remove everything with confirmation
-launchpad uninstall
+pantry uninstall
 
 # Preview what would be removed
-launchpad uninstall --dry-run
+pantry uninstall --dry-run
 
 # Remove everything without prompts
-launchpad uninstall --force
+pantry uninstall --force
 
 # Remove only packages but keep shell integration
-launchpad uninstall --keep-packages
+pantry uninstall --keep-packages
 ```
 
 The `uninstall` command removes:
@@ -713,13 +713,13 @@ Shims are lightweight executable scripts that point to the actual binaries. They
 
 ```bash
 # Create shims for a package
-launchpad shim node
+pantry shim node
 
 # Create shims with a custom path
-launchpad shim --path ~/bin typescript
+pantry shim --path ~/bin typescript
 
 # Create shims without auto-adding to PATH
-launchpad shim node --no-auto-path
+pantry shim node --no-auto-path
 ```
 
 ## Bootstrap Setup
@@ -728,48 +728,48 @@ Bootstrap your development environment with everything you need:
 
 ```bash
 # Bootstrap essential tools and environment
-launchpad bootstrap
+pantry bootstrap
 
 # Force reinstall components
-launchpad bootstrap --force
+pantry bootstrap --force
 
 # Install to specific path
-launchpad bootstrap --path ~/bin
+pantry bootstrap --path ~/bin
 ```
 
 ## Installing Bun
 
-Launchpad provides a dedicated command for installing Bun directly from GitHub releases:
+pantry provides a dedicated command for installing Bun directly from GitHub releases:
 
 ```bash
 # Install latest Bun version
-launchpad bun
+pantry bun
 
 # Install specific version
-launchpad bun --version 1.0.0
+pantry bun --version 1.0.0
 
 # Specify installation path
-launchpad bun --path ~/bin
+pantry bun --path ~/bin
 ```
 
 The `bun` command automatically detects your platform, downloads the appropriate binary, and adds it to your PATH.
 
 ## Installing Zsh
 
-Launchpad provides a dedicated command for installing the Zsh shell:
+pantry provides a dedicated command for installing the Zsh shell:
 
 ```bash
 # Install zsh
-launchpad zsh
+pantry zsh
 
 # Force reinstall
-launchpad zsh --force
+pantry zsh --force
 
 # Specify installation path
-launchpad zsh --path ~/bin
+pantry zsh --path ~/bin
 ```
 
-After installation, Launchpad provides instructions for making zsh your default shell:
+After installation, pantry provides instructions for making zsh your default shell:
 
 ```bash
 # Make zsh your default shell
@@ -782,13 +782,13 @@ Keep your packages up-to-date:
 
 ```bash
 # Check for outdated packages
-launchpad outdated
+pantry outdated
 
 # Update all packages to latest versions
-launchpad update
+pantry update
 
 # Update specific packages
-launchpad update node python
+pantry update node python
 ```
 
 ## Listing Installed Packages
@@ -797,7 +797,7 @@ View what packages are currently installed:
 
 ```bash
 # List all installed packages
-launchpad list
+pantry list
 ```
 
 ## Common Options
@@ -820,7 +820,7 @@ Most commands support these options:
 
 ### Understanding Installation Philosophy
 
-Launchpad follows a clean package management approach _(similar to pkgm)_:
+pantry follows a clean package management approach _(similar to pkgm)_:
 
 - **Never uses Homebrew directories** (`/opt/homebrew`)
 - **Prefers `~/.local`** for user-specific installations (safest approach)
@@ -829,7 +829,7 @@ Launchpad follows a clean package management approach _(similar to pkgm)_:
 
 ### Using Environment Isolation
 
-Launchpad automatically provides environment isolation for each project:
+pantry automatically provides environment isolation for each project:
 
 ```bash
 # Each project gets its own environment
@@ -839,8 +839,8 @@ cd ../project-b/ # → Uses node@22, python@3.12
 
 ### Choosing Between Remove and Uninstall
 
-- Use `remove` when you want to uninstall specific packages while keeping your Launchpad setup
-- Use `uninstall` when you want to completely remove Launchpad and start fresh
+- Use `remove` when you want to uninstall specific packages while keeping your pantry setup
+- Use `uninstall` when you want to completely remove pantry and start fresh
 
 ### Using Dry-Run Mode
 
@@ -848,13 +848,13 @@ Always preview major changes before executing them:
 
 ```bash
 # Preview package removal
-launchpad remove python --dry-run
+pantry remove python --dry-run
 
 # Preview complete system cleanup
-launchpad uninstall --dry-run
+pantry uninstall --dry-run
 
 # Preview environment setup
-launchpad dev:dump --dryrun
+pantry dev:dump --dryrun
 ```
 
 ### Version Management
@@ -863,27 +863,27 @@ Remove specific versions while keeping others:
 
 ```bash
 # List installed packages to see versions
-launchpad list
+pantry list
 
 # Remove only a specific version
-launchpad remove node@20
+pantry remove node@20
 
 # Keep node@22 installed
 ```
 
 ## Using PATH Integration
 
-By default, Launchpad automatically adds shim directories to your PATH. You can disable this behavior:
+By default, pantry automatically adds shim directories to your PATH. You can disable this behavior:
 
 ```bash
-launchpad shim node --no-auto-path
+pantry shim node --no-auto-path
 ```
 
 ## Working with Dependencies
 
 ### Dependency File Formats
 
-Launchpad supports multiple dependency file formats:
+pantry supports multiple dependency file formats:
 
 ```yaml
 # dependencies.yaml
@@ -930,8 +930,8 @@ env:
 For detailed information about any command:
 
 ```bash
-launchpad help
-launchpad <command> --help
+pantry help
+pantry <command> --help
 ```
 
 ## Troubleshooting
@@ -943,7 +943,7 @@ If automatic environment activation isn't working:
 1. Ensure shell integration is set up:
 
    ```bash
-   echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+   echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
    source ~/.zshrc
    ```
 
@@ -956,14 +956,14 @@ If packages fail to install:
 
 1. Check your internet connection
 2. Verify the package name and version exist
-3. Try with verbose output: `launchpad install --verbose package-name`
+3. Try with verbose output: `pantry install --verbose package-name`
 4. Check if you have write permissions to the installation directory
 
 ### Permission Issues
 
 If you encounter permission errors:
 
-1. Launchpad will automatically prompt for sudo when installing to `/usr/local`
+1. pantry will automatically prompt for sudo when installing to `/usr/local`
 2. Install to user directory: `--path ~/.local`
 3. Check directory permissions
 
@@ -974,8 +974,8 @@ If shell integration isn't working:
 1. Verify your shell is supported (bash or zsh)
 2. Check that the shell integration code was added correctly
 3. Reload your shell configuration
-4. Try generating new shell code: `launchpad dev:shellcode`
-5. Check if shell messages are disabled: `echo $LAUNCHPAD_SHOW_ENV_MESSAGES`
+4. Try generating new shell code: `pantry dev:shellcode`
+5. Check if shell messages are disabled: `echo $pantry_SHOW_ENV_MESSAGES`
 
 ### Shell Message Issues
 
@@ -984,13 +984,13 @@ If you're not seeing environment messages:
 1. Check if messages are disabled:
 
    ```bash
-   echo $LAUNCHPAD_SHOW_ENV_MESSAGES
+   echo $pantry_SHOW_ENV_MESSAGES
    ```
 
 2. Re-enable messages:
 
    ```bash
-   export LAUNCHPAD_SHOW_ENV_MESSAGES=true
+   export pantry_SHOW_ENV_MESSAGES=true
    ```
 
 3. Check your configuration file for `showShellMessages: false`

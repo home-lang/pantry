@@ -17,17 +17,17 @@ export async function run(): Promise<void> {
     // Get inputs
     const inputs: ActionInputs = {
       packages: core.getInput('packages', { required: false }) || '',
-      configPath: core.getInput('config-path', { required: false }) || 'launchpad.config.ts',
+      configPath: core.getInput('config-path', { required: false }) || 'pantry.config.ts',
     }
 
-    core.info('Starting Launchpad Installer')
+    core.info('Starting pantry Installer')
     core.info(`Context: ${JSON.stringify(github.context)}`)
 
     // Setup Bun
     await setupBun()
 
-    // Install launchpad
-    await installLaunchpad()
+    // Install pantry
+    await installpantry()
 
     // Install dependencies
     if (inputs.packages) {
@@ -37,7 +37,7 @@ export async function run(): Promise<void> {
       await installProjectDependencies(inputs.configPath)
     }
 
-    core.info('Launchpad installation completed successfully')
+    core.info('pantry installation completed successfully')
   }
   catch (error) {
     core.setFailed(error instanceof Error ? error.message : String(error))
@@ -82,12 +82,12 @@ async function setupBun(): Promise<void> {
 }
 
 /**
- * Install launchpad using Bun
+ * Install pantry using Bun
  */
-async function installLaunchpad(): Promise<void> {
-  core.info('Installing launchpad...')
-  await exec.exec('bun', ['install', '-g', 'launchpad'])
-  core.info('launchpad installation completed')
+async function installpantry(): Promise<void> {
+  core.info('Installing pantry...')
+  await exec.exec('bun', ['install', '-g', 'pantry'])
+  core.info('pantry installation completed')
 }
 
 /**
@@ -99,13 +99,13 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
   const options = {
     env: {
       ...process.env,
-      LAUNCHPAD_VERBOSE: 'true',
+      pantry_VERBOSE: 'true',
       CONTEXT: JSON.stringify(github.context),
     },
   }
 
   const args = ['install', '--verbose', ...packages.split(' ')]
-  await exec.exec('launchpad', args, options)
+  await exec.exec('pantry', args, options)
 
   core.info('Package installation completed')
 }
@@ -119,7 +119,7 @@ async function installProjectDependencies(configPath: string): Promise<void> {
   const options = {
     env: {
       ...process.env,
-      LAUNCHPAD_VERBOSE: 'true',
+      pantry_VERBOSE: 'true',
       CONTEXT: JSON.stringify(github.context),
     },
   }
@@ -129,7 +129,7 @@ async function installProjectDependencies(configPath: string): Promise<void> {
   if (dependencies.length > 0) {
     core.info(`Found dependencies: ${dependencies.join(', ')}`)
     const args = ['install', '--verbose', ...dependencies]
-    await exec.exec('launchpad', args, options)
+    await exec.exec('pantry', args, options)
     core.info('Project dependencies installation completed')
   }
   else {

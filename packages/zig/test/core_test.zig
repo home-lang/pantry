@@ -4,7 +4,7 @@ const Platform = lib.Platform;
 const Architecture = lib.Architecture;
 const Paths = lib.Paths;
 const string = lib.string;
-const LaunchpadError = lib.LaunchpadError;
+const pantryError = lib.pantryError;
 const ErrorContext = lib.ErrorContext;
 
 // Platform tests
@@ -39,19 +39,19 @@ test "Path resolution returns valid paths" {
     const cache = try Paths.cache(allocator);
     defer allocator.free(cache);
     try std.testing.expect(cache.len > 0);
-    try std.testing.expect(std.mem.indexOf(u8, cache, "launchpad") != null);
+    try std.testing.expect(std.mem.indexOf(u8, cache, "pantry") != null);
 
     // Test data path
     const data = try Paths.data(allocator);
     defer allocator.free(data);
     try std.testing.expect(data.len > 0);
-    try std.testing.expect(std.mem.indexOf(u8, data, "launchpad") != null);
+    try std.testing.expect(std.mem.indexOf(u8, data, "pantry") != null);
 
     // Test config path
     const config = try Paths.config(allocator);
     defer allocator.free(config);
     try std.testing.expect(config.len > 0);
-    try std.testing.expect(std.mem.indexOf(u8, config, "launchpad") != null);
+    try std.testing.expect(std.mem.indexOf(u8, config, "pantry") != null);
 }
 
 test "Library path variables are platform-specific" {
@@ -159,7 +159,7 @@ test "formatError returns meaningful messages" {
     const allocator = std.testing.allocator;
     const errors_mod = @import("lib").errors;
 
-    const errors = [_]LaunchpadError{
+    const errors = [_]pantryError{
         error.PackageNotFound,
         error.CacheCorrupted,
         error.DependencyConflict,

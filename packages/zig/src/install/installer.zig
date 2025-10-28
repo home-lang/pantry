@@ -7,7 +7,7 @@ const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
 const libfixer = @import("libfixer.zig");
 
-const LaunchpadError = errors.LaunchpadError;
+const pantryError = errors.pantryError;
 const Paths = core.Paths;
 const PackageCache = cache.PackageCache;
 const PackageSpec = packages.PackageSpec;
@@ -145,7 +145,7 @@ pub const Installer = struct {
 
         return std.fmt.allocPrint(
             self.allocator,
-            "{s}/.local/share/launchpad/global/packages/{s}/v{s}",
+            "{s}/.local/share/pantry/global/packages/{s}/v{s}",
             .{ home, domain, version },
         );
     }
@@ -241,7 +241,7 @@ pub const Installer = struct {
 
         const temp_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/.local/share/launchpad/.tmp/{s}-{s}",
+            "{s}/.local/share/pantry/.tmp/{s}-{s}",
             .{ home, spec.name, spec.version },
         );
         defer self.allocator.free(temp_dir);

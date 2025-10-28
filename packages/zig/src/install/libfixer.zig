@@ -124,13 +124,13 @@ fn addRpathEntries(
 
     // Add rpath entries for:
     // 1. The package's own lib directory
-    // 2. The global launchpad directory (for finding openssl.org, nodejs.org, etc.)
+    // 2. The global pantry directory (for finding openssl.org, nodejs.org, etc.)
     const rpath_entries = [_][]const u8{
         // Package's own lib dir
         try std.fmt.allocPrint(allocator, "{s}/lib", .{package_dir}),
-        // Global launchpad dir (for dependencies like OpenSSL)
+        // Global pantry dir (for dependencies like OpenSSL)
         // This allows @rpath/openssl.org/v1/lib/libcrypto.dylib to resolve
-        try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home}),
+        try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home}),
     };
 
     defer {

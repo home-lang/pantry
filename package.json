@@ -1,18 +1,18 @@
 {
-  "name": "launchpad",
+  "name": "pantry",
   "type": "module",
   "version": "0.6.4",
   "private": true,
   "description": "Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
-  "homepage": "https://github.com/stacksjs/launchpad#readme",
+  "homepage": "https://github.com/stacksjs/pantry#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stacksjs/launchpad.git"
+    "url": "git+https://github.com/stacksjs/pantry.git"
   },
   "bugs": {
-    "url": "https://github.com/stacksjs/launchpad/issues"
+    "url": "https://github.com/stacksjs/pantry/issues"
   },
   "keywords": ["homebrew", "pkgx", "bun", "package"],
   "scripts": {

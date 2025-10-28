@@ -1,17 +1,17 @@
 # Cache Management
 
-Launchpad provides powerful cache management and cleanup capabilities to help you manage disk space and maintain a clean development environment. This includes both selective cache clearing and comprehensive system cleanup.
+pantry provides powerful cache management and cleanup capabilities to help you manage disk space and maintain a clean development environment. This includes both selective cache clearing and comprehensive system cleanup.
 
 ## Overview
 
-Launchpad caches downloaded packages to improve performance when switching between versions or reinstalling packages. Over time, this cache can grow large, and you may want to clean it up or perform a complete system reset.
+pantry caches downloaded packages to improve performance when switching between versions or reinstalling packages. Over time, this cache can grow large, and you may want to clean it up or perform a complete system reset.
 
 ## Cache Structure
 
-Launchpad stores cached data in the following locations:
+pantry stores cached data in the following locations:
 
 ```
-~/.cache/launchpad/
+~/.cache/pantry/
 ├── binaries/
 │   ├── packages/          # General package cache
 │   │   ├── bun.sh-1.2.2/
@@ -31,16 +31,16 @@ The `cache:clear` command removes all cached downloads while preserving installe
 
 ```bash
 # Preview what would be cleared
-launchpad cache:clear --dry-run
+pantry cache:clear --dry-run
 
 # Clear cache with confirmation
-launchpad cache:clear
+pantry cache:clear
 
 # Clear cache without confirmation
-launchpad cache:clear --force
+pantry cache:clear --force
 
 # Clear cache with verbose output
-launchpad cache:clear --verbose --force
+pantry cache:clear --verbose --force
 ```
 
 **Alias:** You can also use `cache:clean` as an alias for `cache:clear`.
@@ -55,8 +55,8 @@ launchpad cache:clear --verbose --force
 
 #### What Gets Cleared
 
-- **Package Cache:** `~/.cache/launchpad/binaries/packages/`
-- **Bun Cache:** `~/.cache/launchpad/binaries/bun/`
+- **Package Cache:** `~/.cache/pantry/binaries/packages/`
+- **Bun Cache:** `~/.cache/pantry/binaries/bun/`
 - **All cached downloads and extracted packages**
 
 #### Safety Features
@@ -67,20 +67,20 @@ launchpad cache:clear --verbose --force
 
 ### Complete Cleanup Command
 
-The `clean` command performs a comprehensive cleanup of all Launchpad-managed resources.
+The `clean` command performs a comprehensive cleanup of all pantry-managed resources.
 
 ```bash
 # Preview complete cleanup
-launchpad clean --dry-run
+pantry clean --dry-run
 
 # Perform complete cleanup
-launchpad clean --force
+pantry clean --force
 
 # Clean packages but keep cache
-launchpad clean --keep-cache --force
+pantry clean --keep-cache --force
 
 # Clean with verbose output
-launchpad clean --verbose --force
+pantry clean --verbose --force
 ```
 
 #### Options
@@ -94,21 +94,21 @@ launchpad clean --verbose --force
 
 #### What Gets Cleaned
 
-1. **Launchpad Packages:** `{install_prefix}/pkgs/`
+1. **pantry Packages:** `{install_prefix}/pkgs/`
    - Only the `pkgs` subdirectory, not the entire install prefix
    - Safely preserves other tools installed in `/usr/local`
 
-2. **Project Environments:** `~/.local/share/launchpad/`
+2. **Project Environments:** `~/.local/share/pantry/`
    - All project-specific environments
    - Environment activation scripts
 
-3. **Cache Directory:** `~/.cache/launchpad/` (unless `--keep-cache` is used)
+3. **Cache Directory:** `~/.cache/pantry/` (unless `--keep-cache` is used)
    - All cached downloads
    - Temporary files
 
 #### Safety Features
 
-- **Targeted Cleanup:** Only removes Launchpad-specific directories
+- **Targeted Cleanup:** Only removes pantry-specific directories
 - **Confirmation Required:** Requires `--force` flag for actual cleanup
 - **Detailed Preview:** Shows exactly what will be removed with sizes
 - **Selective Options:** Can preserve cache while cleaning packages
@@ -119,38 +119,38 @@ launchpad clean --verbose --force
 
 ```bash
 # Check cache size
-launchpad cache:clear --dry-run
+pantry cache:clear --dry-run
 
 # Clear cache when it gets too large
-launchpad cache:clear --force
+pantry cache:clear --force
 ```
 
 ### Complete System Reset
 
 ```bash
 # Preview what would be removed
-launchpad clean --dry-run
+pantry clean --dry-run
 
 # Complete reset (removes everything)
-launchpad clean --force
+pantry clean --force
 
 # Reset packages but keep cache for faster reinstalls
-launchpad clean --keep-cache --force
+pantry clean --keep-cache --force
 ```
 
 ### Maintenance Workflow
 
 ```bash
 # 1. Check what's installed and cached
-launchpad list
-launchpad cache:clear --dry-run
+pantry list
+pantry cache:clear --dry-run
 
 # 2. Clean up unused packages but keep cache
-launchpad clean --keep-cache --dry-run
-launchpad clean --keep-cache --force
+pantry clean --keep-cache --dry-run
+pantry clean --keep-cache --force
 
 # 3. Reinstall needed packages (will use cache)
-launchpad install node python bun
+pantry install node python bun
 ```
 
 ## Output Examples
@@ -158,23 +158,23 @@ launchpad install node python bun
 ### Cache Clear Dry-Run
 
 ```bash
-$ launchpad cache:clear --dry-run
+$ pantry cache:clear --dry-run
 🔍 DRY RUN MODE - Nothing will actually be cleared
-Would clear Launchpad cache...
+Would clear pantry cache...
 📊 Cache statistics:
    • Total size: 48.3 MB
    • File count: 4
-   • Cache directory: /Users/user/.cache/launchpad
+   • Cache directory: /Users/user/.cache/pantry
 
 Would remove:
-   • Package cache: /Users/user/.cache/launchpad/binaries/packages
-   • Bun cache: /Users/user/.cache/launchpad/binaries/bun
+   • Package cache: /Users/user/.cache/pantry/binaries/packages
+   • Bun cache: /Users/user/.cache/pantry/binaries/bun
 ```
 
 ### Clean Dry-Run
 
 ```bash
-$ launchpad clean --dry-run
+$ pantry clean --dry-run
 🔍 DRY RUN MODE - Nothing will actually be removed
 Would perform complete cleanup...
 📊 Cleanup statistics:
@@ -182,11 +182,11 @@ Would perform complete cleanup...
    • Total files: 6
 
 Would remove:
-   • Launchpad packages: /usr/local/pkgs (108.3 MB, 2 files)
-   • Launchpad environments: /Users/user/.local/share/launchpad (0.0 B, 0 files)
-   • Cache directory: /Users/user/.cache/launchpad (48.3 MB, 4 files)
+   • pantry packages: /usr/local/pkgs (108.3 MB, 2 files)
+   • pantry environments: /Users/user/.local/share/pantry (0.0 B, 0 files)
+   • Cache directory: /Users/user/.cache/pantry (48.3 MB, 4 files)
 
-📦 Launchpad-installed packages that would be removed:
+📦 pantry-installed packages that would be removed:
    • bun.sh
    • node
 ```
@@ -209,13 +209,13 @@ Would remove:
 
 ```bash
 # Monitor cache growth
-launchpad cache:clear --dry-run
+pantry cache:clear --dry-run
 
 # Clear cache periodically (e.g., monthly)
-launchpad cache:clear --force
+pantry cache:clear --force
 
 # Or use selective cleanup
-launchpad clean --keep-cache --force  # Keep cache, remove packages
+pantry clean --keep-cache --force  # Keep cache, remove packages
 ```
 
 ## Integration with Other Commands
@@ -224,15 +224,15 @@ launchpad clean --keep-cache --force  # Keep cache, remove packages
 
 ```bash
 # Clean slate before updating
-launchpad clean --force
-launchpad install node@latest python@latest
+pantry clean --force
+pantry install node@latest python@latest
 ```
 
 ### Project Migration
 
 ```bash
 # Clean old project environments
-launchpad clean --keep-cache --force
+pantry clean --keep-cache --force
 # Cache is preserved for faster setup of new projects
 ```
 
@@ -240,8 +240,8 @@ launchpad clean --keep-cache --force
 
 ```bash
 # In CI environments, you might want to always start clean
-launchpad clean --force --quiet
-launchpad install node python bun
+pantry clean --force --quiet
+pantry install node python bun
 ```
 
 ## Troubleshooting
@@ -252,11 +252,11 @@ If you encounter permission errors during cleanup:
 
 ```bash
 # Check what would be removed
-launchpad clean --dry-run
+pantry clean --dry-run
 
 # Ensure you have write permissions to the directories
 ls -la /usr/local/pkgs
-ls -la ~/.cache/launchpad
+ls -la ~/.cache/pantry
 ```
 
 ### Partial Cleanup Failures
@@ -273,11 +273,11 @@ If you accidentally clean too much:
 
 ```bash
 # Reinstall essential packages
-launchpad install node python bun
+pantry install node python bun
 
 # Recreate project environments
 cd your-project
-launchpad dev
+pantry dev
 ```
 
 ## Best Practices
@@ -290,6 +290,6 @@ launchpad dev
 
 ## Related Commands
 
-- [`launchpad list`](/features/package-management#listing-packages) - See what's installed
-- [`launchpad install`](/features/package-management#installation) - Reinstall packages after cleaning
-- [`launchpad dev`](/features/environment-management) - Recreate project environments
+- [`pantry list`](/features/package-management#listing-packages) - See what's installed
+- [`pantry install`](/features/package-management#installation) - Reinstall packages after cleaning
+- [`pantry dev`](/features/environment-management) - Recreate project environments

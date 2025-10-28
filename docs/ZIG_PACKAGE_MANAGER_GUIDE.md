@@ -38,10 +38,10 @@ In your Zig project root, create a `package.jsonc` (or `zig.json`) file:
 cd ~/Code/my-zig-project
 
 # Install dependencies (will auto-detect package.jsonc)
-launchpad install
+pantry install
 
 # Or specify the config file explicitly
-launchpad install --config package.jsonc
+pantry install --config package.jsonc
 ```
 
 ### 3. Lockfile generation
@@ -125,6 +125,7 @@ Pantry automatically detects these configuration files (in priority order):
 ```
 
 **How it works:**
+
 - Resolves to GitHub releases or repository archives
 - Can specify `tag` for specific release
 - `version: "latest"` always fetches the most recent release
@@ -144,6 +145,7 @@ Pantry automatically detects these configuration files (in priority order):
 ```
 
 **Supported version ranges:**
+
 - `^1.0.0` - Compatible with 1.x.x
 - `~1.0.0` - Compatible with 1.0.x
 - `>=1.0.0` - Greater than or equal
@@ -164,6 +166,7 @@ Pantry automatically detects these configuration files (in priority order):
 ```
 
 **Supported archive formats:**
+
 - `.tar.gz`
 - `.tar.xz`
 - `.zip`
@@ -203,6 +206,7 @@ Pantry automatically detects these configuration files (in priority order):
 ### Purpose
 
 The `package-lock.json` file ensures reproducible builds by:
+
 - Pinning exact versions of all dependencies
 - Storing resolved download URLs
 - Including integrity checksums (SHA-256)
@@ -235,16 +239,16 @@ The `package-lock.json` file ensures reproducible builds by:
 
 ```bash
 # Generate/update lockfile
-launchpad install
+pantry install
 
 # Install from lockfile (exact versions)
-launchpad install --frozen-lockfile
+pantry install --frozen-lockfile
 
 # Update all dependencies
-launchpad update
+pantry update
 
 # Update specific dependency
-launchpad update package-name
+pantry update package-name
 ```
 
 ## Distributing Zig Packages
@@ -254,12 +258,14 @@ launchpad update package-name
 **Setup:**
 
 1. Create GitHub releases with semantic versioning:
+
    ```bash
    git tag v0.1.0
    git push origin v0.1.0
    ```
 
 2. Users reference your package:
+
    ```jsonc
    {
      "dependencies": {
@@ -273,6 +279,7 @@ launchpad update package-name
    ```
 
 **Benefits:**
+
 - Free hosting on GitHub
 - Automatic CDN distribution
 - Built-in version management
@@ -283,11 +290,13 @@ launchpad update package-name
 **Setup:**
 
 1. Publish to npm:
+
    ```bash
    npm publish
    ```
 
 2. Users reference your package:
+
    ```jsonc
    {
      "dependencies": {
@@ -304,11 +313,13 @@ launchpad update package-name
 **Setup:**
 
 1. Host archives on your server/CDN:
+
    ```
    https://cdn.example.com/packages/my-lib-v1.0.0.tar.gz
    ```
 
 2. Users reference your package:
+
    ```jsonc
    {
      "dependencies": {
@@ -487,9 +498,11 @@ zig-utils/
 ## Installation Workflow
 
 1. **Dependency Detection:**
+
    ```bash
-   launchpad install
+   pantry install
    ```
+
    - Searches for `package.jsonc`, `zig.json`, `deps.yaml`, or `package.json`
    - Parses dependencies with source information
 
@@ -502,7 +515,7 @@ zig-utils/
      - `pkgx`: Resolves through pkgx ecosystem
 
 3. **Download & Cache:**
-   - Downloads packages to `~/.cache/launchpad/packages/`
+   - Downloads packages to `~/.cache/pantry/packages/`
    - Verifies integrity with SHA-256 checksums
    - Extracts to installation directory
 
@@ -522,33 +535,33 @@ zig-utils/
 
 ```bash
 # Install to specific directory
-launchpad install --install-path ./vendor
+pantry install --install-path ./vendor
 
 # Install globally
-launchpad install --global
+pantry install --global
 ```
 
 ### Dependency Tree
 
 ```bash
 # View dependency tree
-launchpad list --tree
+pantry list --tree
 
 # View installed packages
-launchpad list
+pantry list
 ```
 
 ### Cache Management
 
 ```bash
 # View cache stats
-launchpad cache:stats
+pantry cache:stats
 
 # Clear cache
-launchpad cache:clear
+pantry cache:clear
 
 # Clear specific package from cache
-launchpad cache:clear package-name
+pantry cache:clear package-name
 ```
 
 ## Troubleshooting
@@ -556,6 +569,7 @@ launchpad cache:clear package-name
 ### Issue: Package not found
 
 **Solution:** Verify source and package name:
+
 ```jsonc
 {
   "dependencies": {
@@ -571,6 +585,7 @@ launchpad cache:clear package-name
 ### Issue: Version mismatch
 
 **Solution:** Check available versions:
+
 ```bash
 # For GitHub packages
 curl https://api.github.com/repos/owner/repo/releases
@@ -582,9 +597,10 @@ npm view package-name versions
 ### Issue: Integrity check failed
 
 **Solution:** Clear cache and reinstall:
+
 ```bash
-launchpad cache:clear package-name
-launchpad install package-name
+pantry cache:clear package-name
+pantry install package-name
 ```
 
 ## Future Enhancements
@@ -594,7 +610,7 @@ launchpad install package-name
 - [ ] Workspace support for monorepos
 - [ ] Private registry authentication
 - [ ] Binary caching for compiled packages
-- [ ] Automatic dependency updates with `launchpad update`
+- [ ] Automatic dependency updates with `pantry update`
 
 ## Contributing
 

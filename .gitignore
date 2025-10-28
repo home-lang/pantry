@@ -11,9 +11,9 @@ node_modules
 temp
 docs/.vitepress/cache
 .env
-packages/launchpad/bin/launchpad
-packages/launchpad/bin/launchpad*
-packages/launchpad/test/clean-integration-*
+packages/pantry/bin/pantry
+packages/pantry/bin/pantry*
+packages/pantry/test/clean-integration-*
 *.bun-build
 /.local
 /binaries-test

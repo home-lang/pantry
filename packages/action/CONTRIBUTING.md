@@ -1,21 +1,24 @@
 # Contributing Guide
 
-Thank you for your interest in contributing to the Launchpad Installer! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to the pantry Installer! This document provides guidelines and instructions for contributing.
 
 ## Development Setup
 
 1. **Clone the repository:**
+
    ```bash
-   git clone https://github.com/stacksjs/launchpad.git
-   cd launchpad/packages/action
+   git clone https://github.com/stacksjs/pantry.git
+   cd pantry/packages/action
    ```
 
 2. **Install dependencies:**
+
    ```bash
    bun install
    ```
 
 3. **Build the action:**
+
    ```bash
    bun run build
    ```
@@ -23,6 +26,7 @@ Thank you for your interest in contributing to the Launchpad Installer! This doc
 ## Development Workflow
 
 1. **Create a feature branch:**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -30,6 +34,7 @@ Thank you for your interest in contributing to the Launchpad Installer! This doc
 2. **Make your changes**
 
 3. **Run the build to ensure everything compiles:**
+
    ```bash
    bun run build
    ```
@@ -39,6 +44,7 @@ Thank you for your interest in contributing to the Launchpad Installer! This doc
    - For GitHub Actions testing, you can set up a test workflow in a test repository
 
 5. **Commit your changes:**
+
    ```bash
    git add .
    git commit -m "feat: add your feature"
@@ -73,4 +79,4 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the project's [MIT License](https://github.com/stacksjs/launchpad/tree/main/LICENSE.md).
+By contributing to this project, you agree that your contributions will be licensed under the project's [MIT License](https://github.com/stacksjs/pantry/tree/main/LICENSE.md).

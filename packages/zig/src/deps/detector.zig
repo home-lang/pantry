@@ -90,8 +90,8 @@ pub fn isDepsFile(filename: []const u8) bool {
         "dependencies.yml",
         "pkgx.yaml",
         "pkgx.yml",
-        "launchpad.config.ts",
-        "launchpad.config.js",
+        "pantry.config.ts",
+        "pantry.config.js",
     };
 
     for (deps_files) |deps_file| {

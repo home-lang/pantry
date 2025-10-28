@@ -1,12 +1,13 @@
 # Shim Creation
 
-Launchpad provides a powerful shim creation system that makes package executables available across your system without modifying the global environment.
+pantry provides a powerful shim creation system that makes package executables available across your system without modifying the global environment.
 
 ## What are Shims?
 
 Shims are lightweight executable scripts that point to the actual binaries. When you run a shim, it transparently forwards the command to the actual binary, along with any arguments you provide.
 
 Benefits of using shims:
+
 - Run commands from anywhere without modifying your PATH for each package
 - Use specific versions of tools without conflicts
 - Easy clean-up and management
@@ -17,10 +18,10 @@ To create shims for a package:
 
 ```bash
 # Create shims for all executables in a package
-launchpad shim node
+pantry shim node
 
 # Create shims for multiple packages
-launchpad shim python go typescript
+pantry shim python go typescript
 ```
 
 ## Shim Location
@@ -28,7 +29,7 @@ launchpad shim python go typescript
 By default, shims are created in `~/.local/bin`. You can specify a different location:
 
 ```bash
-launchpad shim --path ~/bin node
+pantry shim --path ~/bin node
 ```
 
 Or set a default location in your configuration:
@@ -41,7 +42,7 @@ Or set a default location in your configuration:
 
 ## How Shims Work
 
-When you create a shim for a package, Launchpad:
+When you create a shim for a package, pantry:
 
 1. Queries pkgx for information about the package
 2. Locates all executable files in the package's `bin` directory
@@ -59,17 +60,17 @@ This tells your system to use pkgx to run the specific version of the package.
 
 ## PATH Integration
 
-For shims to work, the shim directory must be in your PATH. Launchpad can automatically add the shim directory to your PATH by modifying your shell configuration file:
+For shims to work, the shim directory must be in your PATH. pantry can automatically add the shim directory to your PATH by modifying your shell configuration file:
 
 ```bash
-# Launchpad will add the shim directory to your PATH automatically
-launchpad shim node
+# pantry will add the shim directory to your PATH automatically
+pantry shim node
 ```
 
 If you don't want automatic PATH modifications:
 
 ```bash
-launchpad shim --no-auto-path node
+pantry shim --no-auto-path node
 ```
 
 Or disable it in your configuration:
@@ -85,12 +86,12 @@ Or disable it in your configuration:
 To recreate existing shims:
 
 ```bash
-launchpad shim --force node
+pantry shim --force node
 ```
 
 ## Shell Configuration Files
 
-When adding to PATH, Launchpad looks for these files (in order):
+When adding to PATH, pantry looks for these files (in order):
 
 1. `~/.zshrc` (if using Zsh)
 2. `~/.bashrc` (if using Bash)
@@ -98,7 +99,7 @@ When adding to PATH, Launchpad looks for these files (in order):
 
 ## Windows Support
 
-On Windows, Launchpad cannot directly modify the PATH. Instead, it provides instructions for adding the shim directory to your PATH:
+On Windows, pantry cannot directly modify the PATH. Instead, it provides instructions for adding the shim directory to your PATH:
 
 ```powershell
 [System.Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\path\to\shims', [System.EnvironmentVariableTarget]::Machine)

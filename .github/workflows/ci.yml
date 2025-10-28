@@ -110,4 +110,4 @@ jobs:
         run: bun run build
 
       - name: Publish Commit
-        run: bunx pkg-pr-new publish './packages/action' './packages/launchpad'
+        run: bunx pkg-pr-new publish './packages/action' './packages/pantry'

@@ -3,7 +3,7 @@ import type { BuddyBotConfig } from 'buddy-bot'
 const config: BuddyBotConfig = {
   repository: {
     owner: 'stacksjs',
-    name: 'launchpad',
+    name: 'pantry',
     provider: 'github',
     // token: process.env.BUDDY_BOT_TOKEN,
   },
@@ -32,7 +32,7 @@ const config: BuddyBotConfig = {
     ignorePaths: [
       // Add file/directory paths to ignore using glob patterns
       // Example: 'packages/test-*/**', '**/*test-envs/**', 'apps/legacy/**'
-      'packages/launchpad/test-envs/**',
+      'packages/pantry/test-envs/**',
     ],
   },
   verbose: false,

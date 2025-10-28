@@ -1,10 +1,10 @@
 # Bun Package Manager Basic Test Environment
 
-This test environment verifies that Launchpad correctly handles `packageManager: "bun"` without a version specification.
+This test environment verifies that pantry correctly handles `packageManager: "bun"` without a version specification.
 
 ## Expected Behavior
 
-When running `launchpad install` in this directory:
+When running `pantry install` in this directory:
 
 1. **Should install Bun** (latest version)
 2. **Should NOT install Node.js** (since Bun is the package manager)
@@ -25,7 +25,7 @@ When running `launchpad install` in this directory:
 
 ```bash
 # Install packages
-launchpad install --verbose
+pantry install --verbose
 
 # Verify Bun is installed and working
 bunx --version

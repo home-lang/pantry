@@ -11,7 +11,7 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    std.debug.print("\n=== Launchpad Benchmarks ===\n\n", .{});
+    std.debug.print("\n=== pantry Benchmarks ===\n\n", .{});
 
     try benchmarkHashing(allocator);
     try benchmarkPathResolution(allocator);

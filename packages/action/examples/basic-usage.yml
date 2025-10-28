@@ -13,8 +13,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies with Launchpad
-        uses: stacksjs/launchpad-installer@v1
+      - name: Install dependencies with pantry
+        uses: stacksjs/pantry-installer@v1
         with:
           packages: node typescript bun # Space-separated list of packages
 

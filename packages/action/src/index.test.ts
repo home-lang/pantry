@@ -9,7 +9,7 @@ describe('Dependency Detection - All File Types', () => {
 
   beforeEach(() => {
     // Create a temporary test directory
-    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'launchpad-action-test-'))
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pantry-action-test-'))
     process.chdir(testDir)
   })
 
@@ -328,7 +328,7 @@ description = "A pixi project"`
     })
   })
 
-  describe('pkgx/launchpad configuration files', () => {
+  describe('pkgx/pantry configuration files', () => {
     it('should detect pkgx.yml', () => {
       const pkgxYml = `dependencies:
   - nodejs.org@18
@@ -361,34 +361,34 @@ description = "A pixi project"`
       expect(fs.existsSync('.pkgx.yaml')).toBe(true)
     })
 
-    it('should detect launchpad.yml', () => {
-      const launchpadYml = `dependencies:
+    it('should detect pantry.yml', () => {
+      const pantryYml = `dependencies:
   - nodejs.org@18
   - bun.sh@1`
-      fs.writeFileSync('launchpad.yml', launchpadYml)
-      expect(fs.existsSync('launchpad.yml')).toBe(true)
+      fs.writeFileSync('pantry.yml', pantryYml)
+      expect(fs.existsSync('pantry.yml')).toBe(true)
     })
 
-    it('should detect launchpad.yaml', () => {
-      const launchpadYaml = `dependencies:
+    it('should detect pantry.yaml', () => {
+      const pantryYaml = `dependencies:
   - nodejs.org@18
   - bun.sh@1`
-      fs.writeFileSync('launchpad.yaml', launchpadYaml)
-      expect(fs.existsSync('launchpad.yaml')).toBe(true)
+      fs.writeFileSync('pantry.yaml', pantryYaml)
+      expect(fs.existsSync('pantry.yaml')).toBe(true)
     })
 
-    it('should detect .launchpad.yml', () => {
-      const launchpadYml = `dependencies:
+    it('should detect .pantry.yml', () => {
+      const pantryYml = `dependencies:
   - nodejs.org@18`
-      fs.writeFileSync('.launchpad.yml', launchpadYml)
-      expect(fs.existsSync('.launchpad.yml')).toBe(true)
+      fs.writeFileSync('.pantry.yml', pantryYml)
+      expect(fs.existsSync('.pantry.yml')).toBe(true)
     })
 
-    it('should detect .launchpad.yaml', () => {
-      const launchpadYaml = `dependencies:
+    it('should detect .pantry.yaml', () => {
+      const pantryYaml = `dependencies:
   - nodejs.org@18`
-      fs.writeFileSync('.launchpad.yaml', launchpadYaml)
-      expect(fs.existsSync('.launchpad.yaml')).toBe(true)
+      fs.writeFileSync('.pantry.yaml', pantryYaml)
+      expect(fs.existsSync('.pantry.yaml')).toBe(true)
     })
 
     it('should detect dependencies.yml', () => {

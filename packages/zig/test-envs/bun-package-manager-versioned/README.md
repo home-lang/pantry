@@ -1,10 +1,10 @@
 # Bun Package Manager Versioned Test Environment
 
-This test environment verifies that Launchpad correctly handles `packageManager: "bun@1.2.20"` with a specific version.
+This test environment verifies that pantry correctly handles `packageManager: "bun@1.2.20"` with a specific version.
 
 ## Expected Behavior
 
-When running `launchpad install` in this directory:
+When running `pantry install` in this directory:
 
 1. **Should install Bun v1.2.20** (exact version specified)
 2. **Should NOT install Node.js** (since Bun is the package manager)
@@ -22,7 +22,7 @@ When running `launchpad install` in this directory:
 
 ```bash
 # Install packages with specific Bun version
-launchpad install --verbose
+pantry install --verbose
 
 # Verify exact Bun version
 bun --version  # Should show v1.2.20
@@ -40,11 +40,13 @@ bun run build
 ## Critical Test Case
 
 This environment specifically tests the original issue:
+
 ```bash
 bunx eslint src/ --fix
 ```
 
 This should **NOT** produce the error:
+
 ```
 env: node: No such file or directory
 ```

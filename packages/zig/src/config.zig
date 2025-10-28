@@ -7,11 +7,11 @@ pub const ConfigSource = zonfig.ConfigSource;
 pub const MergeStrategy = zonfig.MergeStrategy;
 pub const ZonfigError = zonfig.ZonfigError;
 
-// Launchpad-specific config loader
+// pantry-specific config loader
 pub const loader = @import("config/loader.zig");
-pub const LaunchpadConfigLoader = loader.LaunchpadConfigLoader;
+pub const pantryConfigLoader = loader.pantryConfigLoader;
 pub const LoadOptions = loader.LoadOptions;
-pub const loadLaunchpadConfig = loader.loadLaunchpadConfig;
+pub const loadpantryConfig = loader.loadpantryConfig;
 
 // Dependency extraction from config
 pub const dependencies = @import("config/dependencies.zig");

@@ -1,8 +1,8 @@
-# Launchpad - Zig Implementation
+# pantry - Zig Implementation
 
 > High-performance dependency manager refactored from TypeScript/Bun to Zig for 20-50x performance improvements.
 
-## Project Status: 🎉 Phases 1-7 Complete!
+## Project Status: 🎉 Phases 1-7 Complete
 
 This is a high-performance Zig refactor of the TypeScript/Bun implementation. See [ZIG_REFACTOR_PLAN.md](../../ZIG_REFACTOR_PLAN.md) for the complete implementation plan.
 
@@ -121,6 +121,7 @@ packages/zig/
 ### Phases 1-4 Complete! ✅
 
 **Phase 1: Foundation & Core Utilities** ✅
+
 - Platform abstraction layer with compile-time platform detection
 - Ultra-fast hashing using FNV-1a for small strings (< 32 bytes)
 - String interning for pointer-based equality (5 ns/op)
@@ -128,6 +129,7 @@ packages/zig/
 - Full test coverage and benchmarks
 
 **Phase 2: Caching System** ✅
+
 - Environment cache with TTL support (30min default)
 - Ring buffer fast cache (8 entries, L1-optimized, lock-free)
 - Package download cache with SHA256 verification
@@ -135,11 +137,13 @@ packages/zig/
 - Automatic cleanup of expired entries
 
 **Phase 3: Package Management** ✅
+
 - Package specification types
 - Package metadata structures
 - Installed package tracking
 
 **Phase 4: Environment Management** ✅
+
 - Environment manager with hash-based identification
 - Environment creation, loading, listing, removal
 - Dependency file tracking
@@ -147,6 +151,7 @@ packages/zig/
 ### Benchmark Results
 
 Exceeding all performance targets:
+
 - **Small string hashing (FNV-1a):** < 1 ns/op (24+ billion ops/sec)
 - **Large string hashing (MD5):** 163 ns/op - **1,200x faster than 200μs target**
 - **String interning (cache hit):** 5 ns/op (200+ million ops/sec)
@@ -202,7 +207,7 @@ zig build bench
 
 # Build with Profile-Guided Optimization
 zig build -Doptimize=ReleaseFast -fprofile-generate
-./zig-out/bin/launchpad <commands...>
+./zig-out/bin/pantry <commands...>
 zig build -Doptimize=ReleaseFast -fprofile-use=default.profdata
 ```
 

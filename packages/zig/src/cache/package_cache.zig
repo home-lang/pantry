@@ -3,7 +3,7 @@ const core = @import("../core/platform.zig");
 const string = @import("../core/string.zig");
 const errors = @import("../core/error.zig");
 
-const LaunchpadError = errors.LaunchpadError;
+const pantryError = errors.pantryError;
 const Paths = core.Paths;
 
 /// Package cache entry metadata

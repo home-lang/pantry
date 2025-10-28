@@ -1,16 +1,16 @@
 # Frequently Asked Questions (FAQ)
 
-This page answers the most commonly asked questions about Launchpad. If you don't find your answer here, check the [Troubleshooting](./troubleshooting.md) guide or join our [Discord community](https://discord.gg/stacksjs).
+This page answers the most commonly asked questions about pantry. If you don't find your answer here, check the [Troubleshooting](./troubleshooting.md) guide or join our [Discord community](https://discord.gg/stacksjs).
 
 ## General Questions
 
-### What is Launchpad?
+### What is pantry?
 
-Launchpad is a modern package manager built on top of the pkgx Pantry that provides fast, isolated package management with automatic environment activation. _If needed, it's designed to work alongside existing package managers like Homebrew without conflicts._
+pantry is a modern package manager built on top of the pkgx Pantry that provides fast, isolated package management with automatic environment activation. _If needed, it's designed to work alongside existing package managers like Homebrew without conflicts._
 
-### How is Launchpad different from Homebrew?
+### How is pantry different from Homebrew?
 
-| Feature | Launchpad | Homebrew |
+| Feature | pantry | Homebrew |
 |---------|-----------|----------|
 | **Installation location** | `/usr/local` (or `~/.local`) | `/opt/homebrew` (Apple Silicon) |
 | **Environment isolation** | ✅ Project-specific environments | ❌ Global installation |
@@ -19,78 +19,79 @@ Launchpad is a modern package manager built on top of the pkgx Pantry that provi
 | **Conflict with Homebrew** | ❌ No conflicts | N/A |
 | **Focus** | Development environments | System tools & GUI apps |
 
-### Can I use Launchpad alongside Homebrew?
+### Can I use pantry alongside Homebrew?
 
-**Yes, absolutely!** Launchpad is designed to coexist peacefully with Homebrew:
+**Yes, absolutely!** pantry is designed to coexist peacefully with Homebrew:
 
 - **Homebrew** uses `/opt/homebrew` (Apple Silicon) for system tools and GUI apps
-- **Launchpad** uses `/usr/local` for development tools and project environments
+- **pantry** uses `/usr/local` for development tools and project environments
 - **No conflicts** - They use different directories and serve different purposes
 
 ```bash
 # Both work together
 brew install --cask visual-studio-code  # GUI app via Homebrew
-launchpad install node@22               # Development tool via Launchpad
+pantry install node@22               # Development tool via pantry
 ```
 
 ### Do I need to uninstall other package managers?
 
-**No!** Launchpad works best as a complement to existing tools:
+**No!** pantry works best as a complement to existing tools:
 
 - Keep **Homebrew** for GUI applications and system tools
 - Keep **system package managers** (apt, yum, etc.) for OS-level dependencies
-- Use **Launchpad** for development environments and project-specific tools
+- Use **pantry** for development environments and project-specific tools
 
 ## Installation & Setup
 
-### Where does Launchpad install packages?
+### Where does pantry install packages?
 
-Launchpad follows a clear installation hierarchy:
+pantry follows a clear installation hierarchy:
 
 1. **Primary**: `/usr/local` (if writable)
 2. **Fallback**: `~/.local` (user-specific)
 3. **Custom**: Any path you specify with `--path`
 
-**Important**: Launchpad **never** installs to `/opt/homebrew` to avoid conflicts with Homebrew.
+**Important**: pantry **never** installs to `/opt/homebrew` to avoid conflicts with Homebrew.
 
-### Why does Launchpad ask for my password?
+### Why does pantry ask for my password?
 
-Launchpad requests sudo privileges only when:
+pantry requests sudo privileges only when:
 
 1. **Installing to `/usr/local`** and you don't have write permissions
 2. **System-level configuration** is needed
 3. **File permissions** need to be set correctly
 
 You can avoid sudo by:
-- Installing to user directory: `launchpad install --path ~/.local node@22`
+
+- Installing to user directory: `pantry install --path ~/.local node@22`
 - Fixing `/usr/local` permissions: `sudo chown -R $(whoami) /usr/local`
 
-### How do I completely uninstall Launchpad?
+### How do I completely uninstall pantry?
 
 ```bash
 # Use the built-in uninstall command
-launchpad uninstall --force
+pantry uninstall --force
 
 # Manual cleanup (if needed)
-rm -rf ~/.local/share/launchpad/
+rm -rf ~/.local/share/pantry/
 rm -rf ~/.local/bin/{pkgx,bun}
-sed -i '/launchpad/d' ~/.zshrc ~/.bashrc
-npm uninstall -g @stacksjs/launchpad
+sed -i '/pantry/d' ~/.zshrc ~/.bashrc
+npm uninstall -g @stacksjs/pantry
 ```
 
-### Can I install Launchpad without npm/bun?
+### Can I install pantry without npm/bun?
 
-Currently, Launchpad is distributed via npm/bun/yarn/pnpm. However, after global installation, Launchpad can bootstrap itself and install its own dependencies (including Bun) independently.
+Currently, pantry is distributed via npm/bun/yarn/pnpm. However, after global installation, pantry can bootstrap itself and install its own dependencies (including Bun) independently.
 
 ## Environment Management
 
 ### How do environment activations work?
 
-When you enter a directory with a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`):
+When you enter a directory with a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `pantry.yml`, `package.json`, `pyproject.toml`):
 
-1. Launchpad generates a hash based on the project path
-2. Launchpad computes a dependency fingerprint (md5 of the dependency file content)
-3. It creates/selects an environment at `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
+1. pantry generates a hash based on the project path
+2. pantry computes a dependency fingerprint (md5 of the dependency file content)
+3. It creates/selects an environment at `~/.local/share/pantry/envs/<project>_<hash>-d<dep_hash>`
 4. Installs project packages into that isolated environment (if needed)
 5. Modifies PATH to prioritize project binaries
 6. Sets environment variables from the dependency file
@@ -101,25 +102,27 @@ When you leave the directory, everything is automatically restored.
 ### Why isn't my environment activating?
 
 **Check shell integration:**
+
 ```bash
 # Should show function definition
 type _pkgx_chpwd_hook
 
 # If not working, add integration
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
 **Check dependency file:**
+
 ```bash
 # Verify file exists and syntax is correct
 cat dependencies.yaml
-launchpad dev:dump --dryrun
+pantry dev:dump --dryrun
 ```
 
 ### Why didn't my tool version switch after I changed deps.yaml?
 
-When you cd into a project, Launchpad now derives the environment directory from:
+When you cd into a project, pantry now derives the environment directory from:
 
 - a hash of the project path, and
 - a dependency fingerprint (md5 of the dependency file content),
@@ -127,24 +130,24 @@ When you cd into a project, Launchpad now derives the environment directory from
 producing a path like:
 
 ```
-~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>
+~/.local/share/pantry/envs/<project>_<hash>-d<dep_hash>
 ```
 
-Changing versions in `deps.yaml` (or `dependencies.yml`, `pkgx.yml`, `launchpad.yml`, `package.json`, `pyproject.toml`, etc.) changes the fingerprint, so a new env dir is selected and the correct versions are installed/activated automatically.
+Changing versions in `deps.yaml` (or `dependencies.yml`, `pkgx.yml`, `pantry.yml`, `package.json`, `pyproject.toml`, etc.) changes the fingerprint, so a new env dir is selected and the correct versions are installed/activated automatically.
 
 Recognized dependency files include:
 
 - `deps.yaml` / `deps.yml`
 - `dependencies.yaml` / `dependencies.yml`
 - `pkgx.yaml` / `pkgx.yml`
-- `launchpad.yaml` / `launchpad.yml`
+- `pantry.yaml` / `pantry.yml`
 - `package.json`
 - `pyproject.toml`
 
 To see this live, enable verbose logging and cd into the project:
 
 ```bash
-export LAUNCHPAD_VERBOSE=true
+export pantry_VERBOSE=true
 cd my-project
 ```
 
@@ -170,27 +173,27 @@ Tip: if you previously activated a project and then edited dependencies, simply 
 
 ```bash
 # Disable all messages
-export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+export pantry_SHOW_ENV_MESSAGES=false
 
 # Customize messages
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 {path}"
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="Done"
+export pantry_SHELL_ACTIVATION_MESSAGE="🔧 {path}"
+export pantry_SHELL_DEACTIVATION_MESSAGE="Done"
 
-# Or configure in launchpad.config.ts
-echo 'export default { showShellMessages: false }' > launchpad.config.ts
+# Or configure in pantry.config.ts
+echo 'export default { showShellMessages: false }' > pantry.config.ts
 ```
 
 ### How do I clean up old environments?
 
 ```bash
 # Remove environments older than 30 days
-launchpad env:clean --older-than 30
+pantry env:clean --older-than 30
 
 # Remove all unused environments
-launchpad env:clean --force
+pantry env:clean --force
 
 # Remove specific environment
-launchpad env:remove environment_hash_here
+pantry env:remove environment_hash_here
 ```
 
 ### How do I safely clean up without removing essential tools?
@@ -199,19 +202,21 @@ Use the `--keep-global` option to preserve global dependencies during cleanup:
 
 ```bash
 # Safe cleanup that preserves global dependencies
-launchpad clean --keep-global --force
+pantry clean --keep-global --force
 
 # Preview what would be preserved
-launchpad clean --keep-global --dry-run
+pantry clean --keep-global --dry-run
 
 # Combine with other options
-launchpad clean --keep-global --keep-cache --force
+pantry clean --keep-global --keep-cache --force
 ```
 
 **What gets preserved?**
+
 - Any package marked with `global: true` in dependency files
 
 **Example global dependency file** (`~/.dotfiles/deps.yaml`):
+
 ```yaml
 global: true
 dependencies:
@@ -223,6 +228,7 @@ dependencies:
 ```
 
 **Why use `--keep-global`?**
+
 - Prevents accidental removal of essential tools
 - Avoids breaking your development environment
 - Maintains system stability during cleanup
@@ -241,17 +247,18 @@ This design prevents conflicts between projects but may use more disk space.
 
 ### Why do I need to specify versions?
 
-Launchpad requires explicit versions for predictability and isolation:
+pantry requires explicit versions for predictability and isolation:
 
 ```bash
 # ✅ Explicit version (recommended)
-launchpad install node@22
+pantry install node@22
 
 # ❌ This won't work
-launchpad install node
+pantry install node
 ```
 
 This ensures:
+
 - **Reproducible environments** across team members
 - **No surprise updates** that break your project
 - **Clear dependency tracking**
@@ -259,20 +266,20 @@ This ensures:
 ### How do I find available package versions?
 
 ```bash
-# Search with Launchpad's built-in search
-launchpad search node
+# Search with pantry's built-in search
+pantry search node
 
 # Get detailed package information including versions
-launchpad info node --versions
+pantry info node --versions
 ```
 
 ### Can I install packages not available in pkgx?
 
-Currently, Launchpad uses the pkgx registry through ts-pkgx. If a package isn't available, you can:
+Currently, pantry uses the pkgx registry through ts-pkgx. If a package isn't available, you can:
 
 ```bash
 # Check what packages are available
-launchpad search package-name
+pantry search package-name
 
 # Or install manually with your system package manager
 brew install some-package  # macOS
@@ -281,14 +288,14 @@ apt install some-package   # Ubuntu/Debian
 
 ### How do I update packages?
 
-Launchpad uses **immutable packages** - instead of updating, you install new versions:
+pantry uses **immutable packages** - instead of updating, you install new versions:
 
 ```bash
 # Install new version
-launchpad install node@23
+pantry install node@23
 
 # Remove old version if needed
-launchpad remove node@22
+pantry remove node@22
 
 # Or update dependency file
 # dependencies.yaml: node@23 (instead of node@22)
@@ -296,14 +303,16 @@ launchpad remove node@22
 
 ### Why can't I install packages globally?
 
-Launchpad encourages **project-specific environments** instead of global installations:
+pantry encourages **project-specific environments** instead of global installations:
 
 **Instead of global:**
+
 ```bash
 npm install -g typescript  # Global installation
 ```
 
 **Use project environments:**
+
 ```yaml
 # dependencies.yaml
 dependencies:
@@ -319,7 +328,7 @@ This provides better isolation and avoids version conflicts.
 **However, if you need global installations**, you can use the `global` flag in your dependencies:
 
 ```yaml
-# dependencies.yaml - Global installation with Launchpad
+# dependencies.yaml - Global installation with pantry
 dependencies:
   node@22:
     version: 22.1.0
@@ -333,6 +342,7 @@ env:
 ```
 
 **Or apply global installation to all packages:**
+
 ```yaml
 # dependencies.yaml - All packages global
 global: true
@@ -346,6 +356,7 @@ env:
 ```
 
 **Global vs Project-Local Benefits:**
+
 - **Global installation** (`global: true`): Tools available system-wide, shared across projects
 - **Project-local installation** (default): Perfect isolation, no version conflicts between projects
 - **Mixed approach**: Core tools global, project-specific tools local
@@ -354,19 +365,20 @@ env:
 
 ### Where should I put my configuration file?
 
-Launchpad looks for configuration in this order:
+pantry looks for configuration in this order:
 
-1. `launchpad.config.ts` (current directory)
-2. `launchpad.config.js` (current directory)
-3. `launchpad.config.json` (current directory)
-4. `.launchpadrc` (home directory)
-5. `~/.config/launchpad/config.json`
+1. `pantry.config.ts` (current directory)
+2. `pantry.config.js` (current directory)
+3. `pantry.config.json` (current directory)
+4. `.pantryrc` (home directory)
+5. `~/.config/pantry/config.json`
 
-### How do I configure Launchpad for my team?
+### How do I configure pantry for my team?
 
 **Project-specific configuration:**
+
 ```typescript
-// launchpad.config.ts (commit to version control)
+// pantry.config.ts (commit to version control)
 export default {
   verbose: true,
   showShellMessages: true,
@@ -376,45 +388,49 @@ export default {
 ```
 
 **Individual preferences:**
+
 ```bash
 # Personal shell messages (.zshrc)
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="💻 Working on {path}"
+export pantry_SHELL_ACTIVATION_MESSAGE="💻 Working on {path}"
 ```
 
-### Can I use Launchpad in CI/CD?
+### Can I use pantry in CI/CD?
 
-**Absolutely!** Launchpad works great in CI/CD:
+**Absolutely!** pantry works great in CI/CD:
 
 ```yaml
 # GitHub Actions example
-- name: Install Launchpad
-  run: npm install -g @stacksjs/launchpad
+- name: Install pantry
+  run: npm install -g @stacksjs/pantry
 
 - name: Bootstrap environment
-  run: launchpad bootstrap --skip-shell-integration
+  run: pantry bootstrap --skip-shell-integration
 
 - name: Install project dependencies
-  run: launchpad dev:on
+  run: pantry dev:on
 ```
 
 ## Troubleshooting
 
-### My shell is slow after installing Launchpad
+### My shell is slow after installing pantry
 
 This is usually caused by:
 
 1. **Too many old environments** - Clean them up:
+
    ```bash
-   launchpad env:clean --older-than 7
+   pantry env:clean --older-than 7
    ```
 
 2. **Large environments** - Remove unused ones:
+
    ```bash
-   launchpad env:list --verbose  # Find large environments
-   launchpad env:remove large_environment_hash
+   pantry env:list --verbose  # Find large environments
+   pantry env:remove large_environment_hash
    ```
 
 3. **Shell integration conflicts** - Check for conflicts:
+
    ```bash
    grep -E "(nvm|rbenv|pyenv)" ~/.zshrc
    ```
@@ -422,36 +438,42 @@ This is usually caused by:
 ### Package installation fails with permission errors
 
 **Fix /usr/local permissions:**
+
 ```bash
 sudo chown -R $(whoami) /usr/local/bin /usr/local/sbin
 ```
 
 **Or use user-local installation:**
+
 ```bash
-launchpad install --path ~/.local node@22
+pantry install --path ~/.local node@22
 ```
 
 ### Commands not found after installation
 
 **Check PATH order:**
+
 ```bash
-echo $PATH  # Launchpad directories should come first
+echo $PATH  # pantry directories should come first
 ```
 
 **Verify shell integration:**
+
 ```bash
 source ~/.zshrc  # Reload shell configuration
 ```
 
 **Manual activation:**
+
 ```bash
 cd my-project
-launchpad dev:on  # Force activation
+pantry dev:on  # Force activation
 ```
 
 ### Environment variables not working
 
 **Check dependency file syntax:**
+
 ```yaml
 # Correct format
 dependencies:
@@ -463,34 +485,38 @@ env:
 ```
 
 **Test manually:**
+
 ```bash
-launchpad dev:dump --verbose  # Shows what would be set
+pantry dev:dump --verbose  # Shows what would be set
 ```
 
 ## Performance & Limits
 
-### How much disk space does Launchpad use?
+### How much disk space does pantry use?
 
 - **Base installation**: ~50MB (pkgx + Bun)
 - **Per environment**: 10MB - 500MB depending on packages
 - **Large environments**: Python/Node with many packages can be 1GB+
 
 **Monitor usage:**
+
 ```bash
-launchpad env:list --verbose  # Shows sizes
-du -sh ~/.local/share/launchpad/envs/*
+pantry env:list --verbose  # Shows sizes
+du -sh ~/.local/share/pantry/envs/*
 ```
 
 ### Is there a limit on the number of environments?
 
 No hard limit, but consider:
+
 - **Disk space** - Each environment uses storage
 - **Performance** - Many environments can slow shell activation
 - **Management** - Use `env:clean` to remove old environments
 
 ### How fast is package installation?
 
-Launchpad is significantly faster than traditional package managers:
+pantry is significantly faster than traditional package managers:
+
 - **pkgx caching** - Packages are cached after first download
 - **Parallel downloads** - Multiple packages install simultaneously
 - **No compilation** - Uses pre-built binaries when available
@@ -501,14 +527,15 @@ Launchpad is significantly faster than traditional package managers:
 
 **Yes!** See our [Migration Guide](./migration.md) for detailed steps. The general process:
 
-1. **Install Launchpad** alongside existing tools
+1. **Install pantry** alongside existing tools
 2. **Create `dependencies.yaml`** files for projects
-3. **Test each project** with Launchpad environments
+3. **Test each project** with pantry environments
 4. **Gradually remove** old version managers
 
 ### Will this break my existing projects?
 
-**No!** Launchpad is designed for safe migration:
+**No!** pantry is designed for safe migration:
+
 - **Coexists** with existing package managers
 - **Project-specific** - only affects directories with `dependencies.yaml`
 - **Reversible** - Easy to disable or uninstall
@@ -527,9 +554,9 @@ env:
 EOF
 ```
 
-### Does Launchpad work with Starship prompt?
+### Does pantry work with Starship prompt?
 
-**Yes!** Launchpad is fully compatible with Starship. However, you might see timeout warnings when Starship tries to detect tool versions:
+**Yes!** pantry is fully compatible with Starship. However, you might see timeout warnings when Starship tries to detect tool versions:
 
 ```
 [WARN] - (starship::utils): Executing command "/path/to/bin/bun" timed out.
@@ -551,7 +578,7 @@ symbol = "🐰 "
 
 This gives Starship 5 seconds (instead of the default) to execute commands, which eliminates timeout warnings while keeping your prompt responsive.
 
-**Why this happens:** When you enter a Launchpad-managed project, the environment activation process temporarily affects how quickly binaries respond, causing Starship's version detection to timeout with its default settings.
+**Why this happens:** When you enter a pantry-managed project, the environment activation process temporarily affects how quickly binaries respond, causing Starship's version detection to timeout with its default settings.
 
 ## Advanced Usage
 
@@ -561,10 +588,10 @@ This gives Starship 5 seconds (instead of the default) to execute commands, whic
 
 ```bash
 # Create template directory
-mkdir ~/.launchpad-templates
+mkdir ~/.pantry-templates
 
 # Create Node.js template
-cat > ~/.launchpad-templates/node-webapp.yaml << EOF
+cat > ~/.pantry-templates/node-webapp.yaml << EOF
 dependencies:
   - node@22
   - yarn@1.22
@@ -576,36 +603,37 @@ env:
 EOF
 
 # Use template
-cp ~/.launchpad-templates/node-webapp.yaml ./dependencies.yaml
+cp ~/.pantry-templates/node-webapp.yaml ./dependencies.yaml
 ```
 
-### Can I use Launchpad in Docker?
+### Can I use pantry in Docker?
 
-**Yes!** Launchpad works in containers:
+**Yes!** pantry works in containers:
 
 ```dockerfile
 FROM ubuntu:22.04
 
-# Install Launchpad
+# Install pantry
 RUN curl -fsSL https://bun.sh/install | bash
-RUN /root/.bun/bin/bun add -g @stacksjs/launchpad
+RUN /root/.bun/bin/bun add -g @stacksjs/pantry
 
 # Bootstrap and install dependencies
 COPY dependencies.yaml .
-RUN launchpad bootstrap --skip-shell-integration
-RUN launchpad dev:on
+RUN pantry bootstrap --skip-shell-integration
+RUN pantry dev:on
 ```
 
-### How do I script with Launchpad?
+### How do I script with pantry?
 
 **Environment activation in scripts:**
+
 ```bash
 #!/bin/bash
 cd my-project
 
 # Activate environment
-eval "$(launchpad dev:shellcode)"
-source <(launchpad dev:script)
+eval "$(pantry dev:shellcode)"
+source <(pantry dev:script)
 
 # Now use project-specific tools
 node --version
@@ -616,20 +644,20 @@ python --version
 
 ### Where can I get support?
 
-- **Documentation**: [https://launchpad.sh](https://launchpad.sh)
-- **GitHub Discussions**: [Ask questions](https://github.com/stacksjs/launchpad/discussions)
+- **Documentation**: [https://pantry.sh](https://pantry.sh)
+- **GitHub Discussions**: [Ask questions](https://github.com/stacksjs/pantry/discussions)
 - **Discord**: [Real-time chat](https://discord.gg/stacksjs)
-- **Issues**: [Report bugs](https://github.com/stacksjs/launchpad/issues)
+- **Issues**: [Report bugs](https://github.com/stacksjs/pantry/issues)
 
 ### How do I report a bug?
 
 When reporting issues, include:
 
-1. **System information**: `launchpad --version`, OS, shell
+1. **System information**: `pantry --version`, OS, shell
 2. **Error messages**: Full error output
 3. **Steps to reproduce**: What you did before the error
-4. **Configuration**: Your `launchpad.config.ts` (sanitized)
-5. **Environment**: Output of `launchpad env:list`
+4. **Configuration**: Your `pantry.config.ts` (sanitized)
+5. **Environment**: Output of `pantry env:list`
 
 ### How can I contribute?
 
@@ -639,9 +667,10 @@ When reporting issues, include:
 - **Testing**: Report bugs and edge cases
 - **Feedback**: Share your use cases and feature requests
 
-### Is Launchpad open source?
+### Is pantry open source?
 
-**Yes!** Launchpad is open source under the MIT license:
-- **GitHub**: [https://github.com/stacksjs/launchpad](https://github.com/stacksjs/launchpad)
-- **License**: [MIT License](https://github.com/stacksjs/launchpad/blob/main/LICENSE.md)
-- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/launchpad/blob/main/https://github.com/stacksjs/contributing)
+**Yes!** pantry is open source under the MIT license:
+
+- **GitHub**: [https://github.com/stacksjs/pantry](https://github.com/stacksjs/pantry)
+- **License**: [MIT License](https://github.com/stacksjs/pantry/blob/main/LICENSE.md)
+- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/pantry/blob/main/https://github.com/stacksjs/contributing)

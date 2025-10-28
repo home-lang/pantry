@@ -1,15 +1,15 @@
 # Cache Optimization
 
-This guide covers advanced cache optimization strategies, performance tuning, and best practices for managing Launchpad's caching system in production environments.
+This guide covers advanced cache optimization strategies, performance tuning, and best practices for managing pantry's caching system in production environments.
 
 ## Cache Architecture
 
 ### Cache Hierarchy
 
-Launchpad uses a multi-layered caching approach:
+pantry uses a multi-layered caching approach:
 
 ```
-~/.cache/launchpad/
+~/.cache/pantry/
 ├── binaries/
 │   ├── packages/          # Package-specific cache
 │   │   ├── {domain}-{version}/
@@ -33,17 +33,17 @@ Cache keys are generated using a deterministic approach:
 
 ### Environment Selection Cache
 
-Launchpad also maintains a lightweight shell-side cache for environment activation. It stores:
+pantry also maintains a lightweight shell-side cache for environment activation. It stores:
 
 - a persistent marker for fast-path activation, and
 - a `.deps_fingerprint` file inside the environment with the dependency fingerprint used to select it.
 
-On directory change, Launchpad validates fast-path cache with two signals:
+On directory change, pantry validates fast-path cache with two signals:
 
 - "Cache invalid: dependency newer than cache" (dep file mtime > cache mtime)
 - "Cache invalid: fingerprint mismatch" (computed fingerprint != stored fingerprint)
 
-When either triggers, Launchpad skips fast-path and refreshes the environment selection, ensuring the correct versions are active.
+When either triggers, pantry skips fast-path and refreshes the environment selection, ensuring the correct versions are active.
 
 ## Performance Optimization
 
@@ -53,22 +53,22 @@ When either triggers, Launchpad skips fast-path and refreshes the environment se
 
 ```bash
 # Instead of using latest (cache miss on updates)
-launchpad install node@latest
+pantry install node@latest
 
 # Use specific versions for better cache hits
-launchpad install node@20.0.0 python@3.11.5
+pantry install node@20.0.0 python@3.11.5
 ```
 
 #### 2. Batch Operations
 
 ```bash
 # Efficient: Single operation, shared cache lookups
-launchpad install node@20 python@3.11 bun@1.2.3
+pantry install node@20 python@3.11 bun@1.2.3
 
 # Less efficient: Multiple operations, repeated cache checks
-launchpad install node@20
-launchpad install python@3.11
-launchpad install bun@1.2.3
+pantry install node@20
+pantry install python@3.11
+pantry install bun@1.2.3
 ```
 
 #### 3. Environment Consistency
@@ -100,7 +100,7 @@ COMMON_PACKAGES=(
 
 for package in "${COMMON_PACKAGES[@]}"; do
   echo "Warming cache for $package..."
-  launchpad install "$package" --cache-only 2>/dev/null || true
+  pantry install "$package" --cache-only 2>/dev/null || true
 done
 ```
 
@@ -114,17 +114,17 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - name: Cache Launchpad packages
+      - name: Cache pantry packages
         uses: actions/cache@v3
         with:
-          path: ~/.cache/launchpad
-          key: launchpad-${{ runner.os }}-${{ hashFiles('deps.yaml') }}
+          path: ~/.cache/pantry
+          key: pantry-${{ runner.os }}-${{ hashFiles('deps.yaml') }}
           restore-keys: |
-            launchpad-${{ runner.os }}-
+            pantry-${{ runner.os }}-
 
       - name: Install dependencies
         run: |
-          launchpad install
+          pantry install
 ```
 
 ## Cache Size Management
@@ -136,19 +136,19 @@ jobs:
 # cache-monitor.sh - Monitor cache size and growth
 
 cache_size() {
-  du -sh ~/.cache/launchpad 2>/dev/null | cut -f1 || echo "0B"
+  du -sh ~/.cache/pantry 2>/dev/null | cut -f1 || echo "0B"
 }
 
 cache_files() {
-  find ~/.cache/launchpad -type f 2>/dev/null | wc -l || echo "0"
+  find ~/.cache/pantry -type f 2>/dev/null | wc -l || echo "0"
 }
 
 echo "Cache size: $(cache_size)"
 echo "Cache files: $(cache_files)"
 
 # Detailed breakdown
-echo "Package cache: $(du -sh ~/.cache/launchpad/binaries/packages 2>/dev/null | cut -f1 || echo '0B')"
-echo "Bun cache: $(du -sh ~/.cache/launchpad/binaries/bun 2>/dev/null | cut -f1 || echo '0B')"
+echo "Package cache: $(du -sh ~/.cache/pantry/binaries/packages 2>/dev/null | cut -f1 || echo '0B')"
+echo "Bun cache: $(du -sh ~/.cache/pantry/binaries/bun 2>/dev/null | cut -f1 || echo '0B')"
 ```
 
 ### Automated Cache Cleanup
@@ -158,7 +158,7 @@ echo "Bun cache: $(du -sh ~/.cache/launchpad/binaries/bun 2>/dev/null | cut -f1 
 # cache-cleanup.sh - Automated cache maintenance
 
 MAX_CACHE_SIZE_MB=1000
-CACHE_DIR="$HOME/.cache/launchpad"
+CACHE_DIR="$HOME/.cache/pantry"
 
 # Check current cache size
 current_size=$(du -sm "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
@@ -173,7 +173,7 @@ if [ "$current_size" -gt "$MAX_CACHE_SIZE_MB" ]; then
   new_size=$(du -sm "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
   if [ "$new_size" -gt "$MAX_CACHE_SIZE_MB" ]; then
     echo "Clearing entire cache..."
-    launchpad cache:clear --force
+    pantry cache:clear --force
   fi
 fi
 ```
@@ -194,18 +194,18 @@ KEEP_PACKAGES=(
 temp_dir=$(mktemp -d)
 
 for package in "${KEEP_PACKAGES[@]}"; do
-  if [ -d "$HOME/.cache/launchpad/binaries/packages/$package" ]; then
-    cp -r "$HOME/.cache/launchpad/binaries/packages/$package" "$temp_dir/"
+  if [ -d "$HOME/.cache/pantry/binaries/packages/$package" ]; then
+    cp -r "$HOME/.cache/pantry/binaries/packages/$package" "$temp_dir/"
   fi
 done
 
 # Clear cache and restore essential packages
-launchpad cache:clear --force
-mkdir -p "$HOME/.cache/launchpad/binaries/packages"
+pantry cache:clear --force
+mkdir -p "$HOME/.cache/pantry/binaries/packages"
 
 for package in "${KEEP_PACKAGES[@]}"; do
   if [ -d "$temp_dir/$package" ]; then
-    mv "$temp_dir/$package" "$HOME/.cache/launchpad/binaries/packages/"
+    mv "$temp_dir/$package" "$HOME/.cache/pantry/binaries/packages/"
   fi
 done
 
@@ -220,12 +220,12 @@ rm -rf "$temp_dir"
 
 ```bash
 # Setup shared cache for team/CI environments
-export LAUNCHPAD_CACHE_DIR="/shared/cache/launchpad"
-mkdir -p "$LAUNCHPAD_CACHE_DIR"
+export pantry_CACHE_DIR="/shared/cache/pantry"
+mkdir -p "$pantry_CACHE_DIR"
 
 # Symlink to shared cache
-rm -rf ~/.cache/launchpad
-ln -s "$LAUNCHPAD_CACHE_DIR" ~/.cache/launchpad
+rm -rf ~/.cache/pantry
+ln -s "$pantry_CACHE_DIR" ~/.cache/pantry
 ```
 
 #### Cache Synchronization
@@ -234,8 +234,8 @@ ln -s "$LAUNCHPAD_CACHE_DIR" ~/.cache/launchpad
 #!/bin/bash
 # sync-cache.sh - Synchronize cache across environments
 
-REMOTE_CACHE="user@server:/shared/cache/launchpad/"
-LOCAL_CACHE="$HOME/.cache/launchpad/"
+REMOTE_CACHE="user@server:/shared/cache/pantry/"
+LOCAL_CACHE="$HOME/.cache/pantry/"
 
 # Download shared cache
 rsync -av --delete "$REMOTE_CACHE" "$LOCAL_CACHE"
@@ -252,7 +252,7 @@ rsync -av "$LOCAL_CACHE" "$REMOTE_CACHE"
 #!/bin/bash
 # verify-cache.sh - Verify cache integrity
 
-CACHE_DIR="$HOME/.cache/launchpad/binaries/packages"
+CACHE_DIR="$HOME/.cache/pantry/binaries/packages"
 
 for package_dir in "$CACHE_DIR"/*; do
   if [ -d "$package_dir" ]; then
@@ -287,7 +287,7 @@ while IFS= read -r -d '' package_dir; do
       rm -rf "$package_dir"
     fi
   fi
-done < <(find "$HOME/.cache/launchpad/binaries/packages" -maxdepth 1 -type d -print0)
+done < <(find "$HOME/.cache/pantry/binaries/packages" -maxdepth 1 -type d -print0)
 
 # Re-download corrupted packages
 for package in "${corrupted_packages[@]}"; do
@@ -296,7 +296,7 @@ for package in "${corrupted_packages[@]}"; do
   domain=$(echo "$package" | cut -d'-' -f1-2)
   version=$(echo "$package" | cut -d'-' -f3-)
 
-  launchpad install "$domain@$version" --force-download 2>/dev/null || true
+  pantry install "$domain@$version" --force-download 2>/dev/null || true
 done
 ```
 
@@ -308,8 +308,8 @@ done
 #!/bin/bash
 # cache-metrics.sh - Collect cache performance metrics
 
-CACHE_DIR="$HOME/.cache/launchpad"
-METRICS_FILE="/tmp/launchpad-cache-metrics.json"
+CACHE_DIR="$HOME/.cache/pantry"
+METRICS_FILE="/tmp/pantry-cache-metrics.json"
 
 # Collect metrics
 cache_size_bytes=$(du -sb "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
@@ -318,8 +318,8 @@ package_count=$(find "$CACHE_DIR/binaries/packages" -maxdepth 1 -type d 2>/dev/n
 bun_versions=$(find "$CACHE_DIR/binaries/bun" -type f 2>/dev/null | wc -l || echo "0")
 
 # Calculate cache hit rate (requires instrumentation)
-cache_hits=$(grep "cache hit" ~/.launchpad/logs/install.log 2>/dev/null | wc -l || echo "0")
-cache_misses=$(grep "cache miss" ~/.launchpad/logs/install.log 2>/dev/null | wc -l || echo "0")
+cache_hits=$(grep "cache hit" ~/.pantry/logs/install.log 2>/dev/null | wc -l || echo "0")
+cache_misses=$(grep "cache miss" ~/.pantry/logs/install.log 2>/dev/null | wc -l || echo "0")
 total_requests=$((cache_hits + cache_misses))
 
 if [ "$total_requests" -gt 0 ]; then
@@ -357,13 +357,13 @@ PACKAGES=("node@20.0.0" "python@3.11.5" "bun@1.2.3")
 echo "Benchmarking cache performance..."
 
 # Clear cache for clean test
-launchpad cache:clear --force >/dev/null 2>&1
+pantry cache:clear --force >/dev/null 2>&1
 
 # Benchmark cold cache (first install)
 echo "Cold cache performance:"
 for package in "${PACKAGES[@]}"; do
   start_time=$(date +%s.%N)
-  launchpad install "$package" >/dev/null 2>&1
+  pantry install "$package" >/dev/null 2>&1
   end_time=$(date +%s.%N)
   duration=$(echo "$end_time - $start_time" | bc)
   echo "  $package: ${duration}s"
@@ -373,10 +373,10 @@ done
 echo "Warm cache performance:"
 for package in "${PACKAGES[@]}"; do
   # Uninstall first
-  launchpad uninstall "$package" >/dev/null 2>&1
+  pantry uninstall "$package" >/dev/null 2>&1
 
   start_time=$(date +%s.%N)
-  launchpad install "$package" >/dev/null 2>&1
+  pantry install "$package" >/dev/null 2>&1
   end_time=$(date +%s.%N)
   duration=$(echo "$end_time - $start_time" | bc)
   echo "  $package: ${duration}s"
@@ -389,7 +389,7 @@ done
 
 1. **Use Specific Versions:** Pin exact versions in `deps.yaml` for consistent cache hits
 2. **Batch Operations:** Install multiple packages in single commands
-3. **Regular Monitoring:** Check cache size weekly with `launchpad cache:clear --dry-run`
+3. **Regular Monitoring:** Check cache size weekly with `pantry cache:clear --dry-run`
 4. **Selective Cleanup:** Use `--keep-cache` when resetting environments
 
 ### Production Deployment
@@ -411,46 +411,51 @@ done
 ### Common Cache Issues
 
 #### Cache Corruption
+
 ```bash
 # Symptoms: Installation failures, corrupted archives
 # Solution: Clear and rebuild cache
-launchpad cache:clear --force
-launchpad install your-packages
+pantry cache:clear --force
+pantry install your-packages
 ```
 
 #### Disk Space Issues
+
 ```bash
 # Symptoms: "No space left on device" errors
 # Solution: Clean cache and monitor size
-launchpad cache:clear --dry-run  # Check size first
-launchpad cache:clear --force    # Clean if needed
+pantry cache:clear --dry-run  # Check size first
+pantry cache:clear --force    # Clean if needed
 ```
 
 #### Permission Problems
+
 ```bash
 # Symptoms: Permission denied errors
 # Solution: Fix cache directory permissions
-sudo chown -R $(whoami) ~/.cache/launchpad
-chmod -R 755 ~/.cache/launchpad
+sudo chown -R $(whoami) ~/.cache/pantry
+chmod -R 755 ~/.cache/pantry
 ```
 
 ### Performance Issues
 
 #### Slow Cache Lookups
+
 ```bash
 # Check cache directory structure
-find ~/.cache/launchpad -type f | wc -l
+find ~/.cache/pantry -type f | wc -l
 
 # If too many files, consider cleanup
-launchpad cache:clear --force
+pantry cache:clear --force
 ```
 
 #### Network vs Cache Performance
+
 ```bash
 # Compare download vs cache performance
-time launchpad install node@20.0.0  # First time (download)
-launchpad uninstall node@20.0.0
-time launchpad install node@20.0.0  # Second time (cache)
+time pantry install node@20.0.0  # First time (download)
+pantry uninstall node@20.0.0
+time pantry install node@20.0.0  # Second time (cache)
 ```
 
 ## Related Documentation

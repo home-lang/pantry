@@ -53,7 +53,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         const cwd = try std.process.getCwdAlloc(allocator);
         defer allocator.free(cwd);
 
-        // Try to load dependencies from config file first (launchpad.config.ts, etc.)
+        // Try to load dependencies from config file first (pantry.config.ts, etc.)
         const config_deps = try loadDependenciesFromConfig(allocator, cwd);
         defer {
             if (config_deps) |deps_list| {
@@ -145,7 +145,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
         const env_dir = try std.fmt.allocPrint(
             allocator,
-            "{s}/.local/share/launchpad/envs/{s}_{s}-{s}",
+            "{s}/.local/share/pantry/envs/{s}_{s}-{s}",
             .{ home, proj_basename, proj_hash_short, dep_hash_short },
         );
         defer allocator.free(env_dir);
@@ -647,7 +647,7 @@ pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !
 
     // Find dependency file in project directory
     const deps_file = (try detector.findDepsFile(allocator, project_dir)) orelse {
-        // No dependency file found - not a launchpad project
+        // No dependency file found - not a pantry project
         return .{ .exit_code = 1 };
     };
     defer allocator.free(deps_file.path);
@@ -684,7 +684,7 @@ pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !
     const home = try lib.Paths.home(allocator);
     defer allocator.free(home);
 
-    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/envs", .{home});
+    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/envs", .{home});
     defer allocator.free(envs_dir_path);
 
     var envs_dir = try std.fs.cwd().openDir(envs_dir_path, .{ .iterate = true });
@@ -754,7 +754,7 @@ pub fn cacheCleanCommand(allocator: std.mem.Allocator) !CommandResult {
 
 /// Doctor command - verify installation and environment
 pub fn doctorCommand(allocator: std.mem.Allocator) !CommandResult {
-    std.debug.print("Launchpad Doctor\n\n", .{});
+    std.debug.print("pantry Doctor\n\n", .{});
 
     // Check paths
     const home = try lib.Paths.home(allocator);
@@ -845,10 +845,10 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     }
 
     std.debug.print("\nUsage:\n", .{});
-    std.debug.print("  launchpad start <service>    Start a service\n", .{});
-    std.debug.print("  launchpad stop <service>     Stop a service\n", .{});
-    std.debug.print("  launchpad restart <service>  Restart a service\n", .{});
-    std.debug.print("  launchpad status [service]   Show service status\n", .{});
+    std.debug.print("  pantry start <service>    Start a service\n", .{});
+    std.debug.print("  pantry stop <service>     Stop a service\n", .{});
+    std.debug.print("  pantry restart <service>  Restart a service\n", .{});
+    std.debug.print("  pantry status [service]   Show service status\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -1181,7 +1181,7 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
 
     if (try env_cache.get(hash)) |entry| {
         // Cache hit - output shell code with PATH and tracking variables
-        std.debug.print("export LAUNCHPAD_ENV_BIN_PATH=\"{s}\"\n", .{entry.path});
+        std.debug.print("export pantry_ENV_BIN_PATH=\"{s}\"\n", .{entry.path});
         std.debug.print("export PATH=\"{s}:$PATH\"\n", .{entry.path});
         return .{ .exit_code = 0 };
     }
@@ -1304,11 +1304,11 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
     // Generate minimal, performant shell integration code with instant deactivation
     const shellcode =
         \\
-        \\# Launchpad shell integration - minimal and performant
+        \\# pantry shell integration - minimal and performant
         \\
         \\# Dependency file names to check (keep in sync with Zig detector)
         \\__LP_DEP_FILES=(
-        \\  "launchpad.config.ts" "launchpad.config.js" "dependencies.yaml" "dependencies.yml"
+        \\  "pantry.config.ts" "pantry.config.js" "dependencies.yaml" "dependencies.yml"
         \\  "deps.yaml" "deps.yml" "pkgx.yaml" "pkgx.yml" "package.json"
         \\  "pyproject.toml" "requirements.txt" "Cargo.toml" "go.mod" "Gemfile" "deno.json"
         \\)
@@ -1344,7 +1344,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  fi
         \\}
         \\
-        \\launchpad_chpwd() {
+        \\pantry_chpwd() {
         \\  # SUPER FAST: Skip if PWD hasn't changed
         \\  if [[ "$__LP_LAST_PWD" == "$PWD" ]]; then
         \\    return 0
@@ -1352,30 +1352,30 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  export __LP_LAST_PWD="$PWD"
         \\
         \\  # INSTANT DEACTIVATION: Check if we've left a project
-        \\  if [[ -n "$LAUNCHPAD_CURRENT_PROJECT" ]]; then
+        \\  if [[ -n "$pantry_CURRENT_PROJECT" ]]; then
         \\    # We had a project - check if we've left it
-        \\    if [[ "$PWD" != "$LAUNCHPAD_CURRENT_PROJECT"* ]]; then
+        \\    if [[ "$PWD" != "$pantry_CURRENT_PROJECT"* ]]; then
         \\      # Left the project - deactivate instantly (no subprocess calls!)
-        \\      if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
-        \\        PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g; s|:$LAUNCHPAD_ENV_BIN_PATH||g; s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+        \\      if [[ -n "$pantry_ENV_BIN_PATH" ]]; then
+        \\        PATH=$(echo "$PATH" | sed "s|$pantry_ENV_BIN_PATH:||g; s|:$pantry_ENV_BIN_PATH||g; s|^$pantry_ENV_BIN_PATH$||g")
         \\        export PATH
         \\      fi
-        \\      unset LAUNCHPAD_CURRENT_PROJECT LAUNCHPAD_ENV_BIN_PATH LAUNCHPAD_DEP_FILE LAUNCHPAD_DEP_MTIME
+        \\      unset pantry_CURRENT_PROJECT pantry_ENV_BIN_PATH pantry_DEP_FILE pantry_DEP_MTIME
         \\      # IMPORTANT: Return immediately after deactivation - don't search for new projects!
         \\      # Only search when entering a directory, not when leaving
         \\      return 0
         \\    fi
         \\
         \\    # Still in same project - check if dependency file changed
-        \\    if [[ -n "$LAUNCHPAD_DEP_FILE" && -f "$LAUNCHPAD_DEP_FILE" ]]; then
-        \\      local current_mtime=$(__lp_mtime "$LAUNCHPAD_DEP_FILE")
-        \\      if [[ "$current_mtime" != "$LAUNCHPAD_DEP_MTIME" ]]; then
+        \\    if [[ -n "$pantry_DEP_FILE" && -f "$pantry_DEP_FILE" ]]; then
+        \\      local current_mtime=$(__lp_mtime "$pantry_DEP_FILE")
+        \\      if [[ "$current_mtime" != "$pantry_DEP_MTIME" ]]; then
         \\        # Dependency file changed! Force re-activation
         \\        # Deactivate first
-        \\        if [[ -n "$LAUNCHPAD_ENV_BIN_PATH" ]]; then
-        \\          PATH=$(echo "$PATH" | sed "s|$LAUNCHPAD_ENV_BIN_PATH:||g; s|:$LAUNCHPAD_ENV_BIN_PATH||g; s|^$LAUNCHPAD_ENV_BIN_PATH$||g")
+        \\        if [[ -n "$pantry_ENV_BIN_PATH" ]]; then
+        \\          PATH=$(echo "$PATH" | sed "s|$pantry_ENV_BIN_PATH:||g; s|:$pantry_ENV_BIN_PATH||g; s|^$pantry_ENV_BIN_PATH$||g")
         \\        fi
-        \\        unset LAUNCHPAD_CURRENT_PROJECT LAUNCHPAD_ENV_BIN_PATH LAUNCHPAD_DEP_FILE LAUNCHPAD_DEP_MTIME
+        \\        unset pantry_CURRENT_PROJECT pantry_ENV_BIN_PATH pantry_DEP_FILE pantry_DEP_MTIME
         \\        # Fall through to re-activation below
         \\      else
         \\        # No changes - skip lookup
@@ -1389,7 +1389,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\
         \\  # If we're not in a project, do a quick check before expensive file search
         \\  # Only search for dependency files if we're likely in a project directory
-        \\  if [[ -z "$LAUNCHPAD_CURRENT_PROJECT" ]]; then
+        \\  if [[ -z "$pantry_CURRENT_PROJECT" ]]; then
         \\    # Not in any project - do a fast single-directory check first
         \\    local has_dep_file=0
         \\    for fname in "${__LP_DEP_FILES[@]}"; do
@@ -1415,7 +1415,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  # Not in a project (or dep file changed) - find environment by hash
         \\  # Call Zig binary to get environment path for this project
         \\  local env_lookup
-        \\  env_lookup=$(launchpad env:lookup "$PWD" 2>/dev/null)
+        \\  env_lookup=$(pantry env:lookup "$PWD" 2>/dev/null)
         \\
         \\  if [[ -n "$env_lookup" ]]; then
         \\    # env_lookup format: "env_dir|dep_file"
@@ -1425,26 +1425,26 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\    if [[ -d "$env_dir/bin" ]]; then
         \\      # Activate environment
         \\      export PATH="$env_dir/bin:$PATH"
-        \\      export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-        \\      export LAUNCHPAD_CURRENT_PROJECT="$PWD"
-        \\      export LAUNCHPAD_DEP_FILE="$dep_file"
-        \\      export LAUNCHPAD_DEP_MTIME=$(__lp_mtime "$dep_file")
+        \\      export pantry_ENV_BIN_PATH="$env_dir/bin"
+        \\      export pantry_CURRENT_PROJECT="$PWD"
+        \\      export pantry_DEP_FILE="$dep_file"
+        \\      export pantry_DEP_MTIME=$(__lp_mtime "$dep_file")
         \\    fi
         \\  else
         \\    # No environment found - auto-install if we have a dep file
         \\    if [[ -n "$dep_file" ]]; then
-        \\      if launchpad install; then
+        \\      if pantry install; then
         \\        # Retry lookup after install
-        \\        env_lookup=$(launchpad env:lookup "$PWD" 2>/dev/null)
+        \\        env_lookup=$(pantry env:lookup "$PWD" 2>/dev/null)
         \\        if [[ -n "$env_lookup" ]]; then
         \\          local env_dir env_dep_file
         \\          IFS='|' read -r env_dir env_dep_file <<< "$env_lookup"
         \\          if [[ -d "$env_dir/bin" ]]; then
         \\            export PATH="$env_dir/bin:$PATH"
-        \\            export LAUNCHPAD_ENV_BIN_PATH="$env_dir/bin"
-        \\            export LAUNCHPAD_CURRENT_PROJECT="$PWD"
-        \\            export LAUNCHPAD_DEP_FILE="$dep_file"
-        \\            export LAUNCHPAD_DEP_MTIME=$(__lp_mtime "$dep_file")
+        \\            export pantry_ENV_BIN_PATH="$env_dir/bin"
+        \\            export pantry_CURRENT_PROJECT="$PWD"
+        \\            export pantry_DEP_FILE="$dep_file"
+        \\            export pantry_DEP_MTIME=$(__lp_mtime "$dep_file")
         \\          fi
         \\        fi
         \\      fi
@@ -1454,18 +1454,18 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\
         \\# Add to chpwd hooks for zsh
         \\if [[ -n "$ZSH_VERSION" ]]; then
-        \\  if [[ -z "${chpwd_functions[(r)launchpad_chpwd]}" ]]; then
-        \\    chpwd_functions+=(launchpad_chpwd)
+        \\  if [[ -z "${chpwd_functions[(r)pantry_chpwd]}" ]]; then
+        \\    chpwd_functions+=(pantry_chpwd)
         \\  fi
         \\elif [[ -n "$BASH_VERSION" ]]; then
         \\  # Bash: use PROMPT_COMMAND
-        \\  if [[ "$PROMPT_COMMAND" != *"launchpad_chpwd"* ]]; then
-        \\    PROMPT_COMMAND="launchpad_chpwd;$PROMPT_COMMAND"
+        \\  if [[ "$PROMPT_COMMAND" != *"pantry_chpwd"* ]]; then
+        \\    PROMPT_COMMAND="pantry_chpwd;$PROMPT_COMMAND"
         \\  fi
         \\fi
         \\
         \\# Run on shell start
-        \\launchpad_chpwd
+        \\pantry_chpwd
         \\
     ;
 
@@ -1579,7 +1579,7 @@ fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
     const home = try lib.Paths.home(allocator);
     defer allocator.free(home);
 
-    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home});
+    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home});
     defer allocator.free(global_dir);
 
     try std.fs.cwd().makePath(global_dir);
@@ -1624,7 +1624,7 @@ fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []cons
     const home = try lib.Paths.home(allocator);
     defer allocator.free(home);
 
-    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/launchpad/global", .{home});
+    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home});
     defer allocator.free(global_dir);
 
     try std.fs.cwd().makePath(global_dir);
@@ -1673,15 +1673,15 @@ fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []cons
     return .{ .exit_code = 0 };
 }
 
-/// Try to load dependencies from a config file (launchpad.config.ts, etc.)
+/// Try to load dependencies from a config file (pantry.config.ts, etc.)
 /// Returns null if no config file found or if config has no dependencies
 fn loadDependenciesFromConfig(
     allocator: std.mem.Allocator,
     cwd: []const u8,
 ) !?[]@import("../deps/parser.zig").PackageDependency {
-    // Try to load launchpad config
-    var config = lib.config.loadLaunchpadConfig(allocator, .{
-        .name = "launchpad",
+    // Try to load pantry config
+    var config = lib.config.loadpantryConfig(allocator, .{
+        .name = "pantry",
         .cwd = cwd,
     }) catch {
         // No config file found or failed to load
@@ -2022,7 +2022,7 @@ pub fn serviceStatusCommand(allocator: std.mem.Allocator, args: []const []const 
 
     const status = manager.status(service_name) catch services.ServiceStatus.unknown;
 
-    std.debug.print("\n{s} Status: {s}\n", .{service_name, status.toString()});
+    std.debug.print("\n{s} Status: {s}\n", .{ service_name, status.toString() });
     if (config.port) |p| {
         std.debug.print("Port: {d}\n", .{p});
     }

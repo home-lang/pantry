@@ -1,10 +1,11 @@
 # Custom Shims
 
-Beyond the basic shim creation functionality, Launchpad allows for advanced shim customization for more complex scenarios, performance optimization, and specialized workflows.
+Beyond the basic shim creation functionality, pantry allows for advanced shim customization for more complex scenarios, performance optimization, and specialized workflows.
 
 ## Understanding Shim Architecture
 
-Launchpad shims are lightweight executable scripts that:
+pantry shims are lightweight executable scripts that:
+
 - Activate the appropriate environment
 - Set necessary environment variables
 - Execute the target binary with proper context
@@ -12,7 +13,7 @@ Launchpad shims are lightweight executable scripts that:
 
 ## Manual Shim Creation
 
-If you need more control over your shims than the standard `launchpad shim` command provides, you can create them manually:
+If you need more control over your shims than the standard `pantry shim` command provides, you can create them manually:
 
 ```bash
 # Create a directory for your shims if it doesn't exist
@@ -30,7 +31,7 @@ chmod +x ~/.local/bin/custom-node
 
 ## Shim Templates
 
-Launchpad's shims generally follow this template:
+pantry's shims generally follow this template:
 
 ```sh
 #!/usr/bin/env -S pkgx -q [package]@[version]
@@ -50,16 +51,16 @@ exec pkgx -q [package]@[version] "$@"
 
 ## Environment-Aware Shims
 
-Create shims that integrate with Launchpad's environment system:
+Create shims that integrate with pantry's environment system:
 
 ```bash
 #!/bin/sh
 # Custom Node.js shim with environment awareness
 
-# Check if we're in a Launchpad environment
-if [ -n "$LAUNCHPAD_ENV_HASH" ]; then
+# Check if we're in a pantry environment
+if [ -n "$pantry_ENV_HASH" ]; then
   # Use environment-specific binary if available
-  ENV_NODE="$HOME/.local/share/launchpad/envs/$LAUNCHPAD_ENV_HASH/bin/node"
+  ENV_NODE="$HOME/.local/share/pantry/envs/$pantry_ENV_HASH/bin/node"
   if [ -x "$ENV_NODE" ]; then
     exec "$ENV_NODE" "$@"
   fi
@@ -128,7 +129,7 @@ Create shims that provide feedback when used:
 ```bash
 #!/bin/sh
 # Shim with custom messaging
-if [ "$LAUNCHPAD_SHOW_ENV_MESSAGES" = "true" ]; then
+if [ "$pantry_SHOW_ENV_MESSAGES" = "true" ]; then
   echo "🚀 Using custom Node.js shim" >&2
 fi
 
@@ -212,16 +213,16 @@ Create a debug version of a shim:
 ```bash
 #!/bin/sh
 # Debug shim with detailed information
-if [ "$LAUNCHPAD_DEBUG_SHIMS" = "true" ]; then
+if [ "$pantry_DEBUG_SHIMS" = "true" ]; then
   echo "🐛 Debug Info:" >&2
   echo "  Arguments: $*" >&2
   echo "  Working directory: $(pwd)" >&2
   echo "  PATH: $PATH" >&2
-  echo "  Environment hash: $LAUNCHPAD_ENV_HASH" >&2
+  echo "  Environment hash: $pantry_ENV_HASH" >&2
 fi
 
 # Run with verbose output if debugging
-if [ "$LAUNCHPAD_DEBUG_SHIMS" = "true" ]; then
+if [ "$pantry_DEBUG_SHIMS" = "true" ]; then
   exec pkgx -v -q node "$@"
 else
   exec pkgx -q node "$@"
@@ -237,8 +238,8 @@ Create shims with multiple fallback strategies:
 # Multi-fallback shim
 
 # Try environment-specific binary first
-if [ -n "$LAUNCHPAD_ENV_HASH" ]; then
-  ENV_BINARY="$HOME/.local/share/launchpad/envs/$LAUNCHPAD_ENV_HASH/bin/node"
+if [ -n "$pantry_ENV_HASH" ]; then
+  ENV_BINARY="$HOME/.local/share/pantry/envs/$pantry_ENV_HASH/bin/node"
   if [ -x "$ENV_BINARY" ]; then
     exec "$ENV_BINARY" "$@"
   fi
@@ -257,7 +258,7 @@ if command -v pkgx >/dev/null 2>&1; then
 fi
 
 # Final fallback
-echo "❌ Node.js not found. Install with: launchpad install node" >&2
+echo "❌ Node.js not found. Install with: pantry install node" >&2
 exit 1
 ```
 
@@ -304,7 +305,7 @@ Test your custom shims thoroughly:
 ~/my-shims/development/node-dev -e "console.log('test')"
 
 # Test environment variable handling
-LAUNCHPAD_DEBUG_SHIMS=true ~/my-shims/debug/node-debug --version
+pantry_DEBUG_SHIMS=true ~/my-shims/debug/node-debug --version
 ```
 
 ### Shim Documentation
@@ -314,7 +315,7 @@ Document your custom shims:
 ```bash
 # Create a README for your shims
 cat > ~/my-shims/README.md << EOF
-# Custom Launchpad Shims
+# Custom pantry Shims
 
 ## Development Shims
 - \`node-dev\`: Node.js with development optimizations

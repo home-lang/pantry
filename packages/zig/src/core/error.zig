@@ -1,7 +1,7 @@
 const std = @import("std");
 
-/// Comprehensive error types for Launchpad operations
-pub const LaunchpadError = error{
+/// Comprehensive error types for pantry operations
+pub const pantryError = error{
     // File system errors
     FileNotFound,
     DirectoryNotFound,
@@ -77,7 +77,7 @@ pub const LaunchpadError = error{
 };
 
 /// Format error with context for user-friendly display
-pub fn formatError(err: LaunchpadError, allocator: std.mem.Allocator) ![]const u8 {
+pub fn formatError(err: pantryError, allocator: std.mem.Allocator) ![]const u8 {
     return switch (err) {
         // File system errors
         error.FileNotFound => try allocator.dupe(u8, "File not found"),
@@ -87,7 +87,7 @@ pub fn formatError(err: LaunchpadError, allocator: std.mem.Allocator) ![]const u
         error.PathTooLong => try allocator.dupe(u8, "Path too long"),
 
         // Cache errors
-        error.CacheCorrupted => try allocator.dupe(u8, "Cache is corrupted - run 'launchpad cache:clear' to fix"),
+        error.CacheCorrupted => try allocator.dupe(u8, "Cache is corrupted - run 'pantry cache:clear' to fix"),
         error.CacheReadFailed => try allocator.dupe(u8, "Failed to read from cache"),
         error.CacheWriteFailed => try allocator.dupe(u8, "Failed to write to cache"),
         error.CacheLockTimeout => try allocator.dupe(u8, "Cache lock timeout - another operation may be in progress"),
@@ -156,7 +156,7 @@ pub fn formatError(err: LaunchpadError, allocator: std.mem.Allocator) ![]const u
 
 /// Error context for detailed error reporting
 pub const ErrorContext = struct {
-    error_type: LaunchpadError,
+    error_type: pantryError,
     message: []const u8,
     file_path: ?[]const u8 = null,
     line: ?usize = null,

@@ -1,10 +1,10 @@
 # Environment Management
 
-Launchpad provides powerful environment management capabilities that automatically isolate project dependencies and provide tools for managing these environments. This guide covers all aspects of environment management, from automatic activation to manual cleanup.
+pantry provides powerful environment management capabilities that automatically isolate project dependencies and provide tools for managing these environments. This guide covers all aspects of environment management, from automatic activation to manual cleanup.
 
 ## Overview
 
-Environment management in Launchpad consists of two main components:
+Environment management in pantry consists of two main components:
 
 1. **Automatic Environment Isolation** - Project-specific environments that activate when you enter a directory
 2. **Environment Management Tools** - CLI commands for listing, inspecting, cleaning, and removing environments
@@ -14,11 +14,11 @@ Environment management in Launchpad consists of two main components:
 
 ### How It Works
 
-When you enter a directory containing dependency files (like `dependencies.yaml`), Launchpad automatically:
+When you enter a directory containing dependency files (like `dependencies.yaml`), pantry automatically:
 
 1. **Generates a unique environment hash** based on the project path
 2. **Computes a dependency fingerprint** (md5 of the dependency file content)
-3. **Creates/selects an isolated environment directory** at `~/.local/share/launchpad/envs/<project>_<hash>-d<dep_hash>`
+3. **Creates/selects an isolated environment directory** at `~/.local/share/pantry/envs/<project>_<hash>-d<dep_hash>`
 4. **Installs project-specific packages** to the isolated environment
 5. **Modifies PATH** to prioritize the project's binaries
 6. **Sets up environment variables** as specified in the dependency file
@@ -27,7 +27,7 @@ When you enter a directory containing dependency files (like `dependencies.yaml`
 
 ### Environment Hash Format
 
-Launchpad uses a human-readable hash format for environment directories:
+pantry uses a human-readable hash format for environment directories:
 
 **Format:** `{project-name}_{8-char-hex-hash}-d{8-char-dep-hash}`
 
@@ -46,15 +46,15 @@ Launchpad uses a human-readable hash format for environment directories:
 
 ### Supported Dependency Files
 
-Launchpad automatically detects these dependency files:
+pantry automatically detects these dependency files:
 
 - `dependencies.yaml` / `dependencies.yml`
-- `.launchpad.yaml` / `launchpad.yaml`
-- `.launchpad.yml` / `launchpad.yml`
+- `.pantry.yaml` / `pantry.yaml`
+- `.pantry.yml` / `pantry.yml`
 - `deps.yml` / `deps.yaml`
 - `.deps.yml` / `.deps.yaml`
 
-For pkgx compatibility, Launchpad also supports:
+For pkgx compatibility, pantry also supports:
 
 - `pkgx.yaml` / `pkgx.yml`
 - `.pkgx.yaml` / `.pkgx.yml`
@@ -134,7 +134,7 @@ To enable automatic environment activation, add shell integration:
 
 ```bash
 # Add to your shell configuration
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 
 # Reload your shell
 source ~/.zshrc
@@ -155,34 +155,34 @@ You can customize or disable environment activation/deactivation messages:
 
 ```bash
 # Disable all environment messages
-export LAUNCHPAD_SHOW_ENV_MESSAGES=false
+export pantry_SHOW_ENV_MESSAGES=false
 
 # Or in configuration file
-echo 'export default { showShellMessages: false }' > launchpad.config.ts
+echo 'export default { showShellMessages: false }' > pantry.config.ts
 ```
 
 #### Custom Activation Messages
 
 ```bash
 # Environment variable (use {path} placeholder for project path)
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
+export pantry_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
 
 # Or in configuration file
 echo 'export default {
   shellActivationMessage: "🔧 Development environment ready: {path}"
-}' > launchpad.config.ts
+}' > pantry.config.ts
 ```
 
 #### Custom Deactivation Messages
 
 ```bash
 # Environment variable
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Project environment closed"
+export pantry_SHELL_DEACTIVATION_MESSAGE="👋 Project environment closed"
 
 # Or in configuration file
 echo 'export default {
   shellDeactivationMessage: "🔒 Environment closed"
-}' > launchpad.config.ts
+}' > pantry.config.ts
 ```
 
 #### Message Examples
@@ -191,16 +191,16 @@ Different styles you can use:
 
 ```bash
 # Minimal style
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="[ENV] {path}"
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="[ENV] closed"
+export pantry_SHELL_ACTIVATION_MESSAGE="[ENV] {path}"
+export pantry_SHELL_DEACTIVATION_MESSAGE="[ENV] closed"
 
 # Detailed style
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="🔧 Development environment ready for {path}"
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="👋 Development environment deactivated"
+export pantry_SHELL_ACTIVATION_MESSAGE="🔧 Development environment ready for {path}"
+export pantry_SHELL_DEACTIVATION_MESSAGE="👋 Development environment deactivated"
 
 # Emoji style
-export LAUNCHPAD_SHELL_ACTIVATION_MESSAGE="📁 {path} 🚀"
-export LAUNCHPAD_SHELL_DEACTIVATION_MESSAGE="🏠 Back to global environment"
+export pantry_SHELL_ACTIVATION_MESSAGE="📁 {path} 🚀"
+export pantry_SHELL_DEACTIVATION_MESSAGE="🏠 Back to global environment"
 ```
 
 ## Environment Management Commands
@@ -211,16 +211,16 @@ The `env:list` command shows all your development environments:
 
 ```bash
 # Basic listing
-launchpad env:list
+pantry env:list
 
 # Detailed view with hashes
-launchpad env:list --verbose
+pantry env:list --verbose
 
 # JSON output for scripting
-launchpad env:list --format json
+pantry env:list --format json
 
 # Simple format
-launchpad env:ls --format simple
+pantry env:ls --format simple
 ```
 
 **Output formats:**
@@ -269,13 +269,13 @@ The `env:inspect` command provides detailed information about a specific environ
 
 ```bash
 # Basic inspection
-launchpad env:inspect working-test_208a31ec
+pantry env:inspect working-test_208a31ec
 
 # Detailed inspection with directory structure
-launchpad env:inspect final-project_7db6cf06 --verbose
+pantry env:inspect final-project_7db6cf06 --verbose
 
 # Show binary stub contents
-launchpad env:inspect dummy_6d7cf1d6 --show-stubs
+pantry env:inspect dummy_6d7cf1d6 --show-stubs
 ```
 
 **Example output:**
@@ -286,7 +286,7 @@ launchpad env:inspect dummy_6d7cf1d6 --show-stubs
 📋 Basic Information:
   Project Name: working-test
   Hash: working-test_208a31ec
-  Path: /Users/user/.local/share/launchpad/envs/working-test_208a31ec
+  Path: /Users/user/.local/share/pantry/envs/working-test_208a31ec
   Size: 324M
   Created: 5/30/2025, 6:38:08 PM
   Modified: 5/30/2025, 6:38:12 PM
@@ -328,19 +328,19 @@ The `env:clean` command automatically removes unused or problematic environments
 
 ```bash
 # Preview what would be cleaned
-launchpad env:clean --dry-run
+pantry env:clean --dry-run
 
 # Clean environments older than 30 days (default)
-launchpad env:clean
+pantry env:clean
 
 # Clean environments older than 7 days
-launchpad env:clean --older-than 7
+pantry env:clean --older-than 7
 
 # Force cleanup without confirmation
-launchpad env:clean --force
+pantry env:clean --force
 
 # Verbose cleanup with details
-launchpad env:clean --verbose
+pantry env:clean --verbose
 ```
 
 **Cleanup Criteria:**
@@ -355,13 +355,13 @@ Remove individual environments by their hash:
 
 ```bash
 # Remove with confirmation
-launchpad env:remove dummy_6d7cf1d6
+pantry env:remove dummy_6d7cf1d6
 
 # Force removal without confirmation
-launchpad env:remove minimal_3a5dc15d --force
+pantry env:remove minimal_3a5dc15d --force
 
 # Verbose removal showing details
-launchpad env:remove working-test_208a31ec --verbose
+pantry env:remove working-test_208a31ec --verbose
 ```
 
 ## Advanced Environment Features
@@ -372,12 +372,12 @@ Each environment can export specific variables:
 
 ```bash
 # Check current environment context
-echo $LAUNCHPAD_ENV_HASH
-echo $LAUNCHPAD_PROJECT_NAME
+echo $pantry_ENV_HASH
+echo $pantry_PROJECT_NAME
 
 # Use in scripts
-if [ -n "$LAUNCHPAD_ENV_HASH" ]; then
-  echo "Running in Launchpad environment: $LAUNCHPAD_PROJECT_NAME"
+if [ -n "$pantry_ENV_HASH" ]; then
+  echo "Running in pantry environment: $pantry_PROJECT_NAME"
 fi
 ```
 
@@ -431,7 +431,7 @@ env:
 2. Verify dependency file:
 
    ```bash
-   launchpad dev:dump --dryrun
+   pantry dev:dump --dryrun
    ```
 
 3. Check file detection:
@@ -445,19 +445,19 @@ env:
 1. Check message settings:
 
    ```bash
-   echo $LAUNCHPAD_SHOW_ENV_MESSAGES
+   echo $pantry_SHOW_ENV_MESSAGES
    ```
 
 2. Verify shell integration:
 
    ```bash
-   grep "launchpad dev:shellcode" ~/.zshrc
+   grep "pantry dev:shellcode" ~/.zshrc
    ```
 
 3. Test manual activation:
 
 ```bash
-   eval "$(launchpad dev:shellcode)"
+   eval "$(pantry dev:shellcode)"
    ```
 
 #### Performance Issues
@@ -465,13 +465,13 @@ env:
 1. Clean old environments:
 
    ```bash
-   launchpad env:clean --older-than 7
+   pantry env:clean --older-than 7
    ```
 
 2. Check disk usage:
 
    ```bash
-   du -sh ~/.local/share/launchpad/envs/*
+   du -sh ~/.local/share/pantry/envs/*
    ```
 
 3. Monitor activation time:
@@ -504,7 +504,7 @@ env:
 
 **Environment not activating:**
 
-1. Check shell integration: `echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc`
+1. Check shell integration: `echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc`
 2. Verify dependency file exists and has correct syntax
 3. Reload shell configuration: `source ~/.zshrc`
 
@@ -512,13 +512,13 @@ env:
 
 1. Check internet connectivity
 2. Verify package names and versions exist in pkgx
-3. Use `launchpad dev:dump --verbose` for detailed error information
+3. Use `pantry dev:dump --verbose` for detailed error information
 
 **Hash collisions (rare):**
 
 1. Different projects with same name get different hashes based on full path
 2. If collision occurs, rename one of the project directories
-3. Remove old environment: `launchpad env:remove {hash}`
+3. Remove old environment: `pantry env:remove {hash}`
 
 ## Advanced Usage
 
@@ -530,10 +530,10 @@ Use JSON output for automation:
 #!/bin/bash
 # Clean up environments larger than 100MB
 
-envs=$(launchpad env:list --format json)
+envs=$(pantry env:list --format json)
 echo "$envs" | jq -r '.[] | select(.size | test("^[0-9]+[0-9][0-9]M|^[0-9]+G")) | .hash' | while read hash; do
   echo "Removing large environment: $hash"
-  launchpad env:remove "$hash" --force
+  pantry env:remove "$hash" --force
 done
 ```
 
@@ -545,7 +545,7 @@ Clean up environments in CI pipelines:
 # GitHub Actions example
 - name: Clean old environments
   run: |
-    launchpad env:clean --older-than 1 --force
+    pantry env:clean --older-than 1 --force
 ```
 
 ### Monitoring Environment Usage
@@ -554,5 +554,5 @@ Track environment disk usage:
 
 ```bash
 # Show environments sorted by size
-launchpad env:list --format json | jq -r 'sort_by(.size) | reverse | .[] | "\(.projectName): \(.size)"'
+pantry env:list --format json | jq -r 'sort_by(.size) | reverse | .[] | "\(.projectName): \(.size)"'
 ```

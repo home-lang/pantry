@@ -19,7 +19,7 @@ test "Cache format compatibility with TypeScript" {
         \\  "packages": {
         \\    "node": {
         \\      "version": "22.0.0",
-        \\      "path": "/usr/local/share/launchpad/global/nodejs.org/v22.0.0"
+        \\      "path": "/usr/local/share/pantry/global/nodejs.org/v22.0.0"
         \\    }
         \\  }
         \\}
@@ -40,9 +40,9 @@ test "Shell integration output matches TypeScript" {
 
     // Expected shell code format from TypeScript
     const expected_shell_code =
-        \\# Launchpad environment activation
-        \\export PATH="/usr/local/share/launchpad/global/bin:$PATH"
-        \\export LAUNCHPAD_ENV="test-env"
+        \\# pantry environment activation
+        \\export PATH="/usr/local/share/pantry/global/bin:$PATH"
+        \\export pantry_ENV="test-env"
     ;
 
     _ = allocator;
@@ -110,11 +110,11 @@ test "Path resolution matches TypeScript" {
     defer allocator.free(cache_path);
 
     // Verify path structure matches TypeScript:
-    // macOS: ~/Library/Caches/launchpad
-    // Linux: ~/.cache/launchpad
-    // Windows: %LOCALAPPDATA%\launchpad\cache
+    // macOS: ~/Library/Caches/pantry
+    // Linux: ~/.cache/pantry
+    // Windows: %LOCALAPPDATA%\pantry\cache
 
-    try testing.expect(std.mem.indexOf(u8, cache_path, "launchpad") != null);
+    try testing.expect(std.mem.indexOf(u8, cache_path, "pantry") != null);
 
     // TODO: Test against actual TypeScript-generated paths
     // TODO: Verify XDG_CACHE_HOME handling on Linux
@@ -125,7 +125,7 @@ test "Path resolution matches TypeScript" {
 // Symlink layout should match TypeScript version
 test "Symlink structure matches TypeScript" {
     // Verify that installed packages use same symlink structure
-    // e.g., /usr/local/share/launchpad/global/bin/node -> ../nodejs.org/v22.0.0/bin/node
+    // e.g., /usr/local/share/pantry/global/bin/node -> ../nodejs.org/v22.0.0/bin/node
 
     // TODO: Test symlink creation
     // TODO: Verify symlink resolution
@@ -152,7 +152,7 @@ test "Error messages match TypeScript format" {
 // Test configuration file parsing compatibility
 // Should handle same config format as TypeScript
 test "Config file parsing matches TypeScript" {
-    // Test parsing of launchpad.config.ts/yaml
+    // Test parsing of pantry.config.ts/yaml
     // Should support same configuration options
 
     const sample_config =

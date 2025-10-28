@@ -6,13 +6,13 @@
 <!-- [![npm downloads][npm-downloads-src]][npm-downloads-href] -->
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
-# launchpad
+# pantry
 
 > A modern dependency manager for your system and your projects. Effortlessly manage development tools, runtime environments, and project dependencies with automatic environment isolation. _Think Homebrew meets project-aware dependency management._
 
-## What is Launchpad?
+## What is pantry?
 
-Launchpad is a comprehensive dependency management solution that bridges the gap between system-wide package management and project-specific environments. Whether you're setting up a new development machine, managing system tools, or working on projects with specific dependency requirements, Launchpad provides a unified interface for all your dependency needs.
+pantry is a comprehensive dependency management solution that bridges the gap between system-wide package management and project-specific environments. Whether you're setting up a new development machine, managing system tools, or working on projects with specific dependency requirements, pantry provides a unified interface for all your dependency needs.
 
 **System Management:**
 
@@ -28,13 +28,13 @@ Launchpad is a comprehensive dependency management solution that bridges the gap
 - Version-specific tool installation
 - Seamless switching between project contexts
 
-At its core, Launchpad leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows.
+At its core, pantry leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows.
 
-Learn more in the docs: [Why Launchpad](https://stacks-launchpad.netlify.app/why), [Quick Start](https://stacks-launchpad.netlify.app/quickstart).
+Learn more in the docs: [Why pantry](https://stacks-pantry.netlify.app/why), [Quick Start](https://stacks-pantry.netlify.app/quickstart).
 
 ## Features
 
-Launchpad transforms how you manage dependencies across your entire development workflow:
+pantry transforms how you manage dependencies across your entire development workflow:
 
 ### System-Wide Dependency Management
 
@@ -67,7 +67,7 @@ Launchpad transforms how you manage dependencies across your entire development 
 - 🔄 **Auto-Updates** — Configure automatic updates for your dependency management tools
 - 🎛️ **Flexible Configuration** — Customize behavior through config files or command-line options
 
-## Why Launchpad?
+## Why pantry?
 
 Modern development requires managing dependencies at multiple levels - from system tools to project-specific requirements. Traditional approaches fall short:
 
@@ -85,7 +85,7 @@ Modern development requires managing dependencies at multiple levels - from syst
 - ❌ **Version drift** — Hard to maintain consistent tool versions
 - ❌ **Platform differences** — Different setup procedures for each OS
 
-**Launchpad's Solution:**
+**pantry's Solution:**
 
 - ✅ **Unified Management** — Single tool for both system and project dependencies
 - ✅ **Automatic Isolation** — Project environments activate automatically
@@ -93,13 +93,13 @@ Modern development requires managing dependencies at multiple levels - from syst
 - ✅ **Consistent Experience** — Same commands and behavior across all platforms
 - ✅ **Smart Defaults** — Sensible installation paths and configuration out of the box
 
-[Read more about why we created Launchpad](https://github.com/stacksjs/launchpad/tree/main/docs/why.md)
+[Read more about why we created pantry](https://github.com/stacksjs/pantry/tree/main/docs/why.md)
 
 ## Development
 
 ### Scripts
 
-Launchpad includes several utility scripts for development and maintenance:
+pantry includes several utility scripts for development and maintenance:
 
 #### Dynamic PHP Version Management
 
@@ -120,27 +120,27 @@ bun scripts/check-php-updates.ts
 
 ## Installation
 
-Get started with Launchpad through your preferred package manager:
+Get started with pantry through your preferred package manager:
 
 ```bash
 # Install with Bun (recommended)
-bun add -g @stacksjs/launchpad
+bun add -g @stacksjs/pantry
 
 # Or with npm
-npm install -g @stacksjs/launchpad
+npm install -g @stacksjs/pantry
 
 # Or with yarn
-yarn global add @stacksjs/launchpad
+yarn global add @stacksjs/pantry
 
 # Or with pnpm
-pnpm add -g @stacksjs/launchpad
+pnpm add -g @stacksjs/pantry
 ```
 
-See [Installation Guide](https://stacks-launchpad.netlify.app/install) for more options.
+See [Installation Guide](https://stacks-pantry.netlify.app/install) for more options.
 
 ## Quick Start
 
-Launchpad is designed to handle both system setup and project management seamlessly! 🎯
+pantry is designed to handle both system setup and project management seamlessly! 🎯
 
 ### System Setup (First Time)
 
@@ -148,13 +148,13 @@ Bootstrap your development environment with everything you need:
 
 ```bash
 # Complete system setup - installs to /usr/local by default
-./launchpad bootstrap
+./pantry bootstrap
 
 # Or for a custom installation path
-./launchpad bootstrap --path ~/.local --verbose
+./pantry bootstrap --path ~/.local --verbose
 
 # Skip specific components if needed
-./launchpad bootstrap --skip-bun --skip-shell-integration
+./pantry bootstrap --skip-bun --skip-shell-integration
 ```
 
 The bootstrap command sets up your entire development foundation:
@@ -170,19 +170,19 @@ Install and manage development tools across your entire system:
 
 ```bash
 # Install essential development tools system-wide
-launchpad install node python go rust
+pantry install node python go rust
 
 # Install specific versions
-launchpad install node@22 python@3.12
+pantry install node@22 python@3.12
 
 # Install to /usr/local (default system-wide location)
-launchpad install typescript --system
+pantry install typescript --system
 
 # Or specify any custom path
-launchpad install docker --path /opt/tools
+pantry install docker --path /opt/tools
 
 # Use shorthand for quick installs
-launchpad i node@22 typescript@5.7
+pantry i node@22 typescript@5.7
 ```
 
 **Smart Installation Behavior:**
@@ -194,7 +194,7 @@ launchpad i node@22 typescript@5.7
 
 ### Project Environment Management
 
-Launchpad automatically manages project-specific dependencies:
+pantry automatically manages project-specific dependencies:
 
 ```bash
 # Create a project with dependencies
@@ -216,13 +216,13 @@ cd ..
 # → 🔄 Environment deactivated
 ```
 
-Learn more: [Environment Management](https://stacks-launchpad.netlify.app/features/environment-management), [Package Management](https://stacks-launchpad.netlify.app/features/package-management), [Configuration](https://stacks-launchpad.netlify.app/config), [FAQ](https://stacks-launchpad.netlify.app/faq).
+Learn more: [Environment Management](https://stacks-pantry.netlify.app/features/environment-management), [Package Management](https://stacks-pantry.netlify.app/features/package-management), [Configuration](https://stacks-pantry.netlify.app/config), [FAQ](https://stacks-pantry.netlify.app/faq).
 
 **Supported Project Files:**
 
 - `deps.yaml` / `deps.yml`
 - `dependencies.yaml` / `dependencies.yml`
-- `launchpad.yaml` / `launchpad.yml`
+- `pantry.yaml` / `pantry.yml`
 - `pkgx.yaml` / `pkgx.yml`
 - `package.json` (Node.js projects)
 - `pyproject.toml` (Python projects)
@@ -235,16 +235,16 @@ Manage your project environments with human-readable identifiers:
 
 ```bash
 # List all development environments
-launchpad env:list
+pantry env:list
 
 # Inspect a specific environment
-launchpad env:inspect my-project_1a2b3c4d-d89abc12
+pantry env:inspect my-project_1a2b3c4d-d89abc12
 
 # Clean up old or failed environments
-launchpad env:clean --dry-run
+pantry env:clean --dry-run
 
 # Remove a specific environment
-launchpad env:remove old-project_5e6f7g8h --force
+pantry env:remove old-project_5e6f7g8h --force
 ```
 
 **Environment Hash Format:** `{project-name}_{8-char-hex}-d{8-char-dep-hash}`
@@ -259,16 +259,16 @@ Remove packages and manage your installation:
 
 ```bash
 # Remove specific system tools
-launchpad remove node python
+pantry remove node python
 
 # Remove project-specific versions (using uninstall command)
-launchpad uninstall node@22
+pantry uninstall node@22
 
 # See what would be removed
-launchpad uninstall python --dry-run
+pantry uninstall python --dry-run
 
 # Complete system cleanup
-launchpad clean --force
+pantry clean --force
 ```
 
 ### Service Management
@@ -277,20 +277,20 @@ Manage development services with ease:
 
 ```bash
 # Start essential development services
-launchpad service start postgres redis
+pantry service start postgres redis
 
 # Start multiple services at once
-launchpad service start postgres redis nginx prometheus
+pantry service start postgres redis nginx prometheus
 
 # Check service status
-launchpad service status postgres
-launchpad service list
+pantry service status postgres
+pantry service list
 
 # Stop services when done
-launchpad service stop postgres redis
+pantry service stop postgres redis
 
 # Enable auto-start for essential services
-launchpad service enable postgres redis
+pantry service enable postgres redis
 ```
 
 **Available Services (31+):**
@@ -327,12 +327,12 @@ Customize database credentials for all database services:
 
 ```bash
 # Configure database credentials globally
-export LAUNCHPAD_DB_USERNAME="myuser"
-export LAUNCHPAD_DB_PASSWORD="mypassword"
-export LAUNCHPAD_DB_AUTH_METHOD="md5"  # PostgreSQL: trust|md5|scram-sha-256
+export pantry_DB_USERNAME="myuser"
+export pantry_DB_PASSWORD="mypassword"
+export pantry_DB_AUTH_METHOD="md5"  # PostgreSQL: trust|md5|scram-sha-256
 
 # Start databases with custom credentials
-launchpad service start postgres mysql
+pantry service start postgres mysql
 # Creates project-specific databases with your configured credentials
 ```
 
@@ -344,40 +344,40 @@ launchpad service start postgres mysql
 
 **Configuration Options:**
 
-- Environment variables: `LAUNCHPAD_DB_USERNAME`, `LAUNCHPAD_DB_PASSWORD`, `LAUNCHPAD_DB_AUTH_METHOD`
-- Config file: `launchpad.config.ts` → `services.database`
+- Environment variables: `pantry_DB_USERNAME`, `pantry_DB_PASSWORD`, `pantry_DB_AUTH_METHOD`
+- Config file: `pantry.config.ts` → `services.database`
 - Per-project databases automatically created with your credentials
 
 ### Advanced Operations
 
 ```bash
 # Create executable shims
-launchpad shim node@22 typescript@5.7
+pantry shim node@22 typescript@5.7
 
 # List all installed packages
-launchpad list
+pantry list
 
 # Update packages
-launchpad update node python --latest
+pantry update node python --latest
 
 # Cache management
-launchpad cache:stats     # Show cache statistics
-launchpad cache:clean     # Clean old cached packages
-launchpad cache:clear     # Clear all cache
+pantry cache:stats     # Show cache statistics
+pantry cache:clean     # Clean old cached packages
+pantry cache:clear     # Clear all cache
 
 # Install additional tools
-launchpad bootstrap  # Bootstrap essential tools
-launchpad bun     # Install Bun runtime
+pantry bootstrap  # Bootstrap essential tools
+pantry bun     # Install Bun runtime
 ```
 
 ## Configuration
 
-Customize Launchpad's behavior for your system and projects:
+Customize pantry's behavior for your system and projects:
 
 ```ts
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+import type { pantryConfig } from '@stacksjs/pantry'
 
-const config: LaunchpadConfig = {
+const config: pantryConfig = {
   // System-wide installation preferences
   installationPath: '/usr/local', // Default system location
   sudoPassword: '', // Password for sudo operations, can be loaded from `SUDO_PASSWORD` environment variable
@@ -404,8 +404,8 @@ const config: LaunchpadConfig = {
   // Service management configuration
   services: {
     enabled: true, // Enable service management
-    dataDir: '~/.local/share/launchpad/services', // Services data directory
-    logDir: '~/.local/share/launchpad/logs', // Services log directory
+    dataDir: '~/.local/share/pantry/services', // Services data directory
+    logDir: '~/.local/share/pantry/logs', // Services log directory
     autoRestart: true, // Auto-restart failed services
     startupTimeout: 30, // Service startup timeout
     shutdownTimeout: 10, // Service shutdown timeout
@@ -420,31 +420,31 @@ const config: LaunchpadConfig = {
 export default config
 ```
 
-See [Configuration Guide](https://github.com/stacksjs/launchpad/tree/main/docs/config.md) for all options.
+See [Configuration Guide](https://github.com/stacksjs/pantry/tree/main/docs/config.md) for all options.
 
 ## GitHub Action
 
-Integrate Launchpad into your CI/CD workflows:
+Integrate pantry into your CI/CD workflows:
 
 ```yaml
 - name: Setup Development Environment
-  uses: stacksjs/launchpad-installer@v1
+  uses: stacksjs/pantry-installer@v1
   with:
     packages: node@22 typescript@5.7 bun@1.2.14
 ```
 
-See [GitHub Action Documentation](https://github.com/stacksjs/launchpad/tree/main/packages/action/README.md) for details.
+See [GitHub Action Documentation](https://github.com/stacksjs/pantry/tree/main/packages/action/README.md) for details.
 
 ## Advanced Usage
 
 Explore advanced dependency management topics:
 
-- [Service Management](https://stacks-launchpad.netlify.app/features/service-management)
-- [Project Environment Configuration](https://stacks-launchpad.netlify.app/features/package-management)
-- [Custom Shims and Tool Management](https://stacks-launchpad.netlify.app/advanced/custom-shims)
-- [Cross-platform Compatibility](https://stacks-launchpad.netlify.app/advanced/cross-platform)
-- [Performance Optimization](https://stacks-launchpad.netlify.app/advanced/performance)
-- [API Reference](https://stacks-launchpad.netlify.app/api/reference)
+- [Service Management](https://stacks-pantry.netlify.app/features/service-management)
+- [Project Environment Configuration](https://stacks-pantry.netlify.app/features/package-management)
+- [Custom Shims and Tool Management](https://stacks-pantry.netlify.app/advanced/custom-shims)
+- [Cross-platform Compatibility](https://stacks-pantry.netlify.app/advanced/cross-platform)
+- [Performance Optimization](https://stacks-pantry.netlify.app/advanced/performance)
+- [API Reference](https://stacks-pantry.netlify.app/api/reference)
 
 ## Comparing to Alternatives
 
@@ -473,7 +473,7 @@ Explore advanced dependency management topics:
 
 ## Changelog
 
-Please see our [releases](https://github.com/stacksjs/launchpad/releases) page for information on changes.
+Please see our [releases](https://github.com/stacksjs/pantry/releases) page for information on changes.
 
 ## Contributing
 
@@ -483,7 +483,7 @@ Please see [CONTRIBUTING](https://github.com/stacksjs/contributing) for details.
 
 For help or discussion:
 
-- [Discussions on GitHub](https://github.com/stacksjs/launchpad/discussions)
+- [Discussions on GitHub](https://github.com/stacksjs/pantry/discussions)
 - [Join the Stacks Discord Server](https://discord.gg/stacksjs)
 
 ## Postcardware
@@ -497,7 +497,7 @@ Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United St
 - [Max Howell](https://github.com/mxcl) - for creating [pkgx](https://github.com/pkgxdev/pkgx) and [Homebrew](https://github.com/Homebrew/brew)
 - [pkgm](https://github.com/pkgxdev/pkgm) & [dev](https://github.com/pkgxdev/dev) - thanks for the inspiration
 - [Chris Breuer](https://github.com/chrisbbreuer)
-- [All Contributors](https://github.com/stacksjs/launchpad/graphs/contributors)
+- [All Contributors](https://github.com/stacksjs/pantry/graphs/contributors)
 
 ## Sponsors
 
@@ -513,10 +513,10 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 Made with 💙
 
 <!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/@stacksjs/launchpad?style=flat-square
-[npm-version-href]: https://npmjs.com/package/@stacksjs/launchpad
-[github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/launchpad/ci.yml?style=flat-square&branch=main
-[github-actions-href]: https://github.com/stacksjs/launchpad/actions?query=workflow%3Aci
+[npm-version-src]: https://img.shields.io/npm/v/@stacksjs/pantry?style=flat-square
+[npm-version-href]: https://npmjs.com/package/@stacksjs/pantry
+[github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/pantry/ci.yml?style=flat-square&branch=main
+[github-actions-href]: https://github.com/stacksjs/pantry/actions?query=workflow%3Aci
 
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/launchpad/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/launchpad -->
+<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/pantry/main?style=flat-square
+[codecov-href]: https://codecov.io/gh/stacksjs/pantry -->

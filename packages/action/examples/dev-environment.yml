@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install development dependencies
-        uses: stacksjs/launchpad-installer@v1
+        uses: stacksjs/pantry-installer@v1
         # Automatically detects project dependencies
         # from package.json, requirements.txt, etc.
 

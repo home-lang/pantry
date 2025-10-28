@@ -1,4 +1,4 @@
-# Launchpad Zig Implementation - Current Status
+# pantry Zig Implementation - Current Status
 
 **Date**: 2025-10-20
 **Status**: Phases 1-4 Complete ✅
@@ -17,27 +17,33 @@
 ## Implemented Modules
 
 ### ✅ Core Foundation (src/core/)
+
 - `platform.zig` - Platform & architecture detection (197 lines)
 - `string.zig` - Ultra-fast hashing & string operations (243 lines)
 - `error.zig` - Comprehensive error handling (210 lines)
 
 ### ✅ Caching System (src/cache/)
+
 - `env_cache.zig` - Environment cache with TTL (343 lines)
 - `package_cache.zig` - Package download cache (311 lines)
 
 ### ✅ Package Management (src/packages/)
+
 - `types.zig` - Package specifications & metadata (79 lines)
 
 ### ✅ Environment Management (src/env/)
+
 - `manager.zig` - Environment lifecycle management (177 lines)
 
 ### ✅ Module Exports
+
 - `lib.zig` - Main library exports
 - `cache.zig` - Cache module aggregator
 - `packages.zig` - Packages module aggregator
 - `env.zig` - Environment module aggregator
 
 ### ✅ CLI & Testing
+
 - `main.zig` - CLI entry point
 - `test/core_test.zig` - Comprehensive test suite (226 lines)
 - `bench/bench.zig` - Performance benchmarks (262 lines)
@@ -45,6 +51,7 @@
 ## Performance Achievements
 
 ### Hashing Performance
+
 ```
 Small string (FNV-1a):  < 1 ns/op   (infinite M ops/sec)
 Large string (MD5):     149 ns/op   (6,702 M ops/sec)
@@ -54,6 +61,7 @@ Hash to hex:            5,134 ns/op (194 K ops/sec)
 **Achievement**: Exceeded 200μs target by **1,342x** for MD5, **> 200,000x** for FNV-1a
 
 ### String Interning Performance
+
 ```
 Intern (cache hit):   4 ns/op     (205,761 M ops/sec)
 Intern (cache miss):  56 ns/op    (17,678 K ops/sec)
@@ -63,6 +71,7 @@ Pointer compare:      < 1 ns/op   (24,390,243 M ops/sec)
 **Achievement**: Instant pointer-based equality checks
 
 ### Path Resolution Performance
+
 ```
 Home path:   5,205 ns/op  (192 K ops/sec)
 Cache path:  10,027 ns/op (99 K ops/sec)
@@ -73,6 +82,7 @@ Cache path:  10,027 ns/op (99 K ops/sec)
 ## API Examples
 
 ### Platform Detection
+
 ```zig
 const Platform = @import("lib").Platform;
 const platform = Platform.current(); // Compile-time
@@ -80,6 +90,7 @@ const name = platform.name(); // "darwin", "linux", or "windows"
 ```
 
 ### Fast Hashing
+
 ```zig
 const string = @import("lib").string;
 
@@ -92,6 +103,7 @@ const hex = try string.hashToHex(hash1, allocator);
 ```
 
 ### String Interning
+
 ```zig
 const string = @import("lib").string;
 
@@ -106,6 +118,7 @@ const equal = string.StringInterner.equalPtr(str1, str2); // true
 ```
 
 ### Environment Cache
+
 ```zig
 const cache = @import("lib").cache;
 
@@ -125,6 +138,7 @@ try env_cache.cleanup();
 ```
 
 ### Package Cache
+
 ```zig
 const cache = @import("lib").cache;
 
@@ -146,6 +160,7 @@ if (try pkg_cache.get("node", "20.0.0")) |meta| {
 ```
 
 ### Environment Manager
+
 ```zig
 const env = @import("lib").env;
 
@@ -167,26 +182,31 @@ try manager.remove(hash);
 ## Architecture Features
 
 ### 1. Lock-Free Fast Path
+
 - Ring buffer cache (8 entries, L1-sized)
 - Atomic operations for fast cache access
 - No locks on hot path
 
 ### 2. Thread Safety
+
 - RwLock for main cache (multiple readers)
 - Lock-free for ring buffer reads
 - Atomic operations for counters
 
 ### 3. Memory Efficiency
+
 - Cache-line aligned structures (64 bytes)
 - Minimal allocations
 - Smart cleanup strategies
 
 ### 4. Compile-Time Optimization
+
 - Platform detection at compile time
 - Architecture detection at compile time
 - Zero runtime overhead for conditionals
 
 ### 5. Smart Algorithms
+
 - FNV-1a for small strings (< 32 bytes)
 - MD5 for large strings (≥ 32 bytes)
 - String interning for repeated strings
@@ -222,7 +242,7 @@ zig build test
 
 # Run CLI
 zig build run -- --version
-# Output: launchpad 1.0.0-alpha (Zig)
+# Output: pantry 1.0.0-alpha (Zig)
 
 zig build run -- --help
 # Output: Full help menu
@@ -233,11 +253,11 @@ zig build bench
 # Cross-compile
 zig build compile-all
 # Outputs:
-#   zig-out/bin/macos-aarch64/launchpad
-#   zig-out/bin/macos-x86_64/launchpad
-#   zig-out/bin/linux-aarch64/launchpad
-#   zig-out/bin/linux-x86_64/launchpad
-#   zig-out/bin/windows-x86_64/launchpad.exe
+#   zig-out/bin/macos-aarch64/pantry
+#   zig-out/bin/macos-x86_64/pantry
+#   zig-out/bin/linux-aarch64/pantry
+#   zig-out/bin/linux-x86_64/pantry
+#   zig-out/bin/windows-x86_64/pantry.exe
 ```
 
 ## What Works
@@ -260,16 +280,19 @@ zig build compile-all
 The core foundation is complete. To finish the implementation:
 
 ### Priority 1: Shell Integration
+
 - Shell hook generation (zsh, bash)
 - Environment activation scripts
 - PATH management
 
 ### Priority 2: Installation Logic
+
 - Package download
 - Archive extraction
 - Installation to environment directories
 
 ### Priority 3: CLI Commands
+
 - `install` command
 - `uninstall` command
 - `list` command
@@ -277,11 +300,13 @@ The core foundation is complete. To finish the implementation:
 - `cache:*` commands
 
 ### Priority 4: Service Management
+
 - Service definitions
 - launchd/systemd integration
 - Service lifecycle
 
 ### Priority 5: Integration
+
 - End-to-end workflows
 - Migration from TypeScript
 - Production validation

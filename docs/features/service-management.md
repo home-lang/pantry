@@ -1,10 +1,10 @@
 # Service Management
 
-Launchpad provides comprehensive service management capabilities for common development services like databases, web servers, and infrastructure tools. This feature allows you to easily start, stop, and manage services across different platforms with automatic configuration and health monitoring.
+pantry provides comprehensive service management capabilities for common development services like databases, web servers, and infrastructure tools. This feature allows you to easily start, stop, and manage services across different platforms with automatic configuration and health monitoring.
 
 ## Overview
 
-Service management in Launchpad includes:
+Service management in pantry includes:
 
 - **19+ Pre-configured Services**: PostgreSQL, Redis, MySQL, Nginx, Kafka, Vault, Prometheus, Grafana, and more
 - **Cross-Platform Support**: Works on macOS (launchd) and Linux (systemd)
@@ -17,22 +17,22 @@ Service management in Launchpad includes:
 
 ```bash
 # Start a database service
-launchpad service start postgres
+pantry service start postgres
 
 # Start multiple services
-launchpad service start redis nginx
+pantry service start redis nginx
 
 # Check service status
-launchpad service status postgres
+pantry service status postgres
 
 # Stop a service
-launchpad service stop postgres
+pantry service stop postgres
 
 # List all available services
-launchpad service list
+pantry service list
 
 # Restart a service
-launchpad service restart redis
+pantry service restart redis
 ```
 
 ## Configure Services in dependencies.yaml
@@ -73,20 +73,23 @@ services:
 ```
 
 Behavior:
+
 - Reads `DB_CONNECTION` and `CACHE_DRIVER` or `CACHE_STORE` from `.env` when a Stacks or Laravel app is detected (`buddy` or `artisan` present).
 - Maps to services: `pgsql` → `postgres`, `mysql`/`mariadb` → `mysql`, `redis` → `redis`, `memcached` → `memcached`.
 - Equivalent to specifying `services.enabled: true` with an `autoStart` list of detected services.
-- Can be disabled via env: set `LAUNCHPAD_AUTO_START_FROM_FRAMEWORK=false`.
+- Can be disabled via env: set `pantry_AUTO_START_FROM_FRAMEWORK=false`.
 
 Notes:
+
 - **services.enabled**: turn service management on for the project.
 - **services.autoStart**: list of services to start automatically (supported values are listed below in Available Services). These start when the environment activates (e.g. upon `cd` into the project with shell integration).
 
 ## Available Services
 
-Launchpad includes pre-configured definitions for these services:
+pantry includes pre-configured definitions for these services:
 
 ### Databases
+
 - **PostgreSQL** (`postgres`) - Advanced relational database (port 5432)
 - **MySQL** (`mysql`) - Popular relational database (port 3306)
 - **MongoDB** (`mongodb`) - Document database (port 27017)
@@ -97,21 +100,25 @@ Launchpad includes pre-configured definitions for these services:
 - **ClickHouse** (`clickhouse`) - Columnar analytics database (port 8123)
 
 ### Web Servers
+
 - **Nginx** (`nginx`) - High-performance web server (port 8080)
 - **Caddy** (`caddy`) - Web server with automatic HTTPS (port 2015)
 
 ### Message Queues & Streaming
+
 - **Apache Kafka** (`kafka`) - Distributed event streaming (port 9092)
 - **RabbitMQ** (`rabbitmq`) - Message broker (port 5672)
 - **Apache Pulsar** (`pulsar`) - Cloud-native messaging platform (port 6650)
 - **NATS** (`nats`) - High-performance messaging system (port 4222)
 
 ### Monitoring & Observability
+
 - **Prometheus** (`prometheus`) - Metrics collection (port 9090)
 - **Grafana** (`grafana`) - Visualization dashboard (port 3000)
 - **Jaeger** (`jaeger`) - Distributed tracing (port 16686)
 
 ### Infrastructure & Tools
+
 - **HashiCorp Vault** (`vault`) - Secrets management (port 8200)
 - **HashiCorp Consul** (`consul`) - Service discovery (port 8500)
 - **etcd** (`etcd`) - Distributed key-value store (port 2379)
@@ -120,15 +127,18 @@ Launchpad includes pre-configured definitions for these services:
 - **Temporal** (`temporal`) - Workflow orchestration (port 7233)
 
 ### Development & CI/CD
+
 - **Jenkins** (`jenkins`) - CI/CD automation server (port 8090)
 - **LocalStack** (`localstack`) - Local AWS cloud stack (port 4566)
 - **Verdaccio** (`verdaccio`) - Private npm registry (port 4873)
 
 ### API & Backend Services
+
 - **Hasura** (`hasura`) - GraphQL API with real-time subscriptions (port 8085)
 - **Keycloak** (`keycloak`) - Identity and access management (port 8088)
 
 ### Caching & Storage
+
 - **Memcached** (`memcached`) - Memory caching system (port 11211)
 - **Elasticsearch** (`elasticsearch`) - Search engine (port 9200)
 
@@ -140,10 +150,10 @@ Start one or more services:
 
 ```bash
 # Start a single service
-launchpad service start postgres
+pantry service start postgres
 
 # Start multiple services
-launchpad service start redis postgres nginx
+pantry service start redis postgres nginx
 
 # Services are initialized automatically on first start
 # PostgreSQL: Creates database cluster with initdb
@@ -156,10 +166,10 @@ Stop running services:
 
 ```bash
 # Stop a single service
-launchpad service stop postgres
+pantry service stop postgres
 
 # Stop multiple services
-launchpad service stop redis postgres nginx
+pantry service stop redis postgres nginx
 
 # All services support graceful shutdown
 ```
@@ -170,7 +180,7 @@ Restart services (stop then start):
 
 ```bash
 # Restart a service
-launchpad service restart postgres
+pantry service restart postgres
 
 # Includes automatic health checks after restart
 ```
@@ -181,11 +191,11 @@ Check the status of services:
 
 ```bash
 # Check specific service status
-launchpad service status postgres
+pantry service status postgres
 # Output: stopped | starting | running | stopping | failed | unknown
 
 # List all services and their status
-launchpad service list
+pantry service list
 ```
 
 ### Enabling/Disabling Auto-Start
@@ -194,34 +204,35 @@ Configure services to start automatically:
 
 ```bash
 # Enable auto-start (starts with system)
-launchpad service enable postgres
+pantry service enable postgres
 
 # Disable auto-start
-launchpad service disable postgres
+pantry service disable postgres
 
 # Check if service is enabled
-launchpad service status postgres
+pantry service status postgres
 ```
 
 ## Service Configuration
 
 ### Automatic Configuration
 
-Launchpad automatically creates default configuration files for services:
+pantry automatically creates default configuration files for services:
 
 ```bash
 # Service configurations are stored in:
-~/.local/share/launchpad/services/config/
+~/.local/share/pantry/services/config/
 
 # Examples:
-# ~/.local/share/launchpad/services/config/redis.conf
-# ~/.local/share/launchpad/services/config/nginx.conf
-# ~/.local/share/launchpad/services/config/prometheus.yml
+# ~/.local/share/pantry/services/config/redis.conf
+# ~/.local/share/pantry/services/config/nginx.conf
+# ~/.local/share/pantry/services/config/prometheus.yml
 ```
 
 ### Configuration Examples
 
 #### Redis Configuration
+
 ```ini
 # Generated Redis configuration
 port 6379
@@ -231,16 +242,17 @@ save 300 10
 save 60 10000
 rdbcompression yes
 dbfilename dump.rdb
-dir ~/.local/share/launchpad/services/redis/data
-logfile ~/.local/share/launchpad/logs/redis.log
+dir ~/.local/share/pantry/services/redis/data
+logfile ~/.local/share/pantry/logs/redis.log
 loglevel notice
 ```
 
 #### Nginx Configuration
+
 ```nginx
 # Generated Nginx configuration
 worker_processes auto;
-error_log ~/.local/share/launchpad/logs/nginx-error.log;
+error_log ~/.local/share/pantry/logs/nginx-error.log;
 
 events {
     worker_connections 1024;
@@ -257,7 +269,7 @@ http {
         }
 
         location / {
-            root ~/.local/share/launchpad/services/nginx/html;
+            root ~/.local/share/pantry/services/nginx/html;
             index index.html;
         }
     }
@@ -265,6 +277,7 @@ http {
 ```
 
 #### Prometheus Configuration
+
 ```yaml
 # Generated Prometheus configuration
 global:
@@ -287,18 +300,18 @@ You can customize service configurations by editing the generated files:
 
 ```bash
 # Edit Redis configuration
-nano ~/.local/share/launchpad/services/config/redis.conf
+nano ~/.local/share/pantry/services/config/redis.conf
 
 # Edit Nginx configuration
-nano ~/.local/share/launchpad/services/config/nginx.conf
+nano ~/.local/share/pantry/services/config/nginx.conf
 
 # Restart service to apply changes
-launchpad service restart redis
+pantry service restart redis
 ```
 
 ## Database Configuration
 
-Launchpad provides configurable database credentials for all database services. These settings allow you to customize database authentication while maintaining secure defaults.
+pantry provides configurable database credentials for all database services. These settings allow you to customize database authentication while maintaining secure defaults.
 
 ### Default Database Credentials
 
@@ -318,22 +331,22 @@ Set database credentials globally using environment variables:
 
 ```bash
 # Database username (default: 'root')
-export LAUNCHPAD_DB_USERNAME="myuser"
+export pantry_DB_USERNAME="myuser"
 
 # Database password (default: 'password')
-export LAUNCHPAD_DB_PASSWORD="mypassword"
+export pantry_DB_PASSWORD="mypassword"
 
 # Database authentication method (default: 'trust')
-export LAUNCHPAD_DB_AUTH_METHOD="md5"  # PostgreSQL only
+export pantry_DB_AUTH_METHOD="md5"  # PostgreSQL only
 ```
 
 #### Configuration File
 
-Configure credentials in your `launchpad.config.ts`:
+Configure credentials in your `pantry.config.ts`:
 
 ```typescript
-// launchpad.config.ts
-const config: LaunchpadConfig = {
+// pantry.config.ts
+const config: pantryConfig = {
   services: {
     database: {
       username: 'myuser',
@@ -352,13 +365,14 @@ PostgreSQL services support all configuration options:
 
 ```bash
 # Start PostgreSQL with custom credentials
-export LAUNCHPAD_DB_USERNAME="postgres_user"
-export LAUNCHPAD_DB_PASSWORD="secure_password"
-export LAUNCHPAD_DB_AUTH_METHOD="md5"
-launchpad service start postgres
+export pantry_DB_USERNAME="postgres_user"
+export pantry_DB_PASSWORD="secure_password"
+export pantry_DB_AUTH_METHOD="md5"
+pantry service start postgres
 ```
 
 **Authentication Methods:**
+
 - `trust` - No password required (development)
 - `md5` - MD5-hashed password authentication
 - `scram-sha-256` - Modern SCRAM authentication (recommended for production)
@@ -369,9 +383,9 @@ MySQL services use username and password configuration:
 
 ```bash
 # Start MySQL with custom credentials
-export LAUNCHPAD_DB_USERNAME="mysql_user"
-export LAUNCHPAD_DB_PASSWORD="mysql_password"
-launchpad service start mysql
+export pantry_DB_USERNAME="mysql_user"
+export pantry_DB_PASSWORD="mysql_password"
+pantry service start mysql
 ```
 
 #### Database Creation
@@ -388,15 +402,18 @@ Each service automatically creates a project-specific database:
 ### Security Considerations
 
 #### Development Setup
+
 - Default `trust` authentication is suitable for local development
 - Credentials are simple and predictable for quick setup
 
 #### Production-like Setup
+
 - Use `md5` or `scram-sha-256` for PostgreSQL authentication
 - Set strong, unique passwords
 - Consider per-project credentials
 
 #### Best Practices
+
 - Store sensitive credentials in `.env` files (never commit)
 - Use environment variables for production deployments
 - Avoid hardcoding passwords in configuration files
@@ -405,27 +422,30 @@ Each service automatically creates a project-specific database:
 ### Examples
 
 #### Default Development Setup
+
 ```bash
 # Uses: username=root, password=password, authMethod=trust
-launchpad service start postgres
+pantry service start postgres
 # Database URL: postgresql://root:password@localhost:5432/my_project
 ```
 
 #### Custom Development Setup
+
 ```bash
-export LAUNCHPAD_DB_USERNAME="dev_user"
-export LAUNCHPAD_DB_PASSWORD="dev_password"
-launchpad service start postgres mysql
+export pantry_DB_USERNAME="dev_user"
+export pantry_DB_PASSWORD="dev_password"
+pantry service start postgres mysql
 # PostgreSQL: postgresql://dev_user:dev_password@localhost:5432/my_project
 # MySQL: mysql://dev_user:dev_password@localhost:3306/my_project
 ```
 
 #### Production-like Setup
+
 ```bash
-export LAUNCHPAD_DB_USERNAME="app_user"
-export LAUNCHPAD_DB_PASSWORD="$(openssl rand -base64 32)"
-export LAUNCHPAD_DB_AUTH_METHOD="scram-sha-256"
-launchpad service start postgres
+export pantry_DB_USERNAME="app_user"
+export pantry_DB_PASSWORD="$(openssl rand -base64 32)"
+export pantry_DB_AUTH_METHOD="scram-sha-256"
+pantry service start postgres
 ```
 
 ## Health Monitoring
@@ -438,7 +458,7 @@ All services include built-in health checks:
 # Health checks run automatically every 30 seconds
 # Check results are cached and displayed in status commands
 
-launchpad service status postgres
+pantry service status postgres
 # Includes health check results and last check time
 ```
 
@@ -476,11 +496,11 @@ Services are managed using launchd plists:
 
 ```bash
 # Service files created at:
-~/Library/LaunchAgents/com.launchpad.{service}.plist
+~/Library/LaunchAgents/com.pantry.{service}.plist
 
 # Manual launchd operations:
-launchctl load ~/Library/LaunchAgents/com.launchpad.postgres.plist
-launchctl start com.launchpad.postgres
+launchctl load ~/Library/LaunchAgents/com.pantry.postgres.plist
+launchctl start com.pantry.postgres
 ```
 
 ### Linux (systemd)
@@ -489,11 +509,11 @@ Services are managed using systemd user services:
 
 ```bash
 # Service files created at:
-~/.config/systemd/user/launchpad-{service}.service
+~/.config/systemd/user/pantry-{service}.service
 
 # Manual systemd operations:
-systemctl --user start launchpad-postgres
-systemctl --user enable launchpad-postgres
+systemctl --user start pantry-postgres
+systemctl --user enable pantry-postgres
 ```
 
 ### Windows Support
@@ -508,12 +528,12 @@ Each service gets its own isolated data directory:
 
 ```bash
 # Service data is stored in:
-~/.local/share/launchpad/services/{service}/data/
+~/.local/share/pantry/services/{service}/data/
 
 # Examples:
-~/.local/share/launchpad/services/postgres/data/
-~/.local/share/launchpad/services/redis/data/
-~/.local/share/launchpad/services/mongodb/data/
+~/.local/share/pantry/services/postgres/data/
+~/.local/share/pantry/services/redis/data/
+~/.local/share/pantry/services/mongodb/data/
 ```
 
 ### Log Files
@@ -522,13 +542,13 @@ Service logs are centrally managed:
 
 ```bash
 # Logs are stored in:
-~/.local/share/launchpad/logs/
+~/.local/share/pantry/logs/
 
 # Examples:
-~/.local/share/launchpad/logs/postgres.log
-~/.local/share/launchpad/logs/redis.log
-~/.local/share/launchpad/logs/nginx-error.log
-~/.local/share/launchpad/logs/nginx-access.log
+~/.local/share/pantry/logs/postgres.log
+~/.local/share/pantry/logs/redis.log
+~/.local/share/pantry/logs/nginx-error.log
+~/.local/share/pantry/logs/nginx-access.log
 ```
 
 ### Backup and Migration
@@ -537,10 +557,10 @@ Service data can be easily backed up:
 
 ```bash
 # Backup all service data
-tar -czf services-backup.tar.gz ~/.local/share/launchpad/services/
+tar -czf services-backup.tar.gz ~/.local/share/pantry/services/
 
 # Backup specific service
-tar -czf postgres-backup.tar.gz ~/.local/share/launchpad/services/postgres/
+tar -czf postgres-backup.tar.gz ~/.local/share/pantry/services/postgres/
 
 # Restore service data
 tar -xzf services-backup.tar.gz -C ~/
@@ -556,18 +576,18 @@ Services automatically receive environment variables:
 
 ```bash
 # PostgreSQL
-PGDATA=~/.local/share/launchpad/services/postgres/data
+PGDATA=~/.local/share/pantry/services/postgres/data
 
 # MongoDB
-MONGODB_DATA_DIR=~/.local/share/launchpad/services/mongodb/data
+MONGODB_DATA_DIR=~/.local/share/pantry/services/mongodb/data
 
 # Grafana
-GF_PATHS_DATA=~/.local/share/launchpad/services/grafana/data
-GF_PATHS_LOGS=~/.local/share/launchpad/logs
+GF_PATHS_DATA=~/.local/share/pantry/services/grafana/data
+GF_PATHS_LOGS=~/.local/share/pantry/logs
 
 # Kafka
 KAFKA_HEAP_OPTS=-Xmx1G -Xms1G
-LOG_DIR=~/.local/share/launchpad/logs
+LOG_DIR=~/.local/share/pantry/logs
 ```
 
 ### Custom Environment Variables
@@ -605,13 +625,14 @@ Service configurations support template variables:
 - `{pidFile}` - Service PID file path
 
 Example usage in service arguments:
+
 ```bash
 postgres -D {dataDir} --config-file={configFile}
 ```
 
 ### Port Management
 
-Launchpad ensures no port conflicts:
+pantry ensures no port conflicts:
 
 - Each service has a default port
 - Standard ports are used for well-known services
@@ -632,63 +653,74 @@ Services are automatically initialized on first start:
 ### Service Won't Start
 
 1. Check if the service binary is installed:
+
    ```bash
    which postgres
    which redis-server
    ```
 
 2. Check service logs:
+
    ```bash
-   tail -f ~/.local/share/launchpad/logs/postgres.log
+   tail -f ~/.local/share/pantry/logs/postgres.log
    ```
 
 3. Check port availability:
+
    ```bash
    lsof -i :5432  # Check if PostgreSQL port is in use
    ```
 
 4. Verify configuration:
+
    ```bash
-   cat ~/.local/share/launchpad/services/config/postgres.conf
+   cat ~/.local/share/pantry/services/config/postgres.conf
    ```
 
 ### Permission Issues
 
 1. Check data directory permissions:
+
    ```bash
-   ls -la ~/.local/share/launchpad/services/
+   ls -la ~/.local/share/pantry/services/
    ```
 
 2. Fix ownership if needed:
+
    ```bash
-   chown -R $USER ~/.local/share/launchpad/services/
+   chown -R $USER ~/.local/share/pantry/services/
    ```
 
 ### Platform-Specific Issues
 
 #### macOS
+
 - Ensure you have necessary permissions for launchd
 - Check Console.app for system-level errors
 
 #### Linux
+
 - Ensure systemd user services are enabled
-- Check journal logs: `journalctl --user -u launchpad-postgres`
+- Check journal logs: `journalctl --user -u pantry-postgres`
 
 ### Health Check Failures
 
 1. Check if health check commands are available:
+
    ```bash
    which pg_isready
    which redis-cli
    ```
 
 2. Test health check manually:
+
    ```bash
    pg_isready -p 5432
    redis-cli ping
    ```
 
 3. Verify service is actually running:
+
    ```bash
    ps aux | grep postgres
    netstat -an | grep 5432
@@ -699,23 +731,27 @@ Services are automatically initialized on first start:
 ### Development Workflow
 
 1. **Start services you need**:
+
    ```bash
-   launchpad service start postgres redis
+   pantry service start postgres redis
    ```
 
 2. **Enable auto-start for essential services**:
+
    ```bash
-   launchpad service enable postgres
+   pantry service enable postgres
    ```
 
 3. **Monitor service health**:
+
    ```bash
-   launchpad service list
+   pantry service list
    ```
 
 4. **Stop unused services to save resources**:
+
    ```bash
-   launchpad service stop mongodb
+   pantry service stop mongodb
    ```
 
 ### Production Considerations
@@ -766,7 +802,7 @@ env:
 
 ```bash
 # Start database services
-launchpad service start postgres redis
+pantry service start postgres redis
 
 # Connect to PostgreSQL
 psql postgresql://localhost:5432/postgres
@@ -779,7 +815,7 @@ redis-cli -h localhost -p 6379
 
 ```bash
 # Start web development stack
-launchpad service start postgres redis nginx
+pantry service start postgres redis nginx
 
 # Services are now available at:
 # PostgreSQL: localhost:5432
@@ -791,7 +827,7 @@ launchpad service start postgres redis nginx
 
 ```bash
 # Start infrastructure services
-launchpad service start consul vault prometheus grafana
+pantry service start consul vault prometheus grafana
 
 # Service discovery: http://localhost:8500
 # Secrets management: http://localhost:8200

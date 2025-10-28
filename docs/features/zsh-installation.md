@@ -1,17 +1,18 @@
 # Zsh Installation
 
-Launchpad provides a dedicated command for installing the Zsh shell, making it easy to get a modern shell environment set up on any system.
+pantry provides a dedicated command for installing the Zsh shell, making it easy to get a modern shell environment set up on any system.
 
 ## Quick Start
 
 Install zsh with a single command:
 
 ```bash
-launchpad zsh
+pantry zsh
 ```
 
 This will:
-1. Install the latest version of zsh through Launchpad's package registry
+
+1. Install the latest version of zsh through pantry's package registry
 2. Add the installation directory to your PATH
 3. Provide instructions for making zsh your default shell
 
@@ -21,43 +22,43 @@ This will:
 
 ```bash
 # Install zsh with default settings
-launchpad zsh
+pantry zsh
 ```
 
 ### Custom Installation Path
 
 ```bash
 # Install to a specific directory
-launchpad zsh --path ~/my-shell
+pantry zsh --path ~/my-shell
 
 # Install to a system directory
-launchpad zsh --path /usr/local
+pantry zsh --path /usr/local
 ```
 
 ### Force Reinstallation
 
 ```bash
 # Force reinstall even if zsh is already installed
-launchpad zsh --force
+pantry zsh --force
 ```
 
 ### Disable Auto-PATH
 
 ```bash
 # Install without automatically adding to PATH
-launchpad zsh --no-auto-path
+pantry zsh --no-auto-path
 ```
 
 ### Verbose Output
 
 ```bash
 # See detailed installation information
-launchpad zsh --verbose
+pantry zsh --verbose
 ```
 
 ## Making Zsh Your Default Shell
 
-After installation, you'll want to make zsh your default shell. Launchpad provides helpful instructions after installation:
+After installation, you'll want to make zsh your default shell. pantry provides helpful instructions after installation:
 
 ### Using the Installed Zsh
 
@@ -115,7 +116,7 @@ If you encounter permission issues:
 
 ```bash
 # Use sudo if installing to system directories
-sudo launchpad zsh --path /usr/local
+sudo pantry zsh --path /usr/local
 ```
 
 ### PATH Issues
@@ -138,12 +139,14 @@ echo 'export PATH="/path/to/zsh/bin:$PATH"' >> ~/.bashrc
 If `chsh` doesn't work:
 
 1. Make sure the zsh path is in `/etc/shells`:
+
    ```bash
    # Add your zsh path to allowed shells
    echo "/path/to/zsh/bin/zsh" | sudo tee -a /etc/shells
    ```
 
 2. Try changing shell as root:
+
    ```bash
    sudo chsh -s /path/to/zsh/bin/zsh $USER
    ```
@@ -152,7 +155,7 @@ If `chsh` doesn't work:
 
 | Method | Pros | Cons |
 |--------|------|------|
-| **Launchpad** | Simple, cross-platform, automatic PATH management | Uses ts-pkgx registry |
+| **pantry** | Simple, cross-platform, automatic PATH management | Uses ts-pkgx registry |
 | **Package Manager** | System integration | Platform-specific, may need sudo |
 | **From Source** | Latest features | Complex, time-consuming |
 
@@ -164,19 +167,19 @@ You can install zsh to different paths for testing:
 
 ```bash
 # Install stable version
-launchpad zsh --path ~/zsh-stable
+pantry zsh --path ~/zsh-stable
 
 # Install to another location for testing
-launchpad zsh --path ~/zsh-test --force
+pantry zsh --path ~/zsh-test --force
 ```
 
 ### Integration with Development Environments
 
-Zsh works great with Launchpad's dev-aware installations:
+Zsh works great with pantry's dev-aware installations:
 
 ```bash
 # Install dev package for project-specific environments
-launchpad dev
+pantry dev
 
 # Use zsh in your development workflow
 cd your-project

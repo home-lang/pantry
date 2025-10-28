@@ -3,7 +3,7 @@ const core = @import("../core/platform.zig");
 const string = @import("../core/string.zig");
 const errors = @import("../core/error.zig");
 
-const LaunchpadError = errors.LaunchpadError;
+const pantryError = errors.pantryError;
 const Paths = core.Paths;
 
 /// Environment configuration
@@ -167,7 +167,7 @@ test "EnvManager basic operations" {
     defer manager.deinit();
 
     // Create temporary test file
-    const tmp_file = "/tmp/launchpad_env_test.yaml";
+    const tmp_file = "/tmp/pantry_env_test.yaml";
     {
         const file = try std.fs.cwd().createFile(tmp_file, .{});
         defer file.close();

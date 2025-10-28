@@ -1,6 +1,6 @@
-# Launchpad Scripts
+# pantry Scripts
 
-This document describes the utility scripts available in the Launchpad project for development and maintenance tasks.
+This document describes the utility scripts available in the pantry project for development and maintenance tasks.
 
 ## Dynamic PHP Version Management
 
@@ -44,6 +44,7 @@ bun scripts/check-php-updates.ts
 The script provides three types of output:
 
 1. **Human-readable summary**:
+
    ```
    🔍 Dynamic PHP versions: 8.4.11, 8.3.24, 8.2.29, 8.1.32
 
@@ -54,11 +55,13 @@ The script provides three types of output:
    ```
 
 2. **JSON for GitHub Actions**:
+
    ```json
    ["8.4.11","8.3.24","8.2.29","8.1.32"]
    ```
 
 3. **Markdown table for documentation**:
+
    ```markdown
    | Configuration | Description | Use Case | Database Support |
    |---------------|-------------|----------|------------------|
@@ -70,6 +73,7 @@ The script provides three types of output:
 The update checking script provides:
 
 1. **Human-readable summary**:
+
    ```
    🔍 PHP Version Update Check
 
@@ -82,6 +86,7 @@ The update checking script provides:
    ```
 
 2. **GitHub Actions outputs**:
+
    ```
    rebuild_needed=true
    reason=New versions available: 8.3.24, 8.2.29, 8.1.32

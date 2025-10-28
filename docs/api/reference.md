@@ -1,11 +1,11 @@
 # API Reference
 
-This document provides detailed information about Launchpad's API for developers who want to integrate with or extend Launchpad.
+This document provides detailed information about pantry's API for developers who want to integrate with or extend pantry.
 
 ## Installation
 
 ```bash
-npm install @stacksjs/launchpad
+npm install @stacksjs/pantry
 ```
 
 ## Core Modules
@@ -13,7 +13,7 @@ npm install @stacksjs/launchpad
 ### Cache Management Module
 
 ```typescript
-import { cleanSystem, clearCache } from '@stacksjs/launchpad'
+import { cleanSystem, clearCache } from '@stacksjs/pantry'
 
 /**
  * Clear all cached packages and downloads
@@ -35,7 +35,7 @@ async function clearCache(options?: {
 }>
 
 /**
- * Perform comprehensive cleanup of all Launchpad-managed resources
+ * Perform comprehensive cleanup of all pantry-managed resources
  * @param options Configuration options for system cleanup
  * @param options.dryRun Whether to preview what would be removed without actually removing
  * @param options.force Skip confirmation prompts
@@ -60,7 +60,7 @@ async function cleanSystem(options?: {
 ### Installation Module
 
 ```typescript
-import { install, install_bun, install_prefix } from '@stacksjs/launchpad'
+import { install, install_bun, install_prefix } from '@stacksjs/pantry'
 
 /**
  * Install one or more packages
@@ -88,7 +88,7 @@ async function install_bun(installPath: string, version?: string): Promise<strin
 ### Package Management Module
 
 ```typescript
-import { update, updateAllPackages, updateSpecificPackages } from '@stacksjs/launchpad'
+import { update, updateAllPackages, updateSpecificPackages } from '@stacksjs/pantry'
 
 /**
  * Update packages to newer versions
@@ -146,7 +146,7 @@ async function updateAllPackages(
 ### Shim Module
 
 ```typescript
-import { create_shim, shim_dir } from '@stacksjs/launchpad'
+import { create_shim, shim_dir } from '@stacksjs/pantry'
 
 /**
  * Create shims for packages
@@ -166,7 +166,7 @@ function shim_dir(): Path
 ### Development Environment Module
 
 ```typescript
-import { datadir, dump, integrate, shellcode } from '@stacksjs/launchpad'
+import { datadir, dump, integrate, shellcode } from '@stacksjs/pantry'
 
 /**
  * Generate shell integration code for automatic environment activation
@@ -204,7 +204,7 @@ async function integrate(directory: string): Promise<void>
 ### Package Management Module
 
 ```typescript
-import { update } from '@stacksjs/launchpad'
+import { update } from '@stacksjs/pantry'
 
 /**
  * Update packages to newer versions
@@ -218,7 +218,7 @@ async function update(packages?: string[], options?: { latest?: boolean, dryRun?
 ### List Module
 
 ```typescript
-import { list } from '@stacksjs/launchpad'
+import { list } from '@stacksjs/pantry'
 
 /**
  * List installed packages
@@ -239,10 +239,10 @@ interface Installation {
 ### Configuration Module
 
 ```typescript
-import type { LaunchpadConfig, LaunchpadOptions } from '@stacksjs/launchpad'
-import { config, defaultConfig } from '@stacksjs/launchpad'
+import type { pantryConfig, pantryOptions } from '@stacksjs/pantry'
+import { config, defaultConfig } from '@stacksjs/pantry'
 
-interface LaunchpadConfig {
+interface pantryConfig {
   /** Enable verbose logging (default: false) */
   verbose: boolean
   /** Path where binaries should be installed (default: /usr/local if writable, ~/.local otherwise) */
@@ -271,19 +271,19 @@ interface LaunchpadConfig {
   shellDeactivationMessage: string
 }
 
-type LaunchpadOptions = Partial<LaunchpadConfig>
+type pantryOptions = Partial<pantryConfig>
 
 // The resolved configuration object
-const config: LaunchpadConfig
+const config: pantryConfig
 
 // The default configuration values
-const defaultConfig: LaunchpadConfig
+const defaultConfig: pantryConfig
 ```
 
 ### Version Module
 
 ```typescript
-import { parseVersion, Version } from '@stacksjs/launchpad'
+import { parseVersion, Version } from '@stacksjs/pantry'
 
 /**
  * Simple class to represent semantic versions
@@ -309,7 +309,7 @@ function parseVersion(versionStr: string): Version | null
 ### Path Module
 
 ```typescript
-import { Path } from '@stacksjs/launchpad'
+import { Path } from '@stacksjs/pantry'
 
 /**
  * Path utility class for handling file system paths
@@ -330,7 +330,7 @@ import {
   addToPath,
   downloadAndInstallPkgx,
   isInPath
-} from '@stacksjs/launchpad'
+} from '@stacksjs/pantry'
 
 /**
  * Activate development environment for a directory
@@ -343,7 +343,7 @@ async function activateDevEnv(directory: string): Promise<void>
 async function addToPath(directory: string): Promise<void>
 
 /**
- * Bootstrap Launchpad installation with essential tools
+ * Bootstrap pantry installation with essential tools
  */
 async function bootstrap(options?: { path?: string, verbose?: boolean, force?: boolean }): Promise<void>
 
@@ -438,7 +438,7 @@ interface DependencyExamples {
 ### Cache Management
 
 ```typescript
-import { cleanSystem, clearCache } from '@stacksjs/launchpad'
+import { cleanSystem, clearCache } from '@stacksjs/pantry'
 
 // Clear cache with preview
 const cacheResult = await clearCache({ dryRun: true })
@@ -464,7 +464,7 @@ console.log('Would remove packages:', previewResult.removedPackages)
 ### Basic Package Installation
 
 ```typescript
-import { install, install_prefix } from '@stacksjs/launchpad'
+import { install, install_prefix } from '@stacksjs/pantry'
 
 // Install a package
 const installPath = install_prefix()
@@ -475,15 +475,15 @@ console.log('Installed files:', installedFiles)
 ### Configuration
 
 ```typescript
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
-import { config } from '@stacksjs/launchpad'
+import type { pantryConfig } from '@stacksjs/pantry'
+import { config } from '@stacksjs/pantry'
 
 // Access current configuration
 console.log('Verbose mode:', config.verbose)
 console.log('Install path:', config.installationPath)
 
 // Create custom configuration
-const customConfig: LaunchpadConfig = {
+const customConfig: pantryConfig = {
   ...config,
   verbose: true,
   installationPath: '/custom/path'
@@ -493,7 +493,7 @@ const customConfig: LaunchpadConfig = {
 ### Development Environment
 
 ```typescript
-import { dump, integrate, shellcode } from '@stacksjs/launchpad'
+import { dump, integrate, shellcode } from '@stacksjs/pantry'
 
 // Generate shell integration code
 const shellIntegration = shellcode()
@@ -509,7 +509,7 @@ await integrate('/path/to/project')
 ### Dependency Management with Global Flags
 
 ```typescript
-import { dump } from '@stacksjs/launchpad'
+import { dump } from '@stacksjs/pantry'
 
 // Example: dependencies.yaml with global flag configurations
 const dependencyConfig = `
@@ -545,7 +545,7 @@ await dump('/path/to/project', { dryrun: false, quiet: false })
 
 ### Services in dependencies.yaml
 
-Launchpad can read a `services` section from your dependency file to automatically start services on environment activation.
+pantry can read a `services` section from your dependency file to automatically start services on environment activation.
 
 ```yaml
 # deps.yaml
@@ -583,13 +583,13 @@ services:
 
 This will auto-start services based on `.env` (e.g., `DB_CONNECTION=pgsql` and `CACHE_DRIVER=redis` → `postgres` and `redis`).
 
-Project-level post-setup commands can be configured via top-level `postSetup` in `launchpad.config.ts`:
+Project-level post-setup commands can be configured via top-level `postSetup` in `pantry.config.ts`:
 
 ```ts
-// launchpad.config.ts
-import type { LaunchpadConfig } from '@stacksjs/launchpad'
+// pantry.config.ts
+import type { pantryConfig } from '@stacksjs/pantry'
 
-const config: LaunchpadConfig = {
+const config: pantryConfig = {
   postSetup: {
     enabled: true,
     commands: [
@@ -653,7 +653,7 @@ const topLevelWithOverrides = {
 ### Creating Shims
 
 ```typescript
-import { create_shim, shim_dir } from '@stacksjs/launchpad'
+import { create_shim, shim_dir } from '@stacksjs/pantry'
 
 // Create shims for packages
 const shimPath = shim_dir()
@@ -664,7 +664,7 @@ console.log('Created shims:', createdShims)
 ### Version Handling
 
 ```typescript
-import { parseVersion, Version } from '@stacksjs/launchpad'
+import { parseVersion, Version } from '@stacksjs/pantry'
 
 // Parse version string
 const version = parseVersion('1.2.3')
@@ -680,7 +680,7 @@ console.log(v.toString()) // "2.0.0"
 ### Package Updates
 
 ```typescript
-import { update } from '@stacksjs/launchpad'
+import { update } from '@stacksjs/pantry'
 
 // Update all packages
 await update()
@@ -698,7 +698,7 @@ await update(['node'], { latest: true })
 ### Listing Packages
 
 ```typescript
-import { list } from '@stacksjs/launchpad'
+import { list } from '@stacksjs/pantry'
 
 // List installed packages
 const installations = await list('/usr/local')
@@ -709,10 +709,10 @@ installations.forEach((installation) => {
 
 ## Error Handling
 
-Most functions in the Launchpad API can throw errors. It's recommended to wrap calls in try-catch blocks:
+Most functions in the pantry API can throw errors. It's recommended to wrap calls in try-catch blocks:
 
 ```typescript
-import { install } from '@stacksjs/launchpad'
+import { install } from '@stacksjs/pantry'
 
 try {
   const result = await install(['node@22'], '/usr/local')
@@ -725,14 +725,14 @@ catch (error) {
 
 ## CLI Commands
 
-Launchpad provides several CLI commands for cache and system management:
+pantry provides several CLI commands for cache and system management:
 
 ### Cache Management Commands
 
 ```bash
 # Clear all cached packages and downloads
-launchpad cache:clear [options]
-launchpad cache:clean [options]  # Alias for cache:clear
+pantry cache:clear [options]
+pantry cache:clean [options]  # Alias for cache:clear
 
 # Options:
 #   --dry-run    Show what would be cleared without actually clearing
@@ -740,16 +740,16 @@ launchpad cache:clean [options]  # Alias for cache:clear
 #   --verbose    Enable verbose output
 
 # Examples:
-launchpad cache:clear --dry-run     # Preview cache cleanup
-launchpad cache:clear --force       # Clear without confirmation
-launchpad cache:clean --verbose     # Clear with detailed output
+pantry cache:clear --dry-run     # Preview cache cleanup
+pantry cache:clear --force       # Clear without confirmation
+pantry cache:clean --verbose     # Clear with detailed output
 ```
 
 ### System Cleanup Commands
 
 ```bash
-# Remove all Launchpad-installed packages and environments
-launchpad clean [options]
+# Remove all pantry-installed packages and environments
+pantry clean [options]
 
 # Options:
 #   --dry-run      Show what would be removed without actually removing
@@ -758,21 +758,21 @@ launchpad clean [options]
 #   --verbose      Enable verbose output during cleanup
 
 # Examples:
-launchpad clean --dry-run           # Preview complete cleanup
-launchpad clean --force             # Complete system reset
-launchpad clean --keep-cache        # Remove packages but preserve cache
+pantry clean --dry-run           # Preview complete cleanup
+pantry clean --force             # Complete system reset
+pantry clean --keep-cache        # Remove packages but preserve cache
 ```
 
 ### Command Safety Features
 
 - **Confirmation Required:** Both commands require `--force` for actual operations
 - **Dry-Run Mode:** Preview exactly what will be affected with `--dry-run`
-- **Targeted Cleanup:** Only removes Launchpad-specific directories
+- **Targeted Cleanup:** Only removes pantry-specific directories
 - **Graceful Error Handling:** Continues operation even if some files can't be removed
 
 ## Service Management API
 
-Launchpad provides comprehensive service management capabilities with a robust TypeScript API.
+pantry provides comprehensive service management capabilities with a robust TypeScript API.
 
 ### Service Operations
 
@@ -786,7 +786,7 @@ import {
   getServiceStatus,
   listServices,
   initializeServiceManager
-} from '@stacksjs/launchpad'
+} from '@stacksjs/pantry'
 
 // Start a service
 const success = await startService('postgres')
@@ -821,7 +821,7 @@ import {
   getAllServiceDefinitions,
   isServiceSupported,
   createDefaultServiceConfig
-} from '@stacksjs/launchpad'
+} from '@stacksjs/pantry'
 
 // Get specific service definition
 const postgres = getServiceDefinition('postgres')
@@ -979,7 +979,7 @@ import {
   getServiceManagerName,
   generateLaunchdPlist,
   generateSystemdService
-} from '@stacksjs/launchpad'
+} from '@stacksjs/pantry'
 
 // Check if current platform supports service management
 const supported = isPlatformSupported() // true on macOS/Linux
@@ -994,7 +994,7 @@ const systemdUnit = generateSystemdService(serviceInstance) // Linux
 
 ### Available Services
 
-Launchpad includes these pre-configured services:
+pantry includes these pre-configured services:
 
 ```typescript
 // Database services
@@ -1046,14 +1046,14 @@ Launchpad includes these pre-configured services:
 
 ## TypeScript Support
 
-Launchpad is written in TypeScript and provides full type definitions. All functions, classes, and interfaces are properly typed for the best development experience.
+pantry is written in TypeScript and provides full type definitions. All functions, classes, and interfaces are properly typed for the best development experience.
 
 ```typescript
 import type {
   Installation,
   JsonResponse,
-  LaunchpadConfig,
-  LaunchpadOptions,
+  pantryConfig,
+  pantryOptions,
   ServiceDefinition,
   ServiceInstance,
   ServiceStatus,
@@ -1063,5 +1063,5 @@ import type {
   ServiceConfig,
   LaunchdPlist,
   SystemdService
-} from '@stacksjs/launchpad'
+} from '@stacksjs/pantry'
 ```

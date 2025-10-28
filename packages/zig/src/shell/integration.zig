@@ -2,7 +2,7 @@ const std = @import("std");
 const core = @import("../core/platform.zig");
 const errors = @import("../core/error.zig");
 
-const LaunchpadError = errors.LaunchpadError;
+const pantryError = errors.pantryError;
 const Platform = core.Platform;
 
 /// Shell types
@@ -46,11 +46,11 @@ pub fn generateHook(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
 /// Generate zsh hook (chpwd function)
 fn generateZshHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
-        \\# Launchpad shell integration for zsh
-        \\launchpad_chpwd() {
-        \\  if command -v launchpad >/dev/null 2>&1; then
+        \\# pantry shell integration for zsh
+        \\pantry_chpwd() {
+        \\  if command -v pantry >/dev/null 2>&1; then
         \\    local env_info
-        \\    env_info=$(launchpad shell:lookup "$PWD" 2>/dev/null)
+        \\    env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
         \\    if [ -n "$env_info" ]; then
         \\      eval "$env_info"
         \\    fi
@@ -58,12 +58,12 @@ fn generateZshHook(allocator: std.mem.Allocator) ![]const u8 {
         \\}
         \\
         \\# Add to chpwd hooks
-        \\if [[ -z "${chpwd_functions[(r)launchpad_chpwd]}" ]]; then
-        \\  chpwd_functions+=(launchpad_chpwd)
+        \\if [[ -z "${chpwd_functions[(r)pantry_chpwd]}" ]]; then
+        \\  chpwd_functions+=(pantry_chpwd)
         \\fi
         \\
         \\# Run on shell start
-        \\launchpad_chpwd
+        \\pantry_chpwd
     ;
     return try allocator.dupe(u8, hook);
 }
@@ -71,11 +71,11 @@ fn generateZshHook(allocator: std.mem.Allocator) ![]const u8 {
 /// Generate bash hook (PROMPT_COMMAND)
 fn generateBashHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
-        \\# Launchpad shell integration for bash
-        \\launchpad_prompt_command() {
-        \\  if command -v launchpad >/dev/null 2>&1; then
+        \\# pantry shell integration for bash
+        \\pantry_prompt_command() {
+        \\  if command -v pantry >/dev/null 2>&1; then
         \\    local env_info
-        \\    env_info=$(launchpad shell:lookup "$PWD" 2>/dev/null)
+        \\    env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
         \\    if [ -n "$env_info" ]; then
         \\      eval "$env_info"
         \\    fi
@@ -83,12 +83,12 @@ fn generateBashHook(allocator: std.mem.Allocator) ![]const u8 {
         \\}
         \\
         \\# Add to PROMPT_COMMAND
-        \\if [[ ":$PROMPT_COMMAND:" != *":launchpad_prompt_command:"* ]]; then
-        \\  PROMPT_COMMAND="launchpad_prompt_command${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+        \\if [[ ":$PROMPT_COMMAND:" != *":pantry_prompt_command:"* ]]; then
+        \\  PROMPT_COMMAND="pantry_prompt_command${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
         \\fi
         \\
         \\# Run on shell start
-        \\launchpad_prompt_command
+        \\pantry_prompt_command
     ;
     return try allocator.dupe(u8, hook);
 }
@@ -96,10 +96,10 @@ fn generateBashHook(allocator: std.mem.Allocator) ![]const u8 {
 /// Generate fish hook
 fn generateFishHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
-        \\# Launchpad shell integration for fish
-        \\function launchpad_pwd --on-variable PWD
-        \\  if command -v launchpad >/dev/null 2>&1
-        \\    set -l env_info (launchpad shell:lookup "$PWD" 2>/dev/null)
+        \\# pantry shell integration for fish
+        \\function pantry_pwd --on-variable PWD
+        \\  if command -v pantry >/dev/null 2>&1
+        \\    set -l env_info (pantry shell:lookup "$PWD" 2>/dev/null)
         \\    if test -n "$env_info"
         \\      eval $env_info
         \\    end
@@ -107,7 +107,7 @@ fn generateFishHook(allocator: std.mem.Allocator) ![]const u8 {
         \\end
         \\
         \\# Run on shell start
-        \\launchpad_pwd
+        \\pantry_pwd
     ;
     return try allocator.dupe(u8, hook);
 }
@@ -177,7 +177,7 @@ pub fn install(allocator: std.mem.Allocator) !void {
     defer if (existing.len > 0) allocator.free(existing);
 
     // Check if already installed
-    if (std.mem.indexOf(u8, existing, "Launchpad shell integration") != null) {
+    if (std.mem.indexOf(u8, existing, "pantry shell integration") != null) {
         // Already installed
         return;
     }
@@ -204,7 +204,7 @@ test "Hook generation" {
     {
         const hook = try generateHook(.zsh, allocator);
         defer allocator.free(hook);
-        try std.testing.expect(std.mem.indexOf(u8, hook, "launchpad_chpwd") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "pantry_chpwd") != null);
     }
 
     // Test bash hook

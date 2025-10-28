@@ -31,8 +31,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pkgx-
 
-      - name: Install dependencies with Launchpad
-        uses: stacksjs/launchpad-installer@v1
+      - name: Install dependencies with pantry
+        uses: stacksjs/pantry-installer@v1
         with:
           packages: node typescript go rust
 

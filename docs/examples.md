@@ -1,27 +1,27 @@
 # Examples
 
-This page provides practical examples of using Launchpad in real-world scenarios. These examples demonstrate common workflows and best practices.
+This page provides practical examples of using pantry in real-world scenarios. These examples demonstrate common workflows and best practices.
 
 ## Getting Started Examples
 
 ### Quick Setup for a New Machine
 
 ```bash
-# 1. Install Launchpad
-bun add -g @stacksjs/launchpad
+# 1. Install pantry
+bun add -g @stacksjs/pantry
 
 # 2. Bootstrap your development environment
-launchpad bootstrap
+pantry bootstrap
 
 # 3. Set up shell integration
-echo 'eval "$(launchpad dev:shellcode)"' >> ~/.zshrc
+echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 source ~/.zshrc
 
 # 4. Install common development tools
-launchpad install node@22 python@3.12 go@1.21
+pantry install node@22 python@3.12 go@1.21
 
 # 5. Keep packages updated
-launchpad update
+pantry update
 ```
 
 ### Setting Up a New Project
@@ -201,44 +201,44 @@ env:
 
 ```bash
 # Update all installed packages
-launchpad update
+pantry update
 
 # Update specific packages
-launchpad update node python go
+pantry update node python go
 
 # Use aliases for convenience
-launchpad upgrade bun
-launchpad up typescript
+pantry upgrade bun
+pantry up typescript
 ```
 
 ### Update with Options
 
 ```bash
 # Preview what would be updated
-launchpad update --dry-run
+pantry update --dry-run
 
 # Force update to latest versions
-launchpad upgrade node --latest
+pantry upgrade node --latest
 
 # Verbose updates for debugging
-launchpad up --verbose python
+pantry up --verbose python
 
 # Update multiple packages to latest
-launchpad update node bun python --latest
+pantry update node bun python --latest
 ```
 
 ### Development Workflow Updates
 
 ```bash
 # Morning routine: check for updates
-launchpad update --dry-run
-launchpad update
+pantry update --dry-run
+pantry update
 
 # Update development tools before starting work
-launchpad upgrade typescript eslint prettier --latest
+pantry upgrade typescript eslint prettier --latest
 
 # Update runtime dependencies
-launchpad up node@22 bun --latest
+pantry up node@22 bun --latest
 ```
 
 ### Project-Specific Updates
@@ -246,14 +246,14 @@ launchpad up node@22 bun --latest
 ```bash
 # Update packages for a Node.js project
 cd my-node-project
-launchpad update node typescript
+pantry update node typescript
 
 # Update packages for a Python project
 cd my-python-project
-launchpad upgrade python pip
+pantry upgrade python pip
 
 # Update all tools for full-stack development
-launchpad up node python postgresql redis --latest
+pantry up node python postgresql redis --latest
 ```
 
 ## Advanced Configuration Examples
@@ -262,7 +262,7 @@ launchpad up node python postgresql redis --latest
 
 ```bash
 # Install to a custom directory for a specific project
-launchpad install --path ./tools node@22 python@3.12
+pantry install --path ./tools node@22 python@3.12
 
 # Use the tools from the custom directory
 export PATH="$PWD/tools/bin:$PATH"
@@ -272,7 +272,7 @@ node --version
 ### Environment-Specific Configuration
 
 ```typescript
-// launchpad.config.ts - Development environment
+// pantry.config.ts - Development environment
 export default {
   verbose: true,
   installationPath: '~/.local',
@@ -283,7 +283,7 @@ export default {
 ```
 
 ```typescript
-// launchpad.config.ts - Production environment
+// pantry.config.ts - Production environment
 export default {
   verbose: false,
   installationPath: '/usr/local',
@@ -460,17 +460,17 @@ echo "💡 Run 'cd $PROJECT_NAME' to activate the environment"
 #!/bin/bash
 # cleanup-environments.sh
 
-echo "🧹 Cleaning up old Launchpad environments..."
+echo "🧹 Cleaning up old pantry environments..."
 
 # Remove environments older than 30 days
-launchpad env:clean --older-than 30 --force
+pantry env:clean --older-than 30 --force
 
 # Remove large environments (>500MB)
-launchpad env:list --format json | \
+pantry env:list --format json | \
   jq -r '.[] | select(.size | test("^[5-9][0-9][0-9]M|^[0-9]+G")) | .hash' | \
   while read hash; do
     echo "Removing large environment: $hash"
-    launchpad env:remove "$hash" --force
+    pantry env:remove "$hash" --force
   done
 
 echo "✅ Cleanup complete"
@@ -486,18 +486,18 @@ echo "🔄 Checking for package updates..."
 
 # Preview all available updates
 echo "📋 Available updates:"
-launchpad update --dry-run
+pantry update --dry-run
 
 # Ask for confirmation
 read -p "Do you want to proceed with updates? (y/N): " confirm
 
 if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
   # Update all packages
-  launchpad update
+  pantry update
 
   # Update critical tools to latest
   echo "🚀 Updating critical tools to latest versions..."
-  launchpad upgrade node bun typescript --latest
+  pantry upgrade node bun typescript --latest
 
   echo "✅ Package updates complete"
 else
@@ -511,7 +511,7 @@ fi
 
 ```yaml
 # .github/workflows/test.yml
-name: Test with Launchpad
+name: Test with pantry
 
 on: [push, pull_request]
 
@@ -526,8 +526,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Launchpad
-        run: npm install -g @stacksjs/launchpad
+      - name: Install pantry
+        run: npm install -g @stacksjs/pantry
 
       - name: Install project dependencies
         run: |
@@ -542,7 +542,7 @@ jobs:
           EOF
 
           # Activate environment and install packages
-          launchpad dev:on
+          pantry dev:on
 
       - name: Run tests
         run: |
@@ -557,18 +557,18 @@ jobs:
 # Dockerfile
 FROM ubuntu:22.04
 
-# Install Launchpad
+# Install pantry
 RUN apt-get update && apt-get install -y curl
 RUN curl -fsSL https://bun.sh/install | bash
-RUN /root/.bun/bin/bun add -g @stacksjs/launchpad
+RUN /root/.bun/bin/bun add -g @stacksjs/pantry
 
 # Copy project files
 COPY . /app
 WORKDIR /app
 
-# Install project dependencies using Launchpad
-RUN launchpad bootstrap --skip-shell-integration
-RUN launchpad dev:on
+# Install project dependencies using pantry
+RUN pantry bootstrap --skip-shell-integration
+RUN pantry dev:on
 
 # Start application
 CMD ["node", "server.js"]
@@ -583,18 +583,18 @@ CMD ["node", "server.js"]
 type _pkgx_chpwd_hook
 
 # Verify dependency file syntax
-launchpad dev:dump --dryrun --verbose
+pantry dev:dump --dryrun --verbose
 
 # Check environment status
-echo "Current environment: $LAUNCHPAD_ENV_HASH"
-echo "Project name: $LAUNCHPAD_PROJECT_NAME"
+echo "Current environment: $pantry_ENV_HASH"
+echo "Project name: $pantry_PROJECT_NAME"
 
 # List all environments
-launchpad env:list --verbose
+pantry env:list --verbose
 
 # Test manual activation
 cd my-project
-launchpad dev:on
+pantry dev:on
 ```
 
 ### Fixing Permission Issues
@@ -607,7 +607,7 @@ ls -la /usr/local/
 sudo chown -R $(whoami) /usr/local/bin /usr/local/sbin
 
 # Or use user-local installation
-launchpad install --path ~/.local node@22
+pantry install --path ~/.local node@22
 
 # Verify PATH includes user directories
 echo $PATH | grep -E "(\.local/bin|\.local/sbin)"
@@ -617,13 +617,13 @@ echo $PATH | grep -E "(\.local/bin|\.local/sbin)"
 
 ```bash
 # List environments to identify conflicts
-launchpad env:list --format json | jq -r '.[] | "\(.projectName): \(.hash)"'
+pantry env:list --format json | jq -r '.[] | "\(.projectName): \(.hash)"'
 
 # Remove conflicting environment
-launchpad env:remove problematic_hash_here --force
+pantry env:remove problematic_hash_here --force
 
 # Clean up old environments
-launchpad env:clean --older-than 7 --force
+pantry env:clean --older-than 7 --force
 
 # Recreate environment by re-entering directory
 cd my-project && cd .. && cd my-project
@@ -631,27 +631,27 @@ cd my-project && cd .. && cd my-project
 
 ## Migration Examples
 
-### From Homebrew to Launchpad
+### From Homebrew to pantry
 
 ```bash
 # 1. List current Homebrew packages
 brew list > homebrew-packages.txt
 
-# 2. Install Launchpad
-bun add -g @stacksjs/launchpad
+# 2. Install pantry
+bun add -g @stacksjs/pantry
 
-# 3. Bootstrap Launchpad (installs to /usr/local, separate from Homebrew)
-launchpad bootstrap
+# 3. Bootstrap pantry (installs to /usr/local, separate from Homebrew)
+pantry bootstrap
 
-# 4. Install equivalent packages with Launchpad
-launchpad install node python go
+# 4. Install equivalent packages with pantry
+pantry install node python go
 
 # 5. Both package managers coexist peacefully
 brew list    # Homebrew packages in /opt/homebrew
-launchpad list  # Launchpad packages in /usr/local
+pantry list  # pantry packages in /usr/local
 ```
 
-### From Node Version Manager to Launchpad
+### From Node Version Manager to pantry
 
 ```bash
 # 1. Check current Node versions
@@ -666,8 +666,8 @@ env:
   NODE_ENV: development
 EOF
 
-# 3. Set up Launchpad environment
-launchpad dev:on
+# 3. Set up pantry environment
+pantry dev:on
 
 # 4. Gradually migrate projects to use dependencies.yaml files
 # Each project can specify its own Node version
@@ -675,13 +675,13 @@ launchpad dev:on
 
 ## Best Practices Examples
 
-### Project Template with Launchpad
+### Project Template with pantry
 
 ```bash
 # create-project-template.sh
 #!/bin/bash
 
-TEMPLATE_DIR="$HOME/.launchpad-templates"
+TEMPLATE_DIR="$HOME/.pantry-templates"
 mkdir -p "$TEMPLATE_DIR"
 
 # Create Node.js template
@@ -722,24 +722,24 @@ echo "Usage: cp $TEMPLATE_DIR/node.yaml ./dependencies.yaml"
 # monitor-environments.sh
 #!/bin/bash
 
-echo "📊 Launchpad Environment Report"
+echo "📊 pantry Environment Report"
 echo "================================"
 
 # Total environments
-total=$(launchpad env:list --format json | jq length)
+total=$(pantry env:list --format json | jq length)
 echo "Total environments: $total"
 
 # Disk usage
-total_size=$(launchpad env:list --format json | jq -r '.[].size' | sed 's/[A-Z]//g' | awk '{sum += $1} END {print sum "M"}')
+total_size=$(pantry env:list --format json | jq -r '.[].size' | sed 's/[A-Z]//g' | awk '{sum += $1} END {print sum "M"}')
 echo "Total disk usage: $total_size"
 
 # Largest environments
 echo -e "\n🗂️ Largest environments:"
-launchpad env:list --format json | jq -r 'sort_by(.size) | reverse | .[0:5] | .[] | "\(.projectName): \(.size)"'
+pantry env:list --format json | jq -r 'sort_by(.size) | reverse | .[0:5] | .[] | "\(.projectName): \(.size)"'
 
 # Oldest environments
 echo -e "\n📅 Oldest environments:"
-launchpad env:list --format json | jq -r 'sort_by(.created) | .[0:5] | .[] | "\(.projectName): \(.created)"'
+pantry env:list --format json | jq -r 'sort_by(.created) | .[0:5] | .[] | "\(.projectName): \(.created)"'
 ```
 
 ## Service Management Examples
@@ -750,18 +750,18 @@ Set up a complete database development environment:
 
 ```bash
 # Start essential database services
-launchpad service start postgres redis
+pantry service start postgres redis
 
 # Start modern databases for specific use cases
-launchpad service start cockroachdb      # Distributed SQL
-launchpad service start neo4j            # Graph database
-launchpad service start clickhouse       # Analytics database
+pantry service start cockroachdb      # Distributed SQL
+pantry service start neo4j            # Graph database
+pantry service start clickhouse       # Analytics database
 
 # Enable auto-start for core databases
-launchpad service enable postgres redis
+pantry service enable postgres redis
 
 # Check service status
-launchpad service list
+pantry service list
 
 # Connect to databases
 psql postgresql://localhost:5432/postgres           # PostgreSQL
@@ -777,13 +777,13 @@ Complete web development stack with monitoring:
 
 ```bash
 # Start web development services
-launchpad service start postgres redis nginx
+pantry service start postgres redis nginx
 
 # Start monitoring stack
-launchpad service start prometheus grafana
+pantry service start prometheus grafana
 
 # Check all service status
-launchpad service list
+pantry service list
 
 # Services available at:
 # PostgreSQL: localhost:5432
@@ -799,21 +799,21 @@ Infrastructure services for microservices development:
 
 ```bash
 # Start service discovery and secrets management
-launchpad service start consul vault
+pantry service start consul vault
 
 # Start message queue and monitoring (choose based on needs)
-launchpad service start kafka jaeger prometheus       # Traditional stack
-launchpad service start pulsar jaeger prometheus      # Cloud-native messaging
-launchpad service start nats jaeger prometheus        # High-performance messaging
+pantry service start kafka jaeger prometheus       # Traditional stack
+pantry service start pulsar jaeger prometheus      # Cloud-native messaging
+pantry service start nats jaeger prometheus        # High-performance messaging
 
 # Start storage services
-launchpad service start minio etcd
+pantry service start minio etcd
 
 # Start identity and API services
-launchpad service start keycloak hasura
+pantry service start keycloak hasura
 
 # Check all services
-launchpad service list
+pantry service list
 
 # Services available at:
 # Consul UI: http://localhost:8500
@@ -856,14 +856,14 @@ Set up continuous integration and development tooling:
 
 ```bash
 # Start CI/CD infrastructure
-launchpad service start jenkins          # CI/CD server
-launchpad service start verdaccio        # Private npm registry
+pantry service start jenkins          # CI/CD server
+pantry service start verdaccio        # Private npm registry
 
 # Start local cloud development
-launchpad service start localstack       # AWS services locally
+pantry service start localstack       # AWS services locally
 
 # Start monitoring
-launchpad service start prometheus grafana
+pantry service start prometheus grafana
 
 # Services available at:
 # Jenkins: http://localhost:8090
@@ -891,49 +891,49 @@ npm run dev
 
 ```bash
 # Morning: Start essential services
-launchpad service start postgres redis
+pantry service start postgres redis
 
 # Check what's running
-launchpad service list
+pantry service list
 
 # Work on projects...
 
 # Evening: Stop non-essential services
-launchpad service stop nginx grafana prometheus
+pantry service stop nginx grafana prometheus
 
 # Keep databases running for next day
-launchpad service list
+pantry service list
 ```
 
 #### Project-Specific Services
 
 ```bash
 # Web project: Start web stack
-launchpad service start postgres nginx redis
+pantry service start postgres nginx redis
 
 # API project: Start API stack
-launchpad service start postgres kafka vault
+pantry service start postgres kafka vault
 
 # Data project: Start data stack
-launchpad service start postgres influxdb grafana
+pantry service start postgres influxdb grafana
 
 # Stop all services when done
-launchpad service stop postgres nginx redis kafka vault influxdb grafana
+pantry service stop postgres nginx redis kafka vault influxdb grafana
 ```
 
 #### Service Health Monitoring
 
 ```bash
 # Check service health
-launchpad service status postgres
-launchpad service status redis
+pantry service status postgres
+pantry service status redis
 
 # Monitor logs in real-time
-tail -f ~/.local/share/launchpad/logs/postgres.log
-tail -f ~/.local/share/launchpad/logs/redis.log
+tail -f ~/.local/share/pantry/logs/postgres.log
+tail -f ~/.local/share/pantry/logs/redis.log
 
 # Restart unhealthy services
-launchpad service restart postgres
+pantry service restart postgres
 ```
 
 ### Custom Service Configuration
@@ -942,7 +942,7 @@ launchpad service restart postgres
 
 ```bash
 # Edit Redis configuration
-nano ~/.local/share/launchpad/services/config/redis.conf
+nano ~/.local/share/pantry/services/config/redis.conf
 
 # Example customizations:
 # maxmemory 256mb
@@ -950,14 +950,14 @@ nano ~/.local/share/launchpad/services/config/redis.conf
 # save 60 1000
 
 # Restart to apply changes
-launchpad service restart redis
+pantry service restart redis
 ```
 
 #### Customizing Nginx Configuration
 
 ```bash
 # Edit Nginx configuration
-nano ~/.local/share/launchpad/services/config/nginx.conf
+nano ~/.local/share/pantry/services/config/nginx.conf
 
 # Add custom server block:
 # server {
@@ -969,10 +969,10 @@ nano ~/.local/share/launchpad/services/config/nginx.conf
 # }
 
 # Test configuration
-nginx -t -c ~/.local/share/launchpad/services/config/nginx.conf
+nginx -t -c ~/.local/share/pantry/services/config/nginx.conf
 
 # Restart to apply changes
-launchpad service restart nginx
+pantry service restart nginx
 ```
 
 ### Service Backup and Migration
@@ -982,29 +982,29 @@ launchpad service restart nginx
 ```bash
 # Backup all service data
 tar -czf services-backup-$(date +%Y%m%d).tar.gz \
-  ~/.local/share/launchpad/services/
+  ~/.local/share/pantry/services/
 
 # Backup specific service
 tar -czf postgres-backup-$(date +%Y%m%d).tar.gz \
-  ~/.local/share/launchpad/services/postgres/
+  ~/.local/share/pantry/services/postgres/
 
 # Backup with compression
 tar -czf services-backup.tar.gz \
   --exclude='*.log' \
-  ~/.local/share/launchpad/services/
+  ~/.local/share/pantry/services/
 ```
 
 #### Restore Service Data
 
 ```bash
 # Stop services before restore
-launchpad service stop postgres redis
+pantry service stop postgres redis
 
 # Restore data
 tar -xzf services-backup.tar.gz -C ~/
 
 # Restart services
-launchpad service start postgres redis
+pantry service start postgres redis
 ```
 
 ### Troubleshooting Services
@@ -1021,8 +1021,8 @@ lsof -i :6379  # Redis
 lsof -i :8080  # Nginx
 
 # Check service logs
-tail -f ~/.local/share/launchpad/logs/postgres.log
-tail -f ~/.local/share/launchpad/logs/redis.log
+tail -f ~/.local/share/pantry/logs/postgres.log
+tail -f ~/.local/share/pantry/logs/redis.log
 
 # Test service connectivity
 pg_isready -p 5432
@@ -1034,14 +1034,14 @@ curl http://localhost:8080/health
 
 ```bash
 # Stop all services
-launchpad service stop postgres redis nginx
+pantry service stop postgres redis nginx
 
 # Clear problematic data (careful!)
-rm -rf ~/.local/share/launchpad/services/postgres/data/
-rm -rf ~/.local/share/launchpad/services/redis/data/
+rm -rf ~/.local/share/pantry/services/postgres/data/
+rm -rf ~/.local/share/pantry/services/redis/data/
 
 # Restart services (will reinitialize)
-launchpad service start postgres redis nginx
+pantry service start postgres redis nginx
 ```
 
 ### Service Integration Examples
@@ -1053,7 +1053,7 @@ launchpad service start postgres redis nginx
 const { Pool } = require('pg')
 const redis = require('redis')
 
-// Connect to Launchpad-managed PostgreSQL
+// Connect to pantry-managed PostgreSQL
 const pool = new Pool({
   host: 'localhost',
   port: 5432,
@@ -1061,7 +1061,7 @@ const pool = new Pool({
   user: process.env.USER,
 })
 
-// Connect to Launchpad-managed Redis
+// Connect to pantry-managed Redis
 const redisClient = redis.createClient({
   host: 'localhost',
   port: 6379,
@@ -1077,7 +1077,7 @@ const redisClient = redis.createClient({
 import psycopg2
 import redis
 
-# Connect to Launchpad-managed services
+# Connect to pantry-managed services
 conn = psycopg2.connect(
     host="localhost",
     port=5432,
@@ -1090,4 +1090,4 @@ r = redis.Redis(host='localhost', port=6379, db=0)
 # Your application code...
 ```
 
-These examples demonstrate the versatility and power of Launchpad for various development scenarios. Use them as starting points for your own projects and workflows.
+These examples demonstrate the versatility and power of pantry for various development scenarios. Use them as starting points for your own projects and workflows.
