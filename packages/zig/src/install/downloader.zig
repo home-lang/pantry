@@ -43,6 +43,15 @@ fn formatSpeed(bytes_per_sec: u64, buf: []u8) ![]const u8 {
 
 /// Download a file from a URL to a destination path with progress
 pub fn downloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
+    return downloadFileWithOptions(allocator, url, dest_path, false);
+}
+
+/// Download a file from a URL to a destination path with optional quiet mode
+pub fn downloadFileQuiet(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
+    return downloadFileWithOptions(allocator, url, dest_path, quiet);
+}
+
+fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
     // ANSI codes: dim + italic
     const dim_italic = "\x1b[2;3m";
     const reset = "\x1b[0m";
@@ -100,8 +109,8 @@ pub fn downloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []
         const current_size: u64 = @intCast(stat.size);
         const now = std.time.milliTimestamp();
 
-        // Update progress every 100ms if size changed
-        if (current_size != last_size and (now - last_update) >= 100) {
+        // Update progress every 100ms if size changed (skip if quiet mode)
+        if (!quiet and current_size != last_size and (now - last_update) >= 100) {
             var current_buf: [64]u8 = undefined;
             const current_str = try formatBytes(current_size, &current_buf);
 
@@ -155,6 +164,12 @@ pub fn downloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []
             last_update = now;
         }
 
+        // Update last_size even in quiet mode for download completion check
+        if (quiet and current_size != last_size) {
+            last_size = current_size;
+            last_update = now;
+        }
+
         // Check if download complete (file size stable for 2 seconds)
         if (current_size > 0 and current_size == last_size and (now - last_update) > 2000) {
             break;
@@ -164,8 +179,8 @@ pub fn downloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     // Wait for curl to finish
     const term = try child.wait();
 
-    // Show final download summary on a clean line
-    if (shown_progress) {
+    // Show final download summary on a clean line (skip if quiet mode)
+    if (!quiet and shown_progress) {
         const final_stat = std.fs.cwd().statFile(dest_path) catch |err| {
             std.debug.print("\n", .{});
             if (term.Exited != 0) return error.HttpRequestFailed;

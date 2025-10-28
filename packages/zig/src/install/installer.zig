@@ -22,6 +22,8 @@ pub const InstallOptions = struct {
     dry_run: bool = false,
     /// Project root path for local installations (if null, install globally)
     project_root: ?[]const u8 = null,
+    /// Quiet mode (minimal output)
+    quiet: bool = false,
 };
 
 /// Installation result
@@ -119,7 +121,7 @@ pub const Installer = struct {
             return try self.installFromCache(spec, "");
         } else {
             // Download and install to global cache
-            return try self.installFromNetwork(spec);
+            return try self.installFromNetwork(spec, options);
         }
     }
 
@@ -166,14 +168,14 @@ pub const Installer = struct {
         }
 
         // Not in global cache - download directly to project's pantry_modules
-        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir);
+        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir, options);
         try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
 
         return project_pkg_dir;
     }
 
     /// Download and install package directly to project directory (bypassing global cache)
-    fn downloadAndInstallToProject(self: *Installer, spec: PackageSpec, domain: []const u8, project_pkg_dir: []const u8) !void {
+    fn downloadAndInstallToProject(self: *Installer, spec: PackageSpec, domain: []const u8, project_pkg_dir: []const u8, options: InstallOptions) !void {
         const home = try Paths.home(self.allocator);
         defer self.allocator.free(home);
 
@@ -211,7 +213,7 @@ pub const Installer = struct {
             );
 
             // Try to download
-            downloader.downloadFile(self.allocator, url, temp_archive_path) catch |err| {
+            downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
                 self.allocator.free(temp_archive_path);
                 std.debug.print("Failed to download {s}: {}\n", .{ url, err });
                 continue;
@@ -238,7 +240,7 @@ pub const Installer = struct {
         defer self.allocator.free(extract_dir);
 
         try std.fs.cwd().makePath(extract_dir);
-        try extractor.extractArchive(self.allocator, archive_path, extract_dir, used_format);
+        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
@@ -427,7 +429,7 @@ pub const Installer = struct {
     }
 
     /// Install from network (download)
-    fn installFromNetwork(self: *Installer, spec: PackageSpec) ![]const u8 {
+    fn installFromNetwork(self: *Installer, spec: PackageSpec, options: InstallOptions) ![]const u8 {
         // Resolve package name to domain
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
@@ -486,7 +488,7 @@ pub const Installer = struct {
             );
 
             // Try to download
-            downloader.downloadFile(self.allocator, url, temp_archive_path) catch |err| {
+            downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
                 self.allocator.free(temp_archive_path);
                 std.debug.print("Failed to download {s}: {}\n", .{ url, err });
                 continue;
@@ -513,7 +515,7 @@ pub const Installer = struct {
         defer self.allocator.free(extract_dir);
 
         try std.fs.cwd().makePath(extract_dir);
-        try extractor.extractArchive(self.allocator, archive_path, extract_dir, used_format);
+        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root (might be nested like domain/v{version}/)
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);

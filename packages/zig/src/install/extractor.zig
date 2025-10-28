@@ -13,12 +13,25 @@ pub fn extractArchive(
     dest_dir: []const u8,
     format: []const u8,
 ) !void {
+    return extractArchiveQuiet(allocator, archive_path, dest_dir, format, false);
+}
+
+/// Extract a tar archive with optional quiet mode
+pub fn extractArchiveQuiet(
+    allocator: std.mem.Allocator,
+    archive_path: []const u8,
+    dest_dir: []const u8,
+    format: []const u8,
+    quiet: bool,
+) !void {
     // ANSI codes: dim + italic
     const dim_italic = "\x1b[2;3m";
     const reset = "\x1b[0m";
 
-    // Show extracting message
-    std.debug.print("{s}  extracting...{s}", .{ dim_italic, reset });
+    // Show extracting message (skip if quiet)
+    if (!quiet) {
+        std.debug.print("{s}  extracting...{s}", .{ dim_italic, reset });
+    }
 
     // Ensure destination directory exists
     try std.fs.cwd().makePath(dest_dir);
@@ -52,14 +65,18 @@ pub fn extractArchive(
     defer allocator.free(result.stderr);
 
     if (result.term.Exited != 0) {
-        // Clear the extracting message
-        std.debug.print("\r                    \r", .{});
+        // Clear the extracting message (if not quiet)
+        if (!quiet) {
+            std.debug.print("\r                    \r", .{});
+        }
         std.debug.print("Extraction failed: {s}\n", .{result.stderr});
         return error.ExtractionFailed;
     }
 
-    // Clear the extracting message
-    std.debug.print("\r                    \r", .{});
+    // Clear the extracting message (if not quiet)
+    if (!quiet) {
+        std.debug.print("\r                    \r", .{});
+    }
 }
 
 /// Check if a file is a valid archive

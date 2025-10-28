@@ -206,16 +206,45 @@ pub const ShellCommands = struct {
         try self.env_cache.put(entry);
 
         // 8. Generate shell code for activation
-        return try std.fmt.allocPrint(
+        // Check if pantry_modules/.bin exists in the project
+        const pantry_modules_bin = try std.fmt.allocPrint(
             self.allocator,
-            \\export PANTRY_CURRENT_PROJECT="{s}"
-            \\export PANTRY_ENV_BIN_PATH="{s}"
-            \\export PANTRY_ENV_DIR="{s}"
-            \\PATH="{s}:$PATH"
-            \\export PATH
-            ,
-            .{ project_root, env_bin, env_dir, env_bin },
+            "{s}/pantry_modules/.bin",
+            .{project_root},
         );
+        defer self.allocator.free(pantry_modules_bin);
+
+        const has_pantry_modules = blk: {
+            var dir = std.fs.cwd().openDir(pantry_modules_bin, .{}) catch break :blk false;
+            dir.close();
+            break :blk true;
+        };
+
+        // Add both env_bin and pantry_modules/.bin to PATH if it exists
+        if (has_pantry_modules) {
+            return try std.fmt.allocPrint(
+                self.allocator,
+                \\export PANTRY_CURRENT_PROJECT="{s}"
+                \\export PANTRY_ENV_BIN_PATH="{s}"
+                \\export PANTRY_ENV_DIR="{s}"
+                \\export PANTRY_MODULES_BIN="{s}"
+                \\PATH="{s}:{s}:$PATH"
+                \\export PATH
+                ,
+                .{ project_root, env_bin, env_dir, pantry_modules_bin, pantry_modules_bin, env_bin },
+            );
+        } else {
+            return try std.fmt.allocPrint(
+                self.allocator,
+                \\export PANTRY_CURRENT_PROJECT="{s}"
+                \\export PANTRY_ENV_BIN_PATH="{s}"
+                \\export PANTRY_ENV_DIR="{s}"
+                \\PATH="{s}:$PATH"
+                \\export PATH
+                ,
+                .{ project_root, env_bin, env_dir, env_bin },
+            );
+        }
     }
 
     fn detectProjectRoot(self: *ShellCommands, pwd: []const u8) !?[]const u8 {

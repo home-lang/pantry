@@ -24,8 +24,14 @@ __pantry_switch_environment() {
             export PATH
         fi
 
+        # Remove pantry_modules/.bin from PATH if it exists
+        if [[ -n "$PANTRY_MODULES_BIN" ]]; then
+            PATH=$(echo "$PATH" | sed "s|$PANTRY_MODULES_BIN:||g; s|:$PANTRY_MODULES_BIN||g; s|^$PANTRY_MODULES_BIN$||g")
+            export PATH
+        fi
+
         # Clear environment variables
-        unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR
+        unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR PANTRY_MODULES_BIN
         return 0
     fi
 

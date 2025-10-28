@@ -19,6 +19,134 @@ pub const CommandResult = struct {
     }
 };
 
+/// Result of a single package installation task
+const InstallTaskResult = struct {
+    name: []const u8,
+    version: []const u8,
+    success: bool,
+    error_msg: ?[]const u8,
+    install_time_ms: u64,
+
+    pub fn deinit(self: *InstallTaskResult, allocator: std.mem.Allocator) void {
+        if (self.error_msg) |msg| {
+            allocator.free(msg);
+        }
+    }
+};
+
+/// Task context for concurrent installation
+const InstallTask = struct {
+    allocator: std.mem.Allocator,
+    dep: lib.deps.parser.PackageDependency,
+    proj_dir: []const u8,
+    env_dir: []const u8,
+    bin_dir: []const u8,
+    cwd: []const u8,
+    pkg_cache: *cache.PackageCache,
+    result: *InstallTaskResult,
+    wg: *std.Thread.WaitGroup,
+};
+
+/// Worker function for concurrent package installation
+fn installPackageWorker(task_ptr: *InstallTask) void {
+    defer task_ptr.wg.finish();
+    defer task_ptr.allocator.destroy(task_ptr);
+
+    const result = installSinglePackage(
+        task_ptr.allocator,
+        task_ptr.dep,
+        task_ptr.proj_dir,
+        task_ptr.env_dir,
+        task_ptr.bin_dir,
+        task_ptr.cwd,
+        task_ptr.pkg_cache,
+    ) catch |err| {
+        task_ptr.result.* = .{
+            .name = task_ptr.dep.name,
+            .version = task_ptr.dep.version,
+            .success = false,
+            .error_msg = std.fmt.allocPrint(
+                task_ptr.allocator,
+                "failed: {}",
+                .{err},
+            ) catch null,
+            .install_time_ms = 0,
+        };
+        return;
+    };
+    task_ptr.result.* = result;
+}
+
+/// Install a single package (used by both sequential and concurrent installers)
+fn installSinglePackage(
+    allocator: std.mem.Allocator,
+    dep: lib.deps.parser.PackageDependency,
+    proj_dir: []const u8,
+    env_dir: []const u8,
+    bin_dir: []const u8,
+    cwd: []const u8,
+    pkg_cache: *cache.PackageCache,
+) !InstallTaskResult {
+    const start_time = std.time.milliTimestamp();
+
+    // Skip local packages - they're handled separately
+    const is_local = std.mem.startsWith(u8, dep.name, "local:") or
+        std.mem.startsWith(u8, dep.name, "auto:");
+    if (is_local) {
+        return .{
+            .name = dep.name,
+            .version = dep.version,
+            .success = false,
+            .error_msg = try allocator.dupe(u8, "skipped (local package)"),
+            .install_time_ms = 0,
+        };
+    }
+
+    const spec = lib.packages.PackageSpec{
+        .name = dep.name,
+        .version = dep.version,
+    };
+
+    // Create installer with project_root option for local installs
+    var custom_installer = try install.Installer.init(allocator, pkg_cache);
+    allocator.free(custom_installer.data_dir);
+    custom_installer.data_dir = try allocator.dupe(u8, env_dir);
+    defer custom_installer.deinit();
+
+    // Install to project's pantry_modules directory (quiet mode for clean output)
+    var inst_result = custom_installer.install(spec, .{
+        .project_root = proj_dir,
+        .quiet = true,
+    }) catch |err| {
+        const error_msg = try std.fmt.allocPrint(
+            allocator,
+            "failed: {}",
+            .{err},
+        );
+        return .{
+            .name = dep.name,
+            .version = dep.version,
+            .success = false,
+            .error_msg = error_msg,
+            .install_time_ms = 0,
+        };
+    };
+    defer inst_result.deinit(allocator);
+
+    const end_time = std.time.milliTimestamp();
+
+    _ = bin_dir;
+    _ = cwd;
+
+    return .{
+        .name = dep.name,
+        .version = dep.version,
+        .success = true,
+        .error_msg = null,
+        .install_time_ms = @intCast(end_time - start_time),
+    };
+}
+
 /// Install command
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     // Parse flags and filter out non-package arguments
@@ -156,86 +284,147 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         defer allocator.free(bin_dir);
         try std.fs.cwd().makePath(bin_dir);
 
-        std.debug.print("Installing {d} package(s) to {s}...\n", .{ deps.len, env_dir });
+        // Clean Yarn/Bun-style output - just show what we're installing
+        const green = "\x1b[32m";
+        const dim = "\x1b[2m";
+        const reset = "\x1b[0m";
+        std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, deps.len });
 
-        // Install each dependency
+        // Install each dependency concurrently
         var pkg_cache = try cache.PackageCache.init(allocator);
         defer pkg_cache.deinit();
 
-        for (deps) |dep| {
-            std.debug.print("  → {s}@{s}", .{ dep.name, dep.version });
+        // Use thread pool for concurrent installation (max 4 concurrent)
+        const max_concurrent = @min(deps.len, 4);
+        var install_results = try allocator.alloc(InstallTaskResult, deps.len);
+        defer {
+            for (install_results) |*result| {
+                result.deinit(allocator);
+            }
+            allocator.free(install_results);
+        }
 
-            // Check if this is a local/auto package
+        // Initialize results
+        for (install_results) |*result| {
+            result.* = .{
+                .name = "",
+                .version = "",
+                .success = false,
+                .error_msg = null,
+                .install_time_ms = 0,
+            };
+        }
+
+        // Install packages concurrently using thread pool
+        if (deps.len <= 1) {
+            // Single package - install sequentially
+            for (deps, 0..) |dep, i| {
+                install_results[i] = try installSinglePackage(
+                    allocator,
+                    dep,
+                    proj_dir,
+                    env_dir,
+                    bin_dir,
+                    cwd,
+                    &pkg_cache,
+                );
+            }
+        } else {
+            // Multiple packages - use thread pool
+            var thread_pool: std.Thread.Pool = undefined;
+            try thread_pool.init(.{ .allocator = allocator, .n_jobs = max_concurrent });
+            defer thread_pool.deinit();
+
+            var wg: std.Thread.WaitGroup = .{};
+            defer wg.wait();
+
+            for (deps, 0..) |dep, i| {
+                wg.start();
+                const task = try allocator.create(InstallTask);
+                task.* = .{
+                    .allocator = allocator,
+                    .dep = dep,
+                    .proj_dir = proj_dir,
+                    .env_dir = env_dir,
+                    .bin_dir = bin_dir,
+                    .cwd = cwd,
+                    .pkg_cache = &pkg_cache,
+                    .result = &install_results[i],
+                    .wg = &wg,
+                };
+                try thread_pool.spawn(installPackageWorker, .{task});
+            }
+        }
+
+        // Print clean Yarn/Bun-style summary - only show what was installed or failed
+        var success_count: usize = 0;
+        var failed_count: usize = 0;
+
+        for (install_results) |result| {
+            if (result.name.len == 0) continue;
+            if (result.success) {
+                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, result.name, result.version });
+                success_count += 1;
+            } else {
+                const red = "\x1b[31m";
+                std.debug.print("{s}✗{s} {s}@{s}", .{ red, reset, result.name, result.version });
+                if (result.error_msg) |msg| {
+                    std.debug.print(" {s}({s}){s}\n", .{ dim, msg, reset });
+                } else {
+                    std.debug.print("\n", .{});
+                }
+                failed_count += 1;
+            }
+        }
+
+        // Handle local packages separately (they need special symlink handling)
+        for (deps) |dep| {
             const is_local = std.mem.startsWith(u8, dep.name, "local:") or
                 std.mem.startsWith(u8, dep.name, "auto:");
+            if (!is_local) continue;
 
-            if (is_local) {
-                // Handle local packages by creating symlinks
-                const local_path = if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
-                    const home_path = try lib.Paths.home(allocator);
-                    defer allocator.free(home_path);
-                    const rel_path = dep.version[2..]; // Remove "~/"
-                    break :blk try std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, rel_path });
-                } else if (std.mem.startsWith(u8, dep.version, "/"))
-                    try allocator.dupe(u8, dep.version)
-                else
-                    try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dep.version });
-                defer allocator.free(local_path);
+            // Handle local packages by creating symlinks
+            const local_path = if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
+                const home_path = try lib.Paths.home(allocator);
+                defer allocator.free(home_path);
+                const rel_path = dep.version[2..]; // Remove "~/"
+                break :blk try std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, rel_path });
+            } else if (std.mem.startsWith(u8, dep.version, "/"))
+                try allocator.dupe(u8, dep.version)
+            else
+                try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dep.version });
+            defer allocator.free(local_path);
 
-                // Check if local path exists
-                std.fs.accessAbsolute(local_path, .{}) catch {
-                    std.debug.print(" ... skipped (path not found: {s})\n", .{local_path});
-                    continue;
-                };
-
-                // Create symlink in env bin directory
-                const pkg_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
-                    dep.name[colon_pos + 1 ..]
-                else
-                    dep.name;
-
-                const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
-                defer allocator.free(link_path);
-
-                // Remove existing symlink if present
-                std.fs.deleteFileAbsolute(link_path) catch {};
-
-                // Create symlink
-                std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch |err| {
-                    std.debug.print(" ... failed to create symlink: {}\n", .{err});
-                    continue;
-                };
-
-                std.debug.print(" ... done (linked)\n", .{});
-                continue;
-            }
-
-            const spec = lib.packages.PackageSpec{
-                .name = dep.name,
-                .version = dep.version,
-            };
-
-            // Create installer with project_root option for local installs
-            var custom_installer = try install.Installer.init(allocator, &pkg_cache);
-            // Override data_dir to point to our env dir for environment-based symlinks
-            allocator.free(custom_installer.data_dir);
-            custom_installer.data_dir = try allocator.dupe(u8, env_dir);
-            defer custom_installer.deinit();
-
-            // Install to project's pantry_modules directory
-            var result = custom_installer.install(spec, .{
-                .project_root = proj_dir,
-            }) catch |err| {
-                std.debug.print(" failed: {}\n", .{err});
+            // Check if local path exists
+            std.fs.accessAbsolute(local_path, .{}) catch {
+                const yellow = "\x1b[33m";
+                std.debug.print("{s}⚠{s}  {s}@{s} {s}(path not found){s}\n", .{ yellow, reset, dep.name, dep.version, dim, reset });
+                failed_count += 1;
                 continue;
             };
-            defer result.deinit(allocator);
 
-            if (result.from_cache) {
-                std.debug.print(" ... done (cached, {d}ms)\n", .{result.install_time_ms});
-            } else {
-                std.debug.print(" ... done ({d}ms)\n", .{result.install_time_ms});
-            }
+            // Create symlink in env bin directory
+            const pkg_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
+                dep.name[colon_pos + 1 ..]
+            else
+                dep.name;
+
+            const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
+            defer allocator.free(link_path);
+
+            // Remove existing symlink if present
+            std.fs.deleteFileAbsolute(link_path) catch {};
+
+            // Create symlink
+            std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch |err| {
+                const red = "\x1b[31m";
+                std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, dep.name, dep.version, dim, err, reset });
+                failed_count += 1;
+                continue;
+            };
+
+            std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, dep.name, dep.version, dim, reset });
+            success_count += 1;
         }
 
         // Generate lockfile
@@ -279,11 +468,17 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         // Write lockfile
         const lockfile_writer = @import("../packages/lockfile.zig");
         lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-            std.debug.print("\n⚠️  Warning: Failed to write lockfile: {}\n", .{err});
+            const yellow = "\x1b[33m";
+            std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
         };
 
-        std.debug.print("\n✅ Environment created at: {s}\n", .{env_dir});
-        std.debug.print("📝 Lockfile written to: {s}\n", .{lockfile_path});
+        // Clean summary - Yarn/Bun style
+        std.debug.print("\n{s}✓{s} Installed {d} package(s)", .{ green, reset, success_count });
+        if (failed_count > 0) {
+            const red = "\x1b[31m";
+            std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        }
+        std.debug.print("\n", .{});
         return .{ .exit_code = 0 };
     }
 
