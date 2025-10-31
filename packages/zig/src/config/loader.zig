@@ -1,14 +1,14 @@
 const std = @import("std");
-const zonfig = @import("zonfig");
+const zig_config = @import("zig-config");
 
 /// pantry-specific configuration loader
-/// Extends zonfig to support:
+/// Extends zig-config to support:
 /// - TypeScript config files (.config.ts)
 /// - Alias config files (e.g., buddy-bot.config.ts)
 /// - Multiple config sources with priority
 pub const pantryConfigLoader = struct {
     allocator: std.mem.Allocator,
-    zonfig_loader: zonfig.config_loader.ConfigLoader,
+    zig_config_loader: zig_config.config_loader.ConfigLoader,
 
     /// File extensions to search for (in priority order)
     const EXTENSIONS = [_][]const u8{ ".config.ts", ".config.json", ".config.zig", ".json" };
@@ -19,7 +19,7 @@ pub const pantryConfigLoader = struct {
     pub fn init(allocator: std.mem.Allocator) !pantryConfigLoader {
         return pantryConfigLoader{
             .allocator = allocator,
-            .zonfig_loader = try zonfig.config_loader.ConfigLoader.init(allocator),
+            .zig_config_loader = try zig_config.config_loader.ConfigLoader.init(allocator),
         };
     }
 
@@ -28,11 +28,11 @@ pub const pantryConfigLoader = struct {
     /// 1. {name}.config.ts (TypeScript config)
     /// 2. {alias}.config.ts (e.g., buddy-bot.config.ts if alias is buddy-bot)
     /// 3. pantry.config.ts (default pantry config)
-    /// 4. Standard zonfig search paths
+    /// 4. Standard zig-config search paths
     pub fn load(
         self: *pantryConfigLoader,
         options: LoadOptions,
-    ) !zonfig.ConfigResult {
+    ) !zig_config.UntypedConfigResult {
         // Determine CWD
         const cwd = options.cwd orelse blk: {
             var buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -58,7 +58,7 @@ pub const pantryConfigLoader = struct {
             // Merge with defaults if provided
             const final_config = if (options.defaults) |defaults| blk: {
                 defer parsed.deinit();
-                const merged = try zonfig.deepMerge(
+                const merged = try zig_config.deepMerge(
                     self.allocator,
                     defaults,
                     parsed.value,
@@ -68,14 +68,14 @@ pub const pantryConfigLoader = struct {
             } else parsed.value;
 
             // Create ConfigResult
-            var sources = try self.allocator.alloc(zonfig.SourceInfo, 1);
-            sources[0] = zonfig.SourceInfo{
+            var sources = try self.allocator.alloc(zig_config.SourceInfo, 1);
+            sources[0] = zig_config.SourceInfo{
                 .source = .typescript,
                 .path = try self.allocator.dupe(u8, ts_config_path),
                 .priority = 1,
             };
 
-            return zonfig.ConfigResult{
+            return zig_config.UntypedConfigResult{
                 .config = final_config,
                 .source = .typescript,
                 .sources = sources,
@@ -85,8 +85,8 @@ pub const pantryConfigLoader = struct {
             };
         }
 
-        // Fall back to standard zonfig loading
-        const zonfig_options = zonfig.LoadOptions{
+        // Fall back to standard zig-config loading
+        const zig_config_options = zig_config.LoadOptions{
             .name = options.name,
             .defaults = options.defaults,
             .cwd = cwd,
@@ -97,7 +97,7 @@ pub const pantryConfigLoader = struct {
             .merge_strategy = options.merge_strategy,
         };
 
-        return try self.zonfig_loader.load(zonfig_options);
+        return try self.zig_config_loader.load(zig_config_options);
     }
 
     /// Execute TypeScript config file using Bun or Node.js
@@ -220,14 +220,14 @@ pub const LoadOptions = struct {
     env_prefix: ?[]const u8 = null,
 
     /// Merge strategy
-    merge_strategy: zonfig.MergeStrategy = .smart,
+    merge_strategy: zig_config.MergeStrategy = .smart,
 };
 
 /// Load pantry configuration
 pub fn loadpantryConfig(
     allocator: std.mem.Allocator,
     options: LoadOptions,
-) !zonfig.ConfigResult {
+) !zig_config.UntypedConfigResult {
     var loader = try pantryConfigLoader.init(allocator);
     return try loader.load(options);
 }

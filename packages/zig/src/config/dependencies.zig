@@ -1,12 +1,12 @@
 const std = @import("std");
-const zonfig = @import("zonfig");
+const zig_config = @import("zig-config");
 const deps = @import("../deps/parser.zig");
 
 /// Extract bin paths from a loaded configuration
 /// Returns a map of executable names to their paths within the package
 pub fn extractBinPaths(
     allocator: std.mem.Allocator,
-    config: zonfig.ConfigResult,
+    config: zig_config.UntypedConfigResult,
 ) !?std.StringHashMap([]const u8) {
     // Check if config is an object
     if (config.config != .object) {
@@ -73,7 +73,7 @@ pub fn extractBinPaths(
 /// - global flag at top level
 pub fn extractDependencies(
     allocator: std.mem.Allocator,
-    config: zonfig.ConfigResult,
+    config: zig_config.UntypedConfigResult,
 ) ![]deps.PackageDependency {
     var dependencies = try std.ArrayList(deps.PackageDependency).initCapacity(allocator, 8);
     errdefer {
@@ -163,10 +163,10 @@ test "extractDependencies from object format" {
     try config_obj.put("dependencies", .{ .object = deps_obj });
     try config_obj.put("global", .{ .bool = false });
 
-    const config_result = zonfig.ConfigResult{
+    const config_result = zig_config.UntypedConfigResult{
         .config = .{ .object = config_obj },
         .source = .file_local,
-        .sources = &[_]zonfig.SourceInfo{},
+        .sources = &[_]zig_config.SourceInfo{},
         .loaded_at = 0,
         .allocator = allocator,
     };
@@ -206,10 +206,10 @@ test "extractDependencies from array format" {
     try config_obj.put("dependencies", .{ .array = deps_array });
     try config_obj.put("global", .{ .bool = true });
 
-    const config_result = zonfig.ConfigResult{
+    const config_result = zig_config.UntypedConfigResult{
         .config = .{ .object = config_obj },
         .source = .file_local,
-        .sources = &[_]zonfig.SourceInfo{},
+        .sources = &[_]zig_config.SourceInfo{},
         .loaded_at = 0,
         .allocator = allocator,
     };
@@ -235,10 +235,10 @@ test "extractDependencies from string format" {
 
     try config_obj.put("dependencies", .{ .string = "bun redis.io postgresql.org" });
 
-    const config_result = zonfig.ConfigResult{
+    const config_result = zig_config.UntypedConfigResult{
         .config = .{ .object = config_obj },
         .source = .file_local,
-        .sources = &[_]zonfig.SourceInfo{},
+        .sources = &[_]zig_config.SourceInfo{},
         .loaded_at = 0,
         .allocator = allocator,
     };

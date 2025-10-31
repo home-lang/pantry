@@ -1,11 +1,12 @@
 const std = @import("std");
-const zonfig = @import("zonfig");
+const zig_config = @import("zig-config");
 
-// Re-export zonfig for convenience
-pub const ConfigResult = zonfig.ConfigResult;
-pub const ConfigSource = zonfig.ConfigSource;
-pub const MergeStrategy = zonfig.MergeStrategy;
-pub const ZonfigError = zonfig.ZonfigError;
+// Re-export zig-config types and functions
+pub const UntypedConfigResult = zig_config.UntypedConfigResult;
+pub const ConfigResult = zig_config.ConfigResult;
+pub const ConfigSource = zig_config.ConfigSource;
+pub const MergeStrategy = zig_config.MergeStrategy;
+pub const ZigConfigError = zig_config.ZigConfigError;
 
 // pantry-specific config loader
 pub const loader = @import("config/loader.zig");
@@ -18,10 +19,10 @@ pub const dependencies = @import("config/dependencies.zig");
 pub const extractDependencies = dependencies.extractDependencies;
 pub const extractBinPaths = dependencies.extractBinPaths;
 
-// Re-export core zonfig functions
-pub const loadConfig = zonfig.loadConfig;
-pub const tryLoadConfig = zonfig.tryLoadConfig;
-pub const deepMerge = zonfig.deepMerge;
+// Re-export core zig-config functions
+pub const loadConfig = zig_config.loadConfig;
+pub const tryLoadConfig = zig_config.tryLoadConfig;
+pub const deepMerge = zig_config.deepMerge;
 
 test {
     // Run all config tests

@@ -7,6 +7,21 @@ const install = lib.install;
 const shell = lib.shell;
 const string = lib.string;
 
+/// Check if a version string is a local filesystem path
+fn isLocalPath(version: []const u8) bool {
+    return std.mem.startsWith(u8, version, "~/") or
+        std.mem.startsWith(u8, version, "./") or
+        std.mem.startsWith(u8, version, "../") or
+        std.mem.startsWith(u8, version, "/");
+}
+
+/// Check if a dependency is local (either has local: prefix or is a filesystem path)
+fn isLocalDependency(dep: lib.deps.parser.PackageDependency) bool {
+    return std.mem.startsWith(u8, dep.name, "local:") or
+        std.mem.startsWith(u8, dep.name, "auto:") or
+        isLocalPath(dep.version);
+}
+
 /// Command execution result
 pub const CommandResult = struct {
     exit_code: u8,
@@ -90,14 +105,12 @@ fn installSinglePackage(
     const start_time = std.time.milliTimestamp();
 
     // Skip local packages - they're handled separately
-    const is_local = std.mem.startsWith(u8, dep.name, "local:") or
-        std.mem.startsWith(u8, dep.name, "auto:");
-    if (is_local) {
+    if (isLocalDependency(dep)) {
         return .{
-            .name = dep.name,
-            .version = dep.version,
-            .success = false,
-            .error_msg = try allocator.dupe(u8, "skipped (local package)"),
+            .name = "",
+            .version = "",
+            .success = true,
+            .error_msg = null,
             .install_time_ms = 0,
         };
     }
@@ -202,15 +215,6 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
         // Try to load dependencies from config file first (pantry.config.ts, etc.)
         const config_deps = try loadDependenciesFromConfig(allocator, cwd);
-        defer {
-            if (config_deps) |deps_list| {
-                for (deps_list) |*dep| {
-                    var d = dep.*;
-                    d.deinit(allocator);
-                }
-                allocator.free(deps_list);
-            }
-        }
 
         // If config file had dependencies, use those
         var deps: []parser.PackageDependency = undefined;
@@ -397,12 +401,15 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         }
 
         // Handle local packages separately (they need special symlink handling)
-        for (deps) |dep| {
-            const is_local = std.mem.startsWith(u8, dep.name, "local:") or
-                std.mem.startsWith(u8, dep.name, "auto:");
-            if (!is_local) continue;
+        // Create pantry_modules directory if it doesn't exist
+        const pantry_modules_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{proj_dir});
+        defer allocator.free(pantry_modules_dir);
+        try std.fs.cwd().makePath(pantry_modules_dir);
 
-            // Handle local packages by creating symlinks
+        for (deps) |dep| {
+            if (!isLocalDependency(dep)) continue;
+
+            // Resolve local path
             const local_path = if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
                 const home_path = try lib.Paths.home(allocator);
                 defer allocator.free(home_path);
@@ -422,25 +429,35 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
                 continue;
             };
 
-            // Create symlink in env bin directory
             const pkg_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
                 dep.name[colon_pos + 1 ..]
             else
                 dep.name;
 
-            const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
-            defer allocator.free(link_path);
+            // Create pantry_modules/{package} directory structure
+            const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_modules_dir, pkg_name });
+            defer allocator.free(pkg_modules_dir);
+            try std.fs.cwd().makePath(pkg_modules_dir);
 
-            // Remove existing symlink if present
-            std.fs.deleteFileAbsolute(link_path) catch {};
+            // Create symlink to source directory for build system
+            const src_link_path = try std.fmt.allocPrint(allocator, "{s}/src", .{pkg_modules_dir});
+            defer allocator.free(src_link_path);
+            std.fs.deleteFileAbsolute(src_link_path) catch {};
 
-            // Create symlink
-            std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch |err| {
+            const src_path = try std.fmt.allocPrint(allocator, "{s}/src", .{local_path});
+            defer allocator.free(src_path);
+            std.fs.symLinkAbsolute(src_path, src_link_path, .{ .is_directory = true }) catch |err| {
                 const red = "\x1b[31m";
                 std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, dep.name, dep.version, dim, err, reset });
                 failed_count += 1;
                 continue;
             };
+
+            // Also create symlink in env bin directory for executables
+            const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
+            defer allocator.free(link_path);
+            std.fs.deleteFileAbsolute(link_path) catch {};
+            std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch {};
 
             std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, dep.name, dep.version, dim, reset });
             success_count += 1;
@@ -455,7 +472,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
         // Add entries for all installed packages
         for (deps) |dep| {
-            const source = if (std.mem.startsWith(u8, dep.name, "local:") or std.mem.startsWith(u8, dep.name, "auto:"))
+            const source = if (isLocalDependency(dep))
                 lib.packages.PackageSource.local
             else if (std.mem.startsWith(u8, dep.name, "github:"))
                 lib.packages.PackageSource.github

@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "lockfileVersion": 1,
+  "generatedAt": "1761949764",
+  "packages": {
+    "zig-test-framework@~/Code/zig-test-framework": {
+      "name": "zig-test-framework",
+      "version": "~/Code/zig-test-framework",
+      "source": "local",
+      "url": "~/Code/zig-test-framework"
+    },
+    "zig-config@~/Code/zig-config": {
+      "name": "zig-config",
+      "version": "~/Code/zig-config",
+      "source": "local",
+      "url": "~/Code/zig-config"
+    },
+    "zig-cli@~/Code/zig-cli": {
+      "name": "zig-cli",
+      "version": "~/Code/zig-cli",
+      "source": "local",
+      "url": "~/Code/zig-cli"
+    }
+  }
+}
