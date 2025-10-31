@@ -56,6 +56,12 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     const dim_italic = "\x1b[2;3m";
     const reset = "\x1b[0m";
 
+    // Validate URL format
+    if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
+        std.debug.print("❌ Invalid URL: {s}\n", .{url});
+        return error.InvalidUrl;
+    }
+
     // First, get the file size from HTTP headers
     const size_result = try std.process.Child.run(.{
         .allocator = allocator,
@@ -98,16 +104,24 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     var last_size: u64 = 0;
     var last_update = start_time;
     var shown_progress = false;
+    const timeout_ms: i64 = 30000; // 30 second timeout
 
     while (true) {
         std.Thread.sleep(100 * std.time.ns_per_ms);
+
+        const now = std.time.milliTimestamp();
+        
+        // Add timeout check to prevent infinite hanging
+        if (now - start_time > timeout_ms) {
+            _ = child.kill() catch {};
+            return error.NetworkError;
+        }
 
         const stat = std.fs.cwd().statFile(dest_path) catch {
             continue;
         };
 
         const current_size: u64 = @intCast(stat.size);
-        const now = std.time.milliTimestamp();
 
         // Update progress every 100ms if size changed (skip if quiet mode)
         if (!quiet and current_size != last_size and (now - last_update) >= 100) {
@@ -170,8 +184,14 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
             last_update = now;
         }
 
-        // Check if download complete (file size stable for 2 seconds)
-        if (current_size > 0 and current_size == last_size and (now - last_update) > 2000) {
+        // Check if download complete (file size stable for 1 second, or any size after 5 seconds)
+        const time_since_last_change = now - last_update;
+        if (current_size > 0 and current_size == last_size and time_since_last_change > 1000) {
+            break;
+        }
+        
+        // Fallback: if we have any data after 5 seconds and size hasn't changed in 1 second, assume done
+        if (current_size > 0 and (now - start_time) > 5000 and time_since_last_change > 1000) {
             break;
         }
     }
@@ -227,10 +247,24 @@ pub fn buildPackageUrl(
         .aarch64 => "aarch64",
     };
 
+    // pkgx uses format: https://dist.pkgx.dev/{domain}/{platform}/{arch}/v{version}.tar.xz
+    // Note: version should NOT have 'v' prefix in the URL path, but the file does
+    const clean_version = if (std.mem.startsWith(u8, version, "v"))
+        version[1..]
+    else
+        version;
+    
+    // If version is just a major version like "22", try with .0.0
+    const full_version = if (std.mem.indexOf(u8, clean_version, ".") == null)
+        try std.fmt.allocPrint(allocator, "{s}.0.0", .{clean_version})
+    else
+        try allocator.dupe(u8, clean_version);
+    defer if (std.mem.indexOf(u8, clean_version, ".") == null) allocator.free(full_version);
+    
     return std.fmt.allocPrint(
         allocator,
         "https://dist.pkgx.dev/{s}/{s}/{s}/v{s}.{s}",
-        .{ domain, platform_str, arch_str, version, format },
+        .{ domain, platform_str, arch_str, full_version, format },
     );
 }
 

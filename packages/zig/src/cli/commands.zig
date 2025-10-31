@@ -102,6 +102,25 @@ fn installSinglePackage(
         };
     }
 
+    // Validate package exists in registry
+    const pkg_registry = @import("../packages/generated.zig");
+    const pkg_info = pkg_registry.getPackageByName(dep.name);
+    
+    if (pkg_info == null) {
+        const error_msg = try std.fmt.allocPrint(
+            allocator,
+            "Package '{s}' not found in registry. Try: pantry search {s}",
+            .{ dep.name, dep.name },
+        );
+        return .{
+            .name = dep.name,
+            .version = dep.version,
+            .success = false,
+            .error_msg = error_msg,
+            .install_time_ms = 0,
+        };
+    }
+
     const spec = lib.packages.PackageSpec{
         .name = dep.name,
         .version = dep.version,
