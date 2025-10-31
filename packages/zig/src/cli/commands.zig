@@ -447,7 +447,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         }
 
         // Generate lockfile
-        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
+        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{proj_dir});
         defer allocator.free(lockfile_path);
 
         var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");

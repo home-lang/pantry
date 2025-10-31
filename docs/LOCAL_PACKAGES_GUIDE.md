@@ -595,7 +595,7 @@ RUN pantry install
 # Production
 FROM zig:0.15.1
 WORKDIR /app
-COPY pantry.json pantry-lock.json ./
+COPY pantry.json .freezer ./
 # Use GitHub sources
 RUN pantry install --frozen-lockfile
 COPY . .

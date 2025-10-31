@@ -245,7 +245,7 @@ test "lockfile write and read" {
     // Write lockfile
     const lock_path = try tmp.dir.realpathAlloc(allocator, ".");
     defer allocator.free(lock_path);
-    const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/package-lock.json", .{lock_path});
+    const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{lock_path});
     defer allocator.free(lock_file_path);
 
     try writeLockfile(allocator, &lockfile, lock_file_path);
