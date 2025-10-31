@@ -16,6 +16,7 @@ pub const loadpantryConfig = loader.loadpantryConfig;
 // Dependency extraction from config
 pub const dependencies = @import("config/dependencies.zig");
 pub const extractDependencies = dependencies.extractDependencies;
+pub const extractBinPaths = dependencies.extractBinPaths;
 
 // Re-export core zonfig functions
 pub const loadConfig = zonfig.loadConfig;

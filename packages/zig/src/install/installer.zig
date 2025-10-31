@@ -367,12 +367,6 @@ pub const Installer = struct {
 
     /// Create symlinks in project's pantry_modules/.bin directory
     fn createProjectSymlinks(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8, package_dir: []const u8) !void {
-        // Get package info to find which programs to symlink
-        const pkg_registry = @import("../packages/generated.zig");
-        const pkg_info = pkg_registry.getPackageByName(domain) orelse return;
-
-        if (pkg_info.programs.len == 0) return;
-
         // Project bin directory (pantry_modules/.bin)
         const project_bin_dir = try std.fmt.allocPrint(
             self.allocator,
@@ -382,6 +376,98 @@ pub const Installer = struct {
         defer self.allocator.free(project_bin_dir);
 
         try std.fs.cwd().makePath(project_bin_dir);
+
+        // First, try to load bin paths from package configuration (pantry.json or package.json)
+        var custom_bins_created = false;
+        const config_loader = @import("../config.zig");
+
+        // Try pantry.json first, then package.json
+        const config_names = [_][]const u8{ "pantry.json", "package.json" };
+        for (config_names) |config_name| {
+            const config_path = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ package_dir, config_name },
+            );
+            defer self.allocator.free(config_path);
+
+            // Check if config file exists
+            std.fs.accessAbsolute(config_path, .{}) catch continue;
+
+            // Try to load and extract bin paths
+            var config = config_loader.loadpantryConfig(self.allocator, .{
+                .name = "pantry",
+                .cwd = package_dir,
+            }) catch continue;
+            defer config.deinit();
+
+            if (config_loader.extractBinPaths(self.allocator, config)) |maybe_bin_map| {
+                if (maybe_bin_map) |bin_map_const| {
+                    var bin_map = bin_map_const;
+                    defer {
+                        var it = bin_map.iterator();
+                        while (it.next()) |entry| {
+                            self.allocator.free(entry.key_ptr.*);
+                            self.allocator.free(entry.value_ptr.*);
+                        }
+                        bin_map.deinit();
+                    }
+
+                    // Create symlinks for custom bin paths
+                    var it = bin_map.iterator();
+                    while (it.next()) |entry| {
+                        const bin_name = entry.key_ptr.*;
+                        const bin_path = entry.value_ptr.*;
+
+                        const source = try std.fmt.allocPrint(
+                            self.allocator,
+                            "{s}/{s}",
+                            .{ package_dir, bin_path },
+                        );
+                        defer self.allocator.free(source);
+
+                        const link = try std.fmt.allocPrint(
+                            self.allocator,
+                            "{s}/{s}",
+                            .{ project_bin_dir, bin_name },
+                        );
+                        defer self.allocator.free(link);
+
+                        // Check if source exists
+                        std.fs.accessAbsolute(source, .{}) catch |err| {
+                            if (err == error.FileNotFound) {
+                                std.debug.print("Warning: Bin not found: {s}\n", .{source});
+                                continue;
+                            }
+                            return err;
+                        };
+
+                        // Remove existing symlink if it exists
+                        std.fs.deleteFileAbsolute(link) catch {};
+
+                        // Create symlink
+                        std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
+                            std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
+                            continue;
+                        };
+
+                        custom_bins_created = true;
+                    }
+
+                    // If we found and processed custom bins, we're done
+                    if (custom_bins_created) return;
+                }
+            } else |_| {
+                // Failed to extract bin paths, try next config file
+                continue;
+            }
+        }
+
+        // Fallback: Use package registry programs if no custom bins were found
+        const pkg_registry = @import("../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(domain) orelse return;
+
+        if (pkg_info.programs.len == 0) return;
 
         // Package bin directory
         const pkg_bin_dir = try std.fmt.allocPrint(

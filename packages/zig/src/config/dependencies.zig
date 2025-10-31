@@ -2,6 +2,69 @@ const std = @import("std");
 const zonfig = @import("zonfig");
 const deps = @import("../deps/parser.zig");
 
+/// Extract bin paths from a loaded configuration
+/// Returns a map of executable names to their paths within the package
+pub fn extractBinPaths(
+    allocator: std.mem.Allocator,
+    config: zonfig.ConfigResult,
+) !?std.StringHashMap([]const u8) {
+    // Check if config is an object
+    if (config.config != .object) {
+        return null;
+    }
+
+    // Get bin field
+    const bin_val = config.config.object.get("bin") orelse {
+        return null;
+    };
+
+    var bin_map = std.StringHashMap([]const u8).init(allocator);
+    errdefer {
+        var it = bin_map.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            allocator.free(entry.value_ptr.*);
+        }
+        bin_map.deinit();
+    }
+
+    switch (bin_val) {
+        .object => |bin_obj| {
+            // Object format: { "executable": "path/to/bin", ... }
+            var iter = bin_obj.iterator();
+            while (iter.next()) |entry| {
+                const bin_name = entry.key_ptr.*;
+                const bin_path = switch (entry.value_ptr.*) {
+                    .string => |v| v,
+                    else => continue, // Skip non-string values
+                };
+
+                try bin_map.put(
+                    try allocator.dupe(u8, bin_name),
+                    try allocator.dupe(u8, bin_path),
+                );
+            }
+        },
+        .string => |bin_str| {
+            // String format: single executable path
+            // Use the basename as the executable name
+            const basename = std.fs.path.basename(bin_str);
+            try bin_map.put(
+                try allocator.dupe(u8, basename),
+                try allocator.dupe(u8, bin_str),
+            );
+        },
+        else => return null, // Unsupported format
+    }
+
+    if (bin_map.count() == 0) {
+        bin_map.deinit();
+        return null;
+    }
+
+    return bin_map;
+}
+
 /// Extract package dependencies from a loaded configuration
 /// Supports:
 /// - dependencies as object: { "bun": "^1.2.19", "redis.io": "^8.0.0" }

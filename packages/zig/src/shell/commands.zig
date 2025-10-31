@@ -227,7 +227,7 @@ pub const ShellCommands = struct {
                 \\export PANTRY_CURRENT_PROJECT="{s}"
                 \\export PANTRY_ENV_BIN_PATH="{s}"
                 \\export PANTRY_ENV_DIR="{s}"
-                \\export PANTRY_MODULES_BIN="{s}"
+                \\export PANTRY_MODULES_BIN_PATH="{s}"
                 \\PATH="{s}:{s}:$PATH"
                 \\export PATH
                 ,

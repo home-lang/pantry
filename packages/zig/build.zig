@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) void {
     });
 
     // Create the library module
-    const lib_mod = b.addModule("launchpad", .{
+    const lib_mod = b.addModule("pantry", .{
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
     });
@@ -181,7 +181,7 @@ pub fn build(b: *std.Build) void {
             .target = resolved_target,
         });
 
-        const cross_lib_mod = b.addModule("launchpad", .{
+        const cross_lib_mod = b.addModule("pantry", .{
             .root_source_file = b.path("src/lib.zig"),
             .target = resolved_target,
         });
