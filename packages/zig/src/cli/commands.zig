@@ -652,6 +652,104 @@ pub fn cacheClearCommand(allocator: std.mem.Allocator, _: []const []const u8) !C
     return .{ .exit_code = 0 };
 }
 
+pub const CleanOptions = struct {
+    local: bool = false,
+    global: bool = false,
+    cache: bool = false,
+};
+
+/// Clean command - clean local deps, global deps, and/or cache
+pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !CommandResult {
+    var total_freed: u64 = 0;
+    var items_removed: u64 = 0;
+
+    // Clean local project dependencies (pantry_modules)
+    if (options.local) {
+        std.debug.print("Cleaning local dependencies (pantry_modules)...\n", .{});
+
+        const cwd = std.fs.cwd();
+        const pantry_modules_path = "pantry_modules";
+
+        cwd.deleteTree(pantry_modules_path) catch |err| {
+            if (err != error.FileNotFound) {
+                std.debug.print("Warning: Failed to clean pantry_modules: {}\n", .{err});
+            }
+        };
+
+        std.debug.print("  ✓ Removed pantry_modules/\n", .{});
+        items_removed += 1;
+    }
+
+    // Clean global dependencies
+    if (options.global) {
+        std.debug.print("Cleaning global dependencies...\n", .{});
+
+        const home = try lib.Paths.home(allocator);
+        defer allocator.free(home);
+
+        const global_path = try std.fmt.allocPrint(
+            allocator,
+            "{s}/.local/share/pantry/global/packages",
+            .{home},
+        );
+        defer allocator.free(global_path);
+
+        // Try to open global directory
+        if (std.fs.cwd().openDir(global_path, .{ .iterate = true })) |global_dir| {
+            var dir = global_dir;
+            defer dir.close();
+
+            var iter = dir.iterate();
+            while (try iter.next()) |entry| {
+                if (entry.kind == .directory) {
+                    items_removed += 1;
+                }
+            }
+
+            // Delete the directory
+            std.fs.cwd().deleteTree(global_path) catch |err| {
+                std.debug.print("Warning: Failed to clean global packages: {}\n", .{err});
+            };
+
+            // Recreate empty directory
+            try std.fs.cwd().makePath(global_path);
+
+            std.debug.print("  ✓ Removed {d} global package(s)\n", .{items_removed});
+        } else |err| {
+            if (err == error.FileNotFound) {
+                std.debug.print("  No global packages found\n", .{});
+            } else {
+                std.debug.print("Warning: Failed to access global packages: {}\n", .{err});
+            }
+        }
+    }
+
+    // Clean package cache
+    if (options.cache) {
+        var pkg_cache = try cache.PackageCache.init(allocator);
+        defer pkg_cache.deinit();
+
+        const stats_before = pkg_cache.stats();
+
+        std.debug.print("Cleaning package cache...\n", .{});
+        try pkg_cache.clear();
+
+        total_freed += stats_before.total_size;
+        items_removed += stats_before.total_packages;
+
+        std.debug.print("  ✓ Removed {d} cached package(s)\n", .{stats_before.total_packages});
+    }
+
+    // Summary
+    if (total_freed > 0) {
+        std.debug.print("\nFreed {d:.2} MB total\n", .{
+            @as(f64, @floatFromInt(total_freed)) / 1024.0 / 1024.0,
+        });
+    }
+
+    return .{ .exit_code = 0 };
+}
+
 /// Environment list command
 pub fn envListCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var manager = try env.EnvManager.init(allocator);
@@ -738,6 +836,24 @@ pub fn shellIntegrateCommand(allocator: std.mem.Allocator) !CommandResult {
     }
 
     return .{ .exit_code = 0 };
+}
+
+/// Generate shell code for integration (dev:shellcode command)
+pub fn shellCodeCommand(allocator: std.mem.Allocator) !CommandResult {
+    var generator = shell.ShellCodeGenerator.init(allocator, .{
+        .show_messages = true,
+        .activation_message = "✅ Environment activated",
+        .deactivation_message = "Environment deactivated",
+        .verbose = false,
+    });
+    defer generator.deinit();
+
+    const shell_code = try generator.generate();
+
+    return .{
+        .exit_code = 0,
+        .message = shell_code,
+    };
 }
 
 /// Uninstall command
@@ -1476,12 +1592,18 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     defer env_cache.deinit();
 
     if (try env_cache.get(hash)) |entry| {
-        // Cache hit - output cached shell code
-        std.debug.print("export PATH=\"{s}:$PATH\"\n", .{entry.path});
+        // Cache hit - output cached shell code to stdout
+        const shell_code = try std.fmt.allocPrint(allocator, "export PATH=\"{s}:$PATH\"\n", .{entry.path});
+        defer allocator.free(shell_code);
+
+        const stdout_fd: std.posix.fd_t = 1;
+        _ = std.posix.write(stdout_fd, shell_code) catch |err| {
+            std.debug.print("Error writing shell code: {}\n", .{err});
+            return .{ .exit_code = 1 };
+        };
+
         return .{ .exit_code = 0 };
     }
-
-    std.debug.print("Found dependency file: {s} (hash: {s})\n", .{ deps_file.path, hash_hex });
 
     // Parse dependency file (auto-detects format)
     const deps = try parser.inferDependencies(allocator, deps_file);
@@ -1494,7 +1616,6 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     }
 
     if (deps.len == 0) {
-        std.debug.print("No dependencies found\n", .{});
         return .{ .exit_code = 0 };
     }
 
@@ -1505,28 +1626,148 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    std.debug.print("Installing {d} package(s)...\n", .{deps.len});
+    // Set installer data_dir to environment-specific directory
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+    const env_dir = try std.fmt.allocPrint(
+        allocator,
+        "{s}/.local/share/pantry/envs/pantry_{s}-{s}",
+        .{ home, hash_hex[0..8], hash_hex[8..] },
+    );
+    allocator.free(installer.data_dir);
+    installer.data_dir = env_dir;
 
-    // Install each dependency
+    // Install each dependency to project directory in parallel
+    const proj_dir = std.fs.path.dirname(deps_file.path) orelse dir;
+
+    const dim = "\x1b[2m";
+    const green = "\x1b[32m";
+    const reset = "\x1b[0m";
+
+    // Show all packages that will be installed
     for (deps) |dep| {
-        std.debug.print("  → {s}@{s}...", .{ dep.name, dep.version });
+        std.debug.print("{s}+{s} {s}@{s}\n", .{
+            dim, reset, dep.name, dep.version
+        });
+    }
 
-        const spec = lib.packages.PackageSpec{
-            .name = dep.name,
-            .version = dep.version,
-        };
+    // Prepare for parallel installation
+    const InstallResult = struct {
+        success: bool,
+        error_name: ?[]const u8,
+    };
 
-        var result = installer.install(spec, .{}) catch |err| {
-            std.debug.print(" failed: {}\n", .{err});
-            continue;
-        };
-        defer result.deinit(allocator);
+    var results = try allocator.alloc(InstallResult, deps.len);
+    defer allocator.free(results);
 
-        if (result.from_cache) {
-            std.debug.print(" done (cached, {d}ms)\n", .{result.install_time_ms});
-        } else {
-            std.debug.print(" done ({d}ms)\n", .{result.install_time_ms});
+    // Thread context for parallel installation
+    const ThreadContext = struct {
+        dep: parser.PackageDependency,
+        index: usize,
+        installer: *install.Installer,
+        proj_dir: []const u8,
+        allocator: std.mem.Allocator,
+        pkg_cache: *cache.PackageCache,
+        result: *InstallResult,
+        mutex: *std.Thread.Mutex,
+        total_deps: usize,
+        dim_str: []const u8,
+        green_str: []const u8,
+        reset_str: []const u8,
+
+        fn installThread(ctx: *@This()) void {
+            const spec = lib.packages.PackageSpec{
+                .name = ctx.dep.name,
+                .version = ctx.dep.version,
+            };
+
+            // Each thread needs its own installer instance
+            var thread_installer = install.Installer.init(ctx.allocator, ctx.pkg_cache) catch {
+                ctx.mutex.lock();
+                defer ctx.mutex.unlock();
+                ctx.result.* = .{ .success = false, .error_name = "InitFailed" };
+                const lines_up = ctx.total_deps - ctx.index;
+                std.debug.print("\x1b[{d}A\r\x1b[K{s}✗{s} {s}@{s} {s}(InitFailed){s}\n", .{
+                    lines_up, "\x1b[31m", ctx.reset_str, ctx.dep.name, ctx.dep.version, ctx.dim_str, ctx.reset_str
+                });
+                if (ctx.index < ctx.total_deps - 1) {
+                    std.debug.print("\x1b[{d}B", .{lines_up - 1});
+                }
+                return;
+            };
+            defer thread_installer.deinit();
+
+            // Copy data_dir from main installer
+            ctx.allocator.free(thread_installer.data_dir);
+            thread_installer.data_dir = ctx.allocator.dupe(u8, ctx.installer.data_dir) catch {
+                ctx.mutex.lock();
+                defer ctx.mutex.unlock();
+                ctx.result.* = .{ .success = false, .error_name = "AllocFailed" };
+                return;
+            };
+
+            var inst_result = thread_installer.install(spec, .{
+                .project_root = ctx.proj_dir,
+                .quiet = true,
+            }) catch |err| {
+                ctx.mutex.lock();
+                defer ctx.mutex.unlock();
+                ctx.result.* = .{ .success = false, .error_name = @errorName(err) };
+                const lines_up = ctx.total_deps - ctx.index;
+                std.debug.print("\x1b[{d}A\r\x1b[K{s}✗{s} {s}@{s} {s}({s}){s}\n", .{
+                    lines_up, "\x1b[31m", ctx.reset_str, ctx.dep.name, ctx.dep.version, ctx.dim_str, @errorName(err), ctx.reset_str
+                });
+                if (ctx.index < ctx.total_deps - 1) {
+                    std.debug.print("\x1b[{d}B", .{lines_up - 1});
+                }
+                return;
+            };
+            defer inst_result.deinit(ctx.allocator);
+
+            ctx.mutex.lock();
+            defer ctx.mutex.unlock();
+            ctx.result.* = .{ .success = true, .error_name = null };
+            const lines_up = ctx.total_deps - ctx.index;
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}{s}@{s}{s}\n", .{
+                lines_up, ctx.green_str, ctx.reset_str, ctx.dim_str, ctx.dep.name, ctx.dep.version, ctx.reset_str
+            });
+            if (ctx.index < ctx.total_deps - 1) {
+                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+            }
         }
+    };
+
+    var mutex = std.Thread.Mutex{};
+    var threads = try allocator.alloc(std.Thread, deps.len);
+    defer allocator.free(threads);
+
+    var contexts = try allocator.alloc(ThreadContext, deps.len);
+    defer allocator.free(contexts);
+
+    // Spawn threads for parallel installation
+    for (deps, 0..) |dep, i| {
+        results[i] = .{ .success = false, .error_name = null };
+        contexts[i] = .{
+            .dep = dep,
+            .index = i,
+            .installer = &installer,
+            .proj_dir = proj_dir,
+            .allocator = allocator,
+            .pkg_cache = &pkg_cache,
+            .result = &results[i],
+            .mutex = &mutex,
+            .total_deps = deps.len,
+            .dim_str = dim,
+            .green_str = green,
+            .reset_str = reset,
+        };
+
+        threads[i] = try std.Thread.spawn(.{}, ThreadContext.installThread, .{&contexts[i]});
+    }
+
+    // Wait for all threads to complete
+    for (threads) |thread| {
+        thread.join();
     }
 
     // Output shell code to add bin directory to PATH
@@ -1558,7 +1799,15 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     };
     try env_cache.put(entry);
 
-    std.debug.print("\nexport PATH=\"{s}:$PATH\"\n", .{bin_dir});
+    // Output shell code to stdout (not stderr) so eval can capture it
+    const shell_code = try std.fmt.allocPrint(allocator, "\nexport PATH=\"{s}:$PATH\"\n", .{bin_dir});
+    defer allocator.free(shell_code);
+
+    const stdout_fd: std.posix.fd_t = 1;
+    _ = std.posix.write(stdout_fd, shell_code) catch |err| {
+        std.debug.print("Error writing shell code: {}\n", .{err});
+        return .{ .exit_code = 1 };
+    };
 
     return .{ .exit_code = 0 };
 }
@@ -1818,7 +2067,17 @@ pub fn devCheckUpdatesCommand(_: std.mem.Allocator) !CommandResult {
 }
 
 /// Install global dependencies by scanning common locations
-fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
+pub fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
+    return installGlobalDepsCommandWithOptions(allocator, false);
+}
+
+/// Install global dependencies with user-local option
+pub fn installGlobalDepsCommandUserLocal(allocator: std.mem.Allocator) !CommandResult {
+    return installGlobalDepsCommandWithOptions(allocator, true);
+}
+
+/// Install global dependencies by scanning common locations
+fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local: bool) !CommandResult {
     const global_scanner = @import("../deps/global_scanner.zig");
 
     std.debug.print("Scanning for global dependencies...\n", .{});
@@ -1839,14 +2098,69 @@ fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
 
     std.debug.print("Found {d} global package(s).\n", .{global_deps.len});
 
-    // Install to global location
-    const home = try lib.Paths.home(allocator);
-    defer allocator.free(home);
+    // Determine installation directory
+    const global_dir = if (user_local) blk: {
+        const home = try lib.Paths.home(allocator);
+        defer allocator.free(home);
+        break :blk try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home});
+    } else "/usr/local/share/pantry";
+    defer if (user_local) allocator.free(global_dir);
 
-    const global_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home});
-    defer allocator.free(global_dir);
+    // Check if we need sudo for system-wide installation
+    if (!user_local) {
+        // Test if we can write to /usr/local/share
+        std.fs.cwd().makePath(global_dir) catch |err| {
+            if (err == error.AccessDenied or err == error.PermissionDenied) {
+                // Check if we're already running under sudo (macOS/Unix)
+                const euid = std.c.geteuid();
+                if (euid == 0) {
+                    // We're root, but still getting permission denied - something else is wrong
+                    return err;
+                }
 
-    try std.fs.cwd().makePath(global_dir);
+                // Try to re-execute with sudo
+                std.debug.print("\n⚠️  System-wide installation requires elevated privileges.\n", .{});
+                std.debug.print("Attempting to re-run with sudo...\n\n", .{});
+
+                // Get the current executable path
+                var exe_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+                const exe_path = std.fs.selfExePath(&exe_path_buf) catch {
+                    std.debug.print("Error: Could not determine executable path\n", .{});
+                    std.debug.print("Please run manually with sudo:\n", .{});
+                    std.debug.print("  sudo pantry install -g\n", .{});
+                    return .{ .exit_code = 1 };
+                };
+
+                // Re-execute with sudo
+                const result = std.process.Child.run(.{
+                    .allocator = allocator,
+                    .argv = &[_][]const u8{ "sudo", exe_path, "install", "-g" },
+                }) catch |sudo_err| {
+                    std.debug.print("Error: Failed to execute sudo: {}\n", .{sudo_err});
+                    std.debug.print("Please run manually with sudo:\n", .{});
+                    std.debug.print("  sudo pantry install -g\n\n", .{});
+                    std.debug.print("Or install to user directory instead:\n", .{});
+                    std.debug.print("  pantry install -g --user\n", .{});
+                    return .{ .exit_code = 1 };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+
+                // Print output
+                if (result.stdout.len > 0) {
+                    std.debug.print("{s}", .{result.stdout});
+                }
+                if (result.stderr.len > 0) {
+                    std.debug.print("{s}", .{result.stderr});
+                }
+
+                return .{ .exit_code = result.term.Exited };
+            }
+            return err;
+        };
+    } else {
+        try std.fs.cwd().makePath(global_dir);
+    }
 
     std.debug.print("Installing to {s}...\n", .{global_dir});
 

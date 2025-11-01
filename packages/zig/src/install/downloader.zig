@@ -201,24 +201,13 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
     // Show final download summary on a clean line (skip if quiet mode)
     if (!quiet and shown_progress) {
-        const final_stat = std.fs.cwd().statFile(dest_path) catch |err| {
+        _ = std.fs.cwd().statFile(dest_path) catch |err| {
             std.debug.print("\n", .{});
             if (term.Exited != 0) return error.HttpRequestFailed;
             return err;
         };
-        const final_size: u64 = @intCast(final_stat.size);
-
-        var final_buf: [64]u8 = undefined;
-        const final_str = try formatBytes(final_size, &final_buf);
-
-        const total_time = std.time.milliTimestamp() - start_time;
-        const avg_speed = if (total_time > 0) @as(f64, @floatFromInt(final_size)) / (@as(f64, @floatFromInt(total_time)) / 1000.0) else 0.0;
-
-        var speed_buf: [64]u8 = undefined;
-        const speed_str = try formatSpeed(@intFromFloat(avg_speed), &speed_buf);
-
-        // Clear line completely and show final summary (no newline - let caller add it)
-        std.debug.print("\r{s}  ✓ {s} ({s} avg){s}\x1b[K", .{ dim_italic, final_str, speed_str, reset });
+        // Clear line completely (let caller print final status)
+        std.debug.print("\r\x1b[K", .{});
     }
 
     if (term.Exited != 0) {
@@ -248,11 +237,29 @@ pub fn buildPackageUrl(
     };
 
     // pkgx uses format: https://dist.pkgx.dev/{domain}/{platform}/{arch}/v{version}.tar.xz
-    // Note: version should NOT have 'v' prefix in the URL path, but the file does
-    const clean_version = if (std.mem.startsWith(u8, version, "v"))
-        version[1..]
-    else
-        version;
+    // Strip semver prefixes (^, ~, >=, etc.) and 'v' prefix
+    var clean_version = version;
+
+    // Strip semver constraint prefixes
+    if (std.mem.startsWith(u8, clean_version, "^") or
+        std.mem.startsWith(u8, clean_version, "~") or
+        std.mem.startsWith(u8, clean_version, "="))
+    {
+        clean_version = clean_version[1..];
+    } else if (std.mem.startsWith(u8, clean_version, ">=") or
+               std.mem.startsWith(u8, clean_version, "<="))
+    {
+        clean_version = clean_version[2..];
+    } else if (std.mem.startsWith(u8, clean_version, ">") or
+               std.mem.startsWith(u8, clean_version, "<"))
+    {
+        clean_version = clean_version[1..];
+    }
+
+    // Strip 'v' prefix if present
+    if (std.mem.startsWith(u8, clean_version, "v")) {
+        clean_version = clean_version[1..];
+    }
     
     // If version is just a major version like "22", try with .0.0
     const full_version = if (std.mem.indexOf(u8, clean_version, ".") == null)

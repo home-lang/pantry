@@ -74,12 +74,27 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     const global = ctx.hasOption("global");
+    const user = ctx.hasOption("user");
     const force = ctx.hasOption("force");
     const verbose = ctx.hasOption("verbose");
 
-    _ = global;
     _ = force;
     _ = verbose;
+
+    // If global flag is set and no packages specified, install global dependencies
+    if (global and packages.items.len == 0) {
+        const result = if (user)
+            try lib.commands.installGlobalDepsCommandUserLocal(allocator)
+        else
+            try lib.commands.installGlobalDepsCommand(allocator);
+        defer result.deinit(allocator);
+
+        if (result.message) |msg| {
+            std.debug.print("{s}\n", .{msg});
+        }
+
+        std.process.exit(result.exit_code);
+    }
 
     // Call existing install logic
     const result = try lib.commands.installCommand(allocator, packages.items);
@@ -134,6 +149,33 @@ fn cacheClearAction(ctx: *cli.BaseCommand.ParseContext) !void {
     _ = force;
 
     const result = try lib.commands.cacheClearCommand(allocator, &[_][]const u8{});
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn cleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const clean_local = ctx.hasOption("local");
+    const clean_global = ctx.hasOption("global");
+    const clean_cache = ctx.hasOption("cache");
+    const clean_all = ctx.hasOption("all");
+
+    // If no flags specified, default to cleaning cache only (backward compatible)
+    const should_clean_local = clean_all or clean_local;
+    const should_clean_global = clean_all or clean_global;
+    const should_clean_cache = clean_all or clean_cache or (!clean_local and !clean_global and !clean_all);
+
+    const result = try lib.commands.cleanCommand(allocator, .{
+        .local = should_clean_local,
+        .global = should_clean_global,
+        .cache = should_clean_cache,
+    });
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -272,6 +314,26 @@ fn shellActivateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn devShellcodeAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var result = try lib.commands.shellCodeCommand(allocator);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        // Write to stdout for eval to capture
+        // In Zig 0.15, we access stdout via file descriptor 1
+        const stdout_fd: std.posix.fd_t = 1;
+        const bytes_written = std.posix.write(stdout_fd, msg) catch |err| {
+            std.debug.print("Error writing to stdout: {}\n", .{err});
+            std.process.exit(1);
+        };
+        _ = bytes_written;
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn servicesAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -391,6 +453,10 @@ pub fn main() !void {
         .withShort('g');
     _ = try install_cmd.addOption(global_opt);
 
+    const user_opt = cli.Option.init("user", "user", "Install to user directory (~/.local/share/pantry/global)", .bool)
+        .withShort('u');
+    _ = try install_cmd.addOption(user_opt);
+
     const install_force_opt = cli.Option.init("force", "force", "Force installation", .bool)
         .withShort('f');
     _ = try install_cmd.addOption(install_force_opt);
@@ -439,9 +505,26 @@ pub fn main() !void {
     _ = cache_clear_cmd.setAction(cacheClearAction);
     _ = try root.addCommand(cache_clear_cmd);
 
-    // clean alias for cache:clear
-    var clean_cmd = try cli.BaseCommand.init(allocator, "clean", "Clear all cache");
-    _ = clean_cmd.setAction(cacheClearAction);
+    // clean command with options for local/global
+    var clean_cmd = try cli.BaseCommand.init(allocator, "clean", "Clean cache and dependencies");
+
+    const clean_local_opt = cli.Option.init("local", "local", "Clean local project dependencies (pantry_modules)", .bool)
+        .withShort('l');
+    _ = try clean_cmd.addOption(clean_local_opt);
+
+    const clean_global_opt = cli.Option.init("global", "global", "Clean global dependencies", .bool)
+        .withShort('g');
+    _ = try clean_cmd.addOption(clean_global_opt);
+
+    const clean_cache_opt = cli.Option.init("cache", "cache", "Clean package cache", .bool)
+        .withShort('c');
+    _ = try clean_cmd.addOption(clean_cache_opt);
+
+    const clean_all_opt = cli.Option.init("all", "all", "Clean everything (local, global, cache)", .bool)
+        .withShort('a');
+    _ = try clean_cmd.addOption(clean_all_opt);
+
+    _ = clean_cmd.setAction(cleanAction);
     _ = try root.addCommand(clean_cmd);
 
     // ========================================================================
@@ -522,6 +605,13 @@ pub fn main() !void {
 
     _ = shell_activate_cmd.setAction(shellActivateAction);
     _ = try root.addCommand(shell_activate_cmd);
+
+    // ========================================================================
+    // Dev Commands
+    // ========================================================================
+    var dev_shellcode_cmd = try cli.BaseCommand.init(allocator, "dev:shellcode", "Generate shell integration code");
+    _ = dev_shellcode_cmd.setAction(devShellcodeAction);
+    _ = try root.addCommand(dev_shellcode_cmd);
 
     // ========================================================================
     // Service Commands

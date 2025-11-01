@@ -65,11 +65,11 @@ __pantry_switch_environment() {
     fi
 
     # CACHE MISS: Use Zig binary for project detection and installation
+    # Run installation (stderr shows to user, stdout is eval'd for PATH)
     local install_output
-    install_output=$(pantry shell:activate "$PWD" 2>&1)
+    install_output=$(pantry shell:activate "$PWD")
 
-    if [[ $? -eq 0 ]]; then
-        # Eval shell output to activate environment
+    if [[ $? -eq 0 && -n "$install_output" ]]; then
         eval "$install_output" 2>/dev/null || true
     fi
 }
@@ -97,6 +97,13 @@ elif [[ -n "$BASH_VERSION" ]]; then
 
     [[ "$PROMPT_COMMAND" != *"__pantry_prompt_command"* ]] && \
         PROMPT_COMMAND="__pantry_prompt_command;$PROMPT_COMMAND"
+fi
+
+# Add global packages to PATH (user-local or system-wide)
+if [[ -d "$HOME/.local/share/pantry/global/bin" ]]; then
+    export PATH="$HOME/.local/share/pantry/global/bin:$PATH"
+elif [[ -d "/usr/local/share/pantry/bin" ]]; then
+    export PATH="/usr/local/share/pantry/bin:$PATH"
 fi
 
 # Initial environment check

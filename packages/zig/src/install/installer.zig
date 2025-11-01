@@ -78,6 +78,15 @@ pub const Installer = struct {
     ) !InstallResult {
         const start_time = std.time.milliTimestamp();
 
+        // Check if this is a local path dependency
+        const is_local_path = std.mem.startsWith(u8, spec.version, "~/") or
+            std.mem.startsWith(u8, spec.version, "/");
+
+        if (is_local_path) {
+            // Handle local path dependency
+            return try self.installLocalPath(spec, options);
+        }
+
         // Check if package exists in global cache (filesystem check, not in-memory cache)
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
@@ -96,6 +105,103 @@ pub const Installer = struct {
             .version = try self.allocator.dupe(u8, spec.version),
             .install_path = install_path,
             .from_cache = false, // TODO: track cache hits properly
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install a local path dependency by creating a symlink
+    fn installLocalPath(
+        self: *Installer,
+        spec: PackageSpec,
+        options: InstallOptions,
+    ) !InstallResult {
+        const start_time = std.time.milliTimestamp();
+
+        // Expand ~ to home directory if needed
+        var local_path: []const u8 = undefined;
+        const needs_free = if (std.mem.startsWith(u8, spec.version, "~/")) blk: {
+            const home = try Paths.home(self.allocator);
+            defer self.allocator.free(home);
+            local_path = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ home, spec.version[2..] },
+            );
+            break :blk true;
+        } else blk: {
+            local_path = spec.version;
+            break :blk false;
+        };
+        defer if (needs_free) self.allocator.free(local_path);
+
+        // Verify the local path exists
+        var local_dir = std.fs.cwd().openDir(local_path, .{}) catch |err| {
+            std.debug.print("Error: Local path '{s}' does not exist or is not accessible: {}\n", .{ local_path, err });
+            return error.FileNotFound;
+        };
+        local_dir.close();
+
+        // Get absolute path for the local dependency
+        const abs_local_path = try std.fs.cwd().realpathAlloc(self.allocator, local_path);
+        defer self.allocator.free(abs_local_path);
+
+        // Create symlink in project's pantry_modules if we have a project root
+        const symlink_path = if (options.project_root) |project_root| blk: {
+            const modules_bin = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry_modules/.bin/{s}",
+                .{ project_root, spec.name },
+            );
+            errdefer self.allocator.free(modules_bin);
+
+            // Create pantry_modules/.bin directory
+            const modules_bin_dir = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry_modules/.bin",
+                .{project_root},
+            );
+            defer self.allocator.free(modules_bin_dir);
+
+            try std.fs.cwd().makePath(modules_bin_dir);
+
+            // Check if symlink already exists
+            std.fs.cwd().deleteFile(modules_bin) catch {};
+
+            // Create symlink to local path's bin or the path itself
+            const target_bin = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/bin/{s}",
+                .{ abs_local_path, spec.name },
+            );
+            defer self.allocator.free(target_bin);
+
+            // Try bin/name first, fall back to the directory itself
+            const target = blk2: {
+                var check_bin = std.fs.cwd().openFile(target_bin, .{}) catch break :blk2 abs_local_path;
+                check_bin.close();
+                break :blk2 target_bin;
+            };
+
+            std.posix.symlink(target, modules_bin) catch |err| {
+                std.debug.print("Warning: Failed to create symlink {s} -> {s}: {}\n", .{ modules_bin, target, err });
+            };
+
+            break :blk modules_bin;
+        } else blk: {
+            break :blk try self.allocator.dupe(u8, abs_local_path);
+        };
+
+        const end_time = std.time.milliTimestamp();
+
+        if (!options.quiet) {
+            std.debug.print("  ✓ linked to {s}\n", .{local_path});
+        }
+
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, "local"),
+            .install_path = symlink_path,
+            .from_cache = false,
             .install_time_ms = @intCast(end_time - start_time),
         };
     }
@@ -284,8 +390,23 @@ pub const Installer = struct {
     }
 
     /// Get global package directory (shared across all environments)
-    /// Uses /usr/local/share/pantry/packages/ for global installations
+    /// Uses /usr/local/share/pantry/packages/ for system-wide global installations
+    /// Or ~/.local/share/pantry/global/packages/ for user-local installations
     fn getGlobalPackageDir(self: *Installer, domain: []const u8, version: []const u8) ![]const u8 {
+        // Check if we're using user-local installation (stored in data_dir)
+        // If data_dir contains ".local/share/pantry/global", use user-local path
+        if (std.mem.indexOf(u8, self.data_dir, ".local/share/pantry/global") != null) {
+            const home = try Paths.home(self.allocator);
+            defer self.allocator.free(home);
+
+            return std.fmt.allocPrint(
+                self.allocator,
+                "{s}/.local/share/pantry/global/packages/{s}/v{s}",
+                .{ home, domain, version },
+            );
+        }
+
+        // System-wide installation (default)
         return std.fmt.allocPrint(
             self.allocator,
             "/usr/local/share/pantry/packages/{s}/v{s}",
