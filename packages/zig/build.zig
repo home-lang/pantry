@@ -68,8 +68,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    // Add zonfig as an import to the library
-    lib_mod.addImport("zonfig", zonfig_mod);
+    // Add zig-config as an import to the library
+    lib_mod.addImport("zig-config", zig_config_mod);
 
     // Executable
     const exe = b.addExecutable(.{
@@ -102,7 +102,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "zonfig", .module = zonfig_mod },
+            .{ .name = "zig-config", .module = zig_config_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
         },
     });
@@ -318,8 +318,8 @@ pub fn build(b: *std.Build) void {
         const resolved_target = b.resolveTargetQuery(t);
 
         // Create zig-config module for this target
-        const cross_zonfig_mod = b.addModule("zonfig", .{
-            .root_source_file = b.path(zonfig_path),
+        const cross_zig_config_mod = b.addModule("zig-config", .{
+            .root_source_file = b.path(zig_config_path),
             .target = resolved_target,
         });
 
@@ -328,8 +328,8 @@ pub fn build(b: *std.Build) void {
             .target = resolved_target,
         });
 
-        // Add zonfig to the cross-compiled library
-        cross_lib_mod.addImport("zonfig", cross_zonfig_mod);
+        // Add zig-config to the cross-compiled library
+        cross_lib_mod.addImport("zig-config", cross_zig_config_mod);
 
         const cross_exe = b.addExecutable(.{
             .name = "pantry",
