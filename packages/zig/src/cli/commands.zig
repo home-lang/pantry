@@ -693,6 +693,31 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
 
         std.debug.print("  ✓ Removed pantry_modules/\n", .{});
         items_removed += 1;
+
+        // Also clean env cache when cleaning local deps
+        const home = lib.Paths.home(allocator) catch {
+            std.debug.print("Warning: Failed to get home directory for env cache\n", .{});
+            return .{ .exit_code = 0 };
+        };
+        defer allocator.free(home);
+
+        const env_cache_path = std.fmt.allocPrint(
+            allocator,
+            "{s}/.pantry/cache/envs.cache",
+            .{home},
+        ) catch {
+            std.debug.print("Warning: Failed to allocate env cache path\n", .{});
+            return .{ .exit_code = 0 };
+        };
+        defer allocator.free(env_cache_path);
+
+        std.fs.cwd().deleteFile(env_cache_path) catch |err| {
+            if (err != error.FileNotFound) {
+                std.debug.print("Warning: Failed to clean env cache: {}\n", .{err});
+            }
+        };
+
+        std.debug.print("  ✓ Cleared environment cache\n", .{});
     }
 
     // Clean global dependencies
@@ -1596,6 +1621,83 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
     return .{ .exit_code = 1 };
 }
 
+/// Ensure global dependencies are installed (called on every shell activation)
+fn ensureGlobalDepsInstalled(allocator: std.mem.Allocator) !void {
+    const global_scanner = @import("../deps/global_scanner.zig");
+
+    // Scan for global dependencies
+    const global_deps = global_scanner.scanForGlobalDeps(allocator) catch |err| {
+        // If scanning fails, just continue - don't block shell activation
+        std.debug.print("Warning: Failed to scan for global deps: {}\n", .{err});
+        return;
+    };
+    defer {
+        for (global_deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(global_deps);
+    }
+
+    if (global_deps.len == 0) return;
+
+    // Determine global installation directory
+    // Try /usr/local first (system-wide), fallback to ~/.pantry/global (user-local)
+    const global_dir = blk: {
+        // Test if we can actually write to /usr/local by creating a test directory
+        const test_path = "/usr/local/pantry_test_write";
+        std.fs.cwd().makePath(test_path) catch {
+            // Cannot write to /usr/local - use user-local
+            const home = lib.Paths.home(allocator) catch return;
+            defer allocator.free(home);
+            const user_dir = std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home}) catch return;
+            std.fs.cwd().makePath(user_dir) catch return;
+            break :blk user_dir;
+        };
+        // Clean up test directory
+        std.fs.cwd().deleteTree(test_path) catch {};
+        // Has permissions for /usr/local
+        break :blk "/usr/local";
+    };
+    const is_user_local = !std.mem.eql(u8, global_dir, "/usr/local");
+    defer if (is_user_local) allocator.free(global_dir);
+
+    // Check which global deps need to be installed
+    var pkg_cache = cache.PackageCache.init(allocator) catch return;
+    defer pkg_cache.deinit();
+
+    for (global_deps) |dep| {
+        // Check if package is already installed in the target directory
+        const pkg_dir = std.fmt.allocPrint(
+            allocator,
+            "{s}/packages/{s}",
+            .{ global_dir, dep.name },
+        ) catch continue;
+        defer allocator.free(pkg_dir);
+
+        // If package directory exists, skip installation
+        var dir = std.fs.cwd().openDir(pkg_dir, .{}) catch {
+            // Package not installed - install it silently
+            const spec = lib.packages.PackageSpec{
+                .name = dep.name,
+                .version = dep.version,
+            };
+
+            var custom_installer = install.Installer.init(allocator, &pkg_cache) catch continue;
+            defer custom_installer.deinit();
+
+            allocator.free(custom_installer.data_dir);
+            custom_installer.data_dir = allocator.dupe(u8, global_dir) catch continue;
+
+            var result = custom_installer.install(spec, .{ .quiet = true }) catch continue;
+            result.deinit(allocator);
+
+            continue;
+        };
+        dir.close();
+    }
+}
+
 /// Shell activate command (for shell integration)
 pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
     const detector = @import("../deps/detector.zig");
@@ -1618,7 +1720,10 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     defer env_cache.deinit();
 
     if (try env_cache.get(hash)) |entry| {
-        // Cache hit - output cached shell code to stdout
+        // Cache hit - but first check global dependencies
+        try ensureGlobalDepsInstalled(allocator);
+
+        // Output cached shell code to stdout
         const shell_code = try std.fmt.allocPrint(allocator, "export PATH=\"{s}:$PATH\"\n", .{entry.path});
         defer allocator.free(shell_code);
 
@@ -1645,6 +1750,9 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
         return .{ .exit_code = 0 };
     }
 
+    // Check and install global dependencies first
+    try ensureGlobalDepsInstalled(allocator);
+
     // Initialize package cache and installer
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
@@ -1658,11 +1766,25 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     const dim = "\x1b[2m";
     const green = "\x1b[32m";
     const reset = "\x1b[0m";
+    const italic = "\x1b[3m";
 
     // Show all packages that will be installed
     for (deps) |dep| {
-        std.debug.print("{s}+{s} {s}@{s}\n", .{
-            dim, reset, dep.name, dep.version
+        // Parse source type from name (auto: prefix) or version (local path ~/)
+        const clean_name = if (std.mem.startsWith(u8, dep.name, "auto:"))
+            dep.name[5..]
+        else
+            dep.name;
+
+        const source_label = if (std.mem.startsWith(u8, dep.version, "~/") or std.mem.startsWith(u8, dep.version, "/"))
+            "local"
+        else if (std.mem.indexOf(u8, dep.name, "/") != null)
+            "github"
+        else
+            "pkgx";
+
+        std.debug.print("{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
+            dim, reset, clean_name, dim, italic, dep.version, dim, source_label, reset
         });
     }
 
@@ -1689,6 +1811,7 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
         dim_str: []const u8,
         green_str: []const u8,
         reset_str: []const u8,
+        italic_str: []const u8,
 
         fn installThread(ctx: *@This()) void {
             const spec = lib.packages.PackageSpec{
@@ -1721,16 +1844,32 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
                 return;
             };
 
+            // Parse clean name for inline progress display
+            const clean_name = if (std.mem.startsWith(u8, ctx.dep.name, "auto:"))
+                ctx.dep.name[5..]
+            else
+                ctx.dep.name;
+
             var inst_result = thread_installer.install(spec, .{
                 .project_root = ctx.proj_dir,
-                .quiet = true,
+                .quiet = true, // Keep quiet to avoid newline progress
+                .inline_progress = .{
+                    .line_offset = ctx.index,
+                    .total_deps = ctx.total_deps,
+                    .pkg_name = clean_name,
+                    .pkg_version = ctx.dep.version,
+                    .dim_str = ctx.dim_str,
+                    .italic_str = ctx.italic_str,
+                    .reset_str = ctx.reset_str,
+                },
             }) catch |err| {
                 ctx.mutex.lock();
                 defer ctx.mutex.unlock();
                 ctx.result.* = .{ .success = false, .error_name = @errorName(err) };
                 const lines_up = ctx.total_deps - ctx.index;
+
                 std.debug.print("\x1b[{d}A\r\x1b[K{s}✗{s} {s}@{s} {s}({s}){s}\n", .{
-                    lines_up, "\x1b[31m", ctx.reset_str, ctx.dep.name, ctx.dep.version, ctx.dim_str, @errorName(err), ctx.reset_str
+                    lines_up, "\x1b[31m", ctx.reset_str, clean_name, ctx.dep.version, ctx.dim_str, @errorName(err), ctx.reset_str
                 });
                 if (ctx.index < ctx.total_deps - 1) {
                     std.debug.print("\x1b[{d}B", .{lines_up - 1});
@@ -1743,8 +1882,18 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
             defer ctx.mutex.unlock();
             ctx.result.* = .{ .success = true, .error_name = null };
             const lines_up = ctx.total_deps - ctx.index;
-            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}{s}@{s}{s}\n", .{
-                lines_up, ctx.green_str, ctx.reset_str, ctx.dim_str, ctx.dep.name, ctx.dep.version, ctx.reset_str
+
+            // Parse source label
+            const source_label = if (std.mem.startsWith(u8, ctx.dep.version, "~/") or std.mem.startsWith(u8, ctx.dep.version, "/"))
+                "local"
+            else if (std.mem.indexOf(u8, ctx.dep.name, "/") != null)
+                "github"
+            else
+                "pkgx";
+
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
+                lines_up, ctx.green_str, ctx.reset_str, clean_name, ctx.dim_str, ctx.italic_str, ctx.dep.version,
+                ctx.dim_str, source_label, ctx.reset_str
             });
             if (ctx.index < ctx.total_deps - 1) {
                 std.debug.print("\x1b[{d}B", .{lines_up - 1});
@@ -1775,6 +1924,7 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
             .dim_str = dim,
             .green_str = green,
             .reset_str = reset,
+            .italic_str = italic,
         };
 
         threads[i] = try std.Thread.spawn(.{}, ThreadContext.installThread, .{&contexts[i]});
@@ -1814,8 +1964,23 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     };
     try env_cache.put(entry);
 
+    // Print summary of what was installed (to stderr, visible to user)
+    // Use \r to ensure we start at beginning of line, clear any previous content
+    var successful_count: usize = 0;
+    for (results) |result| {
+        if (result.success) successful_count += 1;
+    }
+
     // Output shell code to stdout (not stderr) so eval can capture it
-    const shell_code = try std.fmt.allocPrint(allocator, "\nexport PATH=\"{s}:$PATH\"\n", .{bin_dir});
+    // Include summary message as an echo command so it's visible after eval
+    const shell_code = if (successful_count > 0)
+        try std.fmt.allocPrint(
+            allocator,
+            "\necho '{s}✓{s} Installed {d} package(s)' >&2\nexport PATH=\"{s}:$PATH\"\n",
+            .{ green, reset, successful_count, bin_dir },
+        )
+    else
+        try std.fmt.allocPrint(allocator, "\nexport PATH=\"{s}:$PATH\"\n", .{bin_dir});
     defer allocator.free(shell_code);
 
     const stdout_fd: std.posix.fd_t = 1;

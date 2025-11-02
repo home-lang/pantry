@@ -25,6 +25,8 @@ pub const InstallOptions = struct {
     project_root: ?[]const u8 = null,
     /// Quiet mode (minimal output)
     quiet: bool = false,
+    /// Inline progress options for parallel installation display
+    inline_progress: ?downloader.InlineProgressOptions = null,
 };
 
 /// Installation result
@@ -351,12 +353,20 @@ pub const Installer = struct {
                 .{ temp_dir, format },
             );
 
-            // Try to download
-            downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
-                self.allocator.free(temp_archive_path);
-                std.debug.print("Failed to download {s}: {}\n", .{ url, err });
-                continue;
-            };
+            // Try to download (use inline progress if available, otherwise use quiet mode)
+            if (options.inline_progress) |progress_opts| {
+                downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
+                    self.allocator.free(temp_archive_path);
+                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    continue;
+                };
+            } else {
+                downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
+                    self.allocator.free(temp_archive_path);
+                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    continue;
+                };
+            }
 
             // Success!
             downloaded = true;
@@ -726,12 +736,20 @@ pub const Installer = struct {
                 .{ temp_dir, format },
             );
 
-            // Try to download
-            downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
-                self.allocator.free(temp_archive_path);
-                std.debug.print("Failed to download {s}: {}\n", .{ url, err });
-                continue;
-            };
+            // Try to download (use inline progress if available, otherwise use quiet mode)
+            if (options.inline_progress) |progress_opts| {
+                downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
+                    self.allocator.free(temp_archive_path);
+                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    continue;
+                };
+            } else {
+                downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
+                    self.allocator.free(temp_archive_path);
+                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    continue;
+                };
+            }
 
             // Success!
             downloaded = true;

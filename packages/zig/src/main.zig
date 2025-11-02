@@ -178,10 +178,11 @@ fn cleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const clean_cache = ctx.hasOption("cache");
     const clean_all = ctx.hasOption("all");
 
-    // If no flags specified, default to cleaning cache only (backward compatible)
-    const should_clean_local = clean_all or clean_local;
+    // If no flags specified, default to cleaning local deps (which includes env cache)
+    // This is the most common dev workflow: clean project to test fresh install
+    const should_clean_local = clean_all or clean_local or (!clean_local and !clean_global and !clean_cache and !clean_all);
     const should_clean_global = clean_all or clean_global;
-    const should_clean_cache = clean_all or clean_cache or (!clean_local and !clean_global and !clean_all);
+    const should_clean_cache = clean_all or clean_cache;
 
     const result = try lib.commands.cleanCommand(allocator, .{
         .local = should_clean_local,
@@ -518,7 +519,7 @@ pub fn main() !void {
     _ = try root.addCommand(cache_clear_cmd);
 
     // clean command with options for local/global
-    var clean_cmd = try cli.BaseCommand.init(allocator, "clean", "Clean cache and dependencies");
+    var clean_cmd = try cli.BaseCommand.init(allocator, "clean", "Clean local dependencies and env cache (default)");
 
     const clean_local_opt = cli.Option.init("local", "local", "Clean local project dependencies (pantry_modules)", .bool)
         .withShort('l');

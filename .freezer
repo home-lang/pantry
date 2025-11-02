@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1761595209",
+  "generatedAt": "1762104767",
   "packages": {
     "zig-bump@~/Code/zig-bump": {
       "name": "zig-bump",

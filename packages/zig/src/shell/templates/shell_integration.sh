@@ -117,12 +117,20 @@ elif [[ -d "/usr/local/bin" ]]; then
     :
 fi
 
-# Initial environment check - but don't install packages on shell init
-# Only activate if we're already in a cached environment
-# This makes shell startup instant
+# Initial environment check
+# If cache hit: fast activation
+# If cache miss: trigger installation (this handles the case where user runs pantry clean
+# and reloads shell while still in project directory)
 local env_info
 env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
 if [[ $? -eq 0 && -n "$env_info" ]]; then
-    # We're in a known project - activate it
+    # We're in a known project - activate it from cache
+    __pantry_switch_environment
+else
+    # Cache miss - clear __PANTRY_LAST_PWD to force re-check on next cd
+    # This ensures that reloadshell after pantry clean will trigger installation
+    unset __PANTRY_LAST_PWD
+    # Force a check which will install deps if needed
+    # This ensures deps install when opening a new terminal in a project
     __pantry_switch_environment
 fi

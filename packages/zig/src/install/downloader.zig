@@ -43,15 +43,31 @@ fn formatSpeed(bytes_per_sec: u64, buf: []u8) ![]const u8 {
 
 /// Download a file from a URL to a destination path with progress
 pub fn downloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
-    return downloadFileWithOptions(allocator, url, dest_path, false);
+    return downloadFileWithOptions(allocator, url, dest_path, false, null);
 }
 
 /// Download a file from a URL to a destination path with optional quiet mode
 pub fn downloadFileQuiet(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
-    return downloadFileWithOptions(allocator, url, dest_path, quiet);
+    return downloadFileWithOptions(allocator, url, dest_path, quiet, null);
 }
 
-fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
+/// Download progress callback options for inline progress display
+pub const InlineProgressOptions = struct {
+    line_offset: usize, // How many lines up from current position
+    total_deps: usize, // Total number of dependencies
+    pkg_name: []const u8, // Package name to display
+    pkg_version: []const u8, // Package version to display
+    dim_str: []const u8,
+    italic_str: []const u8,
+    reset_str: []const u8,
+};
+
+/// Download with inline progress (updates a specific line instead of new lines)
+pub fn downloadFileInline(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, progress_opts: InlineProgressOptions) !void {
+    return downloadFileWithOptions(allocator, url, dest_path, false, progress_opts);
+}
+
+fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) !void {
     // ANSI codes: dim + italic
     const dim_italic = "\x1b[2;3m";
     const reset = "\x1b[0m";
@@ -125,51 +141,98 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
         // Update progress every 100ms if size changed (skip if quiet mode)
         if (!quiet and current_size != last_size and (now - last_update) >= 100) {
-            var current_buf: [64]u8 = undefined;
-            const current_str = try formatBytes(current_size, &current_buf);
-
-            const elapsed_sec = @as(f64, @floatFromInt(now - start_time)) / 1000.0;
-
-            if (elapsed_sec > 0.1) {
-                const speed = @as(f64, @floatFromInt(current_size)) / elapsed_sec;
-                var speed_buf: [64]u8 = undefined;
-                const speed_str = try formatSpeed(@intFromFloat(speed), &speed_buf);
+            if (inline_progress) |opts| {
+                // Inline progress: update the package line itself
+                const lines_up = opts.total_deps - opts.line_offset;
+                var current_buf: [64]u8 = undefined;
+                const current_str = try formatBytes(current_size, &current_buf);
 
                 if (total_bytes) |total| {
                     var total_buf: [64]u8 = undefined;
                     const total_str = try formatBytes(total, &total_buf);
 
-                    if (shown_progress) {
-                        std.debug.print("\r{s}  {s} / {s} ({s}){s}", .{ dim_italic, current_str, total_str, speed_str, reset });
-                    } else {
-                        std.debug.print("\n{s}  {s} / {s} ({s}){s}", .{ dim_italic, current_str, total_str, speed_str, reset });
-                        shown_progress = true;
-                    }
+                    // Update package line with download progress in source label position
+                    std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}({s} / {s}){s}\n", .{
+                        lines_up,
+                        opts.dim_str,
+                        reset,
+                        opts.pkg_name,
+                        opts.dim_str,
+                        opts.italic_str,
+                        opts.pkg_version,
+                        opts.dim_str,
+                        current_str,
+                        total_str,
+                        reset,
+                    });
                 } else {
-                    if (shown_progress) {
-                        std.debug.print("\r{s}  {s} ({s}){s}", .{ dim_italic, current_str, speed_str, reset });
-                    } else {
-                        std.debug.print("\n{s}  {s} ({s}){s}", .{ dim_italic, current_str, speed_str, reset });
-                        shown_progress = true;
-                    }
+                    // No total size known, just show current
+                    std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
+                        lines_up,
+                        opts.dim_str,
+                        reset,
+                        opts.pkg_name,
+                        opts.dim_str,
+                        opts.italic_str,
+                        opts.pkg_version,
+                        opts.dim_str,
+                        current_str,
+                        reset,
+                    });
+                }
+
+                // Move cursor back down
+                if (opts.line_offset < opts.total_deps - 1) {
+                    std.debug.print("\x1b[{d}B", .{lines_up - 1});
                 }
             } else {
-                if (total_bytes) |total| {
-                    var total_buf: [64]u8 = undefined;
-                    const total_str = try formatBytes(total, &total_buf);
+                // Standard newline progress
+                var current_buf: [64]u8 = undefined;
+                const current_str = try formatBytes(current_size, &current_buf);
 
-                    if (shown_progress) {
-                        std.debug.print("\r{s}  {s} / {s}{s}", .{ dim_italic, current_str, total_str, reset });
+                const elapsed_sec = @as(f64, @floatFromInt(now - start_time)) / 1000.0;
+
+                if (elapsed_sec > 0.1) {
+                    const speed = @as(f64, @floatFromInt(current_size)) / elapsed_sec;
+                    var speed_buf: [64]u8 = undefined;
+                    const speed_str = try formatSpeed(@intFromFloat(speed), &speed_buf);
+
+                    if (total_bytes) |total| {
+                        var total_buf: [64]u8 = undefined;
+                        const total_str = try formatBytes(total, &total_buf);
+
+                        if (shown_progress) {
+                            std.debug.print("\r{s}  {s} / {s} ({s}){s}", .{ dim_italic, current_str, total_str, speed_str, reset });
+                        } else {
+                            std.debug.print("\n{s}  {s} / {s} ({s}){s}", .{ dim_italic, current_str, total_str, speed_str, reset });
+                            shown_progress = true;
+                        }
                     } else {
-                        std.debug.print("\n{s}  {s} / {s}{s}", .{ dim_italic, current_str, total_str, reset });
-                        shown_progress = true;
+                        if (shown_progress) {
+                            std.debug.print("\r{s}  {s} ({s}){s}", .{ dim_italic, current_str, speed_str, reset });
+                        } else {
+                            std.debug.print("\n{s}  {s} ({s}){s}", .{ dim_italic, current_str, speed_str, reset });
+                            shown_progress = true;
+                        }
                     }
                 } else {
-                    if (shown_progress) {
-                        std.debug.print("\r{s}  {s}{s}", .{ dim_italic, current_str, reset });
+                    if (total_bytes) |total| {
+                        var total_buf: [64]u8 = undefined;
+                        const total_str = try formatBytes(total, &total_buf);
+
+                        if (shown_progress) {
+                            std.debug.print("\r{s}  {s} / {s}{s}", .{ dim_italic, current_str, total_str, reset });
+                        } else {
+                            std.debug.print("\n{s}  {s} / {s}{s}", .{ dim_italic, current_str, total_str, reset });
+                            shown_progress = true;
+                        }
                     } else {
-                        std.debug.print("\n{s}  {s}{s}", .{ dim_italic, current_str, reset });
-                        shown_progress = true;
+                        if (shown_progress) {
+                            std.debug.print("\r{s}  {s}{s}", .{ dim_italic, current_str, reset });
+                        } else {
+                            std.debug.print("\n{s}  {s}{s}", .{ dim_italic, current_str, reset });
+                            shown_progress = true;
+                        }
                     }
                 }
             }
