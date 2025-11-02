@@ -380,6 +380,25 @@ pub const Installer = struct {
         }
         defer self.allocator.free(archive_path);
 
+        // Show "extracting..." status if inline progress is enabled
+        if (options.inline_progress) |progress_opts| {
+            const lines_up = progress_opts.total_deps - progress_opts.line_offset;
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+                lines_up,
+                progress_opts.dim_str,
+                "\x1b[0m",
+                progress_opts.pkg_name,
+                progress_opts.dim_str,
+                progress_opts.italic_str,
+                progress_opts.pkg_version,
+                progress_opts.dim_str,
+                "\x1b[0m",
+            });
+            if (progress_opts.line_offset < progress_opts.total_deps - 1) {
+                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+            }
+        }
+
         // Extract archive to temp directory
         const extract_dir = try std.fmt.allocPrint(
             self.allocator,
@@ -762,6 +781,25 @@ pub const Installer = struct {
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
+
+        // Show "extracting..." status if inline progress is enabled
+        if (options.inline_progress) |progress_opts| {
+            const lines_up = progress_opts.total_deps - progress_opts.line_offset;
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+                lines_up,
+                progress_opts.dim_str,
+                "\x1b[0m",
+                progress_opts.pkg_name,
+                progress_opts.dim_str,
+                progress_opts.italic_str,
+                progress_opts.pkg_version,
+                progress_opts.dim_str,
+                "\x1b[0m",
+            });
+            if (progress_opts.line_offset < progress_opts.total_deps - 1) {
+                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+            }
+        }
 
         // Extract archive to temp directory
         const extract_dir = try std.fmt.allocPrint(
