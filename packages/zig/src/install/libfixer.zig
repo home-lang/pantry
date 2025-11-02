@@ -130,7 +130,7 @@ fn addRpathEntries(
         try std.fmt.allocPrint(allocator, "{s}/lib", .{package_dir}),
         // Global pantry dir (for dependencies like OpenSSL)
         // This allows @rpath/openssl.org/v1/lib/libcrypto.dylib to resolve
-        try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home}),
+        try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home}),
     };
 
     defer {

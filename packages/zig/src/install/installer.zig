@@ -6,6 +6,7 @@ const errors = @import("../core/error.zig");
 const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
 const libfixer = @import("libfixer.zig");
+const semver = @import("../packages/semver.zig");
 
 const pantryError = errors.pantryError;
 const Paths = core.Paths;
@@ -92,17 +93,35 @@ pub const Installer = struct {
         const pkg_info = pkg_registry.getPackageByName(spec.name);
         const domain = if (pkg_info) |info| info.domain else spec.name;
 
+        // Resolve version constraint to actual version
+        var resolved_spec = spec;
+        if (pkg_info) |_| {
+            // Try to resolve version constraint (e.g., ^1.2.16 -> 1.3.1)
+            if (semver.resolveVersion(domain, spec.version)) |resolved_version| {
+                // Create a new spec with the resolved version
+                resolved_spec = PackageSpec{
+                    .name = spec.name,
+                    .version = resolved_version,
+                };
+            }
+        }
+
         // Determine install location based on whether we have a project root
         const install_path = if (options.project_root) |project_root|
-            try self.installToProject(spec, domain, project_root, options)
+            try self.installToProject(resolved_spec, domain, project_root, options)
         else
-            try self.installGlobal(spec, domain, options);
+            try self.installGlobal(resolved_spec, domain, options);
+
+        // Install dependencies after the main package is installed
+        if (pkg_info) |info| {
+            try self.installDependencies(info.dependencies, options);
+        }
 
         const end_time = std.time.milliTimestamp();
 
         return InstallResult{
-            .name = try self.allocator.dupe(u8, spec.name),
-            .version = try self.allocator.dupe(u8, spec.version),
+            .name = try self.allocator.dupe(u8, resolved_spec.name),
+            .version = try self.allocator.dupe(u8, resolved_spec.version),
             .install_path = install_path,
             .from_cache = false, // TODO: track cache hits properly
             .install_time_ms = @intCast(end_time - start_time),
@@ -222,13 +241,27 @@ pub const Installer = struct {
             break :blk true;
         };
 
-        if (from_cache) {
+        const install_path = if (from_cache) blk: {
             // Use cached package (from global location)
-            return try self.installFromCache(spec, "");
-        } else {
+            break :blk try self.installFromCache(spec, "");
+        } else blk: {
             // Download and install to global cache
-            return try self.installFromNetwork(spec, options);
-        }
+            break :blk try self.installFromNetwork(spec, options);
+        };
+
+        // Create symlinks in data_dir/bin (e.g., ~/.pantry/global/bin or /usr/local/bin)
+        const symlink_mod = @import("symlink.zig");
+        symlink_mod.createPackageSymlinks(
+            self.allocator,
+            domain,
+            spec.version,
+            self.data_dir,
+        ) catch |err| {
+            // Log error but don't fail the install
+            std.debug.print("Warning: Failed to create symlinks: {}\n", .{err});
+        };
+
+        return install_path;
     }
 
     /// Install package to project's pantry_modules directory
@@ -287,7 +320,7 @@ pub const Installer = struct {
 
         const temp_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/.local/share/pantry/.tmp/{s}-{s}",
+            "{s}/.pantry/.tmp/{s}-{s}",
             .{ home, spec.name, spec.version },
         );
         defer self.allocator.free(temp_dir);
@@ -390,27 +423,26 @@ pub const Installer = struct {
     }
 
     /// Get global package directory (shared across all environments)
-    /// Uses /usr/local/share/pantry/packages/ for system-wide global installations
-    /// Or ~/.local/share/pantry/global/packages/ for user-local installations
+    /// Uses /usr/local/packages/ for system-wide global installations
+    /// Or ~/.pantry/global/packages/ for user-local installations
     fn getGlobalPackageDir(self: *Installer, domain: []const u8, version: []const u8) ![]const u8 {
-        // Check if we're using user-local installation (stored in data_dir)
-        // If data_dir contains ".local/share/pantry/global", use user-local path
-        if (std.mem.indexOf(u8, self.data_dir, ".local/share/pantry/global") != null) {
-            const home = try Paths.home(self.allocator);
-            defer self.allocator.free(home);
-
+        // Check if we're using system-wide installation (/usr/local)
+        if (std.mem.eql(u8, self.data_dir, "/usr/local")) {
             return std.fmt.allocPrint(
                 self.allocator,
-                "{s}/.local/share/pantry/global/packages/{s}/v{s}",
-                .{ home, domain, version },
+                "/usr/local/packages/{s}/v{s}",
+                .{ domain, version },
             );
         }
 
-        // System-wide installation (default)
+        // Otherwise use user-local path (~/.pantry/global/packages/)
+        const home = try Paths.home(self.allocator);
+        defer self.allocator.free(home);
+
         return std.fmt.allocPrint(
             self.allocator,
-            "/usr/local/share/pantry/packages/{s}/v{s}",
-            .{ domain, version },
+            "{s}/.pantry/global/packages/{s}/v{s}",
+            .{ home, domain, version },
         );
     }
 
@@ -663,7 +695,7 @@ pub const Installer = struct {
 
         const temp_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/.local/share/pantry/.tmp/{s}-{s}",
+            "{s}/.pantry/.tmp/{s}-{s}",
             .{ home, spec.name, spec.version },
         );
         defer self.allocator.free(temp_dir);
@@ -973,6 +1005,119 @@ pub const Installer = struct {
                 try std.fs.copyFileAbsolute(src_path, dst_path, .{});
             }
         }
+    }
+
+    /// Install package dependencies recursively
+    fn installDependencies(self: *Installer, dependencies: []const []const u8, options: InstallOptions) !void {
+        if (dependencies.len == 0) return;
+
+        for (dependencies) |dep_str| {
+            // Skip platform-specific dependencies that don't apply
+            if (std.mem.startsWith(u8, dep_str, "linux:") or
+                std.mem.startsWith(u8, dep_str, "darwin:") or
+                std.mem.startsWith(u8, dep_str, "windows:"))
+            {
+                // Parse platform prefix
+                const colon_pos = std.mem.indexOf(u8, dep_str, ":") orelse continue;
+                const platform = dep_str[0..colon_pos];
+                const actual_dep = dep_str[colon_pos + 1 ..];
+
+                // Check if this platform applies to us
+                const Platform = @import("../core/platform.zig").Platform;
+                const current_platform = Platform.current();
+                const matches = blk: {
+                    if (std.mem.eql(u8, platform, "linux:") and current_platform == .linux) break :blk true;
+                    if (std.mem.eql(u8, platform, "darwin:") and current_platform == .darwin) break :blk true;
+                    if (std.mem.eql(u8, platform, "windows:") and current_platform == .windows) break :blk true;
+                    break :blk false;
+                };
+
+                if (!matches) continue;
+
+                // Install the actual dependency
+                self.installDependency(actual_dep, options) catch |err| {
+                    std.debug.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
+                };
+            } else {
+                // Regular dependency
+                self.installDependency(dep_str, options) catch |err| {
+                    std.debug.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
+                };
+            }
+        }
+    }
+
+    /// Install a single dependency
+    fn installDependency(self: *Installer, dep_str: []const u8, options: InstallOptions) anyerror!void {
+        // Parse dependency string (name@version or name^version, etc.)
+        const at_pos = std.mem.indexOfAny(u8, dep_str, "@^~>=<");
+        const name = if (at_pos) |pos| dep_str[0..pos] else dep_str;
+        const raw_version = if (at_pos) |pos| dep_str[pos..] else "latest";
+
+        // Normalize @X and @X.Y to ^X and ^X.Y (treat @ as caret for major/minor versions)
+        var version_owned: ?[]const u8 = null;
+        defer if (version_owned) |v| self.allocator.free(v);
+
+        const version = blk: {
+            if (std.mem.startsWith(u8, raw_version, "@")) {
+                const ver_without_at = raw_version[1..];
+                // Count dots to see if it's @X or @X.Y (not @X.Y.Z)
+                var dot_count: usize = 0;
+                for (ver_without_at) |c| {
+                    if (c == '.') dot_count += 1;
+                }
+                // If @X or @X.Y, convert to caret
+                if (dot_count < 2) {
+                    const normalized = try std.fmt.allocPrint(self.allocator, "^{s}", .{ver_without_at});
+                    version_owned = normalized;
+                    break :blk normalized;
+                }
+            }
+            break :blk raw_version;
+        };
+
+        // Check if already installed to avoid infinite recursion
+        const pkg_registry = @import("../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(name) orelse {
+            // Package not in registry, skip
+            return;
+        };
+
+        const domain = pkg_info.domain;
+
+        // Resolve version
+        const resolved_version = semver.resolveVersion(domain, version) orelse {
+            std.debug.print("  ! Could not resolve version for {s}{s}\n", .{ name, version });
+            return error.VersionNotFound;
+        };
+
+        // Check if already installed
+        const global_pkg_dir = try self.getGlobalPackageDir(domain, resolved_version);
+        defer self.allocator.free(global_pkg_dir);
+
+        var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch |err| {
+            if (err != error.FileNotFound) return err;
+            // Not installed, continue
+            const spec = PackageSpec{
+                .name = name,
+                .version = resolved_version,
+            };
+
+            std.debug.print("    → Installing dependency: {s}@{s}\n", .{ name, resolved_version });
+
+            // Install the dependency (this will recursively install its dependencies)
+            const result = self.install(spec, options) catch |e| {
+                std.debug.print("  ! Failed to install dependency: {}\n", .{e});
+                return e;
+            };
+            var mut_result = result;
+            defer mut_result.deinit(self.allocator);
+            return;
+        };
+        check_dir.close();
+
+        // Already installed, skip
+        std.debug.print("    ✓ Dependency already installed: {s}@{s}\n", .{ name, resolved_version });
     }
 };
 

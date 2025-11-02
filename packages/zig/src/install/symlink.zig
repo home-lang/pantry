@@ -16,10 +16,10 @@ pub fn createBinarySymlink(
     bin_name: []const u8,
     install_base: []const u8,
 ) !void {
-    // Build paths
+    // Build paths - packages are in {install_base}/packages/
     const package_bin_path = try std.fmt.allocPrint(
         allocator,
-        "{s}/{s}/v{s}/bin/{s}",
+        "{s}/packages/{s}/v{s}/bin/{s}",
         .{ install_base, package_name, version, bin_name },
     );
     defer allocator.free(package_bin_path);
@@ -71,14 +71,14 @@ pub fn createVersionSymlink(
 ) !void {
     const target_path = try std.fmt.allocPrint(
         allocator,
-        "{s}/{s}/v{s}",
+        "{s}/packages/{s}/v{s}",
         .{ install_base, package_name, full_version },
     );
     defer allocator.free(target_path);
 
     const symlink_path = try std.fmt.allocPrint(
         allocator,
-        "{s}/{s}/v{s}",
+        "{s}/packages/{s}/v{s}",
         .{ install_base, package_name, major_version },
     );
     defer allocator.free(symlink_path);
@@ -113,12 +113,12 @@ pub fn discoverBinaries(
     };
     defer dir.close();
 
-    var binaries = std.ArrayList([]const u8).init(allocator);
+    var binaries = try std.ArrayList([]const u8).initCapacity(allocator, 8);
     errdefer {
         for (binaries.items) |bin| {
             allocator.free(bin);
         }
-        binaries.deinit();
+        binaries.deinit(allocator);
     }
 
     var it = dir.iterate();
@@ -132,12 +132,12 @@ pub fn discoverBinaries(
             const is_executable = (stat.mode & 0o111) != 0;
 
             if (is_executable) {
-                try binaries.append(try allocator.dupe(u8, entry.name));
+                try binaries.append(allocator, try allocator.dupe(u8, entry.name));
             }
         }
     }
 
-    return try binaries.toOwnedSlice();
+    return try binaries.toOwnedSlice(allocator);
 }
 
 /// Create all symlinks for a package
@@ -149,7 +149,7 @@ pub fn createPackageSymlinks(
 ) !void {
     const package_dir = try std.fmt.allocPrint(
         allocator,
-        "{s}/{s}/v{s}",
+        "{s}/packages/{s}/v{s}",
         .{ install_base, package_name, version },
     );
     defer allocator.free(package_dir);
@@ -165,16 +165,16 @@ pub fn createPackageSymlinks(
 
     if (binaries.len == 0) {
         std.debug.print("  ! No binaries found in {s}\n", .{package_dir});
-        return;
+        // Even without binaries, still create version symlink for libraries
+    } else {
+        // Create symlinks for each binary
+        for (binaries) |bin_name| {
+            try createBinarySymlink(allocator, package_name, version, bin_name, install_base);
+        }
     }
 
-    // Create symlinks for each binary
-    for (binaries) |bin_name| {
-        try createBinarySymlink(allocator, package_name, version, bin_name, install_base);
-    }
-
-    // Extract major version for version symlink
-    var parts = std.mem.split(u8, version, ".");
+    // Always create version symlink (needed for library dependencies like zlib)
+    var parts = std.mem.splitScalar(u8, version, '.');
     if (parts.next()) |major| {
         createVersionSymlink(allocator, package_name, version, major, install_base) catch |err| {
             std.debug.print("  ! Failed to create version symlink: {}\n", .{err});
@@ -191,7 +191,7 @@ pub fn removePackageSymlinks(
 ) !void {
     const package_dir = try std.fmt.allocPrint(
         allocator,
-        "{s}/{s}/v{s}",
+        "{s}/packages/{s}/v{s}",
         .{ install_base, package_name, version },
     );
     defer allocator.free(package_dir);
@@ -225,7 +225,7 @@ pub fn removePackageSymlinks(
     if (parts.next()) |major| {
         const version_symlink = try std.fmt.allocPrint(
             allocator,
-            "{s}/{s}/v{s}",
+            "{s}/packages/{s}/v{s}",
             .{ install_base, package_name, major },
         );
         defer allocator.free(version_symlink);

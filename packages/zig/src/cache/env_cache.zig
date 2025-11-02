@@ -24,8 +24,8 @@ pub const Entry = struct {
     cached_at: i64,
     /// Timestamp when entry was last validated
     last_validated: i64,
-    /// TTL in seconds (default 30 minutes)
-    ttl: i64 = 1800,
+    /// TTL in seconds (default 2 hours)
+    ttl: i64 = 7200,
 
     /// Check if cache entry is still valid
     pub fn isValid(self: *Entry, _: std.mem.Allocator) !bool {
@@ -76,6 +76,8 @@ pub const EnvCache = struct {
     allocator: std.mem.Allocator,
     /// RWLock for thread-safe access
     lock: std.Thread.RwLock,
+    /// Cache file path
+    cache_file_path: ?[]const u8 = null,
 
     pub fn init(allocator: std.mem.Allocator) EnvCache {
         return .{
@@ -86,7 +88,35 @@ pub const EnvCache = struct {
         };
     }
 
+    /// Initialize and load from disk
+    pub fn initWithPersistence(allocator: std.mem.Allocator) !EnvCache {
+        var env_cache = EnvCache.init(allocator);
+
+        // Get cache file path
+        const home = core.Paths.home(allocator) catch return env_cache;
+        defer allocator.free(home);
+
+        const cache_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry/cache", .{home});
+        defer allocator.free(cache_dir);
+
+        // Ensure cache directory exists
+        std.fs.cwd().makePath(cache_dir) catch {};
+
+        const cache_file = try std.fmt.allocPrint(allocator, "{s}/envs.cache", .{cache_dir});
+        env_cache.cache_file_path = cache_file;
+
+        // Load from disk
+        env_cache.load() catch {
+            // Ignore load errors (file might not exist yet)
+        };
+
+        return env_cache;
+    }
+
     pub fn deinit(self: *EnvCache) void {
+        // Save to disk before deinit
+        self.save() catch {};
+
         self.lock.lock();
         defer self.lock.unlock();
 
@@ -96,6 +126,10 @@ pub const EnvCache = struct {
             self.allocator.destroy(entry_ptr.*);
         }
         self.cache.deinit();
+
+        if (self.cache_file_path) |path| {
+            self.allocator.free(path);
+        }
     }
 
     /// Fast lookup in ring buffer (lock-free read)
@@ -206,6 +240,154 @@ pub const EnvCache = struct {
                 if (!try entry.isValid(self.allocator)) {
                     maybe_entry.* = null;
                 }
+            }
+        }
+    }
+
+    /// Save cache to disk
+    pub fn save(self: *EnvCache) !void {
+        const cache_file = self.cache_file_path orelse return;
+
+        self.lock.lockShared();
+        defer self.lock.unlockShared();
+
+        // Create temp file for atomic write
+        const temp_file = try std.fmt.allocPrint(self.allocator, "{s}.tmp", .{cache_file});
+        defer self.allocator.free(temp_file);
+
+        const file = try std.fs.cwd().createFile(temp_file, .{});
+        defer file.close();
+
+        // Write magic header and version
+        try file.writeAll("PANTRY_ENV_CACHE_V1\n");
+
+        // Write number of entries
+        const count = self.cache.count();
+        var count_buf: [32]u8 = undefined;
+        const count_str = try std.fmt.bufPrint(&count_buf, "{d}\n", .{count});
+        try file.writeAll(count_str);
+
+        // Write each entry
+        var it = self.cache.iterator();
+        while (it.next()) |kv| {
+            const entry = kv.value_ptr.*;
+
+            // Write hash (hex encoded)
+            const hash_hex = try std.fmt.allocPrint(self.allocator, "{x}\n", .{entry.hash});
+            defer self.allocator.free(hash_hex);
+            try file.writeAll(hash_hex);
+
+            // Write dep_file
+            try file.writeAll(entry.dep_file);
+            try file.writeAll("\n");
+
+            // Write dep_mtime
+            var mtime_buf: [32]u8 = undefined;
+            const mtime_str = try std.fmt.bufPrint(&mtime_buf, "{d}\n", .{entry.dep_mtime});
+            try file.writeAll(mtime_str);
+
+            // Write path
+            try file.writeAll(entry.path);
+            try file.writeAll("\n");
+
+            // Write timestamps
+            var ts_buf: [128]u8 = undefined;
+            const ts_str = try std.fmt.bufPrint(&ts_buf, "{d} {d} {d} {d}\n", .{ entry.created_at, entry.cached_at, entry.last_validated, entry.ttl });
+            try file.writeAll(ts_str);
+
+            // Write env var count
+            var env_count_buf: [32]u8 = undefined;
+            const env_count_str = try std.fmt.bufPrint(&env_count_buf, "{d}\n", .{entry.env_vars.count()});
+            try file.writeAll(env_count_str);
+
+            // Write env vars
+            var env_it = entry.env_vars.iterator();
+            while (env_it.next()) |env_kv| {
+                try file.writeAll(env_kv.key_ptr.*);
+                try file.writeAll("=");
+                try file.writeAll(env_kv.value_ptr.*);
+                try file.writeAll("\n");
+            }
+        }
+
+        // Atomic rename
+        try std.fs.cwd().rename(temp_file, cache_file);
+    }
+
+    /// Load cache from disk
+    pub fn load(self: *EnvCache) !void {
+        const cache_file = self.cache_file_path orelse return error.NoCacheFile;
+
+        const file = try std.fs.cwd().openFile(cache_file, .{});
+        defer file.close();
+
+        const content = try file.readToEndAlloc(self.allocator, 10 * 1024 * 1024); // 10MB max
+        defer self.allocator.free(content);
+
+        var lines = std.mem.splitScalar(u8, content, '\n');
+
+        // Read header
+        const header = lines.next() orelse return error.InvalidCache;
+        if (!std.mem.eql(u8, header, "PANTRY_ENV_CACHE_V1")) {
+            return error.InvalidCacheVersion;
+        }
+
+        // Read count
+        const count_str = lines.next() orelse return error.InvalidCache;
+        const count = try std.fmt.parseInt(usize, count_str, 10);
+
+        // Read each entry
+        var i: usize = 0;
+        while (i < count) : (i += 1) {
+            const hash_str = lines.next() orelse return error.InvalidCache;
+            var hash: [16]u8 = undefined;
+            _ = try std.fmt.hexToBytes(&hash, hash_str);
+
+            const dep_file = lines.next() orelse return error.InvalidCache;
+            const mtime_str = lines.next() orelse return error.InvalidCache;
+            const dep_mtime = try std.fmt.parseInt(i128, mtime_str, 10);
+            const path = lines.next() orelse return error.InvalidCache;
+
+            const ts_str = lines.next() orelse return error.InvalidCache;
+            var ts_parts = std.mem.splitScalar(u8, ts_str, ' ');
+            const created_at = try std.fmt.parseInt(i64, ts_parts.next() orelse return error.InvalidCache, 10);
+            const cached_at = try std.fmt.parseInt(i64, ts_parts.next() orelse return error.InvalidCache, 10);
+            const last_validated = try std.fmt.parseInt(i64, ts_parts.next() orelse return error.InvalidCache, 10);
+            const ttl = try std.fmt.parseInt(i64, ts_parts.next() orelse return error.InvalidCache, 10);
+
+            const env_count_str = lines.next() orelse return error.InvalidCache;
+            const env_count = try std.fmt.parseInt(usize, env_count_str, 10);
+
+            var env_vars = std.StringHashMap([]const u8).init(self.allocator);
+            var j: usize = 0;
+            while (j < env_count) : (j += 1) {
+                const env_line = lines.next() orelse return error.InvalidCache;
+                const eq_pos = std.mem.indexOf(u8, env_line, "=") orelse return error.InvalidCache;
+                const key = try self.allocator.dupe(u8, env_line[0..eq_pos]);
+                const value = try self.allocator.dupe(u8, env_line[eq_pos + 1 ..]);
+                try env_vars.put(key, value);
+            }
+
+            const entry = try self.allocator.create(Entry);
+            entry.* = .{
+                .hash = hash,
+                .dep_file = try self.allocator.dupe(u8, dep_file),
+                .dep_mtime = dep_mtime,
+                .path = try self.allocator.dupe(u8, path),
+                .env_vars = env_vars,
+                .created_at = created_at,
+                .cached_at = cached_at,
+                .last_validated = last_validated,
+                .ttl = ttl,
+            };
+
+            // Validate entry before adding to cache
+            if (try entry.isValid(self.allocator)) {
+                try self.put(entry);
+            } else {
+                // Entry expired, clean it up
+                entry.deinit(self.allocator);
+                self.allocator.destroy(entry);
             }
         }
     }

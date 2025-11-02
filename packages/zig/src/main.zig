@@ -96,6 +96,18 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         std.process.exit(result.exit_code);
     }
 
+    // If global flag is set WITH packages, install those packages globally
+    if (global and packages.items.len > 0) {
+        const result = try lib.commands.installPackagesGloballyCommand(allocator, packages.items);
+        defer result.deinit(allocator);
+
+        if (result.message) |msg| {
+            std.debug.print("{s}\n", .{msg});
+        }
+
+        std.process.exit(result.exit_code);
+    }
+
     // Call existing install logic
     const result = try lib.commands.installCommand(allocator, packages.items);
     defer result.deinit(allocator);
@@ -453,7 +465,7 @@ pub fn main() !void {
         .withShort('g');
     _ = try install_cmd.addOption(global_opt);
 
-    const user_opt = cli.Option.init("user", "user", "Install to user directory (~/.local/share/pantry/global)", .bool)
+    const user_opt = cli.Option.init("user", "user", "Install to user directory (~/.pantry/global)", .bool)
         .withShort('u');
     _ = try install_cmd.addOption(user_opt);
 

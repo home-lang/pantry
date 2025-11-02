@@ -139,27 +139,14 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
 
                     // If value is present, it's simple format: "package: version"
                     if (value.len > 0) {
-                        var version = value;
-                        // Remove version constraint prefix
-                        if (version.len > 0 and (version[0] == '^' or version[0] == '~' or version[0] == '=')) {
-                            version = version[1..];
-                        }
-                        if (std.mem.startsWith(u8, version, ">=")) {
-                            version = version[2..];
-                        }
-                        current_version = version;
+                        // Keep version constraint prefixes (^, ~, >=, etc.) - semver resolver will handle them
+                        current_version = value;
                     }
                 } else {
                     // Level 2+ = package properties (version, global)
                     if (std.mem.eql(u8, key, "version")) {
-                        var version = value;
-                        if (version.len > 0 and (version[0] == '^' or version[0] == '~' or version[0] == '=')) {
-                            version = version[1..];
-                        }
-                        if (std.mem.startsWith(u8, version, ">=")) {
-                            version = version[2..];
-                        }
-                        current_version = version;
+                        // Keep version constraint prefixes (^, ~, >=, etc.) - semver resolver will handle them
+                        current_version = value;
                     } else if (std.mem.eql(u8, key, "global")) {
                         current_global = std.mem.eql(u8, value, "true");
                     }
@@ -241,14 +228,8 @@ fn parsePackageJson(allocator: std.mem.Allocator, file_path: []const u8) ![]Pack
             if (std.mem.indexOf(u8, after_node, "\"")) |quote1| {
                 const version_start = after_node[quote1 + 1 ..];
                 if (std.mem.indexOf(u8, version_start, "\"")) |quote2| {
-                    var version = version_start[0..quote2];
-                    // Strip version prefix
-                    if (version.len > 0 and (version[0] == '^' or version[0] == '~' or version[0] == '=')) {
-                        version = version[1..];
-                    }
-                    if (std.mem.startsWith(u8, version, ">=")) {
-                        version = version[2..];
-                    }
+                    const version = version_start[0..quote2];
+                    // Keep version constraint prefixes (^, ~, >=, etc.) - semver resolver will handle them
 
                     try deps.append(allocator, .{
                         .name = try allocator.dupe(u8, "nodejs.org"),

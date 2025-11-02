@@ -22,6 +22,16 @@ fn isLocalDependency(dep: lib.deps.parser.PackageDependency) bool {
         isLocalPath(dep.version);
 }
 
+/// Strip display prefixes like "auto:" and "local:" from package names for output
+fn stripDisplayPrefix(name: []const u8) []const u8 {
+    if (std.mem.startsWith(u8, name, "auto:")) {
+        return name[5..]; // Skip "auto:"
+    } else if (std.mem.startsWith(u8, name, "local:")) {
+        return name[6..]; // Skip "local:"
+    }
+    return name;
+}
+
 /// Command execution result
 pub const CommandResult = struct {
     exit_code: u8,
@@ -296,7 +306,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
         const env_dir = try std.fmt.allocPrint(
             allocator,
-            "{s}/.local/share/pantry/envs/{s}_{s}-{s}",
+            "{s}/.pantry/envs/{s}_{s}-{s}",
             .{ home, proj_basename, proj_hash_short, dep_hash_short },
         );
         defer allocator.free(env_dir);
@@ -385,12 +395,13 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
 
         for (install_results) |result| {
             if (result.name.len == 0) continue;
+            const display_name = stripDisplayPrefix(result.name);
             if (result.success) {
-                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, result.name, result.version });
+                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, display_name, result.version });
                 success_count += 1;
             } else {
                 const red = "\x1b[31m";
-                std.debug.print("{s}✗{s} {s}@{s}", .{ red, reset, result.name, result.version });
+                std.debug.print("{s}✗{s} {s}@{s}", .{ red, reset, display_name, result.version });
                 if (result.error_msg) |msg| {
                     std.debug.print(" {s}({s}){s}\n", .{ dim, msg, reset });
                 } else {
@@ -448,7 +459,8 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             defer allocator.free(src_path);
             std.fs.symLinkAbsolute(src_path, src_link_path, .{ .is_directory = true }) catch |err| {
                 const red = "\x1b[31m";
-                std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, dep.name, dep.version, dim, err, reset });
+                const display_name = stripDisplayPrefix(dep.name);
+                std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, display_name, dep.version, dim, err, reset });
                 failed_count += 1;
                 continue;
             };
@@ -459,7 +471,8 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             std.fs.deleteFileAbsolute(link_path) catch {};
             std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch {};
 
-            std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, dep.name, dep.version, dim, reset });
+            const display_name = stripDisplayPrefix(dep.name);
+            std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, display_name, dep.version, dim, reset });
             success_count += 1;
         }
 
@@ -529,9 +542,11 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             defer allocator.free(df.path);
             break :blk try allocator.dupe(u8, std.fs.path.dirname(df.path) orelse cwd);
         }
-        break :blk null;
+        // If no deps file, use current directory as project root for local installs
+        // This allows `pantry install <package>` to work in any directory
+        break :blk try allocator.dupe(u8, cwd);
     };
-    defer if (project_root) |pr| allocator.free(pr);
+    defer allocator.free(project_root);
 
     // Initialize package cache and installer
     var pkg_cache = try cache.PackageCache.init(allocator);
@@ -689,7 +704,7 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
 
         const global_path = try std.fmt.allocPrint(
             allocator,
-            "{s}/.local/share/pantry/global/packages",
+            "{s}/.pantry/global/packages",
             .{home},
         );
         defer allocator.free(global_path);
@@ -1064,7 +1079,7 @@ pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !
     const home = try lib.Paths.home(allocator);
     defer allocator.free(home);
 
-    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/envs", .{home});
+    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.pantry/envs", .{home});
     defer allocator.free(envs_dir_path);
 
     var envs_dir = try std.fs.cwd().openDir(envs_dir_path, .{ .iterate = true });
@@ -1552,17 +1567,28 @@ pub fn statusCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
 
 /// Shell lookup command (for shell integration)
 pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
-    // Hash the dependency file path
-    const hash = string.hashDependencyFile(dir);
+    const detector = @import("../deps/detector.zig");
 
-    // Check environment cache
-    var env_cache = cache.EnvCache.init(allocator);
+    // Find dependency file first
+    const deps_file = (try detector.findDepsFile(allocator, dir)) orelse {
+        // No dependency file found
+        return .{ .exit_code = 1 };
+    };
+    defer allocator.free(deps_file.path);
+
+    // Hash the dependency file path (same as shell:activate does)
+    const hash = string.hashDependencyFile(deps_file.path);
+
+    // Check environment cache (with disk persistence)
+    var env_cache = try cache.EnvCache.initWithPersistence(allocator);
     defer env_cache.deinit();
 
     if (try env_cache.get(hash)) |entry| {
-        // Cache hit - output shell code with PATH and tracking variables
-        std.debug.print("export pantry_ENV_BIN_PATH=\"{s}\"\n", .{entry.path});
-        std.debug.print("export PATH=\"{s}:$PATH\"\n", .{entry.path});
+        // Cache hit - output env_dir|project_dir format expected by shell integration
+        const project_dir = std.fs.path.dirname(deps_file.path) orelse dir;
+        const env_dir = std.fs.path.dirname(entry.path) orelse return .{ .exit_code = 1 };
+
+        std.debug.print("{s}|{s}\n", .{ env_dir, project_dir });
         return .{ .exit_code = 0 };
     }
 
@@ -1587,8 +1613,8 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     const hash_hex = try string.hashToHex(hash, allocator);
     defer allocator.free(hash_hex);
 
-    // Check environment cache first
-    var env_cache = cache.EnvCache.init(allocator);
+    // Check environment cache first (with disk persistence)
+    var env_cache = try cache.EnvCache.initWithPersistence(allocator);
     defer env_cache.deinit();
 
     if (try env_cache.get(hash)) |entry| {
@@ -1626,18 +1652,7 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    // Set installer data_dir to environment-specific directory
-    const home = try lib.Paths.home(allocator);
-    defer allocator.free(home);
-    const env_dir = try std.fmt.allocPrint(
-        allocator,
-        "{s}/.local/share/pantry/envs/pantry_{s}-{s}",
-        .{ home, hash_hex[0..8], hash_hex[8..] },
-    );
-    allocator.free(installer.data_dir);
-    installer.data_dir = env_dir;
-
-    // Install each dependency to project directory in parallel
+    // Install to project-local pantry_modules directory
     const proj_dir = std.fs.path.dirname(deps_file.path) orelse dir;
 
     const dim = "\x1b[2m";
@@ -1770,11 +1785,11 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
         thread.join();
     }
 
-    // Output shell code to add bin directory to PATH
+    // Output shell code to add pantry_modules/.bin directory to PATH
     const bin_dir = try std.fmt.allocPrint(
         allocator,
-        "{s}/bin",
-        .{installer.data_dir},
+        "{s}/pantry_modules/.bin",
+        .{proj_dir},
     );
     defer allocator.free(bin_dir);
 
@@ -2067,6 +2082,7 @@ pub fn devCheckUpdatesCommand(_: std.mem.Allocator) !CommandResult {
 }
 
 /// Install global dependencies by scanning common locations
+/// Try system-wide first, fallback to user-local if no sudo privileges
 pub fn installGlobalDepsCommand(allocator: std.mem.Allocator) !CommandResult {
     return installGlobalDepsCommandWithOptions(allocator, false);
 }
@@ -2102,59 +2118,18 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
     const global_dir = if (user_local) blk: {
         const home = try lib.Paths.home(allocator);
         defer allocator.free(home);
-        break :blk try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/global", .{home});
-    } else "/usr/local/share/pantry";
+        break :blk try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home});
+    } else "/usr/local";
     defer if (user_local) allocator.free(global_dir);
 
     // Check if we need sudo for system-wide installation
     if (!user_local) {
-        // Test if we can write to /usr/local/share
+        // Test if we can write to /usr/local
         std.fs.cwd().makePath(global_dir) catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
-                // Check if we're already running under sudo (macOS/Unix)
-                const euid = std.c.geteuid();
-                if (euid == 0) {
-                    // We're root, but still getting permission denied - something else is wrong
-                    return err;
-                }
-
-                // Try to re-execute with sudo
-                std.debug.print("\n⚠️  System-wide installation requires elevated privileges.\n", .{});
-                std.debug.print("Attempting to re-run with sudo...\n\n", .{});
-
-                // Get the current executable path
-                var exe_path_buf: [std.fs.max_path_bytes]u8 = undefined;
-                const exe_path = std.fs.selfExePath(&exe_path_buf) catch {
-                    std.debug.print("Error: Could not determine executable path\n", .{});
-                    std.debug.print("Please run manually with sudo:\n", .{});
-                    std.debug.print("  sudo pantry install -g\n", .{});
-                    return .{ .exit_code = 1 };
-                };
-
-                // Re-execute with sudo
-                const result = std.process.Child.run(.{
-                    .allocator = allocator,
-                    .argv = &[_][]const u8{ "sudo", exe_path, "install", "-g" },
-                }) catch |sudo_err| {
-                    std.debug.print("Error: Failed to execute sudo: {}\n", .{sudo_err});
-                    std.debug.print("Please run manually with sudo:\n", .{});
-                    std.debug.print("  sudo pantry install -g\n\n", .{});
-                    std.debug.print("Or install to user directory instead:\n", .{});
-                    std.debug.print("  pantry install -g --user\n", .{});
-                    return .{ .exit_code = 1 };
-                };
-                defer allocator.free(result.stdout);
-                defer allocator.free(result.stderr);
-
-                // Print output
-                if (result.stdout.len > 0) {
-                    std.debug.print("{s}", .{result.stdout});
-                }
-                if (result.stderr.len > 0) {
-                    std.debug.print("{s}", .{result.stderr});
-                }
-
-                return .{ .exit_code = result.term.Exited };
+                // No sudo privileges - automatically fallback to user-local
+                std.debug.print("⚠️  No permission for system-wide install, using ~/.pantry/global instead\n\n", .{});
+                return installGlobalDepsCommandWithOptions(allocator, true);
             }
             return err;
         };
@@ -2198,14 +2173,29 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
 }
 
 /// Install specific packages globally
-fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []const []const u8) !CommandResult {
-    const global_dir = "/usr/local/share/pantry";
+pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []const []const u8) !CommandResult {
+    // Try system-wide first, fallback to user-local if no permissions
+    var global_dir_owned: ?[]const u8 = null;
+    const global_dir = blk: {
+        // Try /usr/local first - test actual write permissions
+        std.fs.cwd().makePath("/usr/local/packages") catch |err| {
+            if (err == error.AccessDenied or err == error.PermissionDenied) {
+                // Fallback to ~/.pantry/global
+                const home = try lib.Paths.home(allocator);
+                defer allocator.free(home);
+                const user_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home});
+                global_dir_owned = user_dir;
+                std.debug.print("⚠️  No permission for system-wide install, using ~/.pantry/global\n\n", .{});
+                try std.fs.cwd().makePath(user_dir);
+                break :blk user_dir;
+            }
+            return err;
+        };
+        break :blk "/usr/local";
+    };
+    defer if (global_dir_owned) |dir| allocator.free(dir);
 
     std.debug.print("Installing {d} package(s) globally to {s}...\n", .{ packages.len, global_dir });
-    std.debug.print("⚠️  Note: You may need to run with sudo for /usr/local write access\n", .{});
-    std.debug.print("    Many tools expect packages in /usr/local rather than ~/.local\n\n", .{});
-
-    try std.fs.cwd().makePath(global_dir);
 
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
@@ -2220,7 +2210,7 @@ fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []cons
             version = pkg_str[at_pos + 1 ..];
         }
 
-        std.debug.print("  → {s}@{s}", .{ name, version });
+        std.debug.print("  → {s}@{s} ... ", .{ name, version });
 
         const spec = lib.packages.PackageSpec{
             .name = name,
@@ -2233,15 +2223,12 @@ fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []cons
         defer custom_installer.deinit();
 
         var result = custom_installer.install(spec, .{}) catch |err| {
-            std.debug.print(" failed: {}\n", .{err});
+            std.debug.print("failed: {}\n", .{err});
             continue;
         };
         defer result.deinit(allocator);
 
-        std.debug.print(" ... done ({s}, {d}ms)\n", .{
-            if (result.from_cache) "cached" else "installed",
-            result.install_time_ms,
-        });
+        std.debug.print("done! Installed to {s}\n", .{result.install_path});
     }
 
     std.debug.print("\n✅ Packages installed globally to: {s}\n", .{global_dir});
