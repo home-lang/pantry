@@ -1,8 +1,93 @@
 const std = @import("std");
 const types = @import("types.zig");
 
-/// Write lockfile to disk in JSON format
+/// Compare two lockfiles, ignoring the generatedAt field
+/// Returns true if lockfiles are equal (excluding generatedAt)
+pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
+    // Compare version
+    if (!std.mem.eql(u8, a.version, b.version)) return false;
+
+    // Compare lockfile_version
+    if (a.lockfile_version != b.lockfile_version) return false;
+
+    // Compare package count
+    if (a.packages.count() != b.packages.count()) return false;
+
+    // Compare each package
+    var it = a.packages.iterator();
+    while (it.next()) |entry| {
+        const key = entry.key_ptr.*;
+        const a_pkg = entry.value_ptr.*;
+
+        // Check if key exists in b
+        const b_pkg = b.packages.get(key) orelse return false;
+
+        // Compare package fields
+        if (!std.mem.eql(u8, a_pkg.name, b_pkg.name)) return false;
+        if (!std.mem.eql(u8, a_pkg.version, b_pkg.version)) return false;
+        if (a_pkg.source != b_pkg.source) return false;
+
+        // Compare optional fields
+        if (a_pkg.url) |a_url| {
+            if (b_pkg.url) |b_url| {
+                if (!std.mem.eql(u8, a_url, b_url)) return false;
+            } else return false;
+        } else if (b_pkg.url != null) return false;
+
+        if (a_pkg.resolved) |a_resolved| {
+            if (b_pkg.resolved) |b_resolved| {
+                if (!std.mem.eql(u8, a_resolved, b_resolved)) return false;
+            } else return false;
+        } else if (b_pkg.resolved != null) return false;
+
+        if (a_pkg.integrity) |a_integrity| {
+            if (b_pkg.integrity) |b_integrity| {
+                if (!std.mem.eql(u8, a_integrity, b_integrity)) return false;
+            } else return false;
+        } else if (b_pkg.integrity != null) return false;
+
+        // Compare dependencies
+        if (a_pkg.dependencies) |*a_deps| {
+            if (b_pkg.dependencies) |*b_deps| {
+                if (a_deps.count() != b_deps.count()) return false;
+
+                var deps_it = a_deps.iterator();
+                while (deps_it.next()) |dep_entry| {
+                    const dep_key = dep_entry.key_ptr.*;
+                    const a_dep_value = dep_entry.value_ptr.*;
+                    const b_dep_value = b_deps.get(dep_key) orelse return false;
+                    if (!std.mem.eql(u8, a_dep_value, b_dep_value)) return false;
+                }
+            } else return false;
+        } else if (b_pkg.dependencies != null) return false;
+    }
+
+    return true;
+}
+
+/// Write lockfile to disk in JSON format, but only if it differs from existing file
+/// (ignoring generatedAt field)
 pub fn writeLockfile(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
+    // Try to read existing lockfile
+    if (readLockfile(allocator, file_path)) |existing_lockfile| {
+        var existing = existing_lockfile;
+        defer existing.deinit(allocator);
+
+        // Compare lockfiles (ignoring generatedAt)
+        if (lockfilesEqual(lockfile, &existing)) {
+            // No changes needed, skip writing
+            return;
+        }
+    } else |_| {
+        // File doesn't exist or can't be read, proceed with writing
+    }
+
+    // Write the lockfile
+    try writeLockfileForce(allocator, lockfile, file_path);
+}
+
+/// Write lockfile to disk in JSON format (always writes, internal use)
+fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
     const file = try std.fs.createFileAbsolute(file_path, .{});
     defer file.close();
 
@@ -257,4 +342,139 @@ test "lockfile write and read" {
     try std.testing.expectEqualStrings("1.0.0", read_lockfile.version);
     try std.testing.expectEqual(@as(u32, 1), read_lockfile.lockfile_version);
     try std.testing.expectEqual(@as(usize, 1), read_lockfile.packages.count());
+}
+
+test "lockfile comparison ignores generatedAt" {
+    const allocator = std.testing.allocator;
+
+    // Create two lockfiles with same content but different generatedAt
+    var lockfile1 = try types.Lockfile.init(allocator, "1.0.0");
+    defer lockfile1.deinit(allocator);
+    lockfile1.generated_at = 1000;
+
+    var lockfile2 = try types.Lockfile.init(allocator, "1.0.0");
+    defer lockfile2.deinit(allocator);
+    lockfile2.generated_at = 2000; // Different timestamp
+
+    // Add same package to both
+    const entry1 = types.LockfileEntry{
+        .name = try allocator.dupe(u8, "test-pkg"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .pkgx,
+        .url = null,
+        .resolved = null,
+        .integrity = null,
+        .dependencies = null,
+    };
+    try lockfile1.addEntry(allocator, "test-pkg@1.0.0", entry1);
+
+    const entry2 = types.LockfileEntry{
+        .name = try allocator.dupe(u8, "test-pkg"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .pkgx,
+        .url = null,
+        .resolved = null,
+        .integrity = null,
+        .dependencies = null,
+    };
+    try lockfile2.addEntry(allocator, "test-pkg@1.0.0", entry2);
+
+    // Should be equal despite different generatedAt
+    try std.testing.expect(lockfilesEqual(&lockfile1, &lockfile2));
+}
+
+test "lockfile comparison detects package changes" {
+    const allocator = std.testing.allocator;
+
+    // Create two lockfiles with different packages
+    var lockfile1 = try types.Lockfile.init(allocator, "1.0.0");
+    defer lockfile1.deinit(allocator);
+
+    var lockfile2 = try types.Lockfile.init(allocator, "1.0.0");
+    defer lockfile2.deinit(allocator);
+
+    // Add different packages
+    const entry1 = types.LockfileEntry{
+        .name = try allocator.dupe(u8, "pkg1"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .pkgx,
+        .url = null,
+        .resolved = null,
+        .integrity = null,
+        .dependencies = null,
+    };
+    try lockfile1.addEntry(allocator, "pkg1@1.0.0", entry1);
+
+    const entry2 = types.LockfileEntry{
+        .name = try allocator.dupe(u8, "pkg2"),
+        .version = try allocator.dupe(u8, "2.0.0"),
+        .source = .pkgx,
+        .url = null,
+        .resolved = null,
+        .integrity = null,
+        .dependencies = null,
+    };
+    try lockfile2.addEntry(allocator, "pkg2@2.0.0", entry2);
+
+    // Should NOT be equal
+    try std.testing.expect(!lockfilesEqual(&lockfile1, &lockfile2));
+}
+
+test "writeLockfile skips write when no changes" {
+    const allocator = std.testing.allocator;
+
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    // Create initial lockfile
+    var lockfile1 = try types.Lockfile.init(allocator, "1.0.0");
+    defer lockfile1.deinit(allocator);
+    lockfile1.generated_at = 1000;
+
+    const entry1 = types.LockfileEntry{
+        .name = try allocator.dupe(u8, "test"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .pkgx,
+        .url = null,
+        .resolved = null,
+        .integrity = null,
+        .dependencies = null,
+    };
+    try lockfile1.addEntry(allocator, "test@1.0.0", entry1);
+
+    // Write initial file
+    const lock_path = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(lock_path);
+    const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{lock_path});
+    defer allocator.free(lock_file_path);
+
+    try writeLockfile(allocator, &lockfile1, lock_file_path);
+
+    // Read the file content
+    const content1 = try std.fs.cwd().readFileAlloc(allocator, lock_file_path, 1024 * 1024);
+    defer allocator.free(content1);
+
+    // Create second lockfile with different generatedAt but same content
+    var lockfile2 = try types.Lockfile.init(allocator, "1.0.0");
+    defer lockfile2.deinit(allocator);
+    lockfile2.generated_at = 2000; // Different timestamp
+
+    const entry2 = types.LockfileEntry{
+        .name = try allocator.dupe(u8, "test"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .pkgx,
+        .url = null,
+        .resolved = null,
+        .integrity = null,
+        .dependencies = null,
+    };
+    try lockfile2.addEntry(allocator, "test@1.0.0", entry2);
+
+    // Write again - should be skipped
+    try writeLockfile(allocator, &lockfile2, lock_file_path);
+
+    // Check file content hasn't changed (generatedAt should still be 1000, not 2000)
+    const content2 = try std.fs.cwd().readFileAlloc(allocator, lock_file_path, 1024 * 1024);
+    defer allocator.free(content2);
+    try std.testing.expectEqualStrings(content1, content2);
 }

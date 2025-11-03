@@ -1611,9 +1611,8 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
     if (try env_cache.get(hash)) |entry| {
         // Cache hit - output env_dir|project_dir format expected by shell integration
         const project_dir = std.fs.path.dirname(deps_file.path) orelse dir;
-        const env_dir = std.fs.path.dirname(entry.path) orelse return .{ .exit_code = 1 };
 
-        std.debug.print("{s}|{s}\n", .{ env_dir, project_dir });
+        std.debug.print("{s}|{s}\n", .{ entry.path, project_dir });
         return .{ .exit_code = 0 };
     }
 
