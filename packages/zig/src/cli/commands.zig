@@ -173,7 +173,10 @@ fn installSinglePackage(
             .install_time_ms = 0,
         };
     };
-    defer inst_result.deinit(allocator);
+
+    // Duplicate the version string before deinit
+    const installed_version = try allocator.dupe(u8, inst_result.version);
+    inst_result.deinit(allocator);
 
     const end_time = std.time.milliTimestamp();
 
@@ -182,7 +185,7 @@ fn installSinglePackage(
 
     return .{
         .name = dep.name,
-        .version = dep.version,
+        .version = installed_version,
         .success = true,
         .error_msg = null,
         .install_time_ms = @intCast(end_time - start_time),
@@ -484,7 +487,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         defer lockfile.deinit(allocator);
 
         // Add entries for all installed packages
-        for (deps) |dep| {
+        for (deps, 0..) |dep, i| {
             const source = if (isLocalDependency(dep))
                 lib.packages.PackageSource.local
             else if (std.mem.startsWith(u8, dep.name, "github:"))
@@ -499,9 +502,15 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             else
                 dep.name;
 
+            // Use the resolved version from install_results if available, otherwise use dep.version
+            const resolved_version = if (i < install_results.len and install_results[i].success and install_results[i].version.len > 0)
+                install_results[i].version
+            else
+                dep.version;
+
             const entry = lib.packages.LockfileEntry{
                 .name = try allocator.dupe(u8, clean_name),
-                .version = try allocator.dupe(u8, dep.version),
+                .version = try allocator.dupe(u8, resolved_version),
                 .source = source,
                 .url = if (source == .local) try allocator.dupe(u8, dep.version) else null,
                 .resolved = null,
@@ -509,7 +518,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
                 .dependencies = null,
             };
 
-            const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, dep.version });
+            const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, resolved_version });
             defer allocator.free(key);
             try lockfile.addEntry(allocator, key, entry);
         }
