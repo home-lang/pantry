@@ -131,12 +131,25 @@ fn extractDependencyField(
                     else => "latest", // Default to latest if not a string
                 };
 
-                try dependencies.append(allocator, .{
-                    .name = try allocator.dupe(u8, pkg_name),
-                    .version = try allocator.dupe(u8, version),
-                    .global = global_flag,
-                    .dep_type = dep_type,
-                });
+                // Check if version is a GitHub URL
+                if (deps.parseGitHubUrl(allocator, version)) |github_ref| {
+                    try dependencies.append(allocator, .{
+                        .name = try allocator.dupe(u8, pkg_name),
+                        .version = try allocator.dupe(u8, version),
+                        .global = global_flag,
+                        .dep_type = dep_type,
+                        .source = .github,
+                        .github_ref = github_ref,
+                    });
+                } else |_| {
+                    // Not a GitHub URL, treat as registry package
+                    try dependencies.append(allocator, .{
+                        .name = try allocator.dupe(u8, pkg_name),
+                        .version = try allocator.dupe(u8, version),
+                        .global = global_flag,
+                        .dep_type = dep_type,
+                    });
+                }
             }
         },
         .array => |deps_arr| {

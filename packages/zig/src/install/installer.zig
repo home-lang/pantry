@@ -143,6 +143,11 @@ pub const Installer = struct {
             return try self.installLocalPath(spec, options);
         }
 
+        // Check if this is a GitHub dependency
+        if (spec.source == .github) {
+            return try self.installFromGitHub(spec, options);
+        }
+
         // Check if package exists in global cache (filesystem check, not in-memory cache)
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
@@ -303,6 +308,118 @@ pub const Installer = struct {
             .name = try self.allocator.dupe(u8, spec.name),
             .version = try self.allocator.dupe(u8, "local"),
             .install_path = symlink_path,
+            .from_cache = false,
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install a package from GitHub
+    fn installFromGitHub(
+        self: *Installer,
+        spec: PackageSpec,
+        options: InstallOptions,
+    ) !InstallResult {
+        const start_time = std.time.milliTimestamp();
+
+        if (spec.repo == null) {
+            return error.InvalidGitHubSpec;
+        }
+
+        const repo = spec.repo.?;
+
+        // Determine install location
+        const install_dir = if (options.project_root) |project_root| blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry_modules/{s}/{s}",
+                .{ project_root, spec.name, spec.version },
+            );
+        } else blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/packages/{s}/{s}",
+                .{ self.data_dir, spec.name, spec.version },
+            );
+        };
+        errdefer self.allocator.free(install_dir);
+
+        // Check if already installed
+        const already_installed = !options.force and blk: {
+            var check_dir = std.fs.cwd().openDir(install_dir, .{}) catch break :blk false;
+            check_dir.close();
+            break :blk true;
+        };
+
+        if (already_installed) {
+            const end_time = std.time.milliTimestamp();
+            return InstallResult{
+                .name = try self.allocator.dupe(u8, spec.name),
+                .version = try self.allocator.dupe(u8, spec.version),
+                .install_path = install_dir,
+                .from_cache = true,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        }
+
+        if (!options.quiet) {
+            std.debug.print("  → Cloning from GitHub: {s}#{s}\n", .{ repo, spec.version });
+        }
+
+        // Create temp directory for cloning
+        const temp_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/.pantry/.tmp/github-{s}-{s}",
+            .{ try Paths.home(self.allocator), spec.name, spec.version },
+        );
+        defer {
+            self.allocator.free(temp_dir);
+            std.fs.cwd().deleteTree(temp_dir) catch {};
+        }
+
+        // Clone the repository
+        const clone_url = try std.fmt.allocPrint(
+            self.allocator,
+            "https://github.com/{s}.git",
+            .{repo},
+        );
+        defer self.allocator.free(clone_url);
+
+        const clone_result = try std.process.Child.run(.{
+            .allocator = self.allocator,
+            .argv = &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir },
+        });
+        defer {
+            self.allocator.free(clone_result.stdout);
+            self.allocator.free(clone_result.stderr);
+        }
+
+        if (clone_result.term.Exited != 0) {
+            if (!options.quiet) {
+                std.debug.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
+            }
+            return error.GitCloneFailed;
+        }
+
+        // Create parent directory
+        const parent_dir = std.fs.path.dirname(install_dir);
+        if (parent_dir) |dir| {
+            try std.fs.cwd().makePath(dir);
+        }
+
+        // Move from temp to final location
+        try std.fs.cwd().rename(temp_dir, install_dir);
+
+        // Create project symlinks if installing to project
+        if (options.project_root) |project_root| {
+            try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
+        }
+
+        const end_time = std.time.milliTimestamp();
+
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, spec.version),
+            .install_path = install_dir,
             .from_cache = false,
             .install_time_ms = @intCast(end_time - start_time),
         };

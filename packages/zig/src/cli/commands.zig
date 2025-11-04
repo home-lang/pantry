@@ -128,25 +128,40 @@ fn installSinglePackage(
     // Validate package exists in registry
     const pkg_registry = @import("../packages/generated.zig");
     const pkg_info = pkg_registry.getPackageByName(dep.name);
-    
-    if (pkg_info == null) {
-        const error_msg = try std.fmt.allocPrint(
-            allocator,
-            "Package '{s}' not found in registry. Try: pantry search {s}",
-            .{ dep.name, dep.name },
-        );
-        return .{
+
+    // Check if this is a GitHub dependency
+    const spec = if (dep.source == .github and dep.github_ref != null) blk: {
+        const gh_ref = dep.github_ref.?;
+        const repo_str = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ gh_ref.owner, gh_ref.repo });
+        defer allocator.free(repo_str);
+
+        break :blk lib.packages.PackageSpec{
+            .name = dep.name,
+            .version = gh_ref.ref,
+            .source = .github,
+            .repo = try allocator.dupe(u8, repo_str),
+        };
+    } else blk: {
+        // Regular registry package
+        if (pkg_info == null) {
+            const error_msg = try std.fmt.allocPrint(
+                allocator,
+                "Package '{s}' not found in registry. Try: pantry search {s}",
+                .{ dep.name, dep.name },
+            );
+            return .{
+                .name = dep.name,
+                .version = dep.version,
+                .success = false,
+                .error_msg = error_msg,
+                .install_time_ms = 0,
+            };
+        }
+
+        break :blk lib.packages.PackageSpec{
             .name = dep.name,
             .version = dep.version,
-            .success = false,
-            .error_msg = error_msg,
-            .install_time_ms = 0,
         };
-    }
-
-    const spec = lib.packages.PackageSpec{
-        .name = dep.name,
-        .version = dep.version,
     };
 
     // Create installer with project_root option for local installs

@@ -7,17 +7,117 @@ pub const DependencyType = enum {
     peer,
 };
 
+pub const DependencySource = enum {
+    registry, // pkgx registry
+    github, // GitHub repository
+    git, // Generic git repository
+    url, // Direct URL download
+};
+
+pub const GitHubRef = struct {
+    owner: []const u8,
+    repo: []const u8,
+    ref: []const u8, // branch, tag, or commit hash
+
+    pub fn deinit(self: *GitHubRef, allocator: std.mem.Allocator) void {
+        allocator.free(self.owner);
+        allocator.free(self.repo);
+        allocator.free(self.ref);
+    }
+};
+
 pub const PackageDependency = struct {
     name: []const u8,
     version: []const u8,
     global: bool = false,
     dep_type: DependencyType = .normal,
+    source: DependencySource = .registry,
+    github_ref: ?GitHubRef = null,
 
     pub fn deinit(self: *PackageDependency, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
         allocator.free(self.version);
+        if (self.github_ref) |*gh_ref| {
+            var gh = gh_ref.*;
+            gh.deinit(allocator);
+        }
     }
 };
+
+/// Parse GitHub URL formats:
+/// - github:owner/repo#ref
+/// - https://github.com/owner/repo#ref
+/// - git+https://github.com/owner/repo.git#ref
+/// Returns GitHubRef if it's a GitHub URL, null otherwise
+pub fn parseGitHubUrl(allocator: std.mem.Allocator, version: []const u8) !?GitHubRef {
+    var owner: []const u8 = undefined;
+    var repo: []const u8 = undefined;
+    var ref: []const u8 = "main"; // default branch
+
+    if (std.mem.startsWith(u8, version, "github:")) {
+        // Format: github:owner/repo#ref
+        const after_prefix = version[7..]; // skip "github:"
+
+        // Find # for ref
+        if (std.mem.indexOf(u8, after_prefix, "#")) |hash_pos| {
+            ref = after_prefix[hash_pos + 1 ..];
+            const owner_repo = after_prefix[0..hash_pos];
+
+            // Split owner/repo
+            if (std.mem.indexOf(u8, owner_repo, "/")) |slash_pos| {
+                owner = owner_repo[0..slash_pos];
+                repo = owner_repo[slash_pos + 1 ..];
+            } else {
+                return null; // Invalid format
+            }
+        } else {
+            // No ref specified, use default
+            if (std.mem.indexOf(u8, after_prefix, "/")) |slash_pos| {
+                owner = after_prefix[0..slash_pos];
+                repo = after_prefix[slash_pos + 1 ..];
+            } else {
+                return null; // Invalid format
+            }
+        }
+
+        return GitHubRef{
+            .owner = try allocator.dupe(u8, owner),
+            .repo = try allocator.dupe(u8, repo),
+            .ref = try allocator.dupe(u8, ref),
+        };
+    } else if (std.mem.indexOf(u8, version, "github.com/")) |github_pos| {
+        // Format: https://github.com/owner/repo#ref or git+https://github.com/owner/repo.git#ref
+        const after_github = version[github_pos + 11 ..]; // skip "github.com/"
+
+        // Find # for ref
+        var owner_repo = after_github;
+        if (std.mem.indexOf(u8, after_github, "#")) |hash_pos| {
+            ref = after_github[hash_pos + 1 ..];
+            owner_repo = after_github[0..hash_pos];
+        }
+
+        // Remove .git suffix if present
+        if (std.mem.endsWith(u8, owner_repo, ".git")) {
+            owner_repo = owner_repo[0 .. owner_repo.len - 4];
+        }
+
+        // Split owner/repo
+        if (std.mem.indexOf(u8, owner_repo, "/")) |slash_pos| {
+            owner = owner_repo[0..slash_pos];
+            repo = owner_repo[slash_pos + 1 ..];
+        } else {
+            return null; // Invalid format
+        }
+
+        return GitHubRef{
+            .owner = try allocator.dupe(u8, owner),
+            .repo = try allocator.dupe(u8, repo),
+            .ref = try allocator.dupe(u8, ref),
+        };
+    }
+
+    return null; // Not a GitHub URL
+}
 
 /// Infer dependencies from a file based on its format
 pub fn inferDependencies(
