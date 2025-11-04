@@ -19,6 +19,11 @@ pub const dependencies = @import("config/dependencies.zig");
 pub const extractDependencies = dependencies.extractDependencies;
 pub const extractBinPaths = dependencies.extractBinPaths;
 
+// Script extraction from config
+pub const scripts = @import("config/scripts.zig");
+pub const extractScripts = scripts.extractScripts;
+pub const findProjectScripts = scripts.findProjectScripts;
+
 // Re-export core zig-config functions
 pub const loadConfig = zig_config.loadConfig;
 pub const tryLoadConfig = zig_config.tryLoadConfig;
@@ -29,4 +34,5 @@ test {
     std.testing.refAllDecls(@This());
     std.testing.refAllDecls(loader);
     std.testing.refAllDecls(dependencies);
+    std.testing.refAllDecls(scripts);
 }

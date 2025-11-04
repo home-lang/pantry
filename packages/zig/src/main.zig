@@ -119,6 +119,53 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const script_name = ctx.getArgument(0) orelse {
+        std.debug.print("Error: No script name provided\n", .{});
+        std.process.exit(1);
+    };
+
+    // Use a stack-allocated array for args
+    var args_buf: [32][]const u8 = undefined;
+    var args_len: usize = 0;
+
+    args_buf[args_len] = script_name;
+    args_len += 1;
+
+    // Get remaining arguments
+    var i: usize = 1;
+    while (true) : (i += 1) {
+        const arg = ctx.getArgument(i) orelse break;
+        if (args_len >= args_buf.len) break; // Prevent overflow
+        args_buf[args_len] = arg;
+        args_len += 1;
+    }
+
+    var result = try lib.commands.runScriptCommand(allocator, args_buf[0..args_len]);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn scriptsListAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var result = try lib.commands.listScriptsCommand(allocator);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -496,6 +543,89 @@ pub fn main() !void {
 
     _ = list_cmd.setAction(listAction);
     _ = try root.addCommand(list_cmd);
+
+    // ========================================================================
+    // Run Command (Script Runner)
+    // ========================================================================
+    var run_cmd = try cli.BaseCommand.init(allocator, "run", "Run a script from pantry.json or package.json");
+
+    const run_script_arg = cli.Argument.init("script", "Script name", .string)
+        .withRequired(true);
+    _ = try run_cmd.addArgument(run_script_arg);
+
+    const run_args_arg = cli.Argument.init("args", "Script arguments", .string)
+        .withVariadic(true)
+        .withRequired(false);
+    _ = try run_cmd.addArgument(run_args_arg);
+
+    _ = run_cmd.setAction(runAction);
+    _ = try root.addCommand(run_cmd);
+
+    // ========================================================================
+    // Scripts Command
+    // ========================================================================
+    var scripts_list_cmd = try cli.BaseCommand.init(allocator, "scripts", "List available scripts");
+    _ = scripts_list_cmd.setAction(scriptsListAction);
+    _ = try root.addCommand(scripts_list_cmd);
+
+    // ========================================================================
+    // Common Script Shortcuts (npm-style)
+    // ========================================================================
+    // Add shortcuts for common scripts: dev, test, build
+    // Note: 'start' is reserved for service management
+    const common_scripts = [_]struct { name: []const u8, desc: []const u8 }{
+        .{ .name = "dev", .desc = "Run development script (alias for 'run dev')" },
+        .{ .name = "test", .desc = "Run test script (alias for 'run test')" },
+        .{ .name = "build", .desc = "Run build script (alias for 'run build')" },
+    };
+
+    inline for (common_scripts) |script_info| {
+        const ScriptName = struct {
+            const name = script_info.name;
+        };
+
+        var shortcut_cmd = try cli.BaseCommand.init(allocator, script_info.name, script_info.desc);
+
+        const shortcut_args_arg = cli.Argument.init("args", "Script arguments", .string)
+            .withVariadic(true)
+            .withRequired(false);
+        _ = try shortcut_cmd.addArgument(shortcut_args_arg);
+
+        const ActionStruct = struct {
+            fn action(ctx: *cli.BaseCommand.ParseContext) !void {
+                const alloc = ctx.allocator;
+
+                // Use a stack-allocated array for script name + args
+                var args_buf: [16][]const u8 = undefined;
+                var args_len: usize = 0;
+
+                // Add the script name (command name)
+                args_buf[args_len] = ScriptName.name;
+                args_len += 1;
+
+                // Add any additional arguments
+                var i: usize = 0;
+                while (true) : (i += 1) {
+                    const arg = ctx.getArgument(i) orelse break;
+                    if (args_len >= args_buf.len) break; // Prevent overflow
+                    args_buf[args_len] = arg;
+                    args_len += 1;
+                }
+
+                var result = try lib.commands.runScriptCommand(alloc, args_buf[0..args_len]);
+                defer result.deinit(alloc);
+
+                if (result.message) |msg| {
+                    std.debug.print("{s}\n", .{msg});
+                }
+
+                std.process.exit(result.exit_code);
+            }
+        };
+
+        _ = shortcut_cmd.setAction(ActionStruct.action);
+        _ = try root.addCommand(shortcut_cmd);
+    }
 
     // ========================================================================
     // Cache Commands
