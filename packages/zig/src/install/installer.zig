@@ -57,20 +57,26 @@ pub const Installer = struct {
     data_dir: []const u8,
     /// Allocator
     allocator: std.mem.Allocator,
+    /// Track packages currently being installed to prevent infinite loops
+    installing_stack: std.StringHashMap(void),
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
         errdefer allocator.free(data_dir);
 
+        const installing_stack = std.StringHashMap(void).init(allocator);
+
         return .{
             .cache = pkg_cache,
             .data_dir = data_dir,
             .allocator = allocator,
+            .installing_stack = installing_stack,
         };
     }
 
     pub fn deinit(self: *Installer) void {
         self.allocator.free(self.data_dir);
+        self.installing_stack.deinit();
     }
 
     /// Install a package
@@ -105,6 +111,36 @@ pub const Installer = struct {
                     .name = spec.name,
                     .version = resolved_version,
                 };
+            }
+        }
+
+        // Create a unique key for this package installation (domain@version)
+        const install_key = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}@{s}",
+            .{ domain, resolved_spec.version },
+        );
+        defer self.allocator.free(install_key);
+
+        // Check if we're already installing this package (circular dependency)
+        if (self.installing_stack.contains(install_key)) {
+            // Already being installed in the call stack - skip to avoid infinite loop
+            const end_time = std.time.milliTimestamp();
+            return InstallResult{
+                .name = try self.allocator.dupe(u8, resolved_spec.name),
+                .version = try self.allocator.dupe(u8, resolved_spec.version),
+                .install_path = try self.allocator.dupe(u8, ""),
+                .from_cache = true,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        }
+
+        // Mark this package as being installed
+        try self.installing_stack.put(try self.allocator.dupe(u8, install_key), {});
+        defer {
+            // Remove from stack when we're done
+            if (self.installing_stack.fetchRemove(install_key)) |entry| {
+                self.allocator.free(entry.key);
             }
         }
 
@@ -1067,7 +1103,14 @@ pub const Installer = struct {
     fn installDependencies(self: *Installer, dependencies: []const []const u8, options: InstallOptions) !void {
         if (dependencies.len == 0) return;
 
+        // Track if any critical dependency failed
+        var has_critical_failure = false;
+        var first_error: ?anyerror = null;
+
         for (dependencies) |dep_str| {
+            // Check if this is an optional dependency (ends with # comment)
+            const is_optional = std.mem.indexOf(u8, dep_str, "#") != null;
+
             // Skip platform-specific dependencies that don't apply
             if (std.mem.startsWith(u8, dep_str, "linux:") or
                 std.mem.startsWith(u8, dep_str, "darwin:") or
@@ -1093,22 +1136,50 @@ pub const Installer = struct {
                 // Install the actual dependency
                 self.installDependency(actual_dep, options) catch |err| {
                     std.debug.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
+                    if (!is_optional and !has_critical_failure) {
+                        has_critical_failure = true;
+                        first_error = err;
+                    }
                 };
             } else {
                 // Regular dependency
                 self.installDependency(dep_str, options) catch |err| {
                     std.debug.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
+                    if (!is_optional and !has_critical_failure) {
+                        has_critical_failure = true;
+                        first_error = err;
+                    }
                 };
+            }
+        }
+
+        // If any critical dependency failed, propagate the error
+        if (has_critical_failure) {
+            if (first_error) |err| {
+                return err;
             }
         }
     }
 
     /// Install a single dependency
     fn installDependency(self: *Installer, dep_str: []const u8, options: InstallOptions) anyerror!void {
+        // Strip out comment if present (e.g., "pkg^1.0 # comment" -> "pkg^1.0")
+        const dep_without_comment = blk: {
+            if (std.mem.indexOf(u8, dep_str, "#")) |comment_pos| {
+                // Trim whitespace before the comment
+                var end = comment_pos;
+                while (end > 0 and dep_str[end - 1] == ' ') {
+                    end -= 1;
+                }
+                break :blk dep_str[0..end];
+            }
+            break :blk dep_str;
+        };
+
         // Parse dependency string (name@version or name^version, etc.)
-        const at_pos = std.mem.indexOfAny(u8, dep_str, "@^~>=<");
-        const name = if (at_pos) |pos| dep_str[0..pos] else dep_str;
-        const raw_version = if (at_pos) |pos| dep_str[pos..] else "latest";
+        const at_pos = std.mem.indexOfAny(u8, dep_without_comment, "@^~>=<");
+        const name = if (at_pos) |pos| dep_without_comment[0..pos] else dep_without_comment;
+        const raw_version = if (at_pos) |pos| dep_without_comment[pos..] else "latest";
 
         // Normalize @X and @X.Y to ^X and ^X.Y (treat @ as caret for major/minor versions)
         var version_owned: ?[]const u8 = null;
