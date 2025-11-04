@@ -93,7 +93,11 @@ pub fn satisfiesConstraint(version_str: []const u8, constraint: Constraint) bool
         // ^1.2.3 := >=1.2.3 <2.0.0
         .caret => {
             if (constraint.major == 0) {
-                // ^0.x.y is special - only patch updates allowed
+                // ^0.0.0 or ^0 means any 0.x.x version
+                if (constraint.minor == 0 and constraint.patch == 0) {
+                    return version.major == 0;
+                }
+                // ^0.x.y with specific minor/patch - only patch updates allowed
                 return version.major == 0 and
                     version.minor == constraint.minor and
                     version.patch >= constraint.patch;

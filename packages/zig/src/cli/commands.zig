@@ -1841,16 +1841,28 @@ pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !Comm
                 }
                 return;
             };
-            defer thread_installer.deinit();
 
             // Copy data_dir from main installer
             ctx.allocator.free(thread_installer.data_dir);
             thread_installer.data_dir = ctx.allocator.dupe(u8, ctx.installer.data_dir) catch {
+                thread_installer.deinit();
                 ctx.mutex.lock();
                 defer ctx.mutex.unlock();
                 ctx.result.* = .{ .success = false, .error_name = "AllocFailed" };
                 return;
             };
+
+            // Share the installing_stack from main installer to prevent circular deps across threads
+            // Clean up the thread installer's stack first before replacing it
+            const old_stack = thread_installer.installing_stack;
+            old_stack.deinit();
+            ctx.allocator.destroy(old_stack);
+            thread_installer.installing_stack = ctx.installer.installing_stack;
+
+            defer {
+                // Free data_dir but don't destroy installing_stack (it's shared)
+                ctx.allocator.free(thread_installer.data_dir);
+            }
 
             // Parse clean name for inline progress display
             const clean_name = if (std.mem.startsWith(u8, ctx.dep.name, "auto:"))

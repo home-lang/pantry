@@ -49,6 +49,51 @@ pub const InstallResult = struct {
     }
 };
 
+/// Thread-safe wrapper for the installing stack
+const InstallingStack = struct {
+    map: std.StringHashMap(void),
+    mutex: std.Thread.Mutex,
+    allocator: std.mem.Allocator,
+
+    fn init(allocator: std.mem.Allocator) InstallingStack {
+        return .{
+            .map = std.StringHashMap(void).init(allocator),
+            .mutex = std.Thread.Mutex{},
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *InstallingStack) void {
+        // Clean up all keys
+        var it = self.map.iterator();
+        while (it.next()) |entry| {
+            self.allocator.free(entry.key_ptr.*);
+        }
+        self.map.deinit();
+    }
+
+    fn contains(self: *InstallingStack, key: []const u8) bool {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.map.contains(key);
+    }
+
+    fn put(self: *InstallingStack, key: []const u8) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        const key_owned = try self.allocator.dupe(u8, key);
+        try self.map.put(key_owned, {});
+    }
+
+    fn remove(self: *InstallingStack, key: []const u8) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        if (self.map.fetchRemove(key)) |entry| {
+            self.allocator.free(entry.key);
+        }
+    }
+};
+
 /// Package installer
 pub const Installer = struct {
     /// Package cache
@@ -57,14 +102,15 @@ pub const Installer = struct {
     data_dir: []const u8,
     /// Allocator
     allocator: std.mem.Allocator,
-    /// Track packages currently being installed to prevent infinite loops
-    installing_stack: std.StringHashMap(void),
+    /// Track packages currently being installed to prevent infinite loops (shared across threads)
+    installing_stack: *InstallingStack,
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
         errdefer allocator.free(data_dir);
 
-        const installing_stack = std.StringHashMap(void).init(allocator);
+        const installing_stack = try allocator.create(InstallingStack);
+        installing_stack.* = InstallingStack.init(allocator);
 
         return .{
             .cache = pkg_cache,
@@ -77,6 +123,7 @@ pub const Installer = struct {
     pub fn deinit(self: *Installer) void {
         self.allocator.free(self.data_dir);
         self.installing_stack.deinit();
+        self.allocator.destroy(self.installing_stack);
     }
 
     /// Install a package
@@ -136,12 +183,10 @@ pub const Installer = struct {
         }
 
         // Mark this package as being installed
-        try self.installing_stack.put(try self.allocator.dupe(u8, install_key), {});
+        try self.installing_stack.put(install_key);
         defer {
             // Remove from stack when we're done
-            if (self.installing_stack.fetchRemove(install_key)) |entry| {
-                self.allocator.free(entry.key);
-            }
+            self.installing_stack.remove(install_key);
         }
 
         // Determine install location based on whether we have a project root
