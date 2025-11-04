@@ -8,22 +8,13 @@ pub const SymlinkError = error{
     InvalidPath,
 };
 
-/// Create symlink for a package binary
-pub fn createBinarySymlink(
+/// Create symlink for a package binary (with explicit binary path)
+pub fn createBinarySymlinkFromPath(
     allocator: std.mem.Allocator,
-    package_name: []const u8,
-    version: []const u8,
     bin_name: []const u8,
+    bin_path: []const u8,
     install_base: []const u8,
 ) !void {
-    // Build paths - packages are in {install_base}/packages/
-    const package_bin_path = try std.fmt.allocPrint(
-        allocator,
-        "{s}/packages/{s}/v{s}/bin/{s}",
-        .{ install_base, package_name, version, bin_name },
-    );
-    defer allocator.free(package_bin_path);
-
     const symlink_dir = try std.fmt.allocPrint(
         allocator,
         "{s}/bin",
@@ -39,8 +30,8 @@ pub fn createBinarySymlink(
     defer allocator.free(symlink_path);
 
     // Verify target exists
-    std.fs.cwd().access(package_bin_path, .{}) catch {
-        std.debug.print("  ✗ Binary not found: {s}\n", .{package_bin_path});
+    std.fs.cwd().access(bin_path, .{}) catch {
+        std.debug.print("  ✗ Binary not found: {s}\n", .{bin_path});
         return error.TargetNotFound;
     };
 
@@ -53,12 +44,31 @@ pub fn createBinarySymlink(
     std.fs.cwd().deleteFile(symlink_path) catch {};
 
     // Create symlink
-    std.fs.cwd().symLink(package_bin_path, symlink_path, .{}) catch |err| {
+    std.fs.cwd().symLink(bin_path, symlink_path, .{}) catch |err| {
         std.debug.print("  ✗ Failed to create symlink: {}\n", .{err});
         return error.SymlinkCreationFailed;
     };
 
-    std.debug.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, package_bin_path });
+    std.debug.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, bin_path });
+}
+
+/// Create symlink for a package binary (legacy - builds path from package info)
+pub fn createBinarySymlink(
+    allocator: std.mem.Allocator,
+    package_name: []const u8,
+    version: []const u8,
+    bin_name: []const u8,
+    install_base: []const u8,
+) !void {
+    // Build paths - packages are in {install_base}/packages/
+    const package_bin_path = try std.fmt.allocPrint(
+        allocator,
+        "{s}/packages/{s}/v{s}/bin/{s}",
+        .{ install_base, package_name, version, bin_name },
+    );
+    defer allocator.free(package_bin_path);
+
+    return createBinarySymlinkFromPath(allocator, bin_name, package_bin_path, install_base);
 }
 
 /// Create version symlink (e.g., nodejs.org/v22 -> nodejs.org/v22.0.0)
@@ -99,24 +109,114 @@ pub fn createVersionSymlink(
     std.debug.print("  ✓ Version symlink: v{s} -> v{s}\n", .{ major_version, full_version });
 }
 
+/// Result of discovering binaries - contains bin name and its full path
+pub const BinaryInfo = struct {
+    name: []const u8,
+    path: []const u8,
+
+    pub fn deinit(self: *BinaryInfo, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.path);
+    }
+};
+
+/// Discover npm package binaries in lib/node_modules structure
+fn discoverNpmBinaries(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+) ![]BinaryInfo {
+    // Check for npm package structure: {package_dir}/lib/node_modules/{package_name}/
+    const node_modules_path = try std.fmt.allocPrint(allocator, "{s}/lib/node_modules", .{package_dir});
+    defer allocator.free(node_modules_path);
+
+    var node_modules_dir = std.fs.cwd().openDir(node_modules_path, .{ .iterate = true }) catch {
+        return try allocator.alloc(BinaryInfo, 0);
+    };
+    defer node_modules_dir.close();
+
+    var binaries = try std.ArrayList(BinaryInfo).initCapacity(allocator, 8);
+    errdefer {
+        for (binaries.items) |*bin| {
+            bin.deinit(allocator);
+        }
+        binaries.deinit(allocator);
+    }
+
+    // Iterate through packages in node_modules
+    var it = node_modules_dir.iterate();
+    while (try it.next()) |entry| {
+        if (entry.kind != .directory) continue;
+
+        // Check for bin directory in this npm package
+        const npm_bin_path = try std.fmt.allocPrint(
+            allocator,
+            "{s}/{s}/bin",
+            .{ node_modules_path, entry.name },
+        );
+        defer allocator.free(npm_bin_path);
+
+        var npm_bin_dir = std.fs.cwd().openDir(npm_bin_path, .{ .iterate = true }) catch continue;
+        defer npm_bin_dir.close();
+
+        // Iterate binaries in npm package's bin directory
+        var bin_it = npm_bin_dir.iterate();
+        while (try bin_it.next()) |bin_entry| {
+            if (bin_entry.kind == .file or bin_entry.kind == .sym_link) {
+                const full_path = try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/{s}",
+                    .{ npm_bin_path, bin_entry.name },
+                );
+                errdefer allocator.free(full_path);
+
+                // Check if executable
+                const stat = std.fs.cwd().statFile(full_path) catch {
+                    allocator.free(full_path);
+                    continue;
+                };
+                const is_executable = (stat.mode & 0o111) != 0;
+
+                if (is_executable) {
+                    try binaries.append(allocator, .{
+                        .name = try allocator.dupe(u8, bin_entry.name),
+                        .path = full_path,
+                    });
+                }
+            }
+        }
+    }
+
+    return try binaries.toOwnedSlice(allocator);
+}
+
 /// Discover binaries in a package directory
+/// First checks for npm package structure (lib/node_modules/*/bin/*)
+/// Falls back to standard pkgx bin/ directory
 pub fn discoverBinaries(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
-) ![][]const u8 {
+) ![]BinaryInfo {
+    // First, try to find npm binaries (these take precedence)
+    const npm_bins = try discoverNpmBinaries(allocator, package_dir);
+    if (npm_bins.len > 0) {
+        return npm_bins;
+    }
+    defer allocator.free(npm_bins);
+
+    // Fall back to standard bin directory
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{package_dir});
     defer allocator.free(bin_dir);
 
     var dir = std.fs.cwd().openDir(bin_dir, .{ .iterate = true }) catch {
         // No bin directory
-        return try allocator.alloc([]const u8, 0);
+        return try allocator.alloc(BinaryInfo, 0);
     };
     defer dir.close();
 
-    var binaries = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    var binaries = try std.ArrayList(BinaryInfo).initCapacity(allocator, 8);
     errdefer {
-        for (binaries.items) |bin| {
-            allocator.free(bin);
+        for (binaries.items) |*bin| {
+            bin.deinit(allocator);
         }
         binaries.deinit(allocator);
     }
@@ -124,15 +224,21 @@ pub fn discoverBinaries(
     var it = dir.iterate();
     while (try it.next()) |entry| {
         if (entry.kind == .file or entry.kind == .sym_link) {
-            // Check if executable
             const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name });
-            defer allocator.free(full_path);
+            errdefer allocator.free(full_path);
 
-            const stat = std.fs.cwd().statFile(full_path) catch continue;
+            // Check if executable
+            const stat = std.fs.cwd().statFile(full_path) catch {
+                allocator.free(full_path);
+                continue;
+            };
             const is_executable = (stat.mode & 0o111) != 0;
 
             if (is_executable) {
-                try binaries.append(allocator, try allocator.dupe(u8, entry.name));
+                try binaries.append(allocator, .{
+                    .name = try allocator.dupe(u8, entry.name),
+                    .path = full_path,
+                });
             }
         }
     }
@@ -157,8 +263,9 @@ pub fn createPackageSymlinks(
     // Discover binaries
     const binaries = try discoverBinaries(allocator, package_dir);
     defer {
-        for (binaries) |bin| {
-            allocator.free(bin);
+        for (binaries) |*bin| {
+            var b = bin.*;
+            b.deinit(allocator);
         }
         allocator.free(binaries);
     }
@@ -167,9 +274,11 @@ pub fn createPackageSymlinks(
         std.debug.print("  ! No binaries found in {s}\n", .{package_dir});
         // Even without binaries, still create version symlink for libraries
     } else {
-        // Create symlinks for each binary
-        for (binaries) |bin_name| {
-            try createBinarySymlink(allocator, package_name, version, bin_name, install_base);
+        // Create symlinks for each binary using the discovered paths
+        for (binaries) |bin_info| {
+            createBinarySymlinkFromPath(allocator, bin_info.name, bin_info.path, install_base) catch |err| {
+                std.debug.print("  ! Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
+            };
         }
     }
 
@@ -198,8 +307,9 @@ pub fn removePackageSymlinks(
 
     const binaries = try discoverBinaries(allocator, package_dir);
     defer {
-        for (binaries) |bin| {
-            allocator.free(bin);
+        for (binaries) |*bin| {
+            var b = bin.*;
+            b.deinit(allocator);
         }
         allocator.free(binaries);
     }
@@ -207,16 +317,16 @@ pub fn removePackageSymlinks(
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{install_base});
     defer allocator.free(bin_dir);
 
-    for (binaries) |bin_name| {
+    for (binaries) |bin_info| {
         const symlink_path = try std.fmt.allocPrint(
             allocator,
             "{s}/{s}",
-            .{ bin_dir, bin_name },
+            .{ bin_dir, bin_info.name },
         );
         defer allocator.free(symlink_path);
 
         std.fs.cwd().deleteFile(symlink_path) catch |err| {
-            std.debug.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_name, err });
+            std.debug.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });
         };
     }
 
@@ -259,14 +369,15 @@ test "discoverBinaries" {
     // Discover binaries
     const binaries = try discoverBinaries(allocator, test_dir);
     defer {
-        for (binaries) |bin| {
-            allocator.free(bin);
+        for (binaries) |*bin| {
+            var b = bin.*;
+            b.deinit(allocator);
         }
         allocator.free(binaries);
     }
 
     try std.testing.expect(binaries.len == 1);
-    try std.testing.expectEqualStrings("testbin", binaries[0]);
+    try std.testing.expectEqualStrings("testbin", binaries[0].name);
 }
 
 test "createBinarySymlink" {

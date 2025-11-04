@@ -726,55 +726,39 @@ pub const Installer = struct {
             }
         }
 
-        // Fallback: Use package registry programs if no custom bins were found
-        const pkg_registry = @import("../packages/generated.zig");
-        const pkg_info = pkg_registry.getPackageByName(domain) orelse return;
+        // Fallback: Discover binaries in the package (using npm-aware logic)
+        const symlink = @import("symlink.zig");
+        const binaries = symlink.discoverBinaries(self.allocator, package_dir) catch return;
+        defer {
+            for (binaries) |*bin| {
+                var b = bin.*;
+                b.deinit(self.allocator);
+            }
+            self.allocator.free(binaries);
+        }
 
-        if (pkg_info.programs.len == 0) return;
+        if (binaries.len == 0) return;
 
-        // Package bin directory
-        const pkg_bin_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/bin",
-            .{package_dir},
-        );
-        defer self.allocator.free(pkg_bin_dir);
-
-        // Create symlinks for each program
-        for (pkg_info.programs) |program| {
-            const source = try std.fmt.allocPrint(
-                self.allocator,
-                "{s}/{s}",
-                .{ pkg_bin_dir, program },
-            );
-            defer self.allocator.free(source);
-
+        // Create symlinks for each discovered binary
+        for (binaries) |bin_info| {
             const link = try std.fmt.allocPrint(
                 self.allocator,
                 "{s}/{s}",
-                .{ project_bin_dir, program },
+                .{ project_bin_dir, bin_info.name },
             );
             defer self.allocator.free(link);
-
-            // Check if source exists
-            std.fs.accessAbsolute(source, .{}) catch |err| {
-                if (err == error.FileNotFound) {
-                    std.debug.print("Warning: Program not found: {s}\n", .{source});
-                    continue;
-                }
-                return err;
-            };
 
             // Remove existing symlink if it exists
             std.fs.deleteFileAbsolute(link) catch {};
 
-            // Create symlink
-            std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
-                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+            // Create symlink using absolute paths
+            std.fs.symLinkAbsolute(bin_info.path, link, .{}) catch |err| {
+                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
 
         _ = version; // not used in current implementation
+        _ = domain; // not used with new discovery method
     }
 
     /// Install from network (download)
