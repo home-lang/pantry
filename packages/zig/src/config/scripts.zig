@@ -75,11 +75,15 @@ pub fn findProjectScripts(allocator: std.mem.Allocator, project_dir: []const u8)
     return try extractScripts(allocator, config);
 }
 
-test "extract scripts from config" {
+test "extract scripts from config file" {
     const allocator = std.testing.allocator;
 
-    // Create a simple config with scripts
-    const json_str =
+    // Create a temporary directory with a config file
+    var tmp_dir = std.testing.tmpDir(.{});
+    defer tmp_dir.cleanup();
+
+    // Create package.json with scripts
+    const package_json =
         \\{
         \\  "name": "test-project",
         \\  "scripts": {
@@ -90,52 +94,74 @@ test "extract scripts from config" {
         \\}
     ;
 
-    var config = try zig_config.loadConfig(allocator, .{
-        .name = "test",
-        .sources = &[_]zig_config.ConfigSource{
-            .{ .json_string = json_str },
-        },
+    const file = try tmp_dir.dir.createFile("package.json", .{});
+    defer file.close();
+    try file.writeAll(package_json);
+
+    // Get absolute path to the temp directory
+    const cwd_path = try tmp_dir.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(cwd_path);
+
+    // Load config from the temp directory
+    const config_loader = @import("../config.zig");
+    var config = try config_loader.loadpantryConfig(allocator, .{
+        .name = "test-project",
+        .cwd = cwd_path,
     });
     defer config.deinit();
 
     const scripts = try extractScripts(allocator, config);
-    if (scripts) |*s| {
+    if (scripts) |s| {
+        var scripts_map = s;
         defer {
-            var it = s.iterator();
+            var it = scripts_map.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            s.deinit();
+            scripts_map.deinit();
         }
 
-        try std.testing.expectEqual(@as(usize, 3), s.count());
-        try std.testing.expectEqualStrings("bun run src/index.ts", s.get("dev").?);
-        try std.testing.expectEqualStrings("bun build src/index.ts", s.get("build").?);
-        try std.testing.expectEqualStrings("bun test", s.get("test").?);
+        try std.testing.expectEqual(@as(usize, 3), scripts_map.count());
+        try std.testing.expectEqualStrings("bun run src/index.ts", scripts_map.get("dev").?);
+        try std.testing.expectEqualStrings("bun build src/index.ts", scripts_map.get("build").?);
+        try std.testing.expectEqualStrings("bun test", scripts_map.get("test").?);
     } else {
         try std.testing.expect(false); // Should have found scripts
     }
 }
 
-test "no scripts in config" {
+test "no scripts in config file" {
     const allocator = std.testing.allocator;
 
-    const json_str =
+    // Create a temporary directory with a config file
+    var tmp_dir = std.testing.tmpDir(.{});
+    defer tmp_dir.cleanup();
+
+    // Create package.json without scripts
+    const package_json =
         \\{
         \\  "name": "test-project",
         \\  "dependencies": {}
         \\}
     ;
 
-    var config = try zig_config.loadConfig(allocator, .{
-        .name = "test",
-        .sources = &[_]zig_config.ConfigSource{
-            .{ .json_string = json_str },
-        },
+    const file = try tmp_dir.dir.createFile("package.json", .{});
+    defer file.close();
+    try file.writeAll(package_json);
+
+    // Get absolute path to the temp directory
+    const cwd_path = try tmp_dir.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(cwd_path);
+
+    // Load config from the temp directory
+    const config_loader = @import("../config.zig");
+    var config = try config_loader.loadpantryConfig(allocator, .{
+        .name = "test-project",
+        .cwd = cwd_path,
     });
     defer config.deinit();
 
     const scripts = try extractScripts(allocator, config);
-    try std.testing.expectEqual(@as(?std.StringHashMap([]const u8), null), scripts);
+    try std.testing.expect(scripts == null);
 }

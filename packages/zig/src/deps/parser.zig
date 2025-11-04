@@ -42,6 +42,26 @@ pub const PackageDependency = struct {
             gh.deinit(allocator);
         }
     }
+
+    pub fn clone(self: PackageDependency, allocator: std.mem.Allocator) !PackageDependency {
+        var cloned_github_ref: ?GitHubRef = null;
+        if (self.github_ref) |gh_ref| {
+            cloned_github_ref = GitHubRef{
+                .owner = try allocator.dupe(u8, gh_ref.owner),
+                .repo = try allocator.dupe(u8, gh_ref.repo),
+                .ref = try allocator.dupe(u8, gh_ref.ref),
+            };
+        }
+
+        return PackageDependency{
+            .name = try allocator.dupe(u8, self.name),
+            .version = try allocator.dupe(u8, self.version),
+            .global = self.global,
+            .dep_type = self.dep_type,
+            .source = self.source,
+            .github_ref = cloned_github_ref,
+        };
+    }
 };
 
 /// Parse GitHub URL formats:
@@ -117,6 +137,84 @@ pub fn parseGitHubUrl(allocator: std.mem.Allocator, version: []const u8) !?GitHu
     }
 
     return null; // Not a GitHub URL
+}
+
+test "parseGitHubUrl with github: prefix" {
+    const allocator = std.testing.allocator;
+
+    // Test: github:owner/repo#ref
+    {
+        const gh_ref = try parseGitHubUrl(allocator, "github:lodash/lodash#4.17.21");
+        try std.testing.expect(gh_ref != null);
+        defer {
+            var ref = gh_ref.?;
+            ref.deinit(allocator);
+        }
+
+        try std.testing.expectEqualStrings("lodash", gh_ref.?.owner);
+        try std.testing.expectEqualStrings("lodash", gh_ref.?.repo);
+        try std.testing.expectEqualStrings("4.17.21", gh_ref.?.ref);
+    }
+
+    // Test: github:owner/repo (no ref, should default to main)
+    {
+        const gh_ref = try parseGitHubUrl(allocator, "github:chalk/chalk");
+        try std.testing.expect(gh_ref != null);
+        defer {
+            var ref = gh_ref.?;
+            ref.deinit(allocator);
+        }
+
+        try std.testing.expectEqualStrings("chalk", gh_ref.?.owner);
+        try std.testing.expectEqualStrings("chalk", gh_ref.?.repo);
+        try std.testing.expectEqualStrings("main", gh_ref.?.ref);
+    }
+}
+
+test "parseGitHubUrl with https URL" {
+    const allocator = std.testing.allocator;
+
+    // Test: https://github.com/owner/repo#ref
+    {
+        const gh_ref = try parseGitHubUrl(allocator, "https://github.com/lodash/lodash#4.17.21");
+        try std.testing.expect(gh_ref != null);
+        defer {
+            var ref = gh_ref.?;
+            ref.deinit(allocator);
+        }
+
+        try std.testing.expectEqualStrings("lodash", gh_ref.?.owner);
+        try std.testing.expectEqualStrings("lodash", gh_ref.?.repo);
+        try std.testing.expectEqualStrings("4.17.21", gh_ref.?.ref);
+    }
+
+    // Test: git+https://github.com/owner/repo.git#ref
+    {
+        const gh_ref = try parseGitHubUrl(allocator, "git+https://github.com/chalk/chalk.git#v5.3.0");
+        try std.testing.expect(gh_ref != null);
+        defer {
+            var ref = gh_ref.?;
+            ref.deinit(allocator);
+        }
+
+        try std.testing.expectEqualStrings("chalk", gh_ref.?.owner);
+        try std.testing.expectEqualStrings("chalk", gh_ref.?.repo);
+        try std.testing.expectEqualStrings("v5.3.0", gh_ref.?.ref);
+    }
+}
+
+test "parseGitHubUrl with non-GitHub URL" {
+    const allocator = std.testing.allocator;
+
+    // Should return null for non-GitHub URLs
+    const result1 = try parseGitHubUrl(allocator, "^3.0.0");
+    try std.testing.expect(result1 == null);
+
+    const result2 = try parseGitHubUrl(allocator, "latest");
+    try std.testing.expect(result2 == null);
+
+    const result3 = try parseGitHubUrl(allocator, "1.2.3");
+    try std.testing.expect(result3 == null);
 }
 
 /// Infer dependencies from a file based on its format
@@ -311,7 +409,7 @@ test "parseDepsFile" {
     try std.testing.expectEqualStrings("nodejs.org", deps[0].name);
     try std.testing.expectEqualStrings("20.11.0", deps[0].version);
     try std.testing.expectEqualStrings("python.org", deps[1].name);
-    try std.testing.expectEqualStrings("3.12", deps[1].version);
+    try std.testing.expectEqualStrings("~3.12", deps[1].version); // Keep version constraint prefix
 }
 
 /// Parse package.json to infer Node.js version from engines field

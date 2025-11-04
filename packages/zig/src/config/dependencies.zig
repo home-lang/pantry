@@ -1,6 +1,7 @@
 const std = @import("std");
 const zig_config = @import("zig-config");
 const deps = @import("../deps/parser.zig");
+const types = @import("../packages/types.zig");
 
 /// Extract bin paths from a loaded configuration
 /// Returns a map of executable names to their paths within the package
@@ -287,4 +288,78 @@ test "extractDependencies from string format" {
     }
 
     try std.testing.expectEqual(@as(usize, 3), result.len);
+}
+
+/// Extract workspace patterns from a loaded configuration
+/// Returns an array of glob patterns like ["packages/*", "apps/*"]
+pub fn extractWorkspacePatterns(
+    allocator: std.mem.Allocator,
+    config: zig_config.UntypedConfigResult,
+) !?[][]const u8 {
+    // Check if config is an object
+    if (config.config != .object) {
+        return null;
+    }
+
+    // Get workspaces field
+    const workspaces_val = config.config.object.get("workspaces") orelse {
+        return null;
+    };
+
+    // We'll use a simple dynamic approach to collect patterns
+    var patterns_list: [][]const u8 = undefined;
+
+    switch (workspaces_val) {
+        .array => |workspaces_arr| {
+            // Array format: ["packages/*", "apps/*"]
+            patterns_list = try allocator.alloc([]const u8, workspaces_arr.items.len);
+            var count: usize = 0;
+            for (workspaces_arr.items) |pattern_val| {
+                if (pattern_val == .string) {
+                    patterns_list[count] = try allocator.dupe(u8, pattern_val.string);
+                    count += 1;
+                }
+            }
+            // Resize if needed
+            if (count < patterns_list.len) {
+                patterns_list = try allocator.realloc(patterns_list, count);
+            }
+        },
+        .string => |workspaces_str| {
+            // String format: "packages/*"
+            patterns_list = try allocator.alloc([]const u8, 1);
+            patterns_list[0] = try allocator.dupe(u8, workspaces_str);
+        },
+        else => return null, // Unsupported format
+    }
+
+    if (patterns_list.len == 0) {
+        allocator.free(patterns_list);
+        return null;
+    }
+
+    return patterns_list;
+}
+
+/// Extract workspace name from configuration
+pub fn extractWorkspaceName(
+    allocator: std.mem.Allocator,
+    config: zig_config.UntypedConfigResult,
+    fallback: []const u8,
+) ![]const u8 {
+    // Check if config is an object
+    if (config.config != .object) {
+        return try allocator.dupe(u8, fallback);
+    }
+
+    // Get name field
+    const name_val = config.config.object.get("name") orelse {
+        return try allocator.dupe(u8, fallback);
+    };
+
+    if (name_val == .string) {
+        return try allocator.dupe(u8, name_val.string);
+    }
+
+    return try allocator.dupe(u8, fallback);
 }

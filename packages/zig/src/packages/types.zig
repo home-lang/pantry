@@ -193,3 +193,51 @@ test "PackageSource string conversion" {
     try std.testing.expect(PackageSource.fromString("npm") == .npm);
     try std.testing.expect(PackageSource.fromString("invalid") == null);
 }
+
+/// Workspace member information
+pub const WorkspaceMember = struct {
+    /// Package name
+    name: []const u8,
+    /// Relative path from workspace root
+    path: []const u8,
+    /// Absolute path
+    abs_path: []const u8,
+    /// Config file path (if any)
+    config_path: ?[]const u8 = null,
+    /// Dependency file path (if any)
+    deps_file_path: ?[]const u8 = null,
+
+    pub fn deinit(self: *WorkspaceMember, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.path);
+        allocator.free(self.abs_path);
+        if (self.config_path) |p| allocator.free(p);
+        if (self.deps_file_path) |p| allocator.free(p);
+    }
+};
+
+/// Workspace configuration
+pub const WorkspaceConfig = struct {
+    /// Workspace root directory (absolute path)
+    root_path: []const u8,
+    /// Workspace name (from config or directory name)
+    name: []const u8,
+    /// Glob patterns for workspace members (e.g., ["packages/*", "apps/*"])
+    patterns: [][]const u8,
+    /// Discovered workspace members
+    members: []WorkspaceMember,
+
+    pub fn deinit(self: *WorkspaceConfig, allocator: std.mem.Allocator) void {
+        allocator.free(self.root_path);
+        allocator.free(self.name);
+        for (self.patterns) |pattern| {
+            allocator.free(pattern);
+        }
+        allocator.free(self.patterns);
+        for (self.members) |*member| {
+            var m = member.*;
+            m.deinit(allocator);
+        }
+        allocator.free(self.members);
+    }
+};
