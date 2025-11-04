@@ -1,10 +1,17 @@
 const std = @import("std");
 const detector = @import("detector.zig");
 
+pub const DependencyType = enum {
+    normal,
+    dev,
+    peer,
+};
+
 pub const PackageDependency = struct {
     name: []const u8,
     version: []const u8,
     global: bool = false,
+    dep_type: DependencyType = .normal,
 
     pub fn deinit(self: *PackageDependency, allocator: std.mem.Allocator) void {
         allocator.free(self.name);

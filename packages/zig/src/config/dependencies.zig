@@ -70,6 +70,8 @@ pub fn extractBinPaths(
 /// - dependencies as object: { "bun": "^1.2.19", "redis.io": "^8.0.0" }
 /// - dependencies as array: ["bun", "redis.io"]
 /// - dependencies as string: "bun redis.io"
+/// - devDependencies (same formats as dependencies)
+/// - peerDependencies (same formats as dependencies)
 /// - global flag at top level
 pub fn extractDependencies(
     allocator: std.mem.Allocator,
@@ -92,11 +94,32 @@ pub fn extractDependencies(
     else
         false;
 
-    // Get dependencies field
-    const deps_val = config.config.object.get("dependencies") orelse {
-        return dependencies.toOwnedSlice(allocator);
-    };
+    // Extract regular dependencies
+    if (config.config.object.get("dependencies")) |deps_val| {
+        try extractDependencyField(allocator, deps_val, global_flag, .normal, &dependencies);
+    }
 
+    // Extract devDependencies
+    if (config.config.object.get("devDependencies")) |deps_val| {
+        try extractDependencyField(allocator, deps_val, global_flag, .dev, &dependencies);
+    }
+
+    // Extract peerDependencies
+    if (config.config.object.get("peerDependencies")) |deps_val| {
+        try extractDependencyField(allocator, deps_val, global_flag, .peer, &dependencies);
+    }
+
+    return dependencies.toOwnedSlice(allocator);
+}
+
+/// Helper to extract dependencies from a field (dependencies, devDependencies, or peerDependencies)
+fn extractDependencyField(
+    allocator: std.mem.Allocator,
+    deps_val: std.json.Value,
+    global_flag: bool,
+    dep_type: deps.DependencyType,
+    dependencies: *std.ArrayList(deps.PackageDependency),
+) !void {
     switch (deps_val) {
         .object => |deps_obj| {
             // Object format: { "package": "version", ... }
@@ -112,6 +135,7 @@ pub fn extractDependencies(
                     .name = try allocator.dupe(u8, pkg_name),
                     .version = try allocator.dupe(u8, version),
                     .global = global_flag,
+                    .dep_type = dep_type,
                 });
             }
         },
@@ -123,6 +147,7 @@ pub fn extractDependencies(
                         .name = try allocator.dupe(u8, dep_val.string),
                         .version = try allocator.dupe(u8, "latest"),
                         .global = global_flag,
+                        .dep_type = dep_type,
                     });
                 }
             }
@@ -137,14 +162,13 @@ pub fn extractDependencies(
                         .name = try allocator.dupe(u8, trimmed),
                         .version = try allocator.dupe(u8, "latest"),
                         .global = global_flag,
+                        .dep_type = dep_type,
                     });
                 }
             }
         },
         else => {}, // Unsupported format, skip
     }
-
-    return dependencies.toOwnedSlice(allocator);
 }
 
 test "extractDependencies from object format" {

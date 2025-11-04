@@ -77,6 +77,9 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const user = ctx.hasOption("user");
     const force = ctx.hasOption("force");
     const verbose = ctx.hasOption("verbose");
+    const production = ctx.hasOption("production");
+    const dev_only = ctx.hasOption("dev");
+    const include_peer = ctx.hasOption("peer");
 
     _ = force;
     _ = verbose;
@@ -108,8 +111,13 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         std.process.exit(result.exit_code);
     }
 
-    // Call existing install logic
-    const result = try lib.commands.installCommand(allocator, packages.items);
+    // Call existing install logic with options
+    const install_options = lib.commands.InstallOptions{
+        .production = production,
+        .dev_only = dev_only,
+        .include_peer = include_peer,
+    };
+    const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -524,6 +532,17 @@ pub fn main() !void {
     const install_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
         .withShort('v');
     _ = try install_cmd.addOption(install_verbose_opt);
+
+    const install_production_opt = cli.Option.init("production", "production", "Skip devDependencies (install only dependencies)", .bool)
+        .withShort('p');
+    _ = try install_cmd.addOption(install_production_opt);
+
+    const install_dev_opt = cli.Option.init("dev", "dev", "Install devDependencies only", .bool)
+        .withShort('d');
+    _ = try install_cmd.addOption(install_dev_opt);
+
+    const install_peer_opt = cli.Option.init("peer", "peer", "Install peerDependencies", .bool);
+    _ = try install_cmd.addOption(install_peer_opt);
 
     _ = install_cmd.setAction(installAction);
     _ = try root.addCommand(install_cmd);

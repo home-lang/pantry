@@ -193,7 +193,17 @@ fn installSinglePackage(
 }
 
 /// Install command
+pub const InstallOptions = struct {
+    production: bool = false, // Skip devDependencies
+    dev_only: bool = false, // Install devDependencies only
+    include_peer: bool = false, // Include peerDependencies
+};
+
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    return installCommandWithOptions(allocator, args, .{});
+}
+
+pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []const u8, options: InstallOptions) !CommandResult {
     // Parse flags and filter out non-package arguments
     var is_global = false;
     var package_args = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
@@ -263,11 +273,47 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             }
         }
 
-        if (deps.len == 0) {
+        // Filter dependencies based on options
+        var filtered_deps = try std.ArrayList(parser.PackageDependency).initCapacity(allocator, deps.len);
+        defer filtered_deps.deinit(allocator);
+
+        for (deps) |dep| {
+            const should_include = blk: {
+                if (options.dev_only) {
+                    // --dev: only install devDependencies
+                    break :blk dep.dep_type == .dev;
+                } else if (options.production) {
+                    // --production: install only dependencies (skip dev and peer unless --peer is set)
+                    if (dep.dep_type == .dev) {
+                        break :blk false;
+                    } else if (dep.dep_type == .peer) {
+                        break :blk options.include_peer;
+                    } else {
+                        break :blk true; // .normal dependencies
+                    }
+                } else {
+                    // Default: install dependencies and devDependencies
+                    // Only skip peerDependencies unless --peer is specified
+                    if (dep.dep_type == .peer) {
+                        break :blk options.include_peer;
+                    }
+                    break :blk true;
+                }
+            };
+
+            if (should_include) {
+                try filtered_deps.append(allocator, dep);
+            }
+        }
+
+        // Use filtered_deps from this point forward
+        const deps_to_install = filtered_deps.items;
+
+        if (deps_to_install.len == 0) {
             if (deps_file_path) |path| {
-                std.debug.print("No dependencies found in {s}\n", .{path});
+                std.debug.print("No dependencies to install from {s}\n", .{path});
             } else {
-                std.debug.print("No dependencies found in config file\n", .{});
+                std.debug.print("No dependencies to install from config file\n", .{});
             }
             return .{ .exit_code = 0 };
         }
@@ -324,15 +370,15 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         const green = "\x1b[32m";
         const dim = "\x1b[2m";
         const reset = "\x1b[0m";
-        std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, deps.len });
+        std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, deps_to_install.len });
 
         // Install each dependency concurrently
         var pkg_cache = try cache.PackageCache.init(allocator);
         defer pkg_cache.deinit();
 
         // Use thread pool for concurrent installation (max 4 concurrent)
-        const max_concurrent = @min(deps.len, 4);
-        var install_results = try allocator.alloc(InstallTaskResult, deps.len);
+        const max_concurrent = @min(deps_to_install.len, 4);
+        var install_results = try allocator.alloc(InstallTaskResult, deps_to_install.len);
         defer {
             for (install_results) |*result| {
                 result.deinit(allocator);
@@ -352,9 +398,9 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
         }
 
         // Install packages concurrently using thread pool
-        if (deps.len <= 1) {
+        if (deps_to_install.len <= 1) {
             // Single package - install sequentially
-            for (deps, 0..) |dep, i| {
+            for (deps_to_install, 0..) |dep, i| {
                 install_results[i] = try installSinglePackage(
                     allocator,
                     dep,
@@ -374,7 +420,7 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
             var wg: std.Thread.WaitGroup = .{};
             defer wg.wait();
 
-            for (deps, 0..) |dep, i| {
+            for (deps_to_install, 0..) |dep, i| {
                 wg.start();
                 const task = try allocator.create(InstallTask);
                 task.* = .{
