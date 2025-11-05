@@ -74,6 +74,22 @@ pub fn stripDisplayPrefix(name: []const u8) []const u8 {
 }
 
 // ============================================================================
+// Dependency Types
+// ============================================================================
+
+pub const DependencyType = enum {
+    normal,
+    dev,
+    peer,
+    optional,
+};
+
+pub const DependencyInfo = struct {
+    version: []const u8,
+    dep_type: DependencyType,
+};
+
+// ============================================================================
 // Config File Utilities
 // ============================================================================
 
@@ -114,4 +130,50 @@ pub fn readConfigFile(allocator: std.mem.Allocator, config_path: []const u8) !st
     defer allocator.free(json_content);
 
     return try std.json.parseFromSlice(std.json.Value, allocator, json_content, .{});
+}
+
+/// Extract all dependencies from parsed config with their types
+pub fn extractAllDependencies(
+    allocator: std.mem.Allocator,
+    parsed: std.json.Parsed(std.json.Value),
+) !std.StringHashMap(DependencyInfo) {
+    var deps_map = std.StringHashMap(DependencyInfo).init(allocator);
+    errdefer deps_map.deinit();
+
+    const root = parsed.value.object;
+
+    // Process each dependency type
+    const dep_types = [_]struct {
+        key: []const u8,
+        dep_type: DependencyType,
+    }{
+        .{ .key = "dependencies", .dep_type = .normal },
+        .{ .key = "devDependencies", .dep_type = .dev },
+        .{ .key = "peerDependencies", .dep_type = .peer },
+        .{ .key = "optionalDependencies", .dep_type = .optional },
+    };
+
+    for (dep_types) |dt| {
+        if (root.get(dt.key)) |deps_val| {
+            if (deps_val != .object) continue;
+
+            var it = deps_val.object.iterator();
+            while (it.next()) |entry| {
+                const name = try allocator.dupe(u8, entry.key_ptr.*);
+                errdefer allocator.free(name);
+
+                const version = switch (entry.value_ptr.*) {
+                    .string => |s| s,
+                    else => "unknown",
+                };
+
+                try deps_map.put(name, .{
+                    .version = version,
+                    .dep_type = dt.dep_type,
+                });
+            }
+        }
+    }
+
+    return deps_map;
 }

@@ -59,6 +59,9 @@ pub const uninstallCommand = package_commands.uninstallCommand;
 pub const PublishOptions = package_commands.PublishOptions;
 pub const publishCommand = package_commands.publishCommand;
 
+pub const WhyOptions = package_commands.WhyOptions;
+pub const whyCommand = package_commands.whyCommand;
+
 // ============================================================================
 // Re-export Registry Commands
 // ============================================================================

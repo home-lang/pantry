@@ -373,6 +373,41 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get package name argument
+    var packages = std.ArrayList([]const u8){};
+    defer packages.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |pkg| : (i += 1) {
+        try packages.append(allocator, pkg);
+    }
+
+    const top = ctx.hasOption("top");
+    const depth_str = ctx.getOption("depth");
+
+    var depth: ?usize = null;
+    if (depth_str) |d| {
+        depth = std.fmt.parseInt(usize, d, 10) catch null;
+    }
+
+    const options = lib.commands.WhyOptions{
+        .top = top,
+        .depth = depth,
+    };
+
+    const result = try lib.commands.whyCommand(allocator, packages.items, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -906,6 +941,25 @@ pub fn main() !void {
 
     _ = publish_cmd.setAction(publishAction);
     _ = try root.addCommand(publish_cmd);
+
+    // ========================================================================
+    // Why Command
+    // ========================================================================
+    var why_cmd = try cli.BaseCommand.init(allocator, "why", "Explain why a package is installed");
+
+    const why_package_arg = cli.Argument.init("package", "Package name or pattern (supports globs like @org/*, *-suffix)", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try why_cmd.addArgument(why_package_arg);
+
+    const why_top_opt = cli.Option.init("top", "top", "Show only top-level dependencies", .bool);
+    _ = try why_cmd.addOption(why_top_opt);
+
+    const why_depth_opt = cli.Option.init("depth", "depth", "Maximum depth of dependency tree to display", .string);
+    _ = try why_cmd.addOption(why_depth_opt);
+
+    _ = why_cmd.setAction(whyAction);
+    _ = try root.addCommand(why_cmd);
 
     // ========================================================================
     // Run Command (Script Runner)

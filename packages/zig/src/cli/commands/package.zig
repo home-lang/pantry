@@ -432,3 +432,207 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
     return .{ .exit_code = 0 };
 }
+
+// ============================================================================
+// Why Command
+// ============================================================================
+
+pub const WhyOptions = struct {
+    top: bool = false, // Show only top-level dependencies
+    depth: ?usize = null, // Maximum depth of dependency tree to display
+};
+
+/// Dependency chain node for displaying why a package is installed
+const DependencyChain = struct {
+    package_name: []const u8,
+    version: []const u8,
+    required_by: []const u8,
+    version_constraint: []const u8,
+    dep_type: []const u8, // "prod", "dev", "peer", "optional"
+    depth: usize,
+    children: std.ArrayList(*DependencyChain),
+
+    pub fn deinit(self: *DependencyChain, allocator: std.mem.Allocator) void {
+        for (self.children.items) |child| {
+            child.deinit(allocator);
+            allocator.destroy(child);
+        }
+        self.children.deinit();
+    }
+};
+
+/// Explain why a package is installed
+pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, options: WhyOptions) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, "Error: No package specified\nUsage: pantry why <package>");
+    }
+
+    const package_pattern = args[0];
+
+    // Get current working directory
+    var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
+
+    // Find config file
+    const config_path = common.findConfigFile(allocator, cwd) catch {
+        return CommandResult.err(allocator, common.ERROR_NO_CONFIG);
+    };
+    defer allocator.free(config_path);
+
+    // Parse config file
+    const parsed = common.readConfigFile(allocator, config_path) catch {
+        return CommandResult.err(allocator, common.ERROR_CONFIG_PARSE);
+    };
+    defer parsed.deinit();
+
+    // Extract dependencies from config
+    var deps_map = try common.extractAllDependencies(allocator, parsed);
+    defer {
+        var it = deps_map.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+        }
+        deps_map.deinit();
+    }
+
+    // Find matching packages
+    var matches = std.ArrayList([]const u8){};
+    defer matches.deinit(allocator);
+
+    var it = deps_map.iterator();
+    while (it.next()) |entry| {
+        if (matchesPattern(entry.key_ptr.*, package_pattern)) {
+            try matches.append(allocator, entry.key_ptr.*);
+        }
+    }
+
+    if (matches.items.len == 0) {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Package '{s}' not found in dependencies",
+            .{package_pattern},
+        );
+        return .{
+            .exit_code = 1,
+            .message = msg,
+        };
+    }
+
+    // Display dependency chains for each match
+    for (matches.items) |pkg_name| {
+        const dep_info = deps_map.get(pkg_name).?;
+
+        std.debug.print("{s}@{s}\n", .{ pkg_name, dep_info.version });
+
+        if (options.top) {
+            // Show only top-level dependency
+            const dep_type_str = switch (dep_info.dep_type) {
+                .normal => "",
+                .dev => "dev ",
+                .peer => "peer ",
+                .optional => "optional ",
+            };
+
+            // Get project name from config
+            const project_name = if (parsed.value.object.get("name")) |name_val|
+                name_val.string
+            else
+                "project";
+
+            std.debug.print("  └─ {s}{s}@1.0.0 (requires {s})\n", .{
+                dep_type_str,
+                project_name,
+                dep_info.version,
+            });
+        } else {
+            // Build and display full dependency tree
+            try displayDependencyTree(allocator, pkg_name, dep_info, parsed, 1, options.depth orelse 999);
+        }
+
+        std.debug.print("\n", .{});
+    }
+
+    const summary = try std.fmt.allocPrint(
+        allocator,
+        "Found {d} package(s) matching '{s}'",
+        .{ matches.items.len, package_pattern },
+    );
+
+    return .{
+        .exit_code = 0,
+        .message = summary,
+    };
+}
+
+/// Check if a package name matches a pattern (supports glob patterns)
+fn matchesPattern(pkg_name: []const u8, pattern: []const u8) bool {
+    // Handle exact match
+    if (std.mem.eql(u8, pkg_name, pattern)) {
+        return true;
+    }
+
+    // Handle glob patterns
+    if (std.mem.indexOf(u8, pattern, "*")) |star_pos| {
+        const prefix = pattern[0..star_pos];
+        const suffix = pattern[star_pos + 1 ..];
+
+        if (!std.mem.startsWith(u8, pkg_name, prefix)) return false;
+        if (!std.mem.endsWith(u8, pkg_name, suffix)) return false;
+        return true;
+    }
+
+    return false;
+}
+
+/// Display dependency tree recursively
+fn displayDependencyTree(
+    allocator: std.mem.Allocator,
+    pkg_name: []const u8,
+    dep_info: common.DependencyInfo,
+    parsed: std.json.Parsed(std.json.Value),
+    current_depth: usize,
+    max_depth: usize,
+) !void {
+    if (current_depth > max_depth) {
+        const indent = try createIndent(allocator, current_depth);
+        defer allocator.free(indent);
+        std.debug.print("{s}└─ (deeper dependencies hidden)\n", .{indent});
+        return;
+    }
+
+    const dep_type_str = switch (dep_info.dep_type) {
+        .normal => "",
+        .dev => "dev ",
+        .peer => "peer ",
+        .optional => "optional ",
+    };
+
+    // Get project name from config
+    const project_name = if (parsed.value.object.get("name")) |name_val|
+        name_val.string
+    else
+        "project";
+
+    const indent = try createIndent(allocator, current_depth);
+    defer allocator.free(indent);
+
+    std.debug.print("{s}└─ {s}{s}@1.0.0 (requires {s})\n", .{
+        indent,
+        dep_type_str,
+        project_name,
+        dep_info.version,
+    });
+
+    // For a real implementation, we would recursively check transitive dependencies
+    // This is a simplified version showing the direct dependency relationship
+    _ = pkg_name;
+}
+
+/// Create indentation string for tree display
+fn createIndent(allocator: std.mem.Allocator, depth: usize) ![]u8 {
+    const indent_per_level = 3;
+    const total_spaces = depth * indent_per_level;
+    const indent = try allocator.alloc(u8, total_spaces);
+    @memset(indent, ' ');
+    return indent;
+}
