@@ -241,6 +241,40 @@ fn updateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn pxAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get all arguments
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    defer args.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args.append(allocator, arg);
+    }
+
+    const use_pantry = ctx.hasOption("pantry");
+    const package_name = ctx.getOption("package");
+    const silent = ctx.hasOption("silent");
+    const verbose = ctx.hasOption("verbose");
+
+    const options = lib.commands.PxOptions{
+        .use_pantry = use_pantry,
+        .package_name = package_name,
+        .silent = silent,
+        .verbose = verbose,
+    };
+
+    const result = try lib.commands.pxCommand(allocator, args.items, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn scriptsListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -735,6 +769,37 @@ pub fn main() !void {
     // ========================================================================
     var list_cmd = try cli.BaseCommand.init(allocator, "list", "List installed packages");
 
+
+    // ========================================================================
+    // Px Command (Package Executor)
+    // ========================================================================
+    var px_cmd = try cli.BaseCommand.init(allocator, "px", "Run packages from npm (like npx/bunx)");
+
+    const px_executable_arg = cli.Argument.init("executable", "Package executable to run", .string)
+        .withRequired(true);
+    _ = try px_cmd.addArgument(px_executable_arg);
+
+    const px_args_arg = cli.Argument.init("args", "Arguments for the executable", .string)
+        .withRequired(false)
+        .withVariadic(true);
+    _ = try px_cmd.addArgument(px_args_arg);
+
+    const px_pantry_opt = cli.Option.init("pantry", "pantry", "Use Pantry runtime (ignore shebangs)", .bool);
+    _ = try px_cmd.addOption(px_pantry_opt);
+
+    const px_package_opt = cli.Option.init("package", "package", "Specific package to use", .string)
+        .withShort('p');
+    _ = try px_cmd.addOption(px_package_opt);
+
+    const px_silent_opt = cli.Option.init("silent", "silent", "Don't log anything", .bool);
+    _ = try px_cmd.addOption(px_silent_opt);
+
+    const px_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose logging", .bool)
+        .withShort('v');
+    _ = try px_cmd.addOption(px_verbose_opt);
+
+    _ = px_cmd.setAction(pxAction);
+    _ = try root.addCommand(px_cmd);
     const list_format_opt = cli.Option.init("format", "format", "Output format (table, json, simple)", .string)
         .withDefault("table");
     _ = try list_cmd.addOption(list_format_opt);

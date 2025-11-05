@@ -3869,3 +3869,151 @@ fn updateSpecificPackages(
 
     return try installCommandWithOptions(allocator, packages, install_options);
 }
+
+/// Px command options
+pub const PxOptions = struct {
+    use_pantry: bool = false, // Use Pantry runtime instead of respecting shebangs
+    package_name: ?[]const u8 = null, // Specific package to use
+    silent: bool = false, // Don't log anything
+    verbose: bool = false, // Verbose logging
+};
+
+/// Run packages from npm (like npx/bunx)
+pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PxOptions) !CommandResult {
+    if (args.len == 0) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: No package specified\nUsage: px <package> [args...]"),
+        };
+    }
+
+    const package_name = options.package_name orelse args[0];
+    const executable_name = args[0];
+    const exec_args = if (args.len > 1) args[1..] else &[_][]const u8{};
+
+    if (!options.silent and options.verbose) {
+        std.debug.print("\x1b[34m📦 Running package executable\x1b[0m\n", .{});
+        std.debug.print("\x1b[2m   Package: {s}\x1b[0m\n", .{package_name});
+        std.debug.print("\x1b[2m   Executable: {s}\x1b[0m\n", .{executable_name});
+        if (exec_args.len > 0) {
+            std.debug.print("\x1b[2m   Arguments: {d}\x1b[0m\n", .{exec_args.len});
+        }
+        std.debug.print("\n", .{});
+    }
+
+    // Get current working directory
+    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
+        };
+    };
+    defer allocator.free(cwd);
+
+    // Check if package is installed locally
+    const local_bin_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules", ".bin", executable_name });
+    defer allocator.free(local_bin_path);
+
+    var executable_path: ?[]const u8 = null;
+    var path_allocated = false;
+    defer if (path_allocated and executable_path != null) allocator.free(executable_path.?);
+
+    // Try local installation first
+    std.fs.accessAbsolute(local_bin_path, .{}) catch {
+        // Not found locally, check global
+        const global_bin_path = try std.fs.path.join(
+            allocator,
+            &[_][]const u8{ std.posix.getenv("HOME") orelse "~", ".pantry", "global", "bin", executable_name },
+        );
+        defer allocator.free(global_bin_path);
+
+        std.fs.accessAbsolute(global_bin_path, .{}) catch {
+            // Not installed, need to install it
+            if (!options.silent) {
+                std.debug.print("\x1b[33m📥 Package not found, installing {s}...\x1b[0m\n\n", .{package_name});
+            }
+
+            // Install the package globally temporarily
+            const install_args = [_][]const u8{package_name};
+            const install_options = InstallOptions{};
+            const install_result = try installCommandWithOptions(allocator, &install_args, install_options);
+            defer if (install_result.message) |msg| allocator.free(msg);
+
+            if (install_result.exit_code != 0) {
+                return .{
+                    .exit_code = 1,
+                    .message = try std.fmt.allocPrint(allocator, "Error: Failed to install package '{s}'", .{package_name}),
+                };
+            }
+
+            // After install, check local bin again
+            std.fs.accessAbsolute(local_bin_path, .{}) catch {
+                return .{
+                    .exit_code = 1,
+                    .message = try std.fmt.allocPrint(allocator, "Error: Package '{s}' installed but executable '{s}' not found", .{ package_name, executable_name }),
+                };
+            };
+
+            executable_path = try allocator.dupe(u8, local_bin_path);
+            path_allocated = true;
+        };
+
+        if (executable_path == null) {
+            executable_path = try allocator.dupe(u8, global_bin_path);
+            path_allocated = true;
+        }
+    };
+
+    if (executable_path == null) {
+        executable_path = try allocator.dupe(u8, local_bin_path);
+        path_allocated = true;
+    }
+
+    // Execute the package
+    if (!options.silent and !options.verbose) {
+        std.debug.print("\x1b[2m$ {s}", .{executable_name});
+        for (exec_args) |arg| {
+            std.debug.print(" {s}", .{arg});
+        }
+        std.debug.print("\x1b[0m\n", .{});
+    }
+
+    // Build command arguments
+    var cmd_args = try std.ArrayList([]const u8).initCapacity(allocator, 1 + exec_args.len);
+    defer cmd_args.deinit(allocator);
+
+    try cmd_args.append(allocator, executable_path.?);
+    for (exec_args) |arg| {
+        try cmd_args.append(allocator, arg);
+    }
+
+    // Execute
+    const result = std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = cmd_args.items,
+        .cwd = cwd,
+    }) catch |err| {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Failed to execute '{s}': {}", .{ executable_name, err }),
+        };
+    };
+
+    // Print output
+    if (result.stdout.len > 0) {
+        std.debug.print("{s}", .{result.stdout});
+    }
+    if (result.stderr.len > 0) {
+        std.debug.print("{s}", .{result.stderr});
+    }
+
+    allocator.free(result.stdout);
+    allocator.free(result.stderr);
+
+    const exit_code: u8 = switch (result.term) {
+        .Exited => |code| @intCast(code),
+        else => 1,
+    };
+
+    return .{ .exit_code = exit_code };
+}
