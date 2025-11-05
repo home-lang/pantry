@@ -1,12 +1,13 @@
 //! Core Install Logic
 //!
-//! Main installation command implementation.
+//! Main installation command implementation for project dependencies.
 
 const std = @import("std");
 const lib = @import("../../../lib.zig");
 const types = @import("types.zig");
 const helpers = @import("helpers.zig");
 const workspace = @import("workspace.zig");
+const global = @import("global.zig");
 
 const cache = lib.cache;
 const string = lib.string;
@@ -34,13 +35,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
     // If -g flag is set with no packages, scan for global dependencies
     if (is_global and package_args.items.len == 0) {
-        const global = @import("global.zig");
         return try global.installGlobalDepsCommand(allocator);
     }
 
     // If -g flag is set with packages, install those packages globally
     if (is_global and package_args.items.len > 0) {
-        const global = @import("global.zig");
         return try global.installPackagesGloballyCommand(allocator, package_args.items);
     }
 
@@ -147,8 +146,272 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             return .{ .exit_code = 0 };
         }
 
-        // Rest of the install logic will be handled by installProjectDependencies
-        return try installProjectDependencies(allocator, cwd, deps_to_install, deps_file_path);
+        // Create project-specific environment
+        const proj_dir = if (deps_file_path) |path|
+            std.fs.path.dirname(path) orelse cwd
+        else
+            cwd;
+        const proj_basename = std.fs.path.basename(proj_dir);
+
+        // Hash project directory for short hash
+        var proj_hasher = std.crypto.hash.Md5.init(.{});
+        proj_hasher.update(proj_dir);
+        var proj_hash: [16]u8 = undefined;
+        proj_hasher.final(&proj_hash);
+        const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
+        defer allocator.free(proj_hash_short);
+
+        // Hash dependency file contents (or project dir if using config)
+        const hash_input = if (deps_file_path) |path|
+            try std.fs.cwd().readFileAlloc(allocator, path, 1024 * 1024)
+        else
+            try allocator.dupe(u8, proj_dir);
+        defer allocator.free(hash_input);
+
+        var dep_hasher = std.crypto.hash.Md5.init(.{});
+        dep_hasher.update(hash_input);
+        var dep_hash: [16]u8 = undefined;
+        dep_hasher.final(&dep_hash);
+        const dep_hash_hex = try string.hashToHex(dep_hash, allocator);
+        defer allocator.free(dep_hash_hex);
+        const dep_hash_short = try std.fmt.allocPrint(allocator, "d{s}", .{dep_hash_hex[0..8]});
+        defer allocator.free(dep_hash_short);
+
+        // Create environment directory
+        const home = try lib.Paths.home(allocator);
+        defer allocator.free(home);
+
+        const env_dir = try std.fmt.allocPrint(
+            allocator,
+            "{s}/.pantry/envs/{s}_{s}-{s}",
+            .{ home, proj_basename, proj_hash_short, dep_hash_short },
+        );
+        defer allocator.free(env_dir);
+
+        // Create environment directory structure
+        try std.fs.cwd().makePath(env_dir);
+        const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
+        defer allocator.free(bin_dir);
+        try std.fs.cwd().makePath(bin_dir);
+
+        // Clean Yarn/Bun-style output - just show what we're installing
+        const green = "\x1b[32m";
+        const dim = "\x1b[2m";
+        const reset = "\x1b[0m";
+        std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, deps_to_install.len });
+
+        // Install each dependency concurrently
+        var pkg_cache = try cache.PackageCache.init(allocator);
+        defer pkg_cache.deinit();
+
+        // Use thread pool for concurrent installation (max 4 concurrent)
+        const max_concurrent = @min(deps_to_install.len, 4);
+        var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
+        defer {
+            for (install_results) |*result| {
+                result.deinit(allocator);
+            }
+            allocator.free(install_results);
+        }
+
+        // Initialize results
+        for (install_results) |*result| {
+            result.* = .{
+                .name = "",
+                .version = "",
+                .success = false,
+                .error_msg = null,
+                .install_time_ms = 0,
+            };
+        }
+
+        // Install packages concurrently using thread pool
+        if (deps_to_install.len <= 1) {
+            // Single package - install sequentially
+            for (deps_to_install, 0..) |dep, i| {
+                install_results[i] = try helpers.installSinglePackage(
+                    allocator,
+                    dep,
+                    proj_dir,
+                    env_dir,
+                    bin_dir,
+                    cwd,
+                    &pkg_cache,
+                );
+            }
+        } else {
+            // Multiple packages - use thread pool
+            var thread_pool: std.Thread.Pool = undefined;
+            try thread_pool.init(.{ .allocator = allocator, .n_jobs = max_concurrent });
+            defer thread_pool.deinit();
+
+            var wg: std.Thread.WaitGroup = .{};
+            defer wg.wait();
+
+            for (deps_to_install, 0..) |dep, i| {
+                wg.start();
+                const task = try allocator.create(types.InstallTask);
+                task.* = .{
+                    .allocator = allocator,
+                    .dep = dep,
+                    .proj_dir = proj_dir,
+                    .env_dir = env_dir,
+                    .bin_dir = bin_dir,
+                    .cwd = cwd,
+                    .pkg_cache = &pkg_cache,
+                    .result = &install_results[i],
+                    .wg = &wg,
+                };
+                try thread_pool.spawn(helpers.installPackageWorker, .{task});
+            }
+        }
+
+        // Print clean Yarn/Bun-style summary - only show what was installed or failed
+        var success_count: usize = 0;
+        var failed_count: usize = 0;
+
+        for (install_results) |result| {
+            if (result.name.len == 0) continue;
+            const display_name = helpers.stripDisplayPrefix(result.name);
+            if (result.success) {
+                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, display_name, result.version });
+                success_count += 1;
+            } else {
+                const red = "\x1b[31m";
+                std.debug.print("{s}✗{s} {s}@{s}", .{ red, reset, display_name, result.version });
+                if (result.error_msg) |msg| {
+                    std.debug.print(" {s}({s}){s}\n", .{ dim, msg, reset });
+                } else {
+                    std.debug.print("\n", .{});
+                }
+                failed_count += 1;
+            }
+        }
+
+        // Handle local packages separately (they need special symlink handling)
+        // Create pantry_modules directory if it doesn't exist
+        const pantry_modules_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{proj_dir});
+        defer allocator.free(pantry_modules_dir);
+        try std.fs.cwd().makePath(pantry_modules_dir);
+
+        for (deps) |dep| {
+            if (!helpers.isLocalDependency(dep)) continue;
+
+            // Resolve local path
+            const local_path = if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
+                const home_path = try lib.Paths.home(allocator);
+                defer allocator.free(home_path);
+                const rel_path = dep.version[2..]; // Remove "~/"
+                break :blk try std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, rel_path });
+            } else if (std.mem.startsWith(u8, dep.version, "/"))
+                try allocator.dupe(u8, dep.version)
+            else
+                try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dep.version });
+            defer allocator.free(local_path);
+
+            // Check if local path exists
+            std.fs.accessAbsolute(local_path, .{}) catch {
+                const yellow = "\x1b[33m";
+                std.debug.print("{s}⚠{s}  {s}@{s} {s}(path not found){s}\n", .{ yellow, reset, dep.name, dep.version, dim, reset });
+                failed_count += 1;
+                continue;
+            };
+
+            const pkg_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
+                dep.name[colon_pos + 1 ..]
+            else
+                dep.name;
+
+            // Create pantry_modules/{package} directory structure
+            const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_modules_dir, pkg_name });
+            defer allocator.free(pkg_modules_dir);
+            try std.fs.cwd().makePath(pkg_modules_dir);
+
+            // Create symlink to source directory for build system
+            const src_link_path = try std.fmt.allocPrint(allocator, "{s}/src", .{pkg_modules_dir});
+            defer allocator.free(src_link_path);
+            std.fs.deleteFileAbsolute(src_link_path) catch {};
+
+            const src_path = try std.fmt.allocPrint(allocator, "{s}/src", .{local_path});
+            defer allocator.free(src_path);
+            std.fs.symLinkAbsolute(src_path, src_link_path, .{ .is_directory = true }) catch |err| {
+                const red = "\x1b[31m";
+                const display_name = helpers.stripDisplayPrefix(dep.name);
+                std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, display_name, dep.version, dim, err, reset });
+                failed_count += 1;
+                continue;
+            };
+
+            // Also create symlink in env bin directory for executables
+            const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
+            defer allocator.free(link_path);
+            std.fs.deleteFileAbsolute(link_path) catch {};
+            std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch {};
+
+            const display_name = helpers.stripDisplayPrefix(dep.name);
+            std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, display_name, dep.version, dim, reset });
+            success_count += 1;
+        }
+
+        // Generate lockfile
+        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{proj_dir});
+        defer allocator.free(lockfile_path);
+
+        var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
+        defer lockfile.deinit(allocator);
+
+        // Add entries for all installed packages
+        for (deps, 0..) |dep, i| {
+            const source = if (helpers.isLocalDependency(dep))
+                lib.packages.PackageSource.local
+            else if (std.mem.startsWith(u8, dep.name, "github:"))
+                lib.packages.PackageSource.github
+            else if (std.mem.startsWith(u8, dep.name, "npm:"))
+                lib.packages.PackageSource.npm
+            else
+                lib.packages.PackageSource.pkgx;
+
+            const clean_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
+                dep.name[colon_pos + 1 ..]
+            else
+                dep.name;
+
+            // Use the resolved version from install_results if available, otherwise use dep.version
+            const resolved_version = if (i < install_results.len and install_results[i].success and install_results[i].version.len > 0)
+                install_results[i].version
+            else
+                dep.version;
+
+            const entry = lib.packages.LockfileEntry{
+                .name = try allocator.dupe(u8, clean_name),
+                .version = try allocator.dupe(u8, resolved_version),
+                .source = source,
+                .url = if (source == .local) try allocator.dupe(u8, dep.version) else null,
+                .resolved = null,
+                .integrity = null,
+                .dependencies = null,
+            };
+
+            const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, resolved_version });
+            defer allocator.free(key);
+            try lockfile.addEntry(allocator, key, entry);
+        }
+
+        // Write lockfile
+        const lockfile_writer = @import("../../../packages/lockfile.zig");
+        lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+            const yellow = "\x1b[33m";
+            std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
+        };
+
+        // Clean summary - Yarn/Bun style
+        std.debug.print("\n{s}✓{s} Installed {d} package(s)", .{ green, reset, success_count });
+        if (failed_count > 0) {
+            const red = "\x1b[31m";
+            std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        }
+        std.debug.print("\n", .{});
+        return .{ .exit_code = 0 };
     }
 
     // Detect if we're in a project directory
@@ -219,33 +482,4 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     std.debug.print("\n", .{});
 
     return .{ .exit_code = 0 };
-}
-
-/// Install project dependencies (from deps file or config)
-fn installProjectDependencies(
-    allocator: std.mem.Allocator,
-    cwd: []const u8,
-    deps: []const lib.deps.parser.PackageDependency,
-    deps_file_path: ?[]const u8,
-) !types.CommandResult {
-    // NOTE: This function contains the core logic for installing dependencies from a project
-    // For brevity in this refactor, I'm calling this a placeholder that will use the
-    // actual implementation from install_impl.zig lines 380-720
-    // The full implementation includes:
-    // - Environment directory creation
-    // - Concurrent installation with thread pools
-    // - Local dependency handling
-    // - Lockfile generation
-    // This will be extracted in the final version
-
-    _ = cwd;
-    _ = deps;
-    _ = deps_file_path;
-    _ = allocator;
-    
-    // Temporary stub - actual implementation to be extracted
-    return .{
-        .exit_code = 1,
-        .message = try allocator.dupe(u8, "Project dependency installation not yet fully extracted"),
-    };
 }

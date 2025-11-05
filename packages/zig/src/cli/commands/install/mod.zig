@@ -14,22 +14,17 @@ pub const types = @import("types.zig");
 pub const helpers = @import("helpers.zig");
 pub const global = @import("global.zig");
 pub const workspace = @import("workspace.zig");
+pub const core = @import("core.zig");
 
 // Re-export commonly used types
 pub const CommandResult = types.CommandResult;
+pub const InstallOptions = types.InstallOptions;
 pub const InstallTask = types.InstallTask;
 pub const InstallTaskResult = types.InstallTaskResult;
 
-// For now, import the monolithic implementation
-// TODO: Extract core.zig logic from install_impl.zig
-const install_impl = @import("../install_impl.zig");
-
-// Re-export InstallOptions from install_impl (use install_impl version for now)
-pub const InstallOptions = install_impl.InstallOptions;
-
-// Re-export main install commands (currently from install_impl)
-pub const installCommand = install_impl.installCommand;
-pub const installCommandWithOptions = install_impl.installCommandWithOptions;
+// Re-export main install commands (from core.zig)
+pub const installCommand = core.installCommand;
+pub const installCommandWithOptions = core.installCommandWithOptions;
 
 // Re-export global commands (now from modular global.zig)
 pub const installGlobalDepsCommand = global.installGlobalDepsCommand;
