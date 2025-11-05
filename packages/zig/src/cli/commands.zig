@@ -2,13 +2,14 @@
 //!
 //! This module organizes commands into logical groups:
 //! - common: Shared types and utilities
-//! - package: remove, update, outdated commands
+//! - package: Package management (remove, update, outdated, uninstall, publish)
+//! - registry: Package discovery (search, info, list)
 //! - px: Package executor (npx/bunx equivalent)
 //! - scripts: Script execution from package.json
 //! - cache: Cache management
 //! - env: Environment management
 //! - shell: Shell integration
-//! - utils: Utility commands (clean, doctor, info, search, uninstall, list, publish)
+//! - utils: System utilities (clean, doctor)
 //! - services: Service management (start, stop, restart, status)
 //! - install: Installation commands
 //! - dev: Developer/debugging commands
@@ -29,6 +30,7 @@ pub const CommandResult = common.CommandResult;
 // ============================================================================
 
 pub const package_commands = @import("commands/package.zig");
+pub const registry_commands = @import("commands/registry.zig");
 pub const px_commands = @import("commands/px.zig");
 pub const scripts_commands = @import("commands/scripts.zig");
 pub const cache_commands = @import("commands/cache.zig");
@@ -51,6 +53,19 @@ pub const updateCommand = package_commands.updateCommand;
 
 pub const OutdatedOptions = package_commands.OutdatedOptions;
 pub const outdatedCommand = package_commands.outdatedCommand;
+
+pub const uninstallCommand = package_commands.uninstallCommand;
+
+pub const PublishOptions = package_commands.PublishOptions;
+pub const publishCommand = package_commands.publishCommand;
+
+// ============================================================================
+// Re-export Registry Commands
+// ============================================================================
+
+pub const searchCommand = registry_commands.searchCommand;
+pub const infoCommand = registry_commands.infoCommand;
+pub const listCommand = registry_commands.listCommand;
 
 // ============================================================================
 // Re-export Px Command
@@ -94,20 +109,13 @@ pub const shellLookupCommand = shell_commands.shellLookupCommand;
 pub const shellActivateCommand = shell_commands.shellActivateCommand;
 
 // ============================================================================
-// Re-export Utility Commands
+// Re-export System Utility Commands
 // ============================================================================
 
 pub const CleanOptions = utils_commands.CleanOptions;
 pub const cleanCommand = utils_commands.cleanCommand;
 
 pub const doctorCommand = utils_commands.doctorCommand;
-pub const uninstallCommand = utils_commands.uninstallCommand;
-pub const searchCommand = utils_commands.searchCommand;
-pub const infoCommand = utils_commands.infoCommand;
-pub const listCommand = utils_commands.listCommand;
-
-pub const PublishOptions = utils_commands.PublishOptions;
-pub const publishCommand = utils_commands.publishCommand;
 
 // ============================================================================
 // Re-export Service Commands

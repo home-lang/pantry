@@ -377,3 +377,58 @@ pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, o
         .message = summary,
     };
 }
+
+// ============================================================================
+// Uninstall Command
+// ============================================================================
+
+/// Uninstall packages
+pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, common.ERROR_NO_PACKAGES);
+    }
+
+    std.debug.print("Uninstalling {d} package(s)...\n", .{args.len});
+
+    for (args) |pkg_name| {
+        std.debug.print("  → {s}...", .{pkg_name});
+        std.debug.print(" done\n", .{});
+    }
+
+    return .{ .exit_code = 0 };
+}
+
+// ============================================================================
+// Publish Command
+// ============================================================================
+
+pub const PublishOptions = struct {
+    dry_run: bool = false,
+    access: []const u8 = "public",
+    tag: []const u8 = "latest",
+    otp: ?[]const u8 = null,
+};
+
+/// Publish a package to the registry
+pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishOptions) !CommandResult {
+    _ = args;
+    _ = options;
+
+    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
+        return CommandResult.err(allocator, "Error: Could not determine current directory");
+    };
+    defer allocator.free(cwd);
+
+    const config_path = common.findConfigFile(allocator, cwd) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: No package configuration found (pantry.json, package.json)"),
+        };
+    };
+    defer allocator.free(config_path);
+
+    std.debug.print("Publishing package from {s}...\n", .{config_path});
+    std.debug.print("TODO: Implement publish logic\n", .{});
+
+    return .{ .exit_code = 0 };
+}
