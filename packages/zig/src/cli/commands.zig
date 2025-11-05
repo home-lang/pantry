@@ -40,6 +40,7 @@ pub const utils_commands = @import("commands/utils.zig");
 pub const services_commands = @import("commands/services.zig");
 pub const install_commands = @import("commands/install.zig");
 pub const dev_commands = @import("commands/dev.zig");
+pub const audit_commands = @import("commands/audit.zig");
 
 // ============================================================================
 // Re-export Package Commands
@@ -155,3 +156,11 @@ pub const devShellcodeCommand = dev_commands.devShellcodeCommand;
 pub const devMd5Command = dev_commands.devMd5Command;
 pub const devFindProjectRootCommand = dev_commands.devFindProjectRootCommand;
 pub const devCheckUpdatesCommand = dev_commands.devCheckUpdatesCommand;
+
+// ============================================================================
+// Re-export Audit Commands
+// ============================================================================
+
+pub const AuditOptions = audit_commands.AuditOptions;
+pub const Severity = audit_commands.Severity;
+pub const auditCommand = audit_commands.auditCommand;

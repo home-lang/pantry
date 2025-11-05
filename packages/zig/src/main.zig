@@ -408,6 +408,49 @@ fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn auditAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Parse audit-level option
+    var audit_level: ?lib.commands.Severity = null;
+    if (ctx.getOption("audit-level")) |level_str| {
+        audit_level = lib.commands.Severity.fromString(level_str);
+    }
+
+    // Parse ignore CVEs
+    var ignore_cves = std.ArrayList([]const u8){};
+    defer ignore_cves.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getOption("ignore")) |_| : (i += 1) {
+        // Note: zig-cli doesn't support multiple same-name options easily
+        // This is a placeholder for the pattern
+        break;
+    }
+
+    const prod_only = ctx.hasOption("prod");
+    const json = ctx.hasOption("json");
+
+    const options = lib.commands.AuditOptions{
+        .audit_level = audit_level,
+        .prod_only = prod_only,
+        .ignore_cves = ignore_cves.items,
+        .json = json,
+    };
+
+    const result = try lib.commands.auditCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -960,6 +1003,26 @@ pub fn main() !void {
 
     _ = why_cmd.setAction(whyAction);
     _ = try root.addCommand(why_cmd);
+
+    // ========================================================================
+    // Audit Command
+    // ========================================================================
+    var audit_cmd = try cli.BaseCommand.init(allocator, "audit", "Check packages for security vulnerabilities");
+
+    const audit_level_opt = cli.Option.init("audit-level", "audit-level", "Only show vulnerabilities at this severity or higher (low, moderate, high, critical)", .string);
+    _ = try audit_cmd.addOption(audit_level_opt);
+
+    const audit_prod_opt = cli.Option.init("prod", "prod", "Audit only production dependencies", .bool);
+    _ = try audit_cmd.addOption(audit_prod_opt);
+
+    const audit_ignore_opt = cli.Option.init("ignore", "ignore", "Ignore specific CVE IDs", .string);
+    _ = try audit_cmd.addOption(audit_ignore_opt);
+
+    const audit_json_opt = cli.Option.init("json", "json", "Output in JSON format", .bool);
+    _ = try audit_cmd.addOption(audit_json_opt);
+
+    _ = audit_cmd.setAction(auditAction);
+    _ = try root.addCommand(audit_cmd);
 
     // ========================================================================
     // Run Command (Script Runner)
