@@ -920,6 +920,96 @@ fn installWorkspaceCommand(
     return .{ .exit_code = 0 };
 }
 
+/// Publish options
+pub const PublishOptions = struct {
+    dry_run: bool = false,
+    access: []const u8 = "public", // public or restricted
+    registry: ?[]const u8 = null,
+    tag: []const u8 = "latest",
+};
+
+/// Publish command - publish package to registry
+pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishOptions) !CommandResult {
+    _ = args;
+
+    const publish_module = @import("../packages/publish.zig");
+
+    const cwd = try std.process.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    const green = "\x1b[32m";
+    const blue = "\x1b[34m";
+    const yellow = "\x1b[33m";
+    const dim = "\x1b[2m";
+    const reset = "\x1b[0m";
+
+    // Find package config
+    const config_path = publish_module.findPackageConfig(allocator, cwd) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: No package configuration found (pantry.json, package.json)"),
+        };
+    };
+    defer allocator.free(config_path);
+
+    std.debug.print("{s}📦 Publishing package{s}\n", .{ blue, reset });
+    std.debug.print("{s}   Config: {s}{s}\n\n", .{ dim, std.fs.path.basename(config_path), reset });
+
+    // Extract and validate metadata
+    var metadata = publish_module.extractMetadata(allocator, config_path) catch |err| {
+        const error_msg = switch (err) {
+            error.MissingName => "package name is required",
+            error.MissingVersion => "package version is required",
+            error.InvalidVersion => "package version must be valid semver (e.g., 1.0.0)",
+            error.InvalidName => "package name contains invalid characters",
+            error.PackageConfigNotFound => "package config file not found",
+            error.InvalidPackageConfig => "package config file is invalid JSON",
+            else => "unknown validation error",
+        };
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Validation failed: {s}", .{error_msg}),
+        };
+    };
+    defer metadata.deinit(allocator);
+
+    // Display package info
+    std.debug.print("{s}Package:{s} {s}@{s}\n", .{ green, reset, metadata.name, metadata.version });
+    if (metadata.description) |desc| {
+        std.debug.print("{s}Description:{s} {s}\n", .{ dim, reset, desc });
+    }
+    if (metadata.license) |lic| {
+        std.debug.print("{s}License:{s} {s}\n", .{ dim, reset, lic });
+    }
+    if (metadata.author) |auth| {
+        std.debug.print("{s}Author:{s} {s}\n", .{ dim, reset, auth });
+    }
+    std.debug.print("\n", .{});
+
+    if (options.dry_run) {
+        std.debug.print("{s}🔍 Dry run mode{s} - no actual publish will occur\n", .{ yellow, reset });
+        std.debug.print("\n{s}✓{s} Package validation successful!\n", .{ green, reset });
+        std.debug.print("{s}   Would publish:{s} {s}@{s}\n", .{ dim, reset, metadata.name, metadata.version });
+        if (options.registry) |reg| {
+            std.debug.print("{s}   Registry:{s} {s}\n", .{ dim, reset, reg });
+        }
+        std.debug.print("{s}   Tag:{s} {s}\n", .{ dim, reset, options.tag });
+        std.debug.print("{s}   Access:{s} {s}\n", .{ dim, reset, options.access });
+        return .{ .exit_code = 0 };
+    }
+
+    // TODO: Actual publish implementation
+    // For now, we'll just validate and show what would be published
+    std.debug.print("{s}⚠{s}  Publishing functionality not yet implemented\n", .{ yellow, reset });
+    std.debug.print("{s}   Package validation successful!{s}\n", .{ dim, reset });
+    std.debug.print("{s}   Use --dry-run to test package validation{s}\n\n", .{ dim, reset });
+
+    return .{
+        .exit_code = 0,
+        .message = try std.fmt.allocPrint(allocator, "Package {s}@{s} validated successfully", .{ metadata.name, metadata.version }),
+    };
+}
+
 /// List command
 pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);

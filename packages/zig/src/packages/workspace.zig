@@ -22,6 +22,8 @@ pub fn discoverMembers(
 
         for (pattern_members) |member| {
             if (member_count >= members_buffer.len) {
+                std.debug.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
+                std.debug.print("Consider splitting into multiple workspaces or increasing the buffer size\n", .{});
                 return error.TooManyWorkspaceMembers;
             }
             members_buffer[member_count] = member;
@@ -85,6 +87,7 @@ fn discoverMembersForPattern(
                 // Only add as member if it has a config or deps file
                 if (config_path != null or deps_file_path != null) {
                     if (member_count >= members_buffer.len) {
+                        std.debug.print("Error: Too many workspace members in pattern (limit: {d})\n", .{members_buffer.len});
                         return error.TooManyWorkspaceMembers;
                     }
                     members_buffer[member_count] = .{
@@ -120,6 +123,7 @@ fn discoverMembersForPattern(
         if (config_path != null or deps_file_path != null) {
             const member_name = std.fs.path.basename(pattern);
             if (member_count >= members_buffer.len) {
+                std.debug.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
                 return error.TooManyWorkspaceMembers;
             }
             members_buffer[member_count] = .{
@@ -198,6 +202,8 @@ pub fn loadWorkspaceConfig(
 
     // Extract workspace patterns
     const patterns = (try deps_extractor.extractWorkspacePatterns(allocator, config_result)) orelse {
+        std.debug.print("Error: No 'workspaces' field found in configuration\n", .{});
+        std.debug.print("Expected format: {{\"workspaces\": [\"packages/*\", \"apps/*\"]}}\n", .{});
         return error.NoWorkspacePatternsFound;
     };
     errdefer {

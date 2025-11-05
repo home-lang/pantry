@@ -193,6 +193,34 @@ fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const dry_run = ctx.hasOption("dry-run");
+    const access_val = ctx.getOption("access") orelse "public";
+    const tag = ctx.getOption("tag") orelse "latest";
+    const registry = ctx.getOption("registry");
+
+    const options = lib.commands.PublishOptions{
+        .dry_run = dry_run,
+        .access = access_val,
+        .tag = tag,
+        .registry = registry,
+    };
+
+    const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -562,6 +590,28 @@ pub fn main() !void {
 
     _ = list_cmd.setAction(listAction);
     _ = try root.addCommand(list_cmd);
+
+    // ========================================================================
+    // Publish Command
+    // ========================================================================
+    var publish_cmd = try cli.BaseCommand.init(allocator, "publish", "Publish package to registry");
+
+    const dry_run_opt = cli.Option.init("dry-run", "dry-run", "Perform dry run without publishing", .bool);
+    _ = try publish_cmd.addOption(dry_run_opt);
+
+    const access_opt = cli.Option.init("access", "access", "Package access level (public/restricted)", .string)
+        .withDefault("public");
+    _ = try publish_cmd.addOption(access_opt);
+
+    const tag_opt = cli.Option.init("tag", "tag", "Publish with a tag", .string)
+        .withDefault("latest");
+    _ = try publish_cmd.addOption(tag_opt);
+
+    const registry_opt = cli.Option.init("registry", "registry", "Custom registry URL", .string);
+    _ = try publish_cmd.addOption(registry_opt);
+
+    _ = publish_cmd.setAction(publishAction);
+    _ = try root.addCommand(publish_cmd);
 
     // ========================================================================
     // Run Command (Script Runner)
