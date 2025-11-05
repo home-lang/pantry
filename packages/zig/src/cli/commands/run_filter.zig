@@ -15,6 +15,8 @@ pub const RunFilterOptions = struct {
     parallel: bool = true, // Run scripts in parallel (respecting dependency order)
     verbose: bool = false,
     respect_order: bool = true, // Respect dependency order (topological sort)
+    changed_only: bool = false, // Only run on changed packages (git-based)
+    changed_base: []const u8 = "HEAD", // Git ref to compare against
 };
 
 /// Run a script across multiple workspace members matching the filter
@@ -83,6 +85,47 @@ pub fn runScriptWithFilter(
         }
     }
 
+    // Apply changed detection if requested
+    if (options.changed_only) {
+        const changed_detector = lib.packages.changed_detector;
+        var changed_result = try changed_detector.detectChangedMembers(
+            allocator,
+            ws_file.root_dir,
+            matching_members.items,
+            .{
+                .base = options.changed_base,
+                .include_uncommitted = true,
+                .include_untracked = false,
+            },
+        );
+        defer changed_result.deinit();
+
+        // Replace matching_members with only changed ones
+        matching_members.deinit(allocator);
+        matching_members = std.ArrayList(lib.packages.types.WorkspaceMember){};
+
+        for (changed_result.changed_members) |changed_member| {
+            try matching_members.append(allocator, changed_member);
+        }
+
+        if (matching_members.items.len == 0) {
+            const msg = try std.fmt.allocPrint(
+                allocator,
+                "No changed packages found (comparing against {s})",
+                .{options.changed_base},
+            );
+            return .{
+                .exit_code = 0,
+                .message = msg,
+            };
+        }
+
+        std.debug.print("Detected {d} changed package(s) since {s}\n\n", .{
+            matching_members.items.len,
+            options.changed_base,
+        });
+    }
+
     if (matching_members.items.len == 0) {
         return CommandResult.err(allocator, "Error: No workspace members match the filter pattern");
     }
@@ -125,7 +168,7 @@ pub fn runScriptWithFilter(
     }
     std.debug.print("\n", .{});
 
-    // Run the script in each ordered workspace member
+    // Execute scripts - either in parallel groups or sequentially
     var success_count: usize = 0;
     var failed_count: usize = 0;
     var skipped_count: usize = 0;
@@ -134,7 +177,62 @@ pub fn runScriptWithFilter(
     const red = "\x1b[31m";
     const yellow = "\x1b[33m";
 
-    for (ordered_result.order) |member| {
+    if (options.parallel and ordered_result.parallel_groups.len > 0) {
+        // Execute in parallel groups
+        const parallel_executor = @import("parallel_executor.zig");
+
+        for (ordered_result.parallel_groups, 0..) |group, group_idx| {
+            if (group.len == 0) continue;
+
+            if (ordered_result.parallel_groups.len > 1) {
+                std.debug.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
+            }
+
+            // Execute group in parallel
+            const results = parallel_executor.executeParallelGroup(
+                allocator,
+                group,
+                script_name,
+                script_args,
+                options.verbose,
+            ) catch |err| {
+                std.debug.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
+                failed_count += group.len;
+                continue;
+            };
+            defer {
+                for (results) |*result| {
+                    result.deinit();
+                }
+                allocator.free(results);
+            }
+
+            // Display results
+            for (results) |result| {
+                if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "No scripts defined") != null) {
+                    std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    skipped_count += 1;
+                } else if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "Script not found") != null) {
+                    std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    skipped_count += 1;
+                } else if (result.success) {
+                    std.debug.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
+                    if (options.verbose and result.stdout.len > 0) {
+                        std.debug.print("{s}", .{result.stdout});
+                    }
+                    success_count += 1;
+                } else {
+                    std.debug.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
+                    if (result.stderr.len > 0) {
+                        std.debug.print("{s}", .{result.stderr});
+                    }
+                    failed_count += 1;
+                }
+            }
+        }
+    } else {
+        // Sequential execution (original code)
+        for (ordered_result.order) |member| {
         // Load scripts for this member
         const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
             std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
@@ -240,6 +338,7 @@ pub fn runScriptWithFilter(
                 std.debug.print("{s}", .{result.stderr});
             }
             failed_count += 1;
+        }
         }
     }
 

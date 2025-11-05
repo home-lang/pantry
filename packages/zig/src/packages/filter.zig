@@ -5,6 +5,7 @@
 
 const std = @import("std");
 const types = @import("types.zig");
+const advanced_glob = @import("advanced_glob.zig");
 
 /// Filter type for matching packages
 pub const FilterType = enum {
@@ -46,6 +47,11 @@ pub const FilterPattern = struct {
 
     /// Check if a package name matches this pattern
     pub fn matchesName(self: FilterPattern, package_name: []const u8) bool {
+        // Try advanced glob first (supports **, {})
+        if (advanced_glob.matchGlob(self.pattern, package_name)) {
+            return true;
+        }
+        // Fall back to simple glob
         return matchGlob(self.pattern, package_name);
     }
 
@@ -62,6 +68,11 @@ pub const FilterPattern = struct {
         else
             package_path;
 
+        // Try advanced glob first
+        if (advanced_glob.matchGlob(clean_pattern, clean_path)) {
+            return true;
+        }
+        // Fall back to simple glob
         return matchGlob(clean_pattern, clean_path);
     }
 };

@@ -176,6 +176,9 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // Check if --filter flag is set
     const filter = ctx.getOption("filter");
+    const parallel = ctx.hasOption("parallel");
+    const sequential = ctx.hasOption("sequential");
+    const changed = ctx.getOption("changed");
 
     // Use a stack-allocated array for args
     var args_buf: [32][]const u8 = undefined;
@@ -193,13 +196,20 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
         args_len += 1;
     }
 
-    // If filter is set, use filtered execution
-    if (filter) |filter_pattern| {
+    // If filter or changed is set, use filtered execution
+    if (filter != null or changed != null) {
+        const use_parallel = if (sequential) false else if (parallel) true else true;
+
         const result = try lib.commands.runScriptWithFilter(
             allocator,
             script_name,
             args_buf[1..args_len],
-            .{ .filter = filter_pattern },
+            .{
+                .filter = filter,
+                .parallel = use_parallel,
+                .changed_only = changed != null,
+                .changed_base = changed orelse "HEAD",
+            },
         );
         defer result.deinit(allocator);
 
@@ -1073,6 +1083,15 @@ pub fn main() !void {
     const run_filter_opt = cli.Option.init("filter", "filter", "Run script in filtered workspace packages", .string)
         .withShort('F');
     _ = try run_cmd.addOption(run_filter_opt);
+
+    const run_parallel_opt = cli.Option.init("parallel", "parallel", "Run scripts in parallel (respecting dependency order)", .bool);
+    _ = try run_cmd.addOption(run_parallel_opt);
+
+    const run_sequential_opt = cli.Option.init("sequential", "sequential", "Run scripts sequentially", .bool);
+    _ = try run_cmd.addOption(run_sequential_opt);
+
+    const run_changed_opt = cli.Option.init("changed", "changed", "Only run on changed packages since git ref", .string);
+    _ = try run_cmd.addOption(run_changed_opt);
 
     _ = run_cmd.setAction(runAction);
     _ = try root.addCommand(run_cmd);

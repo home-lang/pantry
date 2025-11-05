@@ -34,6 +34,35 @@ pub fn installWorkspaceCommandWithOptions(
     );
     defer workspace_config.deinit(allocator);
 
+    // Load catalogs from root package.json
+    var catalog_manager = lib.deps.catalogs.CatalogManager.init(allocator);
+    defer catalog_manager.deinit();
+
+    const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, "package.json" });
+    defer allocator.free(root_package_json_path);
+
+    if (std.fs.cwd().readFileAlloc(allocator, root_package_json_path, 1024 * 1024)) |package_json_content| {
+        defer allocator.free(package_json_content);
+
+        if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {
+            defer parsed.deinit();
+            catalog_manager = try lib.deps.catalogs.parseFromPackageJson(allocator, parsed);
+
+            // Show catalog info if any catalogs were loaded
+            var catalog_count: usize = 0;
+            if (catalog_manager.default_catalog != null) catalog_count += 1;
+            catalog_count += catalog_manager.named_catalogs.count();
+
+            if (catalog_count > 0) {
+                std.debug.print("📚 Found {d} catalog(s)\n", .{catalog_count});
+            }
+        } else |_| {
+            // Failed to parse package.json, continue without catalogs
+        }
+    } else |_| {
+        // No package.json or failed to read, continue without catalogs
+    }
+
     const green = "\x1b[32m";
     const blue = "\x1b[34m";
     const dim = "\x1b[2m";
@@ -125,8 +154,31 @@ pub fn installWorkspaceCommandWithOptions(
 
         if (member_deps) |deps| {
             for (deps) |dep| {
+                // Resolve catalog references
+                var resolved_dep = dep;
+
+                if (lib.deps.catalogs.CatalogManager.isCatalogReference(dep.version)) {
+                    if (catalog_manager.resolveCatalogReference(dep.name, dep.version)) |resolved_version| {
+                        // Replace catalog reference with actual version
+                        allocator.free(resolved_dep.version);
+                        resolved_dep.version = try allocator.dupe(u8, resolved_version);
+                    } else {
+                        // Catalog reference not found - warn user
+                        const catalog_name = lib.deps.catalogs.CatalogManager.getCatalogName(dep.version);
+                        if (catalog_name) |cat_name| {
+                            if (cat_name.len == 0) {
+                                std.debug.print("Warning: Package '{s}' references default catalog but no version found\n", .{dep.name});
+                            } else {
+                                std.debug.print("Warning: Package '{s}' references catalog '{s}' but no version found\n", .{ dep.name, cat_name });
+                            }
+                        }
+                        // Skip this dependency
+                        continue;
+                    }
+                }
+
                 // Create a unique key for this dependency
-                const dep_key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ dep.name, dep.version });
+                const dep_key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ resolved_dep.name, resolved_dep.version });
                 defer allocator.free(dep_key);
 
                 // Only add if we haven't seen this exact dep before
@@ -138,7 +190,7 @@ pub fn installWorkspaceCommandWithOptions(
                             .message = try allocator.dupe(u8, "Too many dependencies in workspace (max 1024)"),
                         };
                     }
-                    all_deps_buffer[all_deps_count] = try dep.clone(allocator);
+                    all_deps_buffer[all_deps_count] = try resolved_dep.clone(allocator);
                     all_deps_count += 1;
                 }
             }

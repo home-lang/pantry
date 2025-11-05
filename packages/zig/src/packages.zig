@@ -5,6 +5,8 @@ pub const registry = @import("packages/registry.zig");
 pub const dep_graph = @import("packages/dep_graph.zig");
 pub const filter = @import("packages/filter.zig");
 pub const workspace_deps = @import("packages/workspace_deps.zig");
+pub const changed_detector = @import("packages/changed_detector.zig");
+pub const advanced_glob = @import("packages/advanced_glob.zig");
 
 // Re-export main types
 pub const PackageSpec = types.PackageSpec;

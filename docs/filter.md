@@ -399,13 +399,95 @@ If the wrong packages are being selected:
 
 ---
 
+## Advanced Features
+
+### Parallel Execution
+
+Pantry can run scripts in parallel across multiple packages, significantly speeding up builds and tests:
+
+```bash
+# Run in parallel (default)
+pantry run build --filter '*'
+
+# Run sequentially
+pantry run build --filter '*' --sequential
+
+# Explicitly enable parallel
+pantry run build --filter '*' --parallel
+```
+
+**How it works:**
+- Packages are grouped by dependency level
+- Each group runs in parallel using threads
+- Dependencies are respected (level 0 before level 1)
+- Shows timing information for each package
+
+**Example output:**
+```
+Running script 'build' in 4 package(s) (3 parallel groups):
+  • shared-utils
+  • api
+  • frontend
+  • e2e-tests
+
+Group 1 (1 package(s))
+✓ shared-utils (234ms)
+Group 2 (2 package(s))
+✓ api (456ms)
+✓ frontend (512ms)
+Group 3 (1 package(s))
+✓ e2e-tests (1234ms)
+
+✓ 4 succeeded
+```
+
+### Changed Packages Detection
+
+Only run scripts on packages that have changed since a git ref:
+
+```bash
+# Run on packages changed since HEAD
+pantry run test --changed HEAD
+
+# Run on packages changed since main branch
+pantry run build --changed origin/main
+
+# Combine with filter
+pantry run test --filter 'pkg-*' --changed HEAD
+```
+
+**Detection strategy:**
+- Uses `git diff` to find changed files
+- Includes uncommitted changes
+- Maps changed files to workspace packages
+- Respects dependency order
+
+**Example output:**
+```
+Detected 2 changed package(s) since HEAD
+
+Running script 'test' in 2 package(s):
+  • api
+  • e2e-tests
+
+✓ api
+✓ e2e-tests
+
+✓ 2 succeeded
+```
+
+**Use cases:**
+- CI/CD: Only test what changed
+- Incremental builds: Rebuild only affected packages
+- Fast iteration: Skip unchanged packages
+
 ## Future Enhancements
 
 Planned improvements for `--filter`:
 
 1. ✅ **Dependency-aware ordering**: Automatically run scripts in dependency order (IMPLEMENTED)
-2. **Parallel execution**: Run scripts in parallel where possible (respecting dependencies)
-3. **Changed packages detection**: `--filter-changed` to only select packages with changes
+2. ✅ **Parallel execution**: Run scripts in parallel where possible (IMPLEMENTED)
+3. ✅ **Changed packages detection**: Only select packages with changes (IMPLEMENTED)
 4. **Filter configuration**: Save common filter patterns in `pantry.json`
 5. **Advanced glob patterns**: Support for `**`, `{a,b}`, and other advanced glob features
 6. **Watch mode**: `--watch` to re-run scripts when files change in filtered packages
