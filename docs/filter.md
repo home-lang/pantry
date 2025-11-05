@@ -218,13 +218,21 @@ To fix this, review your dependencies and break the circular reference.
 
 ## Pattern Syntax
 
-Pantry's filter patterns support the following glob syntax:
+Pantry's filter patterns support advanced glob syntax:
 
-- `*` - Matches any sequence of characters
+### Basic Patterns
+
+- `*` - Matches any sequence of characters (within a directory)
 - `?` - Matches any single character
 - `!` prefix - Excludes packages matching the pattern
 - `./` prefix - Matches by path instead of name
 - `./` alone - Matches the root package
+
+### Advanced Patterns
+
+- `**` - Recursive directory matching (matches across directories)
+- `{a,b,c}` - Brace expansion (matches any of the alternatives)
+- Combined patterns - Mix and match for powerful filtering
 
 **Pattern Examples:**
 
@@ -235,8 +243,134 @@ Pantry's filter patterns support the following glob syntax:
 | `@org/*` | `@org/package-a`, `@org/package-b` |
 | `!pkg-c` | Excludes `pkg-c` |
 | `./packages/*` | All packages in `packages/` directory |
-| `./apps/**` | All packages in `apps/` and subdirectories |
+| `./packages/**` | All packages in `packages/` and subdirectories recursively |
+| `**/*.test.ts` | Any `.test.ts` file at any depth |
+| `*.{js,ts}` | Files ending in `.js` or `.ts` |
+| `./packages/{api,frontend}/*` | Packages in `api` or `frontend` subdirectories |
 | `./` | The root package only |
+
+### Recursive Matching Examples
+
+```bash
+# Match packages at any depth under src/
+pantry run build --filter './src/**'
+
+# Match test packages anywhere
+pantry run test --filter '**/test-*'
+
+# Match specific file types in any package
+pantry run lint --filter '**/*.{ts,tsx}'
+```
+
+### Brace Expansion Examples
+
+```bash
+# Run in specific packages
+pantry run build --filter '{api,frontend,backend}'
+
+# Multiple directories
+pantry run test --filter './packages/{core,utils}/*'
+
+# File extensions
+pantry run lint --filter '*.{js,ts,jsx,tsx}'
+```
+
+---
+
+## Filter Configuration
+
+Save commonly used filter patterns in `pantry.json` for easy reuse.
+
+### Configuration Format
+
+Add a `filters` field to your root `pantry.json`:
+
+```json
+{
+  "name": "my-workspace",
+  "workspaces": ["packages/*"],
+  "filters": {
+    "backend": "packages/backend-*",
+    "frontend": ["packages/frontend-*", "packages/ui-*"],
+    "api": {
+      "patterns": ["packages/api-*", "packages/services-*"],
+      "description": "All API and service packages"
+    },
+    "changed-critical": {
+      "patterns": ["packages/{auth,payments,security}/**"],
+      "description": "Critical packages that need extra testing"
+    }
+  }
+}
+```
+
+### Using Named Filters
+
+Reference named filters by name:
+
+```bash
+# Use the "backend" filter
+pantry run build --filter backend
+
+# Use the "api" filter with description
+pantry run test --filter api
+
+# Combine with other flags
+pantry run build --filter frontend --parallel
+
+# Works with changed detection too
+pantry run test --filter changed-critical --changed origin/main
+```
+
+**Output with named filter:**
+```
+Using named filter 'api'
+  All API and service packages
+
+Running script 'test' in 3 package(s):
+  • api-gateway
+  • api-users
+  • services-auth
+
+✓ 3 succeeded
+```
+
+### Filter Configuration Benefits
+
+1. **Reusability**: Define once, use everywhere
+2. **Documentation**: Descriptions explain filter purpose
+3. **Consistency**: Team uses same filter definitions
+4. **Maintainability**: Update filter in one place
+5. **Discoverability**: New team members can see available filters
+
+### Complex Filter Examples
+
+```json
+{
+  "filters": {
+    "tests": {
+      "patterns": ["**/*-test", "**/*.test.*"],
+      "description": "All test packages and files"
+    },
+    "docs": {
+      "patterns": ["packages/docs/**", "packages/**/docs/**"],
+      "description": "Documentation packages"
+    },
+    "typescript": {
+      "patterns": ["./packages/**/*.{ts,tsx}"],
+      "description": "All TypeScript packages"
+    },
+    "build-chain": {
+      "patterns": [
+        "packages/compiler/**",
+        "packages/bundler/**",
+        "packages/minifier/**"
+      ],
+      "description": "Build toolchain packages"
+    }
+  }
+}
+```
 
 ---
 
@@ -483,14 +617,17 @@ Running script 'test' in 2 package(s):
 
 ## Future Enhancements
 
-Planned improvements for `--filter`:
+Completed and planned improvements for `--filter`:
 
 1. ✅ **Dependency-aware ordering**: Automatically run scripts in dependency order (IMPLEMENTED)
 2. ✅ **Parallel execution**: Run scripts in parallel where possible (IMPLEMENTED)
 3. ✅ **Changed packages detection**: Only select packages with changes (IMPLEMENTED)
-4. **Filter configuration**: Save common filter patterns in `pantry.json`
-5. **Advanced glob patterns**: Support for `**`, `{a,b}`, and other advanced glob features
-6. **Watch mode**: `--watch` to re-run scripts when files change in filtered packages
+4. ✅ **Filter configuration**: Save common filter patterns in `pantry.json` (IMPLEMENTED)
+5. ✅ **Advanced glob patterns**: Support for `**`, `{a,b}`, and other advanced glob features (IMPLEMENTED)
+6. **Watch mode**: `--watch` to re-run scripts when files change (COMING SOON)
+7. **Filter inheritance**: Extend and combine named filters
+8. **Regex patterns**: Support for regular expressions in filters
+9. **Interactive filter builder**: CLI tool to help create complex filters
 
 ---
 

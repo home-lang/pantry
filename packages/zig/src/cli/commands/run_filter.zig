@@ -57,9 +57,26 @@ pub fn runScriptWithFilter(
     );
     defer workspace_config.deinit(allocator);
 
+    // Load filter configurations from pantry.json
+    const filter_config_module = @import("../../packages/filter_config.zig");
+    const config_path = try std.fs.path.join(allocator, &[_][]const u8{ ws_file.root_dir, "pantry.json" });
+    defer allocator.free(config_path);
+
+    var filter_configs = try filter_config_module.loadFromConfig(allocator, config_path);
+    defer filter_configs.deinit();
+
     // Parse filter patterns
     const filter_module = @import("../../packages/filter.zig");
     var filter = if (options.filter) |filter_str| blk: {
+        // Check if it's a named filter from config
+        if (filter_configs.get(filter_str)) |named_filter| {
+            std.debug.print("Using named filter '{s}'\n", .{filter_str});
+            if (named_filter.description) |desc| {
+                std.debug.print("  {s}\n", .{desc});
+            }
+            break :blk try filter_module.Filter.initWithPatterns(allocator, named_filter.patterns);
+        }
+
         var patterns_list = std.ArrayList([]const u8){};
         defer patterns_list.deinit(allocator);
 
