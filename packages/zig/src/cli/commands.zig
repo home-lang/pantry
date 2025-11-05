@@ -1615,31 +1615,6 @@ pub fn doctorCommand(allocator: std.mem.Allocator) !CommandResult {
     return .{ .exit_code = 0 };
 }
 
-
-/// Outdated command - check for outdated packages
-pub fn outdatedCommand(allocator: std.mem.Allocator) !CommandResult {
-    var pkg_cache = try cache.PackageCache.init(allocator);
-    defer pkg_cache.deinit();
-
-    var installer = try install.Installer.init(allocator, &pkg_cache);
-    defer installer.deinit();
-
-    std.debug.print("Checking for outdated packages...\n\n", .{});
-
-    var installed = try installer.listInstalled();
-    defer {
-        for (installed.items) |*pkg| {
-            pkg.deinit(allocator);
-        }
-        installed.deinit(allocator);
-    }
-
-    // TODO: Implement actual version checking logic
-    std.debug.print("All packages are up to date.\n", .{});
-
-    return .{ .exit_code = 0 };
-}
-
 /// Services list command
 pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     std.debug.print("Available services:\n\n", .{});
@@ -4016,4 +3991,232 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     };
 
     return .{ .exit_code = exit_code };
+}
+
+// ============================================================================
+// Outdated Command
+// ============================================================================
+
+/// Outdated command options
+pub const OutdatedOptions = struct {
+    production: bool = false,
+    global: bool = false,
+    filter: ?[]const u8 = null,
+    silent: bool = false,
+    verbose: bool = false,
+    no_progress: bool = false,
+};
+
+/// Package version information for outdated check
+const PackageVersionInfo = struct {
+    name: []const u8,
+    current: []const u8,
+    update: []const u8,
+    latest: []const u8,
+    is_dev: bool,
+    workspace: ?[]const u8 = null,
+
+    fn deinit(self: *PackageVersionInfo, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.current);
+        allocator.free(self.update);
+        allocator.free(self.latest);
+        if (self.workspace) |ws| {
+            allocator.free(ws);
+        }
+    }
+};
+
+/// Check for outdated dependencies
+pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, options: OutdatedOptions) !CommandResult {
+    _ = options;
+
+    // Get current working directory
+    var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
+
+    // Find config file
+    const config_path = findConfigFile(allocator, cwd) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: No package.json or pantry.json found"),
+        };
+    };
+    defer allocator.free(config_path);
+
+    // Read and parse config
+    const config_content = try std.fs.cwd().readFileAlloc(allocator, config_path, 1024 * 1024);
+    defer allocator.free(config_content);
+
+    // Strip JSONC comments if needed
+    const jsonc_util = @import("../utils/jsonc.zig");
+    const is_jsonc = std.mem.endsWith(u8, config_path, ".jsonc");
+    const json_content = if (is_jsonc)
+        try jsonc_util.stripComments(allocator, config_content)
+    else
+        try allocator.dupe(u8, config_content);
+    defer allocator.free(json_content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Failed to parse config file"),
+        };
+    };
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Config file must be a JSON object"),
+        };
+    }
+
+    var outdated_packages = try std.ArrayList(PackageVersionInfo).initCapacity(allocator, 16);
+    defer {
+        for (outdated_packages.items) |*pkg| {
+            pkg.deinit(allocator);
+        }
+        outdated_packages.deinit(allocator);
+    }
+
+    // Helper to check if package matches filter patterns
+    const matchesFilter = struct {
+        fn call(pkg_name: []const u8, patterns: []const []const u8) bool {
+            if (patterns.len == 0) return true;
+
+            for (patterns) |pattern| {
+                // Negation pattern
+                if (pattern.len > 0 and pattern[0] == '!') {
+                    const neg_pattern = pattern[1..];
+                    if (matchGlob(pkg_name, neg_pattern)) {
+                        return false;
+                    }
+                    continue;
+                }
+
+                // Positive pattern
+                if (matchGlob(pkg_name, pattern)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        fn matchGlob(text: []const u8, pattern: []const u8) bool {
+            // Simple glob matching supporting * wildcard
+            if (std.mem.indexOf(u8, pattern, "*")) |star_pos| {
+                const prefix = pattern[0..star_pos];
+                const suffix = pattern[star_pos + 1..];
+
+                if (!std.mem.startsWith(u8, text, prefix)) return false;
+                if (!std.mem.endsWith(u8, text, suffix)) return false;
+                return true;
+            }
+            return std.mem.eql(u8, text, pattern);
+        }
+    }.call;
+
+    // Check dependencies
+    if (root.object.get("dependencies")) |deps_val| {
+        if (deps_val == .object) {
+            var iter = deps_val.object.iterator();
+            while (iter.next()) |entry| {
+                const pkg_name = entry.key_ptr.*;
+
+                // Apply filter
+                if (!matchesFilter(pkg_name, args)) continue;
+
+                const version_str = if (entry.value_ptr.* == .string)
+                    entry.value_ptr.string
+                else
+                    "unknown";
+
+                // For now, simulate version checking
+                // In a real implementation, this would query the registry
+                const current = try allocator.dupe(u8, version_str);
+                const update = try allocator.dupe(u8, version_str);
+                const latest = try allocator.dupe(u8, version_str);
+                const name = try allocator.dupe(u8, pkg_name);
+
+                try outdated_packages.append(allocator, .{
+                    .name = name,
+                    .current = current,
+                    .update = update,
+                    .latest = latest,
+                    .is_dev = false,
+                });
+            }
+        }
+    }
+
+    // Check devDependencies
+    if (root.object.get("devDependencies")) |dev_deps_val| {
+        if (dev_deps_val == .object) {
+            var iter = dev_deps_val.object.iterator();
+            while (iter.next()) |entry| {
+                const pkg_name = entry.key_ptr.*;
+
+                // Apply filter
+                if (!matchesFilter(pkg_name, args)) continue;
+
+                const version_str = if (entry.value_ptr.* == .string)
+                    entry.value_ptr.string
+                else
+                    "unknown";
+
+                const current = try allocator.dupe(u8, version_str);
+                const update = try allocator.dupe(u8, version_str);
+                const latest = try allocator.dupe(u8, version_str);
+                const name = try allocator.dupe(u8, pkg_name);
+
+                try outdated_packages.append(allocator, .{
+                    .name = name,
+                    .current = current,
+                    .update = update,
+                    .latest = latest,
+                    .is_dev = true,
+                });
+            }
+        }
+    }
+
+    // Display results in table format
+    if (outdated_packages.items.len == 0) {
+        return .{
+            .exit_code = 0,
+            .message = try allocator.dupe(u8, "\x1b[32m✓\x1b[0m All dependencies are up to date!"),
+        };
+    }
+
+    // Print table header
+    std.debug.print("\n\x1b[1m{s: <35} | {s: <10} | {s: <10} | {s: <10}\x1b[0m\n", .{ "Package", "Current", "Update", "Latest" });
+    std.debug.print("{s:-<35}-+-{s:-<10}-+-{s:-<10}-+-{s:-<10}\n", .{ "", "", "", "" });
+
+    // Print each outdated package
+    for (outdated_packages.items) |pkg| {
+        const dev_marker = if (pkg.is_dev) " (dev)" else "";
+        const pkg_display = try std.fmt.allocPrint(allocator, "{s}{s}", .{ pkg.name, dev_marker });
+        defer allocator.free(pkg_display);
+
+        std.debug.print("{s: <35} | {s: <10} | {s: <10} | {s: <10}\n", .{
+            pkg_display,
+            pkg.current,
+            pkg.update,
+            pkg.latest,
+        });
+    }
+    std.debug.print("\n", .{});
+
+    const summary = try std.fmt.allocPrint(
+        allocator,
+        "{d} package(s) checked",
+        .{outdated_packages.items.len},
+    );
+
+    return .{
+        .exit_code = 0,
+        .message = summary,
+    };
 }

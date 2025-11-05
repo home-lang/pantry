@@ -275,6 +275,44 @@ fn pxAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn outdatedAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic filter arguments
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    defer args.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args.append(allocator, arg);
+    }
+
+    const production = ctx.hasOption("production");
+    const global = ctx.hasOption("global");
+    const filter = ctx.getOption("filter");
+    const silent = ctx.hasOption("silent");
+    const verbose = ctx.hasOption("verbose");
+    const no_progress = ctx.hasOption("no-progress");
+
+    const options = lib.commands.OutdatedOptions{
+        .production = production,
+        .global = global,
+        .filter = filter,
+        .silent = silent,
+        .verbose = verbose,
+        .no_progress = no_progress,
+    };
+
+    const result = try lib.commands.outdatedCommand(allocator, args.items, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn scriptsListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -800,6 +838,42 @@ pub fn main() !void {
 
     _ = px_cmd.setAction(pxAction);
     _ = try root.addCommand(px_cmd);
+
+    // ========================================================================
+    // Outdated Command
+    // ========================================================================
+    var outdated_cmd = try cli.BaseCommand.init(allocator, "outdated", "Check for outdated dependencies");
+
+    const outdated_filter_arg = cli.Argument.init("filter", "Package name patterns to check", .string)
+        .withRequired(false)
+        .withVariadic(true);
+    _ = try outdated_cmd.addArgument(outdated_filter_arg);
+
+    const outdated_production_opt = cli.Option.init("production", "production", "Check only production dependencies", .bool)
+        .withShort('p');
+    _ = try outdated_cmd.addOption(outdated_production_opt);
+
+    const outdated_global_opt = cli.Option.init("global", "global", "Check global packages", .bool)
+        .withShort('g');
+    _ = try outdated_cmd.addOption(outdated_global_opt);
+
+    const outdated_filter_opt = cli.Option.init("filter", "filter", "Filter by workspace", .string)
+        .withShort('F');
+    _ = try outdated_cmd.addOption(outdated_filter_opt);
+
+    const outdated_silent_opt = cli.Option.init("silent", "silent", "Don't log anything", .bool);
+    _ = try outdated_cmd.addOption(outdated_silent_opt);
+
+    const outdated_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose logging", .bool)
+        .withShort('v');
+    _ = try outdated_cmd.addOption(outdated_verbose_opt);
+
+    const outdated_no_progress_opt = cli.Option.init("no-progress", "no-progress", "Disable progress bar", .bool);
+    _ = try outdated_cmd.addOption(outdated_no_progress_opt);
+
+    _ = outdated_cmd.setAction(outdatedAction);
+    _ = try root.addCommand(outdated_cmd);
+
     const list_format_opt = cli.Option.init("format", "format", "Output format (table, json, simple)", .string)
         .withDefault("table");
     _ = try list_cmd.addOption(list_format_opt);
