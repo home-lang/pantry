@@ -3419,3 +3419,273 @@ test "Command structures" {
     };
     _ = result;
 }
+
+/// Remove command options
+pub const RemoveOptions = struct {
+    save: bool = true, // Update package.json (default: true)
+    global: bool = false, // Remove globally
+    dry_run: bool = false, // Don't actually remove anything
+    silent: bool = false, // Don't log anything
+    verbose: bool = false, // Verbose logging
+};
+
+/// Remove packages from the project
+pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, options: RemoveOptions) !CommandResult {
+    if (args.len == 0) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: No packages specified to remove\nUsage: pantry remove <package>"),
+        };
+    }
+
+    // Get current working directory
+    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
+        };
+    };
+    defer allocator.free(cwd);
+
+    if (options.dry_run and !options.silent) {
+        std.debug.print("\x1b[33m🔍 Dry run mode\x1b[0m - no changes will be made\n\n", .{});
+    }
+
+    // Find package.json or pantry.json
+    const config_path = findConfigFile(allocator, cwd) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: No package.json or pantry.json found"),
+        };
+    };
+    defer allocator.free(config_path);
+
+    if (options.verbose and !options.silent) {
+        std.debug.print("\x1b[2mUsing config: {s}\x1b[0m\n", .{config_path});
+    }
+
+    // Read config file
+    const config_contents = std.fs.cwd().readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Could not read config file"),
+        };
+    };
+    defer allocator.free(config_contents);
+
+    // Check if JSONC and strip comments
+    const jsonc_util = @import("../utils/jsonc.zig");
+    const is_jsonc = std.mem.endsWith(u8, config_path, ".jsonc");
+    const json_contents = if (is_jsonc)
+        try jsonc_util.stripComments(allocator, config_contents)
+    else
+        config_contents;
+    defer if (is_jsonc) allocator.free(json_contents);
+
+    // Parse JSON
+    var parsed = std.json.parseFromSlice(
+        std.json.Value,
+        allocator,
+        json_contents,
+        .{},
+    ) catch {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Invalid JSON in config file"),
+        };
+    };
+    defer parsed.deinit();
+
+    var root = parsed.value;
+    if (root != .object) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: Config file must be a JSON object"),
+        };
+    }
+
+    // Track what we're removing
+    var removed_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
+    defer removed_packages.deinit(allocator);
+
+    var not_found_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
+    defer not_found_packages.deinit(allocator);
+
+    // Check which packages exist
+    var deps_modified = false;
+    if (root.object.get("dependencies")) |deps_val| {
+        if (deps_val == .object) {
+            for (args) |package_name| {
+                if (deps_val.object.contains(package_name)) {
+                    try removed_packages.append(allocator, package_name);
+                    deps_modified = true;
+                } else {
+                    // Check in devDependencies
+                    var found_in_dev = false;
+                    if (root.object.get("devDependencies")) |dev_deps| {
+                        if (dev_deps == .object and dev_deps.object.contains(package_name)) {
+                            found_in_dev = true;
+                        }
+                    }
+                    if (!found_in_dev) {
+                        try not_found_packages.append(allocator, package_name);
+                    }
+                }
+            }
+        }
+    }
+
+    // Check devDependencies
+    if (root.object.get("devDependencies")) |dev_deps_val| {
+        if (dev_deps_val == .object) {
+            for (args) |package_name| {
+                if (dev_deps_val.object.contains(package_name)) {
+                    // Only add if not already in removed list
+                    var already_added = false;
+                    for (removed_packages.items) |pkg| {
+                        if (std.mem.eql(u8, pkg, package_name)) {
+                            already_added = true;
+                            break;
+                        }
+                    }
+                    if (!already_added) {
+                        try removed_packages.append(allocator, package_name);
+                    }
+                    deps_modified = true;
+                }
+            }
+        }
+    }
+
+    // Print results
+    if (!options.silent) {
+        if (removed_packages.items.len > 0) {
+            std.debug.print("\x1b[32m✓\x1b[0m Removed {d} package(s):\n", .{removed_packages.items.len});
+            for (removed_packages.items) |pkg| {
+                std.debug.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
+            }
+            std.debug.print("\n", .{});
+        }
+
+        if (not_found_packages.items.len > 0) {
+            std.debug.print("\x1b[33m⚠\x1b[0m Package(s) not found in dependencies:\n", .{});
+            for (not_found_packages.items) |pkg| {
+                std.debug.print("  \x1b[2m?\x1b[0m {s}\n", .{pkg});
+            }
+            std.debug.print("\n", .{});
+        }
+    }
+
+    // Write back to file if save is enabled
+    if (options.save and deps_modified and !options.dry_run) {
+        // Build new JSON object without removed packages
+        var new_obj = std.json.ObjectMap.init(allocator);
+        defer new_obj.deinit();
+
+        // Copy all fields from original object
+        var it = root.object.iterator();
+        while (it.next()) |entry| {
+            const key = entry.key_ptr.*;
+            const value = entry.value_ptr.*;
+
+            // Filter dependencies and devDependencies
+            if (std.mem.eql(u8, key, "dependencies") or std.mem.eql(u8, key, "devDependencies")) {
+                if (value == .object) {
+                    var filtered_deps = std.json.ObjectMap.init(allocator);
+                    var deps_it = value.object.iterator();
+                    while (deps_it.next()) |dep_entry| {
+                        const dep_name = dep_entry.key_ptr.*;
+                        // Check if this package should be removed
+                        var should_remove = false;
+                        for (removed_packages.items) |pkg| {
+                            if (std.mem.eql(u8, dep_name, pkg)) {
+                                should_remove = true;
+                                break;
+                            }
+                        }
+                        if (!should_remove) {
+                            try filtered_deps.put(dep_name, dep_entry.value_ptr.*);
+                        }
+                    }
+                    try new_obj.put(key, .{ .object = filtered_deps });
+                } else {
+                    try new_obj.put(key, value);
+                }
+            } else {
+                try new_obj.put(key, value);
+            }
+        }
+
+        // Write the new JSON
+        var output = try std.ArrayList(u8).initCapacity(allocator, 4096);
+        defer output.deinit(allocator);
+
+        const new_root = std.json.Value{ .object = new_obj };
+        try std.json.stringifyArbitraryDepth(allocator, new_root, .{ .whitespace = .indent_2 }, output.writer());
+
+        std.fs.cwd().writeFile(.{
+            .sub_path = config_path,
+            .data = output.items,
+        }) catch {
+            return .{
+                .exit_code = 1,
+                .message = try allocator.dupe(u8, "Error: Could not write config file"),
+            };
+        };
+
+        if (!options.silent) {
+            std.debug.print("\x1b[2mUpdated {s}\x1b[0m\n", .{config_path});
+        }
+    }
+
+    // Remove from pantry_modules if not dry run
+    if (!options.dry_run and removed_packages.items.len > 0) {
+        const modules_dir = if (options.global)
+            try std.fs.path.join(allocator, &[_][]const u8{ std.posix.getenv("HOME") orelse "~", ".pantry", "global", "packages" })
+        else
+            try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules" });
+        defer allocator.free(modules_dir);
+
+        for (removed_packages.items) |pkg| {
+            const pkg_path = try std.fs.path.join(allocator, &[_][]const u8{ modules_dir, pkg });
+            defer allocator.free(pkg_path);
+
+            std.fs.cwd().deleteTree(pkg_path) catch |err| {
+                if (options.verbose and !options.silent) {
+                    std.debug.print("\x1b[2mNote: Could not remove {s}: {}\x1b[0m\n", .{ pkg_path, err });
+                }
+            };
+        }
+    }
+
+    if (removed_packages.items.len == 0 and not_found_packages.items.len > 0) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "Error: None of the specified packages were found"),
+        };
+    }
+
+    return .{ .exit_code = 0 };
+}
+
+/// Find config file (package.json, pantry.json, etc.)
+fn findConfigFile(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
+    const config_files = [_][]const u8{
+        "pantry.json",
+        "pantry.jsonc",
+        "package.json",
+        "package.jsonc",
+    };
+
+    for (config_files) |config_file| {
+        const full_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, config_file });
+        defer allocator.free(full_path);
+
+        std.fs.accessAbsolute(full_path, .{}) catch continue;
+
+        // Found a config file
+        return try allocator.dupe(u8, full_path);
+    }
+
+    return error.ConfigNotFound;
+}

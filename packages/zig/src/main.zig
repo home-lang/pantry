@@ -127,6 +127,41 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic package arguments
+    var packages = std.ArrayList([]const u8){};
+    defer packages.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |pkg| : (i += 1) {
+        try packages.append(allocator, pkg);
+    }
+
+    const save = !ctx.hasOption("no-save");
+    const global = ctx.hasOption("global");
+    const dry_run = ctx.hasOption("dry-run");
+    const silent = ctx.hasOption("silent");
+    const verbose = ctx.hasOption("verbose");
+
+    const options = lib.commands.RemoveOptions{
+        .save = save,
+        .global = global,
+        .dry_run = dry_run,
+        .silent = silent,
+        .verbose = verbose,
+    };
+
+    const result = try lib.commands.removeCommand(allocator, packages.items, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
 fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -574,6 +609,36 @@ pub fn main() !void {
 
     _ = install_cmd.setAction(installAction);
     _ = try root.addCommand(install_cmd);
+
+    // ========================================================================
+    // Remove Command
+    // ========================================================================
+    var remove_cmd = try cli.BaseCommand.init(allocator, "remove", "Remove dependencies from your project");
+
+    const remove_packages_arg = cli.Argument.init("packages", "Packages to remove", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try remove_cmd.addArgument(remove_packages_arg);
+
+    const remove_no_save_opt = cli.Option.init("no-save", "no-save", "Don't update package.json or save a lockfile", .bool);
+    _ = try remove_cmd.addOption(remove_no_save_opt);
+
+    const remove_global_opt = cli.Option.init("global", "global", "Remove globally", .bool)
+        .withShort('g');
+    _ = try remove_cmd.addOption(remove_global_opt);
+
+    const remove_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Don't remove anything", .bool);
+    _ = try remove_cmd.addOption(remove_dry_run_opt);
+
+    const remove_silent_opt = cli.Option.init("silent", "silent", "Don't log anything", .bool);
+    _ = try remove_cmd.addOption(remove_silent_opt);
+
+    const remove_verbose_opt = cli.Option.init("verbose", "verbose", "Excessively verbose logging", .bool)
+        .withShort('v');
+    _ = try remove_cmd.addOption(remove_verbose_opt);
+
+    _ = remove_cmd.setAction(removeAction);
+    _ = try root.addCommand(remove_cmd);
 
     // ========================================================================
     // List Command
