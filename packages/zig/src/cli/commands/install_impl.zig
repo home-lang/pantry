@@ -1,16 +1,20 @@
-//! CLI Commands Module
+//! Install Command Implementation
 //!
-//! This module contains all command implementations for the Pantry CLI.
-//! Commands are organized into logical sections:
-//! - Package Management: install, remove, update, outdated
-//! - Scripts: run, list scripts
-//! - Environment: shell integration, environment management
-//! - Cache: cache stats, cache clear
-//! - Development: dev tools and utilities
-//! - Services: service management (start, stop, restart, status)
+//! This module contains the complete implementation of the install command and
+//! all its variants. The install logic is complex with support for:
+//! - Concurrent package installation with thread pools
+//! - Workspace support (monorepo handling)
+//! - Local dependencies (filesystem paths)
+//! - Global dependencies scanning and installation
+//! - Lockfile generation (.freezer)
+//! - Environment directory management
+//! - Dependency filtering (production, dev-only, peer)
+//!
+//! This implementation is kept in a separate file due to its size (2900+ lines)
+//! while being wrapped by install.zig for the public API.
 
 const std = @import("std");
-const lib = @import("../lib.zig");
+const lib = @import("../../lib.zig");
 
 // Import commonly used modules
 const cache = lib.cache;
@@ -155,7 +159,7 @@ fn installSinglePackage(
     }
 
     // Validate package exists in registry
-    const pkg_registry = @import("../packages/generated.zig");
+    const pkg_registry = @import("../../packages/generated.zig");
     const pkg_info = pkg_registry.getPackageByName(dep.name);
 
     // Check if this is a GitHub dependency
@@ -279,8 +283,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     // Otherwise, normal install flow
     if (package_args.items.len == 0) {
         // No args - check if we're in a project directory
-        const detector = @import("../deps/detector.zig");
-        const parser = @import("../deps/parser.zig");
+        const detector = @import("../../deps/detector.zig");
+        const parser = @import("../../deps/parser.zig");
 
         const cwd = try std.process.getCwdAlloc(allocator);
         defer allocator.free(cwd);
@@ -631,7 +635,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Write lockfile
-        const lockfile_writer = @import("../packages/lockfile.zig");
+        const lockfile_writer = @import("../../packages/lockfile.zig");
         lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
             const yellow = "\x1b[33m";
             std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
@@ -648,7 +652,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     }
 
     // Detect if we're in a project directory
-    const detector = @import("../deps/detector.zig");
+    const detector = @import("../../deps/detector.zig");
     const cwd = try std.process.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
@@ -723,8 +727,8 @@ fn installWorkspaceCommand(
     workspace_root: []const u8,
     workspace_file_path: []const u8,
 ) !CommandResult {
-    const workspace_module = @import("../packages/workspace.zig");
-    const parser = @import("../deps/parser.zig");
+    const workspace_module = @import("../../packages/workspace.zig");
+    const parser = @import("../../deps/parser.zig");
 
     // Load workspace configuration
     var workspace_config = try workspace_module.loadWorkspaceConfig(
@@ -775,7 +779,7 @@ fn installWorkspaceCommand(
 
         // Try config file first
         if (member.config_path) |_| {
-            var config_result = @import("../config/loader.zig").loadpantryConfig(
+            var config_result = @import("../../config/loader.zig").loadpantryConfig(
                 allocator,
                 .{
                     .name = "pantry",
@@ -785,14 +789,14 @@ fn installWorkspaceCommand(
 
             if (config_result) |*config| {
                 defer config.deinit();
-                const deps_extractor = @import("../config/dependencies.zig");
+                const deps_extractor = @import("../../config/dependencies.zig");
                 member_deps = try deps_extractor.extractDependencies(allocator, config.*);
             }
         }
 
         // Try deps file if config didn't work
         if (member_deps == null and member.deps_file_path != null) {
-            const detector = @import("../deps/detector.zig");
+            const detector = @import("../../deps/detector.zig");
             if (try detector.findDepsFile(allocator, member.abs_path)) |deps_file| {
                 defer allocator.free(deps_file.path);
                 member_deps = try parser.inferDependencies(allocator, deps_file);
@@ -937,7 +941,7 @@ fn installWorkspaceCommand(
     }
 
     // Write lockfile
-    const lockfile_writer = @import("../packages/lockfile.zig");
+    const lockfile_writer = @import("../../packages/lockfile.zig");
     lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
         const yellow = "\x1b[33m";
         std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
@@ -966,7 +970,7 @@ pub const PublishOptions = struct {
 pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishOptions) !CommandResult {
     _ = args;
 
-    const publish_module = @import("../packages/publish.zig");
+    const publish_module = @import("../../packages/publish.zig");
 
     const cwd = try std.process.getCwdAlloc(allocator);
     defer allocator.free(cwd);
@@ -1368,7 +1372,7 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
         };
     }
 
-    const packages = @import("../packages/generated.zig");
+    const packages = @import("../../packages/generated.zig");
     const search_term = args[0];
 
     std.debug.print("Searching for '{s}'...\n\n", .{search_term});
@@ -1405,7 +1409,7 @@ pub fn infoCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         };
     }
 
-    const packages = @import("../packages/generated.zig");
+    const packages = @import("../../packages/generated.zig");
     const pkg_name = args[0];
 
     const pkg = packages.getPackageByName(pkg_name);
@@ -1506,7 +1510,7 @@ pub fn envCleanCommand(allocator: std.mem.Allocator, _: []const []const u8) !Com
 
 /// Environment lookup command - find environment for a project directory
 pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !CommandResult {
-    const detector = @import("../deps/detector.zig");
+    const detector = @import("../../deps/detector.zig");
 
     // Find dependency file in project directory
     const deps_file = (try detector.findDepsFile(allocator, project_dir)) orelse {
@@ -1641,7 +1645,7 @@ pub fn doctorCommand(allocator: std.mem.Allocator) !CommandResult {
     std.debug.print("✓ Shell: {s}\n", .{detected_shell.name()});
 
     // Check package registry
-    const packages = @import("../packages/generated.zig");
+    const packages = @import("../../packages/generated.zig");
     std.debug.print("✓ Package registry: {d} packages\n", .{packages.packages.len});
 
     std.debug.print("\nEverything looks good!\n", .{});
@@ -1994,7 +1998,7 @@ pub fn statusCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
 
 /// Shell lookup command (for shell integration)
 pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
-    const detector = @import("../deps/detector.zig");
+    const detector = @import("../../deps/detector.zig");
 
     // Find dependency file first
     const deps_file = (try detector.findDepsFile(allocator, dir)) orelse {
@@ -2024,7 +2028,7 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
 
 /// Ensure global dependencies are installed (called on every shell activation)
 fn ensureGlobalDepsInstalled(allocator: std.mem.Allocator) !void {
-    const global_scanner = @import("../deps/global_scanner.zig");
+    const global_scanner = @import("../../deps/global_scanner.zig");
 
     // Scan for global dependencies
     const global_deps = global_scanner.scanForGlobalDeps(allocator) catch |err| {
@@ -2101,8 +2105,8 @@ fn ensureGlobalDepsInstalled(allocator: std.mem.Allocator) !void {
 
 /// Shell activate command (for shell integration)
 pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
-    const detector = @import("../deps/detector.zig");
-    const parser = @import("../deps/parser.zig");
+    const detector = @import("../../deps/detector.zig");
+    const parser = @import("../../deps/parser.zig");
 
     // Find dependency file
     const deps_file = (try detector.findDepsFile(allocator, dir)) orelse {
@@ -2635,7 +2639,7 @@ pub fn devMd5Command(allocator: std.mem.Allocator, path: []const u8) !CommandRes
 
 /// Dev: find-project-root command - find project root from a directory
 pub fn devFindProjectRootCommand(allocator: std.mem.Allocator, start_dir: []const u8) !CommandResult {
-    const detector = @import("../deps/detector.zig");
+    const detector = @import("../../deps/detector.zig");
 
     // Try to find a dependency file
     const deps_file = (try detector.findDepsFile(allocator, start_dir)) orelse {
@@ -2672,7 +2676,7 @@ pub fn installGlobalDepsCommandUserLocal(allocator: std.mem.Allocator) !CommandR
 
 /// Install global dependencies by scanning common locations
 fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local: bool) !CommandResult {
-    const global_scanner = @import("../deps/global_scanner.zig");
+    const global_scanner = @import("../../deps/global_scanner.zig");
 
     std.debug.print("Scanning for global dependencies...\n", .{});
 
@@ -2819,7 +2823,7 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
 fn loadDependenciesFromConfig(
     allocator: std.mem.Allocator,
     cwd: []const u8,
-) !?[]@import("../deps/parser.zig").PackageDependency {
+) !?[]@import("../../deps/parser.zig").PackageDependency {
     // Try to load pantry config
     var config = lib.config.loadpantryConfig(allocator, .{
         .name = "pantry",
@@ -2847,1420 +2851,4 @@ fn loadDependenciesFromConfig(
     }
 
     return deps;
-}
-
-// ============================================================================
-// Service Management Commands
-// ============================================================================
-
-/// List available services
-pub fn servicesListCommand(allocator: std.mem.Allocator) !CommandResult {
-    _ = allocator;
-    const services = lib.services;
-
-    std.debug.print("\n📋 Available Services:\n\n", .{});
-
-    const available_services = [_]struct {
-        name: []const u8,
-        description: []const u8,
-        default_port: u16,
-    }{
-        .{ .name = "postgresql", .description = "PostgreSQL database server", .default_port = 5432 },
-        .{ .name = "redis", .description = "Redis in-memory data store", .default_port = 6379 },
-        .{ .name = "mysql", .description = "MySQL database server", .default_port = 3306 },
-        .{ .name = "nginx", .description = "Nginx web server", .default_port = 80 },
-        .{ .name = "mongodb", .description = "MongoDB database server", .default_port = 27017 },
-    };
-
-    for (available_services) |svc| {
-        std.debug.print("  {s:<15}  {s:<40}  (port {d})\n", .{
-            svc.name,
-            svc.description,
-            svc.default_port,
-        });
-    }
-
-    std.debug.print("\nUsage:\n", .{});
-    std.debug.print("  pantry start <service>     Start a service\n", .{});
-    std.debug.print("  pantry stop <service>      Stop a service\n", .{});
-    std.debug.print("  pantry restart <service>   Restart a service\n", .{});
-    std.debug.print("  pantry status [service]    Show service status\n", .{});
-    std.debug.print("\n", .{});
-
-    _ = services;
-
-    return .{ .exit_code = 0 };
-}
-
-/// Start a service
-pub fn serviceStartCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Service name required. Usage: pantry start <service>"),
-        };
-    }
-
-    const service_name = args[0];
-    const services = lib.services;
-
-    // Create service manager
-    var manager = services.ServiceManager.init(allocator);
-    defer manager.deinit();
-
-    // Get default port
-    const port = services.Services.getDefaultPort(service_name) orelse {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    };
-
-    // Create service config
-    var config: services.ServiceConfig = undefined;
-    if (std.mem.eql(u8, service_name, "postgresql")) {
-        config = try services.Services.postgresql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "redis")) {
-        config = try services.Services.redis(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mysql")) {
-        config = try services.Services.mysql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "nginx")) {
-        config = try services.Services.nginx(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mongodb")) {
-        config = try services.Services.mongodb(allocator, port);
-    } else {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    }
-
-    // Register and start service
-    try manager.register(config);
-
-    std.debug.print("Starting {s}...\n", .{service_name});
-    manager.start(service_name) catch |err| {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error starting service: {any}", .{err}),
-        };
-    };
-
-    std.debug.print("✓ {s} started successfully\n", .{service_name});
-
-    return .{ .exit_code = 0 };
-}
-
-/// Stop a service
-pub fn serviceStopCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Service name required. Usage: pantry stop <service>"),
-        };
-    }
-
-    const service_name = args[0];
-    const services = lib.services;
-
-    // Create service manager
-    var manager = services.ServiceManager.init(allocator);
-    defer manager.deinit();
-
-    // Get default port (to create config)
-    const port = services.Services.getDefaultPort(service_name) orelse {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    };
-
-    // Create service config
-    var config: services.ServiceConfig = undefined;
-    if (std.mem.eql(u8, service_name, "postgresql")) {
-        config = try services.Services.postgresql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "redis")) {
-        config = try services.Services.redis(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mysql")) {
-        config = try services.Services.mysql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "nginx")) {
-        config = try services.Services.nginx(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mongodb")) {
-        config = try services.Services.mongodb(allocator, port);
-    } else {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    }
-
-    // Register and stop service
-    try manager.register(config);
-
-    std.debug.print("Stopping {s}...\n", .{service_name});
-    manager.stop(service_name) catch |err| {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error stopping service: {any}", .{err}),
-        };
-    };
-
-    std.debug.print("✓ {s} stopped successfully\n", .{service_name});
-
-    return .{ .exit_code = 0 };
-}
-
-/// Restart a service
-pub fn serviceRestartCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Service name required. Usage: pantry restart <service>"),
-        };
-    }
-
-    const service_name = args[0];
-    const services = lib.services;
-
-    // Create service manager
-    var manager = services.ServiceManager.init(allocator);
-    defer manager.deinit();
-
-    // Get default port
-    const port = services.Services.getDefaultPort(service_name) orelse {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    };
-
-    // Create service config
-    var config: services.ServiceConfig = undefined;
-    if (std.mem.eql(u8, service_name, "postgresql")) {
-        config = try services.Services.postgresql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "redis")) {
-        config = try services.Services.redis(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mysql")) {
-        config = try services.Services.mysql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "nginx")) {
-        config = try services.Services.nginx(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mongodb")) {
-        config = try services.Services.mongodb(allocator, port);
-    } else {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    }
-
-    // Register and restart service
-    try manager.register(config);
-
-    std.debug.print("Restarting {s}...\n", .{service_name});
-    manager.restart(service_name) catch |err| {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error restarting service: {any}", .{err}),
-        };
-    };
-
-    std.debug.print("✓ {s} restarted successfully\n", .{service_name});
-
-    return .{ .exit_code = 0 };
-}
-
-/// Get service status
-pub fn serviceStatusCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    const services = lib.services;
-
-    // If no service name provided, show status of all services
-    if (args.len == 0) {
-        std.debug.print("\n📊 Service Status:\n\n", .{});
-
-        const service_names = [_][]const u8{
-            "postgresql",
-            "redis",
-            "mysql",
-            "nginx",
-            "mongodb",
-        };
-
-        var manager = services.ServiceManager.init(allocator);
-        defer manager.deinit();
-
-        for (service_names) |service_name| {
-            const port = services.Services.getDefaultPort(service_name) orelse continue;
-
-            // Create service config
-            var config: services.ServiceConfig = undefined;
-            if (std.mem.eql(u8, service_name, "postgresql")) {
-                config = try services.Services.postgresql(allocator, port);
-            } else if (std.mem.eql(u8, service_name, "redis")) {
-                config = try services.Services.redis(allocator, port);
-            } else if (std.mem.eql(u8, service_name, "mysql")) {
-                config = try services.Services.mysql(allocator, port);
-            } else if (std.mem.eql(u8, service_name, "nginx")) {
-                config = try services.Services.nginx(allocator, port);
-            } else if (std.mem.eql(u8, service_name, "mongodb")) {
-                config = try services.Services.mongodb(allocator, port);
-            } else {
-                continue;
-            }
-
-            try manager.register(config);
-
-            const status = manager.status(service_name) catch services.ServiceStatus.unknown;
-            const status_str = status.toString();
-            const indicator = if (status == .running) "●" else if (status == .stopped) "○" else "?";
-
-            std.debug.print("  {s} {s:<15}  {s}\n", .{
-                indicator,
-                service_name,
-                status_str,
-            });
-        }
-
-        std.debug.print("\n", .{});
-        return .{ .exit_code = 0 };
-    }
-
-    // Show status for specific service
-    const service_name = args[0];
-
-    // Create service manager
-    var manager = services.ServiceManager.init(allocator);
-    defer manager.deinit();
-
-    // Get default port
-    const port = services.Services.getDefaultPort(service_name) orelse {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    };
-
-    // Create service config
-    var config: services.ServiceConfig = undefined;
-    if (std.mem.eql(u8, service_name, "postgresql")) {
-        config = try services.Services.postgresql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "redis")) {
-        config = try services.Services.redis(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mysql")) {
-        config = try services.Services.mysql(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "nginx")) {
-        config = try services.Services.nginx(allocator, port);
-    } else if (std.mem.eql(u8, service_name, "mongodb")) {
-        config = try services.Services.mongodb(allocator, port);
-    } else {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Unknown service '{s}'", .{service_name}),
-        };
-    }
-
-    // Register service
-    try manager.register(config);
-
-    const status = manager.status(service_name) catch services.ServiceStatus.unknown;
-
-    std.debug.print("\n{s} Status: {s}\n", .{ service_name, status.toString() });
-    if (config.port) |p| {
-        std.debug.print("Port: {d}\n", .{p});
-    }
-    std.debug.print("\n", .{});
-
-    return .{ .exit_code = 0 };
-}
-
-// ============================================================================
-// Scripts Commands
-// ============================================================================
-
-/// Run a script from pantry.json or package.json
-pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: No script name provided\nUsage: pantry run <script-name> [args...]"),
-        };
-    }
-
-    const script_name = args[0];
-    const script_args = if (args.len > 1) args[1..] else &[_][]const u8{};
-
-    // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
-        };
-    };
-    defer allocator.free(cwd);
-
-    // Find project scripts
-    const scripts_map = lib.config.findProjectScripts(allocator, cwd) catch |err| {
-        const msg = try std.fmt.allocPrint(allocator, "Error loading scripts: {}", .{err});
-        return .{
-            .exit_code = 1,
-            .message = msg,
-        };
-    };
-
-    if (scripts_map == null) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: No scripts found in pantry.json or package.json"),
-        };
-    }
-
-    var scripts = scripts_map.?;
-    defer {
-        var it = scripts.iterator();
-        while (it.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
-            allocator.free(entry.value_ptr.*);
-        }
-        scripts.deinit();
-    }
-
-    // Find the requested script
-    const script_command = scripts.get(script_name) orelse {
-        // Count scripts for allocation size estimate
-        var count: usize = 0;
-        var it_count = scripts.iterator();
-        while (it_count.next()) |_| count += 1;
-
-        // Build error message
-        const prefix = try std.fmt.allocPrint(allocator, "Error: Script '{s}' not found\n\nAvailable scripts:\n", .{script_name});
-        defer allocator.free(prefix);
-
-        // Collect script names
-        var names = try allocator.alloc([]const u8, count);
-        defer allocator.free(names);
-
-        var idx: usize = 0;
-        var it = scripts.iterator();
-        while (it.next()) |entry| {
-            names[idx] = entry.key_ptr.*;
-            idx += 1;
-        }
-
-        // Format list of scripts
-        var list_buf: [1024]u8 = undefined;
-        var list_stream = std.io.fixedBufferStream(&list_buf);
-        const writer = list_stream.writer();
-        for (names) |name| {
-            writer.print("  {s}\n", .{name}) catch break;
-        }
-
-        const msg = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, list_stream.getWritten() });
-
-        return .{
-            .exit_code = 1,
-            .message = msg,
-        };
-    };
-
-    // Build the full command with arguments
-    // We need to pass args as positional parameters to sh, so we construct:
-    // sh -c 'script_command "$@"' _ arg1 arg2 ...
-    var command_buf: [2048]u8 = undefined;
-    var command_stream = std.io.fixedBufferStream(&command_buf);
-    const cmd_writer = command_stream.writer();
-
-    // Build display version for user
-    try cmd_writer.writeAll(script_command);
-    for (script_args) |arg| {
-        try cmd_writer.writeByte(' ');
-        try cmd_writer.writeAll(arg);
-    }
-    const display_command = try allocator.dupe(u8, command_stream.getWritten());
-    defer allocator.free(display_command);
-
-    // Print what we're running
-    std.debug.print("\x1b[2m$ {s}\x1b[0m\n", .{display_command});
-
-    // Build argv for shell execution with proper positional parameters
-    var argv_buf: [128][]const u8 = undefined;
-    argv_buf[0] = "sh";
-    argv_buf[1] = "-c";
-    argv_buf[2] = script_command;
-    argv_buf[3] = "_"; // sh placeholder for $0
-
-    var argc: usize = 4;
-    for (script_args) |arg| {
-        if (argc >= argv_buf.len) break;
-        argv_buf[argc] = arg;
-        argc += 1;
-    }
-
-    // Execute the script using sh -c with positional parameters
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = argv_buf[0..argc],
-        .cwd = cwd,
-    }) catch |err| {
-        const msg = try std.fmt.allocPrint(allocator, "Error executing script: {}", .{err});
-        return .{
-            .exit_code = 1,
-            .message = msg,
-        };
-    };
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
-
-    // Print output
-    if (result.stdout.len > 0) {
-        std.debug.print("{s}", .{result.stdout});
-    }
-    if (result.stderr.len > 0) {
-        std.debug.print("{s}", .{result.stderr});
-    }
-
-    return .{
-        .exit_code = if (result.term.Exited == 0) @as(u8, 0) else @as(u8, 1),
-    };
-}
-
-/// List all available scripts in the current project
-pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
-    // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
-        };
-    };
-    defer allocator.free(cwd);
-
-    // Find project scripts
-    const scripts_map = lib.config.findProjectScripts(allocator, cwd) catch |err| {
-        const msg = try std.fmt.allocPrint(allocator, "Error loading scripts: {}", .{err});
-        return .{
-            .exit_code = 1,
-            .message = msg,
-        };
-    };
-
-    if (scripts_map == null) {
-        return .{
-            .exit_code = 0,
-            .message = try allocator.dupe(u8, "No scripts found in pantry.json or package.json"),
-        };
-    }
-
-    var scripts = scripts_map.?;
-    defer {
-        var it = scripts.iterator();
-        while (it.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
-            allocator.free(entry.value_ptr.*);
-        }
-        scripts.deinit();
-    }
-
-    // Build output listing all scripts
-    var output_buf: [8192]u8 = undefined;
-    var output_stream = std.io.fixedBufferStream(&output_buf);
-    const writer = output_stream.writer();
-
-    try writer.writeAll("\x1b[1mAvailable scripts:\x1b[0m\n\n");
-
-    // Collect script names in a fixed array (max 100 scripts)
-    var script_names_buf: [100][]const u8 = undefined;
-    var script_count: usize = 0;
-
-    var it = scripts.iterator();
-    while (it.next()) |entry| {
-        if (script_count >= script_names_buf.len) break;
-        script_names_buf[script_count] = entry.key_ptr.*;
-        script_count += 1;
-    }
-
-    const script_names = script_names_buf[0..script_count];
-
-    // Simple bubble sort for script names
-    var i: usize = 0;
-    while (i < script_names.len) : (i += 1) {
-        var j: usize = i + 1;
-        while (j < script_names.len) : (j += 1) {
-            if (std.mem.order(u8, script_names[i], script_names[j]) == .gt) {
-                const temp = script_names[i];
-                script_names[i] = script_names[j];
-                script_names[j] = temp;
-            }
-        }
-    }
-
-    // Print scripts in sorted order
-    for (script_names) |name| {
-        const command = scripts.get(name).?;
-        try writer.writeAll("  \x1b[36m");
-        try writer.writeAll(name);
-        try writer.writeAll("\x1b[0m\n    ");
-        try writer.writeAll(command);
-        try writer.writeAll("\n\n");
-    }
-
-    const output_bytes = output_stream.getWritten();
-    return .{
-        .exit_code = 0,
-        .message = try allocator.dupe(u8, output_bytes),
-    };
-}
-
-test "Command structures" {
-    const result = CommandResult{
-        .exit_code = 0,
-        .message = null,
-    };
-    _ = result;
-}
-
-// ============================================================================
-// Remove Command
-// ============================================================================
-
-pub const RemoveOptions = struct {
-    save: bool = true, // Update package.json (default: true)
-    global: bool = false, // Remove globally
-    dry_run: bool = false, // Don't actually remove anything
-    silent: bool = false, // Don't log anything
-    verbose: bool = false, // Verbose logging
-};
-
-/// Remove packages from the project
-pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, options: RemoveOptions) !CommandResult {
-    if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: No packages specified to remove\nUsage: pantry remove <package>"),
-        };
-    }
-
-    // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
-        };
-    };
-    defer allocator.free(cwd);
-
-    if (options.dry_run and !options.silent) {
-        std.debug.print("\x1b[33m🔍 Dry run mode\x1b[0m - no changes will be made\n\n", .{});
-    }
-
-    // Find package.json or pantry.json
-    const config_path = findConfigFile(allocator, cwd) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_NO_CONFIG),
-        };
-    };
-    defer allocator.free(config_path);
-
-    if (options.verbose and !options.silent) {
-        std.debug.print("\x1b[2mUsing config: {s}\x1b[0m\n", .{config_path});
-    }
-
-    // Read config file
-    const config_contents = std.fs.cwd().readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not read config file"),
-        };
-    };
-    defer allocator.free(config_contents);
-
-    // Check if JSONC and strip comments
-    const jsonc_util = @import("../utils/jsonc.zig");
-    const is_jsonc = std.mem.endsWith(u8, config_path, ".jsonc");
-    const json_contents = if (is_jsonc)
-        try jsonc_util.stripComments(allocator, config_contents)
-    else
-        config_contents;
-    defer if (is_jsonc) allocator.free(json_contents);
-
-    // Parse JSON
-    var parsed = std.json.parseFromSlice(
-        std.json.Value,
-        allocator,
-        json_contents,
-        .{},
-    ) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Invalid JSON in config file"),
-        };
-    };
-    defer parsed.deinit();
-
-    var root = parsed.value;
-    if (root != .object) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_CONFIG_NOT_OBJECT),
-        };
-    }
-
-    // Track what we're removing
-    var removed_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
-    defer removed_packages.deinit(allocator);
-
-    var not_found_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
-    defer not_found_packages.deinit(allocator);
-
-    // Check which packages exist
-    var deps_modified = false;
-    if (root.object.get("dependencies")) |deps_val| {
-        if (deps_val == .object) {
-            for (args) |package_name| {
-                if (deps_val.object.contains(package_name)) {
-                    try removed_packages.append(allocator, package_name);
-                    deps_modified = true;
-                } else {
-                    // Check in devDependencies
-                    var found_in_dev = false;
-                    if (root.object.get("devDependencies")) |dev_deps| {
-                        if (dev_deps == .object and dev_deps.object.contains(package_name)) {
-                            found_in_dev = true;
-                        }
-                    }
-                    if (!found_in_dev) {
-                        try not_found_packages.append(allocator, package_name);
-                    }
-                }
-            }
-        }
-    }
-
-    // Check devDependencies
-    if (root.object.get("devDependencies")) |dev_deps_val| {
-        if (dev_deps_val == .object) {
-            for (args) |package_name| {
-                if (dev_deps_val.object.contains(package_name)) {
-                    // Only add if not already in removed list
-                    var already_added = false;
-                    for (removed_packages.items) |pkg| {
-                        if (std.mem.eql(u8, pkg, package_name)) {
-                            already_added = true;
-                            break;
-                        }
-                    }
-                    if (!already_added) {
-                        try removed_packages.append(allocator, package_name);
-                    }
-                    deps_modified = true;
-                }
-            }
-        }
-    }
-
-    // Print results
-    if (!options.silent) {
-        if (removed_packages.items.len > 0) {
-            std.debug.print("\x1b[32m✓\x1b[0m Removed {d} package(s):\n", .{removed_packages.items.len});
-            for (removed_packages.items) |pkg| {
-                std.debug.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
-            }
-            std.debug.print("\n", .{});
-        }
-
-        if (not_found_packages.items.len > 0) {
-            std.debug.print("\x1b[33m⚠\x1b[0m Package(s) not found in dependencies:\n", .{});
-            for (not_found_packages.items) |pkg| {
-                std.debug.print("  \x1b[2m?\x1b[0m {s}\n", .{pkg});
-            }
-            std.debug.print("\n", .{});
-        }
-    }
-
-    // Write back to file if save is enabled
-    if (options.save and deps_modified and !options.dry_run) {
-        // Build new JSON object without removed packages
-        var new_obj = std.json.ObjectMap.init(allocator);
-        defer new_obj.deinit();
-
-        // Copy all fields from original object
-        var it = root.object.iterator();
-        while (it.next()) |entry| {
-            const key = entry.key_ptr.*;
-            const value = entry.value_ptr.*;
-
-            // Filter dependencies and devDependencies
-            if (std.mem.eql(u8, key, "dependencies") or std.mem.eql(u8, key, "devDependencies")) {
-                if (value == .object) {
-                    var filtered_deps = std.json.ObjectMap.init(allocator);
-                    var deps_it = value.object.iterator();
-                    while (deps_it.next()) |dep_entry| {
-                        const dep_name = dep_entry.key_ptr.*;
-                        // Check if this package should be removed
-                        var should_remove = false;
-                        for (removed_packages.items) |pkg| {
-                            if (std.mem.eql(u8, dep_name, pkg)) {
-                                should_remove = true;
-                                break;
-                            }
-                        }
-                        if (!should_remove) {
-                            try filtered_deps.put(dep_name, dep_entry.value_ptr.*);
-                        }
-                    }
-                    try new_obj.put(key, .{ .object = filtered_deps });
-                } else {
-                    try new_obj.put(key, value);
-                }
-            } else {
-                try new_obj.put(key, value);
-            }
-        }
-
-        // Write the new JSON
-        var output = try std.ArrayList(u8).initCapacity(allocator, 4096);
-        defer output.deinit(allocator);
-
-        _ = std.json.Value{ .object = new_obj };
-        // TODO: Fix JSON API - try std.json.stringifyArbitraryDepth(allocator, new_root, .{ .whitespace = .indent_2 }, output.writer());
-
-        std.fs.cwd().writeFile(.{
-            .sub_path = config_path,
-            .data = output.items,
-        }) catch {
-            return .{
-                .exit_code = 1,
-                .message = try allocator.dupe(u8, "Error: Could not write config file"),
-            };
-        };
-
-        if (!options.silent) {
-            std.debug.print("\x1b[2mUpdated {s}\x1b[0m\n", .{config_path});
-        }
-    }
-
-    // Remove from pantry_modules if not dry run
-    if (!options.dry_run and removed_packages.items.len > 0) {
-        const modules_dir = if (options.global)
-            try std.fs.path.join(allocator, &[_][]const u8{ std.posix.getenv("HOME") orelse "~", ".pantry", "global", "packages" })
-        else
-            try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules" });
-        defer allocator.free(modules_dir);
-
-        for (removed_packages.items) |pkg| {
-            const pkg_path = try std.fs.path.join(allocator, &[_][]const u8{ modules_dir, pkg });
-            defer allocator.free(pkg_path);
-
-            std.fs.cwd().deleteTree(pkg_path) catch |err| {
-                if (options.verbose and !options.silent) {
-                    std.debug.print("\x1b[2mNote: Could not remove {s}: {}\x1b[0m\n", .{ pkg_path, err });
-                }
-            };
-        }
-    }
-
-    if (removed_packages.items.len == 0 and not_found_packages.items.len > 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: None of the specified packages were found"),
-        };
-    }
-
-    return .{ .exit_code = 0 };
-}
-
-/// Find config file (package.json, pantry.json, etc.)
-fn findConfigFile(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
-    const config_files = [_][]const u8{
-        "pantry.json",
-        "pantry.jsonc",
-        "package.json",
-        "package.jsonc",
-    };
-
-    for (config_files) |config_file| {
-        const full_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, config_file });
-        defer allocator.free(full_path);
-
-        std.fs.accessAbsolute(full_path, .{}) catch continue;
-
-        // Found a config file
-        return try allocator.dupe(u8, full_path);
-    }
-
-    return error.ConfigNotFound;
-}
-
-// ============================================================================
-// Update Command
-// ============================================================================
-
-pub const UpdateOptions = struct {
-    latest: bool = false, // Update to latest versions (ignore semver constraints)
-    force: bool = false, // Force update
-    interactive: bool = false, // Interactive mode
-    production: bool = false, // Skip devDependencies
-    global: bool = false, // Update globally
-    dry_run: bool = false, // Don't actually update
-    silent: bool = false, // Don't log anything
-    verbose: bool = false, // Verbose logging
-    save: bool = true, // Update package.json
-};
-
-/// Update packages to their latest versions
-pub fn updateCommand(allocator: std.mem.Allocator, args: []const []const u8, options: UpdateOptions) !CommandResult {
-    // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
-        };
-    };
-    defer allocator.free(cwd);
-
-    if (options.dry_run and !options.silent) {
-        std.debug.print("\x1b[33m🔍 Dry run mode\x1b[0m - no changes will be made\n\n", .{});
-    }
-
-    // If no packages specified, update all
-    if (args.len == 0) {
-        return updateAllPackages(allocator, cwd, options);
-    }
-
-    // Update specific packages
-    return updateSpecificPackages(allocator, cwd, args, options);
-}
-
-/// Update all packages in the project
-fn updateAllPackages(allocator: std.mem.Allocator, cwd: []const u8, options: UpdateOptions) !CommandResult {
-    if (!options.silent) {
-        std.debug.print("\x1b[34m📦 Updating all packages\x1b[0m\n", .{});
-        if (options.latest) {
-            std.debug.print("\x1b[2m   Mode: latest (ignoring semver constraints)\x1b[0m\n", .{});
-        } else {
-            std.debug.print("\x1b[2m   Mode: semver-compatible\x1b[0m\n", .{});
-        }
-        std.debug.print("\n", .{});
-    }
-
-    // Find config file
-    const config_path = findConfigFile(allocator, cwd) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_NO_CONFIG),
-        };
-    };
-    defer allocator.free(config_path);
-
-    // Read config
-    const config_contents = std.fs.cwd().readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not read config file"),
-        };
-    };
-    defer allocator.free(config_contents);
-
-    // Check if JSONC and strip comments
-    const jsonc_util = @import("../utils/jsonc.zig");
-    const is_jsonc = std.mem.endsWith(u8, config_path, ".jsonc");
-    const json_contents = if (is_jsonc)
-        try jsonc_util.stripComments(allocator, config_contents)
-    else
-        config_contents;
-    defer if (is_jsonc) allocator.free(json_contents);
-
-    // Parse JSON
-    var parsed = std.json.parseFromSlice(
-        std.json.Value,
-        allocator,
-        json_contents,
-        .{},
-    ) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Invalid JSON in config file"),
-        };
-    };
-    defer parsed.deinit();
-
-    const root = parsed.value;
-    if (root != .object) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_CONFIG_NOT_OBJECT),
-        };
-    }
-
-    // Collect packages to update
-    var packages_to_update = try std.ArrayList([]const u8).initCapacity(allocator, 32);
-    defer packages_to_update.deinit(allocator);
-
-    // Get dependencies
-    if (root.object.get("dependencies")) |deps| {
-        if (deps == .object) {
-            var it = deps.object.iterator();
-            while (it.next()) |entry| {
-                try packages_to_update.append(allocator, entry.key_ptr.*);
-            }
-        }
-    }
-
-    // Get devDependencies unless production mode
-    if (!options.production) {
-        if (root.object.get("devDependencies")) |dev_deps| {
-            if (dev_deps == .object) {
-                var it = dev_deps.object.iterator();
-                while (it.next()) |entry| {
-                    try packages_to_update.append(allocator, entry.key_ptr.*);
-                }
-            }
-        }
-    }
-
-    if (packages_to_update.items.len == 0) {
-        if (!options.silent) {
-            std.debug.print("\x1b[33m⚠\x1b[0m No packages found to update\n", .{});
-        }
-        return .{ .exit_code = 0 };
-    }
-
-    if (!options.silent) {
-        std.debug.print("\x1b[32m✓\x1b[0m Found {d} package(s) to update\n\n", .{packages_to_update.items.len});
-
-        // List packages
-        for (packages_to_update.items) |pkg| {
-            std.debug.print("  \x1b[2m→\x1b[0m {s}\n", .{pkg});
-        }
-        std.debug.print("\n", .{});
-    }
-
-    if (options.dry_run) {
-        return .{ .exit_code = 0 };
-    }
-
-    // Simulate update by calling install command
-    if (!options.silent) {
-        std.debug.print("\x1b[34m📥 Installing updates...\x1b[0m\n\n", .{});
-    }
-
-    // Call install command with the packages
-    const install_options = InstallOptions{
-        .production = options.production,
-    };
-
-    return try installCommandWithOptions(allocator, packages_to_update.items, install_options);
-}
-
-/// Update specific packages
-fn updateSpecificPackages(
-    allocator: std.mem.Allocator,
-    cwd: []const u8,
-    packages: []const []const u8,
-    options: UpdateOptions,
-) !CommandResult {
-    if (!options.silent) {
-        std.debug.print("\x1b[34m📦 Updating {d} package(s)\x1b[0m\n", .{packages.len});
-        if (options.latest) {
-            std.debug.print("\x1b[2m   Mode: latest (ignoring semver constraints)\x1b[0m\n", .{});
-        }
-        std.debug.print("\n", .{});
-
-        for (packages) |pkg| {
-            std.debug.print("  \x1b[2m→\x1b[0m {s}\n", .{pkg});
-        }
-        std.debug.print("\n", .{});
-    }
-
-    _ = cwd;
-
-    if (options.dry_run) {
-        return .{ .exit_code = 0 };
-    }
-
-    // Install the packages (which will update them)
-    const install_options = InstallOptions{
-        .production = options.production,
-    };
-
-    if (!options.silent) {
-        std.debug.print("\x1b[34m📥 Installing updates...\x1b[0m\n\n", .{});
-    }
-
-    return try installCommandWithOptions(allocator, packages, install_options);
-}
-
-/// Px command options
-pub const PxOptions = struct {
-    use_pantry: bool = false, // Use Pantry runtime instead of respecting shebangs
-    package_name: ?[]const u8 = null, // Specific package to use
-    silent: bool = false, // Don't log anything
-    verbose: bool = false, // Verbose logging
-};
-
-/// Run packages from npm (like npx/bunx)
-pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PxOptions) !CommandResult {
-    if (args.len == 0) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: No package specified\nUsage: px <package> [args...]"),
-        };
-    }
-
-    const package_name = options.package_name orelse args[0];
-    const executable_name = args[0];
-    const exec_args = if (args.len > 1) args[1..] else &[_][]const u8{};
-
-    if (!options.silent and options.verbose) {
-        std.debug.print("\x1b[34m📦 Running package executable\x1b[0m\n", .{});
-        std.debug.print("\x1b[2m   Package: {s}\x1b[0m\n", .{package_name});
-        std.debug.print("\x1b[2m   Executable: {s}\x1b[0m\n", .{executable_name});
-        if (exec_args.len > 0) {
-            std.debug.print("\x1b[2m   Arguments: {d}\x1b[0m\n", .{exec_args.len});
-        }
-        std.debug.print("\n", .{});
-    }
-
-    // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, "Error: Could not determine current directory"),
-        };
-    };
-    defer allocator.free(cwd);
-
-    // Check if package is installed locally
-    const local_bin_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules", ".bin", executable_name });
-    defer allocator.free(local_bin_path);
-
-    var executable_path: ?[]const u8 = null;
-    var path_allocated = false;
-    defer if (path_allocated and executable_path != null) allocator.free(executable_path.?);
-
-    // Try local installation first
-    std.fs.accessAbsolute(local_bin_path, .{}) catch {
-        // Not found locally, check global
-        const global_bin_path = try std.fs.path.join(
-            allocator,
-            &[_][]const u8{ std.posix.getenv("HOME") orelse "~", ".pantry", "global", "bin", executable_name },
-        );
-        defer allocator.free(global_bin_path);
-
-        std.fs.accessAbsolute(global_bin_path, .{}) catch {
-            // Not installed, need to install it
-            if (!options.silent) {
-                std.debug.print("\x1b[33m📥 Package not found, installing {s}...\x1b[0m\n\n", .{package_name});
-            }
-
-            // Install the package globally temporarily
-            const install_args = [_][]const u8{package_name};
-            const install_options = InstallOptions{};
-            const install_result = try installCommandWithOptions(allocator, &install_args, install_options);
-            defer if (install_result.message) |msg| allocator.free(msg);
-
-            if (install_result.exit_code != 0) {
-                return .{
-                    .exit_code = 1,
-                    .message = try std.fmt.allocPrint(allocator, "Error: Failed to install package '{s}'", .{package_name}),
-                };
-            }
-
-            // After install, check local bin again
-            std.fs.accessAbsolute(local_bin_path, .{}) catch {
-                return .{
-                    .exit_code = 1,
-                    .message = try std.fmt.allocPrint(allocator, "Error: Package '{s}' installed but executable '{s}' not found", .{ package_name, executable_name }),
-                };
-            };
-
-            executable_path = try allocator.dupe(u8, local_bin_path);
-            path_allocated = true;
-        };
-
-        if (executable_path == null) {
-            executable_path = try allocator.dupe(u8, global_bin_path);
-            path_allocated = true;
-        }
-    };
-
-    if (executable_path == null) {
-        executable_path = try allocator.dupe(u8, local_bin_path);
-        path_allocated = true;
-    }
-
-    // Execute the package
-    if (!options.silent and !options.verbose) {
-        std.debug.print("\x1b[2m$ {s}", .{executable_name});
-        for (exec_args) |arg| {
-            std.debug.print(" {s}", .{arg});
-        }
-        std.debug.print("\x1b[0m\n", .{});
-    }
-
-    // Build command arguments
-    var cmd_args = try std.ArrayList([]const u8).initCapacity(allocator, 1 + exec_args.len);
-    defer cmd_args.deinit(allocator);
-
-    try cmd_args.append(allocator, executable_path.?);
-    for (exec_args) |arg| {
-        try cmd_args.append(allocator, arg);
-    }
-
-    // Execute
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = cmd_args.items,
-        .cwd = cwd,
-    }) catch |err| {
-        return .{
-            .exit_code = 1,
-            .message = try std.fmt.allocPrint(allocator, "Error: Failed to execute '{s}': {}", .{ executable_name, err }),
-        };
-    };
-
-    // Print output
-    if (result.stdout.len > 0) {
-        std.debug.print("{s}", .{result.stdout});
-    }
-    if (result.stderr.len > 0) {
-        std.debug.print("{s}", .{result.stderr});
-    }
-
-    allocator.free(result.stdout);
-    allocator.free(result.stderr);
-
-    const exit_code: u8 = switch (result.term) {
-        .Exited => |code| @intCast(code),
-        else => 1,
-    };
-
-    return .{ .exit_code = exit_code };
-}
-
-// ============================================================================
-// Outdated Command
-// ============================================================================
-
-/// Outdated command options
-pub const OutdatedOptions = struct {
-    production: bool = false,
-    global: bool = false,
-    filter: ?[]const u8 = null,
-    silent: bool = false,
-    verbose: bool = false,
-    no_progress: bool = false,
-};
-
-/// Package version information for outdated check
-const PackageVersionInfo = struct {
-    name: []const u8,
-    current: []const u8,
-    update: []const u8,
-    latest: []const u8,
-    is_dev: bool,
-    workspace: ?[]const u8 = null,
-
-    fn deinit(self: *PackageVersionInfo, allocator: std.mem.Allocator) void {
-        allocator.free(self.name);
-        allocator.free(self.current);
-        allocator.free(self.update);
-        allocator.free(self.latest);
-        if (self.workspace) |ws| {
-            allocator.free(ws);
-        }
-    }
-};
-
-/// Check for outdated dependencies
-pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, options: OutdatedOptions) !CommandResult {
-    _ = options;
-
-    // Get current working directory
-    var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
-
-    // Find config file
-    const config_path = findConfigFile(allocator, cwd) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_NO_CONFIG),
-        };
-    };
-    defer allocator.free(config_path);
-
-    // Read and parse config
-    const config_content = try std.fs.cwd().readFileAlloc(allocator, config_path, 1024 * 1024);
-    defer allocator.free(config_content);
-
-    // Strip JSONC comments if needed
-    const jsonc_util = @import("../utils/jsonc.zig");
-    const is_jsonc = std.mem.endsWith(u8, config_path, ".jsonc");
-    const json_content = if (is_jsonc)
-        try jsonc_util.stripComments(allocator, config_content)
-    else
-        try allocator.dupe(u8, config_content);
-    defer allocator.free(json_content);
-
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_CONFIG_PARSE),
-        };
-    };
-    defer parsed.deinit();
-
-    const root = parsed.value;
-    if (root != .object) {
-        return .{
-            .exit_code = 1,
-            .message = try allocator.dupe(u8, ERROR_CONFIG_NOT_OBJECT),
-        };
-    }
-
-    var outdated_packages = try std.ArrayList(PackageVersionInfo).initCapacity(allocator, 16);
-    defer {
-        for (outdated_packages.items) |*pkg| {
-            pkg.deinit(allocator);
-        }
-        outdated_packages.deinit(allocator);
-    }
-
-    // Helper to check if package matches filter patterns
-    const matchesFilter = struct {
-        fn call(pkg_name: []const u8, patterns: []const []const u8) bool {
-            if (patterns.len == 0) return true;
-
-            for (patterns) |pattern| {
-                // Negation pattern
-                if (pattern.len > 0 and pattern[0] == '!') {
-                    const neg_pattern = pattern[1..];
-                    if (matchGlob(pkg_name, neg_pattern)) {
-                        return false;
-                    }
-                    continue;
-                }
-
-                // Positive pattern
-                if (matchGlob(pkg_name, pattern)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        fn matchGlob(text: []const u8, pattern: []const u8) bool {
-            // Simple glob matching supporting * wildcard
-            if (std.mem.indexOf(u8, pattern, "*")) |star_pos| {
-                const prefix = pattern[0..star_pos];
-                const suffix = pattern[star_pos + 1..];
-
-                if (!std.mem.startsWith(u8, text, prefix)) return false;
-                if (!std.mem.endsWith(u8, text, suffix)) return false;
-                return true;
-            }
-            return std.mem.eql(u8, text, pattern);
-        }
-    }.call;
-
-    // Check dependencies
-    if (root.object.get("dependencies")) |deps_val| {
-        if (deps_val == .object) {
-            var iter = deps_val.object.iterator();
-            while (iter.next()) |entry| {
-                const pkg_name = entry.key_ptr.*;
-
-                // Apply filter
-                if (!matchesFilter(pkg_name, args)) continue;
-
-                const version_str = if (entry.value_ptr.* == .string)
-                    entry.value_ptr.string
-                else
-                    "unknown";
-
-                // For now, simulate version checking
-                // In a real implementation, this would query the registry
-                const current = try allocator.dupe(u8, version_str);
-                const update = try allocator.dupe(u8, version_str);
-                const latest = try allocator.dupe(u8, version_str);
-                const name = try allocator.dupe(u8, pkg_name);
-
-                try outdated_packages.append(allocator, .{
-                    .name = name,
-                    .current = current,
-                    .update = update,
-                    .latest = latest,
-                    .is_dev = false,
-                });
-            }
-        }
-    }
-
-    // Check devDependencies
-    if (root.object.get("devDependencies")) |dev_deps_val| {
-        if (dev_deps_val == .object) {
-            var iter = dev_deps_val.object.iterator();
-            while (iter.next()) |entry| {
-                const pkg_name = entry.key_ptr.*;
-
-                // Apply filter
-                if (!matchesFilter(pkg_name, args)) continue;
-
-                const version_str = if (entry.value_ptr.* == .string)
-                    entry.value_ptr.string
-                else
-                    "unknown";
-
-                const current = try allocator.dupe(u8, version_str);
-                const update = try allocator.dupe(u8, version_str);
-                const latest = try allocator.dupe(u8, version_str);
-                const name = try allocator.dupe(u8, pkg_name);
-
-                try outdated_packages.append(allocator, .{
-                    .name = name,
-                    .current = current,
-                    .update = update,
-                    .latest = latest,
-                    .is_dev = true,
-                });
-            }
-        }
-    }
-
-    // Display results in table format
-    if (outdated_packages.items.len == 0) {
-        return .{
-            .exit_code = 0,
-            .message = try allocator.dupe(u8, "\x1b[32m✓\x1b[0m All dependencies are up to date!"),
-        };
-    }
-
-    // Print table header
-    std.debug.print("\n\x1b[1m{s: <35} | {s: <10} | {s: <10} | {s: <10}\x1b[0m\n", .{ "Package", "Current", "Update", "Latest" });
-    std.debug.print("{s:-<35}-+-{s:-<10}-+-{s:-<10}-+-{s:-<10}\n", .{ "", "", "", "" });
-
-    // Print each outdated package
-    for (outdated_packages.items) |pkg| {
-        const dev_marker = if (pkg.is_dev) " (dev)" else "";
-        const pkg_display = try std.fmt.allocPrint(allocator, "{s}{s}", .{ pkg.name, dev_marker });
-        defer allocator.free(pkg_display);
-
-        std.debug.print("{s: <35} | {s: <10} | {s: <10} | {s: <10}\n", .{
-            pkg_display,
-            pkg.current,
-            pkg.update,
-            pkg.latest,
-        });
-    }
-    std.debug.print("\n", .{});
-
-    const summary = try std.fmt.allocPrint(
-        allocator,
-        "{d} package(s) checked",
-        .{outdated_packages.items.len},
-    );
-
-    return .{
-        .exit_code = 0,
-        .message = summary,
-    };
 }
