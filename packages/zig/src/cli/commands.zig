@@ -4,7 +4,14 @@
 //! - common: Shared types and utilities
 //! - package: remove, update, outdated commands
 //! - px: Package executor (npx/bunx equivalent)
-//! - install: Installation logic (from old structure)
+//! - scripts: Script execution from package.json
+//! - cache: Cache management
+//! - env: Environment management
+//! - shell: Shell integration
+//! - utils: Utility commands (clean, doctor, info, search, uninstall, list, publish)
+//! - services: Service management (start, stop, restart, status)
+//! - install: Installation commands
+//! - dev: Developer/debugging commands
 //!
 //! Each command group is in its own file for better maintainability.
 
@@ -25,9 +32,12 @@ pub const package_commands = @import("commands/package.zig");
 pub const px_commands = @import("commands/px.zig");
 pub const scripts_commands = @import("commands/scripts.zig");
 pub const cache_commands = @import("commands/cache.zig");
-
-// Temporarily import from old commands file until fully refactored
-const old_commands = @import("commands_old.zig");
+pub const env_commands = @import("commands/env.zig");
+pub const shell_commands = @import("commands/shell.zig");
+pub const utils_commands = @import("commands/utils.zig");
+pub const services_commands = @import("commands/services.zig");
+pub const install_commands = @import("commands/install.zig");
+pub const dev_commands = @import("commands/dev.zig");
 
 // ============================================================================
 // Re-export Package Commands
@@ -50,79 +60,87 @@ pub const PxOptions = px_commands.PxOptions;
 pub const pxCommand = px_commands.pxCommand;
 
 // ============================================================================
-// Re-export Old Commands (to be refactored)
+// Re-export Script Commands
 // ============================================================================
 
-// Install commands
-pub const InstallOptions = old_commands.InstallOptions;
-pub const installCommand = old_commands.installCommand;
-pub const installCommandWithOptions = old_commands.installCommandWithOptions;
-pub const installWorkspaceCommand = old_commands.installWorkspaceCommand;
-pub const installGlobalDepsCommand = old_commands.installGlobalDepsCommand;
-pub const installGlobalDepsCommandUserLocal = old_commands.installGlobalDepsCommandUserLocal;
+pub const runScriptCommand = scripts_commands.runScriptCommand;
+pub const listScriptsCommand = scripts_commands.listScriptsCommand;
 
-// Publish
-pub const PublishOptions = old_commands.PublishOptions;
-pub const publishCommand = old_commands.publishCommand;
+// ============================================================================
+// Re-export Cache Commands
+// ============================================================================
 
-// List
-pub const listCommand = old_commands.listCommand;
-
-// Cache commands
 pub const cacheStatsCommand = cache_commands.cacheStatsCommand;
 pub const cacheClearCommand = cache_commands.cacheClearCommand;
 pub const cacheCleanCommand = cache_commands.cacheCleanCommand;
 
-// Clean
-pub const CleanOptions = old_commands.CleanOptions;
-pub const cleanCommand = old_commands.cleanCommand;
+// ============================================================================
+// Re-export Environment Commands
+// ============================================================================
 
-// Environment commands
-pub const envListCommand = old_commands.envListCommand;
-pub const envRemoveCommand = old_commands.envRemoveCommand;
-pub const envInspectCommand = old_commands.envInspectCommand;
-pub const envCleanCommand = old_commands.envCleanCommand;
-pub const envLookupCommand = old_commands.envLookupCommand;
+pub const envListCommand = env_commands.envListCommand;
+pub const envRemoveCommand = env_commands.envRemoveCommand;
+pub const envInspectCommand = env_commands.envInspectCommand;
+pub const envCleanCommand = env_commands.envCleanCommand;
+pub const envLookupCommand = env_commands.envLookupCommand;
 
-// Shell commands
-pub const shellIntegrateCommand = old_commands.shellIntegrateCommand;
-pub const shellCodeCommand = old_commands.shellCodeCommand;
-pub const shellLookupCommand = old_commands.shellLookupCommand;
-pub const shellActivateCommand = old_commands.shellActivateCommand;
+// ============================================================================
+// Re-export Shell Commands
+// ============================================================================
 
-// Uninstall
-pub const uninstallCommand = old_commands.uninstallCommand;
+pub const shellIntegrateCommand = shell_commands.shellIntegrateCommand;
+pub const shellCodeCommand = shell_commands.shellCodeCommand;
+pub const shellLookupCommand = shell_commands.shellLookupCommand;
+pub const shellActivateCommand = shell_commands.shellActivateCommand;
 
-// Search
-pub const searchCommand = old_commands.searchCommand;
+// ============================================================================
+// Re-export Utility Commands
+// ============================================================================
 
-// Info
-pub const infoCommand = old_commands.infoCommand;
+pub const CleanOptions = utils_commands.CleanOptions;
+pub const cleanCommand = utils_commands.cleanCommand;
 
-// Doctor
-pub const doctorCommand = old_commands.doctorCommand;
+pub const doctorCommand = utils_commands.doctorCommand;
+pub const uninstallCommand = utils_commands.uninstallCommand;
+pub const searchCommand = utils_commands.searchCommand;
+pub const infoCommand = utils_commands.infoCommand;
+pub const listCommand = utils_commands.listCommand;
 
-// Services
-pub const servicesCommand = old_commands.servicesCommand;
-pub const servicesListCommand = old_commands.servicesCommand;  // Alias
-pub const serviceStartCommand = old_commands.startCommand;  // With prefix
-pub const serviceStopCommand = old_commands.stopCommand;  // With prefix
-pub const serviceRestartCommand = old_commands.restartCommand;  // With prefix
-pub const serviceStatusCommand = old_commands.statusCommand;  // With prefix
-pub const startCommand = old_commands.startCommand;
-pub const stopCommand = old_commands.stopCommand;
-pub const restartCommand = old_commands.restartCommand;
-pub const statusCommand = old_commands.statusCommand;
+pub const PublishOptions = utils_commands.PublishOptions;
+pub const publishCommand = utils_commands.publishCommand;
 
-// Install packages globally (was missing)
-pub const installPackagesGloballyCommand = old_commands.installPackagesGloballyCommand;
+// ============================================================================
+// Re-export Service Commands
+// ============================================================================
 
-// Dev commands
-pub const devShellcodeCommand = old_commands.devShellcodeCommand;
-pub const devMd5Command = old_commands.devMd5Command;
-pub const devFindProjectRootCommand = old_commands.devFindProjectRootCommand;
-pub const devCheckUpdatesCommand = old_commands.devCheckUpdatesCommand;
+pub const servicesCommand = services_commands.servicesCommand;
+pub const servicesListCommand = services_commands.servicesCommand; // Alias
+pub const serviceStartCommand = services_commands.startCommand; // With prefix
+pub const serviceStopCommand = services_commands.stopCommand; // With prefix
+pub const serviceRestartCommand = services_commands.restartCommand; // With prefix
+pub const serviceStatusCommand = services_commands.statusCommand; // With prefix
+pub const startCommand = services_commands.startCommand;
+pub const stopCommand = services_commands.stopCommand;
+pub const restartCommand = services_commands.restartCommand;
+pub const statusCommand = services_commands.statusCommand;
 
-// Scripts
-pub const runScriptCommand = scripts_commands.runScriptCommand;
-pub const listScriptsCommand = scripts_commands.listScriptsCommand;
+// ============================================================================
+// Re-export Install Commands
+// ============================================================================
+
+pub const InstallOptions = install_commands.InstallOptions;
+pub const installCommand = install_commands.installCommand;
+pub const installCommandWithOptions = install_commands.installCommandWithOptions;
+pub const installWorkspaceCommand = install_commands.installWorkspaceCommand;
+pub const installGlobalDepsCommand = install_commands.installGlobalDepsCommand;
+pub const installGlobalDepsCommandUserLocal = install_commands.installGlobalDepsCommandUserLocal;
+pub const installPackagesGloballyCommand = install_commands.installPackagesGloballyCommand;
+
+// ============================================================================
+// Re-export Dev Commands
+// ============================================================================
+
+pub const devShellcodeCommand = dev_commands.devShellcodeCommand;
+pub const devMd5Command = dev_commands.devMd5Command;
+pub const devFindProjectRootCommand = dev_commands.devFindProjectRootCommand;
+pub const devCheckUpdatesCommand = dev_commands.devCheckUpdatesCommand;
