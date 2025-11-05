@@ -196,6 +196,51 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+
+fn updateAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic package arguments
+    var packages = std.ArrayList([]const u8){};
+    defer packages.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |pkg| : (i += 1) {
+        try packages.append(allocator, pkg);
+    }
+
+    const latest = ctx.hasOption("latest");
+    const force = ctx.hasOption("force");
+    const interactive = ctx.hasOption("interactive");
+    const production = ctx.hasOption("production");
+    const global = ctx.hasOption("global");
+    const dry_run = ctx.hasOption("dry-run");
+    const silent = ctx.hasOption("silent");
+    const verbose = ctx.hasOption("verbose");
+    const no_save = ctx.hasOption("no-save");
+
+    const options = lib.commands.UpdateOptions{
+        .latest = latest,
+        .force = force,
+        .interactive = interactive,
+        .production = production,
+        .global = global,
+        .dry_run = dry_run,
+        .silent = silent,
+        .verbose = verbose,
+        .save = !no_save,
+    };
+
+    const result = try lib.commands.updateCommand(allocator, packages.items, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn scriptsListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -642,6 +687,51 @@ pub fn main() !void {
 
     // ========================================================================
     // List Command
+
+    // ========================================================================
+    // Update Command
+    // ========================================================================
+    var update_cmd = try cli.BaseCommand.init(allocator, "update", "Update dependencies to latest versions");
+
+    const update_packages_arg = cli.Argument.init("packages", "Packages to update", .string)
+        .withRequired(false)
+        .withVariadic(true);
+    _ = try update_cmd.addArgument(update_packages_arg);
+
+    const update_latest_opt = cli.Option.init("latest", "latest", "Update to latest versions (ignore semver)", .bool);
+    _ = try update_cmd.addOption(update_latest_opt);
+
+    const update_force_opt = cli.Option.init("force", "force", "Force update", .bool)
+        .withShort('f');
+    _ = try update_cmd.addOption(update_force_opt);
+
+    const update_interactive_opt = cli.Option.init("interactive", "interactive", "Interactive mode", .bool)
+        .withShort('i');
+    _ = try update_cmd.addOption(update_interactive_opt);
+
+    const update_production_opt = cli.Option.init("production", "production", "Skip devDependencies", .bool)
+        .withShort('p');
+    _ = try update_cmd.addOption(update_production_opt);
+
+    const update_global_opt = cli.Option.init("global", "global", "Update globally", .bool)
+        .withShort('g');
+    _ = try update_cmd.addOption(update_global_opt);
+
+    const update_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Don't update anything", .bool);
+    _ = try update_cmd.addOption(update_dry_run_opt);
+
+    const update_silent_opt = cli.Option.init("silent", "silent", "Don't log anything", .bool);
+    _ = try update_cmd.addOption(update_silent_opt);
+
+    const update_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose logging", .bool)
+        .withShort('v');
+    _ = try update_cmd.addOption(update_verbose_opt);
+
+    const update_no_save_opt = cli.Option.init("no-save", "no-save", "Don't update package.json", .bool);
+    _ = try update_cmd.addOption(update_no_save_opt);
+
+    _ = update_cmd.setAction(updateAction);
+    _ = try root.addCommand(update_cmd);
     // ========================================================================
     var list_cmd = try cli.BaseCommand.init(allocator, "list", "List installed packages");
 
