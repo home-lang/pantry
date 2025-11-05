@@ -5,6 +5,8 @@ pub const DepsFile = struct {
     format: FileFormat,
 
     pub const FileFormat = enum {
+        config_deps_ts, // config/deps.ts (highest priority for TS config)
+        pantry_config_ts, // pantry.config.ts
         pantry_json, // pantry.json
         pantry_jsonc, // pantry.jsonc
         deps_yaml,
@@ -37,7 +39,9 @@ pub const WorkspaceFile = struct {
 /// Find dependency file in directory or parent directories
 pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsFile {
     const file_names = [_][]const u8{
-        "pantry.json", // pantry.json (highest priority)
+        "config/deps.ts", // config/deps.ts (highest priority for typed TS config)
+        "pantry.config.ts", // pantry.config.ts
+        "pantry.json", // pantry.json
         "pantry.jsonc", // pantry.jsonc
         "deps.yaml",
         "deps.yml",
@@ -95,6 +99,7 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
 /// Check if a filename is a recognized deps file
 pub fn isDepsFile(filename: []const u8) bool {
     const deps_files = [_][]const u8{
+        "deps.ts",
         "deps.yaml",
         "deps.yml",
         "dependencies.yaml",
@@ -109,11 +114,17 @@ pub fn isDepsFile(filename: []const u8) bool {
         if (std.mem.eql(u8, filename, deps_file)) return true;
     }
 
+    // Also check for config/deps.ts pattern
+    if (std.mem.endsWith(u8, filename, "config/deps.ts")) return true;
+
     return false;
 }
 
 /// Infer format from filename
 pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
+    // Check for config/deps.ts pattern first
+    if (std.mem.endsWith(u8, filename, "config/deps.ts")) return .config_deps_ts;
+    if (std.mem.eql(u8, filename, "pantry.config.ts")) return .pantry_config_ts;
     if (std.mem.eql(u8, filename, "pantry.json")) return .pantry_json;
     if (std.mem.eql(u8, filename, "pantry.jsonc")) return .pantry_jsonc;
     if (std.mem.eql(u8, filename, "deps.yaml")) return .deps_yaml;

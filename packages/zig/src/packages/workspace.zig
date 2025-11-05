@@ -73,6 +73,20 @@ fn discoverMembersForPattern(
             while (try iter.next()) |entry| {
                 if (entry.kind != .directory) continue;
 
+                // Skip common ignore directories
+                if (std.mem.eql(u8, entry.name, "node_modules") or
+                    std.mem.eql(u8, entry.name, "cdk.out") or
+                    std.mem.eql(u8, entry.name, ".cache") or
+                    std.mem.eql(u8, entry.name, ".git") or
+                    std.mem.eql(u8, entry.name, "dist") or
+                    std.mem.eql(u8, entry.name, "build") or
+                    std.mem.eql(u8, entry.name, ".next") or
+                    std.mem.eql(u8, entry.name, ".turbo") or
+                    std.mem.startsWith(u8, entry.name, "."))
+                {
+                    continue;
+                }
+
                 // Construct member path
                 const member_rel_path = try std.fs.path.join(allocator, &[_][]const u8{ base_dir, entry.name });
                 errdefer allocator.free(member_rel_path);

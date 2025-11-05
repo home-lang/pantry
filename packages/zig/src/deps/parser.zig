@@ -223,6 +223,8 @@ pub fn inferDependencies(
     deps_file: detector.DepsFile,
 ) ![]PackageDependency {
     return switch (deps_file.format) {
+        // TypeScript config files are handled by the config loader (returns empty for direct parsing)
+        .config_deps_ts, .pantry_config_ts => &[_]PackageDependency{},
         .deps_yaml, .deps_yml, .dependencies_yaml, .pkgx_yaml => try parseDepsFile(allocator, deps_file.path),
         .package_json => try parsePackageJson(allocator, deps_file.path),
         .package_jsonc, .zig_json, .pantry_json, .pantry_jsonc => try parseZigPackageJson(allocator, deps_file.path),
