@@ -275,6 +275,58 @@ pantry run test --filter './packages/{core,utils}/*'
 pantry run lint --filter '*.{js,ts,jsx,tsx}'
 ```
 
+### Regex Patterns
+
+For advanced matching, use regex patterns by prefixing with `regex:`:
+
+```bash
+# Match packages with numbers
+pantry run build --filter 'regex:pkg-\\d+'
+
+# Match scoped packages
+pantry run test --filter 'regex:^@myorg/'
+
+# Match specific package format
+pantry run build --filter 'regex:^(api|service)-[a-z]+$'
+
+# Complex version patterns
+pantry run test --filter 'regex:v\\d+\\.\\d+\\.\\d+'
+```
+
+**Supported regex features:**
+- `.` - Matches any character
+- `*` - Matches zero or more of the preceding character
+- `+` - Matches one or more of the preceding character
+- `?` - Makes the preceding character optional
+- `[abc]` - Matches any character in the set
+- `[a-z]` - Matches any character in the range
+- `[^abc]` - Matches any character NOT in the set
+- `^` - Matches start of string
+- `$` - Matches end of string
+- `\\d` - Matches any digit
+- `\\w` - Matches any word character (alphanumeric + _)
+- `\\s` - Matches any whitespace
+
+**Examples:**
+
+| Pattern | Matches |
+|---------|---------|
+| `regex:pkg-\\d+` | `pkg-1`, `pkg-42`, `pkg-999` |
+| `regex:^@[a-z]+/` | `@myorg/package`, `@company/api` |
+| `regex:[a-z]+-test$` | `unit-test`, `integration-test` |
+| `regex:\\w+-v\\d+` | `api-v1`, `service-v2` |
+
+**Combining with other patterns:**
+```bash
+# Use regex with negation
+pantry run test --filter 'regex:^api-' --filter '!api-legacy'
+
+# Mix glob and regex
+pantry run build --filter './packages/*' --filter '!regex:.*-deprecated'
+```
+
+**Note:** Regex patterns use a simplified regex engine built into pantry. For full PCRE-style regex support, consider contributing or requesting the feature.
+
 ---
 
 ## Filter Configuration
@@ -342,6 +394,54 @@ Running script 'test' in 3 package(s):
 3. **Consistency**: Team uses same filter definitions
 4. **Maintainability**: Update filter in one place
 5. **Discoverability**: New team members can see available filters
+
+### Filter Inheritance
+
+Filters can extend other filters, allowing you to build complex filter hierarchies:
+
+```json
+{
+  "filters": {
+    "base": {
+      "patterns": ["packages/*"],
+      "description": "All packages"
+    },
+    "frontend": {
+      "extends": "base",
+      "patterns": ["packages/frontend-*", "packages/ui-*"],
+      "description": "Frontend packages (extends base)"
+    },
+    "frontend-critical": {
+      "extends": "frontend",
+      "patterns": ["!packages/frontend-experimental"],
+      "description": "Production-ready frontend packages"
+    }
+  }
+}
+```
+
+**How it works:**
+- Child filters inherit all patterns from parent filters
+- Patterns are applied in order: parent first, then child
+- Multiple levels of inheritance are supported
+- Circular inheritance is detected and reported as an error
+
+**Example usage:**
+```bash
+# Use the extended filter
+pantry run build --filter frontend-critical
+
+# Output shows inheritance chain:
+# Using named filter 'frontend-critical'
+#   Production-ready frontend packages
+#   (extends 'frontend')
+```
+
+**Benefits:**
+- **DRY**: Avoid repeating common patterns
+- **Composition**: Build complex filters from simpler ones
+- **Maintainability**: Update base filters and all children inherit changes
+- **Organization**: Create logical filter hierarchies
 
 ### Complex Filter Examples
 
@@ -615,6 +715,82 @@ Running script 'test' in 2 package(s):
 - Incremental builds: Rebuild only affected packages
 - Fast iteration: Skip unchanged packages
 
+### Watch Mode
+
+Automatically re-run scripts when files change in filtered packages:
+
+```bash
+# Watch for changes and re-run dev script
+pantry run dev --filter '*' --watch
+
+# Watch specific packages
+pantry run build --filter 'pkg-a' --watch
+
+# Watch with changed detection
+pantry run test --changed HEAD --watch
+
+# Watch with custom filter
+pantry run dev --filter './packages/frontend-*' --watch
+```
+
+**How it works:**
+- Polls filesystem for changes every 500ms
+- Debounces multiple changes (waits 100ms after last change)
+- Automatically ignores common directories (node_modules, .git, etc.)
+- Shows which files changed and in which packages
+- Re-runs the script in all filtered packages
+
+**Example output:**
+```
+Running script 'build' in 2 package(s):
+  • api
+  • frontend
+
+✓ api (456ms)
+✓ frontend (512ms)
+
+✓ 2 succeeded
+
+👀 Watching for changes in 2 package(s)...
+   Press Ctrl+C to stop
+
+───────────────────────────────────────
+Detected 3 file change(s):
+  /src/index.ts in api (modified)
+  /src/routes.ts in api (modified)
+  /src/App.tsx in frontend (modified)
+
+Re-running script 'build' in 2 affected package(s)...
+───────────────────────────────────────
+
+✓ api (423ms)
+✓ frontend (534ms)
+
+✓ 2 succeeded
+
+👀 Watching for changes...
+```
+
+**Ignored patterns (by default):**
+- `node_modules`
+- `.git`
+- `pantry_modules`
+- `.zig-cache`
+- `zig-out`
+- `.DS_Store`
+
+**Best practices:**
+- Use with `--filter` to watch specific packages
+- Combine with `--parallel` for faster re-runs
+- Use `--sequential` if you need deterministic output
+- Watch mode respects dependency ordering
+
+**Use cases:**
+- Development: Auto-rebuild on file changes
+- Testing: Continuous test running
+- Hot reload: Re-run dev servers
+- Documentation: Auto-regenerate docs
+
 ## Future Enhancements
 
 Completed and planned improvements for `--filter`:
@@ -624,9 +800,9 @@ Completed and planned improvements for `--filter`:
 3. ✅ **Changed packages detection**: Only select packages with changes (IMPLEMENTED)
 4. ✅ **Filter configuration**: Save common filter patterns in `pantry.json` (IMPLEMENTED)
 5. ✅ **Advanced glob patterns**: Support for `**`, `{a,b}`, and other advanced glob features (IMPLEMENTED)
-6. **Watch mode**: `--watch` to re-run scripts when files change (COMING SOON)
-7. **Filter inheritance**: Extend and combine named filters
-8. **Regex patterns**: Support for regular expressions in filters
+6. ✅ **Watch mode**: `--watch` to re-run scripts when files change (IMPLEMENTED)
+7. ✅ **Filter inheritance**: Extend and combine named filters (IMPLEMENTED)
+8. ✅ **Regex patterns**: Support for regular expressions in filters (IMPLEMENTED)
 9. **Interactive filter builder**: CLI tool to help create complex filters
 
 ---

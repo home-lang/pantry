@@ -179,6 +179,7 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const parallel = ctx.hasOption("parallel");
     const sequential = ctx.hasOption("sequential");
     const changed = ctx.getOption("changed");
+    const watch = ctx.hasOption("watch");
 
     // Use a stack-allocated array for args
     var args_buf: [32][]const u8 = undefined;
@@ -197,7 +198,7 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     // If filter or changed is set, use filtered execution
-    if (filter != null or changed != null) {
+    if (filter != null or changed != null or watch) {
         const use_parallel = if (sequential) false else if (parallel) true else true;
 
         const result = try lib.commands.runScriptWithFilter(
@@ -209,6 +210,7 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
                 .parallel = use_parallel,
                 .changed_only = changed != null,
                 .changed_base = changed orelse "HEAD",
+                .watch = watch,
             },
         );
         defer result.deinit(allocator);
@@ -1092,6 +1094,10 @@ pub fn main() !void {
 
     const run_changed_opt = cli.Option.init("changed", "changed", "Only run on changed packages since git ref", .string);
     _ = try run_cmd.addOption(run_changed_opt);
+
+    const run_watch_opt = cli.Option.init("watch", "watch", "Watch for changes and re-run script", .bool)
+        .withShort('w');
+    _ = try run_cmd.addOption(run_watch_opt);
 
     _ = run_cmd.setAction(runAction);
     _ = try root.addCommand(run_cmd);

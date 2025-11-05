@@ -10,6 +10,7 @@ pub const FilterConfig = struct {
     name: []const u8,
     patterns: [][]const u8,
     description: ?[]const u8,
+    extends: ?[]const u8 = null, // Name of filter to extend
 
     pub fn deinit(self: *FilterConfig, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -19,6 +20,9 @@ pub const FilterConfig = struct {
         allocator.free(self.patterns);
         if (self.description) |desc| {
             allocator.free(desc);
+        }
+        if (self.extends) |ext| {
+            allocator.free(ext);
         }
     }
 };
@@ -58,6 +62,48 @@ pub const FilterConfigs = struct {
 
     pub fn get(self: *FilterConfigs, name: []const u8) ?*const FilterConfig {
         return self.configs.getPtr(name);
+    }
+
+    /// Resolve a filter with its full inheritance chain
+    /// Returns all patterns from the filter and its extended filters
+    pub fn resolveWithInheritance(
+        self: *FilterConfigs,
+        name: []const u8,
+    ) ![][]const u8 {
+        var all_patterns = std.ArrayList([]const u8){};
+        errdefer all_patterns.deinit(self.allocator);
+
+        var visited = std.StringHashMap(void).init(self.allocator);
+        defer visited.deinit();
+
+        try self.collectPatternsRecursive(name, &all_patterns, &visited);
+
+        return try all_patterns.toOwnedSlice(self.allocator);
+    }
+
+    fn collectPatternsRecursive(
+        self: *FilterConfigs,
+        name: []const u8,
+        patterns: *std.ArrayList([]const u8),
+        visited: *std.StringHashMap(void),
+    ) !void {
+        // Check for circular references
+        if (visited.contains(name)) {
+            return error.CircularInheritance;
+        }
+
+        const config = self.configs.get(name) orelse return error.FilterNotFound;
+        try visited.put(try self.allocator.dupe(u8, name), {});
+
+        // First, resolve parent if it exists
+        if (config.extends) |parent_name| {
+            try self.collectPatternsRecursive(parent_name, patterns, visited);
+        }
+
+        // Then add our own patterns
+        for (config.patterns) |pattern| {
+            try patterns.append(self.allocator, try self.allocator.dupe(u8, pattern));
+        }
     }
 };
 
@@ -170,6 +216,13 @@ pub fn loadFromConfig(
                     config.description = try allocator.dupe(u8, desc_val.string);
                 }
             }
+
+            // Get extends if present
+            if (filter_value.object.get("extends")) |extends_val| {
+                if (extends_val == .string) {
+                    config.extends = try allocator.dupe(u8, extends_val.string);
+                }
+            }
         } else {
             config.deinit(allocator);
             continue;
@@ -253,4 +306,120 @@ test "loadFromConfig - missing file" {
 
     // Should return empty configs without error
     try std.testing.expect(configs.configs.count() == 0);
+}
+
+test "filter inheritance - simple extends" {
+    const allocator = std.testing.allocator;
+
+    const config_content =
+        \\{
+        \\  "filters": {
+        \\    "base": ["packages/base-*"],
+        \\    "extended": {
+        \\      "extends": "base",
+        \\      "patterns": ["packages/extended-*"],
+        \\      "description": "Extended filter"
+        \\    }
+        \\  }
+        \\}
+    ;
+
+    const temp_path = "/tmp/test-filter-inheritance.json";
+    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
+    defer std.fs.cwd().deleteFile(temp_path) catch {};
+
+    var configs = try loadFromConfig(allocator, temp_path);
+    defer configs.deinit();
+
+    // Check that extends field was loaded
+    const extended = configs.get("extended");
+    try std.testing.expect(extended != null);
+    try std.testing.expect(extended.?.extends != null);
+    try std.testing.expectEqualStrings("base", extended.?.extends.?);
+
+    // Resolve inheritance
+    const resolved = try configs.resolveWithInheritance("extended");
+    defer {
+        for (resolved) |pattern| {
+            allocator.free(pattern);
+        }
+        allocator.free(resolved);
+    }
+
+    // Should have both base and extended patterns
+    try std.testing.expect(resolved.len == 2);
+    try std.testing.expectEqualStrings("packages/base-*", resolved[0]);
+    try std.testing.expectEqualStrings("packages/extended-*", resolved[1]);
+}
+
+test "filter inheritance - multiple levels" {
+    const allocator = std.testing.allocator;
+
+    const config_content =
+        \\{
+        \\  "filters": {
+        \\    "level1": ["pattern1"],
+        \\    "level2": {
+        \\      "extends": "level1",
+        \\      "patterns": ["pattern2"]
+        \\    },
+        \\    "level3": {
+        \\      "extends": "level2",
+        \\      "patterns": ["pattern3"]
+        \\    }
+        \\  }
+        \\}
+    ;
+
+    const temp_path = "/tmp/test-filter-multi-level.json";
+    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
+    defer std.fs.cwd().deleteFile(temp_path) catch {};
+
+    var configs = try loadFromConfig(allocator, temp_path);
+    defer configs.deinit();
+
+    // Resolve multi-level inheritance
+    const resolved = try configs.resolveWithInheritance("level3");
+    defer {
+        for (resolved) |pattern| {
+            allocator.free(pattern);
+        }
+        allocator.free(resolved);
+    }
+
+    // Should have all three patterns in order
+    try std.testing.expect(resolved.len == 3);
+    try std.testing.expectEqualStrings("pattern1", resolved[0]);
+    try std.testing.expectEqualStrings("pattern2", resolved[1]);
+    try std.testing.expectEqualStrings("pattern3", resolved[2]);
+}
+
+test "filter inheritance - circular detection" {
+    const allocator = std.testing.allocator;
+
+    const config_content =
+        \\{
+        \\  "filters": {
+        \\    "a": {
+        \\      "extends": "b",
+        \\      "patterns": ["patternA"]
+        \\    },
+        \\    "b": {
+        \\      "extends": "a",
+        \\      "patterns": ["patternB"]
+        \\    }
+        \\  }
+        \\}
+    ;
+
+    const temp_path = "/tmp/test-filter-circular.json";
+    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
+    defer std.fs.cwd().deleteFile(temp_path) catch {};
+
+    var configs = try loadFromConfig(allocator, temp_path);
+    defer configs.deinit();
+
+    // Should detect circular reference
+    const result = configs.resolveWithInheritance("a");
+    try std.testing.expectError(error.CircularInheritance, result);
 }

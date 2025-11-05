@@ -6,6 +6,7 @@
 const std = @import("std");
 const types = @import("types.zig");
 const advanced_glob = @import("advanced_glob.zig");
+const simple_regex = @import("simple_regex.zig");
 
 /// Filter type for matching packages
 pub const FilterType = enum {
@@ -15,6 +16,8 @@ pub const FilterType = enum {
     path,
     /// Match root package (e.g., "./")
     root,
+    /// Match by regex (e.g., "regex:pkg-[0-9]+")
+    regex,
 };
 
 /// A single filter pattern
@@ -27,6 +30,16 @@ pub const FilterPattern = struct {
         // Check for negation
         const is_negation = std.mem.startsWith(u8, pattern_str, "!");
         const clean_pattern = if (is_negation) pattern_str[1..] else pattern_str;
+
+        // Check for regex prefix
+        if (std.mem.startsWith(u8, clean_pattern, "regex:")) {
+            const regex_pattern = clean_pattern["regex:".len..];
+            return FilterPattern{
+                .pattern = try allocator.dupe(u8, regex_pattern),
+                .filter_type = .regex,
+                .is_negation = is_negation,
+            };
+        }
 
         // Determine filter type
         const filter_type: FilterType = if (std.mem.startsWith(u8, clean_pattern, "./"))
@@ -47,6 +60,10 @@ pub const FilterPattern = struct {
 
     /// Check if a package name matches this pattern
     pub fn matchesName(self: FilterPattern, package_name: []const u8) bool {
+        if (self.filter_type == .regex) {
+            return simple_regex.matchRegex(self.pattern, package_name);
+        }
+
         // Try advanced glob first (supports **, {})
         if (advanced_glob.matchGlob(self.pattern, package_name)) {
             return true;
@@ -57,6 +74,10 @@ pub const FilterPattern = struct {
 
     /// Check if a package path matches this pattern
     pub fn matchesPath(self: FilterPattern, package_path: []const u8) bool {
+        if (self.filter_type == .regex) {
+            return simple_regex.matchRegex(self.pattern, package_path);
+        }
+
         // For path patterns, we need to handle "./" prefix
         const clean_pattern = if (std.mem.startsWith(u8, self.pattern, "./"))
             self.pattern[2..]
@@ -141,6 +162,7 @@ pub const Filter = struct {
                 .name => pattern.matchesName(member.name),
                 .path => pattern.matchesPath(member.path),
                 .root => false, // Root doesn't match workspace members
+                .regex => pattern.matchesName(member.name) or pattern.matchesPath(member.path),
             };
 
             if (does_match) {
