@@ -61,7 +61,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
 
             // We found a workspace! Install all workspace member dependencies
-            return try workspace.installWorkspaceCommand(allocator, ws_file.root_dir, ws_file.path);
+            return try workspace.installWorkspaceCommandWithOptions(allocator, ws_file.root_dir, ws_file.path, options);
         }
 
         // Try to load dependencies from config file first (pantry.config.ts, etc.)
@@ -131,6 +131,39 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
             if (should_include) {
                 try filtered_deps.append(allocator, dep);
+            }
+        }
+
+        // Load overrides/resolutions from package.json if it exists
+        var override_map = lib.deps.overrides.OverrideMap.init(allocator);
+        defer override_map.deinit();
+
+        const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });
+        defer allocator.free(package_json_path);
+
+        if (std.fs.cwd().readFileAlloc(allocator, package_json_path, 1024 * 1024)) |package_json_content| {
+            defer allocator.free(package_json_content);
+
+            if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {
+                defer parsed.deinit();
+                override_map = try lib.deps.overrides.parseFromPackageJson(allocator, parsed);
+
+                if (override_map.count() > 0) {
+                    std.debug.print("Found {d} package override(s)\n", .{override_map.count()});
+                }
+            } else |_| {
+                // Failed to parse package.json, continue without overrides
+            }
+        } else |_| {
+            // No package.json or failed to read, continue without overrides
+        }
+
+        // Apply overrides to dependencies
+        for (filtered_deps.items) |*dep| {
+            if (lib.deps.overrides.shouldOverride(&override_map, dep.name)) |override_version| {
+                // Free the old version and replace with override
+                allocator.free(dep.version);
+                dep.version = try allocator.dupe(u8, override_version);
             }
         }
 
@@ -237,6 +270,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     bin_dir,
                     cwd,
                     &pkg_cache,
+                    options,
                 );
             }
         } else {
@@ -261,6 +295,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     .pkg_cache = &pkg_cache,
                     .result = &install_results[i],
                     .wg = &wg,
+                    .options = options,
                 };
                 try thread_pool.spawn(helpers.installPackageWorker, .{task});
             }

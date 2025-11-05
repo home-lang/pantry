@@ -23,6 +23,9 @@ pub const InstallOptions = struct {
     production: bool = false, // Skip devDependencies
     dev_only: bool = false, // Install devDependencies only
     include_peer: bool = false, // Include peerDependencies
+    ignore_scripts: bool = false, // Don't run lifecycle scripts
+    verbose: bool = false, // Verbose output
+    filter: ?[]const u8 = null, // Filter pattern for workspace packages
 };
 
 /// Result of a single package installation task
@@ -51,4 +54,5 @@ pub const InstallTask = struct {
     pkg_cache: *cache.PackageCache,
     result: *InstallTaskResult,
     wg: *std.Thread.WaitGroup,
+    options: InstallOptions,
 };

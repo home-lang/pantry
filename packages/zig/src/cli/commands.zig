@@ -33,6 +33,7 @@ pub const package_commands = @import("commands/package.zig");
 pub const registry_commands = @import("commands/registry.zig");
 pub const px_commands = @import("commands/px.zig");
 pub const scripts_commands = @import("commands/scripts.zig");
+pub const run_filter = @import("commands/run_filter.zig");
 pub const cache_commands = @import("commands/cache.zig");
 pub const env_commands = @import("commands/env.zig");
 pub const shell_commands = @import("commands/shell.zig");
@@ -84,6 +85,8 @@ pub const pxCommand = px_commands.pxCommand;
 
 pub const runScriptCommand = scripts_commands.runScriptCommand;
 pub const listScriptsCommand = scripts_commands.listScriptsCommand;
+pub const runScriptWithFilter = run_filter.runScriptWithFilter;
+pub const RunFilterOptions = run_filter.RunFilterOptions;
 
 // ============================================================================
 // Re-export Cache Commands

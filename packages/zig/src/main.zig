@@ -80,9 +80,10 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const production = ctx.hasOption("production");
     const dev_only = ctx.hasOption("dev");
     const include_peer = ctx.hasOption("peer");
+    const ignore_scripts = ctx.hasOption("ignore-scripts");
+    const filter = ctx.getOption("filter");
 
     _ = force;
-    _ = verbose;
 
     // If global flag is set and no packages specified, install global dependencies
     if (global and packages.items.len == 0) {
@@ -116,6 +117,9 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .production = production,
         .dev_only = dev_only,
         .include_peer = include_peer,
+        .ignore_scripts = ignore_scripts,
+        .verbose = verbose,
+        .filter = filter,
     };
     const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);
@@ -170,6 +174,9 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
         std.process.exit(1);
     };
 
+    // Check if --filter flag is set
+    const filter = ctx.getOption("filter");
+
     // Use a stack-allocated array for args
     var args_buf: [32][]const u8 = undefined;
     var args_len: usize = 0;
@@ -186,6 +193,24 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
         args_len += 1;
     }
 
+    // If filter is set, use filtered execution
+    if (filter) |filter_pattern| {
+        const result = try lib.commands.runScriptWithFilter(
+            allocator,
+            script_name,
+            args_buf[1..args_len],
+            .{ .filter = filter_pattern },
+        );
+        defer result.deinit(allocator);
+
+        if (result.message) |msg| {
+            std.debug.print("{s}\n", .{msg});
+        }
+
+        std.process.exit(result.exit_code);
+    }
+
+    // Otherwise, run normally
     var result = try lib.commands.runScriptCommand(allocator, args_buf[0..args_len]);
     defer result.deinit(allocator);
 
@@ -802,6 +827,13 @@ pub fn main() !void {
     const install_peer_opt = cli.Option.init("peer", "peer", "Install peerDependencies", .bool);
     _ = try install_cmd.addOption(install_peer_opt);
 
+    const install_ignore_scripts_opt = cli.Option.init("ignore-scripts", "ignore-scripts", "Don't run lifecycle scripts", .bool);
+    _ = try install_cmd.addOption(install_ignore_scripts_opt);
+
+    const install_filter_opt = cli.Option.init("filter", "filter", "Filter workspace packages by pattern", .string)
+        .withShort('F');
+    _ = try install_cmd.addOption(install_filter_opt);
+
     _ = install_cmd.setAction(installAction);
     _ = try root.addCommand(install_cmd);
 
@@ -1037,6 +1069,10 @@ pub fn main() !void {
         .withVariadic(true)
         .withRequired(false);
     _ = try run_cmd.addArgument(run_args_arg);
+
+    const run_filter_opt = cli.Option.init("filter", "filter", "Run script in filtered workspace packages", .string)
+        .withShort('F');
+    _ = try run_cmd.addOption(run_filter_opt);
 
     _ = run_cmd.setAction(runAction);
     _ = try root.addCommand(run_cmd);

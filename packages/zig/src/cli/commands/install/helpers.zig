@@ -46,6 +46,7 @@ pub fn installPackageWorker(task_ptr: *types.InstallTask) void {
         task_ptr.bin_dir,
         task_ptr.cwd,
         task_ptr.pkg_cache,
+        task_ptr.options,
     ) catch |err| {
         task_ptr.result.* = .{
             .name = task_ptr.dep.name,
@@ -72,6 +73,7 @@ pub fn installSinglePackage(
     bin_dir: []const u8,
     cwd: []const u8,
     pkg_cache: *cache.PackageCache,
+    options: types.InstallOptions,
 ) !types.InstallTaskResult {
     const start_time = std.time.milliTimestamp();
 
@@ -153,6 +155,46 @@ pub fn installSinglePackage(
     // Duplicate the version string before deinit
     const installed_version = try allocator.dupe(u8, inst_result.version);
     inst_result.deinit(allocator);
+
+    // Run postinstall lifecycle script if enabled
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
+    defer allocator.free(package_path);
+
+    if (!options.ignore_scripts) {
+        const lifecycle_options = lib.lifecycle.ScriptOptions{
+            .cwd = package_path,
+            .ignore_scripts = options.ignore_scripts,
+            .verbose = options.verbose,
+        };
+
+        // Run postinstall script
+        if (try lib.lifecycle.runLifecycleScript(
+            allocator,
+            dep.name,
+            .postinstall,
+            package_path,
+            lifecycle_options,
+        )) |script_result| {
+            var result = script_result;
+            defer result.deinit(allocator);
+
+            if (!result.success) {
+                const error_msg = try std.fmt.allocPrint(
+                    allocator,
+                    "postinstall script failed (exit code {d})",
+                    .{result.exit_code},
+                );
+                allocator.free(installed_version);
+                return .{
+                    .name = dep.name,
+                    .version = "",
+                    .success = false,
+                    .error_msg = error_msg,
+                    .install_time_ms = 0,
+                };
+            }
+        }
+    }
 
     const end_time = std.time.milliTimestamp();
 

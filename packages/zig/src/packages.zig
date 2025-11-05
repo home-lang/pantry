@@ -3,6 +3,8 @@ pub const types = @import("packages/types.zig");
 pub const lockfile = @import("packages/lockfile.zig");
 pub const registry = @import("packages/registry.zig");
 pub const dep_graph = @import("packages/dep_graph.zig");
+pub const filter = @import("packages/filter.zig");
+pub const workspace_deps = @import("packages/workspace_deps.zig");
 
 // Re-export main types
 pub const PackageSpec = types.PackageSpec;

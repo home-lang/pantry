@@ -14,6 +14,15 @@ pub fn installWorkspaceCommand(
     workspace_root: []const u8,
     workspace_file_path: []const u8,
 ) !types.CommandResult {
+    return installWorkspaceCommandWithOptions(allocator, workspace_root, workspace_file_path, .{});
+}
+
+pub fn installWorkspaceCommandWithOptions(
+    allocator: std.mem.Allocator,
+    workspace_root: []const u8,
+    workspace_file_path: []const u8,
+    options: types.InstallOptions,
+) !types.CommandResult {
     const workspace_module = @import("../../../packages/workspace.zig");
     const parser = @import("../../../deps/parser.zig");
 
@@ -40,6 +49,25 @@ pub fn installWorkspaceCommand(
         };
     }
 
+    // Apply filter if provided
+    const filter_module = @import("../../../packages/filter.zig");
+    var filter = if (options.filter) |filter_str| blk: {
+        // Parse filter string - could be comma-separated patterns
+        var patterns_list = std.ArrayList([]const u8){};
+        defer patterns_list.deinit(allocator);
+
+        var iter = std.mem.splitScalar(u8, filter_str, ',');
+        while (iter.next()) |pattern| {
+            const trimmed = std.mem.trim(u8, pattern, " \t");
+            if (trimmed.len > 0) {
+                try patterns_list.append(allocator, trimmed);
+            }
+        }
+
+        break :blk try filter_module.Filter.initWithPatterns(allocator, patterns_list.items);
+    } else filter_module.Filter.init(allocator);
+    defer filter.deinit();
+
     // Collect all dependencies from all workspace members
     var all_deps_buffer: [1024]parser.PackageDependency = undefined;
     var all_deps_count: usize = 0;
@@ -56,6 +84,11 @@ pub fn installWorkspaceCommand(
 
     // Process each workspace member
     for (workspace_config.members) |member| {
+        // Skip members that don't match the filter
+        if (!filter.matchesMember(member)) {
+            continue;
+        }
+
         std.debug.print("{s}📦 {s}{s}\n", .{ dim, member.name, reset });
 
         // Load dependencies for this member

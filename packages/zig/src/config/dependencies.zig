@@ -380,7 +380,7 @@ pub fn extractConcurrentScripts(config: zig_config.UntypedConfigResult) ?usize {
     // Should be an integer
     return switch (concurrent_val) {
         .integer => |v| if (v > 0) @as(usize, @intCast(v)) else null,
-        .number_float => |v| if (v > 0) @as(usize, @intFromFloat(v)) else null,
+        .float => |v| if (v > 0) @as(usize, @intFromFloat(v)) else null,
         else => null,
     };
 }
@@ -401,7 +401,7 @@ pub fn extractMinimumReleaseAge(config: zig_config.UntypedConfigResult) ?u64 {
     // Should be an integer (seconds)
     return switch (age_val) {
         .integer => |v| if (v > 0) @as(u64, @intCast(v)) else null,
-        .number_float => |v| if (v > 0) @as(u64, @intFromFloat(v)) else null,
+        .float => |v| if (v > 0) @as(u64, @intFromFloat(v)) else null,
         else => null,
     };
 }
