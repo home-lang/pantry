@@ -363,3 +363,97 @@ pub fn extractWorkspaceName(
 
     return try allocator.dupe(u8, fallback);
 }
+
+/// Extract concurrentScripts configuration from config
+/// Returns the number of concurrent scripts allowed, or null to use default
+pub fn extractConcurrentScripts(config: zig_config.UntypedConfigResult) ?usize {
+    // Check if config is an object
+    if (config.config != .object) {
+        return null;
+    }
+
+    // Get concurrentScripts field
+    const concurrent_val = config.config.object.get("concurrentScripts") orelse {
+        return null;
+    };
+
+    // Should be an integer
+    return switch (concurrent_val) {
+        .integer => |v| if (v > 0) @as(usize, @intCast(v)) else null,
+        .number_float => |v| if (v > 0) @as(usize, @intFromFloat(v)) else null,
+        else => null,
+    };
+}
+
+/// Extract minimumReleaseAge configuration from config (in seconds)
+/// Returns the minimum age in seconds, or null to use default (259200 = 3 days)
+pub fn extractMinimumReleaseAge(config: zig_config.UntypedConfigResult) ?u64 {
+    // Check if config is an object
+    if (config.config != .object) {
+        return null;
+    }
+
+    // Get minimumReleaseAge field
+    const age_val = config.config.object.get("minimumReleaseAge") orelse {
+        return null;
+    };
+
+    // Should be an integer (seconds)
+    return switch (age_val) {
+        .integer => |v| if (v > 0) @as(u64, @intCast(v)) else null,
+        .number_float => |v| if (v > 0) @as(u64, @intFromFloat(v)) else null,
+        else => null,
+    };
+}
+
+/// Extract minimumReleaseAgeExcludes configuration from config
+/// Returns array of package names to exclude from minimum age check
+/// Caller owns the returned array and all strings in it
+pub fn extractMinimumReleaseAgeExcludes(
+    allocator: std.mem.Allocator,
+    config: zig_config.UntypedConfigResult,
+) !?[][]const u8 {
+    // Check if config is an object
+    if (config.config != .object) {
+        return null;
+    }
+
+    // Get minimumReleaseAgeExcludes field
+    const excludes_val = config.config.object.get("minimumReleaseAgeExcludes") orelse {
+        return null;
+    };
+
+    // Should be an array of strings
+    const excludes_array = switch (excludes_val) {
+        .array => |arr| arr,
+        else => return null,
+    };
+
+    if (excludes_array.items.len == 0) {
+        return null;
+    }
+
+    // Use fixed buffer for excludes (max 256 entries)
+    var buffer: [256][]const u8 = undefined;
+    var count: usize = 0;
+
+    for (excludes_array.items) |item| {
+        if (count >= buffer.len) break;
+
+        const pkg_name = switch (item) {
+            .string => |s| s,
+            else => continue,
+        };
+
+        buffer[count] = try allocator.dupe(u8, pkg_name);
+        count += 1;
+    }
+
+    if (count == 0) {
+        return null;
+    }
+
+    const result = try allocator.alloc([]const u8, count);
+    @memcpy(result, buffer[0..count]);
+    return result;
+}
