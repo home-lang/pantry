@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.6.4",
   "private": true,
-  "description": "Like Homebrew, but faster.",
+  "description": "A performant, universal package manager. Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/pantry#readme",
@@ -30,16 +30,12 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "devDependencies": {
-    "@stacksjs/docs": "^0.70.23",
-    "@stacksjs/eslint-config": "^4.14.0-beta.3",
-    "better-dx": "^0.2.0"
-  },
-  "overrides": {
-    "unconfig": "0.3.10"
+    "better-dx": "^0.2.2"
   },
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
+        "*.{zig}": "zig fmt --check",
         "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint --fix"
       }
     },

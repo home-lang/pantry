@@ -8,7 +8,6 @@
  */
 
 import type {
-  CleanDependencies,
   Dependencies,
   PackageAlias,
   PackageDomain,
@@ -17,21 +16,23 @@ import type {
 } from 'ts-pkgx'
 
 export type {
-  Dependencies,
   PackageAlias,
   PackageDomain,
   PackageName,
   Packages,
 }
 
+// Re-export key types from ts-pkgx
+export type { Dependencies, CleanDependencies } from 'ts-pkgx'
+
 /**
- * Pantry dependencies type with full validation
+ * Pantry dependencies type with FULL validation
  *
- * Uses CleanDependencies from ts-pkgx which provides full type safety
+ * Uses Dependencies from ts-pkgx which provides full type safety
  * for package names and versions without the Record<string, never> constraint
  * that causes issues when types cross module boundaries.
  */
-export type PantryDependencies = CleanDependencies
+export type PantryDependencies = Dependencies
 
 /**
  * Helper function to create fully typed dependencies with package name and version validation
@@ -236,9 +237,9 @@ export interface LifecycleHooks {
 }
 
 /**
- * Pantry configuration interface (formerly LaunchpadConfig)
+ * Base Pantry configuration interface without dependencies
  */
-export interface PantryConfig {
+interface PantryConfigBase {
   /**
    * Installation path for packages
    * @default System-dependent
@@ -279,7 +280,14 @@ export interface PantryConfig {
    * @default false
    */
   installBuildDeps?: boolean | string | string[]
+}
 
+/**
+ * Pantry configuration interface (formerly LaunchpadConfig)
+ *
+ * FULLY TYPED with validation for both package names AND versions
+ */
+export interface PantryConfig extends PantryConfigBase {
   /**
    * Package dependencies to install (similar to deps.yaml)
    * FULLY TYPED package names AND versions from ts-pkgx
@@ -295,7 +303,7 @@ export interface PantryConfig {
    * }
    * ```
    */
-  dependencies?: PantryDependencies
+  dependencies?: Dependencies
 
   /**
    * Install all dependencies globally (system-wide)
@@ -621,7 +629,9 @@ export interface SystemdService {
 /**
  * Helper function to define Pantry configuration with full type safety
  */
-export function definePantryConfig(config: PantryConfig): PantryConfig {
+export function definePantryConfig(
+  config: PantryConfig
+): PantryConfig {
   return config
 }
 

@@ -9,8 +9,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -18,7 +17,7 @@
     "src"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node --format esm && bun run build:types",
+    "build": "bun build.ts",
     "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist",
     "dev": "bun build src/index.ts --outdir dist --target node --format esm --watch",
     "prepublishOnly": "bun run build"
@@ -38,12 +37,8 @@
     "directory": "packages/ts-pantry"
   },
   "devDependencies": {
-    "typescript": "^5.9.2"
-  },
-  "peerDependencies": {
-    "ts-pkgx": ">=0.4.0"
-  },
-  "dependencies": {
-    "ts-pkgx": "^0.4.119"
+    "better-dx": "^0.2.2",
+    "ts-pkgx": "^0.4.120",
+    "typescript": "^5.9.3"
   }
 }

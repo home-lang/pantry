@@ -51,3 +51,4 @@ vitebook
 vitejs
 vue-demi
 vueus
+ziglang

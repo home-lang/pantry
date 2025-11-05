@@ -6,8 +6,5 @@
   "description": "Performance benchmarks for pantry file detection",
   "scripts": {
     "file-detection": "bun run file-detection-comparison.ts"
-  },
-  "dependencies": {
-    "bun-types": "latest"
   }
 }
