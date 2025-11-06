@@ -3,9 +3,9 @@
   "version": "0.6.4",
   "description": "Pantry package manager - Zig implementation",
   "dependencies": {
-    "zig-config": "~/Code/zig-config",
-    "zig-cli": "~/Code/zig-cli",
-    "zig-test-framework": "~/Code/zig-test-framework"
+    "zig-config": "github:zig-utils/zig-config",
+    "zig-cli": "github:zig-utils/zig-cli",
+    "zig-test-framework": "github:zig-utils/zig-test-framework"
   },
   "bin": {
     "pantry": "zig-out/bin/pantry"

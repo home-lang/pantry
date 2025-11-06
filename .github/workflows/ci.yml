@@ -98,6 +98,11 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Install Zig Dependencies with Pantry
+        uses: ./packages/action
+        with:
+          config-path: packages/zig/pantry.json
+
       - name: Build Zig Package
         run: cd packages/zig && zig build
 

@@ -38,6 +38,11 @@ jobs:
         with:
           version: 0.15.1
 
+      - name: Install Zig Dependencies with Pantry
+        uses: ./packages/action
+        with:
+          config-path: packages/zig/pantry.json
+
       - name: Build Zig Package for All Platforms
         run: cd packages/zig && zig build compile-all
 
