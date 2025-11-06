@@ -511,7 +511,7 @@ To update dependencies in your project, edit your dependency file (e.g. `deps.ya
 cd .. && cd my-project
 
 # Optional: inspect selection decisions
-export pantry_VERBOSE=true
+export PANTRY_VERBOSE=true
 cd my-project
 # 🔍 Env target: env_dir=… dep_file=… dep_hash=…
 # 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no

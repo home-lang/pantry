@@ -105,7 +105,7 @@ Environment variables are automatically parsed with type awareness:
 ```bash
 # Boolean values
 export pantry_GLOBAL=true
-export pantry_VERBOSE=1
+export PANTRY_VERBOSE=1
 export pantry_SERVICES_ENABLED=yes
 
 # Numbers

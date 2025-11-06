@@ -286,7 +286,7 @@ pantry encodes dependency versions into the environment directory via a dependen
 This guarantees immediate version switches without manual cleanup. Enable verbose logs to see the chosen `env_dir`, dependency file, and fingerprint:
 
 ```bash
-export pantry_VERBOSE=true
+export PANTRY_VERBOSE=true
 cd my-project
 # 🔍 Env target: env_dir=… dep_file=… dep_hash=…
 ```

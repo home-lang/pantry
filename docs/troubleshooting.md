@@ -541,7 +541,7 @@ Starship tries to execute pantry-managed binaries (like `bun`, `node`, etc.) to 
 ```bash
 # Set debug environment variables
 export pantry_DEBUG=true
-export pantry_VERBOSE=true
+export PANTRY_VERBOSE=true
 
 # Run commands with maximum verbosity
 pantry --verbose install node@22

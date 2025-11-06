@@ -558,7 +558,7 @@ You can also configure pantry using environment variables:
 
 | Environment Variable | Description |
 |----------------------|-------------|
-| `pantry_VERBOSE` | Enable verbose logging |
+| `PANTRY_VERBOSE` | Enable verbose logging |
 | `pantry_INSTALL_PATH` | Set installation path |
 | `pantry_SHIM_PATH` | Set shim path |
 | `pantry_AUTO_SUDO` | Enable/disable auto sudo |
@@ -580,7 +580,7 @@ You can also configure pantry using environment variables:
 Example:
 
 ```bash
-pantry_VERBOSE=true pantry_INSTALL_PATH=~/apps pantry install node@22
+PANTRY_VERBOSE=true pantry_INSTALL_PATH=~/apps pantry install node@22
 
 ## Environment Activation Model
 
@@ -602,7 +602,7 @@ This guarantees that editing dependency versions switches to a distinct environm
 To inspect selection and cache behavior, enable verbose logging:
 
 ```bash
-export pantry_VERBOSE=true # or set in .env
+export PANTRY_VERBOSE=true # or set in .env
 cd my-project
 # 🔍 Env target: env_dir=… dep_file=… dep_hash=…
 # 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
@@ -798,7 +798,7 @@ pantry --verbose install --dry-run node
 2. Export variables properly:
 
    ```bash
-   export pantry_VERBOSE=true
+   export PANTRY_VERBOSE=true
    export pantry_INSTALL_PATH=/custom/path
    export pantry_DB_USERNAME=myuser
    export pantry_DB_PASSWORD=mypassword

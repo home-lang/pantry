@@ -99,7 +99,7 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
   const options = {
     env: {
       ...process.env,
-      pantry_VERBOSE: 'true',
+      PANTRY_VERBOSE: 'true',
       CONTEXT: JSON.stringify(github.context),
     },
   }
@@ -119,7 +119,7 @@ async function installProjectDependencies(configPath: string): Promise<void> {
   const options = {
     env: {
       ...process.env,
-      pantry_VERBOSE: 'true',
+      PANTRY_VERBOSE: 'true',
       CONTEXT: JSON.stringify(github.context),
     },
   }

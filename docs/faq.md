@@ -147,7 +147,7 @@ Recognized dependency files include:
 To see this live, enable verbose logging and cd into the project:
 
 ```bash
-export pantry_VERBOSE=true
+export PANTRY_VERBOSE=true
 cd my-project
 ```
 

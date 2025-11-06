@@ -846,7 +846,7 @@ Total: 2 environment(s)
 
 - `pantry_DISABLE_SHELL_INTEGRATION` - Disable shell hooks
 - `pantry_SHELL_INTEGRATION` - Indicates shell integration mode
-- `pantry_VERBOSE` - Enable verbose shell messages
+- `PANTRY_VERBOSE` - Enable verbose shell messages
 - `pantry_SHELL_VERBOSE` - Shell-specific verbose mode
 
 **Internal**:
