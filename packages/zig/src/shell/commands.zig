@@ -230,7 +230,7 @@ pub const ShellCommands = struct {
                 \\export PANTRY_MODULES_BIN_PATH="{s}"
                 \\PATH="{s}:{s}:$PATH"
                 \\export PATH
-                ,
+            ,
                 .{ project_root, env_bin, env_dir, pantry_modules_bin, pantry_modules_bin, env_bin },
             );
         } else {
@@ -241,7 +241,7 @@ pub const ShellCommands = struct {
                 \\export PANTRY_ENV_DIR="{s}"
                 \\PATH="{s}:$PATH"
                 \\export PATH
-                ,
+            ,
                 .{ project_root, env_bin, env_dir, env_bin },
             );
         }

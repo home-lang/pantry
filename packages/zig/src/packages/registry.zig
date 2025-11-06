@@ -166,7 +166,7 @@ pub fn satisfiesConstraint(version: []const u8, constraint: []const u8) !bool {
             const ver_minor = ver_parts.next() orelse return false;
             const ver_minor_num = try std.fmt.parseInt(u32, ver_minor, 10);
 
-            const ver_major = version[0..std.mem.indexOf(u8, version, ".") orelse return false];
+            const ver_major = version[0 .. std.mem.indexOf(u8, version, ".") orelse return false];
             const major_match = std.mem.eql(u8, major, ver_major);
 
             return major_match and ver_minor_num < minor_num;

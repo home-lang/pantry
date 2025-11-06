@@ -20,8 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bun
+      - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.15.1
 
       - name: Use cached node_modules
         uses: actions/cache@v4
@@ -34,8 +39,11 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Lint
+      - name: Lint TypeScript/JavaScript
         run: bun run lint
+
+      - name: Format Check Zig Code
+        run: zig fmt --check packages/zig/src
 
   typecheck:
     runs-on: ubuntu-latest
@@ -43,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bun
+      - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
       - name: Use cached node_modules
@@ -66,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bun
+      - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
       - name: Setup Zig
@@ -100,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bun
+      - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
       - name: Use cached node_modules

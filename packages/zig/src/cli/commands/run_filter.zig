@@ -280,112 +280,112 @@ pub fn runScriptWithFilter(
     } else {
         // Sequential execution (original code)
         for (ordered_result.order) |member| {
-        // Load scripts for this member
-        const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
-            std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
-                yellow,
-                reset,
-                member.name,
-                dim,
-                reset,
-            });
-            skipped_count += 1;
-            continue;
-        };
+            // Load scripts for this member
+            const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
+                std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
+                    yellow,
+                    reset,
+                    member.name,
+                    dim,
+                    reset,
+                });
+                skipped_count += 1;
+                continue;
+            };
 
-        if (scripts_map == null) {
-            std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
-                yellow,
-                reset,
-                member.name,
-                dim,
-                reset,
-            });
-            skipped_count += 1;
-            continue;
-        }
-
-        var scripts = scripts_map.?;
-        defer {
-            var it = scripts.iterator();
-            while (it.next()) |entry| {
-                allocator.free(entry.key_ptr.*);
-                allocator.free(entry.value_ptr.*);
+            if (scripts_map == null) {
+                std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
+                    yellow,
+                    reset,
+                    member.name,
+                    dim,
+                    reset,
+                });
+                skipped_count += 1;
+                continue;
             }
-            scripts.deinit();
-        }
 
-        // Check if the script exists for this member
-        const script_command = scripts.get(script_name) orelse {
-            std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{
-                yellow,
-                reset,
-                member.name,
-                dim,
-                reset,
-            });
-            skipped_count += 1;
-            continue;
-        };
-
-        // Execute the script
-        std.debug.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
-
-        // Build command with args
-        var command_buf: [2048]u8 = undefined;
-        var command_stream = std.io.fixedBufferStream(&command_buf);
-        const cmd_writer = command_stream.writer();
-
-        try cmd_writer.writeAll(script_command);
-        for (script_args) |arg| {
-            try cmd_writer.writeByte(' ');
-            try cmd_writer.writeAll(arg);
-        }
-
-        const full_command = command_stream.getWritten();
-
-        // Execute in member directory
-        const result = std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{ "sh", "-c", full_command },
-            .cwd = member.abs_path,
-        }) catch |err| {
-            std.debug.print("{s}✗{s} {s} {s}({any}){s}\n", .{
-                red,
-                reset,
-                member.name,
-                dim,
-                err,
-                reset,
-            });
-            failed_count += 1;
-            continue;
-        };
-        defer {
-            allocator.free(result.stdout);
-            allocator.free(result.stderr);
-        }
-
-        if (result.term.Exited == 0) {
-            std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
-            if (options.verbose and result.stdout.len > 0) {
-                std.debug.print("{s}", .{result.stdout});
+            var scripts = scripts_map.?;
+            defer {
+                var it = scripts.iterator();
+                while (it.next()) |entry| {
+                    allocator.free(entry.key_ptr.*);
+                    allocator.free(entry.value_ptr.*);
+                }
+                scripts.deinit();
             }
-            success_count += 1;
-        } else {
-            std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{
-                red,
-                reset,
-                member.name,
-                dim,
-                result.term.Exited,
-                reset,
-            });
-            if (result.stderr.len > 0) {
-                std.debug.print("{s}", .{result.stderr});
+
+            // Check if the script exists for this member
+            const script_command = scripts.get(script_name) orelse {
+                std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{
+                    yellow,
+                    reset,
+                    member.name,
+                    dim,
+                    reset,
+                });
+                skipped_count += 1;
+                continue;
+            };
+
+            // Execute the script
+            std.debug.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
+
+            // Build command with args
+            var command_buf: [2048]u8 = undefined;
+            var command_stream = std.io.fixedBufferStream(&command_buf);
+            const cmd_writer = command_stream.writer();
+
+            try cmd_writer.writeAll(script_command);
+            for (script_args) |arg| {
+                try cmd_writer.writeByte(' ');
+                try cmd_writer.writeAll(arg);
             }
-            failed_count += 1;
-        }
+
+            const full_command = command_stream.getWritten();
+
+            // Execute in member directory
+            const result = std.process.Child.run(.{
+                .allocator = allocator,
+                .argv = &[_][]const u8{ "sh", "-c", full_command },
+                .cwd = member.abs_path,
+            }) catch |err| {
+                std.debug.print("{s}✗{s} {s} {s}({any}){s}\n", .{
+                    red,
+                    reset,
+                    member.name,
+                    dim,
+                    err,
+                    reset,
+                });
+                failed_count += 1;
+                continue;
+            };
+            defer {
+                allocator.free(result.stdout);
+                allocator.free(result.stderr);
+            }
+
+            if (result.term.Exited == 0) {
+                std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
+                if (options.verbose and result.stdout.len > 0) {
+                    std.debug.print("{s}", .{result.stdout});
+                }
+                success_count += 1;
+            } else {
+                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{
+                    red,
+                    reset,
+                    member.name,
+                    dim,
+                    result.term.Exited,
+                    reset,
+                });
+                if (result.stderr.len > 0) {
+                    std.debug.print("{s}", .{result.stderr});
+                }
+                failed_count += 1;
+            }
         }
     }
 

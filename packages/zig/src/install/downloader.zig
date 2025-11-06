@@ -126,7 +126,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         std.Thread.sleep(100 * std.time.ns_per_ms);
 
         const now = std.time.milliTimestamp();
-        
+
         // Add timeout check to prevent infinite hanging
         if (now - start_time > timeout_ms) {
             _ = child.kill() catch {};
@@ -252,7 +252,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         if (current_size > 0 and current_size == last_size and time_since_last_change > 1000) {
             break;
         }
-        
+
         // Fallback: if we have any data after 5 seconds and size hasn't changed in 1 second, assume done
         if (current_size > 0 and (now - start_time) > 5000 and time_since_last_change > 1000) {
             break;
@@ -310,11 +310,11 @@ pub fn buildPackageUrl(
     {
         clean_version = clean_version[1..];
     } else if (std.mem.startsWith(u8, clean_version, ">=") or
-               std.mem.startsWith(u8, clean_version, "<="))
+        std.mem.startsWith(u8, clean_version, "<="))
     {
         clean_version = clean_version[2..];
     } else if (std.mem.startsWith(u8, clean_version, ">") or
-               std.mem.startsWith(u8, clean_version, "<"))
+        std.mem.startsWith(u8, clean_version, "<"))
     {
         clean_version = clean_version[1..];
     }
@@ -323,14 +323,14 @@ pub fn buildPackageUrl(
     if (std.mem.startsWith(u8, clean_version, "v")) {
         clean_version = clean_version[1..];
     }
-    
+
     // If version is just a major version like "22", try with .0.0
     const full_version = if (std.mem.indexOf(u8, clean_version, ".") == null)
         try std.fmt.allocPrint(allocator, "{s}.0.0", .{clean_version})
     else
         try allocator.dupe(u8, clean_version);
     defer if (std.mem.indexOf(u8, clean_version, ".") == null) allocator.free(full_version);
-    
+
     return std.fmt.allocPrint(
         allocator,
         "https://dist.pkgx.dev/{s}/{s}/{s}/v{s}.{s}",

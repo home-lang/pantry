@@ -63,7 +63,8 @@ pub fn validatePackageName(name: []const u8) !void {
     for (name) |char| {
         if (!std.ascii.isAlphanumeric(char) and
             char != '-' and char != '_' and
-            char != '.' and char != '@' and char != '/') {
+            char != '.' and char != '@' and char != '/')
+        {
             return error.InvalidName;
         }
     }

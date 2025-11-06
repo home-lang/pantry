@@ -105,7 +105,7 @@ pub fn satisfiesConstraint(version_str: []const u8, constraint: Constraint) bool
                 // ^1.2.3 allows 1.x.x but not 2.0.0
                 return version.major == constraint.major and
                     (version.minor > constraint.minor or
-                    (version.minor == constraint.minor and version.patch >= constraint.patch));
+                        (version.minor == constraint.minor and version.patch >= constraint.patch));
             }
         },
 

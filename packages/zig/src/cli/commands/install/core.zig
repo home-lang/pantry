@@ -451,9 +451,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const bold = "\x1b[1m";
 
         // First line: "pantry install v0.1.0 (abc1234)"
-        std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{
-            bold, reset, dim, pantry_version, pantry_hash, reset
-        });
+        std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{ bold, reset, dim, pantry_version, pantry_hash, reset });
 
         // Second line: "Checked X installs across Y packages (no changes) [Zms]"
         const total_deps = deps.len;
@@ -461,10 +459,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
         std.debug.print("Checked {s}{d}{s} installs across {s}{d}{s} packages {s}(no changes){s} [{s}{d:.2}ms{s}]\n", .{
-            green, success_count, reset,
-            green, total_deps, reset,
-            dim, reset,
-            bold, elapsed_ms, reset,
+            green,      success_count, reset,
+            green,      total_deps,    reset,
+            dim,        reset,         bold,
+            elapsed_ms, reset,
         });
 
         if (failed_count > 0) {
@@ -512,9 +510,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     // Print header with Pantry version info
     const pantry_version = version_options.version;
     const pantry_hash = version_options.commit_hash;
-    std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{
-        bold, reset, dim, pantry_version, pantry_hash, reset
-    });
+    std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{ bold, reset, dim, pantry_version, pantry_hash, reset });
 
     std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, args.len });
 
@@ -552,8 +548,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
     std.debug.print("\nChecked {s}{d}{s} installs across {s}{d}{s} packages {s}{d:.2}ms{s}\n", .{
         green, success_count, reset,
-        green, args.len, reset,
-        bold, elapsed_ms, reset,
+        green, args.len,      reset,
+        bold,  elapsed_ms,    reset,
     });
 
     if (failed_count > 0) {

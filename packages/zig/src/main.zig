@@ -233,7 +233,6 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
-
 fn updateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -928,7 +927,6 @@ pub fn main() !void {
     _ = try root.addCommand(update_cmd);
     // ========================================================================
     var list_cmd = try cli.BaseCommand.init(allocator, "list", "List installed packages");
-
 
     // ========================================================================
     // Px Command (Package Executor)
