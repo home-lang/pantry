@@ -82,6 +82,14 @@ async function setupBun(): Promise<void> {
 }
 
 /**
+ * Get the path to the pantry executable
+ */
+function getPantryPath(): string {
+  const bunGlobalBin = path.join(os.homedir(), '.bun', 'bin')
+  return path.join(bunGlobalBin, 'pantry')
+}
+
+/**
  * Install pantry using Bun
  */
 async function installpantry(): Promise<void> {
@@ -110,8 +118,9 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
     },
   }
 
+  const pantryPath = getPantryPath()
   const args = ['install', '--verbose', ...packages.split(' ')]
-  await exec.exec('pantry', args, options)
+  await exec.exec(pantryPath, args, options)
 
   core.info('Package installation completed')
 }
@@ -134,8 +143,9 @@ async function installProjectDependencies(configPath: string): Promise<void> {
 
   if (dependencies.length > 0) {
     core.info(`Found dependencies: ${dependencies.join(', ')}`)
+    const pantryPath = getPantryPath()
     const args = ['install', '--verbose', ...dependencies]
-    await exec.exec('pantry', args, options)
+    await exec.exec(pantryPath, args, options)
     core.info('Project dependencies installation completed')
   }
   else {

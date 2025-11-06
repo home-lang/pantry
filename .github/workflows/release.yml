@@ -33,6 +33,9 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      - name: Build Action (for self-use)
+        run: cd packages/action && bun run build
+
       - name: Setup Zig
         uses: goto-bus-stop/setup-zig@v2
         with:
