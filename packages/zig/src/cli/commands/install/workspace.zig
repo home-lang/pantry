@@ -267,7 +267,6 @@ pub fn installWorkspaceCommandWithOptions(
             // Parse GitHub URL to extract repo info
             const gh_ref = try parser.parseGitHubUrl(allocator, dep.version) orelse {
                 const red = "\x1b[31m";
-                const dim = "\x1b[2m";
                 std.debug.print("{s}✗{s} {s}@{s} {s}(invalid GitHub URL){s}\n", .{ red, reset, dep.name, dep.version, dim, reset });
                 failed_count += 1;
                 continue;
