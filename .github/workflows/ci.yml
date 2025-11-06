@@ -128,4 +128,4 @@ jobs:
         run: bun run build
 
       - name: Publish Commit
-        run: bunx pkg-pr-new publish './packages/action' './packages/pantry'
+        run: bunx pkg-pr-new publish './packages/action' './packages/ts-pantry'
