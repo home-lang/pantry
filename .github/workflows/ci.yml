@@ -95,7 +95,7 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Build
+      - name: Build TypeScript packages
         run: bun run build
 
       - name: Install Zig Dependencies with Pantry

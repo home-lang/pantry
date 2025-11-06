@@ -87,6 +87,12 @@ async function setupBun(): Promise<void> {
 async function installpantry(): Promise<void> {
   core.info('Installing pantry...')
   await exec.exec('bun', ['install', '-g', 'pantry'])
+
+  // Add Bun's global bin to PATH
+  const bunGlobalBin = path.join(os.homedir(), '.bun', 'bin')
+  core.addPath(bunGlobalBin)
+  core.info(`Added ${bunGlobalBin} to PATH`)
+
   core.info('pantry installation completed')
 }
 

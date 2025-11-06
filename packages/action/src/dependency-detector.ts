@@ -457,8 +457,60 @@ function sniffDirectory(dirPath: SimplePath): { pkgs: PackageRequirement[], env:
 /**
  * Detect project dependencies using simplified sniff functionality
  */
-export async function detectProjectDependencies(_configPath?: string): Promise<string[]> {
+export async function detectProjectDependencies(configPath?: string): Promise<string[]> {
   try {
+    // If a config path is provided, try to read dependencies from it
+    if (configPath) {
+      core.info(`Reading dependencies from config: ${configPath}`)
+      const configFilePath = new SimplePath(configPath)
+
+      if (configFilePath.string.endsWith('.json')) {
+        try {
+          const content = configFilePath.read()
+          const config = JSON.parse(content)
+
+          if (config.dependencies) {
+            const deps: string[] = []
+
+            for (const [name, spec] of Object.entries(config.dependencies)) {
+              // Handle different dependency formats
+              if (typeof spec === 'string') {
+                // GitHub format: "github:org/repo" or "~/path"
+                if (spec.startsWith('github:')) {
+                  deps.push(spec) // Keep full github: format
+                }
+                else if (spec.startsWith('~')) {
+                  // Skip local paths in CI
+                  core.warning(`Skipping local dependency: ${name} (${spec})`)
+                }
+                else {
+                  deps.push(name)
+                }
+              }
+              else if (typeof spec === 'object' && spec !== null) {
+                // Object format with github/version
+                if ('github' in spec) {
+                  deps.push(`github:${spec.github}`)
+                }
+                else {
+                  deps.push(name)
+                }
+              }
+            }
+
+            if (deps.length > 0) {
+              core.info(`Found dependencies from config: ${deps.join(', ')}`)
+              return deps
+            }
+          }
+        }
+        catch (error) {
+          core.warning(`Failed to parse config file: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    }
+
+    // Fall back to directory sniffing
     const currentDir = new SimplePath(process.cwd())
 
     core.info(`Sniffing dependencies in: ${currentDir.string}`)
