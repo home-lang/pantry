@@ -84,7 +84,30 @@ async function setupBun(): Promise<void> {
 /**
  * Get the path to the pantry executable
  */
-function getPantryPath(): string {
+async function getPantryPath(): Promise<string> {
+  // Try to find pantry using 'which' command first
+  try {
+    let pantryPath = ''
+    await exec.exec('which', ['pantry'], {
+      listeners: {
+        stdout: (data: Buffer) => {
+          pantryPath += data.toString()
+        },
+      },
+      silent: true,
+    })
+
+    const trimmedPath = pantryPath.trim()
+    if (trimmedPath) {
+      core.info(`Found pantry at: ${trimmedPath}`)
+      return trimmedPath
+    }
+  }
+  catch {
+    // Fall through to default path
+  }
+
+  // Fallback to expected Bun global bin location
   const bunGlobalBin = path.join(os.homedir(), '.bun', 'bin')
   return path.join(bunGlobalBin, 'pantry')
 }
@@ -118,7 +141,7 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
     },
   }
 
-  const pantryPath = getPantryPath()
+  const pantryPath = await getPantryPath()
   const args = ['install', '--verbose', ...packages.split(' ')]
   await exec.exec(pantryPath, args, options)
 
@@ -143,7 +166,7 @@ async function installProjectDependencies(configPath: string): Promise<void> {
 
   if (dependencies.length > 0) {
     core.info(`Found dependencies: ${dependencies.join(', ')}`)
-    const pantryPath = getPantryPath()
+    const pantryPath = await getPantryPath()
     const args = ['install', '--verbose', ...dependencies]
     await exec.exec(pantryPath, args, options)
     core.info('Project dependencies installation completed')
