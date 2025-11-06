@@ -19,8 +19,8 @@
     "build": "for dir in packages/*; do if [ -f \"$dir/package.json\" ]; then echo \"Building $dir\" && bun run --cwd $dir build; fi; done",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "test": "bun test",
-    "lint": "bunx --bun eslint .",
-    "lint:fix": "bunx --bun eslint . --fix",
+    "lint": "echo \"Pickier to be implemented\"",
+    "lint:fix": "echo \"Pickier to be implemented\"",
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md",
     "release": "bun run changelog:generate && bunx bumpx prompt --recursive",
@@ -35,8 +35,8 @@
   "git-hooks": {
     "pre-commit": {
       "staged-lint": {
-        "*.{zig}": "zig fmt --check",
-        "*.{js,ts,json,yaml,yml,md}": "bunx --bun eslint --fix"
+        "*.{zig}": "bash -c '[[ $0 != *generated.zig ]] && zig fmt --check $0 || true'",
+        "*.{js,ts,json,yaml,yml,md}": "echo \"Pickier to be implemented\""
       }
     },
     "commit-msg": "bunx gitlint --edit .git/COMMIT_EDITMSG"

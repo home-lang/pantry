@@ -43,7 +43,9 @@ jobs:
         run: bun run lint
 
       - name: Format Check Zig Code
-        run: zig fmt --check packages/zig/src
+        run: |
+          # Format check all Zig files except generated.zig
+          find packages/zig/src -name "*.zig" -not -name "generated.zig" -type f -exec zig fmt --check {} +
 
   typecheck:
     runs-on: ubuntu-latest
