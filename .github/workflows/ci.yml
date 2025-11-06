@@ -100,7 +100,9 @@ jobs:
 
       - name: Bootstrap Zig Dependencies (for initial build only)
         run: |
-          # Clone to repository root where build.zig fallback paths expect them
+          # Clone to parent directory where build.zig fallback paths expect them
+          # From packages/zig/, the path ../../../zig-cli goes up to the parent of repo root
+          cd ..
           git clone --depth 1 https://github.com/zig-utils/zig-cli.git
           git clone --depth 1 https://github.com/zig-utils/zig-config.git
           git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
@@ -111,8 +113,8 @@ jobs:
       - name: Verify pantry can manage its own dependencies
         run: |
           cd packages/zig
-          # Remove the bootstrap clones
-          rm -rf ../../zig-cli ../../zig-config ../../zig-test-framework
+          # Remove the bootstrap clones (they're in parent of repo root)
+          rm -rf ../../../zig-cli ../../../zig-config ../../../zig-test-framework
           # Use pantry to install dependencies properly (creates pantry_modules/)
           ./zig-out/bin/pantry install
           # Rebuild with pantry-managed dependencies to ensure it works
