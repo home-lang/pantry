@@ -69,6 +69,11 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.15.1
+
       - name: Use cached node_modules
         uses: actions/cache@v4
         with:
@@ -82,6 +87,9 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Build Zig Package
+        run: cd packages/zig && zig build
 
       - name: Unit Test
         run: bun test

@@ -19,6 +19,17 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Get version from package.json
+    const version = getPackageVersion(b) catch "0.1.0";
+
+    // Get git commit hash (short)
+    const commit_hash = getGitCommitHash(b) catch "unknown";
+
+    // Create version options
+    const version_options = b.addOptions();
+    version_options.addOption([]const u8, "version", version);
+    version_options.addOption([]const u8, "commit_hash", commit_hash);
+
     // Resolve zig-config path
     // Tries pantry_modules first, then falls back to local dev path
     const zig_config_path = resolveDependencyPath(
@@ -70,6 +81,10 @@ pub fn build(b: *std.Build) void {
 
     // Add zig-config as an import to the library
     lib_mod.addImport("zig-config", zig_config_mod);
+
+    // Add version options module
+    const version_mod = version_options.createModule();
+    lib_mod.addImport("version", version_mod);
 
     // Executable
     const exe = b.addExecutable(.{
@@ -356,4 +371,58 @@ pub fn build(b: *std.Build) void {
 
         compile_all_step.dependOn(&install.step);
     }
+}
+
+/// Get package version from package.json
+fn getPackageVersion(b: *std.Build) ![]const u8 {
+    // Try to read from parent directory (monorepo structure)
+    const package_json = std.fs.cwd().readFileAlloc(
+        b.allocator,
+        "../../package.json",
+        1024 * 1024,
+    ) catch |err| {
+        std.debug.print("Warning: Could not read package.json: {}\n", .{err});
+        return error.PackageJsonNotFound;
+    };
+    defer b.allocator.free(package_json);
+
+    const parsed = std.json.parseFromSlice(
+        std.json.Value,
+        b.allocator,
+        package_json,
+        .{},
+    ) catch |err| {
+        std.debug.print("Warning: Could not parse package.json: {}\n", .{err});
+        return error.InvalidJson;
+    };
+    defer parsed.deinit();
+
+    const version = parsed.value.object.get("version") orelse {
+        return error.NoVersionField;
+    };
+
+    return b.allocator.dupe(u8, version.string);
+}
+
+/// Get git commit hash (short)
+fn getGitCommitHash(b: *std.Build) ![]const u8 {
+    const result = std.process.Child.run(.{
+        .allocator = b.allocator,
+        .argv = &[_][]const u8{ "git", "rev-parse", "--short", "HEAD" },
+    }) catch |err| {
+        std.debug.print("Warning: Could not get git hash: {}\n", .{err});
+        return error.GitNotFound;
+    };
+    defer {
+        b.allocator.free(result.stdout);
+        b.allocator.free(result.stderr);
+    }
+
+    if (result.term.Exited != 0) {
+        return error.GitFailed;
+    }
+
+    // Trim whitespace
+    const hash = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
+    return b.allocator.dupe(u8, hash);
 }

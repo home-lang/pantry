@@ -8,6 +8,7 @@ const types = @import("types.zig");
 const helpers = @import("helpers.zig");
 const workspace = @import("workspace.zig");
 const global = @import("global.zig");
+const version_options = @import("version");
 
 const cache = lib.cache;
 const string = lib.string;
@@ -51,6 +52,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         const cwd = try std.process.getCwdAlloc(allocator);
         defer allocator.free(cwd);
+
+        // Start timing for install operation
+        const start_time = std.time.milliTimestamp();
 
         // First, check if we're in a workspace
         const workspace_file = try detector.findWorkspaceFile(allocator, cwd);
@@ -439,13 +443,35 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
         };
 
-        // Clean summary - Yarn/Bun style
-        std.debug.print("\n{s}✓{s} Installed {d} package(s)", .{ green, reset, success_count });
+        // Get Pantry version and hash for display
+        const pantry_version = version_options.version;
+        const pantry_hash = version_options.commit_hash;
+
+        // Clean summary - Bun style with formatting
+        const bold = "\x1b[1m";
+
+        // First line: "pantry install v0.1.0 (abc1234)"
+        std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{
+            bold, reset, dim, pantry_version, pantry_hash, reset
+        });
+
+        // Second line: "Checked X installs across Y packages (no changes) [Zms]"
+        const total_deps = deps.len;
+        const end_time = std.time.milliTimestamp();
+        const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+
+        std.debug.print("Checked {s}{d}{s} installs across {s}{d}{s} packages {s}(no changes){s} [{s}{d:.2}ms{s}]\n", .{
+            green, success_count, reset,
+            green, total_deps, reset,
+            dim, reset,
+            bold, elapsed_ms, reset,
+        });
+
         if (failed_count > 0) {
             const red = "\x1b[31m";
-            std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+            std.debug.print("\n{s}{d} packages failed to install{s}\n", .{ red, failed_count, reset });
         }
-        std.debug.print("\n", .{});
+
         return .{ .exit_code = 0 };
     }
 
@@ -477,7 +503,18 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     const green = "\x1b[32m";
     const red = "\x1b[31m";
     const dim = "\x1b[2m";
+    const bold = "\x1b[1m";
     const reset = "\x1b[0m";
+
+    // Start timing
+    const start_time = std.time.milliTimestamp();
+
+    // Print header with Pantry version info
+    const pantry_version = version_options.version;
+    const pantry_hash = version_options.commit_hash;
+    std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{
+        bold, reset, dim, pantry_version, pantry_hash, reset
+    });
 
     std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, args.len });
 
@@ -509,12 +546,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         success_count += 1;
     }
 
-    // Clean summary
-    std.debug.print("\n{s}✓{s} Installed {d} package(s)", .{ green, reset, success_count });
+    // Clean summary with timing
+    const end_time = std.time.milliTimestamp();
+    const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+
+    std.debug.print("\nChecked {s}{d}{s} installs across {s}{d}{s} packages {s}{d:.2}ms{s}\n", .{
+        green, success_count, reset,
+        green, args.len, reset,
+        bold, elapsed_ms, reset,
+    });
+
     if (failed_count > 0) {
-        std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        std.debug.print("\n{s}{d} packages failed to install{s}\n", .{ red, failed_count, reset });
     }
-    std.debug.print("\n", .{});
 
     return .{ .exit_code = 0 };
 }

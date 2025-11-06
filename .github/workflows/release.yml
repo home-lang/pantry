@@ -33,6 +33,39 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.15.1
+
+      - name: Build Zig Package
+        run: cd packages/zig && zig build
+
+      - name: Package Binaries
+        run: |
+          mkdir -p dist
+          cd packages/zig/zig-out/bin
+
+          # Package Linux x64
+          if [ -d "linux-x86_64" ]; then
+            cd linux-x86_64 && zip -r ../../../../dist/pantry-linux-x64.zip pantry && cd ..
+          fi
+
+          # Package Linux ARM64
+          if [ -d "linux-aarch64" ]; then
+            cd linux-aarch64 && zip -r ../../../../dist/pantry-linux-arm64.zip pantry && cd ..
+          fi
+
+          # Package macOS x64
+          if [ -d "macos-x86_64" ]; then
+            cd macos-x86_64 && zip -r ../../../../dist/pantry-darwin-x64.zip pantry && cd ..
+          fi
+
+          # Package macOS ARM64
+          if [ -d "macos-aarch64" ]; then
+            cd macos-aarch64 && zip -r ../../../../dist/pantry-darwin-arm64.zip pantry && cd ..
+          fi
+
       - name: Publish to npm
         run: ./scripts/publish.sh
         env:
@@ -42,10 +75,9 @@ jobs:
         uses: stacksjs/action-releaser@v1.2.7
         with:
           files: |
-            packages/pantry/bin/pantry-linux-x64.zip
-            packages/pantry/bin/pantry-linux-arm64.zip
-            packages/pantry/bin/pantry-windows-x64.zip
-            packages/pantry/bin/pantry-darwin-x64.zip
-            packages/pantry/bin/pantry-darwin-arm64.zip
+            dist/pantry-linux-x64.zip
+            dist/pantry-linux-arm64.zip
+            dist/pantry-darwin-x64.zip
+            dist/pantry-darwin-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
