@@ -346,6 +346,9 @@ pub fn build(b: *std.Build) void {
         // Add zig-config to the cross-compiled library
         cross_lib_mod.addImport("zig-config", cross_zig_config_mod);
 
+        // Add version options module to cross-compiled library
+        cross_lib_mod.addImport("version", version_mod);
+
         const cross_exe = b.addExecutable(.{
             .name = "pantry",
             .root_module = b.createModule(.{
@@ -354,6 +357,7 @@ pub fn build(b: *std.Build) void {
                 .optimize = .ReleaseFast,
                 .imports = &.{
                     .{ .name = "lib", .module = cross_lib_mod },
+                    .{ .name = "zig-cli", .module = cli_mod },
                 },
             }),
         });

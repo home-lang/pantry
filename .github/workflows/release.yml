@@ -38,8 +38,8 @@ jobs:
         with:
           version: 0.15.1
 
-      - name: Build Zig Package
-        run: cd packages/zig && zig build
+      - name: Build Zig Package for All Platforms
+        run: cd packages/zig && zig build compile-all
 
       - name: Package Binaries
         run: |
