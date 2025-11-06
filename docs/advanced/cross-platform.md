@@ -216,7 +216,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install pantry
-        run: npm install -g @stacksjs/pantry
+        run: npm install -g ts-pantry
       - name: Install dependencies with pantry
         run: pantry install node@22 python@3.12
       - name: Test environment activation

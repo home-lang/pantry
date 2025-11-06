@@ -8,16 +8,16 @@ Choose your preferred package manager:
 
 ```bash
 # Recommended: Bun (fastest)
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 
 # Or use npm
-npm install -g @stacksjs/pantry
+npm install -g ts-pantry
 
 # Or use yarn
-yarn global add @stacksjs/pantry
+yarn global add ts-pantry
 
 # Or use pnpm
-pnpm add -g @stacksjs/pantry
+pnpm add -g ts-pantry
 ```
 
 ## 2. Bootstrap Your Environment

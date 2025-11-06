@@ -524,7 +524,7 @@ Starship tries to execute pantry-managed binaries (like `bun`, `node`, etc.) to 
    sed -i '/pantry/d' ~/.zshrc ~/.bashrc
 
    # Remove global package
-   npm uninstall -g @stacksjs/pantry
+   npm uninstall -g ts-pantry
    ```
 
 3. **Clean PATH:**

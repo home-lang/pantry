@@ -1,6 +1,6 @@
-import type { pantryConfig } from '@stacksjs/pantry'
+import type { PantryConfig } from 'ts-pantry'
 
-export const config: pantryConfig = {
+export const config: PantryConfig = {
   dependencies: {
     'bun': '1.2.21',
     'redis.io': '7.2.10',

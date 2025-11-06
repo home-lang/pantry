@@ -12,7 +12,7 @@ pantry looks for configuration in these locations (in order of precedence):
 Example configuration file (`pantry.config.ts`):
 
 ```ts
-import type { pantryConfig } from '@stacksjs/pantry'
+import type { pantryConfig } from 'ts-pantry'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -459,7 +459,7 @@ Configure commands to run after the environment is prepared (independent of serv
 
 ```ts
 // pantry.config.ts
-import type { pantryConfig } from '@stacksjs/pantry'
+import type { pantryConfig } from 'ts-pantry'
 
 const config: pantryConfig = {
   postSetup: {
@@ -494,7 +494,7 @@ Config file example:
 
 ```ts
 // pantry.config.ts
-import type { pantryConfig } from '@stacksjs/pantry'
+import type { pantryConfig } from 'ts-pantry'
 
 const config: pantryConfig = {
   preSetup: {
@@ -730,7 +730,7 @@ pantry uses the `bunfig` library to load configuration files in this order:
 When using pantry as a library, you can import the types:
 
 ```ts
-import type { pantryConfig, pantryOptions } from '@stacksjs/pantry'
+import type { pantryConfig, pantryOptions } from 'ts-pantry'
 
 // Full configuration
 const config: pantryConfig = {

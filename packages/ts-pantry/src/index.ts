@@ -635,4 +635,4 @@ export function definePantryConfig(
   return config
 }
 
-export default PantryConfig
+export default definePantryConfig

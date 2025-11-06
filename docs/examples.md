@@ -8,7 +8,7 @@ This page provides practical examples of using pantry in real-world scenarios. T
 
 ```bash
 # 1. Install pantry
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 
 # 2. Bootstrap your development environment
 pantry bootstrap
@@ -527,7 +527,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install pantry
-        run: npm install -g @stacksjs/pantry
+        run: npm install -g ts-pantry
 
       - name: Install project dependencies
         run: |
@@ -560,7 +560,7 @@ FROM ubuntu:22.04
 # Install pantry
 RUN apt-get update && apt-get install -y curl
 RUN curl -fsSL https://bun.sh/install | bash
-RUN /root/.bun/bin/bun add -g @stacksjs/pantry
+RUN /root/.bun/bin/bun add -g ts-pantry
 
 # Copy project files
 COPY . /app
@@ -638,7 +638,7 @@ cd my-project && cd .. && cd my-project
 brew list > homebrew-packages.txt
 
 # 2. Install pantry
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 
 # 3. Bootstrap pantry (installs to /usr/local, separate from Homebrew)
 pantry bootstrap

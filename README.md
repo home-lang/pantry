@@ -124,16 +124,16 @@ Get started with pantry through your preferred package manager:
 
 ```bash
 # Install with Bun (recommended)
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 
 # Or with npm
-npm install -g @stacksjs/pantry
+npm install -g ts-pantry
 
 # Or with yarn
-yarn global add @stacksjs/pantry
+yarn global add ts-pantry
 
 # Or with pnpm
-pnpm add -g @stacksjs/pantry
+pnpm add -g ts-pantry
 ```
 
 See [Installation Guide](https://stacks-pantry.netlify.app/install) for more options.
@@ -375,7 +375,7 @@ pantry bun     # Install Bun runtime
 Customize pantry's behavior for your system and projects:
 
 ```ts
-import type { pantryConfig } from '@stacksjs/pantry'
+import type { pantryConfig } from 'ts-pantry'
 
 const config: pantryConfig = {
   // System-wide installation preferences
@@ -513,8 +513,8 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 Made with 💙
 
 <!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/@stacksjs/pantry?style=flat-square
-[npm-version-href]: https://npmjs.com/package/@stacksjs/pantry
+[npm-version-src]: https://img.shields.io/npm/v/ts-pantry?style=flat-square
+[npm-version-href]: https://npmjs.com/package/ts-pantry
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/pantry/ci.yml?style=flat-square&branch=main
 [github-actions-href]: https://github.com/stacksjs/pantry/actions?query=workflow%3Aci
 

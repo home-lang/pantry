@@ -5,7 +5,7 @@ This document provides detailed information about pantry's API for developers wh
 ## Installation
 
 ```bash
-npm install @stacksjs/pantry
+npm install ts-pantry
 ```
 
 ## Core Modules
@@ -13,7 +13,7 @@ npm install @stacksjs/pantry
 ### Cache Management Module
 
 ```typescript
-import { cleanSystem, clearCache } from '@stacksjs/pantry'
+import { cleanSystem, clearCache } from 'ts-pantry'
 
 /**
  * Clear all cached packages and downloads
@@ -60,7 +60,7 @@ async function cleanSystem(options?: {
 ### Installation Module
 
 ```typescript
-import { install, install_bun, install_prefix } from '@stacksjs/pantry'
+import { install, install_bun, install_prefix } from 'ts-pantry'
 
 /**
  * Install one or more packages
@@ -88,7 +88,7 @@ async function install_bun(installPath: string, version?: string): Promise<strin
 ### Package Management Module
 
 ```typescript
-import { update, updateAllPackages, updateSpecificPackages } from '@stacksjs/pantry'
+import { update, updateAllPackages, updateSpecificPackages } from 'ts-pantry'
 
 /**
  * Update packages to newer versions
@@ -146,7 +146,7 @@ async function updateAllPackages(
 ### Shim Module
 
 ```typescript
-import { create_shim, shim_dir } from '@stacksjs/pantry'
+import { create_shim, shim_dir } from 'ts-pantry'
 
 /**
  * Create shims for packages
@@ -166,7 +166,7 @@ function shim_dir(): Path
 ### Development Environment Module
 
 ```typescript
-import { datadir, dump, integrate, shellcode } from '@stacksjs/pantry'
+import { datadir, dump, integrate, shellcode } from 'ts-pantry'
 
 /**
  * Generate shell integration code for automatic environment activation
@@ -204,7 +204,7 @@ async function integrate(directory: string): Promise<void>
 ### Package Management Module
 
 ```typescript
-import { update } from '@stacksjs/pantry'
+import { update } from 'ts-pantry'
 
 /**
  * Update packages to newer versions
@@ -218,7 +218,7 @@ async function update(packages?: string[], options?: { latest?: boolean, dryRun?
 ### List Module
 
 ```typescript
-import { list } from '@stacksjs/pantry'
+import { list } from 'ts-pantry'
 
 /**
  * List installed packages
@@ -239,8 +239,8 @@ interface Installation {
 ### Configuration Module
 
 ```typescript
-import type { pantryConfig, pantryOptions } from '@stacksjs/pantry'
-import { config, defaultConfig } from '@stacksjs/pantry'
+import type { pantryConfig, pantryOptions } from 'ts-pantry'
+import { config, defaultConfig } from 'ts-pantry'
 
 interface pantryConfig {
   /** Enable verbose logging (default: false) */
@@ -283,7 +283,7 @@ const defaultConfig: pantryConfig
 ### Version Module
 
 ```typescript
-import { parseVersion, Version } from '@stacksjs/pantry'
+import { parseVersion, Version } from 'ts-pantry'
 
 /**
  * Simple class to represent semantic versions
@@ -309,7 +309,7 @@ function parseVersion(versionStr: string): Version | null
 ### Path Module
 
 ```typescript
-import { Path } from '@stacksjs/pantry'
+import { Path } from 'ts-pantry'
 
 /**
  * Path utility class for handling file system paths
@@ -330,7 +330,7 @@ import {
   addToPath,
   downloadAndInstallPkgx,
   isInPath
-} from '@stacksjs/pantry'
+} from 'ts-pantry'
 
 /**
  * Activate development environment for a directory
@@ -438,7 +438,7 @@ interface DependencyExamples {
 ### Cache Management
 
 ```typescript
-import { cleanSystem, clearCache } from '@stacksjs/pantry'
+import { cleanSystem, clearCache } from 'ts-pantry'
 
 // Clear cache with preview
 const cacheResult = await clearCache({ dryRun: true })
@@ -464,7 +464,7 @@ console.log('Would remove packages:', previewResult.removedPackages)
 ### Basic Package Installation
 
 ```typescript
-import { install, install_prefix } from '@stacksjs/pantry'
+import { install, install_prefix } from 'ts-pantry'
 
 // Install a package
 const installPath = install_prefix()
@@ -475,8 +475,8 @@ console.log('Installed files:', installedFiles)
 ### Configuration
 
 ```typescript
-import type { pantryConfig } from '@stacksjs/pantry'
-import { config } from '@stacksjs/pantry'
+import type { pantryConfig } from 'ts-pantry'
+import { config } from 'ts-pantry'
 
 // Access current configuration
 console.log('Verbose mode:', config.verbose)
@@ -493,7 +493,7 @@ const customConfig: pantryConfig = {
 ### Development Environment
 
 ```typescript
-import { dump, integrate, shellcode } from '@stacksjs/pantry'
+import { dump, integrate, shellcode } from 'ts-pantry'
 
 // Generate shell integration code
 const shellIntegration = shellcode()
@@ -509,7 +509,7 @@ await integrate('/path/to/project')
 ### Dependency Management with Global Flags
 
 ```typescript
-import { dump } from '@stacksjs/pantry'
+import { dump } from 'ts-pantry'
 
 // Example: dependencies.yaml with global flag configurations
 const dependencyConfig = `
@@ -587,7 +587,7 @@ Project-level post-setup commands can be configured via top-level `postSetup` in
 
 ```ts
 // pantry.config.ts
-import type { pantryConfig } from '@stacksjs/pantry'
+import type { pantryConfig } from 'ts-pantry'
 
 const config: pantryConfig = {
   postSetup: {
@@ -653,7 +653,7 @@ const topLevelWithOverrides = {
 ### Creating Shims
 
 ```typescript
-import { create_shim, shim_dir } from '@stacksjs/pantry'
+import { create_shim, shim_dir } from 'ts-pantry'
 
 // Create shims for packages
 const shimPath = shim_dir()
@@ -664,7 +664,7 @@ console.log('Created shims:', createdShims)
 ### Version Handling
 
 ```typescript
-import { parseVersion, Version } from '@stacksjs/pantry'
+import { parseVersion, Version } from 'ts-pantry'
 
 // Parse version string
 const version = parseVersion('1.2.3')
@@ -680,7 +680,7 @@ console.log(v.toString()) // "2.0.0"
 ### Package Updates
 
 ```typescript
-import { update } from '@stacksjs/pantry'
+import { update } from 'ts-pantry'
 
 // Update all packages
 await update()
@@ -698,7 +698,7 @@ await update(['node'], { latest: true })
 ### Listing Packages
 
 ```typescript
-import { list } from '@stacksjs/pantry'
+import { list } from 'ts-pantry'
 
 // List installed packages
 const installations = await list('/usr/local')
@@ -712,7 +712,7 @@ installations.forEach((installation) => {
 Most functions in the pantry API can throw errors. It's recommended to wrap calls in try-catch blocks:
 
 ```typescript
-import { install } from '@stacksjs/pantry'
+import { install } from 'ts-pantry'
 
 try {
   const result = await install(['node@22'], '/usr/local')
@@ -786,7 +786,7 @@ import {
   getServiceStatus,
   listServices,
   initializeServiceManager
-} from '@stacksjs/pantry'
+} from 'ts-pantry'
 
 // Start a service
 const success = await startService('postgres')
@@ -821,7 +821,7 @@ import {
   getAllServiceDefinitions,
   isServiceSupported,
   createDefaultServiceConfig
-} from '@stacksjs/pantry'
+} from 'ts-pantry'
 
 // Get specific service definition
 const postgres = getServiceDefinition('postgres')
@@ -979,7 +979,7 @@ import {
   getServiceManagerName,
   generateLaunchdPlist,
   generateSystemdService
-} from '@stacksjs/pantry'
+} from 'ts-pantry'
 
 // Check if current platform supports service management
 const supported = isPlatformSupported() // true on macOS/Linux
@@ -1063,5 +1063,5 @@ import type {
   ServiceConfig,
   LaunchdPlist,
   SystemdService
-} from '@stacksjs/pantry'
+} from 'ts-pantry'
 ```

@@ -76,7 +76,7 @@ pantry uninstall --force
 rm -rf ~/.local/share/pantry/
 rm -rf ~/.local/bin/{pkgx,bun}
 sed -i '/pantry/d' ~/.zshrc ~/.bashrc
-npm uninstall -g @stacksjs/pantry
+npm uninstall -g ts-pantry
 ```
 
 ### Can I install pantry without npm/bun?
@@ -401,7 +401,7 @@ export pantry_SHELL_ACTIVATION_MESSAGE="💻 Working on {path}"
 ```yaml
 # GitHub Actions example
 - name: Install pantry
-  run: npm install -g @stacksjs/pantry
+  run: npm install -g ts-pantry
 
 - name: Bootstrap environment
   run: pantry bootstrap --skip-shell-integration
@@ -615,7 +615,7 @@ FROM ubuntu:22.04
 
 # Install pantry
 RUN curl -fsSL https://bun.sh/install | bash
-RUN /root/.bun/bin/bun add -g @stacksjs/pantry
+RUN /root/.bun/bin/bun add -g ts-pantry
 
 # Bootstrap and install dependencies
 COPY dependencies.yaml .

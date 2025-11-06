@@ -1,6 +1,6 @@
 # Installation
 
-Installing `@stacksjs/pantry` is easy. You can install it using your package manager of choice, or build it from source.
+Installing `ts-pantry` is easy. You can install it using your package manager of choice, or build it from source.
 
 ## Package Managers
 
@@ -10,34 +10,34 @@ Choose your preferred package manager:
 
 ```sh [npm]
 # Install globally
-npm install -g @stacksjs/pantry
+npm install -g ts-pantry
 
 # Or install as a development dependency
-npm install --save-dev @stacksjs/pantry
+npm install --save-dev ts-pantry
 ```
 
 ```sh [bun]
 # Install globally
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 
 # Or install as a development dependency
-bun add -d @stacksjs/pantry
+bun add -d ts-pantry
 ```
 
 ```sh [pnpm]
 # Install globally
-pnpm add -g @stacksjs/pantry
+pnpm add -g ts-pantry
 
 # Or install as a development dependency
-pnpm add -D @stacksjs/pantry
+pnpm add -D ts-pantry
 ```
 
 ```sh [yarn]
 # Install globally
-yarn global add @stacksjs/pantry
+yarn global add ts-pantry
 
 # Or install as a development dependency
-yarn add -D @stacksjs/pantry
+yarn add -D ts-pantry
 ```
 
 :::

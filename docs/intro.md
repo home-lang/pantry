@@ -57,7 +57,7 @@ Here's a simple example of how to use pantry:
 
 ```bash
 # Install pantry
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 
 # Bootstrap everything you need at once (installs to /usr/local if writable)
 pantry bootstrap

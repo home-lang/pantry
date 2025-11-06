@@ -45,7 +45,7 @@ Keep Homebrew for some packages, use pantry for others:
 
 ```bash
 # Install pantry
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 pantry bootstrap
 
 # Keep using Homebrew for GUI apps
@@ -90,7 +90,7 @@ Replace Homebrew development tools with pantry:
 
 ```bash
 # 1. Install pantry
-bun add -g @stacksjs/pantry
+bun add -g ts-pantry
 pantry bootstrap
 
 # 2. Install development tools via pantry
@@ -137,7 +137,7 @@ find . -name ".nvmrc" -exec echo {} \; -exec cat {} \; -exec echo \;
 1. **Install pantry:**
 
    ```bash
-   bun add -g @stacksjs/pantry
+   bun add -g ts-pantry
    pantry bootstrap
    ```
 
