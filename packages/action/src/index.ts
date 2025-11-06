@@ -23,12 +23,6 @@ export async function run(): Promise<void> {
     core.info('Starting pantry Installer')
     core.info(`Context: ${JSON.stringify(github.context)}`)
 
-    // Setup Bun
-    await setupBun()
-
-    // Install pantry
-    await installpantry()
-
     // Install dependencies
     if (inputs.packages) {
       await installSpecifiedPackages(inputs.packages)
@@ -45,102 +39,12 @@ export async function run(): Promise<void> {
 }
 
 /**
- * Setup Bun in the environment
+ * Get the path to the locally built pantry binary
  */
-async function setupBun(): Promise<void> {
-  core.info('Setting up Bun...')
-
-  // Check if Bun is already installed
-  try {
-    await exec.exec('which', ['bun'])
-    core.info('Bun is already installed')
-  }
-  catch {
-    core.info('Bun is not installed, installing now...')
-
-    // Install Bun based on platform
-    const platform = process.platform
-
-    if (platform === 'darwin' || platform === 'linux') {
-      // macOS or Linux
-      await exec.exec('curl', ['-fsSL', 'https://bun.sh/install', '|', 'bash'])
-    }
-    else if (platform === 'win32') {
-      // Windows
-      await exec.exec('powershell', ['-Command', 'irm bun.sh/install.ps1 | iex'])
-    }
-    else {
-      throw new Error(`Unsupported platform: ${platform}`)
-    }
-
-    // Add Bun to PATH
-    const bunPath = path.join(os.homedir(), '.bun', 'bin')
-    core.addPath(bunPath)
-
-    core.info('Bun installation completed')
-  }
-}
-
-/**
- * Get the command and args to run pantry
- */
-async function getPantryCommand(): Promise<{ command: string, baseArgs: string[] }> {
-  // Try to find pantry using 'which' command first
-  try {
-    let pantryPath = ''
-    await exec.exec('which', ['pantry'], {
-      listeners: {
-        stdout: (data: Buffer) => {
-          pantryPath += data.toString()
-        },
-      },
-      silent: true,
-    })
-
-    const trimmedPath = pantryPath.trim()
-    if (trimmedPath) {
-      core.info(`Found pantry at: ${trimmedPath}`)
-      return { command: trimmedPath, baseArgs: [] }
-    }
-  }
-  catch {
-    // Fall through to bun approach
-  }
-
-  // Use 'bun' to run pantry since global binaries might not be created
-  core.info('Pantry not found in PATH, using bun to run it')
-  return { command: 'bun', baseArgs: ['pantry'] }
-}
-
-/**
- * Install pantry using Bun
- */
-async function installpantry(): Promise<void> {
-  core.info('Installing pantry...')
-  await exec.exec('bun', ['install', '-g', 'pantry'])
-
-  // Add Bun's global bin to PATH
-  const bunGlobalBin = path.join(os.homedir(), '.bun', 'bin')
-  core.addPath(bunGlobalBin)
-  core.info(`Added ${bunGlobalBin} to PATH`)
-
-  // Debug: List files in Bun's global bin directory
-  try {
-    await exec.exec('ls', ['-la', bunGlobalBin])
-  }
-  catch (error) {
-    core.warning(`Failed to list ${bunGlobalBin}: ${error}`)
-  }
-
-  // Debug: Try to find where pantry was actually installed
-  try {
-    await exec.exec('find', [os.homedir(), '-name', 'pantry', '-type', 'f', '-executable', '2>/dev/null', '|', 'head', '-5'])
-  }
-  catch {
-    // Ignore errors
-  }
-
-  core.info('pantry installation completed')
+function getPantryBinaryPath(): string {
+  // The pantry binary is built in packages/zig/zig-out/bin/pantry
+  // This action runs from the repo root, so we can use a relative path
+  return path.join(process.cwd(), 'packages', 'zig', 'zig-out', 'bin', 'pantry')
 }
 
 /**
@@ -157,9 +61,9 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
     },
   }
 
-  const { command, baseArgs } = await getPantryCommand()
-  const args = [...baseArgs, 'install', '--verbose', ...packages.split(' ')]
-  await exec.exec(command, args, options)
+  const pantryBin = getPantryBinaryPath()
+  const args = ['install', '--verbose', ...packages.split(' ')]
+  await exec.exec(pantryBin, args, options)
 
   core.info('Package installation completed')
 }
@@ -182,9 +86,9 @@ async function installProjectDependencies(configPath: string): Promise<void> {
 
   if (dependencies.length > 0) {
     core.info(`Found dependencies: ${dependencies.join(', ')}`)
-    const { command, baseArgs } = await getPantryCommand()
-    const args = [...baseArgs, 'install', '--verbose', ...dependencies]
-    await exec.exec(command, args, options)
+    const pantryBin = getPantryBinaryPath()
+    const args = ['install', '--verbose', ...dependencies]
+    await exec.exec(pantryBin, args, options)
     core.info('Project dependencies installation completed')
   }
   else {

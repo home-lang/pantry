@@ -98,15 +98,16 @@ jobs:
       - name: Build TypeScript packages
         run: bun run build
 
-      - name: Build Action (for self-use)
-        run: cd packages/action && bun run build
+      - name: Bootstrap Zig Dependencies (for building pantry)
+        run: |
+          cd packages/zig
+          mkdir -p pantry_modules
+          cd pantry_modules
+          git clone --depth 1 https://github.com/zig-utils/zig-cli.git
+          git clone --depth 1 https://github.com/zig-utils/zig-config.git
+          git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
-      - name: Install Zig Dependencies with Pantry
-        uses: ./packages/action
-        with:
-          config-path: packages/zig/pantry.json
-
-      - name: Build Zig Package
+      - name: Build Zig Package (to create pantry binary)
         run: cd packages/zig && zig build
 
       - name: Unit Test
