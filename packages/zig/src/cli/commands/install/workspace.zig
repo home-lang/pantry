@@ -263,7 +263,7 @@ pub fn installWorkspaceCommandWithOptions(
         };
 
         // Create package spec, parsing GitHub URLs if needed
-        var spec = if (pkg_source == .github) blk: {
+        const spec = if (pkg_source == .github) blk: {
             // Parse GitHub URL to extract repo info
             const gh_ref = try parser.parseGitHubUrl(allocator, dep.version) orelse {
                 const red = "\x1b[31m";
