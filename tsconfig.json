@@ -9,10 +9,10 @@
     "moduleResolution": "bundler",
     "paths": {
       "ts-pantry": [
-        "./packages/ts/src/index.ts"
+        "./packages/ts-pantry/src/index.ts"
       ],
       "ts-pantry/*": [
-        "./packages/ts/src/*"
+        "./packages/ts-pantry/src/*"
       ]
     },
     "resolveJsonModule": true,
