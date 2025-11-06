@@ -262,11 +262,37 @@ pub fn installWorkspaceCommandWithOptions(
             .url => .http,
         };
 
-        const spec = lib.packages.PackageSpec{
+        // Create package spec, parsing GitHub URLs if needed
+        var spec = if (pkg_source == .github) blk: {
+            // Parse GitHub URL to extract repo info
+            const gh_ref = try parser.parseGitHubUrl(allocator, dep.version) orelse {
+                const red = "\x1b[31m";
+                const dim = "\x1b[2m";
+                std.debug.print("{s}✗{s} {s}@{s} {s}(invalid GitHub URL){s}\n", .{ red, reset, dep.name, dep.version, dim, reset });
+                failed_count += 1;
+                continue;
+            };
+            defer {
+                allocator.free(gh_ref.owner);
+                allocator.free(gh_ref.repo);
+                allocator.free(gh_ref.ref);
+            }
+
+            const repo_str = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ gh_ref.owner, gh_ref.repo });
+            errdefer allocator.free(repo_str);
+
+            break :blk lib.packages.PackageSpec{
+                .name = dep.name,
+                .version = gh_ref.ref,
+                .source = .github,
+                .repo = repo_str,
+            };
+        } else lib.packages.PackageSpec{
             .name = dep.name,
             .version = dep.version,
             .source = pkg_source,
         };
+        defer if (spec.repo) |r| allocator.free(r);
 
         var result = installer_instance.install(spec, .{
             .project_root = workspace_root,
