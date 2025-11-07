@@ -98,27 +98,11 @@ jobs:
       - name: Build TypeScript packages
         run: bun run build
 
-      - name: Bootstrap Zig Dependencies (for initial build only)
-        run: |
-          # Clone to parent directory where build.zig fallback paths expect them
-          # From packages/zig/, the path ../../../zig-cli goes up to the parent of repo root
-          cd ..
-          git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
+      - name: Build pantry GitHub Action
+        run: cd packages/action && bun run build
 
-      - name: Build Zig Package (to create pantry binary)
-        run: cd packages/zig && zig build
-
-      - name: Verify pantry can manage its own dependencies
-        run: |
-          cd packages/zig
-          # Remove the bootstrap clones (they're in parent of repo root)
-          rm -rf ../../../zig-cli ../../../zig-config ../../../zig-test-framework
-          # Use pantry to install dependencies properly (creates pantry_modules/)
-          ./zig-out/bin/pantry install
-          # Rebuild with pantry-managed dependencies to ensure it works
-          zig build
+      - name: Setup pantry
+        uses: ./packages/action
 
       - name: Unit Test
         run: bun test

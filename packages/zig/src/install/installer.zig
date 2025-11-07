@@ -384,10 +384,22 @@ pub const Installer = struct {
         );
         defer self.allocator.free(clone_url);
 
-        const clone_result = try std.process.Child.run(.{
+        // Try cloning with the specified branch/tag first
+        var clone_result = try std.process.Child.run(.{
             .allocator = self.allocator,
             .argv = &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir },
         });
+
+        // If the branch-specific clone failed, try without branch (use default branch)
+        if (clone_result.term.Exited != 0) {
+            self.allocator.free(clone_result.stdout);
+            self.allocator.free(clone_result.stderr);
+
+            clone_result = try std.process.Child.run(.{
+                .allocator = self.allocator,
+                .argv = &[_][]const u8{ "git", "clone", "--depth", "1", clone_url, temp_dir },
+            });
+        }
         defer {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
