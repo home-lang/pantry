@@ -1,6 +1,6 @@
 {
   "name": "bun-package-manager-with-deps",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "packageManager": "bun@latest",
   "description": "Test environment for Bun package manager with additional dependencies",
   "scripts": {

@@ -9,7 +9,7 @@
     },
     "packages/action": {
       "name": "pantry-installer",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "bin": {
         "pantry-installer": "dist/index.js",
       },
@@ -25,11 +25,11 @@
     },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
-      "version": "0.7.1",
+      "version": "0.7.2",
     },
     "packages/ts-pantry": {
       "name": "ts-pantry",
-      "version": "0.7.1",
+      "version": "0.7.2",
       "devDependencies": {
         "better-dx": "^0.2.2",
         "ts-pkgx": "^0.4.120",

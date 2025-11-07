@@ -1,3 +1,24 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.7.2...v0.7.3)
+
+### 🧹 Chores
+
+- release v0.7.3 ([e4327a8](https://github.com/home-lang/pantry/commit/e4327a8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9f10c29](https://github.com/home-lang/pantry/commit/9f10c29)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.7.2...HEAD)
+
+### 🧹 Chores
+
+- wip ([9f10c29](https://github.com/home-lang/pantry/commit/9f10c29)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.7.1...v0.7.2)
 
 ### 🧹 Chores
