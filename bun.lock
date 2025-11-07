@@ -9,7 +9,7 @@
     },
     "packages/action": {
       "name": "pantry-installer",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "bin": {
         "pantry-installer": "dist/index.js",
       },
@@ -25,11 +25,11 @@
     },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
-      "version": "0.7.0",
+      "version": "0.7.1",
     },
     "packages/ts-pantry": {
       "name": "ts-pantry",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "devDependencies": {
         "better-dx": "^0.2.2",
         "ts-pkgx": "^0.4.120",
@@ -72,7 +72,7 @@
 
     "@pantry/benchmark": ["@pantry/benchmark@workspace:packages/benchmark"],
 
-    "@stacksjs/bumpx": ["@stacksjs/bumpx@0.2.3", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "@stacksjs/logsmith": "^0.2.1", "bunfig": "^0.15.6" }, "bin": { "bumpx": "dist/bin/cli.js" } }, "sha512-5LgQD7khS6PCojC/I4fcTVd+Oam3ZjQchAb4dyTPEdqArMtCb12ekfjCwuQD/7Y7VElUZnuFTrx1QsTWY1u3HA=="],
+    "@stacksjs/bumpx": ["@stacksjs/bumpx@0.2.4", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "@stacksjs/logsmith": "^0.2.1", "bunfig": "^0.15.6" }, "bin": { "bumpx": "dist/bin/cli.js" } }, "sha512-bt14GhW4QJKqmAgfTyjW0pDblDu+y6+DSX8xva1HnLk2GtLyQe0YXUs51dUvZBFgYVHcHEUijNoj2pivuwIcjQ=="],
 
     "@stacksjs/bunpress": ["@stacksjs/bunpress@0.1.0", "", { "bin": { "bunpress": "dist/bin/cli.js" } }, "sha512-pYIVjKc8dSRBX2yZyWQiPF55kXQjDS+1oImRYvoTTdjLycFgauFEfDQhxh71yWsYmMCQZBfoflFKepYpxo1CHg=="],
 
