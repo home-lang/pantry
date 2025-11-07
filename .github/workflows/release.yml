@@ -9,6 +9,8 @@ jobs:
   npm:
     name: npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to create releases and upload assets
 
     steps:
       - uses: actions/checkout@v4
@@ -55,25 +57,53 @@ jobs:
           mkdir -p dist
           cd packages/zig/zig-out/bin
 
+          # List what was actually built
+          echo "Built binaries:"
+          ls -la
+
           # Package Linux x64
           if [ -d "linux-x86_64" ]; then
+            echo "Packaging Linux x64..."
             cd linux-x86_64 && zip -r ../../../../dist/pantry-linux-x64.zip pantry && cd ..
+          else
+            echo "Warning: linux-x86_64 directory not found"
           fi
 
           # Package Linux ARM64
           if [ -d "linux-aarch64" ]; then
+            echo "Packaging Linux ARM64..."
             cd linux-aarch64 && zip -r ../../../../dist/pantry-linux-arm64.zip pantry && cd ..
+          else
+            echo "Warning: linux-aarch64 directory not found"
           fi
 
           # Package macOS x64
           if [ -d "macos-x86_64" ]; then
+            echo "Packaging macOS x64..."
             cd macos-x86_64 && zip -r ../../../../dist/pantry-darwin-x64.zip pantry && cd ..
+          else
+            echo "Warning: macos-x86_64 directory not found"
           fi
 
           # Package macOS ARM64
           if [ -d "macos-aarch64" ]; then
+            echo "Packaging macOS ARM64..."
             cd macos-aarch64 && zip -r ../../../../dist/pantry-darwin-arm64.zip pantry && cd ..
+          else
+            echo "Warning: macos-aarch64 directory not found"
           fi
+
+          # Package Windows x64
+          if [ -d "windows-x86_64" ]; then
+            echo "Packaging Windows x64..."
+            cd windows-x86_64 && zip -r ../../../../dist/pantry-windows-x64.zip pantry.exe && cd ..
+          else
+            echo "Warning: windows-x86_64 directory not found"
+          fi
+
+          cd ../../..
+          echo "Packaged files:"
+          ls -la dist/
 
       - name: Publish to npm
         run: ./scripts/publish.sh
@@ -88,5 +118,5 @@ jobs:
             dist/pantry-linux-arm64.zip
             dist/pantry-darwin-x64.zip
             dist/pantry-darwin-arm64.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            dist/pantry-windows-x64.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
