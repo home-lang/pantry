@@ -12,9 +12,17 @@ for dir in packages/*/ ; do
   if [ -d "$dir" ]; then
     package_name=$(basename "$dir")
     package_json="$dir/package.json"
+    pantry_json="$dir/pantry.json"
 
     echo "----------------------------------------"
     echo "Processing $package_name..."
+
+    # Skip if no package.json exists (e.g., zig package uses pantry.json instead)
+    if [ ! -f "$package_json" ]; then
+      echo "Skipping $package_name (no package.json - not an npm package)"
+      echo "----------------------------------------"
+      continue
+    fi
 
     # Check if package is private using Bun
     if command -v bun >/dev/null 2>&1; then
