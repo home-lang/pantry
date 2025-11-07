@@ -1,3 +1,13 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.7.4...v0.7.5)
+
+### 🧹 Chores
+
+- release v0.7.5 ([9a83ca5](https://github.com/home-lang/pantry/commit/9a83ca5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.7.3...v0.7.4)
 
 ### 🧹 Chores
