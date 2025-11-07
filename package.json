@@ -1,7 +1,7 @@
 {
   "name": "pantry",
   "type": "module",
-  "version": "0.6.4",
+  "version": "0.7.0",
   "private": true,
   "description": "A performant, universal package manager. Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -14,16 +14,21 @@
   "bugs": {
     "url": "https://github.com/stacksjs/pantry/issues"
   },
-  "keywords": ["homebrew", "pkgx", "bun", "package"],
+  "keywords": [
+    "homebrew",
+    "pkgx",
+    "bun",
+    "package"
+  ],
   "scripts": {
     "build": "for dir in packages/*; do if [ -f \"$dir/package.json\" ]; then echo \"Building $dir\" && bun run --cwd $dir build; fi; done",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "test": "bun test",
     "lint": "echo \"Pickier to be implemented\"",
     "lint:fix": "echo \"Pickier to be implemented\"",
-    "changelog": "bunx logsmith --verbose",
-    "changelog:generate": "bunx logsmith --output CHANGELOG.md",
-    "release": "bun run changelog:generate && bunx bumpx prompt --recursive",
+    "changelog": "bunx --bun logsmith --verbose",
+    "changelog:generate": "bunx --bun logsmith --output CHANGELOG.md",
+    "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
     "dev:docs": "bun vitepress dev docs",
     "build:docs": "bun vitepress build docs",
     "preview:docs": "bun vitepress preview docs",

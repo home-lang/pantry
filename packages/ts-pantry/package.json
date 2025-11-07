@@ -1,6 +1,6 @@
 {
   "name": "ts-pantry",
-  "version": "0.1.0",
+  "version": "0.7.0",
   "description": "TypeScript types for Pantry package manager configuration",
   "type": "module",
   "main": "./dist/index.js",
