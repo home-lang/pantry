@@ -44,7 +44,15 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     };
 
     // Check global bin
-    const home = std.posix.getenv("HOME") orelse "/tmp";
+    const home = std.process.getEnvVarOwned(allocator, "HOME") catch |err| blk: {
+        if (err == error.EnvironmentVariableNotFound) {
+            // Try USERPROFILE on Windows
+            break :blk std.process.getEnvVarOwned(allocator, "USERPROFILE") catch "/tmp";
+        }
+        break :blk "/tmp";
+    };
+    defer if (!std.mem.eql(u8, home, "/tmp")) allocator.free(home);
+
     const global_bin = try std.fs.path.join(allocator, &[_][]const u8{ home, ".local", "share", "pantry", "global", "bin", executable_name });
     defer allocator.free(global_bin);
 

@@ -289,7 +289,8 @@ pub const Installer = struct {
                 break :blk2 target_bin;
             };
 
-            std.posix.symlink(target, modules_bin) catch |err| {
+            const symlink_module = @import("symlink.zig");
+            symlink_module.createSymlinkCrossPlatform(target, modules_bin) catch |err| {
                 std.debug.print("Warning: Failed to create symlink {s} -> {s}: {}\n", .{ modules_bin, target, err });
             };
 

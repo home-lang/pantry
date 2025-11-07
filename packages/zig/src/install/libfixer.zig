@@ -120,7 +120,8 @@ fn addRpathEntries(
     if (builtin.os.tag != .macos) return;
 
     // Get home directory for global package location
-    const home = std.posix.getenv("HOME") orelse return;
+    const home = std.process.getEnvVarOwned(allocator, "HOME") catch return;
+    defer allocator.free(home);
 
     // Add rpath entries for:
     // 1. The package's own lib directory

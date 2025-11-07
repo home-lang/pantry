@@ -46,7 +46,14 @@ pub const Platform = enum {
     }
 
     pub fn userServiceDirectory(self: Platform, allocator: std.mem.Allocator) ![]const u8 {
-        const home = std.posix.getenv("HOME") orelse return error.HomeNotFound;
+        const home = std.process.getEnvVarOwned(allocator, "HOME") catch |err| {
+            if (err == error.EnvironmentVariableNotFound) {
+                // Try USERPROFILE on Windows
+                return std.process.getEnvVarOwned(allocator, "USERPROFILE") catch return error.HomeNotFound;
+            }
+            return error.HomeNotFound;
+        };
+        defer allocator.free(home);
 
         return switch (self) {
             .macos => try std.fmt.allocPrint(allocator, "{s}/Library/LaunchAgents", .{home}),

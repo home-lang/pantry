@@ -10,7 +10,7 @@ pub const SymlinkError = error{
 };
 
 /// Cross-platform symlink creation
-fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8) !void {
+pub fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8) !void {
     if (builtin.os.tag == .windows) {
         // On Windows, copy the file instead of creating a symlink
         // This avoids privilege requirements
