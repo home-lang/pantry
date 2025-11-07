@@ -4,7 +4,21 @@ const parser = @import("parser.zig");
 
 /// Scan common locations for dependency files with global packages
 pub fn scanForGlobalDeps(allocator: std.mem.Allocator) ![]parser.PackageDependency {
-    const home = std.posix.getenv("HOME") orelse return &[_]parser.PackageDependency{};
+    const home = std.process.getEnvVarOwned(allocator, "HOME") catch |err| {
+        if (err == error.EnvironmentVariableNotFound) {
+            // Try USERPROFILE on Windows
+            const userprofile = std.process.getEnvVarOwned(allocator, "USERPROFILE") catch return &[_]parser.PackageDependency{};
+            defer allocator.free(userprofile);
+            return scanLocations(allocator, userprofile);
+        }
+        return &[_]parser.PackageDependency{};
+    };
+    defer allocator.free(home);
+
+    return scanLocations(allocator, home);
+}
+
+fn scanLocations(allocator: std.mem.Allocator, home: []const u8) ![]parser.PackageDependency {
 
     // Common locations to search
     const search_locations = [_][]const u8{

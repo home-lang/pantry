@@ -1,5 +1,6 @@
 const std = @import("std");
 const lib = @import("../lib.zig");
+const builtin = @import("builtin");
 
 pub const SymlinkError = error{
     SymlinkCreationFailed,
@@ -7,6 +8,18 @@ pub const SymlinkError = error{
     BinDirCreationFailed,
     InvalidPath,
 };
+
+/// Cross-platform symlink creation
+fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8) !void {
+    if (builtin.os.tag == .windows) {
+        // On Windows, copy the file instead of creating a symlink
+        // This avoids privilege requirements
+        try std.fs.cwd().copyFile(target_path, std.fs.cwd(), link_path, .{});
+    } else {
+        // On Unix systems, create actual symlink
+        try std.fs.cwd().symLink(target_path, link_path, .{});
+    }
+}
 
 /// Create symlink for a package binary (with explicit binary path)
 pub fn createBinarySymlinkFromPath(
@@ -43,8 +56,8 @@ pub fn createBinarySymlinkFromPath(
     // Remove existing symlink if present
     std.fs.cwd().deleteFile(symlink_path) catch {};
 
-    // Create symlink
-    std.fs.cwd().symLink(bin_path, symlink_path, .{}) catch |err| {
+    // Create symlink (cross-platform)
+    createSymlinkCrossPlatform(bin_path, symlink_path) catch |err| {
         std.debug.print("  ✗ Failed to create symlink: {}\n", .{err});
         return error.SymlinkCreationFailed;
     };
@@ -101,8 +114,8 @@ pub fn createVersionSymlink(
     // Remove existing symlink if present
     std.fs.cwd().deleteFile(symlink_path) catch {};
 
-    // Create symlink
-    std.fs.cwd().symLink(target_path, symlink_path, .{}) catch {
+    // Create symlink (cross-platform)
+    createSymlinkCrossPlatform(target_path, symlink_path) catch {
         return error.SymlinkCreationFailed;
     };
 

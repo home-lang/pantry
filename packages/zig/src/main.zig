@@ -684,13 +684,11 @@ fn devShellcodeAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     if (result.message) |msg| {
         // Write to stdout for eval to capture
-        // In Zig 0.15, we access stdout via file descriptor 1
-        const stdout_fd: std.posix.fd_t = 1;
-        const bytes_written = std.posix.write(stdout_fd, msg) catch |err| {
+        const stdout = std.io.getStdOut().writer();
+        stdout.writeAll(msg) catch |err| {
             std.debug.print("Error writing to stdout: {}\n", .{err});
             std.process.exit(1);
         };
-        _ = bytes_written;
     }
 
     std.process.exit(result.exit_code);
