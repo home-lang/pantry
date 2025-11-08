@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "pantry",
@@ -9,7 +10,7 @@
     },
     "packages/action": {
       "name": "pantry-installer",
-      "version": "0.7.2",
+      "version": "0.7.5",
       "bin": {
         "pantry-installer": "dist/index.js",
       },
@@ -25,11 +26,11 @@
     },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
-      "version": "0.7.2",
+      "version": "0.7.5",
     },
     "packages/ts-pantry": {
       "name": "ts-pantry",
-      "version": "0.7.2",
+      "version": "0.7.5",
       "devDependencies": {
         "better-dx": "^0.2.2",
         "ts-pkgx": "^0.4.120",
