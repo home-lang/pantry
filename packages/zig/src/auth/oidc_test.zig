@@ -53,7 +53,7 @@ test "OIDC Provider - CircleCI" {
 }
 
 test "Trusted Publisher - Validate GitHub Actions Claims" {
-    const allocator = testing.allocator;
+    _ = testing.allocator;
 
     const publisher = oidc.TrustedPublisher{
         .type = "github-action",
@@ -96,7 +96,7 @@ test "Trusted Publisher - Validate GitHub Actions Claims" {
 }
 
 test "Trusted Publisher - Reject Invalid Repository" {
-    const allocator = testing.allocator;
+    _ = testing.allocator;
 
     const publisher = oidc.TrustedPublisher{
         .type = "github-action",
@@ -139,7 +139,7 @@ test "Trusted Publisher - Reject Invalid Repository" {
 }
 
 test "Trusted Publisher - Validate GitLab CI Claims" {
-    const allocator = testing.allocator;
+    _ = testing.allocator;
 
     const publisher = oidc.TrustedPublisher{
         .type = "gitlab-ci",

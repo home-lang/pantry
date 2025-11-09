@@ -257,6 +257,21 @@ pub fn build(b: *std.Build) void {
     });
     const run_config_comprehensive_tests = b.addRunArtifact(config_comprehensive_tests);
 
+    // OIDC authentication tests
+    const oidc_test_mod = b.createModule(.{
+        .root_source_file = b.path("src/auth/oidc_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+            .{ .name = "zig-test-framework", .module = test_framework_mod },
+        },
+    });
+    const oidc_tests = b.addTest(.{
+        .root_module = oidc_test_mod,
+    });
+    const run_oidc_tests = b.addRunArtifact(oidc_tests);
+
     // Shell integration benchmark
     const shell_bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/shell_bench.zig"),
@@ -284,6 +299,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_platform_tests.step);
     test_step.dependOn(&run_lockfile_tests.step);
     test_step.dependOn(&run_config_comprehensive_tests.step);
+    test_step.dependOn(&run_oidc_tests.step);
 
     const integration_step = b.step("test:integration", "Run integration tests");
     integration_step.dependOn(&run_integration_tests.step);
