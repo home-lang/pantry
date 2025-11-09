@@ -550,21 +550,63 @@ pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OI
 
 /// Request OIDC token from GitHub Actions
 fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8, request_token: []const u8) ![]const u8 {
-    _ = allocator;
-    _ = request_url;
-    _ = request_token;
+    var client = http.Client{ .allocator = allocator };
+    defer client.deinit();
 
-    // TODO: Implement proper HTTP client for OIDC token request
-    // This requires updating to match Zig 0.15's HTTP client API
-    // For now, return an error to signal that this method is not yet implemented
-    // The OIDC flow will work for providers that directly expose tokens in env vars (GitLab, Bitbucket, CircleCI)
-    return error.NetworkError;
+    // Add audience query parameter (default to "pantry")
+    const url_with_audience = try std.fmt.allocPrint(
+        allocator,
+        "{s}&audience=pantry",
+        .{request_url},
+    );
+    defer allocator.free(url_with_audience);
 
-    // Full implementation would:
-    // 1. Create HTTP.Client
-    // 2. Fetch the token from GitHub's OIDC endpoint
-    // 3. Parse JSON response and extract the "value" field
-    // This is left as a TODO for the next iteration
+    // Parse URI
+    const uri = try std.Uri.parse(url_with_audience);
+
+    // Create authorization header
+    const auth_header = try std.fmt.allocPrint(allocator, "Bearer {s}", .{request_token});
+    defer allocator.free(auth_header);
+
+    // Create extra headers
+    const extra_headers = [_]http.Header{
+        .{ .name = "Authorization", .value = auth_header },
+    };
+
+    // Make HTTP request using lower-level API
+    var req = try client.request(.GET, uri, .{
+        .extra_headers = &extra_headers,
+    });
+    defer req.deinit();
+
+    try req.sendBodiless();
+
+    var redirect_buffer: [4096]u8 = undefined;
+    var response = try req.receiveHead(&redirect_buffer);
+
+    // Check status
+    if (response.head.status != .ok) {
+        return error.NetworkError;
+    }
+
+    // Read response body
+    const body_reader = response.reader(&.{});
+    const body = try body_reader.allocRemaining(allocator, std.Io.Limit.limited(4096));
+    defer allocator.free(body);
+
+    // Parse JSON response
+    const parsed = try std.json.parseFromSlice(
+        std.json.Value,
+        allocator,
+        body,
+        .{},
+    );
+    defer parsed.deinit();
+
+    const value_obj = parsed.value.object;
+    const token_value = value_obj.get("value") orelse return error.InvalidToken;
+
+    return try allocator.dupe(u8, token_value.string);
 }
 
 /// Detect OIDC provider from environment

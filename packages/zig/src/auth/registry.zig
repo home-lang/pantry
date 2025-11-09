@@ -28,18 +28,72 @@ pub const RegistryClient = struct {
         tarball_path: []const u8,
         token: *const oidc.OIDCToken,
     ) !PublishResponse {
-        _ = package_name;
-        _ = version;
-        _ = tarball_path;
-        _ = token;
+        // Construct registry URL for package publish
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}",
+            .{ self.registry_url, package_name },
+        );
+        defer self.allocator.free(url);
 
-        // TODO: Implement HTTP client for OIDC publishing
-        // This requires updating to match Zig 0.15's HTTP client API
-        // For now, return a success response for testing purposes
+        // Read tarball
+        const tarball = try std.fs.cwd().readFileAlloc(
+            self.allocator,
+            tarball_path,
+            100 * 1024 * 1024, // 100 MB max
+        );
+        defer self.allocator.free(tarball);
+
+        // Create package metadata JSON
+        const metadata = try self.createPackageMetadata(package_name, version, tarball);
+        defer self.allocator.free(metadata);
+
+        // Parse URI
+        const uri = try std.Uri.parse(url);
+
+        // Create authorization header
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{token.raw_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        // Create extra headers
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+            .{ .name = "Content-Type", .value = "application/json" },
+        };
+
+        // Make HTTP request
+        var req = try self.http_client.request(.PUT, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        req.transfer_encoding = .{ .content_length = metadata.len };
+        try req.sendBodyComplete(@constCast(metadata));
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        // Read response body
+        const body_reader = response.reader(&.{});
+        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+            error.StreamTooLong => return error.ResponseTooLarge,
+            else => |e| return e,
+        };
+        defer self.allocator.free(body);
+
+        const message = if (body.len > 0)
+            try self.allocator.dupe(u8, body)
+        else
+            null;
+
         return PublishResponse{
-            .success = false,
-            .status_code = 501, // Not Implemented
-            .message = try self.allocator.dupe(u8, "OIDC publishing not yet implemented - HTTP client needs Zig 0.15 API update"),
+            .success = response.head.status == .ok or response.head.status == .created,
+            .status_code = @intFromEnum(response.head.status),
+            .message = message,
         };
     }
 
@@ -51,17 +105,71 @@ pub const RegistryClient = struct {
         tarball_path: []const u8,
         auth_token: []const u8,
     ) !PublishResponse {
-        _ = package_name;
-        _ = version;
-        _ = tarball_path;
-        _ = auth_token;
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}",
+            .{ self.registry_url, package_name },
+        );
+        defer self.allocator.free(url);
 
-        // TODO: Implement HTTP client for token-based publishing
-        // This requires updating to match Zig 0.15's HTTP client API
+        // Read tarball
+        const tarball = try std.fs.cwd().readFileAlloc(
+            self.allocator,
+            tarball_path,
+            100 * 1024 * 1024,
+        );
+        defer self.allocator.free(tarball);
+
+        // Create package metadata
+        const metadata = try self.createPackageMetadata(package_name, version, tarball);
+        defer self.allocator.free(metadata);
+
+        // Parse URI
+        const uri = try std.Uri.parse(url);
+
+        // Create authorization header
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{auth_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        // Create extra headers
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+            .{ .name = "Content-Type", .value = "application/json" },
+        };
+
+        // Make HTTP request
+        var req = try self.http_client.request(.PUT, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        req.transfer_encoding = .{ .content_length = metadata.len };
+        try req.sendBodyComplete(@constCast(metadata));
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        // Read response body
+        const body_reader = response.reader(&.{});
+        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+            error.StreamTooLong => return error.ResponseTooLarge,
+            else => |e| return e,
+        };
+        defer self.allocator.free(body);
+
+        const message = if (body.len > 0)
+            try self.allocator.dupe(u8, body)
+        else
+            null;
+
         return PublishResponse{
-            .success = false,
-            .status_code = 501,
-            .message = try self.allocator.dupe(u8, "Token-based publishing not yet implemented - HTTP client needs Zig 0.15 API update"),
+            .success = response.head.status == .ok or response.head.status == .created,
+            .status_code = @intFromEnum(response.head.status),
+            .message = message,
         };
     }
 
@@ -72,14 +180,49 @@ pub const RegistryClient = struct {
         publisher: *const oidc.TrustedPublisher,
         auth_token: []const u8,
     ) !void {
-        _ = self;
-        _ = package_name;
-        _ = publisher;
-        _ = auth_token;
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/-/oidc/publishers",
+            .{ self.registry_url, package_name },
+        );
+        defer self.allocator.free(url);
 
-        // TODO: Implement HTTP client for adding trusted publishers
-        // This requires updating to match Zig 0.15's HTTP client API
-        return error.NetworkError;
+        // Create publisher configuration JSON
+        const publisher_json = try self.serializeTrustedPublisher(publisher);
+        defer self.allocator.free(publisher_json);
+
+        // Parse URI
+        const uri = try std.Uri.parse(url);
+
+        // Create authorization header
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{auth_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        // Create headers
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+            .{ .name = "Content-Type", .value = "application/json" },
+        };
+
+        // Make HTTP request
+        var req = try self.http_client.request(.POST, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        req.transfer_encoding = .{ .content_length = publisher_json.len };
+        try req.sendBodyComplete(@constCast(publisher_json));
+
+        var redirect_buffer: [4096]u8 = undefined;
+        const response = try req.receiveHead(&redirect_buffer);
+
+        if (response.head.status != .ok and response.head.status != .created) {
+            return error.RegistryError;
+        }
     }
 
     /// List trusted publishers for a package
@@ -88,13 +231,54 @@ pub const RegistryClient = struct {
         package_name: []const u8,
         auth_token: []const u8,
     ) ![]oidc.TrustedPublisher {
-        _ = self;
-        _ = package_name;
-        _ = auth_token;
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/-/oidc/publishers",
+            .{ self.registry_url, package_name },
+        );
+        defer self.allocator.free(url);
 
-        // TODO: Implement HTTP client for listing trusted publishers
-        // This requires updating to match Zig 0.15's HTTP client API
-        return error.NetworkError;
+        // Parse URI
+        const uri = try std.Uri.parse(url);
+
+        // Create authorization header
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{auth_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        // Create headers
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+        };
+
+        // Make HTTP request
+        var req = try self.http_client.request(.GET, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        try req.sendBodiless();
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        if (response.head.status != .ok) {
+            return error.RegistryError;
+        }
+
+        // Read response body
+        const body_reader = response.reader(&.{});
+        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+            error.StreamTooLong => return error.ResponseTooLarge,
+            else => |e| return e,
+        };
+        defer self.allocator.free(body);
+
+        // Parse publishers from JSON
+        return try self.parsePublishersResponse(body);
     }
 
     /// Remove trusted publisher from package
@@ -104,14 +288,43 @@ pub const RegistryClient = struct {
         publisher_id: []const u8,
         auth_token: []const u8,
     ) !void {
-        _ = self;
-        _ = package_name;
-        _ = publisher_id;
-        _ = auth_token;
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/-/oidc/publishers/{s}",
+            .{ self.registry_url, package_name, publisher_id },
+        );
+        defer self.allocator.free(url);
 
-        // TODO: Implement HTTP client for removing trusted publishers
-        // This requires updating to match Zig 0.15's HTTP client API
-        return error.NetworkError;
+        // Parse URI
+        const uri = try std.Uri.parse(url);
+
+        // Create authorization header
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{auth_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        // Create headers
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+        };
+
+        // Make HTTP request
+        var req = try self.http_client.request(.DELETE, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        try req.sendBodiless();
+
+        var redirect_buffer: [4096]u8 = undefined;
+        const response = try req.receiveHead(&redirect_buffer);
+
+        if (response.head.status != .ok and response.head.status != .no_content) {
+            return error.RegistryError;
+        }
     }
 
     // Private helper methods
@@ -121,7 +334,7 @@ pub const RegistryClient = struct {
         package_name: []const u8,
         version: []const u8,
         tarball: []const u8,
-    ) ![]const u8 {
+    ) ![]u8 {
         // Base64 encode tarball
         const encoder = std.base64.standard.Encoder;
         const encoded_len = encoder.calcSize(tarball.len);
@@ -176,20 +389,7 @@ pub const RegistryClient = struct {
         return metadata;
     }
 
-    fn parsePublishResponse(self: *RegistryClient, req: *http.Client.Request) !PublishResponse {
-        const status = req.response.status;
-
-        const body = try req.reader().readAllAlloc(self.allocator, 1024 * 1024);
-        defer self.allocator.free(body);
-
-        return PublishResponse{
-            .success = status == .ok or status == .created,
-            .status_code = @intFromEnum(status),
-            .message = if (body.len > 0) try self.allocator.dupe(u8, body) else null,
-        };
-    }
-
-    fn serializeTrustedPublisher(self: *RegistryClient, publisher: *const oidc.TrustedPublisher) ![]const u8 {
+    fn serializeTrustedPublisher(self: *RegistryClient, publisher: *const oidc.TrustedPublisher) ![]u8 {
         // Build allowed_refs array
         var refs_json = std.ArrayList(u8).init(self.allocator);
         defer refs_json.deinit();
