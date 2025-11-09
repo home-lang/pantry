@@ -61,6 +61,15 @@ pub const uninstallCommand = package_commands.uninstallCommand;
 pub const PublishOptions = package_commands.PublishOptions;
 pub const publishCommand = package_commands.publishCommand;
 
+pub const TrustedPublisherAddOptions = package_commands.TrustedPublisherAddOptions;
+pub const trustedPublisherAddCommand = package_commands.trustedPublisherAddCommand;
+
+pub const TrustedPublisherListOptions = package_commands.TrustedPublisherListOptions;
+pub const trustedPublisherListCommand = package_commands.trustedPublisherListCommand;
+
+pub const TrustedPublisherRemoveOptions = package_commands.TrustedPublisherRemoveOptions;
+pub const trustedPublisherRemoveCommand = package_commands.trustedPublisherRemoveCommand;
+
 pub const WhyOptions = package_commands.WhyOptions;
 pub const whyCommand = package_commands.whyCommand;
 

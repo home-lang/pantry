@@ -407,12 +407,14 @@ pub const PublishOptions = struct {
     access: []const u8 = "public",
     tag: []const u8 = "latest",
     otp: ?[]const u8 = null,
+    registry: []const u8 = "https://registry.npmjs.org",
+    use_oidc: bool = true, // Try OIDC first, fallback to token
+    provenance: bool = true, // Generate provenance metadata
 };
 
 /// Publish a package to the registry
 pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishOptions) !CommandResult {
     _ = args;
-    _ = options;
 
     const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
         return CommandResult.err(allocator, "Error: Could not determine current directory");
@@ -428,7 +430,521 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     defer allocator.free(config_path);
 
     std.debug.print("Publishing package from {s}...\n", .{config_path});
-    std.debug.print("TODO: Implement publish logic\n", .{});
+
+    // Import auth modules
+    const registry = @import("../../auth/registry.zig");
+    const publish_lib = @import("../../packages/publish.zig");
+
+    // Extract package metadata
+    const metadata = publish_lib.extractMetadata(allocator, config_path) catch |err| {
+        const err_msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to extract package metadata: {any}",
+            .{err},
+        );
+        return CommandResult.err(allocator, err_msg);
+    };
+    defer {
+        var mut_metadata = metadata;
+        mut_metadata.deinit(allocator);
+    }
+
+    // Validate package metadata
+    publish_lib.validatePackageName(metadata.name) catch {
+        return CommandResult.err(allocator, "Error: Invalid package name");
+    };
+
+    publish_lib.validateVersion(metadata.version) catch {
+        return CommandResult.err(allocator, "Error: Invalid package version");
+    };
+
+    std.debug.print("Publishing {s}@{s}...\n", .{ metadata.name, metadata.version });
+
+    // Create tarball
+    const tarball_path = try createTarball(allocator, cwd, metadata.name, metadata.version);
+    defer allocator.free(tarball_path);
+    defer std.fs.cwd().deleteFile(tarball_path) catch {};
+
+    if (options.dry_run) {
+        std.debug.print("Dry run mode - package would be published to {s}\n", .{options.registry});
+        std.debug.print("Tarball: {s}\n", .{tarball_path});
+        return .{ .exit_code = 0 };
+    }
+
+    // Initialize registry client
+    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    defer registry_client.deinit();
+
+    // Try OIDC authentication first if enabled
+    if (options.use_oidc) {
+        if (try attemptOIDCPublish(
+            allocator,
+            &registry_client,
+            metadata.name,
+            metadata.version,
+            tarball_path,
+            options.provenance,
+        )) {
+            std.debug.print("✓ Package published successfully using OIDC\n", .{});
+            return .{ .exit_code = 0 };
+        } else {
+            std.debug.print("OIDC authentication not available, falling back to token auth...\n", .{});
+        }
+    }
+
+    // Fallback to token authentication
+    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+        if (err == error.EnvironmentVariableNotFound) {
+            return CommandResult.err(
+                allocator,
+                "Error: No authentication method available. Set NPM_TOKEN or use OIDC in CI/CD.",
+            );
+        }
+        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+    };
+    defer allocator.free(auth_token);
+
+    const response = registry_client.publishWithToken(
+        metadata.name,
+        metadata.version,
+        tarball_path,
+        auth_token,
+    ) catch |err| {
+        const err_msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to publish package: {any}",
+            .{err},
+        );
+        return CommandResult.err(allocator, err_msg);
+    };
+    defer {
+        var mut_response = response;
+        mut_response.deinit(allocator);
+    }
+
+    if (response.success) {
+        std.debug.print("✓ Package published successfully\n", .{});
+        return .{ .exit_code = 0 };
+    } else {
+        const err_msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to publish package (status {d}): {s}",
+            .{ response.status_code, response.message orelse "Unknown error" },
+        );
+        return CommandResult.err(allocator, err_msg);
+    }
+}
+
+/// Attempt to publish using OIDC authentication
+fn attemptOIDCPublish(
+    allocator: std.mem.Allocator,
+    registry_client: *@import("../../auth/registry.zig").RegistryClient,
+    package_name: []const u8,
+    version: []const u8,
+    tarball_path: []const u8,
+    generate_provenance: bool,
+) !bool {
+    const oidc = @import("../../auth/oidc.zig");
+
+    // Detect OIDC provider
+    var provider = try oidc.detectProvider(allocator) orelse return false;
+    defer provider.deinit(allocator);
+
+    std.debug.print("Detected OIDC provider: {s}\n", .{provider.name});
+
+    // Get OIDC token from environment
+    const raw_token = try oidc.getTokenFromEnvironment(allocator, &provider) orelse return false;
+    defer allocator.free(raw_token);
+
+    // Decode and validate token
+    var token = try oidc.decodeTokenUnsafe(allocator, raw_token);
+    defer token.deinit(allocator);
+
+    // Validate expiration
+    try oidc.validateExpiration(&token.claims);
+
+    // Print token info for transparency
+    std.debug.print("OIDC Claims:\n", .{});
+    std.debug.print("  Issuer: {s}\n", .{token.claims.iss});
+    std.debug.print("  Subject: {s}\n", .{token.claims.sub});
+    if (token.claims.repository) |repo| {
+        std.debug.print("  Repository: {s}\n", .{repo});
+    }
+    if (token.claims.ref) |ref| {
+        std.debug.print("  Ref: {s}\n", .{ref});
+    }
+    if (token.claims.sha) |sha| {
+        std.debug.print("  SHA: {s}\n", .{sha});
+    }
+
+    // Generate provenance if requested
+    if (generate_provenance) {
+        try generateProvenance(allocator, &token, package_name, version);
+    }
+
+    // Publish package
+    const response = try registry_client.publishWithOIDC(
+        package_name,
+        version,
+        tarball_path,
+        &token,
+    );
+    defer {
+        var mut_response = response;
+        mut_response.deinit(allocator);
+    }
+
+    return response.success;
+}
+
+/// Create tarball for package
+fn createTarball(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+    package_name: []const u8,
+    version: []const u8,
+) ![]const u8 {
+    const tarball_name = try std.fmt.allocPrint(
+        allocator,
+        "{s}-{s}.tgz",
+        .{ package_name, version },
+    );
+    defer allocator.free(tarball_name);
+
+    const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, tarball_name });
+
+    // Use tar command to create tarball
+    const result = try std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &[_][]const u8{
+            "tar",
+            "-czf",
+            tarball_path,
+            "-C",
+            package_dir,
+            "--exclude=node_modules",
+            "--exclude=pantry_modules",
+            "--exclude=.git",
+            "--exclude=*.tgz",
+            ".",
+        },
+    });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term.Exited != 0) {
+        return error.TarballCreationFailed;
+    }
+
+    return tarball_path;
+}
+
+/// Generate provenance metadata
+fn generateProvenance(
+    allocator: std.mem.Allocator,
+    token: *@import("../../auth/oidc.zig").OIDCToken,
+    package_name: []const u8,
+    version: []const u8,
+) !void {
+    // Generate SLSA provenance format
+    const provenance = try std.fmt.allocPrint(
+        allocator,
+        \\{{
+        \\  "_type": "https://in-toto.io/Statement/v0.1",
+        \\  "subject": [{{
+        \\    "name": "{s}",
+        \\    "digest": {{
+        \\      "sha256": "placeholder"
+        \\    }}
+        \\  }}],
+        \\  "predicateType": "https://slsa.dev/provenance/v0.2",
+        \\  "predicate": {{
+        \\    "builder": {{
+        \\      "id": "{s}"
+        \\    }},
+        \\    "buildType": "https://slsa.dev/build-type/v1",
+        \\    "invocation": {{
+        \\      "configSource": {{
+        \\        "uri": "{s}",
+        \\        "digest": {{
+        \\          "sha1": "{s}"
+        \\        }}
+        \\      }}
+        \\    }},
+        \\    "metadata": {{
+        \\      "buildInvocationId": "{s}",
+        \\      "completeness": {{
+        \\        "parameters": true,
+        \\        "environment": true,
+        \\        "materials": true
+        \\      }},
+        \\      "reproducible": false
+        \\    }}
+        \\  }}
+        \\}}
+    ,
+        .{
+            try std.fmt.allocPrint(allocator, "{s}@{s}", .{ package_name, version }),
+            token.claims.iss,
+            token.claims.repository orelse "unknown",
+            token.claims.sha orelse "unknown",
+            token.claims.jti orelse "unknown",
+        },
+    );
+    defer allocator.free(provenance);
+
+    // Write provenance to file
+    const provenance_path = try std.fmt.allocPrint(
+        allocator,
+        "{s}-{s}.provenance.json",
+        .{ package_name, version },
+    );
+    defer allocator.free(provenance_path);
+
+    try std.fs.cwd().writeFile(.{
+        .sub_path = provenance_path,
+        .data = provenance,
+    });
+
+    std.debug.print("Generated provenance: {s}\n", .{provenance_path});
+}
+
+// ============================================================================
+// Trusted Publisher Management Commands
+// ============================================================================
+
+pub const TrustedPublisherAddOptions = struct {
+    package: []const u8,
+    type: []const u8, // "github-action", "gitlab-ci", etc.
+    owner: []const u8,
+    repository: []const u8,
+    workflow: ?[]const u8 = null,
+    environment: ?[]const u8 = null,
+    registry: []const u8 = "https://registry.npmjs.org",
+};
+
+/// Add a trusted publisher to a package
+pub fn trustedPublisherAddCommand(
+    allocator: std.mem.Allocator,
+    args: []const []const u8,
+    options: TrustedPublisherAddOptions,
+) !CommandResult {
+    _ = args;
+
+    const oidc = @import("../../auth/oidc.zig");
+    const registry = @import("../../auth/registry.zig");
+
+    std.debug.print("Adding trusted publisher for {s}...\n", .{options.package});
+    std.debug.print("  Type: {s}\n", .{options.type});
+    std.debug.print("  Owner: {s}\n", .{options.owner});
+    std.debug.print("  Repository: {s}\n", .{options.repository});
+    if (options.workflow) |w| {
+        std.debug.print("  Workflow: {s}\n", .{w});
+    }
+    if (options.environment) |e| {
+        std.debug.print("  Environment: {s}\n", .{e});
+    }
+
+    // Get authentication token
+    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+        if (err == error.EnvironmentVariableNotFound) {
+            return CommandResult.err(
+                allocator,
+                "Error: NPM_TOKEN environment variable not set. This is required to manage trusted publishers.",
+            );
+        }
+        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+    };
+    defer allocator.free(auth_token);
+
+    // Create trusted publisher configuration
+    const publisher = oidc.TrustedPublisher{
+        .type = options.type,
+        .owner = options.owner,
+        .repository = options.repository,
+        .workflow = options.workflow,
+        .environment = options.environment,
+        .allowed_refs = null, // Can be extended to support allowed_refs
+    };
+
+    // Initialize registry client
+    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    defer registry_client.deinit();
+
+    // Add trusted publisher
+    registry_client.addTrustedPublisher(
+        options.package,
+        &publisher,
+        auth_token,
+    ) catch |err| {
+        const err_msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to add trusted publisher: {any}",
+            .{err},
+        );
+        return CommandResult.err(allocator, err_msg);
+    };
+
+    std.debug.print("✓ Trusted publisher added successfully\n", .{});
+    std.debug.print("\nYou can now publish {s} from {s}/{s} using OIDC authentication.\n", .{
+        options.package,
+        options.owner,
+        options.repository,
+    });
+
+    return .{ .exit_code = 0 };
+}
+
+pub const TrustedPublisherListOptions = struct {
+    package: []const u8,
+    registry: []const u8 = "https://registry.npmjs.org",
+    json: bool = false,
+};
+
+/// List trusted publishers for a package
+pub fn trustedPublisherListCommand(
+    allocator: std.mem.Allocator,
+    args: []const []const u8,
+    options: TrustedPublisherListOptions,
+) !CommandResult {
+    _ = args;
+
+    const registry = @import("../../auth/registry.zig");
+
+    // Get authentication token
+    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+        if (err == error.EnvironmentVariableNotFound) {
+            return CommandResult.err(
+                allocator,
+                "Error: NPM_TOKEN environment variable not set",
+            );
+        }
+        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+    };
+    defer allocator.free(auth_token);
+
+    // Initialize registry client
+    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    defer registry_client.deinit();
+
+    // List trusted publishers
+    const publishers = registry_client.listTrustedPublishers(
+        options.package,
+        auth_token,
+    ) catch |err| {
+        const err_msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to list trusted publishers: {any}",
+            .{err},
+        );
+        return CommandResult.err(allocator, err_msg);
+    };
+    defer {
+        for (publishers) |*pub_item| {
+            var mut_pub = pub_item.*;
+            mut_pub.deinit(allocator);
+        }
+        allocator.free(publishers);
+    }
+
+    if (options.json) {
+        // Output JSON format
+        std.debug.print("[\n", .{});
+        for (publishers, 0..) |pub_item, i| {
+            std.debug.print("  {{\n", .{});
+            std.debug.print("    \"type\": \"{s}\",\n", .{pub_item.type});
+            std.debug.print("    \"owner\": \"{s}\",\n", .{pub_item.owner});
+            std.debug.print("    \"repository\": \"{s}\"", .{pub_item.repository});
+            if (pub_item.workflow) |w| {
+                std.debug.print(",\n    \"workflow\": \"{s}\"", .{w});
+            }
+            if (pub_item.environment) |e| {
+                std.debug.print(",\n    \"environment\": \"{s}\"", .{e});
+            }
+            std.debug.print("\n  }}", .{});
+            if (i < publishers.len - 1) {
+                std.debug.print(",", .{});
+            }
+            std.debug.print("\n", .{});
+        }
+        std.debug.print("]\n", .{});
+    } else {
+        // Output table format
+        if (publishers.len == 0) {
+            std.debug.print("No trusted publishers configured for {s}\n", .{options.package});
+            std.debug.print("\nUse 'pantry publisher add' to add a trusted publisher.\n", .{});
+        } else {
+            std.debug.print("Trusted Publishers for {s}:\n\n", .{options.package});
+            for (publishers, 0..) |pub_item, i| {
+                std.debug.print("{}. Type: {s}\n", .{ i + 1, pub_item.type });
+                std.debug.print("   Owner: {s}\n", .{pub_item.owner});
+                std.debug.print("   Repository: {s}\n", .{pub_item.repository});
+                if (pub_item.workflow) |w| {
+                    std.debug.print("   Workflow: {s}\n", .{w});
+                }
+                if (pub_item.environment) |e| {
+                    std.debug.print("   Environment: {s}\n", .{e});
+                }
+                std.debug.print("\n", .{});
+            }
+        }
+    }
+
+    return .{ .exit_code = 0 };
+}
+
+pub const TrustedPublisherRemoveOptions = struct {
+    package: []const u8,
+    publisher_id: []const u8,
+    registry: []const u8 = "https://registry.npmjs.org",
+};
+
+/// Remove a trusted publisher from a package
+pub fn trustedPublisherRemoveCommand(
+    allocator: std.mem.Allocator,
+    args: []const []const u8,
+    options: TrustedPublisherRemoveOptions,
+) !CommandResult {
+    _ = args;
+
+    const registry = @import("../../auth/registry.zig");
+
+    std.debug.print("Removing trusted publisher {s} from {s}...\n", .{
+        options.publisher_id,
+        options.package,
+    });
+
+    // Get authentication token
+    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+        if (err == error.EnvironmentVariableNotFound) {
+            return CommandResult.err(
+                allocator,
+                "Error: NPM_TOKEN environment variable not set",
+            );
+        }
+        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+    };
+    defer allocator.free(auth_token);
+
+    // Initialize registry client
+    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    defer registry_client.deinit();
+
+    // Remove trusted publisher
+    registry_client.removeTrustedPublisher(
+        options.package,
+        options.publisher_id,
+        auth_token,
+    ) catch |err| {
+        const err_msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to remove trusted publisher: {any}",
+            .{err},
+        );
+        return CommandResult.err(allocator, err_msg);
+    };
+
+    std.debug.print("✓ Trusted publisher removed successfully\n", .{});
 
     return .{ .exit_code = 0 };
 }
