@@ -80,6 +80,7 @@ pub const whyCommand = package_commands.whyCommand;
 pub const searchCommand = registry_commands.searchCommand;
 pub const infoCommand = registry_commands.infoCommand;
 pub const listCommand = registry_commands.listCommand;
+pub const whoamiCommand = registry_commands.whoamiCommand;
 
 // ============================================================================
 // Re-export Px Command

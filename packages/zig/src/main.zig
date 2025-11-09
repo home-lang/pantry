@@ -381,6 +381,19 @@ fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn whoamiAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const result = try lib.commands.whoamiCommand(allocator, &[_][]const u8{});
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -999,6 +1012,13 @@ pub fn main() !void {
 
     _ = list_cmd.setAction(listAction);
     _ = try root.addCommand(list_cmd);
+
+    // ========================================================================
+    // Whoami Command
+    // ========================================================================
+    var whoami_cmd = try cli.BaseCommand.init(allocator, "whoami", "Display the currently authenticated user");
+    _ = whoami_cmd.setAction(whoamiAction);
+    _ = try root.addCommand(whoami_cmd);
 
     // ========================================================================
     // Publish Command

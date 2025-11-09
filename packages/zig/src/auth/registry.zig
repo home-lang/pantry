@@ -524,7 +524,7 @@ pub const DefaultRegistries = struct {
     }
 
     pub fn pantry(allocator: std.mem.Allocator, url: ?[]const u8) !RegistryConfig {
-        const registry_url = url orelse "https://registry.pantry.sh";
+        const registry_url = url orelse "https://registry.pantry.dev";
         return RegistryConfig{
             .url = try allocator.dupe(u8, registry_url),
             .name = try allocator.dupe(u8, "pantry"),

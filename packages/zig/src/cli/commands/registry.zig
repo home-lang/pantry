@@ -136,3 +136,75 @@ pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !Command
 
     return .{ .exit_code = 0 };
 }
+
+/// Display the currently authenticated user
+pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
+    // Try to get user from Pantry config
+    const home = std.process.getEnvVarOwned(allocator, "HOME") catch {
+        return CommandResult.err(allocator, "Error: Could not determine home directory");
+    };
+    defer allocator.free(home);
+
+    const pantryrc_path = try std.fs.path.join(allocator, &[_][]const u8{ home, ".pantryrc" });
+    defer allocator.free(pantryrc_path);
+
+    var username: ?[]const u8 = null;
+    defer if (username) |u| allocator.free(u);
+
+    // Try to read .pantryrc to find username
+    const file = std.fs.openFileAbsolute(pantryrc_path, .{}) catch |err| {
+        if (err == error.FileNotFound) {
+            std.debug.print("Not logged in (no .pantryrc found)\n", .{});
+            std.debug.print("\nTo authenticate:\n", .{});
+            std.debug.print("  1. Get an authentication token from the Pantry registry\n", .{});
+            std.debug.print("  2. Add it to ~/.pantryrc as: //registry.pantry.dev/:_authToken=YOUR_TOKEN\n", .{});
+            std.debug.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
+            std.debug.print("  pantry publisher add --help\n", .{});
+            return .{ .exit_code = 1 };
+        }
+        return err;
+    };
+    defer file.close();
+
+    const content = try file.readToEndAlloc(allocator, 1024 * 1024);
+    defer allocator.free(content);
+
+    // Parse .pantryrc for username or email
+    var lines = std.mem.splitScalar(u8, content, '\n');
+    var found_auth = false;
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+        // Look for username or email
+        if (std.mem.indexOf(u8, trimmed, "username=")) |idx| {
+            const value_start = idx + "username=".len;
+            username = try allocator.dupe(u8, std.mem.trim(u8, trimmed[value_start..], " \t\"'"));
+            break;
+        } else if (std.mem.indexOf(u8, trimmed, "email=")) |idx| {
+            const value_start = idx + "email=".len;
+            username = try allocator.dupe(u8, std.mem.trim(u8, trimmed[value_start..], " \t\"'"));
+            break;
+        } else if (std.mem.indexOf(u8, trimmed, "_authToken=")) |_| {
+            found_auth = true;
+        }
+    }
+
+    if (username) |u| {
+        std.debug.print("{s}\n", .{u});
+        return .{ .exit_code = 0 };
+    } else if (found_auth) {
+        std.debug.print("Authenticated (token found in .pantryrc)\n", .{});
+        std.debug.print("Note: Username not configured. Add 'username=YOUR_USERNAME' to ~/.pantryrc\n", .{});
+        return .{ .exit_code = 0 };
+    } else {
+        std.debug.print("Not logged in\n", .{});
+        std.debug.print("\nTo authenticate:\n", .{});
+        std.debug.print("  1. Get an authentication token from the Pantry registry\n", .{});
+        std.debug.print("  2. Add it to ~/.pantryrc as: //registry.pantry.dev/:_authToken=YOUR_TOKEN\n", .{});
+        std.debug.print("  3. Optionally add: username=YOUR_USERNAME\n", .{});
+        std.debug.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
+        std.debug.print("  pantry publisher add --help\n", .{});
+        return .{ .exit_code = 1 };
+    }
+}
