@@ -42,6 +42,12 @@ pub const services_commands = @import("commands/services.zig");
 pub const install_commands = @import("commands/install.zig");
 pub const dev_commands = @import("commands/dev.zig");
 pub const audit_commands = @import("commands/audit.zig");
+pub const outdated_cmd = @import("commands/outdated.zig");
+pub const update_cmd = @import("commands/update.zig");
+pub const doctor_cmd = @import("commands/doctor.zig");
+pub const clean_cmd = @import("commands/clean.zig");
+pub const why_cmd = @import("commands/why.zig");
+pub const dedupe_cmd = @import("commands/dedupe.zig");
 
 // ============================================================================
 // Re-export Package Commands
@@ -177,3 +183,14 @@ pub const devCheckUpdatesCommand = dev_commands.devCheckUpdatesCommand;
 pub const AuditOptions = audit_commands.AuditOptions;
 pub const Severity = audit_commands.Severity;
 pub const auditCommand = audit_commands.auditCommand;
+
+// ============================================================================
+// Re-export New Utility Commands
+// ============================================================================
+
+pub const outdatedNewCommand = outdated_cmd.execute;
+pub const updateNewCommand = update_cmd.execute;
+pub const doctorNewCommand = doctor_cmd.execute;
+pub const cleanNewCommand = clean_cmd.execute;
+pub const whyNewCommand = why_cmd.execute;
+pub const dedupeCommand = dedupe_cmd.execute;
