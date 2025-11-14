@@ -460,19 +460,33 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
     std.debug.print("Publishing {s}@{s}...\n", .{ metadata.name, metadata.version });
 
+    // Determine registry URL (priority: CLI flag > publishConfig > default)
+    const registry_url = if (!std.mem.eql(u8, options.registry, "https://registry.npmjs.org"))
+        options.registry // CLI flag takes precedence
+    else if (metadata.publish_config) |pc|
+        pc.registry orelse options.registry // Use publishConfig if available
+    else
+        options.registry; // Fall back to default
+
+    std.debug.print("Registry: {s}\n", .{registry_url});
+
     // Create tarball
     const tarball_path = try createTarball(allocator, cwd, metadata.name, metadata.version);
     defer allocator.free(tarball_path);
     defer std.fs.cwd().deleteFile(tarball_path) catch {};
 
     if (options.dry_run) {
-        std.debug.print("Dry run mode - package would be published to {s}\n", .{options.registry});
+        std.debug.print("Dry run mode - package would be published to {s}\n", .{registry_url});
         std.debug.print("Tarball: {s}\n", .{tarball_path});
+        if (metadata.publish_config) |pc| {
+            if (pc.access) |a| std.debug.print("Access: {s}\n", .{a});
+            if (pc.tag) |t| std.debug.print("Tag: {s}\n", .{t});
+        }
         return .{ .exit_code = 0 };
     }
 
     // Initialize registry client
-    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    var registry_client = registry.RegistryClient.init(allocator, registry_url);
     defer registry_client.deinit();
 
     // Try OIDC authentication first if enabled

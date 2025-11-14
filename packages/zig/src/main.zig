@@ -697,8 +697,8 @@ fn devShellcodeAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     if (result.message) |msg| {
         // Write to stdout for eval to capture
-        // Use debug.print which works cross-platform
-        std.debug.print("{s}", .{msg});
+        const stdout = std.fs.File.stdout();
+        _ = try stdout.writeAll(msg);
     }
 
     std.process.exit(result.exit_code);

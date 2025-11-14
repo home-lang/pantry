@@ -98,8 +98,16 @@ pub const Paths = struct {
         defer allocator.free(home_dir);
 
         return switch (Platform.current()) {
-            .darwin => try std.fmt.allocPrint(allocator, "{s}/.pantry", .{home_dir}),
-            .linux => try std.fmt.allocPrint(allocator, "{s}/.pantry", .{home_dir}),
+            .darwin => try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry", .{home_dir}),
+            .linux => blk: {
+                // Try XDG_DATA_HOME first
+                if (std.process.getEnvVarOwned(allocator, "XDG_DATA_HOME")) |xdg| {
+                    defer allocator.free(xdg);
+                    break :blk try std.fmt.allocPrint(allocator, "{s}/pantry", .{xdg});
+                } else |_| {
+                    break :blk try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry", .{home_dir});
+                }
+            },
             .windows => try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\data", .{home_dir}),
         };
     }

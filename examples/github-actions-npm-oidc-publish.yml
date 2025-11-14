@@ -1,0 +1,87 @@
+name: Publish to npm with OIDC
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+
+    # IMPORTANT: Required for OIDC authentication
+    permissions:
+      id-token: write  # Required to request OIDC token
+      contents: read   # Required to checkout code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Pantry
+        run: |
+          # Install pantry
+          curl -fsSL https://pantry.sh/install.sh | bash
+
+          # Or build from source if in pantry repo
+          # zig build
+          # export PATH="$PWD/zig-out/bin:$PATH"
+
+      - name: Publish to npm with OIDC
+        run: pantry publish
+        env:
+          # No NPM_TOKEN needed! OIDC handles authentication
+          NODE_AUTH_TOKEN: "" # Not needed with OIDC
+
+      # Alternative: Publish with explicit registry configuration
+      - name: Publish to npm with OIDC (explicit registry)
+        run: pantry publish --registry https://registry.npmjs.org
+        if: false # Disabled by default (example only)
+
+      # For debugging: Test with dry-run first
+      - name: Dry run publish
+        run: pantry publish --dry-run
+        if: false # Disabled by default (example only)
+
+  # Example: Publish to multiple registries
+  publish-multi-registry:
+    runs-on: ubuntu-latest
+    if: false # Disabled by default (example only)
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Pantry
+        run: curl -fsSL https://pantry.sh/install.sh | bash
+
+      - name: Publish to npm
+        run: pantry publish --registry https://registry.npmjs.org
+
+      - name: Publish to Pantry registry (future)
+        run: pantry publish --registry https://registry.pantry.dev
+        continue-on-error: true # Continue if pantry registry not yet available
+
+  # Example: Environment-specific publishing
+  publish-with-environment:
+    runs-on: ubuntu-latest
+    if: false # Disabled by default (example only)
+
+    # Use GitHub environments for additional security
+    environment: npm-production
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Pantry
+        run: curl -fsSL https://pantry.sh/install.sh | bash
+
+      - name: Publish to npm
+        run: pantry publish

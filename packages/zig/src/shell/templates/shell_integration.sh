@@ -110,27 +110,13 @@ elif [[ -n "$BASH_VERSION" ]]; then
 fi
 
 # Add global packages to PATH (user-local or system-wide)
-if [[ -d "$HOME/.pantry/global/bin" ]]; then
-    export PATH="$HOME/.pantry/global/bin:$PATH"
+if [[ -d "$HOME/.local/share/pantry/global/bin" ]]; then
+    export PATH="$HOME/.local/share/pantry/global/bin:$PATH"
 elif [[ -d "/usr/local/bin" ]]; then
     # System-wide install adds to /usr/local/bin (already in PATH typically)
     :
 fi
 
-# Initial environment check
-# If cache hit: fast activation
-# If cache miss: trigger installation (this handles the case where user runs pantry clean
-# and reloads shell while still in project directory)
-local env_info
-env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
-if [[ $? -eq 0 && -n "$env_info" ]]; then
-    # We're in a known project - activate it from cache
-    __pantry_switch_environment
-else
-    # Cache miss - clear __PANTRY_LAST_PWD to force re-check on next cd
-    # This ensures that reloadshell after pantry clean will trigger installation
-    unset __PANTRY_LAST_PWD
-    # Force a check which will install deps if needed
-    # This ensures deps install when opening a new terminal in a project
-    __pantry_switch_environment
-fi
+# Initial environment check on shell start
+# Check for project dependencies and activate if needed
+__pantry_switch_environment

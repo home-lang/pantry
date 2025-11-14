@@ -13,6 +13,7 @@ pub const PackageMetadata = struct {
     homepage: ?[]const u8 = null,
     keywords: ?[][]const u8 = null,
     dependencies: ?std.StringHashMap([]const u8) = null,
+    publish_config: ?PublishConfig = null,
 
     pub fn deinit(self: *PackageMetadata, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -36,6 +37,23 @@ pub const PackageMetadata = struct {
             }
             deps.deinit();
         }
+        if (self.publish_config) |*pc| {
+            var mut_pc = pc.*;
+            mut_pc.deinit(allocator);
+        }
+    }
+};
+
+/// Publish configuration from pantry.json/package.json
+pub const PublishConfig = struct {
+    registry: ?[]const u8 = null,
+    access: ?[]const u8 = null,
+    tag: ?[]const u8 = null,
+
+    pub fn deinit(self: *PublishConfig, allocator: std.mem.Allocator) void {
+        if (self.registry) |r| allocator.free(r);
+        if (self.access) |a| allocator.free(a);
+        if (self.tag) |t| allocator.free(t);
     }
 };
 
@@ -182,6 +200,33 @@ pub fn extractMetadata(
         }
     }
 
+    // Extract publishConfig
+    var publish_config: ?PublishConfig = null;
+    if (root.object.get("publishConfig")) |pc_val| {
+        if (pc_val == .object) {
+            const registry = if (pc_val.object.get("registry")) |r|
+                if (r == .string) try allocator.dupe(u8, r.string) else null
+            else
+                null;
+
+            const access = if (pc_val.object.get("access")) |a|
+                if (a == .string) try allocator.dupe(u8, a.string) else null
+            else
+                null;
+
+            const tag = if (pc_val.object.get("tag")) |t|
+                if (t == .string) try allocator.dupe(u8, t.string) else null
+            else
+                null;
+
+            publish_config = PublishConfig{
+                .registry = registry,
+                .access = access,
+                .tag = tag,
+            };
+        }
+    }
+
     return PackageMetadata{
         .name = try allocator.dupe(u8, name),
         .version = try allocator.dupe(u8, version),
@@ -192,6 +237,7 @@ pub fn extractMetadata(
         .homepage = homepage,
         .keywords = keywords,
         .dependencies = null, // TODO: Extract if needed
+        .publish_config = publish_config,
     };
 }
 
