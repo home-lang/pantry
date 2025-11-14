@@ -272,6 +272,21 @@ pub fn build(b: *std.Build) void {
     });
     const run_oidc_tests = b.addRunArtifact(oidc_tests);
 
+    // Resolution tests (conflict resolution, peer deps, optional deps, lockfile)
+    const resolution_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/resolution_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+            .{ .name = "zig-test-framework", .module = test_framework_mod },
+        },
+    });
+    const resolution_tests = b.addTest(.{
+        .root_module = resolution_test_mod,
+    });
+    const run_resolution_tests = b.addRunArtifact(resolution_tests);
+
     // Shell integration benchmark
     const shell_bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/shell_bench.zig"),
@@ -300,6 +315,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_lockfile_tests.step);
     test_step.dependOn(&run_config_comprehensive_tests.step);
     test_step.dependOn(&run_oidc_tests.step);
+    test_step.dependOn(&run_resolution_tests.step);
 
     const integration_step = b.step("test:integration", "Run integration tests");
     integration_step.dependOn(&run_integration_tests.step);
@@ -315,6 +331,7 @@ pub fn build(b: *std.Build) void {
     test_all_step.dependOn(&run_platform_tests.step);
     test_all_step.dependOn(&run_lockfile_tests.step);
     test_all_step.dependOn(&run_config_comprehensive_tests.step);
+    test_all_step.dependOn(&run_resolution_tests.step);
 
     // Benchmarks
     const bench_mod = b.createModule(.{
