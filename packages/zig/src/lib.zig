@@ -16,6 +16,20 @@ pub const deps = @import("deps.zig");
 pub const benchmark = @import("benchmark.zig");
 pub const services = @import("services.zig");
 pub const lifecycle = @import("lifecycle.zig");
+pub const utils = struct {
+    pub const jsonc = @import("utils/jsonc.zig");
+};
+pub const auth = struct {
+    pub const oidc = @import("auth/oidc.zig");
+    pub const signing = @import("auth/signing.zig");
+    pub const registry = @import("auth/registry.zig");
+    pub const policy = @import("auth/policy.zig");
+};
+pub const registry = struct {
+    pub const core = @import("registry/core.zig");
+    pub const npm = @import("registry/npm.zig");
+    pub const custom = @import("registry/custom.zig");
+};
 
 // Re-export commonly used types
 pub const Platform = core.Platform;

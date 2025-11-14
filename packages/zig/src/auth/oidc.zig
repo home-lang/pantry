@@ -198,6 +198,45 @@ pub const Providers = struct {
             .claims_mapping = null,
         };
     }
+
+    /// Azure Pipelines OIDC configuration
+    pub fn azure(allocator: std.mem.Allocator) !OIDCProvider {
+        return OIDCProvider{
+            .name = try allocator.dupe(u8, "Azure Pipelines"),
+            .issuer = try allocator.dupe(u8, "https://vstoken.actions.githubusercontent.com"),
+            .jwks_uri = try allocator.dupe(u8, "https://vstoken.actions.githubusercontent.com/.well-known/jwks"),
+            .token_env_var = try allocator.dupe(u8, "SYSTEM_OIDCTOKEN"),
+            .request_token_env_var = try allocator.dupe(u8, "SYSTEM_OIDCREQUESTTOKEN"),
+            .request_url_env_var = try allocator.dupe(u8, "SYSTEM_OIDCREQUESTURL"),
+            .claims_mapping = null,
+        };
+    }
+
+    /// Jenkins OIDC configuration
+    pub fn jenkins(allocator: std.mem.Allocator) !OIDCProvider {
+        return OIDCProvider{
+            .name = try allocator.dupe(u8, "Jenkins"),
+            .issuer = try allocator.dupe(u8, "https://jenkins.io"),
+            .jwks_uri = try allocator.dupe(u8, "https://jenkins.io/.well-known/jwks.json"),
+            .token_env_var = try allocator.dupe(u8, "JENKINS_OIDC_TOKEN"),
+            .request_token_env_var = null,
+            .request_url_env_var = null,
+            .claims_mapping = null,
+        };
+    }
+
+    /// Travis CI OIDC configuration
+    pub fn travis(allocator: std.mem.Allocator) !OIDCProvider {
+        return OIDCProvider{
+            .name = try allocator.dupe(u8, "Travis CI"),
+            .issuer = try allocator.dupe(u8, "https://api.travis-ci.com"),
+            .jwks_uri = try allocator.dupe(u8, "https://api.travis-ci.com/.well-known/jwks.json"),
+            .token_env_var = try allocator.dupe(u8, "TRAVIS_OIDC_TOKEN"),
+            .request_token_env_var = null,
+            .request_url_env_var = null,
+            .claims_mapping = null,
+        };
+    }
 };
 
 /// Trusted Publisher configuration stored in package metadata
@@ -621,6 +660,11 @@ pub fn detectProvider(allocator: std.mem.Allocator) !?OIDCProvider {
         return try Providers.gitlab(allocator);
     }
 
+    // Check for Azure Pipelines
+    if (std.process.getEnvVarOwned(allocator, "AZURE_PIPELINES") catch null) |_| {
+        return try Providers.azure(allocator);
+    }
+
     // Check for Bitbucket Pipelines
     if (std.process.getEnvVarOwned(allocator, "BITBUCKET_BUILD_NUMBER") catch null) |_| {
         return try Providers.bitbucket(allocator);
@@ -629,6 +673,16 @@ pub fn detectProvider(allocator: std.mem.Allocator) !?OIDCProvider {
     // Check for CircleCI
     if (std.process.getEnvVarOwned(allocator, "CIRCLECI") catch null) |_| {
         return try Providers.circleci(allocator);
+    }
+
+    // Check for Jenkins
+    if (std.process.getEnvVarOwned(allocator, "JENKINS_HOME") catch null) |_| {
+        return try Providers.jenkins(allocator);
+    }
+
+    // Check for Travis CI
+    if (std.process.getEnvVarOwned(allocator, "TRAVIS") catch null) |_| {
+        return try Providers.travis(allocator);
     }
 
     return null;

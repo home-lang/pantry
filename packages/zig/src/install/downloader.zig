@@ -325,11 +325,12 @@ pub fn buildPackageUrl(
     }
 
     // If version is just a major version like "22", try with .0.0
-    const full_version = if (std.mem.indexOf(u8, clean_version, ".") == null)
+    const needs_full_version = std.mem.indexOf(u8, clean_version, ".") == null;
+    const full_version = if (needs_full_version)
         try std.fmt.allocPrint(allocator, "{s}.0.0", .{clean_version})
     else
-        try allocator.dupe(u8, clean_version);
-    defer if (std.mem.indexOf(u8, clean_version, ".") == null) allocator.free(full_version);
+        clean_version;
+    defer if (needs_full_version) allocator.free(full_version);
 
     return std.fmt.allocPrint(
         allocator,

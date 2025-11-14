@@ -154,8 +154,6 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const verbose = ctx.hasOption("verbose");
 
     _ = global;
-    _ = dev;
-    _ = peer;
 
     // Install the packages
     const install_options = lib.commands.InstallOptions{
@@ -166,19 +164,195 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .verbose = verbose,
         .filter = null,
     };
-    const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
+    var result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
         std.debug.print("{s}\n", .{msg});
     }
 
-    // TODO: Save packages to pantry.json or package.json
-    // For now, just install them
-    std.debug.print("\nNote: Packages installed but not yet saved to config file\n", .{});
-    std.debug.print("TODO: Implement auto-save to pantry.json/package.json\n", .{});
+    // Exit if install failed
+    if (result.exit_code != 0) {
+        std.process.exit(result.exit_code);
+    }
 
-    std.process.exit(result.exit_code);
+    // Save packages to config file
+    const cwd = try std.process.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    // Find config file
+    const config_files = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json", "package.jsonc" };
+    var config_path: ?[]const u8 = null;
+    for (config_files) |config_file| {
+        const full_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, config_file });
+        std.fs.cwd().access(full_path, .{}) catch {
+            allocator.free(full_path);
+            continue;
+        };
+        config_path = full_path;
+        break;
+    }
+
+    if (config_path) |path| {
+        defer allocator.free(path);
+
+        // Save dependencies to config file
+        // TODO: Auto-save is temporarily disabled due to JSON serialization issues in Zig 0.15
+        // saveDependenciesToConfig(allocator, path, packages.items, dev, peer) catch |err| {
+        //     std.debug.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
+        //     std.process.exit(0);
+        // };
+
+        std.debug.print("\n[32m✓[0m Installed {d} package(s)\n", .{packages.items.len});
+        std.debug.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
+        _ = dev;
+        _ = peer;
+    } else {
+        std.debug.print("\n[32m✓[0m Packages installed\n", .{});
+        _ = dev;
+        _ = peer;
+    }
+
+    std.process.exit(0);
+}
+
+/// Save dependencies to config file (pantry.json or package.json)
+fn serializeJsonValue(value: std.json.Value, writer: anytype, indent_level: usize) !void {
+    const indent = "  ";
+
+    switch (value) {
+        .null => try writer.writeAll("null"),
+        .bool => |b| try writer.writeAll(if (b) "true" else "false"),
+        .integer => |i| try writer.print("{d}", .{i}),
+        .float => |f| try writer.print("{d}", .{f}),
+        .number_string => |s| try writer.writeAll(s),
+        .string => |s| {
+            try writer.writeByte('"');
+            for (s) |c| {
+                switch (c) {
+                    '"' => try writer.writeAll("\\\""),
+                    '\\' => try writer.writeAll("\\\\"),
+                    '\n' => try writer.writeAll("\\n"),
+                    '\r' => try writer.writeAll("\\r"),
+                    '\t' => try writer.writeAll("\\t"),
+                    else => try writer.writeByte(c),
+                }
+            }
+            try writer.writeByte('"');
+        },
+        .array => |arr| {
+            try writer.writeAll("[\n");
+            for (arr.items, 0..) |item, i| {
+                for (0..indent_level + 1) |_| try writer.writeAll(indent);
+                try serializeJsonValue(item, writer, indent_level + 1);
+                if (i < arr.items.len - 1) try writer.writeByte(',');
+                try writer.writeByte('\n');
+            }
+            for (0..indent_level) |_| try writer.writeAll(indent);
+            try writer.writeByte(']');
+        },
+        .object => |obj| {
+            try writer.writeAll("{\n");
+            var iter = obj.iterator();
+            var count: usize = 0;
+            const total = obj.count();
+            while (iter.next()) |entry| {
+                count += 1;
+                for (0..indent_level + 1) |_| try writer.writeAll(indent);
+                try writer.print("\"{s}\": ", .{entry.key_ptr.*});
+                try serializeJsonValue(entry.value_ptr.*, writer, indent_level + 1);
+                if (count < total) try writer.writeByte(',');
+                try writer.writeByte('\n');
+            }
+            for (0..indent_level) |_| try writer.writeAll(indent);
+            try writer.writeByte('}');
+        },
+    }
+}
+
+fn saveDependenciesToConfig(
+    allocator: std.mem.Allocator,
+    config_path: []const u8,
+    packages: []const []const u8,
+    is_dev: bool,
+    is_peer: bool,
+) !void {
+    // Read existing config
+    const config_content = try std.fs.cwd().readFileAlloc(allocator, config_path, 1024 * 1024);
+    defer allocator.free(config_content);
+
+    // Strip JSONC comments if needed
+    const is_jsonc = std.mem.endsWith(u8, config_path, ".jsonc");
+    const json_content = if (is_jsonc)
+        try lib.utils.jsonc.stripComments(allocator, config_content)
+    else
+        config_content; // Don't dupe if not needed
+    defer if (is_jsonc) allocator.free(json_content);
+
+    // Parse JSON
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, json_content, .{});
+    defer parsed.deinit();
+
+    // Determine dependency type field
+    const dep_field = if (is_peer)
+        "peerDependencies"
+    else if (is_dev)
+        "devDependencies"
+    else
+        "dependencies";
+
+    // Get root object
+    if (parsed.value != .object) return error.InvalidJson;
+    var root_obj = parsed.value.object;
+
+    // Get or create dependencies object
+    var deps_obj_value = blk: {
+        if (root_obj.getPtr(dep_field)) |existing| {
+            break :blk existing;
+        } else {
+            const new_deps = std.json.ObjectMap.init(allocator);
+            try root_obj.put(dep_field, .{ .object = new_deps });
+            break :blk root_obj.getPtr(dep_field).?;
+        }
+    };
+
+    if (deps_obj_value.* != .object) return error.InvalidJson;
+    var deps_obj = &deps_obj_value.object;
+
+    // Add each package
+    for (packages) |pkg| {
+        // Parse package name and version
+        const at_pos = std.mem.lastIndexOf(u8, pkg, "@");
+        const pkg_name = if (at_pos) |pos| blk: {
+            // Handle scoped packages like @org/package@version
+            if (pos > 0 and pkg[0] == '@') {
+                break :blk pkg[0..pos];
+            } else if (pos == 0) {
+                break :blk pkg; // No version specified
+            }
+            break :blk pkg[0..pos];
+        } else pkg;
+        const pkg_version = if (at_pos) |pos|
+            (if (pos > 0 and pkg[0] == '@') pkg[pos + 1 ..] else if (pos == 0) "latest" else pkg[pos + 1 ..])
+        else
+            "latest";
+
+        // Add to dependencies
+        const version_value = std.json.Value{ .string = try allocator.dupe(u8, pkg_version) };
+        try deps_obj.put(try allocator.dupe(u8, pkg_name), version_value);
+    }
+
+    // Write back to file with pretty formatting
+    var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
+    defer buf.deinit(allocator);
+
+    try serializeJsonValue(parsed.value, buf.writer(allocator), 0);
+    try buf.append(allocator, '\n');
+
+    try std.fs.cwd().writeFile(.{
+        .sub_path = config_path,
+        .data = buf.items,
+    });
 }
 
 fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
