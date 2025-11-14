@@ -329,11 +329,12 @@ pub const Installer = struct {
         const repo = spec.repo.?;
 
         // Determine install location
+        // For project installations, don't include version in path to match build expectations
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry_modules/{s}/{s}",
-                .{ project_root, spec.name, spec.version },
+                "{s}/pantry_modules/{s}",
+                .{ project_root, spec.name },
             );
         } else blk: {
             break :blk try std.fmt.allocPrint(
@@ -413,14 +414,24 @@ pub const Installer = struct {
             return error.GitCloneFailed;
         }
 
-        // Create parent directory
-        const parent_dir = std.fs.path.dirname(install_dir);
-        if (parent_dir) |dir| {
-            try std.fs.cwd().makePath(dir);
-        }
+        // Create install directory
+        try std.fs.cwd().makePath(install_dir);
 
-        // Move from temp to final location
-        try std.fs.cwd().rename(temp_dir, install_dir);
+        // Move contents from temp to final location
+        // Git clone creates a directory, so we need to move the contents
+        var temp_dir_handle = try std.fs.cwd().openDir(temp_dir, .{ .iterate = true });
+        defer temp_dir_handle.close();
+
+        var iter = temp_dir_handle.iterate();
+        while (try iter.next()) |entry| {
+            const src_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ temp_dir, entry.name });
+            defer self.allocator.free(src_path);
+
+            const dest_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ install_dir, entry.name });
+            defer self.allocator.free(dest_path);
+
+            try std.fs.cwd().rename(src_path, dest_path);
+        }
 
         // Create project symlinks if installing to project
         if (options.project_root) |project_root| {

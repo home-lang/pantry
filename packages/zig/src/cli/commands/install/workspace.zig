@@ -263,8 +263,21 @@ pub fn installWorkspaceCommandWithOptions(
         };
 
         // Create package spec, parsing GitHub URLs if needed
-        const spec = if (pkg_source == .github) blk: {
-            // Parse GitHub URL to extract repo info
+        const spec = if (pkg_source == .github and dep.github_ref != null) blk: {
+            // Use already-parsed GitHub ref from dependency
+            const gh_ref = dep.github_ref.?;
+
+            const repo_str = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ gh_ref.owner, gh_ref.repo });
+            errdefer allocator.free(repo_str);
+
+            break :blk lib.packages.PackageSpec{
+                .name = dep.name,
+                .version = gh_ref.ref,
+                .source = .github,
+                .repo = repo_str,
+            };
+        } else if (pkg_source == .github) blk: {
+            // Fallback: try parsing GitHub URL from version string
             const gh_ref = try parser.parseGitHubUrl(allocator, dep.version) orelse {
                 const red = "\x1b[31m";
                 std.debug.print("{s}✗{s} {s}@{s} {s}(invalid GitHub URL){s}\n", .{ red, reset, dep.name, dep.version, dim, reset });

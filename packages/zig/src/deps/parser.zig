@@ -697,21 +697,30 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
             var tag: ?[]const u8 = null;
             var branch: ?[]const u8 = null;
             var global = false;
+            var parsed_github_ref: ?GitHubRef = null;
 
             // Handle simplified npm-style syntax: "package": "version"
             if (pkg_spec == .string) {
                 version = pkg_spec.string;
 
-                // Auto-detect source from package name
-                const detection = SourceDetection.fromPackageName(pkg_name);
-                source = detection.source;
+                // First, check if the version string itself is a GitHub URL
+                if (try parseGitHubUrl(allocator, version)) |github_ref| {
+                    source = "github";
+                    repo = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ github_ref.owner, github_ref.repo });
+                    version = github_ref.ref;
+                    parsed_github_ref = github_ref;
+                } else {
+                    // Auto-detect source from package name
+                    const detection = SourceDetection.fromPackageName(pkg_name);
+                    source = detection.source;
 
-                // Set detected metadata
-                if (detection.repo) |r| {
-                    repo = r;
-                }
-                if (detection.url) |u| {
-                    url = u;
+                    // Set detected metadata
+                    if (detection.repo) |r| {
+                        repo = r;
+                    }
+                    if (detection.url) |u| {
+                        url = u;
+                    }
                 }
             }
             // Handle explicit object format: "package": { ... }
@@ -766,10 +775,22 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
                 break :blk try std.fmt.allocPrint(allocator, "auto:{s}", .{pkg_name});
             };
 
+            // Determine the dependency source
+            const dep_source: DependencySource = if (std.mem.eql(u8, source, "github"))
+                .github
+            else if (std.mem.eql(u8, source, "git"))
+                .git
+            else if (std.mem.eql(u8, source, "url") or std.mem.eql(u8, source, "http"))
+                .url
+            else
+                .registry;
+
             try deps.append(allocator, .{
                 .name = full_name,
                 .version = try allocator.dupe(u8, version),
                 .global = global,
+                .source = dep_source,
+                .github_ref = parsed_github_ref,
             });
         }
     }

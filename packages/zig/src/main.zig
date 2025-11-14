@@ -131,6 +131,56 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic package arguments
+    var packages = std.ArrayList([]const u8){};
+    defer packages.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |pkg| : (i += 1) {
+        try packages.append(allocator, pkg);
+    }
+
+    if (packages.items.len == 0) {
+        std.debug.print("Error: No packages specified. Usage: pantry add <package>[@version] ...\n", .{});
+        std.process.exit(1);
+    }
+
+    const global = ctx.hasOption("global");
+    const dev = ctx.hasOption("dev");
+    const peer = ctx.hasOption("peer");
+    const verbose = ctx.hasOption("verbose");
+
+    _ = global;
+    _ = dev;
+    _ = peer;
+
+    // Install the packages
+    const install_options = lib.commands.InstallOptions{
+        .production = false,
+        .dev_only = false,
+        .include_peer = false,
+        .ignore_scripts = false,
+        .verbose = verbose,
+        .filter = null,
+    };
+    const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    // TODO: Save packages to pantry.json or package.json
+    // For now, just install them
+    std.debug.print("\nNote: Packages installed but not yet saved to config file\n", .{});
+    std.debug.print("TODO: Implement auto-save to pantry.json/package.json\n", .{});
+
+    std.process.exit(result.exit_code);
+}
+
 fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -855,6 +905,35 @@ pub fn main() !void {
 
     _ = install_cmd.setAction(installAction);
     _ = try root.addCommand(install_cmd);
+
+    // ========================================================================
+    // Add Command
+    // ========================================================================
+    var add_cmd = try cli.BaseCommand.init(allocator, "add", "Add and install packages");
+
+    const add_packages_arg = cli.Argument.init("packages", "Packages to add", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try add_cmd.addArgument(add_packages_arg);
+
+    const add_global_opt = cli.Option.init("global", "global", "Add globally", .bool)
+        .withShort('g');
+    _ = try add_cmd.addOption(add_global_opt);
+
+    const add_dev_opt = cli.Option.init("dev", "dev", "Add to devDependencies", .bool)
+        .withShort('D');
+    _ = try add_cmd.addOption(add_dev_opt);
+
+    const add_peer_opt = cli.Option.init("peer", "peer", "Add to peerDependencies", .bool)
+        .withShort('P');
+    _ = try add_cmd.addOption(add_peer_opt);
+
+    const add_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try add_cmd.addOption(add_verbose_opt);
+
+    _ = add_cmd.setAction(addAction);
+    _ = try root.addCommand(add_cmd);
 
     // ========================================================================
     // Remove Command

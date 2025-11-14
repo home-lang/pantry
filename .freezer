@@ -1,30 +1,22 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1762104767",
+  "generatedAt": "1763105581",
   "packages": {
-    "zig-bump@~/Code/zig-bump": {
-      "name": "zig-bump",
-      "version": "~/Code/zig-bump",
-      "source": "local",
-      "url": "~/Code/zig-bump"
+    "zig-test-framework@github:zig-utils/zig-test-framework": {
+      "name": "zig-test-framework",
+      "version": "github:zig-utils/zig-test-framework",
+      "source": "github"
     },
-    "ziglang.org@0.15.1": {
-      "name": "ziglang.org",
-      "version": "0.15.1",
-      "source": "pkgx"
-    },
-    "zig-config@~/Code/zig-config": {
+    "zig-config@github:zig-utils/zig-config": {
       "name": "zig-config",
-      "version": "~/Code/zig-config",
-      "source": "local",
-      "url": "~/Code/zig-config"
+      "version": "github:zig-utils/zig-config",
+      "source": "github"
     },
-    "zig-cli@~/Code/zig-cli": {
+    "zig-cli@github:zig-utils/zig-cli": {
       "name": "zig-cli",
-      "version": "~/Code/zig-cli",
-      "source": "local",
-      "url": "~/Code/zig-cli"
+      "version": "github:zig-utils/zig-cli",
+      "source": "github"
     }
   }
 }
