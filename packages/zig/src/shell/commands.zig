@@ -103,14 +103,14 @@ pub const ShellCommands = struct {
 
     /// shell:activate - Detect project, install dependencies, output shell code
     /// Returns: Shell code to eval (exports, PATH modifications)
-    /// Performance target: < 50ms (cache miss)
+    /// Performance target: < 50ms (cache hit), < 300ms (cache miss with install)
     pub fn activate(self: *ShellCommands, pwd: []const u8) ![]const u8 {
         const start = std.time.nanoTimestamp();
         defer {
             const elapsed = std.time.nanoTimestamp() - start;
             const elapsed_ms = @divFloor(elapsed, std.time.ns_per_ms);
             if (elapsed_ms > 50) {
-                std.debug.print("! shell:activate took {d}ms (> 50ms target)\n", .{elapsed_ms});
+                std.debug.print("⏱️  shell:activate took {d}ms\n", .{elapsed_ms});
             }
         }
 
@@ -124,7 +124,33 @@ pub const ShellCommands = struct {
         const dep_file = try self.findDependencyFile(project_root);
         defer if (dep_file) |file| self.allocator.free(file);
 
-        // 3. Compute environment hash
+        // 3. Fast-path: Check cache first (1-hour TTL)
+        const cache_ttl_seconds: i64 = 3600; // 1 hour
+        const now = std.time.timestamp();
+
+        const project_hash_quick = lib.string.md5Hash(project_root);
+        if (try self.env_cache.get(project_hash_quick)) |cached_entry| {
+            const cache_age = now - cached_entry.last_validated;
+
+            // Check if cache is still valid (within TTL)
+            if (cache_age < cache_ttl_seconds) {
+                // Verify dep file hasn't changed
+                const current_dep_mtime = if (dep_file) |file| blk: {
+                    const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
+                    defer f.close();
+                    const stat = f.stat() catch break :blk 0;
+                    break :blk @divFloor(stat.mtime, std.time.ns_per_s);
+                } else 0;
+
+                // Cache hit: dep file unchanged within TTL
+                if (current_dep_mtime == cached_entry.dep_mtime) {
+                    return try self.generateShellCode(project_root, cached_entry.path);
+                }
+            }
+        }
+
+        // Cache miss or invalidated - proceed with full activation
+        // 4. Compute environment hash
         const project_hash = lib.string.md5Hash(project_root);
         const project_hash_hex = try lib.string.hashToHex(project_hash, self.allocator);
         defer self.allocator.free(project_hash_hex);
@@ -177,9 +203,112 @@ pub const ShellCommands = struct {
         };
 
         if (!env_exists and dep_file != null) {
-            // 6. Install dependencies (stub for now)
-            // In production, this would call the installer
-            std.debug.print("Would install dependencies from {s} to {s}\n", .{ dep_file.?, env_dir });
+            // 6. Install dependencies with progress feedback
+            std.debug.print("🔧 Setting up environment for {s}...\n", .{project_basename});
+
+            // Parse dependency file to detect version changes
+            const dep_file_content = std.fs.cwd().readFileAlloc(
+                self.allocator,
+                dep_file.?,
+                10 * 1024 * 1024, // 10MB max
+            ) catch {
+                std.debug.print("⚠️  Could not read {s}\n", .{dep_file.?});
+                return try self.allocator.dupe(u8, "");
+            };
+            defer self.allocator.free(dep_file_content);
+
+            std.debug.print("📦 Installing dependencies from {s}\n", .{std.fs.path.basename(dep_file.?)});
+
+            // Create env directory
+            std.fs.cwd().makePath(env_dir) catch |err| {
+                std.debug.print("❌ Failed to create environment: {s}\n", .{@errorName(err)});
+                return try self.allocator.dupe(u8, "");
+            };
+
+            // Actually install dependencies
+            const install_cmd = @import("../cli/commands/install/core.zig");
+            const install_types = @import("../cli/commands/install/types.zig");
+
+            // Change to project directory temporarily
+            const original_cwd = try std.process.getCwdAlloc(self.allocator);
+            defer self.allocator.free(original_cwd);
+
+            std.os.chdir(project_root) catch |err| {
+                std.debug.print("❌ Failed to change to project directory: {s}\n", .{@errorName(err)});
+                return try self.allocator.dupe(u8, "");
+            };
+            defer std.os.chdir(original_cwd) catch {};
+
+            // Run install command (no args = auto-detect from dep file)
+            var install_result = install_cmd.installCommandWithOptions(
+                self.allocator,
+                &[_][]const u8{},
+                install_types.InstallOptions{},
+            ) catch |err| {
+                std.debug.print("❌ Installation failed: {s}\n", .{@errorName(err)});
+                return try self.allocator.dupe(u8, "");
+            };
+            defer install_result.deinit(self.allocator);
+
+            if (install_result.exit_code != 0) {
+                if (install_result.message) |msg| {
+                    std.debug.print("❌ {s}\n", .{msg});
+                }
+                return try self.allocator.dupe(u8, "");
+            }
+
+            std.debug.print("✅ Environment ready: {s}\n", .{env_name});
+        } else if (env_exists and dep_file != null) {
+            // Environment exists but dep file may have changed
+            // Check if we need to update (only when cache was invalidated)
+            const current_dep_mtime = blk: {
+                const f = std.fs.cwd().openFile(dep_file.?, .{}) catch break :blk 0;
+                defer f.close();
+                const stat = f.stat() catch break :blk 0;
+                break :blk @divFloor(stat.mtime, std.time.ns_per_s);
+            };
+
+            // Check if dep file was modified recently (cache was invalidated)
+            if (try self.env_cache.get(project_hash_quick)) |cached| {
+                if (current_dep_mtime != cached.dep_mtime) {
+                    std.debug.print("🔄 Dependencies changed, updating environment...\n", .{});
+                    std.debug.print("📦 Processing updates from {s}\n", .{std.fs.path.basename(dep_file.?)});
+
+                    // Actually re-install dependencies
+                    const install_cmd = @import("../cli/commands/install/core.zig");
+                    const install_types = @import("../cli/commands/install/types.zig");
+
+                    // Change to project directory temporarily
+                    const original_cwd = try std.process.getCwdAlloc(self.allocator);
+                    defer self.allocator.free(original_cwd);
+
+                    std.os.chdir(project_root) catch |err| {
+                        std.debug.print("❌ Failed to change to project directory: {s}\n", .{@errorName(err)});
+                        return try self.allocator.dupe(u8, "");
+                    };
+                    defer std.os.chdir(original_cwd) catch {};
+
+                    // Run install command (no args = auto-detect from dep file)
+                    var install_result = install_cmd.installCommandWithOptions(
+                        self.allocator,
+                        &[_][]const u8{},
+                        install_types.InstallOptions{},
+                    ) catch |err| {
+                        std.debug.print("❌ Update failed: {s}\n", .{@errorName(err)});
+                        return try self.allocator.dupe(u8, "");
+                    };
+                    defer install_result.deinit(self.allocator);
+
+                    if (install_result.exit_code != 0) {
+                        if (install_result.message) |msg| {
+                            std.debug.print("❌ {s}\n", .{msg});
+                        }
+                        return try self.allocator.dupe(u8, "");
+                    }
+
+                    std.debug.print("✅ Environment updated\n", .{});
+                }
+            }
         }
 
         // 7. Update cache
@@ -206,6 +335,17 @@ pub const ShellCommands = struct {
         try self.env_cache.put(entry);
 
         // 8. Generate shell code for activation
+        return try self.generateShellCode(project_root, env_dir);
+    }
+
+    /// Generate shell code for environment activation
+    fn generateShellCode(self: *ShellCommands, project_root: []const u8, env_dir: []const u8) ![]const u8 {
+        const env_bin = try std.fs.path.join(self.allocator, &[_][]const u8{
+            env_dir,
+            "bin",
+        });
+        defer self.allocator.free(env_bin);
+
         // Check if pantry_modules/.bin exists in the project
         const pantry_modules_bin = try std.fmt.allocPrint(
             self.allocator,
