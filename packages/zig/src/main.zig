@@ -197,20 +197,16 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
         defer allocator.free(path);
 
         // Save dependencies to config file
-        // TODO: Auto-save is temporarily disabled due to JSON serialization issues in Zig 0.15
-        // saveDependenciesToConfig(allocator, path, packages.items, dev, peer) catch |err| {
-        //     std.debug.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
-        //     std.process.exit(0);
-        // };
+        saveDependenciesToConfig(allocator, path, packages.items, dev, peer) catch |err| {
+            std.debug.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
+            std.debug.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
+            std.process.exit(0);
+        };
 
-        std.debug.print("\n[32m✓[0m Installed {d} package(s)\n", .{packages.items.len});
-        std.debug.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
-        _ = dev;
-        _ = peer;
+        std.debug.print("\n[32m✓[0m Installed and saved {d} package(s) to {s}\n", .{ packages.items.len, std.fs.path.basename(path) });
     } else {
         std.debug.print("\n[32m✓[0m Packages installed\n", .{});
-        _ = dev;
-        _ = peer;
+        // No config file, so dev and peer flags are not used
     }
 
     std.process.exit(0);
@@ -343,10 +339,11 @@ fn saveDependenciesToConfig(
     }
 
     // Write back to file with pretty formatting
-    var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
+    var buf = std.ArrayList(u8){};
     defer buf.deinit(allocator);
 
-    try serializeJsonValue(parsed.value, buf.writer(allocator), 0);
+    const writer = buf.writer(allocator);
+    try serializeJsonValue(parsed.value, writer, 0);
     try buf.append(allocator, '\n');
 
     try std.fs.cwd().writeFile(.{

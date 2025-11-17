@@ -202,12 +202,186 @@ pub const NpmRegistry = struct {
         metadata: *const core.PackageMetadata,
         tarball_path: []const u8,
     ) !void {
-        _ = self;
-        _ = allocator;
-        _ = metadata;
-        _ = tarball_path;
-        // TODO: Implement npm publish
-        return error.NotImplemented;
+        // Read tarball file
+        const tarball_data = try std.fs.cwd().readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024);
+        defer allocator.free(tarball_data);
+
+        // Base64 encode the tarball
+        const base64_encoder = std.base64.standard.Encoder;
+        const encoded_len = base64_encoder.calcSize(tarball_data.len);
+        const encoded_tarball = try allocator.alloc(u8, encoded_len);
+        defer allocator.free(encoded_tarball);
+        _ = base64_encoder.encode(encoded_tarball, tarball_data);
+
+        // Build npm publish payload
+        // Format: https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#publishing
+        var payload = std.json.ObjectMap.init(allocator);
+        defer payload.deinit();
+
+        // Package name and version
+        try payload.put("_id", .{ .string = metadata.name });
+        try payload.put("name", .{ .string = metadata.name });
+        try payload.put("version", .{ .string = metadata.version });
+
+        // Optional fields
+        if (metadata.description) |desc| {
+            try payload.put("description", .{ .string = desc });
+        }
+        if (metadata.homepage) |home| {
+            try payload.put("homepage", .{ .string = home });
+        }
+        if (metadata.license) |lic| {
+            try payload.put("license", .{ .string = lic });
+        }
+        if (metadata.repository) |repo| {
+            var repo_obj = std.json.ObjectMap.init(allocator);
+            try repo_obj.put("type", .{ .string = "git" });
+            try repo_obj.put("url", .{ .string = repo });
+            try payload.put("repository", .{ .object = repo_obj });
+        }
+
+        // Dependencies
+        if (metadata.dependencies) |deps| {
+            var deps_obj = std.json.ObjectMap.init(allocator);
+            var it = deps.iterator();
+            while (it.next()) |entry| {
+                try deps_obj.put(entry.key_ptr.*, .{ .string = entry.value_ptr.* });
+            }
+            try payload.put("dependencies", .{ .object = deps_obj });
+        }
+
+        // Dev dependencies
+        if (metadata.dev_dependencies) |devDeps| {
+            var dev_deps_obj = std.json.ObjectMap.init(allocator);
+            var it = devDeps.iterator();
+            while (it.next()) |entry| {
+                try dev_deps_obj.put(entry.key_ptr.*, .{ .string = entry.value_ptr.* });
+            }
+            try payload.put("devDependencies", .{ .object = dev_deps_obj });
+        }
+
+        // Add _attachments with the tarball
+        var attachments = std.json.ObjectMap.init(allocator);
+        const tarball_filename = try std.fmt.allocPrint(allocator, "{s}-{s}.tgz", .{ metadata.name, metadata.version });
+        defer allocator.free(tarball_filename);
+
+        var attachment = std.json.ObjectMap.init(allocator);
+        try attachment.put("content_type", .{ .string = "application/octet-stream" });
+        try attachment.put("data", .{ .string = encoded_tarball });
+        try attachment.put("length", .{ .integer = @intCast(tarball_data.len) });
+
+        try attachments.put(tarball_filename, .{ .object = attachment });
+        try payload.put("_attachments", .{ .object = attachments });
+
+        // Add dist-tags
+        var dist_tags = std.json.ObjectMap.init(allocator);
+        try dist_tags.put("latest", .{ .string = metadata.version });
+        try payload.put("dist-tags", .{ .object = dist_tags });
+
+        // Versions object
+        var versions = std.json.ObjectMap.init(allocator);
+        var version_obj = std.json.ObjectMap.init(allocator);
+        try version_obj.put("name", .{ .string = metadata.name });
+        try version_obj.put("version", .{ .string = metadata.version });
+        if (metadata.description) |desc| {
+            try version_obj.put("description", .{ .string = desc });
+        }
+
+        // Add dist info to version object
+        var dist = std.json.ObjectMap.init(allocator);
+        const shasum = if (metadata.checksum) |cs| cs else ""; // Should calculate if not provided
+        try dist.put("shasum", .{ .string = shasum });
+        try dist.put("tarball", .{ .string = tarball_filename });
+        try version_obj.put("dist", .{ .object = dist });
+
+        try versions.put(metadata.version, .{ .object = version_obj });
+        try payload.put("versions", .{ .object = versions });
+
+        // Serialize to JSON
+        var json_buf = std.ArrayList(u8){};
+        defer json_buf.deinit(allocator);
+        try std.json.stringify(payload, .{}, json_buf.writer(allocator));
+
+        // Build URL for publishing
+        const url = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ self.config.url, metadata.name });
+        defer allocator.free(url);
+
+        const uri = try std.Uri.parse(url);
+
+        // Prepare headers
+        var headers_buf: [8]http.Header = undefined;
+        var headers_count: usize = 0;
+
+        // Content-Type
+        headers_buf[headers_count] = .{ .name = "Content-Type", .value = "application/json" };
+        headers_count += 1;
+
+        // Authorization
+        switch (self.config.auth) {
+            .bearer => |token| {
+                const auth_value = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+                defer allocator.free(auth_value);
+                headers_buf[headers_count] = .{ .name = "Authorization", .value = auth_value };
+                headers_count += 1;
+            },
+            .oidc => |token| {
+                const auth_value = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+                defer allocator.free(auth_value);
+                headers_buf[headers_count] = .{ .name = "Authorization", .value = auth_value };
+                headers_count += 1;
+            },
+            .basic => |creds| {
+                const auth_str = try std.fmt.allocPrint(allocator, "{s}:{s}", .{ creds.username, creds.password });
+                defer allocator.free(auth_str);
+
+                const base64_size = std.base64.standard.Encoder.calcSize(auth_str.len);
+                const auth_encoded = try allocator.alloc(u8, base64_size);
+                defer allocator.free(auth_encoded);
+                _ = std.base64.standard.Encoder.encode(auth_encoded, auth_str);
+
+                const auth_value = try std.fmt.allocPrint(allocator, "Basic {s}", .{auth_encoded});
+                defer allocator.free(auth_value);
+                headers_buf[headers_count] = .{ .name = "Authorization", .value = auth_value };
+                headers_count += 1;
+            },
+            else => {
+                return error.AuthenticationRequired;
+            },
+        }
+
+        // Make PUT request
+        var req = try self.http_client.request(.PUT, uri, .{
+            .extra_headers = headers_buf[0..headers_count],
+        });
+        defer req.deinit();
+
+        req.transfer_encoding = .{ .content_length = json_buf.items.len };
+        try req.send(.{});
+        try req.writer().writeAll(json_buf.items);
+        try req.finish();
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        // Check response status
+        switch (response.head.status) {
+            .ok, .created => {
+                // Success
+                return;
+            },
+            .unauthorized => return error.Unauthorized,
+            .forbidden => return error.Forbidden,
+            .conflict => return error.PackageAlreadyExists,
+            else => {
+                // Read error response for debugging
+                const body_reader = response.reader(&.{});
+                const error_body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(10 * 1024)) catch "";
+                defer allocator.free(error_body);
+
+                std.debug.print("Publish failed with status {}: {s}\n", .{ response.head.status, error_body });
+                return error.PublishFailed;
+            },
+        }
     }
 
     /// Create registry interface

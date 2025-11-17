@@ -2855,7 +2855,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Read-only mirror of file CVS repository, updated every half hour. NOTE: do not make pull requests here, nor comment any commits, submit them usual way to bug tracker or to the mailing list. Maintainer(s) are not tracking  this git mirror.",
     .homepage_url = "https://darwinsys.com/file/",
     .programs = &[_][]const u8{"file"},
-    .dependencies = &[_][]const u8{"zlib.net^1 #FIXME this is actually an optional dep"},
+    .dependencies = &[_][]const u8{}, // zlib is optional, not required
     .build_dependencies = &[_][]const u8{"gnu.org/patch"},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "5.46.0", "5.45.0", "5.43.0" },
@@ -8205,7 +8205,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Toolkit for image loading and pixel buffer manipulation",
     .homepage_url = "https://gtk.org",
     .programs = &[_][]const u8{ "gdk-pixbuf-csource", "gdk-pixbuf-pixdata", "gdk-pixbuf-query-loaders", "gdk-pixbuf-thumbnailer" },
-    .dependencies = &[_][]const u8{ "ijg.org^9.6 # needs fixed major; sadly this includes the character > v9f", "gnome.org/glib@2", "libpng.org@1", "freedesktop.org/shared-mime-info^2 #FIXME only on Linux" },
+    .dependencies = &[_][]const u8{ "ijg.org^9", "gnome.org/glib@2", "libpng.org@1", "freedesktop.org/shared-mime-info^2" },
     .build_dependencies = &[_][]const u8{ "mesonbuild.com@1", "python.org@>=3<3.12" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "2.44.4", "2.44.3", "2.44.2", "2.44.1", "2.44.0", "2.43.5", "2.43.3", "2.43.2", "2.42.9", "2.42.8" },

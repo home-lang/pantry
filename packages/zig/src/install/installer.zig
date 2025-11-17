@@ -194,11 +194,14 @@ pub const Installer = struct {
             self.installing_stack.remove(install_key);
         }
 
+        // Track whether we used cache
+        var used_cache = false;
+
         // Determine install location based on whether we have a project root
         const install_path = if (options.project_root) |project_root|
-            try self.installToProject(resolved_spec, domain, project_root, options)
+            try self.installToProject(resolved_spec, domain, project_root, options, &used_cache)
         else
-            try self.installGlobal(resolved_spec, domain, options);
+            try self.installGlobal(resolved_spec, domain, options, &used_cache);
 
         // Install dependencies after the main package is installed
         if (pkg_info) |info| {
@@ -211,7 +214,7 @@ pub const Installer = struct {
             .name = try self.allocator.dupe(u8, resolved_spec.name),
             .version = try self.allocator.dupe(u8, resolved_spec.version),
             .install_path = install_path,
-            .from_cache = false, // TODO: track cache hits properly
+            .from_cache = used_cache,
             .install_time_ms = @intCast(end_time - start_time),
         };
     }
@@ -455,6 +458,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         domain: []const u8,
         options: InstallOptions,
+        used_cache: *bool,
     ) ![]const u8 {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
@@ -464,6 +468,8 @@ pub const Installer = struct {
             check_dir.close();
             break :blk true;
         };
+
+        used_cache.* = from_cache;
 
         const install_path = if (from_cache) blk: {
             // Use cached package (from global location)
@@ -495,6 +501,7 @@ pub const Installer = struct {
         domain: []const u8,
         project_root: []const u8,
         options: InstallOptions,
+        used_cache: *bool,
     ) ![]const u8 {
         const project_pkg_dir = try self.getProjectPackageDir(project_root, domain, spec.version);
         errdefer self.allocator.free(project_pkg_dir);
@@ -508,6 +515,7 @@ pub const Installer = struct {
 
         if (already_installed) {
             // Already in pantry_modules - create symlinks and return
+            used_cache.* = true;
             try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
             return project_pkg_dir;
         }
@@ -524,6 +532,7 @@ pub const Installer = struct {
         if (global_dir) |*dir| {
             dir.close();
             // Copy from global cache to project's pantry_modules
+            used_cache.* = true;
             try std.fs.cwd().makePath(project_pkg_dir);
             try self.copyDirectoryStructure(global_pkg_dir, project_pkg_dir);
             try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
@@ -531,6 +540,7 @@ pub const Installer = struct {
         }
 
         // Not in global cache - download directly to project's pantry_modules
+        used_cache.* = false;
         try self.downloadAndInstallToProject(spec, domain, project_pkg_dir, options);
         try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
 

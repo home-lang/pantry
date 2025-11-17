@@ -313,11 +313,86 @@ pub const PackageCache = struct {
             .total_size = total_size,
         };
     }
+
+    /// Smart cleanup: remove old/unused packages while keeping frequently accessed ones
+    /// Returns number of packages removed and bytes freed
+    pub fn cleanUnused(self: *PackageCache, max_age_days: u32, keep_recent_count: usize) !CleanupStats {
+        self.lock.lock();
+        defer self.lock.unlock();
+
+        const now = std.time.timestamp();
+        const max_age_seconds = @as(i64, max_age_days) * 24 * 60 * 60;
+
+        // Build list of all packages with their metadata
+        var packages = try std.ArrayList(struct {
+            key: []const u8,
+            last_accessed: i64,
+            downloaded_at: i64,
+            size: usize,
+            age_seconds: i64,
+        }).initCapacity(self.allocator, self.metadata.count());
+        defer packages.deinit(self.allocator);
+
+        var entry_it = self.metadata.iterator();
+        while (entry_it.next()) |entry| {
+            const age = now - entry.value_ptr.last_accessed;
+            try packages.append(self.allocator, .{
+                .key = entry.key_ptr.*,
+                .last_accessed = entry.value_ptr.last_accessed,
+                .downloaded_at = entry.value_ptr.downloaded_at,
+                .size = entry.value_ptr.size,
+                .age_seconds = age,
+            });
+        }
+
+        // Sort by last_accessed (most recent first)
+        std.mem.sort(@TypeOf(packages.items[0]), packages.items, {}, struct {
+            fn lessThan(_: void, a: @TypeOf(packages.items[0]), b: @TypeOf(packages.items[0])) bool {
+                return a.last_accessed > b.last_accessed;
+            }
+        }.lessThan);
+
+        var removed_count: usize = 0;
+        var freed_bytes: usize = 0;
+
+        // Keep the N most recently accessed packages
+        for (packages.items, 0..) |pkg, i| {
+            // Skip the most recently used packages
+            if (i < keep_recent_count) {
+                continue;
+            }
+
+            // Remove packages older than max_age_days
+            if (pkg.age_seconds > max_age_seconds) {
+                if (self.metadata.fetchRemove(pkg.key)) |kv| {
+                    // Delete cached file
+                    std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+
+                    removed_count += 1;
+                    freed_bytes += pkg.size;
+
+                    self.allocator.free(kv.key);
+                    var meta = kv.value;
+                    meta.deinit(self.allocator);
+                }
+            }
+        }
+
+        return .{
+            .packages_removed = removed_count,
+            .bytes_freed = freed_bytes,
+        };
+    }
 };
 
 pub const CacheStats = struct {
     total_packages: usize,
     total_size: usize,
+};
+
+pub const CleanupStats = struct {
+    packages_removed: usize,
+    bytes_freed: usize,
 };
 
 test "PackageCache basic operations" {

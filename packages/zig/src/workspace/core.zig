@@ -419,18 +419,81 @@ pub const Workspace = struct {
     }
 
     fn discoverPattern(self: *Workspace, pattern: []const u8) !void {
-        // Simple glob matching for now
-        // TODO: Implement full glob pattern matching
-
         // Check if pattern contains wildcards
-        if (std.mem.indexOf(u8, pattern, "*")) |_| {
-            // Handle wildcard patterns
+        if (std.mem.indexOfAny(u8, pattern, "*?")) |_| {
+            // Handle wildcard patterns with recursive discovery
+            try self.discoverGlobPattern(pattern);
+        } else {
+            // Direct path
+            const pkg = try WorkspacePackage.fromDirectory(
+                self.allocator,
+                self.config.root,
+                pattern,
+            );
+            try self.packages.append(pkg);
+        }
+    }
+
+    /// Match a glob pattern against a path
+    fn matchGlob(pattern: []const u8, path: []const u8) bool {
+        var p_idx: usize = 0;
+        var s_idx: usize = 0;
+        var star_idx: ?usize = null;
+        var match_idx: usize = 0;
+
+        while (s_idx < path.len) {
+            if (p_idx < pattern.len) {
+                const p_char = pattern[p_idx];
+                const s_char = path[s_idx];
+
+                if (p_char == '*') {
+                    // Wildcard: remember position
+                    star_idx = p_idx;
+                    match_idx = s_idx;
+                    p_idx += 1;
+                    continue;
+                } else if (p_char == '?' or p_char == s_char) {
+                    // Single char wildcard or exact match
+                    p_idx += 1;
+                    s_idx += 1;
+                    continue;
+                }
+            }
+
+            // Mismatch: backtrack to last wildcard if any
+            if (star_idx) |star| {
+                p_idx = star + 1;
+                match_idx += 1;
+                s_idx = match_idx;
+            } else {
+                return false;
+            }
+        }
+
+        // Consume any trailing wildcards in pattern
+        while (p_idx < pattern.len and pattern[p_idx] == '*') {
+            p_idx += 1;
+        }
+
+        return p_idx == pattern.len;
+    }
+
+    /// Recursively discover packages matching a glob pattern
+    fn discoverGlobPattern(self: *Workspace, pattern: []const u8) !void {
+        // Split pattern into segments
+        const has_double_star = std.mem.indexOf(u8, pattern, "**") != null;
+
+        if (has_double_star) {
+            // ** means recursive directory search
+            try self.discoverGlobRecursive(".", pattern);
+        } else {
+            // Single * means match within current directory level
             const dir_path = blk: {
                 // Get directory part before wildcard
                 var last_slash: usize = 0;
                 for (pattern, 0..) |c, i| {
                     if (c == '/') last_slash = i;
-                    if (c == '*') break;
+                    if (c == '*' or c == '?') break;
                 }
 
                 if (last_slash > 0) {
@@ -449,13 +512,68 @@ pub const Workspace = struct {
             var it = dir.iterate();
             while (try it.next()) |entry| {
                 if (entry.kind == .directory) {
-                    const rel_path = try std.fmt.allocPrint(
-                        self.allocator,
-                        "{s}/{s}",
-                        .{ dir_path, entry.name },
-                    );
+                    const rel_path = if (std.mem.eql(u8, dir_path, "."))
+                        try self.allocator.dupe(u8, entry.name)
+                    else
+                        try std.fmt.allocPrint(
+                            self.allocator,
+                            "{s}/{s}",
+                            .{ dir_path, entry.name },
+                        );
                     defer self.allocator.free(rel_path);
 
+                    // Check if path matches pattern
+                    if (matchGlob(pattern, rel_path)) {
+                        // Check if pantry.json exists
+                        const config_path = try std.fmt.allocPrint(
+                            self.allocator,
+                            "{s}/{s}/pantry.json",
+                            .{ self.config.root, rel_path },
+                        );
+                        defer self.allocator.free(config_path);
+
+                        std.fs.cwd().access(config_path, .{}) catch continue;
+
+                        const pkg = try WorkspacePackage.fromDirectory(
+                            self.allocator,
+                            self.config.root,
+                            rel_path,
+                        );
+                        try self.packages.append(pkg);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Recursively discover packages with ** patterns
+    fn discoverGlobRecursive(self: *Workspace, base_path: []const u8, pattern: []const u8) !void {
+        const full_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ self.config.root, base_path });
+        defer self.allocator.free(full_dir);
+
+        var dir = std.fs.cwd().openDir(full_dir, .{ .iterate = true }) catch return;
+        defer dir.close();
+
+        var it = dir.iterate();
+        while (try it.next()) |entry| {
+            if (entry.kind == .directory) {
+                // Skip hidden directories and node_modules
+                if (entry.name[0] == '.' or std.mem.eql(u8, entry.name, "node_modules")) {
+                    continue;
+                }
+
+                const rel_path = if (std.mem.eql(u8, base_path, "."))
+                    try self.allocator.dupe(u8, entry.name)
+                else
+                    try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}/{s}",
+                        .{ base_path, entry.name },
+                    );
+                defer self.allocator.free(rel_path);
+
+                // Check if path matches pattern
+                if (matchGlob(pattern, rel_path)) {
                     // Check if pantry.json exists
                     const config_path = try std.fmt.allocPrint(
                         self.allocator,
@@ -464,24 +582,19 @@ pub const Workspace = struct {
                     );
                     defer self.allocator.free(config_path);
 
-                    std.fs.cwd().access(config_path, .{}) catch continue;
-
-                    const pkg = try WorkspacePackage.fromDirectory(
-                        self.allocator,
-                        self.config.root,
-                        rel_path,
-                    );
-                    try self.packages.append(pkg);
+                    if (std.fs.cwd().access(config_path, .{})) {
+                        const pkg = try WorkspacePackage.fromDirectory(
+                            self.allocator,
+                            self.config.root,
+                            rel_path,
+                        );
+                        try self.packages.append(pkg);
+                    } else |_| {}
                 }
+
+                // Recurse into subdirectory
+                try self.discoverGlobRecursive(rel_path, pattern);
             }
-        } else {
-            // Direct path
-            const pkg = try WorkspacePackage.fromDirectory(
-                self.allocator,
-                self.config.root,
-                pattern,
-            );
-            try self.packages.append(pkg);
         }
     }
 
