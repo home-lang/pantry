@@ -76,11 +76,31 @@ pub const ServiceController = struct {
         };
     }
 
-    /// Start a service
+    /// Start a service (load and start)
     pub fn start(self: *ServiceController, service_name: []const u8) !void {
         switch (self.platform) {
             .macos => try self.launchdStart(service_name),
             .linux => try self.systemdStart(service_name),
+            .windows => return error.UnsupportedPlatform,
+            .unknown => return error.UnsupportedPlatform,
+        }
+    }
+
+    /// Enable a service (auto-start on boot)
+    pub fn enable(self: *ServiceController, service_name: []const u8) !void {
+        switch (self.platform) {
+            .macos => {}, // launchd handles this via RunAtLoad in plist
+            .linux => try self.systemdEnable(service_name),
+            .windows => return error.UnsupportedPlatform,
+            .unknown => return error.UnsupportedPlatform,
+        }
+    }
+
+    /// Disable a service (don't auto-start on boot)
+    pub fn disable(self: *ServiceController, service_name: []const u8) !void {
+        switch (self.platform) {
+            .macos => {}, // launchd handles this via plist modification
+            .linux => try self.systemdDisable(service_name),
             .windows => return error.UnsupportedPlatform,
             .unknown => return error.UnsupportedPlatform,
         }
@@ -172,10 +192,13 @@ pub const ServiceController = struct {
         const label = try self.getLaunchdLabel(service_name);
         defer self.allocator.free(label);
 
+        const service_dir = try self.platform.userServiceDirectory(self.allocator);
+        defer self.allocator.free(service_dir);
+
         return try std.fmt.allocPrint(
             self.allocator,
-            "/Library/LaunchDaemons/{s}.plist",
-            .{label},
+            "{s}/{s}.plist",
+            .{ service_dir, label },
         );
     }
 
@@ -195,7 +218,8 @@ pub const ServiceController = struct {
         const service_unit = try self.getSystemdUnit(service_name);
         defer self.allocator.free(service_unit);
 
-        const argv = [_][]const u8{ "systemctl", "start", service_unit };
+        // Use --user flag for user services
+        const argv = [_][]const u8{ "systemctl", "--user", "start", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
         const result = try child.spawnAndWait();
 
@@ -208,7 +232,7 @@ pub const ServiceController = struct {
         const service_unit = try self.getSystemdUnit(service_name);
         defer self.allocator.free(service_unit);
 
-        const argv = [_][]const u8{ "systemctl", "stop", service_unit };
+        const argv = [_][]const u8{ "systemctl", "--user", "stop", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
         const result = try child.spawnAndWait();
 
@@ -217,11 +241,37 @@ pub const ServiceController = struct {
         }
     }
 
+    fn systemdEnable(self: *ServiceController, service_name: []const u8) !void {
+        const service_unit = try self.getSystemdUnit(service_name);
+        defer self.allocator.free(service_unit);
+
+        const argv = [_][]const u8{ "systemctl", "--user", "enable", service_unit };
+        var child = std.process.Child.init(&argv, self.allocator);
+        const result = try child.spawnAndWait();
+
+        if (result != .Exited or result.Exited != 0) {
+            return error.ServiceEnableFailed;
+        }
+    }
+
+    fn systemdDisable(self: *ServiceController, service_name: []const u8) !void {
+        const service_unit = try self.getSystemdUnit(service_name);
+        defer self.allocator.free(service_unit);
+
+        const argv = [_][]const u8{ "systemctl", "--user", "disable", service_unit };
+        var child = std.process.Child.init(&argv, self.allocator);
+        const result = try child.spawnAndWait();
+
+        if (result != .Exited or result.Exited != 0) {
+            return error.ServiceDisableFailed;
+        }
+    }
+
     fn systemdStatus(self: *ServiceController, service_name: []const u8) !definitions.ServiceStatus {
         const service_unit = try self.getSystemdUnit(service_name);
         defer self.allocator.free(service_unit);
 
-        const argv = [_][]const u8{ "systemctl", "is-active", service_unit };
+        const argv = [_][]const u8{ "systemctl", "--user", "is-active", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
         child.stdout_behavior = .Pipe;
         child.stderr_behavior = .Pipe;
@@ -232,13 +282,13 @@ pub const ServiceController = struct {
         const n = try child.stdout.?.readAll(&stdout_buf);
         _ = try child.wait();
 
-        const output = stdout_buf[0..n];
+        const output = std.mem.trim(u8, stdout_buf[0..n], &std.ascii.whitespace);
 
-        if (std.mem.startsWith(u8, output, "active")) {
+        if (std.mem.eql(u8, output, "active")) {
             return .running;
-        } else if (std.mem.startsWith(u8, output, "inactive")) {
+        } else if (std.mem.eql(u8, output, "inactive")) {
             return .stopped;
-        } else if (std.mem.startsWith(u8, output, "failed")) {
+        } else if (std.mem.eql(u8, output, "failed")) {
             return .failed;
         }
 

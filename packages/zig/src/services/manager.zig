@@ -122,10 +122,18 @@ pub const ServiceManager = struct {
         );
         defer self.allocator.free(label);
 
+        // Use user LaunchAgents directory instead of system LaunchDaemons
+        const plat = platform.Platform.detect();
+        const service_dir = try plat.userServiceDirectory(self.allocator);
+        defer self.allocator.free(service_dir);
+
+        // Ensure directory exists
+        try std.fs.cwd().makePath(service_dir);
+
         const plist_path = try std.fmt.allocPrint(
             self.allocator,
-            "/Library/LaunchDaemons/{s}.plist",
-            .{label},
+            "{s}/{s}.plist",
+            .{ service_dir, label },
         );
         defer self.allocator.free(plist_path);
 
@@ -193,10 +201,18 @@ pub const ServiceManager = struct {
         );
         defer self.allocator.free(unit_name);
 
+        // Use user systemd directory instead of system
+        const plat = platform.Platform.detect();
+        const service_dir = try plat.userServiceDirectory(self.allocator);
+        defer self.allocator.free(service_dir);
+
+        // Ensure directory exists
+        try std.fs.cwd().makePath(service_dir);
+
         const unit_path = try std.fmt.allocPrint(
             self.allocator,
-            "/etc/systemd/system/{s}",
-            .{unit_name},
+            "{s}/{s}",
+            .{ service_dir, unit_name },
         );
         defer self.allocator.free(unit_path);
 
