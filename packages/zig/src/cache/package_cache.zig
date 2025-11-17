@@ -20,8 +20,10 @@ pub const PackageMetadata = struct {
     downloaded_at: i64,
     /// Last accessed timestamp (for LRU)
     last_accessed: i64,
-    /// File size in bytes
+    /// File size in bytes (compressed)
     size: usize,
+    /// Uncompressed size in bytes (when extracted)
+    uncompressed_size: usize,
     /// Cached file path
     cache_path: []const u8,
 
@@ -178,6 +180,11 @@ pub const PackageCache = struct {
         errdefer self.allocator.free(key);
 
         const now = std.time.timestamp();
+
+        // Estimate uncompressed size (for gzipped tarballs, typically 3-5x compression)
+        // This is a heuristic - exact size would require extraction
+        const estimated_uncompressed = estimateUncompressedSize(data);
+
         const metadata = PackageMetadata{
             .name = try self.allocator.dupe(u8, name),
             .version = try self.allocator.dupe(u8, version),
@@ -186,6 +193,7 @@ pub const PackageCache = struct {
             .downloaded_at = now,
             .last_accessed = now,
             .size = data.len,
+            .uncompressed_size = estimated_uncompressed,
             .cache_path = cache_path,
         };
 
@@ -394,6 +402,22 @@ pub const CleanupStats = struct {
     packages_removed: usize,
     bytes_freed: usize,
 };
+
+/// Estimate uncompressed size from compressed tarball data
+/// This is a heuristic since we can't know the exact size without extraction
+fn estimateUncompressedSize(data: []const u8) usize {
+    // Check if it's a gzipped tarball (magic bytes: 1f 8b)
+    const is_gzipped = data.len >= 2 and data[0] == 0x1f and data[1] == 0x8b;
+
+    if (is_gzipped) {
+        // For gzipped tarballs, typical compression ratio is 3-5x
+        // We use a conservative 3.5x multiplier
+        return data.len * 7 / 2; // 3.5x
+    }
+
+    // For non-compressed or unknown format, assume minimal compression
+    return data.len * 2;
+}
 
 test "PackageCache basic operations" {
     const allocator = std.testing.allocator;

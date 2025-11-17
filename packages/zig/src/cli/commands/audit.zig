@@ -250,17 +250,315 @@ fn checkSecurityScanner(
 
     const scanner_name = scanner.string;
 
-    // TODO: Run the scanner module
-    // For now, just acknowledge the scanner is configured
-    const msg = try std.fmt.allocPrint(
+    // Get scanner severity level (default to warn)
+    const severity_str = if (security_config.object.get("severity")) |sev|
+        if (sev == .string) sev.string else "warn"
+    else
+        "warn";
+
+    const severity = ScannerSeverity.fromString(severity_str) orelse .warn;
+
+    // Run the configured scanner module
+    const result = runSecurityScanner(allocator, scanner_name, severity) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Failed to run security scanner '{s}': {s}",
+            .{ scanner_name, @errorName(err) },
+        );
+        return .{
+            .exit_code = 1,
+            .message = msg,
+        };
+    };
+
+    return result;
+}
+
+/// Run the configured security scanner module
+fn runSecurityScanner(
+    allocator: std.mem.Allocator,
+    scanner_name: []const u8,
+    severity: ScannerSeverity,
+) !CommandResult {
+    // Get current working directory
+    const cwd = try std.process.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    // Try to find the scanner in node_modules
+    const scanner_path = try std.fmt.allocPrint(
         allocator,
-        "Security scanner '{s}' configured but not yet implemented",
-        .{scanner_name},
+        "{s}/node_modules/{s}",
+        .{ cwd, scanner_name },
     );
+    defer allocator.free(scanner_path);
+
+    // Check if scanner exists
+    std.fs.cwd().access(scanner_path, .{}) catch {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Security scanner '{s}' not found. Install it with: pantry install {s}",
+            .{ scanner_name, scanner_name },
+        );
+        return .{
+            .exit_code = 1,
+            .message = msg,
+        };
+    };
+
+    // Determine scanner binary path
+    const bin_path = try std.fmt.allocPrint(
+        allocator,
+        "{s}/node_modules/.bin/{s}",
+        .{ cwd, scanner_name },
+    );
+    defer allocator.free(bin_path);
+
+    // Execute the scanner
+    var child = std.process.Child.init(
+        &[_][]const u8{ bin_path, "." },
+        allocator,
+    );
+    child.stdout_behavior = .Pipe;
+    child.stderr_behavior = .Pipe;
+
+    try child.spawn();
+
+    // Read scanner output
+    var stdout = std.ArrayList(u8){};
+    defer stdout.deinit(allocator);
+
+    var stderr = std.ArrayList(u8){};
+    defer stderr.deinit(allocator);
+
+    // Read all stdout
+    const stdout_data = try child.stdout.?.readToEndAlloc(allocator, 1024 * 1024); // 1MB limit
+    defer allocator.free(stdout_data);
+    try stdout.appendSlice(allocator, stdout_data);
+
+    // Read all stderr
+    const stderr_data = try child.stderr.?.readToEndAlloc(allocator, 1024 * 1024);
+    defer allocator.free(stderr_data);
+    try stderr.appendSlice(allocator, stderr_data);
+
+    const term = try child.wait();
+
+    // Parse scanner results
+    var issues = std.ArrayList(ScannerIssue){};
+    defer {
+        for (issues.items) |*issue| {
+            issue.deinit(allocator);
+        }
+        issues.deinit(allocator);
+    }
+
+    // Try to parse JSON output (most security scanners output JSON)
+    if (stdout.items.len > 0) {
+        parseScannerOutput(allocator, stdout.items, &issues) catch {
+            // If parsing fails, just report raw output
+            const msg = try std.fmt.allocPrint(
+                allocator,
+                "Scanner '{s}' output:\n{s}",
+                .{ scanner_name, stdout.items },
+            );
+            return .{
+                .exit_code = switch (term) {
+                    .Exited => |code| code,
+                    else => 1,
+                },
+                .message = msg,
+            };
+        };
+    }
+
+    // Filter issues by severity
+    var filtered_issues = std.ArrayList(ScannerIssue){};
+    defer filtered_issues.deinit(allocator);
+
+    for (issues.items) |issue| {
+        if (severity == .fatal and issue.severity == .warn) {
+            continue;
+        }
+        try filtered_issues.append(allocator, issue);
+    }
+
+    // Generate report
+    return generateScannerReport(allocator, scanner_name, filtered_issues.items, term);
+}
+
+/// Parse scanner output (expects JSON format)
+fn parseScannerOutput(
+    allocator: std.mem.Allocator,
+    output: []const u8,
+    issues: *std.ArrayList(ScannerIssue),
+) !void {
+    // Try to parse as JSON
+    const parsed = std.json.parseFromSlice(
+        std.json.Value,
+        allocator,
+        output,
+        .{},
+    ) catch return error.InvalidScannerOutput;
+    defer parsed.deinit();
+
+    const root = parsed.value;
+
+    // Support common scanner output formats
+    // Format 1: { "issues": [...] }
+    if (root.object.get("issues")) |issues_value| {
+        if (issues_value == .array) {
+            for (issues_value.array.items) |issue_value| {
+                if (issue_value != .object) continue;
+
+                const issue = try parseScannerIssue(allocator, issue_value.object);
+                try issues.append(allocator, issue);
+            }
+        }
+    }
+
+    // Format 2: { "vulnerabilities": [...] }
+    if (root.object.get("vulnerabilities")) |vulns_value| {
+        if (vulns_value == .array) {
+            for (vulns_value.array.items) |vuln_value| {
+                if (vuln_value != .object) continue;
+
+                const issue = try parseScannerVulnerability(allocator, vuln_value.object);
+                try issues.append(allocator, issue);
+            }
+        }
+    }
+}
+
+/// Parse a single scanner issue
+fn parseScannerIssue(allocator: std.mem.Allocator, obj: std.json.ObjectMap) !ScannerIssue {
+    const package_name = if (obj.get("package")) |pkg|
+        if (pkg == .string) try allocator.dupe(u8, pkg.string) else try allocator.dupe(u8, "unknown")
+    else
+        try allocator.dupe(u8, "unknown");
+
+    const message = if (obj.get("message")) |msg|
+        if (msg == .string) try allocator.dupe(u8, msg.string) else try allocator.dupe(u8, "No description")
+    else
+        try allocator.dupe(u8, "No description");
+
+    const severity_str = if (obj.get("severity")) |sev|
+        if (sev == .string) sev.string else "warn"
+    else
+        "warn";
+
+    const severity = ScannerSeverity.fromString(severity_str) orelse .warn;
+
+    const details = if (obj.get("details")) |det|
+        if (det == .string) try allocator.dupe(u8, det.string) else null
+    else
+        null;
+
+    return ScannerIssue{
+        .severity = severity,
+        .package_name = package_name,
+        .message = message,
+        .details = details,
+    };
+}
+
+/// Parse a vulnerability as scanner issue
+fn parseScannerVulnerability(allocator: std.mem.Allocator, obj: std.json.ObjectMap) !ScannerIssue {
+    const package_name = if (obj.get("name") orelse obj.get("package")) |pkg|
+        if (pkg == .string) try allocator.dupe(u8, pkg.string) else try allocator.dupe(u8, "unknown")
+    else
+        try allocator.dupe(u8, "unknown");
+
+    const title = if (obj.get("title")) |t|
+        if (t == .string) t.string else "Security vulnerability"
+    else
+        "Security vulnerability";
+
+    const severity_str = if (obj.get("severity")) |sev|
+        if (sev == .string) sev.string else "warn"
+    else
+        "warn";
+
+    // Map vulnerability severity to scanner severity
+    const severity: ScannerSeverity = if (std.mem.eql(u8, severity_str, "critical") or
+        std.mem.eql(u8, severity_str, "high"))
+        .fatal
+    else
+        .warn;
+
+    const message = try allocator.dupe(u8, title);
+
+    const details = if (obj.get("url")) |url|
+        if (url == .string) try allocator.dupe(u8, url.string) else null
+    else
+        null;
+
+    return ScannerIssue{
+        .severity = severity,
+        .package_name = package_name,
+        .message = message,
+        .details = details,
+    };
+}
+
+/// Generate scanner report
+fn generateScannerReport(
+    allocator: std.mem.Allocator,
+    scanner_name: []const u8,
+    issues: []const ScannerIssue,
+    term_status: std.process.Child.Term,
+) !CommandResult {
+    if (issues.len == 0) {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Security scanner '{s}' found no issues",
+            .{scanner_name},
+        );
+        return .{
+            .exit_code = 0,
+            .message = msg,
+        };
+    }
+
+    var output = std.ArrayList(u8){};
+    defer output.deinit(allocator);
+
+    const writer = output.writer(allocator);
+
+    try writer.print("\nSecurity scanner '{s}' found {d} issue(s):\n\n", .{ scanner_name, issues.len });
+
+    var fatal_count: usize = 0;
+    var warn_count: usize = 0;
+
+    for (issues) |issue| {
+        const severity_str = switch (issue.severity) {
+            .fatal => "FATAL",
+            .warn => "WARN",
+        };
+
+        if (issue.severity == .fatal) {
+            fatal_count += 1;
+        } else {
+            warn_count += 1;
+        }
+
+        try writer.print("[{s}] {s}: {s}\n", .{ severity_str, issue.package_name, issue.message });
+        if (issue.details) |details| {
+            try writer.print("  {s}\n", .{details});
+        }
+    }
+
+    try writer.print("\nSummary: {d} fatal, {d} warnings\n", .{ fatal_count, warn_count });
+
+    const message = try output.toOwnedSlice(allocator);
+    const exit_code: u8 = if (fatal_count > 0)
+        1
+    else switch (term_status) {
+        .Exited => |code| code,
+        else => 1,
+    };
 
     return .{
-        .exit_code = 0,
-        .message = msg,
+        .exit_code = exit_code,
+        .message = message,
     };
 }
 

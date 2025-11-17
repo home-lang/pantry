@@ -127,7 +127,7 @@ test "Default ports" {
     try std.testing.expect(definitions.Services.getDefaultPort("postgresql").? == 5432);
     try std.testing.expect(definitions.Services.getDefaultPort("redis").? == 6379);
     try std.testing.expect(definitions.Services.getDefaultPort("mysql").? == 3306);
-    try std.testing.expect(definitions.Services.getDefaultPort("nginx").? == 80);
+    try std.testing.expect(definitions.Services.getDefaultPort("nginx").? == 8080);
     try std.testing.expect(definitions.Services.getDefaultPort("mongodb").? == 27017);
     try std.testing.expect(definitions.Services.getDefaultPort("unknown") == null);
 }
@@ -624,10 +624,10 @@ test "Default ports for all services" {
     try std.testing.expect(mysql_port != null);
     try std.testing.expect(mysql_port.? == 3306);
 
-    // Nginx
+    // Nginx (using 8080 to avoid requiring root)
     const nginx_port = definitions.Services.getDefaultPort("nginx");
     try std.testing.expect(nginx_port != null);
-    try std.testing.expect(nginx_port.? == 80);
+    try std.testing.expect(nginx_port.? == 8080);
 
     // MongoDB
     const mongo_port = definitions.Services.getDefaultPort("mongodb");

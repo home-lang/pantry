@@ -143,12 +143,106 @@ pub const CustomRegistry = struct {
         metadata: *const core.PackageMetadata,
         tarball_path: []const u8,
     ) !void {
-        _ = self;
-        _ = allocator;
-        _ = metadata;
-        _ = tarball_path;
-        // TODO: Implement multipart/form-data upload
-        return error.NotImplemented;
+        // Read tarball file
+        const tarball_data = try std.fs.cwd().readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024); // 100MB max
+        defer allocator.free(tarball_data);
+
+        // Generate multipart boundary
+        const boundary = "----PantryFormBoundary";
+
+        // Build multipart/form-data body
+        var body = std.ArrayList(u8){};
+        defer body.deinit(allocator);
+
+        const writer = body.writer(allocator);
+
+        // Add metadata field
+        try writer.print("--{s}\r\n", .{boundary});
+        try writer.print("Content-Disposition: form-data; name=\"metadata\"\r\n", .{});
+        try writer.print("Content-Type: application/json\r\n\r\n", .{});
+
+        // Serialize metadata to JSON
+        var metadata_json = std.ArrayList(u8){};
+        defer metadata_json.deinit(allocator);
+        const json_writer = metadata_json.writer(allocator);
+
+        try json_writer.print("{{", .{});
+        try json_writer.print("\"name\":\"{s}\",", .{metadata.name});
+        try json_writer.print("\"version\":\"{s}\"", .{metadata.version});
+        if (metadata.description) |desc| {
+            try json_writer.print(",\"description\":\"{s}\"", .{desc});
+        }
+        try json_writer.print("}}", .{});
+
+        try writer.print("{s}\r\n", .{metadata_json.items});
+
+        // Add tarball file field
+        try writer.print("--{s}\r\n", .{boundary});
+        try writer.print("Content-Disposition: form-data; name=\"tarball\"; filename=\"{s}-{s}.tgz\"\r\n", .{ metadata.name, metadata.version });
+        try writer.print("Content-Type: application/gzip\r\n\r\n", .{});
+        try writer.writeAll(tarball_data);
+        try writer.print("\r\n", .{});
+
+        // End boundary
+        try writer.print("--{s}--\r\n", .{boundary});
+
+        const multipart_body = try body.toOwnedSlice(allocator);
+        defer allocator.free(multipart_body);
+
+        // Construct publish URL
+        const publish_url = try std.fmt.allocPrint(
+            allocator,
+            "{s}/publish",
+            .{self.registry_url},
+        );
+        defer allocator.free(publish_url);
+
+        // Make request with multipart content type
+        const uri = try std.Uri.parse(publish_url);
+
+        var headers_buf: [4]http.Header = undefined;
+        var headers_count: usize = 0;
+
+        const content_type = try std.fmt.allocPrint(
+            allocator,
+            "multipart/form-data; boundary={s}",
+            .{boundary},
+        );
+        defer allocator.free(content_type);
+
+        headers_buf[headers_count] = .{ .name = "Content-Type", .value = content_type };
+        headers_count += 1;
+
+        if (self.auth_token) |token| {
+            const auth_header = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+            defer allocator.free(auth_header);
+            headers_buf[headers_count] = .{ .name = "Authorization", .value = auth_header };
+            headers_count += 1;
+        }
+
+        var client = http.Client{ .allocator = allocator };
+        defer client.deinit();
+
+        var request_headers = http.Headers.init(allocator);
+        defer request_headers.deinit();
+
+        for (headers_buf[0..headers_count]) |header| {
+            try request_headers.append(header.name, header.value);
+        }
+
+        var req = try client.open(.POST, uri, request_headers, .{});
+        defer req.deinit();
+
+        req.transfer_encoding = .{ .content_length = multipart_body.len };
+        try req.send(.{});
+        try req.writeAll(multipart_body);
+        try req.finish();
+
+        try req.wait();
+
+        if (req.response.status != .ok and req.response.status != .created) {
+            return error.PublishFailed;
+        }
     }
 
     /// Make HTTP request with authentication

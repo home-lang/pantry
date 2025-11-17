@@ -200,6 +200,24 @@ pub fn extractMetadata(
         }
     }
 
+    // Extract dependencies
+    var dependencies: ?std.StringHashMap([]const u8) = null;
+    if (root.object.get("dependencies")) |deps_val| {
+        if (deps_val == .object) {
+            var deps_map = std.StringHashMap([]const u8).init(allocator);
+            var it = deps_val.object.iterator();
+            while (it.next()) |entry| {
+                const dep_name = try allocator.dupe(u8, entry.key_ptr.*);
+                const dep_version = if (entry.value_ptr.* == .string)
+                    try allocator.dupe(u8, entry.value_ptr.string)
+                else
+                    try allocator.dupe(u8, "*");
+                try deps_map.put(dep_name, dep_version);
+            }
+            dependencies = deps_map;
+        }
+    }
+
     // Extract publishConfig
     var publish_config: ?PublishConfig = null;
     if (root.object.get("publishConfig")) |pc_val| {
@@ -236,7 +254,7 @@ pub fn extractMetadata(
         .repository = repository,
         .homepage = homepage,
         .keywords = keywords,
-        .dependencies = null, // TODO: Extract if needed
+        .dependencies = dependencies,
         .publish_config = publish_config,
     };
 }

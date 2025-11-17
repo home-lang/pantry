@@ -433,7 +433,7 @@ pub const OptimizedCache = struct {
         var it = self.base.metadata.valueIterator();
         while (it.next()) |meta| {
             total_size += meta.size;
-            uncompressed_size += meta.size; // TODO: Track uncompressed size separately
+            uncompressed_size += meta.uncompressed_size;
 
             if (meta.downloaded_at < oldest) oldest = meta.downloaded_at;
             if (meta.downloaded_at > newest) newest = meta.downloaded_at;

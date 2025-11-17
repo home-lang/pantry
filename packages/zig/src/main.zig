@@ -621,13 +621,13 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const dry_run = ctx.hasOption("dry-run");
     const access_val = ctx.getOption("access") orelse "public";
     const tag = ctx.getOption("tag") orelse "latest";
-    const registry = ctx.getOption("registry");
+    const registry_val = ctx.getOption("registry") orelse "https://registry.npmjs.org";
 
-    _ = registry; // TODO: Add registry support to PublishOptions
     const options = lib.commands.PublishOptions{
         .dry_run = dry_run,
         .access = access_val,
         .tag = tag,
+        .registry = registry_val,
     };
 
     const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, options);

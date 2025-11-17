@@ -56,9 +56,10 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation. Se
   - [x] `env:remove` command
   - [x] `shell:integrate` command
 
-- [ ] Phase 8: Service Management (Future)
-  - [ ] Service definitions
-  - [ ] launchd/systemd integration
+- [x] **Phase 8: Service Management** ✅
+  - [x] Service definitions (31 services)
+  - [x] launchd/systemd integration
+  - [x] Service commands (start, stop, restart, status, enable, disable)
 
 ## Quick Start
 
@@ -198,6 +199,32 @@ zig build test
 # Specific test file
 zig test test/core_test.zig
 ```
+
+### Build Optimizations
+
+The default debug build produces an 8.9MB binary. For production use, you can significantly reduce binary size:
+
+```bash
+# Optimized for size (3.2MB - 64% reduction)
+zig build -Doptimize=ReleaseSmall -Dstrip=true
+
+# Optimized for speed
+zig build -Doptimize=ReleaseFast
+
+# Debug build (default)
+zig build
+```
+
+**Build options:**
+- `-Doptimize=ReleaseSmall` - Optimize for binary size
+- `-Doptimize=ReleaseFast` - Optimize for performance
+- `-Dstrip=true` - Strip debug symbols
+- ~~`-Dsingle-threaded=true`~~ - Not compatible (requires threads for parallel execution)
+
+**Binary size comparison:**
+- Debug: 8.9MB (default)
+- ReleaseSmall + strip: 3.2MB (64% reduction)
+- ReleaseFast: ~4.5MB
 
 ### Benchmarking
 

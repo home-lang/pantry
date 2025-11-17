@@ -19,6 +19,12 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Option to strip debug symbols for smaller binaries
+    const strip = b.option(bool, "strip", "Strip debug symbols") orelse false;
+
+    // Single-threaded mode for smaller binary (optional, off by default)
+    const single_threaded = b.option(bool, "single-threaded", "Build in single-threaded mode for smaller binary") orelse false;
+
     // Get version from package.json
     const version = getPackageVersion(b) catch "0.1.0";
 
@@ -97,6 +103,8 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "lib", .module = lib_mod },
                 .{ .name = "zig-cli", .module = cli_mod },
             },
+            .strip = strip,
+            .single_threaded = single_threaded,
         }),
     });
     b.installArtifact(exe);
