@@ -2,66 +2,25 @@
   "name": "pantry",
   "version": "1.0.0",
   "description": "Modern dependency manager for system and project environments - Like Homebrew but faster",
-
   "dependencies": {
-    // ============================================
-    // LOCAL DEVELOPMENT PACKAGES (zig-utils)
-    // ============================================
-    // These are linked locally for development
-    // But can also be fetched from GitHub when distributed
-
-    // Local path (for development)
     "zig-config": "~/Code/zig-config",
     "zig-cli": "~/Code/zig-cli",
     "zig-bump": "~/Code/zig-bump",
-
-    // Alternative: GitHub (for production/CI)
-    // "zig-utils/zig-config": "latest",
-    // "zig-utils/zig-cli": "latest",
-    // "zig-utils/zig-bump": "latest",
-
-    // ============================================
-    // SYSTEM DEPENDENCIES
-    // ============================================
-
-    // Bun
     "bun": "1.3.1",
-
-    // Zig compiler
-    "ziglang.org": "0.15.1"
-
-    // ============================================
-    // OPTIONAL: Explicit local link syntax
-    // ============================================
-    // You can also use explicit syntax for local packages:
-
-    // "zig-config-explicit": {
-    //   "source": "local",
-    //   "path": "~/Code/zig-config",
-    //   "version": "local"
-    // }
+    "ziglang.org": "0.15.1",
+    "vitepress": "next"
   },
-
-  // Development dependencies
   "devDependencies": {
-    // Testing tools would go here
   },
-
-  // Link configuration (for `pantry link` command)
   "link": {
-    // Map package names to local paths
     "zig-config": "~/Code/zig-config",
     "zig-cli": "~/Code/zig-cli",
     "zig-bump": "~/Code/zig-bump"
   },
-
-  // Repository information
   "repository": {
     "type": "git",
     "url": "https://github.com/stacksjs/pantry"
   },
-
-  // Build configuration
   "build": {
     "entry": "packages/zig/src/main.zig",
     "output": "packages/zig/zig-out",
@@ -72,8 +31,6 @@
       "x86_64-windows"
     ]
   },
-
-  // Workspace configuration (monorepo)
   "workspaces": [
     "packages/*"
   ]

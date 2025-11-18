@@ -341,6 +341,14 @@ pub fn build(b: *std.Build) void {
     test_all_step.dependOn(&run_config_comprehensive_tests.step);
     test_all_step.dependOn(&run_resolution_tests.step);
 
+    // Coverage report
+    const coverage_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash",
+        "scripts/coverage.sh",
+    });
+    const coverage_step = b.step("coverage", "Generate test coverage report");
+    coverage_step.dependOn(&coverage_cmd.step);
+
     // Benchmarks
     const bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/bench.zig"),

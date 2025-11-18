@@ -5,11 +5,18 @@ pub const validator = @import("install/validator.zig");
 pub const symlink = @import("install/symlink.zig");
 pub const wrapper = @import("install/wrapper.zig");
 pub const rollback = @import("install/rollback.zig");
+pub const runtime = @import("install/runtime.zig");
 
 // Re-export main types
 pub const Installer = installer.Installer;
 pub const InstallOptions = installer.InstallOptions;
 pub const InstallResult = installer.InstallResult;
+
+// Re-export runtime types
+pub const RuntimeInstaller = runtime.RuntimeInstaller;
+pub const RuntimeType = runtime.RuntimeType;
+pub const RuntimeInstallOptions = runtime.RuntimeInstallOptions;
+pub const RuntimeInstallResult = runtime.RuntimeInstallResult;
 
 // Re-export parallel download types
 pub const DownloadTask = parallel.DownloadTask;

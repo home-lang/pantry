@@ -24,6 +24,12 @@ pub const scripts = @import("config/scripts.zig");
 pub const extractScripts = scripts.extractScripts;
 pub const findProjectScripts = scripts.findProjectScripts;
 
+// Service extraction from config
+pub const services = @import("config/services.zig");
+pub const ServiceConfig = services.ServiceConfig;
+pub const extractServices = services.extractServices;
+pub const findProjectServices = services.findProjectServices;
+
 // Re-export core zig-config functions
 pub const loadConfig = zig_config.loadConfig;
 pub const tryLoadConfig = zig_config.tryLoadConfig;
@@ -35,4 +41,5 @@ test {
     std.testing.refAllDecls(loader);
     std.testing.refAllDecls(dependencies);
     std.testing.refAllDecls(scripts);
+    std.testing.refAllDecls(services);
 }

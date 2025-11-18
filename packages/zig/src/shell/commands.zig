@@ -258,6 +258,9 @@ pub const ShellCommands = struct {
             }
 
             std.debug.print("✅ Environment ready: {s}\n", .{env_name});
+
+            // Auto-start services if configured
+            try self.autoStartServices(project_root);
         } else if (env_exists and dep_file != null) {
             // Environment exists but dep file may have changed
             // Check if we need to update (only when cache was invalidated)
@@ -360,30 +363,148 @@ pub const ShellCommands = struct {
             break :blk true;
         };
 
-        // Add both env_bin and pantry_modules/.bin to PATH if it exists
+        // Get runtime paths from ~/.pantry/runtimes
+        const runtime_paths = try self.getRuntimePaths(project_root);
+        defer self.allocator.free(runtime_paths);
+
+        // Build PATH with runtime bins first (highest precedence)
+        var path_components = std.ArrayList([]const u8).init(self.allocator);
+        defer path_components.deinit();
+
+        // 1. Runtime binaries (highest priority)
+        if (runtime_paths.len > 0) {
+            try path_components.append(runtime_paths);
+        }
+
+        // 2. Project-local binaries
         if (has_pantry_modules) {
-            return try std.fmt.allocPrint(
-                self.allocator,
-                \\export PANTRY_CURRENT_PROJECT="{s}"
-                \\export PANTRY_ENV_BIN_PATH="{s}"
-                \\export PANTRY_ENV_DIR="{s}"
-                \\export PANTRY_MODULES_BIN_PATH="{s}"
-                \\PATH="{s}:{s}:$PATH"
-                \\export PATH
-            ,
-                .{ project_root, env_bin, env_dir, pantry_modules_bin, pantry_modules_bin, env_bin },
-            );
-        } else {
-            return try std.fmt.allocPrint(
-                self.allocator,
-                \\export PANTRY_CURRENT_PROJECT="{s}"
-                \\export PANTRY_ENV_BIN_PATH="{s}"
-                \\export PANTRY_ENV_DIR="{s}"
-                \\PATH="{s}:$PATH"
-                \\export PATH
-            ,
-                .{ project_root, env_bin, env_dir, env_bin },
-            );
+            try path_components.append(pantry_modules_bin);
+        }
+
+        // 3. Environment binaries
+        try path_components.append(env_bin);
+
+        // Join all paths
+        const new_path = try std.mem.join(self.allocator, ":", path_components.items);
+        defer self.allocator.free(new_path);
+
+        // Generate shell code
+        return try std.fmt.allocPrint(
+            self.allocator,
+            \\export PANTRY_CURRENT_PROJECT="{s}"
+            \\export PANTRY_ENV_BIN_PATH="{s}"
+            \\export PANTRY_ENV_DIR="{s}"
+            \\PATH="{s}:$PATH"
+            \\export PATH
+        ,
+            .{ project_root, env_bin, env_dir, new_path },
+        );
+    }
+
+    /// Get runtime bin paths for the project
+    fn getRuntimePaths(self: *ShellCommands, project_root: []const u8) ![]const u8 {
+        // Parse dependency file to find runtime dependencies
+        const detector = @import("../deps/detector.zig");
+        const parser = @import("../deps/parser.zig");
+
+        const deps_file = (try detector.findDepsFile(self.allocator, project_root)) orelse {
+            return try self.allocator.dupe(u8, "");
+        };
+        defer {
+            self.allocator.free(deps_file.path);
+            self.allocator.free(deps_file.root_dir);
+        }
+
+        const deps = try parser.inferDependencies(self.allocator, deps_file);
+        defer {
+            for (deps) |*dep| {
+                var d = dep.*;
+                d.deinit(self.allocator);
+            }
+            self.allocator.free(deps);
+        }
+
+        // Find runtime dependencies and build paths
+        var runtime_paths = std.ArrayList([]const u8).init(self.allocator);
+        defer {
+            for (runtime_paths.items) |path| self.allocator.free(path);
+            runtime_paths.deinit();
+        }
+
+        const paths = try lib.core.Paths.init(self.allocator);
+        defer paths.deinit(self.allocator);
+
+        for (deps) |dep| {
+            if (dep.isRuntime()) {
+                // Build path to runtime bin directory
+                const runtime_bin = try std.fs.path.join(self.allocator, &[_][]const u8{
+                    paths.home,
+                    ".pantry",
+                    "runtimes",
+                    dep.name,
+                    dep.version,
+                    "bin",
+                });
+
+                // Check if it exists
+                std.fs.accessAbsolute(runtime_bin, .{}) catch {
+                    self.allocator.free(runtime_bin);
+                    continue;
+                };
+
+                try runtime_paths.append(runtime_bin);
+            }
+        }
+
+        // Join all runtime paths
+        if (runtime_paths.items.len == 0) {
+            return try self.allocator.dupe(u8, "");
+        }
+
+        return try std.mem.join(self.allocator, ":", runtime_paths.items);
+    }
+
+    /// Auto-start services configured in pantry.json
+    fn autoStartServices(self: *ShellCommands, project_root: []const u8) !void {
+        // Load services configuration
+        const services = lib.config.findProjectServices(self.allocator, project_root) catch |err| {
+            // Silently ignore errors - services config is optional
+            _ = err;
+            return;
+        };
+
+        if (services == null) return;
+
+        const services_list = services.?;
+        defer {
+            for (services_list) |*svc| {
+                var s = svc.*;
+                s.deinit(self.allocator);
+            }
+            self.allocator.free(services_list);
+        }
+
+        // Start services that have autoStart: true
+        for (services_list) |svc| {
+            if (!svc.auto_start) continue;
+
+            std.debug.print("🚀 Starting service: {s}...\n", .{svc.name});
+
+            // Use the service commands module to start the service
+            const service_cmd = @import("../cli/commands/services.zig");
+            const result = service_cmd.serviceStartCommand(self.allocator, &[_][]const u8{svc.name}) catch |err| {
+                std.debug.print("⚠️  Failed to start {s}: {s}\n", .{ svc.name, @errorName(err) });
+                continue;
+            };
+            defer result.deinit(self.allocator);
+
+            if (result.exit_code == 0) {
+                std.debug.print("✅ {s} started\n", .{svc.name});
+            } else {
+                if (result.message) |msg| {
+                    std.debug.print("⚠️  {s}\n", .{msg});
+                }
+            }
         }
     }
 

@@ -25,6 +25,38 @@ pub const Platform = enum {
             .windows => "windows",
         };
     }
+
+    /// Get platform name as string (alias for name())
+    pub fn toString(self: Platform) []const u8 {
+        return self.name();
+    }
+
+    /// Get platform name in Node.js format
+    pub fn toNodeString(self: Platform) []const u8 {
+        return switch (self) {
+            .darwin => "darwin",
+            .linux => "linux",
+            .windows => "win",
+        };
+    }
+
+    /// Get platform name in Deno format
+    pub fn toDenoString(self: Platform) []const u8 {
+        return switch (self) {
+            .darwin => "apple-darwin",
+            .linux => "unknown-linux-gnu",
+            .windows => "pc-windows-msvc",
+        };
+    }
+
+    /// Get CPU architecture as string (x64, arm64, etc.)
+    pub fn arch() ![]const u8 {
+        const cpu_arch = Architecture.current();
+        return switch (cpu_arch) {
+            .aarch64 => "arm64",
+            .x86_64 => "x64",
+        };
+    }
 };
 
 /// Supported CPU architectures

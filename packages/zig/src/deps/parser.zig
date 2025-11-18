@@ -43,6 +43,14 @@ pub const PackageDependency = struct {
         }
     }
 
+    /// Check if this dependency is a runtime (bun, node, deno, python)
+    pub fn isRuntime(self: *const PackageDependency) bool {
+        return std.mem.eql(u8, self.name, "bun") or
+            std.mem.eql(u8, self.name, "node") or
+            std.mem.eql(u8, self.name, "deno") or
+            std.mem.eql(u8, self.name, "python");
+    }
+
     pub fn clone(self: PackageDependency, allocator: std.mem.Allocator) !PackageDependency {
         var cloned_github_ref: ?GitHubRef = null;
         if (self.github_ref) |gh_ref| {
