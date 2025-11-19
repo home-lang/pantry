@@ -17,17 +17,21 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation, ac
 - **Custom Registries** - Support for custom npm-compatible registries
 
 ### 📦 Package Management
-- **Multiple Dependency Files** - Supports `pantry.json`, `pantry.jsonc`, `package.json`, `bun.lockb`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
-- **Version Pinning** - Pin exact versions (e.g., `bun: "1.3.0"`) - automatically installs specified version
+- **Native Config Format** - Uses `pantry.json`, `pantry.jsonc`, or `config/deps.ts` (TypeScript config)
+- **Universal Support** - Fallback support for other package managers (Cargo.toml, pyproject.toml, Gemfile, go.mod, composer.json)
+- **Runtime Version Management** - Pin runtime versions (e.g., `"bun": "1.3.0"`) - automatically downloads and activates
+- **Version Pinning** - Pin exact package versions for reproducible builds
 - **Automatic Updates** - Detects version changes in config files and auto-installs/updates
 - **Dependency Resolution** - Smart dependency resolution with conflict detection
-- **Package Publishing** - Publish to npm or custom registries with `publish` command
+- **Package Publishing** - Publish to custom registries with `publish` command
 
 ### 🔧 Service Management
 - **31 Pre-configured Services** - nginx, postgres, redis, mongodb, mysql, and more
+- **Auto-Start from Config** - Services automatically start when entering a project
 - **Multi-Platform** - launchd for macOS, systemd for Linux
 - **Full Lifecycle** - start, stop, restart, status, enable, disable commands
 - **Custom Services** - Define your own services with simple configuration
+- **Health Checks** - Optional health check commands per service
 
 ### 🐚 Shell Integration
 - **Multi-Shell Support** - zsh, bash, fish with automatic detection
@@ -185,7 +189,7 @@ packages/zig/
 **Phase 3: Package Management** ✅
 - Package specification types and metadata structures
 - Installed package tracking
-- Dependency extraction from pantry.json/package.json
+- Dependency extraction from pantry.json, config/deps.ts, and other formats
 - Package publishing with multipart/form-data upload
 - Custom registry support
 
@@ -261,7 +265,7 @@ Comprehensive test suites covering:
 - ✅ Workspace support (monorepo testing)
 - ✅ Override resolution and version conflicts
 - ✅ Lockfile generation and reading
-- ✅ Configuration parsing (pantry.json, package.json)
+- ✅ Configuration parsing (pantry.json, pantry.jsonc, config/deps.ts)
 
 **Advanced Test Types:**
 - ✅ Concurrent testing (race condition detection)
@@ -607,6 +611,63 @@ zig build -Doptimize=ReleaseFast -fprofile-use=default.profdata
 5. **SIMD Operations** - @Vector for bulk operations
 6. **Cache Line Aware** - 64-byte alignment for hot structures
 7. **Profile-Guided Optimization** - PGO for optimal branch prediction
+
+### Configuration Examples
+
+#### pantry.json (Native Format)
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "bun": "1.3.0",
+    "react": "18.2.0",
+    "lodash": "4.17.21"
+  },
+  "devDependencies": {
+    "typescript": "5.0.0"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts",
+    "test": "bun test"
+  },
+  "services": {
+    "postgres": {
+      "autoStart": true,
+      "port": 5432,
+      "healthCheck": "pg_isready"
+    },
+    "redis": true
+  }
+}
+```
+
+#### config/deps.ts (TypeScript Config)
+
+```typescript
+// config/deps.ts
+export default {
+  dependencies: {
+    "bun": "1.3.0",
+    "node": "20.10.0",
+    "react": "18.2.0"
+  },
+  services: {
+    postgres: {
+      autoStart: true,
+      port: 5432
+    }
+  },
+  scripts: {
+    dev: "bun run --hot src/index.ts",
+    build: "bun build src/index.ts"
+  }
+}
+```
+
+**Note**: TypeScript configs require Bun or Node.js to be installed on your system.
 
 ### Custom Registry Configuration
 
