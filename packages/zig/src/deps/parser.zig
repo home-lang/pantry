@@ -225,17 +225,140 @@ test "parseGitHubUrl with non-GitHub URL" {
     try std.testing.expect(result3 == null);
 }
 
+/// Execute a TypeScript dependency file using Bun or Node
+/// Returns JSON string output from the executed file
+fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]const u8 {
+    // Try Bun first, then Node.js
+    const runtimes = [_][]const u8{ "bun", "node" };
+
+    for (runtimes) |runtime| {
+        // Create a wrapper script that imports the config and outputs JSON
+        const wrapper_script = try std.fmt.allocPrint(
+            allocator,
+            \\import config from '{s}';
+            \\const output = config.default || config;
+            \\console.log(JSON.stringify(output));
+        ,
+            .{file_path},
+        );
+        defer allocator.free(wrapper_script);
+
+        // Bun uses --eval, Node uses eval
+        const eval_flag = if (std.mem.eql(u8, runtime, "bun")) "--eval" else "eval";
+
+        // Try to execute with this runtime
+        const result = std.process.Child.run(.{
+            .allocator = allocator,
+            .argv = &[_][]const u8{ runtime, eval_flag, wrapper_script },
+        }) catch continue; // Try next runtime if this one fails
+
+        defer allocator.free(result.stdout);
+        defer allocator.free(result.stderr);
+
+        switch (result.term) {
+            .Exited => |code| {
+                if (code == 0) {
+                    return try allocator.dupe(u8, result.stdout);
+                }
+            },
+            else => {}, // Signal or other termination
+        }
+    }
+
+    return error.NoRuntimeAvailable;
+}
+
+/// Parse TypeScript config file (config/deps.ts or pantry.config.ts)
+/// Executes the TS file with Bun/Node and parses JSON output
+pub fn parseTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
+    // Execute the TypeScript file
+    const json_output = executeTsConfigFile(allocator, file_path) catch |err| {
+        if (err == error.NoRuntimeAvailable) {
+            std.debug.print("Error: No JavaScript runtime found (bun or node required)\n", .{});
+            std.debug.print("Install bun or node to use TypeScript config files\n", .{});
+        }
+        return err;
+    };
+    defer allocator.free(json_output);
+
+    // Parse JSON output
+    const parsed = try std.json.parseFromSlice(
+        std.json.Value,
+        allocator,
+        json_output,
+        .{},
+    );
+    defer parsed.deinit();
+
+    // Extract dependencies from the parsed JSON
+    // The TS file should export an object with a "dependencies" field
+    var deps = try std.ArrayList(PackageDependency).initCapacity(allocator, 8);
+    errdefer {
+        for (deps.items) |*dep| dep.deinit(allocator);
+        deps.deinit(allocator);
+    }
+
+    if (parsed.value != .object) {
+        return deps.toOwnedSlice(allocator);
+    }
+
+    // Get dependencies object
+    if (parsed.value.object.get("dependencies")) |deps_value| {
+        if (deps_value != .object) return deps.toOwnedSlice(allocator);
+
+        var it = deps_value.object.iterator();
+        while (it.next()) |entry| {
+            const pkg_name = entry.key_ptr.*;
+            const pkg_spec = entry.value_ptr.*;
+
+            // Simple version: "package": "version"
+            if (pkg_spec == .string) {
+                const dep = PackageDependency{
+                    .name = try allocator.dupe(u8, pkg_name),
+                    .version = try allocator.dupe(u8, pkg_spec.string),
+                    .source = .registry,
+                };
+                try deps.append(allocator, dep);
+            }
+            // Object format: "package": { "version": "1.0.0", ... }
+            else if (pkg_spec == .object) {
+                var version: []const u8 = "latest";
+                var global = false;
+
+                if (pkg_spec.object.get("version")) |v| {
+                    if (v == .string) version = v.string;
+                }
+                if (pkg_spec.object.get("global")) |g| {
+                    if (g == .bool) global = g.bool;
+                }
+
+                const dep = PackageDependency{
+                    .name = try allocator.dupe(u8, pkg_name),
+                    .version = try allocator.dupe(u8, version),
+                    .global = global,
+                    .source = .registry,
+                };
+                try deps.append(allocator, dep);
+            }
+        }
+    }
+
+    return deps.toOwnedSlice(allocator);
+}
+
 /// Infer dependencies from a file based on its format
 pub fn inferDependencies(
     allocator: std.mem.Allocator,
     deps_file: detector.DepsFile,
 ) ![]PackageDependency {
     return switch (deps_file.format) {
-        // TypeScript config files are handled by the config loader (returns empty for direct parsing)
-        .config_deps_ts, .pantry_config_ts => &[_]PackageDependency{},
+        // Pantry native formats
+        .pantry_json, .pantry_jsonc => try parseZigPackageJson(allocator, deps_file.path),
+        // TypeScript config files - execute with Bun/Node
+        .config_deps_ts, .pantry_config_ts => try parseTsConfigFile(allocator, deps_file.path),
         .deps_yaml, .deps_yml, .dependencies_yaml, .pkgx_yaml => try parseDepsFile(allocator, deps_file.path),
-        .package_json => try parsePackageJson(allocator, deps_file.path),
-        .package_jsonc, .zig_json, .pantry_json, .pantry_jsonc => try parseZigPackageJson(allocator, deps_file.path),
+        // Other package manager formats (fallback)
+        .package_jsonc, .zig_json => try parseZigPackageJson(allocator, deps_file.path),
         .cargo_toml => try parseCargoToml(allocator, deps_file.path),
         .pyproject_toml => try parsePyprojectToml(allocator, deps_file.path),
         .requirements_txt => try parseRequirementsTxt(allocator, deps_file.path),

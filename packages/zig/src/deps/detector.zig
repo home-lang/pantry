@@ -5,15 +5,14 @@ pub const DepsFile = struct {
     format: FileFormat,
 
     pub const FileFormat = enum {
-        config_deps_ts, // config/deps.ts (highest priority for TS config)
-        pantry_config_ts, // pantry.config.ts
-        pantry_json, // pantry.json
+        pantry_json, // pantry.json (highest priority)
         pantry_jsonc, // pantry.jsonc
+        config_deps_ts, // config/deps.ts (typed TS config)
+        pantry_config_ts, // pantry.config.ts
         deps_yaml,
         deps_yml,
         dependencies_yaml,
         pkgx_yaml,
-        package_json,
         package_jsonc, // Zig package.jsonc
         zig_json, // zig.json
         cargo_toml,
@@ -39,15 +38,15 @@ pub const WorkspaceFile = struct {
 /// Find dependency file in directory or parent directories
 pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsFile {
     const file_names = [_][]const u8{
-        "config/deps.ts", // config/deps.ts (highest priority for typed TS config)
-        "pantry.config.ts", // pantry.config.ts
-        "pantry.json", // pantry.json
+        "pantry.json", // pantry.json (highest priority)
         "pantry.jsonc", // pantry.jsonc
+        "config/deps.ts", // config/deps.ts (typed TS config)
+        "pantry.config.ts", // pantry.config.ts
         "deps.yaml",
         "deps.yml",
         "dependencies.yaml",
         "pkgx.yaml",
-        "package.json",
+        // Other package manager formats (lower priority, fallback only)
         "package.jsonc", // Zig package.jsonc
         "zig.json", // zig.json
         "Cargo.toml",
@@ -122,16 +121,16 @@ pub fn isDepsFile(filename: []const u8) bool {
 
 /// Infer format from filename
 pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
-    // Check for config/deps.ts pattern first
-    if (std.mem.endsWith(u8, filename, "config/deps.ts")) return .config_deps_ts;
-    if (std.mem.eql(u8, filename, "pantry.config.ts")) return .pantry_config_ts;
+    // Pantry formats first (highest priority)
     if (std.mem.eql(u8, filename, "pantry.json")) return .pantry_json;
     if (std.mem.eql(u8, filename, "pantry.jsonc")) return .pantry_jsonc;
+    if (std.mem.endsWith(u8, filename, "config/deps.ts")) return .config_deps_ts;
+    if (std.mem.eql(u8, filename, "pantry.config.ts")) return .pantry_config_ts;
     if (std.mem.eql(u8, filename, "deps.yaml")) return .deps_yaml;
     if (std.mem.eql(u8, filename, "deps.yml")) return .deps_yml;
     if (std.mem.eql(u8, filename, "dependencies.yaml")) return .dependencies_yaml;
     if (std.mem.eql(u8, filename, "pkgx.yaml")) return .pkgx_yaml;
-    if (std.mem.eql(u8, filename, "package.json")) return .package_json;
+    // Other package managers (fallback)
     if (std.mem.eql(u8, filename, "package.jsonc")) return .package_jsonc;
     if (std.mem.eql(u8, filename, "zig.json")) return .zig_json;
     if (std.mem.eql(u8, filename, "Cargo.toml")) return .cargo_toml;
@@ -144,12 +143,11 @@ pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
 }
 
 /// Find workspace configuration file in directory or parent directories
-/// Looks for files with a "workspaces" field (e.g., pantry.json, package.json)
+/// Looks for files with a "workspaces" field (e.g., pantry.json)
 pub fn findWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !?WorkspaceFile {
     const workspace_file_names = [_][]const u8{
         "pantry.json", // Highest priority for workspace configs
         "pantry.jsonc",
-        "package.json", // Also check package.json for Node.js-style workspaces
     };
 
     var current_dir_buf: [std.fs.max_path_bytes]u8 = undefined;

@@ -10,7 +10,7 @@ const CommandResult = common.CommandResult;
 // Run Script Command
 // ============================================================================
 
-/// Run a script from pantry.json or package.json
+/// Run a script from pantry.json
 pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     if (args.len == 0) {
         return CommandResult.err(allocator, "Error: No script name provided\nUsage: pantry run <script-name> [args...]");
@@ -35,7 +35,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     };
 
     if (scripts_map == null) {
-        return CommandResult.err(allocator, "Error: No scripts found in pantry.json or package.json");
+        return CommandResult.err(allocator, "Error: No scripts found in pantry.json");
     }
 
     var scripts = scripts_map.?;
@@ -167,7 +167,7 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     if (scripts_map == null) {
         return .{
             .exit_code = 0,
-            .message = try allocator.dupe(u8, "No scripts found in pantry.json or package.json"),
+            .message = try allocator.dupe(u8, "No scripts found in pantry.json"),
         };
     }
 

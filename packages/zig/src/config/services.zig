@@ -130,7 +130,7 @@ pub fn extractServices(allocator: std.mem.Allocator, config: anytype) !?[]Servic
 }
 
 /// Find and load services configuration from a project directory
-/// Searches for pantry.json, pantry.jsonc, or package.json
+/// Searches for pantry.json or pantry.jsonc
 pub fn findProjectServices(allocator: std.mem.Allocator, project_dir: []const u8) !?[]ServiceConfig {
     const loader = @import("loader.zig");
 

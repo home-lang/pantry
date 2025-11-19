@@ -61,7 +61,7 @@ pub fn extractScripts(allocator: std.mem.Allocator, config: anytype) !?std.Strin
 }
 
 /// Find and load scripts from a project directory
-/// Searches for pantry.json, pantry.jsonc, or package.json
+/// Searches for pantry.json or pantry.jsonc
 pub fn findProjectScripts(allocator: std.mem.Allocator, project_dir: []const u8) !?std.StringHashMap([]const u8) {
     const loader = @import("loader.zig");
 
