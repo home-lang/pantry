@@ -167,7 +167,7 @@ pub fn verifyPackageSignature(
 }
 
 /// Parse Ed25519 public key from PEM format
-fn parseEd25519PublicKey(pem: []const u8) ![] const u8 {
+fn parseEd25519PublicKey(pem: []const u8) ![]const u8 {
     // Simple PEM parser for Ed25519 keys
     // Format: -----BEGIN PUBLIC KEY-----\nbase64data\n-----END PUBLIC KEY-----
 

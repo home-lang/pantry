@@ -254,19 +254,23 @@ pub const RuntimeInstaller = struct {
         const arch = try core.Platform.arch();
 
         return switch (runtime) {
-            .bun => try std.fmt.allocPrint(self.allocator,
+            .bun => try std.fmt.allocPrint(
+                self.allocator,
                 "https://github.com/oven-sh/bun/releases/download/bun-v{s}/bun-{s}-{s}.zip",
                 .{ version, platform.toString(), arch },
             ),
-            .node => try std.fmt.allocPrint(self.allocator,
+            .node => try std.fmt.allocPrint(
+                self.allocator,
                 "https://nodejs.org/dist/v{s}/node-v{s}-{s}-{s}.tar.gz",
                 .{ version, version, platform.toNodeString(), arch },
             ),
-            .deno => try std.fmt.allocPrint(self.allocator,
+            .deno => try std.fmt.allocPrint(
+                self.allocator,
                 "https://github.com/denoland/deno/releases/download/v{s}/deno-{s}-{s}.zip",
                 .{ version, platform.toDenoString(), arch },
             ),
-            .python => try std.fmt.allocPrint(self.allocator,
+            .python => try std.fmt.allocPrint(
+                self.allocator,
                 "https://www.python.org/ftp/python/{s}/Python-{s}.tgz",
                 .{ version, version },
             ),
@@ -320,4 +324,3 @@ pub const RuntimeInstaller = struct {
         std.debug.print("✅ Uninstalled {s}@{s}\n", .{ runtime.toString(), version });
     }
 };
-
