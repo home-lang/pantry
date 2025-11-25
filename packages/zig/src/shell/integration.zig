@@ -170,7 +170,7 @@ pub fn install(allocator: std.mem.Allocator) !void {
     defer allocator.free(hook);
 
     // Read existing RC file
-    const existing = std.fs.cwd().readFileAlloc(allocator, rc_file, 1024 * 1024) catch |err| switch (err) {
+    const existing = std.fs.cwd().readFileAlloc(rc_file, allocator, @enumFromInt(1024 * 1024)) catch |err| switch (err) {
         error.FileNotFound => "",
         else => return err,
     };

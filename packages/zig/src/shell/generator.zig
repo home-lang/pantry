@@ -31,7 +31,7 @@ pub const ShellCodeGenerator = struct {
         var result = try std.ArrayList(u8).initCapacity(self.allocator, 4096);
         errdefer result.deinit(self.allocator);
 
-        const writer = result.writer(self.allocator);
+        const writer = result.writer();
 
         // Header
         try writer.writeAll("# Pantry Shell Integration (Zig)\n");

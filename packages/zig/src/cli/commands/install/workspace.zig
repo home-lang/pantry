@@ -41,7 +41,7 @@ pub fn installWorkspaceCommandWithOptions(
     const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, "package.json" });
     defer allocator.free(root_package_json_path);
 
-    if (std.fs.cwd().readFileAlloc(allocator, root_package_json_path, 1024 * 1024)) |package_json_content| {
+    if (std.fs.cwd().readFileAlloc(root_package_json_path, allocator, @enumFromInt(1024 * 1024))) |package_json_content| {
         defer allocator.free(package_json_content);
 
         if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {

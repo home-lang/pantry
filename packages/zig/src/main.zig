@@ -274,7 +274,7 @@ fn saveDependenciesToConfig(
     is_peer: bool,
 ) !void {
     // Read existing config
-    const config_content = try std.fs.cwd().readFileAlloc(allocator, config_path, 1024 * 1024);
+    const config_content = try std.fs.cwd().readFileAlloc(config_path, allocator, @enumFromInt(1024 * 1024));
     defer allocator.free(config_content);
 
     // Strip JSONC comments if needed

@@ -203,7 +203,7 @@ pub const NpmRegistry = struct {
         tarball_path: []const u8,
     ) !void {
         // Read tarball file
-        const tarball_data = try std.fs.cwd().readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024);
+        const tarball_data = try std.fs.cwd().readFileAlloc(tarball_path, allocator, 100 * 1024 * 1024);
         defer allocator.free(tarball_data);
 
         // Base64 encode the tarball

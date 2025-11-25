@@ -79,7 +79,7 @@ pub const pantryConfigLoader = struct {
                 .config = final_config,
                 .source = .typescript,
                 .sources = sources,
-                .loaded_at = std.time.milliTimestamp(),
+                .loaded_at = std.time.timestamp() * std.time.ms_per_s,
                 .allocator = self.allocator,
                 .parsed_json = if (options.defaults == null) parsed else null,
             };

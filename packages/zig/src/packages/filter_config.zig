@@ -116,7 +116,7 @@ pub fn loadFromConfig(
     errdefer configs.deinit();
 
     // Read config file
-    const content = std.fs.cwd().readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch |err| {
+    const content = std.fs.cwd().readFileAlloc(config_path, allocator, @enumFromInt(10 * 1024 * 1024)) catch |err| {
         if (err == error.FileNotFound) {
             // No config file, return empty configs
             return configs;

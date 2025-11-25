@@ -182,7 +182,7 @@ pub const LockFile = struct {
 
     /// Read lock file from disk
     pub fn read(allocator: std.mem.Allocator, path: []const u8) !LockFile {
-        const content = try std.fs.cwd().readFileAlloc(allocator, path, 10 * 1024 * 1024);
+        const content = try std.fs.cwd().readFileAlloc(path, allocator, @enumFromInt(10 * 1024 * 1024));
         defer allocator.free(content);
 
         return try parse(allocator, content);

@@ -146,7 +146,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });
         defer allocator.free(package_json_path);
 
-        if (std.fs.cwd().readFileAlloc(allocator, package_json_path, 1024 * 1024)) |package_json_content| {
+        if (std.fs.cwd().readFileAlloc(package_json_path, allocator, @enumFromInt(1024 * 1024))) |package_json_content| {
             defer allocator.free(package_json_content);
 
             if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {
@@ -201,7 +201,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Hash dependency file contents (or project dir if using config)
         const hash_input = if (deps_file_path) |path|
-            try std.fs.cwd().readFileAlloc(allocator, path, 1024 * 1024)
+            try std.fs.cwd().readFileAlloc(path, allocator, @enumFromInt(1024 * 1024))
         else
             try allocator.dupe(u8, proj_dir);
         defer allocator.free(hash_input);
