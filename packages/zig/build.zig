@@ -428,33 +428,38 @@ pub fn build(b: *std.Build) void {
 
 /// Get package version from package.json
 fn getPackageVersion(b: *std.Build) ![]const u8 {
+    _ = b;
+    // Temporarily return fixed version until build.zig API is updated
+    return "0.7.5";
+
+    // TODO: Re-enable when Zig API stabilizes
     // Try to read from parent directory (monorepo structure)
-    const package_json = std.fs.cwd().readFileAlloc(
-        b.allocator,
-        "../../package.json",
-        1024 * 1024,
-    ) catch |err| {
-        std.debug.print("Warning: Could not read package.json: {}\n", .{err});
-        return error.PackageJsonNotFound;
-    };
-    defer b.allocator.free(package_json);
+    // const package_json = std.fs.cwd().readFileAlloc(
+    //     b.allocator,
+    //     "../../package.json",
+    //     1024 * 1024,
+    // ) catch |err| {
+    //     std.debug.print("Warning: Could not read package.json: {}\n", .{err});
+    //     return error.PackageJsonNotFound;
+    // };
+    // defer b.allocator.free(package_json);
 
-    const parsed = std.json.parseFromSlice(
-        std.json.Value,
-        b.allocator,
-        package_json,
-        .{},
-    ) catch |err| {
-        std.debug.print("Warning: Could not parse package.json: {}\n", .{err});
-        return error.InvalidJson;
-    };
-    defer parsed.deinit();
+    // const parsed = std.json.parseFromSlice(
+    //     std.json.Value,
+    //     b.allocator,
+    //     package_json,
+    //     .{},
+    // ) catch |err| {
+    //     std.debug.print("Warning: Could not parse package.json: {}\n", .{err});
+    //     return error.InvalidJson;
+    // };
+    // defer parsed.deinit();
 
-    const version = parsed.value.object.get("version") orelse {
-        return error.NoVersionField;
-    };
+    // const version = parsed.value.object.get("version") orelse {
+    //     return error.NoVersionField;
+    // };
 
-    return b.allocator.dupe(u8, version.string);
+    // return b.allocator.dupe(u8, version.string);
 }
 
 /// Get git commit hash (short)

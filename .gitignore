@@ -22,3 +22,6 @@ packages/pantry/test/clean-integration-*
 /packages/zonfig/.zig-cache
 /packages/zig/pantry_modules
 /pantry_modules
+/packages/zig/no/
+/packages/zig/*.a
+/packages/zig/*.o

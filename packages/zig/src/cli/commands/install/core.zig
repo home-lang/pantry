@@ -9,6 +9,7 @@ const helpers = @import("helpers.zig");
 const workspace = @import("workspace.zig");
 const global = @import("global.zig");
 const version_options = @import("version");
+const lockfile_hooks = @import("lockfile_hooks.zig");
 
 const cache = lib.cache;
 const string = lib.string;
@@ -231,6 +232,24 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(bin_dir);
         try std.fs.cwd().makePath(bin_dir);
 
+        // Load or create lockfile
+        var lock_file = try lockfile_hooks.loadOrCreateLockfile(allocator, cwd);
+        defer lock_file.deinit();
+
+        // Execute pre-install hook
+        if (try lockfile_hooks.executePreInstallHook(allocator, cwd, options.verbose)) |*pre_result| {
+            defer {
+                var r = pre_result.*;
+                r.deinit(allocator);
+            }
+            if (!pre_result.success) {
+                return .{
+                    .exit_code = 1,
+                    .message = try allocator.dupe(u8, "Pre-install hook failed"),
+                };
+            }
+        }
+
         // Clean Yarn/Bun-style output - just show what we're installing
         const green = "\x1b[32m";
         const dim = "\x1b[2m";
@@ -443,6 +462,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
         };
 
+        // Add successful packages to pantry.lock
+        for (install_results) |result| {
+            if (result.success and result.name.len > 0) {
+                const clean_name = helpers.stripDisplayPrefix(result.name);
+                const resolved_url = try std.fmt.allocPrint(allocator, "registry:{s}@{s}", .{ clean_name, result.version });
+                defer allocator.free(resolved_url);
+                try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, null);
+            }
+        }
+
+        // Save pantry.lock
+        try lockfile_hooks.saveLockfile(&lock_file, cwd);
+
         // Get Pantry version and hash for display
         const pantry_version = version_options.version;
         const pantry_hash = version_options.commit_hash;
@@ -468,6 +500,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         if (failed_count > 0) {
             const red = "\x1b[31m";
             std.debug.print("\n{s}{d} packages failed to install{s}\n", .{ red, failed_count, reset });
+        }
+
+        // Execute post-install hook
+        if (try lockfile_hooks.executePostInstallHook(allocator, cwd, options.verbose)) |*post_result| {
+            defer {
+                var r = post_result.*;
+                r.deinit(allocator);
+            }
+            if (!post_result.success) {
+                const yellow = "\x1b[33m";
+                std.debug.print("\n{s}⚠{s}  Post-install hook failed\n", .{ yellow, reset });
+                // Don't fail the install, just warn
+            }
         }
 
         return .{ .exit_code = 0 };
