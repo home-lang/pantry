@@ -209,10 +209,8 @@ fn parseEd25519PublicKey(pem: []const u8) ![]const u8 {
     if (decoded.len < 32) return error.InvalidPublicKey;
 
     const key_start = decoded.len - 32;
-    var public_key: [32]u8 = undefined;
-    @memcpy(&public_key, decoded[key_start .. key_start + 32]);
-
-    return &public_key;
+    // Return slice from heap-allocated decoded buffer (last 32 bytes)
+    return decoded[key_start .. key_start + 32];
 }
 
 /// Generate Ed25519 keypair and return as PEM format

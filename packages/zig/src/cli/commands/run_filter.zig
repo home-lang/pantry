@@ -332,17 +332,16 @@ pub fn runScriptWithFilter(
             std.debug.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
 
             // Build command with args
-            var command_buf: [2048]u8 = undefined;
-            var command_stream = std.io.fixedBufferStream(&command_buf);
-            const cmd_writer = command_stream.writer();
+            var command_list = std.ArrayList(u8){};
+            defer command_list.deinit(allocator);
 
-            try cmd_writer.writeAll(script_command);
+            try command_list.appendSlice(allocator, script_command);
             for (script_args) |arg| {
-                try cmd_writer.writeByte(' ');
-                try cmd_writer.writeAll(arg);
+                try command_list.append(allocator, ' ');
+                try command_list.appendSlice(allocator, arg);
             }
 
-            const full_command = command_stream.getWritten();
+            const full_command = command_list.items;
 
             // Execute in member directory
             const result = std.process.Child.run(.{
@@ -501,7 +500,7 @@ fn watchAndRerun(
             std.debug.print("{s}───────────────────────────────────────{s}\n\n", .{ dim, reset });
 
             // Wait for debounce
-            std.Thread.sleep(watcher.options.debounce_ms * std.time.ns_per_ms);
+            std.posix.nanosleep(0, watcher.options.debounce_ms * std.time.ns_per_ms);
 
             // Re-run the script execution logic
             try executeScriptsInMembers(
@@ -516,7 +515,7 @@ fn watchAndRerun(
         }
 
         // Sleep for poll interval
-        std.Thread.sleep(watcher.options.poll_interval_ms * std.time.ns_per_ms);
+        std.posix.nanosleep(0, watcher.options.poll_interval_ms * std.time.ns_per_ms);
     }
 }
 
@@ -639,17 +638,16 @@ fn executeScriptsInMembers(
 
             std.debug.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
 
-            var command_buf: [2048]u8 = undefined;
-            var command_stream = std.io.fixedBufferStream(&command_buf);
-            const cmd_writer = command_stream.writer();
+            var command_list = std.ArrayList(u8){};
+            defer command_list.deinit(allocator);
 
-            try cmd_writer.writeAll(script_command);
+            try command_list.appendSlice(allocator, script_command);
             for (script_args) |arg| {
-                try cmd_writer.writeByte(' ');
-                try cmd_writer.writeAll(arg);
+                try command_list.append(allocator, ' ');
+                try command_list.appendSlice(allocator, arg);
             }
 
-            const full_command = command_stream.getWritten();
+            const full_command = command_list.items;
 
             const result = std.process.Child.run(.{
                 .allocator = allocator,

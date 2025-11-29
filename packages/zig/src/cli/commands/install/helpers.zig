@@ -75,7 +75,7 @@ pub fn installSinglePackage(
     pkg_cache: *cache.PackageCache,
     options: types.InstallOptions,
 ) !types.InstallTaskResult {
-    const start_time = std.time.milliTimestamp();
+    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     // Skip local packages - they're handled separately
     if (isLocalDependency(dep)) {
@@ -196,7 +196,7 @@ pub fn installSinglePackage(
         }
     }
 
-    const end_time = std.time.milliTimestamp();
+    const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     _ = bin_dir;
     _ = cwd;

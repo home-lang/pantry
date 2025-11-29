@@ -116,16 +116,16 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     try child.spawn();
 
     // Monitor download progress
-    const start_time = std.time.milliTimestamp();
+    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
     var last_size: u64 = 0;
     var last_update = start_time;
     var shown_progress = false;
     const timeout_ms: i64 = 30000; // 30 second timeout
 
     while (true) {
-        std.Thread.sleep(100 * std.time.ns_per_ms);
+        std.posix.nanosleep(0, 100 * std.time.ns_per_ms);
 
-        const now = std.time.milliTimestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         // Add timeout check to prevent infinite hanging
         if (now - start_time > timeout_ms) {

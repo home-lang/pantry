@@ -313,34 +313,15 @@ fn runSecurityScanner(
     );
     defer allocator.free(bin_path);
 
-    // Execute the scanner
-    var child = std.process.Child.init(
-        &[_][]const u8{ bin_path, "." },
-        allocator,
-    );
-    child.stdout_behavior = .Pipe;
-    child.stderr_behavior = .Pipe;
+    // Execute the scanner using Child.run() pattern
+    const result = try std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &[_][]const u8{ bin_path, "." },
+    });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
 
-    try child.spawn();
-
-    // Read scanner output
-    var stdout = std.ArrayList(u8){};
-    defer stdout.deinit(allocator);
-
-    var stderr = std.ArrayList(u8){};
-    defer stderr.deinit(allocator);
-
-    // Read all stdout
-    const stdout_data = try child.stdout.?.readToEndAlloc(allocator, 1024 * 1024); // 1MB limit
-    defer allocator.free(stdout_data);
-    try stdout.appendSlice(allocator, stdout_data);
-
-    // Read all stderr
-    const stderr_data = try child.stderr.?.readToEndAlloc(allocator, 1024 * 1024);
-    defer allocator.free(stderr_data);
-    try stderr.appendSlice(allocator, stderr_data);
-
-    const term = try child.wait();
+    const term = result.term;
 
     // Parse scanner results
     var issues = std.ArrayList(ScannerIssue){};
@@ -352,13 +333,13 @@ fn runSecurityScanner(
     }
 
     // Try to parse JSON output (most security scanners output JSON)
-    if (stdout.items.len > 0) {
-        parseScannerOutput(allocator, stdout.items, &issues) catch {
+    if (result.stdout.len > 0) {
+        parseScannerOutput(allocator, result.stdout, &issues) catch {
             // If parsing fails, just report raw output
             const msg = try std.fmt.allocPrint(
                 allocator,
                 "Scanner '{s}' output:\n{s}",
-                .{ scanner_name, stdout.items },
+                .{ scanner_name, result.stdout },
             );
             return .{
                 .exit_code = switch (term) {
@@ -521,9 +502,13 @@ fn generateScannerReport(
     var output = std.ArrayList(u8){};
     defer output.deinit(allocator);
 
-    const writer = output.writer(allocator);
-
-    try writer.print("\nSecurity scanner '{s}' found {d} issue(s):\n\n", .{ scanner_name, issues.len });
+    try output.appendSlice(allocator, "\nSecurity scanner '");
+    try output.appendSlice(allocator, scanner_name);
+    try output.appendSlice(allocator, "' found ");
+    var count_buf: [20]u8 = undefined;
+    const count_str = std.fmt.bufPrint(&count_buf, "{d}", .{issues.len}) catch "?";
+    try output.appendSlice(allocator, count_str);
+    try output.appendSlice(allocator, " issue(s):\n\n");
 
     var fatal_count: usize = 0;
     var warn_count: usize = 0;
@@ -540,13 +525,29 @@ fn generateScannerReport(
             warn_count += 1;
         }
 
-        try writer.print("[{s}] {s}: {s}\n", .{ severity_str, issue.package_name, issue.message });
+        try output.appendSlice(allocator, "[");
+        try output.appendSlice(allocator, severity_str);
+        try output.appendSlice(allocator, "] ");
+        try output.appendSlice(allocator, issue.package_name);
+        try output.appendSlice(allocator, ": ");
+        try output.appendSlice(allocator, issue.message);
+        try output.appendSlice(allocator, "\n");
         if (issue.details) |details| {
-            try writer.print("  {s}\n", .{details});
+            try output.appendSlice(allocator, "  ");
+            try output.appendSlice(allocator, details);
+            try output.appendSlice(allocator, "\n");
         }
     }
 
-    try writer.print("\nSummary: {d} fatal, {d} warnings\n", .{ fatal_count, warn_count });
+    try output.appendSlice(allocator, "\nSummary: ");
+    var fatal_buf: [20]u8 = undefined;
+    const fatal_str = std.fmt.bufPrint(&fatal_buf, "{d}", .{fatal_count}) catch "?";
+    try output.appendSlice(allocator, fatal_str);
+    try output.appendSlice(allocator, " fatal, ");
+    var warn_buf: [20]u8 = undefined;
+    const warn_str = std.fmt.bufPrint(&warn_buf, "{d}", .{warn_count}) catch "?";
+    try output.appendSlice(allocator, warn_str);
+    try output.appendSlice(allocator, " warnings\n");
 
     const message = try output.toOwnedSlice(allocator);
     const exit_code: u8 = if (fatal_count > 0)
@@ -729,23 +730,24 @@ fn generateTextReport(
     var output = std.ArrayList(u8){};
     defer output.deinit(allocator);
 
-    const writer = output.writer(allocator);
-
     // Print each vulnerability
     for (vulnerabilities) |vuln| {
-        try writer.print("\n{s} ({s})\n", .{ vuln.id, vuln.severity.toString() });
-        try writer.print("Package: {s}\n", .{vuln.package_name});
-        try writer.print("{s}\n", .{vuln.title});
-        try writer.print("Vulnerable: {s}\n", .{vuln.vulnerable_versions});
+        const vuln_line = try std.fmt.allocPrint(allocator, "\n{s} ({s})\nPackage: {s}\n{s}\nVulnerable: {s}\n", .{ vuln.id, vuln.severity.toString(), vuln.package_name, vuln.title, vuln.vulnerable_versions });
+        defer allocator.free(vuln_line);
+        try output.appendSlice(allocator, vuln_line);
         if (vuln.patched_versions) |pv| {
-            try writer.print("Patched: {s}\n", .{pv});
+            const patched = try std.fmt.allocPrint(allocator, "Patched: {s}\n", .{pv});
+            defer allocator.free(patched);
+            try output.appendSlice(allocator, patched);
         }
-        try writer.print("More info: {s}\n", .{vuln.url});
+        const url_line = try std.fmt.allocPrint(allocator, "More info: {s}\n", .{vuln.url});
+        defer allocator.free(url_line);
+        try output.appendSlice(allocator, url_line);
     }
 
     // Print summary
     const summary = generateSummary(vulnerabilities);
-    try writer.print("\n", .{});
+    try output.appendSlice(allocator, "\n");
 
     var summary_parts = std.ArrayList([]const u8){};
     defer {
@@ -768,17 +770,20 @@ fn generateTextReport(
         try summary_parts.append(allocator, try std.fmt.allocPrint(allocator, "{d} low", .{summary.low}));
     }
 
-    try writer.print("{d} vulnerabilities (", .{summary.total});
+    var total_buf: [20]u8 = undefined;
+    const total_str = std.fmt.bufPrint(&total_buf, "{d}", .{summary.total}) catch "?";
+    try output.appendSlice(allocator, total_str);
+    try output.appendSlice(allocator, " vulnerabilities (");
     for (summary_parts.items, 0..) |part, i| {
-        if (i > 0) try writer.print(", ", .{});
-        try writer.print("{s}", .{part});
+        if (i > 0) try output.appendSlice(allocator, ", ");
+        try output.appendSlice(allocator, part);
     }
-    try writer.print(")\n", .{});
+    try output.appendSlice(allocator, ")\n");
 
-    try writer.print("To update all dependencies to the latest compatible versions:\n", .{});
-    try writer.print("  pantry update\n", .{});
-    try writer.print("To update all dependencies to the latest versions (including breaking changes):\n", .{});
-    try writer.print("  pantry update --latest\n", .{});
+    try output.appendSlice(allocator, "To update all dependencies to the latest compatible versions:\n");
+    try output.appendSlice(allocator, "  pantry update\n");
+    try output.appendSlice(allocator, "To update all dependencies to the latest versions (including breaking changes):\n");
+    try output.appendSlice(allocator, "  pantry update --latest\n");
 
     const message = try output.toOwnedSlice(allocator);
     return .{
@@ -795,38 +800,35 @@ fn generateJsonReport(
     var output = std.ArrayList(u8){};
     defer output.deinit(allocator);
 
-    const writer = output.writer(allocator);
-
-    try writer.print("{{\"vulnerabilities\":[", .{});
+    try output.appendSlice(allocator, "{\"vulnerabilities\":[");
 
     for (vulnerabilities, 0..) |vuln, i| {
-        if (i > 0) try writer.print(",", .{});
-        try writer.print("{{", .{});
-        try writer.print("\"id\":\"{s}\",", .{vuln.id});
-        try writer.print("\"title\":\"{s}\",", .{vuln.title});
-        try writer.print("\"severity\":\"{s}\",", .{vuln.severity.toString()});
-        try writer.print("\"package\":\"{s}\",", .{vuln.package_name});
-        try writer.print("\"vulnerable_versions\":\"{s}\",", .{vuln.vulnerable_versions});
+        if (i > 0) try output.appendSlice(allocator, ",");
+        const vuln_json = try std.fmt.allocPrint(allocator, "{{\"id\":\"{s}\",\"title\":\"{s}\",\"severity\":\"{s}\",\"package\":\"{s}\",\"vulnerable_versions\":\"{s}\",", .{ vuln.id, vuln.title, vuln.severity.toString(), vuln.package_name, vuln.vulnerable_versions });
+        defer allocator.free(vuln_json);
+        try output.appendSlice(allocator, vuln_json);
         if (vuln.patched_versions) |pv| {
-            try writer.print("\"patched_versions\":\"{s}\",", .{pv});
+            const patched = try std.fmt.allocPrint(allocator, "\"patched_versions\":\"{s}\",", .{pv});
+            defer allocator.free(patched);
+            try output.appendSlice(allocator, patched);
         } else {
-            try writer.print("\"patched_versions\":null,", .{});
+            try output.appendSlice(allocator, "\"patched_versions\":null,");
         }
-        try writer.print("\"url\":\"{s}\"", .{vuln.url});
+        const url_json = try std.fmt.allocPrint(allocator, "\"url\":\"{s}\"", .{vuln.url});
+        defer allocator.free(url_json);
+        try output.appendSlice(allocator, url_json);
         if (vuln.cwe) |cwe| {
-            try writer.print(",\"cwe\":\"{s}\"", .{cwe});
+            const cwe_json = try std.fmt.allocPrint(allocator, ",\"cwe\":\"{s}\"", .{cwe});
+            defer allocator.free(cwe_json);
+            try output.appendSlice(allocator, cwe_json);
         }
-        try writer.print("}}", .{});
+        try output.appendSlice(allocator, "}");
     }
 
     const summary = generateSummary(vulnerabilities);
-    try writer.print("],\"summary\":{{", .{});
-    try writer.print("\"total\":{d},", .{summary.total});
-    try writer.print("\"low\":{d},", .{summary.low});
-    try writer.print("\"moderate\":{d},", .{summary.moderate});
-    try writer.print("\"high\":{d},", .{summary.high});
-    try writer.print("\"critical\":{d}", .{summary.critical});
-    try writer.print("}}}}", .{});
+    const summary_json = try std.fmt.allocPrint(allocator, "],\"summary\":{{\"total\":{d},\"low\":{d},\"moderate\":{d},\"high\":{d},\"critical\":{d}}}}}", .{ summary.total, summary.low, summary.moderate, summary.high, summary.critical });
+    defer allocator.free(summary_json);
+    try output.appendSlice(allocator, summary_json);
 
     const message = try output.toOwnedSlice(allocator);
     const exit_code: u8 = if (vulnerabilities.len > 0) 1 else 0;

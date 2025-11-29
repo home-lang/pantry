@@ -101,7 +101,7 @@ pub const RuntimeInstaller = struct {
         version: []const u8,
         options: RuntimeInstallOptions,
     ) !RuntimeInstallResult {
-        const start_time = std.time.milliTimestamp();
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         if (!options.quiet) {
             std.debug.print("📦 Installing {s}@{s}...\n", .{ runtime.toString(), version });
@@ -204,7 +204,7 @@ pub const RuntimeInstaller = struct {
         perms.inner.unixSet(.other, .{ .execute = true });
         try file.setPermissions(perms);
 
-        const elapsed_ms = @as(u64, @intCast(std.time.milliTimestamp() - start_time));
+        const elapsed_ms = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
 
         if (!options.quiet) {
             std.debug.print("✅ {s}@{s} installed ({d}ms)\n", .{

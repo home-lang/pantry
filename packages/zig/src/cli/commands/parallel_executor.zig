@@ -34,7 +34,7 @@ const ExecutionContext = struct {
 
 /// Execute a script in a workspace member
 fn executeScript(ctx: ExecutionContext) !ScriptResult {
-    const start_time = std.time.milliTimestamp();
+    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     // Load scripts for this member
     const scripts_map = lib.config.findProjectScripts(ctx.allocator, ctx.member.abs_path) catch {
@@ -85,17 +85,16 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
     };
 
     // Build command with args
-    var command_buf: [2048]u8 = undefined;
-    var command_stream = std.io.fixedBufferStream(&command_buf);
-    const cmd_writer = command_stream.writer();
+    var command_list = std.ArrayList(u8){};
+    defer command_list.deinit(ctx.allocator);
 
-    try cmd_writer.writeAll(script_command);
+    try command_list.appendSlice(ctx.allocator, script_command);
     for (ctx.script_args) |arg| {
-        try cmd_writer.writeByte(' ');
-        try cmd_writer.writeAll(arg);
+        try command_list.append(ctx.allocator, ' ');
+        try command_list.appendSlice(ctx.allocator, arg);
     }
 
-    const full_command = command_stream.getWritten();
+    const full_command = command_list.items;
 
     // Execute in member directory
     const result = std.process.Child.run(.{
@@ -110,12 +109,12 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
             .exit_code = 1,
             .stdout = try ctx.allocator.dupe(u8, ""),
             .stderr = err_msg,
-            .duration_ms = @intCast(std.time.milliTimestamp() - start_time),
+            .duration_ms = @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time),
             .allocator = ctx.allocator,
         };
     };
 
-    const duration = @as(u64, @intCast(std.time.milliTimestamp() - start_time));
+    const duration = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
     const success = result.term.Exited == 0;
 
     return ScriptResult{

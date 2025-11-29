@@ -272,17 +272,14 @@ pub const ServiceController = struct {
         defer self.allocator.free(service_unit);
 
         const argv = [_][]const u8{ "systemctl", "--user", "is-active", service_unit };
-        var child = std.process.Child.init(&argv, self.allocator);
-        child.stdout_behavior = .Pipe;
-        child.stderr_behavior = .Pipe;
+        const result = try std.process.Child.run(.{
+            .allocator = self.allocator,
+            .argv = &argv,
+        });
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
 
-        try child.spawn();
-
-        var stdout_buf: [1024]u8 = undefined;
-        const n = try child.stdout.?.readAll(&stdout_buf);
-        _ = try child.wait();
-
-        const output = std.mem.trim(u8, stdout_buf[0..n], &std.ascii.whitespace);
+        const output = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
 
         if (std.mem.eql(u8, output, "active")) {
             return .running;

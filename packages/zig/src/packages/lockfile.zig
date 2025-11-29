@@ -189,10 +189,7 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
 
 /// Read lockfile from disk
 pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.Lockfile {
-    const file = try std.fs.openFileAbsolute(file_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, @enumFromInt(10 * 1024 * 1024)); // 10MB max
+    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
     defer allocator.free(content);
 
     const parsed = try std.json.parseFromSlice(
@@ -216,10 +213,11 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
     else
         1;
 
+    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
     const generated_at = if (root.object.get("generatedAt")) |v|
-        if (v == .string) std.fmt.parseInt(i64, v.string, 10) catch std.time.timestamp() else std.time.timestamp()
+        if (v == .string) std.fmt.parseInt(i64, v.string, 10) catch now else now
     else
-        std.time.timestamp();
+        now;
 
     var lockfile = types.Lockfile{
         .version = try allocator.dupe(u8, version),
@@ -451,7 +449,7 @@ test "writeLockfile skips write when no changes" {
     try writeLockfile(allocator, &lockfile1, lock_file_path);
 
     // Read the file content
-    const content1 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, @enumFromInt(1024 * 1024));
+    const content1 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content1);
 
     // Create second lockfile with different generatedAt but same content
@@ -474,7 +472,7 @@ test "writeLockfile skips write when no changes" {
     try writeLockfile(allocator, &lockfile2, lock_file_path);
 
     // Check file content hasn't changed (generatedAt should still be 1000, not 2000)
-    const content2 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, @enumFromInt(1024 * 1024));
+    const content2 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content2);
     try std.testing.expectEqualStrings(content1, content2);
 }

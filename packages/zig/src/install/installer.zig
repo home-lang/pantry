@@ -132,7 +132,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = std.time.milliTimestamp();
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         // Check if this is a local path dependency
         const is_local_path = std.mem.startsWith(u8, spec.version, "~/") or
@@ -177,7 +177,7 @@ pub const Installer = struct {
         // Check if we're already installing this package (circular dependency)
         if (self.installing_stack.contains(install_key)) {
             // Already being installed in the call stack - skip to avoid infinite loop
-            const end_time = std.time.milliTimestamp();
+            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
             return InstallResult{
                 .name = try self.allocator.dupe(u8, resolved_spec.name),
                 .version = try self.allocator.dupe(u8, resolved_spec.version),
@@ -208,7 +208,7 @@ pub const Installer = struct {
             try self.installDependencies(info.dependencies, options);
         }
 
-        const end_time = std.time.milliTimestamp();
+        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, resolved_spec.name),
@@ -225,7 +225,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = std.time.milliTimestamp();
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         // Expand ~ to home directory if needed
         var local_path: []const u8 = undefined;
@@ -302,7 +302,7 @@ pub const Installer = struct {
             break :blk try self.allocator.dupe(u8, abs_local_path);
         };
 
-        const end_time = std.time.milliTimestamp();
+        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         if (!options.quiet) {
             std.debug.print("  ✓ linked to {s}\n", .{local_path});
@@ -323,7 +323,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = std.time.milliTimestamp();
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         if (spec.repo == null) {
             return error.InvalidGitHubSpec;
@@ -356,7 +356,7 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = std.time.milliTimestamp();
+            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -441,7 +441,7 @@ pub const Installer = struct {
             try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
         }
 
-        const end_time = std.time.milliTimestamp();
+        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -1170,7 +1170,7 @@ pub const Installer = struct {
                     .name = try self.allocator.dupe(u8, entry.name),
                     .version = try self.allocator.dupe(u8, ver_entry.name),
                     .install_path = install_path,
-                    .installed_at = @intCast(stat.ctime),
+                    .installed_at = @intCast(stat.ctime.toSeconds()),
                     .size = @intCast(stat.size),
                 });
             }
@@ -1305,9 +1305,9 @@ pub const Installer = struct {
                 const Platform = @import("../core/platform.zig").Platform;
                 const current_platform = Platform.current();
                 const matches = blk: {
-                    if (std.mem.eql(u8, platform, "linux:") and current_platform == .linux) break :blk true;
-                    if (std.mem.eql(u8, platform, "darwin:") and current_platform == .darwin) break :blk true;
-                    if (std.mem.eql(u8, platform, "windows:") and current_platform == .windows) break :blk true;
+                    if (std.mem.eql(u8, platform, "linux") and current_platform == .linux) break :blk true;
+                    if (std.mem.eql(u8, platform, "darwin") and current_platform == .darwin) break :blk true;
+                    if (std.mem.eql(u8, platform, "windows") and current_platform == .windows) break :blk true;
                     break :blk false;
                 };
 

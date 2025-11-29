@@ -152,7 +152,7 @@ pub const Lockfile = struct {
             .version = try allocator.dupe(u8, version),
             .lockfile_version = 1,
             .packages = std.StringHashMap(LockfileEntry).init(allocator),
-            .generated_at = std.time.timestamp(),
+            .generated_at = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec,
         };
     }
 

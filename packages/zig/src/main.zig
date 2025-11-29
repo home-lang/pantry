@@ -212,6 +212,26 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(0);
 }
 
+/// Wrapper for ArrayList that provides writer interface for Zig 0.16-dev
+const AppendWriter = struct {
+    list: *std.ArrayList(u8),
+    allocator: std.mem.Allocator,
+
+    pub fn writeAll(self: *AppendWriter, bytes: []const u8) !void {
+        try self.list.appendSlice(self.allocator, bytes);
+    }
+
+    pub fn writeByte(self: *AppendWriter, byte: u8) !void {
+        try self.list.append(self.allocator, byte);
+    }
+
+    pub fn print(self: *AppendWriter, comptime fmt: []const u8, args: anytype) !void {
+        var buf: [1024]u8 = undefined;
+        const formatted = try std.fmt.bufPrint(&buf, fmt, args);
+        try self.list.appendSlice(self.allocator, formatted);
+    }
+};
+
 /// Save dependencies to config file (pantry.json or package.json)
 fn serializeJsonValue(value: std.json.Value, writer: anytype, indent_level: usize) !void {
     const indent = "  ";
@@ -274,7 +294,7 @@ fn saveDependenciesToConfig(
     is_peer: bool,
 ) !void {
     // Read existing config
-    const config_content = try std.fs.cwd().readFileAlloc(config_path, allocator, @enumFromInt(1024 * 1024));
+    const config_content = try std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(config_content);
 
     // Strip JSONC comments if needed
@@ -342,8 +362,9 @@ fn saveDependenciesToConfig(
     var buf = std.ArrayList(u8){};
     defer buf.deinit(allocator);
 
-    const writer = buf.writer(allocator);
-    try serializeJsonValue(parsed.value, writer, 0);
+    // Create an AppendWriter that wraps ArrayList
+    var append_writer = AppendWriter{ .list = &buf, .allocator = allocator };
+    try serializeJsonValue(parsed.value, &append_writer, 0);
     try buf.append(allocator, '\n');
 
     try std.fs.cwd().writeFile(.{

@@ -112,64 +112,71 @@ pub const LockFile = struct {
     pub fn write(self: *LockFile, path: []const u8) !void {
         var output: std.ArrayList(u8) = .{};
         defer output.deinit(self.allocator);
-        const writer = output.writer(self.allocator);
 
-        try writer.writeAll("{\n");
-        try writer.print("  \"version\": \"{s}\",\n", .{self.version});
-        try writer.writeAll("  \"packages\": {\n");
+        try output.appendSlice(self.allocator, "{\n");
+        var buf: [1024]u8 = undefined;
+        const version_line = try std.fmt.bufPrint(&buf, "  \"version\": \"{s}\",\n", .{self.version});
+        try output.appendSlice(self.allocator, version_line);
+        try output.appendSlice(self.allocator, "  \"packages\": {\n");
 
         var it = self.packages.iterator();
         var first = true;
         while (it.next()) |entry| {
             if (!first) {
-                try writer.writeAll(",\n");
+                try output.appendSlice(self.allocator, ",\n");
             }
             first = false;
 
             const key = entry.key_ptr.*;
             const pkg = entry.value_ptr.*;
 
-            try writer.print("    \"{s}\": {{\n", .{key});
-            try writer.print("      \"name\": \"{s}\",\n", .{pkg.name});
-            try writer.print("      \"version\": \"{s}\",\n", .{pkg.version});
-            try writer.print("      \"resolved\": \"{s}\"", .{pkg.resolved});
+            const key_line = try std.fmt.bufPrint(&buf, "    \"{s}\": {{\n", .{key});
+            try output.appendSlice(self.allocator, key_line);
+            const name_line = try std.fmt.bufPrint(&buf, "      \"name\": \"{s}\",\n", .{pkg.name});
+            try output.appendSlice(self.allocator, name_line);
+            const version_line2 = try std.fmt.bufPrint(&buf, "      \"version\": \"{s}\",\n", .{pkg.version});
+            try output.appendSlice(self.allocator, version_line2);
+            const resolved_line = try std.fmt.bufPrint(&buf, "      \"resolved\": \"{s}\"", .{pkg.resolved});
+            try output.appendSlice(self.allocator, resolved_line);
 
             if (pkg.integrity) |integrity| {
-                try writer.print(",\n      \"integrity\": \"{s}\"", .{integrity});
+                const integrity_line = try std.fmt.bufPrint(&buf, ",\n      \"integrity\": \"{s}\"", .{integrity});
+                try output.appendSlice(self.allocator, integrity_line);
             }
 
             if (pkg.dev) {
-                try writer.writeAll(",\n      \"dev\": true");
+                try output.appendSlice(self.allocator, ",\n      \"dev\": true");
             }
 
             if (pkg.optional) {
-                try writer.writeAll(",\n      \"optional\": true");
+                try output.appendSlice(self.allocator, ",\n      \"optional\": true");
             }
 
             if (pkg.dependencies.count() > 0) {
-                try writer.writeAll(",\n      \"dependencies\": {\n");
+                try output.appendSlice(self.allocator, ",\n      \"dependencies\": {\n");
 
                 var dep_it = pkg.dependencies.iterator();
                 var dep_first = true;
                 while (dep_it.next()) |dep_entry| {
                     if (!dep_first) {
-                        try writer.writeAll(",\n");
+                        try output.appendSlice(self.allocator, ",\n");
                     }
                     dep_first = false;
 
-                    try writer.print("        \"{s}\": \"{s}\"", .{
+                    const dep_line = try std.fmt.bufPrint(&buf, "        \"{s}\": \"{s}\"", .{
                         dep_entry.key_ptr.*,
                         dep_entry.value_ptr.*,
                     });
+                    try output.appendSlice(self.allocator, dep_line);
                 }
 
-                try writer.writeAll("\n      }");
+                try output.appendSlice(self.allocator, "\n      }");
             }
 
-            try writer.writeAll("\n    }");
+            try output.appendSlice(self.allocator, "\n    }");
         }
 
-        try writer.writeAll("\n  }\n}\n");
+        try output.appendSlice(self.allocator, "\n  }\n}\n");
 
         const file = try std.fs.cwd().createFile(path, .{});
         defer file.close();
@@ -182,7 +189,7 @@ pub const LockFile = struct {
 
     /// Read lock file from disk
     pub fn read(allocator: std.mem.Allocator, path: []const u8) !LockFile {
-        const content = try std.fs.cwd().readFileAlloc(path, allocator, @enumFromInt(10 * 1024 * 1024));
+        const content = try std.fs.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
         defer allocator.free(content);
 
         return try parse(allocator, content);

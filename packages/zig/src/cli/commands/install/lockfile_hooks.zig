@@ -65,9 +65,9 @@ pub fn executePreInstallHook(
 
     // Try pantry.json first, then fall back to package.json
     const config_content = std.fs.cwd().readFileAlloc(
-        allocator,
         pantry_json_path,
-        1024 * 1024,
+        allocator,
+        std.Io.Limit.limited(1024 * 1024),
     ) catch |err| blk: {
         if (err == error.FileNotFound) {
             const package_json_path = try std.fs.path.join(
@@ -77,9 +77,9 @@ pub fn executePreInstallHook(
             defer allocator.free(package_json_path);
 
             break :blk std.fs.cwd().readFileAlloc(
-                allocator,
                 package_json_path,
-                1024 * 1024,
+                allocator,
+                std.Io.Limit.limited(1024 * 1024),
             ) catch return null;
         }
         return null;
@@ -127,9 +127,9 @@ pub fn executePostInstallHook(
 
     // Try pantry.json first, then fall back to package.json
     const config_content = std.fs.cwd().readFileAlloc(
-        allocator,
         pantry_json_path,
-        1024 * 1024,
+        allocator,
+        std.Io.Limit.limited(1024 * 1024),
     ) catch |err| blk: {
         if (err == error.FileNotFound) {
             const package_json_path = try std.fs.path.join(
@@ -139,9 +139,9 @@ pub fn executePostInstallHook(
             defer allocator.free(package_json_path);
 
             break :blk std.fs.cwd().readFileAlloc(
-                allocator,
                 package_json_path,
-                1024 * 1024,
+                allocator,
+                std.Io.Limit.limited(1024 * 1024),
             ) catch return null;
         }
         return null;

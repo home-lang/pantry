@@ -334,9 +334,9 @@ pub fn runLifecycleScript(
     defer allocator.free(package_json_path);
 
     const package_json_content = std.fs.cwd().readFileAlloc(
-        allocator,
         package_json_path,
-        1024 * 1024,
+        allocator,
+        std.Io.Limit.limited(1024 * 1024),
     ) catch |err| {
         if (err == error.FileNotFound) return null;
         return err;
@@ -369,9 +369,9 @@ pub fn runLifecycleScript(
     defer allocator.free(root_package_json_path);
 
     const root_package_json = std.fs.cwd().readFileAlloc(
-        allocator,
         root_package_json_path,
-        1024 * 1024,
+        allocator,
+        std.Io.Limit.limited(1024 * 1024),
     ) catch {
         // If no root package.json, use empty trusted list
         var empty_trusted = std.StringHashMap(void).init(allocator);

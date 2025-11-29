@@ -117,7 +117,7 @@ pub fn findConfigFile(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8
 /// Read and parse config file with JSONC support
 pub fn readConfigFile(allocator: std.mem.Allocator, config_path: []const u8) !std.json.Parsed(std.json.Value) {
     // Read file
-    const config_content = try std.fs.cwd().readFileAlloc(config_path, allocator, @enumFromInt(1024 * 1024));
+    const config_content = try std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(config_content);
 
     // Strip JSONC comments if needed

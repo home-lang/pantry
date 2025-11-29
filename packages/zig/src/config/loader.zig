@@ -79,7 +79,7 @@ pub const pantryConfigLoader = struct {
                 .config = final_config,
                 .source = .typescript,
                 .sources = sources,
-                .loaded_at = std.time.timestamp() * std.time.ms_per_s,
+                .loaded_at = @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000),
                 .allocator = self.allocator,
                 .parsed_json = if (options.defaults == null) parsed else null,
             };

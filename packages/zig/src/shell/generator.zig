@@ -31,32 +31,35 @@ pub const ShellCodeGenerator = struct {
         var result = try std.ArrayList(u8).initCapacity(self.allocator, 4096);
         errdefer result.deinit(self.allocator);
 
-        const writer = result.writer();
-
         // Header
-        try writer.writeAll("# Pantry Shell Integration (Zig)\n");
-        try writer.writeAll("# Generated: ");
-        try writer.writeAll(@tagName(builtin.os.tag));
-        try writer.writeAll("-");
-        try writer.writeAll(@tagName(builtin.cpu.arch));
-        try writer.writeAll("\n\n");
+        try result.appendSlice(self.allocator, "# Pantry Shell Integration (Zig)\n");
+        try result.appendSlice(self.allocator, "# Generated: ");
+        try result.appendSlice(self.allocator, @tagName(builtin.os.tag));
+        try result.appendSlice(self.allocator, "-");
+        try result.appendSlice(self.allocator, @tagName(builtin.cpu.arch));
+        try result.appendSlice(self.allocator, "\n\n");
 
         // Configuration
-        try writer.print("__PANTRY_SHOW_MESSAGES=\"{s}\"\n", .{
-            if (self.config.show_messages) "true" else "false",
-        });
-        try writer.print("__PANTRY_ACTIVATION_MSG=\"{s}\"\n", .{
-            self.config.activation_message,
-        });
-        try writer.print("__PANTRY_DEACTIVATION_MSG=\"{s}\"\n", .{
-            self.config.deactivation_message,
-        });
-        try writer.print("__PANTRY_VERBOSE=\"{s}\"\n\n", .{
-            if (self.config.verbose) "true" else "false",
-        });
+        const show_msg = if (self.config.show_messages) "true" else "false";
+        try result.appendSlice(self.allocator, "__PANTRY_SHOW_MESSAGES=\"");
+        try result.appendSlice(self.allocator, show_msg);
+        try result.appendSlice(self.allocator, "\"\n");
+
+        try result.appendSlice(self.allocator, "__PANTRY_ACTIVATION_MSG=\"");
+        try result.appendSlice(self.allocator, self.config.activation_message);
+        try result.appendSlice(self.allocator, "\"\n");
+
+        try result.appendSlice(self.allocator, "__PANTRY_DEACTIVATION_MSG=\"");
+        try result.appendSlice(self.allocator, self.config.deactivation_message);
+        try result.appendSlice(self.allocator, "\"\n");
+
+        const verbose = if (self.config.verbose) "true" else "false";
+        try result.appendSlice(self.allocator, "__PANTRY_VERBOSE=\"");
+        try result.appendSlice(self.allocator, verbose);
+        try result.appendSlice(self.allocator, "\"\n\n");
 
         // Embed optimized shell functions (compile-time)
-        try writer.writeAll(shell_template);
+        try result.appendSlice(self.allocator, shell_template);
 
         return try result.toOwnedSlice(self.allocator);
     }
@@ -66,21 +69,22 @@ pub const ShellCodeGenerator = struct {
         var result = try std.ArrayList(u8).initCapacity(self.allocator, 2048);
         errdefer result.deinit(self.allocator);
 
-        const writer = result.writer(self.allocator);
-
         // Just the switch function, no hooks
-        try writer.writeAll("# Pantry Shell Functions\n\n");
+        try result.appendSlice(self.allocator, "# Pantry Shell Functions\n\n");
 
         // Configuration
-        try writer.print("__PANTRY_SHOW_MESSAGES=\"{s}\"\n", .{
-            if (self.config.show_messages) "true" else "false",
-        });
-        try writer.print("__PANTRY_ACTIVATION_MSG=\"{s}\"\n", .{
-            self.config.activation_message,
-        });
-        try writer.print("__PANTRY_DEACTIVATION_MSG=\"{s}\"\n\n", .{
-            self.config.deactivation_message,
-        });
+        const show_msg = if (self.config.show_messages) "true" else "false";
+        try result.appendSlice(self.allocator, "__PANTRY_SHOW_MESSAGES=\"");
+        try result.appendSlice(self.allocator, show_msg);
+        try result.appendSlice(self.allocator, "\"\n");
+
+        try result.appendSlice(self.allocator, "__PANTRY_ACTIVATION_MSG=\"");
+        try result.appendSlice(self.allocator, self.config.activation_message);
+        try result.appendSlice(self.allocator, "\"\n");
+
+        try result.appendSlice(self.allocator, "__PANTRY_DEACTIVATION_MSG=\"");
+        try result.appendSlice(self.allocator, self.config.deactivation_message);
+        try result.appendSlice(self.allocator, "\"\n\n");
 
         // Only the core function
         var lines = std.mem.split(u8, shell_template, "\n");
@@ -90,8 +94,8 @@ pub const ShellCodeGenerator = struct {
                 in_function = true;
             }
             if (in_function) {
-                try writer.writeAll(line);
-                try writer.writeAll("\n");
+                try result.appendSlice(self.allocator, line);
+                try result.appendSlice(self.allocator, "\n");
             }
             if (in_function and std.mem.indexOf(u8, line, "# Hook registration") != null) {
                 break;

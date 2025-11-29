@@ -55,7 +55,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(cwd);
 
         // Start timing for install operation
-        const start_time = std.time.milliTimestamp();
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         // First, check if we're in a workspace
         const workspace_file = try detector.findWorkspaceFile(allocator, cwd);
@@ -146,7 +146,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });
         defer allocator.free(package_json_path);
 
-        if (std.fs.cwd().readFileAlloc(package_json_path, allocator, @enumFromInt(1024 * 1024))) |package_json_content| {
+        if (std.fs.cwd().readFileAlloc(package_json_path, allocator, std.Io.Limit.limited(1024 * 1024))) |package_json_content| {
             defer allocator.free(package_json_content);
 
             if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {
@@ -201,7 +201,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Hash dependency file contents (or project dir if using config)
         const hash_input = if (deps_file_path) |path|
-            try std.fs.cwd().readFileAlloc(path, allocator, @enumFromInt(1024 * 1024))
+            try std.fs.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(1024 * 1024))
         else
             try allocator.dupe(u8, proj_dir);
         defer allocator.free(hash_input);
@@ -487,7 +487,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Second line: "Checked X installs across Y packages (no changes) [Zms]"
         const total_deps = deps.len;
-        const end_time = std.time.milliTimestamp();
+        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
         std.debug.print("Checked {s}{d}{s} installs across {s}{d}{s} packages {s}(no changes){s} [{s}{d:.2}ms{s}]\n", .{
@@ -550,7 +550,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     const reset = "\x1b[0m";
 
     // Start timing
-    const start_time = std.time.milliTimestamp();
+    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     // Print header with Pantry version info
     const pantry_version = version_options.version;
@@ -588,7 +588,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     }
 
     // Clean summary with timing
-    const end_time = std.time.milliTimestamp();
+    const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
     std.debug.print("\nChecked {s}{d}{s} installs across {s}{d}{s} packages {s}{d:.2}ms{s}\n", .{

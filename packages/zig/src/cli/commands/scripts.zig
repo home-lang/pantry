@@ -70,14 +70,15 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         }
 
         // Format list of scripts
-        var list_buf: [1024]u8 = undefined;
-        var list_stream = std.io.fixedBufferStream(&list_buf);
-        const writer = list_stream.writer();
+        var list = std.ArrayList(u8){};
+        defer list.deinit(allocator);
         for (names) |name| {
-            writer.print("  {s}\n", .{name}) catch break;
+            try list.appendSlice(allocator, "  ");
+            try list.appendSlice(allocator, name);
+            try list.appendSlice(allocator, "\n");
         }
 
-        const msg = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, list_stream.getWritten() });
+        const msg = try std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, list.items });
 
         return .{
             .exit_code = 1,
@@ -86,16 +87,15 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     };
 
     // Build display command
-    var command_buf: [2048]u8 = undefined;
-    var command_stream = std.io.fixedBufferStream(&command_buf);
-    const cmd_writer = command_stream.writer();
+    var command_list = std.ArrayList(u8){};
+    defer command_list.deinit(allocator);
 
-    try cmd_writer.writeAll(script_command);
+    try command_list.appendSlice(allocator, script_command);
     for (script_args) |arg| {
-        try cmd_writer.writeByte(' ');
-        try cmd_writer.writeAll(arg);
+        try command_list.append(allocator, ' ');
+        try command_list.appendSlice(allocator, arg);
     }
-    const display_command = try allocator.dupe(u8, command_stream.getWritten());
+    const display_command = try allocator.dupe(u8, command_list.items);
     defer allocator.free(display_command);
 
     // Print what we're running
@@ -182,11 +182,10 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     }
 
     // Build output listing all scripts
-    var output_buf: [8192]u8 = undefined;
-    var output_stream = std.io.fixedBufferStream(&output_buf);
-    const writer = output_stream.writer();
+    var output_list = std.ArrayList(u8){};
+    defer output_list.deinit(allocator);
 
-    try writer.writeAll("\x1b[1mAvailable scripts:\x1b[0m\n\n");
+    try output_list.appendSlice(allocator, "\x1b[1mAvailable scripts:\x1b[0m\n\n");
 
     // Collect and sort script names
     var script_names_buf: [100][]const u8 = undefined;
@@ -217,16 +216,15 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     // Print scripts in sorted order
     for (script_names) |name| {
         const command = scripts.get(name).?;
-        try writer.writeAll("  \x1b[36m");
-        try writer.writeAll(name);
-        try writer.writeAll("\x1b[0m\n    ");
-        try writer.writeAll(command);
-        try writer.writeAll("\n\n");
+        try output_list.appendSlice(allocator, "  \x1b[36m");
+        try output_list.appendSlice(allocator, name);
+        try output_list.appendSlice(allocator, "\x1b[0m\n    ");
+        try output_list.appendSlice(allocator, command);
+        try output_list.appendSlice(allocator, "\n\n");
     }
 
-    const output_bytes = output_stream.getWritten();
     return .{
         .exit_code = 0,
-        .message = try allocator.dupe(u8, output_bytes),
+        .message = try allocator.dupe(u8, output_list.items),
     };
 }

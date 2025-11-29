@@ -548,7 +548,7 @@ fn extractClaims(allocator: std.mem.Allocator, obj: std.json.ObjectMap) !OIDCTok
 
 /// Validate token expiration
 pub fn validateExpiration(claims: *const OIDCToken.Claims) !void {
-    const now = std.time.timestamp();
+    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
 
     // Check if token has expired
     if (now >= claims.exp) {
@@ -589,7 +589,9 @@ pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OI
 
 /// Request OIDC token from GitHub Actions
 fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8, request_token: []const u8) ![]const u8 {
-    var client = http.Client{ .allocator = allocator };
+    var io = std.Io.Threaded.init(allocator);
+    defer io.deinit();
+    var client = http.Client{ .allocator = allocator, .io = io.io() };
     defer client.deinit();
 
     // Add audience query parameter (default to "pantry")

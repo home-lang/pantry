@@ -48,7 +48,7 @@ fn extractWorkspaceDependencies(
         const config_path = try std.fs.path.join(allocator, &[_][]const u8{ member.abs_path, config_file });
         defer allocator.free(config_path);
 
-        const content = std.fs.cwd().readFileAlloc(config_path, allocator, @enumFromInt(10 * 1024 * 1024)) catch continue;
+        const content = std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch continue;
         defer allocator.free(content);
 
         // Parse JSON to find dependencies

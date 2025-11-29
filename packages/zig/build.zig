@@ -435,9 +435,9 @@ fn getPackageVersion(b: *std.Build) ![]const u8 {
     // TODO: Re-enable when Zig API stabilizes
     // Try to read from parent directory (monorepo structure)
     // const package_json = std.fs.cwd().readFileAlloc(
-    //     b.allocator,
     //     "../../package.json",
-    //     1024 * 1024,
+    //     b.allocator,
+    //     std.Io.Limit.limited(1024 * 1024),
     // ) catch |err| {
     //     std.debug.print("Warning: Could not read package.json: {}\n", .{err});
     //     return error.PackageJsonNotFound;

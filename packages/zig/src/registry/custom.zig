@@ -144,7 +144,7 @@ pub const CustomRegistry = struct {
         tarball_path: []const u8,
     ) !void {
         // Read tarball file
-        const tarball_data = try std.fs.cwd().readFileAlloc(tarball_path, allocator, 100 * 1024 * 1024); // 100MB max
+        const tarball_data = try std.fs.cwd().readFileAlloc(tarball_path, allocator, std.Io.Limit.limited(100 * 1024 * 1024)); // 100MB max
         defer allocator.free(tarball_data);
 
         // Generate multipart boundary

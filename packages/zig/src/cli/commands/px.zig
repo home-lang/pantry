@@ -37,7 +37,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     defer allocator.free(local_bin);
 
     const found_local = blk: {
-        std.fs.cwd().access(local_bin, .{ .mode = .read_only }) catch {
+        std.fs.cwd().access(local_bin, .{}) catch {
             break :blk false;
         };
         break :blk true;
@@ -58,7 +58,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
 
     const found_global = blk: {
         if (found_local) break :blk false;
-        std.fs.cwd().access(global_bin, .{ .mode = .read_only }) catch {
+        std.fs.cwd().access(global_bin, .{}) catch {
             break :blk false;
         };
         break :blk true;
@@ -85,7 +85,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
         }
 
         // After install, check local bin again
-        std.fs.cwd().access(local_bin, .{ .mode = .read_only }) catch {
+        std.fs.cwd().access(local_bin, .{}) catch {
             return .{
                 .exit_code = 1,
                 .message = try std.fmt.allocPrint(allocator, "Error: Package '{s}' installed but executable '{s}' not found", .{ package_name, executable_name }),

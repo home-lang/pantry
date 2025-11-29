@@ -8,16 +8,21 @@ pub const RegistryClient = struct {
     registry_url: []const u8,
     http_client: http.Client,
 
+    io: std.Io.Threaded,
+
     pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) RegistryClient {
+        var io = std.Io.Threaded.init(allocator);
         return RegistryClient{
             .allocator = allocator,
             .registry_url = registry_url,
-            .http_client = http.Client{ .allocator = allocator },
+            .io = io,
+            .http_client = http.Client{ .allocator = allocator, .io = io.io() },
         };
     }
 
     pub fn deinit(self: *RegistryClient) void {
         self.http_client.deinit();
+        self.io.deinit();
     }
 
     /// Publish package using OIDC authentication
@@ -38,9 +43,9 @@ pub const RegistryClient = struct {
 
         // Read tarball
         const tarball = try std.fs.cwd().readFileAlloc(
-            self.allocator,
             tarball_path,
-            100 * 1024 * 1024, // 100 MB max
+            self.allocator,
+            std.Io.Limit.limited(100 * 1024 * 1024), // 100 MB max
         );
         defer self.allocator.free(tarball);
 
@@ -114,9 +119,9 @@ pub const RegistryClient = struct {
 
         // Read tarball
         const tarball = try std.fs.cwd().readFileAlloc(
-            self.allocator,
             tarball_path,
-            100 * 1024 * 1024,
+            self.allocator,
+            std.Io.Limit.limited(100 * 1024 * 1024),
         );
         defer self.allocator.free(tarball);
 
