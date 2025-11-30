@@ -141,7 +141,7 @@ pub const PackageCache = struct {
             };
 
             // Update last accessed time (for LRU)
-            meta.last_accessed = std.time.timestamp();
+            meta.last_accessed = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
 
             return meta.*;
         }
@@ -179,7 +179,7 @@ pub const PackageCache = struct {
         const key = try getCacheKey(self.allocator, name, version);
         errdefer self.allocator.free(key);
 
-        const now = std.time.timestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
 
         // Estimate uncompressed size (for gzipped tarballs, typically 3-5x compression)
         // This is a heuristic - exact size would require extraction
@@ -328,7 +328,7 @@ pub const PackageCache = struct {
         self.lock.lock();
         defer self.lock.unlock();
 
-        const now = std.time.timestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
         const max_age_seconds = @as(i64, max_age_days) * 24 * 60 * 60;
 
         // Build list of all packages with their metadata

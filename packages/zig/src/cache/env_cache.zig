@@ -29,7 +29,7 @@ pub const Entry = struct {
 
     /// Check if cache entry is still valid
     pub fn isValid(self: *Entry, _: std.mem.Allocator) !bool {
-        const now = std.time.timestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
 
         // Check TTL expiration
         if (now - self.created_at > self.ttl) {
@@ -41,7 +41,7 @@ pub const Entry = struct {
             return false; // File no longer exists
         };
 
-        const current_mtime = stat.mtime;
+        const current_mtime = stat.mtime.toNanoseconds();
         if (current_mtime != self.dep_mtime) {
             return false; // File has been modified
         }
@@ -433,10 +433,10 @@ pub fn createEntry(
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, dep_file),
-        .dep_mtime = stat.mtime,
+        .dep_mtime = stat.mtime.toNanoseconds(),
         .path = try allocator.dupe(u8, path),
         .env_vars = env_vars,
-        .created_at = std.time.timestamp(),
+        .created_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
     };
 
     return entry;
@@ -465,11 +465,11 @@ test "EnvCache basic operations" {
 
     const hash = string.md5Hash("test");
     const entry = try allocator.create(Entry);
-    const now = std.time.timestamp();
+    const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, tmp_file),
-        .dep_mtime = stat.mtime,
+        .dep_mtime = stat.mtime.toNanoseconds(),
         .path = try allocator.dupe(u8, "/usr/bin"),
         .env_vars = env_vars,
         .created_at = now,
@@ -517,11 +517,11 @@ test "EnvCache fast cache" {
         const hash = string.md5Hash(key);
 
         const entry = try allocator.create(Entry);
-        const now = std.time.timestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
         entry.* = .{
             .hash = hash,
             .dep_file = try allocator.dupe(u8, tmp_file),
-            .dep_mtime = stat.mtime,
+            .dep_mtime = stat.mtime.toNanoseconds(),
             .path = try allocator.dupe(u8, "/usr/bin"),
             .env_vars = env_vars,
             .created_at = now,

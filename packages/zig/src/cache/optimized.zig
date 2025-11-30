@@ -188,7 +188,7 @@ pub const OptimizedCache = struct {
         // Check TTL expiration
         if (result) |meta| {
             if (self.config.max_age_seconds > 0) {
-                const now = std.time.timestamp();
+                const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
                 const age = now - meta.downloaded_at;
                 if (age > self.config.max_age_seconds) {
                     // Expired, remove from cache
@@ -393,7 +393,7 @@ pub const OptimizedCache = struct {
         self.base.lock.lock();
         defer self.base.lock.unlock();
 
-        const now = std.time.timestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
         var to_remove = std.ArrayList([]const u8).init(self.allocator);
         defer to_remove.deinit();
 

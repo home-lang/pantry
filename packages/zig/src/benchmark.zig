@@ -34,11 +34,11 @@ pub fn benchmark(
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
-        const start = std.time.nanoTimestamp();
+        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
         func();
-        const end = std.time.nanoTimestamp();
+        const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
 
-        const elapsed = @as(u64, @intCast(end - start));
+        const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
@@ -68,11 +68,11 @@ pub fn benchmarkCacheLookup(
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
-        const start = std.time.nanoTimestamp();
+        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
         _ = try cache.get(key);
-        const end = std.time.nanoTimestamp();
+        const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
 
-        const elapsed = @as(u64, @intCast(end - start));
+        const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
@@ -106,11 +106,11 @@ pub fn benchmarkHash(
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
-        const start = std.time.nanoTimestamp();
+        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
         _ = string.md5Hash(data);
-        const end = std.time.nanoTimestamp();
+        const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
 
-        const elapsed = @as(u64, @intCast(end - start));
+        const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;

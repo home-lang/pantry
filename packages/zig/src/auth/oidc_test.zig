@@ -186,9 +186,9 @@ test "Validate Token Expiration - Valid" {
         .iss = "https://token.actions.githubusercontent.com",
         .sub = "repo:owner/repo:ref:refs/heads/main",
         .aud = "pantry",
-        .exp = std.time.timestamp() + 3600, // Expires in 1 hour
-        .iat = std.time.timestamp() - 60, // Issued 1 minute ago
-        .nbf = std.time.timestamp() - 60, // Valid from 1 minute ago
+        .exp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)) + 3600, // Expires in 1 hour
+        .iat = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)) - 60, // Issued 1 minute ago
+        .nbf = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)) - 60, // Valid from 1 minute ago
         .jti = null,
         .repository_owner = "owner",
         .repository = "owner/repo",

@@ -143,7 +143,7 @@ test "Verify with missing key returns error" {
         .algorithm = "ed25519",
         .signature = "dummy_signature",
         .key_id = "nonexistent_key",
-        .timestamp = std.time.timestamp(),
+        .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
     };
 
     var keyring = signing.Keyring.init(allocator);
@@ -165,7 +165,7 @@ test "Verify with unsupported algorithm returns error" {
         .algorithm = "unsupported_algo",
         .signature = "dummy_signature",
         .key_id = "some_key",
-        .timestamp = std.time.timestamp(),
+        .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
     };
 
     var keyring = signing.Keyring.init(allocator);

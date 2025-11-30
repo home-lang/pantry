@@ -37,10 +37,11 @@ pub const ShellCommands = struct {
     /// Returns: env_dir|project_dir or empty on cache miss
     /// Performance target: < 1ms
     pub fn lookup(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
-        const start = std.time.nanoTimestamp();
+        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
         defer {
-            const elapsed = std.time.nanoTimestamp() - start;
-            const elapsed_us = @divFloor(elapsed, std.time.ns_per_us);
+            const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
+            const elapsed_us = @divFloor(elapsed_ns, std.time.ns_per_us);
             if (elapsed_us > 1000) {
                 std.debug.print("! shell:lookup took {d}μs (> 1ms target)\n", .{elapsed_us});
             }
@@ -74,7 +75,7 @@ pub const ShellCommands = struct {
                     defer file.close();
 
                     const stat = try file.stat();
-                    const mtime = @divFloor(stat.mtime, std.time.ns_per_s);
+                    const mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
 
                     if (mtime != entry.dep_mtime) {
                         // Dependency file changed, invalidate cache
@@ -94,8 +95,10 @@ pub const ShellCommands = struct {
             const parent = std.fs.path.dirname(current_dir) orelse break;
             if (std.mem.eql(u8, parent, current_dir)) break; // Reached root
 
+            // Duplicate parent before freeing current_dir since parent points into current_dir
+            const new_dir = try self.allocator.dupe(u8, parent);
             self.allocator.free(current_dir);
-            current_dir = try self.allocator.dupe(u8, parent);
+            current_dir = new_dir;
         }
 
         return null; // Cache miss
@@ -105,10 +108,11 @@ pub const ShellCommands = struct {
     /// Returns: Shell code to eval (exports, PATH modifications)
     /// Performance target: < 50ms (cache hit), < 300ms (cache miss with install)
     pub fn activate(self: *ShellCommands, pwd: []const u8) ![]const u8 {
-        const start = std.time.nanoTimestamp();
+        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
         defer {
-            const elapsed = std.time.nanoTimestamp() - start;
-            const elapsed_ms = @divFloor(elapsed, std.time.ns_per_ms);
+            const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
+            const elapsed_ms = @divFloor(elapsed_ns, std.time.ns_per_ms);
             if (elapsed_ms > 50) {
                 std.debug.print("⏱️  shell:activate took {d}ms\n", .{elapsed_ms});
             }
@@ -126,7 +130,7 @@ pub const ShellCommands = struct {
 
         // 3. Fast-path: Check cache first (1-hour TTL)
         const cache_ttl_seconds: i64 = 3600; // 1 hour
-        const now = std.time.timestamp();
+        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
 
         const project_hash_quick = lib.string.md5Hash(project_root);
         if (try self.env_cache.get(project_hash_quick)) |cached_entry| {
@@ -139,7 +143,7 @@ pub const ShellCommands = struct {
                     const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
                     defer f.close();
                     const stat = f.stat() catch break :blk 0;
-                    break :blk @divFloor(stat.mtime, std.time.ns_per_s);
+                    break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
                 } else 0;
 
                 // Cache hit: dep file unchanged within TTL
@@ -208,9 +212,9 @@ pub const ShellCommands = struct {
 
             // Parse dependency file to detect version changes
             const dep_file_content = std.fs.cwd().readFileAlloc(
-                self.allocator,
                 dep_file.?,
-                10 * 1024 * 1024, // 10MB max
+                self.allocator,
+                std.Io.Limit.limited(10 * 1024 * 1024), // 10MB max
             ) catch {
                 std.debug.print("⚠️  Could not read {s}\n", .{dep_file.?});
                 return try self.allocator.dupe(u8, "");
@@ -233,11 +237,11 @@ pub const ShellCommands = struct {
             const original_cwd = try std.process.getCwdAlloc(self.allocator);
             defer self.allocator.free(original_cwd);
 
-            std.os.chdir(project_root) catch |err| {
+            std.posix.chdir(project_root) catch |err| {
                 std.debug.print("❌ Failed to change to project directory: {s}\n", .{@errorName(err)});
                 return try self.allocator.dupe(u8, "");
             };
-            defer std.os.chdir(original_cwd) catch {};
+            defer std.posix.chdir(original_cwd) catch {};
 
             // Run install command (no args = auto-detect from dep file)
             var install_result = install_cmd.installCommandWithOptions(
@@ -268,7 +272,7 @@ pub const ShellCommands = struct {
                 const f = std.fs.cwd().openFile(dep_file.?, .{}) catch break :blk 0;
                 defer f.close();
                 const stat = f.stat() catch break :blk 0;
-                break :blk @divFloor(stat.mtime, std.time.ns_per_s);
+                break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
             };
 
             // Check if dep file was modified recently (cache was invalidated)
@@ -285,11 +289,11 @@ pub const ShellCommands = struct {
                     const original_cwd = try std.process.getCwdAlloc(self.allocator);
                     defer self.allocator.free(original_cwd);
 
-                    std.os.chdir(project_root) catch |err| {
+                    std.posix.chdir(project_root) catch |err| {
                         std.debug.print("❌ Failed to change to project directory: {s}\n", .{@errorName(err)});
                         return try self.allocator.dupe(u8, "");
                     };
-                    defer std.os.chdir(original_cwd) catch {};
+                    defer std.posix.chdir(original_cwd) catch {};
 
                     // Run install command (no args = auto-detect from dep file)
                     var install_result = install_cmd.installCommandWithOptions(
@@ -320,7 +324,7 @@ pub const ShellCommands = struct {
             const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
             defer f.close();
             const stat = f.stat() catch break :blk 0;
-            break :blk @divFloor(stat.mtime, std.time.ns_per_s);
+            break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
         } else 0;
 
         const entry = try self.allocator.create(lib.cache.env_cache.Entry);
@@ -330,9 +334,9 @@ pub const ShellCommands = struct {
             .dep_mtime = dep_mtime,
             .path = try self.allocator.dupe(u8, env_dir),
             .env_vars = std.StringHashMap([]const u8).init(self.allocator),
-            .created_at = std.time.timestamp(),
-            .cached_at = std.time.timestamp(),
-            .last_validated = std.time.timestamp(),
+            .created_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+            .cached_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+            .last_validated = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
         };
 
         try self.env_cache.put(entry);
@@ -368,21 +372,21 @@ pub const ShellCommands = struct {
         defer self.allocator.free(runtime_paths);
 
         // Build PATH with runtime bins first (highest precedence)
-        var path_components = std.ArrayList([]const u8).init(self.allocator);
-        defer path_components.deinit();
+        var path_components: std.ArrayList([]const u8) = .{};
+        defer path_components.deinit(self.allocator);
 
         // 1. Runtime binaries (highest priority)
         if (runtime_paths.len > 0) {
-            try path_components.append(runtime_paths);
+            try path_components.append(self.allocator, runtime_paths);
         }
 
         // 2. Project-local binaries
         if (has_pantry_modules) {
-            try path_components.append(pantry_modules_bin);
+            try path_components.append(self.allocator, pantry_modules_bin);
         }
 
         // 3. Environment binaries
-        try path_components.append(env_bin);
+        try path_components.append(self.allocator, env_bin);
 
         // Join all paths
         const new_path = try std.mem.join(self.allocator, ":", path_components.items);
@@ -412,7 +416,6 @@ pub const ShellCommands = struct {
         };
         defer {
             self.allocator.free(deps_file.path);
-            self.allocator.free(deps_file.root_dir);
         }
 
         const deps = try parser.inferDependencies(self.allocator, deps_file);
@@ -425,20 +428,20 @@ pub const ShellCommands = struct {
         }
 
         // Find runtime dependencies and build paths
-        var runtime_paths = std.ArrayList([]const u8).init(self.allocator);
+        var runtime_paths: std.ArrayList([]const u8) = .{};
         defer {
             for (runtime_paths.items) |path| self.allocator.free(path);
-            runtime_paths.deinit();
+            runtime_paths.deinit(self.allocator);
         }
 
-        const paths = try lib.core.Paths.init(self.allocator);
-        defer paths.deinit(self.allocator);
+        const home_dir = try lib.core.Paths.home(self.allocator);
+        defer self.allocator.free(home_dir);
 
         for (deps) |dep| {
             if (dep.isRuntime()) {
                 // Build path to runtime bin directory
                 const runtime_bin = try std.fs.path.join(self.allocator, &[_][]const u8{
-                    paths.home,
+                    home_dir,
                     ".pantry",
                     "runtimes",
                     dep.name,
@@ -452,7 +455,7 @@ pub const ShellCommands = struct {
                     continue;
                 };
 
-                try runtime_paths.append(runtime_bin);
+                try runtime_paths.append(self.allocator, runtime_bin);
             }
         }
 
@@ -467,9 +470,8 @@ pub const ShellCommands = struct {
     /// Auto-start services configured in pantry.json
     fn autoStartServices(self: *ShellCommands, project_root: []const u8) !void {
         // Load services configuration
-        const services = lib.config.findProjectServices(self.allocator, project_root) catch |err| {
+        const services = lib.config.findProjectServices(self.allocator, project_root) catch {
             // Silently ignore errors - services config is optional
-            _ = err;
             return;
         };
 
@@ -492,7 +494,7 @@ pub const ShellCommands = struct {
 
             // Use the service commands module to start the service
             const service_cmd = @import("../cli/commands/services.zig");
-            const result = service_cmd.serviceStartCommand(self.allocator, &[_][]const u8{svc.name}) catch |err| {
+            var result = service_cmd.startCommand(self.allocator, &[_][]const u8{svc.name}) catch |err| {
                 std.debug.print("⚠️  Failed to start {s}: {s}\n", .{ svc.name, @errorName(err) });
                 continue;
             };
@@ -511,6 +513,7 @@ pub const ShellCommands = struct {
     fn detectProjectRoot(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
         // Known dependency files to look for
         const dep_files = [_][]const u8{
+            "pantry.json",
             "pantry.jsonc",
             "package.json",
             "Cargo.toml",
@@ -541,8 +544,10 @@ pub const ShellCommands = struct {
             const parent = std.fs.path.dirname(current_dir) orelse break;
             if (std.mem.eql(u8, parent, current_dir)) break; // Reached root
 
+            // Duplicate parent before freeing current_dir since parent points into current_dir
+            const new_dir = try self.allocator.dupe(u8, parent);
             self.allocator.free(current_dir);
-            current_dir = try self.allocator.dupe(u8, parent);
+            current_dir = new_dir;
         }
 
         return null;
@@ -550,6 +555,7 @@ pub const ShellCommands = struct {
 
     fn findDependencyFile(self: *ShellCommands, project_root: []const u8) !?[]const u8 {
         const dep_files = [_][]const u8{
+            "pantry.json",
             "pantry.jsonc",
             "package.json",
             "Cargo.toml",

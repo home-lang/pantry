@@ -76,7 +76,26 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
 }
 
 pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
-    _ = dir;
-    _ = allocator;
-    return .{ .exit_code = 0 };
+    // Use the full ShellCommands implementation for activate
+    const shell_cmds = @import("../../shell/commands.zig");
+
+    var commands = try shell_cmds.ShellCommands.init(allocator);
+    defer commands.deinit();
+
+    const shell_code = commands.activate(dir) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Error: Failed to activate environment: {s}",
+            .{@errorName(err)},
+        );
+        return .{
+            .exit_code = 1,
+            .message = msg,
+        };
+    };
+
+    return .{
+        .exit_code = 0,
+        .message = shell_code,
+    };
 }
