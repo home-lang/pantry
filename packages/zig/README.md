@@ -24,6 +24,12 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation, ac
 - **Automatic Updates** - Detects version changes in config files and auto-installs/updates
 - **Dependency Resolution** - Smart dependency resolution with conflict detection
 - **Package Publishing** - Publish to custom registries with `publish` command
+- **Package Signing** - Ed25519 signature verification for secure package distribution
+- **Dependency Tree** - Visualize dependencies with colored tree output or JSON
+- **Interactive Init** - `pantry init` command for quick project setup
+- **Offline Mode** - Install from cache when offline with `PANTRY_OFFLINE=1`
+- **Proxy Support** - HTTP/HTTPS proxy configuration with NO_PROXY bypass
+- **Error Recovery** - Automatic rollback on failures with contextual suggestions
 
 ### 🔧 Service Management
 - **31 Pre-configured Services** - nginx, postgres, redis, mongodb, mysql, and more
@@ -130,6 +136,73 @@ zig build bench
 # Compile for all platforms
 zig build compile-all
 ```
+
+## New Commands
+
+### Package Initialization
+```bash
+# Initialize a new pantry.json file interactively
+pantry init
+```
+
+### Dependency Visualization
+```bash
+# Display dependency tree
+pantry tree
+
+# Hide version numbers
+pantry tree --no-versions
+
+# Hide dev dependencies
+pantry tree --no-dev
+
+# Show peer dependencies
+pantry tree --peer
+
+# Limit tree depth
+pantry tree --depth=2
+
+# Output in JSON format
+pantry tree --json
+```
+
+### Package Signing & Verification
+```bash
+# Generate Ed25519 keypair
+pantry generate-key
+
+# Sign a package
+pantry sign package.tar.gz <private-key-hex>
+
+# Verify package signature
+pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
+```
+
+### Offline Mode & Proxy Support
+```bash
+# Enable offline mode (uses cache only)
+export PANTRY_OFFLINE=1
+pantry install
+
+# Or use flag
+pantry install --offline
+
+# Configure proxy
+export HTTP_PROXY=http://proxy.company.com:8080
+export HTTPS_PROXY=https://proxy.company.com:8080
+export NO_PROXY=localhost,127.0.0.1,.local
+pantry install
+```
+
+### Error Recovery
+When installations fail, pantry provides contextual suggestions:
+- **Network errors**: Check connection, try `--offline` flag
+- **Permission errors**: Check ownership, may need elevated permissions
+- **Disk space errors**: Clear cache with `pantry cache:clear`
+- **Corrupted packages**: Clear cache and retry
+- **Version conflicts**: Use `pantry tree` to debug dependencies
+
+Automatic rollback on critical failures protects your environment.
 
 ## Project Structure
 

@@ -1035,6 +1035,187 @@ fn statusAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn verifyAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const package_path = ctx.getArgument(0) orelse {
+        std.debug.print("Error: verify requires a package path argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const keyring_path = ctx.getOption("keyring");
+    const verbose = ctx.hasOption("verbose");
+
+    var args = std.ArrayList([]const u8){};
+    defer args.deinit(allocator);
+
+    try args.append(allocator, package_path);
+    if (keyring_path) |path| {
+        try args.append(allocator, "--keyring");
+        try args.append(allocator, path);
+    }
+    if (verbose) {
+        try args.append(allocator, "--verbose");
+    }
+
+    const verify = @import("cli/commands/verify.zig");
+    const result = try verify.verifyCommand(allocator, args.items);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn signAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const package_path = ctx.getArgument(0) orelse {
+        std.debug.print("Error: sign requires a package path argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const key = ctx.getArgument(1) orelse {
+        std.debug.print("Error: sign requires a private key argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const output = ctx.getOption("output");
+    const verbose = ctx.hasOption("verbose");
+
+    var args = std.ArrayList([]const u8){};
+    defer args.deinit(allocator);
+
+    try args.append(allocator, package_path);
+    try args.append(allocator, key);
+    if (output) |path| {
+        try args.append(allocator, "--output");
+        try args.append(allocator, path);
+    }
+    if (verbose) {
+        try args.append(allocator, "--verbose");
+    }
+
+    const verify = @import("cli/commands/verify.zig");
+    const result = try verify.signCommand(allocator, args.items);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn generateKeyAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const output = ctx.getOption("output");
+    const verbose = ctx.hasOption("verbose");
+
+    var args = std.ArrayList([]const u8){};
+    defer args.deinit(allocator);
+
+    if (output) |path| {
+        try args.append(allocator, "--output");
+        try args.append(allocator, path);
+    }
+    if (verbose) {
+        try args.append(allocator, "--verbose");
+    }
+
+    const verify = @import("cli/commands/verify.zig");
+    const result = try verify.generateKeyCommand(allocator, args.items);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn initAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const verbose = ctx.hasOption("verbose");
+
+    var args = std.ArrayList([]const u8){};
+    defer args.deinit(allocator);
+
+    if (verbose) {
+        try args.append(allocator, "--verbose");
+    }
+
+    const init = @import("cli/commands/init.zig");
+    const result = try init.initCommand(allocator, args.items);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const no_versions = ctx.hasOption("no-versions");
+    const no_dev = ctx.hasOption("no-dev");
+    const peer = ctx.hasOption("peer");
+    const json = ctx.hasOption("json");
+    const depth = ctx.getOption("depth");
+
+    var args = std.ArrayList([]const u8){};
+    defer args.deinit(allocator);
+
+    if (no_versions) {
+        try args.append(allocator, "--no-versions");
+    }
+    if (no_dev) {
+        try args.append(allocator, "--no-dev");
+    }
+    if (peer) {
+        try args.append(allocator, "--peer");
+    }
+    if (json) {
+        try args.append(allocator, "--json");
+    }
+    if (depth) |d| {
+        const depth_arg = try std.fmt.allocPrint(allocator, "--depth={s}", .{d});
+        defer allocator.free(depth_arg);
+        try args.append(allocator, depth_arg);
+    }
+
+    const tree = @import("cli/commands/tree.zig");
+    const result = try tree.treeCommand(allocator, args.items);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 // ============================================================================
 // Main
 // ============================================================================
@@ -1627,6 +1808,101 @@ pub fn main() !void {
 
     _ = status_cmd.setAction(statusAction);
     _ = try root.addCommand(status_cmd);
+
+    // ========================================================================
+    // Verify Command (Package Signature Verification)
+    // ========================================================================
+    var verify_cmd = try cli.BaseCommand.init(allocator, "verify", "Verify package signature");
+
+    const verify_package_arg = cli.Argument.init("package", "Package path to verify", .string)
+        .withRequired(true);
+    _ = try verify_cmd.addArgument(verify_package_arg);
+
+    const verify_keyring_opt = cli.Option.init("keyring", "keyring", "Path to keyring file", .string)
+        .withShort('k');
+    _ = try verify_cmd.addOption(verify_keyring_opt);
+
+    const verify_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try verify_cmd.addOption(verify_verbose_opt);
+
+    _ = verify_cmd.setAction(verifyAction);
+    _ = try root.addCommand(verify_cmd);
+
+    // ========================================================================
+    // Sign Command (Package Signing)
+    // ========================================================================
+    var sign_cmd = try cli.BaseCommand.init(allocator, "sign", "Sign a package");
+
+    const sign_package_arg = cli.Argument.init("package", "Package path to sign", .string)
+        .withRequired(true);
+    _ = try sign_cmd.addArgument(sign_package_arg);
+
+    const sign_key_arg = cli.Argument.init("key", "Private key (hex format)", .string)
+        .withRequired(true);
+    _ = try sign_cmd.addArgument(sign_key_arg);
+
+    const sign_output_opt = cli.Option.init("output", "output", "Output signature file path", .string)
+        .withShort('o');
+    _ = try sign_cmd.addOption(sign_output_opt);
+
+    const sign_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try sign_cmd.addOption(sign_verbose_opt);
+
+    _ = sign_cmd.setAction(signAction);
+    _ = try root.addCommand(sign_cmd);
+
+    // ========================================================================
+    // Generate-Key Command (Keypair Generation)
+    // ========================================================================
+    var generate_key_cmd = try cli.BaseCommand.init(allocator, "generate-key", "Generate Ed25519 keypair");
+
+    const generate_key_output_opt = cli.Option.init("output", "output", "Output directory for keys", .string)
+        .withShort('o');
+    _ = try generate_key_cmd.addOption(generate_key_output_opt);
+
+    const generate_key_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try generate_key_cmd.addOption(generate_key_verbose_opt);
+
+    _ = generate_key_cmd.setAction(generateKeyAction);
+    _ = try root.addCommand(generate_key_cmd);
+
+    // ========================================================================
+    // Init Command (Project Initialization)
+    // ========================================================================
+    var init_cmd = try cli.BaseCommand.init(allocator, "init", "Initialize a new pantry.json file");
+
+    const init_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try init_cmd.addOption(init_verbose_opt);
+
+    _ = init_cmd.setAction(initAction);
+    _ = try root.addCommand(init_cmd);
+
+    // ========================================================================
+    // Tree Command (Dependency Tree Visualization)
+    // ========================================================================
+    var tree_cmd = try cli.BaseCommand.init(allocator, "tree", "Display dependency tree");
+
+    const tree_no_versions_opt = cli.Option.init("no-versions", "no-versions", "Hide version numbers", .bool);
+    _ = try tree_cmd.addOption(tree_no_versions_opt);
+
+    const tree_no_dev_opt = cli.Option.init("no-dev", "no-dev", "Hide dev dependencies", .bool);
+    _ = try tree_cmd.addOption(tree_no_dev_opt);
+
+    const tree_peer_opt = cli.Option.init("peer", "peer", "Show peer dependencies", .bool);
+    _ = try tree_cmd.addOption(tree_peer_opt);
+
+    const tree_json_opt = cli.Option.init("json", "json", "Output in JSON format", .bool);
+    _ = try tree_cmd.addOption(tree_json_opt);
+
+    const tree_depth_opt = cli.Option.init("depth", "depth", "Maximum tree depth", .string);
+    _ = try tree_cmd.addOption(tree_depth_opt);
+
+    _ = tree_cmd.setAction(treeAction);
+    _ = try root.addCommand(tree_cmd);
 
     // Parse arguments
     const args = try std.process.argsAlloc(allocator);

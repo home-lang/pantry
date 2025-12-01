@@ -127,6 +127,50 @@ pub fn installSinglePackage(
         };
     };
 
+    // Check offline mode first
+    const offline_mod = @import("../../../install/offline.zig");
+    const recovery_mod = @import("../../../install/recovery.zig");
+
+    const is_offline = offline_mod.isOfflineMode();
+
+    // Try installing from cache if offline
+    if (is_offline) {
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
+        defer allocator.free(dest_dir);
+
+        const cache_success = offline_mod.installFromCache(
+            allocator,
+            dep.name,
+            dep.version,
+            dest_dir,
+        ) catch false;
+
+        if (cache_success) {
+            const end_time = std.time.milliTimestamp();
+            return .{
+                .name = dep.name,
+                .version = try allocator.dupe(u8, dep.version),
+                .success = true,
+                .error_msg = null,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        } else if (is_offline) {
+            // Offline mode, but package not in cache
+            const error_msg = try std.fmt.allocPrint(
+                allocator,
+                "Package not in cache (offline mode)",
+                .{},
+            );
+            return .{
+                .name = dep.name,
+                .version = dep.version,
+                .success = false,
+                .error_msg = error_msg,
+                .install_time_ms = 0,
+            };
+        }
+    }
+
     // Create installer with project_root option for local installs
     var custom_installer = try install.Installer.init(allocator, pkg_cache);
     allocator.free(custom_installer.data_dir);
@@ -138,6 +182,18 @@ pub fn installSinglePackage(
         .project_root = proj_dir,
         .quiet = true,
     }) catch |err| {
+        // Provide recovery suggestions on error
+        const suggestion = try recovery_mod.RecoverySuggestion.suggest(
+            allocator,
+            err,
+            try std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ dep.name, dep.version }),
+        );
+        defer if (suggestion.message.len > 0) allocator.free(suggestion.message);
+
+        if (!options.quiet) {
+            suggestion.print();
+        }
+
         const error_msg = try std.fmt.allocPrint(
             allocator,
             "failed: {}",

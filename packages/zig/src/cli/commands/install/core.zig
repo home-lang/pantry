@@ -10,6 +10,8 @@ const workspace = @import("workspace.zig");
 const global = @import("global.zig");
 const version_options = @import("version");
 const lockfile_hooks = @import("lockfile_hooks.zig");
+const offline = @import("../../../install/offline.zig");
+const recovery = @import("../../../install/recovery.zig");
 
 const cache = lib.cache;
 const string = lib.string;
@@ -232,6 +234,23 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(bin_dir);
         try std.fs.cwd().makePath(bin_dir);
 
+        // Check if we're in offline mode
+        const is_offline = offline.isOfflineMode();
+        if (is_offline) {
+            std.debug.print("🔌 Offline mode enabled - using cache only\n", .{});
+        }
+
+        // Create recovery checkpoint for rollback on failure
+        var checkpoint = recovery.InstallCheckpoint.init(allocator);
+        defer checkpoint.deinit();
+
+        // Create backup of current state
+        checkpoint.createBackup(proj_dir) catch |err| {
+            if (options.verbose) {
+                std.debug.print("⚠️  Could not create backup: {}\n", .{err});
+            }
+        };
+
         // Load or create lockfile
         var lock_file = try lockfile_hooks.loadOrCreateLockfile(allocator, cwd);
         defer lock_file.deinit();
@@ -243,6 +262,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 r.deinit(allocator);
             }
             if (!pre_result.success) {
+                // Rollback on pre-install hook failure
+                checkpoint.rollback() catch |err| {
+                    std.debug.print("⚠️  Rollback failed: {}\n", .{err});
+                };
                 return .{
                     .exit_code = 1,
                     .message = try allocator.dupe(u8, "Pre-install hook failed"),
@@ -462,13 +485,29 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
         };
 
-        // Add successful packages to pantry.lock
+        // Add successful packages to pantry.lock and record in checkpoint
         for (install_results) |result| {
             if (result.success and result.name.len > 0) {
                 const clean_name = helpers.stripDisplayPrefix(result.name);
                 const resolved_url = try std.fmt.allocPrint(allocator, "registry:{s}@{s}", .{ clean_name, result.version });
                 defer allocator.free(resolved_url);
                 try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, null);
+
+                // Record successful package installation in checkpoint
+                checkpoint.recordPackage(clean_name) catch |err| {
+                    if (options.verbose) {
+                        std.debug.print("⚠️  Could not record package in checkpoint: {}\n", .{err});
+                    }
+                };
+
+                // Record installed files/directories
+                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules/{s}", .{ proj_dir, clean_name });
+                defer allocator.free(pkg_dir);
+                checkpoint.recordDir(pkg_dir) catch |err| {
+                    if (options.verbose) {
+                        std.debug.print("⚠️  Could not record directory in checkpoint: {}\n", .{err});
+                    }
+                };
             }
         }
 
@@ -500,6 +539,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         if (failed_count > 0) {
             const red = "\x1b[31m";
             std.debug.print("\n{s}{d} packages failed to install{s}\n", .{ red, failed_count, reset });
+
+            // Optional: Rollback on any failure (can be configured)
+            // For now, we keep partial installs but show warning
+            if (options.verbose) {
+                std.debug.print("⚠️  Some packages failed. Use 'pantry clean' to reset, or fix errors and retry.\n", .{});
+            }
         }
 
         // Execute post-install hook
