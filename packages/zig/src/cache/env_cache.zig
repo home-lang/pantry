@@ -37,13 +37,16 @@ pub const Entry = struct {
         }
 
         // Check if dependency file has been modified
-        const stat = std.fs.cwd().statFile(self.dep_file) catch {
-            return false; // File no longer exists
-        };
+        if (self.dep_file.len > 0) {
+            const stat = std.fs.cwd().statFile(self.dep_file) catch {
+                return false; // File no longer exists
+            };
 
-        const current_mtime = stat.mtime.toNanoseconds();
-        if (current_mtime != self.dep_mtime) {
-            return false; // File has been modified
+            // Compare in seconds (dep_mtime is stored in seconds)
+            const current_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
+            if (current_mtime != self.dep_mtime) {
+                return false; // File has been modified
+            }
         }
 
         // Update last_validated timestamp
@@ -318,10 +321,7 @@ pub const EnvCache = struct {
     pub fn load(self: *EnvCache) !void {
         const cache_file = self.cache_file_path orelse return error.NoCacheFile;
 
-        const file = try std.fs.cwd().openFile(cache_file, .{});
-        defer file.close();
-
-        const content = try file.readToEndAlloc(self.allocator, 10 * 1024 * 1024); // 10MB max
+        const content = try std.fs.cwd().readFileAlloc(cache_file, self.allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
         defer self.allocator.free(content);
 
         var lines = std.mem.splitScalar(u8, content, '\n');

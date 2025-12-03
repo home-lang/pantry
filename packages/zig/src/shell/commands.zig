@@ -6,21 +6,9 @@ pub const ShellCommands = struct {
     env_cache: *lib.cache.EnvCache,
 
     pub fn init(allocator: std.mem.Allocator) !ShellCommands {
-        const cache_dir = try lib.Paths.cache(allocator);
-        defer allocator.free(cache_dir);
-
-        const cache_file = try std.fs.path.join(allocator, &[_][]const u8{
-            cache_dir,
-            "env_cache.json",
-        });
-        defer allocator.free(cache_file);
-
-        // Ensure cache directory exists
-        const cache_parent = std.fs.path.dirname(cache_file) orelse cache_dir;
-        std.fs.cwd().makePath(cache_parent) catch {};
-
+        // Use persistent cache to avoid re-installing on every cd
         const env_cache = try allocator.create(lib.cache.EnvCache);
-        env_cache.* = lib.cache.EnvCache.init(allocator);
+        env_cache.* = try lib.cache.EnvCache.initWithPersistence(allocator);
 
         return .{
             .allocator = allocator,
@@ -128,29 +116,28 @@ pub const ShellCommands = struct {
         const dep_file = try self.findDependencyFile(project_root);
         defer if (dep_file) |file| self.allocator.free(file);
 
-        // 3. Fast-path: Check cache first (1-hour TTL)
-        const cache_ttl_seconds: i64 = 3600; // 1 hour
+        // 3. Fast-path: Check cache first (file modification based)
+        // If pantry.json mtime unchanged, use cached environment instantly
         const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
 
         const project_hash_quick = lib.string.md5Hash(project_root);
         if (try self.env_cache.get(project_hash_quick)) |cached_entry| {
-            const cache_age = now - cached_entry.last_validated;
+            // Get current dep file mtime
+            const current_dep_mtime = if (dep_file) |file| blk: {
+                const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
+                defer f.close();
+                const stat = f.stat() catch break :blk 0;
+                break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
+            } else 0;
 
-            // Check if cache is still valid (within TTL)
-            if (cache_age < cache_ttl_seconds) {
-                // Verify dep file hasn't changed
-                const current_dep_mtime = if (dep_file) |file| blk: {
-                    const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
-                    defer f.close();
-                    const stat = f.stat() catch break :blk 0;
-                    break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
-                } else 0;
-
-                // Cache hit: dep file unchanged within TTL
-                if (current_dep_mtime == cached_entry.dep_mtime) {
-                    return try self.generateShellCode(project_root, cached_entry.path);
-                }
+            // Cache hit if dep file mtime unchanged (primary check)
+            if (current_dep_mtime == cached_entry.dep_mtime) {
+                // File unchanged - use cache regardless of TTL
+                // Just update last_validated timestamp for bookkeeping
+                cached_entry.last_validated = now;
+                return try self.generateShellCode(project_root, cached_entry.path);
             }
+            // File mtime changed: invalidate cache and do full activation
         }
 
         // Cache miss or invalidated - proceed with full activation
