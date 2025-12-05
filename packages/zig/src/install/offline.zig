@@ -89,16 +89,16 @@ fn copyDir(src: []const u8, dest: []const u8) !void {
             },
             .directory => {
                 const src_subdir = try std.fs.path.join(
-                    src_dir.fd.allocator orelse std.heap.page_allocator,
+                    std.heap.page_allocator,
                     &[_][]const u8{ src, entry.name },
                 );
-                defer (src_dir.fd.allocator orelse std.heap.page_allocator).free(src_subdir);
+                defer std.heap.page_allocator.free(src_subdir);
 
                 const dest_subdir = try std.fs.path.join(
-                    dest_dir.fd.allocator orelse std.heap.page_allocator,
+                    std.heap.page_allocator,
                     &[_][]const u8{ dest, entry.name },
                 );
-                defer (dest_dir.fd.allocator orelse std.heap.page_allocator).free(dest_subdir);
+                defer std.heap.page_allocator.free(dest_subdir);
 
                 try copyDir(src_subdir, dest_subdir);
             },

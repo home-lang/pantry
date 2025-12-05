@@ -48,6 +48,8 @@ pub const doctor_cmd = @import("commands/doctor.zig");
 pub const clean_cmd = @import("commands/clean.zig");
 pub const why_cmd = @import("commands/why.zig");
 pub const dedupe_cmd = @import("commands/dedupe.zig");
+pub const bootstrap_commands = @import("commands/bootstrap.zig");
+pub const shim_commands = @import("commands/shim.zig");
 
 // ============================================================================
 // Re-export Package Commands
@@ -194,3 +196,49 @@ pub const doctorNewCommand = doctor_cmd.execute;
 pub const cleanNewCommand = clean_cmd.execute;
 pub const whyNewCommand = why_cmd.execute;
 pub const dedupeCommand = dedupe_cmd.execute;
+
+// ============================================================================
+// Re-export Bootstrap Commands
+// ============================================================================
+
+pub const BootstrapOptions = bootstrap_commands.BootstrapOptions;
+pub const bootstrapCommand = bootstrap_commands.bootstrapCommand;
+
+// ============================================================================
+// Re-export Shim Commands
+// ============================================================================
+
+pub const ShimOptions = shim_commands.ShimOptions;
+pub const shimCommand = shim_commands.shimCommand;
+pub const shimListCommand = shim_commands.shimListCommand;
+pub const shimRemoveCommand = shim_commands.shimRemoveCommand;
+
+// ============================================================================
+// Re-export Service Enable/Disable Commands
+// ============================================================================
+
+pub const serviceEnableCommand = services_commands.enableCommand;
+pub const serviceDisableCommand = services_commands.disableCommand;
+
+// ============================================================================
+// Re-export Verify Commands
+// ============================================================================
+
+pub const verify_commands = @import("commands/verify.zig");
+pub const verifyCommand = verify_commands.verifyCommand;
+pub const signCommand = verify_commands.signCommand;
+pub const generateKeyCommand = verify_commands.generateKeyCommand;
+
+// ============================================================================
+// Re-export Init Command
+// ============================================================================
+
+pub const init_commands = @import("commands/init.zig");
+pub const initCommand = init_commands.initCommand;
+
+// ============================================================================
+// Re-export Tree Command
+// ============================================================================
+
+pub const tree_commands = @import("commands/tree.zig");
+pub const treeCommand = tree_commands.treeCommand;

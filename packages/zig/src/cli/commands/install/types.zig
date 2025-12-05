@@ -25,6 +25,7 @@ pub const InstallOptions = struct {
     include_peer: bool = false, // Include peerDependencies
     ignore_scripts: bool = false, // Don't run lifecycle scripts
     verbose: bool = false, // Verbose output
+    quiet: bool = false, // Quiet output (suppress non-essential messages)
     filter: ?[]const u8 = null, // Filter pattern for workspace packages
 };
 

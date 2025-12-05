@@ -1035,6 +1035,136 @@ fn statusAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn enableAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const service_name = ctx.getArgument(0) orelse {
+        std.debug.print("Error: enable requires a service name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{service_name};
+    const result = try lib.commands.serviceEnableCommand(allocator, &args);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn disableAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const service_name = ctx.getArgument(0) orelse {
+        std.debug.print("Error: disable requires a service name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{service_name};
+    const result = try lib.commands.serviceDisableCommand(allocator, &args);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn bootstrapAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const path = ctx.getOption("path");
+    const verbose = ctx.hasOption("verbose");
+    const skip_bun = ctx.hasOption("skip-bun");
+    const skip_shell_integration = ctx.hasOption("skip-shell-integration");
+
+    const options = lib.commands.BootstrapOptions{
+        .path = path,
+        .verbose = verbose,
+        .skip_bun = skip_bun,
+        .skip_shell_integration = skip_shell_integration,
+    };
+
+    const result = try lib.commands.bootstrapCommand(allocator, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn shimAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic package arguments
+    var packages = std.ArrayList([]const u8){};
+    defer packages.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |pkg| : (i += 1) {
+        try packages.append(allocator, pkg);
+    }
+
+    const output_dir = ctx.getOption("output");
+    const force = ctx.hasOption("force");
+    const verbose = ctx.hasOption("verbose");
+
+    const options = lib.commands.ShimOptions{
+        .output_dir = output_dir,
+        .force = force,
+        .verbose = verbose,
+    };
+
+    const result = try lib.commands.shimCommand(allocator, packages.items, options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn shimListAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const result = try lib.commands.shimListCommand(allocator);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn shimRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic name arguments
+    var names = std.ArrayList([]const u8){};
+    defer names.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |name| : (i += 1) {
+        try names.append(allocator, name);
+    }
+
+    const result = try lib.commands.shimRemoveCommand(allocator, names.items);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn verifyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1058,8 +1188,7 @@ fn verifyAction(ctx: *cli.BaseCommand.ParseContext) !void {
         try args.append(allocator, "--verbose");
     }
 
-    const verify = @import("cli/commands/verify.zig");
-    const result = try verify.verifyCommand(allocator, args.items);
+    const result = try lib.commands.verifyCommand(allocator, args.items);
     defer {
         var r = result;
         r.deinit(allocator);
@@ -1101,8 +1230,7 @@ fn signAction(ctx: *cli.BaseCommand.ParseContext) !void {
         try args.append(allocator, "--verbose");
     }
 
-    const verify = @import("cli/commands/verify.zig");
-    const result = try verify.signCommand(allocator, args.items);
+    const result = try lib.commands.signCommand(allocator, args.items);
     defer {
         var r = result;
         r.deinit(allocator);
@@ -1132,8 +1260,7 @@ fn generateKeyAction(ctx: *cli.BaseCommand.ParseContext) !void {
         try args.append(allocator, "--verbose");
     }
 
-    const verify = @import("cli/commands/verify.zig");
-    const result = try verify.generateKeyCommand(allocator, args.items);
+    const result = try lib.commands.generateKeyCommand(allocator, args.items);
     defer {
         var r = result;
         r.deinit(allocator);
@@ -1158,8 +1285,7 @@ fn initAction(ctx: *cli.BaseCommand.ParseContext) !void {
         try args.append(allocator, "--verbose");
     }
 
-    const init = @import("cli/commands/init.zig");
-    const result = try init.initCommand(allocator, args.items);
+    const result = try lib.commands.initCommand(allocator, args.items);
     defer {
         var r = result;
         r.deinit(allocator);
@@ -1202,8 +1328,7 @@ fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
         try args.append(allocator, depth_arg);
     }
 
-    const tree = @import("cli/commands/tree.zig");
-    const result = try tree.treeCommand(allocator, args.items);
+    const result = try lib.commands.treeCommand(allocator, args.items);
     defer {
         var r = result;
         r.deinit(allocator);
@@ -1808,6 +1933,84 @@ pub fn main() !void {
 
     _ = status_cmd.setAction(statusAction);
     _ = try root.addCommand(status_cmd);
+
+    var enable_cmd = try cli.BaseCommand.init(allocator, "enable", "Enable service auto-start");
+
+    const enable_service_arg = cli.Argument.init("service", "Service name", .string)
+        .withRequired(true);
+    _ = try enable_cmd.addArgument(enable_service_arg);
+
+    _ = enable_cmd.setAction(enableAction);
+    _ = try root.addCommand(enable_cmd);
+
+    var disable_cmd = try cli.BaseCommand.init(allocator, "disable", "Disable service auto-start");
+
+    const disable_service_arg = cli.Argument.init("service", "Service name", .string)
+        .withRequired(true);
+    _ = try disable_cmd.addArgument(disable_service_arg);
+
+    _ = disable_cmd.setAction(disableAction);
+    _ = try root.addCommand(disable_cmd);
+
+    // ========================================================================
+    // Bootstrap Command (System Setup)
+    // ========================================================================
+    var bootstrap_cmd = try cli.BaseCommand.init(allocator, "bootstrap", "Set up development environment");
+
+    const bootstrap_path_opt = cli.Option.init("path", "path", "Custom installation path", .string);
+    _ = try bootstrap_cmd.addOption(bootstrap_path_opt);
+
+    const bootstrap_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try bootstrap_cmd.addOption(bootstrap_verbose_opt);
+
+    const bootstrap_skip_bun_opt = cli.Option.init("skip-bun", "skip-bun", "Skip Bun installation", .bool);
+    _ = try bootstrap_cmd.addOption(bootstrap_skip_bun_opt);
+
+    const bootstrap_skip_shell_opt = cli.Option.init("skip-shell-integration", "skip-shell-integration", "Skip shell integration", .bool);
+    _ = try bootstrap_cmd.addOption(bootstrap_skip_shell_opt);
+
+    _ = bootstrap_cmd.setAction(bootstrapAction);
+    _ = try root.addCommand(bootstrap_cmd);
+
+    // ========================================================================
+    // Shim Commands
+    // ========================================================================
+    var shim_cmd = try cli.BaseCommand.init(allocator, "shim", "Create executable shims for packages");
+
+    const shim_packages_arg = cli.Argument.init("packages", "Packages to create shims for", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try shim_cmd.addArgument(shim_packages_arg);
+
+    const shim_output_opt = cli.Option.init("output", "output", "Output directory for shims", .string)
+        .withShort('o');
+    _ = try shim_cmd.addOption(shim_output_opt);
+
+    const shim_force_opt = cli.Option.init("force", "force", "Overwrite existing shims", .bool)
+        .withShort('f');
+    _ = try shim_cmd.addOption(shim_force_opt);
+
+    const shim_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try shim_cmd.addOption(shim_verbose_opt);
+
+    _ = shim_cmd.setAction(shimAction);
+    _ = try root.addCommand(shim_cmd);
+
+    var shim_list_cmd = try cli.BaseCommand.init(allocator, "shim:list", "List existing shims");
+    _ = shim_list_cmd.setAction(shimListAction);
+    _ = try root.addCommand(shim_list_cmd);
+
+    var shim_remove_cmd = try cli.BaseCommand.init(allocator, "shim:remove", "Remove shims");
+
+    const shim_remove_names_arg = cli.Argument.init("names", "Shim names to remove", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try shim_remove_cmd.addArgument(shim_remove_names_arg);
+
+    _ = shim_remove_cmd.setAction(shimRemoveAction);
+    _ = try root.addCommand(shim_remove_cmd);
 
     // ========================================================================
     // Verify Command (Package Signature Verification)

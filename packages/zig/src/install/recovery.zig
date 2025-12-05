@@ -19,8 +19,8 @@ pub const InstallCheckpoint = struct {
     pub fn init(allocator: std.mem.Allocator) InstallCheckpoint {
         return .{
             .installed_packages = std.StringHashMap(void).init(allocator),
-            .created_files = std.ArrayList([]const u8).init(allocator),
-            .created_dirs = std.ArrayList([]const u8).init(allocator),
+            .created_files = std.ArrayList([]const u8){},
+            .created_dirs = std.ArrayList([]const u8){},
             .backup_dir = null,
             .allocator = allocator,
         };
@@ -36,12 +36,12 @@ pub const InstallCheckpoint = struct {
         for (self.created_files.items) |file| {
             self.allocator.free(file);
         }
-        self.created_files.deinit();
+        self.created_files.deinit(self.allocator);
 
         for (self.created_dirs.items) |dir| {
             self.allocator.free(dir);
         }
-        self.created_dirs.deinit();
+        self.created_dirs.deinit(self.allocator);
 
         if (self.backup_dir) |dir| {
             self.allocator.free(dir);
@@ -51,13 +51,13 @@ pub const InstallCheckpoint = struct {
     /// Record a file creation
     pub fn recordFile(self: *InstallCheckpoint, file_path: []const u8) !void {
         const owned = try self.allocator.dupe(u8, file_path);
-        try self.created_files.append(owned);
+        try self.created_files.append(self.allocator, owned);
     }
 
     /// Record a directory creation
     pub fn recordDir(self: *InstallCheckpoint, dir_path: []const u8) !void {
         const owned = try self.allocator.dupe(u8, dir_path);
-        try self.created_dirs.append(owned);
+        try self.created_dirs.append(self.allocator, owned);
     }
 
     /// Record a package installation
@@ -111,12 +111,14 @@ pub const InstallCheckpoint = struct {
 
     /// Create a backup of the current state
     pub fn createBackup(self: *InstallCheckpoint, target_dir: []const u8) !void {
-        // Create backup directory with timestamp
-        const timestamp = std.time.timestamp();
+        // Create backup directory with random suffix (timestamp API changed in Zig 0.16)
+        var random_bytes: [8]u8 = undefined;
+        std.crypto.random.bytes(&random_bytes);
+        const backup_suffix = std.mem.readInt(u64, &random_bytes, .big);
         const backup_dir = try std.fmt.allocPrint(
             self.allocator,
             "{s}/.pantry-backup-{d}",
-            .{ target_dir, timestamp },
+            .{ target_dir, backup_suffix },
         );
         errdefer self.allocator.free(backup_dir);
 

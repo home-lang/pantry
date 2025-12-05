@@ -146,7 +146,7 @@ pub fn installSinglePackage(
         ) catch false;
 
         if (cache_success) {
-            const end_time = std.time.milliTimestamp();
+            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
             return .{
                 .name = dep.name,
                 .version = try allocator.dupe(u8, dep.version),

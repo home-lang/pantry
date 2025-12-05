@@ -91,22 +91,23 @@ pub fn signPackageEd25519(
     private_key_seed: [32]u8,
 ) !PackageSignature {
     // Generate Ed25519 keypair from seed
-    const key_pair = try std.crypto.sign.Ed25519.KeyPair.create(private_key_seed);
+    const key_pair = try std.crypto.sign.Ed25519.KeyPair.generateDeterministic(private_key_seed);
 
     // Sign the data
-    const signature = try std.crypto.sign.Ed25519.sign(data, key_pair, null);
+    const signature = try key_pair.sign(data, null);
+    const sig_bytes = signature.toBytes();
 
     // Encode signature to base64
     const encoder = std.base64.standard.Encoder;
-    const sig_b64_len = encoder.calcSize(signature.len);
+    const sig_b64_len = encoder.calcSize(sig_bytes.len);
     const sig_b64 = try allocator.alloc(u8, sig_b64_len);
     errdefer allocator.free(sig_b64);
 
-    _ = encoder.encode(sig_b64, &signature);
+    _ = encoder.encode(sig_b64, &sig_bytes);
 
     // Generate key ID from public key (first 8 bytes of SHA256 hash)
     var hasher = std.crypto.hash.sha2.Sha256.init(.{});
-    hasher.update(&key_pair.public_key);
+    hasher.update(&key_pair.public_key.bytes);
     var hash: [32]u8 = undefined;
     hasher.final(&hash);
 
@@ -141,8 +142,10 @@ pub fn verifySignatureEd25519(
 
     try decoder.decode(&signature_buf, signature_b64);
 
-    // Verify signature
-    try std.crypto.sign.Ed25519.verify(signature_buf, data, public_key);
+    // Verify signature - create signature and public key objects
+    const sig = std.crypto.sign.Ed25519.Signature.fromBytes(signature_buf);
+    const pub_key = try std.crypto.sign.Ed25519.PublicKey.fromBytes(public_key);
+    try sig.verify(data, pub_key);
 }
 
 /// Verify package signature from keyring
@@ -160,7 +163,12 @@ pub fn verifyPackageSignature(
     const public_key_pem = keyring.getKey(sig.key_id) orelse return error.KeyNotFound;
 
     // Parse PEM format to extract raw public key
-    const public_key_bytes = try parseEd25519PublicKey(public_key_pem);
+    const public_key_slice = try parseEd25519PublicKey(public_key_pem);
+    if (public_key_slice.len != 32) return error.InvalidPublicKey;
+
+    // Copy to fixed-size array
+    var public_key_bytes: [32]u8 = undefined;
+    @memcpy(&public_key_bytes, public_key_slice[0..32]);
 
     // Verify signature
     try verifySignatureEd25519(data, sig.signature, public_key_bytes);
@@ -189,12 +197,12 @@ fn parseEd25519PublicKey(pem: []const u8) ![]const u8 {
     const b64_data = pem[start..end];
 
     // Remove any whitespace/newlines from base64
-    var cleaned = std.ArrayList(u8).init(std.heap.page_allocator);
-    defer cleaned.deinit();
+    var cleaned = std.ArrayList(u8){};
+    defer cleaned.deinit(std.heap.page_allocator);
 
     for (b64_data) |c| {
         if (!std.ascii.isWhitespace(c)) {
-            try cleaned.append(c);
+            try cleaned.append(std.heap.page_allocator, c);
         }
     }
 
@@ -224,15 +232,15 @@ pub fn generateEd25519KeyPair(allocator: std.mem.Allocator) !struct {
     std.crypto.random.bytes(&seed);
 
     // Create keypair
-    const key_pair = try std.crypto.sign.Ed25519.KeyPair.create(seed);
+    const key_pair = try std.crypto.sign.Ed25519.KeyPair.generateDeterministic(seed);
 
     // Encode public key to base64
     const encoder = std.base64.standard.Encoder;
-    const pub_b64_len = encoder.calcSize(key_pair.public_key.len);
+    const pub_b64_len = encoder.calcSize(key_pair.public_key.bytes.len);
     const pub_b64 = try allocator.alloc(u8, pub_b64_len);
     defer allocator.free(pub_b64);
 
-    _ = encoder.encode(pub_b64, &key_pair.public_key);
+    _ = encoder.encode(pub_b64, &key_pair.public_key.bytes);
 
     // Create PEM format
     const pem = try std.fmt.allocPrint(
@@ -243,7 +251,7 @@ pub fn generateEd25519KeyPair(allocator: std.mem.Allocator) !struct {
 
     // Generate key ID
     var hasher = std.crypto.hash.sha2.Sha256.init(.{});
-    hasher.update(&key_pair.public_key);
+    hasher.update(&key_pair.public_key.bytes);
     var hash: [32]u8 = undefined;
     hasher.final(&hash);
 
@@ -268,7 +276,9 @@ pub fn computeSHA256(allocator: std.mem.Allocator, data: []const u8) ![]const u8
     hasher.final(&hash);
 
     // Convert to hex string
-    return try std.fmt.allocPrint(allocator, "{x}", .{std.fmt.fmtSliceHexLower(&hash)});
+    const hex_result = try allocator.alloc(u8, 64);
+    _ = std.fmt.bufPrint(hex_result, "{x:0>64}", .{std.mem.readInt(u256, &hash, .big)}) catch unreachable;
+    return hex_result;
 }
 
 /// Compute SHA512 checksum of data
@@ -278,6 +288,9 @@ pub fn computeSHA512(allocator: std.mem.Allocator, data: []const u8) ![]const u8
     var hash: [64]u8 = undefined;
     hasher.final(&hash);
 
-    // Convert to hex string
-    return try std.fmt.allocPrint(allocator, "{x}", .{std.fmt.fmtSliceHexLower(&hash)});
+    // Convert to hex string - use two u256 chunks
+    const hex_result = try allocator.alloc(u8, 128);
+    _ = std.fmt.bufPrint(hex_result[0..64], "{x:0>64}", .{std.mem.readInt(u256, hash[0..32], .big)}) catch unreachable;
+    _ = std.fmt.bufPrint(hex_result[64..], "{x:0>64}", .{std.mem.readInt(u256, hash[32..64], .big)}) catch unreachable;
+    return hex_result;
 }

@@ -35,7 +35,6 @@ const PackageNode = struct {
         normal,
         dev,
         peer,
-        optional,
     };
 
     pub fn init(allocator: std.mem.Allocator, name: []const u8, version: []const u8, dep_type: DepType) !*PackageNode {
@@ -44,7 +43,7 @@ const PackageNode = struct {
             .name = try allocator.dupe(u8, name),
             .version = try allocator.dupe(u8, version),
             .dep_type = dep_type,
-            .dependencies = std.ArrayList(*PackageNode).init(allocator),
+            .dependencies = std.ArrayList(*PackageNode){},
             .allocator = allocator,
         };
         return node;
@@ -56,7 +55,7 @@ const PackageNode = struct {
         for (self.dependencies.items) |child| {
             child.deinit();
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
         self.allocator.destroy(self);
     }
 };
@@ -121,10 +120,9 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
                 .normal => .normal,
                 .dev => .dev,
                 .peer => .peer,
-                .optional => .optional,
             },
         );
-        try root.dependencies.append(node);
+        try root.dependencies.append(root.allocator, node);
     }
 
     // Display tree
@@ -164,7 +162,6 @@ fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: Tre
         .normal => "\x1b[32m",
         .dev => "\x1b[33m",
         .peer => "\x1b[36m",
-        .optional => "\x1b[35m",
     };
     const reset = "\x1b[0m";
 
@@ -193,60 +190,68 @@ fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: Tre
 }
 
 fn printTreeJson(allocator: std.mem.Allocator, root: *PackageNode) !void {
-    var output = std.ArrayList(u8).init(allocator);
-    defer output.deinit();
+    var output = std.ArrayList(u8){};
+    defer output.deinit(allocator);
 
-    try output.appendSlice("{\n");
-    try output.appendSlice("  \"dependencies\": [\n");
+    try output.appendSlice(allocator, "{\n");
+    try output.appendSlice(allocator, "  \"dependencies\": [\n");
 
     for (root.dependencies.items, 0..) |node, i| {
-        try printNodeJson(&output, node, 2);
+        try printNodeJson(allocator, &output, node, 2);
         if (i < root.dependencies.items.len - 1) {
-            try output.appendSlice(",\n");
+            try output.appendSlice(allocator, ",\n");
         } else {
-            try output.appendSlice("\n");
+            try output.appendSlice(allocator, "\n");
         }
     }
 
-    try output.appendSlice("  ]\n");
-    try output.appendSlice("}\n");
+    try output.appendSlice(allocator, "  ]\n");
+    try output.appendSlice(allocator, "}\n");
 
     std.debug.print("{s}", .{output.items});
 }
 
-fn printNodeJson(output: *std.ArrayList(u8), node: *PackageNode, indent: usize) !void {
-    const indent_str = try std.fmt.allocPrint(node.allocator, "{[1]s: >[2]}", .{ "", indent });
-    defer node.allocator.free(indent_str);
+fn printNodeJson(allocator: std.mem.Allocator, output: *std.ArrayList(u8), node: *PackageNode, indent: usize) !void {
+    // Create indent string (spaces)
+    const indent_str = try allocator.alloc(u8, indent);
+    @memset(indent_str, ' ');
+    defer allocator.free(indent_str);
 
-    try output.appendSlice(indent_str);
-    try output.appendSlice("{\n");
+    try output.appendSlice(allocator, indent_str);
+    try output.appendSlice(allocator, "{\n");
 
-    try output.appendSlice(indent_str);
-    try output.writer().print("  \"name\": \"{s}\",\n", .{node.name});
+    try output.appendSlice(allocator, indent_str);
+    const name_line = try std.fmt.allocPrint(allocator, "  \"name\": \"{s}\",\n", .{node.name});
+    defer allocator.free(name_line);
+    try output.appendSlice(allocator, name_line);
 
-    try output.appendSlice(indent_str);
-    try output.writer().print("  \"version\": \"{s}\",\n", .{node.version});
+    try output.appendSlice(allocator, indent_str);
+    const version_line = try std.fmt.allocPrint(allocator, "  \"version\": \"{s}\",\n", .{node.version});
+    defer allocator.free(version_line);
+    try output.appendSlice(allocator, version_line);
 
-    try output.appendSlice(indent_str);
-    try output.writer().print("  \"type\": \"{s}\",\n", .{@tagName(node.dep_type)});
+    try output.appendSlice(allocator, indent_str);
+    const type_line = try std.fmt.allocPrint(allocator, "  \"type\": \"{s}\",\n", .{@tagName(node.dep_type)});
+    defer allocator.free(type_line);
+    try output.appendSlice(allocator, type_line);
 
     if (node.dependencies.items.len > 0) {
-        try output.appendSlice(indent_str);
-        try output.appendSlice("  \"dependencies\": [\n");
+        try output.appendSlice(allocator, indent_str);
+        try output.appendSlice(allocator, "  \"dependencies\": [\n");
 
         for (node.dependencies.items, 0..) |child, i| {
-            try printNodeJson(output, child, indent + 4);
+            try printNodeJson(allocator, output, child, indent + 4);
             if (i < node.dependencies.items.len - 1) {
-                try output.appendSlice(",\n");
+                try output.appendSlice(allocator, ",\n");
             } else {
-                try output.appendSlice("\n");
+                try output.appendSlice(allocator, "\n");
             }
         }
 
-        try output.appendSlice(indent_str);
-        try output.appendSlice("  ]\n");
+        try output.appendSlice(allocator, indent_str);
+        try output.appendSlice(allocator, "  ]\n");
     }
 
-    try output.appendSlice(indent_str);
-    try output.appendSlice("}");
+    try output.appendSlice(allocator, indent_str);
+    try output.appendSlice(allocator, "}");
 }

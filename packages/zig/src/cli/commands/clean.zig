@@ -42,7 +42,8 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         try stdout.print("This will remove cached packages and temporary files.\n", .{});
         try stdout.print("Are you sure? (y/N): ", .{});
 
-        var stdin = std.io.getStdIn().reader();
+        const stdin_file = std.fs.File{ .handle = std.posix.STDIN_FILENO };
+        var stdin = stdin_file.reader();
         var buffer: [10]u8 = undefined;
         const input = (try stdin.readUntilDelimiterOrEof(&buffer, '\n')) orelse "";
 
