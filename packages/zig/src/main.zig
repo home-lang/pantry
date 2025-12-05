@@ -3,61 +3,6 @@ const cli = @import("zig-cli");
 const lib = @import("lib");
 
 // ============================================================================
-// Command Option Definitions
-// ============================================================================
-
-const InstallOptions = struct {
-    packages: []const []const u8 = &[_][]const u8{}, // Variadic packages
-    global: bool = false,
-    force: bool = false,
-    verbose: bool = false,
-};
-
-const ListOptions = struct {
-    format: []const u8 = "table", // table, json, simple
-    verbose: bool = false,
-};
-
-const CacheStatsOptions = struct {
-    format: []const u8 = "table",
-};
-
-const CacheClearOptions = struct {
-    all: bool = false,
-    force: bool = false,
-};
-
-const EnvListOptions = struct {
-    format: []const u8 = "table", // table, json, simple
-    verbose: bool = false,
-};
-
-const EnvInspectOptions = struct {
-    hash: []const u8,
-    verbose: bool = false,
-    show_stubs: bool = false,
-};
-
-const EnvCleanOptions = struct {
-    days: u32 = 30,
-    dry_run: bool = false,
-    force: bool = false,
-};
-
-const EnvRemoveOptions = struct {
-    hash: []const u8,
-    force: bool = false,
-};
-
-const ShellLookupOptions = struct {
-    dir: []const u8,
-};
-
-const ShellActivateOptions = struct {
-    dir: []const u8,
-};
-
-// ============================================================================
 // Command Actions
 // ============================================================================
 
@@ -83,7 +28,9 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const ignore_scripts = ctx.hasOption("ignore-scripts");
     const filter = ctx.getOption("filter");
 
-    _ = force;
+    if (force) {
+        std.debug.print("Warning: --force option is not yet implemented\n", .{});
+    }
 
     // If global flag is set and no packages specified, install global dependencies
     if (global and packages.items.len == 0) {
@@ -153,7 +100,10 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const peer = ctx.hasOption("peer");
     const verbose = ctx.hasOption("verbose");
 
-    _ = global;
+    // TODO: Implement global add (add to global dependencies)
+    if (global) {
+        std.debug.print("Warning: --global option is not yet implemented for add command\n", .{});
+    }
 
     // Install the packages
     const install_options = lib.commands.InstallOptions{
@@ -610,8 +560,13 @@ fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const format = ctx.getOption("format") orelse "table";
     const verbose = ctx.hasOption("verbose");
 
-    _ = format;
-    _ = verbose;
+    // TODO: Implement format and verbose options
+    if (!std.mem.eql(u8, format, "table")) {
+        std.debug.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
+    }
+    if (verbose) {
+        std.debug.print("Warning: --verbose option is not yet implemented for list command\n\n", .{});
+    }
 
     const result = try lib.commands.listCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
@@ -746,7 +701,11 @@ fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const format = ctx.getOption("format") orelse "table";
-    _ = format;
+
+    // TODO: Implement format option
+    if (!std.mem.eql(u8, format, "table")) {
+        std.debug.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
+    }
 
     const result = try lib.commands.cacheStatsCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
@@ -762,9 +721,24 @@ fn cacheClearAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const force = ctx.hasOption("force");
+
+    // TODO: Implement force option (skip confirmation prompt when added)
     _ = force;
 
     const result = try lib.commands.cacheClearCommand(allocator, &[_][]const u8{});
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn cacheCleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var result = try lib.commands.cacheCleanCommand(allocator);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -808,8 +782,13 @@ fn envListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const format = ctx.getOption("format") orelse "table";
     const verbose = ctx.hasOption("verbose");
 
-    _ = format;
-    _ = verbose;
+    // TODO: Implement format and verbose options
+    if (!std.mem.eql(u8, format, "table")) {
+        std.debug.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
+    }
+    if (verbose) {
+        std.debug.print("Warning: --verbose option is not yet implemented for env:list command\n\n", .{});
+    }
 
     const result = try lib.commands.envListCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
@@ -830,7 +809,11 @@ fn envInspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
     };
 
     const verbose = ctx.hasOption("verbose");
-    _ = verbose;
+
+    // TODO: Implement verbose option (show more details like timestamps, sizes)
+    if (verbose) {
+        std.debug.print("Warning: --verbose option is not yet implemented for env:inspect command\n\n", .{});
+    }
 
     const result = try lib.commands.envInspectCommand(allocator, hash);
     defer result.deinit(allocator);
@@ -848,8 +831,13 @@ fn envCleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const dry_run = ctx.hasOption("dry-run");
     const force = ctx.hasOption("force");
 
-    _ = dry_run;
-    _ = force;
+    // TODO: Implement dry_run and force options
+    if (dry_run) {
+        std.debug.print("Warning: --dry-run option is not yet implemented for env:clean command\n\n", .{});
+    }
+    if (force) {
+        std.debug.print("Warning: --force option is not yet implemented for env:clean command\n\n", .{});
+    }
 
     const result = try lib.commands.envCleanCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
@@ -870,6 +858,8 @@ fn envRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     };
 
     const force = ctx.hasOption("force");
+
+    // TODO: Implement force option (skip confirmation prompt when added)
     _ = force;
 
     const result = try lib.commands.envRemoveCommand(allocator, hash);
@@ -1375,7 +1365,7 @@ pub fn main() !void {
         .withShort('u');
     _ = try install_cmd.addOption(user_opt);
 
-    const install_force_opt = cli.Option.init("force", "force", "Force installation", .bool)
+    const install_force_opt = cli.Option.init("force", "force", "Force reinstallation (not yet implemented)", .bool)
         .withShort('f');
     _ = try install_cmd.addOption(install_force_opt);
 
@@ -1778,6 +1768,10 @@ pub fn main() !void {
 
     _ = cache_clear_cmd.setAction(cacheClearAction);
     _ = try root.addCommand(cache_clear_cmd);
+
+    var cache_clean_cmd = try cli.BaseCommand.init(allocator, "cache:clean", "Clean unused cache entries");
+    _ = cache_clean_cmd.setAction(cacheCleanAction);
+    _ = try root.addCommand(cache_clean_cmd);
 
     // clean command with options for local/global
     var clean_cmd = try cli.BaseCommand.init(allocator, "clean", "Clean local dependencies and env cache (default)");
