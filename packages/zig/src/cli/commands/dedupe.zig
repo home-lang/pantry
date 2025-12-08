@@ -22,8 +22,6 @@ pub const DuplicatePackage = struct {
 
 /// Deduplicate dependencies
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    const stdout = std.io.getStdOut().writer();
-
     // Parse flags
     var dry_run = false;
     for (args) |arg| {
@@ -33,11 +31,11 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (dry_run) {
-        try stdout.print("🔍 Dry run mode - no changes will be made\n\n", .{});
+        std.debug.print("Dry run mode - no changes will be made\n\n", .{});
     }
 
     // Load pantry.json
-    const config_result = lib.loadpantryConfig(allocator, .{}) catch {
+    const config_result = lib.loadpantryConfig(allocator, .{ .name = "pantry" }) catch {
         return CommandResult.err(allocator, common.ERROR_NO_CONFIG);
     };
     defer {
@@ -45,26 +43,26 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         mut_result.deinit();
     }
 
-    try stdout.print("🔍 Analyzing dependency tree...\n\n", .{});
+    std.debug.print("Analyzing dependency tree...\n\n", .{});
 
     // Find duplicates
-    var duplicates = std.ArrayList(DuplicatePackage).init(allocator);
+    var duplicates = std.ArrayList(DuplicatePackage){};
     defer {
         for (duplicates.items) |*dup| {
             dup.deinit(allocator);
         }
-        duplicates.deinit();
+        duplicates.deinit(allocator);
     }
 
     try findDuplicates(allocator, &duplicates);
 
     if (duplicates.items.len == 0) {
-        try stdout.print("✨ No duplicate packages found!\n", .{});
+        std.debug.print("No duplicate packages found!\n", .{});
         return CommandResult.success(allocator, "Dependency tree is already optimized");
     }
 
     // Display duplicates
-    try stdout.print("Found {d} duplicate package{s}:\n\n", .{
+    std.debug.print("Found {d} duplicate package{s}:\n\n", .{
         duplicates.items.len,
         if (duplicates.items.len == 1) "" else "s",
     });
@@ -72,20 +70,20 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     var total_size_saved: usize = 0;
 
     for (duplicates.items) |dup| {
-        try stdout.print("📦 {s}\n", .{dup.name});
-        try stdout.print("  Versions: ", .{});
+        std.debug.print("{s}\n", .{dup.name});
+        std.debug.print("  Versions: ", .{});
 
         for (dup.versions, 0..) |version, i| {
-            if (i > 0) try stdout.print(", ", .{});
-            try stdout.print("{s}", .{version});
+            if (i > 0) std.debug.print(", ", .{});
+            std.debug.print("{s}", .{version});
         }
 
-        try stdout.print("\n  Locations: {d}\n", .{dup.locations.len});
+        std.debug.print("\n  Locations: {d}\n", .{dup.locations.len});
 
         const size_str = try formatSize(allocator, dup.total_size);
         defer allocator.free(size_str);
 
-        try stdout.print("  Size: {s}\n\n", .{size_str});
+        std.debug.print("  Size: {s}\n\n", .{size_str});
 
         // Calculate potential savings (keep newest version)
         if (dup.versions.len > 1) {
@@ -94,18 +92,18 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (!dry_run) {
-        try stdout.print("Deduplicating...\n\n", .{});
+        std.debug.print("Deduplicating...\n\n", .{});
 
         var deduped: usize = 0;
         for (duplicates.items) |dup| {
             const result = try deduplicatePackage(allocator, &dup);
             if (result) {
                 deduped += 1;
-                try stdout.print("✓ Deduplicated {s}\n", .{dup.name});
+                std.debug.print("Deduplicated {s}\n", .{dup.name});
             }
         }
 
-        try stdout.print("\n", .{});
+        std.debug.print("\n", .{});
 
         const size_str = try formatSize(allocator, total_size_saved);
         defer allocator.free(size_str);
@@ -177,7 +175,7 @@ fn findDuplicates(
             locations[i] = try std.fmt.allocPrint(allocator, "node_modules/dep{d}/node_modules/{s}", .{ i + 1, sim.name });
         }
 
-        try duplicates.append(.{
+        try duplicates.append(allocator, .{
             .name = try allocator.dupe(u8, sim.name),
             .versions = versions,
             .locations = locations,

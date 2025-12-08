@@ -24,44 +24,40 @@ pub const CheckResult = struct {
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     _ = args;
 
-    const stdout = std.io.getStdOut().writer();
+    std.debug.print("Running pantry diagnostics...\n\n", .{});
 
-    try stdout.print("🔍 Running pantry diagnostics...\n\n", .{});
-
-    var checks = std.ArrayList(CheckResult).init(allocator);
+    var checks = std.ArrayList(CheckResult){};
     defer {
         for (checks.items) |*check| {
             check.deinit(allocator);
         }
-        checks.deinit();
+        checks.deinit(allocator);
     }
 
     // Run all diagnostic checks
-    try checks.append(try checkPlatform(allocator));
-    try checks.append(try checkPaths(allocator));
-    try checks.append(try checkConfig(allocator));
-    try checks.append(try checkCache(allocator));
-    try checks.append(try checkPermissions(allocator));
-    try checks.append(try checkDiskSpace(allocator));
-    try checks.append(try checkNetwork(allocator));
+    try checks.append(allocator, try checkPlatform(allocator));
+    try checks.append(allocator, try checkPaths(allocator));
+    try checks.append(allocator, try checkConfig(allocator));
+    try checks.append(allocator, try checkCache(allocator));
+    try checks.append(allocator, try checkPermissions(allocator));
+    try checks.append(allocator, try checkDiskSpace(allocator));
+    try checks.append(allocator, try checkNetwork(allocator));
 
     // Print results
     var passed: usize = 0;
     var failed: usize = 0;
 
     for (checks.items) |check| {
-        const icon = if (check.passed) "✓" else "✗";
-        const color = if (check.passed) "\x1b[32m" else "\x1b[31m";
-        const reset = "\x1b[0m";
+        const icon = if (check.passed) "[32m✓[0m" else "[31m✗[0m";
 
-        try stdout.print("{s}{s}{s} {s}\n", .{ color, icon, reset, check.name });
-        try stdout.print("  {s}\n", .{check.message});
+        std.debug.print("{s} {s}\n", .{ icon, check.name });
+        std.debug.print("  {s}\n", .{check.message});
 
         if (check.suggestion) |suggestion| {
-            try stdout.print("  💡 {s}\n", .{suggestion});
+            std.debug.print("  Suggestion: {s}\n", .{suggestion});
         }
 
-        try stdout.print("\n", .{});
+        std.debug.print("\n", .{});
 
         if (check.passed) {
             passed += 1;
@@ -71,11 +67,11 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     // Summary
-    try stdout.print("{s}\n", .{"─" ** 60});
-    try stdout.print("Summary: {d}/{d} checks passed\n", .{ passed, checks.items.len });
+    std.debug.print("────────────────────────────────────────────────────────────\n", .{});
+    std.debug.print("Summary: {d}/{d} checks passed\n", .{ passed, checks.items.len });
 
     if (failed == 0) {
-        try stdout.print("\n✨ Your pantry installation is healthy!\n", .{});
+        std.debug.print("\nYour pantry installation is healthy!\n", .{});
         return CommandResult.success(allocator, null);
     } else {
         const message = try std.fmt.allocPrint(
@@ -95,35 +91,17 @@ fn checkPlatform(allocator: std.mem.Allocator) !CheckResult {
     const platform = Platform.current();
     const name = try allocator.dupe(u8, "Platform Detection");
 
-    const supported = switch (platform.os) {
-        .macos, .linux, .windows => true,
-        else => false,
+    // Platform is an enum with darwin, linux, windows values
+    const message = try std.fmt.allocPrint(
+        allocator,
+        "Detected: {s}",
+        .{@tagName(platform)},
+    );
+    return .{
+        .name = name,
+        .passed = true,
+        .message = message,
     };
-
-    if (supported) {
-        const message = try std.fmt.allocPrint(
-            allocator,
-            "Detected: {s} ({s})",
-            .{ @tagName(platform.os), @tagName(platform.arch) },
-        );
-        return .{
-            .name = name,
-            .passed = true,
-            .message = message,
-        };
-    } else {
-        const message = try std.fmt.allocPrint(
-            allocator,
-            "Unsupported platform: {s}",
-            .{@tagName(platform.os)},
-        );
-        return .{
-            .name = name,
-            .passed = false,
-            .message = message,
-            .suggestion = try allocator.dupe(u8, "pantry supports macOS, Linux, and Windows"),
-        };
-    }
 }
 
 /// Check required paths exist
@@ -186,7 +164,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
 fn checkConfig(allocator: std.mem.Allocator) !CheckResult {
     const name = try allocator.dupe(u8, "Configuration File");
 
-    const config_result = lib.loadpantryConfig(allocator, .{}) catch {
+    const config_result = lib.loadpantryConfig(allocator, .{ .name = "pantry" }) catch {
         return .{
             .name = name,
             .passed = false,
@@ -200,7 +178,7 @@ fn checkConfig(allocator: std.mem.Allocator) !CheckResult {
     }
 
     // Check if it's a valid JSON object
-    if (config_result.value != .object) {
+    if (config_result.config != .object) {
         return .{
             .name = name,
             .passed = false,
@@ -209,7 +187,7 @@ fn checkConfig(allocator: std.mem.Allocator) !CheckResult {
         };
     }
 
-    const obj = config_result.value.object;
+    const obj = config_result.config.object;
 
     // Check for required fields
     const has_name = obj.contains("name");
@@ -226,8 +204,8 @@ fn checkConfig(allocator: std.mem.Allocator) !CheckResult {
 
     const message = try std.fmt.allocPrint(
         allocator,
-        "Found valid {s}",
-        .{config_result.source.filename()},
+        "Found valid config ({s})",
+        .{@tagName(config_result.source)},
     );
 
     return .{

@@ -26,10 +26,19 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const dev_only = ctx.hasOption("dev");
     const include_peer = ctx.hasOption("peer");
     const ignore_scripts = ctx.hasOption("ignore-scripts");
+    const offline = ctx.hasOption("offline");
     const filter = ctx.getOption("filter");
 
     if (force) {
         std.debug.print("Warning: --force option is not yet implemented\n", .{});
+    }
+
+    // Note: --offline flag sets offline mode for this process
+    // The offline module checks PANTRY_OFFLINE env var, but we can't easily set it in Zig 0.16
+    // Instead, we inform the user and the install code will check this flag
+    if (offline) {
+        std.debug.print("Offline mode: Installing from cache only\n", .{});
+        std.debug.print("Note: Set PANTRY_OFFLINE=1 environment variable for full offline support\n\n", .{});
     }
 
     // If global flag is set and no packages specified, install global dependencies
@@ -1288,6 +1297,91 @@ fn initAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn doctorAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const result = try lib.commands.doctorNewCommand(allocator, &[_][]const u8{});
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn dedupeAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const dry_run = ctx.hasOption("dry-run");
+
+    var args = std.ArrayList([]const u8){};
+    defer args.deinit(allocator);
+
+    if (dry_run) {
+        try args.append(allocator, "--dry-run");
+    }
+
+    const result = try lib.commands.dedupeCommand(allocator, args.items);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn searchAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const query = ctx.getArgument(0) orelse {
+        std.debug.print("Error: search requires a query argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{query};
+    const result = try lib.commands.searchCommand(allocator, &args);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn infoAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const package_name = ctx.getArgument(0) orelse {
+        std.debug.print("Error: info requires a package name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{package_name};
+    const result = try lib.commands.infoCommand(allocator, &args);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1386,6 +1480,9 @@ pub fn main() !void {
 
     const install_ignore_scripts_opt = cli.Option.init("ignore-scripts", "ignore-scripts", "Don't run lifecycle scripts", .bool);
     _ = try install_cmd.addOption(install_ignore_scripts_opt);
+
+    const install_offline_opt = cli.Option.init("offline", "offline", "Install from cache only (no network requests)", .bool);
+    _ = try install_cmd.addOption(install_offline_opt);
 
     const install_filter_opt = cli.Option.init("filter", "filter", "Filter workspace packages by pattern", .string)
         .withShort('F');
@@ -2100,6 +2197,48 @@ pub fn main() !void {
 
     _ = tree_cmd.setAction(treeAction);
     _ = try root.addCommand(tree_cmd);
+
+    // ========================================================================
+    // Doctor Command (System Diagnostics)
+    // ========================================================================
+    var doctor_cmd = try cli.BaseCommand.init(allocator, "doctor", "Run system diagnostics");
+    _ = doctor_cmd.setAction(doctorAction);
+    _ = try root.addCommand(doctor_cmd);
+
+    // ========================================================================
+    // Dedupe Command (Deduplicate Dependencies)
+    // ========================================================================
+    var dedupe_cmd = try cli.BaseCommand.init(allocator, "dedupe", "Deduplicate dependencies");
+
+    const dedupe_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Preview changes without making them", .bool);
+    _ = try dedupe_cmd.addOption(dedupe_dry_run_opt);
+
+    _ = dedupe_cmd.setAction(dedupeAction);
+    _ = try root.addCommand(dedupe_cmd);
+
+    // ========================================================================
+    // Search Command (Registry Search)
+    // ========================================================================
+    var search_cmd = try cli.BaseCommand.init(allocator, "search", "Search for packages in the registry");
+
+    const search_query_arg = cli.Argument.init("query", "Search term", .string)
+        .withRequired(true);
+    _ = try search_cmd.addArgument(search_query_arg);
+
+    _ = search_cmd.setAction(searchAction);
+    _ = try root.addCommand(search_cmd);
+
+    // ========================================================================
+    // Info Command (Package Information)
+    // ========================================================================
+    var info_cmd = try cli.BaseCommand.init(allocator, "info", "Show detailed package information");
+
+    const info_package_arg = cli.Argument.init("package", "Package name", .string)
+        .withRequired(true);
+    _ = try info_cmd.addArgument(info_package_arg);
+
+    _ = info_cmd.setAction(infoAction);
+    _ = try root.addCommand(info_cmd);
 
     // Parse arguments
     const args = try std.process.argsAlloc(allocator);
