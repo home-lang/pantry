@@ -135,7 +135,7 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
         defer allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
@@ -177,7 +177,7 @@ pub fn installSinglePackage(
     custom_installer.data_dir = try allocator.dupe(u8, env_dir);
     defer custom_installer.deinit();
 
-    // Install to project's pantry_modules directory (quiet mode for clean output)
+    // Install to project's pantry directory (quiet mode for clean output)
     var inst_result = custom_installer.install(spec, .{
         .project_root = proj_dir,
         .quiet = true,
@@ -213,7 +213,7 @@ pub fn installSinglePackage(
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
-    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
     defer allocator.free(package_path);
 
     if (!options.ignore_scripts) {

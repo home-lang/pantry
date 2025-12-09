@@ -48,7 +48,7 @@ test "FileWatcher - ignore patterns" {
     // Test default ignore patterns
     try std.testing.expect(watcher.shouldIgnore("node_modules"));
     try std.testing.expect(watcher.shouldIgnore(".git"));
-    try std.testing.expect(watcher.shouldIgnore("pantry_modules"));
+    try std.testing.expect(watcher.shouldIgnore("pantry"));
     try std.testing.expect(watcher.shouldIgnore(".zig-cache"));
     try std.testing.expect(watcher.shouldIgnore("zig-out"));
     try std.testing.expect(watcher.shouldIgnore(".DS_Store"));

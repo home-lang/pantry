@@ -64,7 +64,7 @@ my-monorepo/
 │   └── mobile/
 │       ├── package.json
 │       └── src/
-└── pantry_modules/     # Shared dependencies
+└── pantry/     # Shared dependencies
 ```
 
 ## Commands
@@ -472,7 +472,7 @@ Dependencies installed at workspace root are shared:
 ```
 my-monorepo/
 ├── workspace.json
-├── pantry_modules/      # Shared dependencies
+├── pantry/      # Shared dependencies
 │   ├── lodash/
 │   ├── react/
 │   └── ...
@@ -488,7 +488,7 @@ Packages can have their own dependencies:
 ```
 packages/core/
 ├── package.json
-└── pantry_modules/      # Core-specific dependencies
+└── pantry/      # Core-specific dependencies
     └── ...
 ```
 
@@ -515,7 +515,7 @@ Pantry hoists dependencies to workspace root when possible:
 Result:
 ```
 my-monorepo/
-├── pantry_modules/
+├── pantry/
 │   └── lodash/          # Shared by both packages
 └── packages/
     ├── core/
@@ -632,7 +632,7 @@ cat package.json | grep "workspace:"
 pantry install
 
 # Check links
-ls -la pantry_modules/@my-org/
+ls -la pantry/@my-org/
 ```
 
 ### Build order issues

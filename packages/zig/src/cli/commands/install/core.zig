@@ -370,10 +370,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Handle local packages separately (they need special symlink handling)
-        // Create pantry_modules directory if it doesn't exist
-        const pantry_modules_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{proj_dir});
-        defer allocator.free(pantry_modules_dir);
-        try std.fs.cwd().makePath(pantry_modules_dir);
+        // Create pantry directory if it doesn't exist
+        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{proj_dir});
+        defer allocator.free(pantry_dir);
+        try std.fs.cwd().makePath(pantry_dir);
 
         for (deps) |dep| {
             if (!helpers.isLocalDependency(dep)) continue;
@@ -403,8 +403,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             else
                 dep.name;
 
-            // Create pantry_modules/{package} directory structure
-            const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_modules_dir, pkg_name });
+            // Create pantry/{package} directory structure
+            const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, pkg_name });
             defer allocator.free(pkg_modules_dir);
             try std.fs.cwd().makePath(pkg_modules_dir);
 
@@ -501,7 +501,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 };
 
                 // Record installed files/directories
-                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules/{s}", .{ proj_dir, clean_name });
+                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name });
                 defer allocator.free(pkg_dir);
                 checkpoint.recordDir(pkg_dir) catch |err| {
                     if (options.verbose) {

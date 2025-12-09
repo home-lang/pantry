@@ -33,7 +33,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
 
     // Check local bin first
-    const local_bin = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules", ".bin", executable_name });
+    const local_bin = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry", ".bin", executable_name });
     defer allocator.free(local_bin);
 
     const found_local = blk: {

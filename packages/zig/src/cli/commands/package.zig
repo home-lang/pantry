@@ -112,9 +112,9 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
         }
     }
 
-    // Remove from pantry_modules
+    // Remove from pantry
     if (!options.dry_run) {
-        const modules_dir = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules" });
+        const modules_dir = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry" });
         defer allocator.free(modules_dir);
 
         for (removed_packages.items) |pkg| {
@@ -637,7 +637,7 @@ fn createTarball(
             "-C",
             package_dir,
             "--exclude=node_modules",
-            "--exclude=pantry_modules",
+            "--exclude=pantry",
             "--exclude=.git",
             "--exclude=*.tgz",
             ".",

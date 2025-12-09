@@ -26,14 +26,14 @@ __pantry_switch_environment() {
             export PATH
         fi
 
-        # Remove pantry_modules/.bin from PATH if it exists
-        if [[ -n "$PANTRY_MODULES_BIN_PATH" ]]; then
-            PATH=$(echo "$PATH" | sed "s|$PANTRY_MODULES_BIN_PATH:||g; s|:$PANTRY_MODULES_BIN_PATH||g; s|^$PANTRY_MODULES_BIN_PATH$||g")
+        # Remove pantry/.bin from PATH if it exists
+        if [[ -n "$pantry_BIN_PATH" ]]; then
+            PATH=$(echo "$PATH" | sed "s|$pantry_BIN_PATH:||g; s|:$pantry_BIN_PATH||g; s|^$pantry_BIN_PATH$||g")
             export PATH
         fi
 
         # Clear environment variables
-        unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR PANTRY_MODULES_BIN_PATH __PANTRY_LAST_ACTIVATION_KEY
+        unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR pantry_BIN_PATH __PANTRY_LAST_ACTIVATION_KEY
 
         # Early return - don't check for new projects immediately after deactivation
         # This makes deactivation instant

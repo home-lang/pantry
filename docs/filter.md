@@ -774,7 +774,7 @@ Re-running script 'build' in 2 affected package(s)...
 **Ignored patterns (by default):**
 - `node_modules`
 - `.git`
-- `pantry_modules`
+- `pantry`
 - `.zig-cache`
 - `zig-out`
 - `.DS_Store`

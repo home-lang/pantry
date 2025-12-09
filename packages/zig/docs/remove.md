@@ -56,7 +56,7 @@ pantry remove <package>
 pantry remove express
 ```
 
-Removes `express` from dependencies and deletes it from `pantry_modules/`.
+Removes `express` from dependencies and deletes it from `pantry/`.
 
 ### Remove Multiple Packages
 
@@ -88,7 +88,7 @@ See what would be removed without actually removing anything.
 pantry remove --no-save react
 ```
 
-Remove the package from `pantry_modules/` but don't update `package.json`.
+Remove the package from `pantry/` but don't update `package.json`.
 
 ### Verbose Output
 
@@ -115,7 +115,7 @@ Remove packages without any console output.
 `pantry remove` will:
 1. Check both `dependencies` and `devDependencies`
 2. Remove the package from whichever section it's found in
-3. Delete the package directory from `pantry_modules/`
+3. Delete the package directory from `pantry/`
 4. Update `package.json` (unless `--no-save` is specified)
 
 ### Error Handling
@@ -172,7 +172,7 @@ pantry remove webpack webpack-cli webpack-dev-server
 
 ## Notes
 
-- Packages are removed from `pantry_modules/` immediately
+- Packages are removed from `pantry/` immediately
 - `package.json` is updated unless `--no-save` is specified
 - Lockfile (`.freezer`) is updated automatically
 - Global packages can be removed with `-g` flag

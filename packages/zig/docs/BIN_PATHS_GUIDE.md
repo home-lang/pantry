@@ -2,12 +2,12 @@
 
 ## Overview
 
-Pantry supports defining custom bin paths for packages through the `bin` field in `pantry.json` or `package.json`. When packages are installed, executables are automatically symlinked to `pantry_modules/.bin/` and added to your PATH through shell integration.
+Pantry supports defining custom bin paths for packages through the `bin` field in `pantry.json` or `package.json`. When packages are installed, executables are automatically symlinked to `pantry/.bin/` and added to your PATH through shell integration.
 
 ## Features
 
 ✅ **Custom bin paths** - Define executables anywhere in your package
-✅ **Automatic symlinking** - Bins are symlinked to `pantry_modules/.bin/`
+✅ **Automatic symlinking** - Bins are symlinked to `pantry/.bin/`
 ✅ **Automatic PATH** - Shell integration adds `.bin` to PATH automatically
 ✅ **Multiple formats** - Object or string format for bin definitions
 ✅ **Fallback support** - Falls back to package registry if no bin field
@@ -31,9 +31,9 @@ Define multiple executables with custom names:
 ```
 
 This creates symlinks:
-- `pantry_modules/.bin/mytool` → `pantry_modules/my-package/v1.0.0/dist/mytool.sh`
-- `pantry_modules/.bin/helper` → `pantry_modules/my-package/v1.0.0/scripts/helper.sh`
-- `pantry_modules/.bin/cli` → `pantry_modules/my-package/v1.0.0/build/cli`
+- `pantry/.bin/mytool` → `pantry/my-package/v1.0.0/dist/mytool.sh`
+- `pantry/.bin/helper` → `pantry/my-package/v1.0.0/scripts/helper.sh`
+- `pantry/.bin/cli` → `pantry/my-package/v1.0.0/build/cli`
 
 ### String Format (Single Executable)
 
@@ -48,7 +48,7 @@ For packages with a single executable:
 ```
 
 This creates:
-- `pantry_modules/.bin/my-tool` → `pantry_modules/my-tool/v1.0.0/bin/my-tool`
+- `pantry/.bin/my-tool` → `pantry/my-tool/v1.0.0/bin/my-tool`
 
 The executable name is derived from the basename of the path.
 
@@ -58,11 +58,11 @@ The executable name is derived from the basename of the path.
 
 When you install a package with `pantry install`:
 
-1. Package is downloaded/copied to `pantry_modules/{package}/v{version}/`
+1. Package is downloaded/copied to `pantry/{package}/v{version}/`
 2. Pantry looks for `pantry.json` or `package.json` in the package
 3. If a `bin` field exists, custom symlinks are created
 4. If no `bin` field, falls back to package registry `programs` field
-5. Symlinks are created in `pantry_modules/.bin/`
+5. Symlinks are created in `pantry/.bin/`
 
 ### 2. Shell Integration
 
@@ -70,7 +70,7 @@ When you navigate to a project directory:
 
 1. Shell hook detects the project
 2. Pantry activates the environment
-3. `pantry_modules/.bin` is added to PATH
+3. `pantry/.bin` is added to PATH
 4. All executables become available
 
 ### 3. Environment Variables
@@ -81,8 +81,8 @@ When activated, these variables are set:
 PANTRY_CURRENT_PROJECT=/path/to/project
 PANTRY_ENV_BIN_PATH=/path/to/env/bin
 PANTRY_ENV_DIR=/path/to/env
-PANTRY_MODULES_BIN_PATH=/path/to/project/pantry_modules/.bin
-PATH=/path/to/project/pantry_modules/.bin:/path/to/env/bin:$PATH
+pantry_BIN_PATH=/path/to/project/pantry/.bin
+PATH=/path/to/project/pantry/.bin:/path/to/env/bin:$PATH
 ```
 
 ## Examples
@@ -274,7 +274,7 @@ After installation:
 
 ```
 project/
-├── pantry_modules/
+├── pantry/
 │   ├── .bin/            # Symlinks to all executables
 │   │   ├── my-tool -> ../my-package/v1.0.0/bin/my-tool
 │   │   ├── cli -> ../my-package/v1.0.0/dist/cli
@@ -296,22 +296,22 @@ project/
 
 1. Check if package is installed:
    ```bash
-   ls pantry_modules/.bin/
+   ls pantry/.bin/
    ```
 
 2. Verify bin field in package:
    ```bash
-   cat pantry_modules/my-package/v1.0.0/pantry.json
+   cat pantry/my-package/v1.0.0/pantry.json
    ```
 
 3. Check if file exists:
    ```bash
-   ls -la pantry_modules/my-package/v1.0.0/dist/mytool.sh
+   ls -la pantry/my-package/v1.0.0/dist/mytool.sh
    ```
 
 4. Verify executable permissions:
    ```bash
-   chmod +x pantry_modules/my-package/v1.0.0/dist/mytool.sh
+   chmod +x pantry/my-package/v1.0.0/dist/mytool.sh
    ```
 
 5. Reinstall package:
@@ -342,35 +342,35 @@ project/
 
 2. Check environment variables:
    ```bash
-   echo $PANTRY_MODULES_BIN_PATH
+   echo $pantry_BIN_PATH
    ```
 
 3. Manually test:
    ```bash
-   ./pantry_modules/.bin/mytool
+   ./pantry/.bin/mytool
    ```
 
 ### Issue: Permission denied
 
-**Error:** `Permission denied: ./pantry_modules/.bin/mytool`
+**Error:** `Permission denied: ./pantry/.bin/mytool`
 
 **Solutions:**
 
 1. Make executable:
    ```bash
-   chmod +x pantry_modules/.bin/mytool
+   chmod +x pantry/.bin/mytool
    ```
 
 2. Check source file permissions:
    ```bash
-   ls -la pantry_modules/my-package/v1.0.0/dist/mytool.sh
+   ls -la pantry/my-package/v1.0.0/dist/mytool.sh
    ```
 
 ## Comparison with npm
 
 | Feature | npm | Pantry |
 |---------|-----|---------|
-| Bin directory | `node_modules/.bin` | `pantry_modules/.bin` |
+| Bin directory | `node_modules/.bin` | `pantry/.bin` |
 | Config field | `bin` | `bin` |
 | Object format | ✅ | ✅ |
 | String format | ✅ | ✅ |

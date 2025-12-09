@@ -39,7 +39,7 @@ When you enter a project directory:
 4. **Environment setup** - If not cached:
    - Creates `~/.pantry/envs/{hash}/`
    - Installs runtimes to `~/.pantry/runtimes/`
-   - Installs packages to `{project}/pantry_modules/`
+   - Installs packages to `{project}/pantry/`
    - Caches environment metadata
 
 5. **Activation** - Updates shell:
@@ -218,11 +218,11 @@ Projects with same dependencies share runtimes but have separate package install
 ```
 Project A (bun 1.3.0, react 18.2.0)
 └── Uses: ~/.pantry/runtimes/bun/1.3.0/
-└── Packages: ~/projects/app-a/pantry_modules/
+└── Packages: ~/projects/app-a/pantry/
 
 Project B (bun 1.3.0, react 18.3.0)
 └── Uses: ~/.pantry/runtimes/bun/1.3.0/ (shared!)
-└── Packages: ~/projects/app-b/pantry_modules/
+└── Packages: ~/projects/app-b/pantry/
 ```
 
 ## Examples

@@ -43,8 +43,8 @@ jobs:
       - name: Bootstrap Zig Dependencies (for building pantry)
         run: |
           cd packages/zig
-          mkdir -p pantry_modules
-          cd pantry_modules
+          mkdir -p pantry
+          cd pantry
           git clone --depth 1 https://github.com/zig-utils/zig-cli.git
           git clone --depth 1 https://github.com/zig-utils/zig-config.git
           git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git

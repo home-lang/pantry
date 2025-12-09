@@ -340,16 +340,16 @@ pub const ShellCommands = struct {
         });
         defer self.allocator.free(env_bin);
 
-        // Check if pantry_modules/.bin exists in the project
-        const pantry_modules_bin = try std.fmt.allocPrint(
+        // Check if pantry/.bin exists in the project
+        const pantry_bin = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry_modules/.bin",
+            "{s}/pantry/.bin",
             .{project_root},
         );
-        defer self.allocator.free(pantry_modules_bin);
+        defer self.allocator.free(pantry_bin);
 
-        const has_pantry_modules = blk: {
-            var dir = std.fs.cwd().openDir(pantry_modules_bin, .{}) catch break :blk false;
+        const has_pantry = blk: {
+            var dir = std.fs.cwd().openDir(pantry_bin, .{}) catch break :blk false;
             dir.close();
             break :blk true;
         };
@@ -368,8 +368,8 @@ pub const ShellCommands = struct {
         }
 
         // 2. Project-local binaries
-        if (has_pantry_modules) {
-            try path_components.append(self.allocator, pantry_modules_bin);
+        if (has_pantry) {
+            try path_components.append(self.allocator, pantry_bin);
         }
 
         // 3. Environment binaries

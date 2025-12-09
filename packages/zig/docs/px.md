@@ -180,7 +180,7 @@ px eslint@8 --version
 
 ### Package Resolution
 
-1. **Local Check** - First checks `./pantry_modules/.bin/`
+1. **Local Check** - First checks `./pantry/.bin/`
 2. **Global Check** - Then checks `~/.pantry/global/bin/`
 3. **Auto-Install** - Installs package if not found
 4. **Cache** - Stores in global cache for future use

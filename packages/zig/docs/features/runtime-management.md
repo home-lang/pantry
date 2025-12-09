@@ -112,7 +112,7 @@ Runtimes are installed in `~/.pantry/runtimes/`:
 Pantry manages PATH with the following priority (highest to lowest):
 
 1. **Runtime binaries** - `~/.pantry/runtimes/{runtime}/{version}/bin`
-2. **Project binaries** - `{project}/pantry_modules/.bin`
+2. **Project binaries** - `{project}/pantry/.bin`
 3. **Environment binaries** - `~/.pantry/envs/{hash}/bin`
 4. **System PATH** - Your existing PATH
 

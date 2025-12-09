@@ -294,7 +294,7 @@ Reference: `ZIG_0.16_MIGRATION.md` for detailed fix patterns.
 
 - [ ] **Install from cache**
   ```bash
-  rm -rf pantry_modules
+  rm -rf pantry
   pantry install
   ```
   - [ ] Installs from cache
@@ -382,7 +382,7 @@ Reference: `ZIG_0.16_MIGRATION.md` for detailed fix patterns.
   pantry install
   ```
   - [ ] Installs packages correctly
-  - [ ] Creates pantry_modules
+  - [ ] Creates pantry
   - [ ] Lockfile updated
 
 - [ ] **Add package**

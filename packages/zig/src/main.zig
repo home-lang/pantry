@@ -1873,7 +1873,7 @@ pub fn main() !void {
     // clean command with options for local/global
     var clean_cmd = try cli.BaseCommand.init(allocator, "clean", "Clean local dependencies and env cache (default)");
 
-    const clean_local_opt = cli.Option.init("local", "local", "Clean local project dependencies (pantry_modules)", .bool)
+    const clean_local_opt = cli.Option.init("local", "local", "Clean local project dependencies (pantry)", .bool)
         .withShort('l');
     _ = try clean_cmd.addOption(clean_local_opt);
 

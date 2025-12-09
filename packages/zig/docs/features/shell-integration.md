@@ -73,7 +73,7 @@ Pantry manages PATH with the following priority:
    - `~/.pantry/runtimes/node/20.10.0/bin`
 
 2. **Project-local binaries**
-   - `{project}/pantry_modules/.bin`
+   - `{project}/pantry/.bin`
 
 3. **Environment binaries**
    - `~/.pantry/envs/{hash}/bin`
@@ -344,7 +344,7 @@ echo $PATH | tr ':' '\n'
 
 # Should see pantry paths first:
 # /Users/you/.pantry/runtimes/bun/1.3.0/bin
-# /path/to/project/pantry_modules/.bin
+# /path/to/project/pantry/.bin
 # /Users/you/.pantry/envs/hash/bin
 # ... system paths ...
 ```

@@ -242,7 +242,7 @@ pantry update react --latest
 npm test
 
 # If successful, commit
-git add package.json pantry_modules
+git add package.json pantry
 git commit -m "chore: upgrade react to latest"
 ```
 
@@ -369,7 +369,7 @@ Error: Failed to fetch package metadata
 - Packages in `minimumReleaseAgeExcludes` can be updated immediately
 - Use `--dry-run` to preview changes before applying
 - Lockfile (`.freezer`) is automatically updated
-- Use `--no-save` to update `pantry_modules` without changing `package.json`
+- Use `--no-save` to update `pantry` without changing `package.json`
 
 ***
 

@@ -1,9 +1,9 @@
 const std = @import("std");
 
-/// Resolve dependency path - checks pantry_modules first, then falls back to local dev paths
+/// Resolve dependency path - checks pantry first, then falls back to local dev paths
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
-    // Check pantry_modules first (for installed dependencies)
-    const pantry_path = b.fmt("pantry_modules/{s}/{s}", .{ package_name, entry_point });
+    // Check pantry first (for installed dependencies)
+    const pantry_path = b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
 
     // Try to access the file to see if it exists
     const pantry_file = std.fs.cwd().openFile(pantry_path, .{}) catch {
@@ -37,7 +37,7 @@ pub fn build(b: *std.Build) void {
     version_options.addOption([]const u8, "commit_hash", commit_hash);
 
     // Resolve zig-config path
-    // Tries pantry_modules first, then falls back to local dev path
+    // Tries pantry first, then falls back to local dev path
     const zig_config_path = resolveDependencyPath(
         b,
         "zig-config",

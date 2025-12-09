@@ -243,7 +243,7 @@ If your override isn't working:
 2. **Check the version range**: Ensure the version range is valid and the version exists
 3. **Clear cache**: Try clearing your Pantry cache and reinstalling:
    ```bash
-   rm -rf pantry_modules
+   rm -rf pantry
    pantry install
    ```
 
