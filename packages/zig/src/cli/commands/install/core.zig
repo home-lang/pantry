@@ -429,13 +429,42 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             std.fs.deleteFileAbsolute(link_path) catch {};
             std.fs.symLinkAbsolute(local_path, link_path, .{ .is_directory = true }) catch {};
 
+            // Create pantry/.bin directory and symlink binaries from zig-out/bin
+            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{proj_dir});
+            defer allocator.free(local_bin_dir);
+            try std.fs.cwd().makePath(local_bin_dir);
+
+            // Check for binaries in the linked package's zig-out/bin directory
+            const zig_out_bin = try std.fmt.allocPrint(allocator, "{s}/zig-out/bin", .{local_path});
+            defer allocator.free(zig_out_bin);
+
+            if (std.fs.openDirAbsolute(zig_out_bin, .{ .iterate = true })) |dir| {
+                var mutable_dir = dir;
+                defer mutable_dir.close();
+                var iter = mutable_dir.iterate();
+                while (iter.next() catch null) |entry| {
+                    if (entry.kind == .file or entry.kind == .sym_link) {
+                        // Create symlink in pantry/.bin
+                        const bin_src = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ zig_out_bin, entry.name });
+                        defer allocator.free(bin_src);
+                        const bin_dst = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ local_bin_dir, entry.name });
+                        defer allocator.free(bin_dst);
+
+                        std.fs.deleteFileAbsolute(bin_dst) catch {};
+                        std.fs.symLinkAbsolute(bin_src, bin_dst, .{}) catch {};
+                    }
+                }
+            } else |_| {
+                // No zig-out/bin directory, that's fine
+            }
+
             const display_name = helpers.stripDisplayPrefix(dep.name);
             std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, display_name, dep.version, dim, reset });
             success_count += 1;
         }
 
         // Generate lockfile
-        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{proj_dir});
+        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
         defer allocator.free(lockfile_path);
 
         var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");

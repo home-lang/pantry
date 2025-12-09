@@ -322,7 +322,7 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     // Generate workspace lockfile
-    const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{workspace_root});
+    const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});
     defer allocator.free(lockfile_path);
 
     var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
