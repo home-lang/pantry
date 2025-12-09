@@ -92,6 +92,12 @@ pub fn installSinglePackage(
     const pkg_registry = @import("../../../packages/generated.zig");
     const pkg_info = pkg_registry.getPackageByName(dep.name);
 
+    // Check if this is a zig dev version (should use ziglang.org instead of pkgx)
+    const is_zig_package = std.mem.eql(u8, dep.name, "zig") or
+        std.mem.eql(u8, dep.name, "ziglang") or
+        std.mem.eql(u8, dep.name, "ziglang.org");
+    const is_zig_dev = lib.install.downloader.isZigDevVersion(dep.version);
+
     // Check if this is a GitHub dependency
     const spec = if (dep.source == .github and dep.github_ref != null) blk: {
         const gh_ref = dep.github_ref.?;
@@ -103,6 +109,13 @@ pub fn installSinglePackage(
             .version = gh_ref.ref,
             .source = .github,
             .repo = try allocator.dupe(u8, repo_str),
+        };
+    } else if (is_zig_package and is_zig_dev) blk: {
+        // Zig dev version - use ziglang.org source
+        break :blk lib.packages.PackageSpec{
+            .name = "zig",
+            .version = dep.version,
+            .source = .ziglang,
         };
     } else blk: {
         // Regular registry package

@@ -148,6 +148,11 @@ pub const Installer = struct {
             return try self.installFromGitHub(spec, options);
         }
 
+        // Check if this is a Zig from ziglang.org (dev or stable)
+        if (spec.source == .ziglang) {
+            return try self.installFromZiglang(spec, options);
+        }
+
         // Check if package exists in global cache (filesystem check, not in-memory cache)
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
@@ -439,6 +444,191 @@ pub const Installer = struct {
         // Create project symlinks if installing to project
         if (options.project_root) |project_root| {
             try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
+        }
+
+        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, spec.version),
+            .install_path = install_dir,
+            .from_cache = false,
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install Zig from ziglang.org (handles both stable and dev versions)
+    fn installFromZiglang(
+        self: *Installer,
+        spec: PackageSpec,
+        options: InstallOptions,
+    ) !InstallResult {
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+
+        // Determine install location
+        const install_dir = if (options.project_root) |project_root| blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry/zig/{s}",
+                .{ project_root, spec.version },
+            );
+        } else blk: {
+            const home = try Paths.home(self.allocator);
+            defer self.allocator.free(home);
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/.pantry/global/packages/ziglang.org/v{s}",
+                .{ home, spec.version },
+            );
+        };
+        errdefer self.allocator.free(install_dir);
+
+        // Check if already installed
+        const already_installed = !options.force and blk: {
+            var check_dir = std.fs.cwd().openDir(install_dir, .{}) catch break :blk false;
+            check_dir.close();
+            break :blk true;
+        };
+
+        if (already_installed) {
+            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            return InstallResult{
+                .name = try self.allocator.dupe(u8, spec.name),
+                .version = try self.allocator.dupe(u8, spec.version),
+                .install_path = install_dir,
+                .from_cache = true,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        }
+
+        if (!options.quiet) {
+            const is_dev = downloader.isZigDevVersion(spec.version);
+            if (is_dev) {
+                std.debug.print("  → Downloading Zig dev from ziglang.org: {s}\n", .{spec.version});
+            } else {
+                std.debug.print("  → Downloading Zig from ziglang.org: {s}\n", .{spec.version});
+            }
+        }
+
+        // Build download URL
+        const url = try downloader.buildZiglangUrl(self.allocator, spec.version);
+        defer self.allocator.free(url);
+
+        // Create temp directory for downloading
+        const home = try Paths.home(self.allocator);
+        defer self.allocator.free(home);
+
+        const temp_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/.pantry/.tmp/zig-{s}",
+            .{ home, spec.version },
+        );
+        defer {
+            self.allocator.free(temp_dir);
+            std.fs.cwd().deleteTree(temp_dir) catch {};
+        }
+
+        try std.fs.cwd().makePath(temp_dir);
+
+        // Download the archive
+        const archive_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/zig.tar.xz",
+            .{temp_dir},
+        );
+        defer self.allocator.free(archive_path);
+
+        // Try to download
+        if (options.inline_progress) |progress_opts| {
+            try downloader.downloadFileInline(self.allocator, url, archive_path, progress_opts);
+        } else {
+            try downloader.downloadFileQuiet(self.allocator, url, archive_path, options.quiet);
+        }
+
+        // Show "extracting..." status if inline progress is enabled
+        if (options.inline_progress) |progress_opts| {
+            const lines_up = progress_opts.total_deps - progress_opts.line_offset;
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+                lines_up,
+                progress_opts.dim_str,
+                "\x1b[0m",
+                progress_opts.pkg_name,
+                progress_opts.dim_str,
+                progress_opts.italic_str,
+                progress_opts.pkg_version,
+                progress_opts.dim_str,
+                "\x1b[0m",
+            });
+            if (progress_opts.line_offset < progress_opts.total_deps - 1) {
+                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+            }
+        }
+
+        // Extract archive to temp directory
+        const extract_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/extracted",
+            .{temp_dir},
+        );
+        defer self.allocator.free(extract_dir);
+
+        try std.fs.cwd().makePath(extract_dir);
+        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, "tar.xz", options.quiet);
+
+        // Find the actual Zig directory (it's usually named zig-{platform}-{arch}-{version})
+        var extracted_handle = try std.fs.openDirAbsolute(extract_dir, .{ .iterate = true });
+        defer extracted_handle.close();
+
+        var zig_source_dir: ?[]const u8 = null;
+        var iter = extracted_handle.iterate();
+        while (try iter.next()) |entry| {
+            if (entry.kind == .directory and std.mem.startsWith(u8, entry.name, "zig-")) {
+                zig_source_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ extract_dir, entry.name });
+                break;
+            }
+        }
+
+        if (zig_source_dir == null) {
+            // Fallback to extract dir itself
+            zig_source_dir = try self.allocator.dupe(u8, extract_dir);
+        }
+        defer self.allocator.free(zig_source_dir.?);
+
+        // Create install directory and copy contents
+        try std.fs.cwd().makePath(install_dir);
+        try self.copyDirectoryStructure(zig_source_dir.?, install_dir);
+
+        // Create project symlinks if installing to project
+        if (options.project_root) |project_root| {
+            // Create pantry/.bin directory
+            const bin_dir = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry/.bin",
+                .{project_root},
+            );
+            defer self.allocator.free(bin_dir);
+            try std.fs.cwd().makePath(bin_dir);
+
+            // Create symlink for zig binary
+            const zig_binary = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/zig",
+                .{install_dir},
+            );
+            defer self.allocator.free(zig_binary);
+
+            const zig_link = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/zig",
+                .{bin_dir},
+            );
+            defer self.allocator.free(zig_link);
+
+            // Remove existing symlink if it exists
+            std.fs.deleteFileAbsolute(zig_link) catch {};
+            std.fs.symLinkAbsolute(zig_binary, zig_link, .{}) catch |err| {
+                std.debug.print("Warning: Failed to create zig symlink: {}\n", .{err});
+            };
         }
 
         const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));

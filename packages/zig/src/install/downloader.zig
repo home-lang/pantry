@@ -119,25 +119,36 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
     var last_size: u64 = 0;
     var last_update = start_time;
+    var last_progress_time = start_time; // Track when we last saw progress
     var shown_progress = false;
-    const timeout_ms: i64 = 30000; // 30 second timeout
+    const stall_timeout_ms: i64 = 60000; // 60 second stall timeout (no progress)
 
     while (true) {
         std.posix.nanosleep(0, 100 * std.time.ns_per_ms);
 
         const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
-        // Add timeout check to prevent infinite hanging
-        if (now - start_time > timeout_ms) {
-            _ = child.kill() catch {};
-            return error.NetworkError;
-        }
-
         const stat = std.fs.cwd().statFile(dest_path) catch {
+            // File doesn't exist yet - check for stall timeout
+            if (now - last_progress_time > stall_timeout_ms) {
+                _ = child.kill() catch {};
+                return error.NetworkError;
+            }
             continue;
         };
 
         const current_size: u64 = @intCast(stat.size);
+
+        // Update progress timestamp if size changed
+        if (current_size != last_size) {
+            last_progress_time = now;
+        }
+
+        // Check for stall timeout (no progress for too long)
+        if (now - last_progress_time > stall_timeout_ms) {
+            _ = child.kill() catch {};
+            return error.NetworkError;
+        }
 
         // Update progress every 100ms if size changed (skip if quiet mode)
         if (!quiet and current_size != last_size and (now - last_update) >= 100) {
@@ -276,6 +287,49 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     if (term.Exited != 0) {
         if (shown_progress) std.debug.print("\n", .{});
         return error.HttpRequestFailed;
+    }
+}
+
+/// Check if a version string looks like a Zig dev version
+pub fn isZigDevVersion(version: []const u8) bool {
+    // Dev versions look like: 0.16.0-dev.1484+d0ba6642b or 0.14.0-dev.2851+b074a1eb8
+    return std.mem.indexOf(u8, version, "-dev.") != null;
+}
+
+/// Build download URL for ziglang.org
+/// For dev versions: https://ziglang.org/builds/zig-{platform}-{arch}-{version}.tar.xz
+/// For stable versions: https://ziglang.org/download/{version}/zig-{platform}-{arch}-{version}.tar.xz
+pub fn buildZiglangUrl(
+    allocator: std.mem.Allocator,
+    version: []const u8,
+) ![]const u8 {
+    const platform = lib.Platform.current();
+    const platform_str = switch (platform) {
+        .darwin => "macos",
+        .linux => "linux",
+        .windows => "windows",
+    };
+
+    const arch = lib.Architecture.current();
+    const arch_str = switch (arch) {
+        .x86_64 => "x86_64",
+        .aarch64 => "aarch64",
+    };
+
+    // Dev versions use /builds/ endpoint, stable use /download/{version}/
+    // Note: ziglang.org uses format zig-{arch}-{platform}-{version}.tar.xz
+    if (isZigDevVersion(version)) {
+        return std.fmt.allocPrint(
+            allocator,
+            "https://ziglang.org/builds/zig-{s}-{s}-{s}.tar.xz",
+            .{ arch_str, platform_str, version },
+        );
+    } else {
+        return std.fmt.allocPrint(
+            allocator,
+            "https://ziglang.org/download/{s}/zig-{s}-{s}-{s}.tar.xz",
+            .{ version, arch_str, platform_str, version },
+        );
     }
 }
 

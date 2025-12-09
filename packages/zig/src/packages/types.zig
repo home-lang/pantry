@@ -8,6 +8,7 @@ pub const PackageSource = enum {
     http, // Direct HTTP download
     git, // Git repository
     local, // Local filesystem path (linked package)
+    ziglang, // ziglang.org official releases (stable and dev)
 
     pub fn toString(self: PackageSource) []const u8 {
         return switch (self) {
@@ -17,6 +18,7 @@ pub const PackageSource = enum {
             .http => "http",
             .git => "git",
             .local => "local",
+            .ziglang => "ziglang",
         };
     }
 
@@ -27,6 +29,7 @@ pub const PackageSource = enum {
         if (std.mem.eql(u8, s, "http")) return .http;
         if (std.mem.eql(u8, s, "git")) return .git;
         if (std.mem.eql(u8, s, "local")) return .local;
+        if (std.mem.eql(u8, s, "ziglang")) return .ziglang;
         return null;
     }
 };

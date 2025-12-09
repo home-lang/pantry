@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1763105581",
+  "generatedAt": "1765264158",
   "packages": {
     "zig-test-framework@github:zig-utils/zig-test-framework": {
       "name": "zig-test-framework",
