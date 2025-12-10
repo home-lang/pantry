@@ -396,20 +396,20 @@ pub const RegistryClient = struct {
 
     fn serializeTrustedPublisher(self: *RegistryClient, publisher: *const oidc.TrustedPublisher) ![]u8 {
         // Build allowed_refs array
-        var refs_json = std.ArrayList(u8).init(self.allocator);
-        defer refs_json.deinit();
+        var refs_json = std.ArrayList(u8){};
+        defer refs_json.deinit(self.allocator);
 
         if (publisher.allowed_refs) |refs| {
-            try refs_json.appendSlice("[");
+            try refs_json.appendSlice(self.allocator, "[");
             for (refs, 0..) |ref, i| {
-                if (i > 0) try refs_json.appendSlice(", ");
-                try refs_json.appendSlice("\"");
-                try refs_json.appendSlice(ref);
-                try refs_json.appendSlice("\"");
+                if (i > 0) try refs_json.appendSlice(self.allocator, ", ");
+                try refs_json.appendSlice(self.allocator, "\"");
+                try refs_json.appendSlice(self.allocator, ref);
+                try refs_json.appendSlice(self.allocator, "\"");
             }
-            try refs_json.appendSlice("]");
+            try refs_json.appendSlice(self.allocator, "]");
         } else {
-            try refs_json.appendSlice("null");
+            try refs_json.appendSlice(self.allocator, "null");
         }
 
         const json = try std.fmt.allocPrint(
@@ -446,7 +446,7 @@ pub const RegistryClient = struct {
         defer parsed.deinit();
 
         const publishers_array = parsed.value.array;
-        var publishers = std.ArrayList(oidc.TrustedPublisher).init(self.allocator);
+        var publishers = std.ArrayList(oidc.TrustedPublisher){};
 
         for (publishers_array.items) |item| {
             const obj = item.object;
@@ -470,7 +470,7 @@ pub const RegistryClient = struct {
                 }
             }
 
-            try publishers.append(oidc.TrustedPublisher{
+            try publishers.append(self.allocator, oidc.TrustedPublisher{
                 .type = try self.allocator.dupe(u8, publisher_type.string),
                 .owner = try self.allocator.dupe(u8, owner.string),
                 .repository = try self.allocator.dupe(u8, repository.string),
@@ -480,7 +480,7 @@ pub const RegistryClient = struct {
             });
         }
 
-        return publishers.toOwnedSlice();
+        return publishers.toOwnedSlice(self.allocator);
     }
 };
 

@@ -628,6 +628,114 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn publisherAddAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const package_name = ctx.getOption("package") orelse {
+        std.debug.print("Error: --package is required\n", .{});
+        std.process.exit(1);
+    };
+
+    const publisher_type = ctx.getOption("type") orelse "github-action";
+    const owner = ctx.getOption("owner") orelse {
+        std.debug.print("Error: --owner is required\n", .{});
+        std.process.exit(1);
+    };
+    const repository = ctx.getOption("repository") orelse {
+        std.debug.print("Error: --repository is required\n", .{});
+        std.process.exit(1);
+    };
+    const workflow = ctx.getOption("workflow");
+    const environment = ctx.getOption("environment");
+    const registry = ctx.getOption("registry") orelse "https://registry.npmjs.org";
+
+    const options = lib.commands.TrustedPublisherAddOptions{
+        .package = package_name,
+        .type = publisher_type,
+        .owner = owner,
+        .repository = repository,
+        .workflow = workflow,
+        .environment = environment,
+        .registry = registry,
+    };
+
+    const result = try lib.commands.trustedPublisherAddCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn publisherListAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const package_name = ctx.getOption("package") orelse {
+        std.debug.print("Error: --package is required\n", .{});
+        std.process.exit(1);
+    };
+
+    const json_output = ctx.hasOption("json");
+    const registry = ctx.getOption("registry") orelse "https://registry.npmjs.org";
+
+    const options = lib.commands.TrustedPublisherListOptions{
+        .package = package_name,
+        .registry = registry,
+        .json = json_output,
+    };
+
+    const result = try lib.commands.trustedPublisherListCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn publisherRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const package_name = ctx.getOption("package") orelse {
+        std.debug.print("Error: --package is required\n", .{});
+        std.process.exit(1);
+    };
+
+    const publisher_id = ctx.getOption("publisher-id") orelse {
+        std.debug.print("Error: --publisher-id is required\n", .{});
+        std.process.exit(1);
+    };
+
+    const registry = ctx.getOption("registry") orelse "https://registry.npmjs.org";
+
+    const options = lib.commands.TrustedPublisherRemoveOptions{
+        .package = package_name,
+        .publisher_id = publisher_id,
+        .registry = registry,
+    };
+
+    const result = try lib.commands.trustedPublisherRemoveCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -2239,6 +2347,73 @@ pub fn main() !void {
 
     _ = info_cmd.setAction(infoAction);
     _ = try root.addCommand(info_cmd);
+
+    // ========================================================================
+    // Publisher Commands (Trusted Publisher Management for OIDC)
+    // ========================================================================
+    var publisher_add_cmd = try cli.BaseCommand.init(allocator, "publisher:add", "Add a trusted publisher for OIDC authentication");
+
+    const pub_add_package_opt = cli.Option.init("package", "package", "Package name", .string)
+        .withRequired(true);
+    _ = try publisher_add_cmd.addOption(pub_add_package_opt);
+
+    const pub_add_type_opt = cli.Option.init("type", "type", "Publisher type (github-action, gitlab-ci, bitbucket-pipeline, circleci)", .string)
+        .withDefault("github-action");
+    _ = try publisher_add_cmd.addOption(pub_add_type_opt);
+
+    const pub_add_owner_opt = cli.Option.init("owner", "owner", "Repository owner/organization", .string)
+        .withRequired(true);
+    _ = try publisher_add_cmd.addOption(pub_add_owner_opt);
+
+    const pub_add_repo_opt = cli.Option.init("repository", "repository", "Repository name", .string)
+        .withRequired(true);
+    _ = try publisher_add_cmd.addOption(pub_add_repo_opt);
+
+    const pub_add_workflow_opt = cli.Option.init("workflow", "workflow", "Workflow file path (e.g., .github/workflows/publish.yml)", .string);
+    _ = try publisher_add_cmd.addOption(pub_add_workflow_opt);
+
+    const pub_add_env_opt = cli.Option.init("environment", "environment", "GitHub environment name", .string);
+    _ = try publisher_add_cmd.addOption(pub_add_env_opt);
+
+    const pub_add_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
+        .withDefault("https://registry.npmjs.org");
+    _ = try publisher_add_cmd.addOption(pub_add_registry_opt);
+
+    _ = publisher_add_cmd.setAction(publisherAddAction);
+    _ = try root.addCommand(publisher_add_cmd);
+
+    var publisher_list_cmd = try cli.BaseCommand.init(allocator, "publisher:list", "List trusted publishers for a package");
+
+    const pub_list_package_opt = cli.Option.init("package", "package", "Package name", .string)
+        .withRequired(true);
+    _ = try publisher_list_cmd.addOption(pub_list_package_opt);
+
+    const pub_list_json_opt = cli.Option.init("json", "json", "Output in JSON format", .bool);
+    _ = try publisher_list_cmd.addOption(pub_list_json_opt);
+
+    const pub_list_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
+        .withDefault("https://registry.npmjs.org");
+    _ = try publisher_list_cmd.addOption(pub_list_registry_opt);
+
+    _ = publisher_list_cmd.setAction(publisherListAction);
+    _ = try root.addCommand(publisher_list_cmd);
+
+    var publisher_remove_cmd = try cli.BaseCommand.init(allocator, "publisher:remove", "Remove a trusted publisher");
+
+    const pub_remove_package_opt = cli.Option.init("package", "package", "Package name", .string)
+        .withRequired(true);
+    _ = try publisher_remove_cmd.addOption(pub_remove_package_opt);
+
+    const pub_remove_id_opt = cli.Option.init("publisher-id", "publisher-id", "Publisher ID to remove", .string)
+        .withRequired(true);
+    _ = try publisher_remove_cmd.addOption(pub_remove_id_opt);
+
+    const pub_remove_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
+        .withDefault("https://registry.npmjs.org");
+    _ = try publisher_remove_cmd.addOption(pub_remove_registry_opt);
+
+    _ = publisher_remove_cmd.setAction(publisherRemoveAction);
+    _ = try root.addCommand(publisher_remove_cmd);
 
     // Parse arguments
     const args = try std.process.argsAlloc(allocator);

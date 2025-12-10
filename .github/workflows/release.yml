@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Required to create releases and upload assets
+      id-token: write  # Required for OIDC authentication with npm
 
     steps:
       - uses: actions/checkout@v4
@@ -113,10 +114,9 @@ jobs:
           echo "Packaged files:"
           ls -la dist/
 
-      - name: Publish to npm
-        run: ./scripts/publish.sh
-        env:
-          BUN_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      - name: Publish to npm with OIDC
+        run: ./scripts/publish-oidc.sh
+        # OIDC token will be automatically provided by GitHub Actions via ACTIONS_ID_TOKEN_REQUEST_URL
 
       - name: Create GitHub Release
         uses: stacksjs/action-releaser@v1.2.7
