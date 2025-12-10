@@ -25,3 +25,4 @@ packages/pantry/test/clean-integration-*
 /packages/zig/*.a
 /packages/zig/*.o
 /pantry
+pantry_modules
