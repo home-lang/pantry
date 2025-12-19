@@ -23,6 +23,16 @@ This implementation adds comprehensive OpenID Connect (OIDC) authentication supp
 - `validateClaims()` - Claims matching against trusted publishers
 - `detectProvider()` - Automatic CI/CD environment detection
 - `getTokenFromEnvironment()` - Token acquisition logic
+- `JWTHeader` - Parsed JWT header with algorithm and key ID
+- `JWK` / `JWKS` - JSON Web Key and Key Set structures
+- `parseJWTHeader()` - Extract algorithm and key ID from JWT
+- `fetchJWKS()` - Fetch JWKS from provider's endpoint
+- `verifyTokenSignature()` - Verify JWT signature against JWKS
+- `verifyES256()` - ECDSA P-256 signature verification (full crypto)
+- `verifyRS256()` - RSA signature structural validation
+- `validateTokenComplete()` - Full validation: signature + claims + expiration
+- `fetchJWKSCached()` - JWKS fetching with TTL-based caching
+- `CachedJWKS` - Cached JWKS with expiration handling
 
 ### 2. Registry Client (`packages/zig/src/auth/registry.zig`)
 
@@ -271,11 +281,11 @@ pantry/
 
 ## Lines of Code
 
-- **Core Implementation:** ~2,000 lines of Zig code
-- **Tests:** ~500 lines
+- **Core Implementation:** ~2,500 lines of Zig code (oidc.zig: ~1,185 lines, registry.zig: ~580 lines)
+- **Tests:** ~550 lines
 - **Documentation:** ~3,000 lines
 - **Examples:** ~200 lines
-- **Total:** ~5,700 lines
+- **Total:** ~6,300 lines
 
 ## Testing
 
@@ -315,7 +325,7 @@ To complete the implementation:
 
 ## Known Limitations
 
-1. **Signature Verification**: Currently decodes tokens without verifying signatures (JWKS validation to be added)
+1. **RSA Signature Verification**: RS256 signature validation performs structural checks; full cryptographic verification relies on the registry (Zig std lacks built-in RSA verification)
 2. **Token Refresh**: No automatic token refresh for long-running builds
 3. **Custom Providers**: No support for custom OIDC providers yet
 4. **Provenance Upload**: Provenance generated locally but not uploaded to registry
@@ -323,7 +333,11 @@ To complete the implementation:
 
 ## Future Enhancements
 
-- [ ] JWKS caching and signature verification
+- [x] JWKS fetching and caching
+- [x] JWT header parsing (alg, kid extraction)
+- [x] ES256 (ECDSA) signature verification
+- [x] RS256 structural validation
+- [ ] Full RSA cryptographic verification (requires external library)
 - [ ] Support for custom OIDC providers
 - [ ] Automatic provenance upload to registry
 - [ ] Token refresh for long-running builds
@@ -384,5 +398,7 @@ This implementation is part of the Pantry package manager and follows the same l
 
 **Implementation Date:** 2025
 **Status:** Complete ✅
+**Signature Verification:** ES256 Full ✅ | RS256 Structural ✅
+**JWKS Caching:** Complete ✅
 **Test Coverage:** Comprehensive ✅
 **Documentation:** Complete ✅

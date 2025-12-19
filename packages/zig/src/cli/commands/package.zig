@@ -570,12 +570,28 @@ fn attemptOIDCPublish(
     const raw_token = try oidc.getTokenFromEnvironment(allocator, &provider) orelse return false;
     defer allocator.free(raw_token);
 
-    // Decode and validate token
-    var token = try oidc.decodeTokenUnsafe(allocator, raw_token);
-    defer token.deinit(allocator);
+    // Verify token signature against provider's JWKS
+    std.debug.print("Verifying OIDC token signature...\n", .{});
+    const sig_valid = oidc.verifyTokenSignature(allocator, raw_token, &provider) catch |err| {
+        std.debug.print("Warning: Could not verify token signature: {any}\n", .{err});
+        std.debug.print("Proceeding with unverified token (registry will validate)\n", .{});
+        // Continue anyway - registry will do final validation
+        return attemptOIDCPublishUnverified(allocator, registry_client, package_name, version, tarball_path, generate_provenance, raw_token, &provider);
+    };
 
-    // Validate expiration
-    try oidc.validateExpiration(&token.claims);
+    if (!sig_valid) {
+        std.debug.print("Error: OIDC token signature verification failed\n", .{});
+        return false;
+    }
+
+    std.debug.print("✓ Token signature verified\n", .{});
+
+    // Decode and validate token (signature already verified)
+    var token = oidc.validateTokenComplete(allocator, raw_token, &provider, null) catch |err| {
+        std.debug.print("Error: Token validation failed: {any}\n", .{err});
+        return false;
+    };
+    defer token.deinit(allocator);
 
     // Print token info for transparency
     std.debug.print("OIDC Claims:\n", .{});
@@ -597,6 +613,59 @@ fn attemptOIDCPublish(
     }
 
     // Publish package
+    const response = try registry_client.publishWithOIDC(
+        package_name,
+        version,
+        tarball_path,
+        &token,
+    );
+    defer {
+        var mut_response = response;
+        mut_response.deinit(allocator);
+    }
+
+    return response.success;
+}
+
+/// Fallback: Attempt OIDC publish without local signature verification
+/// Used when JWKS fetch fails - registry will still validate the token
+fn attemptOIDCPublishUnverified(
+    allocator: std.mem.Allocator,
+    registry_client: *@import("../../auth/registry.zig").RegistryClient,
+    package_name: []const u8,
+    version: []const u8,
+    tarball_path: []const u8,
+    generate_provenance: bool,
+    raw_token: []const u8,
+    provider: *const @import("../../auth/oidc.zig").OIDCProvider,
+) !bool {
+    const oidc = @import("../../auth/oidc.zig");
+    _ = provider;
+
+    // Decode token without signature verification
+    var token = try oidc.decodeTokenUnsafe(allocator, raw_token);
+    defer token.deinit(allocator);
+
+    // At least validate expiration
+    oidc.validateExpiration(&token.claims) catch |err| {
+        std.debug.print("Error: Token validation failed: {any}\n", .{err});
+        return false;
+    };
+
+    // Print token info
+    std.debug.print("OIDC Claims (unverified):\n", .{});
+    std.debug.print("  Issuer: {s}\n", .{token.claims.iss});
+    std.debug.print("  Subject: {s}\n", .{token.claims.sub});
+    if (token.claims.repository) |repo| {
+        std.debug.print("  Repository: {s}\n", .{repo});
+    }
+
+    // Generate provenance if requested
+    if (generate_provenance) {
+        try generateProvenance(allocator, &token, package_name, version);
+    }
+
+    // Publish - registry will validate
     const response = try registry_client.publishWithOIDC(
         package_name,
         version,

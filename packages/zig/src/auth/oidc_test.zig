@@ -322,3 +322,223 @@ test "Trusted Publisher - With Allowed Refs" {
     const result_invalid = try publisher.validateClaims(&claims_invalid);
     try testing.expect(!result_invalid);
 }
+
+// =============================================================================
+// JWT Header and JWKS Tests
+// =============================================================================
+
+test "Parse JWT Header - RS256" {
+    const allocator = testing.allocator;
+
+    // Sample JWT with RS256 algorithm and kid
+    const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LTEifQ.eyJzdWIiOiJ0ZXN0In0.signature";
+
+    var header = try oidc.parseJWTHeader(allocator, token);
+    defer header.deinit(allocator);
+
+    try testing.expectEqualStrings("RS256", header.alg);
+    try testing.expect(header.kid != null);
+    try testing.expectEqualStrings("test-key-1", header.kid.?);
+    try testing.expect(header.typ != null);
+    try testing.expectEqualStrings("JWT", header.typ.?);
+}
+
+test "Parse JWT Header - ES256" {
+    const allocator = testing.allocator;
+
+    // Sample JWT with ES256 algorithm
+    const token = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.signature";
+
+    var header = try oidc.parseJWTHeader(allocator, token);
+    defer header.deinit(allocator);
+
+    try testing.expectEqualStrings("ES256", header.alg);
+    try testing.expect(header.kid == null); // No kid in this token
+    try testing.expect(header.typ != null);
+    try testing.expectEqualStrings("JWT", header.typ.?);
+}
+
+test "Parse JWT Header - Invalid Token" {
+    const allocator = testing.allocator;
+
+    // Invalid token format
+    const result = oidc.parseJWTHeader(allocator, "not-a-valid-token");
+    try testing.expectError(error.InvalidToken, result);
+}
+
+test "JWKS - Find Key By ID" {
+    const allocator = testing.allocator;
+
+    // Create mock JWKS
+    var keys = try allocator.alloc(oidc.JWK, 2);
+    keys[0] = oidc.JWK{
+        .kty = try allocator.dupe(u8, "RSA"),
+        .kid = try allocator.dupe(u8, "key-1"),
+        .alg = try allocator.dupe(u8, "RS256"),
+        .n = try allocator.dupe(u8, "modulus"),
+        .e = try allocator.dupe(u8, "AQAB"),
+    };
+    keys[1] = oidc.JWK{
+        .kty = try allocator.dupe(u8, "RSA"),
+        .kid = try allocator.dupe(u8, "key-2"),
+        .alg = try allocator.dupe(u8, "RS256"),
+        .n = try allocator.dupe(u8, "modulus2"),
+        .e = try allocator.dupe(u8, "AQAB"),
+    };
+
+    var jwks = oidc.JWKS{
+        .keys = keys,
+        .allocator = allocator,
+    };
+    defer jwks.deinit();
+
+    // Find key by ID
+    const found_key = jwks.findKeyById("key-2");
+    try testing.expect(found_key != null);
+    try testing.expectEqualStrings("key-2", found_key.?.kid.?);
+
+    // Key not found
+    const not_found = jwks.findKeyById("key-3");
+    try testing.expect(not_found == null);
+}
+
+test "JWKS - Find Key By Algorithm" {
+    const allocator = testing.allocator;
+
+    // Create mock JWKS
+    var keys = try allocator.alloc(oidc.JWK, 2);
+    keys[0] = oidc.JWK{
+        .kty = try allocator.dupe(u8, "RSA"),
+        .alg = try allocator.dupe(u8, "RS256"),
+        .n = try allocator.dupe(u8, "modulus"),
+        .e = try allocator.dupe(u8, "AQAB"),
+    };
+    keys[1] = oidc.JWK{
+        .kty = try allocator.dupe(u8, "EC"),
+        .alg = try allocator.dupe(u8, "ES256"),
+        .crv = try allocator.dupe(u8, "P-256"),
+        .x = try allocator.dupe(u8, "x-coord"),
+        .y = try allocator.dupe(u8, "y-coord"),
+    };
+
+    var jwks = oidc.JWKS{
+        .keys = keys,
+        .allocator = allocator,
+    };
+    defer jwks.deinit();
+
+    // Find RS256 key
+    const rs256_key = jwks.findKeyByAlg("RS256");
+    try testing.expect(rs256_key != null);
+    try testing.expectEqualStrings("RSA", rs256_key.?.kty);
+
+    // Find ES256 key
+    const es256_key = jwks.findKeyByAlg("ES256");
+    try testing.expect(es256_key != null);
+    try testing.expectEqualStrings("EC", es256_key.?.kty);
+}
+
+test "JWK Structure - RSA Key Components" {
+    const allocator = testing.allocator;
+
+    var jwk = oidc.JWK{
+        .kty = try allocator.dupe(u8, "RSA"),
+        .kid = try allocator.dupe(u8, "test-key"),
+        .alg = try allocator.dupe(u8, "RS256"),
+        .use = try allocator.dupe(u8, "sig"),
+        .n = try allocator.dupe(u8, "modulus-base64url"),
+        .e = try allocator.dupe(u8, "AQAB"),
+    };
+    defer jwk.deinit(allocator);
+
+    try testing.expectEqualStrings("RSA", jwk.kty);
+    try testing.expectEqualStrings("test-key", jwk.kid.?);
+    try testing.expectEqualStrings("RS256", jwk.alg.?);
+    try testing.expectEqualStrings("sig", jwk.use.?);
+    try testing.expect(jwk.n != null);
+    try testing.expect(jwk.e != null);
+    try testing.expect(jwk.crv == null); // EC-only field
+    try testing.expect(jwk.x == null); // EC-only field
+    try testing.expect(jwk.y == null); // EC-only field
+}
+
+test "JWK Structure - EC Key Components" {
+    const allocator = testing.allocator;
+
+    var jwk = oidc.JWK{
+        .kty = try allocator.dupe(u8, "EC"),
+        .kid = try allocator.dupe(u8, "ec-test-key"),
+        .alg = try allocator.dupe(u8, "ES256"),
+        .use = try allocator.dupe(u8, "sig"),
+        .crv = try allocator.dupe(u8, "P-256"),
+        .x = try allocator.dupe(u8, "x-coordinate-base64url"),
+        .y = try allocator.dupe(u8, "y-coordinate-base64url"),
+    };
+    defer jwk.deinit(allocator);
+
+    try testing.expectEqualStrings("EC", jwk.kty);
+    try testing.expectEqualStrings("ES256", jwk.alg.?);
+    try testing.expectEqualStrings("P-256", jwk.crv.?);
+    try testing.expect(jwk.x != null);
+    try testing.expect(jwk.y != null);
+    try testing.expect(jwk.n == null); // RSA-only field
+    try testing.expect(jwk.e == null); // RSA-only field
+}
+
+test "JWT Header Structure" {
+    const allocator = testing.allocator;
+
+    var header = oidc.JWTHeader{
+        .alg = try allocator.dupe(u8, "RS256"),
+        .kid = try allocator.dupe(u8, "my-key-id"),
+        .typ = try allocator.dupe(u8, "JWT"),
+    };
+    defer header.deinit(allocator);
+
+    try testing.expectEqualStrings("RS256", header.alg);
+    try testing.expectEqualStrings("my-key-id", header.kid.?);
+    try testing.expectEqualStrings("JWT", header.typ.?);
+}
+
+test "Cached JWKS - Expiration Check" {
+    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+
+    // Not expired
+    const cached_valid = oidc.CachedJWKS{
+        .jwks = undefined, // Not used in this test
+        .fetched_at = now - 1800, // 30 minutes ago
+        .ttl_seconds = 3600, // 1 hour TTL
+    };
+    try testing.expect(!cached_valid.isExpired());
+
+    // Expired
+    const cached_expired = oidc.CachedJWKS{
+        .jwks = undefined,
+        .fetched_at = now - 7200, // 2 hours ago
+        .ttl_seconds = 3600, // 1 hour TTL
+    };
+    try testing.expect(cached_expired.isExpired());
+}
+
+test "Validation Error Types" {
+    // Test that all validation errors are properly defined
+    const errors = [_]oidc.ValidationError{
+        error.InvalidToken,
+        error.ExpiredToken,
+        error.InvalidIssuer,
+        error.InvalidAudience,
+        error.MissingClaims,
+        error.InvalidSignature,
+        error.NetworkError,
+        error.InvalidJWKS,
+        error.UnsupportedAlgorithm,
+        error.ClaimsMismatch,
+    };
+
+    // Just verify they're all distinct error types
+    for (errors, 0..) |err, i| {
+        for (errors[i + 1 ..]) |other_err| {
+            try testing.expect(err != other_err);
+        }
+    }
+}

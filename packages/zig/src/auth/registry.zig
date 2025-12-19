@@ -25,7 +25,47 @@ pub const RegistryClient = struct {
         self.io.deinit();
     }
 
-    /// Publish package using OIDC authentication
+    /// Publish package using OIDC authentication with full token validation
+    /// This is the recommended method - validates signature before publishing
+    pub fn publishWithOIDCValidated(
+        self: *RegistryClient,
+        package_name: []const u8,
+        version: []const u8,
+        tarball_path: []const u8,
+        raw_token: []const u8,
+        provider: *const oidc.OIDCProvider,
+    ) !PublishResponse {
+        // Validate the token completely (signature + claims + expiration)
+        var validated_token = oidc.validateTokenComplete(
+            self.allocator,
+            raw_token,
+            provider,
+            null, // audience validation is optional for npm
+        ) catch |err| {
+            return PublishResponse{
+                .success = false,
+                .status_code = 401,
+                .message = switch (err) {
+                    error.InvalidSignature => try self.allocator.dupe(u8, "OIDC token signature verification failed"),
+                    error.ExpiredToken => try self.allocator.dupe(u8, "OIDC token has expired"),
+                    error.InvalidIssuer => try self.allocator.dupe(u8, "OIDC token issuer does not match provider"),
+                    error.InvalidAudience => try self.allocator.dupe(u8, "OIDC token audience mismatch"),
+                    error.UnsupportedAlgorithm => try self.allocator.dupe(u8, "OIDC token uses unsupported algorithm"),
+                    error.InvalidToken => try self.allocator.dupe(u8, "Invalid OIDC token format"),
+                    error.InvalidJWKS => try self.allocator.dupe(u8, "Failed to fetch or parse JWKS"),
+                    error.NetworkError => try self.allocator.dupe(u8, "Network error fetching JWKS"),
+                    else => try self.allocator.dupe(u8, "OIDC token validation failed"),
+                },
+            };
+        };
+        defer validated_token.deinit(self.allocator);
+
+        // Now publish with the validated token
+        return self.publishWithOIDC(package_name, version, tarball_path, &validated_token);
+    }
+
+    /// Publish package using OIDC authentication (assumes token is already validated)
+    /// Use publishWithOIDCValidated for automatic validation
     pub fn publishWithOIDC(
         self: *RegistryClient,
         package_name: []const u8,
