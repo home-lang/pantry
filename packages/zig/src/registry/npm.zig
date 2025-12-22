@@ -641,3 +641,286 @@ fn parseNpmVersions(allocator: std.mem.Allocator, json: std.json.Value) ![][]con
 
     return results.toOwnedSlice();
 }
+
+/// Semver constraint types for NPM version resolution
+pub const SemverConstraint = struct {
+    type: ConstraintType,
+    major: u32,
+    minor: u32,
+    patch: u32,
+
+    pub const ConstraintType = enum {
+        exact, // 1.2.3
+        caret, // ^1.2.3 - compatible with version
+        tilde, // ~1.2.3 - approximately equivalent
+        gte, // >=1.2.3
+        lte, // <=1.2.3
+        gt, // >1.2.3
+        lt, // <1.2.3
+        any, // * or latest
+    };
+
+    /// Parse a semver version string into major.minor.patch
+    pub fn parseVersion(version: []const u8) !struct { major: u32, minor: u32, patch: u32 } {
+        var clean_version = version;
+
+        // Strip 'v' prefix if present
+        if (std.mem.startsWith(u8, clean_version, "v")) {
+            clean_version = clean_version[1..];
+        }
+
+        // Split by '.' and '-' (for pre-release versions)
+        var parts = std.mem.splitAny(u8, clean_version, ".-+");
+
+        const major_str = parts.next() orelse return error.InvalidVersion;
+        const minor_str = parts.next() orelse "0";
+        const patch_str = parts.next() orelse "0";
+
+        const major = std.fmt.parseInt(u32, major_str, 10) catch return error.InvalidVersion;
+        const minor = std.fmt.parseInt(u32, minor_str, 10) catch 0;
+        const patch = std.fmt.parseInt(u32, patch_str, 10) catch 0;
+
+        return .{ .major = major, .minor = minor, .patch = patch };
+    }
+
+    /// Parse a version constraint string like "^1.2.3" or ">=1.0.0"
+    pub fn parse(constraint_str: []const u8) !SemverConstraint {
+        var version_str = constraint_str;
+        var constraint_type = ConstraintType.exact;
+
+        // Handle special cases
+        if (std.mem.eql(u8, constraint_str, "*") or
+            std.mem.eql(u8, constraint_str, "latest") or
+            constraint_str.len == 0)
+        {
+            return SemverConstraint{
+                .type = .any,
+                .major = 0,
+                .minor = 0,
+                .patch = 0,
+            };
+        }
+
+        // Detect constraint type and strip prefix
+        if (std.mem.startsWith(u8, version_str, "^")) {
+            constraint_type = .caret;
+            version_str = version_str[1..];
+        } else if (std.mem.startsWith(u8, version_str, "~")) {
+            constraint_type = .tilde;
+            version_str = version_str[1..];
+        } else if (std.mem.startsWith(u8, version_str, ">=")) {
+            constraint_type = .gte;
+            version_str = version_str[2..];
+        } else if (std.mem.startsWith(u8, version_str, "<=")) {
+            constraint_type = .lte;
+            version_str = version_str[2..];
+        } else if (std.mem.startsWith(u8, version_str, ">")) {
+            constraint_type = .gt;
+            version_str = version_str[1..];
+        } else if (std.mem.startsWith(u8, version_str, "<")) {
+            constraint_type = .lt;
+            version_str = version_str[1..];
+        } else if (std.mem.startsWith(u8, version_str, "=")) {
+            constraint_type = .exact;
+            version_str = version_str[1..];
+        }
+
+        const version = try parseVersion(version_str);
+
+        return SemverConstraint{
+            .type = constraint_type,
+            .major = version.major,
+            .minor = version.minor,
+            .patch = version.patch,
+        };
+    }
+
+    /// Check if a version satisfies this constraint
+    pub fn satisfies(self: SemverConstraint, version_str: []const u8) bool {
+        // Any constraint matches everything
+        if (self.type == .any) return true;
+
+        const version = parseVersion(version_str) catch return false;
+
+        return switch (self.type) {
+            .exact => version.major == self.major and
+                version.minor == self.minor and
+                version.patch == self.patch,
+
+            // ^1.2.3 := >=1.2.3 <2.0.0
+            .caret => blk: {
+                if (self.major == 0) {
+                    if (self.minor == 0) {
+                        // ^0.0.x only matches exact patch
+                        break :blk version.major == 0 and
+                            version.minor == 0 and
+                            version.patch == self.patch;
+                    }
+                    // ^0.x.y allows patch updates only
+                    break :blk version.major == 0 and
+                        version.minor == self.minor and
+                        version.patch >= self.patch;
+                } else {
+                    // ^1.2.3 allows 1.x.x but not 2.0.0
+                    break :blk version.major == self.major and
+                        (version.minor > self.minor or
+                        (version.minor == self.minor and version.patch >= self.patch));
+                }
+            },
+
+            // ~1.2.3 := >=1.2.3 <1.3.0
+            .tilde => version.major == self.major and
+                version.minor == self.minor and
+                version.patch >= self.patch,
+
+            .gte => version.major > self.major or
+                (version.major == self.major and version.minor > self.minor) or
+                (version.major == self.major and version.minor == self.minor and version.patch >= self.patch),
+
+            .lte => version.major < self.major or
+                (version.major == self.major and version.minor < self.minor) or
+                (version.major == self.major and version.minor == self.minor and version.patch <= self.patch),
+
+            .gt => version.major > self.major or
+                (version.major == self.major and version.minor > self.minor) or
+                (version.major == self.major and version.minor == self.minor and version.patch > self.patch),
+
+            .lt => version.major < self.major or
+                (version.major == self.major and version.minor < self.minor) or
+                (version.major == self.major and version.minor == self.minor and version.patch < self.patch),
+
+            .any => true,
+        };
+    }
+};
+
+/// Compare two semver versions, returns >0 if a > b, <0 if a < b, 0 if equal
+fn compareVersions(a: []const u8, b: []const u8) i32 {
+    const va = SemverConstraint.parseVersion(a) catch return 0;
+    const vb = SemverConstraint.parseVersion(b) catch return 0;
+
+    if (va.major != vb.major) {
+        return if (va.major > vb.major) @as(i32, 1) else @as(i32, -1);
+    }
+    if (va.minor != vb.minor) {
+        return if (va.minor > vb.minor) @as(i32, 1) else @as(i32, -1);
+    }
+    if (va.patch != vb.patch) {
+        return if (va.patch > vb.patch) @as(i32, 1) else @as(i32, -1);
+    }
+    return 0;
+}
+
+/// Result of version resolution
+pub const VersionResolution = struct {
+    /// The resolved version string
+    version: []const u8,
+    /// Whether this is the latest version
+    is_latest: bool,
+    /// Whether an update is available (resolved > current)
+    has_update: bool,
+
+    pub fn deinit(self: *VersionResolution, allocator: std.mem.Allocator) void {
+        allocator.free(self.version);
+    }
+};
+
+/// Resolve the best matching version from NPM registry based on constraint
+/// Returns the highest version that satisfies the constraint
+pub fn resolveVersion(
+    registry: *NpmRegistry,
+    allocator: std.mem.Allocator,
+    package_name: []const u8,
+    constraint_str: []const u8,
+    current_version: ?[]const u8,
+) !VersionResolution {
+    // Fetch all available versions from NPM
+    const versions = try registry.listVersions(allocator, package_name);
+    defer {
+        for (versions) |v| {
+            allocator.free(v);
+        }
+        allocator.free(versions);
+    }
+
+    if (versions.len == 0) {
+        return error.NoVersions;
+    }
+
+    // Parse the constraint
+    const constraint = SemverConstraint.parse(constraint_str) catch {
+        // If constraint is invalid, treat as exact match or latest
+        return VersionResolution{
+            .version = try allocator.dupe(u8, versions[0]),
+            .is_latest = true,
+            .has_update = false,
+        };
+    };
+
+    // Find the highest version that satisfies the constraint
+    var best_version: ?[]const u8 = null;
+    var highest_version: ?[]const u8 = null;
+
+    for (versions) |version| {
+        // Track the absolute highest version for "latest" check
+        if (highest_version == null or compareVersions(version, highest_version.?) > 0) {
+            highest_version = version;
+        }
+
+        // Check if this version satisfies the constraint
+        if (constraint.satisfies(version)) {
+            if (best_version == null or compareVersions(version, best_version.?) > 0) {
+                best_version = version;
+            }
+        }
+    }
+
+    const resolved = best_version orelse highest_version orelse versions[0];
+    const is_latest = highest_version != null and std.mem.eql(u8, resolved, highest_version.?);
+
+    // Check if there's an update available
+    var has_update = false;
+    if (current_version) |current| {
+        has_update = compareVersions(resolved, current) > 0;
+    }
+
+    return VersionResolution{
+        .version = try allocator.dupe(u8, resolved),
+        .is_latest = is_latest,
+        .has_update = has_update,
+    };
+}
+
+/// Get the latest version of a package from NPM
+pub fn getLatestVersion(
+    registry: *NpmRegistry,
+    allocator: std.mem.Allocator,
+    package_name: []const u8,
+) ![]const u8 {
+    // Use fetchMetadata with null version to get latest
+    const metadata = try registry.fetchMetadata(allocator, package_name, null);
+    defer {
+        var mut_metadata = metadata;
+        mut_metadata.deinit(allocator);
+    }
+
+    return try allocator.dupe(u8, metadata.version);
+}
+
+/// Check if a package has updates available based on constraint
+pub fn checkForUpdates(
+    registry: *NpmRegistry,
+    allocator: std.mem.Allocator,
+    package_name: []const u8,
+    current_version: []const u8,
+    constraint_str: []const u8,
+) !?[]const u8 {
+    const resolution = try resolveVersion(registry, allocator, package_name, constraint_str, current_version);
+
+    if (resolution.has_update) {
+        return resolution.version;
+    } else {
+        allocator.free(resolution.version);
+        return null;
+    }
+}

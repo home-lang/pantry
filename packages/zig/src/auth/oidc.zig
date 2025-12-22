@@ -573,6 +573,101 @@ pub fn validateExpiration(claims: *const OIDCToken.Claims) !void {
 /// Default audience for OIDC token requests
 pub const DEFAULT_OIDC_AUDIENCE: []const u8 = "https://registry.npmjs.org";
 
+/// Token refresh threshold in seconds (refresh if token expires within this time)
+pub const TOKEN_REFRESH_THRESHOLD_SECONDS: i64 = 300; // 5 minutes
+
+/// Token manager for handling token lifecycle including refresh
+pub const TokenManager = struct {
+    allocator: std.mem.Allocator,
+    provider: OIDCProvider,
+    audience: []const u8,
+    current_token: ?OIDCToken,
+
+    pub fn init(allocator: std.mem.Allocator, provider: OIDCProvider, audience: []const u8) TokenManager {
+        return .{
+            .allocator = allocator,
+            .provider = provider,
+            .audience = audience,
+            .current_token = null,
+        };
+    }
+
+    pub fn deinit(self: *TokenManager) void {
+        if (self.current_token) |*token| {
+            token.deinit(self.allocator);
+        }
+        self.provider.deinit(self.allocator);
+    }
+
+    /// Get a valid token, refreshing if necessary
+    pub fn getValidToken(self: *TokenManager) !*const OIDCToken {
+        // Check if we have a token and it's still valid
+        if (self.current_token) |*token| {
+            if (!self.isTokenExpiringSoon(token)) {
+                return token;
+            }
+            // Token is expiring soon, free it and get a new one
+            token.deinit(self.allocator);
+            self.current_token = null;
+        }
+
+        // Get a fresh token
+        const raw_token = try getTokenFromEnvironmentWithAudience(
+            self.allocator,
+            &self.provider,
+            self.audience,
+        ) orelse return error.NetworkError;
+        defer self.allocator.free(raw_token);
+
+        // Validate and store the token
+        self.current_token = try validateTokenComplete(
+            self.allocator,
+            raw_token,
+            &self.provider,
+            self.audience,
+        );
+
+        return &self.current_token.?;
+    }
+
+    /// Check if token is expiring within the threshold
+    fn isTokenExpiringSoon(self: *const TokenManager, token: *const OIDCToken) bool {
+        _ = self;
+        const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+        return now >= (token.claims.exp - TOKEN_REFRESH_THRESHOLD_SECONDS);
+    }
+
+    /// Force refresh the token
+    pub fn refreshToken(self: *TokenManager) !*const OIDCToken {
+        // Free existing token if any
+        if (self.current_token) |*token| {
+            token.deinit(self.allocator);
+            self.current_token = null;
+        }
+
+        return self.getValidToken();
+    }
+
+    /// Get time until token expires (in seconds)
+    pub fn getTokenTTL(self: *const TokenManager) ?i64 {
+        if (self.current_token) |token| {
+            const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+            const ttl = token.claims.exp - now;
+            return if (ttl > 0) ttl else 0;
+        }
+        return null;
+    }
+
+    /// Check if refresh is needed before an operation that takes estimated_duration_seconds
+    pub fn needsRefreshForOperation(self: *const TokenManager, estimated_duration_seconds: i64) bool {
+        if (self.getTokenTTL()) |ttl| {
+            // Need refresh if token will expire during the operation (with buffer)
+            return ttl < (estimated_duration_seconds + TOKEN_REFRESH_THRESHOLD_SECONDS);
+        }
+        return true; // No token, definitely need to refresh
+    }
+};
+
 /// Get OIDC token from environment with default audience
 pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OIDCProvider) !?[]const u8 {
     return getTokenFromEnvironmentWithAudience(allocator, provider, DEFAULT_OIDC_AUDIENCE);
@@ -855,24 +950,80 @@ pub fn parseJWTHeader(allocator: std.mem.Allocator, token: []const u8) !JWTHeade
     };
 }
 
-/// Fetch JWKS from provider's JWKS URI
+/// Network retry configuration
+pub const RetryConfig = struct {
+    /// Maximum number of retry attempts
+    max_retries: u32 = 3,
+    /// Initial delay between retries in milliseconds
+    initial_delay_ms: u64 = 100,
+    /// Maximum delay between retries in milliseconds
+    max_delay_ms: u64 = 5000,
+    /// Multiplier for exponential backoff
+    backoff_multiplier: u32 = 2,
+};
+
+/// Default retry configuration
+pub const DEFAULT_RETRY_CONFIG = RetryConfig{};
+
+/// Fetch JWKS from provider's JWKS URI with retry logic
 pub fn fetchJWKS(allocator: std.mem.Allocator, jwks_uri: []const u8) !JWKS {
+    return fetchJWKSWithRetry(allocator, jwks_uri, DEFAULT_RETRY_CONFIG);
+}
+
+/// Fetch JWKS with configurable retry behavior
+pub fn fetchJWKSWithRetry(allocator: std.mem.Allocator, jwks_uri: []const u8, config: RetryConfig) !JWKS {
+    var last_error: anyerror = error.NetworkError;
+    var delay_ms: u64 = config.initial_delay_ms;
+
+    var attempt: u32 = 0;
+    while (attempt <= config.max_retries) : (attempt += 1) {
+        // Try to fetch JWKS
+        const result = fetchJWKSOnce(allocator, jwks_uri);
+
+        if (result) |jwks| {
+            return jwks;
+        } else |err| {
+            last_error = err;
+
+            // Don't retry on non-transient errors
+            if (err == error.InvalidJWKS or err == error.OutOfMemory) {
+                return err;
+            }
+
+            // If we've exhausted retries, return the error
+            if (attempt >= config.max_retries) {
+                break;
+            }
+
+            // Sleep before retry (exponential backoff)
+            std.time.sleep(delay_ms * std.time.ns_per_ms);
+
+            // Increase delay for next attempt
+            delay_ms = @min(delay_ms * config.backoff_multiplier, config.max_delay_ms);
+        }
+    }
+
+    return last_error;
+}
+
+/// Single attempt to fetch JWKS (internal helper)
+fn fetchJWKSOnce(allocator: std.mem.Allocator, jwks_uri: []const u8) !JWKS {
     var io = std.Io.Threaded.init(allocator);
     defer io.deinit();
     var client = http.Client{ .allocator = allocator, .io = io.io() };
     defer client.deinit();
 
     // Parse URI
-    const uri = try std.Uri.parse(jwks_uri);
+    const uri = std.Uri.parse(jwks_uri) catch return error.NetworkError;
 
     // Make HTTP request
-    var req = try client.request(.GET, uri, .{});
+    var req = client.request(.GET, uri, .{}) catch return error.NetworkError;
     defer req.deinit();
 
-    try req.sendBodiless();
+    req.sendBodiless() catch return error.NetworkError;
 
     var redirect_buffer: [4096]u8 = undefined;
-    var response = try req.receiveHead(&redirect_buffer);
+    var response = req.receiveHead(&redirect_buffer) catch return error.NetworkError;
 
     // Check status
     if (response.head.status != .ok) {
@@ -881,7 +1032,7 @@ pub fn fetchJWKS(allocator: std.mem.Allocator, jwks_uri: []const u8) !JWKS {
 
     // Read response body
     const body_reader = response.reader(&.{});
-    const body = try body_reader.allocRemaining(allocator, std.Io.Limit.limited(65536));
+    const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(65536)) catch return error.NetworkError;
     defer allocator.free(body);
 
     // Parse JWKS JSON

@@ -180,15 +180,25 @@ pub const RegistryClient = struct {
         };
         defer self.allocator.free(body);
 
+        const success = response.head.status == .ok or response.head.status == .created;
+        const status_code = @intFromEnum(response.head.status);
+
         const message = if (body.len > 0)
             try self.allocator.dupe(u8, body)
         else
             null;
 
+        // Parse error details if publish failed
+        const error_details = if (!success and body.len > 0)
+            parseErrorDetails(self.allocator, body)
+        else
+            null;
+
         return PublishResponse{
-            .success = response.head.status == .ok or response.head.status == .created,
-            .status_code = @intFromEnum(response.head.status),
+            .success = success,
+            .status_code = status_code,
             .message = message,
+            .error_details = error_details,
         };
     }
 
@@ -260,15 +270,25 @@ pub const RegistryClient = struct {
         };
         defer self.allocator.free(body);
 
+        const success = response.head.status == .ok or response.head.status == .created;
+        const status_code = @intFromEnum(response.head.status);
+
         const message = if (body.len > 0)
             try self.allocator.dupe(u8, body)
         else
             null;
 
+        // Parse error details if publish failed
+        const error_details = if (!success and body.len > 0)
+            parseErrorDetails(self.allocator, body)
+        else
+            null;
+
         return PublishResponse{
-            .success = response.head.status == .ok or response.head.status == .created,
-            .status_code = @intFromEnum(response.head.status),
+            .success = success,
+            .status_code = status_code,
             .message = message,
+            .error_details = error_details,
         };
     }
 
@@ -608,13 +628,126 @@ pub const PublishResponse = struct {
     success: bool,
     status_code: u16,
     message: ?[]const u8 = null,
+    /// Detailed error information for debugging
+    error_details: ?ErrorDetails = null,
+
+    pub const ErrorDetails = struct {
+        /// Error code from registry (e.g., "E403", "ENEEDAUTH")
+        code: ?[]const u8 = null,
+        /// Human-readable error summary
+        summary: ?[]const u8 = null,
+        /// Suggested action to fix the error
+        suggestion: ?[]const u8 = null,
+
+        pub fn deinit(self: *ErrorDetails, allocator: std.mem.Allocator) void {
+            if (self.code) |c| allocator.free(c);
+            if (self.summary) |s| allocator.free(s);
+            if (self.suggestion) |sg| allocator.free(sg);
+        }
+    };
 
     pub fn deinit(self: *PublishResponse, allocator: std.mem.Allocator) void {
         if (self.message) |msg| {
             allocator.free(msg);
         }
+        if (self.error_details) |*ed| {
+            ed.deinit(allocator);
+        }
+    }
+
+    /// Get a human-readable error description
+    pub fn getErrorDescription(self: *const PublishResponse) []const u8 {
+        if (self.success) return "Success";
+
+        return switch (self.status_code) {
+            400 => "Bad Request: The package metadata is malformed or invalid",
+            401 => "Unauthorized: Authentication failed - check your OIDC token or credentials",
+            403 => "Forbidden: You don't have permission to publish this package",
+            404 => "Not Found: The package or registry endpoint doesn't exist",
+            409 => "Conflict: This version already exists - bump the version number",
+            413 => "Payload Too Large: The package tarball exceeds the size limit",
+            422 => "Unprocessable Entity: The package failed validation",
+            429 => "Too Many Requests: Rate limited - wait before retrying",
+            500 => "Internal Server Error: Registry is experiencing issues",
+            502 => "Bad Gateway: Registry proxy error",
+            503 => "Service Unavailable: Registry is temporarily unavailable",
+            else => "Unknown error occurred",
+        };
+    }
+
+    /// Check if the error is retryable
+    pub fn isRetryable(self: *const PublishResponse) bool {
+        return switch (self.status_code) {
+            408, 429, 500, 502, 503, 504 => true,
+            else => false,
+        };
     }
 };
+
+/// Registry operation errors with detailed information
+pub const RegistryError = error{
+    /// Network connectivity issues
+    NetworkError,
+    /// Authentication failed
+    AuthenticationFailed,
+    /// Authorization denied
+    AuthorizationDenied,
+    /// Package not found
+    PackageNotFound,
+    /// Version conflict
+    VersionConflict,
+    /// Rate limited
+    RateLimited,
+    /// Registry temporarily unavailable
+    ServiceUnavailable,
+    /// Invalid response from registry
+    InvalidResponse,
+    /// Response too large
+    ResponseTooLarge,
+    /// Generic registry error
+    RegistryError,
+};
+
+/// Parse error details from NPM registry JSON response
+fn parseErrorDetails(allocator: std.mem.Allocator, body: []const u8) ?PublishResponse.ErrorDetails {
+    const parsed = std.json.parseFromSlice(
+        std.json.Value,
+        allocator,
+        body,
+        .{},
+    ) catch return null;
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return null;
+    const obj = parsed.value.object;
+
+    var details = PublishResponse.ErrorDetails{};
+
+    if (obj.get("error")) |err_val| {
+        if (err_val == .string) {
+            details.code = allocator.dupe(u8, err_val.string) catch null;
+        }
+    }
+
+    if (obj.get("message")) |msg_val| {
+        if (msg_val == .string) {
+            details.summary = allocator.dupe(u8, msg_val.string) catch null;
+        }
+    }
+
+    if (obj.get("reason")) |reason_val| {
+        if (reason_val == .string) {
+            details.summary = allocator.dupe(u8, reason_val.string) catch null;
+        }
+    }
+
+    // Check if we got any useful info
+    if (details.code != null or details.summary != null) {
+        return details;
+    }
+
+    return null;
+}
 
 /// Registry configuration
 pub const RegistryConfig = struct {

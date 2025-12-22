@@ -183,3 +183,40 @@ pub fn validatePackageInLockfile(
     const pkg = lock_file.getPackage(name, version) orelse return false;
     return std.mem.eql(u8, pkg.version, version);
 }
+
+/// Get locked version for a package (for deterministic installs)
+pub fn getLockedVersionForPackage(
+    lock_file: *LockFile,
+    name: []const u8,
+) ?lockfile_mod.LockedVersion {
+    return lockfile_mod.getLockedVersion(lock_file, name);
+}
+
+/// Resolve version using lockfile if available, with options for frozen mode
+pub fn resolveVersionFromLockfile(
+    allocator: std.mem.Allocator,
+    lock_file: ?*LockFile,
+    name: []const u8,
+    requested_version: []const u8,
+    registry_resolved: ?[]const u8,
+    frozen: bool,
+) !lockfile_mod.ResolvedVersion {
+    return lockfile_mod.resolveVersionWithLockfile(
+        allocator,
+        lock_file,
+        name,
+        requested_version,
+        registry_resolved,
+        .{ .frozen = frozen, .prefer_lockfile = true },
+    );
+}
+
+/// Check if lockfile exists in project directory
+pub fn hasLockfile(cwd: []const u8) bool {
+    return lockfile_mod.lockfileExists(cwd);
+}
+
+/// Load lockfile if it exists (returns null if not found)
+pub fn tryLoadLockfile(allocator: std.mem.Allocator, cwd: []const u8) !?LockFile {
+    return lockfile_mod.loadLockfileIfExists(allocator, cwd);
+}

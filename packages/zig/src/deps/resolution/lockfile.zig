@@ -419,3 +419,116 @@ pub fn generateLockFile(
 
     return lock_file;
 }
+
+/// Resolved version from lockfile
+pub const LockedVersion = struct {
+    version: []const u8,
+    resolved: []const u8,
+    integrity: ?[]const u8,
+};
+
+/// Get locked version for a package if it exists in lockfile
+/// This is the key function for deterministic installs
+pub fn getLockedVersion(lock_file: *LockFile, name: []const u8) ?LockedVersion {
+    // Search through all packages to find one matching the name
+    var it = lock_file.packages.iterator();
+    while (it.next()) |entry| {
+        const pkg = entry.value_ptr.*;
+        if (std.mem.eql(u8, pkg.name, name)) {
+            return LockedVersion{
+                .version = pkg.version,
+                .resolved = pkg.resolved,
+                .integrity = pkg.integrity,
+            };
+        }
+    }
+    return null;
+}
+
+/// Options for resolving versions
+pub const ResolveOptions = struct {
+    /// If true, only use versions from lockfile (fail if not found)
+    frozen: bool = false,
+    /// If true, prefer lockfile version but allow updates
+    prefer_lockfile: bool = true,
+};
+
+/// Result of version resolution
+pub const ResolvedVersion = struct {
+    version: []const u8,
+    resolved_url: ?[]const u8,
+    integrity: ?[]const u8,
+    from_lockfile: bool,
+};
+
+/// Resolve version for a package, using lockfile if available
+/// This implements the deterministic install logic:
+/// 1. If frozen mode, only use lockfile versions (fail if missing)
+/// 2. If prefer_lockfile, use lockfile version if available
+/// 3. Otherwise, resolve from registry (caller provides resolved version)
+pub fn resolveVersionWithLockfile(
+    allocator: std.mem.Allocator,
+    lock_file: ?*LockFile,
+    name: []const u8,
+    requested_version: []const u8,
+    registry_resolved: ?[]const u8,
+    options: ResolveOptions,
+) !ResolvedVersion {
+    _ = allocator;
+
+    // Try to get locked version
+    if (lock_file) |lf| {
+        if (getLockedVersion(lf, name)) |locked| {
+            // Found in lockfile
+            return ResolvedVersion{
+                .version = locked.version,
+                .resolved_url = locked.resolved,
+                .integrity = locked.integrity,
+                .from_lockfile = true,
+            };
+        }
+    }
+
+    // Not in lockfile
+    if (options.frozen) {
+        // Frozen mode requires lockfile entry
+        return error.PackageNotInLockfile;
+    }
+
+    // Use registry-resolved version
+    return ResolvedVersion{
+        .version = requested_version,
+        .resolved_url = registry_resolved,
+        .integrity = null,
+        .from_lockfile = false,
+    };
+}
+
+/// Check if lockfile exists in directory
+pub fn lockfileExists(cwd: []const u8) bool {
+    const allocator = std.heap.page_allocator;
+    const lockfile_path = std.fs.path.join(
+        allocator,
+        &[_][]const u8{ cwd, LOCK_FILE_NAME },
+    ) catch return false;
+    defer allocator.free(lockfile_path);
+
+    std.fs.cwd().access(lockfile_path, .{}) catch return false;
+    return true;
+}
+
+/// Load lockfile from directory if it exists
+pub fn loadLockfileIfExists(allocator: std.mem.Allocator, cwd: []const u8) !?LockFile {
+    const lockfile_path = try std.fs.path.join(
+        allocator,
+        &[_][]const u8{ cwd, LOCK_FILE_NAME },
+    );
+    defer allocator.free(lockfile_path);
+
+    return LockFile.read(allocator, lockfile_path) catch |err| {
+        if (err == error.FileNotFound) {
+            return null;
+        }
+        return err;
+    };
+}
