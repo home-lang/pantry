@@ -2,6 +2,52 @@ const std = @import("std");
 const http = std.http;
 const oidc = @import("oidc.zig");
 
+/// URL-encode a package name for use in registry URLs
+/// Scoped packages like "@scope/name" need special handling
+fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) ![]u8 {
+    // Count how many characters need encoding
+    var encoded_len: usize = 0;
+    for (package_name) |c| {
+        encoded_len += switch (c) {
+            '@', '/' => 3, // %40, %2F
+            else => 1,
+        };
+    }
+
+    // If no encoding needed, just dupe
+    if (encoded_len == package_name.len) {
+        return try allocator.dupe(u8, package_name);
+    }
+
+    // Allocate and encode
+    const result = try allocator.alloc(u8, encoded_len);
+    errdefer allocator.free(result);
+
+    var i: usize = 0;
+    for (package_name) |c| {
+        switch (c) {
+            '@' => {
+                result[i] = '%';
+                result[i + 1] = '4';
+                result[i + 2] = '0';
+                i += 3;
+            },
+            '/' => {
+                result[i] = '%';
+                result[i + 1] = '2';
+                result[i + 2] = 'F';
+                i += 3;
+            },
+            else => {
+                result[i] = c;
+                i += 1;
+            },
+        }
+    }
+
+    return result;
+}
+
 /// Registry client for publishing packages
 pub const RegistryClient = struct {
     allocator: std.mem.Allocator,
@@ -73,11 +119,15 @@ pub const RegistryClient = struct {
         tarball_path: []const u8,
         token: *const oidc.OIDCToken,
     ) !PublishResponse {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
         // Construct registry URL for package publish
         const url = try std.fmt.allocPrint(
             self.allocator,
             "{s}/{s}",
-            .{ self.registry_url, package_name },
+            .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
 
@@ -150,10 +200,14 @@ pub const RegistryClient = struct {
         tarball_path: []const u8,
         auth_token: []const u8,
     ) !PublishResponse {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
         const url = try std.fmt.allocPrint(
             self.allocator,
             "{s}/{s}",
-            .{ self.registry_url, package_name },
+            .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
 
@@ -225,10 +279,14 @@ pub const RegistryClient = struct {
         publisher: *const oidc.TrustedPublisher,
         auth_token: []const u8,
     ) !void {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
         const url = try std.fmt.allocPrint(
             self.allocator,
             "{s}/{s}/-/oidc/publishers",
-            .{ self.registry_url, package_name },
+            .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
 
@@ -276,10 +334,14 @@ pub const RegistryClient = struct {
         package_name: []const u8,
         auth_token: []const u8,
     ) ![]oidc.TrustedPublisher {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
         const url = try std.fmt.allocPrint(
             self.allocator,
             "{s}/{s}/-/oidc/publishers",
-            .{ self.registry_url, package_name },
+            .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
 
@@ -333,10 +395,14 @@ pub const RegistryClient = struct {
         publisher_id: []const u8,
         auth_token: []const u8,
     ) !void {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
         const url = try std.fmt.allocPrint(
             self.allocator,
             "{s}/{s}/-/oidc/publishers/{s}",
-            .{ self.registry_url, package_name, publisher_id },
+            .{ self.registry_url, encoded_name, publisher_id },
         );
         defer self.allocator.free(url);
 
@@ -436,21 +502,34 @@ pub const RegistryClient = struct {
 
     fn serializeTrustedPublisher(self: *RegistryClient, publisher: *const oidc.TrustedPublisher) ![]u8 {
         // Build allowed_refs array
-        var refs_json = std.ArrayList(u8){};
-        defer refs_json.deinit(self.allocator);
+        var refs_json = std.ArrayList(u8).init(self.allocator);
+        defer refs_json.deinit();
 
         if (publisher.allowed_refs) |refs| {
-            try refs_json.appendSlice(self.allocator, "[");
+            try refs_json.appendSlice("[");
             for (refs, 0..) |ref, i| {
-                if (i > 0) try refs_json.appendSlice(self.allocator, ", ");
-                try refs_json.appendSlice(self.allocator, "\"");
-                try refs_json.appendSlice(self.allocator, ref);
-                try refs_json.appendSlice(self.allocator, "\"");
+                if (i > 0) try refs_json.appendSlice(", ");
+                try refs_json.appendSlice("\"");
+                try refs_json.appendSlice(ref);
+                try refs_json.appendSlice("\"");
             }
-            try refs_json.appendSlice(self.allocator, "]");
+            try refs_json.appendSlice("]");
         } else {
-            try refs_json.appendSlice(self.allocator, "null");
+            try refs_json.appendSlice("null");
         }
+
+        // Build workflow and environment strings, tracking allocations for cleanup
+        const workflow_str: []const u8 = if (publisher.workflow) |w|
+            try std.fmt.allocPrint(self.allocator, "\"{s}\"", .{w})
+        else
+            "null";
+        defer if (publisher.workflow != null) self.allocator.free(workflow_str);
+
+        const environment_str: []const u8 = if (publisher.environment) |e|
+            try std.fmt.allocPrint(self.allocator, "\"{s}\"", .{e})
+        else
+            "null";
+        defer if (publisher.environment != null) self.allocator.free(environment_str);
 
         const json = try std.fmt.allocPrint(
             self.allocator,
@@ -467,8 +546,8 @@ pub const RegistryClient = struct {
                 publisher.type,
                 publisher.owner,
                 publisher.repository,
-                if (publisher.workflow) |w| try std.fmt.allocPrint(self.allocator, "\"{s}\"", .{w}) else "null",
-                if (publisher.environment) |e| try std.fmt.allocPrint(self.allocator, "\"{s}\"", .{e}) else "null",
+                workflow_str,
+                environment_str,
                 refs_json.items,
             },
         );

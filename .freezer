@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "lockfileVersion": 1,
+  "generatedAt": "1766399003",
+  "packages": {
+    "zig-test-framework@github:zig-utils/zig-test-framework": {
+      "name": "zig-test-framework",
+      "version": "github:zig-utils/zig-test-framework",
+      "source": "github"
+    },
+    "zig-config@github:zig-utils/zig-config": {
+      "name": "zig-config",
+      "version": "github:zig-utils/zig-config",
+      "source": "github"
+    },
+    "zig-cli@github:zig-utils/zig-cli": {
+      "name": "zig-cli",
+      "version": "github:zig-utils/zig-cli",
+      "source": "github"
+    }
+  }
+}

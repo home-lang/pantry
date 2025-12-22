@@ -163,19 +163,15 @@ pub fn verifyPackageSignature(
     const public_key_pem = keyring.getKey(sig.key_id) orelse return error.KeyNotFound;
 
     // Parse PEM format to extract raw public key
-    const public_key_slice = try parseEd25519PublicKey(public_key_pem);
-    if (public_key_slice.len != 32) return error.InvalidPublicKey;
-
-    // Copy to fixed-size array
     var public_key_bytes: [32]u8 = undefined;
-    @memcpy(&public_key_bytes, public_key_slice[0..32]);
+    try parseEd25519PublicKey(public_key_pem, &public_key_bytes);
 
     // Verify signature
     try verifySignatureEd25519(data, sig.signature, public_key_bytes);
 }
 
-/// Parse Ed25519 public key from PEM format
-fn parseEd25519PublicKey(pem: []const u8) ![]const u8 {
+/// Parse Ed25519 public key from PEM format into output buffer
+fn parseEd25519PublicKey(pem: []const u8, out: *[32]u8) !void {
     // Simple PEM parser for Ed25519 keys
     // Format: -----BEGIN PUBLIC KEY-----\nbase64data\n-----END PUBLIC KEY-----
 
@@ -196,29 +192,36 @@ fn parseEd25519PublicKey(pem: []const u8) ![]const u8 {
 
     const b64_data = pem[start..end];
 
-    // Remove any whitespace/newlines from base64
-    var cleaned = std.ArrayList(u8){};
-    defer cleaned.deinit(std.heap.page_allocator);
+    // Remove any whitespace/newlines from base64 using stack buffer
+    // Max base64 length for Ed25519 public key (44 bytes DER-encoded) with some margin
+    var cleaned_buf: [256]u8 = undefined;
+    var cleaned_len: usize = 0;
 
     for (b64_data) |c| {
         if (!std.ascii.isWhitespace(c)) {
-            try cleaned.append(std.heap.page_allocator, c);
+            if (cleaned_len >= cleaned_buf.len) return error.InvalidKeyFormat;
+            cleaned_buf[cleaned_len] = c;
+            cleaned_len += 1;
         }
     }
 
-    // Decode base64
-    const decoder = std.base64.standard.Decoder;
-    const decoded_len = try decoder.calcSizeForSlice(cleaned.items);
+    const cleaned = cleaned_buf[0..cleaned_len];
 
-    var decoded = try std.heap.page_allocator.alloc(u8, decoded_len);
-    try decoder.decode(decoded, cleaned.items);
+    // Decode base64 into stack buffer
+    // Ed25519 public key is at most ~48 bytes in DER format
+    var decoded_buf: [128]u8 = undefined;
+    const decoder = std.base64.standard.Decoder;
+    const decoded_len = decoder.calcSizeForSlice(cleaned) catch return error.InvalidKeyFormat;
+
+    if (decoded_len > decoded_buf.len) return error.InvalidKeyFormat;
+
+    decoder.decode(decoded_buf[0..decoded_len], cleaned) catch return error.InvalidKeyFormat;
 
     // Ed25519 public key is 32 bytes (may be in ASN.1 DER format, so extract last 32 bytes)
-    if (decoded.len < 32) return error.InvalidPublicKey;
+    if (decoded_len < 32) return error.InvalidPublicKey;
 
-    const key_start = decoded.len - 32;
-    // Return slice from heap-allocated decoded buffer (last 32 bytes)
-    return decoded[key_start .. key_start + 32];
+    const key_start = decoded_len - 32;
+    @memcpy(out, decoded_buf[key_start .. key_start + 32]);
 }
 
 /// Generate Ed25519 keypair and return as PEM format

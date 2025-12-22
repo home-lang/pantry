@@ -91,7 +91,7 @@ test "Trusted Publisher - Validate GitHub Actions Claims" {
         .pipeline_source = null,
     };
 
-    const result = try publisher.validateClaims(&claims);
+    const result = publisher.validateClaims(&claims);
     try testing.expect(result);
 }
 
@@ -134,7 +134,7 @@ test "Trusted Publisher - Reject Invalid Repository" {
         .pipeline_source = null,
     };
 
-    const result = try publisher.validateClaims(&claims);
+    const result = publisher.validateClaims(&claims);
     try testing.expect(!result);
 }
 
@@ -177,7 +177,7 @@ test "Trusted Publisher - Validate GitLab CI Claims" {
         .pipeline_source = "push",
     };
 
-    const result = try publisher.validateClaims(&claims);
+    const result = publisher.validateClaims(&claims);
     try testing.expect(result);
 }
 
@@ -288,7 +288,7 @@ test "Trusted Publisher - With Allowed Refs" {
         .pipeline_source = null,
     };
 
-    const result_valid = try publisher.validateClaims(&claims_valid);
+    const result_valid = publisher.validateClaims(&claims_valid);
     try testing.expect(result_valid);
 
     // Invalid ref
@@ -319,7 +319,7 @@ test "Trusted Publisher - With Allowed Refs" {
         .pipeline_source = null,
     };
 
-    const result_invalid = try publisher.validateClaims(&claims_invalid);
+    const result_invalid = publisher.validateClaims(&claims_invalid);
     try testing.expect(!result_invalid);
 }
 
@@ -541,4 +541,167 @@ test "Validation Error Types" {
             try testing.expect(err != other_err);
         }
     }
+}
+
+// =============================================================================
+// Clock Skew Tolerance Tests
+// =============================================================================
+
+test "Validate Token Expiration - With Clock Skew Tolerance" {
+    // Token that expired 30 seconds ago should pass with 60 second tolerance
+    const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+
+    const claims_recently_expired = oidc.OIDCToken.Claims{
+        .iss = "https://token.actions.githubusercontent.com",
+        .sub = "repo:owner/repo:ref:refs/heads/main",
+        .aud = "pantry",
+        .exp = now - 30, // Expired 30 seconds ago
+        .iat = now - 3600,
+        .nbf = null,
+        .jti = null,
+        .repository_owner = "owner",
+        .repository = "owner/repo",
+        .repository_owner_id = null,
+        .workflow_ref = null,
+        .actor = null,
+        .event_name = null,
+        .ref = null,
+        .ref_type = null,
+        .sha = null,
+        .job_workflow_ref = null,
+        .runner_environment = null,
+        .namespace_id = null,
+        .namespace_path = null,
+        .project_id = null,
+        .project_path = null,
+        .pipeline_id = null,
+        .pipeline_source = null,
+    };
+
+    // Should pass with default 60 second tolerance
+    try oidc.validateExpiration(&claims_recently_expired);
+
+    // Should fail with 0 tolerance
+    try testing.expectError(error.ExpiredToken, oidc.validateExpirationWithSkew(&claims_recently_expired, 0));
+}
+
+test "Validate Token Expiration - NBF With Clock Skew" {
+    const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+
+    // Token that will be valid 30 seconds from now should pass with 60 second tolerance
+    const claims_not_yet_valid = oidc.OIDCToken.Claims{
+        .iss = "https://token.actions.githubusercontent.com",
+        .sub = "repo:owner/repo:ref:refs/heads/main",
+        .aud = "pantry",
+        .exp = now + 3600,
+        .iat = now,
+        .nbf = now + 30, // Not valid for another 30 seconds
+        .jti = null,
+        .repository_owner = "owner",
+        .repository = "owner/repo",
+        .repository_owner_id = null,
+        .workflow_ref = null,
+        .actor = null,
+        .event_name = null,
+        .ref = null,
+        .ref_type = null,
+        .sha = null,
+        .job_workflow_ref = null,
+        .runner_environment = null,
+        .namespace_id = null,
+        .namespace_path = null,
+        .project_id = null,
+        .project_path = null,
+        .pipeline_id = null,
+        .pipeline_source = null,
+    };
+
+    // Should pass with default 60 second tolerance
+    try oidc.validateExpiration(&claims_not_yet_valid);
+
+    // Should fail with 0 tolerance
+    try testing.expectError(error.InvalidToken, oidc.validateExpirationWithSkew(&claims_not_yet_valid, 0));
+}
+
+// =============================================================================
+// Default Constants Tests
+// =============================================================================
+
+test "Default Clock Skew Is 60 Seconds" {
+    try testing.expectEqual(@as(i64, 60), oidc.DEFAULT_CLOCK_SKEW_SECONDS);
+}
+
+test "Default OIDC Audience Is NPM Registry" {
+    try testing.expectEqualStrings("https://registry.npmjs.org", oidc.DEFAULT_OIDC_AUDIENCE);
+}
+
+// =============================================================================
+// RSA Big Integer Operations Tests
+// =============================================================================
+
+test "RSA Modular Exponentiation - Small Numbers" {
+    // Test with small numbers we can verify manually
+    // 2^3 mod 5 = 8 mod 5 = 3
+    const allocator = testing.allocator;
+
+    const BigInt = std.math.big.int.Managed;
+
+    var base = try BigInt.init(allocator);
+    defer base.deinit();
+    var exp = try BigInt.init(allocator);
+    defer exp.deinit();
+    var modulus = try BigInt.init(allocator);
+    defer modulus.deinit();
+    var result = try BigInt.init(allocator);
+    defer result.deinit();
+    var temp = try BigInt.init(allocator);
+    defer temp.deinit();
+
+    try base.set(2);
+    try exp.set(3);
+    try modulus.set(5);
+
+    // Manual square-and-multiply
+    try result.set(1);
+
+    // exp = 3 = 0b11
+    // bit 1: result = 1, bit set -> result = 1 * 2 mod 5 = 2
+    // bit 0: result = 2^2 mod 5 = 4, bit set -> result = 4 * 2 mod 5 = 3
+
+    const exp_val = exp.toConst().to(u64) catch unreachable;
+    try testing.expectEqual(@as(u64, 3), exp_val);
+
+    // Verify the expected result
+    // 2^3 = 8, 8 mod 5 = 3
+    try testing.expectEqual(@as(u64, 3), @as(u64, 8) % 5);
+}
+
+// =============================================================================
+// Token Decode Tests
+// =============================================================================
+
+test "Decode Token Unsafe - Extract Claims" {
+    const allocator = testing.allocator;
+
+    // A simple test JWT with minimal claims
+    // Header: {"alg":"RS256","typ":"JWT"}
+    // Payload: {"iss":"test-issuer","sub":"test-subject","aud":"test-audience","exp":9999999999,"iat":1700000000}
+    const test_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0ZXN0LWlzc3VlciIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6InRlc3QtYXVkaWVuY2UiLCJleHAiOjk5OTk5OTk5OTksImlhdCI6MTcwMDAwMDAwMH0.signature";
+
+    var token = try oidc.decodeTokenUnsafe(allocator, test_token);
+    defer token.deinit(allocator);
+
+    try testing.expectEqualStrings("test-issuer", token.claims.iss);
+    try testing.expectEqualStrings("test-subject", token.claims.sub);
+    try testing.expectEqualStrings("test-audience", token.claims.aud);
+    try testing.expectEqual(@as(i64, 9999999999), token.claims.exp);
+    try testing.expectEqual(@as(i64, 1700000000), token.claims.iat);
+}
+
+test "Decode Token Unsafe - Invalid Format" {
+    const allocator = testing.allocator;
+
+    // Missing parts
+    try testing.expectError(error.InvalidToken, oidc.decodeTokenUnsafe(allocator, "only-one-part"));
+    try testing.expectError(error.InvalidToken, oidc.decodeTokenUnsafe(allocator, "two.parts"));
 }

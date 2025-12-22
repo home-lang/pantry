@@ -274,7 +274,8 @@ pub const TrustedPublisher = struct {
     }
 
     /// Validate if the OIDC claims match this trusted publisher
-    pub fn validateClaims(self: *const TrustedPublisher, claims: *const OIDCToken.Claims) !bool {
+    /// Uses stack-based buffer to avoid allocator dependency for simple string comparison
+    pub fn validateClaims(self: *const TrustedPublisher, claims: *const OIDCToken.Claims) bool {
         // For GitHub Actions
         if (std.mem.eql(u8, self.type, "github-action")) {
             // Validate repository owner
@@ -286,14 +287,13 @@ pub const TrustedPublisher = struct {
                 return false;
             }
 
-            // Validate repository
+            // Validate repository - build expected format "owner/repo" using stack buffer
             if (claims.repository) |repo| {
-                const expected = try std.fmt.allocPrint(
-                    std.heap.page_allocator,
-                    "{s}/{s}",
-                    .{ self.owner, self.repository },
-                );
-                defer std.heap.page_allocator.free(expected);
+                // Stack buffer large enough for reasonable owner/repo names
+                var expected_buf: [512]u8 = undefined;
+                const expected = std.fmt.bufPrint(&expected_buf, "{s}/{s}", .{ self.owner, self.repository }) catch {
+                    return false; // Names too long
+                };
 
                 if (!std.mem.eql(u8, expected, repo)) {
                     return false;
@@ -346,14 +346,12 @@ pub const TrustedPublisher = struct {
                 return false;
             }
 
-            // Validate project path
+            // Validate project path - build expected format "owner/repo" using stack buffer
             if (claims.project_path) |project_path| {
-                const expected = try std.fmt.allocPrint(
-                    std.heap.page_allocator,
-                    "{s}/{s}",
-                    .{ self.owner, self.repository },
-                );
-                defer std.heap.page_allocator.free(expected);
+                var expected_buf: [512]u8 = undefined;
+                const expected = std.fmt.bufPrint(&expected_buf, "{s}/{s}", .{ self.owner, self.repository }) catch {
+                    return false; // Names too long
+                };
 
                 if (!std.mem.eql(u8, expected, project_path)) {
                     return false;
@@ -546,25 +544,42 @@ fn extractClaims(allocator: std.mem.Allocator, obj: std.json.ObjectMap) !OIDCTok
     };
 }
 
-/// Validate token expiration
-pub fn validateExpiration(claims: *const OIDCToken.Claims) !void {
+/// Default clock skew tolerance in seconds (60 seconds)
+/// This allows for minor clock differences between systems
+pub const DEFAULT_CLOCK_SKEW_SECONDS: i64 = 60;
+
+/// Validate token expiration with configurable clock skew tolerance
+pub fn validateExpirationWithSkew(claims: *const OIDCToken.Claims, clock_skew_seconds: i64) !void {
     const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
 
-    // Check if token has expired
-    if (now >= claims.exp) {
+    // Check if token has expired (with clock skew tolerance)
+    if (now >= claims.exp + clock_skew_seconds) {
         return error.ExpiredToken;
     }
 
-    // Check if token is not yet valid (nbf claim)
+    // Check if token is not yet valid (nbf claim, with clock skew tolerance)
     if (claims.nbf) |nbf| {
-        if (now < nbf) {
+        if (now < nbf - clock_skew_seconds) {
             return error.InvalidToken;
         }
     }
 }
 
-/// Get OIDC token from environment
+/// Validate token expiration using default clock skew tolerance
+pub fn validateExpiration(claims: *const OIDCToken.Claims) !void {
+    return validateExpirationWithSkew(claims, DEFAULT_CLOCK_SKEW_SECONDS);
+}
+
+/// Default audience for OIDC token requests
+pub const DEFAULT_OIDC_AUDIENCE: []const u8 = "https://registry.npmjs.org";
+
+/// Get OIDC token from environment with default audience
 pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OIDCProvider) !?[]const u8 {
+    return getTokenFromEnvironmentWithAudience(allocator, provider, DEFAULT_OIDC_AUDIENCE);
+}
+
+/// Get OIDC token from environment with custom audience
+pub fn getTokenFromEnvironmentWithAudience(allocator: std.mem.Allocator, provider: *const OIDCProvider, audience: []const u8) !?[]const u8 {
     // For GitHub Actions, we need to request the token from the OIDC endpoint
     if (provider.request_url_env_var != null and provider.request_token_env_var != null) {
         const request_url = std.process.getEnvVarOwned(
@@ -579,8 +594,8 @@ pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OI
         ) catch return null;
         defer allocator.free(request_token);
 
-        // Request OIDC token from GitHub Actions
-        return try requestGitHubOIDCToken(allocator, request_url, request_token);
+        // Request OIDC token from GitHub Actions with specified audience
+        return try requestGitHubOIDCToken(allocator, request_url, request_token, audience);
     }
 
     // For other providers, token is directly in environment variable
@@ -588,17 +603,17 @@ pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OI
 }
 
 /// Request OIDC token from GitHub Actions
-fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8, request_token: []const u8) ![]const u8 {
+fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8, request_token: []const u8, audience: []const u8) ![]const u8 {
     var io = std.Io.Threaded.init(allocator);
     defer io.deinit();
     var client = http.Client{ .allocator = allocator, .io = io.io() };
     defer client.deinit();
 
-    // Add audience query parameter (default to "pantry")
+    // Add audience query parameter
     const url_with_audience = try std.fmt.allocPrint(
         allocator,
-        "{s}&audience=pantry",
-        .{request_url},
+        "{s}&audience={s}",
+        .{ request_url, audience },
     );
     defer allocator.free(url_with_audience);
 
@@ -653,37 +668,44 @@ fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8,
 /// Detect OIDC provider from environment
 pub fn detectProvider(allocator: std.mem.Allocator) !?OIDCProvider {
     // Check for GitHub Actions
-    if (std.process.getEnvVarOwned(allocator, "GITHUB_ACTIONS") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "GITHUB_ACTIONS") catch null) |val| {
+        allocator.free(val);
         return try Providers.github(allocator);
     }
 
     // Check for GitLab CI
-    if (std.process.getEnvVarOwned(allocator, "GITLAB_CI") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "GITLAB_CI") catch null) |val| {
+        allocator.free(val);
         return try Providers.gitlab(allocator);
     }
 
     // Check for Azure Pipelines
-    if (std.process.getEnvVarOwned(allocator, "AZURE_PIPELINES") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "AZURE_PIPELINES") catch null) |val| {
+        allocator.free(val);
         return try Providers.azure(allocator);
     }
 
     // Check for Bitbucket Pipelines
-    if (std.process.getEnvVarOwned(allocator, "BITBUCKET_BUILD_NUMBER") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "BITBUCKET_BUILD_NUMBER") catch null) |val| {
+        allocator.free(val);
         return try Providers.bitbucket(allocator);
     }
 
     // Check for CircleCI
-    if (std.process.getEnvVarOwned(allocator, "CIRCLECI") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "CIRCLECI") catch null) |val| {
+        allocator.free(val);
         return try Providers.circleci(allocator);
     }
 
     // Check for Jenkins
-    if (std.process.getEnvVarOwned(allocator, "JENKINS_HOME") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "JENKINS_HOME") catch null) |val| {
+        allocator.free(val);
         return try Providers.jenkins(allocator);
     }
 
     // Check for Travis CI
-    if (std.process.getEnvVarOwned(allocator, "TRAVIS") catch null) |_| {
+    if (std.process.getEnvVarOwned(allocator, "TRAVIS") catch null) |val| {
+        allocator.free(val);
         return try Providers.travis(allocator);
     }
 
@@ -966,7 +988,7 @@ pub fn verifyTokenSignature(allocator: std.mem.Allocator, token: []const u8, pro
     }
 }
 
-/// Verify RS256 (RSA-SHA256) signature
+/// Verify RS256 (RSA-SHA256) signature using PKCS#1 v1.5
 fn verifyRS256(allocator: std.mem.Allocator, key: *const JWK, data: []const u8, signature: []const u8) !bool {
     // Ensure we have RSA key components
     if (!std.mem.eql(u8, key.kty, "RSA")) {
@@ -977,40 +999,162 @@ fn verifyRS256(allocator: std.mem.Allocator, key: *const JWK, data: []const u8, 
     const e_b64 = key.e orelse return error.InvalidJWKS;
 
     // Decode modulus and exponent
-    const n = try base64UrlDecode(allocator, n_b64);
-    defer allocator.free(n);
+    const n_bytes = try base64UrlDecode(allocator, n_b64);
+    defer allocator.free(n_bytes);
 
-    const e = try base64UrlDecode(allocator, e_b64);
-    defer allocator.free(e);
+    const e_bytes = try base64UrlDecode(allocator, e_b64);
+    defer allocator.free(e_bytes);
+
+    // Signature length must match modulus length
+    if (signature.len != n_bytes.len) {
+        return false;
+    }
 
     // Compute SHA-256 hash of the signed data
     var hash: [32]u8 = undefined;
     std.crypto.hash.sha2.Sha256.hash(data, &hash, .{});
 
-    // RSA signature verification using PKCS#1 v1.5
-    // The signature is s^e mod n, and we verify it matches the padded hash
-    //
-    // For a complete implementation, we would need to:
-    // 1. Perform modular exponentiation: s^e mod n
-    // 2. Verify PKCS#1 v1.5 padding
-    // 3. Extract and compare hash
-    //
-    // Zig's std.crypto doesn't have built-in RSA verification, so we use
-    // a simplified approach that validates the structure. The actual
-    // cryptographic verification happens on the npm registry side.
-    //
-    // For production use, consider using a dedicated crypto library like
-    // zig-bearssl or implementing full RSA verification.
+    // Perform RSA verification: decrypt signature using public key (s^e mod n)
+    const decrypted = try rsaPublicOp(allocator, signature, e_bytes, n_bytes);
+    defer allocator.free(decrypted);
 
-    // Structural validation: signature length should match key size
-    // RSA 2048 = 256 bytes, RSA 4096 = 512 bytes
-    if (signature.len != n.len) {
+    // Verify PKCS#1 v1.5 signature padding and extract hash
+    // Format: 0x00 0x01 [0xFF padding] 0x00 [DigestInfo] [Hash]
+    // DigestInfo for SHA-256: 30 31 30 0d 06 09 60 86 48 01 65 03 04 02 01 05 00 04 20
+    const sha256_digest_info = [_]u8{
+        0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
+        0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
+        0x00, 0x04, 0x20,
+    };
+
+    // Check minimum length: 0x00 + 0x01 + at least 8 bytes of 0xFF + 0x00 + DigestInfo + hash
+    const min_len = 2 + 8 + 1 + sha256_digest_info.len + 32;
+    if (decrypted.len < min_len) {
         return false;
     }
 
-    // Basic sanity checks passed - the registry will do full verification
-    // This provides defense-in-depth by catching malformed tokens early
+    // Verify padding format
+    if (decrypted[0] != 0x00 or decrypted[1] != 0x01) {
+        return false;
+    }
+
+    // Find end of 0xFF padding
+    var i: usize = 2;
+    while (i < decrypted.len and decrypted[i] == 0xFF) : (i += 1) {}
+
+    // Must have at least 8 bytes of 0xFF padding (per PKCS#1 v1.5)
+    if (i < 10) {
+        return false;
+    }
+
+    // Next byte must be 0x00 separator
+    if (i >= decrypted.len or decrypted[i] != 0x00) {
+        return false;
+    }
+    i += 1;
+
+    // Check DigestInfo
+    const remaining = decrypted.len - i;
+    if (remaining != sha256_digest_info.len + 32) {
+        return false;
+    }
+
+    if (!std.mem.eql(u8, decrypted[i .. i + sha256_digest_info.len], &sha256_digest_info)) {
+        return false;
+    }
+    i += sha256_digest_info.len;
+
+    // Compare hash
+    if (!std.mem.eql(u8, decrypted[i .. i + 32], &hash)) {
+        return false;
+    }
+
     return true;
+}
+
+/// RSA public key operation: compute (base ^ exp) mod modulus
+/// Uses square-and-multiply algorithm with big integers
+fn rsaPublicOp(allocator: std.mem.Allocator, base_bytes: []const u8, exp_bytes: []const u8, mod_bytes: []const u8) ![]u8 {
+    const BigInt = std.math.big.int.Managed;
+
+    // Initialize big integers
+    var base = try BigInt.init(allocator);
+    defer base.deinit();
+    var exp = try BigInt.init(allocator);
+    defer exp.deinit();
+    var modulus = try BigInt.init(allocator);
+    defer modulus.deinit();
+    var result = try BigInt.init(allocator);
+    defer result.deinit();
+    var temp = try BigInt.init(allocator);
+    defer temp.deinit();
+
+    // Convert bytes to big integers (big-endian)
+    try base.setBytes(.big, base_bytes, .unsigned);
+    try exp.setBytes(.big, exp_bytes, .unsigned);
+    try modulus.setBytes(.big, mod_bytes, .unsigned);
+
+    // Check that modulus is not zero
+    if (modulus.eqlZero()) {
+        return error.InvalidJWKS;
+    }
+
+    // Check that base < modulus
+    if (base.order(modulus) != .lt) {
+        return error.InvalidSignature;
+    }
+
+    // Square-and-multiply modular exponentiation
+    try result.set(1);
+
+    // Get exponent limbs for bit iteration
+    const exp_limbs = exp.toConst().limbs;
+    const limb_bits = @bitSizeOf(std.math.big.Limb);
+
+    // Process each bit of the exponent from most significant to least significant
+    var started = false;
+    var limb_idx: usize = exp_limbs.len;
+    while (limb_idx > 0) {
+        limb_idx -= 1;
+        const limb = exp_limbs[limb_idx];
+
+        var bit_idx: usize = limb_bits;
+        while (bit_idx > 0) {
+            bit_idx -= 1;
+
+            if (started) {
+                // Square: result = result^2 mod modulus
+                try temp.mul(result.toConst(), result.toConst());
+                try result.divFloor(&temp, temp.toConst(), modulus.toConst());
+                result.swap(&temp);
+            }
+
+            // Check if current bit is set
+            const bit_set = (limb >> @intCast(bit_idx)) & 1 == 1;
+            if (bit_set) {
+                started = true;
+                // Multiply: result = result * base mod modulus
+                try temp.mul(result.toConst(), base.toConst());
+                try result.divFloor(&temp, temp.toConst(), modulus.toConst());
+                result.swap(&temp);
+            }
+        }
+    }
+
+    // Convert result back to bytes
+    const result_bytes = try allocator.alloc(u8, mod_bytes.len);
+    errdefer allocator.free(result_bytes);
+
+    // Zero-pad and copy result
+    @memset(result_bytes, 0);
+    const result_const = result.toConst();
+    const byte_count = (result_const.bitCountAbs() + 7) / 8;
+    if (byte_count > 0) {
+        const start_offset = result_bytes.len - byte_count;
+        _ = result_const.toBytes(result_bytes[start_offset..], .big);
+    }
+
+    return result_bytes;
 }
 
 /// Verify ES256 (ECDSA-SHA256) signature
