@@ -5,6 +5,17 @@ const Workspace = core.Workspace;
 const WorkspaceConfig = core.WorkspaceConfig;
 const WorkspacePackage = core.WorkspacePackage;
 
+/// Read entire file contents (Zig 0.16 compatible)
+fn readFileAlloc(allocator: std.mem.Allocator, file: std.fs.File, max_size: usize) ![]u8 {
+    const file_size = try file.getEndPos();
+    if (file_size > max_size) return error.FileTooBig;
+    const buffer = try allocator.alloc(u8, @intCast(file_size));
+    errdefer allocator.free(buffer);
+    const bytes_read = try file.preadAll(buffer, 0);
+    if (bytes_read != buffer.len) return error.UnexpectedEndOfFile;
+    return buffer;
+}
+
 /// Workspace command result
 pub const CommandResult = struct {
     success: bool,
@@ -69,27 +80,25 @@ pub fn init(allocator: std.mem.Allocator, root: []const u8, name: ?[]const u8) !
 
 /// List all packages in workspace
 pub fn list(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult {
-    var output: std.ArrayList(u8) = .{};
+    var output = try std.ArrayList(u8).initCapacity(allocator, 512);
     defer output.deinit(allocator);
 
-    const writer = output.writer(allocator);
-
-    try writer.print("Workspace: {s}\n", .{workspace.config.name orelse "unnamed"});
-    try writer.print("Packages ({d}):\n\n", .{workspace.packages.items.len});
+    try output.print(allocator, "Workspace: {s}\n", .{workspace.config.name orelse "unnamed"});
+    try output.print(allocator, "Packages ({d}):\n\n", .{workspace.packages.items.len});
 
     for (workspace.packages.items) |pkg| {
-        try writer.print("  {s}@{s}\n", .{ pkg.name, pkg.version });
-        try writer.print("    Path: {s}\n", .{pkg.path});
+        try output.print(allocator, "  {s}@{s}\n", .{ pkg.name, pkg.version });
+        try output.print(allocator, "    Path: {s}\n", .{pkg.path});
 
         if (pkg.dependencies.count() > 0) {
-            try writer.print("    Dependencies: {d}\n", .{pkg.dependencies.count()});
+            try output.print(allocator, "    Dependencies: {d}\n", .{pkg.dependencies.count()});
         }
 
         if (pkg.private) {
-            try writer.print("    [PRIVATE]\n", .{});
+            try output.print(allocator, "    [PRIVATE]\n", .{});
         }
 
-        try writer.print("\n", .{});
+        try output.print(allocator, "\n", .{});
     }
 
     return .{
@@ -174,7 +183,7 @@ fn runPackageScript(
     const file = std.fs.cwd().openFile(config_path, .{}) catch return false;
     defer file.close();
 
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    const content = try readFileAlloc(allocator, file, 10 * 1024 * 1024);
     defer allocator.free(content);
 
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, content, .{});
@@ -223,17 +232,15 @@ pub fn linkAll(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResu
 
 /// Check workspace for issues
 pub fn check(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult {
-    var issues: std.ArrayList(u8) = .{};
+    var issues = try std.ArrayList(u8).initCapacity(allocator, 256);
     defer issues.deinit(allocator);
-
-    const writer = issues.writer(allocator);
 
     var has_issues = false;
 
     // Check for circular dependencies
     if (workspace.hasCircularDependencies()) {
         has_issues = true;
-        try writer.print("❌ Circular dependencies detected\n", .{});
+        try issues.print(allocator, "❌ Circular dependencies detected\n", .{});
     }
 
     // Check for missing dependencies
@@ -260,14 +267,14 @@ pub fn check(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult
         const result = try name_map.getOrPut(pkg.name);
         if (result.found_existing) {
             has_issues = true;
-            try writer.print("❌ Duplicate package name: {s}\n", .{pkg.name});
+            try issues.print(allocator, "❌ Duplicate package name: {s}\n", .{pkg.name});
         } else {
             result.value_ptr.* = 1;
         }
     }
 
     if (!has_issues) {
-        try writer.print("✅ No issues found\n", .{});
+        try issues.print(allocator, "✅ No issues found\n", .{});
     }
 
     return .{
@@ -279,15 +286,13 @@ pub fn check(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult
 
 /// Show workspace dependency graph
 pub fn graph(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult {
-    var output: std.ArrayList(u8) = .{};
+    var output = try std.ArrayList(u8).initCapacity(allocator, 512);
     defer output.deinit(allocator);
 
-    const writer = output.writer(allocator);
-
-    try writer.print("Workspace Dependency Graph:\n\n", .{});
+    try output.print(allocator, "Workspace Dependency Graph:\n\n", .{});
 
     for (workspace.packages.items) |pkg| {
-        try writer.print("{s}@{s}\n", .{ pkg.name, pkg.version });
+        try output.print(allocator, "{s}@{s}\n", .{ pkg.name, pkg.version });
 
         if (pkg.dependencies.count() > 0) {
             var dep_it = pkg.dependencies.iterator();
@@ -296,16 +301,16 @@ pub fn graph(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult
                 const is_workspace = workspace.getPackage(dep_name) != null;
 
                 if (is_workspace) {
-                    try writer.print("  ├─ {s} [workspace]\n", .{dep_name});
+                    try output.print(allocator, "  ├─ {s} [workspace]\n", .{dep_name});
                 } else {
-                    try writer.print("  ├─ {s} [external]\n", .{dep_name});
+                    try output.print(allocator, "  ├─ {s} [external]\n", .{dep_name});
                 }
             }
         } else {
-            try writer.print("  (no dependencies)\n", .{});
+            try output.print(allocator, "  (no dependencies)\n", .{});
         }
 
-        try writer.print("\n", .{});
+        try output.print(allocator, "\n", .{});
     }
 
     // Show build order
@@ -317,9 +322,9 @@ pub fn graph(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult
         allocator.free(build_order);
     }
 
-    try writer.print("Build Order:\n", .{});
+    try output.print(allocator, "Build Order:\n", .{});
     for (build_order, 0..) |pkg_name, i| {
-        try writer.print("  {d}. {s}\n", .{ i + 1, pkg_name });
+        try output.print(allocator, "  {d}. {s}\n", .{ i + 1, pkg_name });
     }
 
     return .{

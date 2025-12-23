@@ -167,30 +167,28 @@ pub const ErrorContext = struct {
         var list = try std.ArrayList(u8).initCapacity(allocator, 256);
         defer list.deinit(allocator);
 
-        const writer = list.writer(allocator);
-
         // Error type and message
         const error_msg = try formatError(self.error_type, allocator);
         defer allocator.free(error_msg);
-        try writer.print("Error: {s}\n", .{error_msg});
+        try list.print(allocator, "Error: {s}\n", .{error_msg});
 
         // Additional message if provided
         if (self.message.len > 0) {
-            try writer.print("Details: {s}\n", .{self.message});
+            try list.print(allocator, "Details: {s}\n", .{self.message});
         }
 
         // File path and line if available
         if (self.file_path) |path| {
             if (self.line) |ln| {
-                try writer.print("Location: {s}:{d}\n", .{ path, ln });
+                try list.print(allocator, "Location: {s}:{d}\n", .{ path, ln });
             } else {
-                try writer.print("File: {s}\n", .{path});
+                try list.print(allocator, "File: {s}\n", .{path});
             }
         }
 
         // Additional context if provided
         if (self.context) |ctx| {
-            try writer.print("Context: {s}\n", .{ctx});
+            try list.print(allocator, "Context: {s}\n", .{ctx});
         }
 
         return list.toOwnedSlice(allocator);

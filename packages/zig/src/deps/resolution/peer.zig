@@ -219,57 +219,56 @@ pub const PeerDependencyManager = struct {
 
     /// Format validation report
     pub fn formatValidationReport(result: *const ValidationResult, allocator: std.mem.Allocator) ![]const u8 {
-        var output: std.ArrayList(u8) = .{};
+        var output = try std.ArrayList(u8).initCapacity(allocator, 256);
         defer output.deinit(allocator);
-        const writer = output.writer(allocator);
 
         if (result.satisfied) {
-            try writer.writeAll("✓ All peer dependencies satisfied\n");
+            try output.appendSlice(allocator, "✓ All peer dependencies satisfied\n");
             return try output.toOwnedSlice(allocator);
         }
 
-        try writer.writeAll("Peer dependency issues:\n\n");
+        try output.appendSlice(allocator, "Peer dependency issues:\n\n");
 
         // Missing peers
         if (result.missing.len > 0) {
-            try writer.print("Missing peer dependencies ({d}):\n", .{result.missing.len});
+            try output.print(allocator, "Missing peer dependencies ({d}):\n", .{result.missing.len});
             for (result.missing) |peer| {
                 if (peer.optional) {
-                    try writer.print("  ⚠  {s}@{s} (optional, required by {s})\n", .{
+                    try output.print(allocator, "  ⚠  {s}@{s} (optional, required by {s})\n", .{
                         peer.name,
                         peer.version_range,
                         peer.required_by,
                     });
                 } else {
-                    try writer.print("  ✗  {s}@{s} (required by {s})\n", .{
+                    try output.print(allocator, "  ✗  {s}@{s} (required by {s})\n", .{
                         peer.name,
                         peer.version_range,
                         peer.required_by,
                     });
                 }
             }
-            try writer.writeAll("\n");
+            try output.appendSlice(allocator, "\n");
         }
 
         // Incompatible peers
         if (result.incompatible.len > 0) {
-            try writer.print("Incompatible peer dependencies ({d}):\n", .{result.incompatible.len});
+            try output.print(allocator, "Incompatible peer dependencies ({d}):\n", .{result.incompatible.len});
             for (result.incompatible) |peer| {
-                try writer.print("  ✗  {s}: installed {s}, but {s} requires {s}\n", .{
+                try output.print(allocator, "  ✗  {s}: installed {s}, but {s} requires {s}\n", .{
                     peer.name,
                     peer.installed_version,
                     peer.required_by,
                     peer.required_version,
                 });
             }
-            try writer.writeAll("\n");
+            try output.appendSlice(allocator, "\n");
         }
 
         // Warnings
         if (result.warnings.len > 0) {
-            try writer.print("Warnings ({d}):\n", .{result.warnings.len});
+            try output.print(allocator, "Warnings ({d}):\n", .{result.warnings.len});
             for (result.warnings) |warning| {
-                try writer.print("  ⚠  {s}\n", .{warning.message});
+                try output.print(allocator, "  ⚠  {s}\n", .{warning.message});
             }
         }
 

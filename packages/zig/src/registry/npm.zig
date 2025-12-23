@@ -298,9 +298,8 @@ pub const NpmRegistry = struct {
         try payload.put("versions", .{ .object = versions });
 
         // Serialize to JSON
-        var json_buf = std.ArrayList(u8){};
-        defer json_buf.deinit(allocator);
-        try std.json.stringify(payload, .{}, json_buf.writer(allocator));
+        const json_bytes = try std.json.Stringify.valueAlloc(allocator, payload, .{});
+        defer allocator.free(json_bytes);
 
         // Build URL for publishing
         const url = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ self.config.url, metadata.name });
@@ -355,9 +354,9 @@ pub const NpmRegistry = struct {
         });
         defer req.deinit();
 
-        req.transfer_encoding = .{ .content_length = json_buf.items.len };
+        req.transfer_encoding = .{ .content_length = json_bytes.len };
         try req.send(.{});
-        try req.writer().writeAll(json_buf.items);
+        try req.writer().writeAll(json_bytes);
         try req.finish();
 
         var redirect_buffer: [4096]u8 = undefined;

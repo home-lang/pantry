@@ -2,6 +2,12 @@ const std = @import("std");
 const testing = std.testing;
 const oidc = @import("oidc.zig");
 
+/// Get current Unix timestamp (Zig 0.16 compatible)
+fn getTimestamp() i64 {
+    const ts = std.posix.clock_gettime(.REALTIME) catch return 0;
+    return @intCast(ts.sec);
+}
+
 // Mock JWT token for testing (this is a sample, not a real token)
 const sample_github_token =
     \\eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHViY29udGVudC5jb20iLCJzdWIiOiJyZXBvOm93bmVyL3JlcG86cmVmOnJlZnMvaGVhZHMvbWFpbiIsImF1ZCI6InBhbnRyeSIsImV4cCI6OTk5OTk5OTk5OSwiaWF0IjoxNzAwMDAwMDAwLCJyZXBvc2l0b3J5X293bmVyIjoib3duZXIiLCJyZXBvc2l0b3J5Ijoib3duZXIvcmVwbyIsInJlcG9zaXRvcnlfb3duZXJfaWQiOiIxMjM0NTYiLCJ3b3JrZmxvd19yZWYiOiJvd25lci9yZXBvLy5naXRodWIvd29ya2Zsb3dzL3JlbGVhc2UueW1sQHJlZnMvaGVhZHMvbWFpbiIsImFjdG9yIjoidXNlciIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmIjoicmVmcy9oZWFkcy9tYWluIiwicmVmX3R5cGUiOiJicmFuY2giLCJzaGEiOiJhYmMxMjM0NTYiLCJqb2Jfd29ya2Zsb3dfcmVmIjoib3duZXIvcmVwby8uZ2l0aHViL3dvcmtmbG93cy9yZWxlYXNlLnltbEByZWZzL2hlYWRzL21haW4iLCJydW5uZXJfZW52aXJvbm1lbnQiOiJnaXRodWItaG9zdGVkIn0.signature
@@ -217,8 +223,8 @@ test "Validate Token Expiration - Expired" {
         .iss = "https://token.actions.githubusercontent.com",
         .sub = "repo:owner/repo:ref:refs/heads/main",
         .aud = "pantry",
-        .exp = std.time.timestamp() - 3600, // Expired 1 hour ago
-        .iat = std.time.timestamp() - 7200, // Issued 2 hours ago
+        .exp = getTimestamp() - 3600, // Expired 1 hour ago
+        .iat = getTimestamp() - 7200, // Issued 2 hours ago
         .nbf = null,
         .jti = null,
         .repository_owner = "owner",
@@ -668,7 +674,8 @@ test "RSA Modular Exponentiation - Small Numbers" {
     // bit 1: result = 1, bit set -> result = 1 * 2 mod 5 = 2
     // bit 0: result = 2^2 mod 5 = 4, bit set -> result = 4 * 2 mod 5 = 3
 
-    const exp_val = exp.toConst().to(u64) catch unreachable;
+    // In Zig 0.16, directly access the limbs for small values
+    const exp_val: u64 = if (exp.len() > 0) exp.toConst().limbs[0] else 0;
     try testing.expectEqual(@as(u64, 3), exp_val);
 
     // Verify the expected result

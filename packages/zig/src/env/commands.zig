@@ -1,6 +1,12 @@
 const std = @import("std");
 const scanner = @import("scanner.zig");
 
+/// Get current Unix timestamp (Zig 0.16 compatible)
+fn getTimestamp() i64 {
+    const ts = std.posix.clock_gettime(.REALTIME) catch return 0;
+    return @intCast(ts.sec);
+}
+
 pub const EnvCommands = struct {
     allocator: std.mem.Allocator,
     scanner: scanner.EnvScanner,
@@ -126,7 +132,7 @@ pub const EnvCommands = struct {
             return;
         }
 
-        const now = std.time.timestamp();
+        const now = getTimestamp();
         const cutoff = now - (@as(i64, older_than_days) * 86400);
 
         var removed_count: usize = 0;
@@ -355,7 +361,7 @@ fn formatSize(bytes: u64, allocator: std.mem.Allocator) ![]const u8 {
 
 fn formatTimestamp(timestamp: i64, allocator: std.mem.Allocator) ![]const u8 {
     // Simple relative time formatting
-    const now = std.time.timestamp();
+    const now = getTimestamp();
     const diff = now - timestamp;
 
     if (diff < 60) {
@@ -401,7 +407,7 @@ test "formatSize" {
 test "formatTimestamp" {
     const allocator = std.testing.allocator;
 
-    const now = std.time.timestamp();
+    const now = getTimestamp();
 
     const t1 = try formatTimestamp(now - 30, allocator);
     defer allocator.free(t1);

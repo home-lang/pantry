@@ -118,18 +118,16 @@ pub fn generateActivation(
     path: []const u8,
     env_vars: std.StringHashMap([]const u8),
 ) ![]const u8 {
-    var script = std.ArrayList(u8).init(allocator);
+    var script = try std.ArrayList(u8).initCapacity(allocator, 256);
     defer script.deinit(allocator);
 
-    const writer = script.writer(allocator);
-
     // Export PATH
-    try writer.print("export PATH=\"{s}\"\n", .{path});
+    try script.print(allocator, "export PATH=\"{s}\"\n", .{path});
 
     // Export environment variables
     var it = env_vars.iterator();
     while (it.next()) |entry| {
-        try writer.print("export {s}=\"{s}\"\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+        try script.print(allocator, "export {s}=\"{s}\"\n", .{ entry.key_ptr.*, entry.value_ptr.* });
     }
 
     return script.toOwnedSlice(allocator);

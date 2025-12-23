@@ -119,8 +119,9 @@ pub const ServiceController = struct {
     /// Restart a service
     pub fn restart(self: *ServiceController, service_name: []const u8) !void {
         try self.stop(service_name);
-        // Small delay to ensure service fully stops
-        std.Thread.sleep(std.time.ns_per_s / 2);
+        // Small delay to ensure service fully stops (500ms)
+        const delay_ns: u64 = std.time.ns_per_s / 2;
+        std.posix.nanosleep(delay_ns / std.time.ns_per_s, delay_ns % std.time.ns_per_s);
         try self.start(service_name);
     }
 

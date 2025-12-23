@@ -124,44 +124,43 @@ pub const ResolutionResult = struct {
 
     /// Format complete resolution report
     pub fn formatReport(self: *const ResolutionResult, allocator: std.mem.Allocator) ![]const u8 {
-        var output: std.ArrayList(u8) = .{};
+        var output = try std.ArrayList(u8).initCapacity(allocator, 512);
         defer output.deinit(allocator);
-        const writer = output.writer(allocator);
 
-        try writer.writeAll("=== Dependency Resolution Report ===\n\n");
+        try output.appendSlice(allocator, "=== Dependency Resolution Report ===\n\n");
 
         // Conflict resolutions
         if (self.conflict_resolutions.count() > 0) {
-            try writer.print("Resolved conflicts ({d}):\n", .{self.conflict_resolutions.count()});
+            try output.print(allocator, "Resolved conflicts ({d}):\n", .{self.conflict_resolutions.count()});
             var it = self.conflict_resolutions.iterator();
             while (it.next()) |entry| {
-                try writer.print("  ✓ {s} -> {s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+                try output.print(allocator, "  ✓ {s} -> {s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
             }
-            try writer.writeAll("\n");
+            try output.appendSlice(allocator, "\n");
         }
 
         // Peer dependencies
         if (!self.peer_validation.satisfied) {
             const peer_report = try PeerDependencyManager.formatValidationReport(&self.peer_validation, allocator);
             defer allocator.free(peer_report);
-            try writer.writeAll(peer_report);
-            try writer.writeAll("\n");
+            try output.appendSlice(allocator, peer_report);
+            try output.appendSlice(allocator, "\n");
         } else {
-            try writer.writeAll("✓ All peer dependencies satisfied\n\n");
+            try output.appendSlice(allocator, "✓ All peer dependencies satisfied\n\n");
         }
 
         // Optional dependencies
         if (self.optional_summary.total > 0) {
-            try writer.print("Optional dependencies:\n", .{});
-            try writer.print("  Installed: {d}/{d}\n", .{
+            try output.print(allocator, "Optional dependencies:\n", .{});
+            try output.print(allocator, "  Installed: {d}/{d}\n", .{
                 self.optional_summary.installed,
                 self.optional_summary.total,
             });
             if (self.optional_summary.failed > 0) {
-                try writer.print("  Failed: {d}\n", .{self.optional_summary.failed});
+                try output.print(allocator, "  Failed: {d}\n", .{self.optional_summary.failed});
             }
             if (self.optional_summary.skipped > 0) {
-                try writer.print("  Skipped: {d}\n", .{self.optional_summary.skipped});
+                try output.print(allocator, "  Skipped: {d}\n", .{self.optional_summary.skipped});
             }
         }
 

@@ -169,43 +169,42 @@ pub const OptionalDependencyManager = struct {
 
     /// Format installation report
     pub fn formatReport(self: *OptionalDependencyManager, allocator: std.mem.Allocator) ![]const u8 {
-        var output: std.ArrayList(u8) = .{};
+        var output = try std.ArrayList(u8).initCapacity(allocator, 256);
         defer output.deinit(allocator);
-        const writer = output.writer(allocator);
 
         const summary = self.getSummary();
 
-        try writer.print("\nOptional dependencies ({d} total):\n", .{summary.total});
+        try output.print(allocator, "\nOptional dependencies ({d} total):\n", .{summary.total});
 
         if (summary.installed > 0) {
-            try writer.print("  ✓ Installed: {d}\n", .{summary.installed});
+            try output.print(allocator, "  ✓ Installed: {d}\n", .{summary.installed});
         }
 
         if (summary.skipped > 0) {
-            try writer.print("  ⊘ Skipped: {d}\n", .{summary.skipped});
+            try output.print(allocator, "  ⊘ Skipped: {d}\n", .{summary.skipped});
         }
 
         if (summary.failed > 0) {
-            try writer.print("  ✗ Failed: {d}\n", .{summary.failed});
+            try output.print(allocator, "  ✗ Failed: {d}\n", .{summary.failed});
         }
 
         // Detail section
         if (summary.failed > 0 or summary.skipped > 0) {
-            try writer.writeAll("\nDetails:\n");
+            try output.appendSlice(allocator, "\nDetails:\n");
 
             for (self.results.items) |result| {
                 if (result.skipped) {
-                    try writer.print("  ⊘ {s}", .{result.name});
+                    try output.print(allocator, "  ⊘ {s}", .{result.name});
                     if (result.skip_reason) |reason| {
-                        try writer.print(" - {s}", .{reason});
+                        try output.print(allocator, " - {s}", .{reason});
                     }
-                    try writer.writeAll("\n");
+                    try output.appendSlice(allocator, "\n");
                 } else if (!result.success) {
-                    try writer.print("  ✗ {s}", .{result.name});
+                    try output.print(allocator, "  ✗ {s}", .{result.name});
                     if (result.error_message) |msg| {
-                        try writer.print(" - {s}", .{msg});
+                        try output.print(allocator, " - {s}", .{msg});
                     }
-                    try writer.writeAll("\n");
+                    try output.appendSlice(allocator, "\n");
                 }
             }
         }

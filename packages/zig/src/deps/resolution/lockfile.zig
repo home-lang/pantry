@@ -353,29 +353,28 @@ pub const ValidationResult = struct {
     }
 
     pub fn format(self: *const ValidationResult, allocator: std.mem.Allocator) ![]const u8 {
-        var output: std.ArrayList(u8) = .{};
+        var output = try std.ArrayList(u8).initCapacity(allocator, 256);
         defer output.deinit(allocator);
-        const writer = output.writer(allocator);
 
         if (self.valid) {
-            try writer.writeAll("✓ Lock file is valid\n");
+            try output.appendSlice(allocator, "✓ Lock file is valid\n");
             return try output.toOwnedSlice(allocator);
         }
 
-        try writer.writeAll("Lock file validation failed:\n\n");
+        try output.appendSlice(allocator, "Lock file validation failed:\n\n");
 
         if (self.missing.len > 0) {
-            try writer.print("Missing packages ({d}):\n", .{self.missing.len});
+            try output.print(allocator, "Missing packages ({d}):\n", .{self.missing.len});
             for (self.missing) |name| {
-                try writer.print("  - {s}\n", .{name});
+                try output.print(allocator, "  - {s}\n", .{name});
             }
-            try writer.writeAll("\n");
+            try output.appendSlice(allocator, "\n");
         }
 
         if (self.version_mismatch.len > 0) {
-            try writer.print("Version mismatches ({d}):\n", .{self.version_mismatch.len});
+            try output.print(allocator, "Version mismatches ({d}):\n", .{self.version_mismatch.len});
             for (self.version_mismatch) |mismatch| {
-                try writer.print("  - {s}: expected {s}, got {s}\n", .{
+                try output.print(allocator, "  - {s}: expected {s}, got {s}\n", .{
                     mismatch.name,
                     mismatch.expected,
                     mismatch.actual,

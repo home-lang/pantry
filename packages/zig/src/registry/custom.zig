@@ -151,40 +151,37 @@ pub const CustomRegistry = struct {
         const boundary = "----PantryFormBoundary";
 
         // Build multipart/form-data body
-        var body = std.ArrayList(u8){};
+        var body = try std.ArrayList(u8).initCapacity(allocator, tarball_data.len + 512);
         defer body.deinit(allocator);
 
-        const writer = body.writer(allocator);
-
         // Add metadata field
-        try writer.print("--{s}\r\n", .{boundary});
-        try writer.print("Content-Disposition: form-data; name=\"metadata\"\r\n", .{});
-        try writer.print("Content-Type: application/json\r\n\r\n", .{});
+        try body.print(allocator, "--{s}\r\n", .{boundary});
+        try body.print(allocator, "Content-Disposition: form-data; name=\"metadata\"\r\n", .{});
+        try body.print(allocator, "Content-Type: application/json\r\n\r\n", .{});
 
         // Serialize metadata to JSON
-        var metadata_json = std.ArrayList(u8){};
+        var metadata_json = try std.ArrayList(u8).initCapacity(allocator, 256);
         defer metadata_json.deinit(allocator);
-        const json_writer = metadata_json.writer(allocator);
 
-        try json_writer.print("{{", .{});
-        try json_writer.print("\"name\":\"{s}\",", .{metadata.name});
-        try json_writer.print("\"version\":\"{s}\"", .{metadata.version});
+        try metadata_json.print(allocator, "{{", .{});
+        try metadata_json.print(allocator, "\"name\":\"{s}\",", .{metadata.name});
+        try metadata_json.print(allocator, "\"version\":\"{s}\"", .{metadata.version});
         if (metadata.description) |desc| {
-            try json_writer.print(",\"description\":\"{s}\"", .{desc});
+            try metadata_json.print(allocator, ",\"description\":\"{s}\"", .{desc});
         }
-        try json_writer.print("}}", .{});
+        try metadata_json.print(allocator, "}}", .{});
 
-        try writer.print("{s}\r\n", .{metadata_json.items});
+        try body.print(allocator, "{s}\r\n", .{metadata_json.items});
 
         // Add tarball file field
-        try writer.print("--{s}\r\n", .{boundary});
-        try writer.print("Content-Disposition: form-data; name=\"tarball\"; filename=\"{s}-{s}.tgz\"\r\n", .{ metadata.name, metadata.version });
-        try writer.print("Content-Type: application/gzip\r\n\r\n", .{});
-        try writer.writeAll(tarball_data);
-        try writer.print("\r\n", .{});
+        try body.print(allocator, "--{s}\r\n", .{boundary});
+        try body.print(allocator, "Content-Disposition: form-data; name=\"tarball\"; filename=\"{s}-{s}.tgz\"\r\n", .{ metadata.name, metadata.version });
+        try body.print(allocator, "Content-Type: application/gzip\r\n\r\n", .{});
+        try body.appendSlice(allocator, tarball_data);
+        try body.print(allocator, "\r\n", .{});
 
         // End boundary
-        try writer.print("--{s}--\r\n", .{boundary});
+        try body.print(allocator, "--{s}--\r\n", .{boundary});
 
         const multipart_body = try body.toOwnedSlice(allocator);
         defer allocator.free(multipart_body);

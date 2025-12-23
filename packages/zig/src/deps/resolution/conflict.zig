@@ -203,9 +203,8 @@ pub const ConflictResolver = struct {
 
     /// Get conflict report
     pub fn getConflictReport(self: *ConflictResolver, allocator: std.mem.Allocator) ![]const u8 {
-        var output: std.ArrayList(u8) = .{};
+        var output = try std.ArrayList(u8).initCapacity(allocator, 256);
         defer output.deinit(allocator);
-        const writer = output.writer(allocator);
 
         var it = self.conflicts.iterator();
         while (it.next()) |entry| {
@@ -226,9 +225,9 @@ pub const ConflictResolver = struct {
 
             if (!has_conflict) continue;
 
-            try writer.print("\nConflict for '{s}':\n", .{conflict.package_name});
+            try output.print(allocator, "\nConflict for '{s}':\n", .{conflict.package_name});
             for (conflict.required_by.items) |req| {
-                try writer.print("  - {s} requires {s}\n", .{ req.package, req.version_range });
+                try output.print(allocator, "  - {s} requires {s}\n", .{ req.package, req.version_range });
             }
         }
 
