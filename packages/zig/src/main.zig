@@ -1,6 +1,7 @@
 const std = @import("std");
 const cli = @import("zig-cli");
 const lib = @import("lib");
+const version_options = @import("version");
 
 // ============================================================================
 // Command Actions
@@ -1537,6 +1538,101 @@ fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
 // Main
 // ============================================================================
 
+/// Print version information
+fn printVersion() void {
+    std.debug.print("pantry {s} ({s})\n", .{ version_options.version, version_options.commit_hash });
+}
+
+/// Print help information
+fn printHelp() void {
+
+    std.debug.print(
+        \\
+        \\  \x1b[1;36mpantry\x1b[0m {s} - Modern dependency manager
+        \\
+        \\  \x1b[1mUSAGE:\x1b[0m
+        \\      pantry <command> [options] [arguments]
+        \\
+        \\  \x1b[1mCOMMANDS:\x1b[0m
+        \\
+        \\    \x1b[33mPackage Management:\x1b[0m
+        \\      install, i          Install packages from pantry.json/package.json
+        \\      add                 Add and install new packages
+        \\      remove, rm          Remove packages
+        \\      update              Update packages to latest versions
+        \\      outdated            Check for outdated dependencies
+        \\
+        \\    \x1b[33mPackage Info:\x1b[0m
+        \\      list, ls            List installed packages
+        \\      tree                Show dependency tree
+        \\      why                 Explain why a package is installed
+        \\      search              Search for packages in registry
+        \\      info                Show package information
+        \\
+        \\    \x1b[33mScripts:\x1b[0m
+        \\      run                 Run a script from package.json
+        \\      px                  Execute a package binary
+        \\      scripts             List available scripts
+        \\
+        \\    \x1b[33mPublishing:\x1b[0m
+        \\      publish             Publish package to registry (supports OIDC)
+        \\      publisher:add       Add a trusted publisher (OIDC)
+        \\      publisher:list      List trusted publishers
+        \\      publisher:remove    Remove a trusted publisher
+        \\
+        \\    \x1b[33mSecurity:\x1b[0m
+        \\      audit               Check for security vulnerabilities
+        \\      verify              Verify package signatures
+        \\      sign                Sign a package
+        \\
+        \\    \x1b[33mProject:\x1b[0m
+        \\      init                Initialize a new project
+        \\      doctor              Check system health
+        \\      dedupe              Deduplicate dependencies
+        \\      clean               Clean project artifacts
+        \\
+        \\    \x1b[33mCache:\x1b[0m
+        \\      cache:stats         Show cache statistics
+        \\      cache:clear         Clear the cache
+        \\      cache:clean         Remove stale cache entries
+        \\
+        \\    \x1b[33mEnvironment:\x1b[0m
+        \\      env:list            List project environments
+        \\      env:inspect         Inspect environment details
+        \\      env:clean           Clean stale environments
+        \\
+        \\    \x1b[33mOther:\x1b[0m
+        \\      whoami              Show current user
+        \\      help                Show this help message
+        \\      version             Show version information
+        \\
+        \\  \x1b[1mGLOBAL OPTIONS:\x1b[0m
+        \\      -h, --help          Show help information
+        \\      -V, --version       Show version information
+        \\
+        \\  \x1b[1mEXAMPLES:\x1b[0m
+        \\      pantry install                  Install all dependencies
+        \\      pantry add lodash               Add lodash to dependencies
+        \\      pantry add -D typescript        Add typescript to devDependencies
+        \\      pantry run build                Run the build script
+        \\      pantry publish                  Publish with OIDC (in CI/CD)
+        \\      pantry publish --dry-run        Preview publish without uploading
+        \\
+        \\  \x1b[2mFor more info on a command: pantry <command> --help\x1b[0m
+        \\
+    , .{version_options.version});
+}
+
+/// Help command action
+fn helpAction(_: *cli.BaseCommand.ParseContext) !void {
+    printHelp();
+}
+
+/// Version command action
+fn versionAction(_: *cli.BaseCommand.ParseContext) !void {
+    printVersion();
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -2415,10 +2511,49 @@ pub fn main() !void {
     _ = publisher_remove_cmd.setAction(publisherRemoveAction);
     _ = try root.addCommand(publisher_remove_cmd);
 
+    // ========================================================================
+    // Help Command
+    // ========================================================================
+    var help_cmd = try cli.BaseCommand.init(allocator, "help", "Show help information");
+    _ = help_cmd.setAction(helpAction);
+    _ = try root.addCommand(help_cmd);
+
+    // ========================================================================
+    // Version Command
+    // ========================================================================
+    var version_cmd = try cli.BaseCommand.init(allocator, "version", "Show version information");
+    _ = version_cmd.setAction(versionAction);
+    _ = try root.addCommand(version_cmd);
+
     // Parse arguments
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
+    // Handle no arguments or --help flag
+    if (args.len <= 1) {
+        printHelp();
+        return;
+    }
+
+    // Check for --help or -h flag
+    if (args.len == 2) {
+        if (std.mem.eql(u8, args[1], "--help") or std.mem.eql(u8, args[1], "-h")) {
+            printHelp();
+            return;
+        }
+        if (std.mem.eql(u8, args[1], "--version") or std.mem.eql(u8, args[1], "-V")) {
+            printVersion();
+            return;
+        }
+    }
+
     var parser = cli.Parser.init(allocator);
-    try parser.parse(root, args[1..]);
+    parser.parse(root, args[1..]) catch |err| {
+        if (err == error.UnknownOption or err == error.TooManyArguments) {
+            std.debug.print("Error: {}\n\n", .{err});
+            printHelp();
+            std.process.exit(1);
+        }
+        return err;
+    };
 }

@@ -996,7 +996,8 @@ pub fn fetchJWKSWithRetry(allocator: std.mem.Allocator, jwks_uri: []const u8, co
             }
 
             // Sleep before retry (exponential backoff)
-            std.time.sleep(delay_ms * std.time.ns_per_ms);
+            const delay_ns = delay_ms * std.time.ns_per_ms;
+            std.posix.nanosleep(delay_ns / std.time.ns_per_s, delay_ns % std.time.ns_per_s);
 
             // Increase delay for next attempt
             delay_ms = @min(delay_ms * config.backoff_multiplier, config.max_delay_ms);
@@ -1056,12 +1057,12 @@ fn parseJWKS(allocator: std.mem.Allocator, json_str: []const u8) !JWKS {
         return error.InvalidJWKS;
     }
 
-    var keys = std.ArrayList(JWK).init(allocator);
+    var keys = std.ArrayList(JWK){};
     errdefer {
         for (keys.items) |*key| {
             key.deinit(allocator);
         }
-        keys.deinit();
+        keys.deinit(allocator);
     }
 
     for (keys_array.array.items) |key_value| {
@@ -1085,11 +1086,11 @@ fn parseJWKS(allocator: std.mem.Allocator, json_str: []const u8) !JWKS {
             .y = if (key_obj.get("y")) |v| if (v == .string) try allocator.dupe(u8, v.string) else null else null,
         };
 
-        try keys.append(jwk);
+        try keys.append(allocator, jwk);
     }
 
     return JWKS{
-        .keys = try keys.toOwnedSlice(),
+        .keys = try keys.toOwnedSlice(allocator),
         .allocator = allocator,
     };
 }
@@ -1223,6 +1224,81 @@ fn verifyRS256(allocator: std.mem.Allocator, key: *const JWK, data: []const u8, 
     return true;
 }
 
+/// Helper: Convert a big int to big-endian bytes (Zig 0.16 compatible)
+fn bigIntToBytes(big_int: *const std.math.big.int.Managed, out_bytes: []u8) void {
+    const Limb = std.math.big.Limb;
+    const limb_bytes = @sizeOf(Limb);
+
+    // Zero the output first
+    @memset(out_bytes, 0);
+
+    const limbs = big_int.toConst().limbs;
+    const num_limbs = big_int.len();
+
+    if (num_limbs == 0) return;
+
+    // Convert little-endian limbs to big-endian bytes
+    var byte_idx: usize = out_bytes.len;
+
+    for (limbs[0..num_limbs]) |limb| {
+        var remaining = limb;
+        var i: usize = 0;
+        while (i < limb_bytes and byte_idx > 0) : (i += 1) {
+            byte_idx -= 1;
+            out_bytes[byte_idx] = @truncate(remaining);
+            remaining >>= 8;
+        }
+    }
+}
+
+/// Helper: Set a Managed big int from big-endian bytes (Zig 0.16 compatible)
+fn setBigIntFromBytes(big_int: *std.math.big.int.Managed, bytes: []const u8) !void {
+    const Limb = std.math.big.Limb;
+    const limb_bytes = @sizeOf(Limb);
+
+    // Skip leading zeros
+    var start: usize = 0;
+    while (start < bytes.len and bytes[start] == 0) : (start += 1) {}
+
+    if (start >= bytes.len) {
+        // All zeros
+        try big_int.set(@as(usize, 0));
+        return;
+    }
+
+    const significant_bytes = bytes[start..];
+    const num_limbs = (significant_bytes.len + limb_bytes - 1) / limb_bytes;
+
+    // Ensure we have enough capacity
+    try big_int.ensureCapacity(num_limbs);
+
+    // Clear existing limbs
+    @memset(big_int.limbs[0..big_int.limbs.len], 0);
+
+    // Convert big-endian bytes to little-endian limbs
+    var limb_idx: usize = 0;
+    var byte_idx: usize = significant_bytes.len;
+
+    while (byte_idx > 0) {
+        var limb: Limb = 0;
+        var shift: u6 = 0;
+
+        while (shift < @bitSizeOf(Limb) and byte_idx > 0) {
+            byte_idx -= 1;
+            limb |= @as(Limb, significant_bytes[byte_idx]) << shift;
+            shift += 8;
+        }
+
+        if (limb_idx < big_int.limbs.len) {
+            big_int.limbs[limb_idx] = limb;
+        }
+        limb_idx += 1;
+    }
+
+    // Set the length metadata (positive, num_limbs used)
+    big_int.setLen(num_limbs);
+}
+
 /// RSA public key operation: compute (base ^ exp) mod modulus
 /// Uses square-and-multiply algorithm with big integers
 fn rsaPublicOp(allocator: std.mem.Allocator, base_bytes: []const u8, exp_bytes: []const u8, mod_bytes: []const u8) ![]u8 {
@@ -1241,9 +1317,9 @@ fn rsaPublicOp(allocator: std.mem.Allocator, base_bytes: []const u8, exp_bytes: 
     defer temp.deinit();
 
     // Convert bytes to big integers (big-endian)
-    try base.setBytes(.big, base_bytes, .unsigned);
-    try exp.setBytes(.big, exp_bytes, .unsigned);
-    try modulus.setBytes(.big, mod_bytes, .unsigned);
+    try setBigIntFromBytes(&base, base_bytes);
+    try setBigIntFromBytes(&exp, exp_bytes);
+    try setBigIntFromBytes(&modulus, mod_bytes);
 
     // Check that modulus is not zero
     if (modulus.eqlZero()) {
@@ -1275,8 +1351,8 @@ fn rsaPublicOp(allocator: std.mem.Allocator, base_bytes: []const u8, exp_bytes: 
 
             if (started) {
                 // Square: result = result^2 mod modulus
-                try temp.mul(result.toConst(), result.toConst());
-                try result.divFloor(&temp, temp.toConst(), modulus.toConst());
+                try temp.mul(&result, &result);
+                try result.divFloor(&temp, &temp, &modulus);
                 result.swap(&temp);
             }
 
@@ -1285,8 +1361,8 @@ fn rsaPublicOp(allocator: std.mem.Allocator, base_bytes: []const u8, exp_bytes: 
             if (bit_set) {
                 started = true;
                 // Multiply: result = result * base mod modulus
-                try temp.mul(result.toConst(), base.toConst());
-                try result.divFloor(&temp, temp.toConst(), modulus.toConst());
+                try temp.mul(&result, &base);
+                try result.divFloor(&temp, &temp, &modulus);
                 result.swap(&temp);
             }
         }
@@ -1296,14 +1372,8 @@ fn rsaPublicOp(allocator: std.mem.Allocator, base_bytes: []const u8, exp_bytes: 
     const result_bytes = try allocator.alloc(u8, mod_bytes.len);
     errdefer allocator.free(result_bytes);
 
-    // Zero-pad and copy result
-    @memset(result_bytes, 0);
-    const result_const = result.toConst();
-    const byte_count = (result_const.bitCountAbs() + 7) / 8;
-    if (byte_count > 0) {
-        const start_offset = result_bytes.len - byte_count;
-        _ = result_const.toBytes(result_bytes[start_offset..], .big);
-    }
+    // Convert big int to big-endian bytes
+    bigIntToBytes(&result, result_bytes);
 
     return result_bytes;
 }
@@ -1330,10 +1400,6 @@ fn verifyES256(allocator: std.mem.Allocator, key: *const JWK, data: []const u8, 
     const y = try base64UrlDecode(allocator, y_b64);
     defer allocator.free(y);
 
-    // Compute SHA-256 hash of the signed data
-    var hash: [32]u8 = undefined;
-    std.crypto.hash.sha2.Sha256.hash(data, &hash, .{});
-
     // ES256 signature is 64 bytes (r: 32, s: 32)
     if (signature.len != 64) {
         return false;
@@ -1344,8 +1410,8 @@ fn verifyES256(allocator: std.mem.Allocator, key: *const JWK, data: []const u8, 
         return false;
     }
 
-    // Use Zig's built-in ECDSA verification
-    const P256 = std.crypto.ecc.P256;
+    // Use Zig's built-in ECDSA verification (Zig 0.16 API)
+    const EcdsaP256Sha256 = std.crypto.sign.ecdsa.EcdsaP256Sha256;
 
     // Construct the public key from x and y coordinates
     var public_key_bytes: [65]u8 = undefined;
@@ -1353,15 +1419,15 @@ fn verifyES256(allocator: std.mem.Allocator, key: *const JWK, data: []const u8, 
     @memcpy(public_key_bytes[1..33], x);
     @memcpy(public_key_bytes[33..65], y);
 
-    const public_key = P256.fromSec1(public_key_bytes[0..]) catch return false;
+    const public_key = EcdsaP256Sha256.PublicKey.fromSec1(&public_key_bytes) catch return false;
 
     // Parse the signature (r || s format)
     var sig_bytes: [64]u8 = undefined;
     @memcpy(&sig_bytes, signature);
-    const sig = P256.Ecdsa.Signature.fromBytes(sig_bytes) catch return false;
+    const sig = EcdsaP256Sha256.Signature.fromBytes(sig_bytes);
 
-    // Verify the signature
-    sig.verify(hash, public_key) catch return false;
+    // Verify the signature - Zig 0.16 API: verify takes message, not hash
+    sig.verify(data, public_key) catch return false;
 
     return true;
 }

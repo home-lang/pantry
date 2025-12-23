@@ -522,20 +522,20 @@ pub const RegistryClient = struct {
 
     fn serializeTrustedPublisher(self: *RegistryClient, publisher: *const oidc.TrustedPublisher) ![]u8 {
         // Build allowed_refs array
-        var refs_json = std.ArrayList(u8).init(self.allocator);
-        defer refs_json.deinit();
+        var refs_json = std.ArrayList(u8){};
+        defer refs_json.deinit(self.allocator);
 
         if (publisher.allowed_refs) |refs| {
-            try refs_json.appendSlice("[");
+            try refs_json.appendSlice(self.allocator, "[");
             for (refs, 0..) |ref, i| {
-                if (i > 0) try refs_json.appendSlice(", ");
-                try refs_json.appendSlice("\"");
-                try refs_json.appendSlice(ref);
-                try refs_json.appendSlice("\"");
+                if (i > 0) try refs_json.appendSlice(self.allocator, ", ");
+                try refs_json.appendSlice(self.allocator, "\"");
+                try refs_json.appendSlice(self.allocator, ref);
+                try refs_json.appendSlice(self.allocator, "\"");
             }
-            try refs_json.appendSlice("]");
+            try refs_json.appendSlice(self.allocator, "]");
         } else {
-            try refs_json.appendSlice("null");
+            try refs_json.appendSlice(self.allocator, "null");
         }
 
         // Build workflow and environment strings, tracking allocations for cleanup

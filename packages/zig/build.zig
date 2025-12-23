@@ -2,17 +2,23 @@ const std = @import("std");
 
 /// Resolve dependency path - checks pantry first, then falls back to local dev paths
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
-    // Check pantry first (for installed dependencies)
-    const pantry_path = b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
+    // Check pantry_modules first (for installed dependencies)
+    const pantry_modules_path = b.fmt("pantry_modules/{s}/{s}", .{ package_name, entry_point });
 
     // Try to access the file to see if it exists
-    const pantry_file = std.fs.cwd().openFile(pantry_path, .{}) catch {
-        // Pantry module doesn't exist, use fallback
-        return fallback_path;
+    const pantry_modules_file = std.fs.cwd().openFile(pantry_modules_path, .{}) catch {
+        // Try legacy pantry/ path
+        const pantry_path = b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
+        const pantry_file = std.fs.cwd().openFile(pantry_path, .{}) catch {
+            // Pantry module doesn't exist, use fallback
+            return fallback_path;
+        };
+        pantry_file.close();
+        return pantry_path;
     };
-    pantry_file.close();
+    pantry_modules_file.close();
 
-    return pantry_path;
+    return pantry_modules_path;
 }
 
 pub fn build(b: *std.Build) void {
@@ -102,6 +108,7 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "lib", .module = lib_mod },
                 .{ .name = "zig-cli", .module = cli_mod },
+                .{ .name = "version", .module = version_mod },
             },
             .strip = strip,
             .single_threaded = single_threaded,
