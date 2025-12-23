@@ -80,20 +80,20 @@ async function ensurePantryBinary(): Promise<void> {
 
   // Map to pantry's release binary names
   if (platform === 'darwin' && arch === 'arm64') {
-    downloadUrl = 'https://github.com/stacksjs/pantry/releases/latest/download/macos-aarch64/pantry'
+    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/macos-aarch64/pantry'
   }
   else if (platform === 'darwin' && arch === 'x64') {
-    downloadUrl = 'https://github.com/stacksjs/pantry/releases/latest/download/macos-x86_64/pantry'
+    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/macos-x86_64/pantry'
   }
   else if (platform === 'linux' && arch === 'arm64') {
-    downloadUrl = 'https://github.com/stacksjs/pantry/releases/latest/download/linux-aarch64/pantry'
+    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/linux-aarch64/pantry'
   }
   else if (platform === 'linux' && arch === 'x64') {
-    downloadUrl = 'https://github.com/stacksjs/pantry/releases/latest/download/linux-x86_64/pantry'
+    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/linux-x86_64/pantry'
   }
   else if (platform === 'win32' && arch === 'x64') {
     binaryName = 'pantry.exe'
-    downloadUrl = 'https://github.com/stacksjs/pantry/releases/latest/download/windows-x86_64/pantry.exe'
+    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/windows-x86_64/pantry.exe'
   }
   else {
     throw new Error(`Unsupported platform: ${platform}-${arch}. Building from source...`)

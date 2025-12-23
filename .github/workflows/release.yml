@@ -39,7 +39,7 @@ jobs:
       - name: Setup Zig
         uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.15.1
+          version: master
 
       - name: Bootstrap Zig Dependencies (for building pantry)
         run: |
