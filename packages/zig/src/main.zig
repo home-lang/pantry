@@ -1545,7 +1545,6 @@ fn printVersion() void {
 
 /// Print help information
 fn printHelp() void {
-
     std.debug.print(
         \\
         \\  \x1b[1;36mpantry\x1b[0m {s} - Modern dependency manager

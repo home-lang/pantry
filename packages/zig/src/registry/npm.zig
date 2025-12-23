@@ -763,7 +763,7 @@ pub const SemverConstraint = struct {
                     // ^1.2.3 allows 1.x.x but not 2.0.0
                     break :blk version.major == self.major and
                         (version.minor > self.minor or
-                        (version.minor == self.minor and version.patch >= self.patch));
+                            (version.minor == self.minor and version.patch >= self.patch));
                 }
             },
 
