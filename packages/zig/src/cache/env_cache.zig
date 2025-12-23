@@ -433,7 +433,7 @@ pub fn createEntry(
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, dep_file),
-        .dep_mtime = stat.mtime.toNanoseconds(),
+        .dep_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s), // Store in seconds to match isValid comparison
         .path = try allocator.dupe(u8, path),
         .env_vars = env_vars,
         .created_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
@@ -469,7 +469,7 @@ test "EnvCache basic operations" {
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, tmp_file),
-        .dep_mtime = stat.mtime.toNanoseconds(),
+        .dep_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s), // Store in seconds to match isValid comparison
         .path = try allocator.dupe(u8, "/usr/bin"),
         .env_vars = env_vars,
         .created_at = now,
@@ -521,7 +521,7 @@ test "EnvCache fast cache" {
         entry.* = .{
             .hash = hash,
             .dep_file = try allocator.dupe(u8, tmp_file),
-            .dep_mtime = stat.mtime.toNanoseconds(),
+            .dep_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s), // Store in seconds to match isValid comparison
             .path = try allocator.dupe(u8, "/usr/bin"),
             .env_vars = env_vars,
             .created_at = now,

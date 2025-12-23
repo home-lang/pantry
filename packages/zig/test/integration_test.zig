@@ -287,7 +287,7 @@ test "Performance: Cache lookup" {
 
     // Benchmark cache lookup
     const iterations = 10000;
-    const start = std.time.nanoTimestamp();
+    var timer = std.time.Timer.start() catch unreachable;
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
@@ -295,8 +295,7 @@ test "Performance: Cache lookup" {
         _ = h;
     }
 
-    const end = std.time.nanoTimestamp();
-    const duration_ns = @as(u64, @intCast(end - start));
+    const duration_ns = timer.read();
     const avg_ns = duration_ns / iterations;
 
     std.debug.print("\nCache lookup avg: {}ns ({} lookups/sec)\n", .{
@@ -311,9 +310,9 @@ test "Performance: Cache lookup" {
 // Performance baseline: Shell code generation speed
 test "Performance: Shell code generation" {
     const iterations = 1000;
-    const start = std.time.nanoTimestamp();
-
     const allocator = testing.allocator;
+
+    var timer = std.time.Timer.start() catch unreachable;
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
@@ -327,8 +326,7 @@ test "Performance: Shell code generation" {
         allocator.free(shell_code);
     }
 
-    const end = std.time.nanoTimestamp();
-    const duration_ns = @as(u64, @intCast(end - start));
+    const duration_ns = timer.read();
     const avg_ns = duration_ns / iterations;
 
     std.debug.print("\nShell code generation avg: {}ns\n", .{avg_ns});
@@ -344,7 +342,7 @@ test "Performance: MD5 hashing" {
 
     const test_string = "/Users/test/project/package.json";
 
-    const start = std.time.nanoTimestamp();
+    var timer = std.time.Timer.start() catch unreachable;
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
@@ -352,8 +350,7 @@ test "Performance: MD5 hashing" {
         _ = hash;
     }
 
-    const end = std.time.nanoTimestamp();
-    const duration_ns = @as(u64, @intCast(end - start));
+    const duration_ns = timer.read();
     const avg_ns = duration_ns / iterations;
 
     std.debug.print("\nMD5 hash avg: {}ns\n", .{avg_ns});
@@ -378,7 +375,7 @@ test "Performance: String interning benefits" {
 
     // Test interning performance
     const iterations = 10000;
-    const start = std.time.nanoTimestamp();
+    var timer = std.time.Timer.start() catch unreachable;
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
@@ -387,8 +384,7 @@ test "Performance: String interning benefits" {
         }
     }
 
-    const end = std.time.nanoTimestamp();
-    const duration_ns = @as(u64, @intCast(end - start));
+    const duration_ns = timer.read();
     const avg_ns = duration_ns / (iterations * test_strings.len);
 
     std.debug.print("\nString interning avg: {}ns per operation\n", .{avg_ns});
