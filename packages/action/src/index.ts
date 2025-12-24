@@ -100,6 +100,10 @@ async function ensurePantryBinary(): Promise<void> {
   }
 
   try {
+    // Create output directory if it doesn't exist
+    const binDir = path.dirname(pantryBin)
+    await fs.mkdir(binDir, { recursive: true })
+
     // Download pre-built binary
     core.info(`Downloading pantry from ${downloadUrl}`)
     await exec.exec('curl', ['-L', '-o', pantryBin, downloadUrl])
