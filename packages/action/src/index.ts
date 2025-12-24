@@ -19,12 +19,25 @@ export async function run(): Promise<void> {
       packages: core.getInput('packages', { required: false }) || '',
       configPath: core.getInput('config-path', { required: false }) || 'pantry.config.ts',
     }
+    const setupOnly = core.getInput('setup-only', { required: false }) === 'true'
 
     core.info('Starting pantry Installer')
     core.info(`Context: ${JSON.stringify(github.context)}`)
 
     // Ensure pantry binary is available
     await ensurePantryBinary()
+
+    // Add pantry to PATH
+    const pantryBin = getPantryBinaryPath()
+    const binDir = path.dirname(pantryBin)
+    core.addPath(binDir)
+    core.info(`Added ${binDir} to PATH`)
+
+    // If setup-only mode, skip installation
+    if (setupOnly) {
+      core.info('Setup-only mode: skipping package installation')
+      return
+    }
 
     // Install dependencies
     if (inputs.packages) {
