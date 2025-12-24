@@ -34,8 +34,9 @@ pub fn stripDisplayPrefix(name: []const u8) []const u8 {
 }
 
 /// Worker function for concurrent package installation
+/// TODO: Re-enable when std.Io.Group API stabilizes
 pub fn installPackageWorker(task_ptr: *types.InstallTask) void {
-    defer task_ptr.wg.finish();
+    // defer task_ptr.wg.finish(); // Removed - std.Thread.WaitGroup deprecated
     defer task_ptr.allocator.destroy(task_ptr);
 
     const result = installSinglePackage(

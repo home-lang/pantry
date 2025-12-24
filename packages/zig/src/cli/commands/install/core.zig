@@ -283,8 +283,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var pkg_cache = try cache.PackageCache.init(allocator);
         defer pkg_cache.deinit();
 
-        // Use thread pool for concurrent installation (max 4 concurrent)
-        const max_concurrent = @min(deps_to_install.len, 4);
+        // Install results storage
         var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
         defer {
             for (install_results) |*result| {
@@ -304,47 +303,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
         }
 
-        // Install packages concurrently using thread pool
-        if (deps_to_install.len <= 1) {
-            // Single package - install sequentially
-            for (deps_to_install, 0..) |dep, i| {
-                install_results[i] = try helpers.installSinglePackage(
-                    allocator,
-                    dep,
-                    proj_dir,
-                    env_dir,
-                    bin_dir,
-                    cwd,
-                    &pkg_cache,
-                    options,
-                );
-            }
-        } else {
-            // Multiple packages - use thread pool
-            var thread_pool: std.Thread.Pool = undefined;
-            try thread_pool.init(.{ .allocator = allocator, .n_jobs = max_concurrent });
-            defer thread_pool.deinit();
-
-            var wg: std.Thread.WaitGroup = .{};
-            defer wg.wait();
-
-            for (deps_to_install, 0..) |dep, i| {
-                wg.start();
-                const task = try allocator.create(types.InstallTask);
-                task.* = .{
-                    .allocator = allocator,
-                    .dep = dep,
-                    .proj_dir = proj_dir,
-                    .env_dir = env_dir,
-                    .bin_dir = bin_dir,
-                    .cwd = cwd,
-                    .pkg_cache = &pkg_cache,
-                    .result = &install_results[i],
-                    .wg = &wg,
-                    .options = options,
-                };
-                try thread_pool.spawn(helpers.installPackageWorker, .{task});
-            }
+        // Install packages sequentially
+        // TODO: Re-add parallel installation using std.Io.Group when API stabilizes
+        for (deps_to_install, 0..) |dep, i| {
+            install_results[i] = try helpers.installSinglePackage(
+                allocator,
+                dep,
+                proj_dir,
+                env_dir,
+                bin_dir,
+                cwd,
+                &pkg_cache,
+                options,
+            );
         }
 
         // Print clean Yarn/Bun-style summary - only show what was installed or failed

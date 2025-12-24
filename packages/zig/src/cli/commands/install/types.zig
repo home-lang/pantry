@@ -45,6 +45,7 @@ pub const InstallTaskResult = struct {
 };
 
 /// Task context for concurrent installation
+/// TODO: Re-enable when std.Io.Group API stabilizes
 pub const InstallTask = struct {
     allocator: std.mem.Allocator,
     dep: lib.deps.parser.PackageDependency,
@@ -54,6 +55,6 @@ pub const InstallTask = struct {
     cwd: []const u8,
     pkg_cache: *cache.PackageCache,
     result: *InstallTaskResult,
-    wg: *std.Thread.WaitGroup,
+    // wg field removed - std.Thread.WaitGroup deprecated in Zig 0.16
     options: InstallOptions,
 };
