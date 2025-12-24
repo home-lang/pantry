@@ -104,9 +104,9 @@ async function ensurePantryBinary(): Promise<void> {
     const binDir = path.dirname(pantryBin)
     await fs.mkdir(binDir, { recursive: true })
 
-    // Download pre-built binary
+    // Download pre-built binary (--fail to error on 404)
     core.info(`Downloading pantry from ${downloadUrl}`)
-    await exec.exec('curl', ['-L', '-o', pantryBin, downloadUrl])
+    await exec.exec('curl', ['--fail', '-L', '-o', pantryBin, downloadUrl])
     await exec.exec('chmod', ['+x', pantryBin])
     core.info('pantry binary downloaded successfully')
   }
@@ -114,10 +114,29 @@ async function ensurePantryBinary(): Promise<void> {
     core.warning('Failed to download pre-built binary, building from source...')
 
     // Fallback: Build from source
-    // First, bootstrap by cloning deps to fallback location
     const parentDir = path.join(process.cwd(), '..')
-    const deps = ['zig-cli', 'zig-config', 'zig-test-framework']
 
+    // Clone pantry repo if not present
+    const pantryRepoDir = path.join(parentDir, 'pantry')
+    const pantryZigDir = path.join(pantryRepoDir, 'packages', 'zig')
+
+    try {
+      await fs.access(pantryZigDir)
+      core.info('pantry repo already exists')
+    }
+    catch {
+      core.info('Cloning pantry repo...')
+      await exec.exec('git', [
+        'clone',
+        '--depth',
+        '1',
+        'https://github.com/home-lang/pantry.git',
+        pantryRepoDir,
+      ])
+    }
+
+    // Clone dependencies
+    const deps = ['zig-cli', 'zig-config', 'zig-test-framework']
     for (const dep of deps) {
       const depPath = path.join(parentDir, dep)
       try {
@@ -137,7 +156,14 @@ async function ensurePantryBinary(): Promise<void> {
     }
 
     core.info('Building pantry from source')
-    await exec.exec('zig', ['build'], { cwd: zigDir })
+    await exec.exec('zig', ['build'], { cwd: pantryZigDir })
+
+    // Copy built binary to expected location
+    const builtBinary = path.join(pantryZigDir, 'zig-out', 'bin', 'pantry')
+    await fs.mkdir(path.dirname(pantryBin), { recursive: true })
+    await fs.copyFile(builtBinary, pantryBin)
+    await exec.exec('chmod', ['+x', pantryBin])
+
     core.info('pantry binary built successfully')
   }
 
