@@ -687,10 +687,19 @@ fn createTarball(
     package_name: []const u8,
     version: []const u8,
 ) ![]const u8 {
+    // Sanitize package name for tarball filename (replace @ and / with -)
+    var sanitized_name = try allocator.alloc(u8, package_name.len);
+    defer allocator.free(sanitized_name);
+    for (package_name, 0..) |c, i| {
+        sanitized_name[i] = if (c == '@' or c == '/') '-' else c;
+    }
+    // Trim leading dash if present (from @scope)
+    const clean_name = if (sanitized_name[0] == '-') sanitized_name[1..] else sanitized_name;
+
     const tarball_name = try std.fmt.allocPrint(
         allocator,
         "{s}-{s}.tgz",
-        .{ package_name, version },
+        .{ clean_name, version },
     );
     defer allocator.free(tarball_name);
 
