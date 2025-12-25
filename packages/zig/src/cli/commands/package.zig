@@ -742,6 +742,18 @@ fn generateProvenance(
     package_name: []const u8,
     version: []const u8,
 ) !void {
+    // Sanitize package name for filename (replace @ and / with -)
+    var sanitized_name = try allocator.alloc(u8, package_name.len);
+    defer allocator.free(sanitized_name);
+    for (package_name, 0..) |c, i| {
+        sanitized_name[i] = if (c == '@' or c == '/') '-' else c;
+    }
+    const clean_name = if (sanitized_name[0] == '-') sanitized_name[1..] else sanitized_name;
+
+    // Generate subject name for provenance
+    const subject_name = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ package_name, version });
+    defer allocator.free(subject_name);
+
     // Generate SLSA provenance format
     const provenance = try std.fmt.allocPrint(
         allocator,
@@ -780,7 +792,7 @@ fn generateProvenance(
         \\}}
     ,
         .{
-            try std.fmt.allocPrint(allocator, "{s}@{s}", .{ package_name, version }),
+            subject_name,
             token.claims.iss,
             token.claims.repository orelse "unknown",
             token.claims.sha orelse "unknown",
@@ -789,11 +801,11 @@ fn generateProvenance(
     );
     defer allocator.free(provenance);
 
-    // Write provenance to file
+    // Write provenance to file (use sanitized name for filename)
     const provenance_path = try std.fmt.allocPrint(
         allocator,
         "{s}-{s}.provenance.json",
-        .{ package_name, version },
+        .{ clean_name, version },
     );
     defer allocator.free(provenance_path);
 
