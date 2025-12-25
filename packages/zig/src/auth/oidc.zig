@@ -1281,11 +1281,11 @@ fn setBigIntFromBytes(big_int: *std.math.big.int.Managed, bytes: []const u8) !vo
 
     while (byte_idx > 0) {
         var limb: Limb = 0;
-        var shift: u6 = 0;
+        var shift: u8 = 0;
 
         while (shift < @bitSizeOf(Limb) and byte_idx > 0) {
             byte_idx -= 1;
-            limb |= @as(Limb, significant_bytes[byte_idx]) << shift;
+            limb |= @as(Limb, significant_bytes[byte_idx]) << @truncate(shift);
             shift += 8;
         }
 
