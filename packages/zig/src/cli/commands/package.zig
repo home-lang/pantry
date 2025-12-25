@@ -715,7 +715,9 @@ fn createTarball(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (result.term.Exited != 0) {
+    if (result.term != .Exited or result.term.Exited != 0) {
+        std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
+        std.debug.print("stderr: {s}\n", .{result.stderr});
         return error.TarballCreationFailed;
     }
 
