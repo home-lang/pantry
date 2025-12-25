@@ -624,6 +624,18 @@ fn attemptOIDCPublish(
         mut_response.deinit(allocator);
     }
 
+    if (!response.success) {
+        std.debug.print("OIDC publish failed with status {d}\n", .{response.status_code});
+        if (response.message) |msg| {
+            std.debug.print("Response: {s}\n", .{msg});
+        }
+        if (response.error_details) |details| {
+            if (details.code) |code| std.debug.print("Error code: {s}\n", .{code});
+            if (details.summary) |summary| std.debug.print("Error: {s}\n", .{summary});
+            if (details.suggestion) |suggestion| std.debug.print("Suggestion: {s}\n", .{suggestion});
+        }
+    }
+
     return response.success;
 }
 
