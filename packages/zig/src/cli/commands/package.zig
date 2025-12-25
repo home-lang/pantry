@@ -486,7 +486,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     }
 
     // Initialize registry client
-    var registry_client = registry.RegistryClient.init(allocator, registry_url);
+    var registry_client = try registry.RegistryClient.init(allocator, registry_url);
     defer registry_client.deinit();
 
     // Try OIDC authentication first if enabled
@@ -876,7 +876,7 @@ pub fn trustedPublisherAddCommand(
     };
 
     // Initialize registry client
-    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    var registry_client = try registry.RegistryClient.init(allocator, options.registry);
     defer registry_client.deinit();
 
     // Add trusted publisher
@@ -932,7 +932,7 @@ pub fn trustedPublisherListCommand(
     defer allocator.free(auth_token);
 
     // Initialize registry client
-    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    var registry_client = try registry.RegistryClient.init(allocator, options.registry);
     defer registry_client.deinit();
 
     // List trusted publishers
@@ -1035,7 +1035,7 @@ pub fn trustedPublisherRemoveCommand(
     defer allocator.free(auth_token);
 
     // Initialize registry client
-    var registry_client = registry.RegistryClient.init(allocator, options.registry);
+    var registry_client = try registry.RegistryClient.init(allocator, options.registry);
     defer registry_client.deinit();
 
     // Remove trusted publisher

@@ -54,10 +54,12 @@ pub const RegistryClient = struct {
     registry_url: []const u8,
     http_client: http.Client,
 
-    io: std.Io.Threaded,
+    io: *std.Io.Threaded,
 
-    pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) RegistryClient {
-        var io = std.Io.Threaded.init(allocator);
+    pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) !RegistryClient {
+        // Heap-allocate Io.Threaded so http_client.io reference remains valid
+        const io = try allocator.create(std.Io.Threaded);
+        io.* = std.Io.Threaded.init(allocator);
         return RegistryClient{
             .allocator = allocator,
             .registry_url = registry_url,
@@ -69,6 +71,7 @@ pub const RegistryClient = struct {
     pub fn deinit(self: *RegistryClient) void {
         self.http_client.deinit();
         self.io.deinit();
+        self.allocator.destroy(self.io);
     }
 
     /// Publish package using OIDC authentication with full token validation
