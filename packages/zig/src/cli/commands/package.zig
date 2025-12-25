@@ -703,7 +703,9 @@ fn createTarball(
     );
     defer allocator.free(tarball_name);
 
-    const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, tarball_name });
+    // Create tarball in temp directory to avoid "file changed as we read it" error
+    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // Use tar command to create tarball
     const result = try std.process.Child.run(.{
