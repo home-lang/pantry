@@ -4,9 +4,10 @@ const oidc = @import("oidc.zig");
 
 /// URL-encode a package name for use in registry URLs
 /// Scoped packages like "@scope/name" need special handling
-/// npm expects: @scope%2Fname (@ NOT encoded, / encoded as %2F)
+/// npm expects the / to be encoded as %2F in the URL path
 fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) ![]u8 {
-    // Count how many characters need encoding (only / needs encoding, not @)
+    // npm registry expects scoped packages with / encoded as %2F
+    // e.g., @scope/name -> @scope%2fname
     var encoded_len: usize = 0;
     for (package_name) |c| {
         encoded_len += switch (c) {
@@ -30,7 +31,7 @@ fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) 
             '/' => {
                 result[i] = '%';
                 result[i + 1] = '2';
-                result[i + 2] = 'F';
+                result[i + 2] = 'f'; // lowercase per npm convention
                 i += 3;
             },
             else => {
@@ -129,6 +130,8 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
+        std.debug.print("Publishing to URL: {s}\n", .{url});
+
         // Read tarball
         const tarball = try std.fs.cwd().readFileAlloc(
             tarball_path,
@@ -218,6 +221,8 @@ pub const RegistryClient = struct {
             .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
+
+        std.debug.print("Publishing to URL (token): {s}\n", .{url});
 
         // Read tarball
         const tarball = try std.fs.cwd().readFileAlloc(
