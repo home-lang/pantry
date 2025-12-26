@@ -4,12 +4,13 @@ const oidc = @import("oidc.zig");
 
 /// URL-encode a package name for use in registry URLs
 /// Scoped packages like "@scope/name" need special handling
+/// npm expects: @scope%2Fname (@ NOT encoded, / encoded as %2F)
 fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) ![]u8 {
-    // Count how many characters need encoding
+    // Count how many characters need encoding (only / needs encoding, not @)
     var encoded_len: usize = 0;
     for (package_name) |c| {
         encoded_len += switch (c) {
-            '@', '/' => 3, // %40, %2F
+            '/' => 3, // %2F
             else => 1,
         };
     }
@@ -26,12 +27,6 @@ fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) 
     var i: usize = 0;
     for (package_name) |c| {
         switch (c) {
-            '@' => {
-                result[i] = '%';
-                result[i + 1] = '4';
-                result[i + 2] = '0';
-                i += 3;
-            },
             '/' => {
                 result[i] = '%';
                 result[i + 1] = '2';
