@@ -476,18 +476,34 @@ pub const RegistryClient = struct {
         defer self.allocator.free(encoded_tarball);
         _ = encoder.encode(encoded_tarball, tarball);
 
-        // Calculate SHA integrity
-        var sha256: [32]u8 = undefined;
-        std.crypto.hash.sha2.Sha256.hash(tarball, &sha256, .{});
-
-        // Convert to hex string
+        // Calculate SHA-1 shasum (hex)
+        var sha1: [20]u8 = undefined;
+        std.crypto.hash.Sha1.hash(tarball, &sha1, .{});
         const hex_chars = "0123456789abcdef";
-        var integrity_buf: [64]u8 = undefined;
-        for (sha256, 0..) |byte, i| {
-            integrity_buf[i * 2] = hex_chars[byte >> 4];
-            integrity_buf[i * 2 + 1] = hex_chars[byte & 0x0F];
+        var shasum_buf: [40]u8 = undefined;
+        for (sha1, 0..) |byte, i| {
+            shasum_buf[i * 2] = hex_chars[byte >> 4];
+            shasum_buf[i * 2 + 1] = hex_chars[byte & 0x0F];
         }
-        const integrity = try self.allocator.dupe(u8, &integrity_buf);
+
+        // Calculate SHA-512 integrity (base64)
+        var sha512: [64]u8 = undefined;
+        std.crypto.hash.sha2.Sha512.hash(tarball, &sha512, .{});
+        var integrity_buf: [88]u8 = undefined; // base64 of 64 bytes
+        const integrity_len = std.base64.standard.Encoder.encode(&integrity_buf, &sha512);
+        _ = integrity_len;
+
+        // Build tarball URL - for scoped packages, encode the / as %2f
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
+        // npm tarball URLs use: registry/package/-/package-version.tgz
+        // For scoped packages: registry/@scope%2fname/-/name-version.tgz
+        // Extract just the package name part (after the scope) for the tarball filename
+        const tarball_basename = if (std.mem.indexOf(u8, package_name, "/")) |idx|
+            package_name[idx + 1 ..]
+        else
+            package_name;
 
         // Create JSON metadata (NPM registry format)
         const metadata = try std.fmt.allocPrint(
@@ -495,28 +511,46 @@ pub const RegistryClient = struct {
             \\{{
             \\  "_id": "{s}",
             \\  "name": "{s}",
-            \\  "version": "{s}",
+            \\  "dist-tags": {{
+            \\    "latest": "{s}"
+            \\  }},
+            \\  "versions": {{
+            \\    "{s}": {{
+            \\      "_id": "{s}@{s}",
+            \\      "name": "{s}",
+            \\      "version": "{s}",
+            \\      "dist": {{
+            \\        "integrity": "sha512-{s}",
+            \\        "shasum": "{s}",
+            \\        "tarball": "{s}/{s}/-/{s}-{s}.tgz"
+            \\      }}
+            \\    }}
+            \\  }},
+            \\  "access": "public",
             \\  "_attachments": {{
             \\    "{s}-{s}.tgz": {{
             \\      "content_type": "application/octet-stream",
             \\      "data": "{s}",
             \\      "length": {d}
             \\    }}
-            \\  }},
-            \\  "dist": {{
-            \\    "shasum": "{s}"
             \\  }}
             \\}}
         ,
             .{
-                package_name,
-                package_name,
-                version,
-                package_name,
-                version,
-                encoded_tarball,
-                tarball.len,
-                integrity,
+                package_name,                        // _id
+                package_name,                        // name
+                version,                             // dist-tags.latest
+                version,                             // versions key
+                package_name, version,               // versions[v]._id
+                package_name,                        // versions[v].name
+                version,                             // versions[v].version
+                &integrity_buf,                      // dist.integrity
+                &shasum_buf,                         // dist.shasum
+                self.registry_url, encoded_name,     // dist.tarball (registry/encoded_name)
+                tarball_basename, version,           // dist.tarball (/-/name-version.tgz)
+                tarball_basename, version,           // _attachments key
+                encoded_tarball,                     // _attachments data
+                tarball.len,                         // _attachments length
             },
         );
 
