@@ -507,14 +507,16 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     }
 
     // Fallback to token authentication
-    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+    // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action)
+    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch
+        std.process.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch |err| {
         if (err == error.EnvironmentVariableNotFound) {
             return CommandResult.err(
                 allocator,
-                "Error: No authentication method available. Set NPM_TOKEN or use OIDC in CI/CD.",
+                "Error: No authentication method available. Set NPM_TOKEN or NODE_AUTH_TOKEN.",
             );
         }
-        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+        return CommandResult.err(allocator, "Error: Failed to read auth token");
     };
     defer allocator.free(auth_token);
 
