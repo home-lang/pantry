@@ -471,23 +471,7 @@ fn getPackageVersion(b: *std.Build) ![]const u8 {
 
 /// Get git commit hash (short)
 fn getGitCommitHash(b: *std.Build) ![]const u8 {
-    const result = std.process.Child.run(.{
-        .allocator = b.allocator,
-        .argv = &[_][]const u8{ "git", "rev-parse", "--short", "HEAD" },
-    }) catch |err| {
-        std.debug.print("Warning: Could not get git hash: {}\n", .{err});
-        return error.GitNotFound;
-    };
-    defer {
-        b.allocator.free(result.stdout);
-        b.allocator.free(result.stderr);
-    }
-
-    if (result.term.Exited != 0) {
-        return error.GitFailed;
-    }
-
-    // Trim whitespace
-    const hash = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
-    return b.allocator.dupe(u8, hash);
+    _ = b;
+    // Skip git hash lookup for now - Zig 0.16 API changes
+    return "unknown";
 }
