@@ -89,39 +89,48 @@ async function ensurePantryBinary(): Promise<void> {
   const arch = os.arch()
 
   let binaryName = 'pantry'
-  let downloadUrl = ''
+  let assetName = ''
 
-  // Map to pantry's release binary names
+  // Map to pantry's release asset names (zip files)
   if (platform === 'darwin' && arch === 'arm64') {
-    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/macos-aarch64/pantry'
+    assetName = 'pantry-darwin-arm64.zip'
   }
   else if (platform === 'darwin' && arch === 'x64') {
-    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/macos-x86_64/pantry'
+    assetName = 'pantry-darwin-x64.zip'
   }
   else if (platform === 'linux' && arch === 'arm64') {
-    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/linux-aarch64/pantry'
+    assetName = 'pantry-linux-arm64.zip'
   }
   else if (platform === 'linux' && arch === 'x64') {
-    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/linux-x86_64/pantry'
+    assetName = 'pantry-linux-x64.zip'
   }
   else if (platform === 'win32' && arch === 'x64') {
     binaryName = 'pantry.exe'
-    downloadUrl = 'https://github.com/home-lang/pantry/releases/latest/download/windows-x86_64/pantry.exe'
+    assetName = 'pantry-windows-x64.zip'
   }
   else {
     throw new Error(`Unsupported platform: ${platform}-${arch}. Building from source...`)
   }
+
+  const downloadUrl = `https://github.com/home-lang/pantry/releases/latest/download/${assetName}`
 
   try {
     // Create output directory if it doesn't exist
     const binDir = path.dirname(pantryBin)
     await fs.mkdir(binDir, { recursive: true })
 
-    // Download pre-built binary (--fail to error on 404)
+    // Download zip file
+    const zipPath = path.join(binDir, assetName)
     core.info(`Downloading pantry from ${downloadUrl}`)
-    await exec.exec('curl', ['--fail', '-L', '-o', pantryBin, downloadUrl])
+    await exec.exec('curl', ['--fail', '-L', '-o', zipPath, downloadUrl])
+
+    // Unzip and extract binary
+    await exec.exec('unzip', ['-o', zipPath, '-d', binDir])
     await exec.exec('chmod', ['+x', pantryBin])
-    core.info('pantry binary downloaded successfully')
+
+    // Clean up zip file
+    await fs.unlink(zipPath)
+    core.info('pantry binary downloaded and extracted successfully')
   }
   catch (error) {
     core.warning('Failed to download pre-built binary, building from source...')
