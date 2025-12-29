@@ -6,10 +6,10 @@ fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: [
     const pantry_modules_path = b.fmt("pantry_modules/{s}/{s}", .{ package_name, entry_point });
 
     // Try to access the file to see if it exists
-    const pantry_modules_file = std.fs.cwd().openFile(pantry_modules_path, .{}) catch {
+    const pantry_modules_file = b.build_root.handle.openFile(pantry_modules_path, .{}) catch {
         // Try legacy pantry/ path
         const pantry_path = b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
-        const pantry_file = std.fs.cwd().openFile(pantry_path, .{}) catch {
+        const pantry_file = b.build_root.handle.openFile(pantry_path, .{}) catch {
             // Pantry module doesn't exist, use fallback
             return fallback_path;
         };
