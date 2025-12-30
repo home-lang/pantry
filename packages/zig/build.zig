@@ -5,7 +5,7 @@ fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: [
     _ = fallback_path;
     // Always use pantry/ directory - deps should be cloned there
     // For CI: workflow clones deps into pantry/
-    // For local: run the bootstrap script or clone deps manually
+    // For local: clone deps manually into packages/zig/pantry/
     return b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
 }
 
