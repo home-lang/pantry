@@ -5,13 +5,15 @@ fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: [
     // Check pantry_modules first (for installed dependencies)
     const pantry_modules_path = b.fmt("pantry_modules/{s}/{s}", .{ package_name, entry_point });
 
-    // Use statFile to check existence (synchronous, no io parameter needed)
-    if (b.build_root.handle.statFile(pantry_modules_path)) |_| {
+    // Try to open file to check existence
+    if (b.build_root.handle.openFile(pantry_modules_path, .{})) |file| {
+        file.close();
         return pantry_modules_path;
     } else |_| {
         // Try legacy pantry/ path
         const pantry_path = b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
-        if (b.build_root.handle.statFile(pantry_path)) |_| {
+        if (b.build_root.handle.openFile(pantry_path, .{})) |file| {
+            file.close();
             return pantry_path;
         } else |_| {
             // Pantry module doesn't exist, use fallback
