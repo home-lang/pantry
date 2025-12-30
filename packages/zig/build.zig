@@ -5,10 +5,13 @@ fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: [
     // Check pantry/ path first (for CI where deps are cloned into pantry/)
     const pantry_path = b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
 
-    // Get absolute path and check if file exists using std.fs
-    if (b.build_root.path) |root| {
-        const abs_path = std.fmt.allocPrint(b.allocator, "{s}/{s}", .{ root, pantry_path }) catch return fallback_path;
-        std.fs.accessAbsolute(abs_path, .{}) catch return fallback_path;
+    // Check if file exists by trying to get its path
+    const lazy_path = b.path(pantry_path);
+    const full_path_slice = lazy_path.getPath(b);
+    // Create null-terminated string for C access function
+    const full_path_z = b.allocator.dupeZ(u8, full_path_slice) catch return fallback_path;
+    // F_OK = 0 (check existence)
+    if (std.c.access(full_path_z.ptr, 0) == 0) {
         return pantry_path;
     }
     return fallback_path;
