@@ -913,7 +913,7 @@ pub fn parseJWTHeader(allocator: std.mem.Allocator, token: []const u8) !JWTHeade
     const header_b64 = parts.next() orelse return error.InvalidToken;
 
     // Decode base64url header
-    const header_json = try base64UrlDecode(allocator, header_b64);
+    const header_json = base64UrlDecode(allocator, header_b64) catch return error.InvalidToken;
     defer allocator.free(header_json);
 
     // Parse JSON

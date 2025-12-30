@@ -543,20 +543,20 @@ pub const RegistryClient = struct {
             \\}}
         ,
             .{
-                package_name,                        // _id
-                package_name,                        // name
-                version,                             // dist-tags.latest
-                version,                             // versions key
-                package_name, version,               // versions[v]._id
-                package_name,                        // versions[v].name
-                version,                             // versions[v].version
-                &integrity_buf,                      // dist.integrity
-                &shasum_buf,                         // dist.shasum
-                self.registry_url, encoded_name,     // dist.tarball (registry/encoded_name)
-                tarball_basename, version,           // dist.tarball (/-/name-version.tgz)
-                tarball_basename, version,           // _attachments key
-                encoded_tarball,                     // _attachments data
-                tarball.len,                         // _attachments length
+                package_name, // _id
+                package_name, // name
+                version, // dist-tags.latest
+                version, // versions key
+                package_name, version, // versions[v]._id
+                package_name, // versions[v].name
+                version, // versions[v].version
+                &integrity_buf, // dist.integrity
+                &shasum_buf, // dist.shasum
+                self.registry_url, encoded_name, // dist.tarball (registry/encoded_name)
+                tarball_basename, version, // dist.tarball (/-/name-version.tgz)
+                tarball_basename, version, // _attachments key
+                encoded_tarball, // _attachments data
+                tarball.len, // _attachments length
             },
         );
 
