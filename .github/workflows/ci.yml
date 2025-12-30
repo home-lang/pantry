@@ -83,5 +83,14 @@ jobs:
       - name: Unit Test
         run: bun test
 
+      - name: Bootstrap Zig Dependencies
+        run: |
+          cd packages/zig
+          mkdir -p pantry
+          cd pantry
+          git clone --depth 1 https://github.com/zig-utils/zig-cli.git
+          git clone --depth 1 https://github.com/zig-utils/zig-config.git
+          git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
+
       - name: Zig Tests
         run: cd packages/zig && zig build test:all
