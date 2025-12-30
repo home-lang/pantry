@@ -470,7 +470,11 @@ fn getPackageVersion(b: *std.Build) ![]const u8 {
 
 /// Get git commit hash (short)
 fn getGitCommitHash(b: *std.Build) ![]const u8 {
-    _ = b;
-    // Skip git hash lookup for now - Zig 0.16 API changes
+    const result = b.run(&.{ "git", "rev-parse", "--short", "HEAD" });
+    // Trim whitespace/newline
+    const trimmed = std.mem.trim(u8, result, &std.ascii.whitespace);
+    if (trimmed.len > 0) {
+        return b.allocator.dupe(u8, trimmed) catch return "unknown";
+    }
     return "unknown";
 }
