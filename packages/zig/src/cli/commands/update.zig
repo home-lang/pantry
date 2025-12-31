@@ -245,10 +245,10 @@ fn updateConfigFile(
 ) !void {
     // Try to find and read pantry.json
     const config_path = "pantry.json";
-    const file = std.fs.cwd().openFile(config_path, .{ .mode = .read_write }) catch |err| {
+    const file = std.Io.Dir.cwd().openFile(config_path, .{ .mode = .read_write }) catch |err| {
         // Try package.json as fallback
         if (err == error.FileNotFound) {
-            const pkg_file = std.fs.cwd().openFile("package.json", .{ .mode = .read_write }) catch {
+            const pkg_file = std.Io.Dir.cwd().openFile("package.json", .{ .mode = .read_write }) catch {
                 return error.ConfigNotFound;
             };
             defer pkg_file.close();

@@ -148,7 +148,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });
         defer allocator.free(package_json_path);
 
-        if (std.fs.cwd().readFileAlloc(package_json_path, allocator, std.Io.Limit.limited(1024 * 1024))) |package_json_content| {
+        if (std.Io.Dir.cwd().readFileAlloc(package_json_path, allocator, std.Io.Limit.limited(1024 * 1024))) |package_json_content| {
             defer allocator.free(package_json_content);
 
             if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {
@@ -203,7 +203,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Hash dependency file contents (or project dir if using config)
         const hash_input = if (deps_file_path) |path|
-            try std.fs.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(1024 * 1024))
+            try std.Io.Dir.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(1024 * 1024))
         else
             try allocator.dupe(u8, proj_dir);
         defer allocator.free(hash_input);
@@ -229,10 +229,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(env_dir);
 
         // Create environment directory structure
-        try std.fs.cwd().makePath(env_dir);
+        try std.Io.Dir.cwd().makePath(env_dir);
         const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
         defer allocator.free(bin_dir);
-        try std.fs.cwd().makePath(bin_dir);
+        try std.Io.Dir.cwd().makePath(bin_dir);
 
         // Check if we're in offline mode
         const is_offline = offline.isOfflineMode();
@@ -344,7 +344,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Create pantry directory if it doesn't exist
         const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{proj_dir});
         defer allocator.free(pantry_dir);
-        try std.fs.cwd().makePath(pantry_dir);
+        try std.Io.Dir.cwd().makePath(pantry_dir);
 
         for (deps) |dep| {
             if (!helpers.isLocalDependency(dep)) continue;
@@ -377,7 +377,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // Create pantry/{package} directory structure
             const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, pkg_name });
             defer allocator.free(pkg_modules_dir);
-            try std.fs.cwd().makePath(pkg_modules_dir);
+            try std.Io.Dir.cwd().makePath(pkg_modules_dir);
 
             // Create symlink to source directory for build system
             const src_link_path = try std.fmt.allocPrint(allocator, "{s}/src", .{pkg_modules_dir});
@@ -403,7 +403,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
             const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{proj_dir});
             defer allocator.free(local_bin_dir);
-            try std.fs.cwd().makePath(local_bin_dir);
+            try std.Io.Dir.cwd().makePath(local_bin_dir);
 
             // Check for binaries in the linked package's zig-out/bin directory
             const zig_out_bin = try std.fmt.allocPrint(allocator, "{s}/zig-out/bin", .{local_path});

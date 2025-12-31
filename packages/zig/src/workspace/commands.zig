@@ -30,7 +30,7 @@ pub const CommandResult = struct {
 /// Initialize a new workspace
 pub fn init(allocator: std.mem.Allocator, root: []const u8, name: ?[]const u8) !CommandResult {
     // Create workspace directory
-    try std.fs.cwd().makePath(root);
+    try std.Io.Dir.cwd().makePath(root);
 
     // Create workspace config
     const config_path = try std.fmt.allocPrint(allocator, "{s}/pantry.json", .{root});
@@ -57,14 +57,14 @@ pub fn init(allocator: std.mem.Allocator, root: []const u8, name: ?[]const u8) !
     );
     defer allocator.free(config_content);
 
-    const file = try std.fs.cwd().createFile(config_path, .{});
+    const file = try std.Io.Dir.cwd().createFile(config_path, .{});
     defer file.close();
     try file.writeAll(config_content);
 
     // Create packages directory
     const packages_dir = try std.fmt.allocPrint(allocator, "{s}/packages", .{root});
     defer allocator.free(packages_dir);
-    try std.fs.cwd().makePath(packages_dir);
+    try std.Io.Dir.cwd().makePath(packages_dir);
 
     const message = try std.fmt.allocPrint(
         allocator,
@@ -180,7 +180,7 @@ fn runPackageScript(
     const config_path = try std.fmt.allocPrint(allocator, "{s}/pantry.json", .{pkg_path});
     defer allocator.free(config_path);
 
-    const file = std.fs.cwd().openFile(config_path, .{}) catch return false;
+    const file = std.Io.Dir.cwd().openFile(config_path, .{}) catch return false;
     defer file.close();
 
     const content = try readFileAlloc(allocator, file, 10 * 1024 * 1024);

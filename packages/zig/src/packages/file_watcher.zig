@@ -156,7 +156,7 @@ pub const FileWatcher = struct {
                 try self.scanDirectory(full_path, member);
             } else if (entry.kind == .file) {
                 // Get file modification time
-                const stat = std.fs.cwd().statFile(full_path) catch continue;
+                const stat = std.Io.Dir.cwd().statFile(full_path) catch continue;
                 const mtime: i64 = @intCast(@divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_ms));
 
                 // Store timestamp
@@ -245,7 +245,7 @@ pub const FileWatcher = struct {
             if (entry.kind == .directory) {
                 try self.scanDirectoryForChanges(full_path, member, changes, new_timestamps);
             } else if (entry.kind == .file) {
-                const stat = std.fs.cwd().statFile(full_path) catch continue;
+                const stat = std.Io.Dir.cwd().statFile(full_path) catch continue;
                 const mtime: i64 = @intCast(@divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_ms));
 
                 // Store new timestamp

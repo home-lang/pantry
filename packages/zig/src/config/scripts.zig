@@ -77,6 +77,7 @@ pub fn findProjectScripts(allocator: std.mem.Allocator, project_dir: []const u8)
 
 test "extract scripts from config file" {
     const allocator = std.testing.allocator;
+    const io = std.testing.io;
 
     // Create a temporary directory with a config file
     var tmp_dir = std.testing.tmpDir(.{});
@@ -94,13 +95,13 @@ test "extract scripts from config file" {
         \\}
     ;
 
-    const file = try tmp_dir.dir.createFile("package.json", .{});
+    const file = try tmp_dir.dir.createFile(io, "package.json", .{});
     defer file.close();
     try file.writeAll(package_json);
 
     // Get absolute path to the temp directory
-    const cwd_path = try tmp_dir.dir.realpathAlloc(allocator, ".");
-    defer allocator.free(cwd_path);
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const cwd_path = try tmp_dir.dir.realpath(io, ".", &path_buf);
 
     // Load config from the temp directory
     const config_loader = @import("../config.zig");
@@ -133,6 +134,7 @@ test "extract scripts from config file" {
 
 test "no scripts in config file" {
     const allocator = std.testing.allocator;
+    const io = std.testing.io;
 
     // Create a temporary directory with a config file
     var tmp_dir = std.testing.tmpDir(.{});
@@ -146,13 +148,13 @@ test "no scripts in config file" {
         \\}
     ;
 
-    const file = try tmp_dir.dir.createFile("package.json", .{});
+    const file = try tmp_dir.dir.createFile(io, "package.json", .{});
     defer file.close();
     try file.writeAll(package_json);
 
     // Get absolute path to the temp directory
-    const cwd_path = try tmp_dir.dir.realpathAlloc(allocator, ".");
-    defer allocator.free(cwd_path);
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const cwd_path = try tmp_dir.dir.realpath(io, ".", &path_buf);
 
     // Load config from the temp directory
     const config_loader = @import("../config.zig");

@@ -28,7 +28,7 @@ pub fn deinit() void {
 
 /// Read entire file contents using blocking I/O
 pub fn readFile(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
-    const file = try std.fs.cwd().openFile(path, .{});
+    const file = try std.Io.Dir.cwd().openFile(path, .{});
     defer file.close();
 
     return try file.reader().readAllAlloc(allocator, max_size);

@@ -178,7 +178,7 @@ pub const LockFile = struct {
 
         try output.appendSlice(self.allocator, "\n  }\n}\n");
 
-        const file = try std.fs.cwd().createFile(path, .{});
+        const file = try std.Io.Dir.cwd().createFile(path, .{});
         defer file.close();
 
         const content = try output.toOwnedSlice(self.allocator);
@@ -189,7 +189,7 @@ pub const LockFile = struct {
 
     /// Read lock file from disk
     pub fn read(allocator: std.mem.Allocator, path: []const u8) !LockFile {
-        const content = try std.fs.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
+        const content = try std.Io.Dir.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
         defer allocator.free(content);
 
         return try parse(allocator, content);
@@ -512,7 +512,7 @@ pub fn lockfileExists(cwd: []const u8) bool {
     ) catch return false;
     defer allocator.free(lockfile_path);
 
-    std.fs.cwd().access(lockfile_path, .{}) catch return false;
+    std.Io.Dir.cwd().access(lockfile_path, .{}) catch return false;
     return true;
 }
 

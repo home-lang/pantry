@@ -115,7 +115,7 @@ pub fn extractMetadata(
     config_path: []const u8,
 ) !PackageMetadata {
     // Read the config file
-    const contents = std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch {
+    const contents = std.Io.Dir.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch {
         return error.PackageConfigNotFound;
     };
     defer allocator.free(contents);

@@ -99,7 +99,7 @@ pub const ShellIntegrator = struct {
             });
             errdefer self.allocator.free(file);
 
-            std.fs.cwd().access(file, .{}) catch {
+            std.Io.Dir.cwd().access(file, .{}) catch {
                 self.allocator.free(file);
                 continue;
             };
@@ -120,7 +120,7 @@ pub const ShellIntegrator = struct {
     }
 
     fn hasHook(self: *ShellIntegrator, file: []const u8) !bool {
-        const content = std.fs.cwd().readFileAlloc(
+        const content = std.Io.Dir.cwd().readFileAlloc(
             self.allocator,
             file,
             10 * 1024 * 1024,
@@ -132,7 +132,7 @@ pub const ShellIntegrator = struct {
     }
 
     fn appendHook(_: *ShellIntegrator, file: []const u8, hook_line: []const u8) !void {
-        const f = try std.fs.cwd().openFile(file, .{ .mode = .read_write });
+        const f = try std.Io.Dir.cwd().openFile(file, .{ .mode = .read_write });
         defer f.close();
 
         try f.seekFromEnd(0);
@@ -144,7 +144,7 @@ pub const ShellIntegrator = struct {
     }
 
     fn removeHook(self: *ShellIntegrator, file: []const u8) !void {
-        const content = try std.fs.cwd().readFileAlloc(
+        const content = try std.Io.Dir.cwd().readFileAlloc(
             self.allocator,
             file,
             10 * 1024 * 1024,
@@ -174,7 +174,7 @@ pub const ShellIntegrator = struct {
         }
 
         // Rewrite file
-        const f = try std.fs.cwd().createFile(file, .{ .truncate = true });
+        const f = try std.Io.Dir.cwd().createFile(file, .{ .truncate = true });
         defer f.close();
 
         const writer = f.writer();
@@ -221,11 +221,11 @@ test "ShellIntegrator hasHook" {
     // Create test file
     const test_file = "test_shell_hook.sh";
     {
-        const file = try std.fs.cwd().createFile(test_file, .{});
+        const file = try std.Io.Dir.cwd().createFile(test_file, .{});
         defer file.close();
         try file.writeAll("#!/bin/bash\n# Added by pantry\neval \"$(pantry dev:shellcode)\"\n");
     }
-    defer std.fs.cwd().deleteFile(test_file) catch {};
+    defer std.Io.Dir.cwd().deleteFile(test_file) catch {};
 
     const has_hook = try integrator.hasHook(test_file);
     try std.testing.expect(has_hook);
@@ -240,11 +240,11 @@ test "ShellIntegrator appendHook and removeHook" {
     // Create test file
     const test_file = "test_shell_append.sh";
     {
-        const file = try std.fs.cwd().createFile(test_file, .{});
+        const file = try std.Io.Dir.cwd().createFile(test_file, .{});
         defer file.close();
         try file.writeAll("#!/bin/bash\n");
     }
-    defer std.fs.cwd().deleteFile(test_file) catch {};
+    defer std.Io.Dir.cwd().deleteFile(test_file) catch {};
 
     // Add hook
     try integrator.appendHook(test_file, "eval \"$(pantry dev:shellcode)\"");

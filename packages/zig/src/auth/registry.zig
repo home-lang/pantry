@@ -133,7 +133,7 @@ pub const RegistryClient = struct {
         std.debug.print("Publishing to URL: {s}\n", .{url});
 
         // Read tarball
-        const tarball = try std.fs.cwd().readFileAlloc(
+        const tarball = try std.Io.Dir.cwd().readFileAlloc(
             tarball_path,
             self.allocator,
             std.Io.Limit.limited(100 * 1024 * 1024), // 100 MB max
@@ -228,7 +228,7 @@ pub const RegistryClient = struct {
         std.debug.print("Publishing to URL (token): {s}\n", .{url});
 
         // Read tarball
-        const tarball = try std.fs.cwd().readFileAlloc(
+        const tarball = try std.Io.Dir.cwd().readFileAlloc(
             tarball_path,
             self.allocator,
             std.Io.Limit.limited(100 * 1024 * 1024),

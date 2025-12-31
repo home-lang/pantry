@@ -25,7 +25,7 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
     if (options.local) {
         std.debug.print("Cleaning local dependencies (pantry)...\n", .{});
 
-        const cwd = std.fs.cwd();
+        const cwd = std.Io.Dir.cwd();
         const pantry_path = "pantry";
 
         cwd.deleteTree(pantry_path) catch |err| {
@@ -60,7 +60,7 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
     if (!options.local and !options.global and !options.cache) {
         std.debug.print("Cleaning all (local + cache)...\n", .{});
 
-        const cwd = std.fs.cwd();
+        const cwd = std.Io.Dir.cwd();
         cwd.deleteTree("pantry") catch |err| {
             if (err != error.FileNotFound) {
                 std.debug.print("Warning: Failed to clean pantry: {}\n", .{err});

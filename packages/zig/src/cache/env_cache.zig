@@ -38,7 +38,7 @@ pub const Entry = struct {
 
         // Check if dependency file has been modified
         if (self.dep_file.len > 0) {
-            const stat = std.fs.cwd().statFile(self.dep_file) catch {
+            const stat = std.Io.Dir.cwd().statFile(self.dep_file) catch {
                 return false; // File no longer exists
             };
 
@@ -103,7 +103,7 @@ pub const EnvCache = struct {
         defer allocator.free(cache_dir);
 
         // Ensure cache directory exists
-        std.fs.cwd().makePath(cache_dir) catch {};
+        std.Io.Dir.cwd().makePath(cache_dir) catch {};
 
         const cache_file = try std.fmt.allocPrint(allocator, "{s}/envs.cache", .{cache_dir});
         env_cache.cache_file_path = cache_file;
@@ -258,7 +258,7 @@ pub const EnvCache = struct {
         const temp_file = try std.fmt.allocPrint(self.allocator, "{s}.tmp", .{cache_file});
         defer self.allocator.free(temp_file);
 
-        const file = try std.fs.cwd().createFile(temp_file, .{});
+        const file = try std.Io.Dir.cwd().createFile(temp_file, .{});
         defer file.close();
 
         // Write magic header and version
@@ -314,14 +314,14 @@ pub const EnvCache = struct {
         }
 
         // Atomic rename
-        try std.fs.cwd().rename(temp_file, cache_file);
+        try std.Io.Dir.cwd().rename(temp_file, cache_file);
     }
 
     /// Load cache from disk
     pub fn load(self: *EnvCache) !void {
         const cache_file = self.cache_file_path orelse return error.NoCacheFile;
 
-        const content = try std.fs.cwd().readFileAlloc(cache_file, self.allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
+        const content = try std.Io.Dir.cwd().readFileAlloc(cache_file, self.allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
         defer self.allocator.free(content);
 
         var lines = std.mem.splitScalar(u8, content, '\n');
@@ -425,7 +425,7 @@ pub fn createEntry(
     errdefer allocator.destroy(entry);
 
     // Get dependency file mtime
-    const stat = try std.fs.cwd().statFile(dep_file);
+    const stat = try std.Io.Dir.cwd().statFile(dep_file);
 
     // Compute hash
     const hash = string.hashDependencyFile(dep_file);
@@ -450,14 +450,14 @@ test "EnvCache basic operations" {
     // Create a temporary test file
     const tmp_file = "/tmp/pantry_test_deps.yaml";
     {
-        const file = try std.fs.cwd().createFile(tmp_file, .{});
+        const file = try std.Io.Dir.cwd().createFile(tmp_file, .{});
         defer file.close();
         try file.writeAll("test: content");
     }
-    defer std.fs.cwd().deleteFile(tmp_file) catch {};
+    defer std.Io.Dir.cwd().deleteFile(tmp_file) catch {};
 
     // Get file stat
-    const stat = try std.fs.cwd().statFile(tmp_file);
+    const stat = try std.Io.Dir.cwd().statFile(tmp_file);
 
     // Create a test entry
     var env_vars = std.StringHashMap([]const u8).init(allocator);
@@ -498,13 +498,13 @@ test "EnvCache fast cache" {
     // Create a temporary test file
     const tmp_file = "/tmp/pantry_test_deps2.yaml";
     {
-        const file = try std.fs.cwd().createFile(tmp_file, .{});
+        const file = try std.Io.Dir.cwd().createFile(tmp_file, .{});
         defer file.close();
         try file.writeAll("test: content");
     }
-    defer std.fs.cwd().deleteFile(tmp_file) catch {};
+    defer std.Io.Dir.cwd().deleteFile(tmp_file) catch {};
 
-    const stat = try std.fs.cwd().statFile(tmp_file);
+    const stat = try std.Io.Dir.cwd().statFile(tmp_file);
 
     // Create multiple entries
     var i: usize = 0;

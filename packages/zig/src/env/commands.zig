@@ -151,7 +151,7 @@ pub const EnvCommands = struct {
                     }
 
                     std.debug.print("Removing: {s}...", .{env.project_name});
-                    std.fs.cwd().deleteTree(env.path) catch |err| {
+                    std.Io.Dir.cwd().deleteTree(env.path) catch |err| {
                         std.debug.print(" ✗ ({any})\n", .{err});
                         continue;
                     };
@@ -214,7 +214,7 @@ pub const EnvCommands = struct {
         }
 
         std.debug.print("Removing environment: {s}...", .{env.project_name});
-        try std.fs.cwd().deleteTree(env.path);
+        try std.Io.Dir.cwd().deleteTree(env.path);
         std.debug.print(" ✓\n", .{});
     }
 
@@ -317,7 +317,7 @@ pub const EnvCommands = struct {
         const bin_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ env_path, "bin" });
         defer self.allocator.free(bin_dir);
 
-        var dir = std.fs.cwd().openDir(bin_dir, .{ .iterate = true }) catch {
+        var dir = std.Io.Dir.cwd().openDir(bin_dir, .{ .iterate = true }) catch {
             std.debug.print("  (none)\n", .{});
             return;
         };
@@ -333,7 +333,7 @@ pub const EnvCommands = struct {
         const stubs_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ env_path, "stubs" });
         defer self.allocator.free(stubs_dir);
 
-        var dir = std.fs.cwd().openDir(stubs_dir, .{ .iterate = true }) catch {
+        var dir = std.Io.Dir.cwd().openDir(stubs_dir, .{ .iterate = true }) catch {
             std.debug.print("  (none)\n", .{});
             return;
         };

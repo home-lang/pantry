@@ -166,7 +166,7 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
     };
     defer file.close();
 
-    const content = try std.fs.cwd().readFileAlloc(pantryrc_path, allocator, std.Io.Limit.limited(1024 * 1024));
+    const content = try std.Io.Dir.cwd().readFileAlloc(pantryrc_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content);
 
     // Parse .pantryrc for username or email

@@ -25,7 +25,7 @@ pub fn extractArchiveQuiet(
     _: bool, // quiet parameter unused now
 ) !void {
     // Ensure destination directory exists
-    try std.fs.cwd().makePath(dest_dir);
+    try std.Io.Dir.cwd().makePath(dest_dir);
 
     // Determine extraction command based on format
     const result = if (std.mem.eql(u8, format, "tar.xz"))

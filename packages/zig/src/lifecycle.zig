@@ -333,7 +333,7 @@ pub fn runLifecycleScript(
     const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_path, "package.json" });
     defer allocator.free(package_json_path);
 
-    const package_json_content = std.fs.cwd().readFileAlloc(
+    const package_json_content = std.Io.Dir.cwd().readFileAlloc(
         package_json_path,
         allocator,
         std.Io.Limit.limited(1024 * 1024),
@@ -368,7 +368,7 @@ pub fn runLifecycleScript(
     const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });
     defer allocator.free(root_package_json_path);
 
-    const root_package_json = std.fs.cwd().readFileAlloc(
+    const root_package_json = std.Io.Dir.cwd().readFileAlloc(
         root_package_json_path,
         allocator,
         std.Io.Limit.limited(1024 * 1024),

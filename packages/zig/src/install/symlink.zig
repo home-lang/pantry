@@ -14,10 +14,10 @@ pub fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8
     if (builtin.os.tag == .windows) {
         // On Windows, copy the file instead of creating a symlink
         // This avoids privilege requirements
-        try std.fs.cwd().copyFile(target_path, std.fs.cwd(), link_path, .{});
+        try std.Io.Dir.cwd().copyFile(target_path, std.Io.Dir.cwd(), link_path, .{});
     } else {
         // On Unix systems, create actual symlink
-        try std.fs.cwd().symLink(target_path, link_path, .{});
+        try std.Io.Dir.cwd().symLink(target_path, link_path, .{});
     }
 }
 
@@ -43,18 +43,18 @@ pub fn createBinarySymlinkFromPath(
     defer allocator.free(symlink_path);
 
     // Verify target exists
-    std.fs.cwd().access(bin_path, .{}) catch {
+    std.Io.Dir.cwd().access(bin_path, .{}) catch {
         std.debug.print("  ✗ Binary not found: {s}\n", .{bin_path});
         return error.TargetNotFound;
     };
 
     // Create bin directory if it doesn't exist
-    std.fs.cwd().makePath(symlink_dir) catch {
+    std.Io.Dir.cwd().makePath(symlink_dir) catch {
         return error.BinDirCreationFailed;
     };
 
     // Remove existing symlink if present
-    std.fs.cwd().deleteFile(symlink_path) catch {};
+    std.Io.Dir.cwd().deleteFile(symlink_path) catch {};
 
     // Create symlink (cross-platform)
     createSymlinkCrossPlatform(bin_path, symlink_path) catch |err| {
@@ -107,12 +107,12 @@ pub fn createVersionSymlink(
     defer allocator.free(symlink_path);
 
     // Verify target exists
-    std.fs.cwd().access(target_path, .{}) catch {
+    std.Io.Dir.cwd().access(target_path, .{}) catch {
         return error.TargetNotFound;
     };
 
     // Remove existing symlink if present
-    std.fs.cwd().deleteFile(symlink_path) catch {};
+    std.Io.Dir.cwd().deleteFile(symlink_path) catch {};
 
     // Create symlink (cross-platform)
     createSymlinkCrossPlatform(target_path, symlink_path) catch {
@@ -142,7 +142,7 @@ fn discoverNpmBinaries(
     const node_modules_path = try std.fmt.allocPrint(allocator, "{s}/lib/node_modules", .{package_dir});
     defer allocator.free(node_modules_path);
 
-    var node_modules_dir = std.fs.cwd().openDir(node_modules_path, .{ .iterate = true }) catch {
+    var node_modules_dir = std.Io.Dir.cwd().openDir(node_modules_path, .{ .iterate = true }) catch {
         return try allocator.alloc(BinaryInfo, 0);
     };
     defer node_modules_dir.close();
@@ -168,7 +168,7 @@ fn discoverNpmBinaries(
         );
         defer allocator.free(npm_bin_path);
 
-        var npm_bin_dir = std.fs.cwd().openDir(npm_bin_path, .{ .iterate = true }) catch continue;
+        var npm_bin_dir = std.Io.Dir.cwd().openDir(npm_bin_path, .{ .iterate = true }) catch continue;
         defer npm_bin_dir.close();
 
         // Iterate binaries in npm package's bin directory
@@ -183,7 +183,7 @@ fn discoverNpmBinaries(
                 errdefer allocator.free(full_path);
 
                 // Check if executable
-                const stat = std.fs.cwd().statFile(full_path) catch {
+                const stat = std.Io.Dir.cwd().statFile(full_path) catch {
                     allocator.free(full_path);
                     continue;
                 };
@@ -220,7 +220,7 @@ pub fn discoverBinaries(
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{package_dir});
     defer allocator.free(bin_dir);
 
-    var dir = std.fs.cwd().openDir(bin_dir, .{ .iterate = true }) catch {
+    var dir = std.Io.Dir.cwd().openDir(bin_dir, .{ .iterate = true }) catch {
         // No bin directory
         return try allocator.alloc(BinaryInfo, 0);
     };
@@ -241,7 +241,7 @@ pub fn discoverBinaries(
             errdefer allocator.free(full_path);
 
             // Check if executable
-            const stat = std.fs.cwd().statFile(full_path) catch {
+            const stat = std.Io.Dir.cwd().statFile(full_path) catch {
                 allocator.free(full_path);
                 continue;
             };
@@ -338,7 +338,7 @@ pub fn removePackageSymlinks(
         );
         defer allocator.free(symlink_path);
 
-        std.fs.cwd().deleteFile(symlink_path) catch |err| {
+        std.Io.Dir.cwd().deleteFile(symlink_path) catch |err| {
             std.debug.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });
         };
     }
@@ -353,7 +353,7 @@ pub fn removePackageSymlinks(
         );
         defer allocator.free(version_symlink);
 
-        std.fs.cwd().deleteFile(version_symlink) catch {};
+        std.Io.Dir.cwd().deleteFile(version_symlink) catch {};
     }
 }
 
@@ -362,20 +362,20 @@ test "discoverBinaries" {
 
     // Create test directory structure
     const test_dir = "test_pkg_bin";
-    std.fs.cwd().makeDir(test_dir) catch {};
-    defer std.fs.cwd().deleteTree(test_dir) catch {};
+    std.Io.Dir.cwd().makeDir(test_dir) catch {};
+    defer std.Io.Dir.cwd().deleteTree(test_dir) catch {};
 
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{test_dir});
     defer allocator.free(bin_dir);
 
-    std.fs.cwd().makeDir(bin_dir) catch {};
+    std.Io.Dir.cwd().makeDir(bin_dir) catch {};
 
     // Create test binary file
     {
         const test_bin = try std.fmt.allocPrint(allocator, "{s}/testbin", .{bin_dir});
         defer allocator.free(test_bin);
 
-        const file = try std.fs.cwd().createFile(test_bin, .{ .mode = 0o755 });
+        const file = try std.Io.Dir.cwd().createFile(test_bin, .{ .mode = 0o755 });
         file.close();
     }
 
@@ -398,21 +398,21 @@ test "createBinarySymlink" {
 
     // Create test structure
     const install_base = "test_install";
-    std.fs.cwd().makeDir(install_base) catch {};
-    defer std.fs.cwd().deleteTree(install_base) catch {};
+    std.Io.Dir.cwd().makeDir(install_base) catch {};
+    defer std.Io.Dir.cwd().deleteTree(install_base) catch {};
 
     // Create package directory
     const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/testpkg/v1.0.0/bin", .{install_base});
     defer allocator.free(pkg_dir);
 
-    std.fs.cwd().makePath(pkg_dir) catch {};
+    std.Io.Dir.cwd().makePath(pkg_dir) catch {};
 
     // Create binary
     const bin_path = try std.fmt.allocPrint(allocator, "{s}/testbin", .{pkg_dir});
     defer allocator.free(bin_path);
 
     {
-        const file = try std.fs.cwd().createFile(bin_path, .{ .mode = 0o755 });
+        const file = try std.Io.Dir.cwd().createFile(bin_path, .{ .mode = 0o755 });
         file.close();
     }
 
@@ -423,6 +423,6 @@ test "createBinarySymlink" {
     const symlink_path = try std.fmt.allocPrint(allocator, "{s}/bin/testbin", .{install_base});
     defer allocator.free(symlink_path);
 
-    const stat = try std.fs.cwd().statFile(symlink_path);
+    const stat = try std.Io.Dir.cwd().statFile(symlink_path);
     _ = stat;
 }

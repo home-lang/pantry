@@ -41,7 +41,7 @@ pub fn installWorkspaceCommandWithOptions(
     const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, "package.json" });
     defer allocator.free(root_package_json_path);
 
-    if (std.fs.cwd().readFileAlloc(root_package_json_path, allocator, std.Io.Limit.limited(1024 * 1024))) |package_json_content| {
+    if (std.Io.Dir.cwd().readFileAlloc(root_package_json_path, allocator, std.Io.Limit.limited(1024 * 1024))) |package_json_content| {
         defer allocator.free(package_json_content);
 
         if (std.json.parseFromSlice(std.json.Value, allocator, package_json_content, .{})) |parsed| {
@@ -230,10 +230,10 @@ pub fn installWorkspaceCommandWithOptions(
     defer allocator.free(env_dir);
 
     // Create environment directory structure
-    try std.fs.cwd().makePath(env_dir);
+    try std.Io.Dir.cwd().makePath(env_dir);
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
     defer allocator.free(bin_dir);
-    try std.fs.cwd().makePath(bin_dir);
+    try std.Io.Dir.cwd().makePath(bin_dir);
 
     // Install each dependency
     var pkg_cache = try cache.PackageCache.init(allocator);

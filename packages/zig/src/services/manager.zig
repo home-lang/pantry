@@ -128,7 +128,7 @@ pub const ServiceManager = struct {
         defer self.allocator.free(service_dir);
 
         // Ensure directory exists
-        try std.fs.cwd().makePath(service_dir);
+        try std.Io.Dir.cwd().makePath(service_dir);
 
         const plist_path = try std.fmt.allocPrint(
             self.allocator,
@@ -138,9 +138,9 @@ pub const ServiceManager = struct {
         defer self.allocator.free(plist_path);
 
         // Check if file already exists
-        std.fs.cwd().access(plist_path, .{}) catch {
+        std.Io.Dir.cwd().access(plist_path, .{}) catch {
             // File doesn't exist, create it
-            var file = try std.fs.cwd().createFile(plist_path, .{});
+            var file = try std.Io.Dir.cwd().createFile(plist_path, .{});
             defer file.close();
 
             try file.writeAll("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -207,7 +207,7 @@ pub const ServiceManager = struct {
         defer self.allocator.free(service_dir);
 
         // Ensure directory exists
-        try std.fs.cwd().makePath(service_dir);
+        try std.Io.Dir.cwd().makePath(service_dir);
 
         const unit_path = try std.fmt.allocPrint(
             self.allocator,
@@ -217,9 +217,9 @@ pub const ServiceManager = struct {
         defer self.allocator.free(unit_path);
 
         // Check if file already exists
-        std.fs.cwd().access(unit_path, .{}) catch {
+        std.Io.Dir.cwd().access(unit_path, .{}) catch {
             // File doesn't exist, create it
-            var file = try std.fs.cwd().createFile(unit_path, .{});
+            var file = try std.Io.Dir.cwd().createFile(unit_path, .{});
             defer file.close();
 
             try file.writeAll("[Unit]\n");
