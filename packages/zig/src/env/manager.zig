@@ -62,7 +62,7 @@ pub const EnvManager = struct {
         errdefer allocator.free(data_dir);
 
         // Ensure data directory exists
-        try std.Io.Dir.cwd().makePath(data_dir);
+        try std.fs.cwd().makePath(data_dir);
 
         return .{
             .data_dir = data_dir,
@@ -97,7 +97,7 @@ pub const EnvManager = struct {
         // Create environment directory
         const env_dir = try self.getEnvDir(env.hash);
         defer self.allocator.free(env_dir);
-        try std.Io.Dir.cwd().makePath(env_dir);
+        try std.fs.cwd().makePath(env_dir);
 
         return env;
     }
@@ -108,7 +108,7 @@ pub const EnvManager = struct {
         defer self.allocator.free(env_dir);
 
         // Check if environment exists
-        std.Io.Dir.cwd().access(env_dir, .{}) catch {
+        std.fs.cwd().access(env_dir, .{}) catch {
             return null;
         };
 
@@ -124,7 +124,7 @@ pub const EnvManager = struct {
         defer self.allocator.free(env_dir);
 
         // Remove environment directory
-        std.Io.Dir.cwd().deleteTree(env_dir) catch {};
+        std.fs.cwd().deleteTree(env_dir) catch {};
         // Ignore errors - environment may not exist
     }
 
@@ -140,7 +140,7 @@ pub const EnvManager = struct {
         );
         defer self.allocator.free(envs_dir);
 
-        var dir = std.Io.Dir.cwd().openDir(envs_dir, .{ .iterate = true }) catch |err| switch (err) {
+        var dir = std.fs.cwd().openDir(envs_dir, .{ .iterate = true }) catch |err| switch (err) {
             error.FileNotFound => return envs,
             else => return err,
         };
@@ -169,11 +169,11 @@ test "EnvManager basic operations" {
     // Create temporary test file
     const tmp_file = "/tmp/pantry_env_test.yaml";
     {
-        const file = try std.Io.Dir.cwd().createFile(tmp_file, .{});
+        const file = try std.fs.cwd().createFile(tmp_file, .{});
         defer file.close();
         try file.writeAll("node: 20.0.0");
     }
-    defer std.Io.Dir.cwd().deleteFile(tmp_file) catch {};
+    defer std.fs.cwd().deleteFile(tmp_file) catch {};
 
     // Create environment
     var env = try manager.create(tmp_file);

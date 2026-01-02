@@ -143,7 +143,7 @@ pub fn getRcFile(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
         .bash => blk: {
             // Try .bashrc first, then .bash_profile
             const bashrc = try std.fmt.allocPrint(allocator, "{s}/.bashrc", .{home});
-            std.Io.Dir.cwd().access(bashrc, .{}) catch {
+            std.fs.cwd().access(bashrc, .{}) catch {
                 allocator.free(bashrc);
                 break :blk try std.fmt.allocPrint(allocator, "{s}/.bash_profile", .{home});
             };
@@ -168,7 +168,7 @@ pub fn install(allocator: std.mem.Allocator) !void {
     defer allocator.free(hook);
 
     // Read existing RC file
-    const existing = std.Io.Dir.cwd().readFileAlloc(rc_file, allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+    const existing = std.fs.cwd().readFileAlloc(rc_file, allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
         error.FileNotFound => "",
         else => return err,
     };
@@ -181,7 +181,7 @@ pub fn install(allocator: std.mem.Allocator) !void {
     }
 
     // Append hook to RC file
-    const file = try std.Io.Dir.cwd().createFile(rc_file, .{ .truncate = false });
+    const file = try std.fs.cwd().createFile(rc_file, .{ .truncate = false });
     defer file.close();
 
     try file.seekFromEnd(0);

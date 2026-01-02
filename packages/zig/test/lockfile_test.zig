@@ -70,7 +70,6 @@ test "Lockfile - multiple entries" {
 
 test "Lockfile - write and read roundtrip" {
     const allocator = testing.allocator;
-    const io = testing.io;
 
     var tmp = testing.tmpDir(.{});
     defer tmp.cleanup();
@@ -92,7 +91,7 @@ test "Lockfile - write and read roundtrip" {
 
     // Write to temp file
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const path = try tmp.dir.realpath(io, ".", &path_buf);
+    const path = try tmp.dir.realpath(".", &path_buf);
 
     const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/.freezer", .{path});
     defer allocator.free(lockfile_path);

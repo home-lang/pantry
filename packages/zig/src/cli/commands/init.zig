@@ -23,7 +23,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Check if pantry.json already exists
     const file_exists = blk: {
-        std.Io.Dir.cwd().access("pantry.json", .{}) catch |err| {
+        std.fs.cwd().access("pantry.json", .{}) catch |err| {
             if (err == error.FileNotFound) break :blk false;
             return err;
         };
@@ -83,12 +83,12 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Detect if TypeScript project
     const has_tsconfig = blk: {
-        std.Io.Dir.cwd().access("tsconfig.json", .{}) catch break :blk false;
+        std.fs.cwd().access("tsconfig.json", .{}) catch break :blk false;
         break :blk true;
     };
 
     const has_package_json = blk: {
-        std.Io.Dir.cwd().access("package.json", .{}) catch break :blk false;
+        std.fs.cwd().access("package.json", .{}) catch break :blk false;
         break :blk true;
     };
 
@@ -100,7 +100,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     defer allocator.free(template);
 
     // Write file
-    const file = try std.Io.Dir.cwd().createFile("pantry.json", .{});
+    const file = try std.fs.cwd().createFile("pantry.json", .{});
     defer file.close();
     try file.writeAll(template);
 

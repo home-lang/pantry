@@ -28,7 +28,7 @@ pub fn runScriptWithFilter(
     options: RunFilterOptions,
 ) !CommandResult {
     // Get current working directory
-    const cwd = std.Io.Dir.cwd().realpathAlloc(allocator, ".") catch {
+    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
         return CommandResult.err(allocator, "Error: Could not determine current directory");
     };
     defer allocator.free(cwd);

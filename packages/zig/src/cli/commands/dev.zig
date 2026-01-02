@@ -201,7 +201,7 @@ pub fn devMd5Command(allocator: std.mem.Allocator, path: []const u8) !CommandRes
         }
     } else {
         // Read from file
-        const file = std.Io.Dir.cwd().openFile(path, .{}) catch |err| {
+        const file = std.fs.cwd().openFile(path, .{}) catch |err| {
             const msg = try std.fmt.allocPrint(
                 allocator,
                 "Error: Failed to open file {s}: {}",

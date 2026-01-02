@@ -92,7 +92,7 @@ pub fn executeHook(
     );
     defer allocator.free(package_json_path);
 
-    const package_json_content = std.Io.Dir.cwd().readFileAlloc(
+    const package_json_content = std.fs.cwd().readFileAlloc(
         allocator,
         package_json_path,
         1024 * 1024,

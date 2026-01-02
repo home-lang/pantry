@@ -145,7 +145,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     var config_path: ?[]const u8 = null;
     for (config_files) |config_file| {
         const full_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, config_file });
-        std.Io.Dir.cwd().access(full_path, .{}) catch {
+        std.fs.cwd().access(full_path, .{}) catch {
             allocator.free(full_path);
             continue;
         };
@@ -254,7 +254,7 @@ fn saveDependenciesToConfig(
     is_peer: bool,
 ) !void {
     // Read existing config
-    const config_content = try std.Io.Dir.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(1024 * 1024));
+    const config_content = try std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(config_content);
 
     // Strip JSONC comments if needed
@@ -327,7 +327,7 @@ fn saveDependenciesToConfig(
     try serializeJsonValue(parsed.value, &append_writer, 0);
     try buf.append(allocator, '\n');
 
-    try std.Io.Dir.cwd().writeFile(.{
+    try std.fs.cwd().writeFile(.{
         .sub_path = config_path,
         .data = buf.items,
     });

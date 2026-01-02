@@ -39,7 +39,7 @@ pub fn bootstrapCommand(allocator: std.mem.Allocator, options: BootstrapOptions)
     // Step 1: Determine installation path
     const install_path = options.path orelse blk: {
         // Try /usr/local first, fall back to ~/.local
-        std.Io.Dir.cwd().makePath("/usr/local/bin") catch |err| {
+        std.fs.cwd().makePath("/usr/local/bin") catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 const home = try lib.Paths.home(allocator);
                 defer allocator.free(home);
@@ -185,7 +185,7 @@ fn configurePath(allocator: std.mem.Allocator, install_path: []const u8, verbose
     defer allocator.free(rc_file);
 
     // Read existing rc file
-    const rc_content = std.Io.Dir.cwd().readFileAlloc(rc_file, allocator, std.Io.Limit.limited(1024 * 1024)) catch "";
+    const rc_content = std.fs.cwd().readFileAlloc(rc_file, allocator, std.Io.Limit.limited(1024 * 1024)) catch "";
     defer if (rc_content.len > 0) allocator.free(rc_content);
 
     // Check if PATH is already configured
@@ -204,7 +204,7 @@ fn configurePath(allocator: std.mem.Allocator, install_path: []const u8, verbose
     defer allocator.free(path_line);
 
     // Append to rc file
-    var file = try std.Io.Dir.cwd().openFile(rc_file, .{ .mode = .read_write });
+    var file = try std.fs.cwd().openFile(rc_file, .{ .mode = .read_write });
     defer file.close();
 
     try file.seekFromEnd(0);

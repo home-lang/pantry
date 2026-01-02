@@ -26,7 +26,7 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.Io.Dir.cwd().realpath(".", &cwd_buf);
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
 
     // Find and read config file
     const config_path = common.findConfigFile(allocator, cwd) catch {
@@ -121,7 +121,7 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
             const pkg_dir = try std.fs.path.join(allocator, &[_][]const u8{ modules_dir, pkg });
             defer allocator.free(pkg_dir);
 
-            std.Io.Dir.cwd().deleteTree(pkg_dir) catch {};
+            std.fs.cwd().deleteTree(pkg_dir) catch {};
         }
     }
 
@@ -152,7 +152,7 @@ pub const UpdateOptions = struct {
 pub fn updateCommand(allocator: std.mem.Allocator, args: []const []const u8, options: UpdateOptions) !CommandResult {
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.Io.Dir.cwd().realpath(".", &cwd_buf);
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
 
     // Find config file
     const config_path = common.findConfigFile(allocator, cwd) catch {
@@ -221,7 +221,7 @@ pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, o
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.Io.Dir.cwd().realpath(".", &cwd_buf);
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
 
     // Find and read config
     const config_path = common.findConfigFile(allocator, cwd) catch {
@@ -416,7 +416,7 @@ pub const PublishOptions = struct {
 pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishOptions) !CommandResult {
     _ = args;
 
-    const cwd = std.Io.Dir.cwd().realpathAlloc(allocator, ".") catch {
+    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
         return CommandResult.err(allocator, "Error: Could not determine current directory");
     };
     defer allocator.free(cwd);
@@ -473,7 +473,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     // Create tarball
     const tarball_path = try createTarball(allocator, cwd, metadata.name, metadata.version);
     defer allocator.free(tarball_path);
-    defer std.Io.Dir.cwd().deleteFile(tarball_path) catch {};
+    defer std.fs.cwd().deleteFile(tarball_path) catch {};
 
     if (options.dry_run) {
         std.debug.print("Dry run mode - package would be published to {s}\n", .{registry_url});
@@ -823,7 +823,7 @@ fn generateProvenance(
     );
     defer allocator.free(provenance_path);
 
-    try std.Io.Dir.cwd().writeFile(.{
+    try std.fs.cwd().writeFile(.{
         .sub_path = provenance_path,
         .data = provenance,
     });
@@ -1109,7 +1109,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.Io.Dir.cwd().realpath(".", &cwd_buf);
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
 
     // Find config file
     const config_path = common.findConfigFile(allocator, cwd) catch {

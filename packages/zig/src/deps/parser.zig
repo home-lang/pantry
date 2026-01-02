@@ -379,7 +379,7 @@ pub fn inferDependencies(
 pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
     // Read file contents
 
-    const content = try std.Io.Dir.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
+    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
     defer allocator.free(content);
 
     var deps = try std.ArrayList(PackageDependency).initCapacity(allocator, 16);
@@ -786,7 +786,7 @@ pub const ExtendedPackageDependency = struct {
 /// }
 pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
     // Read and strip comments for JSONC support
-    const content = try std.Io.Dir.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
+    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
     defer allocator.free(content);
 
     const json_content = try stripJsonComments(allocator, content);

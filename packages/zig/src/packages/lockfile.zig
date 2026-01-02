@@ -189,7 +189,7 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
 
 /// Read lockfile from disk
 pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.Lockfile {
-    const content = try std.Io.Dir.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
+    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
     defer allocator.free(content);
 
     const parsed = try std.json.parseFromSlice(
@@ -449,7 +449,7 @@ test "writeLockfile skips write when no changes" {
     try writeLockfile(allocator, &lockfile1, lock_file_path);
 
     // Read the file content
-    const content1 = try std.Io.Dir.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
+    const content1 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content1);
 
     // Create second lockfile with different generatedAt but same content
@@ -472,7 +472,7 @@ test "writeLockfile skips write when no changes" {
     try writeLockfile(allocator, &lockfile2, lock_file_path);
 
     // Check file content hasn't changed (generatedAt should still be 1000, not 2000)
-    const content2 = try std.Io.Dir.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
+    const content2 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content2);
     try std.testing.expectEqualStrings(content1, content2);
 }

@@ -169,7 +169,7 @@ pub fn findWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !?
             };
 
             // Read file to check if it has a workspaces field
-            const contents = std.Io.Dir.cwd().readFileAlloc(full_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch continue;
+            const contents = std.fs.cwd().readFileAlloc(full_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch continue;
             defer allocator.free(contents);
 
             // Quick check for "workspaces" field (we'll do proper JSON parsing later)

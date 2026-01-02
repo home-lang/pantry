@@ -128,7 +128,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
         const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
-        const stat = std.Io.Dir.cwd().statFile(dest_path) catch {
+        const stat = std.fs.cwd().statFile(dest_path) catch {
             // File doesn't exist yet - check for stall timeout
             if (now - last_progress_time > stall_timeout_ms) {
                 _ = child.kill() catch {};
@@ -275,7 +275,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
     // Show final download summary on a clean line (skip if quiet mode)
     if (!quiet and shown_progress) {
-        _ = std.Io.Dir.cwd().statFile(dest_path) catch |err| {
+        _ = std.fs.cwd().statFile(dest_path) catch |err| {
             std.debug.print("\n", .{});
             if (term.Exited != 0) return error.HttpRequestFailed;
             return err;
@@ -400,7 +400,7 @@ pub fn verifyChecksum(
     expected_checksum: []const u8,
 ) !bool {
     // Read file contents
-    const file = try std.Io.Dir.cwd().openFile(file_path, .{});
+    const file = try std.fs.cwd().openFile(file_path, .{});
     defer file.close();
 
     const file_size = (try file.stat()).size;
@@ -502,11 +502,11 @@ test "verifyChecksum" {
     const test_content = "Hello, World!";
 
     {
-        const file = try std.Io.Dir.cwd().createFile(test_file, .{});
+        const file = try std.fs.cwd().createFile(test_file, .{});
         defer file.close();
         try file.writeAll(test_content);
     }
-    defer std.Io.Dir.cwd().deleteFile(test_file) catch {};
+    defer std.fs.cwd().deleteFile(test_file) catch {};
 
     // Expected SHA256 of "Hello, World!"
     const expected = "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f";

@@ -293,7 +293,7 @@ fn runSecurityScanner(
     defer allocator.free(scanner_path);
 
     // Check if scanner exists
-    std.Io.Dir.cwd().access(scanner_path, .{}) catch {
+    std.fs.cwd().access(scanner_path, .{}) catch {
         const msg = try std.fmt.allocPrint(
             allocator,
             "Security scanner '{s}' not found. Install it with: pantry install {s}",

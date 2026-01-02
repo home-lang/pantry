@@ -49,14 +49,14 @@ pub const ShellCommands = struct {
             if (try self.env_cache.get(hash)) |entry| {
                 // Validate entry is still valid
                 // 1. Check env directory exists
-                std.Io.Dir.cwd().access(entry.path, .{}) catch {
+                std.fs.cwd().access(entry.path, .{}) catch {
                     // Environment deleted, invalidate cache
                     continue;
                 };
 
                 // 2. Check dependency file mtime (if tracked)
                 if (entry.dep_file.len > 0) {
-                    const file = std.Io.Dir.cwd().openFile(entry.dep_file, .{}) catch {
+                    const file = std.fs.cwd().openFile(entry.dep_file, .{}) catch {
                         // Dependency file deleted
                         continue;
                     };
@@ -124,7 +124,7 @@ pub const ShellCommands = struct {
         if (try self.env_cache.get(project_hash_quick)) |cached_entry| {
             // Get current dep file mtime
             const current_dep_mtime = if (dep_file) |file| blk: {
-                const f = std.Io.Dir.cwd().openFile(file, .{}) catch break :blk 0;
+                const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
                 defer f.close();
                 const stat = f.stat() catch break :blk 0;
                 break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
@@ -189,7 +189,7 @@ pub const ShellCommands = struct {
         defer self.allocator.free(env_bin);
 
         const env_exists = blk: {
-            std.Io.Dir.cwd().access(env_bin, .{}) catch break :blk false;
+            std.fs.cwd().access(env_bin, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -198,7 +198,7 @@ pub const ShellCommands = struct {
             std.debug.print("🔧 Setting up environment for {s}...\n", .{project_basename});
 
             // Parse dependency file to detect version changes
-            const dep_file_content = std.Io.Dir.cwd().readFileAlloc(
+            const dep_file_content = std.fs.cwd().readFileAlloc(
                 dep_file.?,
                 self.allocator,
                 std.Io.Limit.limited(10 * 1024 * 1024), // 10MB max
@@ -211,7 +211,7 @@ pub const ShellCommands = struct {
             std.debug.print("📦 Installing dependencies from {s}\n", .{std.fs.path.basename(dep_file.?)});
 
             // Create env directory
-            std.Io.Dir.cwd().makePath(env_dir) catch |err| {
+            std.fs.cwd().makePath(env_dir) catch |err| {
                 std.debug.print("❌ Failed to create environment: {s}\n", .{@errorName(err)});
                 return try self.allocator.dupe(u8, "");
             };
@@ -256,7 +256,7 @@ pub const ShellCommands = struct {
             // Environment exists but dep file may have changed
             // Check if we need to update (only when cache was invalidated)
             const current_dep_mtime = blk: {
-                const f = std.Io.Dir.cwd().openFile(dep_file.?, .{}) catch break :blk 0;
+                const f = std.fs.cwd().openFile(dep_file.?, .{}) catch break :blk 0;
                 defer f.close();
                 const stat = f.stat() catch break :blk 0;
                 break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
@@ -308,7 +308,7 @@ pub const ShellCommands = struct {
         // 7. Update cache
         const project_hash_for_cache = lib.string.md5Hash(project_root);
         const dep_mtime = if (dep_file) |file| blk: {
-            const f = std.Io.Dir.cwd().openFile(file, .{}) catch break :blk 0;
+            const f = std.fs.cwd().openFile(file, .{}) catch break :blk 0;
             defer f.close();
             const stat = f.stat() catch break :blk 0;
             break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
@@ -349,7 +349,7 @@ pub const ShellCommands = struct {
         defer self.allocator.free(pantry_bin);
 
         const has_pantry = blk: {
-            var dir = std.Io.Dir.cwd().openDir(pantry_bin, .{}) catch break :blk false;
+            var dir = std.fs.cwd().openDir(pantry_bin, .{}) catch break :blk false;
             dir.close();
             break :blk true;
         };
@@ -521,7 +521,7 @@ pub const ShellCommands = struct {
                 });
                 defer self.allocator.free(file_path);
 
-                std.Io.Dir.cwd().access(file_path, .{}) catch continue;
+                std.fs.cwd().access(file_path, .{}) catch continue;
 
                 // Found a dependency file!
                 return try self.allocator.dupe(u8, current_dir);
@@ -558,7 +558,7 @@ pub const ShellCommands = struct {
             });
             errdefer self.allocator.free(file_path);
 
-            std.Io.Dir.cwd().access(file_path, .{}) catch {
+            std.fs.cwd().access(file_path, .{}) catch {
                 self.allocator.free(file_path);
                 continue;
             };
@@ -595,14 +595,14 @@ test "ShellCommands detectProjectRoot" {
 
     // Create test project structure
     const test_dir = "test_project_detect";
-    std.Io.Dir.cwd().makeDir(test_dir) catch {};
-    defer std.Io.Dir.cwd().deleteTree(test_dir) catch {};
+    std.fs.cwd().makeDir(test_dir) catch {};
+    defer std.fs.cwd().deleteTree(test_dir) catch {};
 
     const pkg_json = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, "package.json" });
     defer allocator.free(pkg_json);
 
     {
-        const file = try std.Io.Dir.cwd().createFile(pkg_json, .{});
+        const file = try std.fs.cwd().createFile(pkg_json, .{});
         defer file.close();
         try file.writeAll("{}");
     }
@@ -623,14 +623,14 @@ test "ShellCommands activate generates shell code" {
 
     // Create test project
     const test_dir = "test_project_activate";
-    std.Io.Dir.cwd().makeDir(test_dir) catch {};
-    defer std.Io.Dir.cwd().deleteTree(test_dir) catch {};
+    std.fs.cwd().makeDir(test_dir) catch {};
+    defer std.fs.cwd().deleteTree(test_dir) catch {};
 
     const pkg_json = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, "package.json" });
     defer allocator.free(pkg_json);
 
     {
-        const file = try std.Io.Dir.cwd().createFile(pkg_json, .{});
+        const file = try std.fs.cwd().createFile(pkg_json, .{});
         defer file.close();
         try file.writeAll("{}");
     }

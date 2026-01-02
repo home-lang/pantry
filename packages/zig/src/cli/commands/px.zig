@@ -30,14 +30,14 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.Io.Dir.cwd().realpath(".", &cwd_buf);
+    const cwd = try std.fs.cwd().realpath(".", &cwd_buf);
 
     // Check local bin first
     const local_bin = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry", ".bin", executable_name });
     defer allocator.free(local_bin);
 
     const found_local = blk: {
-        std.Io.Dir.cwd().access(local_bin, .{}) catch {
+        std.fs.cwd().access(local_bin, .{}) catch {
             break :blk false;
         };
         break :blk true;
@@ -58,7 +58,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
 
     const found_global = blk: {
         if (found_local) break :blk false;
-        std.Io.Dir.cwd().access(global_bin, .{}) catch {
+        std.fs.cwd().access(global_bin, .{}) catch {
             break :blk false;
         };
         break :blk true;
@@ -85,7 +85,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
         }
 
         // After install, check local bin again
-        std.Io.Dir.cwd().access(local_bin, .{}) catch {
+        std.fs.cwd().access(local_bin, .{}) catch {
             return .{
                 .exit_code = 1,
                 .message = try std.fmt.allocPrint(allocator, "Error: Package '{s}' installed but executable '{s}' not found", .{ package_name, executable_name }),

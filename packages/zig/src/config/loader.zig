@@ -36,7 +36,7 @@ pub const pantryConfigLoader = struct {
         // Determine CWD
         const cwd = options.cwd orelse blk: {
             var buf: [std.fs.max_path_bytes]u8 = undefined;
-            break :blk try std.Io.Dir.cwd().realpath(".", &buf);
+            break :blk try std.fs.cwd().realpath(".", &buf);
         };
 
         // Try to find TypeScript config first
@@ -234,19 +234,18 @@ pub fn loadpantryConfig(
 
 test "pantryConfigLoader.findTsConfig finds config files" {
     const allocator = std.testing.allocator;
-    const io = std.testing.io;
 
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
 
     // Create test config file
-    const file = try tmp.dir.createFile(io, "test.config.ts", .{});
+    const file = try tmp.dir.createFile("test.config.ts", .{});
     defer file.close();
     try file.writeAll("export default { test: true }");
 
     // Get temp dir path
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try tmp.dir.realpath(io, ".", &path_buf);
+    const cwd = try tmp.dir.realpath(".", &path_buf);
 
     var loader = try pantryConfigLoader.init(allocator);
     const found = try loader.findTsConfig("test", null, cwd);
@@ -258,19 +257,18 @@ test "pantryConfigLoader.findTsConfig finds config files" {
 
 test "pantryConfigLoader.findTsConfig finds alias config" {
     const allocator = std.testing.allocator;
-    const io = std.testing.io;
 
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
 
     // Create alias config file
-    const file = try tmp.dir.createFile(io, "buddy-bot.config.ts", .{});
+    const file = try tmp.dir.createFile("buddy-bot.config.ts", .{});
     defer file.close();
     try file.writeAll("export default { buddy: true }");
 
     // Get temp dir path
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try tmp.dir.realpath(io, ".", &path_buf);
+    const cwd = try tmp.dir.realpath(".", &path_buf);
 
     var loader = try pantryConfigLoader.init(allocator);
     const found = try loader.findTsConfig("pantry", "buddy-bot", cwd);

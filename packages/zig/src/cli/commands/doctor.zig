@@ -129,7 +129,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(data_dir);
 
     // Try to create directories
-    std.Io.Dir.cwd().makePath(cache_dir) catch {
+    std.fs.cwd().makePath(cache_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -138,7 +138,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
         };
     };
 
-    std.Io.Dir.cwd().makePath(data_dir) catch {
+    std.fs.cwd().makePath(data_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -223,7 +223,7 @@ fn checkCache(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(cache_dir);
 
     // Check if cache directory is accessible
-    var dir = std.Io.Dir.cwd().openDir(cache_dir, .{}) catch {
+    var dir = std.fs.cwd().openDir(cache_dir, .{}) catch {
         return .{
             .name = name,
             .passed = false,
@@ -264,7 +264,7 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
     const test_file_path = try std.fmt.allocPrint(allocator, "{s}/.pantry-test", .{cache_dir});
     defer allocator.free(test_file_path);
 
-    const test_file = std.Io.Dir.cwd().createFile(test_file_path, .{}) catch {
+    const test_file = std.fs.cwd().createFile(test_file_path, .{}) catch {
         return .{
             .name = name,
             .passed = false,
@@ -275,7 +275,7 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
     test_file.close();
 
     // Clean up
-    std.Io.Dir.cwd().deleteFile(test_file_path) catch {};
+    std.fs.cwd().deleteFile(test_file_path) catch {};
 
     return .{
         .name = name,

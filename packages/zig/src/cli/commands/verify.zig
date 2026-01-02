@@ -69,7 +69,7 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     const sig_path = try std.fmt.allocPrint(allocator, "{s}.sig", .{package_path});
     defer allocator.free(sig_path);
 
-    const sig_content = std.Io.Dir.cwd().readFileAlloc(
+    const sig_content = std.fs.cwd().readFileAlloc(
         sig_path,
         allocator,
         @enumFromInt(1024 * 1024),
@@ -103,7 +103,7 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     defer signature.deinit(allocator);
 
     // Read package data
-    const package_data = try std.Io.Dir.cwd().readFileAlloc(
+    const package_data = try std.fs.cwd().readFileAlloc(
         package_path,
         allocator,
         @enumFromInt(100 * 1024 * 1024), // 100MB max
@@ -134,7 +134,7 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
 
 /// Load keyring from JSON file
 fn loadKeyringFromFile(keyring: *signing.Keyring, allocator: std.mem.Allocator, path: []const u8) !void {
-    const content = try std.Io.Dir.cwd().readFileAlloc(
+    const content = try std.fs.cwd().readFileAlloc(
         path,
         allocator,
         @enumFromInt(1024 * 1024),
@@ -215,7 +215,7 @@ pub fn signCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     std.debug.print("✍️  Signing package: {s}\n", .{package_path});
 
     // Read package data
-    const package_data = try std.Io.Dir.cwd().readFileAlloc(
+    const package_data = try std.fs.cwd().readFileAlloc(
         package_path,
         allocator,
         @enumFromInt(100 * 1024 * 1024), // 100MB max
@@ -249,7 +249,7 @@ pub fn signCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     );
     defer allocator.free(sig_json);
 
-    const sig_file = try std.Io.Dir.cwd().createFile(sig_path, .{});
+    const sig_file = try std.fs.cwd().createFile(sig_path, .{});
     defer sig_file.close();
     try sig_file.writeAll(sig_json);
 

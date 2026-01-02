@@ -53,7 +53,7 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
     // Check if we need sudo for system-wide installation
     if (!user_local) {
         // Test if we can write to /usr/local
-        std.Io.Dir.cwd().makePath(global_dir) catch |err| {
+        std.fs.cwd().makePath(global_dir) catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 // No sudo privileges - automatically fallback to user-local
                 std.debug.print("⚠️  No permission for system-wide install, using ~/.pantry/global instead\n\n", .{});
@@ -62,7 +62,7 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
             return err;
         };
     } else {
-        try std.Io.Dir.cwd().makePath(global_dir);
+        try std.fs.cwd().makePath(global_dir);
     }
 
     std.debug.print("Installing to {s}...\n", .{global_dir});
@@ -106,7 +106,7 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
     var global_dir_owned: ?[]const u8 = null;
     const global_dir = blk: {
         // Try /usr/local first - test actual write permissions
-        std.Io.Dir.cwd().makePath("/usr/local/packages") catch |err| {
+        std.fs.cwd().makePath("/usr/local/packages") catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 // Fallback to ~/.pantry/global
                 const home = try lib.Paths.home(allocator);
@@ -114,7 +114,7 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
                 const user_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home});
                 global_dir_owned = user_dir;
                 std.debug.print("⚠️  No permission for system-wide install, using ~/.pantry/global\n\n", .{});
-                try std.Io.Dir.cwd().makePath(user_dir);
+                try std.fs.cwd().makePath(user_dir);
                 break :blk user_dir;
             }
             return err;

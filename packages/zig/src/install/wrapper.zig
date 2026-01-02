@@ -45,7 +45,7 @@ pub fn createBinaryWrapper(
     env_vars: ?std.StringHashMap([]const u8),
 ) !void {
     // Verify binary exists
-    std.Io.Dir.cwd().access(binary_path, .{}) catch {
+    std.fs.cwd().access(binary_path, .{}) catch {
         std.debug.print("  ✗ Binary not found: {s}\n", .{binary_path});
         return error.BinaryNotFound;
     };
@@ -55,7 +55,7 @@ pub fn createBinaryWrapper(
     defer allocator.free(wrapper_content);
 
     // Create wrapper directory
-    std.Io.Dir.cwd().makePath(wrapper_dir) catch {
+    std.fs.cwd().makePath(wrapper_dir) catch {
         return error.WrapperCreationFailed;
     };
 
@@ -67,7 +67,7 @@ pub fn createBinaryWrapper(
     );
     defer allocator.free(wrapper_path);
 
-    const file = std.Io.Dir.cwd().createFile(wrapper_path, .{ .mode = 0o755 }) catch {
+    const file = std.fs.cwd().createFile(wrapper_path, .{ .mode = 0o755 }) catch {
         return error.WrapperCreationFailed;
     };
     defer file.close();
@@ -95,7 +95,7 @@ pub fn createPackageWrappers(
     defer allocator.free(package_bin_dir);
 
     // Open bin directory
-    var dir = std.Io.Dir.cwd().openDir(package_bin_dir, .{ .iterate = true }) catch {
+    var dir = std.fs.cwd().openDir(package_bin_dir, .{ .iterate = true }) catch {
         std.debug.print("  ! No bin directory found: {s}\n", .{package_bin_dir});
         return;
     };
@@ -121,7 +121,7 @@ pub fn createPackageWrappers(
             defer allocator.free(binary_path);
 
             // Check if executable
-            const stat = std.Io.Dir.cwd().statFile(binary_path) catch continue;
+            const stat = std.fs.cwd().statFile(binary_path) catch continue;
             const is_executable = (stat.mode & 0o111) != 0;
 
             if (is_executable) {
@@ -308,21 +308,21 @@ test "createBinaryWrapper" {
 
     // Create test binary
     const test_bin_dir = "test_wrapper_bin";
-    std.Io.Dir.cwd().makeDir(test_bin_dir) catch {};
-    defer std.Io.Dir.cwd().deleteTree(test_bin_dir) catch {};
+    std.fs.cwd().makeDir(test_bin_dir) catch {};
+    defer std.fs.cwd().deleteTree(test_bin_dir) catch {};
 
     const test_bin = try std.fmt.allocPrint(allocator, "{s}/testbin", .{test_bin_dir});
     defer allocator.free(test_bin);
 
     {
-        const file = try std.Io.Dir.cwd().createFile(test_bin, .{ .mode = 0o755 });
+        const file = try std.fs.cwd().createFile(test_bin, .{ .mode = 0o755 });
         defer file.close();
         try file.writeAll("#!/bin/sh\necho test\n");
     }
 
     // Create wrapper
     const wrapper_dir = "test_wrappers";
-    defer std.Io.Dir.cwd().deleteTree(wrapper_dir) catch {};
+    defer std.fs.cwd().deleteTree(wrapper_dir) catch {};
 
     try createBinaryWrapper(allocator, "testbin", test_bin, wrapper_dir, null);
 
@@ -330,6 +330,6 @@ test "createBinaryWrapper" {
     const wrapper_path = try std.fmt.allocPrint(allocator, "{s}/testbin", .{wrapper_dir});
     defer allocator.free(wrapper_path);
 
-    const stat = try std.Io.Dir.cwd().statFile(wrapper_path);
+    const stat = try std.fs.cwd().statFile(wrapper_path);
     try std.testing.expect((stat.mode & 0o111) != 0);
 }

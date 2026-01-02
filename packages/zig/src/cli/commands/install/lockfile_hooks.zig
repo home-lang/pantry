@@ -64,7 +64,7 @@ pub fn executePreInstallHook(
     defer allocator.free(pantry_json_path);
 
     // Try pantry.json first, then fall back to package.json
-    const config_content = std.Io.Dir.cwd().readFileAlloc(
+    const config_content = std.fs.cwd().readFileAlloc(
         pantry_json_path,
         allocator,
         std.Io.Limit.limited(1024 * 1024),
@@ -76,7 +76,7 @@ pub fn executePreInstallHook(
             );
             defer allocator.free(package_json_path);
 
-            break :blk std.Io.Dir.cwd().readFileAlloc(
+            break :blk std.fs.cwd().readFileAlloc(
                 package_json_path,
                 allocator,
                 std.Io.Limit.limited(1024 * 1024),
@@ -126,7 +126,7 @@ pub fn executePostInstallHook(
     defer allocator.free(pantry_json_path);
 
     // Try pantry.json first, then fall back to package.json
-    const config_content = std.Io.Dir.cwd().readFileAlloc(
+    const config_content = std.fs.cwd().readFileAlloc(
         pantry_json_path,
         allocator,
         std.Io.Limit.limited(1024 * 1024),
@@ -138,7 +138,7 @@ pub fn executePostInstallHook(
             );
             defer allocator.free(package_json_path);
 
-            break :blk std.Io.Dir.cwd().readFileAlloc(
+            break :blk std.fs.cwd().readFileAlloc(
                 package_json_path,
                 allocator,
                 std.Io.Limit.limited(1024 * 1024),

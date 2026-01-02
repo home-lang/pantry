@@ -112,7 +112,7 @@ pub const NpmRegistry = struct {
         }
 
         // Write to file
-        const file = try std.Io.Dir.cwd().createFile(dest_path, .{});
+        const file = try std.fs.cwd().createFile(dest_path, .{});
         defer file.close();
 
         const body_reader = response.reader(&.{});
@@ -203,7 +203,7 @@ pub const NpmRegistry = struct {
         tarball_path: []const u8,
     ) !void {
         // Read tarball file
-        const tarball_data = try std.Io.Dir.cwd().readFileAlloc(tarball_path, allocator, std.Io.Limit.limited(100 * 1024 * 1024));
+        const tarball_data = try std.fs.cwd().readFileAlloc(tarball_path, allocator, std.Io.Limit.limited(100 * 1024 * 1024));
         defer allocator.free(tarball_data);
 
         // Base64 encode the tarball
