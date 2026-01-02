@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Workspace configuration
 pub const WorkspaceConfig = struct {
@@ -138,10 +139,10 @@ pub const WorkspacePackage = struct {
         defer allocator.free(config_path);
 
         // Read config file
-        const file = try std.fs.cwd().openFile(config_path, .{});
+        const file = try std.Io.Dir.cwd().openFile(io_helper.io, config_path, .{});
         defer file.close();
 
-        const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+        const content = try file.readToEndAlloc(allocator, std.Io.Limit.limited(10 * 1024 * 1024));
         defer allocator.free(content);
 
         const parsed = try std.json.parseFromSlice(std.json.Value, allocator, content, .{});
@@ -506,11 +507,11 @@ pub const Workspace = struct {
             const full_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ self.config.root, dir_path });
             defer self.allocator.free(full_dir);
 
-            var dir = std.fs.cwd().openDir(full_dir, .{ .iterate = true }) catch return;
-            defer dir.close();
+            var dir = std.Io.Dir.cwd().openDir(io_helper.io, full_dir, .{ .iterate = true }) catch return;
+            defer dir.close(io_helper.io);
 
             var it = dir.iterate();
-            while (try it.next()) |entry| {
+            while (try it.next(io_helper.io)) |entry| {
                 if (entry.kind == .directory) {
                     const rel_path = if (std.mem.eql(u8, dir_path, "."))
                         try self.allocator.dupe(u8, entry.name)
@@ -532,7 +533,7 @@ pub const Workspace = struct {
                         );
                         defer self.allocator.free(config_path);
 
-                        std.fs.cwd().access(config_path, .{}) catch continue;
+                        std.Io.Dir.cwd().access(io_helper.io, config_path, .{}) catch continue;
 
                         const pkg = try WorkspacePackage.fromDirectory(
                             self.allocator,
@@ -551,11 +552,11 @@ pub const Workspace = struct {
         const full_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ self.config.root, base_path });
         defer self.allocator.free(full_dir);
 
-        var dir = std.fs.cwd().openDir(full_dir, .{ .iterate = true }) catch return;
-        defer dir.close();
+        var dir = std.Io.Dir.cwd().openDir(io_helper.io, full_dir, .{ .iterate = true }) catch return;
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             if (entry.kind == .directory) {
                 // Skip hidden directories and node_modules
                 if (entry.name[0] == '.' or std.mem.eql(u8, entry.name, "node_modules")) {
@@ -582,7 +583,7 @@ pub const Workspace = struct {
                     );
                     defer self.allocator.free(config_path);
 
-                    if (std.fs.cwd().access(config_path, .{})) {
+                    if (std.Io.Dir.cwd().access(io_helper.io, config_path, .{})) {
                         const pkg = try WorkspacePackage.fromDirectory(
                             self.allocator,
                             self.config.root,
@@ -641,7 +642,7 @@ pub const Workspace = struct {
         defer self.allocator.free(node_modules);
 
         // Create node_modules if it doesn't exist
-        try std.fs.cwd().makePath(node_modules);
+        try std.Io.Dir.cwd().makePath(io_helper.io, node_modules);
 
         // Link workspace dependencies
         var dep_it = pkg.dependencies.iterator();

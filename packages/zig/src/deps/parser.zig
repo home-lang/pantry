@@ -1,5 +1,6 @@
 const std = @import("std");
 const detector = @import("detector.zig");
+const io_helper = @import("../io_helper.zig");
 
 pub const DependencyType = enum {
     normal,
@@ -379,7 +380,7 @@ pub fn inferDependencies(
 pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
     // Read file contents
 
-    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
+    const content = try io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024); // 10MB max
     defer allocator.free(content);
 
     var deps = try std.ArrayList(PackageDependency).initCapacity(allocator, 16);
@@ -524,7 +525,9 @@ test "parseDepsFile" {
     defer file.close();
     try file.writeAll(test_content);
 
-    const path = try tmp_dir.dir.realpathAlloc(allocator, "test-deps.yaml");
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const path_slice = try tmp_dir.dir.realpath("test-deps.yaml", &path_buf);
+    const path = try allocator.dupe(u8, path_slice);
     defer allocator.free(path);
 
     const deps = try parseDepsFile(allocator, path);
@@ -786,7 +789,7 @@ pub const ExtendedPackageDependency = struct {
 /// }
 pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
     // Read and strip comments for JSONC support
-    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
+    const content = try io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024);
     defer allocator.free(content);
 
     const json_content = try stripJsonComments(allocator, content);
@@ -1083,7 +1086,9 @@ test "parseZigPackageJson with explicit GitHub source" {
     defer file.close();
     try file.writeAll(test_content);
 
-    const path = try tmp_dir.dir.realpathAlloc(allocator, "package.jsonc");
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const path_slice = try tmp_dir.dir.realpath("package.jsonc", &path_buf);
+    const path = try allocator.dupe(u8, path_slice);
     defer allocator.free(path);
 
     const deps = try parseZigPackageJson(allocator, path);
@@ -1121,7 +1126,9 @@ test "parseZigPackageJson with simplified npm-style syntax" {
     defer file.close();
     try file.writeAll(test_content);
 
-    const path = try tmp_dir.dir.realpathAlloc(allocator, "package.jsonc");
+    var path_buf2: [std.fs.max_path_bytes]u8 = undefined;
+    const path_slice2 = try tmp_dir.dir.realpath("package.jsonc", &path_buf2);
+    const path = try allocator.dupe(u8, path_slice2);
     defer allocator.free(path);
 
     const deps = try parseZigPackageJson(allocator, path);
@@ -1176,7 +1183,9 @@ test "parseZigPackageJson with mixed explicit and simplified syntax" {
     defer file.close();
     try file.writeAll(test_content);
 
-    const path = try tmp_dir.dir.realpathAlloc(allocator, "package.jsonc");
+    var path_buf3: [std.fs.max_path_bytes]u8 = undefined;
+    const path_slice3 = try tmp_dir.dir.realpath("package.jsonc", &path_buf3);
+    const path = try allocator.dupe(u8, path_slice3);
     defer allocator.free(path);
 
     const deps = try parseZigPackageJson(allocator, path);

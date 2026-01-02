@@ -3,6 +3,7 @@
 //! Creates a new pantry.json with sensible defaults
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 
 const CommandResult = struct {
     exit_code: u8,
@@ -23,7 +24,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Check if pantry.json already exists
     const file_exists = blk: {
-        std.fs.cwd().access("pantry.json", .{}) catch |err| {
+        std.Io.Dir.cwd().access(io_helper.io, "pantry.json", .{}) catch |err| {
             if (err == error.FileNotFound) break :blk false;
             return err;
         };
@@ -83,12 +84,12 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Detect if TypeScript project
     const has_tsconfig = blk: {
-        std.fs.cwd().access("tsconfig.json", .{}) catch break :blk false;
+        std.Io.Dir.cwd().access(io_helper.io, "tsconfig.json", .{}) catch break :blk false;
         break :blk true;
     };
 
     const has_package_json = blk: {
-        std.fs.cwd().access("package.json", .{}) catch break :blk false;
+        std.Io.Dir.cwd().access(io_helper.io, "package.json", .{}) catch break :blk false;
         break :blk true;
     };
 
@@ -100,9 +101,9 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     defer allocator.free(template);
 
     // Write file
-    const file = try std.fs.cwd().createFile("pantry.json", .{});
-    defer file.close();
-    try file.writeAll(template);
+    const file = try std.Io.Dir.cwd().createFile(io_helper.io, "pantry.json", .{});
+    defer file.close(io_helper.io);
+    try io_helper.writeAllToFile(file, template);
 
     std.debug.print("\n✅ Created pantry.json\n", .{});
     std.debug.print("\n📝 Next steps:\n", .{});

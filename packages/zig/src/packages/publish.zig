@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const types = @import("types.zig");
 const jsonc = @import("../utils/jsonc.zig");
 
@@ -115,7 +116,7 @@ pub fn extractMetadata(
     config_path: []const u8,
 ) !PackageMetadata {
     // Read the config file
-    const contents = std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch {
+    const contents = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
         return error.PackageConfigNotFound;
     };
     defer allocator.free(contents);

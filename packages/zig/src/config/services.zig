@@ -179,7 +179,9 @@ test "extract services from config" {
     try file.writeAll(pantry_json);
 
     // Get the absolute path
-    const tmp_path = try tmp_dir.dir.realpathAlloc(allocator, ".");
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const tmp_path_slice = try tmp_dir.dir.realpath(".", &path_buf);
+    const tmp_path = try allocator.dupe(u8, tmp_path_slice);
     defer allocator.free(tmp_path);
 
     // Load services

@@ -1,6 +1,7 @@
 //! Scripts commands: run, list
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 
@@ -20,7 +21,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     const script_args = if (args.len > 1) args[1..] else &[_][]const u8{};
 
     // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
+    const cwd = io_helper.realpathAlloc(allocator, ".") catch {
         return CommandResult.err(allocator, "Error: Could not determine current directory");
     };
     defer allocator.free(cwd);
@@ -166,7 +167,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
 /// List all available scripts in the current project
 pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
+    const cwd = io_helper.realpathAlloc(allocator, ".") catch {
         return CommandResult.err(allocator, "Error: Could not determine current directory");
     };
     defer allocator.free(cwd);

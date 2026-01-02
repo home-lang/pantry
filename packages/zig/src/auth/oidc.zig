@@ -464,6 +464,7 @@ fn base64UrlDecode(allocator: std.mem.Allocator, encoded: []const u8) ![]u8 {
     const decoder = std.base64.standard.Decoder;
     const decoded_len = try decoder.calcSizeForSlice(padded);
     const decoded = try allocator.alloc(u8, decoded_len);
+    errdefer allocator.free(decoded);
     try decoder.decode(decoded, padded);
 
     return decoded;

@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const core = @import("core.zig");
 const http = std.http;
 
@@ -112,15 +113,15 @@ pub const NpmRegistry = struct {
         }
 
         // Write to file
-        const file = try std.fs.cwd().createFile(dest_path, .{});
-        defer file.close();
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, dest_path, .{});
+        defer file.close(io_helper.io);
 
         const body_reader = response.reader(&.{});
         var buffer: [8192]u8 = undefined;
         while (true) {
             const bytes_read = try body_reader.read(&buffer);
             if (bytes_read == 0) break;
-            try file.writeAll(buffer[0..bytes_read]);
+            try io_helper.writeAllToFile(file, buffer[0..bytes_read]);
         }
     }
 
@@ -203,7 +204,7 @@ pub const NpmRegistry = struct {
         tarball_path: []const u8,
     ) !void {
         // Read tarball file
-        const tarball_data = try std.fs.cwd().readFileAlloc(tarball_path, allocator, std.Io.Limit.limited(100 * 1024 * 1024));
+        const tarball_data = try io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024);
         defer allocator.free(tarball_data);
 
         // Base64 encode the tarball

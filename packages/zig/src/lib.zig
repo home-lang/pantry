@@ -31,6 +31,7 @@ pub const registry = struct {
     pub const custom = @import("registry/custom.zig");
 };
 pub const workspace = @import("workspace.zig");
+pub const io_helper = @import("io_helper.zig");
 
 // Re-export commonly used types
 pub const Platform = core.Platform;

@@ -340,7 +340,7 @@ test "complete publish workflow with catalog resolution" {
     try createPackageJsonWithCatalogs(allocator, tmp_path, "test-package", "1.0.0", &deps);
 
     // Read and parse
-    const contents = try std.fs.cwd().readFileAlloc(allocator, tmp_path, 1024 * 1024);
+    const contents = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, tmp_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(contents);
 
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, contents, .{});

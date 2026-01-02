@@ -4,6 +4,7 @@
 //! into the install command flow.
 
 const std = @import("std");
+const io_helper = @import("../../../io_helper.zig");
 const lib = @import("../../../lib.zig");
 const lockfile_mod = @import("../../../deps/resolution/lockfile.zig");
 const lifecycle = @import("../../../lifecycle.zig");
@@ -64,11 +65,7 @@ pub fn executePreInstallHook(
     defer allocator.free(pantry_json_path);
 
     // Try pantry.json first, then fall back to package.json
-    const config_content = std.fs.cwd().readFileAlloc(
-        pantry_json_path,
-        allocator,
-        std.Io.Limit.limited(1024 * 1024),
-    ) catch |err| blk: {
+    const config_content = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch |err| blk: {
         if (err == error.FileNotFound) {
             const package_json_path = try std.fs.path.join(
                 allocator,
@@ -76,11 +73,7 @@ pub fn executePreInstallHook(
             );
             defer allocator.free(package_json_path);
 
-            break :blk std.fs.cwd().readFileAlloc(
-                package_json_path,
-                allocator,
-                std.Io.Limit.limited(1024 * 1024),
-            ) catch return null;
+            break :blk io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch return null;
         }
         return null;
     };
@@ -126,11 +119,7 @@ pub fn executePostInstallHook(
     defer allocator.free(pantry_json_path);
 
     // Try pantry.json first, then fall back to package.json
-    const config_content = std.fs.cwd().readFileAlloc(
-        pantry_json_path,
-        allocator,
-        std.Io.Limit.limited(1024 * 1024),
-    ) catch |err| blk: {
+    const config_content_post = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch |err| blk: {
         if (err == error.FileNotFound) {
             const package_json_path = try std.fs.path.join(
                 allocator,
@@ -138,17 +127,13 @@ pub fn executePostInstallHook(
             );
             defer allocator.free(package_json_path);
 
-            break :blk std.fs.cwd().readFileAlloc(
-                package_json_path,
-                allocator,
-                std.Io.Limit.limited(1024 * 1024),
-            ) catch return null;
+            break :blk io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch return null;
         }
         return null;
     };
-    defer allocator.free(config_content);
+    defer allocator.free(config_content_post);
 
-    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_content, .{});
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_content_post, .{});
     defer parsed.deinit();
 
     var scripts = try lifecycle.extractScripts(allocator, parsed);

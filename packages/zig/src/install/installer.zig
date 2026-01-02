@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const core = @import("../core/platform.zig");
 const cache = @import("../cache.zig");
 const packages = @import("../packages.zig");
@@ -250,14 +251,14 @@ pub const Installer = struct {
         defer if (needs_free) self.allocator.free(local_path);
 
         // Verify the local path exists
-        var local_dir = std.fs.cwd().openDir(local_path, .{}) catch |err| {
+        var local_dir = std.Io.Dir.cwd().openDir(io_helper.io, local_path, .{}) catch |err| {
             std.debug.print("Error: Local path '{s}' does not exist or is not accessible: {}\n", .{ local_path, err });
             return error.FileNotFound;
         };
-        local_dir.close();
+        local_dir.close(io_helper.io);
 
         // Get absolute path for the local dependency
-        const abs_local_path = try std.fs.cwd().realpathAlloc(self.allocator, local_path);
+        const abs_local_path = try io_helper.realpathAlloc(self.allocator, local_path);
         defer self.allocator.free(abs_local_path);
 
         // Create symlink in project's pantry if we have a project root
@@ -277,10 +278,10 @@ pub const Installer = struct {
             );
             defer self.allocator.free(modules_bin_dir);
 
-            try std.fs.cwd().makePath(modules_bin_dir);
+            try std.Io.Dir.cwd().makePath(io_helper.io, modules_bin_dir);
 
             // Check if symlink already exists
-            std.fs.cwd().deleteFile(modules_bin) catch {};
+            io_helper.deleteFile(modules_bin) catch {};
 
             // Create symlink to local path's bin or the path itself
             const target_bin = try std.fmt.allocPrint(
@@ -292,8 +293,8 @@ pub const Installer = struct {
 
             // Try bin/name first, fall back to the directory itself
             const target = blk2: {
-                var check_bin = std.fs.cwd().openFile(target_bin, .{}) catch break :blk2 abs_local_path;
-                check_bin.close();
+                var check_bin = std.Io.Dir.cwd().openFile(io_helper.io, target_bin, .{}) catch break :blk2 abs_local_path;
+                check_bin.close(io_helper.io);
                 break :blk2 target_bin;
             };
 
@@ -355,8 +356,8 @@ pub const Installer = struct {
 
         // Check if already installed
         const already_installed = !options.force and blk: {
-            var check_dir = std.fs.cwd().openDir(install_dir, .{}) catch break :blk false;
-            check_dir.close();
+            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
+            check_dir.close(io_helper.io);
             break :blk true;
         };
 
@@ -383,7 +384,7 @@ pub const Installer = struct {
         );
         defer {
             self.allocator.free(temp_dir);
-            std.fs.cwd().deleteTree(temp_dir) catch {};
+            io_helper.deleteTree(temp_dir) catch {};
         }
 
         // Clone the repository
@@ -423,10 +424,11 @@ pub const Installer = struct {
         }
 
         // Create install directory
-        try std.fs.cwd().makePath(install_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, install_dir);
 
         // Move contents from temp to final location
         // Git clone creates a directory, so we need to move the contents
+        // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
         var temp_dir_handle = try std.fs.cwd().openDir(temp_dir, .{ .iterate = true });
         defer temp_dir_handle.close();
 
@@ -485,8 +487,8 @@ pub const Installer = struct {
 
         // Check if already installed
         const already_installed = !options.force and blk: {
-            var check_dir = std.fs.cwd().openDir(install_dir, .{}) catch break :blk false;
-            check_dir.close();
+            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
+            check_dir.close(io_helper.io);
             break :blk true;
         };
 
@@ -525,10 +527,10 @@ pub const Installer = struct {
         );
         defer {
             self.allocator.free(temp_dir);
-            std.fs.cwd().deleteTree(temp_dir) catch {};
+            io_helper.deleteTree(temp_dir) catch {};
         }
 
-        try std.fs.cwd().makePath(temp_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
 
         // Download the archive
         const archive_path = try std.fmt.allocPrint(
@@ -572,7 +574,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try std.fs.cwd().makePath(extract_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, "tar.xz", options.quiet);
 
         // Find the actual Zig directory (it's usually named zig-{platform}-{arch}-{version})
@@ -595,7 +597,7 @@ pub const Installer = struct {
         defer self.allocator.free(zig_source_dir.?);
 
         // Create install directory and copy contents
-        try std.fs.cwd().makePath(install_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, install_dir);
         try self.copyDirectoryStructure(zig_source_dir.?, install_dir);
 
         // Create project symlinks if installing to project
@@ -607,7 +609,7 @@ pub const Installer = struct {
                 .{project_root},
             );
             defer self.allocator.free(bin_dir);
-            try std.fs.cwd().makePath(bin_dir);
+            try std.Io.Dir.cwd().makePath(io_helper.io, bin_dir);
 
             // Create symlink for zig binary
             const zig_binary = try std.fmt.allocPrint(
@@ -654,8 +656,8 @@ pub const Installer = struct {
         defer self.allocator.free(global_pkg_dir);
 
         const from_cache = !options.force and blk: {
-            var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch break :blk false;
-            check_dir.close();
+            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch break :blk false;
+            check_dir.close(io_helper.io);
             break :blk true;
         };
 
@@ -698,8 +700,8 @@ pub const Installer = struct {
 
         // Check if already installed in project
         const already_installed = !options.force and blk: {
-            var check_dir = std.fs.cwd().openDir(project_pkg_dir, .{}) catch break :blk false;
-            check_dir.close();
+            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, project_pkg_dir, .{}) catch break :blk false;
+            check_dir.close(io_helper.io);
             break :blk true;
         };
 
@@ -714,16 +716,16 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
 
-        var global_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch |err| blk: {
+        var global_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
             if (err != error.FileNotFound) return err;
             break :blk null;
         };
 
         if (global_dir) |*dir| {
-            dir.close();
+            dir.close(io_helper.io);
             // Copy from global cache to project's pantry
             used_cache.* = true;
-            try std.fs.cwd().makePath(project_pkg_dir);
+            try std.Io.Dir.cwd().makePath(io_helper.io, project_pkg_dir);
             try self.copyDirectoryStructure(global_pkg_dir, project_pkg_dir);
             try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
             return project_pkg_dir;
@@ -749,8 +751,8 @@ pub const Installer = struct {
         );
         defer self.allocator.free(temp_dir);
 
-        try std.fs.cwd().makePath(temp_dir);
-        defer std.fs.cwd().deleteTree(temp_dir) catch {};
+        try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
+        defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
         const formats = [_][]const u8{ "tar.xz", "tar.gz" };
@@ -829,7 +831,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try std.fs.cwd().makePath(extract_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root
@@ -837,7 +839,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy package contents to project directory
-        try std.fs.cwd().makePath(project_pkg_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, project_pkg_dir);
         try self.copyDirectoryStructure(package_source, project_pkg_dir);
 
         // Fix library paths for macOS
@@ -860,11 +862,11 @@ pub const Installer = struct {
         defer self.allocator.free(global_pkg_dir);
 
         // Verify it exists
-        var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch {
+        var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch {
             // Not in global cache - shouldn't happen if cache.has() returned true
             return error.CacheInconsistent;
         };
-        check_dir.close();
+        check_dir.close(io_helper.io);
 
         // Create symlinks in environment bin directory
         try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
@@ -922,7 +924,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(env_bin_dir);
 
-        try std.fs.cwd().makePath(env_bin_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, env_bin_dir);
 
         // Global package bin directory
         const global_bin_dir = try std.fmt.allocPrint(
@@ -979,7 +981,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(project_bin_dir);
 
-        try std.fs.cwd().makePath(project_bin_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, project_bin_dir);
 
         // First, try to load bin paths from package configuration (pantry.json or package.json)
         var custom_bins_created = false;
@@ -1113,12 +1115,12 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         errdefer self.allocator.free(global_pkg_dir);
 
-        var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch |err| blk: {
+        var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
             if (err != error.FileNotFound) return err;
             break :blk null;
         };
         if (check_dir) |*dir| {
-            dir.close();
+            dir.close(io_helper.io);
             // Already downloaded to global cache - just create env symlinks
             try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
             return global_pkg_dir;
@@ -1135,8 +1137,8 @@ pub const Installer = struct {
         );
         defer self.allocator.free(temp_dir);
 
-        try std.fs.cwd().makePath(temp_dir);
-        defer std.fs.cwd().deleteTree(temp_dir) catch {};
+        try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
+        defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
         const formats = [_][]const u8{ "tar.xz", "tar.gz" };
@@ -1215,7 +1217,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try std.fs.cwd().makePath(extract_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root (might be nested like domain/v{version}/)
@@ -1223,7 +1225,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy/move package contents to global cache location
-        try std.fs.cwd().makePath(global_pkg_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, global_pkg_dir);
         try self.copyDirectoryStructure(package_source, global_pkg_dir);
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
@@ -1252,7 +1254,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(bin_dir);
 
-        try std.fs.cwd().makePath(bin_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, bin_dir);
 
         // The actual binaries are in {install_dir}/{domain}/v{version}/bin/
         const actual_bin_dir = try std.fmt.allocPrint(
@@ -1312,7 +1314,7 @@ pub const Installer = struct {
         defer self.allocator.free(install_dir);
 
         // Remove installation directory
-        std.fs.cwd().deleteTree(install_dir) catch |err| switch (err) {
+        io_helper.deleteTree(install_dir) catch |err| switch (err) {
             error.FileNotFound => return,
             else => return err,
         };
@@ -1330,6 +1332,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(packages_dir);
 
+        // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
         var dir = std.fs.cwd().openDir(packages_dir, .{ .iterate = true }) catch |err| switch (err) {
             error.FileNotFound => return installed,
             else => return err,
@@ -1443,7 +1446,7 @@ pub const Installer = struct {
         defer src_dir.close();
 
         // Ensure destination exists
-        try std.fs.cwd().makePath(dest);
+        try std.Io.Dir.cwd().makePath(io_helper.io, dest);
 
         var it = src_dir.iterate();
         while (try it.next()) |entry| {
@@ -1592,7 +1595,7 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, resolved_version);
         defer self.allocator.free(global_pkg_dir);
 
-        var check_dir = std.fs.cwd().openDir(global_pkg_dir, .{}) catch |err| {
+        var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| {
             if (err != error.FileNotFound) return err;
             // Not installed, continue
             const spec = PackageSpec{
@@ -1611,7 +1614,7 @@ pub const Installer = struct {
             defer mut_result.deinit(self.allocator);
             return;
         };
-        check_dir.close();
+        check_dir.close(io_helper.io);
 
         // Already installed, skip
         std.debug.print("    ✓ Dependency already installed: {s}@{s}\n", .{ name, resolved_version });

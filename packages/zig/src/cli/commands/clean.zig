@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
 
@@ -127,7 +128,7 @@ fn cleanCache(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, cache_dir);
 
     // Recreate empty cache directory
-    try std.fs.cwd().makePath(cache_dir);
+    try std.Io.Dir.cwd().makePath(io_helper.io, cache_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -148,7 +149,7 @@ fn cleanTemp(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, temp_dir);
 
     // Recreate empty temp directory
-    try std.fs.cwd().makePath(temp_dir);
+    try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -169,7 +170,7 @@ fn cleanLogs(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, logs_dir);
 
     // Recreate empty logs directory
-    try std.fs.cwd().makePath(logs_dir);
+    try std.Io.Dir.cwd().makePath(io_helper.io, logs_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -183,22 +184,22 @@ fn removeDirectory(allocator: std.mem.Allocator, path: []const u8) !CleanResult 
     var count: usize = 0;
     var size: usize = 0;
 
-    var dir = std.fs.cwd().openDir(path, .{ .iterate = true }) catch {
+    var dir = std.Io.Dir.cwd().openDir(io_helper.io, path, .{ .iterate = true }) catch {
         // Directory doesn't exist or can't be opened
         return CleanResult{ .count = 0, .size = 0 };
     };
-    defer dir.close();
+    defer dir.close(io_helper.io);
 
     var iter = dir.iterate();
-    while (try iter.next()) |entry| {
+    while (try iter.next(io_helper.io)) |entry| {
         if (entry.kind == .file) {
-            const stat = dir.statFile(entry.name) catch continue;
+            const stat = dir.statFile(io_helper.io, entry.name) catch continue;
             size += stat.size;
             count += 1;
 
-            dir.deleteFile(entry.name) catch {};
+            dir.deleteFile(io_helper.io, entry.name) catch {};
         } else if (entry.kind == .directory) {
-            dir.deleteTree(entry.name) catch {};
+            dir.deleteTree(io_helper.io, entry.name) catch {};
             count += 1;
         }
     }

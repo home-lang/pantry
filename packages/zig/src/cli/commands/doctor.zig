@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
 
@@ -129,7 +130,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(data_dir);
 
     // Try to create directories
-    std.fs.cwd().makePath(cache_dir) catch {
+    std.Io.Dir.cwd().makePath(io_helper.io, cache_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -138,7 +139,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
         };
     };
 
-    std.fs.cwd().makePath(data_dir) catch {
+    std.Io.Dir.cwd().makePath(io_helper.io, data_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -223,7 +224,7 @@ fn checkCache(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(cache_dir);
 
     // Check if cache directory is accessible
-    var dir = std.fs.cwd().openDir(cache_dir, .{}) catch {
+    var dir = std.fs.cwd().openDir(cache_dir, .{ .iterate = true }) catch {
         return .{
             .name = name,
             .passed = false,
@@ -264,7 +265,7 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
     const test_file_path = try std.fmt.allocPrint(allocator, "{s}/.pantry-test", .{cache_dir});
     defer allocator.free(test_file_path);
 
-    const test_file = std.fs.cwd().createFile(test_file_path, .{}) catch {
+    const test_file = std.Io.Dir.cwd().createFile(io_helper.io, test_file_path, .{}) catch {
         return .{
             .name = name,
             .passed = false,
@@ -272,10 +273,10 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
             .suggestion = try allocator.dupe(u8, "Check directory permissions and ownership"),
         };
     };
-    test_file.close();
+    test_file.close(io_helper.io);
 
     // Clean up
-    std.fs.cwd().deleteFile(test_file_path) catch {};
+    io_helper.deleteFile(test_file_path) catch {};
 
     return .{
         .name = name,

@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 pub const RollbackError = error{
     RollbackFailed,
@@ -80,7 +81,7 @@ pub const RollbackManager = struct {
         );
         errdefer self.allocator.free(backup_path);
 
-        std.fs.cwd().copyFile(path, std.fs.cwd(), backup_path, .{}) catch |err| {
+        std.Io.Dir.cwd().copyFile(io_helper.io, path, std.Io.Dir.cwd(), backup_path, .{}) catch |err| {
             self.allocator.free(backup_path);
             return err;
         };
@@ -88,7 +89,7 @@ pub const RollbackManager = struct {
         const path_copy = try self.allocator.dupe(u8, path);
         errdefer {
             self.allocator.free(path_copy);
-            std.fs.cwd().deleteFile(backup_path) catch {};
+            io_helper.deleteFile(backup_path) catch {};
         }
 
         try self.actions.append(.{
@@ -131,34 +132,35 @@ pub const RollbackManager = struct {
             switch (action) {
                 .file_created => |path| {
                     std.debug.print("  Removing created file: {s}\n", .{path});
-                    std.fs.cwd().deleteFile(path) catch |err| {
+                    io_helper.deleteFile(path) catch |err| {
                         std.debug.print("  ! Failed to remove {s}: {}\n", .{ path, err });
                     };
                 },
                 .file_modified => |info| {
                     std.debug.print("  Restoring modified file: {s}\n", .{info.path});
-                    std.fs.cwd().copyFile(
+                    std.Io.Dir.cwd().copyFile(
+                        io_helper.io,
                         info.backup_path,
-                        std.fs.cwd(),
+                        std.Io.Dir.cwd(),
                         info.path,
                         .{},
                     ) catch |err| {
                         std.debug.print("  ! Failed to restore {s}: {}\n", .{ info.path, err });
                     };
-                    std.fs.cwd().deleteFile(info.backup_path) catch {};
+                    io_helper.deleteFile(info.backup_path) catch {};
                 },
                 .file_deleted => |path| {
                     std.debug.print("  ! Cannot restore deleted file: {s}\n", .{path});
                 },
                 .dir_created => |path| {
                     std.debug.print("  Removing created directory: {s}\n", .{path});
-                    std.fs.cwd().deleteTree(path) catch |err| {
+                    io_helper.deleteTree(path) catch |err| {
                         std.debug.print("  ! Failed to remove directory {s}: {}\n", .{ path, err });
                     };
                 },
                 .symlink_created => |path| {
                     std.debug.print("  Removing created symlink: {s}\n", .{path});
-                    std.fs.cwd().deleteFile(path) catch |err| {
+                    io_helper.deleteFile(path) catch |err| {
                         std.debug.print("  ! Failed to remove symlink {s}: {}\n", .{ path, err });
                     };
                 },
@@ -174,7 +176,7 @@ pub const RollbackManager = struct {
         for (self.actions.items) |action| {
             switch (action) {
                 .file_modified => |info| {
-                    std.fs.cwd().deleteFile(info.backup_path) catch {};
+                    io_helper.deleteFile(info.backup_path) catch {};
                 },
                 else => {},
             }
@@ -242,7 +244,7 @@ test "RollbackManager file creation and rollback" {
     // Create test file
     const test_file = "test_rollback.txt";
     {
-        const file = try std.fs.cwd().createFile(test_file, .{});
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_file, .{});
         file.close();
     }
 
@@ -252,7 +254,7 @@ test "RollbackManager file creation and rollback" {
     try manager.rollback();
 
     // Verify file is gone
-    const result = std.fs.cwd().access(test_file, .{});
+    const result = std.Io.Dir.cwd().access(io_helper.io, test_file, .{});
     try std.testing.expectError(error.FileNotFound, result);
 }
 
@@ -263,7 +265,7 @@ test "RollbackManager directory creation and rollback" {
     defer manager.deinit();
 
     const test_dir = "test_rollback_dir";
-    try std.fs.cwd().makeDir(test_dir);
+    try std.Io.Dir.cwd().makeDir(io_helper.io, test_dir);
 
     try manager.recordDirCreated(test_dir);
 
@@ -271,6 +273,6 @@ test "RollbackManager directory creation and rollback" {
     try manager.rollback();
 
     // Verify directory is gone
-    const result = std.fs.cwd().access(test_dir, .{});
+    const result = std.Io.Dir.cwd().access(io_helper.io, test_dir, .{});
     try std.testing.expectError(error.FileNotFound, result);
 }

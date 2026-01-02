@@ -1,6 +1,7 @@
 const std = @import("std");
 const definitions = @import("definitions.zig");
 const platform = @import("platform.zig");
+const io_helper = @import("../io_helper.zig");
 
 pub const ServiceManager = struct {
     allocator: std.mem.Allocator,
@@ -128,7 +129,7 @@ pub const ServiceManager = struct {
         defer self.allocator.free(service_dir);
 
         // Ensure directory exists
-        try std.fs.cwd().makePath(service_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, service_dir);
 
         const plist_path = try std.fmt.allocPrint(
             self.allocator,
@@ -138,41 +139,41 @@ pub const ServiceManager = struct {
         defer self.allocator.free(plist_path);
 
         // Check if file already exists
-        std.fs.cwd().access(plist_path, .{}) catch {
+        std.Io.Dir.cwd().access(io_helper.io, plist_path, .{}) catch {
             // File doesn't exist, create it
-            var file = try std.fs.cwd().createFile(plist_path, .{});
-            defer file.close();
+            const file = try std.Io.Dir.cwd().createFile(io_helper.io, plist_path, .{});
+            defer file.close(io_helper.io);
 
-            try file.writeAll("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            try file.writeAll("<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n");
-            try file.writeAll("<plist version=\"1.0\">\n");
-            try file.writeAll("<dict>\n");
+            try io_helper.writeAllToFile(file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            try io_helper.writeAllToFile(file, "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n");
+            try io_helper.writeAllToFile(file, "<plist version=\"1.0\">\n");
+            try io_helper.writeAllToFile(file, "<dict>\n");
 
             const label_line = try std.fmt.allocPrint(self.allocator, "    <key>Label</key>\n    <string>{s}</string>\n", .{label});
             defer self.allocator.free(label_line);
-            try file.writeAll(label_line);
+            try io_helper.writeAllToFile(file, label_line);
 
             const prog_args_line = try std.fmt.allocPrint(self.allocator, "    <key>ProgramArguments</key>\n    <array>\n        <string>{s}</string>\n    </array>\n", .{service.start_command});
             defer self.allocator.free(prog_args_line);
-            try file.writeAll(prog_args_line);
+            try io_helper.writeAllToFile(file, prog_args_line);
 
             if (service.working_directory) |wd| {
                 const wd_line = try std.fmt.allocPrint(self.allocator, "    <key>WorkingDirectory</key>\n    <string>{s}</string>\n", .{wd});
                 defer self.allocator.free(wd_line);
-                try file.writeAll(wd_line);
+                try io_helper.writeAllToFile(file, wd_line);
             }
 
             if (service.keep_alive) {
-                try file.writeAll("    <key>KeepAlive</key>\n    <true/>\n");
+                try io_helper.writeAllToFile(file, "    <key>KeepAlive</key>\n    <true/>\n");
             }
 
             if (service.auto_start) {
-                try file.writeAll("    <key>RunAtLoad</key>\n    <true/>\n");
+                try io_helper.writeAllToFile(file, "    <key>RunAtLoad</key>\n    <true/>\n");
             }
 
             // Environment variables
             if (service.env_vars.count() > 0) {
-                try file.writeAll("    <key>EnvironmentVariables</key>\n    <dict>\n");
+                try io_helper.writeAllToFile(file, "    <key>EnvironmentVariables</key>\n    <dict>\n");
 
                 var it = service.env_vars.iterator();
                 while (it.next()) |entry| {
@@ -181,14 +182,14 @@ pub const ServiceManager = struct {
                         entry.value_ptr.*,
                     });
                     defer self.allocator.free(env_line);
-                    try file.writeAll(env_line);
+                    try io_helper.writeAllToFile(file, env_line);
                 }
 
-                try file.writeAll("    </dict>\n");
+                try io_helper.writeAllToFile(file, "    </dict>\n");
             }
 
-            try file.writeAll("</dict>\n");
-            try file.writeAll("</plist>\n");
+            try io_helper.writeAllToFile(file, "</dict>\n");
+            try io_helper.writeAllToFile(file, "</plist>\n");
         };
     }
 
@@ -207,7 +208,7 @@ pub const ServiceManager = struct {
         defer self.allocator.free(service_dir);
 
         // Ensure directory exists
-        try std.fs.cwd().makePath(service_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, service_dir);
 
         const unit_path = try std.fmt.allocPrint(
             self.allocator,
@@ -217,34 +218,34 @@ pub const ServiceManager = struct {
         defer self.allocator.free(unit_path);
 
         // Check if file already exists
-        std.fs.cwd().access(unit_path, .{}) catch {
+        std.Io.Dir.cwd().access(io_helper.io, unit_path, .{}) catch {
             // File doesn't exist, create it
-            var file = try std.fs.cwd().createFile(unit_path, .{});
-            defer file.close();
+            const file = try std.Io.Dir.cwd().createFile(io_helper.io, unit_path, .{});
+            defer file.close(io_helper.io);
 
-            try file.writeAll("[Unit]\n");
+            try io_helper.writeAllToFile(file, "[Unit]\n");
 
             const desc_line = try std.fmt.allocPrint(self.allocator, "Description={s}\n", .{service.description});
             defer self.allocator.free(desc_line);
-            try file.writeAll(desc_line);
+            try io_helper.writeAllToFile(file, desc_line);
 
-            try file.writeAll("After=network.target\n\n");
+            try io_helper.writeAllToFile(file, "After=network.target\n\n");
 
-            try file.writeAll("[Service]\n");
+            try io_helper.writeAllToFile(file, "[Service]\n");
 
             const exec_line = try std.fmt.allocPrint(self.allocator, "ExecStart={s}\n", .{service.start_command});
             defer self.allocator.free(exec_line);
-            try file.writeAll(exec_line);
+            try io_helper.writeAllToFile(file, exec_line);
 
             if (service.working_directory) |wd| {
                 const wd_line = try std.fmt.allocPrint(self.allocator, "WorkingDirectory={s}\n", .{wd});
                 defer self.allocator.free(wd_line);
-                try file.writeAll(wd_line);
+                try io_helper.writeAllToFile(file, wd_line);
             }
 
             if (service.keep_alive) {
-                try file.writeAll("Restart=always\n");
-                try file.writeAll("RestartSec=3\n");
+                try io_helper.writeAllToFile(file, "Restart=always\n");
+                try io_helper.writeAllToFile(file, "RestartSec=3\n");
             }
 
             // Environment variables
@@ -255,12 +256,12 @@ pub const ServiceManager = struct {
                     entry.value_ptr.*,
                 });
                 defer self.allocator.free(env_line);
-                try file.writeAll(env_line);
+                try io_helper.writeAllToFile(file, env_line);
             }
 
-            try file.writeAll("\n[Install]\n");
+            try io_helper.writeAllToFile(file, "\n[Install]\n");
             if (service.auto_start) {
-                try file.writeAll("WantedBy=multi-user.target\n");
+                try io_helper.writeAllToFile(file, "WantedBy=multi-user.target\n");
             }
         };
     }

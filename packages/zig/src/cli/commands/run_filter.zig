@@ -4,6 +4,7 @@
 //! using filter patterns, similar to bun's --filter functionality.
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 
@@ -28,7 +29,7 @@ pub fn runScriptWithFilter(
     options: RunFilterOptions,
 ) !CommandResult {
     // Get current working directory
-    const cwd = std.fs.cwd().realpathAlloc(allocator, ".") catch {
+    const cwd = io_helper.realpathAlloc(allocator, ".") catch {
         return CommandResult.err(allocator, "Error: Could not determine current directory");
     };
     defer allocator.free(cwd);

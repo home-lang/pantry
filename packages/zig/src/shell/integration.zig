@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const core = @import("../core/platform.zig");
 const errors = @import("../core/error.zig");
 
@@ -143,7 +144,7 @@ pub fn getRcFile(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
         .bash => blk: {
             // Try .bashrc first, then .bash_profile
             const bashrc = try std.fmt.allocPrint(allocator, "{s}/.bashrc", .{home});
-            std.fs.cwd().access(bashrc, .{}) catch {
+            std.Io.Dir.cwd().access(io_helper.io, bashrc, .{}) catch {
                 allocator.free(bashrc);
                 break :blk try std.fmt.allocPrint(allocator, "{s}/.bash_profile", .{home});
             };
@@ -168,7 +169,7 @@ pub fn install(allocator: std.mem.Allocator) !void {
     defer allocator.free(hook);
 
     // Read existing RC file
-    const existing = std.fs.cwd().readFileAlloc(rc_file, allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+    const existing = io_helper.readFileAlloc(allocator, rc_file, 1024 * 1024) catch |err| switch (err) {
         error.FileNotFound => "",
         else => return err,
     };
@@ -180,14 +181,10 @@ pub fn install(allocator: std.mem.Allocator) !void {
         return;
     }
 
-    // Append hook to RC file
-    const file = try std.fs.cwd().createFile(rc_file, .{ .truncate = false });
-    defer file.close();
-
-    try file.seekFromEnd(0);
-    try file.writeAll("\n\n");
-    try file.writeAll(hook);
-    try file.writeAll("\n");
+    // Append hook to RC file using blocking std.fs API
+    const full_hook = try std.mem.concat(allocator, u8, &[_][]const u8{ "\n\n", hook, "\n" });
+    defer allocator.free(full_hook);
+    try io_helper.appendToFile(rc_file, full_hook);
 }
 
 test "Shell detection" {

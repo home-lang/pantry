@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
 
 pub const WrapperError = error{
@@ -45,7 +46,7 @@ pub fn createBinaryWrapper(
     env_vars: ?std.StringHashMap([]const u8),
 ) !void {
     // Verify binary exists
-    std.fs.cwd().access(binary_path, .{}) catch {
+    std.Io.Dir.cwd().access(io_helper.io, binary_path, .{}) catch {
         std.debug.print("  ✗ Binary not found: {s}\n", .{binary_path});
         return error.BinaryNotFound;
     };
@@ -55,7 +56,7 @@ pub fn createBinaryWrapper(
     defer allocator.free(wrapper_content);
 
     // Create wrapper directory
-    std.fs.cwd().makePath(wrapper_dir) catch {
+    std.Io.Dir.cwd().makePath(io_helper.io, wrapper_dir) catch {
         return error.WrapperCreationFailed;
     };
 
@@ -67,12 +68,12 @@ pub fn createBinaryWrapper(
     );
     defer allocator.free(wrapper_path);
 
-    const file = std.fs.cwd().createFile(wrapper_path, .{ .mode = 0o755 }) catch {
+    const file = std.Io.Dir.cwd().createFile(io_helper.io, wrapper_path, .{ .mode = 0o755 }) catch {
         return error.WrapperCreationFailed;
     };
-    defer file.close();
+    defer file.close(io_helper.io);
 
-    file.writeAll(wrapper_content) catch {
+    io_helper.writeAllToFile(file, wrapper_content) catch {
         return error.WrapperCreationFailed;
     };
 
@@ -95,11 +96,11 @@ pub fn createPackageWrappers(
     defer allocator.free(package_bin_dir);
 
     // Open bin directory
-    var dir = std.fs.cwd().openDir(package_bin_dir, .{ .iterate = true }) catch {
+    var dir = std.Io.Dir.cwd().openDir(io_helper.io, package_bin_dir, .{ .iterate = true }) catch {
         std.debug.print("  ! No bin directory found: {s}\n", .{package_bin_dir});
         return;
     };
-    defer dir.close();
+    defer dir.close(io_helper.io);
 
     const wrapper_dir = try std.fmt.allocPrint(
         allocator,
@@ -111,7 +112,7 @@ pub fn createPackageWrappers(
     var it = dir.iterate();
     var created_count: usize = 0;
 
-    while (try it.next()) |entry| {
+    while (try it.next(io_helper.io)) |entry| {
         if (entry.kind == .file or entry.kind == .sym_link) {
             const binary_path = try std.fmt.allocPrint(
                 allocator,
@@ -121,7 +122,7 @@ pub fn createPackageWrappers(
             defer allocator.free(binary_path);
 
             // Check if executable
-            const stat = std.fs.cwd().statFile(binary_path) catch continue;
+            const stat = std.Io.Dir.cwd().statFile(io_helper.io, binary_path) catch continue;
             const is_executable = (stat.mode & 0o111) != 0;
 
             if (is_executable) {
@@ -308,21 +309,21 @@ test "createBinaryWrapper" {
 
     // Create test binary
     const test_bin_dir = "test_wrapper_bin";
-    std.fs.cwd().makeDir(test_bin_dir) catch {};
-    defer std.fs.cwd().deleteTree(test_bin_dir) catch {};
+    std.Io.Dir.cwd().makeDir(io_helper.io, test_bin_dir) catch {};
+    defer io_helper.deleteTree(test_bin_dir) catch {};
 
     const test_bin = try std.fmt.allocPrint(allocator, "{s}/testbin", .{test_bin_dir});
     defer allocator.free(test_bin);
 
     {
-        const file = try std.fs.cwd().createFile(test_bin, .{ .mode = 0o755 });
-        defer file.close();
-        try file.writeAll("#!/bin/sh\necho test\n");
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_bin, .{ .mode = 0o755 });
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "#!/bin/sh\necho test\n");
     }
 
     // Create wrapper
     const wrapper_dir = "test_wrappers";
-    defer std.fs.cwd().deleteTree(wrapper_dir) catch {};
+    defer io_helper.deleteTree(wrapper_dir) catch {};
 
     try createBinaryWrapper(allocator, "testbin", test_bin, wrapper_dir, null);
 
@@ -330,6 +331,6 @@ test "createBinaryWrapper" {
     const wrapper_path = try std.fmt.allocPrint(allocator, "{s}/testbin", .{wrapper_dir});
     defer allocator.free(wrapper_path);
 
-    const stat = try std.fs.cwd().statFile(wrapper_path);
+    const stat = try std.Io.Dir.cwd().statFile(io_helper.io, wrapper_path);
     try std.testing.expect((stat.mode & 0o111) != 0);
 }

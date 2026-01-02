@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const http = std.http;
 const oidc = @import("oidc.zig");
 
@@ -132,12 +133,8 @@ pub const RegistryClient = struct {
 
         std.debug.print("Publishing to URL: {s}\n", .{url});
 
-        // Read tarball
-        const tarball = try std.fs.cwd().readFileAlloc(
-            tarball_path,
-            self.allocator,
-            std.Io.Limit.limited(100 * 1024 * 1024), // 100 MB max
-        );
+        // Read tarball using io_helper (blocking std.fs API)
+        const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024); // 100 MB max
         defer self.allocator.free(tarball);
 
         // Create package metadata JSON
@@ -227,12 +224,8 @@ pub const RegistryClient = struct {
 
         std.debug.print("Publishing to URL (token): {s}\n", .{url});
 
-        // Read tarball
-        const tarball = try std.fs.cwd().readFileAlloc(
-            tarball_path,
-            self.allocator,
-            std.Io.Limit.limited(100 * 1024 * 1024),
-        );
+        // Read tarball using io_helper (blocking std.fs API)
+        const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024);
         defer self.allocator.free(tarball);
 
         // Create package metadata

@@ -4,6 +4,7 @@
 //! topological ordering for script execution and builds.
 
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const types = @import("types.zig");
 const resolver = @import("../deps/resolver.zig");
 
@@ -48,7 +49,7 @@ fn extractWorkspaceDependencies(
         const config_path = try std.fs.path.join(allocator, &[_][]const u8{ member.abs_path, config_file });
         defer allocator.free(config_path);
 
-        const content = std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch continue;
+        const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch continue;
         defer allocator.free(content);
 
         // Parse JSON to find dependencies

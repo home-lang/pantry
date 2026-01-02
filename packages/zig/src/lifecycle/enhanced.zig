@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const lifecycle = @import("../lifecycle.zig");
 
 const LifecycleScript = lifecycle.LifecycleScript;
@@ -511,12 +512,12 @@ pub fn executeScriptSandboxed(
             const profile_path = try std.fmt.allocPrint(allocator, "/tmp/pantry-sandbox-{d}.sb", .{@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000))});
             defer allocator.free(profile_path);
 
-            const profile_file = try std.fs.cwd().createFile(profile_path, .{});
+            const profile_file = try std.Io.Dir.cwd().createFile(io_helper.io, profile_path, .{});
             defer {
-                profile_file.close();
-                std.fs.cwd().deleteFile(profile_path) catch {};
+                profile_file.close(io_helper.io);
+                io_helper.deleteFile(profile_path) catch {};
             }
-            try profile_file.writeAll(profile_with_paths.items);
+            try io_helper.writeAllToFile(profile_file, profile_with_paths.items);
 
             try cmd_args.append("sandbox-exec");
             try cmd_args.append("-f");

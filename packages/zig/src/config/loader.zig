@@ -1,5 +1,6 @@
 const std = @import("std");
 const zig_config = @import("zig-config");
+const io_helper = @import("../io_helper.zig");
 
 /// pantry-specific configuration loader
 /// Extends zig-config to support:
@@ -36,7 +37,7 @@ pub const pantryConfigLoader = struct {
         // Determine CWD
         const cwd = options.cwd orelse blk: {
             var buf: [std.fs.max_path_bytes]u8 = undefined;
-            break :blk try std.fs.cwd().realpath(".", &buf);
+            break :blk try std.posix.realpath(".", &buf);
         };
 
         // Try to find TypeScript config first

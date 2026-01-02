@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const lifecycle = @import("../lifecycle.zig");
 const enhanced = @import("enhanced.zig");
 
@@ -92,11 +93,7 @@ pub fn executeHook(
     );
     defer allocator.free(package_json_path);
 
-    const package_json_content = std.fs.cwd().readFileAlloc(
-        allocator,
-        package_json_path,
-        1024 * 1024,
-    ) catch |err| {
+    const package_json_content = io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch |err| {
         if (err == error.FileNotFound) {
             return HookResult{
                 .executed = false,

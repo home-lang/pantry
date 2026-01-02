@@ -19,6 +19,7 @@
 
 const std = @import("std");
 const lib = @import("lib.zig");
+const io_helper = @import("io_helper.zig");
 
 // ============================================================================
 // Sub-modules
@@ -333,11 +334,7 @@ pub fn runLifecycleScript(
     const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_path, "package.json" });
     defer allocator.free(package_json_path);
 
-    const package_json_content = std.fs.cwd().readFileAlloc(
-        package_json_path,
-        allocator,
-        std.Io.Limit.limited(1024 * 1024),
-    ) catch |err| {
+    const package_json_content = io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch |err| {
         if (err == error.FileNotFound) return null;
         return err;
     };
@@ -368,11 +365,7 @@ pub fn runLifecycleScript(
     const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });
     defer allocator.free(root_package_json_path);
 
-    const root_package_json = std.fs.cwd().readFileAlloc(
-        root_package_json_path,
-        allocator,
-        std.Io.Limit.limited(1024 * 1024),
-    ) catch {
+    const root_package_json = io_helper.readFileAlloc(allocator, root_package_json_path, 1024 * 1024) catch {
         // If no root package.json, use empty trusted list
         var empty_trusted = std.StringHashMap(void).init(allocator);
         defer empty_trusted.deinit();

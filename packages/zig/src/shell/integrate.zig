@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
 
 pub const ShellIntegrator = struct {
@@ -99,7 +100,7 @@ pub const ShellIntegrator = struct {
             });
             errdefer self.allocator.free(file);
 
-            std.fs.cwd().access(file, .{}) catch {
+            std.Io.Dir.cwd().access(io_helper.io, file, .{}) catch {
                 self.allocator.free(file);
                 continue;
             };
@@ -120,11 +121,7 @@ pub const ShellIntegrator = struct {
     }
 
     fn hasHook(self: *ShellIntegrator, file: []const u8) !bool {
-        const content = std.fs.cwd().readFileAlloc(
-            self.allocator,
-            file,
-            10 * 1024 * 1024,
-        ) catch return false;
+        const content = io_helper.readFileAlloc(self.allocator, file, 10 * 1024 * 1024) catch return false;
         defer self.allocator.free(content);
 
         return std.mem.indexOf(u8, content, "# Added by pantry") != null or
@@ -132,23 +129,18 @@ pub const ShellIntegrator = struct {
     }
 
     fn appendHook(_: *ShellIntegrator, file: []const u8, hook_line: []const u8) !void {
-        const f = try std.fs.cwd().openFile(file, .{ .mode = .read_write });
-        defer f.close();
-
-        try f.seekFromEnd(0);
-
-        const writer = f.writer();
-        try writer.writeAll("\n# Added by pantry\n");
-        try writer.writeAll(hook_line);
-        try writer.writeAll("  # https://github.com/stacksjs/pantry\n");
+        // Use blocking std.fs API for append operation
+        const full_hook = try std.mem.concat(std.heap.page_allocator, u8, &[_][]const u8{
+            "\n# Added by pantry\n",
+            hook_line,
+            "  # https://github.com/stacksjs/pantry\n",
+        });
+        defer std.heap.page_allocator.free(full_hook);
+        try io_helper.appendToFile(file, full_hook);
     }
 
     fn removeHook(self: *ShellIntegrator, file: []const u8) !void {
-        const content = try std.fs.cwd().readFileAlloc(
-            self.allocator,
-            file,
-            10 * 1024 * 1024,
-        );
+        const content = try io_helper.readFileAlloc(self.allocator, file, 10 * 1024 * 1024);
         defer self.allocator.free(content);
 
         var lines = std.ArrayList([]const u8).init(self.allocator);
@@ -174,16 +166,18 @@ pub const ShellIntegrator = struct {
         }
 
         // Rewrite file
-        const f = try std.fs.cwd().createFile(file, .{ .truncate = true });
-        defer f.close();
+        const f = try std.Io.Dir.cwd().createFile(io_helper.io, file, .{ .truncate = true });
+        defer f.close(io_helper.io);
 
-        const writer = f.writer();
+        var buffer: [4096]u8 = undefined;
+        var writer = f.writer(io_helper.io, &buffer);
         for (lines.items, 0..) |line, i| {
             try writer.writeAll(line);
             if (i < lines.items.len - 1) {
                 try writer.writeAll("\n");
             }
         }
+        try writer.flush();
     }
 };
 
@@ -221,11 +215,11 @@ test "ShellIntegrator hasHook" {
     // Create test file
     const test_file = "test_shell_hook.sh";
     {
-        const file = try std.fs.cwd().createFile(test_file, .{});
-        defer file.close();
-        try file.writeAll("#!/bin/bash\n# Added by pantry\neval \"$(pantry dev:shellcode)\"\n");
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_file, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "#!/bin/bash\n# Added by pantry\neval \"$(pantry dev:shellcode)\"\n");
     }
-    defer std.fs.cwd().deleteFile(test_file) catch {};
+    defer io_helper.deleteFile(test_file) catch {};
 
     const has_hook = try integrator.hasHook(test_file);
     try std.testing.expect(has_hook);
@@ -240,11 +234,11 @@ test "ShellIntegrator appendHook and removeHook" {
     // Create test file
     const test_file = "test_shell_append.sh";
     {
-        const file = try std.fs.cwd().createFile(test_file, .{});
-        defer file.close();
-        try file.writeAll("#!/bin/bash\n");
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_file, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "#!/bin/bash\n");
     }
-    defer std.fs.cwd().deleteFile(test_file) catch {};
+    defer io_helper.deleteFile(test_file) catch {};
 
     // Add hook
     try integrator.appendHook(test_file, "eval \"$(pantry dev:shellcode)\"");

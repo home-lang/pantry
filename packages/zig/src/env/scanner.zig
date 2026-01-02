@@ -1,5 +1,6 @@
 const std = @import("std");
 const lib = @import("../lib.zig");
+const io_helper = @import("../io_helper.zig");
 
 pub const EnvironmentInfo = struct {
     hash: []const u8,

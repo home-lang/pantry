@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 const core = @import("../core/platform.zig");
 const string = @import("../core/string.zig");
 const errors = @import("../core/error.zig");
+const io_helper = @import("../io_helper.zig");
 
 const pantryError = errors.pantryError;
 
@@ -38,7 +39,7 @@ pub const Entry = struct {
 
         // Check if dependency file has been modified
         if (self.dep_file.len > 0) {
-            const stat = std.fs.cwd().statFile(self.dep_file) catch {
+            const stat = io_helper.statFile(self.dep_file) catch {
                 return false; // File no longer exists
             };
 
@@ -258,17 +259,18 @@ pub const EnvCache = struct {
         const temp_file = try std.fmt.allocPrint(self.allocator, "{s}.tmp", .{cache_file});
         defer self.allocator.free(temp_file);
 
-        const file = try std.fs.cwd().createFile(temp_file, .{});
-        defer file.close();
+        // Build content in memory first
+        var content = std.ArrayList(u8){};
+        defer content.deinit(self.allocator);
 
         // Write magic header and version
-        try file.writeAll("PANTRY_ENV_CACHE_V1\n");
+        try content.appendSlice(self.allocator, "PANTRY_ENV_CACHE_V1\n");
 
         // Write number of entries
         const count = self.cache.count();
         var count_buf: [32]u8 = undefined;
         const count_str = try std.fmt.bufPrint(&count_buf, "{d}\n", .{count});
-        try file.writeAll(count_str);
+        try content.appendSlice(self.allocator, count_str);
 
         // Write each entry
         var it = self.cache.iterator();
@@ -278,42 +280,47 @@ pub const EnvCache = struct {
             // Write hash (hex encoded)
             const hash_hex = try std.fmt.allocPrint(self.allocator, "{x}\n", .{entry.hash});
             defer self.allocator.free(hash_hex);
-            try file.writeAll(hash_hex);
+            try content.appendSlice(self.allocator, hash_hex);
 
             // Write dep_file
-            try file.writeAll(entry.dep_file);
-            try file.writeAll("\n");
+            try content.appendSlice(self.allocator, entry.dep_file);
+            try content.appendSlice(self.allocator, "\n");
 
             // Write dep_mtime
             var mtime_buf: [32]u8 = undefined;
             const mtime_str = try std.fmt.bufPrint(&mtime_buf, "{d}\n", .{entry.dep_mtime});
-            try file.writeAll(mtime_str);
+            try content.appendSlice(self.allocator, mtime_str);
 
             // Write path
-            try file.writeAll(entry.path);
-            try file.writeAll("\n");
+            try content.appendSlice(self.allocator, entry.path);
+            try content.appendSlice(self.allocator, "\n");
 
             // Write timestamps
             var ts_buf: [128]u8 = undefined;
             const ts_str = try std.fmt.bufPrint(&ts_buf, "{d} {d} {d} {d}\n", .{ entry.created_at, entry.cached_at, entry.last_validated, entry.ttl });
-            try file.writeAll(ts_str);
+            try content.appendSlice(self.allocator, ts_str);
 
             // Write env var count
             var env_count_buf: [32]u8 = undefined;
             const env_count_str = try std.fmt.bufPrint(&env_count_buf, "{d}\n", .{entry.env_vars.count()});
-            try file.writeAll(env_count_str);
+            try content.appendSlice(self.allocator, env_count_str);
 
             // Write env vars
             var env_it = entry.env_vars.iterator();
             while (env_it.next()) |env_kv| {
-                try file.writeAll(env_kv.key_ptr.*);
-                try file.writeAll("=");
-                try file.writeAll(env_kv.value_ptr.*);
-                try file.writeAll("\n");
+                try content.appendSlice(self.allocator, env_kv.key_ptr.*);
+                try content.appendSlice(self.allocator, "=");
+                try content.appendSlice(self.allocator, env_kv.value_ptr.*);
+                try content.appendSlice(self.allocator, "\n");
             }
         }
 
-        // Atomic rename
+        // Write to temp file
+        const file = try std.fs.cwd().createFile(temp_file, .{});
+        defer file.close();
+        try file.writeAll(content.items);
+
+        // Atomic rename using std.fs
         try std.fs.cwd().rename(temp_file, cache_file);
     }
 
@@ -321,7 +328,7 @@ pub const EnvCache = struct {
     pub fn load(self: *EnvCache) !void {
         const cache_file = self.cache_file_path orelse return error.NoCacheFile;
 
-        const content = try std.fs.cwd().readFileAlloc(cache_file, self.allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
+        const content = try io_helper.readFileAlloc(self.allocator, cache_file, 10 * 1024 * 1024); // 10MB max
         defer self.allocator.free(content);
 
         var lines = std.mem.splitScalar(u8, content, '\n');

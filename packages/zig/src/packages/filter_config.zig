@@ -4,6 +4,7 @@
 //! Allows saving common filter patterns with named aliases
 
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Named filter configuration
 pub const FilterConfig = struct {
@@ -116,7 +117,7 @@ pub fn loadFromConfig(
     errdefer configs.deinit();
 
     // Read config file
-    const content = std.fs.cwd().readFileAlloc(config_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch |err| {
+    const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch |err| {
         if (err == error.FileNotFound) {
             // No config file, return empty configs
             return configs;
@@ -252,8 +253,8 @@ test "loadFromConfig - simple patterns" {
     ;
 
     const temp_path = "/tmp/test-filter-config.json";
-    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
-    defer std.fs.cwd().deleteFile(temp_path) catch {};
+    try std.Io.Dir.cwd().writeFile(io_helper.io, .{ .sub_path = temp_path, .data = config_content });
+    defer io_helper.deleteFile(temp_path) catch {};
 
     var configs = try loadFromConfig(allocator, temp_path);
     defer configs.deinit();
@@ -285,8 +286,8 @@ test "loadFromConfig - with description" {
     ;
 
     const temp_path = "/tmp/test-filter-config-desc.json";
-    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
-    defer std.fs.cwd().deleteFile(temp_path) catch {};
+    try std.Io.Dir.cwd().writeFile(io_helper.io, .{ .sub_path = temp_path, .data = config_content });
+    defer io_helper.deleteFile(temp_path) catch {};
 
     var configs = try loadFromConfig(allocator, temp_path);
     defer configs.deinit();
@@ -325,8 +326,8 @@ test "filter inheritance - simple extends" {
     ;
 
     const temp_path = "/tmp/test-filter-inheritance.json";
-    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
-    defer std.fs.cwd().deleteFile(temp_path) catch {};
+    try std.Io.Dir.cwd().writeFile(io_helper.io, .{ .sub_path = temp_path, .data = config_content });
+    defer io_helper.deleteFile(temp_path) catch {};
 
     var configs = try loadFromConfig(allocator, temp_path);
     defer configs.deinit();
@@ -372,8 +373,8 @@ test "filter inheritance - multiple levels" {
     ;
 
     const temp_path = "/tmp/test-filter-multi-level.json";
-    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
-    defer std.fs.cwd().deleteFile(temp_path) catch {};
+    try std.Io.Dir.cwd().writeFile(io_helper.io, .{ .sub_path = temp_path, .data = config_content });
+    defer io_helper.deleteFile(temp_path) catch {};
 
     var configs = try loadFromConfig(allocator, temp_path);
     defer configs.deinit();
@@ -413,8 +414,8 @@ test "filter inheritance - circular detection" {
     ;
 
     const temp_path = "/tmp/test-filter-circular.json";
-    try std.fs.cwd().writeFile(.{ .sub_path = temp_path, .data = config_content });
-    defer std.fs.cwd().deleteFile(temp_path) catch {};
+    try std.Io.Dir.cwd().writeFile(io_helper.io, .{ .sub_path = temp_path, .data = config_content });
+    defer io_helper.deleteFile(temp_path) catch {};
 
     var configs = try loadFromConfig(allocator, temp_path);
     defer configs.deinit();

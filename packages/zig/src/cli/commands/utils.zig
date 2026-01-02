@@ -5,6 +5,7 @@
 //! - doctor: Check system health and configuration
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 
@@ -25,10 +26,9 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
     if (options.local) {
         std.debug.print("Cleaning local dependencies (pantry)...\n", .{});
 
-        const cwd = std.fs.cwd();
         const pantry_path = "pantry";
 
-        cwd.deleteTree(pantry_path) catch |err| {
+        io_helper.deleteTree(pantry_path) catch |err| {
             if (err != error.FileNotFound) {
                 std.debug.print("Warning: Failed to clean pantry: {}\n", .{err});
             }
@@ -60,8 +60,7 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
     if (!options.local and !options.global and !options.cache) {
         std.debug.print("Cleaning all (local + cache)...\n", .{});
 
-        const cwd = std.fs.cwd();
-        cwd.deleteTree("pantry") catch |err| {
+        io_helper.deleteTree("pantry") catch |err| {
             if (err != error.FileNotFound) {
                 std.debug.print("Warning: Failed to clean pantry: {}\n", .{err});
             }

@@ -2,6 +2,7 @@ const std = @import("std");
 const core = @import("../core/platform.zig");
 const string = @import("../core/string.zig");
 const errors = @import("../core/error.zig");
+const io_helper = @import("../io_helper.zig");
 
 const pantryError = errors.pantryError;
 const Paths = core.Paths;
@@ -53,7 +54,7 @@ pub const PackageCache = struct {
         errdefer allocator.free(cache_dir);
 
         // Ensure cache directory exists
-        try std.fs.cwd().makePath(cache_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, cache_dir);
 
         return .{
             .cache_dir = cache_dir,
@@ -117,7 +118,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.get(key)) |meta| {
             // Verify file exists
-            std.fs.cwd().access(meta.cache_path, .{}) catch {
+            std.Io.Dir.cwd().access(io_helper.io, meta.cache_path, .{}) catch {
                 return false;
             };
             return true;
@@ -136,7 +137,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.getPtr(key)) |meta| {
             // Verify file exists
-            std.fs.cwd().access(meta.cache_path, .{}) catch {
+            std.Io.Dir.cwd().access(io_helper.io, meta.cache_path, .{}) catch {
                 return null;
             };
 
@@ -168,12 +169,12 @@ pub const PackageCache = struct {
             .{self.cache_dir},
         );
         defer self.allocator.free(packages_dir);
-        try std.fs.cwd().makePath(packages_dir);
+        try std.Io.Dir.cwd().makePath(io_helper.io, packages_dir);
 
         // Write package data to cache
-        const file = try std.fs.cwd().createFile(cache_path, .{});
-        defer file.close();
-        try file.writeAll(data);
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, cache_path, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, data);
 
         // Create metadata
         const key = try getCacheKey(self.allocator, name, version);
@@ -220,7 +221,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.fetchRemove(key)) |kv| {
             // Delete cached file
-            std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+            io_helper.deleteFile(kv.value.cache_path) catch {};
 
             self.allocator.free(kv.key);
             var meta = kv.value;
@@ -236,7 +237,7 @@ pub const PackageCache = struct {
         var it = self.metadata.iterator();
         while (it.next()) |entry| {
             // Delete cached file
-            std.fs.cwd().deleteFile(entry.value_ptr.cache_path) catch {};
+            io_helper.deleteFile(entry.value_ptr.cache_path) catch {};
 
             self.allocator.free(entry.key_ptr.*);
             var meta = entry.value_ptr;
@@ -294,7 +295,7 @@ pub const PackageCache = struct {
 
             if (self.metadata.fetchRemove(pkg.key)) |kv| {
                 // Delete cached file
-                std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+                io_helper.deleteFile(kv.value.cache_path) catch {};
 
                 current_size -= pkg.size;
 
@@ -374,7 +375,7 @@ pub const PackageCache = struct {
             if (pkg.age_seconds > max_age_seconds) {
                 if (self.metadata.fetchRemove(pkg.key)) |kv| {
                     // Delete cached file
-                    std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+                    io_helper.deleteFile(kv.value.cache_path) catch {};
 
                     removed_count += 1;
                     freed_bytes += pkg.size;

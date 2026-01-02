@@ -6,6 +6,7 @@
 //! Format: pantry.lock (JSON)
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 
 /// Lock file format version
 pub const LOCK_FILE_VERSION = "1.0";
@@ -178,18 +179,18 @@ pub const LockFile = struct {
 
         try output.appendSlice(self.allocator, "\n  }\n}\n");
 
-        const file = try std.fs.cwd().createFile(path, .{});
-        defer file.close();
+        const file = try std.Io.Dir.cwd().createFile(io_helper.io, path, .{});
+        defer file.close(io_helper.io);
 
         const content = try output.toOwnedSlice(self.allocator);
         defer self.allocator.free(content);
 
-        try file.writeAll(content);
+        try io_helper.writeAllToFile(file, content);
     }
 
     /// Read lock file from disk
     pub fn read(allocator: std.mem.Allocator, path: []const u8) !LockFile {
-        const content = try std.fs.cwd().readFileAlloc(path, allocator, std.Io.Limit.limited(10 * 1024 * 1024));
+        const content = try io_helper.readFileAlloc(allocator, path, 10 * 1024 * 1024);
         defer allocator.free(content);
 
         return try parse(allocator, content);
@@ -512,7 +513,7 @@ pub fn lockfileExists(cwd: []const u8) bool {
     ) catch return false;
     defer allocator.free(lockfile_path);
 
-    std.fs.cwd().access(lockfile_path, .{}) catch return false;
+    std.Io.Dir.cwd().access(io_helper.io, lockfile_path, .{}) catch return false;
     return true;
 }
 

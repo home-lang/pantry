@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
 const outdated_cmd = @import("outdated.zig");
@@ -245,19 +246,19 @@ fn updateConfigFile(
 ) !void {
     // Try to find and read pantry.json
     const config_path = "pantry.json";
-    const file = std.fs.cwd().openFile(config_path, .{ .mode = .read_write }) catch |err| {
+    const file = std.Io.Dir.cwd().openFile(io_helper.io, config_path, .{ .mode = .read_write }) catch |err| {
         // Try package.json as fallback
         if (err == error.FileNotFound) {
-            const pkg_file = std.fs.cwd().openFile("package.json", .{ .mode = .read_write }) catch {
+            const pkg_file = std.Io.Dir.cwd().openFile(io_helper.io, "package.json", .{ .mode = .read_write }) catch {
                 return error.ConfigNotFound;
             };
-            defer pkg_file.close();
+            defer pkg_file.close(io_helper.io);
             try updateJsonFile(allocator, pkg_file, package_name, new_version);
             return;
         }
         return err;
     };
-    defer file.close();
+    defer file.close(io_helper.io);
 
     try updateJsonFile(allocator, file, package_name, new_version);
 }
@@ -265,12 +266,12 @@ fn updateConfigFile(
 /// Update version in a JSON config file
 fn updateJsonFile(
     allocator: std.mem.Allocator,
-    file: std.fs.File,
+    file: std.Io.File,
     package_name: []const u8,
     new_version: []const u8,
 ) !void {
     // Read file content
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    const content = try file.readToEndAlloc(io_helper.io, allocator, 10 * 1024 * 1024);
     defer allocator.free(content);
 
     // Find the package in dependencies and update version
@@ -373,7 +374,7 @@ fn updateJsonFile(
     }
 
     // Write back to file
-    try file.seekTo(0);
-    try file.writeAll(result.items);
-    try file.setEndPos(result.items.len);
+    try file.seekTo(io_helper.io, 0);
+    try io_helper.writeAllToFile(file, result.items);
+    try file.setEndPos(io_helper.io, result.items.len);
 }

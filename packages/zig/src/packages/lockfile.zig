@@ -1,5 +1,6 @@
 const std = @import("std");
 const types = @import("types.zig");
+const io_helper = @import("../io_helper.zig");
 
 /// Compare two lockfiles, ignoring the generatedAt field
 /// Returns true if lockfiles are equal (excluding generatedAt)
@@ -189,7 +190,7 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
 
 /// Read lockfile from disk
 pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.Lockfile {
-    const content = try std.fs.cwd().readFileAlloc(file_path, allocator, std.Io.Limit.limited(10 * 1024 * 1024)); // 10MB max
+    const content = try io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024); // 10MB max
     defer allocator.free(content);
 
     const parsed = try std.json.parseFromSlice(
@@ -326,7 +327,9 @@ test "lockfile write and read" {
     try lockfile.addEntry(allocator, "test-package@1.0.0", entry);
 
     // Write lockfile
-    const lock_path = try tmp.dir.realpathAlloc(allocator, ".");
+    var lock_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const lock_path_slice = try tmp.dir.realpath(std.testing.io, ".", &lock_path_buf);
+    const lock_path = try allocator.dupe(u8, lock_path_slice);
     defer allocator.free(lock_path);
     const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{lock_path});
     defer allocator.free(lock_file_path);
@@ -441,7 +444,9 @@ test "writeLockfile skips write when no changes" {
     try lockfile1.addEntry(allocator, "test@1.0.0", entry1);
 
     // Write initial file
-    const lock_path = try tmp.dir.realpathAlloc(allocator, ".");
+    var lock_path_buf2: [std.fs.max_path_bytes]u8 = undefined;
+    const lock_path_slice2 = try tmp.dir.realpath(std.testing.io, ".", &lock_path_buf2);
+    const lock_path = try allocator.dupe(u8, lock_path_slice2);
     defer allocator.free(lock_path);
     const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{lock_path});
     defer allocator.free(lock_file_path);
@@ -449,7 +454,7 @@ test "writeLockfile skips write when no changes" {
     try writeLockfile(allocator, &lockfile1, lock_file_path);
 
     // Read the file content
-    const content1 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
+    const content1 = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content1);
 
     // Create second lockfile with different generatedAt but same content
@@ -472,7 +477,7 @@ test "writeLockfile skips write when no changes" {
     try writeLockfile(allocator, &lockfile2, lock_file_path);
 
     // Check file content hasn't changed (generatedAt should still be 1000, not 2000)
-    const content2 = try std.fs.cwd().readFileAlloc(lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
+    const content2 = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, lock_file_path, allocator, std.Io.Limit.limited(1024 * 1024));
     defer allocator.free(content2);
     try std.testing.expectEqualStrings(content1, content2);
 }

@@ -1,6 +1,7 @@
 const std = @import("std");
 const core = @import("../core/platform.zig");
 const package_cache = @import("package_cache.zig");
+const io_helper = @import("../io_helper.zig");
 
 const Paths = core.Paths;
 const PackageCache = package_cache.PackageCache;
@@ -264,7 +265,7 @@ pub const OptimizedCache = struct {
         const meta = try self.get(name, version) orelse return null;
 
         // Read file
-        const file = try std.fs.cwd().openFile(meta.cache_path, .{});
+        const file = try std.Io.Dir.cwd().openFile(io_helper.io, meta.cache_path, .{});
         defer file.close();
 
         const data = try file.readToEndAlloc(self.allocator, 100 * 1024 * 1024);
@@ -372,7 +373,7 @@ pub const OptimizedCache = struct {
             if (current_size <= self.config.max_size_bytes) break;
 
             if (self.base.metadata.fetchRemove(pkg.key)) |kv| {
-                std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+                io_helper.deleteFile(kv.value.cache_path) catch {};
                 current_size -= pkg.size;
 
                 self.allocator.free(kv.key);
@@ -407,7 +408,7 @@ pub const OptimizedCache = struct {
 
         for (to_remove.items) |key| {
             if (self.base.metadata.fetchRemove(key)) |kv| {
-                std.fs.cwd().deleteFile(kv.value.cache_path) catch {};
+                io_helper.deleteFile(kv.value.cache_path) catch {};
 
                 self.allocator.free(kv.key);
                 var meta = kv.value;
