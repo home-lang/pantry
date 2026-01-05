@@ -73,7 +73,7 @@ pub const EnvScanner = struct {
         });
         errdefer self.allocator.free(env_path);
 
-        const stat = try io_helper.cwd().statFile(io_helper.io, env_path);
+        const stat = try io_helper.cwd().statFile(io_helper.io, env_path, .{});
 
         // Parse project name from hash (format: project_hash-dhash)
         var parts = std.mem.splitScalar(u8, hash, '_');
@@ -106,7 +106,7 @@ pub const EnvScanner = struct {
 
         while (try walker.next(io_helper.io)) |entry| {
             if (entry.kind == .file) {
-                const stat = try entry.dir.statFile(io_helper.io, entry.basename);
+                const stat = try entry.dir.statFile(io_helper.io, entry.basename, .{});
                 total += @intCast(stat.size);
             }
         }

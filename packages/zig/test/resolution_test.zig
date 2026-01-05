@@ -1,6 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const lib = @import("lib");
+const io_helper = lib.io_helper;
 
 const resolution = lib.deps.resolution;
 const ConflictResolver = resolution.ConflictResolver;
@@ -323,7 +324,7 @@ test "LockFile - write and read" {
 
     // Write to temp file
     const temp_path = "test_lock.json";
-    defer std.fs.cwd().deleteFile(temp_path) catch {};
+    defer io_helper.deleteFile(temp_path) catch {};
 
     try lock_file.write(temp_path);
 

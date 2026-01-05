@@ -1,6 +1,7 @@
 const std = @import("std");
 const lib = @import("lib");
 const testing = std.testing;
+const io_helper = lib.io_helper;
 
 // Integration tests for environment management
 
@@ -9,13 +10,13 @@ test "EnvScanner and EnvCommands integration" {
 
     // Create test environment structure
     const test_data_dir = "test_data_envs";
-    defer std.fs.cwd().deleteTree(test_data_dir) catch {};
+    defer io_helper.deleteTree(test_data_dir) catch {};
 
     // Create envs directory
     const envs_dir = try std.fs.path.join(allocator, &[_][]const u8{ test_data_dir, "envs" });
     defer allocator.free(envs_dir);
 
-    std.fs.cwd().makePath(envs_dir) catch {};
+    io_helper.cwd().createDirPath(io_helper.io, envs_dir) catch {};
 
     // Create test environments
     const test_env1 = try std.fs.path.join(allocator, &[_][]const u8{ envs_dir, "project1_abc123" });
@@ -28,11 +29,11 @@ test "EnvScanner and EnvCommands integration" {
     {
         const bin_path1 = try std.fs.path.join(allocator, &[_][]const u8{ test_env1, "bin" });
         defer allocator.free(bin_path1);
-        std.fs.cwd().makePath(bin_path1) catch {};
+        io_helper.cwd().createDirPath(io_helper.io, bin_path1) catch {};
 
         const bin_path2 = try std.fs.path.join(allocator, &[_][]const u8{ test_env2, "bin" });
         defer allocator.free(bin_path2);
-        std.fs.cwd().makePath(bin_path2) catch {};
+        io_helper.cwd().createDirPath(io_helper.io, bin_path2) catch {};
     }
 
     // Create some test binaries
@@ -40,9 +41,10 @@ test "EnvScanner and EnvCommands integration" {
         const bin1 = try std.fs.path.join(allocator, &[_][]const u8{ test_env1, "bin", "node" });
         defer allocator.free(bin1);
 
-        const file = try std.fs.cwd().createFile(bin1, .{ .mode = 0o755 });
-        defer file.close();
-        try file.writeAll("#!/bin/sh\n");
+        const file = try io_helper.cwd().createFile(io_helper.io, bin1, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "#!/bin/sh\n");
+        // Note: mode is not supported in Io.File.CreateFlags, file permissions can't be set on creation
     }
 
     // Test scanner

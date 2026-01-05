@@ -464,7 +464,7 @@ test "EnvCache basic operations" {
     defer io_helper.deleteFile(tmp_file) catch {};
 
     // Get file stat
-    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file);
+    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file, .{});
 
     // Create a test entry
     var env_vars = std.StringHashMap([]const u8).init(allocator);
@@ -511,7 +511,7 @@ test "EnvCache fast cache" {
     }
     defer io_helper.deleteFile(tmp_file) catch {};
 
-    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file);
+    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file, .{});
 
     // Create multiple entries
     var i: usize = 0;
