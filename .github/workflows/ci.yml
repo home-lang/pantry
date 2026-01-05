@@ -96,5 +96,11 @@ jobs:
           git clone --depth 1 https://github.com/zig-utils/zig-config.git
           git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
+      - name: Patch zig-config for Zig 0.16
+        run: |
+          cd packages/zig/pantry/zig-config
+          # Fix std.fs.cwd().realpath -> std.posix.getcwd for Zig 0.16
+          sed -i 's/std\.fs\.cwd()\.realpath("\.", &cwd_buf)/std.posix.getcwd(\&cwd_buf)/g' src/config_loader.zig
+
       - name: Zig Tests
         run: cd packages/zig && zig build test:all
