@@ -265,7 +265,7 @@ pub const OptimizedCache = struct {
         const meta = try self.get(name, version) orelse return null;
 
         // Read file
-        const file = try std.Io.Dir.cwd().openFile(io_helper.io, meta.cache_path, .{});
+        const file = try io_helper.cwd().openFile(io_helper.io, meta.cache_path, .{});
         defer file.close();
 
         const data = try file.readToEndAlloc(self.allocator, 100 * 1024 * 1024);

@@ -5,6 +5,7 @@
 
 const std = @import("std");
 const types = @import("types.zig");
+const io_helper = @import("../io_helper.zig");
 
 /// Result of changed detection
 pub const ChangedResult = struct {
@@ -51,8 +52,7 @@ fn getChangedFiles(
     );
     defer allocator.free(git_diff_cmd);
 
-    const diff_result = try std.process.Child.run(.{
-        .allocator = allocator,
+    const diff_result = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{ "sh", "-c", git_diff_cmd },
         .cwd = workspace_root,
     });
@@ -73,8 +73,7 @@ fn getChangedFiles(
 
     // Get uncommitted changes if requested
     if (options.include_uncommitted) {
-        const status_result = try std.process.Child.run(.{
-            .allocator = allocator,
+        const status_result = try std.process.Child.run(allocator, io_helper.io, .{
             .argv = &[_][]const u8{ "git", "diff", "--name-only", "HEAD" },
             .cwd = workspace_root,
         });
@@ -106,8 +105,7 @@ fn getChangedFiles(
 
     // Get untracked files if requested
     if (options.include_untracked) {
-        const untracked_result = try std.process.Child.run(.{
-            .allocator = allocator,
+        const untracked_result = try std.process.Child.run(allocator, io_helper.io, .{
             .argv = &[_][]const u8{ "git", "ls-files", "--others", "--exclude-standard" },
             .cwd = workspace_root,
         });

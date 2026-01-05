@@ -1,6 +1,8 @@
 const std = @import("std");
 const detector = @import("detector.zig");
 const parser = @import("parser.zig");
+const lib = @import("../lib.zig");
+const io_helper = lib.io_helper;
 
 /// Scan common locations for dependency files with global packages
 pub fn scanForGlobalDeps(allocator: std.mem.Allocator) ![]parser.PackageDependency {
@@ -46,7 +48,7 @@ fn scanLocations(allocator: std.mem.Allocator, home: []const u8) ![]parser.Packa
         defer allocator.free(search_path);
 
         // Check if path exists
-        std.fs.accessAbsolute(search_path, .{}) catch continue;
+        io_helper.accessAbsolute(search_path, .{}) catch continue;
 
         // Look for deps files in this location (non-recursive for home dir, recursive for others)
         const is_home_root = location.len == 0;
@@ -72,12 +74,12 @@ fn scanDirectoryForGlobalDeps(
 ) !void {
     if (current_depth > max_depth) return;
 
-    var dir = std.fs.openDirAbsolute(dir_path, .{ .iterate = true }) catch return;
-    defer dir.close();
+    var dir = io_helper.openDirAbsolute(dir_path, .{ .iterate = true }) catch return;
+    defer dir.close(io_helper.io);
 
     var iterator = dir.iterate();
 
-    while (try iterator.next()) |entry| {
+    while (try iterator.next(io_helper.io)) |entry| {
         // Skip hidden files/directories (except .dotfiles and .config at root)
         if (entry.name[0] == '.' and current_depth > 0) continue;
 

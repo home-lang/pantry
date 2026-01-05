@@ -294,7 +294,7 @@ fn runSecurityScanner(
     defer allocator.free(scanner_path);
 
     // Check if scanner exists
-    std.Io.Dir.cwd().access(io_helper.io, scanner_path, .{}) catch {
+    io_helper.cwd().access(io_helper.io, scanner_path, .{}) catch {
         const msg = try std.fmt.allocPrint(
             allocator,
             "Security scanner '{s}' not found. Install it with: pantry install {s}",
@@ -315,8 +315,7 @@ fn runSecurityScanner(
     defer allocator.free(bin_path);
 
     // Execute the scanner using Child.run() pattern
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
+    const result = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{ bin_path, "." },
     });
     defer allocator.free(result.stdout);

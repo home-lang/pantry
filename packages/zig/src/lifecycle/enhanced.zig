@@ -512,7 +512,7 @@ pub fn executeScriptSandboxed(
             const profile_path = try std.fmt.allocPrint(allocator, "/tmp/pantry-sandbox-{d}.sb", .{@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000))});
             defer allocator.free(profile_path);
 
-            const profile_file = try std.Io.Dir.cwd().createFile(io_helper.io, profile_path, .{});
+            const profile_file = try io_helper.cwd().createFile(io_helper.io, profile_path, .{});
             defer {
                 profile_file.close(io_helper.io);
                 io_helper.deleteFile(profile_path) catch {};

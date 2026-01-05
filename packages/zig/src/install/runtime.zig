@@ -3,6 +3,7 @@ const core = @import("../core/platform.zig");
 const packages = @import("../packages.zig");
 const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
+const io_helper = @import("../io_helper.zig");
 
 /// Runtime types that can be installed
 pub const RuntimeType = enum {
@@ -79,7 +80,7 @@ pub const RuntimeInstaller = struct {
         });
 
         // Ensure runtimes directory exists
-        std.fs.makeDirAbsolute(runtimes_dir) catch |err| switch (err) {
+        io_helper.cwd().createDirPath(io_helper.io, runtimes_dir) catch |err| switch (err) {
             error.PathAlreadyExists => {},
             else => return err,
         };
@@ -114,7 +115,7 @@ pub const RuntimeInstaller = struct {
         const binary_path = try self.getRuntimeBinaryPath(runtime, version);
 
         if (!options.force) {
-            std.fs.accessAbsolute(binary_path, .{}) catch |err| switch (err) {
+            io_helper.accessAbsolute(binary_path, .{}) catch |err| switch (err) {
                 error.FileNotFound => {},
                 else => {
                     // Already installed
@@ -146,7 +147,7 @@ pub const RuntimeInstaller = struct {
         });
         defer self.allocator.free(temp_dir);
 
-        std.fs.makeDirAbsolute(temp_dir) catch |err| switch (err) {
+        io_helper.cwd().createDirPath(io_helper.io, temp_dir) catch |err| switch (err) {
             error.PathAlreadyExists => {},
             else => return err,
         };
@@ -168,11 +169,11 @@ pub const RuntimeInstaller = struct {
         try downloader.downloadFileQuiet(self.allocator, download_url, tarball_path, options.quiet);
 
         // Extract to install directory
-        std.fs.makeDirAbsolute(install_dir) catch |err| switch (err) {
+        io_helper.cwd().createDirPath(io_helper.io, install_dir) catch |err| switch (err) {
             error.PathAlreadyExists => {
                 // Clean existing directory
-                std.fs.deleteTreeAbsolute(install_dir) catch {};
-                try std.fs.makeDirAbsolute(install_dir);
+                io_helper.deleteTree(install_dir) catch {};
+                try io_helper.cwd().createDirPath(io_helper.io, install_dir);
             },
             else => return err,
         };
@@ -185,10 +186,10 @@ pub const RuntimeInstaller = struct {
         try extractor.extractTarball(self.allocator, tarball_path, install_dir);
 
         // Clean up tarball
-        std.fs.deleteFileAbsolute(tarball_path) catch {};
+        io_helper.deleteFile(tarball_path) catch {};
 
         // Verify binary exists
-        std.fs.accessAbsolute(binary_path, .{}) catch {
+        io_helper.accessAbsolute(binary_path, .{}) catch {
             std.debug.print("❌ Installation failed: binary not found at {s}\n", .{binary_path});
             return error.BinaryNotFound;
         };
@@ -285,11 +286,11 @@ pub const RuntimeInstaller = struct {
         });
         defer self.allocator.free(runtime_dir);
 
-        var dir = std.fs.openDirAbsolute(runtime_dir, .{ .iterate = true }) catch |err| switch (err) {
+        var dir = io_helper.openDirAbsolute(runtime_dir, .{ .iterate = true }) catch |err| switch (err) {
             error.FileNotFound => return &[_][]const u8{},
             else => return err,
         };
-        defer dir.close();
+        defer dir.close(io_helper.io);
 
         var versions = std.ArrayList([]const u8).init(self.allocator);
         errdefer {
@@ -298,7 +299,7 @@ pub const RuntimeInstaller = struct {
         }
 
         var iter = dir.iterate();
-        while (try iter.next()) |entry| {
+        while (try iter.next(io_helper.io)) |entry| {
             if (entry.kind == .directory) {
                 const version = try self.allocator.dupe(u8, entry.name);
                 try versions.append(version);
@@ -313,7 +314,7 @@ pub const RuntimeInstaller = struct {
         const install_dir = try self.getRuntimeInstallDir(runtime, version);
         defer self.allocator.free(install_dir);
 
-        std.fs.deleteTreeAbsolute(install_dir) catch |err| switch (err) {
+        io_helper.deleteTree(install_dir) catch |err| switch (err) {
             error.FileNotFound => {
                 std.debug.print("❌ {s}@{s} not installed\n", .{ runtime.toString(), version });
                 return error.NotInstalled;

@@ -4,6 +4,7 @@
 
 const std = @import("std");
 const lib = @import("../lib.zig");
+const io_helper = lib.io_helper;
 
 /// Offline mode configuration
 pub const OfflineConfig = struct {
@@ -41,7 +42,7 @@ pub fn installFromCache(
     defer allocator.free(cached_path);
 
     // Check if directory exists
-    std.fs.accessAbsolute(cached_path, .{}) catch {
+    io_helper.accessAbsolute(cached_path, .{}) catch {
         std.debug.print("❌ {s}@{s} not found in cache (offline mode)\n", .{ package_name, version });
         return false;
     };
@@ -68,24 +69,24 @@ fn getCacheDir(allocator: std.mem.Allocator) ![]const u8 {
 
 /// Copy directory recursively
 fn copyDir(src: []const u8, dest: []const u8) !void {
-    var src_dir = try std.fs.openDirAbsolute(src, .{ .iterate = true });
-    defer src_dir.close();
+    var src_dir = try io_helper.openDirAbsolute(src, .{ .iterate = true });
+    defer src_dir.close(io_helper.io);
 
     // Create destination directory
-    std.fs.makeDirAbsolute(dest) catch |err| switch (err) {
+    io_helper.cwd().createDirPath(io_helper.io, dest) catch |err| switch (err) {
         error.PathAlreadyExists => {},
         else => return err,
     };
 
-    var dest_dir = try std.fs.openDirAbsolute(dest, .{});
-    defer dest_dir.close();
+    var dest_dir = try io_helper.openDirAbsolute(dest, .{});
+    defer dest_dir.close(io_helper.io);
 
     // Iterate and copy
     var it = src_dir.iterate();
-    while (try it.next()) |entry| {
+    while (try it.next(io_helper.io)) |entry| {
         switch (entry.kind) {
             .file => {
-                try src_dir.copyFile(entry.name, dest_dir, entry.name, .{});
+                try src_dir.copyFile(entry.name, dest_dir, entry.name, io_helper.io, .{});
             },
             .directory => {
                 const src_subdir = try std.fs.path.join(

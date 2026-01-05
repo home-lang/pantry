@@ -1,6 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const definitions = @import("definitions.zig");
+const lib = @import("../lib.zig");
+const io_helper = lib.io_helper;
 
 /// Platform-specific service management
 pub const Platform = enum {
@@ -151,7 +153,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "launchctl", "load", service_file };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try child.spawnAndWait(io_helper.io);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStartFailed;
@@ -164,7 +166,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "launchctl", "unload", service_file };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try child.spawnAndWait(io_helper.io);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStopFailed;
@@ -180,8 +182,8 @@ pub const ServiceController = struct {
         child.stdout_behavior = .Pipe;
         child.stderr_behavior = .Pipe;
 
-        try child.spawn();
-        const result = try child.wait();
+        try child.spawn(io_helper.io);
+        const result = try child.wait(io_helper.io);
 
         return if (result == .Exited and result.Exited == 0)
             .running
@@ -222,7 +224,7 @@ pub const ServiceController = struct {
         // Use --user flag for user services
         const argv = [_][]const u8{ "systemctl", "--user", "start", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try child.spawnAndWait(io_helper.io);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStartFailed;
@@ -235,7 +237,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "systemctl", "--user", "stop", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try child.spawnAndWait(io_helper.io);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStopFailed;
@@ -248,7 +250,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "systemctl", "--user", "enable", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try child.spawnAndWait(io_helper.io);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceEnableFailed;
@@ -261,7 +263,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "systemctl", "--user", "disable", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try child.spawnAndWait(io_helper.io);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceDisableFailed;
@@ -273,8 +275,7 @@ pub const ServiceController = struct {
         defer self.allocator.free(service_unit);
 
         const argv = [_][]const u8{ "systemctl", "--user", "is-active", service_unit };
-        const result = try std.process.Child.run(.{
-            .allocator = self.allocator,
+        const result = try std.process.Child.run(self.allocator, io_helper.io, .{
             .argv = &argv,
         });
         defer self.allocator.free(result.stdout);

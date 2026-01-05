@@ -700,7 +700,7 @@ pub fn getTokenFromEnvironmentWithAudience(allocator: std.mem.Allocator, provide
 
 /// Request OIDC token from GitHub Actions
 fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8, request_token: []const u8, audience: []const u8) ![]const u8 {
-    var io = std.Io.Threaded.init(allocator);
+    var io = std.Io.Threaded.init(allocator, .{});
     defer io.deinit();
     var client = http.Client{ .allocator = allocator, .io = io.io() };
     defer client.deinit();
@@ -1010,7 +1010,7 @@ pub fn fetchJWKSWithRetry(allocator: std.mem.Allocator, jwks_uri: []const u8, co
 
 /// Single attempt to fetch JWKS (internal helper)
 fn fetchJWKSOnce(allocator: std.mem.Allocator, jwks_uri: []const u8) !JWKS {
-    var io = std.Io.Threaded.init(allocator);
+    var io = std.Io.Threaded.init(allocator, .{});
     defer io.deinit();
     var client = http.Client{ .allocator = allocator, .io = io.io() };
     defer client.deinit();

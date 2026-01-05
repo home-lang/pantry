@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Fix macOS library paths using install_name_tool
 /// This discovers @rpath dependencies using otool and fixes them to use absolute paths
@@ -15,8 +16,7 @@ pub fn fixMacOSLibraryPaths(
     }
 
     // Use otool to get current library dependencies
-    const otool_result = std.process.Child.run(.{
-        .allocator = allocator,
+    const otool_result = std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{
             "otool",
             "-L",
@@ -75,7 +75,7 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(absolute_lib_path);
 
         // Check if the library exists in our lib directory
-        std.fs.accessAbsolute(absolute_lib_path, .{}) catch {
+        io_helper.accessAbsolute(absolute_lib_path, .{}) catch {
             // Library doesn't exist in our package - skip it
             continue;
         };
@@ -89,8 +89,7 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(rpath_ref);
 
         // Fix the library path using install_name_tool
-        const fix_result = std.process.Child.run(.{
-            .allocator = allocator,
+        const fix_result = std.process.Child.run(allocator, io_helper.io, .{
             .argv = &[_][]const u8{
                 "install_name_tool",
                 "-change",
@@ -141,8 +140,7 @@ fn addRpathEntries(
     // Add each rpath entry
     var needs_codesign = false;
     for (rpath_entries) |rpath| {
-        const result = std.process.Child.run(.{
-            .allocator = allocator,
+        const result = std.process.Child.run(allocator, io_helper.io, .{
             .argv = &[_][]const u8{
                 "install_name_tool",
                 "-add_rpath",
@@ -162,8 +160,7 @@ fn addRpathEntries(
 
     // Re-sign the binary if we modified it
     if (needs_codesign) {
-        const codesign_result = std.process.Child.run(.{
-            .allocator = allocator,
+        const codesign_result = std.process.Child.run(allocator, io_helper.io, .{
             .argv = &[_][]const u8{
                 "codesign",
                 "-s",
@@ -195,21 +192,21 @@ pub fn fixDirectoryLibraryPaths(
     defer allocator.free(lib_dir);
 
     // Check if lib directory exists (we need it for absolute paths)
-    std.fs.accessAbsolute(lib_dir, .{}) catch {
+    io_helper.accessAbsolute(lib_dir, .{}) catch {
         // No lib directory - nothing to fix
         return;
     };
 
     // Fix binaries in bin/ directory
     {
-        var dir = std.fs.openDirAbsolute(bin_dir, .{ .iterate = true }) catch {
+        var dir = io_helper.openDirAbsolute(bin_dir, .{ .iterate = true }) catch {
             // No bin directory or can't open it - that's ok
             return;
         };
-        defer dir.close();
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             if (entry.kind != .file) continue;
 
             const binary_path = try std.fs.path.join(allocator, &[_][]const u8{ bin_dir, entry.name });
@@ -225,14 +222,14 @@ pub fn fixDirectoryLibraryPaths(
 
     // Also fix dylibs in lib/ directory (they can depend on each other)
     {
-        var dir = std.fs.openDirAbsolute(lib_dir, .{ .iterate = true }) catch {
+        var dir = io_helper.openDirAbsolute(lib_dir, .{ .iterate = true }) catch {
             // Can't open lib directory - that's ok
             return;
         };
-        defer dir.close();
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             if (entry.kind != .file) continue;
             if (!std.mem.endsWith(u8, entry.name, ".dylib")) continue;
 

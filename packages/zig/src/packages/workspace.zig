@@ -3,6 +3,8 @@ const types = @import("types.zig");
 const detector = @import("../deps/detector.zig");
 const config_loader = @import("../config/loader.zig");
 const deps_extractor = @import("../config/dependencies.zig");
+const lib = @import("../lib.zig");
+const io_helper = lib.io_helper;
 
 /// Discover workspace members based on glob patterns
 /// This is a simple glob matcher that supports * wildcards
@@ -59,18 +61,18 @@ fn discoverMembersForPattern(
             defer allocator.free(full_base_path);
 
             // Open the directory
-            var dir = std.fs.openDirAbsolute(full_base_path, .{ .iterate = true }) catch |err| {
+            var dir = io_helper.openDirAbsolute(full_base_path, .{ .iterate = true }) catch |err| {
                 // If directory doesn't exist, skip this pattern - return empty list
                 if (err == error.FileNotFound) {
                     return allocator.alloc(types.WorkspaceMember, 0);
                 }
                 return err;
             };
-            defer dir.close();
+            defer dir.close(io_helper.io);
 
             // Iterate through subdirectories
             var iter = dir.iterate();
-            while (try iter.next()) |entry| {
+            while (try iter.next(io_helper.io)) |entry| {
                 if (entry.kind != .directory) continue;
 
                 // Skip common ignore directories
@@ -125,7 +127,7 @@ fn discoverMembersForPattern(
         errdefer allocator.free(member_abs_path);
 
         // Check if directory exists
-        std.fs.accessAbsolute(member_abs_path, .{}) catch {
+        io_helper.accessAbsolute(member_abs_path, .{}) catch {
             allocator.free(member_abs_path);
             return allocator.alloc(types.WorkspaceMember, 0);
         };
@@ -172,7 +174,7 @@ fn findConfigFile(allocator: std.mem.Allocator, dir_path: []const u8) !?[]const 
         const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, config_file });
         defer allocator.free(full_path);
 
-        std.fs.accessAbsolute(full_path, .{}) catch continue;
+        io_helper.accessAbsolute(full_path, .{}) catch continue;
 
         // Found a config file
         return try allocator.dupe(u8, full_path);

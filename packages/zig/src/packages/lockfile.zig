@@ -89,8 +89,8 @@ pub fn writeLockfile(allocator: std.mem.Allocator, lockfile: *const types.Lockfi
 
 /// Write lockfile to disk in JSON format (always writes, internal use)
 fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
-    const file = try std.fs.createFileAbsolute(file_path, .{});
-    defer file.close();
+    const file = try io_helper.cwd().createFile(io_helper.io, file_path, .{});
+    defer file.close(io_helper.io);
 
     // Use std.json.stringify instead of manual JSON writing
     var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
@@ -185,7 +185,7 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
     try buf.appendSlice(allocator, "\n  }\n}\n");
 
     // Write to file
-    try file.writeAll(buf.items);
+    try io_helper.writeAllToFile(file, buf.items);
 }
 
 /// Read lockfile from disk

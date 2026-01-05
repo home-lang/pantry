@@ -41,10 +41,10 @@ pub const EnvScanner = struct {
         });
         defer self.allocator.free(envs_dir);
 
-        var dir = std.fs.cwd().openDir(envs_dir, .{ .iterate = true }) catch {
+        var dir = io_helper.cwd().openDir(io_helper.io, envs_dir, .{ .iterate = true }) catch {
             return try self.allocator.alloc(EnvironmentInfo, 0);
         };
-        defer dir.close();
+        defer dir.close(io_helper.io);
 
         var envs = std.ArrayList(EnvironmentInfo){};
         errdefer {
@@ -55,7 +55,7 @@ pub const EnvScanner = struct {
         }
 
         var iter = dir.iterate();
-        while (try iter.next()) |entry| {
+        while (try iter.next(io_helper.io)) |entry| {
             if (entry.kind != .directory) continue;
             if (std.mem.indexOf(u8, entry.name, "_") == null) continue;
 
@@ -73,7 +73,7 @@ pub const EnvScanner = struct {
         });
         errdefer self.allocator.free(env_path);
 
-        const stat = try std.fs.cwd().statFile(env_path);
+        const stat = try io_helper.cwd().statFile(io_helper.io, env_path);
 
         // Parse project name from hash (format: project_hash-dhash)
         var parts = std.mem.splitScalar(u8, hash, '_');
@@ -98,15 +98,15 @@ pub const EnvScanner = struct {
     fn calculateSize(self: *EnvScanner, dir_path: []const u8) !u64 {
         var total: u64 = 0;
 
-        var dir = std.fs.cwd().openDir(dir_path, .{ .iterate = true }) catch return 0;
-        defer dir.close();
+        var dir = io_helper.cwd().openDir(io_helper.io, dir_path, .{ .iterate = true }) catch return 0;
+        defer dir.close(io_helper.io);
 
         var walker = try dir.walk(self.allocator);
         defer walker.deinit();
 
-        while (try walker.next()) |entry| {
+        while (try walker.next(io_helper.io)) |entry| {
             if (entry.kind == .file) {
-                const stat = try entry.dir.statFile(entry.basename);
+                const stat = try entry.dir.statFile(io_helper.io, entry.basename);
                 total += @intCast(stat.size);
             }
         }
@@ -121,12 +121,12 @@ pub const EnvScanner = struct {
         });
         defer self.allocator.free(dir_path);
 
-        var dir = std.fs.cwd().openDir(dir_path, .{ .iterate = true }) catch return 0;
-        defer dir.close();
+        var dir = io_helper.cwd().openDir(io_helper.io, dir_path, .{ .iterate = true }) catch return 0;
+        defer dir.close(io_helper.io);
 
         var count: usize = 0;
         var iter = dir.iterate();
-        while (try iter.next()) |_| {
+        while (try iter.next(io_helper.io)) |_| {
             count += 1;
         }
 

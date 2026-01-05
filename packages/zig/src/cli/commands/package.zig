@@ -27,7 +27,7 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.posix.realpath(".", &cwd_buf);
+    const cwd = try io_helper.realpath(".", &cwd_buf);
 
     // Find and read config file
     const config_path = common.findConfigFile(allocator, cwd) catch {
@@ -153,7 +153,7 @@ pub const UpdateOptions = struct {
 pub fn updateCommand(allocator: std.mem.Allocator, args: []const []const u8, options: UpdateOptions) !CommandResult {
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.posix.realpath(".", &cwd_buf);
+    const cwd = try io_helper.realpath(".", &cwd_buf);
 
     // Find config file
     const config_path = common.findConfigFile(allocator, cwd) catch {
@@ -222,7 +222,7 @@ pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, o
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.posix.realpath(".", &cwd_buf);
+    const cwd = try io_helper.realpath(".", &cwd_buf);
 
     // Find and read config
     const config_path = common.findConfigFile(allocator, cwd) catch {
@@ -723,8 +723,7 @@ fn createTarball(
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // Use tar command to create tarball
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
+    const result = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{
             "tar",
             "-czf",
@@ -824,10 +823,10 @@ fn generateProvenance(
     );
     defer allocator.free(provenance_path);
 
-    // Use blocking std.fs API for writeFile
-    const fs_file = try std.fs.cwd().createFile(provenance_path, .{});
-    defer fs_file.close();
-    try fs_file.writeAll(provenance);
+    // Use io_helper for writeFile
+    const fs_file = try io_helper.cwd().createFile(io_helper.io, provenance_path, .{});
+    defer fs_file.close(io_helper.io);
+    try io_helper.writeAllToFile(fs_file, provenance);
 
     std.debug.print("Generated provenance: {s}\n", .{provenance_path});
 }
@@ -1110,7 +1109,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
 
     // Get current working directory
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const cwd = try std.posix.realpath(".", &cwd_buf);
+    const cwd = try io_helper.realpath(".", &cwd_buf);
 
     // Find config file
     const config_path = common.findConfigFile(allocator, cwd) catch {

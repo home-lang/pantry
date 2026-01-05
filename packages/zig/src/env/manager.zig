@@ -63,7 +63,7 @@ pub const EnvManager = struct {
         errdefer allocator.free(data_dir);
 
         // Ensure data directory exists
-        try std.Io.Dir.cwd().makePath(io_helper.io, data_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, data_dir);
 
         return .{
             .data_dir = data_dir,
@@ -98,7 +98,7 @@ pub const EnvManager = struct {
         // Create environment directory
         const env_dir = try self.getEnvDir(env.hash);
         defer self.allocator.free(env_dir);
-        try std.Io.Dir.cwd().makePath(io_helper.io, env_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, env_dir);
 
         return env;
     }
@@ -109,7 +109,7 @@ pub const EnvManager = struct {
         defer self.allocator.free(env_dir);
 
         // Check if environment exists
-        std.Io.Dir.cwd().access(io_helper.io, env_dir, .{}) catch {
+        io_helper.cwd().access(io_helper.io, env_dir, .{}) catch {
             return null;
         };
 
@@ -141,15 +141,15 @@ pub const EnvManager = struct {
         );
         defer self.allocator.free(envs_dir);
 
-        // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
-        var dir = std.fs.cwd().openDir(envs_dir, .{ .iterate = true }) catch |err| switch (err) {
+        // Use io_helper for iteration
+        var dir = io_helper.openDir(envs_dir, .{ .iterate = true }) catch |err| switch (err) {
             error.FileNotFound => return envs,
             else => return err,
         };
-        defer dir.close();
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             if (entry.kind != .directory) continue;
             if (entry.name.len != 32) continue; // MD5 hex = 32 chars
 

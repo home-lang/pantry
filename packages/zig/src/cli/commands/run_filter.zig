@@ -345,8 +345,7 @@ pub fn runScriptWithFilter(
             const full_command = command_list.items;
 
             // Execute in member directory
-            const result = std.process.Child.run(.{
-                .allocator = allocator,
+            const result = std.process.Child.run(allocator, io_helper.io, .{
                 .argv = &[_][]const u8{ "sh", "-c", full_command },
                 .cwd = member.abs_path,
             }) catch |err| {
@@ -650,8 +649,7 @@ fn executeScriptsInMembers(
 
             const full_command = command_list.items;
 
-            const result = std.process.Child.run(.{
-                .allocator = allocator,
+            const result = std.process.Child.run(allocator, io_helper.io, .{
                 .argv = &[_][]const u8{ "sh", "-c", full_command },
                 .cwd = member.abs_path,
             }) catch |err| {

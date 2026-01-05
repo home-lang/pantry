@@ -33,7 +33,7 @@ pub fn shimCommand(allocator: std.mem.Allocator, packages: []const []const u8, o
     defer allocator.free(shim_dir);
 
     // Ensure shim directory exists
-    try std.Io.Dir.cwd().makePath(io_helper.io, shim_dir);
+    try io_helper.makePath(shim_dir);
 
     if (options.verbose) {
         std.debug.print("Creating shims in: {s}\n\n", .{shim_dir});
@@ -107,7 +107,7 @@ fn createShim(
 
     // Check if shim already exists
     if (!options.force) {
-        std.Io.Dir.cwd().access(io_helper.io, shim_path, .{}) catch |err| {
+        io_helper.cwd().access(io_helper.io, shim_path, .{}) catch |err| {
             if (err != error.FileNotFound) {
                 return err;
             }
@@ -115,7 +115,7 @@ fn createShim(
         };
 
         // If we get here without error, file exists
-        if (std.Io.Dir.cwd().access(io_helper.io, shim_path, .{})) |_| {
+        if (io_helper.cwd().access(io_helper.io, shim_path, .{})) |_| {
             return error.ShimExists;
         } else |_| {}
     }
@@ -124,16 +124,14 @@ fn createShim(
     const shim_content = try generateShimScript(allocator, name, version);
     defer allocator.free(shim_content);
 
-    // Write shim file using blocking std.fs API (which has proper chmod support)
-    const fs_file = try std.fs.cwd().createFile(shim_path, .{});
-    defer fs_file.close();
+    // Write shim file using io_helper API
+    const fs_file = try io_helper.cwd().createFile(io_helper.io, shim_path, .{});
+    defer fs_file.close(io_helper.io);
 
-    try fs_file.writeAll(shim_content);
+    try io_helper.writeAllToFile(fs_file, shim_content);
 
     // Make executable (chmod +x)
-    const stat = try fs_file.stat();
-    const new_mode = stat.mode | 0o111; // Add execute permission
-    try fs_file.chmod(new_mode);
+    _ = std.c.fchmod(fs_file.handle, 0o755);
 
     return shim_path;
 }
@@ -159,19 +157,19 @@ pub fn shimListCommand(allocator: std.mem.Allocator) !CommandResult {
     const shim_dir = try std.fmt.allocPrint(allocator, "{s}/.local/bin", .{home});
     defer allocator.free(shim_dir);
 
-    var dir = std.fs.cwd().openDir(shim_dir, .{ .iterate = true }) catch |err| {
+    var dir = io_helper.openDir(shim_dir, .{ .iterate = true }) catch |err| {
         if (err == error.FileNotFound) {
             return CommandResult.err(allocator, "No shims directory found. Run 'pantry shim <package>' to create shims.");
         }
         return err;
     };
-    defer dir.close();
+    defer dir.close(io_helper.io);
 
     std.debug.print("Shims in {s}:\n\n", .{shim_dir});
 
     var count: usize = 0;
     var iter = dir.iterate();
-    while (try iter.next()) |entry| {
+    while (try iter.next(io_helper.io)) |entry| {
         if (entry.kind == .file) {
             // Check if it's a pantry shim by reading the first line
             const file_path = try std.fs.path.join(allocator, &[_][]const u8{ shim_dir, entry.name });

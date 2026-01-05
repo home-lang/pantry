@@ -234,7 +234,7 @@ pub fn signCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     );
     defer allocator.free(sig_json);
 
-    const sig_file = try std.Io.Dir.cwd().createFile(io_helper.io, sig_path, .{});
+    const sig_file = try io_helper.cwd().createFile(io_helper.io, sig_path, .{});
     defer sig_file.close(io_helper.io);
     try io_helper.writeAllToFile(sig_file, sig_json);
 

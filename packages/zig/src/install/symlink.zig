@@ -15,14 +15,14 @@ pub fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8
     if (builtin.os.tag == .windows) {
         // On Windows, copy the file instead of creating a symlink
         // This avoids privilege requirements
-        try std.fs.cwd().copyFile(target_path, std.fs.cwd(), link_path, .{});
+        try io_helper.cwd().copyFile(io_helper.io, target_path, io_helper.cwd(), link_path, .{});
     } else {
-        // On Unix systems, create actual symlink using std.fs (blocking API)
-        std.fs.cwd().symLink(target_path, link_path, .{}) catch |err| switch (err) {
+        // On Unix systems, create actual symlink using io_helper
+        io_helper.cwd().symLink(io_helper.io, target_path, link_path, .{}) catch |err| switch (err) {
             error.PathAlreadyExists => {
                 // Delete existing and retry
-                try std.fs.cwd().deleteFile(link_path);
-                try std.fs.cwd().symLink(target_path, link_path, .{});
+                try io_helper.deleteFile(link_path);
+                try io_helper.cwd().symLink(io_helper.io, target_path, link_path, .{});
             },
             else => return err,
         };
@@ -51,13 +51,13 @@ pub fn createBinarySymlinkFromPath(
     defer allocator.free(symlink_path);
 
     // Verify target exists
-    std.Io.Dir.cwd().access(io_helper.io, bin_path, .{}) catch {
+    io_helper.cwd().access(io_helper.io, bin_path, .{}) catch {
         std.debug.print("  ✗ Binary not found: {s}\n", .{bin_path});
         return error.TargetNotFound;
     };
 
     // Create bin directory if it doesn't exist
-    std.Io.Dir.cwd().makePath(io_helper.io, symlink_dir) catch {
+    io_helper.cwd().createDirPath(io_helper.io, symlink_dir) catch {
         return error.BinDirCreationFailed;
     };
 
@@ -115,7 +115,7 @@ pub fn createVersionSymlink(
     defer allocator.free(symlink_path);
 
     // Verify target exists
-    std.Io.Dir.cwd().access(io_helper.io, target_path, .{}) catch {
+    io_helper.cwd().access(io_helper.io, target_path, .{}) catch {
         return error.TargetNotFound;
     };
 
@@ -150,11 +150,11 @@ fn discoverNpmBinaries(
     const node_modules_path = try std.fmt.allocPrint(allocator, "{s}/lib/node_modules", .{package_dir});
     defer allocator.free(node_modules_path);
 
-    // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
-    var node_modules_dir = std.fs.cwd().openDir(node_modules_path, .{ .iterate = true }) catch {
+    // Use io_helper.cwd() for iteration
+    var node_modules_dir = io_helper.cwd().openDir(io_helper.io, node_modules_path, .{ .iterate = true }) catch {
         return try allocator.alloc(BinaryInfo, 0);
     };
-    defer node_modules_dir.close();
+    defer node_modules_dir.close(io_helper.io);
 
     var binaries = try std.ArrayList(BinaryInfo).initCapacity(allocator, 8);
     errdefer {
@@ -166,7 +166,7 @@ fn discoverNpmBinaries(
 
     // Iterate through packages in node_modules
     var it = node_modules_dir.iterate();
-    while (try it.next()) |entry| {
+    while (try it.next(io_helper.io)) |entry| {
         if (entry.kind != .directory) continue;
 
         // Check for bin directory in this npm package
@@ -177,12 +177,12 @@ fn discoverNpmBinaries(
         );
         defer allocator.free(npm_bin_path);
 
-        var npm_bin_dir = std.fs.cwd().openDir(npm_bin_path, .{ .iterate = true }) catch continue;
-        defer npm_bin_dir.close();
+        var npm_bin_dir = io_helper.cwd().openDir(io_helper.io, npm_bin_path, .{ .iterate = true }) catch continue;
+        defer npm_bin_dir.close(io_helper.io);
 
         // Iterate binaries in npm package's bin directory
         var bin_it = npm_bin_dir.iterate();
-        while (try bin_it.next()) |bin_entry| {
+        while (try bin_it.next(io_helper.io)) |bin_entry| {
             if (bin_entry.kind == .file or bin_entry.kind == .sym_link) {
                 const full_path = try std.fmt.allocPrint(
                     allocator,
@@ -196,7 +196,7 @@ fn discoverNpmBinaries(
                     allocator.free(full_path);
                     continue;
                 };
-                const is_executable = (stat.mode & 0o111) != 0;
+                const is_executable = (stat.permissions.toMode() & 0o111) != 0;
 
                 if (is_executable) {
                     try binaries.append(allocator, .{
@@ -229,12 +229,12 @@ pub fn discoverBinaries(
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{package_dir});
     defer allocator.free(bin_dir);
 
-    // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
-    var dir = std.fs.cwd().openDir(bin_dir, .{ .iterate = true }) catch {
+    // Use io_helper.cwd() for iteration
+    var dir = io_helper.cwd().openDir(io_helper.io, bin_dir, .{ .iterate = true }) catch {
         // No bin directory
         return try allocator.alloc(BinaryInfo, 0);
     };
-    defer dir.close();
+    defer dir.close(io_helper.io);
 
     var binaries = try std.ArrayList(BinaryInfo).initCapacity(allocator, 8);
     errdefer {
@@ -245,7 +245,7 @@ pub fn discoverBinaries(
     }
 
     var it = dir.iterate();
-    while (try it.next()) |entry| {
+    while (try it.next(io_helper.io)) |entry| {
         if (entry.kind == .file or entry.kind == .sym_link) {
             const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name });
             errdefer allocator.free(full_path);
@@ -255,7 +255,7 @@ pub fn discoverBinaries(
                 allocator.free(full_path);
                 continue;
             };
-            const is_executable = (stat.mode & 0o111) != 0;
+            const is_executable = (stat.permissions.toMode() & 0o111) != 0;
 
             if (is_executable) {
                 try binaries.append(allocator, .{
@@ -372,20 +372,20 @@ test "discoverBinaries" {
 
     // Create test directory structure
     const test_dir = "test_pkg_bin";
-    std.Io.Dir.cwd().makeDir(io_helper.io, test_dir) catch {};
+    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{test_dir});
     defer allocator.free(bin_dir);
 
-    std.Io.Dir.cwd().makeDir(io_helper.io, bin_dir) catch {};
+    io_helper.cwd().makeDir(io_helper.io, bin_dir) catch {};
 
     // Create test binary file
     {
         const test_bin = try std.fmt.allocPrint(allocator, "{s}/testbin", .{bin_dir});
         defer allocator.free(test_bin);
 
-        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_bin, .{ .mode = 0o755 });
+        const file = try io_helper.cwd().createFile(io_helper.io, test_bin, .{ .mode = 0o755 });
         file.close();
     }
 
@@ -408,21 +408,21 @@ test "createBinarySymlink" {
 
     // Create test structure
     const install_base = "test_install";
-    std.Io.Dir.cwd().makeDir(io_helper.io, install_base) catch {};
+    io_helper.cwd().makeDir(io_helper.io, install_base) catch {};
     defer io_helper.deleteTree(install_base) catch {};
 
     // Create package directory
     const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/testpkg/v1.0.0/bin", .{install_base});
     defer allocator.free(pkg_dir);
 
-    std.Io.Dir.cwd().makePath(io_helper.io, pkg_dir) catch {};
+    io_helper.cwd().createDirPath(io_helper.io, pkg_dir) catch {};
 
     // Create binary
     const bin_path = try std.fmt.allocPrint(allocator, "{s}/testbin", .{pkg_dir});
     defer allocator.free(bin_path);
 
     {
-        const file = try std.Io.Dir.cwd().createFile(io_helper.io, bin_path, .{ .mode = 0o755 });
+        const file = try io_helper.cwd().createFile(io_helper.io, bin_path, .{ .mode = 0o755 });
         file.close();
     }
 
@@ -433,6 +433,6 @@ test "createBinarySymlink" {
     const symlink_path = try std.fmt.allocPrint(allocator, "{s}/bin/testbin", .{install_base});
     defer allocator.free(symlink_path);
 
-    const stat = try std.Io.Dir.cwd().statFile(io_helper.io, symlink_path);
+    const stat = try io_helper.cwd().statPath(io_helper.io, symlink_path);
     _ = stat;
 }

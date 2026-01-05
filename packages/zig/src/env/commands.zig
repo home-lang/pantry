@@ -318,7 +318,7 @@ pub const EnvCommands = struct {
         const bin_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ env_path, "bin" });
         defer self.allocator.free(bin_dir);
 
-        var dir = std.Io.Dir.cwd().openDir(io_helper.io, bin_dir, .{ .iterate = true }) catch {
+        var dir = io_helper.cwd().openDir(io_helper.io, bin_dir, .{ .iterate = true }) catch {
             std.debug.print("  (none)\n", .{});
             return;
         };
@@ -334,7 +334,7 @@ pub const EnvCommands = struct {
         const stubs_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ env_path, "stubs" });
         defer self.allocator.free(stubs_dir);
 
-        var dir = std.Io.Dir.cwd().openDir(io_helper.io, stubs_dir, .{ .iterate = true }) catch {
+        var dir = io_helper.cwd().openDir(io_helper.io, stubs_dir, .{ .iterate = true }) catch {
             std.debug.print("  (none)\n", .{});
             return;
         };

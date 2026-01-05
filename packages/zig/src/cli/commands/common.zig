@@ -107,7 +107,7 @@ pub fn findConfigFile(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8
         const full_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, config_file });
         defer allocator.free(full_path);
 
-        std.Io.Dir.cwd().access(io_helper.io, full_path, .{}) catch continue;
+        io_helper.cwd().access(io_helper.io, full_path, .{}) catch continue;
 
         return try allocator.dupe(u8, full_path);
     }

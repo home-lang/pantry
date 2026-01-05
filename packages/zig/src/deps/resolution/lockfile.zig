@@ -179,7 +179,7 @@ pub const LockFile = struct {
 
         try output.appendSlice(self.allocator, "\n  }\n}\n");
 
-        const file = try std.Io.Dir.cwd().createFile(io_helper.io, path, .{});
+        const file = try io_helper.cwd().createFile(io_helper.io, path, .{});
         defer file.close(io_helper.io);
 
         const content = try output.toOwnedSlice(self.allocator);
@@ -513,7 +513,7 @@ pub fn lockfileExists(cwd: []const u8) bool {
     ) catch return false;
     defer allocator.free(lockfile_path);
 
-    std.Io.Dir.cwd().access(io_helper.io, lockfile_path, .{}) catch return false;
+    io_helper.cwd().access(io_helper.io, lockfile_path, .{}) catch return false;
     return true;
 }
 

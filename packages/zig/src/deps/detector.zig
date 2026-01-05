@@ -59,7 +59,7 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
     };
 
     var current_dir_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const current_dir = try std.fs.realpath(start_dir, &current_dir_buf);
+    const current_dir = try io_helper.realpath(start_dir, &current_dir_buf);
 
     var dir_path = try allocator.dupe(u8, current_dir);
     defer allocator.free(dir_path);
@@ -72,7 +72,7 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
             defer allocator.free(full_path);
 
             // Check if file exists
-            std.fs.accessAbsolute(full_path, .{}) catch {
+            io_helper.accessAbsolute(full_path, .{}) catch {
                 continue;
             };
 
@@ -152,7 +152,7 @@ pub fn findWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !?
     };
 
     var current_dir_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const current_dir = try std.fs.realpath(start_dir, &current_dir_buf);
+    const current_dir = try io_helper.realpath(start_dir, &current_dir_buf);
 
     var dir_path = try allocator.dupe(u8, current_dir);
     defer allocator.free(dir_path);
@@ -165,7 +165,7 @@ pub fn findWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !?
             defer allocator.free(full_path);
 
             // Check if file exists
-            std.fs.accessAbsolute(full_path, .{}) catch {
+            io_helper.accessAbsolute(full_path, .{}) catch {
                 continue;
             };
 

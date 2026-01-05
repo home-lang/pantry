@@ -130,7 +130,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(data_dir);
 
     // Try to create directories
-    std.Io.Dir.cwd().makePath(io_helper.io, cache_dir) catch {
+    io_helper.cwd().createDirPath(io_helper.io, cache_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -139,7 +139,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
         };
     };
 
-    std.Io.Dir.cwd().makePath(io_helper.io, data_dir) catch {
+    io_helper.cwd().createDirPath(io_helper.io, data_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -224,7 +224,7 @@ fn checkCache(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(cache_dir);
 
     // Check if cache directory is accessible
-    var dir = std.fs.cwd().openDir(cache_dir, .{ .iterate = true }) catch {
+    var dir = io_helper.openDir(cache_dir, .{ .iterate = true }) catch {
         return .{
             .name = name,
             .passed = false,
@@ -232,12 +232,12 @@ fn checkCache(allocator: std.mem.Allocator) !CheckResult {
             .suggestion = try allocator.dupe(u8, "Run 'pantry cache verify' to rebuild cache"),
         };
     };
-    defer dir.close();
+    defer dir.close(io_helper.io);
 
     // Count cache entries (simplified)
     var count: usize = 0;
     var iter = dir.iterate();
-    while (try iter.next()) |_| {
+    while (try iter.next(io_helper.io)) |_| {
         count += 1;
     }
 
@@ -265,7 +265,7 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
     const test_file_path = try std.fmt.allocPrint(allocator, "{s}/.pantry-test", .{cache_dir});
     defer allocator.free(test_file_path);
 
-    const test_file = std.Io.Dir.cwd().createFile(io_helper.io, test_file_path, .{}) catch {
+    const test_file = io_helper.cwd().createFile(io_helper.io, test_file_path, .{}) catch {
         return .{
             .name = name,
             .passed = false,

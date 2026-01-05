@@ -257,8 +257,7 @@ pub fn executeScript(
     // Execute the script using Child.run for simplicity
     const is_windows = @import("builtin").os.tag == .windows;
 
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
+    const result = std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{
             if (is_windows) "cmd" else "sh",
             if (is_windows) "/C" else "-c",

@@ -100,7 +100,7 @@ pub const ShellIntegrator = struct {
             });
             errdefer self.allocator.free(file);
 
-            std.Io.Dir.cwd().access(io_helper.io, file, .{}) catch {
+            io_helper.cwd().access(io_helper.io, file, .{}) catch {
                 self.allocator.free(file);
                 continue;
             };
@@ -166,7 +166,7 @@ pub const ShellIntegrator = struct {
         }
 
         // Rewrite file
-        const f = try std.Io.Dir.cwd().createFile(io_helper.io, file, .{ .truncate = true });
+        const f = try io_helper.cwd().createFile(io_helper.io, file, .{ .truncate = true });
         defer f.close(io_helper.io);
 
         var buffer: [4096]u8 = undefined;
@@ -215,7 +215,7 @@ test "ShellIntegrator hasHook" {
     // Create test file
     const test_file = "test_shell_hook.sh";
     {
-        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_file, .{});
+        const file = try io_helper.cwd().createFile(io_helper.io, test_file, .{});
         defer file.close(io_helper.io);
         try io_helper.writeAllToFile(file, "#!/bin/bash\n# Added by pantry\neval \"$(pantry dev:shellcode)\"\n");
     }
@@ -234,7 +234,7 @@ test "ShellIntegrator appendHook and removeHook" {
     // Create test file
     const test_file = "test_shell_append.sh";
     {
-        const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_file, .{});
+        const file = try io_helper.cwd().createFile(io_helper.io, test_file, .{});
         defer file.close(io_helper.io);
         try io_helper.writeAllToFile(file, "#!/bin/bash\n");
     }

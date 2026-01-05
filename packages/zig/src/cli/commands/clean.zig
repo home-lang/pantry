@@ -128,7 +128,7 @@ fn cleanCache(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, cache_dir);
 
     // Recreate empty cache directory
-    try std.Io.Dir.cwd().makePath(io_helper.io, cache_dir);
+    try io_helper.cwd().createDirPath(io_helper.io, cache_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -149,7 +149,7 @@ fn cleanTemp(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, temp_dir);
 
     // Recreate empty temp directory
-    try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
+    try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -170,7 +170,7 @@ fn cleanLogs(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, logs_dir);
 
     // Recreate empty logs directory
-    try std.Io.Dir.cwd().makePath(io_helper.io, logs_dir);
+    try io_helper.cwd().createDirPath(io_helper.io, logs_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -184,7 +184,7 @@ fn removeDirectory(allocator: std.mem.Allocator, path: []const u8) !CleanResult 
     var count: usize = 0;
     var size: usize = 0;
 
-    var dir = std.Io.Dir.cwd().openDir(io_helper.io, path, .{ .iterate = true }) catch {
+    var dir = io_helper.cwd().openDir(io_helper.io, path, .{ .iterate = true }) catch {
         // Directory doesn't exist or can't be opened
         return CleanResult{ .count = 0, .size = 0 };
     };

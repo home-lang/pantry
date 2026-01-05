@@ -113,7 +113,7 @@ pub const NpmRegistry = struct {
         }
 
         // Write to file
-        const file = try std.Io.Dir.cwd().createFile(io_helper.io, dest_path, .{});
+        const file = try io_helper.cwd().createFile(io_helper.io, dest_path, .{});
         defer file.close(io_helper.io);
 
         const body_reader = response.reader(&.{});

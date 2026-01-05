@@ -139,8 +139,8 @@ pub const WorkspacePackage = struct {
         defer allocator.free(config_path);
 
         // Read config file
-        const file = try std.Io.Dir.cwd().openFile(io_helper.io, config_path, .{});
-        defer file.close();
+        const file = try io_helper.cwd().openFile(io_helper.io, config_path, .{});
+        defer file.close(io_helper.io);
 
         const content = try file.readToEndAlloc(allocator, std.Io.Limit.limited(10 * 1024 * 1024));
         defer allocator.free(content);
@@ -507,7 +507,7 @@ pub const Workspace = struct {
             const full_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ self.config.root, dir_path });
             defer self.allocator.free(full_dir);
 
-            var dir = std.Io.Dir.cwd().openDir(io_helper.io, full_dir, .{ .iterate = true }) catch return;
+            var dir = io_helper.cwd().openDir(io_helper.io, full_dir, .{ .iterate = true }) catch return;
             defer dir.close(io_helper.io);
 
             var it = dir.iterate();
@@ -533,7 +533,7 @@ pub const Workspace = struct {
                         );
                         defer self.allocator.free(config_path);
 
-                        std.Io.Dir.cwd().access(io_helper.io, config_path, .{}) catch continue;
+                        io_helper.cwd().access(io_helper.io, config_path, .{}) catch continue;
 
                         const pkg = try WorkspacePackage.fromDirectory(
                             self.allocator,
@@ -552,7 +552,7 @@ pub const Workspace = struct {
         const full_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ self.config.root, base_path });
         defer self.allocator.free(full_dir);
 
-        var dir = std.Io.Dir.cwd().openDir(io_helper.io, full_dir, .{ .iterate = true }) catch return;
+        var dir = io_helper.cwd().openDir(io_helper.io, full_dir, .{ .iterate = true }) catch return;
         defer dir.close(io_helper.io);
 
         var it = dir.iterate();
@@ -583,7 +583,7 @@ pub const Workspace = struct {
                     );
                     defer self.allocator.free(config_path);
 
-                    if (std.Io.Dir.cwd().access(io_helper.io, config_path, .{})) {
+                    if (io_helper.cwd().access(io_helper.io, config_path, .{})) {
                         const pkg = try WorkspacePackage.fromDirectory(
                             self.allocator,
                             self.config.root,
@@ -642,7 +642,7 @@ pub const Workspace = struct {
         defer self.allocator.free(node_modules);
 
         // Create node_modules if it doesn't exist
-        try std.Io.Dir.cwd().makePath(io_helper.io, node_modules);
+        try io_helper.cwd().createDirPath(io_helper.io, node_modules);
 
         // Link workspace dependencies
         var dep_it = pkg.dependencies.iterator();
@@ -666,7 +666,7 @@ pub const Workspace = struct {
                 defer self.allocator.free(link_path);
 
                 // Create symlink
-                std.fs.cwd().symLink(dep_full_path, link_path, .{ .is_directory = true }) catch |err| {
+                io_helper.cwd().symLink(dep_full_path, link_path, io_helper.io, .{ .is_directory = true }) catch |err| {
                     if (err != error.PathAlreadyExists) {
                         return err;
                     }

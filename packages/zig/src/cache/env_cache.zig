@@ -104,7 +104,7 @@ pub const EnvCache = struct {
         defer allocator.free(cache_dir);
 
         // Ensure cache directory exists
-        std.fs.cwd().makePath(cache_dir) catch {};
+        io_helper.makePath(cache_dir) catch {};
 
         const cache_file = try std.fmt.allocPrint(allocator, "{s}/envs.cache", .{cache_dir});
         env_cache.cache_file_path = cache_file;
@@ -316,12 +316,12 @@ pub const EnvCache = struct {
         }
 
         // Write to temp file
-        const file = try std.fs.cwd().createFile(temp_file, .{});
-        defer file.close();
-        try file.writeAll(content.items);
+        const file = try io_helper.cwd().createFile(io_helper.io, temp_file, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, content.items);
 
-        // Atomic rename using std.fs
-        try std.fs.cwd().rename(temp_file, cache_file);
+        // Atomic rename using io_helper
+        try io_helper.rename(temp_file, cache_file);
     }
 
     /// Load cache from disk
@@ -432,7 +432,7 @@ pub fn createEntry(
     errdefer allocator.destroy(entry);
 
     // Get dependency file mtime
-    const stat = try std.fs.cwd().statFile(dep_file);
+    const stat = try io_helper.cwd().statFile(io_helper.io, dep_file);
 
     // Compute hash
     const hash = string.hashDependencyFile(dep_file);
@@ -457,14 +457,14 @@ test "EnvCache basic operations" {
     // Create a temporary test file
     const tmp_file = "/tmp/pantry_test_deps.yaml";
     {
-        const file = try std.fs.cwd().createFile(tmp_file, .{});
-        defer file.close();
-        try file.writeAll("test: content");
+        const file = try io_helper.cwd().createFile(io_helper.io, tmp_file, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "test: content");
     }
-    defer std.fs.cwd().deleteFile(tmp_file) catch {};
+    defer io_helper.deleteFile(tmp_file) catch {};
 
     // Get file stat
-    const stat = try std.fs.cwd().statFile(tmp_file);
+    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file);
 
     // Create a test entry
     var env_vars = std.StringHashMap([]const u8).init(allocator);
@@ -505,13 +505,13 @@ test "EnvCache fast cache" {
     // Create a temporary test file
     const tmp_file = "/tmp/pantry_test_deps2.yaml";
     {
-        const file = try std.fs.cwd().createFile(tmp_file, .{});
-        defer file.close();
-        try file.writeAll("test: content");
+        const file = try io_helper.cwd().createFile(io_helper.io, tmp_file, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "test: content");
     }
-    defer std.fs.cwd().deleteFile(tmp_file) catch {};
+    defer io_helper.deleteFile(tmp_file) catch {};
 
-    const stat = try std.fs.cwd().statFile(tmp_file);
+    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file);
 
     // Create multiple entries
     var i: usize = 0;

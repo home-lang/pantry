@@ -24,7 +24,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Check if pantry.json already exists
     const file_exists = blk: {
-        std.Io.Dir.cwd().access(io_helper.io, "pantry.json", .{}) catch |err| {
+        io_helper.cwd().access(io_helper.io, "pantry.json", .{}) catch |err| {
             if (err == error.FileNotFound) break :blk false;
             return err;
         };
@@ -37,8 +37,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         std.debug.print("Do you want to overwrite it? (y/N): ", .{});
 
         var buf: [10]u8 = undefined;
-        const stdin_file = std.fs.File{ .handle = std.posix.STDIN_FILENO };
-        const bytes_read = try stdin_file.read(&buf);
+        const bytes_read = try io_helper.readStdin(&buf);
 
         if (bytes_read == 0 or buf[0] != 'y') {
             return .{
@@ -56,8 +55,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     std.debug.print("Project name ({s}): ", .{dir_name});
     var name_buf: [256]u8 = undefined;
-    const stdin = std.fs.File{ .handle = std.posix.STDIN_FILENO };
-    const name_bytes = try stdin.read(&name_buf);
+    const name_bytes = try io_helper.readStdin(&name_buf);
     const project_name = blk: {
         if (name_bytes == 0) break :blk dir_name;
         const trimmed = std.mem.trim(u8, name_buf[0..name_bytes], &std.ascii.whitespace);
@@ -66,7 +64,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     std.debug.print("Version (1.0.0): ", .{});
     var version_buf: [64]u8 = undefined;
-    const version_bytes = try stdin.read(&version_buf);
+    const version_bytes = try io_helper.readStdin(&version_buf);
     const version = blk: {
         if (version_bytes == 0) break :blk "1.0.0";
         const trimmed = std.mem.trim(u8, version_buf[0..version_bytes], &std.ascii.whitespace);
@@ -75,7 +73,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     std.debug.print("Description: ", .{});
     var desc_buf: [512]u8 = undefined;
-    const desc_bytes = try stdin.read(&desc_buf);
+    const desc_bytes = try io_helper.readStdin(&desc_buf);
     const description = blk: {
         if (desc_bytes == 0) break :blk "";
         const trimmed = std.mem.trim(u8, desc_buf[0..desc_bytes], &std.ascii.whitespace);
@@ -84,12 +82,12 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Detect if TypeScript project
     const has_tsconfig = blk: {
-        std.Io.Dir.cwd().access(io_helper.io, "tsconfig.json", .{}) catch break :blk false;
+        io_helper.cwd().access(io_helper.io, "tsconfig.json", .{}) catch break :blk false;
         break :blk true;
     };
 
     const has_package_json = blk: {
-        std.Io.Dir.cwd().access(io_helper.io, "package.json", .{}) catch break :blk false;
+        io_helper.cwd().access(io_helper.io, "package.json", .{}) catch break :blk false;
         break :blk true;
     };
 
@@ -101,7 +99,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     defer allocator.free(template);
 
     // Write file
-    const file = try std.Io.Dir.cwd().createFile(io_helper.io, "pantry.json", .{});
+    const file = try io_helper.cwd().createFile(io_helper.io, "pantry.json", .{});
     defer file.close(io_helper.io);
     try io_helper.writeAllToFile(file, template);
 

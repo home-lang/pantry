@@ -5,6 +5,7 @@
 
 const std = @import("std");
 const lib = @import("../../lib.zig");
+const io_helper = lib.io_helper;
 
 /// Result of a single script execution
 pub const ScriptResult = struct {
@@ -97,8 +98,7 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
     const full_command = command_list.items;
 
     // Execute in member directory
-    const result = std.process.Child.run(.{
-        .allocator = ctx.allocator,
+    const result = std.process.Child.run(ctx.allocator, io_helper.io, .{
         .argv = &[_][]const u8{ "sh", "-c", full_command },
         .cwd = ctx.member.abs_path,
     }) catch |err| {

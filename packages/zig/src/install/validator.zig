@@ -30,7 +30,7 @@ pub fn validateInstallation(
     }
 
     // Check if install directory exists
-    var dir = std.Io.Dir.cwd().openDir(io_helper.io, install_path, .{}) catch {
+    var dir = io_helper.cwd().openDir(io_helper.io, install_path, .{}) catch {
         try errors.append(allocator, try std.fmt.allocPrint(
             allocator,
             "Install directory does not exist: {s}",
@@ -77,7 +77,7 @@ pub fn validateBinary(
     }
 
     // Check if file exists
-    std.Io.Dir.cwd().access(io_helper.io, binary_path, .{}) catch {
+    io_helper.cwd().access(io_helper.io, binary_path, .{}) catch {
         try errors.append(allocator, try std.fmt.allocPrint(
             allocator,
             "Binary not found: {s}",
@@ -93,7 +93,7 @@ pub fn validateBinary(
 
     // Check if file is executable (Unix systems)
     if (@import("builtin").os.tag != .windows) {
-        const file = try std.Io.Dir.cwd().openFile(io_helper.io, binary_path, .{});
+        const file = try io_helper.cwd().openFile(io_helper.io, binary_path, .{});
         defer file.close();
 
         const stat = try file.stat();
@@ -131,7 +131,7 @@ pub fn validateDirectoryStructure(
     }
 
     // Check if install directory exists
-    var base_dir = std.Io.Dir.cwd().openDir(io_helper.io, install_path, .{}) catch {
+    var base_dir = io_helper.cwd().openDir(io_helper.io, install_path, .{}) catch {
         try errors.append(allocator, try std.fmt.allocPrint(
             allocator,
             "Install directory does not exist: {s}",

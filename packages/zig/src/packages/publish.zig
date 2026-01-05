@@ -273,7 +273,7 @@ pub fn findPackageConfig(allocator: std.mem.Allocator, dir: []const u8) ![]const
         const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir, config_file });
         defer allocator.free(full_path);
 
-        std.fs.accessAbsolute(full_path, .{}) catch continue;
+        io_helper.accessAbsolute(full_path, .{}) catch continue;
 
         // Found a config file
         return try allocator.dupe(u8, full_path);

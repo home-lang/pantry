@@ -81,7 +81,7 @@ pub const RollbackManager = struct {
         );
         errdefer self.allocator.free(backup_path);
 
-        std.Io.Dir.cwd().copyFile(io_helper.io, path, std.Io.Dir.cwd(), backup_path, .{}) catch |err| {
+        io_helper.cwd().copyFile(io_helper.io, path, io_helper.cwd(), backup_path, .{}) catch |err| {
             self.allocator.free(backup_path);
             return err;
         };
@@ -138,10 +138,10 @@ pub const RollbackManager = struct {
                 },
                 .file_modified => |info| {
                     std.debug.print("  Restoring modified file: {s}\n", .{info.path});
-                    std.Io.Dir.cwd().copyFile(
+                    io_helper.cwd().copyFile(
                         io_helper.io,
                         info.backup_path,
-                        std.Io.Dir.cwd(),
+                        io_helper.cwd(),
                         info.path,
                         .{},
                     ) catch |err| {

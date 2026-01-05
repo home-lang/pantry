@@ -146,7 +146,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     var config_path: ?[]const u8 = null;
     for (config_files) |config_file| {
         const full_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, config_file });
-        std.Io.Dir.cwd().access(io_helper.io, full_path, .{}) catch {
+        io_helper.cwd().access(io_helper.io, full_path, .{}) catch {
             allocator.free(full_path);
             continue;
         };
@@ -328,10 +328,10 @@ fn saveDependenciesToConfig(
     try serializeJsonValue(parsed.value, &append_writer, 0);
     try buf.append(allocator, '\n');
 
-    // Use blocking std.fs API for writeFile
-    const fs_file = try std.fs.cwd().createFile(config_path, .{});
-    defer fs_file.close();
-    try fs_file.writeAll(buf.items);
+    // Use blocking io_helper API for writeFile
+    const fs_file = try io_helper.cwd().createFile(io_helper.io, config_path, .{});
+    defer fs_file.close(io_helper.io);
+    try io_helper.writeAllToFile(fs_file, buf.items);
 }
 
 fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
@@ -1048,8 +1048,8 @@ fn devShellcodeAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     if (result.message) |msg| {
         // Write to stdout for eval to capture
-        const stdout = std.fs.File.stdout();
-        _ = try stdout.writeAll(msg);
+        const stdout = std.Io.File.stdout();
+        try io_helper.writeAllToFile(stdout, msg);
     }
 
     std.process.exit(result.exit_code);

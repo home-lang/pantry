@@ -48,7 +48,7 @@ pub const SharedCache = struct {
         errdefer allocator.free(cache_dir);
 
         // Ensure directory exists with appropriate permissions
-        try std.Io.Dir.cwd().makePath(io_helper.io, cache_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, cache_dir);
 
         // Update base config with shared directory
         var base_config = config.base_config;
@@ -68,7 +68,7 @@ pub const SharedCache = struct {
             );
             defer allocator.free(lock_path);
 
-            lock_file = try std.Io.Dir.cwd().createFile(io_helper.io, lock_path, .{
+            lock_file = try io_helper.cwd().createFile(io_helper.io, lock_path, .{
                 .read = true,
                 .truncate = false,
             });

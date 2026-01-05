@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Configuration for concurrent script execution
 pub const ConcurrentConfig = struct {
@@ -155,8 +156,7 @@ fn executeScript(task: ScriptTask, config: ConcurrentConfig) !ScriptResult {
     }
 
     // Execute the script
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
+    const result = std.process.Child.run(allocator, io_helper.io, .{
         .argv = argv_buf[0..argc],
         .cwd = config.cwd,
     }) catch |err| {

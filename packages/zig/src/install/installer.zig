@@ -251,7 +251,7 @@ pub const Installer = struct {
         defer if (needs_free) self.allocator.free(local_path);
 
         // Verify the local path exists
-        var local_dir = std.Io.Dir.cwd().openDir(io_helper.io, local_path, .{}) catch |err| {
+        var local_dir = io_helper.cwd().openDir(io_helper.io, local_path, .{}) catch |err| {
             std.debug.print("Error: Local path '{s}' does not exist or is not accessible: {}\n", .{ local_path, err });
             return error.FileNotFound;
         };
@@ -278,7 +278,7 @@ pub const Installer = struct {
             );
             defer self.allocator.free(modules_bin_dir);
 
-            try std.Io.Dir.cwd().makePath(io_helper.io, modules_bin_dir);
+            try io_helper.cwd().createDirPath(io_helper.io, modules_bin_dir);
 
             // Check if symlink already exists
             io_helper.deleteFile(modules_bin) catch {};
@@ -293,7 +293,7 @@ pub const Installer = struct {
 
             // Try bin/name first, fall back to the directory itself
             const target = blk2: {
-                var check_bin = std.Io.Dir.cwd().openFile(io_helper.io, target_bin, .{}) catch break :blk2 abs_local_path;
+                var check_bin = io_helper.cwd().openFile(io_helper.io, target_bin, .{}) catch break :blk2 abs_local_path;
                 check_bin.close(io_helper.io);
                 break :blk2 target_bin;
             };
@@ -356,7 +356,7 @@ pub const Installer = struct {
 
         // Check if already installed
         const already_installed = !options.force and blk: {
-            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
+            var check_dir = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
             check_dir.close(io_helper.io);
             break :blk true;
         };
@@ -396,8 +396,7 @@ pub const Installer = struct {
         defer self.allocator.free(clone_url);
 
         // Try cloning with the specified branch/tag first
-        var clone_result = try std.process.Child.run(.{
-            .allocator = self.allocator,
+        var clone_result = try std.process.Child.run(self.allocator, io_helper.io, .{
             .argv = &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir },
         });
 
@@ -406,8 +405,7 @@ pub const Installer = struct {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
 
-            clone_result = try std.process.Child.run(.{
-                .allocator = self.allocator,
+            clone_result = try std.process.Child.run(self.allocator, io_helper.io, .{
                 .argv = &[_][]const u8{ "git", "clone", "--depth", "1", clone_url, temp_dir },
             });
         }
@@ -424,23 +422,23 @@ pub const Installer = struct {
         }
 
         // Create install directory
-        try std.Io.Dir.cwd().makePath(io_helper.io, install_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, install_dir);
 
         // Move contents from temp to final location
         // Git clone creates a directory, so we need to move the contents
-        // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
-        var temp_dir_handle = try std.fs.cwd().openDir(temp_dir, .{ .iterate = true });
-        defer temp_dir_handle.close();
+        // Use io_helper.cwd() for iteration
+        var temp_dir_handle = try io_helper.cwd().openDir(io_helper.io, temp_dir, .{ .iterate = true });
+        defer temp_dir_handle.close(io_helper.io);
 
         var iter = temp_dir_handle.iterate();
-        while (try iter.next()) |entry| {
+        while (try iter.next(io_helper.io)) |entry| {
             const src_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ temp_dir, entry.name });
             defer self.allocator.free(src_path);
 
             const dest_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ install_dir, entry.name });
             defer self.allocator.free(dest_path);
 
-            try std.fs.cwd().rename(src_path, dest_path);
+            try io_helper.cwd().rename(src_path, io_helper.cwd(), dest_path, io_helper.io);
         }
 
         // Create project symlinks if installing to project
@@ -487,7 +485,7 @@ pub const Installer = struct {
 
         // Check if already installed
         const already_installed = !options.force and blk: {
-            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
+            var check_dir = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
             check_dir.close(io_helper.io);
             break :blk true;
         };
@@ -530,7 +528,7 @@ pub const Installer = struct {
             io_helper.deleteTree(temp_dir) catch {};
         }
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
 
         // Download the archive
         const archive_path = try std.fmt.allocPrint(
@@ -574,16 +572,16 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, extract_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, "tar.xz", options.quiet);
 
         // Find the actual Zig directory (it's usually named zig-{platform}-{arch}-{version})
-        var extracted_handle = try std.fs.openDirAbsolute(extract_dir, .{ .iterate = true });
-        defer extracted_handle.close();
+        var extracted_handle = try io_helper.openDirAbsolute(extract_dir, .{ .iterate = true });
+        defer extracted_handle.close(io_helper.io);
 
         var zig_source_dir: ?[]const u8 = null;
         var iter = extracted_handle.iterate();
-        while (try iter.next()) |entry| {
+        while (try iter.next(io_helper.io)) |entry| {
             if (entry.kind == .directory and std.mem.startsWith(u8, entry.name, "zig-")) {
                 zig_source_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ extract_dir, entry.name });
                 break;
@@ -597,7 +595,7 @@ pub const Installer = struct {
         defer self.allocator.free(zig_source_dir.?);
 
         // Create install directory and copy contents
-        try std.Io.Dir.cwd().makePath(io_helper.io, install_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, install_dir);
         try self.copyDirectoryStructure(zig_source_dir.?, install_dir);
 
         // Create project symlinks if installing to project
@@ -609,7 +607,7 @@ pub const Installer = struct {
                 .{project_root},
             );
             defer self.allocator.free(bin_dir);
-            try std.Io.Dir.cwd().makePath(io_helper.io, bin_dir);
+            try io_helper.cwd().createDirPath(io_helper.io, bin_dir);
 
             // Create symlink for zig binary
             const zig_binary = try std.fmt.allocPrint(
@@ -627,8 +625,8 @@ pub const Installer = struct {
             defer self.allocator.free(zig_link);
 
             // Remove existing symlink if it exists
-            std.fs.deleteFileAbsolute(zig_link) catch {};
-            std.fs.symLinkAbsolute(zig_binary, zig_link, .{}) catch |err| {
+            io_helper.deleteFile(zig_link) catch {};
+            io_helper.Dir.symLinkAbsolute(io_helper.io, zig_binary, zig_link, .{}) catch |err| {
                 std.debug.print("Warning: Failed to create zig symlink: {}\n", .{err});
             };
         }
@@ -656,7 +654,7 @@ pub const Installer = struct {
         defer self.allocator.free(global_pkg_dir);
 
         const from_cache = !options.force and blk: {
-            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch break :blk false;
+            var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch break :blk false;
             check_dir.close(io_helper.io);
             break :blk true;
         };
@@ -700,7 +698,7 @@ pub const Installer = struct {
 
         // Check if already installed in project
         const already_installed = !options.force and blk: {
-            var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, project_pkg_dir, .{}) catch break :blk false;
+            var check_dir = io_helper.cwd().openDir(io_helper.io, project_pkg_dir, .{}) catch break :blk false;
             check_dir.close(io_helper.io);
             break :blk true;
         };
@@ -716,7 +714,7 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
 
-        var global_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
+        var global_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
             if (err != error.FileNotFound) return err;
             break :blk null;
         };
@@ -725,7 +723,7 @@ pub const Installer = struct {
             dir.close(io_helper.io);
             // Copy from global cache to project's pantry
             used_cache.* = true;
-            try std.Io.Dir.cwd().makePath(io_helper.io, project_pkg_dir);
+            try io_helper.cwd().createDirPath(io_helper.io, project_pkg_dir);
             try self.copyDirectoryStructure(global_pkg_dir, project_pkg_dir);
             try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
             return project_pkg_dir;
@@ -751,7 +749,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(temp_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
         defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
@@ -831,7 +829,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, extract_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root
@@ -839,7 +837,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy package contents to project directory
-        try std.Io.Dir.cwd().makePath(io_helper.io, project_pkg_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, project_pkg_dir);
         try self.copyDirectoryStructure(package_source, project_pkg_dir);
 
         // Fix library paths for macOS
@@ -862,7 +860,7 @@ pub const Installer = struct {
         defer self.allocator.free(global_pkg_dir);
 
         // Verify it exists
-        var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch {
+        var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch {
             // Not in global cache - shouldn't happen if cache.has() returned true
             return error.CacheInconsistent;
         };
@@ -924,7 +922,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(env_bin_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, env_bin_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, env_bin_dir);
 
         // Global package bin directory
         const global_bin_dir = try std.fmt.allocPrint(
@@ -951,7 +949,7 @@ pub const Installer = struct {
             defer self.allocator.free(link);
 
             // Check if source exists
-            std.fs.accessAbsolute(source, .{}) catch |err| {
+            io_helper.accessAbsolute(source, .{}) catch |err| {
                 if (err == error.FileNotFound) {
                     std.debug.print("Warning: Program not found: {s}\n", .{source});
                     continue;
@@ -960,10 +958,10 @@ pub const Installer = struct {
             };
 
             // Remove existing symlink if it exists
-            std.fs.deleteFileAbsolute(link) catch {};
+            io_helper.deleteFile(link) catch {};
 
             // Create symlink
-            std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
+            io_helper.Dir.symLinkAbsolute(io_helper.io, source, link, .{}) catch |err| {
                 std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
@@ -981,7 +979,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(project_bin_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, project_bin_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, project_bin_dir);
 
         // First, try to load bin paths from package configuration (pantry.json or package.json)
         var custom_bins_created = false;
@@ -998,7 +996,7 @@ pub const Installer = struct {
             defer self.allocator.free(config_path);
 
             // Check if config file exists
-            std.fs.accessAbsolute(config_path, .{}) catch continue;
+            io_helper.accessAbsolute(config_path, .{}) catch continue;
 
             // Try to load and extract bin paths
             var config = config_loader.loadpantryConfig(self.allocator, .{
@@ -1040,7 +1038,7 @@ pub const Installer = struct {
                         defer self.allocator.free(link);
 
                         // Check if source exists
-                        std.fs.accessAbsolute(source, .{}) catch |err| {
+                        io_helper.accessAbsolute(source, .{}) catch |err| {
                             if (err == error.FileNotFound) {
                                 std.debug.print("Warning: Bin not found: {s}\n", .{source});
                                 continue;
@@ -1049,10 +1047,10 @@ pub const Installer = struct {
                         };
 
                         // Remove existing symlink if it exists
-                        std.fs.deleteFileAbsolute(link) catch {};
+                        io_helper.deleteFile(link) catch {};
 
                         // Create symlink
-                        std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
+                        io_helper.Dir.symLinkAbsolute(io_helper.io, source, link, .{}) catch |err| {
                             std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
                             continue;
                         };
@@ -1092,10 +1090,10 @@ pub const Installer = struct {
             defer self.allocator.free(link);
 
             // Remove existing symlink if it exists
-            std.fs.deleteFileAbsolute(link) catch {};
+            io_helper.deleteFile(link) catch {};
 
             // Create symlink using absolute paths
-            std.fs.symLinkAbsolute(bin_info.path, link, .{}) catch |err| {
+            io_helper.Dir.symLinkAbsolute(io_helper.io, bin_info.path, link, .{}) catch |err| {
                 std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
@@ -1115,7 +1113,7 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         errdefer self.allocator.free(global_pkg_dir);
 
-        var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
+        var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
             if (err != error.FileNotFound) return err;
             break :blk null;
         };
@@ -1137,7 +1135,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(temp_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, temp_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
         defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
@@ -1217,7 +1215,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, extract_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root (might be nested like domain/v{version}/)
@@ -1225,7 +1223,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy/move package contents to global cache location
-        try std.Io.Dir.cwd().makePath(io_helper.io, global_pkg_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, global_pkg_dir);
         try self.copyDirectoryStructure(package_source, global_pkg_dir);
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
@@ -1254,7 +1252,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(bin_dir);
 
-        try std.Io.Dir.cwd().makePath(io_helper.io, bin_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, bin_dir);
 
         // The actual binaries are in {install_dir}/{domain}/v{version}/bin/
         const actual_bin_dir = try std.fmt.allocPrint(
@@ -1281,7 +1279,7 @@ pub const Installer = struct {
             defer self.allocator.free(link);
 
             // Check if source exists
-            std.fs.accessAbsolute(source, .{}) catch |err| {
+            io_helper.accessAbsolute(source, .{}) catch |err| {
                 if (err == error.FileNotFound) {
                     std.debug.print("Warning: Program not found: {s}\n", .{source});
                     continue;
@@ -1290,10 +1288,10 @@ pub const Installer = struct {
             };
 
             // Remove existing symlink if it exists
-            std.fs.deleteFileAbsolute(link) catch {};
+            io_helper.deleteFile(link) catch {};
 
             // Create symlink
-            std.fs.symLinkAbsolute(source, link, .{}) catch |err| {
+            io_helper.Dir.symLinkAbsolute(io_helper.io, source, link, .{}) catch |err| {
                 std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
@@ -1333,22 +1331,22 @@ pub const Installer = struct {
         defer self.allocator.free(packages_dir);
 
         // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
-        var dir = std.fs.cwd().openDir(packages_dir, .{ .iterate = true }) catch |err| switch (err) {
+        var dir = io_helper.cwd().openDir(io_helper.io, packages_dir, .{ .iterate = true }) catch |err| switch (err) {
             error.FileNotFound => return installed,
             else => return err,
         };
-        defer dir.close();
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             if (entry.kind != .directory) continue;
 
             // Each package has its own directory with version subdirectories
-            var pkg_dir = try dir.openDir(entry.name, .{ .iterate = true });
-            defer pkg_dir.close();
+            var pkg_dir = try dir.openDir(io_helper.io, entry.name, .{ .iterate = true });
+            defer pkg_dir.close(io_helper.io);
 
             var ver_it = pkg_dir.iterate();
-            while (try ver_it.next()) |ver_entry| {
+            while (try ver_it.next(io_helper.io)) |ver_entry| {
                 if (ver_entry.kind != .directory) continue;
 
                 const install_path = try std.fmt.allocPrint(
@@ -1357,13 +1355,13 @@ pub const Installer = struct {
                     .{ packages_dir, entry.name, ver_entry.name },
                 );
 
-                const stat = try pkg_dir.statFile(ver_entry.name);
+                const stat = try pkg_dir.statFile(io_helper.io, ver_entry.name, .{});
 
                 try installed.append(self.allocator, .{
                     .name = try self.allocator.dupe(u8, entry.name),
                     .version = try self.allocator.dupe(u8, ver_entry.name),
                     .install_path = install_path,
-                    .installed_at = @intCast(stat.ctime.toSeconds()),
+                    .installed_at = @intCast(@divFloor(stat.ctime.nanoseconds, 1_000_000_000)),
                     .size = @intCast(stat.size),
                 });
             }
@@ -1394,11 +1392,11 @@ pub const Installer = struct {
         }
 
         // 3. Try first subdirectory
-        var dir = try std.fs.openDirAbsolute(extract_dir, .{ .iterate = true });
-        defer dir.close();
+        var dir = try io_helper.openDirAbsolute(extract_dir, .{ .iterate = true });
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             if (entry.kind != .directory) continue;
 
             const subdir_path = try std.fs.path.join(
@@ -1419,11 +1417,11 @@ pub const Installer = struct {
     /// Check if a directory has package structure (bin, lib, include, share, etc.)
     fn hasPackageStructure(self: *Installer, dir_path: []const u8) bool {
         _ = self;
-        var dir = std.fs.openDirAbsolute(dir_path, .{ .iterate = true }) catch return false;
-        defer dir.close();
+        var dir = io_helper.openDirAbsolute(dir_path, .{ .iterate = true }) catch return false;
+        defer dir.close(io_helper.io);
 
         var it = dir.iterate();
-        while (it.next() catch return false) |entry| {
+        while (it.next(io_helper.io) catch return false) |entry| {
             if (entry.kind != .directory) continue;
 
             // Check for common package directories
@@ -1442,14 +1440,14 @@ pub const Installer = struct {
 
     /// Copy directory structure from source to destination
     fn copyDirectoryStructure(self: *Installer, source: []const u8, dest: []const u8) !void {
-        var src_dir = try std.fs.openDirAbsolute(source, .{ .iterate = true });
-        defer src_dir.close();
+        var src_dir = try io_helper.openDirAbsolute(source, .{ .iterate = true });
+        defer src_dir.close(io_helper.io);
 
         // Ensure destination exists
-        try std.Io.Dir.cwd().makePath(io_helper.io, dest);
+        try io_helper.cwd().createDirPath(io_helper.io, dest);
 
         var it = src_dir.iterate();
-        while (try it.next()) |entry| {
+        while (try it.next(io_helper.io)) |entry| {
             const src_path = try std.fs.path.join(
                 self.allocator,
                 &[_][]const u8{ source, entry.name },
@@ -1467,7 +1465,7 @@ pub const Installer = struct {
                 try self.copyDirectoryStructure(src_path, dst_path);
             } else {
                 // Copy file
-                try std.fs.copyFileAbsolute(src_path, dst_path, .{});
+                try io_helper.Dir.copyFileAbsolute(src_path, dst_path, io_helper.io, .{});
             }
         }
     }
@@ -1595,7 +1593,7 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, resolved_version);
         defer self.allocator.free(global_pkg_dir);
 
-        var check_dir = std.Io.Dir.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| {
+        var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| {
             if (err != error.FileNotFound) return err;
             // Not installed, continue
             const spec = PackageSpec{

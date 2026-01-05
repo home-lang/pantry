@@ -153,7 +153,7 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
     defer if (username) |u| allocator.free(u);
 
     // Try to read .pantryrc to find username
-    const file = std.fs.openFileAbsolute(pantryrc_path, .{}) catch |err| {
+    const file = io_helper.openFileAbsolute(pantryrc_path, .{}) catch |err| {
         if (err == error.FileNotFound) {
             std.debug.print("Not logged in (no .pantryrc found)\n", .{});
             std.debug.print("\nTo authenticate:\n", .{});
@@ -165,7 +165,7 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
         }
         return err;
     };
-    defer file.close();
+    defer file.close(io_helper.io);
 
     const content = try io_helper.readFileAlloc(allocator, pantryrc_path, 1024 * 1024);
     defer allocator.free(content);

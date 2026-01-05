@@ -56,7 +56,7 @@ pub const RegistryClient = struct {
     pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) !RegistryClient {
         // Heap-allocate Io.Threaded so http_client.io reference remains valid
         const io = try allocator.create(std.Io.Threaded);
-        io.* = std.Io.Threaded.init(allocator);
+        io.* = std.Io.Threaded.init(allocator, .{});
         return RegistryClient{
             .allocator = allocator,
             .registry_url = registry_url,

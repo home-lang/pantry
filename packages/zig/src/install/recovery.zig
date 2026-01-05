@@ -3,6 +3,7 @@
 //! Provides rollback and recovery mechanisms for failed installations
 
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Installation checkpoint for rollback
 pub const InstallCheckpoint = struct {
@@ -77,7 +78,7 @@ pub const InstallCheckpoint = struct {
         while (i > 0) {
             i -= 1;
             const file = self.created_files.items[i];
-            std.fs.deleteFileAbsolute(file) catch |err| {
+            io_helper.deleteFile(file) catch |err| {
                 std.debug.print("⚠️  Failed to delete {s}: {}\n", .{ file, err });
                 failed_count += 1;
             };
@@ -88,7 +89,7 @@ pub const InstallCheckpoint = struct {
         while (i > 0) {
             i -= 1;
             const dir = self.created_dirs.items[i];
-            std.fs.deleteTreeAbsolute(dir) catch |err| {
+            io_helper.deleteTree(dir) catch |err| {
                 std.debug.print("⚠️  Failed to delete {s}: {}\n", .{ dir, err });
                 failed_count += 1;
             };
@@ -122,7 +123,7 @@ pub const InstallCheckpoint = struct {
         );
         errdefer self.allocator.free(backup_dir);
 
-        try std.fs.makeDirAbsolute(backup_dir);
+        try io_helper.cwd().createDirPath(io_helper.io, backup_dir);
         self.backup_dir = backup_dir;
 
         std.debug.print("📦 Created backup at: {s}\n", .{backup_dir});
@@ -134,7 +135,7 @@ fn restoreFromBackup(backup_dir: []const u8) !void {
     std.debug.print("🔄 Restoring from backup: {s}\n", .{backup_dir});
 
     // After restore, clean up backup
-    defer std.fs.deleteTreeAbsolute(backup_dir) catch {};
+    defer io_helper.deleteTree(backup_dir) catch {};
 }
 
 /// Error recovery suggestions

@@ -144,7 +144,7 @@ pub fn getRcFile(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
         .bash => blk: {
             // Try .bashrc first, then .bash_profile
             const bashrc = try std.fmt.allocPrint(allocator, "{s}/.bashrc", .{home});
-            std.Io.Dir.cwd().access(io_helper.io, bashrc, .{}) catch {
+            io_helper.cwd().access(io_helper.io, bashrc, .{}) catch {
                 allocator.free(bashrc);
                 break :blk try std.fmt.allocPrint(allocator, "{s}/.bash_profile", .{home});
             };
