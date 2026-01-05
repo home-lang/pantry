@@ -101,10 +101,16 @@ jobs:
           cd packages/zig/pantry/zig-config
           # Fix std.fs.cwd().realpath -> std.posix.getcwd for Zig 0.16
           sed -i 's/std\.fs\.cwd()\.realpath("\.", &cwd_buf)/std.posix.getcwd(\&cwd_buf)/g' src/config_loader.zig
+          # Add io helper for file_loader.zig (insert after first line)
+          sed -i '1a\var io_instance: std.Io.Threaded = .init_single_threaded;\nfn getIo() std.Io { return io_instance.io(); }' src/services/file_loader.zig
           # Fix std.fs.accessAbsolute -> std.Io.Dir.accessAbsolute
           sed -i 's/std\.fs\.accessAbsolute(path, \.{})/std.Io.Dir.accessAbsolute(getIo(), path, .{})/g' src/services/file_loader.zig
           # Fix std.fs.openFileAbsolute -> std.Io.Dir.openFileAbsolute
           sed -i 's/std\.fs\.openFileAbsolute(path, \.{})/std.Io.Dir.openFileAbsolute(getIo(), path, .{})/g' src/services/file_loader.zig
+          # Fix file.read -> std.posix.read
+          sed -i 's/file\.read(&buf)/std.posix.read(file.handle, \&buf)/g' src/services/file_loader.zig
+          # Fix file.close() -> file.close(getIo())
+          sed -i 's/file\.close()/file.close(getIo())/g' src/services/file_loader.zig
 
       - name: Zig Tests
         run: cd packages/zig && zig build test:all
