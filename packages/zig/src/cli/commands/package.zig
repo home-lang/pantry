@@ -723,25 +723,61 @@ fn createTarball(
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // npm requires all files to be inside a "package/" directory in the tarball
-    // Use tar's --transform option to add "package/" prefix to all paths
+    // Create staging directory structure: /tmp/pantry-staging/package/
+    const staging_base = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-staging" });
+    defer allocator.free(staging_base);
+    const staging_pkg = try std.fs.path.join(allocator, &[_][]const u8{ staging_base, "package" });
+    defer allocator.free(staging_pkg);
+
+    // Clean and create staging directory
+    _ = std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "rm", "-rf", staging_base },
+    }) catch {};
+
+    const mkdir_result = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "mkdir", "-p", staging_pkg },
+    });
+    defer allocator.free(mkdir_result.stdout);
+    defer allocator.free(mkdir_result.stderr);
+
+    // Copy files to staging/package/ (excluding unwanted dirs)
+    // Use shell to handle exclusions properly
+    const copy_cmd = try std.fmt.allocPrint(
+        allocator,
+        "cd {s} && find . -maxdepth 1 ! -name node_modules ! -name pantry ! -name .git ! -name '*.tgz' ! -name . -exec cp -r {{}} {s}/ \\;",
+        .{ package_dir, staging_pkg },
+    );
+    defer allocator.free(copy_cmd);
+
+    const cp_result = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "sh", "-c", copy_cmd },
+    });
+    defer allocator.free(cp_result.stdout);
+    defer allocator.free(cp_result.stderr);
+
+    if (cp_result.term != .Exited or cp_result.term.Exited != 0) {
+        std.debug.print("Copy failed. stderr: {s}\n", .{cp_result.stderr});
+        return error.TarballCreationFailed;
+    }
+
+    // Create tarball with "package" directory at root
     const result = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{
             "tar",
             "-czf",
             tarball_path,
             "-C",
-            package_dir,
-            "--transform",
-            "s,^\\.,package,", // Transform "." to "package" and "./foo" to "package/foo"
-            "--exclude=node_modules",
-            "--exclude=pantry",
-            "--exclude=.git",
-            "--exclude=*.tgz",
-            ".",
+            staging_base,
+            "package",
         },
     });
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
+
+    // Cleanup staging
+    _ = std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "rm", "-rf", staging_base },
+    }) catch {};
 
     if (result.term != .Exited or result.term.Exited != 0) {
         std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
