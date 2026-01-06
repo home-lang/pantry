@@ -722,23 +722,68 @@ fn createTarball(
     const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
-    // Use tar command to create tarball
+    // npm requires all files to be inside a "package/" directory in the tarball
+    // Create a temporary directory with the correct structure
+    const staging_dir = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-staging" });
+    defer allocator.free(staging_dir);
+    const package_staging = try std.fs.path.join(allocator, &[_][]const u8{ staging_dir, "package" });
+    defer allocator.free(package_staging);
+
+    // Clean up any existing staging directory and create fresh
+    io_helper.deleteTree(staging_dir) catch {};
+
+    // Create staging/package directory
+    const mkdir_result = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "mkdir", "-p", package_staging },
+    });
+    defer allocator.free(mkdir_result.stdout);
+    defer allocator.free(mkdir_result.stderr);
+
+    if (mkdir_result.term != .Exited or mkdir_result.term.Exited != 0) {
+        std.debug.print("Failed to create staging directory\n", .{});
+        return error.TarballCreationFailed;
+    }
+
+    // Copy package contents to staging/package, excluding unwanted files
+    const package_dir_with_slash = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
+    defer allocator.free(package_dir_with_slash);
+
+    const rsync_result = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{
+            "rsync",
+            "-a",
+            "--exclude=node_modules",
+            "--exclude=pantry",
+            "--exclude=.git",
+            "--exclude=*.tgz",
+            package_dir_with_slash,
+            package_staging,
+        },
+    });
+    defer allocator.free(rsync_result.stdout);
+    defer allocator.free(rsync_result.stderr);
+
+    if (rsync_result.term != .Exited or rsync_result.term.Exited != 0) {
+        std.debug.print("Failed to copy package contents. stderr: {s}\n", .{rsync_result.stderr});
+        return error.TarballCreationFailed;
+    }
+
+    // Create tarball from staging directory with "package" at root
     const result = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{
             "tar",
             "-czf",
             tarball_path,
             "-C",
-            package_dir,
-            "--exclude=node_modules",
-            "--exclude=pantry",
-            "--exclude=.git",
-            "--exclude=*.tgz",
-            ".",
+            staging_dir,
+            "package",
         },
     });
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
+
+    // Clean up staging directory
+    io_helper.deleteTree(staging_dir) catch {};
 
     if (result.term != .Exited or result.term.Exited != 0) {
         std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
