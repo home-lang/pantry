@@ -794,22 +794,31 @@ fn createTarball(
         return error.TarballCreationFailed;
     }
 
-    // Debug: show tarball info
-    const tar_info = try std.process.Child.run(allocator, io_helper.io, .{
-        .argv = &[_][]const u8{ "ls", "-la", tarball_path },
-        .max_output_bytes = 1024 * 1024,
+    // Check tarball size - warn if too big (npm limit is ~200MB but packages should be small)
+    const stat_result = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "stat", "-c", "%s", tarball_path },
+        .max_output_bytes = 1024,
     });
-    std.debug.print("Tarball created: {s}\n", .{tar_info.stdout});
-    defer allocator.free(tar_info.stdout);
-    defer allocator.free(tar_info.stderr);
+    defer allocator.free(stat_result.stdout);
+    defer allocator.free(stat_result.stderr);
 
-    const tar_contents = try std.process.Child.run(allocator, io_helper.io, .{
-        .argv = &[_][]const u8{ "tar", "-tzf", tarball_path },
-        .max_output_bytes = 1024 * 1024,
-    });
-    std.debug.print("Tarball contents:\n{s}\n", .{tar_contents.stdout});
-    defer allocator.free(tar_contents.stdout);
-    defer allocator.free(tar_contents.stderr);
+    const size_str = std.mem.trim(u8, stat_result.stdout, " \n\r\t");
+    const size = std.fmt.parseInt(u64, size_str, 10) catch 0;
+    std.debug.print("Tarball size: {d} bytes ({d} MB)\n", .{ size, size / (1024 * 1024) });
+
+    if (size > 50 * 1024 * 1024) { // 50MB warning
+        std.debug.print("WARNING: Tarball is very large! Check for unwanted files.\n", .{});
+        // List first few entries to debug
+        const peek_cmd = try std.fmt.allocPrint(allocator, "tar -tzf {s} | head -20", .{tarball_path});
+        defer allocator.free(peek_cmd);
+        const peek = try std.process.Child.run(allocator, io_helper.io, .{
+            .argv = &[_][]const u8{ "sh", "-c", peek_cmd },
+            .max_output_bytes = 4096,
+        });
+        defer allocator.free(peek.stdout);
+        defer allocator.free(peek.stderr);
+        std.debug.print("First 20 entries:\n{s}\n", .{peek.stdout});
+    }
 
     return tarball_path;
 }
