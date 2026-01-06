@@ -749,7 +749,7 @@ fn createTarball(
     const cp_result = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{
             "rsync",
-            "-av",
+            "-a",
             "--exclude=node_modules",
             "--exclude=pantry",
             "--exclude=.git",
@@ -759,11 +759,10 @@ fn createTarball(
             src_path,
             dst_path,
         },
+        .max_output_bytes = 10 * 1024 * 1024, // 10MB limit
     });
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
-
-    std.debug.print("rsync output:\n{s}\n", .{cp_result.stdout});
 
     if (cp_result.term != .Exited or cp_result.term.Exited != 0) {
         std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
@@ -798,6 +797,7 @@ fn createTarball(
     // Debug: show tarball info
     const tar_info = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{ "ls", "-la", tarball_path },
+        .max_output_bytes = 1024 * 1024,
     });
     std.debug.print("Tarball created: {s}\n", .{tar_info.stdout});
     defer allocator.free(tar_info.stdout);
@@ -805,6 +805,7 @@ fn createTarball(
 
     const tar_contents = try std.process.Child.run(allocator, io_helper.io, .{
         .argv = &[_][]const u8{ "tar", "-tzf", tarball_path },
+        .max_output_bytes = 1024 * 1024,
     });
     std.debug.print("Tarball contents:\n{s}\n", .{tar_contents.stdout});
     defer allocator.free(tar_contents.stdout);
