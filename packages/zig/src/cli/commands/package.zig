@@ -740,23 +740,33 @@ fn createTarball(
     defer allocator.free(mkdir_result.stdout);
     defer allocator.free(mkdir_result.stderr);
 
-    // Copy files to staging/package/ (excluding unwanted dirs)
-    // Use shell to handle exclusions properly
-    const copy_cmd = try std.fmt.allocPrint(
-        allocator,
-        "cd {s} && find . -maxdepth 1 ! -name node_modules ! -name pantry ! -name .git ! -name '*.tgz' ! -name . -exec cp -r {{}} {s}/ \\;",
-        .{ package_dir, staging_pkg },
-    );
-    defer allocator.free(copy_cmd);
+    // Copy files to staging/package/ using rsync (available on Ubuntu)
+    const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
+    defer allocator.free(src_path);
+    const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
+    defer allocator.free(dst_path);
 
     const cp_result = try std.process.Child.run(allocator, io_helper.io, .{
-        .argv = &[_][]const u8{ "sh", "-c", copy_cmd },
+        .argv = &[_][]const u8{
+            "rsync",
+            "-av",
+            "--exclude=node_modules",
+            "--exclude=pantry",
+            "--exclude=.git",
+            "--exclude=*.tgz",
+            "--exclude=.github",
+            "--exclude=.claude",
+            src_path,
+            dst_path,
+        },
     });
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
 
+    std.debug.print("rsync output:\n{s}\n", .{cp_result.stdout});
+
     if (cp_result.term != .Exited or cp_result.term.Exited != 0) {
-        std.debug.print("Copy failed. stderr: {s}\n", .{cp_result.stderr});
+        std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
         return error.TarballCreationFailed;
     }
 
@@ -784,6 +794,21 @@ fn createTarball(
         std.debug.print("stderr: {s}\n", .{result.stderr});
         return error.TarballCreationFailed;
     }
+
+    // Debug: show tarball info
+    const tar_info = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "ls", "-la", tarball_path },
+    });
+    std.debug.print("Tarball created: {s}\n", .{tar_info.stdout});
+    defer allocator.free(tar_info.stdout);
+    defer allocator.free(tar_info.stderr);
+
+    const tar_contents = try std.process.Child.run(allocator, io_helper.io, .{
+        .argv = &[_][]const u8{ "tar", "-tzf", tarball_path },
+    });
+    std.debug.print("Tarball contents:\n{s}\n", .{tar_contents.stdout});
+    defer allocator.free(tar_contents.stdout);
+    defer allocator.free(tar_contents.stderr);
 
     return tarball_path;
 }
