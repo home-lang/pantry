@@ -556,7 +556,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     }
 }
 
-/// Attempt to publish using OIDC authentication
+/// Attempt to publish using OIDC authentication with Sigstore provenance
 fn attemptOIDCPublish(
     allocator: std.mem.Allocator,
     registry_client: *@import("../../auth/registry.zig").RegistryClient,
@@ -566,6 +566,7 @@ fn attemptOIDCPublish(
     generate_provenance: bool,
 ) !bool {
     const oidc = @import("../../auth/oidc.zig");
+    const sigstore = @import("../../auth/sigstore.zig");
 
     // Detect OIDC provider
     var provider = try oidc.detectProvider(allocator) orelse return false;
@@ -614,17 +615,45 @@ fn attemptOIDCPublish(
         std.debug.print("  SHA: {s}\n", .{sha});
     }
 
-    // Generate provenance if requested
+    // Generate Sigstore provenance bundle if requested
+    var sigstore_bundle: ?[]const u8 = null;
+    defer if (sigstore_bundle) |bundle| allocator.free(bundle);
+
     if (generate_provenance) {
-        try generateProvenance(allocator, &token, package_name, version);
+        std.debug.print("\nGenerating Sigstore provenance attestation...\n", .{});
+
+        // Read tarball for hashing
+        const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch |err| {
+            std.debug.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
+            return false;
+        };
+        defer allocator.free(tarball_data);
+
+        // Create signed provenance using Sigstore (Fulcio + Rekor)
+        sigstore_bundle = sigstore.createSignedProvenance(
+            allocator,
+            &token,
+            package_name,
+            version,
+            tarball_data,
+        ) catch |err| blk: {
+            std.debug.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
+            std.debug.print("Continuing without provenance attestation...\n", .{});
+            break :blk null;
+        };
+
+        if (sigstore_bundle != null) {
+            std.debug.print("✓ Sigstore provenance bundle created\n", .{});
+        }
     }
 
-    // Publish package
-    const response = try registry_client.publishWithOIDC(
+    // Publish package with provenance bundle
+    const response = try registry_client.publishWithOIDCAndProvenance(
         package_name,
         version,
         tarball_path,
         &token,
+        sigstore_bundle,
     );
     defer {
         var mut_response = response;
@@ -659,6 +688,7 @@ fn attemptOIDCPublishUnverified(
     provider: *const @import("../../auth/oidc.zig").OIDCProvider,
 ) !bool {
     const oidc = @import("../../auth/oidc.zig");
+    const sigstore = @import("../../auth/sigstore.zig");
     _ = provider;
 
     // Decode token without signature verification
@@ -679,17 +709,43 @@ fn attemptOIDCPublishUnverified(
         std.debug.print("  Repository: {s}\n", .{repo});
     }
 
-    // Generate provenance if requested
+    // Generate Sigstore provenance bundle if requested
+    var sigstore_bundle: ?[]const u8 = null;
+    defer if (sigstore_bundle) |bundle| allocator.free(bundle);
+
     if (generate_provenance) {
-        try generateProvenance(allocator, &token, package_name, version);
+        std.debug.print("\nGenerating Sigstore provenance attestation...\n", .{});
+
+        // Read tarball for hashing
+        if (io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024)) |tarball_data| {
+            defer allocator.free(tarball_data);
+
+            sigstore_bundle = sigstore.createSignedProvenance(
+                allocator,
+                &token,
+                package_name,
+                version,
+                tarball_data,
+            ) catch |err| blk: {
+                std.debug.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
+                break :blk null;
+            };
+
+            if (sigstore_bundle != null) {
+                std.debug.print("✓ Sigstore provenance bundle created\n", .{});
+            }
+        } else |err| {
+            std.debug.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
+        }
     }
 
-    // Publish - registry will validate
-    const response = try registry_client.publishWithOIDC(
+    // Publish with provenance - registry will validate token
+    const response = try registry_client.publishWithOIDCAndProvenance(
         package_name,
         version,
         tarball_path,
         &token,
+        sigstore_bundle,
     );
     defer {
         var mut_response = response;
@@ -734,11 +790,11 @@ fn createTarball(
     defer allocator.free(staging_pkg);
 
     // Clean and create staging directory
-    _ = std.process.Child.run(allocator, io_helper.io, .{
+    _ = std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{ "rm", "-rf", staging_base },
     }) catch {};
 
-    const mkdir_result = try std.process.Child.run(allocator, io_helper.io, .{
+    const mkdir_result = try std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{ "mkdir", "-p", staging_pkg },
     });
     defer allocator.free(mkdir_result.stdout);
@@ -750,7 +806,7 @@ fn createTarball(
     const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
     defer allocator.free(dst_path);
 
-    const cp_result = try std.process.Child.run(allocator, io_helper.io, .{
+    const cp_result = try std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{
             "rsync",
             "-a",
@@ -777,7 +833,7 @@ fn createTarball(
     }
 
     // Create tarball with "package" directory at root
-    const result = try std.process.Child.run(allocator, io_helper.io, .{
+    const result = try std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{
             "tar",
             "-czf",
@@ -791,7 +847,7 @@ fn createTarball(
     defer allocator.free(result.stderr);
 
     // Cleanup staging
-    _ = std.process.Child.run(allocator, io_helper.io, .{
+    _ = std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{ "rm", "-rf", staging_base },
     }) catch {};
 
@@ -802,7 +858,7 @@ fn createTarball(
     }
 
     // Check tarball size - warn if too big (npm limit is ~200MB but packages should be small)
-    const stat_result = try std.process.Child.run(allocator, io_helper.io, .{
+    const stat_result = try std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{ "stat", "-c", "%s", tarball_path },
         .max_output_bytes = 1024,
     });
@@ -818,7 +874,7 @@ fn createTarball(
         // List first few entries to debug
         const peek_cmd = try std.fmt.allocPrint(allocator, "tar -tzf {s} | head -20", .{tarball_path});
         defer allocator.free(peek_cmd);
-        const peek = try std.process.Child.run(allocator, io_helper.io, .{
+        const peek = try std.process.Child.run(.{ .allocator = allocator,
             .argv = &[_][]const u8{ "sh", "-c", peek_cmd },
             .max_output_bytes = 4096,
         });

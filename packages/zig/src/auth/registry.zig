@@ -56,7 +56,7 @@ pub const RegistryClient = struct {
     pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) !RegistryClient {
         // Heap-allocate Io.Threaded so http_client.io reference remains valid
         const io = try allocator.create(std.Io.Threaded);
-        io.* = std.Io.Threaded.init(allocator, .{});
+        io.* = .init_single_threaded;
         return RegistryClient{
             .allocator = allocator,
             .registry_url = registry_url,
@@ -153,6 +153,107 @@ pub const RegistryClient = struct {
         defer self.allocator.free(auth_header);
 
         // Create extra headers (npm requires specific headers)
+        // npm-auth-type: oidc tells npm this is OIDC authentication
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+            .{ .name = "Content-Type", .value = "application/json" },
+            .{ .name = "Accept", .value = "application/json" },
+            .{ .name = "User-Agent", .value = "pantry/0.1.0" },
+            .{ .name = "npm-command", .value = "publish" },
+            .{ .name = "npm-auth-type", .value = "oidc" },
+        };
+
+        // Make HTTP request
+        var req = try self.http_client.request(.PUT, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        req.transfer_encoding = .{ .content_length = metadata.len };
+        try req.sendBodyComplete(@constCast(metadata));
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        // Read response body
+        const body_reader = response.reader(&.{});
+        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+            error.StreamTooLong => return error.ResponseTooLarge,
+            else => |e| return e,
+        };
+        defer self.allocator.free(body);
+
+        const success = response.head.status == .ok or response.head.status == .created;
+        const status_code = @intFromEnum(response.head.status);
+
+        const message = if (body.len > 0)
+            try self.allocator.dupe(u8, body)
+        else
+            null;
+
+        // Parse error details if publish failed
+        const error_details = if (!success and body.len > 0)
+            parseErrorDetails(self.allocator, body)
+        else
+            null;
+
+        return PublishResponse{
+            .success = success,
+            .status_code = status_code,
+            .message = message,
+            .error_details = error_details,
+        };
+    }
+
+    /// Publish package using OIDC authentication with Sigstore provenance bundle
+    /// This is the full npm provenance flow as documented at https://docs.npmjs.com/generating-provenance-statements
+    pub fn publishWithOIDCAndProvenance(
+        self: *RegistryClient,
+        package_name: []const u8,
+        version: []const u8,
+        tarball_path: []const u8,
+        token: *const oidc.OIDCToken,
+        sigstore_bundle: ?[]const u8,
+    ) !PublishResponse {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
+        // Construct registry URL for package publish
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}",
+            .{ self.registry_url, encoded_name },
+        );
+        defer self.allocator.free(url);
+
+        std.debug.print("Publishing to URL: {s}\n", .{url});
+
+        // Read tarball using io_helper (blocking std.fs API)
+        const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024); // 100 MB max
+        defer self.allocator.free(tarball);
+
+        // Create package metadata JSON with provenance
+        const metadata = try self.createPackageMetadataWithProvenance(
+            package_name,
+            version,
+            tarball,
+            sigstore_bundle,
+        );
+        defer self.allocator.free(metadata);
+
+        // Parse URI
+        const uri = try std.Uri.parse(url);
+
+        // Create authorization header
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{token.raw_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        // Create extra headers (npm requires specific headers for OIDC provenance)
         // npm-auth-type: oidc tells npm this is OIDC authentication
         const extra_headers = [_]http.Header{
             .{ .name = "Authorization", .value = auth_header },
@@ -552,6 +653,125 @@ pub const RegistryClient = struct {
                 tarball_basename, version, // _attachments key
                 encoded_tarball, // _attachments data
                 tarball.len, // _attachments length
+            },
+        );
+
+        return metadata;
+    }
+
+    /// Create package metadata with optional Sigstore provenance attestation
+    fn createPackageMetadataWithProvenance(
+        self: *RegistryClient,
+        package_name: []const u8,
+        version: []const u8,
+        tarball: []const u8,
+        sigstore_bundle: ?[]const u8,
+    ) ![]u8 {
+        // Base64 encode tarball
+        const encoder = std.base64.standard.Encoder;
+        const encoded_len = encoder.calcSize(tarball.len);
+        const encoded_tarball = try self.allocator.alloc(u8, encoded_len);
+        defer self.allocator.free(encoded_tarball);
+        _ = encoder.encode(encoded_tarball, tarball);
+
+        // Calculate SHA-1 shasum (hex)
+        var sha1: [20]u8 = undefined;
+        std.crypto.hash.Sha1.hash(tarball, &sha1, .{});
+        const hex_chars = "0123456789abcdef";
+        var shasum_buf: [40]u8 = undefined;
+        for (sha1, 0..) |byte, i| {
+            shasum_buf[i * 2] = hex_chars[byte >> 4];
+            shasum_buf[i * 2 + 1] = hex_chars[byte & 0x0F];
+        }
+
+        // Calculate SHA-512 integrity (base64)
+        var sha512: [64]u8 = undefined;
+        std.crypto.hash.sha2.Sha512.hash(tarball, &sha512, .{});
+        var integrity_buf: [88]u8 = undefined;
+        _ = std.base64.standard.Encoder.encode(&integrity_buf, &sha512);
+
+        // Build tarball URL - for scoped packages, encode the / as %2f
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
+        // Extract just the package name part (after the scope) for the tarball filename
+        const tarball_basename = if (std.mem.indexOf(u8, package_name, "/")) |idx|
+            package_name[idx + 1 ..]
+        else
+            package_name;
+
+        // Build attestations section if we have a Sigstore bundle
+        // npm expects attestations as an array under _attachments
+        var attestations_section = std.ArrayList(u8).empty;
+        defer attestations_section.deinit(self.allocator);
+
+        if (sigstore_bundle) |bundle| {
+            // npm expects attestations to be associated with the tarball attachment
+            // The format is: attestations array with predicateType and bundle
+            const attestation_json = try std.fmt.allocPrint(
+                self.allocator,
+                \\,
+                \\  "_attestations": {{
+                \\    "url": "/.well-known/npm/attestation/{s}@{s}",
+                \\    "provenance": {{
+                \\      "predicateType": "https://slsa.dev/provenance/v1",
+                \\      "bundle": {s}
+                \\    }}
+                \\  }}
+            ,
+                .{ package_name, version, bundle },
+            );
+            defer self.allocator.free(attestation_json);
+            try attestations_section.appendSlice(self.allocator, attestation_json);
+        }
+
+        // Create JSON metadata with provenance (NPM registry format)
+        const metadata = try std.fmt.allocPrint(
+            self.allocator,
+            \\{{
+            \\  "_id": "{s}",
+            \\  "name": "{s}",
+            \\  "dist-tags": {{
+            \\    "latest": "{s}"
+            \\  }},
+            \\  "versions": {{
+            \\    "{s}": {{
+            \\      "_id": "{s}@{s}",
+            \\      "name": "{s}",
+            \\      "version": "{s}",
+            \\      "dist": {{
+            \\        "integrity": "sha512-{s}",
+            \\        "shasum": "{s}",
+            \\        "tarball": "{s}/{s}/-/{s}-{s}.tgz"
+            \\      }}
+            \\    }}
+            \\  }},
+            \\  "access": "public",
+            \\  "_attachments": {{
+            \\    "{s}-{s}.tgz": {{
+            \\      "content_type": "application/octet-stream",
+            \\      "data": "{s}",
+            \\      "length": {d}
+            \\    }}
+            \\  }}{s}
+            \\}}
+        ,
+            .{
+                package_name, // _id
+                package_name, // name
+                version, // dist-tags.latest
+                version, // versions key
+                package_name, version, // versions[v]._id
+                package_name, // versions[v].name
+                version, // versions[v].version
+                &integrity_buf, // dist.integrity
+                &shasum_buf, // dist.shasum
+                self.registry_url, encoded_name, // dist.tarball (registry/encoded_name)
+                tarball_basename, version, // dist.tarball (/-/name-version.tgz)
+                tarball_basename, version, // _attachments key
+                encoded_tarball, // _attachments data
+                tarball.len, // _attachments length
+                attestations_section.items, // attestations section (or empty)
             },
         );
 

@@ -130,7 +130,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(data_dir);
 
     // Try to create directories
-    io_helper.cwd().createDirPath(io_helper.io, cache_dir) catch {
+    io_helper.cwd().makePath(io_helper.io, cache_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -139,7 +139,7 @@ fn checkPaths(allocator: std.mem.Allocator) !CheckResult {
         };
     };
 
-    io_helper.cwd().createDirPath(io_helper.io, data_dir) catch {
+    io_helper.cwd().makePath(io_helper.io, data_dir) catch {
         return .{
             .name = name,
             .passed = false,

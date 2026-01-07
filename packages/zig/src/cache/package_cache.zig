@@ -54,7 +54,7 @@ pub const PackageCache = struct {
         errdefer allocator.free(cache_dir);
 
         // Ensure cache directory exists
-        try io_helper.cwd().createDirPath(io_helper.io, cache_dir);
+        try io_helper.cwd().makePath(io_helper.io, cache_dir);
 
         return .{
             .cache_dir = cache_dir,
@@ -169,7 +169,7 @@ pub const PackageCache = struct {
             .{self.cache_dir},
         );
         defer self.allocator.free(packages_dir);
-        try io_helper.cwd().createDirPath(io_helper.io, packages_dir);
+        try io_helper.cwd().makePath(io_helper.io, packages_dir);
 
         // Write package data to cache
         const file = try io_helper.cwd().createFile(io_helper.io, cache_path, .{});

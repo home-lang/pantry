@@ -129,7 +129,7 @@ pub const ServiceManager = struct {
         defer self.allocator.free(service_dir);
 
         // Ensure directory exists
-        try io_helper.cwd().createDirPath(io_helper.io, service_dir);
+        try io_helper.cwd().makePath(io_helper.io, service_dir);
 
         const plist_path = try std.fmt.allocPrint(
             self.allocator,
@@ -208,7 +208,7 @@ pub const ServiceManager = struct {
         defer self.allocator.free(service_dir);
 
         // Ensure directory exists
-        try io_helper.cwd().createDirPath(io_helper.io, service_dir);
+        try io_helper.cwd().makePath(io_helper.io, service_dir);
 
         const unit_path = try std.fmt.allocPrint(
             self.allocator,

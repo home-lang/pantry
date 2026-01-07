@@ -40,7 +40,7 @@ pub fn bootstrapCommand(allocator: std.mem.Allocator, options: BootstrapOptions)
     // Step 1: Determine installation path
     const install_path = options.path orelse blk: {
         // Try /usr/local first, fall back to ~/.local
-        io_helper.cwd().createDirPath(io_helper.io, "/usr/local/bin") catch |err| {
+        io_helper.cwd().makePath(io_helper.io, "/usr/local/bin") catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 const home = try lib.Paths.home(allocator);
                 defer allocator.free(home);
@@ -133,7 +133,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
     _ = install_path;
 
     // Check if bun is already installed
-    const result = std.process.Child.run(allocator, io_helper.io, .{
+    const result = std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{ "bun", "--version" },
     });
 
@@ -153,7 +153,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
     }
 
     // Try to install bun using curl
-    const install_result = std.process.Child.run(allocator, io_helper.io, .{
+    const install_result = std.process.Child.run(.{ .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", "curl -fsSL https://bun.sh/install | bash" },
     });
 

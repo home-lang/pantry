@@ -63,7 +63,7 @@ pub const EnvManager = struct {
         errdefer allocator.free(data_dir);
 
         // Ensure data directory exists
-        try io_helper.cwd().createDirPath(io_helper.io, data_dir);
+        try io_helper.cwd().makePath(io_helper.io, data_dir);
 
         return .{
             .data_dir = data_dir,
@@ -98,7 +98,7 @@ pub const EnvManager = struct {
         // Create environment directory
         const env_dir = try self.getEnvDir(env.hash);
         defer self.allocator.free(env_dir);
-        try io_helper.cwd().createDirPath(io_helper.io, env_dir);
+        try io_helper.cwd().makePath(io_helper.io, env_dir);
 
         return env;
     }
