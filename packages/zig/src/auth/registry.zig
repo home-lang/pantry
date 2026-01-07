@@ -153,12 +153,14 @@ pub const RegistryClient = struct {
         defer self.allocator.free(auth_header);
 
         // Create extra headers (npm requires specific headers)
+        // npm-auth-type: oidc tells npm this is OIDC authentication
         const extra_headers = [_]http.Header{
             .{ .name = "Authorization", .value = auth_header },
             .{ .name = "Content-Type", .value = "application/json" },
             .{ .name = "Accept", .value = "application/json" },
             .{ .name = "User-Agent", .value = "pantry/0.1.0" },
             .{ .name = "npm-command", .value = "publish" },
+            .{ .name = "npm-auth-type", .value = "oidc" },
         };
 
         // Make HTTP request
