@@ -666,7 +666,7 @@ pub const Workspace = struct {
                 defer self.allocator.free(link_path);
 
                 // Create symlink
-                io_helper.cwd().symLink(io_helper.io, dep_full_path, link_path, .{ .is_directory = true }) catch |err| {
+                io_helper.symLink(dep_full_path, link_path) catch |err| {
                     if (err != error.PathAlreadyExists) {
                         return err;
                     }

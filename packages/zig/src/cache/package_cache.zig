@@ -54,7 +54,7 @@ pub const PackageCache = struct {
         errdefer allocator.free(cache_dir);
 
         // Ensure cache directory exists
-        try io_helper.cwd().makePath(io_helper.io, cache_dir);
+        try io_helper.makePath(cache_dir);
 
         return .{
             .cache_dir = cache_dir,
@@ -118,7 +118,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.get(key)) |meta| {
             // Verify file exists
-            io_helper.cwd().access(io_helper.io, meta.cache_path, .{}) catch {
+            io_helper.access(meta.cache_path, .{}) catch {
                 return false;
             };
             return true;
@@ -137,7 +137,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.getPtr(key)) |meta| {
             // Verify file exists
-            io_helper.cwd().access(io_helper.io, meta.cache_path, .{}) catch {
+            io_helper.access(meta.cache_path, .{}) catch {
                 return null;
             };
 
@@ -169,11 +169,11 @@ pub const PackageCache = struct {
             .{self.cache_dir},
         );
         defer self.allocator.free(packages_dir);
-        try io_helper.cwd().makePath(io_helper.io, packages_dir);
+        try io_helper.makePath(packages_dir);
 
         // Write package data to cache
-        const file = try io_helper.cwd().createFile(io_helper.io, cache_path, .{});
-        defer file.close(io_helper.io);
+        const file = try io_helper.createFile(cache_path, .{});
+        defer io_helper.closeFile(file);
         try io_helper.writeAllToFile(file, data);
 
         // Create metadata

@@ -457,14 +457,14 @@ test "EnvCache basic operations" {
     // Create a temporary test file
     const tmp_file = "/tmp/pantry_test_deps.yaml";
     {
-        const file = try io_helper.cwd().createFile(io_helper.io, tmp_file, .{});
-        defer file.close(io_helper.io);
+        const file = try io_helper.createFile(tmp_file, .{});
+        defer io_helper.closeFile(file);
         try io_helper.writeAllToFile(file, "test: content");
     }
     defer io_helper.deleteFile(tmp_file) catch {};
 
     // Get file stat
-    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file, .{});
+    const stat = try io_helper.statFile(tmp_file);
 
     // Create a test entry
     var env_vars = std.StringHashMap([]const u8).init(allocator);
@@ -505,13 +505,13 @@ test "EnvCache fast cache" {
     // Create a temporary test file
     const tmp_file = "/tmp/pantry_test_deps2.yaml";
     {
-        const file = try io_helper.cwd().createFile(io_helper.io, tmp_file, .{});
-        defer file.close(io_helper.io);
+        const file = try io_helper.createFile(tmp_file, .{});
+        defer io_helper.closeFile(file);
         try io_helper.writeAllToFile(file, "test: content");
     }
     defer io_helper.deleteFile(tmp_file) catch {};
 
-    const stat = try io_helper.cwd().statFile(io_helper.io, tmp_file, .{});
+    const stat = try io_helper.statFile(tmp_file);
 
     // Create multiple entries
     var i: usize = 0;

@@ -56,7 +56,6 @@ test "parse package.json with npm overrides" {
 
 test "parse package.json with yarn resolutions" {
     const allocator = testing.allocator;
-    
 
     const package_json =
         \\{
@@ -88,7 +87,6 @@ test "parse package.json with yarn resolutions" {
 
 test "parse package.json with both overrides and resolutions" {
     const allocator = testing.allocator;
-    
 
     const package_json =
         \\{
@@ -117,7 +115,6 @@ test "parse package.json with both overrides and resolutions" {
 }
 
 test "version range validation" {
-    
 
     // Valid version ranges
     try testing.expect(lib.deps.overrides.isValidVersionRange("1.2.3"));
@@ -144,7 +141,6 @@ test "version range validation" {
 
 test "apply override to dependency" {
     const allocator = testing.allocator;
-    
 
     var override_map = lib.deps.OverrideMap.init(allocator);
     defer override_map.deinit();
@@ -166,7 +162,6 @@ test "apply override to dependency" {
 
 test "override with security vulnerability scenario" {
     const allocator = testing.allocator;
-    
 
     // Simulate security vulnerability scenario:
     // - foo@2.0.0 depends on bar@4.5.6
@@ -201,7 +196,6 @@ test "override with security vulnerability scenario" {
 
 test "override with version consistency scenario" {
     const allocator = testing.allocator;
-    
 
     // Simulate version consistency scenario:
     // - Multiple packages depend on different versions of lodash
@@ -241,7 +235,6 @@ test "override with version consistency scenario" {
 
 test "override with GitHub reference" {
     const allocator = testing.allocator;
-    
 
     const package_json =
         \\{
@@ -268,7 +261,6 @@ test "override with GitHub reference" {
 
 test "skip invalid overrides" {
     const allocator = testing.allocator;
-    
 
     const package_json =
         \\{
@@ -297,7 +289,6 @@ test "skip invalid overrides" {
 
 test "empty overrides" {
     const allocator = testing.allocator;
-    
 
     const package_json =
         \\{

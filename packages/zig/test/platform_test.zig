@@ -84,8 +84,8 @@ test "Paths - libraryPathVar returns valid var name" {
     try testing.expect(var_name.len > 0);
     // Should be one of the standard lib path vars
     const valid = std.mem.eql(u8, var_name, "LD_LIBRARY_PATH") or
-                  std.mem.eql(u8, var_name, "DYLD_LIBRARY_PATH") or
-                  std.mem.eql(u8, var_name, "PATH");
+        std.mem.eql(u8, var_name, "DYLD_LIBRARY_PATH") or
+        std.mem.eql(u8, var_name, "PATH");
 
     try testing.expect(valid);
 }

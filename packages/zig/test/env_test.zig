@@ -16,7 +16,7 @@ test "EnvScanner and EnvCommands integration" {
     const envs_dir = try std.fs.path.join(allocator, &[_][]const u8{ test_data_dir, "envs" });
     defer allocator.free(envs_dir);
 
-    io_helper.cwd().createDirPath(io_helper.io, envs_dir) catch {};
+    io_helper.makePath(envs_dir) catch {};
 
     // Create test environments
     const test_env1 = try std.fs.path.join(allocator, &[_][]const u8{ envs_dir, "project1_abc123" });
@@ -29,11 +29,11 @@ test "EnvScanner and EnvCommands integration" {
     {
         const bin_path1 = try std.fs.path.join(allocator, &[_][]const u8{ test_env1, "bin" });
         defer allocator.free(bin_path1);
-        io_helper.cwd().createDirPath(io_helper.io, bin_path1) catch {};
+        io_helper.makePath(bin_path1) catch {};
 
         const bin_path2 = try std.fs.path.join(allocator, &[_][]const u8{ test_env2, "bin" });
         defer allocator.free(bin_path2);
-        io_helper.cwd().createDirPath(io_helper.io, bin_path2) catch {};
+        io_helper.makePath(bin_path2) catch {};
     }
 
     // Create some test binaries

@@ -61,8 +61,9 @@ pub fn openFile(path: []const u8, flags: File.OpenFlags) !File {
 }
 
 /// Make a directory path in the current working directory (recursive)
+/// Uses std.fs.cwd() since Io.Dir.makePath may not exist
 pub fn makePath(path: []const u8) !void {
-    return try cwd().makePath(io, path);
+    return try std.fs.cwd().makePath(path);
 }
 
 /// Check access to a path (relative)
@@ -71,15 +72,10 @@ pub fn access(path: []const u8, flags: Dir.AccessOptions) !void {
 }
 
 /// Check access to an absolute path
-/// Uses std.posix.access since Io.Dir doesn't have accessAbsolute
+/// Uses std.fs.accessAbsolute since Io.Dir doesn't have accessAbsolute
 pub fn accessAbsolute(path: []const u8, flags: Dir.AccessOptions) !void {
-    // Convert AccessOptions to posix access mode
-    var mode: u32 = 0;
-    if (flags.read) mode |= std.posix.R_OK;
-    if (flags.write) mode |= std.posix.W_OK;
-    if (flags.execute) mode |= std.posix.X_OK;
-    if (mode == 0) mode = std.posix.F_OK; // existence check
-    return try std.posix.access(path, mode);
+    _ = flags; // Use default access check (existence)
+    return try std.fs.accessAbsolute(path, .{});
 }
 
 /// Open a directory in the current working directory
@@ -88,24 +84,15 @@ pub fn openDir(path: []const u8, options: Dir.OpenOptions) !Dir {
 }
 
 /// Delete a file
-/// Uses std.posix.unlink since Io.Dir doesn't have deleteFile
+/// Uses std.fs.cwd().deleteFile since Io.Dir doesn't have deleteFile
 pub fn deleteFile(path: []const u8) !void {
-    return try std.posix.unlink(path);
+    return try std.fs.cwd().deleteFile(path);
 }
 
 /// Delete a directory tree
-/// Uses std.posix.unlinkat with AT_REMOVEDIR since Io.Dir doesn't have deleteTree
+/// Uses std.fs.cwd().deleteTree since Io.Dir doesn't have deleteTree
 pub fn deleteTree(path: []const u8) !void {
-    // For a simple deleteTree, we first try to unlink as file
-    // If that fails, we try as directory
-    std.posix.unlink(path) catch |err| {
-        if (err == error.IsDir) {
-            // Try to remove as directory (requires recursive deletion first)
-            // For now, use rmdir for empty directories
-            return std.posix.rmdir(path);
-        }
-        return err;
-    };
+    return try std.fs.cwd().deleteTree(path);
 }
 
 /// Get the current working directory as a path string
@@ -235,7 +222,7 @@ pub fn readStdin(buffer: []u8) !usize {
     return std.posix.read(std.posix.STDIN_FILENO, buffer);
 }
 
-/// Rename a file or directory using std.fs.Dir (Io.Dir.rename doesn't work well in Zig 0.16)
+/// Rename a file or directory using std.fs (Io.Dir.rename doesn't work well in Zig 0.16)
 pub fn rename(old_path: []const u8, new_path: []const u8) !void {
     return try std.fs.cwd().rename(old_path, new_path);
 }

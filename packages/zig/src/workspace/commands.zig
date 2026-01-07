@@ -206,7 +206,7 @@ fn runPackageScript(
     child.stdout_behavior = .Inherit;
     child.stderr_behavior = .Inherit;
 
-    const term = try child.spawnAndWait(io_helper.io);
+    const term = try child.spawnAndWait();
 
     return switch (term) {
         .Exited => |code| code == 0,
@@ -366,7 +366,7 @@ pub fn exec(
     child.stdout_behavior = .Inherit;
     child.stderr_behavior = .Inherit;
 
-    const term = try child.spawnAndWait(io_helper.io);
+    const term = try child.spawnAndWait();
 
     const success = switch (term) {
         .Exited => |code| code == 0,

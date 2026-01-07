@@ -304,7 +304,7 @@ test "End-to-end: Complete publishing workflow simulation" {
         \\  }}],
         \\  "predicateType": "https://slsa.dev/provenance/v0.2"
         \\}}
-        ,
+    ,
         .{ pkg_name, pkg_version, checksum },
     );
     defer allocator.free(provenance_data);
