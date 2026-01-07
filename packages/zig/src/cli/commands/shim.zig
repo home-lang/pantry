@@ -131,7 +131,7 @@ fn createShim(
     try io_helper.writeAllToFile(fs_file, shim_content);
 
     // Make executable (chmod +x)
-    _ = std.c.fchmod(fs_file.handle, 0o755);
+    _ = std.posix.system.fchmod(fs_file.handle, 0o755);
 
     return shim_path;
 }

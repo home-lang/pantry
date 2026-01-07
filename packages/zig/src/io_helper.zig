@@ -153,7 +153,7 @@ pub fn appendToFile(path: []const u8, bytes: []const u8) !void {
     defer file.close(io);
     // Seek to end using C lseek
     const SEEK_END = 2;
-    const result = std.c.lseek(file.handle, 0, SEEK_END);
+    const result = std.posix.system.lseek(file.handle, 0, SEEK_END);
     if (result == -1) return error.Unseekable;
     try writeAllToFile(file, bytes);
 }
