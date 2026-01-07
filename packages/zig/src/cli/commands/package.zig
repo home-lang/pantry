@@ -503,7 +503,11 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             std.debug.print("✓ Package published successfully using OIDC\n", .{});
             return .{ .exit_code = 0 };
         } else {
-            std.debug.print("OIDC authentication not available, falling back to token auth...\n", .{});
+            // OIDC failed - don't fall back, return error for debugging
+            return CommandResult.err(
+                allocator,
+                "Error: OIDC authentication failed. Check trusted publisher configuration on npm.",
+            );
         }
     }
 
