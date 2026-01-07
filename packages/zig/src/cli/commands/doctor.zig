@@ -224,7 +224,8 @@ fn checkCache(allocator: std.mem.Allocator) !CheckResult {
     defer allocator.free(cache_dir);
 
     // Check if cache directory is accessible
-    var dir = io_helper.openDir(cache_dir, .{ .iterate = true }) catch {
+    // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+    var dir = io_helper.openDirAbsoluteForIteration(cache_dir) catch {
         return .{
             .name = name,
             .passed = false,
@@ -232,12 +233,12 @@ fn checkCache(allocator: std.mem.Allocator) !CheckResult {
             .suggestion = try allocator.dupe(u8, "Run 'pantry cache verify' to rebuild cache"),
         };
     };
-    defer dir.close(io_helper.io);
+    defer dir.close();
 
     // Count cache entries (simplified)
     var count: usize = 0;
     var iter = dir.iterate();
-    while (try iter.next(io_helper.io)) |_| {
+    while (iter.next() catch null) |_| {
         count += 1;
     }
 

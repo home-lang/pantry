@@ -230,10 +230,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(env_dir);
 
         // Create environment directory structure
-        try io_helper.cwd().createDirPath(io_helper.io, env_dir);
+        try io_helper.makePath(env_dir);
         const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
         defer allocator.free(bin_dir);
-        try io_helper.cwd().createDirPath(io_helper.io, bin_dir);
+        try io_helper.makePath(bin_dir);
 
         // Check if we're in offline mode
         const is_offline = offline.isOfflineMode();
@@ -345,7 +345,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Create pantry directory if it doesn't exist
         const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{proj_dir});
         defer allocator.free(pantry_dir);
-        try io_helper.cwd().createDirPath(io_helper.io, pantry_dir);
+        try io_helper.makePath(pantry_dir);
 
         for (deps) |dep| {
             if (!helpers.isLocalDependency(dep)) continue;
@@ -378,7 +378,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // Create pantry/{package} directory structure
             const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, pkg_name });
             defer allocator.free(pkg_modules_dir);
-            try io_helper.cwd().createDirPath(io_helper.io, pkg_modules_dir);
+            try io_helper.makePath(pkg_modules_dir);
 
             // Create symlink to source directory for build system
             const src_link_path = try std.fmt.allocPrint(allocator, "{s}/src", .{pkg_modules_dir});
@@ -387,7 +387,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
             const src_path = try std.fmt.allocPrint(allocator, "{s}/src", .{local_path});
             defer allocator.free(src_path);
-            io_helper.Dir.symLinkAbsolute(io_helper.io, src_path, src_link_path, .{ .is_directory = true }) catch |err| {
+            io_helper.symLink(src_path, src_link_path) catch |err| {
                 const red = "\x1b[31m";
                 const display_name = helpers.stripDisplayPrefix(dep.name);
                 std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, display_name, dep.version, dim, err, reset });
@@ -399,22 +399,23 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
             defer allocator.free(link_path);
             io_helper.deleteFile(link_path) catch {};
-            io_helper.Dir.symLinkAbsolute(io_helper.io, local_path, link_path, .{ .is_directory = true }) catch {};
+            io_helper.symLink(local_path, link_path) catch {};
 
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
             const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{proj_dir});
             defer allocator.free(local_bin_dir);
-            try io_helper.cwd().createDirPath(io_helper.io, local_bin_dir);
+            try io_helper.makePath(local_bin_dir);
 
             // Check for binaries in the linked package's zig-out/bin directory
             const zig_out_bin = try std.fmt.allocPrint(allocator, "{s}/zig-out/bin", .{local_path});
             defer allocator.free(zig_out_bin);
 
-            if (io_helper.openDirAbsolute(zig_out_bin, .{ .iterate = true })) |dir| {
-                var mutable_dir = dir;
-                defer mutable_dir.close(io_helper.io);
-                var iter = mutable_dir.iterate();
-                while (iter.next(io_helper.io) catch null) |entry| {
+            // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+            if (io_helper.openDirAbsoluteForIteration(zig_out_bin)) |dir_val| {
+                var dir = dir_val;
+                defer dir.close();
+                var iter = dir.iterate();
+                while (iter.next() catch null) |entry| {
                     if (entry.kind == .file or entry.kind == .sym_link) {
                         // Create symlink in pantry/.bin
                         const bin_src = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ zig_out_bin, entry.name });
@@ -423,7 +424,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         defer allocator.free(bin_dst);
 
                         io_helper.deleteFile(bin_dst) catch {};
-                        io_helper.Dir.symLinkAbsolute(io_helper.io, bin_src, bin_dst, .{}) catch {};
+                        io_helper.symLink(bin_src, bin_dst) catch {};
                     }
                 }
             } else |_| {

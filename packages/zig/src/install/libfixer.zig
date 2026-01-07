@@ -16,7 +16,8 @@ pub fn fixMacOSLibraryPaths(
     }
 
     // Use otool to get current library dependencies
-    const otool_result = std.process.Child.run(allocator, io_helper.io, .{
+    const otool_result = std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{
             "otool",
             "-L",
@@ -89,7 +90,8 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(rpath_ref);
 
         // Fix the library path using install_name_tool
-        const fix_result = std.process.Child.run(allocator, io_helper.io, .{
+        const fix_result = std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{
                 "install_name_tool",
                 "-change",
@@ -140,7 +142,8 @@ fn addRpathEntries(
     // Add each rpath entry
     var needs_codesign = false;
     for (rpath_entries) |rpath| {
-        const result = std.process.Child.run(allocator, io_helper.io, .{
+        const result = std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{
                 "install_name_tool",
                 "-add_rpath",
@@ -160,7 +163,8 @@ fn addRpathEntries(
 
     // Re-sign the binary if we modified it
     if (needs_codesign) {
-        const codesign_result = std.process.Child.run(allocator, io_helper.io, .{
+        const codesign_result = std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{
                 "codesign",
                 "-s",
@@ -199,14 +203,15 @@ pub fn fixDirectoryLibraryPaths(
 
     // Fix binaries in bin/ directory
     {
-        var dir = io_helper.openDirAbsolute(bin_dir, .{ .iterate = true }) catch {
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirAbsoluteForIteration(bin_dir) catch {
             // No bin directory or can't open it - that's ok
             return;
         };
-        defer dir.close(io_helper.io);
+        defer dir.close();
 
         var it = dir.iterate();
-        while (try it.next(io_helper.io)) |entry| {
+        while (it.next() catch null) |entry| {
             if (entry.kind != .file) continue;
 
             const binary_path = try std.fs.path.join(allocator, &[_][]const u8{ bin_dir, entry.name });
@@ -222,14 +227,15 @@ pub fn fixDirectoryLibraryPaths(
 
     // Also fix dylibs in lib/ directory (they can depend on each other)
     {
-        var dir = io_helper.openDirAbsolute(lib_dir, .{ .iterate = true }) catch {
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirAbsoluteForIteration(lib_dir) catch {
             // Can't open lib directory - that's ok
             return;
         };
-        defer dir.close(io_helper.io);
+        defer dir.close();
 
         var it = dir.iterate();
-        while (try it.next(io_helper.io)) |entry| {
+        while (it.next() catch null) |entry| {
             if (entry.kind != .file) continue;
             if (!std.mem.endsWith(u8, entry.name, ".dylib")) continue;
 

@@ -74,12 +74,13 @@ fn scanDirectoryForGlobalDeps(
 ) !void {
     if (current_depth > max_depth) return;
 
-    var dir = io_helper.openDirAbsolute(dir_path, .{ .iterate = true }) catch return;
-    defer dir.close(io_helper.io);
+    // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+    var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch return;
+    defer dir.close();
 
     var iterator = dir.iterate();
 
-    while (try iterator.next(io_helper.io)) |entry| {
+    while (iterator.next() catch null) |entry| {
         // Skip hidden files/directories (except .dotfiles and .config at root)
         if (entry.name[0] == '.' and current_depth > 0) continue;
 

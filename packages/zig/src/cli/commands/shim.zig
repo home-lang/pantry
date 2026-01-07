@@ -157,19 +157,20 @@ pub fn shimListCommand(allocator: std.mem.Allocator) !CommandResult {
     const shim_dir = try std.fmt.allocPrint(allocator, "{s}/.local/bin", .{home});
     defer allocator.free(shim_dir);
 
-    var dir = io_helper.openDir(shim_dir, .{ .iterate = true }) catch |err| {
+    // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+    var dir = io_helper.openDirAbsoluteForIteration(shim_dir) catch |err| {
         if (err == error.FileNotFound) {
             return CommandResult.err(allocator, "No shims directory found. Run 'pantry shim <package>' to create shims.");
         }
         return err;
     };
-    defer dir.close(io_helper.io);
+    defer dir.close();
 
     std.debug.print("Shims in {s}:\n\n", .{shim_dir});
 
     var count: usize = 0;
     var iter = dir.iterate();
-    while (try iter.next(io_helper.io)) |entry| {
+    while (iter.next() catch null) |entry| {
         if (entry.kind == .file) {
             // Check if it's a pantry shim by reading the first line
             const file_path = try std.fs.path.join(allocator, &[_][]const u8{ shim_dir, entry.name });

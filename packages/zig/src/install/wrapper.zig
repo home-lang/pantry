@@ -56,7 +56,7 @@ pub fn createBinaryWrapper(
     defer allocator.free(wrapper_content);
 
     // Create wrapper directory
-    io_helper.cwd().createDirPath(io_helper.io, wrapper_dir) catch {
+    io_helper.makePath(wrapper_dir) catch {
         return error.WrapperCreationFailed;
     };
 
@@ -201,7 +201,8 @@ pub fn fixMacOSLibraryPaths(
     }
 
     // Use otool to find dependencies
-    const result = try std.process.Child.run(allocator, io_helper.io, .{
+    const result = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "otool", "-L", binary_path },
     });
     defer allocator.free(result.stdout);
@@ -241,7 +242,8 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(new_path);
 
         // Run install_name_tool
-        const change_result = try std.process.Child.run(allocator, io_helper.io, .{
+        const change_result = try std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{
                 "install_name_tool",
                 "-change",
@@ -259,7 +261,8 @@ pub fn fixMacOSLibraryPaths(
     }
 
     // Add rpath
-    const add_rpath = try std.process.Child.run(allocator, io_helper.io, .{
+    const add_rpath = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{
             "install_name_tool",
             "-add_rpath",

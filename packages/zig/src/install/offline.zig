@@ -69,24 +69,25 @@ fn getCacheDir(allocator: std.mem.Allocator) ![]const u8 {
 
 /// Copy directory recursively
 fn copyDir(src: []const u8, dest: []const u8) !void {
-    var src_dir = try io_helper.openDirAbsolute(src, .{ .iterate = true });
-    defer src_dir.close(io_helper.io);
+    // Use std.fs.Dir for iteration and copy (Io.Dir doesn't have iterate() in Zig 0.16)
+    var src_dir = try io_helper.openDirAbsoluteForIteration(src);
+    defer src_dir.close();
 
     // Create destination directory
-    io_helper.cwd().createDirPath(io_helper.io, dest) catch |err| switch (err) {
+    io_helper.makePath(dest) catch |err| switch (err) {
         error.PathAlreadyExists => {},
         else => return err,
     };
 
-    var dest_dir = try io_helper.openDirAbsolute(dest, .{});
-    defer dest_dir.close(io_helper.io);
+    var dest_dir = try std.fs.openDirAbsolute(dest, .{});
+    defer dest_dir.close();
 
     // Iterate and copy
     var it = src_dir.iterate();
-    while (try it.next(io_helper.io)) |entry| {
+    while (it.next() catch null) |entry| {
         switch (entry.kind) {
             .file => {
-                try src_dir.copyFile(entry.name, dest_dir, entry.name, io_helper.io, .{});
+                try src_dir.copyFile(entry.name, dest_dir, entry.name, .{});
             },
             .directory => {
                 const src_subdir = try std.fs.path.join(

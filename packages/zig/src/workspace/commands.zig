@@ -31,7 +31,7 @@ pub const CommandResult = struct {
 /// Initialize a new workspace
 pub fn init(allocator: std.mem.Allocator, root: []const u8, name: ?[]const u8) !CommandResult {
     // Create workspace directory
-    try io_helper.cwd().createDirPath(io_helper.io, root);
+    try io_helper.makePath(root);
 
     // Create workspace config
     const config_path = try std.fmt.allocPrint(allocator, "{s}/pantry.json", .{root});
@@ -65,7 +65,7 @@ pub fn init(allocator: std.mem.Allocator, root: []const u8, name: ?[]const u8) !
     // Create packages directory
     const packages_dir = try std.fmt.allocPrint(allocator, "{s}/packages", .{root});
     defer allocator.free(packages_dir);
-    try io_helper.cwd().createDirPath(io_helper.io, packages_dir);
+    try io_helper.makePath(packages_dir);
 
     const message = try std.fmt.allocPrint(
         allocator,

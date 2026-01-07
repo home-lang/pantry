@@ -231,10 +231,10 @@ pub fn installWorkspaceCommandWithOptions(
     defer allocator.free(env_dir);
 
     // Create environment directory structure
-    try io_helper.cwd().createDirPath(io_helper.io, env_dir);
+    try io_helper.makePath(env_dir);
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
     defer allocator.free(bin_dir);
-    try io_helper.cwd().createDirPath(io_helper.io, bin_dir);
+    try io_helper.makePath(bin_dir);
 
     // Install each dependency
     var pkg_cache = try cache.PackageCache.init(allocator);

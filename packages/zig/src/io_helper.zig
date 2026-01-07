@@ -185,11 +185,18 @@ pub fn closeDir(dir: Dir) void {
     dir.close(io);
 }
 
-/// Create an iterator for a directory
-/// Note: iterate() doesn't need io parameter
-pub fn iterateDir(path: []const u8) !Dir.Iterator {
-    const dir = try cwd().openDir(io, path, .{ .iterate = true });
-    return dir.iterate();
+/// Legacy std.fs.Dir for directory iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+pub const FsDir = std.fs.Dir;
+
+/// Open a directory for iteration using std.fs.Dir (which still has iterate())
+/// Returns an std.fs.Dir which has the iterate() method
+pub fn openDirForIteration(path: []const u8) !FsDir {
+    return std.fs.cwd().openDir(path, .{ .iterate = true });
+}
+
+/// Open a directory for iteration using std.fs.Dir with absolute path
+pub fn openDirAbsoluteForIteration(path: []const u8) !FsDir {
+    return std.fs.openDirAbsolute(path, .{ .iterate = true });
 }
 
 /// Open a file with absolute path
@@ -228,17 +235,17 @@ pub fn readStdin(buffer: []u8) !usize {
     return std.posix.read(std.posix.STDIN_FILENO, buffer);
 }
 
-/// Rename a file or directory
+/// Rename a file or directory using std.fs.Dir (Io.Dir.rename doesn't work well in Zig 0.16)
 pub fn rename(old_path: []const u8, new_path: []const u8) !void {
-    return try cwd().rename(old_path, cwd(), new_path, io);
+    return try std.fs.cwd().rename(old_path, new_path);
 }
 
-/// Copy a file
+/// Copy a file using std.fs.Dir (Io.Dir doesn't have copyFile in Zig 0.16)
 pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
-    return try cwd().copyFile(io, src_path, cwd(), dest_path, .{});
+    return try std.fs.cwd().copyFile(src_path, std.fs.cwd(), dest_path, .{});
 }
 
-/// Create a symbolic link
+/// Create a symbolic link using std.posix (Io.Dir doesn't have symLink in Zig 0.16)
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
-    return try cwd().symLink(io, target, link_path, .{});
+    return try std.posix.symlink(target, link_path);
 }

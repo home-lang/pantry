@@ -133,7 +133,8 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
     _ = install_path;
 
     // Check if bun is already installed
-    const result = std.process.Child.run(.{ .allocator = allocator,
+    const result = std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "bun", "--version" },
     });
 
@@ -153,7 +154,8 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
     }
 
     // Try to install bun using curl
-    const install_result = std.process.Child.run(.{ .allocator = allocator,
+    const install_result = std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", "curl -fsSL https://bun.sh/install | bash" },
     });
 

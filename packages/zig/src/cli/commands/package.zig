@@ -790,11 +790,13 @@ fn createTarball(
     defer allocator.free(staging_pkg);
 
     // Clean and create staging directory
-    _ = std.process.Child.run(.{ .allocator = allocator,
+    _ = std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "rm", "-rf", staging_base },
     }) catch {};
 
-    const mkdir_result = try std.process.Child.run(.{ .allocator = allocator,
+    const mkdir_result = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "mkdir", "-p", staging_pkg },
     });
     defer allocator.free(mkdir_result.stdout);
@@ -806,7 +808,8 @@ fn createTarball(
     const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
     defer allocator.free(dst_path);
 
-    const cp_result = try std.process.Child.run(.{ .allocator = allocator,
+    const cp_result = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{
             "rsync",
             "-a",
@@ -833,7 +836,8 @@ fn createTarball(
     }
 
     // Create tarball with "package" directory at root
-    const result = try std.process.Child.run(.{ .allocator = allocator,
+    const result = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{
             "tar",
             "-czf",
@@ -847,7 +851,8 @@ fn createTarball(
     defer allocator.free(result.stderr);
 
     // Cleanup staging
-    _ = std.process.Child.run(.{ .allocator = allocator,
+    _ = std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "rm", "-rf", staging_base },
     }) catch {};
 
@@ -858,7 +863,8 @@ fn createTarball(
     }
 
     // Check tarball size - warn if too big (npm limit is ~200MB but packages should be small)
-    const stat_result = try std.process.Child.run(.{ .allocator = allocator,
+    const stat_result = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "stat", "-c", "%s", tarball_path },
         .max_output_bytes = 1024,
     });
@@ -874,7 +880,8 @@ fn createTarball(
         // List first few entries to debug
         const peek_cmd = try std.fmt.allocPrint(allocator, "tar -tzf {s} | head -20", .{tarball_path});
         defer allocator.free(peek_cmd);
-        const peek = try std.process.Child.run(.{ .allocator = allocator,
+        const peek = try std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{ "sh", "-c", peek_cmd },
             .max_output_bytes = 4096,
         });

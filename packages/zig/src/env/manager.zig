@@ -141,15 +141,15 @@ pub const EnvManager = struct {
         );
         defer self.allocator.free(envs_dir);
 
-        // Use io_helper for iteration
-        var dir = io_helper.openDir(envs_dir, .{ .iterate = true }) catch |err| switch (err) {
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirForIteration(envs_dir) catch |err| switch (err) {
             error.FileNotFound => return envs,
             else => return err,
         };
-        defer dir.close(io_helper.io);
+        defer dir.close();
 
         var it = dir.iterate();
-        while (try it.next(io_helper.io)) |entry| {
+        while (it.next() catch null) |entry| {
             if (entry.kind != .directory) continue;
             if (entry.name.len != 32) continue; // MD5 hex = 32 chars
 

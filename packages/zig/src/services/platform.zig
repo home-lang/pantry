@@ -275,7 +275,8 @@ pub const ServiceController = struct {
         defer self.allocator.free(service_unit);
 
         const argv = [_][]const u8{ "systemctl", "--user", "is-active", service_unit };
-        const result = try std.process.Child.run(.{ .allocator = self.allocator,
+        const result = try std.process.Child.run(.{
+            .allocator = self.allocator,
             .argv = &argv,
         });
         defer self.allocator.free(result.stdout);

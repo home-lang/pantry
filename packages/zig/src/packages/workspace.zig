@@ -61,18 +61,19 @@ fn discoverMembersForPattern(
             defer allocator.free(full_base_path);
 
             // Open the directory
-            var dir = io_helper.openDirAbsolute(full_base_path, .{ .iterate = true }) catch |err| {
+            // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+            var dir = io_helper.openDirAbsoluteForIteration(full_base_path) catch |err| {
                 // If directory doesn't exist, skip this pattern - return empty list
                 if (err == error.FileNotFound) {
                     return allocator.alloc(types.WorkspaceMember, 0);
                 }
                 return err;
             };
-            defer dir.close(io_helper.io);
+            defer dir.close();
 
             // Iterate through subdirectories
             var iter = dir.iterate();
-            while (try iter.next(io_helper.io)) |entry| {
+            while (iter.next() catch null) |entry| {
                 if (entry.kind != .directory) continue;
 
                 // Skip common ignore directories

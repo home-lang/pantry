@@ -48,7 +48,7 @@ pub const SharedCache = struct {
         errdefer allocator.free(cache_dir);
 
         // Ensure directory exists with appropriate permissions
-        try io_helper.cwd().createDirPath(io_helper.io, cache_dir);
+        try io_helper.makePath(cache_dir);
 
         // Update base config with shared directory
         var base_config = config.base_config;

@@ -80,7 +80,8 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     }
 
     // First, get the file size from HTTP headers
-    const size_result = try std.process.Child.run(allocator, io_helper.io, .{
+    const size_result = try std.process.Child.run(.{
+        .allocator = allocator,
         .argv = &[_][]const u8{ "curl", "-sI", url },
     });
     defer allocator.free(size_result.stdout);
@@ -113,7 +114,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     child.stdout_behavior = .Ignore;
     child.stderr_behavior = .Ignore;
 
-    try child.spawn(io_helper.io);
+    try child.spawn();
 
     // Monitor download progress
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
@@ -131,7 +132,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         const stat = io_helper.statFile(dest_path) catch {
             // File doesn't exist yet - check for stall timeout
             if (now - last_progress_time > stall_timeout_ms) {
-                _ = child.kill(io_helper.io) catch {};
+                _ = child.kill() catch {};
                 return error.NetworkError;
             }
             continue;
@@ -146,7 +147,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
         // Check for stall timeout (no progress for too long)
         if (now - last_progress_time > stall_timeout_ms) {
-            _ = child.kill(io_helper.io) catch {};
+            _ = child.kill() catch {};
             return error.NetworkError;
         }
 
@@ -271,7 +272,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     }
 
     // Wait for curl to finish
-    const term = try child.wait(io_helper.io);
+    const term = try child.wait();
 
     // Show final download summary on a clean line (skip if quiet mode)
     if (!quiet and shown_progress) {

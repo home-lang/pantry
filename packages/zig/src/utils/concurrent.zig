@@ -156,7 +156,8 @@ fn executeScript(task: ScriptTask, config: ConcurrentConfig) !ScriptResult {
     }
 
     // Execute the script
-    const result = std.process.Child.run(allocator, io_helper.io, .{
+    const result = std.process.Child.run(.{
+        .allocator = allocator,
         .argv = argv_buf[0..argc],
         .cwd = config.cwd,
     }) catch |err| {

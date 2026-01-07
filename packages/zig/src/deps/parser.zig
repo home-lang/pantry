@@ -248,7 +248,8 @@ fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]c
         const eval_flag = if (std.mem.eql(u8, runtime, "bun")) "--eval" else "eval";
 
         // Try to execute with this runtime
-        const result = std.process.Child.run(.{ .allocator = allocator,
+        const result = std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{ runtime, eval_flag, wrapper_script },
         }) catch continue; // Try next runtime if this one fails
 

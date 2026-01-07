@@ -128,7 +128,7 @@ fn cleanCache(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, cache_dir);
 
     // Recreate empty cache directory
-    try io_helper.cwd().createDirPath(io_helper.io, cache_dir);
+    try io_helper.makePath(cache_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -149,7 +149,7 @@ fn cleanTemp(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, temp_dir);
 
     // Recreate empty temp directory
-    try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
+    try io_helper.makePath(temp_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 
@@ -170,7 +170,7 @@ fn cleanLogs(allocator: std.mem.Allocator) !CleanResult {
     const result = try removeDirectory(allocator, logs_dir);
 
     // Recreate empty logs directory
-    try io_helper.cwd().createDirPath(io_helper.io, logs_dir);
+    try io_helper.makePath(logs_dir);
 
     try stdout.print("✓ Removed {d} files\n", .{result.count});
 

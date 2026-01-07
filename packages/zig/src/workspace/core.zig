@@ -642,7 +642,7 @@ pub const Workspace = struct {
         defer self.allocator.free(node_modules);
 
         // Create node_modules if it doesn't exist
-        try io_helper.cwd().createDirPath(io_helper.io, node_modules);
+        try io_helper.makePath(node_modules);
 
         // Link workspace dependencies
         var dep_it = pkg.dependencies.iterator();

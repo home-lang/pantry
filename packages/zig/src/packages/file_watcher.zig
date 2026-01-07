@@ -134,17 +134,18 @@ pub const FileWatcher = struct {
 
     /// Recursively scan a directory
     fn scanDirectory(self: *FileWatcher, dir_path: []const u8, member: types.WorkspaceMember) !void {
-        var dir = io_helper.openDirAbsolute(dir_path, .{ .iterate = true }) catch |err| {
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch |err| {
             // Skip directories we can't open
             if (err == error.AccessDenied or err == error.FileNotFound) {
                 return;
             }
             return err;
         };
-        defer dir.close(io_helper.io);
+        defer dir.close();
 
         var iter = dir.iterate();
-        while (try iter.next(io_helper.io)) |entry| {
+        while (iter.next() catch null) |entry| {
             // Check ignore patterns
             if (self.shouldIgnore(entry.name)) {
                 continue;
@@ -226,16 +227,17 @@ pub const FileWatcher = struct {
         changes: *std.ArrayList(FileChangeEvent),
         new_timestamps: *std.StringHashMap(i64),
     ) !void {
-        var dir = io_helper.openDirAbsolute(dir_path, .{ .iterate = true }) catch |err| {
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch |err| {
             if (err == error.AccessDenied or err == error.FileNotFound) {
                 return;
             }
             return err;
         };
-        defer dir.close(io_helper.io);
+        defer dir.close();
 
         var iter = dir.iterate();
-        while (try iter.next(io_helper.io)) |entry| {
+        while (iter.next() catch null) |entry| {
             if (self.shouldIgnore(entry.name)) {
                 continue;
             }

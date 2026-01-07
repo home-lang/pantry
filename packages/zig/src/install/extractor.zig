@@ -26,11 +26,12 @@ pub fn extractArchiveQuiet(
     _: bool, // quiet parameter unused now
 ) !void {
     // Ensure destination directory exists
-    try io_helper.cwd().createDirPath(io_helper.io, dest_dir);
+    try io_helper.makePath(dest_dir);
 
     // Determine extraction command based on format
     const result = if (std.mem.eql(u8, format, "tar.xz"))
-        try std.process.Child.run(allocator, io_helper.io, .{
+        try std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{
                 "tar",
                 "-xJf",
@@ -42,7 +43,8 @@ pub fn extractArchiveQuiet(
             },
         })
     else if (std.mem.eql(u8, format, "tar.gz"))
-        try std.process.Child.run(allocator, io_helper.io, .{
+        try std.process.Child.run(.{
+            .allocator = allocator,
             .argv = &[_][]const u8{
                 "tar",
                 "-xzf",

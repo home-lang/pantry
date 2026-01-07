@@ -278,7 +278,7 @@ pub const Installer = struct {
             );
             defer self.allocator.free(modules_bin_dir);
 
-            try io_helper.cwd().createDirPath(io_helper.io, modules_bin_dir);
+            try io_helper.makePath(modules_bin_dir);
 
             // Check if symlink already exists
             io_helper.deleteFile(modules_bin) catch {};
@@ -396,7 +396,8 @@ pub const Installer = struct {
         defer self.allocator.free(clone_url);
 
         // Try cloning with the specified branch/tag first
-        var clone_result = try std.process.Child.run(self.allocator, io_helper.io, .{
+        var clone_result = try std.process.Child.run(.{
+            .allocator = self.allocator,
             .argv = &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir },
         });
 
@@ -405,7 +406,8 @@ pub const Installer = struct {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
 
-            clone_result = try std.process.Child.run(self.allocator, io_helper.io, .{
+            clone_result = try std.process.Child.run(.{
+                .allocator = self.allocator,
                 .argv = &[_][]const u8{ "git", "clone", "--depth", "1", clone_url, temp_dir },
             });
         }
@@ -422,23 +424,23 @@ pub const Installer = struct {
         }
 
         // Create install directory
-        try io_helper.cwd().createDirPath(io_helper.io, install_dir);
+        try io_helper.makePath(install_dir);
 
         // Move contents from temp to final location
         // Git clone creates a directory, so we need to move the contents
-        // Use io_helper.cwd() for iteration
-        var temp_dir_handle = try io_helper.cwd().openDir(io_helper.io, temp_dir, .{ .iterate = true });
-        defer temp_dir_handle.close(io_helper.io);
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var temp_dir_handle = try io_helper.openDirForIteration(temp_dir);
+        defer temp_dir_handle.close();
 
         var iter = temp_dir_handle.iterate();
-        while (try iter.next(io_helper.io)) |entry| {
+        while (iter.next() catch null) |entry| {
             const src_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ temp_dir, entry.name });
             defer self.allocator.free(src_path);
 
             const dest_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ install_dir, entry.name });
             defer self.allocator.free(dest_path);
 
-            try io_helper.cwd().rename(src_path, io_helper.cwd(), dest_path, io_helper.io);
+            try io_helper.rename(src_path, dest_path);
         }
 
         // Create project symlinks if installing to project
@@ -528,7 +530,7 @@ pub const Installer = struct {
             io_helper.deleteTree(temp_dir) catch {};
         }
 
-        try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
+        try io_helper.makePath(temp_dir);
 
         // Download the archive
         const archive_path = try std.fmt.allocPrint(
@@ -572,16 +574,17 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, extract_dir);
+        try io_helper.makePath(extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, "tar.xz", options.quiet);
 
         // Find the actual Zig directory (it's usually named zig-{platform}-{arch}-{version})
-        var extracted_handle = try io_helper.openDirAbsolute(extract_dir, .{ .iterate = true });
-        defer extracted_handle.close(io_helper.io);
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var extracted_handle = try io_helper.openDirAbsoluteForIteration(extract_dir);
+        defer extracted_handle.close();
 
         var zig_source_dir: ?[]const u8 = null;
         var iter = extracted_handle.iterate();
-        while (try iter.next(io_helper.io)) |entry| {
+        while (iter.next() catch null) |entry| {
             if (entry.kind == .directory and std.mem.startsWith(u8, entry.name, "zig-")) {
                 zig_source_dir = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ extract_dir, entry.name });
                 break;
@@ -595,7 +598,7 @@ pub const Installer = struct {
         defer self.allocator.free(zig_source_dir.?);
 
         // Create install directory and copy contents
-        try io_helper.cwd().createDirPath(io_helper.io, install_dir);
+        try io_helper.makePath(install_dir);
         try self.copyDirectoryStructure(zig_source_dir.?, install_dir);
 
         // Create project symlinks if installing to project
@@ -607,7 +610,7 @@ pub const Installer = struct {
                 .{project_root},
             );
             defer self.allocator.free(bin_dir);
-            try io_helper.cwd().createDirPath(io_helper.io, bin_dir);
+            try io_helper.makePath(bin_dir);
 
             // Create symlink for zig binary
             const zig_binary = try std.fmt.allocPrint(
@@ -626,7 +629,7 @@ pub const Installer = struct {
 
             // Remove existing symlink if it exists
             io_helper.deleteFile(zig_link) catch {};
-            io_helper.Dir.symLinkAbsolute(io_helper.io, zig_binary, zig_link, .{}) catch |err| {
+            io_helper.symLink(zig_binary, zig_link) catch |err| {
                 std.debug.print("Warning: Failed to create zig symlink: {}\n", .{err});
             };
         }
@@ -723,7 +726,7 @@ pub const Installer = struct {
             dir.close(io_helper.io);
             // Copy from global cache to project's pantry
             used_cache.* = true;
-            try io_helper.cwd().createDirPath(io_helper.io, project_pkg_dir);
+            try io_helper.makePath(project_pkg_dir);
             try self.copyDirectoryStructure(global_pkg_dir, project_pkg_dir);
             try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
             return project_pkg_dir;
@@ -749,7 +752,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(temp_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
+        try io_helper.makePath(temp_dir);
         defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
@@ -829,7 +832,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, extract_dir);
+        try io_helper.makePath(extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root
@@ -837,7 +840,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy package contents to project directory
-        try io_helper.cwd().createDirPath(io_helper.io, project_pkg_dir);
+        try io_helper.makePath(project_pkg_dir);
         try self.copyDirectoryStructure(package_source, project_pkg_dir);
 
         // Fix library paths for macOS
@@ -922,7 +925,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(env_bin_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, env_bin_dir);
+        try io_helper.makePath(env_bin_dir);
 
         // Global package bin directory
         const global_bin_dir = try std.fmt.allocPrint(
@@ -961,7 +964,7 @@ pub const Installer = struct {
             io_helper.deleteFile(link) catch {};
 
             // Create symlink
-            io_helper.Dir.symLinkAbsolute(io_helper.io, source, link, .{}) catch |err| {
+            io_helper.symLink(source, link) catch |err| {
                 std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
@@ -979,7 +982,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(project_bin_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, project_bin_dir);
+        try io_helper.makePath(project_bin_dir);
 
         // First, try to load bin paths from package configuration (pantry.json or package.json)
         var custom_bins_created = false;
@@ -1050,7 +1053,7 @@ pub const Installer = struct {
                         io_helper.deleteFile(link) catch {};
 
                         // Create symlink
-                        io_helper.Dir.symLinkAbsolute(io_helper.io, source, link, .{}) catch |err| {
+                        io_helper.symLink(source, link) catch |err| {
                             std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
                             continue;
                         };
@@ -1093,7 +1096,7 @@ pub const Installer = struct {
             io_helper.deleteFile(link) catch {};
 
             // Create symlink using absolute paths
-            io_helper.Dir.symLinkAbsolute(io_helper.io, bin_info.path, link, .{}) catch |err| {
+            io_helper.symLink(bin_info.path, link) catch |err| {
                 std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
@@ -1135,7 +1138,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(temp_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, temp_dir);
+        try io_helper.makePath(temp_dir);
         defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
@@ -1215,7 +1218,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(extract_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, extract_dir);
+        try io_helper.makePath(extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
 
         // Find the actual package root (might be nested like domain/v{version}/)
@@ -1223,7 +1226,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy/move package contents to global cache location
-        try io_helper.cwd().createDirPath(io_helper.io, global_pkg_dir);
+        try io_helper.makePath(global_pkg_dir);
         try self.copyDirectoryStructure(package_source, global_pkg_dir);
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
@@ -1252,7 +1255,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(bin_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, bin_dir);
+        try io_helper.makePath(bin_dir);
 
         // The actual binaries are in {install_dir}/{domain}/v{version}/bin/
         const actual_bin_dir = try std.fmt.allocPrint(
@@ -1291,7 +1294,7 @@ pub const Installer = struct {
             io_helper.deleteFile(link) catch {};
 
             // Create symlink
-            io_helper.Dir.symLinkAbsolute(io_helper.io, source, link, .{}) catch |err| {
+            io_helper.symLink(source, link) catch |err| {
                 std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
@@ -1330,23 +1333,23 @@ pub const Installer = struct {
         );
         defer self.allocator.free(packages_dir);
 
-        // Use std.fs.Dir for iteration since std.Io.Dir doesn't have iterate()
-        var dir = io_helper.cwd().openDir(io_helper.io, packages_dir, .{ .iterate = true }) catch |err| switch (err) {
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirForIteration(packages_dir) catch |err| switch (err) {
             error.FileNotFound => return installed,
             else => return err,
         };
-        defer dir.close(io_helper.io);
+        defer dir.close();
 
         var it = dir.iterate();
-        while (try it.next(io_helper.io)) |entry| {
+        while (it.next() catch null) |entry| {
             if (entry.kind != .directory) continue;
 
             // Each package has its own directory with version subdirectories
-            var pkg_dir = try dir.openDir(io_helper.io, entry.name, .{ .iterate = true });
-            defer pkg_dir.close(io_helper.io);
+            var pkg_dir = dir.openDir(entry.name, .{ .iterate = true }) catch continue;
+            defer pkg_dir.close();
 
             var ver_it = pkg_dir.iterate();
-            while (try ver_it.next(io_helper.io)) |ver_entry| {
+            while (ver_it.next() catch null) |ver_entry| {
                 if (ver_entry.kind != .directory) continue;
 
                 const install_path = try std.fmt.allocPrint(
@@ -1355,7 +1358,7 @@ pub const Installer = struct {
                     .{ packages_dir, entry.name, ver_entry.name },
                 );
 
-                const stat = try pkg_dir.statFile(io_helper.io, ver_entry.name, .{});
+                const stat = pkg_dir.statFile(ver_entry.name) catch continue;
 
                 try installed.append(self.allocator, .{
                     .name = try self.allocator.dupe(u8, entry.name),
@@ -1392,11 +1395,12 @@ pub const Installer = struct {
         }
 
         // 3. Try first subdirectory
-        var dir = try io_helper.openDirAbsolute(extract_dir, .{ .iterate = true });
-        defer dir.close(io_helper.io);
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = try io_helper.openDirAbsoluteForIteration(extract_dir);
+        defer dir.close();
 
         var it = dir.iterate();
-        while (try it.next(io_helper.io)) |entry| {
+        while (it.next() catch null) |entry| {
             if (entry.kind != .directory) continue;
 
             const subdir_path = try std.fs.path.join(
@@ -1417,11 +1421,12 @@ pub const Installer = struct {
     /// Check if a directory has package structure (bin, lib, include, share, etc.)
     fn hasPackageStructure(self: *Installer, dir_path: []const u8) bool {
         _ = self;
-        var dir = io_helper.openDirAbsolute(dir_path, .{ .iterate = true }) catch return false;
-        defer dir.close(io_helper.io);
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch return false;
+        defer dir.close();
 
         var it = dir.iterate();
-        while (it.next(io_helper.io) catch return false) |entry| {
+        while (it.next() catch null) |entry| {
             if (entry.kind != .directory) continue;
 
             // Check for common package directories
@@ -1440,14 +1445,15 @@ pub const Installer = struct {
 
     /// Copy directory structure from source to destination
     fn copyDirectoryStructure(self: *Installer, source: []const u8, dest: []const u8) !void {
-        var src_dir = try io_helper.openDirAbsolute(source, .{ .iterate = true });
-        defer src_dir.close(io_helper.io);
+        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        var src_dir = try io_helper.openDirAbsoluteForIteration(source);
+        defer src_dir.close();
 
         // Ensure destination exists
-        try io_helper.cwd().createDirPath(io_helper.io, dest);
+        try io_helper.makePath(dest);
 
         var it = src_dir.iterate();
-        while (try it.next(io_helper.io)) |entry| {
+        while (it.next() catch null) |entry| {
             const src_path = try std.fs.path.join(
                 self.allocator,
                 &[_][]const u8{ source, entry.name },
@@ -1464,8 +1470,8 @@ pub const Installer = struct {
                 // Recursively copy directory
                 try self.copyDirectoryStructure(src_path, dst_path);
             } else {
-                // Copy file
-                try io_helper.Dir.copyFileAbsolute(src_path, dst_path, io_helper.io, .{});
+                // Copy file using std.fs (Io.Dir doesn't have copyFileAbsolute in Zig 0.16)
+                try std.fs.copyFileAbsolute(src_path, dst_path, .{});
             }
         }
     }

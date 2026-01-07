@@ -123,7 +123,7 @@ pub const InstallCheckpoint = struct {
         );
         errdefer self.allocator.free(backup_dir);
 
-        try io_helper.cwd().createDirPath(io_helper.io, backup_dir);
+        try io_helper.makePath(backup_dir);
         self.backup_dir = backup_dir;
 
         std.debug.print("📦 Created backup at: {s}\n", .{backup_dir});

@@ -80,7 +80,7 @@ pub const RuntimeInstaller = struct {
         });
 
         // Ensure runtimes directory exists
-        io_helper.cwd().createDirPath(io_helper.io, runtimes_dir) catch |err| switch (err) {
+        io_helper.makePath(runtimes_dir) catch |err| switch (err) {
             error.PathAlreadyExists => {},
             else => return err,
         };
@@ -147,7 +147,7 @@ pub const RuntimeInstaller = struct {
         });
         defer self.allocator.free(temp_dir);
 
-        io_helper.cwd().createDirPath(io_helper.io, temp_dir) catch |err| switch (err) {
+        io_helper.makePath(temp_dir) catch |err| switch (err) {
             error.PathAlreadyExists => {},
             else => return err,
         };
@@ -169,11 +169,11 @@ pub const RuntimeInstaller = struct {
         try downloader.downloadFileQuiet(self.allocator, download_url, tarball_path, options.quiet);
 
         // Extract to install directory
-        io_helper.cwd().createDirPath(io_helper.io, install_dir) catch |err| switch (err) {
+        io_helper.makePath(install_dir) catch |err| switch (err) {
             error.PathAlreadyExists => {
                 // Clean existing directory
                 io_helper.deleteTree(install_dir) catch {};
-                try io_helper.cwd().createDirPath(io_helper.io, install_dir);
+                try io_helper.makePath(install_dir);
             },
             else => return err,
         };

@@ -119,7 +119,8 @@ pub const pantryConfigLoader = struct {
             defer self.allocator.free(wrapper_script);
 
             // Try to execute with this runtime
-            const result = std.process.Child.run(.{ .allocator = self.allocator,
+            const result = std.process.Child.run(.{
+                .allocator = self.allocator,
                 .argv = &[_][]const u8{ runtime, "eval", wrapper_script },
             }) catch continue; // Try next runtime if this one fails
 
