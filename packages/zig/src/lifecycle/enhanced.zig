@@ -108,13 +108,13 @@ pub fn executeScriptWithTimeout(
     }
 
     // Spawn the process
-    try child.spawn();
+    try io_helper.spawn(&child);
 
     // Wait with timeout
     const timeout_result = if (options.timeout_ms > 0)
         try waitWithTimeout(&child, options.timeout_ms)
     else
-        try child.wait();
+        try io_helper.wait(&child);
 
     const duration_ms = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
 
@@ -203,7 +203,7 @@ fn waitWithTimeout(child: *std.process.Child, timeout_ms: u64) !WaitResult {
         }
 
         // Check if process is still running (non-blocking)
-        const term = child.wait() catch |err| {
+        const term = io_helper.wait(child) catch |err| {
             if (err == error.WouldBlock) {
                 // Still running, sleep briefly
                 std.time.sleep(100 * std.time.ns_per_ms);
@@ -558,13 +558,13 @@ pub fn executeScriptSandboxed(
     }
 
     // Spawn the process
-    try child.spawn();
+    try io_helper.spawn(&child);
 
     // Wait with timeout
     const timeout_result = if (options.timeout_ms > 0)
         try waitWithTimeout(&child, options.timeout_ms)
     else
-        try child.wait();
+        try io_helper.wait(&child);
 
     const duration_ms = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
 

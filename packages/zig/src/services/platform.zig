@@ -182,8 +182,8 @@ pub const ServiceController = struct {
         child.stdout_behavior = .Pipe;
         child.stderr_behavior = .Pipe;
 
-        try child.spawn();
-        const result = try child.wait();
+        try io_helper.spawn(&child);
+        const result = try io_helper.wait(&child);
 
         return if (result == .Exited and result.Exited == 0)
             .running

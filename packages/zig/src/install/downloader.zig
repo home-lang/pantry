@@ -114,7 +114,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     child.stdout_behavior = .Ignore;
     child.stderr_behavior = .Ignore;
 
-    try child.spawn();
+    try io_helper.spawn(&child);
 
     // Monitor download progress
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
@@ -272,7 +272,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     }
 
     // Wait for curl to finish
-    const term = try child.wait();
+    const term = try io_helper.wait(&child);
 
     // Show final download summary on a clean line (skip if quiet mode)
     if (!quiet and shown_progress) {

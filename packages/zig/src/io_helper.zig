@@ -516,6 +516,36 @@ pub fn spawnAndWait(child: *std.process.Child) !std.process.Child.Term {
     }
 }
 
+/// Spawn a child process (without waiting)
+/// Handles cross-platform differences in the spawn signature
+pub fn spawn(child: *std.process.Child) !void {
+    const ChildType = std.process.Child;
+    const fn_info = @typeInfo(@TypeOf(ChildType.spawn)).@"fn";
+
+    if (fn_info.params.len == 2) {
+        // Version with io parameter: spawn(self, io)
+        return child.spawn(io);
+    } else {
+        // Version without io parameter: spawn(self)
+        return child.spawn();
+    }
+}
+
+/// Wait for a spawned child process
+/// Handles cross-platform differences in the wait signature
+pub fn wait(child: *std.process.Child) !std.process.Child.Term {
+    const ChildType = std.process.Child;
+    const fn_info = @typeInfo(@TypeOf(ChildType.wait)).@"fn";
+
+    if (fn_info.params.len == 2) {
+        // Version with io parameter: wait(self, io)
+        return child.wait(io);
+    } else {
+        // Version without io parameter: wait(self)
+        return child.wait();
+    }
+}
+
 /// Result type for childRun
 pub const ChildRunResult = struct {
     term: std.process.Child.Term,
