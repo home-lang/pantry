@@ -1473,8 +1473,8 @@ pub const Installer = struct {
                 // Recursively copy directory
                 try self.copyDirectoryStructure(src_path, dst_path);
             } else {
-                // Copy file using std.fs (Io.Dir doesn't have copyFileAbsolute in Zig 0.16)
-                try std.fs.copyFileAbsolute(src_path, dst_path, .{});
+                // Copy file using io_helper wrapper
+                try io_helper.copyFile(src_path, dst_path);
             }
         }
     }
