@@ -153,7 +153,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "launchctl", "load", service_file };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try io_helper.spawnAndWait(&child);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStartFailed;
@@ -166,7 +166,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "launchctl", "unload", service_file };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try io_helper.spawnAndWait(&child);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStopFailed;
@@ -224,7 +224,7 @@ pub const ServiceController = struct {
         // Use --user flag for user services
         const argv = [_][]const u8{ "systemctl", "--user", "start", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try io_helper.spawnAndWait(&child);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStartFailed;
@@ -237,7 +237,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "systemctl", "--user", "stop", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try io_helper.spawnAndWait(&child);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceStopFailed;
@@ -250,7 +250,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "systemctl", "--user", "enable", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try io_helper.spawnAndWait(&child);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceEnableFailed;
@@ -263,7 +263,7 @@ pub const ServiceController = struct {
 
         const argv = [_][]const u8{ "systemctl", "--user", "disable", service_unit };
         var child = std.process.Child.init(&argv, self.allocator);
-        const result = try child.spawnAndWait();
+        const result = try io_helper.spawnAndWait(&child);
 
         if (result != .Exited or result.Exited != 0) {
             return error.ServiceDisableFailed;

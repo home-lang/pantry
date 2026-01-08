@@ -97,19 +97,35 @@ pub const EnvScanner = struct {
     }
 
     fn calculateSize(self: *EnvScanner, dir_path: []const u8) !u64 {
+        return self.calculateSizeRecursive(dir_path);
+    }
+
+    fn calculateSizeRecursive(self: *EnvScanner, dir_path: []const u8) u64 {
         var total: u64 = 0;
 
-        // Use std.fs.Dir for walking since Io.Dir doesn't have walk() in Zig 0.16
+        // Use FsDir for iteration since Io.Dir doesn't have iterate() in Zig 0.16
         var dir = io_helper.openDirForIteration(dir_path) catch return 0;
         defer dir.close();
 
-        var walker = dir.walk(self.allocator) catch return 0;
-        defer walker.deinit();
+        var iter = dir.iterate();
+        while (iter.next() catch null) |entry| {
+            // Build full path for the entry
+            const entry_path = std.fs.path.join(self.allocator, &[_][]const u8{
+                dir_path,
+                entry.name,
+            }) catch continue;
+            defer self.allocator.free(entry_path);
 
-        while (walker.next() catch null) |entry| {
-            if (entry.kind == .file) {
-                const stat = entry.dir.statFile(entry.basename) catch continue;
-                total += @intCast(stat.size);
+            switch (entry.kind) {
+                .file => {
+                    const stat = io_helper.statFile(entry_path) catch continue;
+                    total += stat.size;
+                },
+                .directory => {
+                    // Recursively calculate size of subdirectories
+                    total += self.calculateSizeRecursive(entry_path);
+                },
+                else => {},
             }
         }
 

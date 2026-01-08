@@ -1333,7 +1333,7 @@ pub const Installer = struct {
         );
         defer self.allocator.free(packages_dir);
 
-        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        // Use FsDir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
         var dir = io_helper.openDirForIteration(packages_dir) catch |err| switch (err) {
             error.FileNotFound => return installed,
             else => return err,
@@ -1344,8 +1344,16 @@ pub const Installer = struct {
         while (it.next() catch null) |entry| {
             if (entry.kind != .directory) continue;
 
+            // Build full path to package directory
+            const pkg_path = try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/{s}",
+                .{ packages_dir, entry.name },
+            );
+            defer self.allocator.free(pkg_path);
+
             // Each package has its own directory with version subdirectories
-            var pkg_dir = dir.openDir(entry.name, .{ .iterate = true }) catch continue;
+            var pkg_dir = io_helper.openDirForIteration(pkg_path) catch continue;
             defer pkg_dir.close();
 
             var ver_it = pkg_dir.iterate();
@@ -1358,13 +1366,14 @@ pub const Installer = struct {
                     .{ packages_dir, entry.name, ver_entry.name },
                 );
 
-                const stat = pkg_dir.statFile(ver_entry.name) catch continue;
+                // Use io_helper.statFile with full path
+                const stat = io_helper.statFile(install_path) catch continue;
 
                 try installed.append(self.allocator, .{
                     .name = try self.allocator.dupe(u8, entry.name),
                     .version = try self.allocator.dupe(u8, ver_entry.name),
                     .install_path = install_path,
-                    .installed_at = @intCast(@divFloor(stat.ctime.nanoseconds, 1_000_000_000)),
+                    .installed_at = @intCast(@divFloor(stat.ctime, std.time.ns_per_s)),
                     .size = @intCast(stat.size),
                 });
             }

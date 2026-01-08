@@ -9,6 +9,7 @@
 
 const std = @import("std");
 const builtin = @import("builtin");
+const c = std.c;
 pub const Io = std.Io;
 pub const Threaded = std.Io.Threaded;
 pub const Dir = std.Io.Dir;
@@ -55,18 +56,17 @@ pub const StatResult = struct {
 };
 
 /// Stat a file path - get file metadata
-/// Opens file and uses fstat for cross-platform compatibility
+/// Uses Io.Dir for cross-platform compatibility
 pub fn statFile(path: []const u8) !StatResult {
-    // Open file to get fd, then fstat
-    const flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
-    const fd = try std.posix.open(path, flags, 0);
-    defer std.posix.close(fd);
+    // Open file first, then stat via Io.Dir
+    const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch return error.FileNotFound;
+    defer file.close(io);
 
-    const stat = try std.posix.fstat(fd);
+    const stat = file.stat(io) catch return error.FileNotFound;
     return .{
         .size = @intCast(stat.size),
-        .mtime = @as(i128, stat.mtime().sec) * std.time.ns_per_s + stat.mtime().nsec,
-        .ctime = @as(i128, stat.ctime().sec) * std.time.ns_per_s + stat.ctime().nsec,
+        .mtime = stat.mtime.toNanoseconds(),
+        .ctime = stat.ctime.toNanoseconds(),
         .mode = stat.mode,
     };
 }
@@ -125,31 +125,41 @@ pub fn openDir(path: []const u8, options: Dir.OpenOptions) !Dir {
     return try cwd().openDir(io, path, options);
 }
 
-/// Delete a file using posix unlink
+/// Delete a file using C unlink
 pub fn deleteFile(path: []const u8) !void {
-    return std.posix.unlink(path);
+    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (path.len >= path_buf.len) return error.NameTooLong;
+    @memcpy(path_buf[0..path.len], path);
+    path_buf[path.len] = 0;
+
+    const result = c.unlink(&path_buf);
+    if (result != 0) {
+        return error.FileNotFound;
+    }
 }
 
 /// Delete a directory tree recursively
 pub fn deleteTree(path: []const u8) !void {
-    // Try to remove as file first
-    std.posix.unlink(path) catch |err| switch (err) {
-        error.IsDir => {
-            // It's a directory, need to recurse
-            var dir = openDirForIteration(path) catch return;
-            defer dir.close();
+    // Try to delete as file first
+    deleteFile(path) catch {
+        // If that fails, try as directory
+        var dir = openDirForIteration(path) catch return;
 
-            var iter = dir.iterate();
-            while (iter.next() catch null) |entry| {
-                var child_path_buf: [std.fs.max_path_bytes]u8 = undefined;
-                const child_path = std.fmt.bufPrint(&child_path_buf, "{s}/{s}", .{ path, entry.name }) catch continue;
-                deleteTree(child_path) catch {};
-            }
-            // Now remove the empty directory
-            std.posix.rmdir(path) catch {};
-        },
-        error.FileNotFound => {}, // Already gone
-        else => return err,
+        var iter = dir.iterate();
+        while (iter.next() catch null) |entry| {
+            var child_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const child_path = std.fmt.bufPrint(&child_path_buf, "{s}/{s}", .{ path, entry.name }) catch continue;
+            deleteTree(child_path) catch {};
+        }
+        dir.close();
+
+        // Now remove the empty directory
+        var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+        if (path.len < path_buf.len) {
+            @memcpy(path_buf[0..path.len], path);
+            path_buf[path.len] = 0;
+            _ = c.rmdir(&path_buf);
+        }
     };
 }
 
@@ -230,13 +240,126 @@ pub fn closeDir(dir: Dir) void {
     dir.close(io);
 }
 
-/// Legacy std.fs.Dir for directory iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-pub const FsDir = std.fs.Dir;
+/// Directory entry for iteration
+pub const DirEntry = struct {
+    name: []const u8,
+    kind: Kind,
+
+    pub const Kind = enum { file, directory, sym_link, unknown };
+};
+
+/// Directory handle wrapper - uses platform-specific directory iteration
+pub const FsDir = struct {
+    fd: std.posix.fd_t,
+
+    // Platform-specific dirent type alias
+    const linux = std.os.linux;
+
+    pub const Iterator = struct {
+        fd: std.posix.fd_t,
+        buf: [8192]u8 align(8), // Aligned for both platforms
+        index: usize,
+        end: usize,
+        seek: i64, // For macOS getdirentries
+
+        pub fn next(self: *Iterator) !?DirEntry {
+            while (true) {
+                if (self.index >= self.end) {
+                    // Need to read more entries - platform specific
+                    switch (builtin.os.tag) {
+                        .macos, .ios, .tvos, .watchos, .visionos => {
+                            const rc = c.getdirentries(self.fd, &self.buf, self.buf.len, &self.seek);
+                            if (rc == 0) return null;
+                            if (rc < 0) return error.ReadDirError;
+                            self.index = 0;
+                            self.end = @intCast(rc);
+                        },
+                        .linux => {
+                            const rc = linux.getdents64(self.fd, &self.buf, self.buf.len);
+                            switch (linux.E.init(rc)) {
+                                .SUCCESS => {},
+                                .BADF => return error.InvalidHandle,
+                                .FAULT => unreachable,
+                                .NOTDIR => return error.NotDir,
+                                .NOENT => return null,
+                                else => return error.ReadDirError,
+                            }
+                            if (rc == 0) return null;
+                            self.index = 0;
+                            self.end = rc;
+                        },
+                        else => return error.UnsupportedPlatform,
+                    }
+                }
+
+                // Platform-specific entry parsing
+                switch (builtin.os.tag) {
+                    .macos, .ios, .tvos, .watchos, .visionos => {
+                        const entry: *align(1) c.dirent = @ptrCast(&self.buf[self.index]);
+                        self.index += entry.reclen;
+
+                        // macOS dirent has namlen field
+                        const name = @as([*]u8, @ptrCast(&entry.name))[0..entry.namlen];
+
+                        // Skip . and ..
+                        if (std.mem.eql(u8, name, ".") or std.mem.eql(u8, name, "..")) {
+                            continue;
+                        }
+
+                        const kind: DirEntry.Kind = switch (entry.type) {
+                            c.DT.REG => .file,
+                            c.DT.DIR => .directory,
+                            c.DT.LNK => .sym_link,
+                            else => .unknown,
+                        };
+
+                        return DirEntry{
+                            .name = name,
+                            .kind = kind,
+                        };
+                    },
+                    .linux => {
+                        const entry: *align(1) linux.dirent64 = @ptrCast(&self.buf[self.index]);
+                        self.index += entry.reclen;
+
+                        // Linux uses null-terminated name at &entry.name
+                        const name_ptr: [*:0]const u8 = @ptrCast(&entry.name);
+                        const name = std.mem.sliceTo(name_ptr, 0);
+
+                        // Skip . and ..
+                        if (std.mem.eql(u8, name, ".") or std.mem.eql(u8, name, "..")) {
+                            continue;
+                        }
+
+                        const kind: DirEntry.Kind = switch (entry.type) {
+                            linux.DT.REG => .file,
+                            linux.DT.DIR => .directory,
+                            linux.DT.LNK => .sym_link,
+                            else => .unknown,
+                        };
+
+                        return DirEntry{
+                            .name = name,
+                            .kind = kind,
+                        };
+                    },
+                    else => return error.UnsupportedPlatform,
+                }
+            }
+        }
+    };
+
+    pub fn iterate(self: *FsDir) Iterator {
+        return .{ .fd = self.fd, .buf = undefined, .index = 0, .end = 0, .seek = 0 };
+    }
+
+    pub fn close(self: *FsDir) void {
+        std.posix.close(self.fd);
+    }
+};
 
 /// Open a directory for iteration
-/// Returns an std.fs.Dir which has the iterate() method
 pub fn openDirForIteration(path: []const u8) !FsDir {
-    // Use posix openat with AT.FDCWD for relative paths
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
     const fd = try std.posix.open(path, flags, 0);
     return .{ .fd = fd };
@@ -283,9 +406,22 @@ pub fn readStdin(buffer: []u8) !usize {
     return std.posix.read(std.posix.STDIN_FILENO, buffer);
 }
 
-/// Rename a file or directory using posix rename
+/// Rename a file or directory using C rename
 pub fn rename(old_path: []const u8, new_path: []const u8) !void {
-    return std.posix.rename(old_path, new_path);
+    var old_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    var new_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+
+    if (old_path.len >= old_buf.len or new_path.len >= new_buf.len) return error.NameTooLong;
+
+    @memcpy(old_buf[0..old_path.len], old_path);
+    old_buf[old_path.len] = 0;
+    @memcpy(new_buf[0..new_path.len], new_path);
+    new_buf[new_path.len] = 0;
+
+    const result = c.rename(&old_buf, &new_buf);
+    if (result != 0) {
+        return error.RenameError;
+    }
 }
 
 /// Copy a file by reading and writing
@@ -307,9 +443,25 @@ pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
     }
 }
 
-/// Create a symbolic link using std.posix (Io.Dir doesn't have symLink in Zig 0.16)
+/// Create a symbolic link using C symlink
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
-    return std.posix.symlink(target, link_path);
+    var target_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    var link_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+
+    if (target.len >= target_buf.len or link_path.len >= link_buf.len) return error.NameTooLong;
+
+    @memcpy(target_buf[0..target.len], target);
+    target_buf[target.len] = 0;
+    @memcpy(link_buf[0..link_path.len], link_path);
+    link_buf[link_path.len] = 0;
+
+    const result = c.symlink(&target_buf, &link_buf);
+    if (result != 0) {
+        // Check errno for PathAlreadyExists
+        const err = std.posix.errno(result);
+        if (err == .EXIST) return error.PathAlreadyExists;
+        return error.SymLinkError;
+    }
 }
 
 /// Spawn a child process and wait for it to complete
