@@ -144,7 +144,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
         // Check for stall timeout (no progress for too long)
         if (now - last_progress_time > stall_timeout_ms) {
-            _ = child.kill() catch {};
+            _ = io_helper.kill(&child) catch {};
             return error.NetworkError;
         }
 

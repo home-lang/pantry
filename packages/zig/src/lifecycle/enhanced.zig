@@ -121,7 +121,7 @@ pub fn executeScriptWithTimeout(
     // Check if timed out
     if (timeout_result == .timeout) {
         // Kill the process
-        _ = child.kill() catch {};
+        _ = io_helper.kill(&child) catch {};
 
         const error_msg = try std.fmt.allocPrint(
             allocator,
@@ -570,7 +570,7 @@ pub fn executeScriptSandboxed(
 
     // Check if timed out
     if (timeout_result == .timeout) {
-        _ = child.kill() catch {};
+        _ = io_helper.kill(&child) catch {};
 
         const error_msg = try std.fmt.allocPrint(
             allocator,
