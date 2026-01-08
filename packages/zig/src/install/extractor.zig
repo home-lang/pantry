@@ -30,30 +30,24 @@ pub fn extractArchiveQuiet(
 
     // Determine extraction command based on format
     const result = if (std.mem.eql(u8, format, "tar.xz"))
-        try std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{
-                "tar",
-                "-xJf",
-                archive_path,
-                "-C",
-                dest_dir,
-                "--no-same-owner",
-                "--no-same-permissions",
-            },
+        try io_helper.childRun(allocator, &[_][]const u8{
+            "tar",
+            "-xJf",
+            archive_path,
+            "-C",
+            dest_dir,
+            "--no-same-owner",
+            "--no-same-permissions",
         })
     else if (std.mem.eql(u8, format, "tar.gz"))
-        try std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{
-                "tar",
-                "-xzf",
-                archive_path,
-                "-C",
-                dest_dir,
-                "--no-same-owner",
-                "--no-same-permissions",
-            },
+        try io_helper.childRun(allocator, &[_][]const u8{
+            "tar",
+            "-xzf",
+            archive_path,
+            "-C",
+            dest_dir,
+            "--no-same-owner",
+            "--no-same-permissions",
         })
     else
         return error.UnsupportedFormat;
