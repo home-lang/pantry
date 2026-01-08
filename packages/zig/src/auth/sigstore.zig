@@ -134,6 +134,19 @@ pub const FulcioClient = struct {
         );
         defer self.allocator.free(url);
 
+        // Escape newlines in the PEM key for JSON embedding
+        var escaped_pem = std.ArrayList(u8){};
+        defer escaped_pem.deinit(self.allocator);
+        for (public_key_pem) |c| {
+            if (c == '\n') {
+                try escaped_pem.appendSlice(self.allocator, "\\n");
+            } else if (c == '\r') {
+                try escaped_pem.appendSlice(self.allocator, "\\r");
+            } else {
+                try escaped_pem.append(self.allocator, c);
+            }
+        }
+
         // Create request body (Fulcio expects specific format)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
@@ -150,7 +163,7 @@ pub const FulcioClient = struct {
             \\  }}
             \\}}
         ,
-            .{ oidc_token, public_key_pem, oidc_token }, // proof of possession is the signed OIDC token
+            .{ oidc_token, escaped_pem.items, oidc_token }, // proof of possession is the signed OIDC token
         );
         defer self.allocator.free(request_body);
 
