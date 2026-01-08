@@ -257,13 +257,11 @@ pub fn executeScript(
     // Execute the script using Child.run for simplicity
     const is_windows = @import("builtin").os.tag == .windows;
 
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{
-            if (is_windows) "cmd" else "sh",
-            if (is_windows) "/C" else "-c",
-            script_cmd,
-        },
+    const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{
+        if (is_windows) "cmd" else "sh",
+        if (is_windows) "/C" else "-c",
+        script_cmd,
+    }, .{
         .cwd = options.cwd,
     }) catch |err| {
         const error_msg = try std.fmt.allocPrint(allocator, "Failed to execute script: {}", .{err});
