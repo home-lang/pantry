@@ -91,8 +91,8 @@ pub const EnvScanner = struct {
             .size_bytes = size_bytes,
             .packages = packages,
             .binaries = binaries,
-            .created = @intCast(@divFloor(stat.ctime.toNanoseconds(), std.time.ns_per_s)),
-            .modified = @intCast(@divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s)),
+            .created = @intCast(@divFloor(stat.ctime, std.time.ns_per_s)),
+            .modified = @intCast(@divFloor(stat.mtime, std.time.ns_per_s)),
         };
     }
 

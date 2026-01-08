@@ -44,7 +44,7 @@ pub const Entry = struct {
             };
 
             // Compare in seconds (dep_mtime is stored in seconds)
-            const current_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
+            const current_mtime = @divFloor(stat.mtime, std.time.ns_per_s);
             if (current_mtime != self.dep_mtime) {
                 return false; // File has been modified
             }
@@ -432,7 +432,7 @@ pub fn createEntry(
     errdefer allocator.destroy(entry);
 
     // Get dependency file mtime
-    const stat = try io_helper.cwd().statFile(io_helper.io, dep_file);
+    const stat = try io_helper.statFile(dep_file);
 
     // Compute hash
     const hash = string.hashDependencyFile(dep_file);
@@ -440,7 +440,7 @@ pub fn createEntry(
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, dep_file),
-        .dep_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s), // Store in seconds to match isValid comparison
+        .dep_mtime = @divFloor(stat.mtime, std.time.ns_per_s), // Store in seconds to match isValid comparison
         .path = try allocator.dupe(u8, path),
         .env_vars = env_vars,
         .created_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
@@ -476,7 +476,7 @@ test "EnvCache basic operations" {
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, tmp_file),
-        .dep_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s), // Store in seconds to match isValid comparison
+        .dep_mtime = @divFloor(stat.mtime, std.time.ns_per_s), // Store in seconds to match isValid comparison
         .path = try allocator.dupe(u8, "/usr/bin"),
         .env_vars = env_vars,
         .created_at = now,
@@ -528,7 +528,7 @@ test "EnvCache fast cache" {
         entry.* = .{
             .hash = hash,
             .dep_file = try allocator.dupe(u8, tmp_file),
-            .dep_mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s), // Store in seconds to match isValid comparison
+            .dep_mtime = @divFloor(stat.mtime, std.time.ns_per_s), // Store in seconds to match isValid comparison
             .path = try allocator.dupe(u8, "/usr/bin"),
             .env_vars = env_vars,
             .created_at = now,

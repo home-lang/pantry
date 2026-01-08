@@ -159,7 +159,7 @@ pub const FileWatcher = struct {
             } else if (entry.kind == .file) {
                 // Get file modification time
                 const stat = io_helper.statFile(full_path) catch continue;
-                const mtime: i64 = @intCast(@divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_ms));
+                const mtime: i64 = @intCast(@divFloor(stat.mtime, std.time.ns_per_ms));
 
                 // Store timestamp
                 const path_copy = try self.allocator.dupe(u8, full_path);
@@ -249,7 +249,7 @@ pub const FileWatcher = struct {
                 try self.scanDirectoryForChanges(full_path, member, changes, new_timestamps);
             } else if (entry.kind == .file) {
                 const stat = io_helper.statFile(full_path) catch continue;
-                const mtime: i64 = @intCast(@divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_ms));
+                const mtime: i64 = @intCast(@divFloor(stat.mtime, std.time.ns_per_ms));
 
                 // Store new timestamp
                 const path_copy = try self.allocator.dupe(u8, full_path);

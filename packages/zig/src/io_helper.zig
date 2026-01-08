@@ -1,4 +1,4 @@
-//! I/O Helper for Zig 0.16.0-dev.1859 async I/O compatibility
+//! I/O Helper for Zig 0.16.0-dev async I/O compatibility
 //!
 //! This module provides a simple interface for creating Io instances
 //! that work with the new async I/O system in Zig 0.16-dev.
@@ -8,6 +8,7 @@
 //! - For test code: use `std.testing.io` directly
 
 const std = @import("std");
+const builtin = @import("builtin");
 pub const Io = std.Io;
 pub const Threaded = std.Io.Threaded;
 pub const Dir = std.Io.Dir;
@@ -45,9 +46,29 @@ pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: u
     return buffer;
 }
 
+/// Stat result structure compatible with both platforms
+pub const StatResult = struct {
+    size: u64,
+    mtime: i128, // nanoseconds since epoch
+    ctime: i128, // nanoseconds since epoch
+    mode: u32,
+};
+
 /// Stat a file path - get file metadata
-pub fn statFile(path: []const u8) !Dir.Stat {
-    return try cwd().statPath(io, path, .{});
+/// Opens file and uses fstat for cross-platform compatibility
+pub fn statFile(path: []const u8) !StatResult {
+    // Open file to get fd, then fstat
+    const flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
+    const fd = try std.posix.open(path, flags, 0);
+    defer std.posix.close(fd);
+
+    const stat = try std.posix.fstat(fd);
+    return .{
+        .size = @intCast(stat.size),
+        .mtime = @as(i128, stat.mtime().sec) * std.time.ns_per_s + stat.mtime().nsec,
+        .ctime = @as(i128, stat.ctime().sec) * std.time.ns_per_s + stat.ctime().nsec,
+        .mode = stat.mode,
+    };
 }
 
 /// Create a file in the current working directory
@@ -60,22 +81,43 @@ pub fn openFile(path: []const u8, flags: File.OpenFlags) !File {
     return try cwd().openFile(io, path, flags);
 }
 
-/// Make a directory path in the current working directory (recursive)
-/// Uses std.fs.cwd() since Io.Dir.makePath may not exist
+/// Make a directory path recursively using posix mkdir
 pub fn makePath(path: []const u8) !void {
-    return try std.fs.cwd().makePath(path);
+    // Try to create the directory directly first
+    std.posix.mkdir(path, 0o755) catch |err| switch (err) {
+        error.FileNotFound => {
+            // Parent doesn't exist, create it first
+            if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep| {
+                if (sep > 0) {
+                    try makePath(path[0..sep]);
+                }
+            }
+            // Now create this directory
+            try std.posix.mkdir(path, 0o755);
+        },
+        error.PathAlreadyExists => {
+            // Directory already exists, that's fine
+        },
+        else => return err,
+    };
 }
 
 /// Check access to a path (relative)
 pub fn access(path: []const u8, flags: Dir.AccessOptions) !void {
-    return try cwd().access(io, path, flags);
+    _ = flags;
+    // Try to open the file to check existence
+    const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
+    const fd = std.posix.open(path, open_flags, 0) catch return error.FileNotFound;
+    std.posix.close(fd);
 }
 
 /// Check access to an absolute path
-/// Uses std.fs.accessAbsolute since Io.Dir doesn't have accessAbsolute
 pub fn accessAbsolute(path: []const u8, flags: Dir.AccessOptions) !void {
-    _ = flags; // Use default access check (existence)
-    return try std.fs.accessAbsolute(path, .{});
+    _ = flags;
+    // Try to open the file to check existence
+    const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
+    const fd = std.posix.open(path, open_flags, 0) catch return error.FileNotFound;
+    std.posix.close(fd);
 }
 
 /// Open a directory in the current working directory
@@ -83,16 +125,32 @@ pub fn openDir(path: []const u8, options: Dir.OpenOptions) !Dir {
     return try cwd().openDir(io, path, options);
 }
 
-/// Delete a file
-/// Uses std.fs.cwd().deleteFile since Io.Dir doesn't have deleteFile
+/// Delete a file using posix unlink
 pub fn deleteFile(path: []const u8) !void {
-    return try std.fs.cwd().deleteFile(path);
+    return std.posix.unlink(path);
 }
 
-/// Delete a directory tree
-/// Uses std.fs.cwd().deleteTree since Io.Dir doesn't have deleteTree
+/// Delete a directory tree recursively
 pub fn deleteTree(path: []const u8) !void {
-    return try std.fs.cwd().deleteTree(path);
+    // Try to remove as file first
+    std.posix.unlink(path) catch |err| switch (err) {
+        error.IsDir => {
+            // It's a directory, need to recurse
+            var dir = openDirForIteration(path) catch return;
+            defer dir.close();
+
+            var iter = dir.iterate();
+            while (iter.next() catch null) |entry| {
+                var child_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+                const child_path = std.fmt.bufPrint(&child_path_buf, "{s}/{s}", .{ path, entry.name }) catch continue;
+                deleteTree(child_path) catch {};
+            }
+            // Now remove the empty directory
+            std.posix.rmdir(path) catch {};
+        },
+        error.FileNotFound => {}, // Already gone
+        else => return err,
+    };
 }
 
 /// Get the current working directory as a path string
@@ -175,15 +233,18 @@ pub fn closeDir(dir: Dir) void {
 /// Legacy std.fs.Dir for directory iteration (Io.Dir doesn't have iterate() in Zig 0.16)
 pub const FsDir = std.fs.Dir;
 
-/// Open a directory for iteration using std.fs.Dir (which still has iterate())
+/// Open a directory for iteration
 /// Returns an std.fs.Dir which has the iterate() method
 pub fn openDirForIteration(path: []const u8) !FsDir {
-    return std.fs.cwd().openDir(path, .{ .iterate = true });
+    // Use posix openat with AT.FDCWD for relative paths
+    const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
+    const fd = try std.posix.open(path, flags, 0);
+    return .{ .fd = fd };
 }
 
-/// Open a directory for iteration using std.fs.Dir with absolute path
+/// Open a directory for iteration with absolute path
 pub fn openDirAbsoluteForIteration(path: []const u8) !FsDir {
-    return std.fs.openDirAbsolute(path, .{ .iterate = true });
+    return openDirForIteration(path);
 }
 
 /// Open a file with absolute path
@@ -222,17 +283,47 @@ pub fn readStdin(buffer: []u8) !usize {
     return std.posix.read(std.posix.STDIN_FILENO, buffer);
 }
 
-/// Rename a file or directory using std.fs (Io.Dir.rename doesn't work well in Zig 0.16)
+/// Rename a file or directory using posix rename
 pub fn rename(old_path: []const u8, new_path: []const u8) !void {
-    return try std.fs.cwd().rename(old_path, new_path);
+    return std.posix.rename(old_path, new_path);
 }
 
-/// Copy a file using std.fs.Dir (Io.Dir doesn't have copyFile in Zig 0.16)
+/// Copy a file by reading and writing
 pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
-    return try std.fs.cwd().copyFile(src_path, std.fs.cwd(), dest_path, .{});
+    const src_file = try cwd().openFile(io, src_path, .{ .mode = .read_only });
+    defer src_file.close(io);
+
+    const dest_file = try cwd().createFile(io, dest_path, .{});
+    defer dest_file.close(io);
+
+    var buf: [8192]u8 = undefined;
+    while (true) {
+        const bytes_read = std.posix.read(src_file.handle, &buf) catch |err| switch (err) {
+            error.WouldBlock => continue,
+            else => return err,
+        };
+        if (bytes_read == 0) break;
+        try writeAllToFile(dest_file, buf[0..bytes_read]);
+    }
 }
 
 /// Create a symbolic link using std.posix (Io.Dir doesn't have symLink in Zig 0.16)
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
-    return try std.posix.symlink(target, link_path);
+    return std.posix.symlink(target, link_path);
+}
+
+/// Spawn a child process and wait for it to complete
+/// Handles cross-platform differences in the spawnAndWait signature
+pub fn spawnAndWait(child: *std.process.Child) !std.process.Child.Term {
+    // Check at compile time which signature is available
+    const ChildType = std.process.Child;
+    const fn_info = @typeInfo(@TypeOf(ChildType.spawnAndWait)).@"fn";
+
+    if (fn_info.params.len == 2) {
+        // Version with io parameter: spawnAndWait(self, io)
+        return child.spawnAndWait(io);
+    } else {
+        // Version without io parameter: spawnAndWait(self)
+        return child.spawnAndWait();
+    }
 }
