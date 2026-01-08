@@ -208,7 +208,7 @@ pub const ShellCommands = struct {
             std.debug.print("📦 Installing dependencies from {s}\n", .{std.fs.path.basename(dep_file.?)});
 
             // Create env directory
-            io_helper.cwd().makePath(io_helper.io, env_dir) catch |err| {
+            io_helper.makePath(env_dir) catch |err| {
                 std.debug.print("❌ Failed to create environment: {s}\n", .{@errorName(err)});
                 return try self.allocator.dupe(u8, "");
             };

@@ -98,9 +98,7 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
     const full_command = command_list.items;
 
     // Execute in member directory
-    const result = std.process.Child.run(.{
-        .allocator = ctx.allocator,
-        .argv = &[_][]const u8{ "sh", "-c", full_command },
+    const result = io_helper.childRunWithOptions(ctx.allocator, &[_][]const u8{ "sh", "-c", full_command }, .{
         .cwd = ctx.member.abs_path,
     }) catch |err| {
         const err_msg = try std.fmt.allocPrint(ctx.allocator, "Execution failed: {}", .{err});

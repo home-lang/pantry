@@ -133,10 +133,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
     _ = install_path;
 
     // Check if bun is already installed
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "bun", "--version" },
-    });
+    const result = io_helper.childRun(allocator, &[_][]const u8{ "bun", "--version" });
 
     if (result) |r| {
         defer allocator.free(r.stdout);
