@@ -131,10 +131,8 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     defer env_map.deinit();
     try env_map.put("PATH", new_path);
 
-    // Execute the script
-    const result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = argv_buf[0..argc],
+    // Execute the script using io_helper for cross-platform compatibility
+    const result = io_helper.childRunWithOptions(allocator, argv_buf[0..argc], .{
         .cwd = cwd,
         .env_map = &env_map,
     }) catch |err| {

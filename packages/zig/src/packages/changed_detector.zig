@@ -52,9 +52,7 @@ fn getChangedFiles(
     );
     defer allocator.free(git_diff_cmd);
 
-    const diff_result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "sh", "-c", git_diff_cmd },
+    const diff_result = try io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", git_diff_cmd }, .{
         .cwd = workspace_root,
     });
     defer {
@@ -74,9 +72,7 @@ fn getChangedFiles(
 
     // Get uncommitted changes if requested
     if (options.include_uncommitted) {
-        const status_result = try std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{ "git", "diff", "--name-only", "HEAD" },
+        const status_result = try io_helper.childRunWithOptions(allocator, &[_][]const u8{ "git", "diff", "--name-only", "HEAD" }, .{
             .cwd = workspace_root,
         });
         defer {
@@ -107,9 +103,7 @@ fn getChangedFiles(
 
     // Get untracked files if requested
     if (options.include_untracked) {
-        const untracked_result = try std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{ "git", "ls-files", "--others", "--exclude-standard" },
+        const untracked_result = try io_helper.childRunWithOptions(allocator, &[_][]const u8{ "git", "ls-files", "--others", "--exclude-standard" }, .{
             .cwd = workspace_root,
         });
         defer {

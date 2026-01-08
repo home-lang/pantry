@@ -553,15 +553,31 @@ pub const ChildRunResult = struct {
     stderr: []u8,
 };
 
+/// Options for childRunWithOptions
+pub const ChildRunOptions = struct {
+    cwd: ?[]const u8 = null,
+    env_map: ?*std.process.EnvMap = null,
+};
+
 /// Run a child process and collect output
 /// Handles cross-platform differences in the Child.run signature
 pub fn childRun(allocator: std.mem.Allocator, argv: []const []const u8) !ChildRunResult {
+    return childRunWithOptions(allocator, argv, .{});
+}
+
+/// Run a child process with additional options (cwd, env_map)
+/// Handles cross-platform differences in the Child.run signature
+pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u8, options: ChildRunOptions) !ChildRunResult {
     const ChildType = std.process.Child;
     const fn_info = @typeInfo(@TypeOf(ChildType.run)).@"fn";
 
     if (fn_info.params.len == 3) {
         // New API: run(allocator, io, args)
-        const result = try ChildType.run(allocator, io, .{ .argv = argv });
+        const result = try ChildType.run(allocator, io, .{
+            .argv = argv,
+            .cwd = options.cwd,
+            .env_map = options.env_map,
+        });
         return .{
             .term = result.term,
             .stdout = result.stdout,
@@ -572,6 +588,8 @@ pub fn childRun(allocator: std.mem.Allocator, argv: []const []const u8) !ChildRu
         const result = try ChildType.run(.{
             .allocator = allocator,
             .argv = argv,
+            .cwd = options.cwd,
+            .env_map = options.env_map,
         });
         return .{
             .term = result.term,

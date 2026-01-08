@@ -314,11 +314,8 @@ fn runSecurityScanner(
     );
     defer allocator.free(bin_path);
 
-    // Execute the scanner using Child.run() pattern
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ bin_path, "." },
-    });
+    // Execute the scanner using io_helper.childRun() for cross-platform compatibility
+    const result = try io_helper.childRun(allocator, &[_][]const u8{ bin_path, "." });
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 

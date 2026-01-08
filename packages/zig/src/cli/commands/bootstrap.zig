@@ -40,7 +40,7 @@ pub fn bootstrapCommand(allocator: std.mem.Allocator, options: BootstrapOptions)
     // Step 1: Determine installation path
     const install_path = options.path orelse blk: {
         // Try /usr/local first, fall back to ~/.local
-        io_helper.cwd().makePath(io_helper.io, "/usr/local/bin") catch |err| {
+        io_helper.makePath("/usr/local/bin") catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 const home = try lib.Paths.home(allocator);
                 defer allocator.free(home);

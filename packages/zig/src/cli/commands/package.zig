@@ -790,15 +790,9 @@ fn createTarball(
     defer allocator.free(staging_pkg);
 
     // Clean and create staging directory
-    _ = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "rm", "-rf", staging_base },
-    }) catch {};
+    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    const mkdir_result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "mkdir", "-p", staging_pkg },
-    });
+    const mkdir_result = try io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", staging_pkg });
     defer allocator.free(mkdir_result.stdout);
     defer allocator.free(mkdir_result.stderr);
 
@@ -808,24 +802,20 @@ fn createTarball(
     const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
     defer allocator.free(dst_path);
 
-    const cp_result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{
-            "rsync",
-            "-a",
-            "--exclude=node_modules",
-            "--exclude=pantry",
-            "--exclude=.git",
-            "--exclude=*.tgz",
-            "--exclude=.github",
-            "--exclude=.claude",
-            "--exclude=zig",
-            "--exclude=zig.tar.xz",
-            "--exclude=*.tar.xz",
-            src_path,
-            dst_path,
-        },
-        .max_output_bytes = 10 * 1024 * 1024, // 10MB limit
+    const cp_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "rsync",
+        "-a",
+        "--exclude=node_modules",
+        "--exclude=pantry",
+        "--exclude=.git",
+        "--exclude=*.tgz",
+        "--exclude=.github",
+        "--exclude=.claude",
+        "--exclude=zig",
+        "--exclude=zig.tar.xz",
+        "--exclude=*.tar.xz",
+        src_path,
+        dst_path,
     });
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
@@ -836,25 +826,19 @@ fn createTarball(
     }
 
     // Create tarball with "package" directory at root
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{
-            "tar",
-            "-czf",
-            tarball_path,
-            "-C",
-            staging_base,
-            "package",
-        },
+    const result = try io_helper.childRun(allocator, &[_][]const u8{
+        "tar",
+        "-czf",
+        tarball_path,
+        "-C",
+        staging_base,
+        "package",
     });
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
     // Cleanup staging
-    _ = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "rm", "-rf", staging_base },
-    }) catch {};
+    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
     if (result.term != .Exited or result.term.Exited != 0) {
         std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
@@ -863,11 +847,7 @@ fn createTarball(
     }
 
     // Check tarball size - warn if too big (npm limit is ~200MB but packages should be small)
-    const stat_result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "stat", "-c", "%s", tarball_path },
-        .max_output_bytes = 1024,
-    });
+    const stat_result = try io_helper.childRun(allocator, &[_][]const u8{ "stat", "-c", "%s", tarball_path });
     defer allocator.free(stat_result.stdout);
     defer allocator.free(stat_result.stderr);
 
@@ -880,11 +860,7 @@ fn createTarball(
         // List first few entries to debug
         const peek_cmd = try std.fmt.allocPrint(allocator, "tar -tzf {s} | head -20", .{tarball_path});
         defer allocator.free(peek_cmd);
-        const peek = try std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{ "sh", "-c", peek_cmd },
-            .max_output_bytes = 4096,
-        });
+        const peek = try io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", peek_cmd });
         defer allocator.free(peek.stdout);
         defer allocator.free(peek.stderr);
         std.debug.print("First 20 entries:\n{s}\n", .{peek.stdout});
