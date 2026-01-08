@@ -52,7 +52,7 @@ pub const StatResult = struct {
     size: u64,
     mtime: i128, // nanoseconds since epoch
     ctime: i128, // nanoseconds since epoch
-    mode: u32,
+    mode: u32 = 0, // Optional - may not be available on all platforms
 };
 
 /// Stat a file path - get file metadata
@@ -67,7 +67,7 @@ pub fn statFile(path: []const u8) !StatResult {
         .size = @intCast(stat.size),
         .mtime = stat.mtime.toNanoseconds(),
         .ctime = stat.ctime.toNanoseconds(),
-        .mode = stat.mode,
+        .mode = if (@hasField(@TypeOf(stat), "mode")) stat.mode else 0,
     };
 }
 
@@ -125,16 +125,44 @@ pub fn openDir(path: []const u8, options: Dir.OpenOptions) !Dir {
     return try cwd().openDir(io, path, options);
 }
 
-/// Delete a file using C unlink
+/// Delete a file using platform-specific syscalls
 pub fn deleteFile(path: []const u8) !void {
     var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     if (path.len >= path_buf.len) return error.NameTooLong;
     @memcpy(path_buf[0..path.len], path);
     path_buf[path.len] = 0;
 
-    const result = c.unlink(&path_buf);
-    if (result != 0) {
-        return error.FileNotFound;
+    switch (builtin.os.tag) {
+        .linux => {
+            const rc = std.os.linux.unlinkat(std.os.linux.AT.FDCWD, &path_buf, 0);
+            if (rc != 0) return error.FileNotFound;
+        },
+        else => {
+            // macOS and others - use libc
+            const result = c.unlink(&path_buf);
+            if (result != 0) return error.FileNotFound;
+        },
+    }
+}
+
+/// Delete a directory using platform-specific syscalls
+fn deleteDir(path: []const u8) !void {
+    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (path.len >= path_buf.len) return error.NameTooLong;
+    @memcpy(path_buf[0..path.len], path);
+    path_buf[path.len] = 0;
+
+    switch (builtin.os.tag) {
+        .linux => {
+            const AT_REMOVEDIR = 0x200;
+            const rc = std.os.linux.unlinkat(std.os.linux.AT.FDCWD, &path_buf, AT_REMOVEDIR);
+            if (rc != 0) return error.DirNotEmpty;
+        },
+        else => {
+            // macOS and others - use libc
+            const result = c.rmdir(&path_buf);
+            if (result != 0) return error.DirNotEmpty;
+        },
     }
 }
 
@@ -154,12 +182,7 @@ pub fn deleteTree(path: []const u8) !void {
         dir.close();
 
         // Now remove the empty directory
-        var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
-        if (path.len < path_buf.len) {
-            @memcpy(path_buf[0..path.len], path);
-            path_buf[path.len] = 0;
-            _ = c.rmdir(&path_buf);
-        }
+        deleteDir(path) catch {};
     };
 }
 
@@ -276,14 +299,9 @@ pub const FsDir = struct {
                         },
                         .linux => {
                             const rc = linux.getdents64(self.fd, &self.buf, self.buf.len);
-                            switch (linux.E.init(rc)) {
-                                .SUCCESS => {},
-                                .BADF => return error.InvalidHandle,
-                                .FAULT => unreachable,
-                                .NOTDIR => return error.NotDir,
-                                .NOENT => return null,
-                                else => return error.ReadDirError,
-                            }
+                            // Check for error - syscall returns negative error code as large usize
+                            const signed_rc = @as(isize, @bitCast(rc));
+                            if (signed_rc < 0) return error.ReadDirError;
                             if (rc == 0) return null;
                             self.index = 0;
                             self.end = rc;
@@ -406,7 +424,7 @@ pub fn readStdin(buffer: []u8) !usize {
     return std.posix.read(std.posix.STDIN_FILENO, buffer);
 }
 
-/// Rename a file or directory using C rename
+/// Rename a file or directory using platform-specific syscalls
 pub fn rename(old_path: []const u8, new_path: []const u8) !void {
     var old_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     var new_buf: [std.fs.max_path_bytes:0]u8 = undefined;
@@ -418,9 +436,15 @@ pub fn rename(old_path: []const u8, new_path: []const u8) !void {
     @memcpy(new_buf[0..new_path.len], new_path);
     new_buf[new_path.len] = 0;
 
-    const result = c.rename(&old_buf, &new_buf);
-    if (result != 0) {
-        return error.RenameError;
+    switch (builtin.os.tag) {
+        .linux => {
+            const rc = std.os.linux.renameat(std.os.linux.AT.FDCWD, &old_buf, std.os.linux.AT.FDCWD, &new_buf);
+            if (rc != 0) return error.RenameError;
+        },
+        else => {
+            const result = c.rename(&old_buf, &new_buf);
+            if (result != 0) return error.RenameError;
+        },
     }
 }
 
@@ -443,7 +467,7 @@ pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
     }
 }
 
-/// Create a symbolic link using C symlink
+/// Create a symbolic link using platform-specific syscalls
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
     var target_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     var link_buf: [std.fs.max_path_bytes:0]u8 = undefined;
@@ -455,12 +479,24 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
     @memcpy(link_buf[0..link_path.len], link_path);
     link_buf[link_path.len] = 0;
 
-    const result = c.symlink(&target_buf, &link_buf);
-    if (result != 0) {
-        // Check errno for PathAlreadyExists
-        const err = std.posix.errno(result);
-        if (err == .EXIST) return error.PathAlreadyExists;
-        return error.SymLinkError;
+    switch (builtin.os.tag) {
+        .linux => {
+            const rc = std.os.linux.symlinkat(&target_buf, std.os.linux.AT.FDCWD, &link_buf);
+            if (rc != 0) {
+                // Check for EEXIST (17 on Linux)
+                const errno_val: u16 = @truncate(rc);
+                if (errno_val == 17) return error.PathAlreadyExists;
+                return error.SymLinkError;
+            }
+        },
+        else => {
+            const result = c.symlink(&target_buf, &link_buf);
+            if (result != 0) {
+                const err = std.posix.errno(result);
+                if (err == .EXIST) return error.PathAlreadyExists;
+                return error.SymLinkError;
+            }
+        },
     }
 }
 
@@ -477,5 +513,40 @@ pub fn spawnAndWait(child: *std.process.Child) !std.process.Child.Term {
     } else {
         // Version without io parameter: spawnAndWait(self)
         return child.spawnAndWait();
+    }
+}
+
+/// Result type for childRun
+pub const ChildRunResult = struct {
+    term: std.process.Child.Term,
+    stdout: []u8,
+    stderr: []u8,
+};
+
+/// Run a child process and collect output
+/// Handles cross-platform differences in the Child.run signature
+pub fn childRun(allocator: std.mem.Allocator, argv: []const []const u8) !ChildRunResult {
+    const ChildType = std.process.Child;
+    const fn_info = @typeInfo(@TypeOf(ChildType.run)).@"fn";
+
+    if (fn_info.params.len == 3) {
+        // New API: run(allocator, io, args)
+        const result = try ChildType.run(allocator, io, .{ .argv = argv });
+        return .{
+            .term = result.term,
+            .stdout = result.stdout,
+            .stderr = result.stderr,
+        };
+    } else {
+        // Old API: run(.{ .allocator = ..., .argv = ... })
+        const result = try ChildType.run(.{
+            .allocator = allocator,
+            .argv = argv,
+        });
+        return .{
+            .term = result.term,
+            .stdout = result.stdout,
+            .stderr = result.stderr,
+        };
     }
 }
