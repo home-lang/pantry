@@ -106,10 +106,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
         try argv.append(allocator, arg);
     }
 
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = argv.items,
-    });
+    const result = try io_helper.childRun(allocator, argv.items);
 
     // Print output
     if (result.stdout.len > 0) {
