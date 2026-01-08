@@ -151,10 +151,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
     }
 
     // Try to install bun using curl
-    const install_result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "sh", "-c", "curl -fsSL https://bun.sh/install | bash" },
-    });
+    const install_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", "curl -fsSL https://bun.sh/install | bash" });
 
     if (install_result) |r| {
         defer allocator.free(r.stdout);

@@ -80,10 +80,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     }
 
     // First, get the file size from HTTP headers
-    const size_result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "curl", "-sI", url },
-    });
+    const size_result = try io_helper.childRun(allocator, &[_][]const u8{ "curl", "-sI", url });
     defer allocator.free(size_result.stdout);
     defer allocator.free(size_result.stderr);
 
