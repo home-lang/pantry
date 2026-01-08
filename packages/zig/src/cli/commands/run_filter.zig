@@ -648,9 +648,7 @@ fn executeScriptsInMembers(
 
             const full_command = command_list.items;
 
-            const result = std.process.Child.run(.{
-                .allocator = allocator,
-                .argv = &[_][]const u8{ "sh", "-c", full_command },
+            const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", full_command }, .{
                 .cwd = member.abs_path,
             }) catch |err| {
                 std.debug.print("{s}✗{s} {s} {s}({any}){s}\n", .{ red, reset, member.name, dim, err, reset });

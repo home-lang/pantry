@@ -129,7 +129,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         const stat = io_helper.statFile(dest_path) catch {
             // File doesn't exist yet - check for stall timeout
             if (now - last_progress_time > stall_timeout_ms) {
-                _ = child.kill() catch {};
+                _ = io_helper.kill(&child) catch {};
                 return error.NetworkError;
             }
             continue;

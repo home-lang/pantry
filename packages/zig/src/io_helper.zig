@@ -546,6 +546,21 @@ pub fn wait(child: *std.process.Child) !std.process.Child.Term {
     }
 }
 
+/// Kill a spawned child process
+/// Handles cross-platform differences in the kill signature
+pub fn kill(child: *std.process.Child) !std.process.Child.Term {
+    const ChildType = std.process.Child;
+    const fn_info = @typeInfo(@TypeOf(ChildType.kill)).@"fn";
+
+    if (fn_info.params.len == 2) {
+        // Version with io parameter: kill(self, io)
+        return child.kill(io);
+    } else {
+        // Version without io parameter: kill(self)
+        return child.kill();
+    }
+}
+
 /// Result type for childRun
 pub const ChildRunResult = struct {
     term: std.process.Child.Term,
