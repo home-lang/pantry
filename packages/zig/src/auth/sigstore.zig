@@ -125,6 +125,7 @@ pub const FulcioClient = struct {
         self: *FulcioClient,
         oidc_token: []const u8,
         public_key_pem: []const u8,
+        private_key: []const u8,
     ) !SigningCertificate {
         // Construct the Fulcio v2 signing cert request
         const url = try std.fmt.allocPrint(
@@ -147,6 +148,17 @@ pub const FulcioClient = struct {
             }
         }
 
+        // Create proof of possession by signing the OIDC token with the private key
+        const signature = try signData(self.allocator, oidc_token, private_key);
+        defer self.allocator.free(signature);
+
+        // Base64 encode the signature for JSON
+        const encoder = std.base64.standard.Encoder;
+        const sig_b64_len = encoder.calcSize(signature.len);
+        const sig_b64 = try self.allocator.alloc(u8, sig_b64_len);
+        defer self.allocator.free(sig_b64);
+        _ = encoder.encode(sig_b64, signature);
+
         // Create request body (Fulcio expects specific format)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
@@ -163,7 +175,7 @@ pub const FulcioClient = struct {
             \\  }}
             \\}}
         ,
-            .{ oidc_token, escaped_pem.items, oidc_token }, // proof of possession is the signed OIDC token
+            .{ oidc_token, escaped_pem.items, sig_b64 },
         );
         defer self.allocator.free(request_body);
 
@@ -667,6 +679,7 @@ pub fn createSignedProvenance(
     const cert = try fulcio.requestSigningCertificate(
         oidc_token.raw_token,
         keypair.public_key_pem,
+        keypair.private_key,
     );
     defer {
         var mut_cert = cert;
