@@ -661,6 +661,14 @@ pub fn createSignedProvenance(
     const tarball_hash = try sha512Hex(allocator, tarball_data);
     defer allocator.free(tarball_hash);
 
+    // 1b. Get a separate OIDC token with "sigstore" audience for Fulcio
+    // Fulcio requires the token to have audience "sigstore"
+    var provider = try oidc.detectProvider(allocator) orelse return error.NoOIDCProvider;
+    defer provider.deinit(allocator);
+
+    const sigstore_token = try oidc.getTokenFromEnvironmentWithAudience(allocator, &provider, "sigstore") orelse return error.NoOIDCToken;
+    defer allocator.free(sigstore_token);
+
     // 2. Generate ephemeral ECDSA keypair
     // Note: Zig's std.crypto has ECDSA support
     // For now, we'll use a simplified approach
@@ -677,7 +685,7 @@ pub fn createSignedProvenance(
     defer fulcio.deinit();
 
     const cert = try fulcio.requestSigningCertificate(
-        oidc_token.raw_token,
+        sigstore_token,
         keypair.public_key_pem,
         keypair.private_key,
     );
