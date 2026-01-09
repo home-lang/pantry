@@ -757,23 +757,26 @@ fn generateEphemeralKeypair(allocator: std.mem.Allocator) !EphemeralKeypair {
     // Generate keypair deterministically from seed
     const keypair = try EcdsaP256.KeyPair.generateDeterministic(seed);
 
-    // Serialize public key to PEM format
+    // Serialize public key to SPKI (SubjectPublicKeyInfo) DER format
     // ECDSA P-256 public key is 65 bytes (uncompressed: 04 || x || y)
     const pub_key_bytes = keypair.public_key.toUncompressedSec1();
 
-    // Create a simple PEM representation (this is simplified)
-    // Real implementation would need proper ASN.1/DER encoding
+    // Create SPKI DER structure for EC P-256 public key
+    const spki_der = try encodeECP256PublicKeySPKI(allocator, &pub_key_bytes);
+    defer allocator.free(spki_der);
+
+    // Base64 encode and wrap in PEM
     const encoder = std.base64.standard.Encoder;
-    const pub_b64_len = encoder.calcSize(pub_key_bytes.len);
+    const pub_b64_len = encoder.calcSize(spki_der.len);
     const pub_b64 = try allocator.alloc(u8, pub_b64_len);
-    _ = encoder.encode(pub_b64, &pub_key_bytes);
+    _ = encoder.encode(pub_b64, spki_der);
+    defer allocator.free(pub_b64);
 
     const public_key_pem = try std.fmt.allocPrint(
         allocator,
         "-----BEGIN PUBLIC KEY-----\n{s}\n-----END PUBLIC KEY-----",
         .{pub_b64},
     );
-    allocator.free(pub_b64);
 
     // Store private key (secret scalar)
     const private_key = try allocator.dupe(u8, &keypair.secret_key.toBytes());
@@ -877,4 +880,39 @@ fn encodeSigToDER(allocator: std.mem.Allocator, sig: []const u8) ![]const u8 {
     idx += s_len;
 
     return der;
+}
+
+/// Encode EC P-256 public key to SPKI (SubjectPublicKeyInfo) DER format
+fn encodeECP256PublicKeySPKI(allocator: std.mem.Allocator, pub_key: []const u8) ![]const u8 {
+    // SPKI structure for EC P-256:
+    // SEQUENCE {
+    //   SEQUENCE {
+    //     OBJECT IDENTIFIER ecPublicKey (1.2.840.10045.2.1)
+    //     OBJECT IDENTIFIER prime256v1 (1.2.840.10045.3.1.7)
+    //   }
+    //   BIT STRING (public key)
+    // }
+
+    // Fixed header for EC P-256 SPKI (26 bytes before the public key)
+    // 30 59 - SEQUENCE, 89 bytes total
+    // 30 13 - SEQUENCE, 19 bytes (algorithm identifier)
+    // 06 07 2a 86 48 ce 3d 02 01 - OID ecPublicKey
+    // 06 08 2a 86 48 ce 3d 03 01 07 - OID prime256v1
+    // 03 42 00 - BIT STRING, 66 bytes, 0 unused bits
+    const spki_header = [_]u8{
+        0x30, 0x59, // SEQUENCE, 89 bytes
+        0x30, 0x13, // SEQUENCE, 19 bytes (AlgorithmIdentifier)
+        0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID 1.2.840.10045.2.1 (ecPublicKey)
+        0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID 1.2.840.10045.3.1.7 (prime256v1)
+        0x03, 0x42, 0x00, // BIT STRING, 66 bytes (1 + 65), 0 unused bits
+    };
+
+    // Total length: header (26 bytes) + public key (65 bytes) = 91 bytes
+    const total_len = spki_header.len + pub_key.len;
+    const spki = try allocator.alloc(u8, total_len);
+
+    @memcpy(spki[0..spki_header.len], &spki_header);
+    @memcpy(spki[spki_header.len..], pub_key);
+
+    return spki;
 }
