@@ -148,8 +148,12 @@ pub const FulcioClient = struct {
             }
         }
 
-        // Create proof of possession by signing the OIDC token with the private key
-        const signature = try signData(self.allocator, oidc_token, private_key);
+        // Create proof of possession by signing the `sub` claim from the OIDC token
+        // (Per Fulcio spec: signature of the sub claim proves key possession)
+        const sub_claim = try extractSubClaim(self.allocator, oidc_token);
+        defer self.allocator.free(sub_claim);
+
+        const signature = try signData(self.allocator, sub_claim, private_key);
         defer self.allocator.free(signature);
 
         // Base64 encode the signature for JSON
@@ -880,6 +884,33 @@ fn encodeSigToDER(allocator: std.mem.Allocator, sig: []const u8) ![]const u8 {
     idx += s_len;
 
     return der;
+}
+
+/// Extract the `sub` claim from a JWT token
+fn extractSubClaim(allocator: std.mem.Allocator, jwt: []const u8) ![]const u8 {
+    // JWT format: header.payload.signature
+    // Split by '.' and decode the payload (second part)
+    var parts = std.mem.splitScalar(u8, jwt, '.');
+
+    _ = parts.next(); // Skip header
+    const payload_b64 = parts.next() orelse return error.InvalidJWT;
+
+    // Base64url decode the payload
+    const decoder = std.base64.url_safe_no_pad.Decoder;
+    const payload_len = decoder.calcSizeForSlice(payload_b64) catch return error.InvalidJWT;
+    const payload = try allocator.alloc(u8, payload_len);
+    defer allocator.free(payload);
+
+    decoder.decode(payload, payload_b64) catch return error.InvalidJWT;
+
+    // Parse JSON to extract "sub" claim
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, payload, .{}) catch return error.InvalidJWT;
+    defer parsed.deinit();
+
+    const sub = parsed.value.object.get("sub") orelse return error.NoSubClaim;
+    if (sub != .string) return error.InvalidSubClaim;
+
+    return try allocator.dupe(u8, sub.string);
 }
 
 /// Encode EC P-256 public key to SPKI (SubjectPublicKeyInfo) DER format
