@@ -788,7 +788,73 @@ fn signData(allocator: std.mem.Allocator, data: []const u8, private_key: []const
 
     // Sign the data
     const signature = try keypair.sign(data, null);
+    const sig_bytes = signature.toBytes();
 
-    // Return signature as DER-encoded (simplified - real impl needs proper DER)
-    return try allocator.dupe(u8, &signature.toBytes());
+    // Convert raw signature (r||s) to DER format
+    // DER: SEQUENCE { INTEGER r, INTEGER s }
+    return try encodeSigToDER(allocator, &sig_bytes);
+}
+
+/// Encode ECDSA signature (r||s) to DER format
+fn encodeSigToDER(allocator: std.mem.Allocator, sig: []const u8) ![]const u8 {
+    // sig is 64 bytes: r (32 bytes) || s (32 bytes)
+    const r = sig[0..32];
+    const s = sig[32..64];
+
+    // Encode each integer, adding leading 0x00 if high bit is set (to keep positive)
+    var r_der: [33]u8 = undefined;
+    var r_len: usize = 32;
+    var r_start: usize = 0;
+
+    // Skip leading zeros in r
+    while (r_start < 32 and r[r_start] == 0) : (r_start += 1) {}
+    if (r_start == 32) { r_start = 31; } // Keep at least one byte
+    r_len = 32 - r_start;
+
+    // Add leading 0x00 if high bit set
+    const r_needs_pad = r[r_start] >= 0x80;
+    if (r_needs_pad) {
+        r_der[0] = 0x00;
+        @memcpy(r_der[1..][0..r_len], r[r_start..32]);
+        r_len += 1;
+    } else {
+        @memcpy(r_der[0..r_len], r[r_start..32]);
+    }
+
+    var s_der: [33]u8 = undefined;
+    var s_len: usize = 32;
+    var s_start: usize = 0;
+
+    // Skip leading zeros in s
+    while (s_start < 32 and s[s_start] == 0) : (s_start += 1) {}
+    if (s_start == 32) { s_start = 31; }
+    s_len = 32 - s_start;
+
+    // Add leading 0x00 if high bit set
+    const s_needs_pad = s[s_start] >= 0x80;
+    if (s_needs_pad) {
+        s_der[0] = 0x00;
+        @memcpy(s_der[1..][0..s_len], s[s_start..32]);
+        s_len += 1;
+    } else {
+        @memcpy(s_der[0..s_len], s[s_start..32]);
+    }
+
+    // Build DER: 0x30 <len> 0x02 <r_len> <r> 0x02 <s_len> <s>
+    const inner_len = 2 + r_len + 2 + s_len;
+    const total_len = 2 + inner_len;
+
+    const der = try allocator.alloc(u8, total_len);
+    var idx: usize = 0;
+
+    der[idx] = 0x30; idx += 1; // SEQUENCE
+    der[idx] = @intCast(inner_len); idx += 1;
+    der[idx] = 0x02; idx += 1; // INTEGER (r)
+    der[idx] = @intCast(r_len); idx += 1;
+    @memcpy(der[idx..][0..r_len], r_der[0..r_len]); idx += r_len;
+    der[idx] = 0x02; idx += 1; // INTEGER (s)
+    der[idx] = @intCast(s_len); idx += 1;
+    @memcpy(der[idx..][0..s_len], s_der[0..s_len]); idx += s_len;
+
+    return der;
 }
