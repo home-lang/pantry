@@ -803,11 +803,9 @@ fn signData(allocator: std.mem.Allocator, data: []const u8, private_key: []const
 
     // Sign the data
     const signature = try keypair.sign(data, null);
-    const sig_bytes = signature.toBytes();
 
-    // Convert raw signature (r||s) to DER format
-    // DER: SEQUENCE { INTEGER r, INTEGER s }
-    return try encodeSigToDER(allocator, &sig_bytes);
+    // Return raw signature bytes (r||s) - Fulcio expects this format
+    return try allocator.dupe(u8, &signature.toBytes());
 }
 
 /// Encode ECDSA signature (r||s) to DER format
