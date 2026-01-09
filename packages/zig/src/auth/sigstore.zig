@@ -286,15 +286,16 @@ pub const RekorClient = struct {
         const escaped_envelope = try escapeJsonString(self.allocator, dsse_envelope_json);
         defer self.allocator.free(escaped_envelope);
 
-        // Convert PEM certificate to base64-encoded DER for verifier
-        const cert_der_b64 = try pemToBase64Der(self.allocator, certificate_pem);
-        defer self.allocator.free(cert_der_b64);
+        // Escape the PEM certificate for embedding in JSON (Rekor expects PEM format with headers)
+        const escaped_cert = try escapeJsonString(self.allocator, certificate_pem);
+        defer self.allocator.free(escaped_cert);
 
         // Debug: print what we're sending
-        std.debug.print("Envelope length: {d}, Verifier length: {d}\n", .{ escaped_envelope.len, cert_der_b64.len });
+        std.debug.print("Envelope length: {d}, Verifier length: {d}\n", .{ escaped_envelope.len, escaped_cert.len });
 
         // Create Rekor entry request (using "dsse" type with verifiers)
         // The envelope must be a "stringified JSON object" (escaped JSON string, NOT base64)
+        // The verifier is the PEM certificate (escaped for JSON embedding)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -308,7 +309,7 @@ pub const RekorClient = struct {
             \\  }}
             \\}}
         ,
-            .{ escaped_envelope, cert_der_b64 },
+            .{ escaped_envelope, escaped_cert },
         );
         defer self.allocator.free(request_body);
 
