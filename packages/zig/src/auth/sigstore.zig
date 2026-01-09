@@ -281,18 +281,20 @@ pub const RekorClient = struct {
         );
         defer self.allocator.free(url);
 
-        // Base64 encode the DSSE envelope
-        const encoder = std.base64.standard.Encoder;
-        const encoded_len = encoder.calcSize(dsse_envelope_json.len);
-        const encoded_envelope = try self.allocator.alloc(u8, encoded_len);
-        defer self.allocator.free(encoded_envelope);
-        _ = encoder.encode(encoded_envelope, dsse_envelope_json);
+        // Escape the DSSE envelope JSON for embedding in another JSON string
+        // Need to escape: \ -> \\, " -> \", newlines, etc.
+        const escaped_envelope = try escapeJsonString(self.allocator, dsse_envelope_json);
+        defer self.allocator.free(escaped_envelope);
 
         // Convert PEM certificate to base64-encoded DER for verifier
         const cert_der_b64 = try pemToBase64Der(self.allocator, certificate_pem);
         defer self.allocator.free(cert_der_b64);
 
+        // Debug: print what we're sending
+        std.debug.print("Envelope length: {d}, Verifier length: {d}\n", .{ escaped_envelope.len, cert_der_b64.len });
+
         // Create Rekor entry request (using "dsse" type with verifiers)
+        // The envelope must be a "stringified JSON object" (escaped JSON string, NOT base64)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -306,7 +308,7 @@ pub const RekorClient = struct {
             \\  }}
             \\}}
         ,
-            .{ encoded_envelope, cert_der_b64 },
+            .{ escaped_envelope, cert_der_b64 },
         );
         defer self.allocator.free(request_body);
 
@@ -915,6 +917,35 @@ fn extractSubClaim(allocator: std.mem.Allocator, jwt: []const u8) ![]const u8 {
     if (sub != .string) return error.InvalidSubClaim;
 
     return try allocator.dupe(u8, sub.string);
+}
+
+/// Escape a string for embedding in a JSON string value
+/// Handles: \ -> \\, " -> \", control characters, etc.
+fn escapeJsonString(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
+    var result = std.ArrayList(u8){};
+    errdefer result.deinit(allocator);
+
+    for (input) |c| {
+        switch (c) {
+            '\\' => try result.appendSlice(allocator, "\\\\"),
+            '"' => try result.appendSlice(allocator, "\\\""),
+            '\n' => try result.appendSlice(allocator, "\\n"),
+            '\r' => try result.appendSlice(allocator, "\\r"),
+            '\t' => try result.appendSlice(allocator, "\\t"),
+            else => {
+                if (c < 0x20) {
+                    // Control character - encode as \uXXXX
+                    var buf: [6]u8 = undefined;
+                    _ = std.fmt.bufPrint(&buf, "\\u{x:0>4}", .{c}) catch unreachable;
+                    try result.appendSlice(allocator, &buf);
+                } else {
+                    try result.append(allocator, c);
+                }
+            },
+        }
+    }
+
+    return try result.toOwnedSlice(allocator);
 }
 
 /// Encode EC P-256 public key to SPKI (SubjectPublicKeyInfo) DER format
