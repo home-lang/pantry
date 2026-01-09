@@ -272,6 +272,7 @@ pub const RekorClient = struct {
     pub fn submitDSSE(
         self: *RekorClient,
         dsse_envelope_json: []const u8,
+        certificate_pem: []const u8,
     ) !RekorEntry {
         const url = try std.fmt.allocPrint(
             self.allocator,
@@ -287,7 +288,11 @@ pub const RekorClient = struct {
         defer self.allocator.free(encoded_envelope);
         _ = encoder.encode(encoded_envelope, dsse_envelope_json);
 
-        // Create Rekor entry request (using "dsse" type)
+        // Convert PEM certificate to base64-encoded DER for verifier
+        const cert_der_b64 = try pemToBase64Der(self.allocator, certificate_pem);
+        defer self.allocator.free(cert_der_b64);
+
+        // Create Rekor entry request (using "dsse" type with verifiers)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -295,12 +300,13 @@ pub const RekorClient = struct {
             \\  "apiVersion": "0.0.1",
             \\  "spec": {{
             \\    "proposedContent": {{
-            \\      "envelope": "{s}"
+            \\      "envelope": "{s}",
+            \\      "verifiers": ["{s}"]
             \\    }}
             \\  }}
             \\}}
         ,
-            .{encoded_envelope},
+            .{ encoded_envelope, cert_der_b64 },
         );
         defer self.allocator.free(request_body);
 
@@ -723,11 +729,11 @@ pub fn createSignedProvenance(
     const dsse_envelope = try createDSSEEnvelope(allocator, provenance, signature);
     defer allocator.free(dsse_envelope);
 
-    // 7. Submit to Rekor
+    // 7. Submit to Rekor (pass certificate for verification)
     var rekor = try RekorClient.init(allocator, null);
     defer rekor.deinit();
 
-    var rekor_entry = try rekor.submitDSSE(dsse_envelope);
+    var rekor_entry = try rekor.submitDSSE(dsse_envelope, cert.signing_cert);
     defer rekor_entry.deinit(allocator);
 
     // 8. Create Sigstore bundle
