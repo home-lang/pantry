@@ -217,9 +217,14 @@ pub const FulcioClient = struct {
 
         std.debug.print("✓ Received signing certificate from Fulcio\n", .{});
 
+        // The response may have escaped newlines (\n as literal characters)
+        // Unescape them to get proper PEM format
+        const unescaped_body = try unescapeNewlines(self.allocator, body);
+        defer self.allocator.free(unescaped_body);
+
         // Parse the certificate chain (PEM format)
         // First cert is the signing cert, rest are the chain
-        const cert_chain = try self.allocator.dupe(u8, body);
+        const cert_chain = try self.allocator.dupe(u8, unescaped_body);
         errdefer self.allocator.free(cert_chain);
 
         // Extract just the first certificate
@@ -231,6 +236,31 @@ pub const FulcioClient = struct {
         };
     }
 };
+
+/// Unescape literal \n and \r sequences to actual newlines
+fn unescapeNewlines(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
+    var result = std.ArrayList(u8){};
+    errdefer result.deinit(allocator);
+
+    var i: usize = 0;
+    while (i < input.len) {
+        if (i + 1 < input.len and input[i] == '\\') {
+            if (input[i + 1] == 'n') {
+                try result.append(allocator, '\n');
+                i += 2;
+                continue;
+            } else if (input[i + 1] == 'r') {
+                try result.append(allocator, '\r');
+                i += 2;
+                continue;
+            }
+        }
+        try result.append(allocator, input[i]);
+        i += 1;
+    }
+
+    return try result.toOwnedSlice(allocator);
+}
 
 /// Extract the first PEM certificate from a chain
 fn extractFirstCertificate(allocator: std.mem.Allocator, pem_chain: []const u8) ![]const u8 {
