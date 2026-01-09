@@ -286,16 +286,16 @@ pub const RekorClient = struct {
         const escaped_envelope = try escapeJsonString(self.allocator, dsse_envelope_json);
         defer self.allocator.free(escaped_envelope);
 
-        // Base64 encode the PEM certificate for the verifier
-        // Rekor expects: base64(PEM) - it will decode then parse as PEM
+        // Base64 encode the full PEM certificate (Rekor expects base64 -> PEM)
         const encoder = std.base64.standard.Encoder;
         const cert_b64_len = encoder.calcSize(certificate_pem.len);
         const cert_b64 = try self.allocator.alloc(u8, cert_b64_len);
         defer self.allocator.free(cert_b64);
         _ = encoder.encode(cert_b64, certificate_pem);
 
-        // Debug: print what we're sending
-        std.debug.print("Envelope length: {d}, Verifier length: {d}\n", .{ escaped_envelope.len, cert_b64.len });
+        // Debug: print certificate info
+        std.debug.print("Certificate PEM length: {d}, Base64 length: {d}\n", .{ certificate_pem.len, cert_b64.len });
+        std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
 
         // Create Rekor entry request (using "dsse" type with verifiers)
         // The envelope must be a "stringified JSON object" (escaped JSON string, NOT base64)
@@ -628,6 +628,7 @@ pub fn createSigstoreBundle(
 }
 
 /// Convert PEM certificate to base64-encoded DER
+/// This decodes the PEM content and re-encodes as standard base64
 fn pemToBase64Der(allocator: std.mem.Allocator, pem: []const u8) ![]const u8 {
     // Extract the base64 content between BEGIN and END markers
     const begin_marker = "-----BEGIN CERTIFICATE-----";
@@ -636,9 +637,9 @@ fn pemToBase64Der(allocator: std.mem.Allocator, pem: []const u8) ![]const u8 {
     const begin_idx = (std.mem.indexOf(u8, pem, begin_marker) orelse return error.InvalidPEM) + begin_marker.len;
     const end_idx = std.mem.indexOf(u8, pem[begin_idx..], end_marker) orelse return error.InvalidPEM;
 
-    // The content between markers is already base64 (but may have newlines)
-    // Remove whitespace
-    var clean = std.ArrayList(u8).empty;
+    // The content between markers is base64 (may have newlines)
+    // First, clean it to remove whitespace
+    var clean = std.ArrayList(u8){};
     defer clean.deinit(allocator);
 
     for (pem[begin_idx .. begin_idx + end_idx]) |c| {
@@ -647,7 +648,20 @@ fn pemToBase64Der(allocator: std.mem.Allocator, pem: []const u8) ![]const u8 {
         }
     }
 
-    return try clean.toOwnedSlice(allocator);
+    // Decode the base64 to get raw DER bytes
+    const decoder = std.base64.standard.Decoder;
+    const der_len = decoder.calcSizeForSlice(clean.items) catch return error.InvalidBase64;
+    const der_bytes = try allocator.alloc(u8, der_len);
+    defer allocator.free(der_bytes);
+    decoder.decode(der_bytes, clean.items) catch return error.InvalidBase64;
+
+    // Re-encode as standard base64 (clean, no line breaks)
+    const encoder = std.base64.standard.Encoder;
+    const b64_len = encoder.calcSize(der_bytes.len);
+    const b64 = try allocator.alloc(u8, b64_len);
+    _ = encoder.encode(b64, der_bytes);
+
+    return b64;
 }
 
 /// Calculate SHA-512 hash of data and return as hex string
