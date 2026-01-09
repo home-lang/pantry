@@ -808,7 +808,9 @@ fn encodeSigToDER(allocator: std.mem.Allocator, sig: []const u8) ![]const u8 {
 
     // Skip leading zeros in r
     while (r_start < 32 and r[r_start] == 0) : (r_start += 1) {}
-    if (r_start == 32) { r_start = 31; } // Keep at least one byte
+    if (r_start == 32) {
+        r_start = 31;
+    } // Keep at least one byte
     r_len = 32 - r_start;
 
     // Add leading 0x00 if high bit set
@@ -827,7 +829,9 @@ fn encodeSigToDER(allocator: std.mem.Allocator, sig: []const u8) ![]const u8 {
 
     // Skip leading zeros in s
     while (s_start < 32 and s[s_start] == 0) : (s_start += 1) {}
-    if (s_start == 32) { s_start = 31; }
+    if (s_start == 32) {
+        s_start = 31;
+    }
     s_len = 32 - s_start;
 
     // Add leading 0x00 if high bit set
@@ -847,14 +851,22 @@ fn encodeSigToDER(allocator: std.mem.Allocator, sig: []const u8) ![]const u8 {
     const der = try allocator.alloc(u8, total_len);
     var idx: usize = 0;
 
-    der[idx] = 0x30; idx += 1; // SEQUENCE
-    der[idx] = @intCast(inner_len); idx += 1;
-    der[idx] = 0x02; idx += 1; // INTEGER (r)
-    der[idx] = @intCast(r_len); idx += 1;
-    @memcpy(der[idx..][0..r_len], r_der[0..r_len]); idx += r_len;
-    der[idx] = 0x02; idx += 1; // INTEGER (s)
-    der[idx] = @intCast(s_len); idx += 1;
-    @memcpy(der[idx..][0..s_len], s_der[0..s_len]); idx += s_len;
+    der[idx] = 0x30;
+    idx += 1; // SEQUENCE
+    der[idx] = @intCast(inner_len);
+    idx += 1;
+    der[idx] = 0x02;
+    idx += 1; // INTEGER (r)
+    der[idx] = @intCast(r_len);
+    idx += 1;
+    @memcpy(der[idx..][0..r_len], r_der[0..r_len]);
+    idx += r_len;
+    der[idx] = 0x02;
+    idx += 1; // INTEGER (s)
+    der[idx] = @intCast(s_len);
+    idx += 1;
+    @memcpy(der[idx..][0..s_len], s_der[0..s_len]);
+    idx += s_len;
 
     return der;
 }
