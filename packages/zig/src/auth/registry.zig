@@ -207,15 +207,20 @@ pub const RegistryClient = struct {
 
     /// Exchange GitHub OIDC token for npm publish token
     /// npm requires this exchange before publishing with OIDC
-    pub fn exchangeOIDCToken(self: *RegistryClient, oidc_token: []const u8) !?[]const u8 {
+    /// Endpoint: /-/npm/v1/oidc/token/exchange/package/<package-name>
+    pub fn exchangeOIDCToken(self: *RegistryClient, oidc_token: []const u8, package_name: []const u8) !?[]const u8 {
+        // URL-encode package name for scoped packages
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
         const url = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/-/npm/v1/security/oidc/token",
-            .{self.registry_url},
+            "{s}/-/npm/v1/oidc/token/exchange/package/{s}",
+            .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
 
-        std.debug.print("Exchanging OIDC token with npm registry...\n", .{});
+        std.debug.print("Exchanging OIDC token with npm registry for {s}...\n", .{package_name});
 
         const uri = try std.Uri.parse(url);
 
@@ -285,14 +290,17 @@ pub const RegistryClient = struct {
         sigstore_bundle: ?[]const u8,
     ) !PublishResponse {
         // Step 1: Exchange OIDC token with npm for a publish token
-        const npm_token = try self.exchangeOIDCToken(token.raw_token) orelse {
+        const npm_token = try self.exchangeOIDCToken(token.raw_token, package_name) orelse {
+            // Allocate strings for error details since PublishResponse.deinit will free them
+            const code = try self.allocator.dupe(u8, "EOTP");
+            const summary = try self.allocator.dupe(u8, "OIDC authentication failed. Check trusted publisher configuration on npm.");
             return PublishResponse{
                 .success = false,
                 .status_code = 401,
                 .message = try self.allocator.dupe(u8, "Failed to exchange OIDC token with npm"),
                 .error_details = .{
-                    .code = "EOTP",
-                    .summary = "OIDC authentication failed. Check trusted publisher configuration on npm.",
+                    .code = code,
+                    .summary = summary,
                     .suggestion = null,
                 },
             };
