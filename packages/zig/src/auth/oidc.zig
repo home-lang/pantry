@@ -572,7 +572,8 @@ pub fn validateExpiration(claims: *const OIDCToken.Claims) !void {
 }
 
 /// Default audience for OIDC token requests
-pub const DEFAULT_OIDC_AUDIENCE: []const u8 = "https://registry.npmjs.org";
+/// npm requires the audience to be "npm:registry.npmjs.org" for token exchange
+pub const DEFAULT_OIDC_AUDIENCE: []const u8 = "npm:registry.npmjs.org";
 
 /// Token refresh threshold in seconds (refresh if token expires within this time)
 pub const TOKEN_REFRESH_THRESHOLD_SECONDS: i64 = 300; // 5 minutes
