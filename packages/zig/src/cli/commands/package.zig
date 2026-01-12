@@ -614,6 +614,12 @@ fn attemptOIDCPublish(
     if (token.claims.sha) |sha| {
         std.debug.print("  SHA: {s}\n", .{sha});
     }
+    if (token.claims.job_workflow_ref) |jwr| {
+        std.debug.print("  Job Workflow Ref: {s}\n", .{jwr});
+    }
+    if (token.claims.event_name) |event| {
+        std.debug.print("  Event: {s}\n", .{event});
+    }
 
     // Generate Sigstore provenance bundle if requested
     var sigstore_bundle: ?[]const u8 = null;
