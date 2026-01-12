@@ -547,6 +547,37 @@ pub fn createSLSAProvenance(
     return statement;
 }
 
+/// Create DSSE PAE (Pre-Authentication Encoding) for signing
+/// Format: "DSSEv1 " + len(type) + " " + type + " " + len(body) + " " + body
+fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload: []const u8) ![]const u8 {
+    // PAE format: "DSSEv1 {len_type} {type} {len_body} {body}"
+    var pae = std.ArrayList(u8){};
+    errdefer pae.deinit(allocator);
+
+    // "DSSEv1 "
+    try pae.appendSlice(allocator, "DSSEv1 ");
+
+    // Length of payload type as decimal ASCII
+    var len_buf: [20]u8 = undefined;
+    const type_len_str = std.fmt.bufPrint(&len_buf, "{d}", .{payload_type.len}) catch unreachable;
+    try pae.appendSlice(allocator, type_len_str);
+    try pae.append(allocator, ' ');
+
+    // Payload type
+    try pae.appendSlice(allocator, payload_type);
+    try pae.append(allocator, ' ');
+
+    // Length of payload as decimal ASCII
+    const payload_len_str = std.fmt.bufPrint(&len_buf, "{d}", .{payload.len}) catch unreachable;
+    try pae.appendSlice(allocator, payload_len_str);
+    try pae.append(allocator, ' ');
+
+    // Payload
+    try pae.appendSlice(allocator, payload);
+
+    return try pae.toOwnedSlice(allocator);
+}
+
 /// Create a DSSE envelope from an in-toto statement and signature
 pub fn createDSSEEnvelope(
     allocator: std.mem.Allocator,
@@ -772,22 +803,27 @@ pub fn createSignedProvenance(
     );
     defer allocator.free(provenance);
 
-    // 5. Sign the provenance with private key
-    const signature = try signData(allocator, provenance, keypair.private_key);
+    // 5. Create PAE (Pre-Authentication Encoding) for DSSE signing
+    // DSSE signs: "DSSEv1 " + len(type) + " " + type + " " + len(body) + " " + body
+    const pae_message = try createDSSEPAE(allocator, INTOTO_PAYLOAD_TYPE, provenance);
+    defer allocator.free(pae_message);
+
+    // 6. Sign the PAE message with private key
+    const signature = try signData(allocator, pae_message, keypair.private_key);
     defer allocator.free(signature);
 
-    // 6. Create DSSE envelope
+    // 7. Create DSSE envelope
     const dsse_envelope = try createDSSEEnvelope(allocator, provenance, signature);
     defer allocator.free(dsse_envelope);
 
-    // 7. Submit to Rekor (pass certificate for verification)
+    // 8. Submit to Rekor (pass certificate for verification)
     var rekor = try RekorClient.init(allocator, null);
     defer rekor.deinit();
 
     var rekor_entry = try rekor.submitDSSE(dsse_envelope, cert.signing_cert);
     defer rekor_entry.deinit(allocator);
 
-    // 8. Create Sigstore bundle
+    // 9. Create Sigstore bundle
     const bundle = try createSigstoreBundle(
         allocator,
         cert.signing_cert,
