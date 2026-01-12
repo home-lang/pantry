@@ -205,6 +205,75 @@ pub const RegistryClient = struct {
         };
     }
 
+    /// Exchange GitHub OIDC token for npm publish token
+    /// npm requires this exchange before publishing with OIDC
+    pub fn exchangeOIDCToken(self: *RegistryClient, oidc_token: []const u8) !?[]const u8 {
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/-/npm/v1/security/oidc/token",
+            .{self.registry_url},
+        );
+        defer self.allocator.free(url);
+
+        std.debug.print("Exchanging OIDC token with npm registry...\n", .{});
+
+        const uri = try std.Uri.parse(url);
+
+        const auth_header = try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{oidc_token},
+        );
+        defer self.allocator.free(auth_header);
+
+        const extra_headers = [_]http.Header{
+            .{ .name = "Authorization", .value = auth_header },
+            .{ .name = "Content-Type", .value = "application/json" },
+            .{ .name = "Accept", .value = "application/json" },
+        };
+
+        var req = try self.http_client.request(.POST, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        // Empty body for token exchange
+        req.transfer_encoding = .{ .content_length = 0 };
+        try req.sendBodyComplete("");
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        const body_reader = response.reader(&.{});
+        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+            error.StreamTooLong => return error.ResponseTooLarge,
+            else => |e| return e,
+        };
+        defer self.allocator.free(body);
+
+        if (response.head.status != .ok and response.head.status != .created) {
+            std.debug.print("npm token exchange failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
+            return null;
+        }
+
+        // Parse JSON response to extract token
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, body, .{}) catch {
+            std.debug.print("Failed to parse npm token response\n", .{});
+            return null;
+        };
+        defer parsed.deinit();
+
+        if (parsed.value.object.get("token")) |token_val| {
+            if (token_val == .string) {
+                std.debug.print("✓ Received npm publish token\n", .{});
+                return try self.allocator.dupe(u8, token_val.string);
+            }
+        }
+
+        std.debug.print("npm token response missing 'token' field: {s}\n", .{body});
+        return null;
+    }
+
     /// Publish package using OIDC authentication with Sigstore provenance bundle
     /// This is the full npm provenance flow as documented at https://docs.npmjs.com/generating-provenance-statements
     pub fn publishWithOIDCAndProvenance(
@@ -215,6 +284,21 @@ pub const RegistryClient = struct {
         token: *const oidc.OIDCToken,
         sigstore_bundle: ?[]const u8,
     ) !PublishResponse {
+        // Step 1: Exchange OIDC token with npm for a publish token
+        const npm_token = try self.exchangeOIDCToken(token.raw_token) orelse {
+            return PublishResponse{
+                .success = false,
+                .status_code = 401,
+                .message = try self.allocator.dupe(u8, "Failed to exchange OIDC token with npm"),
+                .error_details = .{
+                    .code = "EOTP",
+                    .summary = "OIDC authentication failed. Check trusted publisher configuration on npm.",
+                    .suggestion = null,
+                },
+            };
+        };
+        defer self.allocator.free(npm_token);
+
         // URL-encode package name for scoped packages
         const encoded_name = try urlEncodePackageName(self.allocator, package_name);
         defer self.allocator.free(encoded_name);
@@ -245,11 +329,11 @@ pub const RegistryClient = struct {
         // Parse URI
         const uri = try std.Uri.parse(url);
 
-        // Create authorization header
+        // Create authorization header using the exchanged npm token
         const auth_header = try std.fmt.allocPrint(
             self.allocator,
             "Bearer {s}",
-            .{token.raw_token},
+            .{npm_token},
         );
         defer self.allocator.free(auth_header);
 
