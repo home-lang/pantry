@@ -221,6 +221,7 @@ pub const RegistryClient = struct {
         defer self.allocator.free(url);
 
         std.debug.print("Exchanging OIDC token with npm registry for {s}...\n", .{package_name});
+        std.debug.print("Token exchange URL: {s}\n", .{url});
 
         const uri = try std.Uri.parse(url);
 
