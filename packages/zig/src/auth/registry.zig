@@ -242,9 +242,10 @@ pub const RegistryClient = struct {
         });
         defer req.deinit();
 
-        // Empty body for token exchange
-        req.transfer_encoding = .{ .content_length = 0 };
-        try req.sendBodyComplete("");
+        // Send empty JSON object as body (npm might expect this)
+        var req_body = "{}".*;
+        req.transfer_encoding = .{ .content_length = req_body.len };
+        try req.sendBodyComplete(&req_body);
 
         var redirect_buffer: [4096]u8 = undefined;
         var response = try req.receiveHead(&redirect_buffer);

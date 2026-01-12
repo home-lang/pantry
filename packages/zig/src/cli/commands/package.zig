@@ -604,6 +604,7 @@ fn attemptOIDCPublish(
     // Print token info for transparency
     std.debug.print("OIDC Claims:\n", .{});
     std.debug.print("  Issuer: {s}\n", .{token.claims.iss});
+    std.debug.print("  Audience: {s}\n", .{token.claims.aud});
     std.debug.print("  Subject: {s}\n", .{token.claims.sub});
     if (token.claims.repository) |repo| {
         std.debug.print("  Repository: {s}\n", .{repo});
