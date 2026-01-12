@@ -243,8 +243,9 @@ pub const RegistryClient = struct {
         });
         defer req.deinit();
 
-        // npm OIDC token exchange requires no body
-        try req.sendBodiless();
+        // Send empty body (POST requires a body, even if empty)
+        req.transfer_encoding = .{ .content_length = 0 };
+        try req.sendBodyComplete(&.{});
 
         var redirect_buffer: [4096]u8 = undefined;
         var response = try req.receiveHead(&redirect_buffer);
