@@ -3,6 +3,47 @@ const io_helper = @import("../io_helper.zig");
 const http = std.http;
 const oidc = @import("oidc.zig");
 
+/// Decompress gzip data if it looks like gzip (starts with magic bytes 0x1f 0x8b)
+/// Returns a copy of the data if not gzip, or the decompressed data if it is
+fn maybeDecompressGzip(allocator: std.mem.Allocator, data: []const u8) ![]const u8 {
+    // Check for gzip magic bytes
+    if (data.len >= 2 and data[0] == 0x1f and data[1] == 0x8b) {
+        // It's gzip compressed - use gunzip to decompress
+        // Write to temp file, decompress, read result
+        const tmp_gz = "/tmp/pantry_resp.gz";
+
+        // Write compressed data to temp file
+        const gz_file = io_helper.createFile(tmp_gz, .{}) catch {
+            return try allocator.dupe(u8, data);
+        };
+        io_helper.writeAllToFile(gz_file, data) catch {
+            io_helper.closeFile(gz_file);
+            return try allocator.dupe(u8, data);
+        };
+        io_helper.closeFile(gz_file);
+
+        // Run gunzip
+        const result = io_helper.childRun(allocator, &.{ "gunzip", "-c", tmp_gz }) catch {
+            io_helper.deleteFile(tmp_gz) catch {};
+            return try allocator.dupe(u8, data);
+        };
+        defer allocator.free(result.stderr);
+
+        // Clean up temp file
+        io_helper.deleteFile(tmp_gz) catch {};
+
+        if (result.term == .Exited and result.term.Exited == 0) {
+            return result.stdout; // Already allocated
+        }
+
+        allocator.free(result.stdout);
+        return try allocator.dupe(u8, data);
+    }
+
+    // Not gzip, return a copy
+    return try allocator.dupe(u8, data);
+}
+
 /// URL-encode a package name for use in registry URLs
 /// Scoped packages like "@scope/name" need special handling
 /// npm expects the / to be encoded as %2F in the URL path
@@ -179,10 +220,14 @@ pub const RegistryClient = struct {
 
         // Read response body
         const body_reader = response.reader(&.{});
-        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+        const raw_body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
             error.StreamTooLong => return error.ResponseTooLarge,
             else => |e| return e,
         };
+        defer self.allocator.free(raw_body);
+
+        // Decompress if gzip (npm CDN sometimes ignores Accept-Encoding header)
+        const body = try maybeDecompressGzip(self.allocator, raw_body);
         defer self.allocator.free(body);
 
         const success = response.head.status == .ok or response.head.status == .created;
@@ -375,10 +420,14 @@ pub const RegistryClient = struct {
 
         // Read response body
         const body_reader = response.reader(&.{});
-        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+        const raw_body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
             error.StreamTooLong => return error.ResponseTooLarge,
             else => |e| return e,
         };
+        defer self.allocator.free(raw_body);
+
+        // Decompress if gzip (npm CDN sometimes ignores Accept-Encoding header)
+        const body = try maybeDecompressGzip(self.allocator, raw_body);
         defer self.allocator.free(body);
 
         const success = response.head.status == .ok or response.head.status == .created;
@@ -468,10 +517,14 @@ pub const RegistryClient = struct {
 
         // Read response body
         const body_reader = response.reader(&.{});
-        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+        const raw_body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
             error.StreamTooLong => return error.ResponseTooLarge,
             else => |e| return e,
         };
+        defer self.allocator.free(raw_body);
+
+        // Decompress if gzip (npm CDN sometimes ignores Accept-Encoding header)
+        const body = try maybeDecompressGzip(self.allocator, raw_body);
         defer self.allocator.free(body);
 
         const success = response.head.status == .ok or response.head.status == .created;
