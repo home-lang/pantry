@@ -628,6 +628,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             failed_count += 1;
             continue;
         };
+
+        // Create symlinks in pantry/.bin for package executables
+        helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path) catch {};
+
         defer result.deinit(allocator);
 
         std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, name, version });

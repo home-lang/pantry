@@ -77,6 +77,7 @@ pub fn installSinglePackage(
     pkg_cache: *cache.PackageCache,
     options: types.InstallOptions,
 ) !types.InstallTaskResult {
+    std.debug.print("DEBUG: installSinglePackage called for: {s}\n", .{dep.name});
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     // Skip local packages - they're handled separately
@@ -223,8 +224,11 @@ pub fn installSinglePackage(
         };
     };
 
-    // Duplicate the version string before deinit
+    // Duplicate the version and install path strings before deinit
+    std.debug.print("    → DEBUG: install returned path: {s}\n", .{inst_result.install_path});
     const installed_version = try allocator.dupe(u8, inst_result.version);
+    const actual_install_path = try allocator.dupe(u8, inst_result.install_path);
+    defer allocator.free(actual_install_path);
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
@@ -273,10 +277,10 @@ pub fn installSinglePackage(
     _ = cwd;
 
     // Create symlinks in pantry/.bin for package executables
-    createBinSymlinks(allocator, proj_dir, package_path) catch |err| {
-        if (options.verbose) {
-            std.debug.print("⚠️  Could not create bin symlinks: {}\n", .{err});
-        }
+    // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
+    std.debug.print("    → Creating bin symlinks from: {s}\n", .{actual_install_path});
+    createBinSymlinks(allocator, proj_dir, actual_install_path) catch |err| {
+        std.debug.print("    ⚠️  Could not create bin symlinks: {}\n", .{err});
     };
 
     return .{
@@ -289,6 +293,11 @@ pub fn installSinglePackage(
 }
 
 /// Create symlinks in pantry/.bin for executables in the installed package
+/// Called from core.zig after direct package install
+pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8) !void {
+    return createBinSymlinks(allocator, proj_dir, package_path);
+}
+
 fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8) !void {
     // Create pantry/.bin directory
     const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", ".bin" });
@@ -335,6 +344,14 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
     try findAndLinkBinDirs(allocator, package_path, bin_link_dir);
 }
 
+/// Make a file executable (chmod +x)
+fn makeExecutable(path: []const u8) void {
+    // Use child process to chmod
+    var child = std.process.Child.init(&.{ "chmod", "+x", path }, std.heap.page_allocator);
+    child.spawn() catch return;
+    _ = child.wait() catch {};
+}
+
 /// Recursively search for bin directories and create symlinks
 fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin_link_dir: []const u8) !void {
     var dir = io_helper.openDirAbsoluteForIteration(search_path) catch return;
@@ -358,6 +375,9 @@ fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin
                         defer allocator.free(bin_src);
                         const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, bin_entry.name });
                         defer allocator.free(bin_dst);
+
+                        // Make source executable
+                        makeExecutable(bin_src);
 
                         io_helper.deleteFile(bin_dst) catch {};
                         io_helper.symLink(bin_src, bin_dst) catch {};
