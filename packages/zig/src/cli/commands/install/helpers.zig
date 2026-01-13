@@ -4,6 +4,7 @@
 
 const std = @import("std");
 const lib = @import("../../../lib.zig");
+const io_helper = @import("../../../io_helper.zig");
 const types = @import("types.zig");
 const cache = lib.cache;
 const install = lib.install;
@@ -271,6 +272,13 @@ pub fn installSinglePackage(
     _ = bin_dir;
     _ = cwd;
 
+    // Create symlinks in pantry/.bin for package executables
+    createBinSymlinks(allocator, proj_dir, package_path) catch |err| {
+        if (options.verbose) {
+            std.debug.print("⚠️  Could not create bin symlinks: {}\n", .{err});
+        }
+    };
+
     return .{
         .name = dep.name,
         .version = installed_version,
@@ -278,6 +286,89 @@ pub fn installSinglePackage(
         .error_msg = null,
         .install_time_ms = @intCast(end_time - start_time),
     };
+}
+
+/// Create symlinks in pantry/.bin for executables in the installed package
+fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8) !void {
+    // Create pantry/.bin directory
+    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", ".bin" });
+    defer allocator.free(bin_link_dir);
+    try io_helper.makePath(bin_link_dir);
+
+    // Find bin directory in package - could be at different locations
+    // Try: {package_path}/bin, or search for bin subdirectory
+    const possible_bin_paths = [_][]const u8{
+        "bin",
+    };
+
+    for (possible_bin_paths) |bin_subpath| {
+        const pkg_bin_dir = try std.fs.path.join(allocator, &[_][]const u8{ package_path, bin_subpath });
+        defer allocator.free(pkg_bin_dir);
+
+        // Try to iterate the bin directory
+        if (io_helper.openDirAbsoluteForIteration(pkg_bin_dir)) |dir_val| {
+            var dir = dir_val;
+            defer dir.close();
+            var iter = dir.iterate();
+
+            while (iter.next() catch null) |entry| {
+                if (entry.kind == .file or entry.kind == .sym_link) {
+                    const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ pkg_bin_dir, entry.name });
+                    defer allocator.free(bin_src);
+                    const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, entry.name });
+                    defer allocator.free(bin_dst);
+
+                    // Remove existing symlink if present
+                    io_helper.deleteFile(bin_dst) catch {};
+                    // Create new symlink
+                    io_helper.symLink(bin_src, bin_dst) catch {};
+                }
+            }
+            return; // Found and processed bin directory
+        } else |_| {
+            continue; // Try next possible location
+        }
+    }
+
+    // Also search for versioned bin directories (e.g., github.com/org/pkg/v1.2.3/bin)
+    // Walk the package directory tree to find bin folders
+    try findAndLinkBinDirs(allocator, package_path, bin_link_dir);
+}
+
+/// Recursively search for bin directories and create symlinks
+fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin_link_dir: []const u8) !void {
+    var dir = io_helper.openDirAbsoluteForIteration(search_path) catch return;
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind == .directory) {
+            const subpath = try std.fs.path.join(allocator, &[_][]const u8{ search_path, entry.name });
+            defer allocator.free(subpath);
+
+            if (std.mem.eql(u8, entry.name, "bin")) {
+                // Found a bin directory - symlink its contents
+                var bin_dir = io_helper.openDirAbsoluteForIteration(subpath) catch continue;
+                defer bin_dir.close();
+
+                var bin_iter = bin_dir.iterate();
+                while (bin_iter.next() catch null) |bin_entry| {
+                    if (bin_entry.kind == .file or bin_entry.kind == .sym_link) {
+                        const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ subpath, bin_entry.name });
+                        defer allocator.free(bin_src);
+                        const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, bin_entry.name });
+                        defer allocator.free(bin_dst);
+
+                        io_helper.deleteFile(bin_dst) catch {};
+                        io_helper.symLink(bin_src, bin_dst) catch {};
+                    }
+                }
+            } else {
+                // Recurse into subdirectory
+                try findAndLinkBinDirs(allocator, subpath, bin_link_dir);
+            }
+        }
+    }
 }
 
 /// Try to load dependencies from a config file (pantry.config.ts, etc.)
