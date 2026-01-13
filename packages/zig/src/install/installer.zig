@@ -647,9 +647,7 @@ pub const Installer = struct {
         options: InstallOptions,
         used_cache: *bool,
     ) ![]const u8 {
-        std.debug.print("DEBUG: installGlobal called for {s}@{s}, domain={s}\n", .{ spec.name, spec.version, domain });
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
-        std.debug.print("DEBUG: global_pkg_dir = {s}\n", .{global_pkg_dir});
         defer self.allocator.free(global_pkg_dir);
 
         const from_cache = !options.force and blk: {
@@ -1103,26 +1101,21 @@ pub const Installer = struct {
 
     /// Install from network (download)
     fn installFromNetwork(self: *Installer, spec: PackageSpec, options: InstallOptions) ![]const u8 {
-        std.debug.print("DEBUG: installFromNetwork called for {s}@{s}\n", .{ spec.name, spec.version });
         // Resolve package name to domain
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
         const domain = if (pkg_info) |info| info.domain else spec.name;
-        std.debug.print("DEBUG: domain = {s}\n", .{domain});
 
         // Check if already exists in global cache
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
-        std.debug.print("DEBUG: global_pkg_dir = {s}\n", .{global_pkg_dir});
         errdefer self.allocator.free(global_pkg_dir);
 
         var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
-            std.debug.print("DEBUG: check_dir error = {}\n", .{err});
             if (err != error.FileNotFound) return err;
             break :blk null;
         };
         if (check_dir) |*dir| {
             dir.close(io_helper.io);
-            std.debug.print("DEBUG: Already in cache, returning\n", .{});
             // Already downloaded to global cache - just create env symlinks
             try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
             return global_pkg_dir;
@@ -1138,11 +1131,8 @@ pub const Installer = struct {
             .{ home, spec.name, spec.version },
         );
         defer self.allocator.free(temp_dir);
-        std.debug.print("DEBUG: temp_dir = {s}\n", .{temp_dir});
 
-        std.debug.print("DEBUG: calling makePath(temp_dir)\n", .{});
         try io_helper.makePath(temp_dir);
-        std.debug.print("DEBUG: makePath(temp_dir) succeeded\n", .{});
         defer io_helper.deleteTree(temp_dir) catch {};
 
         // Try different archive formats
@@ -1221,26 +1211,17 @@ pub const Installer = struct {
             .{temp_dir},
         );
         defer self.allocator.free(extract_dir);
-        std.debug.print("DEBUG: extract_dir = {s}\n", .{extract_dir});
 
-        std.debug.print("DEBUG: calling makePath(extract_dir)\n", .{});
         try io_helper.makePath(extract_dir);
-        std.debug.print("DEBUG: makePath(extract_dir) succeeded\n", .{});
-        std.debug.print("DEBUG: extracting archive {s} to {s}\n", .{ archive_path, extract_dir });
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
-        std.debug.print("DEBUG: extraction complete\n", .{});
 
         // Find the actual package root (might be nested like domain/v{version}/)
-        std.debug.print("DEBUG: calling findPackageRoot\n", .{});
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
-        std.debug.print("DEBUG: package_source = {s}\n", .{package_source});
         defer self.allocator.free(package_source);
 
         // Copy/move package contents to global cache location
-        std.debug.print("DEBUG: copying to global_pkg_dir = {s}\n", .{global_pkg_dir});
         try io_helper.makePath(global_pkg_dir);
         try self.copyDirectoryStructure(package_source, global_pkg_dir);
-        std.debug.print("DEBUG: copy complete\n", .{});
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
         try libfixer.fixDirectoryLibraryPaths(self.allocator, global_pkg_dir);
@@ -1397,7 +1378,6 @@ pub const Installer = struct {
 
     /// Find the actual package root in the extracted directory
     fn findPackageRoot(self: *Installer, extract_dir: []const u8, domain: []const u8, version: []const u8) ![]const u8 {
-        std.debug.print("DEBUG: findPackageRoot called with extract_dir={s}, domain={s}, version={s}\n", .{ extract_dir, domain, version });
         // Try common package layouts:
         // 1. Direct pkgx format: {domain}/v{version}/
         const pkgx_path = try std.fmt.allocPrint(
@@ -1405,31 +1385,21 @@ pub const Installer = struct {
             "{s}/{s}/v{s}",
             .{ extract_dir, domain, version },
         );
-        std.debug.print("DEBUG: trying pkgx_path={s}\n", .{pkgx_path});
 
         // Check if this path has the package structure (bin, lib, etc.)
         if (self.hasPackageStructure(pkgx_path)) {
-            std.debug.print("DEBUG: pkgx_path has package structure, returning\n", .{});
             return pkgx_path;
         }
-        std.debug.print("DEBUG: pkgx_path does not have package structure\n", .{});
         self.allocator.free(pkgx_path);
 
         // 2. Try just the extract directory itself
-        std.debug.print("DEBUG: checking extract_dir for package structure\n", .{});
         if (self.hasPackageStructure(extract_dir)) {
-            std.debug.print("DEBUG: extract_dir has package structure, returning\n", .{});
             return try self.allocator.dupe(u8, extract_dir);
         }
-        std.debug.print("DEBUG: extract_dir does not have package structure\n", .{});
 
         // 3. Try first subdirectory
         // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-        std.debug.print("DEBUG: trying to iterate extract_dir subdirectories\n", .{});
-        var dir = io_helper.openDirAbsoluteForIteration(extract_dir) catch |err| {
-            std.debug.print("DEBUG: openDirAbsoluteForIteration failed with error={}\n", .{err});
-            return err;
-        };
+        var dir = try io_helper.openDirAbsoluteForIteration(extract_dir);
         defer dir.close();
 
         var it = dir.iterate();
@@ -1485,6 +1455,12 @@ pub const Installer = struct {
         // Ensure destination exists
         try io_helper.makePath(dest);
 
+        // Check if this is a bin or sbin directory - files here need to be executable
+        const is_bin_dir = std.mem.endsWith(u8, source, "/bin") or
+            std.mem.endsWith(u8, source, "/sbin") or
+            std.mem.eql(u8, std.fs.path.basename(source), "bin") or
+            std.mem.eql(u8, std.fs.path.basename(source), "sbin");
+
         var it = src_dir.iterate();
         while (it.next() catch null) |entry| {
             const src_path = try std.fs.path.join(
@@ -1505,8 +1481,22 @@ pub const Installer = struct {
             } else {
                 // Copy file using io_helper wrapper
                 try io_helper.copyFile(src_path, dst_path);
+
+                // Make files in bin directories executable
+                if (is_bin_dir) {
+                    self.makeExecutable(dst_path);
+                }
             }
         }
+    }
+
+    /// Make a file executable (chmod +x)
+    fn makeExecutable(self: *Installer, path: []const u8) void {
+        _ = self;
+        // Use chmod to make the file executable
+        var child = std.process.Child.init(&.{ "chmod", "+x", path }, std.heap.page_allocator);
+        io_helper.spawn(&child) catch return;
+        _ = io_helper.wait(&child) catch {};
     }
 
     /// Install package dependencies recursively

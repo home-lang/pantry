@@ -54,7 +54,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     };
     defer if (!std.mem.eql(u8, home, "/tmp")) allocator.free(home);
 
-    const global_bin = try std.fs.path.join(allocator, &[_][]const u8{ home, ".local", "share", "pantry", "global", "bin", executable_name });
+    const global_bin = try std.fs.path.join(allocator, &[_][]const u8{ home, ".local", "share", "pantry", "bin", executable_name });
     defer allocator.free(global_bin);
 
     const found_global = blk: {
@@ -85,17 +85,48 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
             };
         }
 
-        // After install, check local bin again
-        io_helper.cwd().access(io_helper.io, local_bin, .{}) catch {
+        // After install, check both local and global bin
+        const found_after_install_local = blk: {
+            io_helper.cwd().access(io_helper.io, local_bin, .{}) catch {
+                break :blk false;
+            };
+            break :blk true;
+        };
+        const found_after_install_global = blk: {
+            io_helper.cwd().access(io_helper.io, global_bin, .{}) catch {
+                break :blk false;
+            };
+            break :blk true;
+        };
+        if (!found_after_install_local and !found_after_install_global) {
             return .{
                 .exit_code = 1,
                 .message = try std.fmt.allocPrint(allocator, "Error: Package '{s}' installed but executable '{s}' not found", .{ package_name, executable_name }),
             };
-        };
+        }
     }
 
-    // Determine which bin to execute
-    const bin_path = if (found_local) local_bin else global_bin;
+    // Re-check which bin exists (in case we just installed)
+    const local_exists = blk: {
+        io_helper.cwd().access(io_helper.io, local_bin, .{}) catch {
+            break :blk false;
+        };
+        break :blk true;
+    };
+    const global_exists = blk: {
+        io_helper.cwd().access(io_helper.io, global_bin, .{}) catch {
+            break :blk false;
+        };
+        break :blk true;
+    };
+
+    // Determine which bin to execute (prefer local over global)
+    const bin_path = if (local_exists) local_bin else if (global_exists) global_bin else {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Error: Executable '{s}' not found", .{executable_name}),
+        };
+    };
 
     // Execute the binary with arguments
     var argv = try std.ArrayList([]const u8).initCapacity(allocator, args.len + 1);
