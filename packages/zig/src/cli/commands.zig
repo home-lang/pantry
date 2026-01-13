@@ -50,6 +50,7 @@ pub const why_cmd = @import("commands/why.zig");
 pub const dedupe_cmd = @import("commands/dedupe.zig");
 pub const bootstrap_commands = @import("commands/bootstrap.zig");
 pub const shim_commands = @import("commands/shim.zig");
+pub const oidc_cmd = @import("commands/oidc.zig");
 
 // ============================================================================
 // Re-export Package Commands
@@ -196,6 +197,7 @@ pub const doctorNewCommand = doctor_cmd.execute;
 pub const cleanNewCommand = clean_cmd.execute;
 pub const whyNewCommand = why_cmd.execute;
 pub const dedupeCommand = dedupe_cmd.execute;
+pub const oidcSetupCommand = oidc_cmd.execute;
 
 // ============================================================================
 // Re-export Bootstrap Commands

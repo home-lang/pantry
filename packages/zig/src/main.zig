@@ -1423,6 +1423,22 @@ fn doctorAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn oidcSetupAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const result = try lib.commands.oidcSetupCommand(allocator, &[_][]const u8{});
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn dedupeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1584,6 +1600,7 @@ fn printHelp() void {
         \\      audit               Check for security vulnerabilities
         \\      verify              Verify package signatures
         \\      sign                Sign a package
+        \\      oidc setup          Setup npm trusted publisher
         \\
         \\    \x1b[33mProject:\x1b[0m
         \\      init                Initialize a new project
@@ -2408,6 +2425,17 @@ pub fn main() !void {
     var doctor_cmd = try cli.BaseCommand.init(allocator, "doctor", "Run system diagnostics");
     _ = doctor_cmd.setAction(doctorAction);
     _ = try root.addCommand(doctor_cmd);
+
+    // ========================================================================
+    // OIDC Command (Trusted Publisher Setup)
+    // ========================================================================
+    var oidc_cmd = try cli.BaseCommand.init(allocator, "oidc", "OIDC trusted publisher commands");
+
+    var oidc_setup_cmd = try cli.BaseCommand.init(allocator, "setup", "Setup npm trusted publisher for OIDC publishing");
+    _ = oidc_setup_cmd.setAction(oidcSetupAction);
+    _ = try oidc_cmd.addCommand(oidc_setup_cmd);
+
+    _ = try root.addCommand(oidc_cmd);
 
     // ========================================================================
     // Dedupe Command (Deduplicate Dependencies)
