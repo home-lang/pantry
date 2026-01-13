@@ -69,20 +69,15 @@ fn getPackageName(allocator: std.mem.Allocator) ![]const u8 {
 
 fn detectGitHubRepo(allocator: std.mem.Allocator) ![]const u8 {
     // Try to get the GitHub repo from git remote
-    var child = std.process.Child.init(&.{ "git", "remote", "get-url", "origin" }, allocator);
-    child.stdout_behavior = .Pipe;
-    child.stderr_behavior = .Ignore;
+    const result = try io_helper.childRun(allocator, &.{ "git", "remote", "get-url", "origin" });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
 
-    try child.spawn();
-    const stdout = child.stdout orelse return error.NoStdout;
+    if (result.term.Exited != 0 or result.stdout.len == 0) {
+        return error.EmptyOutput;
+    }
 
-    var buf: [1024]u8 = undefined;
-    const len = stdout.read(&buf) catch return error.ReadFailed;
-    _ = child.wait() catch return error.WaitFailed;
-
-    if (len == 0) return error.EmptyOutput;
-
-    var url = std.mem.trim(u8, buf[0..len], &[_]u8{ '\n', '\r', ' ' });
+    var url = std.mem.trim(u8, result.stdout, &[_]u8{ '\n', '\r', ' ' });
 
     // Parse GitHub URL formats:
     // https://github.com/owner/repo.git

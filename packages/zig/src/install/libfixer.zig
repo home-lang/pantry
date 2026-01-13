@@ -16,13 +16,10 @@ pub fn fixMacOSLibraryPaths(
     }
 
     // Use otool to get current library dependencies
-    const otool_result = std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{
-            "otool",
-            "-L",
-            binary_path,
-        },
+    const otool_result = io_helper.childRun(allocator, &[_][]const u8{
+        "otool",
+        "-L",
+        binary_path,
     }) catch {
         // Not a Mach-O binary or otool failed - just return
         return;
@@ -90,15 +87,12 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(rpath_ref);
 
         // Fix the library path using install_name_tool
-        const fix_result = std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{
-                "install_name_tool",
-                "-change",
-                rpath_ref,
-                absolute_lib_path,
-                binary_path,
-            },
+        const fix_result = io_helper.childRun(allocator, &[_][]const u8{
+            "install_name_tool",
+            "-change",
+            rpath_ref,
+            absolute_lib_path,
+            binary_path,
         }) catch {
             // install_name_tool failed - just continue
             continue;
@@ -142,36 +136,30 @@ fn addRpathEntries(
     // Add each rpath entry
     var needs_codesign = false;
     for (rpath_entries) |rpath| {
-        const result = std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{
-                "install_name_tool",
-                "-add_rpath",
-                rpath,
-                binary_path,
-            },
+        const result = io_helper.childRun(allocator, &[_][]const u8{
+            "install_name_tool",
+            "-add_rpath",
+            rpath,
+            binary_path,
         }) catch continue; // Ignore if already exists
 
         allocator.free(result.stdout);
         allocator.free(result.stderr);
 
         // If install_name_tool succeeded, we modified the binary
-        if (result.term == .Exited and result.term.Exited == 0) {
+        if (result.term.Exited == 0) {
             needs_codesign = true;
         }
     }
 
     // Re-sign the binary if we modified it
     if (needs_codesign) {
-        const codesign_result = std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{
-                "codesign",
-                "-s",
-                "-",
-                "-f",
-                binary_path,
-            },
+        const codesign_result = io_helper.childRun(allocator, &[_][]const u8{
+            "codesign",
+            "-s",
+            "-",
+            "-f",
+            binary_path,
         }) catch return; // Ignore codesign failures
 
         allocator.free(codesign_result.stdout);

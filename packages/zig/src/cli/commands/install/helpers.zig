@@ -348,8 +348,8 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
 fn makeExecutable(path: []const u8) void {
     // Use child process to chmod
     var child = std.process.Child.init(&.{ "chmod", "+x", path }, std.heap.page_allocator);
-    child.spawn() catch return;
-    _ = child.wait() catch {};
+    io_helper.spawn(&child) catch return;
+    _ = io_helper.wait(&child) catch {};
 }
 
 /// Recursively search for bin directories and create symlinks
