@@ -154,10 +154,12 @@ pub const RegistryClient = struct {
 
         // Create extra headers (npm requires specific headers)
         // npm-auth-type: oidc tells npm this is OIDC authentication
+        // Accept-Encoding: identity prevents gzip responses we can't decode
         const extra_headers = [_]http.Header{
             .{ .name = "Authorization", .value = auth_header },
             .{ .name = "Content-Type", .value = "application/json" },
             .{ .name = "Accept", .value = "application/json" },
+            .{ .name = "Accept-Encoding", .value = "identity" },
             .{ .name = "User-Agent", .value = "pantry/0.1.0" },
             .{ .name = "npm-command", .value = "publish" },
             .{ .name = "npm-auth-type", .value = "oidc" },
@@ -348,10 +350,12 @@ pub const RegistryClient = struct {
 
         // Create extra headers (npm requires specific headers for OIDC provenance)
         // npm-auth-type: oidc tells npm this is OIDC authentication
+        // Accept-Encoding: identity prevents gzip responses we can't decode
         const extra_headers = [_]http.Header{
             .{ .name = "Authorization", .value = auth_header },
             .{ .name = "Content-Type", .value = "application/json" },
             .{ .name = "Accept", .value = "application/json" },
+            .{ .name = "Accept-Encoding", .value = "identity" },
             .{ .name = "User-Agent", .value = "pantry/0.1.0" },
             .{ .name = "npm-command", .value = "publish" },
             .{ .name = "npm-auth-type", .value = "oidc" },
@@ -440,10 +444,12 @@ pub const RegistryClient = struct {
         defer self.allocator.free(auth_header);
 
         // Create extra headers (npm requires specific headers)
+        // Accept-Encoding: identity prevents gzip responses we can't decode
         const extra_headers = [_]http.Header{
             .{ .name = "Authorization", .value = auth_header },
             .{ .name = "Content-Type", .value = "application/json" },
             .{ .name = "Accept", .value = "application/json" },
+            .{ .name = "Accept-Encoding", .value = "identity" },
             .{ .name = "User-Agent", .value = "pantry/0.1.0" },
             .{ .name = "npm-command", .value = "publish" },
         };
@@ -1074,9 +1080,22 @@ fn parseErrorDetails(allocator: std.mem.Allocator, body: []const u8) ?PublishRes
 
     var details = PublishResponse.ErrorDetails{};
 
+    // npm returns error messages in the "error" field
     if (obj.get("error")) |err_val| {
         if (err_val == .string) {
-            details.code = allocator.dupe(u8, err_val.string) catch null;
+            const err_str = err_val.string;
+
+            // Check for version conflict (trying to republish existing version)
+            if (std.mem.indexOf(u8, err_str, "cannot publish over the previously published version") != null or
+                std.mem.indexOf(u8, err_str, "Cannot publish over previously published version") != null)
+            {
+                details.code = allocator.dupe(u8, "EPUBLISHCONFLICT") catch null;
+                details.summary = allocator.dupe(u8, err_str) catch null;
+                details.suggestion = allocator.dupe(u8, "Bump the version in package.json before publishing. Use 'npm version patch/minor/major' or edit manually.") catch null;
+                return details;
+            }
+
+            details.code = allocator.dupe(u8, err_str) catch null;
         }
     }
 

@@ -492,22 +492,40 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
     // Try OIDC authentication first if enabled
     if (options.use_oidc) {
-        if (try attemptOIDCPublish(
+        const result = try attemptOIDCPublish(
             allocator,
             &registry_client,
             metadata.name,
             metadata.version,
             tarball_path,
             options.provenance,
-        )) {
+        );
+
+        if (result.success) {
             std.debug.print("✓ Package published successfully using OIDC\n", .{});
             return .{ .exit_code = 0 };
         } else {
-            // OIDC failed - don't fall back, return error for debugging
-            return CommandResult.err(
-                allocator,
-                "Error: OIDC authentication failed. Check trusted publisher configuration on npm.",
-            );
+            // OIDC failed - provide specific error message
+            if (result.is_version_conflict) {
+                const err_msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Error: Version {s} already exists on npm.\nBump the version in package.json before publishing (e.g., 'npm version patch').",
+                    .{metadata.version},
+                );
+                return CommandResult.err(allocator, err_msg);
+            } else if (result.error_message) |msg| {
+                const err_msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Error: {s}",
+                    .{msg},
+                );
+                return CommandResult.err(allocator, err_msg);
+            } else {
+                return CommandResult.err(
+                    allocator,
+                    "Error: OIDC publish failed. Check trusted publisher configuration on npm.",
+                );
+            }
         }
     }
 
@@ -556,6 +574,13 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     }
 }
 
+/// Result of OIDC publish attempt
+const OIDCPublishResult = struct {
+    success: bool,
+    error_message: ?[]const u8 = null,
+    is_version_conflict: bool = false,
+};
+
 /// Attempt to publish using OIDC authentication with Sigstore provenance
 fn attemptOIDCPublish(
     allocator: std.mem.Allocator,
@@ -564,18 +589,24 @@ fn attemptOIDCPublish(
     version: []const u8,
     tarball_path: []const u8,
     generate_provenance: bool,
-) !bool {
+) !OIDCPublishResult {
     const oidc = @import("../../auth/oidc.zig");
     const sigstore = @import("../../auth/sigstore.zig");
 
     // Detect OIDC provider
-    var provider = try oidc.detectProvider(allocator) orelse return false;
+    var provider = try oidc.detectProvider(allocator) orelse return .{
+        .success = false,
+        .error_message = try allocator.dupe(u8, "No OIDC provider detected. Are you running in GitHub Actions or another CI environment?"),
+    };
     defer provider.deinit(allocator);
 
     std.debug.print("Detected OIDC provider: {s}\n", .{provider.name});
 
     // Get OIDC token from environment
-    const raw_token = try oidc.getTokenFromEnvironment(allocator, &provider) orelse return false;
+    const raw_token = try oidc.getTokenFromEnvironment(allocator, &provider) orelse return .{
+        .success = false,
+        .error_message = try allocator.dupe(u8, "Could not get OIDC token from environment. Ensure 'id-token: write' permission is set in your workflow."),
+    };
     defer allocator.free(raw_token);
 
     // Verify token signature against provider's JWKS
@@ -589,7 +620,10 @@ fn attemptOIDCPublish(
 
     if (!sig_valid) {
         std.debug.print("Error: OIDC token signature verification failed\n", .{});
-        return false;
+        return .{
+            .success = false,
+            .error_message = try allocator.dupe(u8, "OIDC token signature verification failed"),
+        };
     }
 
     std.debug.print("✓ Token signature verified\n", .{});
@@ -597,7 +631,10 @@ fn attemptOIDCPublish(
     // Decode and validate token (signature already verified)
     var token = oidc.validateTokenComplete(allocator, raw_token, &provider, null) catch |err| {
         std.debug.print("Error: Token validation failed: {any}\n", .{err});
-        return false;
+        return .{
+            .success = false,
+            .error_message = try std.fmt.allocPrint(allocator, "Token validation failed: {any}", .{err}),
+        };
     };
     defer token.deinit(allocator);
 
@@ -632,7 +669,10 @@ fn attemptOIDCPublish(
         // Read tarball for hashing
         const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch |err| {
             std.debug.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
-            return false;
+            return .{
+                .success = false,
+                .error_message = try std.fmt.allocPrint(allocator, "Could not read tarball: {any}", .{err}),
+            };
         };
         defer allocator.free(tarball_data);
 
@@ -672,14 +712,39 @@ fn attemptOIDCPublish(
         if (response.message) |msg| {
             std.debug.print("Response: {s}\n", .{msg});
         }
+
+        // Build error message from response
+        var error_msg: []const u8 = undefined;
+        var is_version_conflict = false;
+
         if (response.error_details) |details| {
-            if (details.code) |code| std.debug.print("Error code: {s}\n", .{code});
-            if (details.summary) |summary| std.debug.print("Error: {s}\n", .{summary});
-            if (details.suggestion) |suggestion| std.debug.print("Suggestion: {s}\n", .{suggestion});
+            if (details.code) |code| {
+                std.debug.print("Error code: {s}\n", .{code});
+                if (std.mem.eql(u8, code, "EPUBLISHCONFLICT")) {
+                    is_version_conflict = true;
+                }
+            }
+            if (details.summary) |summary| {
+                std.debug.print("Error: {s}\n", .{summary});
+                error_msg = try allocator.dupe(u8, summary);
+            } else {
+                error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
+            }
+            if (details.suggestion) |suggestion| {
+                std.debug.print("Suggestion: {s}\n", .{suggestion});
+            }
+        } else {
+            error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
         }
+
+        return .{
+            .success = false,
+            .error_message = error_msg,
+            .is_version_conflict = is_version_conflict,
+        };
     }
 
-    return response.success;
+    return .{ .success = true };
 }
 
 /// Fallback: Attempt OIDC publish without local signature verification
@@ -693,7 +758,7 @@ fn attemptOIDCPublishUnverified(
     generate_provenance: bool,
     raw_token: []const u8,
     provider: *const @import("../../auth/oidc.zig").OIDCProvider,
-) !bool {
+) !OIDCPublishResult {
     const oidc = @import("../../auth/oidc.zig");
     const sigstore = @import("../../auth/sigstore.zig");
     _ = provider;
@@ -705,7 +770,10 @@ fn attemptOIDCPublishUnverified(
     // At least validate expiration
     oidc.validateExpiration(&token.claims) catch |err| {
         std.debug.print("Error: Token validation failed: {any}\n", .{err});
-        return false;
+        return .{
+            .success = false,
+            .error_message = try std.fmt.allocPrint(allocator, "Token expired or invalid: {any}", .{err}),
+        };
     };
 
     // Print token info
@@ -759,7 +827,33 @@ fn attemptOIDCPublishUnverified(
         mut_response.deinit(allocator);
     }
 
-    return response.success;
+    if (!response.success) {
+        var error_msg: []const u8 = undefined;
+        var is_version_conflict = false;
+
+        if (response.error_details) |details| {
+            if (details.code) |code| {
+                if (std.mem.eql(u8, code, "EPUBLISHCONFLICT")) {
+                    is_version_conflict = true;
+                }
+            }
+            if (details.summary) |summary| {
+                error_msg = try allocator.dupe(u8, summary);
+            } else {
+                error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
+            }
+        } else {
+            error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
+        }
+
+        return .{
+            .success = false,
+            .error_message = error_msg,
+            .is_version_conflict = is_version_conflict,
+        };
+    }
+
+    return .{ .success = true };
 }
 
 /// Create tarball for package
