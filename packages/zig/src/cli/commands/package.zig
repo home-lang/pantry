@@ -520,13 +520,23 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     }
 
     // Fallback to token authentication
-    // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action)
+    // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action), then ~/.pantry/credentials
     const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch
-        std.process.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch |err| {
-        if (err == error.EnvironmentVariableNotFound) {
+        std.process.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch
+        readPantryCredential(allocator, "npm_token") catch |err| {
+        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound) {
             return CommandResult.err(
                 allocator,
-                "Error: No authentication method available. Set NPM_TOKEN or NODE_AUTH_TOKEN.",
+                \\Error: No authentication method available.
+                \\
+                \\To fix this, you can either:
+                \\  1. Set NPM_TOKEN environment variable
+                \\  2. Create ~/.pantry/credentials with your npm token:
+                \\     npm_token=npm_xxxxxxxxxxxx
+                \\  3. Use OIDC authentication in GitHub Actions (recommended for CI)
+                \\
+                \\Get your npm token from: https://www.npmjs.com/settings/tokens
+                ,
             );
         }
         return CommandResult.err(allocator, "Error: Failed to read auth token");
@@ -1484,4 +1494,113 @@ fn createIndent(allocator: std.mem.Allocator, depth: usize) ![]u8 {
     const indent = try allocator.alloc(u8, total_spaces);
     @memset(indent, ' ');
     return indent;
+}
+
+// ============================================================================
+// Credential Storage Helpers
+// ============================================================================
+
+/// Read a credential from ~/.pantry/credentials file
+/// The file format is simple key=value pairs, one per line
+/// Example:
+///   npm_token=npm_xxxxxxxxxxxx
+///   github_token=ghp_xxxxxxxxxxxx
+fn readPantryCredential(allocator: std.mem.Allocator, key: []const u8) ![]u8 {
+    // Get home directory
+    const home = std.posix.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
+
+    // Build path to credentials file
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const credentials_path = try std.fmt.bufPrint(&path_buf, "{s}/.pantry/credentials", .{home});
+
+    // Read file contents
+    const content = io_helper.readFileAlloc(allocator, credentials_path, 64 * 1024) catch |err| {
+        if (err == error.FileNotFound) return error.FileNotFound;
+        return err;
+    };
+    defer allocator.free(content);
+
+    // Parse key=value pairs
+    var lines = std.mem.splitSequence(u8, content, "\n");
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, &std.ascii.whitespace);
+
+        // Skip empty lines and comments
+        if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+        // Find the = separator
+        if (std.mem.indexOfScalar(u8, trimmed, '=')) |eq_pos| {
+            const line_key = std.mem.trim(u8, trimmed[0..eq_pos], &std.ascii.whitespace);
+            const line_value = std.mem.trim(u8, trimmed[eq_pos + 1 ..], &std.ascii.whitespace);
+
+            if (std.mem.eql(u8, line_key, key)) {
+                return try allocator.dupe(u8, line_value);
+            }
+        }
+    }
+
+    return error.EnvironmentVariableNotFound;
+}
+
+/// Save a credential to ~/.pantry/credentials file
+/// Creates the file and directory if they don't exist
+pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value: []const u8) !void {
+    // Get home directory
+    const home = std.posix.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
+
+    // Build paths
+    var dir_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const pantry_dir = try std.fmt.bufPrint(&dir_buf, "{s}/.pantry", .{home});
+
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const credentials_path = try std.fmt.bufPrint(&path_buf, "{s}/.pantry/credentials", .{home});
+
+    // Create directory if needed
+    _ = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", pantry_dir }) catch {};
+
+    // Read existing content or start fresh
+    const existing_content = io_helper.readFileAlloc(allocator, credentials_path, 64 * 1024) catch try allocator.alloc(u8, 0);
+    defer allocator.free(existing_content);
+
+    // Build new content
+    var new_content = std.ArrayList(u8).init(allocator);
+    defer new_content.deinit();
+
+    var found = false;
+    var lines = std.mem.splitSequence(u8, existing_content, "\n");
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, &std.ascii.whitespace);
+        if (trimmed.len == 0) continue;
+
+        // Check if this is the key we're updating
+        if (std.mem.indexOfScalar(u8, trimmed, '=')) |eq_pos| {
+            const line_key = std.mem.trim(u8, trimmed[0..eq_pos], &std.ascii.whitespace);
+            if (std.mem.eql(u8, line_key, key)) {
+                // Replace with new value
+                try new_content.appendSlice(key);
+                try new_content.append('=');
+                try new_content.appendSlice(value);
+                try new_content.append('\n');
+                found = true;
+                continue;
+            }
+        }
+
+        // Keep existing line
+        try new_content.appendSlice(trimmed);
+        try new_content.append('\n');
+    }
+
+    // Append new key if not found
+    if (!found) {
+        try new_content.appendSlice(key);
+        try new_content.append('=');
+        try new_content.appendSlice(value);
+        try new_content.append('\n');
+    }
+
+    // Write file with restricted permissions (0600)
+    const file = try std.fs.createFileAbsolute(credentials_path, .{ .mode = 0o600 });
+    defer file.close();
+    try file.writeAll(new_content.items);
 }
