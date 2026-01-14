@@ -523,6 +523,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action), then ~/.pantry/credentials
     const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch
         std.process.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch
+        readPantryCredential(allocator, "NPM_TOKEN") catch
         readPantryCredential(allocator, "npm_token") catch |err| {
         if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound) {
             return CommandResult.err(
@@ -532,7 +533,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                 \\To fix this, you can either:
                 \\  1. Set NPM_TOKEN environment variable
                 \\  2. Create ~/.pantry/credentials with your npm token:
-                \\     npm_token=npm_xxxxxxxxxxxx
+                \\     NPM_TOKEN=npm_xxxxxxxxxxxx
                 \\  3. Use OIDC authentication in GitHub Actions (recommended for CI)
                 \\
                 \\Get your npm token from: https://www.npmjs.com/settings/tokens
