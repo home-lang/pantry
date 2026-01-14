@@ -505,7 +505,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             std.debug.print("✓ Package published successfully using OIDC\n", .{});
             return .{ .exit_code = 0 };
         } else {
-            // OIDC failed - provide specific error message
+            // OIDC failed - only fail on version conflict, otherwise fall back to token
             if (result.is_version_conflict) {
                 const err_msg = try std.fmt.allocPrint(
                     allocator,
@@ -513,19 +513,9 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                     .{metadata.version},
                 );
                 return CommandResult.err(allocator, err_msg);
-            } else if (result.error_message) |msg| {
-                const err_msg = try std.fmt.allocPrint(
-                    allocator,
-                    "Error: {s}",
-                    .{msg},
-                );
-                return CommandResult.err(allocator, err_msg);
-            } else {
-                return CommandResult.err(
-                    allocator,
-                    "Error: OIDC publish failed. Check trusted publisher configuration on npm.",
-                );
             }
+            // Fall through to token authentication (handles first-time publish, no trusted publisher configured, etc.)
+            std.debug.print("OIDC authentication not available, falling back to token...\n", .{});
         }
     }
 
