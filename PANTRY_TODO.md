@@ -86,12 +86,12 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [x] Expose analytics via API
 
 ### 6. Zig Package Manager Support
-**Status:** Not Started
+**Status:** Complete
 **Description:** Zig does not have an official package manager - pantry should support Zig packages too.
 
-- [ ] Research Zig package structure/conventions
-- [ ] Add Zig support to pantry
-- [ ] Document Zig package publishing workflow
+- [x] Research Zig package structure/conventions
+- [x] Add Zig support to pantry registry
+- [x] Document Zig package publishing workflow
 
 ---
 

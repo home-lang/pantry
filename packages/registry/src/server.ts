@@ -1,6 +1,8 @@
 import type { RegistryConfig } from './types'
 import { Registry, createLocalRegistry } from './registry'
 import { createAnalytics, type AnalyticsStorage } from './analytics'
+import { handleZigRoutes, createZigStorage } from './zig-routes'
+import type { ZigPackageStorage } from './zig'
 
 /**
  * Create the registry HTTP server
@@ -18,14 +20,26 @@ import { createAnalytics, type AnalyticsStorage } from './analytics'
  * GET  /analytics/{name}          - Get package download stats
  * GET  /analytics/{name}/timeline - Get download timeline (last 30 days)
  * GET  /analytics/top             - Get top downloaded packages
+ *
+ * Zig package endpoints:
+ * GET  /zig/packages/{name}                  - Get Zig package metadata
+ * GET  /zig/packages/{name}/{version}        - Get specific version
+ * GET  /zig/packages/{name}/{version}/tarball - Download tarball
+ * GET  /zig/packages/{name}/versions         - List versions
+ * GET  /zig/hash/{hash}                      - Lookup by content hash
+ * GET  /zig/search?q={query}                 - Search Zig packages
+ * POST /zig/publish                          - Publish Zig package
  */
 export function createServer(
   registry: Registry,
   port = 3000,
   analytics?: AnalyticsStorage,
+  zigStorage?: ZigPackageStorage,
 ): { start: () => void, stop: () => void } {
   let server: ReturnType<typeof Bun.serve> | null = null
   const analyticsStorage = analytics || createAnalytics()
+  const zigPackageStorage = zigStorage || createZigStorage()
+  const baseUrl = process.env.BASE_URL || `http://localhost:${port}`
 
   const start = () => {
     server = Bun.serve({
@@ -69,6 +83,14 @@ export function createServer(
           const analyticsMatch = path.match(/^\/analytics(?:\/(.+))?$/)
           if (analyticsMatch && req.method === 'GET') {
             return handleAnalytics(analyticsMatch[1], url, analyticsStorage, corsHeaders)
+          }
+
+          // Zig package routes
+          if (path.startsWith('/zig/')) {
+            const zigResponse = await handleZigRoutes(path, req, url, zigPackageStorage, baseUrl, corsHeaders)
+            if (zigResponse) {
+              return zigResponse
+            }
           }
 
           // Package routes
@@ -163,6 +185,12 @@ export function createServer(
     console.log('  GET  /analytics/{name}          - Package download stats')
     console.log('  GET  /analytics/{name}/timeline - Download timeline')
     console.log('  GET  /analytics/top             - Top downloaded packages')
+    console.log('Zig packages:')
+    console.log('  GET  /zig/packages/{name}       - Get Zig package metadata')
+    console.log('  GET  /zig/packages/{name}/{version}/tarball - Download')
+    console.log('  GET  /zig/hash/{hash}           - Lookup by content hash')
+    console.log('  GET  /zig/search?q={query}      - Search Zig packages')
+    console.log('  POST /zig/publish               - Publish Zig package')
     console.log('  GET  /health                    - Health check')
   }
 

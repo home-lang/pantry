@@ -36,6 +36,24 @@ export type {
   AnalyticsStorage,
 } from './analytics'
 
+// Zig package support
+export {
+  computeZigHash,
+  validateZigHash,
+  parseZigZon,
+  generateDependencyEntry,
+  generateFetchCommand,
+  createZigStorage,
+  InMemoryZigStorage,
+} from './zig'
+export type {
+  ZigManifest,
+  ZigDependency,
+  ZigPackageMetadata,
+  ZigPackageRecord,
+  ZigPackageStorage,
+} from './zig'
+
 // Types
 export type {
   PackageMetadata,
