@@ -513,8 +513,24 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch
         std.process.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch
         readPantryCredential(allocator, "NPM_TOKEN") catch
-        readPantryCredential(allocator, "npm_token") catch |err| {
-        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound) {
+        readPantryCredential(allocator, "npm_token") catch
+        promptAndSaveToken(allocator) catch |err| {
+        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound or err == error.EndOfStream) {
+            // Check if running in CI (non-interactive)
+            const is_ci = std.process.getEnvVarOwned(allocator, "CI") catch null;
+            if (is_ci) |ci| {
+                allocator.free(ci);
+                return CommandResult.err(
+                    allocator,
+                    \\Error: No authentication method available in CI.
+                    \\
+                    \\Ensure NPM_TOKEN secret is set in your repository:
+                    \\  gh secret set NPM_TOKEN
+                    \\
+                    \\Or configure OIDC trusted publishing on npm.
+                    ,
+                );
+            }
             return CommandResult.err(
                 allocator,
                 \\Error: No authentication method available.
@@ -1553,8 +1569,8 @@ pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value
     defer allocator.free(existing_content);
 
     // Build new content
-    var new_content = std.ArrayList(u8).init(allocator);
-    defer new_content.deinit();
+    var new_content: std.ArrayList(u8) = .{};
+    defer new_content.deinit(allocator);
 
     var found = false;
     var lines = std.mem.splitSequence(u8, existing_content, "\n");
@@ -1567,30 +1583,140 @@ pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value
             const line_key = std.mem.trim(u8, trimmed[0..eq_pos], &std.ascii.whitespace);
             if (std.mem.eql(u8, line_key, key)) {
                 // Replace with new value
-                try new_content.appendSlice(key);
-                try new_content.append('=');
-                try new_content.appendSlice(value);
-                try new_content.append('\n');
+                try new_content.appendSlice(allocator, key);
+                try new_content.append(allocator, '=');
+                try new_content.appendSlice(allocator, value);
+                try new_content.append(allocator, '\n');
                 found = true;
                 continue;
             }
         }
 
         // Keep existing line
-        try new_content.appendSlice(trimmed);
-        try new_content.append('\n');
+        try new_content.appendSlice(allocator, trimmed);
+        try new_content.append(allocator, '\n');
     }
 
     // Append new key if not found
     if (!found) {
-        try new_content.appendSlice(key);
-        try new_content.append('=');
-        try new_content.appendSlice(value);
-        try new_content.append('\n');
+        try new_content.appendSlice(allocator, key);
+        try new_content.append(allocator, '=');
+        try new_content.appendSlice(allocator, value);
+        try new_content.append(allocator, '\n');
     }
 
     // Write file with restricted permissions (0600)
-    const file = try std.fs.createFileAbsolute(credentials_path, .{ .mode = 0o600 });
-    defer file.close();
-    try file.writeAll(new_content.items);
+    const file = try std.Io.Dir.createFileAbsolute(io_helper.io, credentials_path, .{});
+    defer file.close(io_helper.io);
+    try io_helper.writeAllToFile(file, new_content.items);
+    // Set restrictive permissions after writing
+    file.setPermissions(io_helper.io, std.Io.File.Permissions.fromMode(0o600)) catch {};
+}
+
+/// Save a credential to the project's .env file
+/// Only saves if the key doesn't already exist in .env
+fn saveToProjectEnv(allocator: std.mem.Allocator, key: []const u8, value: []const u8) !void {
+    // Read existing .env content or start fresh
+    const existing_content = io_helper.readFileAlloc(allocator, ".env", 64 * 1024) catch try allocator.alloc(u8, 0);
+    defer allocator.free(existing_content);
+
+    // Check if key already exists
+    var lines = std.mem.splitSequence(u8, existing_content, "\n");
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, &std.ascii.whitespace);
+        if (trimmed.len == 0) continue;
+
+        if (std.mem.indexOfScalar(u8, trimmed, '=')) |eq_pos| {
+            const line_key = std.mem.trim(u8, trimmed[0..eq_pos], &std.ascii.whitespace);
+            if (std.mem.eql(u8, line_key, key)) {
+                // Key already exists, don't overwrite
+                return;
+            }
+        }
+    }
+
+    // Append key to .env
+    var new_content: std.ArrayList(u8) = .{};
+    defer new_content.deinit(allocator);
+
+    // Copy existing content
+    if (existing_content.len > 0) {
+        try new_content.appendSlice(allocator, existing_content);
+        // Ensure newline before appending
+        if (existing_content[existing_content.len - 1] != '\n') {
+            try new_content.append(allocator, '\n');
+        }
+    }
+
+    // Append new key=value
+    try new_content.appendSlice(allocator, key);
+    try new_content.append(allocator, '=');
+    try new_content.appendSlice(allocator, value);
+    try new_content.append(allocator, '\n');
+
+    // Write to .env file
+    const file = try io_helper.cwd().createFile(io_helper.io, ".env", .{});
+    defer file.close(io_helper.io);
+    try io_helper.writeAllToFile(file, new_content.items);
+}
+
+/// Prompt user for NPM token and save it to ~/.pantry/credentials
+fn promptAndSaveToken(allocator: std.mem.Allocator) ![]u8 {
+    // Check if running in CI - don't prompt in non-interactive environments
+    if (std.process.getEnvVarOwned(allocator, "CI")) |ci| {
+        allocator.free(ci);
+        return error.EnvironmentVariableNotFound;
+    } else |_| {}
+
+    std.debug.print("\n", .{});
+    std.debug.print("+-----------------------------------------------------------------+\n", .{});
+    std.debug.print("|  No NPM token found. Let's set one up!                          |\n", .{});
+    std.debug.print("|                                                                 |\n", .{});
+    std.debug.print("|  Get your token from: https://www.npmjs.com/settings/tokens    |\n", .{});
+    std.debug.print("|  Create a new \"Automation\" or \"Publish\" token.                  |\n", .{});
+    std.debug.print("+-----------------------------------------------------------------+\n", .{});
+    std.debug.print("\n", .{});
+    std.debug.print("Enter your NPM token: ", .{});
+
+    // Read token from stdin
+    var buf: [512]u8 = undefined;
+    const bytes_read = io_helper.readStdin(&buf) catch {
+        return error.EndOfStream;
+    };
+
+    if (bytes_read == 0) {
+        return error.EndOfStream;
+    }
+
+    const token_line = buf[0..bytes_read];
+
+    const token = std.mem.trim(u8, token_line, &std.ascii.whitespace);
+
+    if (token.len == 0) {
+        std.debug.print("Error: No token provided.\n", .{});
+        return error.EndOfStream;
+    }
+
+    // Validate token format (should start with npm_)
+    if (!std.mem.startsWith(u8, token, "npm_")) {
+        std.debug.print("\nWarning: Token doesn't start with 'npm_'. Make sure you copied the full token.\n", .{});
+    }
+
+    // Save to ~/.pantry/credentials (user-level persistence)
+    savePantryCredential(allocator, "NPM_TOKEN", token) catch |err| {
+        std.debug.print("Warning: Could not save token to ~/.pantry/credentials: {any}\n", .{err});
+        // Continue anyway - we have the token in memory
+    };
+
+    // Also save to project's .env file (project-level)
+    saveToProjectEnv(allocator, "NPM_TOKEN", token) catch {
+        // Silently ignore - .env storage is optional
+    };
+
+    std.debug.print("Token saved to:\n", .{});
+    std.debug.print("  ~/.pantry/credentials (user-level)\n", .{});
+    std.debug.print("  .env (project-level, if writable)\n", .{});
+    std.debug.print("\nNote: Make sure .env is in your .gitignore!\n\n", .{});
+
+    return try allocator.dupe(u8, token);
 }

@@ -46,9 +46,9 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 **Important:** Old npm token types have been phased out by npm - that's why we're doing OIDC now.
 
 - [x] OIDC release workflow working
-- [ ] Auto-store tokens to `.env` file
+- [x] Auto-store tokens to `.env` file
 - [x] Auto-store tokens to `~/.pantry` for persistence (reads from `~/.pantry/credentials`)
-- [ ] Prompt user for any required input through CLI only
+- [x] Prompt user for any required input through CLI only
 - [x] Handle first-time publish (falls back to token if OIDC fails)
 - [x] Handle subsequent publishes (uses OIDC)
 
@@ -61,7 +61,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [ ] ~~Integrate into `pantry publish` workflow~~
 
 ### 4. CI Workflow Naming Convention
-**Status:** Not Started
+**Status:** Complete
 **Description:** Update CI workflow naming for clarity with multiple release targets.
 
 **Pattern:**
@@ -69,8 +69,8 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - `Releaser / pantry` - for pantry registry releases
 - etc.
 
-- [ ] Update workflow names to follow convention
-- [ ] Ensure job names are similarly structured
+- [x] Update workflow names to follow convention
+- [x] Ensure job names are similarly structured
 
 ---
 
