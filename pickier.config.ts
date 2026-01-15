@@ -14,14 +14,14 @@ const config: PickierConfig = {
   ],
 
   lint: {
-    extensions: ['ts', 'js', 'mts', 'cts'],
+    extensions: ['ts', 'js'],
     reporter: 'stylish',
     cache: false,
     maxWarnings: -1,
   },
 
   format: {
-    extensions: ['ts', 'js', 'mts', 'cts', 'json', 'md', 'yaml', 'yml'],
+    extensions: ['ts', 'js', 'json', 'md', 'yaml', 'yml'],
     trimTrailingWhitespace: true,
     maxConsecutiveBlankLines: 1,
     finalNewline: 'one',

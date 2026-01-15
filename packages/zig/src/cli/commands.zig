@@ -244,4 +244,3 @@ pub const initCommand = init_commands.initCommand;
 
 pub const tree_commands = @import("commands/tree.zig");
 pub const treeCommand = tree_commands.treeCommand;
-

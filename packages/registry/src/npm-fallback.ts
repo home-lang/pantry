@@ -16,7 +16,7 @@ export async function fetchFromNpm(name: string, version?: string): Promise<Pack
       return null
     }
 
-    const data = await response.json()
+    const data = await response.json() as Record<string, any>
     return {
       name: data.name,
       version: data.version,
@@ -49,7 +49,7 @@ export async function listNpmVersions(name: string): Promise<string[]> {
       return []
     }
 
-    const data = await response.json()
+    const data = await response.json() as Record<string, any>
     return Object.keys(data.versions || {}).sort((a, b) => {
       // Sort by semver descending
       const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
@@ -78,7 +78,7 @@ export async function searchNpm(query: string, limit = 20): Promise<SearchResult
       return []
     }
 
-    const data = await response.json()
+    const data = await response.json() as Record<string, any>
     return (data.objects || []).map((obj: any) => ({
       name: obj.package.name,
       version: obj.package.version,

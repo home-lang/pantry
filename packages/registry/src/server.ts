@@ -209,7 +209,7 @@ async function handlePublish(
 
   // Handle JSON with base64 tarball (alternative)
   if (contentType.includes('application/json')) {
-    const body = await req.json()
+    const body = await req.json() as { metadata?: any, tarball?: string }
     const { metadata, tarball: tarballBase64 } = body
 
     if (!metadata || !tarballBase64) {

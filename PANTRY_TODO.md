@@ -14,7 +14,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 ## High Priority
 
 ### 1. Build Custom Registry Driver
-**Status:** In Progress (existing code in ts-pantry)
+**Status:** In Progress (core implementation complete)
 **Description:** Build our own registry driver that mimics npm functionality. This becomes the default, with npm as an optional driver for compatibility.
 
 **Architecture:**
@@ -30,17 +30,18 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - Single table design patterns
 
 **Tasks:**
-- [ ] Review existing registry code in ts-pantry
-- [ ] Create/expand `registry` package in pantry monorepo
-- [ ] Design data structure for packages, apps, analytics
-- [ ] Require `ts-cloud` for S3 storage abstraction
-- [ ] Implement package publish functionality
-- [ ] Implement package versioning
-- [ ] Implement package download/install with npmjs fallback
+- [x] Review existing registry code in ts-pantry
+- [x] Create/expand `registry` package in pantry monorepo (`packages/registry`)
+- [x] Design data structure for packages, apps, analytics
+- [x] Implement S3 storage abstraction (local storage for dev)
+- [x] Implement package publish functionality
+- [x] Implement package versioning
+- [x] Implement package download/install with npmjs fallback
+- [ ] Add DynamoDB metadata storage for production
 - [ ] Deploy to own domain
 
 ### 2. Automate `pantry publish` End-to-End
-**Status:** In Progress
+**Status:** Complete
 **Description:** Running `pantry publish` should handle all configuration automatically with no manual steps outside the CLI.
 
 **Important:** Old npm token types have been phased out by npm - that's why we're doing OIDC now.
