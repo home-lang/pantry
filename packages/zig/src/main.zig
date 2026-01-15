@@ -605,13 +605,11 @@ fn whoamiAction(ctx: *cli.BaseCommand.ParseContext) !void {
 fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
-    const dry_run = ctx.hasOption("dry-run");
     const access_val = ctx.getOption("access") orelse "public";
     const tag = ctx.getOption("tag") orelse "latest";
     const registry_val = ctx.getOption("registry") orelse "https://registry.npmjs.org";
 
     const options = lib.commands.PublishOptions{
-        .dry_run = dry_run,
         .access = access_val,
         .tag = tag,
         .registry = registry_val,
@@ -1633,7 +1631,6 @@ fn printHelp() void {
         \\      pantry add -D typescript        Add typescript to devDependencies
         \\      pantry run build                Run the build script
         \\      pantry publish                  Publish with OIDC (in CI/CD)
-        \\      pantry publish --dry-run        Preview publish without uploading
         \\
         \\  \x1b[2mFor more info on a command: pantry <command> --help\x1b[0m
         \\
@@ -1909,9 +1906,6 @@ pub fn main() !void {
     // Publish Command
     // ========================================================================
     var publish_cmd = try cli.BaseCommand.init(allocator, "publish", "Publish package to registry");
-
-    const dry_run_opt = cli.Option.init("dry-run", "dry-run", "Perform dry run without publishing", .bool);
-    _ = try publish_cmd.addOption(dry_run_opt);
 
     const access_opt = cli.Option.init("access", "access", "Package access level (public/restricted)", .string)
         .withDefault("public");

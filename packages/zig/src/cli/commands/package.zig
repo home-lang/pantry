@@ -404,7 +404,6 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
 // ============================================================================
 
 pub const PublishOptions = struct {
-    dry_run: bool = false,
     access: []const u8 = "public",
     tag: []const u8 = "latest",
     otp: ?[]const u8 = null,
@@ -475,16 +474,6 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     const tarball_path = try createTarball(allocator, cwd, metadata.name, metadata.version);
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
-
-    if (options.dry_run) {
-        std.debug.print("Dry run mode - package would be published to {s}\n", .{registry_url});
-        std.debug.print("Tarball: {s}\n", .{tarball_path});
-        if (metadata.publish_config) |pc| {
-            if (pc.access) |a| std.debug.print("Access: {s}\n", .{a});
-            if (pc.tag) |t| std.debug.print("Tag: {s}\n", .{t});
-        }
-        return .{ .exit_code = 0 };
-    }
 
     // Initialize registry client
     var registry_client = try registry.RegistryClient.init(allocator, registry_url);
