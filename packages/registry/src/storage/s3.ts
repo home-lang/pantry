@@ -1,73 +1,61 @@
 import type { TarballStorage } from '../types'
+// TODO: Switch to ts-cloud when published on npm
+// import { S3Client } from 'ts-cloud/aws'
+import { S3Client } from './aws-client'
 
 /**
- * S3-based tarball storage
- * Uses ts-cloud for S3 operations when available, falls back to AWS SDK
+ * S3-based tarball storage using ts-cloud
  */
 export class S3Storage implements TarballStorage {
   private bucket: string
   private region: string
   private baseUrl: string
+  private s3: S3Client
 
   constructor(bucket: string, region = 'us-east-1', baseUrl?: string) {
     this.bucket = bucket
     this.region = region
     this.baseUrl = baseUrl || `https://${bucket}.s3.${region}.amazonaws.com`
+    this.s3 = new S3Client(region)
   }
 
   /**
    * Generate S3 key for a package tarball
    */
   private getKey(packageName: string, version: string): string {
-    // Handle scoped packages (@scope/name -> scope/name)
+    // Handle scoped packages (@scope/name -> scope-name)
     const safeName = packageName.replace('@', '').replace('/', '-')
     return `packages/${safeName}/${version}/${safeName}-${version}.tgz`
   }
 
   async upload(key: string, data: ArrayBuffer): Promise<string> {
-    const url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`
-
-    // Use presigned URL or direct upload based on environment
-    const response = await fetch(url, {
-      method: 'PUT',
-      body: data,
-      headers: {
-        'Content-Type': 'application/gzip',
-        'Content-Length': String(data.byteLength),
-      },
+    await this.s3.putObject({
+      bucket: this.bucket,
+      key,
+      body: Buffer.from(data),
+      contentType: 'application/gzip',
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload to S3: ${response.statusText}`)
-    }
 
     return this.getUrl(key)
   }
 
   async download(key: string): Promise<ArrayBuffer> {
-    const url = `${this.baseUrl}/${key}`
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      throw new Error(`Failed to download from S3: ${response.statusText}`)
-    }
-
-    return response.arrayBuffer()
+    const buffer = await this.s3.getObjectBuffer(this.bucket, key)
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer
   }
 
   async exists(key: string): Promise<boolean> {
-    const url = `${this.baseUrl}/${key}`
-    const response = await fetch(url, { method: 'HEAD' })
-    return response.ok
+    try {
+      await this.s3.headObject(this.bucket, key)
+      return true
+    }
+    catch {
+      return false
+    }
   }
 
   async delete(key: string): Promise<void> {
-    const url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`
-    const response = await fetch(url, { method: 'DELETE' })
-
-    if (!response.ok && response.status !== 404) {
-      throw new Error(`Failed to delete from S3: ${response.statusText}`)
-    }
+    await this.s3.deleteObject(this.bucket, key)
   }
 
   getUrl(key: string): string {
@@ -91,11 +79,67 @@ export class S3Storage implements TarballStorage {
   }
 
   /**
+   * Check if a package tarball exists
+   */
+  async packageExists(name: string, version: string): Promise<boolean> {
+    const key = this.getKey(name, version)
+    return this.exists(key)
+  }
+
+  /**
    * Get the URL for a package tarball
    */
   getPackageUrl(name: string, version: string): string {
     const key = this.getKey(name, version)
     return this.getUrl(key)
+  }
+
+  /**
+   * List all versions of a package
+   */
+  async listPackageVersions(name: string): Promise<string[]> {
+    const safeName = name.replace('@', '').replace('/', '-')
+    const prefix = `packages/${safeName}/`
+
+    const objects = await this.s3.list({
+      bucket: this.bucket,
+      prefix,
+    })
+
+    // Extract versions from keys like "packages/name/1.0.0/name-1.0.0.tgz"
+    const versions = new Set<string>()
+    for (const obj of objects) {
+      const match = obj.Key?.match(/packages\/[^/]+\/([^/]+)\//)
+      if (match) {
+        versions.add(match[1])
+      }
+    }
+
+    return Array.from(versions).sort((a, b) => {
+      const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
+      const [bMajor, bMinor, bPatch] = b.split('.').map(Number)
+      if (aMajor !== bMajor)
+        return bMajor - aMajor
+      if (aMinor !== bMinor)
+        return bMinor - aMinor
+      return bPatch - aPatch
+    })
+  }
+
+  /**
+   * Generate a presigned URL for downloading a package (useful for direct downloads)
+   */
+  getPresignedDownloadUrl(name: string, version: string, expiresInSeconds = 3600): string {
+    const key = this.getKey(name, version)
+    return this.s3.generatePresignedGetUrl(this.bucket, key, expiresInSeconds)
+  }
+
+  /**
+   * Generate a presigned URL for uploading a package (useful for direct uploads)
+   */
+  getPresignedUploadUrl(name: string, version: string, expiresInSeconds = 3600): string {
+    const key = this.getKey(name, version)
+    return this.s3.generatePresignedPutUrl(this.bucket, key, 'application/gzip', expiresInSeconds)
   }
 }
 
@@ -117,9 +161,6 @@ export class LocalStorage implements TarballStorage {
 
   async upload(key: string, data: ArrayBuffer): Promise<string> {
     const filePath = this.getFilePath(key)
-    const dir = filePath.substring(0, filePath.lastIndexOf('/'))
-
-    // Create directory if it doesn't exist
     await Bun.write(filePath, data)
     return this.getUrl(key)
   }
