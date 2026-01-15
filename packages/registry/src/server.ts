@@ -1,5 +1,6 @@
 import type { RegistryConfig } from './types'
 import { Registry, createLocalRegistry } from './registry'
+import { createAnalytics, type AnalyticsStorage } from './analytics'
 
 /**
  * Create the registry HTTP server
@@ -12,9 +13,19 @@ import { Registry, createLocalRegistry } from './registry'
  * GET  /search?q={query}          - Search packages
  * POST /publish                   - Publish package (multipart/form-data)
  * GET  /health                    - Health check
+ *
+ * Analytics endpoints:
+ * GET  /analytics/{name}          - Get package download stats
+ * GET  /analytics/{name}/timeline - Get download timeline (last 30 days)
+ * GET  /analytics/top             - Get top downloaded packages
  */
-export function createServer(registry: Registry, port = 3000): { start: () => void, stop: () => void } {
+export function createServer(
+  registry: Registry,
+  port = 3000,
+  analytics?: AnalyticsStorage,
+): { start: () => void, stop: () => void } {
   let server: ReturnType<typeof Bun.serve> | null = null
+  const analyticsStorage = analytics || createAnalytics()
 
   const start = () => {
     server = Bun.serve({
@@ -54,6 +65,12 @@ export function createServer(registry: Registry, port = 3000): { start: () => vo
             return handlePublish(req, registry, corsHeaders)
           }
 
+          // Analytics routes
+          const analyticsMatch = path.match(/^\/analytics(?:\/(.+))?$/)
+          if (analyticsMatch && req.method === 'GET') {
+            return handleAnalytics(analyticsMatch[1], url, analyticsStorage, corsHeaders)
+          }
+
           // Package routes
           const packageMatch = path.match(/^\/packages\/(@?[^/]+(?:\/[^/]+)?)(?:\/(.+))?$/)
           if (packageMatch) {
@@ -77,6 +94,14 @@ export function createServer(registry: Registry, port = 3000): { start: () => vo
                   { status: 404, headers: corsHeaders },
                 )
               }
+
+              // Track download
+              await analyticsStorage.trackDownload({
+                packageName,
+                version,
+                timestamp: new Date().toISOString(),
+                userAgent: req.headers.get('user-agent') || undefined,
+              })
 
               return new Response(tarball, {
                 headers: {
@@ -135,6 +160,9 @@ export function createServer(registry: Registry, port = 3000): { start: () => vo
     console.log('  GET  /packages/{name}/versions  - List versions')
     console.log('  GET  /search?q={query}          - Search packages')
     console.log('  POST /publish                   - Publish package')
+    console.log('  GET  /analytics/{name}          - Package download stats')
+    console.log('  GET  /analytics/{name}/timeline - Download timeline')
+    console.log('  GET  /analytics/top             - Top downloaded packages')
     console.log('  GET  /health                    - Health check')
   }
 
@@ -146,6 +174,44 @@ export function createServer(registry: Registry, port = 3000): { start: () => vo
   }
 
   return { start, stop }
+}
+
+/**
+ * Handle analytics requests
+ */
+async function handleAnalytics(
+  path: string | undefined,
+  url: URL,
+  analytics: AnalyticsStorage,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  // GET /analytics/top
+  if (path === 'top' || !path) {
+    const limit = Number.parseInt(url.searchParams.get('limit') || '10', 10)
+    const packages = await analytics.getTopPackages(limit)
+    return Response.json({ packages }, { headers: corsHeaders })
+  }
+
+  // GET /analytics/{name}/timeline
+  if (path.endsWith('/timeline')) {
+    const packageName = decodeURIComponent(path.replace('/timeline', ''))
+    const days = Number.parseInt(url.searchParams.get('days') || '30', 10)
+    const timeline = await analytics.getDownloadTimeline(packageName, days)
+    return Response.json({ packageName, timeline }, { headers: corsHeaders })
+  }
+
+  // GET /analytics/{name}
+  const packageName = decodeURIComponent(path)
+  const stats = await analytics.getPackageStats(packageName)
+
+  if (!stats) {
+    return Response.json(
+      { error: 'No analytics data for this package' },
+      { status: 404, headers: corsHeaders },
+    )
+  }
+
+  return Response.json(stats, { headers: corsHeaders })
 }
 
 /**
@@ -246,7 +312,14 @@ async function handlePublish(
 // Run server if this is the main module
 if (import.meta.main) {
   const port = Number.parseInt(process.env.PORT || '3000', 10)
+  const analyticsTable = process.env.DYNAMODB_ANALYTICS_TABLE
+  const awsRegion = process.env.AWS_REGION || 'us-east-1'
+
   const registry = createLocalRegistry(`http://localhost:${port}`)
-  const { start } = createServer(registry, port)
+  const analytics = createAnalytics(
+    analyticsTable ? { tableName: analyticsTable, region: awsRegion } : undefined,
+  )
+
+  const { start } = createServer(registry, port, analytics)
   start()
 }

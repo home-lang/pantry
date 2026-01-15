@@ -24,6 +24,18 @@ export {
   downloadNpmTarball,
 } from './npm-fallback'
 
+// Analytics
+export {
+  createAnalytics,
+  DynamoDBAnalytics,
+  InMemoryAnalytics,
+} from './analytics'
+export type {
+  DownloadEvent,
+  PackageStats,
+  AnalyticsStorage,
+} from './analytics'
+
 // Types
 export type {
   PackageMetadata,

@@ -1,0 +1,333 @@
+/**
+ * Registry Analytics
+ * Track package downloads and provide statistics
+ */
+
+import { DynamoDBClient } from './storage/dynamodb-client'
+
+export interface DownloadEvent {
+  packageName: string
+  version: string
+  timestamp: string
+  userAgent?: string
+  ip?: string
+  region?: string
+}
+
+export interface PackageStats {
+  packageName: string
+  totalDownloads: number
+  weeklyDownloads: number
+  monthlyDownloads: number
+  versionDownloads: Record<string, number>
+  lastDownload?: string
+}
+
+export interface AnalyticsStorage {
+  trackDownload(event: DownloadEvent): Promise<void>
+  getPackageStats(packageName: string): Promise<PackageStats | null>
+  getTopPackages(limit?: number): Promise<Array<{ name: string, downloads: number }>>
+  getDownloadTimeline(packageName: string, days?: number): Promise<Array<{ date: string, count: number }>>
+}
+
+/**
+ * DynamoDB-based analytics storage for production
+ *
+ * Table Schema (single table design):
+ * PK: PACKAGE#{name} or DAILY#{date}
+ * SK: STATS or VERSION#{version} or PACKAGE#{name}
+ *
+ * Access patterns:
+ * 1. Get package stats: PK = PACKAGE#{name}, SK = STATS
+ * 2. Get version stats: PK = PACKAGE#{name}, SK begins_with VERSION#
+ * 3. Get daily downloads: PK = DAILY#{date}, SK = PACKAGE#{name}
+ * 4. Get top packages: Scan with filter or use GSI
+ */
+export class DynamoDBAnalytics implements AnalyticsStorage {
+  private db: DynamoDBClient
+  private tableName: string
+
+  constructor(tableName: string, region = 'us-east-1') {
+    this.tableName = tableName
+    this.db = new DynamoDBClient(region)
+  }
+
+  async trackDownload(event: DownloadEvent): Promise<void> {
+    const { packageName, version, timestamp } = event
+    const date = timestamp.split('T')[0] // YYYY-MM-DD
+
+    // Update package total stats (atomic increment)
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `PACKAGE#${packageName}` },
+        SK: { S: 'STATS' },
+      },
+      UpdateExpression: 'SET totalDownloads = if_not_exists(totalDownloads, :zero) + :one, lastDownload = :ts, packageName = :name',
+      ExpressionAttributeValues: {
+        ':zero': { N: '0' },
+        ':one': { N: '1' },
+        ':ts': { S: timestamp },
+        ':name': { S: packageName },
+      },
+    })
+
+    // Update version stats
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `PACKAGE#${packageName}` },
+        SK: { S: `VERSION#${version}` },
+      },
+      UpdateExpression: 'SET downloads = if_not_exists(downloads, :zero) + :one, version = :ver',
+      ExpressionAttributeValues: {
+        ':zero': { N: '0' },
+        ':one': { N: '1' },
+        ':ver': { S: version },
+      },
+    })
+
+    // Update daily stats for timeline
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `DAILY#${date}` },
+        SK: { S: `PACKAGE#${packageName}` },
+      },
+      UpdateExpression: 'SET downloads = if_not_exists(downloads, :zero) + :one, packageName = :name',
+      ExpressionAttributeValues: {
+        ':zero': { N: '0' },
+        ':one': { N: '1' },
+        ':name': { S: packageName },
+      },
+    })
+  }
+
+  async getPackageStats(packageName: string): Promise<PackageStats | null> {
+    // Get main stats
+    const statsResult = await this.db.getItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `PACKAGE#${packageName}` },
+        SK: { S: 'STATS' },
+      },
+    })
+
+    if (!statsResult.Item) {
+      return null
+    }
+
+    const stats = DynamoDBClient.unmarshal(statsResult.Item)
+
+    // Get version breakdown
+    const versionsResult = await this.db.query({
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': { S: `PACKAGE#${packageName}` },
+        ':prefix': { S: 'VERSION#' },
+      },
+    })
+
+    const versionDownloads: Record<string, number> = {}
+    for (const item of versionsResult.Items) {
+      const data = DynamoDBClient.unmarshal(item)
+      if (data.version) {
+        versionDownloads[data.version] = data.downloads || 0
+      }
+    }
+
+    // Calculate weekly/monthly (query daily stats)
+    const now = new Date()
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+    let weeklyDownloads = 0
+    let monthlyDownloads = 0
+
+    // Get last 30 days of daily stats
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+      const dateStr = date.toISOString().split('T')[0]
+
+      try {
+        const dailyResult = await this.db.getItem({
+          TableName: this.tableName,
+          Key: {
+            PK: { S: `DAILY#${dateStr}` },
+            SK: { S: `PACKAGE#${packageName}` },
+          },
+        })
+
+        if (dailyResult.Item) {
+          const daily = DynamoDBClient.unmarshal(dailyResult.Item)
+          const count = daily.downloads || 0
+          monthlyDownloads += count
+          if (i < 7) {
+            weeklyDownloads += count
+          }
+        }
+      }
+      catch {
+        // Ignore errors for missing days
+      }
+    }
+
+    return {
+      packageName,
+      totalDownloads: stats.totalDownloads || 0,
+      weeklyDownloads,
+      monthlyDownloads,
+      versionDownloads,
+      lastDownload: stats.lastDownload,
+    }
+  }
+
+  async getTopPackages(limit = 10): Promise<Array<{ name: string, downloads: number }>> {
+    // Scan for all package stats - in production, use a GSI for this
+    const result = await this.db.scan({
+      TableName: this.tableName,
+      FilterExpression: 'SK = :stats',
+      ExpressionAttributeValues: {
+        ':stats': { S: 'STATS' },
+      },
+    })
+
+    const packages = result.Items.map((item) => {
+      const data = DynamoDBClient.unmarshal(item)
+      return {
+        name: data.packageName,
+        downloads: data.totalDownloads || 0,
+      }
+    })
+
+    // Sort by downloads descending
+    packages.sort((a, b) => b.downloads - a.downloads)
+
+    return packages.slice(0, limit)
+  }
+
+  async getDownloadTimeline(packageName: string, days = 30): Promise<Array<{ date: string, count: number }>> {
+    const timeline: Array<{ date: string, count: number }> = []
+    const now = new Date()
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+      const dateStr = date.toISOString().split('T')[0]
+
+      try {
+        const result = await this.db.getItem({
+          TableName: this.tableName,
+          Key: {
+            PK: { S: `DAILY#${dateStr}` },
+            SK: { S: `PACKAGE#${packageName}` },
+          },
+        })
+
+        const count = result.Item
+          ? DynamoDBClient.unmarshal(result.Item).downloads || 0
+          : 0
+
+        timeline.push({ date: dateStr, count })
+      }
+      catch {
+        timeline.push({ date: dateStr, count: 0 })
+      }
+    }
+
+    return timeline
+  }
+}
+
+/**
+ * In-memory analytics storage for development/testing
+ */
+export class InMemoryAnalytics implements AnalyticsStorage {
+  private downloads: DownloadEvent[] = []
+  private packageStats: Map<string, { total: number, versions: Record<string, number>, lastDownload?: string }> = new Map()
+  private dailyStats: Map<string, Map<string, number>> = new Map() // date -> package -> count
+
+  async trackDownload(event: DownloadEvent): Promise<void> {
+    this.downloads.push(event)
+
+    // Update package stats
+    const stats = this.packageStats.get(event.packageName) || { total: 0, versions: {} }
+    stats.total++
+    stats.versions[event.version] = (stats.versions[event.version] || 0) + 1
+    stats.lastDownload = event.timestamp
+    this.packageStats.set(event.packageName, stats)
+
+    // Update daily stats
+    const date = event.timestamp.split('T')[0]
+    if (!this.dailyStats.has(date)) {
+      this.dailyStats.set(date, new Map())
+    }
+    const dailyPackages = this.dailyStats.get(date)!
+    dailyPackages.set(event.packageName, (dailyPackages.get(event.packageName) || 0) + 1)
+  }
+
+  async getPackageStats(packageName: string): Promise<PackageStats | null> {
+    const stats = this.packageStats.get(packageName)
+    if (!stats) {
+      return null
+    }
+
+    const now = new Date()
+    let weeklyDownloads = 0
+    let monthlyDownloads = 0
+
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+      const dateStr = date.toISOString().split('T')[0]
+      const dailyPackages = this.dailyStats.get(dateStr)
+      const count = dailyPackages?.get(packageName) || 0
+
+      monthlyDownloads += count
+      if (i < 7) {
+        weeklyDownloads += count
+      }
+    }
+
+    return {
+      packageName,
+      totalDownloads: stats.total,
+      weeklyDownloads,
+      monthlyDownloads,
+      versionDownloads: stats.versions,
+      lastDownload: stats.lastDownload,
+    }
+  }
+
+  async getTopPackages(limit = 10): Promise<Array<{ name: string, downloads: number }>> {
+    const packages = Array.from(this.packageStats.entries())
+      .map(([name, stats]) => ({ name, downloads: stats.total }))
+      .sort((a, b) => b.downloads - a.downloads)
+
+    return packages.slice(0, limit)
+  }
+
+  async getDownloadTimeline(packageName: string, days = 30): Promise<Array<{ date: string, count: number }>> {
+    const timeline: Array<{ date: string, count: number }> = []
+    const now = new Date()
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+      const dateStr = date.toISOString().split('T')[0]
+      const dailyPackages = this.dailyStats.get(dateStr)
+      const count = dailyPackages?.get(packageName) || 0
+      timeline.push({ date: dateStr, count })
+    }
+
+    return timeline
+  }
+}
+
+/**
+ * Create analytics storage based on environment
+ */
+export function createAnalytics(config?: { tableName?: string, region?: string }): AnalyticsStorage {
+  if (config?.tableName) {
+    return new DynamoDBAnalytics(config.tableName, config.region)
+  }
+  return new InMemoryAnalytics()
+}
