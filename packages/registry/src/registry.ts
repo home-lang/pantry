@@ -6,7 +6,8 @@ import type {
   TarballStorage,
 } from './types'
 import { downloadNpmTarball, fetchFromNpm, listNpmVersions, searchNpm } from './npm-fallback'
-import { FileMetadataStorage, InMemoryMetadataStorage } from './storage/metadata'
+import { FileMetadataStorage } from './storage/metadata'
+import { DynamoDBMetadataStorage } from './storage/dynamodb-metadata'
 import { LocalStorage, S3Storage } from './storage/s3'
 
 /**
@@ -30,8 +31,8 @@ export class Registry {
     }
 
     if (config.dynamoTable && config.dynamoTable !== 'local') {
-      // TODO: Implement DynamoDB storage
-      this.metadataStorage = new FileMetadataStorage('./.registry/metadata.json')
+      // Use DynamoDB for production
+      this.metadataStorage = new DynamoDBMetadataStorage(config.dynamoTable, config.s3Region || 'us-east-1')
     }
     else {
       // Use file-based storage for development
@@ -204,5 +205,43 @@ export function createLocalRegistry(baseUrl = 'http://localhost:3000'): Registry
     baseUrl,
     npmFallback: true,
     port: 3000,
+  })
+}
+
+/**
+ * Create a production registry with S3 and DynamoDB
+ */
+export function createProductionRegistry(config: {
+  s3Bucket: string
+  dynamoTable: string
+  baseUrl: string
+  region?: string
+  npmFallback?: boolean
+}): Registry {
+  return new Registry({
+    s3Bucket: config.s3Bucket,
+    s3Region: config.region || 'us-east-1',
+    dynamoTable: config.dynamoTable,
+    baseUrl: config.baseUrl,
+    npmFallback: config.npmFallback ?? true,
+  })
+}
+
+/**
+ * Create a registry from environment variables
+ */
+export function createRegistryFromEnv(): Registry {
+  const s3Bucket = process.env.S3_BUCKET || 'local'
+  const dynamoTable = process.env.DYNAMODB_TABLE || 'local'
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+  const region = process.env.AWS_REGION || 'us-east-1'
+  const npmFallback = process.env.NPM_FALLBACK !== 'false'
+
+  return new Registry({
+    s3Bucket,
+    s3Region: region,
+    dynamoTable,
+    baseUrl,
+    npmFallback,
   })
 }

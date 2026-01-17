@@ -2,7 +2,9 @@ const std = @import("std");
 
 /// Registry type enumeration
 pub const RegistryType = enum {
-    /// pkgx registry (default)
+    /// Pantry registry (default for pantry packages)
+    pantry,
+    /// pkgx registry
     pkgx,
     /// npm registry
     npm,
@@ -12,6 +14,7 @@ pub const RegistryType = enum {
     custom,
 
     pub fn fromString(s: []const u8) ?RegistryType {
+        if (std.mem.eql(u8, s, "pantry")) return .pantry;
         if (std.mem.eql(u8, s, "pkgx")) return .pkgx;
         if (std.mem.eql(u8, s, "npm")) return .npm;
         if (std.mem.eql(u8, s, "github")) return .github;
@@ -21,6 +24,7 @@ pub const RegistryType = enum {
 
     pub fn toString(self: RegistryType) []const u8 {
         return switch (self) {
+            .pantry => "pantry",
             .pkgx => "pkgx",
             .npm => "npm",
             .github => "github",
@@ -89,6 +93,17 @@ pub const RegistryConfig = struct {
         allocator.free(self.url);
         self.auth.deinit(allocator);
         if (self.name) |n| allocator.free(n);
+    }
+
+    /// Default Pantry registry (highest priority)
+    pub fn pantry(allocator: std.mem.Allocator) !RegistryConfig {
+        return RegistryConfig{
+            .type = .pantry,
+            .url = try allocator.dupe(u8, "https://registry.stacksjs.org"),
+            .auth = .none,
+            .priority = 1,
+            .name = try allocator.dupe(u8, "pantry"),
+        };
     }
 
     /// Default pkgx registry

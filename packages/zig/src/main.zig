@@ -736,6 +736,32 @@ fn publisherRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.org";
+    const token = ctx.getOption("token");
+    const dry_run = ctx.hasOption("dry-run");
+
+    const options = lib.commands.RegistryPublishOptions{
+        .registry = registry,
+        .token = token,
+        .dry_run = dry_run,
+    };
+
+    const result = try lib.commands.registryPublishCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1589,7 +1615,8 @@ fn printHelp() void {
         \\      scripts             List available scripts
         \\
         \\    \x1b[33mPublishing:\x1b[0m
-        \\      publish             Publish package to registry (supports OIDC)
+        \\      publish             Publish package to npm (supports OIDC)
+        \\      registry:publish    Publish package to Pantry registry (S3)
         \\      publisher:add       Add a trusted publisher (OIDC)
         \\      publisher:list      List trusted publishers
         \\      publisher:remove    Remove a trusted publisher
@@ -2532,6 +2559,24 @@ pub fn main() !void {
 
     _ = publisher_remove_cmd.setAction(publisherRemoveAction);
     _ = try root.addCommand(publisher_remove_cmd);
+
+    // ========================================================================
+    // Registry Publish Command (Pantry Registry - S3/DynamoDB)
+    // ========================================================================
+    var registry_publish_cmd = try cli.BaseCommand.init(allocator, "registry:publish", "Publish package to Pantry registry (S3)");
+
+    const reg_pub_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
+        .withDefault("https://registry.stacksjs.org");
+    _ = try registry_publish_cmd.addOption(reg_pub_registry_opt);
+
+    const reg_pub_token_opt = cli.Option.init("token", "token", "Authentication token", .string);
+    _ = try registry_publish_cmd.addOption(reg_pub_token_opt);
+
+    const reg_pub_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Show what would be published without uploading", .bool);
+    _ = try registry_publish_cmd.addOption(reg_pub_dry_run_opt);
+
+    _ = registry_publish_cmd.setAction(registryPublishAction);
+    _ = try root.addCommand(registry_publish_cmd);
 
     // ========================================================================
     // Help Command

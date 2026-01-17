@@ -407,9 +407,10 @@ pub const PublishOptions = struct {
     access: []const u8 = "public",
     tag: []const u8 = "latest",
     otp: ?[]const u8 = null,
-    registry: []const u8 = "https://registry.npmjs.org",
+    registry: []const u8 = "https://registry.stacksjs.org", // Pantry registry (default)
     use_oidc: bool = true, // Try OIDC first, fallback to token
     provenance: bool = true, // Generate provenance metadata
+    use_npm: bool = false, // Set to true to publish to npm instead
 };
 
 /// Publish a package to the registry

@@ -91,6 +91,10 @@ pub const infoCommand = registry_commands.infoCommand;
 pub const listCommand = registry_commands.listCommand;
 pub const whoamiCommand = registry_commands.whoamiCommand;
 
+// Registry publish command (uploads to Pantry registry S3)
+pub const RegistryPublishOptions = registry_commands.RegistryPublishOptions;
+pub const registryPublishCommand = registry_commands.registryPublishCommand;
+
 // ============================================================================
 // Re-export Px Command
 // ============================================================================

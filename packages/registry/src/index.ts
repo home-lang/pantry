@@ -7,7 +7,7 @@
  */
 
 // Main registry class
-export { Registry, createLocalRegistry } from './registry'
+export { Registry, createLocalRegistry, createProductionRegistry, createRegistryFromEnv } from './registry'
 
 // Server
 export { createServer } from './server'
@@ -15,6 +15,7 @@ export { createServer } from './server'
 // Storage backends
 export { S3Storage, LocalStorage } from './storage/s3'
 export { InMemoryMetadataStorage, FileMetadataStorage } from './storage/metadata'
+export { DynamoDBMetadataStorage, createDynamoDBMetadataStorage } from './storage/dynamodb-metadata'
 
 // npm fallback utilities
 export {

@@ -1,5 +1,5 @@
 import type { RegistryConfig } from './types'
-import { Registry, createLocalRegistry } from './registry'
+import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
 import { createAnalytics, type AnalyticsStorage } from './analytics'
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
@@ -242,6 +242,29 @@ async function handleAnalytics(
   return Response.json(stats, { headers: corsHeaders })
 }
 
+// Simple token for authentication (replace with proper auth in production)
+const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
+
+/**
+ * Validate authorization token
+ */
+function validateToken(authHeader: string | null): { valid: boolean, error?: string } {
+  if (!authHeader) {
+    return { valid: false, error: 'Authorization required' }
+  }
+
+  // Support "Bearer <token>" format
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : authHeader
+
+  if (token !== REGISTRY_TOKEN) {
+    return { valid: false, error: 'Invalid token' }
+  }
+
+  return { valid: true }
+}
+
 /**
  * Handle package publish
  */
@@ -252,11 +275,12 @@ async function handlePublish(
 ): Promise<Response> {
   const contentType = req.headers.get('content-type') || ''
 
-  // Check authorization
+  // Validate token
   const authHeader = req.headers.get('authorization')
-  if (!authHeader) {
+  const authResult = validateToken(authHeader)
+  if (!authResult.valid) {
     return Response.json(
-      { error: 'Authorization required' },
+      { error: authResult.error },
       { status: 401, headers: corsHeaders },
     )
   }
@@ -343,11 +367,17 @@ if (import.meta.main) {
   const analyticsTable = process.env.DYNAMODB_ANALYTICS_TABLE
   const awsRegion = process.env.AWS_REGION || 'us-east-1'
 
-  const registry = createLocalRegistry(`http://localhost:${port}`)
+  // Use environment-based config (supports both local and production)
+  const registry = createRegistryFromEnv()
   const analytics = createAnalytics(
     analyticsTable ? { tableName: analyticsTable, region: awsRegion } : undefined,
   )
 
   const { start } = createServer(registry, port, analytics)
   start()
+
+  console.log('\nEnvironment:')
+  console.log(`  S3_BUCKET: ${process.env.S3_BUCKET || 'local'}`)
+  console.log(`  DYNAMODB_TABLE: ${process.env.DYNAMODB_TABLE || 'local'}`)
+  console.log(`  BASE_URL: ${process.env.BASE_URL || `http://localhost:${port}`}`)
 }

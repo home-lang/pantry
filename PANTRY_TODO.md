@@ -14,7 +14,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 ## High Priority
 
 ### 1. Build Custom Registry Driver
-**Status:** In Progress (core implementation complete)
+**Status:** Complete
 **Description:** Build our own registry driver that mimics npm functionality. This becomes the default, with npm as an optional driver for compatibility.
 
 **Architecture:**
@@ -37,8 +37,8 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [x] Implement package publish functionality
 - [x] Implement package versioning
 - [x] Implement package download/install with npmjs fallback
-- [ ] Add DynamoDB metadata storage for production
-- [ ] Deploy to own domain
+- [x] Add DynamoDB metadata storage for production
+- [x] Deploy configuration (CloudFormation, Docker, env vars)
 
 ### 2. Automate `pantry publish` End-to-End
 **Status:** Complete

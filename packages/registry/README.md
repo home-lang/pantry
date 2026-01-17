@@ -188,6 +188,69 @@ import { S3Storage } from '@stacksjs/registry'
 const storage = new S3Storage('my-bucket', 'us-east-1')
 ```
 
+## Deployment
+
+### AWS Infrastructure
+
+Deploy the required AWS resources using CloudFormation:
+
+```bash
+aws cloudformation deploy \
+  --template-file infrastructure/cloudformation.yml \
+  --stack-name pantry-registry \
+  --parameter-overrides \
+    Environment=production \
+    RegistryDomain=registry.yourdomain.com \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+This creates:
+- S3 bucket for package tarballs
+- DynamoDB table for metadata
+- DynamoDB table for analytics
+- IAM role with required permissions
+
+### Docker Deployment
+
+```bash
+# Build
+docker build -t pantry-registry .
+
+# Run with environment variables
+docker run -d \
+  -p 3000:3000 \
+  -e S3_BUCKET=pantry-registry-production-packages \
+  -e DYNAMODB_TABLE=pantry-registry-production-metadata \
+  -e DYNAMODB_ANALYTICS_TABLE=pantry-registry-production-analytics \
+  -e BASE_URL=https://registry.yourdomain.com \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=your-key \
+  -e AWS_SECRET_ACCESS_KEY=your-secret \
+  pantry-registry
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `3000` |
+| `BASE_URL` | Public URL for the registry | `http://localhost:3000` |
+| `S3_BUCKET` | S3 bucket for tarballs | `local` (file storage) |
+| `DYNAMODB_TABLE` | DynamoDB table for metadata | `local` (file storage) |
+| `DYNAMODB_ANALYTICS_TABLE` | DynamoDB table for analytics | (in-memory) |
+| `AWS_REGION` | AWS region | `us-east-1` |
+| `NPM_FALLBACK` | Enable npm fallback | `true` |
+
+### Local Development
+
+```bash
+# Start with file-based storage (default)
+bun run dev
+
+# Or with specific config
+S3_BUCKET=local DYNAMODB_TABLE=local bun run start
+```
+
 ## License
 
 MIT

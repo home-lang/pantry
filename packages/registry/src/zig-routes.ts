@@ -149,6 +149,28 @@ export async function handleZigRoutes(
   return null
 }
 
+// Simple token for authentication (replace with proper auth in production)
+const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
+
+/**
+ * Validate authorization token
+ */
+function validateToken(authHeader: string | null): { valid: boolean, error?: string } {
+  if (!authHeader) {
+    return { valid: false, error: 'Authorization required' }
+  }
+
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : authHeader
+
+  if (token !== REGISTRY_TOKEN) {
+    return { valid: false, error: 'Invalid token' }
+  }
+
+  return { valid: true }
+}
+
 /**
  * Handle Zig package publish
  */
@@ -160,11 +182,12 @@ async function handleZigPublish(
 ): Promise<Response> {
   const contentType = req.headers.get('content-type') || ''
 
-  // Check authorization
+  // Validate token
   const authHeader = req.headers.get('authorization')
-  if (!authHeader) {
+  const authResult = validateToken(authHeader)
+  if (!authResult.valid) {
     return Response.json(
-      { error: 'Authorization required' },
+      { error: authResult.error },
       { status: 401, headers: corsHeaders },
     )
   }

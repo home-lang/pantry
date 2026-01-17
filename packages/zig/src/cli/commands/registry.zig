@@ -4,15 +4,20 @@
 //! - search: Find packages by keyword
 //! - info: Show detailed package information
 //! - list: List installed packages
+//! - publish: Publish a package to the Pantry registry
 
 const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const http = std.http;
 
 const CommandResult = common.CommandResult;
 const cache = lib.cache;
 const install = lib.install;
+
+/// Default Pantry registry URL
+const PANTRY_REGISTRY_URL = "https://registry.stacksjs.org";
 
 /// Search for packages in the registry
 pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
@@ -158,7 +163,7 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
             std.debug.print("Not logged in (no .pantryrc found)\n", .{});
             std.debug.print("\nTo authenticate:\n", .{});
             std.debug.print("  1. Get an authentication token from the Pantry registry\n", .{});
-            std.debug.print("  2. Add it to ~/.pantryrc as: //registry.pantry.dev/:_authToken=YOUR_TOKEN\n", .{});
+            std.debug.print("  2. Add it to ~/.pantry/credentials as: PANTRY_TOKEN=your_token\n", .{});
             std.debug.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
             std.debug.print("  pantry publisher add --help\n", .{});
             return .{ .exit_code = 1 };
@@ -202,10 +207,315 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
         std.debug.print("Not logged in\n", .{});
         std.debug.print("\nTo authenticate:\n", .{});
         std.debug.print("  1. Get an authentication token from the Pantry registry\n", .{});
-        std.debug.print("  2. Add it to ~/.pantryrc as: //registry.pantry.dev/:_authToken=YOUR_TOKEN\n", .{});
+        std.debug.print("  2. Add it to ~/.pantry/credentials as: PANTRY_TOKEN=your_token\n", .{});
         std.debug.print("  3. Optionally add: username=YOUR_USERNAME\n", .{});
         std.debug.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
         std.debug.print("  pantry publisher add --help\n", .{});
         return .{ .exit_code = 1 };
     }
+}
+
+// ============================================================================
+// Registry Publish Command
+// ============================================================================
+
+pub const RegistryPublishOptions = struct {
+    registry: []const u8 = PANTRY_REGISTRY_URL,
+    token: ?[]const u8 = null,
+    access: []const u8 = "public",
+    tag: []const u8 = "latest",
+    dry_run: bool = false,
+};
+
+/// Publish a package to the Pantry registry
+/// This uploads the tarball directly to S3 via the registry API
+pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: RegistryPublishOptions) !CommandResult {
+    _ = args;
+
+    // Get current working directory
+    const cwd = io_helper.realpathAlloc(allocator, ".") catch {
+        return CommandResult.err(allocator, "Error: Could not determine current directory");
+    };
+    defer allocator.free(cwd);
+
+    // Find config file (pantry.json or package.json)
+    const config_path = common.findConfigFile(allocator, cwd) catch {
+        return CommandResult.err(allocator, "Error: No package configuration found (pantry.json, package.json)");
+    };
+    defer allocator.free(config_path);
+
+    std.debug.print("Publishing to Pantry registry...\n", .{});
+    std.debug.print("Config: {s}\n", .{config_path});
+
+    // Read and parse config
+    const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
+        return CommandResult.err(allocator, "Error: Could not read config file");
+    };
+    defer allocator.free(config_content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, config_content, .{}) catch {
+        return CommandResult.err(allocator, "Error: Could not parse config file");
+    };
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) {
+        return CommandResult.err(allocator, "Error: Config file is not a valid JSON object");
+    }
+
+    // Extract package name and version
+    const name = if (root.object.get("name")) |n|
+        if (n == .string) n.string else return CommandResult.err(allocator, "Error: Missing or invalid 'name' in config")
+    else
+        return CommandResult.err(allocator, "Error: Missing 'name' in config");
+
+    const version = if (root.object.get("version")) |v|
+        if (v == .string) v.string else return CommandResult.err(allocator, "Error: Missing or invalid 'version' in config")
+    else
+        return CommandResult.err(allocator, "Error: Missing 'version' in config");
+
+    std.debug.print("Package: {s}@{s}\n", .{ name, version });
+    std.debug.print("Registry: {s}\n", .{options.registry});
+
+    // Get auth token (from options, env, or ~/.pantry/credentials)
+    const token = options.token orelse
+        std.process.getEnvVarOwned(allocator, "PANTRY_REGISTRY_TOKEN") catch
+        readPantryToken(allocator) catch {
+        return CommandResult.err(
+            allocator,
+            \\Error: No authentication token found.
+            \\
+            \\Set PANTRY_REGISTRY_TOKEN environment variable or add to ~/.pantry/credentials:
+            \\  PANTRY_TOKEN=your_token
+            ,
+        );
+    };
+    defer if (options.token == null) allocator.free(token);
+
+    if (options.dry_run) {
+        std.debug.print("\n[DRY RUN] Would publish {s}@{s} to {s}\n", .{ name, version, options.registry });
+        return .{ .exit_code = 0 };
+    }
+
+    // Create tarball
+    std.debug.print("Creating tarball...\n", .{});
+    const tarball_path = try createTarball(allocator, cwd, name, version);
+    defer allocator.free(tarball_path);
+    defer io_helper.deleteFile(tarball_path) catch {};
+
+    // Read tarball
+    const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch {
+        return CommandResult.err(allocator, "Error: Could not read tarball");
+    };
+    defer allocator.free(tarball_data);
+
+    std.debug.print("Tarball size: {d} bytes\n", .{tarball_data.len});
+
+    // Upload to registry
+    std.debug.print("Uploading to registry...\n", .{});
+
+    const result = uploadToRegistry(allocator, options.registry, name, version, tarball_data, token, config_content) catch |err| {
+        const err_msg = try std.fmt.allocPrint(allocator, "Error: Failed to upload to registry: {any}", .{err});
+        return CommandResult.err(allocator, err_msg);
+    };
+    defer allocator.free(result);
+
+    std.debug.print("\n{s}\n", .{result});
+    std.debug.print("Published {s}@{s} to Pantry registry\n", .{ name, version });
+
+    return .{ .exit_code = 0 };
+}
+
+/// Read PANTRY_TOKEN from ~/.pantry/credentials
+fn readPantryToken(allocator: std.mem.Allocator) ![]u8 {
+    const home = std.posix.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
+
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const credentials_path = try std.fmt.bufPrint(&path_buf, "{s}/.pantry/credentials", .{home});
+
+    const content = io_helper.readFileAlloc(allocator, credentials_path, 64 * 1024) catch {
+        return error.FileNotFound;
+    };
+    defer allocator.free(content);
+
+    // Parse key=value pairs
+    var lines = std.mem.splitSequence(u8, content, "\n");
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, &std.ascii.whitespace);
+        if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+        if (std.mem.indexOfScalar(u8, trimmed, '=')) |eq_pos| {
+            const key = std.mem.trim(u8, trimmed[0..eq_pos], &std.ascii.whitespace);
+            const value = std.mem.trim(u8, trimmed[eq_pos + 1 ..], &std.ascii.whitespace);
+
+            if (std.mem.eql(u8, key, "PANTRY_TOKEN") or std.mem.eql(u8, key, "PANTRY_REGISTRY_TOKEN")) {
+                return try allocator.dupe(u8, value);
+            }
+        }
+    }
+
+    return error.EnvironmentVariableNotFound;
+}
+
+/// Create tarball of the current project
+fn createTarball(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+    package_name: []const u8,
+    version: []const u8,
+) ![]const u8 {
+    // Sanitize package name for tarball filename
+    var sanitized_name = try allocator.alloc(u8, package_name.len);
+    defer allocator.free(sanitized_name);
+    for (package_name, 0..) |c, i| {
+        sanitized_name[i] = if (c == '@' or c == '/') '-' else c;
+    }
+    const clean_name = if (sanitized_name[0] == '-') sanitized_name[1..] else sanitized_name;
+
+    const tarball_name = try std.fmt.allocPrint(allocator, "{s}-{s}.tgz", .{ clean_name, version });
+    defer allocator.free(tarball_name);
+
+    // Create tarball in temp directory
+    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
+
+    // Create staging directory: /tmp/pantry-staging/package/
+    const staging_base = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-staging" });
+    defer allocator.free(staging_base);
+    const staging_pkg = try std.fs.path.join(allocator, &[_][]const u8{ staging_base, "package" });
+    defer allocator.free(staging_pkg);
+
+    // Clean and create staging directory
+    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+    const mkdir_result = try io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", staging_pkg });
+    defer allocator.free(mkdir_result.stdout);
+    defer allocator.free(mkdir_result.stderr);
+
+    // Copy files to staging (excluding common non-publishable files)
+    const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
+    defer allocator.free(src_path);
+    const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
+    defer allocator.free(dst_path);
+
+    const cp_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "rsync",
+        "-a",
+        "--exclude=node_modules",
+        "--exclude=pantry",
+        "--exclude=.git",
+        "--exclude=*.tgz",
+        "--exclude=.github",
+        "--exclude=.claude",
+        "--exclude=zig-out",
+        "--exclude=zig-cache",
+        "--exclude=dist",
+        src_path,
+        dst_path,
+    });
+    defer allocator.free(cp_result.stdout);
+    defer allocator.free(cp_result.stderr);
+
+    if (cp_result.term != .Exited or cp_result.term.Exited != 0) {
+        std.debug.print("rsync failed: {s}\n", .{cp_result.stderr});
+        return error.TarballCreationFailed;
+    }
+
+    // Create tarball with "package" directory at root
+    const tar_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "tar",
+        "-czf",
+        tarball_path,
+        "-C",
+        staging_base,
+        "package",
+    });
+    defer allocator.free(tar_result.stdout);
+    defer allocator.free(tar_result.stderr);
+
+    // Cleanup staging
+    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+
+    if (tar_result.term != .Exited or tar_result.term.Exited != 0) {
+        std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
+        return error.TarballCreationFailed;
+    }
+
+    return tarball_path;
+}
+
+/// Upload tarball to Pantry registry
+fn uploadToRegistry(
+    allocator: std.mem.Allocator,
+    registry_url: []const u8,
+    name: []const u8,
+    version: []const u8,
+    tarball_data: []const u8,
+    token: []const u8,
+    metadata_json: []const u8,
+) ![]const u8 {
+    // Build multipart form data
+    const boundary = "----PantryFormBoundary7MA4YWxkTrZu0gW";
+
+    var body: std.ArrayList(u8) = .{};
+    defer body.deinit(allocator);
+
+    // Add metadata field
+    try body.appendSlice(allocator, "--");
+    try body.appendSlice(allocator, boundary);
+    try body.appendSlice(allocator, "\r\nContent-Disposition: form-data; name=\"metadata\"\r\n");
+    try body.appendSlice(allocator, "Content-Type: application/json\r\n\r\n");
+    try body.appendSlice(allocator, metadata_json);
+    try body.appendSlice(allocator, "\r\n");
+
+    // Add tarball field
+    try body.appendSlice(allocator, "--");
+    try body.appendSlice(allocator, boundary);
+    try body.appendSlice(allocator, "\r\nContent-Disposition: form-data; name=\"tarball\"; filename=\"");
+    try body.appendSlice(allocator, name);
+    try body.appendSlice(allocator, "-");
+    try body.appendSlice(allocator, version);
+    try body.appendSlice(allocator, ".tgz\"\r\n");
+    try body.appendSlice(allocator, "Content-Type: application/gzip\r\n\r\n");
+    try body.appendSlice(allocator, tarball_data);
+    try body.appendSlice(allocator, "\r\n");
+
+    // End boundary
+    try body.appendSlice(allocator, "--");
+    try body.appendSlice(allocator, boundary);
+    try body.appendSlice(allocator, "--\r\n");
+
+    // Build URL
+    const publish_url = try std.fmt.allocPrint(allocator, "{s}/publish", .{registry_url});
+    defer allocator.free(publish_url);
+
+    // Build auth header
+    const auth_header = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+    defer allocator.free(auth_header);
+
+    // Build content-type header
+    const content_type = try std.fmt.allocPrint(allocator, "multipart/form-data; boundary={s}", .{boundary});
+    defer allocator.free(content_type);
+
+    // Use curl for the HTTP request (simpler than building full HTTP client)
+    const curl_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "curl",
+        "-s",
+        "-X",
+        "POST",
+        publish_url,
+        "-H",
+        auth_header,
+        "-H",
+        content_type,
+        "--data-binary",
+        @as([]const u8, body.items),
+    });
+    defer allocator.free(curl_result.stderr);
+
+    if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+        allocator.free(curl_result.stdout);
+        return error.UploadFailed;
+    }
+
+    return curl_result.stdout;
 }

@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Pantry Registry Infrastructure - S3 + DynamoDB
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - production
+      - staging
+    Description: Deployment environment
+
+  RegistryDomain:
+    Type: String
+    Description: Domain name for the registry (e.g., registry.example.com)
+
+Resources:
+  # S3 Bucket for package tarballs
+  PackagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'pantry-registry-${Environment}-packages'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - '*'
+            MaxAge: 3600
+
+  # DynamoDB Table for package metadata
+  MetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'pantry-registry-${Environment}-metadata'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: pantry-registry
+
+  # DynamoDB Table for analytics
+  AnalyticsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'pantry-registry-${Environment}-analytics'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: pantry-registry
+
+  # IAM Role for the registry service
+  RegistryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'pantry-registry-${Environment}-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PackagesBucket.Arn
+                  - !Sub '${PackagesBucket.Arn}/*'
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt MetadataTable.Arn
+                  - !GetAtt AnalyticsTable.Arn
+
+Outputs:
+  PackagesBucketName:
+    Description: S3 bucket name for packages
+    Value: !Ref PackagesBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-PackagesBucket'
+
+  MetadataTableName:
+    Description: DynamoDB table name for metadata
+    Value: !Ref MetadataTable
+    Export:
+      Name: !Sub '${AWS::StackName}-MetadataTable'
+
+  AnalyticsTableName:
+    Description: DynamoDB table name for analytics
+    Value: !Ref AnalyticsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-AnalyticsTable'
+
+  RegistryRoleArn:
+    Description: IAM role ARN for the registry service
+    Value: !GetAtt RegistryRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RegistryRole'
+
+  EnvironmentVariables:
+    Description: Environment variables for the registry server
+    Value: !Sub |
+      S3_BUCKET=${PackagesBucket}
+      DYNAMODB_TABLE=${MetadataTable}
+      DYNAMODB_ANALYTICS_TABLE=${AnalyticsTable}
+      AWS_REGION=${AWS::Region}
+      BASE_URL=https://${RegistryDomain}
