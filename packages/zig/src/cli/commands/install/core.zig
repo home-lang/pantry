@@ -639,10 +639,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .version = version,
         };
 
+        // Show what we're installing
+        std.debug.print("  {s}↓{s} {s}@{s}...", .{ dim, reset, name, version });
+
         var result = installer.install(spec, .{
             .project_root = project_root,
-            .quiet = true, // Enable quiet mode for clean output
+            .quiet = false, // Show download progress
         }) catch |err| {
+            std.debug.print("\r\x1b[K", .{}); // Clear the line
             // Provide friendly error messages
             const error_msg = switch (err) {
                 error.PackageNotFound => "not found in registry (npm packages not yet supported)",
@@ -667,7 +671,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         defer result.deinit(allocator);
 
-        std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, name, result.version });
+        std.debug.print("\r\x1b[K{s}✓{s} {s}@{s}\n", .{ green, reset, name, result.version });
         success_count += 1;
 
         // Track for lockfile
