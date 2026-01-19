@@ -1584,110 +1584,133 @@ fn printVersion() void {
     std.debug.print("pantry {s} ({s})\n", .{ version_options.version, version_options.commit_hash });
 }
 
+// ANSI color codes
+const Color = struct {
+    const reset = "\x1b[0m";
+    const bold = "\x1b[1m";
+    const dim = "\x1b[2m";
+    const teal = "\x1b[36m";
+    const bold_teal = "\x1b[1;36m";
+    const yellow = "\x1b[33m";
+};
+
 /// Print help information
 fn printHelp() void {
-    std.debug.print(
-        \\
-        \\  pantry {s} - Modern dependency manager
-        \\
-        \\  USAGE:
-        \\      pantry <command> [options] [arguments]
-        \\
-        \\  COMMANDS:
-        \\
-        \\    Package Management:
-        \\      install, i          Install packages from pantry.json/package.json
-        \\      add                 Add and install new packages
-        \\      remove, rm          Remove packages
-        \\      update              Update packages to latest versions
-        \\      outdated            Check for outdated dependencies
-        \\
-        \\    Package Info:
-        \\      list, ls            List installed packages
-        \\      tree                Show dependency tree
-        \\      why                 Explain why a package is installed
-        \\      search              Search for packages in registry
-        \\      info                Show package information
-        \\
-        \\    Scripts:
-        \\      run                 Run a script from package.json
-        \\      dev                 Run development script (alias for 'run dev')
-        \\      build               Run build script (alias for 'run build')
-        \\      test                Run test script (alias for 'run test')
-        \\      px                  Execute a package binary
-        \\      scripts             List available scripts
-        \\
-        \\    Publishing:
-        \\      publish             Publish package to npm (supports OIDC)
-        \\      registry:publish    Publish package to Pantry registry (S3)
-        \\      publisher:add       Add a trusted publisher (OIDC)
-        \\      publisher:list      List trusted publishers
-        \\      publisher:remove    Remove a trusted publisher
-        \\
-        \\    Security:
-        \\      audit               Check for security vulnerabilities
-        \\      verify              Verify package signatures
-        \\      sign                Sign a package
-        \\      generate-key        Generate signing key pair
-        \\      oidc setup          Setup npm trusted publisher
-        \\
-        \\    Project:
-        \\      init                Initialize a new project
-        \\      doctor              Check system health
-        \\      dedupe              Deduplicate dependencies
-        \\      clean               Clean project artifacts
-        \\      bootstrap           Bootstrap pantry installation
-        \\
-        \\    Services:
-        \\      services            List all services
-        \\      start               Start a service
-        \\      stop                Stop a service
-        \\      restart             Restart a service
-        \\      status              Show service status
-        \\      enable              Enable a service
-        \\      disable             Disable a service
-        \\
-        \\    Cache:
-        \\      cache:stats         Show cache statistics
-        \\      cache:clear         Clear the cache
-        \\      cache:clean         Remove stale cache entries
-        \\
-        \\    Environment:
-        \\      env:list            List project environments
-        \\      env:inspect         Inspect environment details
-        \\      env:clean           Clean stale environments
-        \\      env:remove          Remove an environment
-        \\
-        \\    Shell:
-        \\      shell:integrate     Integrate with shell
-        \\      shell:lookup        Lookup shell configuration
-        \\      shell:activate      Activate shell integration
-        \\      dev:shellcode       Generate shell integration code
-        \\
-        \\    Shims:
-        \\      shim                Create a shim for a command
-        \\      shim:list           List all shims
-        \\      shim:remove         Remove a shim
-        \\
-        \\    Other:
-        \\      whoami              Show current user
-        \\      help                Show this help message
-        \\      version             Show version information
-        \\
-        \\  GLOBAL OPTIONS:
-        \\      -h, --help          Show help information
-        \\      -V, --version       Show version information
-        \\
-        \\  EXAMPLES:
-        \\      pantry install                  Install all dependencies
-        \\      pantry add lodash               Add lodash to dependencies
-        \\      pantry add -D typescript        Add typescript to devDependencies
-        \\      pantry run build                Run the build script
-        \\      pantry publish                  Publish with OIDC (in CI/CD)
-        \\
-        \\  For more info on a command: pantry <command> --help
-        \\
-    , .{version_options.version});
+    // Header
+    std.debug.print("\n  " ++ Color.bold_teal ++ "pantry" ++ Color.reset ++ " {s} - Modern dependency manager\n\n", .{version_options.version});
+
+    // Usage
+    std.debug.print("  " ++ Color.bold ++ "USAGE:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      pantry <command> [options] [arguments]\n\n", .{});
+
+    // Commands
+    std.debug.print("  " ++ Color.bold ++ "COMMANDS:" ++ Color.reset ++ "\n\n", .{});
+
+    // Package Management
+    std.debug.print("    " ++ Color.teal ++ "Package Management:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "install" ++ Color.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "add" ++ Color.reset ++ "                 Add and install new packages\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "remove" ++ Color.reset ++ ", rm          Remove packages\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "update" ++ Color.reset ++ "              Update packages to latest versions\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "outdated" ++ Color.reset ++ "            Check for outdated dependencies\n\n", .{});
+
+    // Package Info
+    std.debug.print("    " ++ Color.teal ++ "Package Info:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "list" ++ Color.reset ++ ", ls            List installed packages\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "tree" ++ Color.reset ++ "                Show dependency tree\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "why" ++ Color.reset ++ "                 Explain why a package is installed\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "search" ++ Color.reset ++ "              Search for packages in registry\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "info" ++ Color.reset ++ "                Show package information\n\n", .{});
+
+    // Scripts
+    std.debug.print("    " ++ Color.teal ++ "Scripts:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "run" ++ Color.reset ++ "                 Run a script from package.json\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "dev" ++ Color.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "build" ++ Color.reset ++ "               Run build script (alias for 'run build')\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "test" ++ Color.reset ++ "                Run test script (alias for 'run test')\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "px" ++ Color.reset ++ "                  Execute a package binary\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "scripts" ++ Color.reset ++ "             List available scripts\n\n", .{});
+
+    // Publishing
+    std.debug.print("    " ++ Color.teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "publish" ++ Color.reset ++ "             Publish package to npm (supports OIDC)\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "registry:publish" ++ Color.reset ++ "    Publish package to Pantry registry (S3)\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
+
+    // Security
+    std.debug.print("    " ++ Color.teal ++ "Security:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "audit" ++ Color.reset ++ "               Check for security vulnerabilities\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "verify" ++ Color.reset ++ "              Verify package signatures\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "sign" ++ Color.reset ++ "                Sign a package\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "generate-key" ++ Color.reset ++ "        Generate signing key pair\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "oidc setup" ++ Color.reset ++ "          Setup npm trusted publisher\n\n", .{});
+
+    // Project
+    std.debug.print("    " ++ Color.teal ++ "Project:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "init" ++ Color.reset ++ "                Initialize a new project\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "doctor" ++ Color.reset ++ "              Check system health\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "dedupe" ++ Color.reset ++ "              Deduplicate dependencies\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "clean" ++ Color.reset ++ "               Clean project artifacts\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "bootstrap" ++ Color.reset ++ "           Bootstrap pantry installation\n\n", .{});
+
+    // Services
+    std.debug.print("    " ++ Color.teal ++ "Services:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "services" ++ Color.reset ++ "            List all services\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "start" ++ Color.reset ++ "               Start a service\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "stop" ++ Color.reset ++ "                Stop a service\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "restart" ++ Color.reset ++ "             Restart a service\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "status" ++ Color.reset ++ "              Show service status\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "enable" ++ Color.reset ++ "              Enable a service\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "disable" ++ Color.reset ++ "             Disable a service\n\n", .{});
+
+    // Cache
+    std.debug.print("    " ++ Color.teal ++ "Cache:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "cache:stats" ++ Color.reset ++ "         Show cache statistics\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "cache:clear" ++ Color.reset ++ "         Clear the cache\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "cache:clean" ++ Color.reset ++ "         Remove stale cache entries\n\n", .{});
+
+    // Environment
+    std.debug.print("    " ++ Color.teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "env:list" ++ Color.reset ++ "            List project environments\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "env:inspect" ++ Color.reset ++ "         Inspect environment details\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
+
+    // Shell
+    std.debug.print("    " ++ Color.teal ++ "Shell:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "shell:integrate" ++ Color.reset ++ "     Integrate with shell\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "shell:lookup" ++ Color.reset ++ "        Lookup shell configuration\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "shell:activate" ++ Color.reset ++ "      Activate shell integration\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
+
+    // Shims
+    std.debug.print("    " ++ Color.teal ++ "Shims:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "shim" ++ Color.reset ++ "                Create a shim for a command\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "shim:list" ++ Color.reset ++ "           List all shims\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "shim:remove" ++ Color.reset ++ "         Remove a shim\n\n", .{});
+
+    // Other
+    std.debug.print("    " ++ Color.teal ++ "Other:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "whoami" ++ Color.reset ++ "              Show current user\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "help" ++ Color.reset ++ "                Show this help message\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "version" ++ Color.reset ++ "             Show version information\n\n", .{});
+
+    // Global Options
+    std.debug.print("  " ++ Color.bold ++ "GLOBAL OPTIONS:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "-h" ++ Color.reset ++ ", " ++ Color.bold_teal ++ "--help" ++ Color.reset ++ "          Show help information\n", .{});
+    std.debug.print("      " ++ Color.bold_teal ++ "-V" ++ Color.reset ++ ", " ++ Color.bold_teal ++ "--version" ++ Color.reset ++ "       Show version information\n\n", .{});
+
+    // Examples
+    std.debug.print("  " ++ Color.bold ++ "EXAMPLES:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.dim ++ "pantry install" ++ Color.reset ++ "                  Install all dependencies\n", .{});
+    std.debug.print("      " ++ Color.dim ++ "pantry add lodash" ++ Color.reset ++ "               Add lodash to dependencies\n", .{});
+    std.debug.print("      " ++ Color.dim ++ "pantry add -D typescript" ++ Color.reset ++ "        Add typescript to devDependencies\n", .{});
+    std.debug.print("      " ++ Color.dim ++ "pantry run build" ++ Color.reset ++ "                Run the build script\n", .{});
+    std.debug.print("      " ++ Color.dim ++ "pantry publish" ++ Color.reset ++ "                  Publish with OIDC (in CI/CD)\n\n", .{});
+
+    std.debug.print("  " ++ Color.dim ++ "For more info on a command: pantry <command> --help" ++ Color.reset ++ "\n\n", .{});
 }
 
 /// Help command action
