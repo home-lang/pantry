@@ -277,20 +277,39 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
     std.debug.print("Package: {s}@{s}\n", .{ name, version });
     std.debug.print("Registry: {s}\n", .{options.registry});
 
+    // Check if we have AWS credentials for direct S3 upload
+    const aws_key = std.posix.getenv("AWS_ACCESS_KEY_ID");
+    const has_aws_creds = aws_key != null or awsCredentialsFileExists();
+
     // Get auth token (from options, env, or ~/.pantry/credentials)
-    const token = options.token orelse
-        std.process.getEnvVarOwned(allocator, "PANTRY_REGISTRY_TOKEN") catch
-        readPantryToken(allocator) catch {
+    // Token is optional if we have AWS credentials for direct S3 upload
+    var token: ?[]const u8 = options.token;
+    var token_owned = false;
+    if (token == null) {
+        token = std.process.getEnvVarOwned(allocator, "PANTRY_REGISTRY_TOKEN") catch null;
+        if (token != null) token_owned = true;
+    }
+    if (token == null) {
+        token = readPantryToken(allocator) catch null;
+        if (token != null) token_owned = true;
+    }
+    defer if (token_owned and token != null) allocator.free(token.?);
+
+    // If no AWS credentials and no token, error out
+    if (!has_aws_creds and token == null) {
         return CommandResult.err(
             allocator,
-            \\Error: No authentication token found.
+            \\Error: No authentication found.
             \\
-            \\Set PANTRY_REGISTRY_TOKEN environment variable or add to ~/.pantry/credentials:
-            \\  PANTRY_TOKEN=your_token
+            \\For direct S3 upload, configure AWS credentials in ~/.aws/credentials
+            \\Or set PANTRY_REGISTRY_TOKEN for HTTP upload to registry server.
             ,
         );
-    };
-    defer if (options.token == null) allocator.free(token);
+    }
+
+    if (has_aws_creds) {
+        std.debug.print("Using direct S3 upload (AWS credentials found)\n", .{});
+    }
 
     if (options.dry_run) {
         std.debug.print("\n[DRY RUN] Would publish {s}@{s} to {s}\n", .{ name, version, options.registry });
@@ -314,7 +333,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
     // Upload to registry
     std.debug.print("Uploading to registry...\n", .{});
 
-    const result = uploadToRegistry(allocator, options.registry, name, version, tarball_data, token, config_content) catch |err| {
+    const result = uploadToRegistry(allocator, options.registry, name, version, tarball_data, token orelse "", config_content) catch |err| {
         const err_msg = try std.fmt.allocPrint(allocator, "Error: Failed to upload to registry: {any}", .{err});
         return CommandResult.err(allocator, err_msg);
     };
@@ -443,7 +462,7 @@ fn createTarball(
     return tarball_path;
 }
 
-/// Upload tarball to Pantry registry using curl with multipart form
+/// Upload tarball to Pantry registry - direct S3 upload or via HTTP
 fn uploadToRegistry(
     allocator: std.mem.Allocator,
     registry_url: []const u8,
@@ -453,9 +472,130 @@ fn uploadToRegistry(
     token: []const u8,
     metadata_json: []const u8,
 ) ![]const u8 {
-    _ = name;
-    _ = version;
+    // Check if we should use direct S3 upload (AWS credentials available)
+    const aws_key = std.posix.getenv("AWS_ACCESS_KEY_ID");
+    const has_aws_creds = aws_key != null or awsCredentialsFileExists();
 
+    if (has_aws_creds) {
+        return uploadToS3Direct(allocator, name, version, tarball_data, metadata_json);
+    }
+
+    // Fall back to HTTP upload via registry server
+    return uploadViaHttp(allocator, registry_url, tarball_data, token, metadata_json);
+}
+
+/// Check if ~/.aws/credentials file exists
+fn awsCredentialsFileExists() bool {
+    const home = std.posix.getenv("HOME") orelse return false;
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const creds_path = std.fmt.bufPrint(&path_buf, "{s}/.aws/credentials", .{home}) catch return false;
+    io_helper.accessAbsolute(creds_path, .{}) catch return false;
+    return true;
+}
+
+/// Upload directly to S3 using AWS CLI
+fn uploadToS3Direct(
+    allocator: std.mem.Allocator,
+    name: []const u8,
+    version: []const u8,
+    tarball_data: []const u8,
+    metadata_json: []const u8,
+) ![]const u8 {
+    const bucket = "pantry-registry";
+    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+
+    // Sanitize package name for S3 key
+    var sanitized_name = try allocator.alloc(u8, name.len);
+    defer allocator.free(sanitized_name);
+    for (name, 0..) |c, i| {
+        sanitized_name[i] = if (c == '@' or c == '/') '-' else c;
+    }
+    const clean_name = if (sanitized_name[0] == '-') sanitized_name[1..] else sanitized_name;
+
+    // Build tarball filename and S3 key
+    const tarball_filename = try std.fmt.allocPrint(allocator, "{s}-{s}.tgz", .{ clean_name, version });
+    defer allocator.free(tarball_filename);
+
+    const tarball_key = try std.fmt.allocPrint(allocator, "packages/{s}/{s}/{s}", .{ clean_name, version, tarball_filename });
+    defer allocator.free(tarball_key);
+
+    const metadata_key = try std.fmt.allocPrint(allocator, "packages/{s}/metadata.json", .{clean_name});
+    defer allocator.free(metadata_key);
+
+    // Write tarball to temp file
+    const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_filename });
+    defer allocator.free(tarball_tmp);
+
+    const file = try io_helper.cwd().createFile(io_helper.io, tarball_tmp, .{});
+    try io_helper.writeAllToFile(file, tarball_data);
+    file.close(io_helper.io);
+    defer io_helper.deleteFile(tarball_tmp) catch {};
+
+    // Write metadata to temp file
+    const metadata_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "metadata.json" });
+    defer allocator.free(metadata_tmp);
+
+    const meta_file = try io_helper.cwd().createFile(io_helper.io, metadata_tmp, .{});
+    try io_helper.writeAllToFile(meta_file, metadata_json);
+    meta_file.close(io_helper.io);
+    defer io_helper.deleteFile(metadata_tmp) catch {};
+
+    // Upload tarball to S3
+    const s3_tarball_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, tarball_key });
+    defer allocator.free(s3_tarball_uri);
+
+    std.debug.print("  Uploading tarball to S3...\n", .{});
+    const tarball_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "aws",
+        "s3",
+        "cp",
+        tarball_tmp,
+        s3_tarball_uri,
+        "--content-type",
+        "application/gzip",
+    });
+    defer allocator.free(tarball_result.stdout);
+    defer allocator.free(tarball_result.stderr);
+
+    if (tarball_result.term != .Exited or tarball_result.term.Exited != 0) {
+        std.debug.print("S3 upload failed: {s}\n", .{tarball_result.stderr});
+        return error.UploadFailed;
+    }
+
+    // Upload metadata to S3
+    const s3_metadata_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, metadata_key });
+    defer allocator.free(s3_metadata_uri);
+
+    std.debug.print("  Uploading metadata to S3...\n", .{});
+    const metadata_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "aws",
+        "s3",
+        "cp",
+        metadata_tmp,
+        s3_metadata_uri,
+        "--content-type",
+        "application/json",
+    });
+    defer allocator.free(metadata_result.stdout);
+    defer allocator.free(metadata_result.stderr);
+
+    if (metadata_result.term != .Exited or metadata_result.term.Exited != 0) {
+        std.debug.print("S3 metadata upload failed: {s}\n", .{metadata_result.stderr});
+        return error.UploadFailed;
+    }
+
+    const success_msg = try std.fmt.allocPrint(allocator, "Published to s3://{s}/{s}", .{ bucket, tarball_key });
+    return success_msg;
+}
+
+/// Upload via HTTP to registry server
+fn uploadViaHttp(
+    allocator: std.mem.Allocator,
+    registry_url: []const u8,
+    tarball_data: []const u8,
+    token: []const u8,
+    metadata_json: []const u8,
+) ![]const u8 {
     // Write tarball to temp file for curl to read
     const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
     const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-upload.tgz" });
