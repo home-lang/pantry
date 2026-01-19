@@ -151,6 +151,7 @@ pub const RecoverySuggestion = struct {
         corrupted,
         missing_dependency,
         version_conflict,
+        package_not_found,
         unknown,
     };
 
@@ -216,6 +217,16 @@ pub const RecoverySuggestion = struct {
                     "Consider using version ranges instead of exact versions",
                 },
             },
+            .package_not_found => .{
+                .error_type = .package_not_found,
+                .message = "Package not found in registry",
+                .suggestions = &[_][]const u8{
+                    "This package may be an npm package (not yet supported)",
+                    "Try 'pantry search <name>' to find available packages",
+                    "Check spelling of the package name",
+                    "For npm packages, use: bun install <package> (for now)",
+                },
+            },
             .unknown => .{
                 .error_type = .unknown,
                 .message = context,
@@ -249,6 +260,9 @@ pub const RecoverySuggestion = struct {
             error.Unexpected,
             error.EndOfStream,
             => .corrupted,
+
+            error.PackageNotFound,
+            => .package_not_found,
 
             else => .unknown,
         };

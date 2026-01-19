@@ -122,16 +122,15 @@ pub fn installSinglePackage(
     } else blk: {
         // Regular registry package
         if (pkg_info == null) {
-            const error_msg = try std.fmt.allocPrint(
-                allocator,
-                "Package '{s}' not found in registry. Try: pantry search {s}",
-                .{ dep.name, dep.name },
-            );
             return .{
                 .name = dep.name,
                 .version = dep.version,
                 .success = false,
-                .error_msg = error_msg,
+                .error_msg = try std.fmt.allocPrint(
+                    allocator,
+                    "not found in registry (npm packages not yet supported). Try: pantry search {s}",
+                    .{dep.name},
+                ),
                 .install_time_ms = 0,
             };
         }
@@ -205,15 +204,22 @@ pub fn installSinglePackage(
         );
         defer if (suggestion.message.len > 0) allocator.free(suggestion.message);
 
-        if (!options.quiet) {
+        // Always print suggestions for package not found (even in quiet mode)
+        const is_package_not_found = switch (err) {
+            error.PackageNotFound => true,
+            else => false,
+        };
+
+        if (!options.quiet or is_package_not_found) {
             suggestion.print();
         }
 
-        const error_msg = try std.fmt.allocPrint(
-            allocator,
-            "failed: {}",
-            .{err},
-        );
+        // Provide human-readable error messages
+        const error_msg = if (is_package_not_found)
+            try std.fmt.allocPrint(allocator, "not found in registry (npm packages not yet supported)", .{})
+        else
+            try std.fmt.allocPrint(allocator, "failed: {}", .{err});
+
         return .{
             .name = dep.name,
             .version = dep.version,

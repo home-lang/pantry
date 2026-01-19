@@ -632,7 +632,21 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .project_root = project_root,
             .quiet = true, // Enable quiet mode for clean output
         }) catch |err| {
-            std.debug.print("{s}✗{s} {s}@{s} {s}({any}){s}\n", .{ red, reset, name, version, dim, err, reset });
+            // Provide friendly error messages
+            const error_msg = switch (err) {
+                error.PackageNotFound => "not found in registry (npm packages not yet supported)",
+                else => @errorName(err),
+            };
+            std.debug.print("{s}✗{s} {s}@{s} {s}({s}){s}\n", .{ red, reset, name, version, dim, error_msg, reset });
+
+            // Show helpful suggestions for PackageNotFound
+            if (err == error.PackageNotFound) {
+                std.debug.print("\n{s}💡 Suggestions:{s}\n", .{ "\x1b[33m", reset });
+                std.debug.print("   1. This package may be an npm package (not yet supported)\n", .{});
+                std.debug.print("   2. Try 'pantry search {s}' to find available packages\n", .{name});
+                std.debug.print("   3. For npm packages, use: bun install {s} (for now)\n\n", .{name});
+            }
+
             failed_count += 1;
             continue;
         };

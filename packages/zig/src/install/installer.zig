@@ -154,10 +154,17 @@ pub const Installer = struct {
             return try self.installFromZiglang(spec, options);
         }
 
-        // Check if package exists in global cache (filesystem check, not in-memory cache)
+        // Check if package exists in registry
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
-        const domain = if (pkg_info) |info| info.domain else spec.name;
+
+        // If package is not in registry, return error immediately
+        // (npm packages and other non-pkgx packages are not yet supported)
+        if (pkg_info == null) {
+            return error.PackageNotFound;
+        }
+
+        const domain = pkg_info.?.domain;
 
         // Resolve version constraint to actual version
         var resolved_spec = spec;
