@@ -1,0 +1,14 @@
+{
+  "name": "@pantry/registry-app",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Pantry registry test application using ts-cloud",
+  "scripts": {
+    "test:s3": "bun run test-s3.ts",
+    "test:bucket": "bun run test-s3.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
