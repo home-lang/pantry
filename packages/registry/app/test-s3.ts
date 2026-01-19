@@ -8,8 +8,7 @@
  *   - AWS_REGION (optional, defaults to us-east-1)
  */
 
-// Import directly from ts-cloud source
-import { S3Client } from '/Users/glennmichaeltorregosa/Documents/Projects/ts-cloud/packages/ts-cloud/src/aws/s3'
+import { S3Client } from 'ts-cloud/aws'
 
 const BUCKET_NAME = 'pantry-registry'
 const REGION = process.env.AWS_REGION || 'us-east-1'

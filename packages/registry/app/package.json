@@ -7,7 +7,9 @@
     "test:s3": "bun run test-s3.ts",
     "test:bucket": "bun run test-s3.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ts-cloud": "link:ts-cloud"
+  },
   "devDependencies": {
     "bun-types": "latest"
   }
