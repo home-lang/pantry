@@ -1607,100 +1607,100 @@ fn printHelp() void {
     std.debug.print("  " ++ Color.bold ++ "COMMANDS:" ++ Color.reset ++ "\n\n", .{});
 
     // Package Management
-    std.debug.print("    " ++ Color.teal ++ "Package Management:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "install" ++ Color.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "add" ++ Color.reset ++ "                 Add and install new packages\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "remove" ++ Color.reset ++ ", rm          Remove packages\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "update" ++ Color.reset ++ "              Update packages to latest versions\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "outdated" ++ Color.reset ++ "            Check for outdated dependencies\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Package Management:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "install" ++ Color.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "add" ++ Color.reset ++ "                 Add and install new packages\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "remove" ++ Color.reset ++ ", rm          Remove packages\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "update" ++ Color.reset ++ "              Update packages to latest versions\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "outdated" ++ Color.reset ++ "            Check for outdated dependencies\n\n", .{});
 
     // Package Info
-    std.debug.print("    " ++ Color.teal ++ "Package Info:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "list" ++ Color.reset ++ ", ls            List installed packages\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "tree" ++ Color.reset ++ "                Show dependency tree\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "why" ++ Color.reset ++ "                 Explain why a package is installed\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "search" ++ Color.reset ++ "              Search for packages in registry\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "info" ++ Color.reset ++ "                Show package information\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Package Info:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "list" ++ Color.reset ++ ", ls            List installed packages\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "tree" ++ Color.reset ++ "                Show dependency tree\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "why" ++ Color.reset ++ "                 Explain why a package is installed\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "search" ++ Color.reset ++ "              Search for packages in registry\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "info" ++ Color.reset ++ "                Show package information\n\n", .{});
 
     // Scripts
-    std.debug.print("    " ++ Color.teal ++ "Scripts:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "run" ++ Color.reset ++ "                 Run a script from package.json\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "dev" ++ Color.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "build" ++ Color.reset ++ "               Run build script (alias for 'run build')\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "test" ++ Color.reset ++ "                Run test script (alias for 'run test')\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "px" ++ Color.reset ++ "                  Execute a package binary\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "scripts" ++ Color.reset ++ "             List available scripts\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Scripts:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "run" ++ Color.reset ++ "                 Run a script from package.json\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "dev" ++ Color.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "build" ++ Color.reset ++ "               Run build script (alias for 'run build')\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "test" ++ Color.reset ++ "                Run test script (alias for 'run test')\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "px" ++ Color.reset ++ "                  Execute a package binary\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "scripts" ++ Color.reset ++ "             List available scripts\n\n", .{});
 
     // Publishing
-    std.debug.print("    " ++ Color.teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "publish" ++ Color.reset ++ "             Publish package to npm (supports OIDC)\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "registry:publish" ++ Color.reset ++ "    Publish package to Pantry registry (S3)\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "publish" ++ Color.reset ++ "             Publish package to npm (supports OIDC)\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "registry:publish" ++ Color.reset ++ "    Publish package to Pantry registry (S3)\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
 
     // Security
-    std.debug.print("    " ++ Color.teal ++ "Security:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "audit" ++ Color.reset ++ "               Check for security vulnerabilities\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "verify" ++ Color.reset ++ "              Verify package signatures\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "sign" ++ Color.reset ++ "                Sign a package\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "generate-key" ++ Color.reset ++ "        Generate signing key pair\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "oidc setup" ++ Color.reset ++ "          Setup npm trusted publisher\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Security:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "audit" ++ Color.reset ++ "               Check for security vulnerabilities\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "verify" ++ Color.reset ++ "              Verify package signatures\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "sign" ++ Color.reset ++ "                Sign a package\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "generate-key" ++ Color.reset ++ "        Generate signing key pair\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "oidc setup" ++ Color.reset ++ "          Setup npm trusted publisher\n\n", .{});
 
     // Project
-    std.debug.print("    " ++ Color.teal ++ "Project:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "init" ++ Color.reset ++ "                Initialize a new project\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "doctor" ++ Color.reset ++ "              Check system health\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "dedupe" ++ Color.reset ++ "              Deduplicate dependencies\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "clean" ++ Color.reset ++ "               Clean project artifacts\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "bootstrap" ++ Color.reset ++ "           Bootstrap pantry installation\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Project:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "init" ++ Color.reset ++ "                Initialize a new project\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "doctor" ++ Color.reset ++ "              Check system health\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "dedupe" ++ Color.reset ++ "              Deduplicate dependencies\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "clean" ++ Color.reset ++ "               Clean project artifacts\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "bootstrap" ++ Color.reset ++ "           Bootstrap pantry installation\n\n", .{});
 
     // Services
-    std.debug.print("    " ++ Color.teal ++ "Services:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "services" ++ Color.reset ++ "            List all services\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "start" ++ Color.reset ++ "               Start a service\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "stop" ++ Color.reset ++ "                Stop a service\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "restart" ++ Color.reset ++ "             Restart a service\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "status" ++ Color.reset ++ "              Show service status\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "enable" ++ Color.reset ++ "              Enable a service\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "disable" ++ Color.reset ++ "             Disable a service\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Services:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "services" ++ Color.reset ++ "            List all services\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "start" ++ Color.reset ++ "               Start a service\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "stop" ++ Color.reset ++ "                Stop a service\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "restart" ++ Color.reset ++ "             Restart a service\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "status" ++ Color.reset ++ "              Show service status\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "enable" ++ Color.reset ++ "              Enable a service\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "disable" ++ Color.reset ++ "             Disable a service\n\n", .{});
 
     // Cache
-    std.debug.print("    " ++ Color.teal ++ "Cache:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "cache:stats" ++ Color.reset ++ "         Show cache statistics\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "cache:clear" ++ Color.reset ++ "         Clear the cache\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "cache:clean" ++ Color.reset ++ "         Remove stale cache entries\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Cache:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "cache:stats" ++ Color.reset ++ "         Show cache statistics\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "cache:clear" ++ Color.reset ++ "         Clear the cache\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "cache:clean" ++ Color.reset ++ "         Remove stale cache entries\n\n", .{});
 
     // Environment
-    std.debug.print("    " ++ Color.teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "env:list" ++ Color.reset ++ "            List project environments\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "env:inspect" ++ Color.reset ++ "         Inspect environment details\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "env:list" ++ Color.reset ++ "            List project environments\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "env:inspect" ++ Color.reset ++ "         Inspect environment details\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
 
     // Shell
-    std.debug.print("    " ++ Color.teal ++ "Shell:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "shell:integrate" ++ Color.reset ++ "     Integrate with shell\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "shell:lookup" ++ Color.reset ++ "        Lookup shell configuration\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "shell:activate" ++ Color.reset ++ "      Activate shell integration\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Shell:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shell:integrate" ++ Color.reset ++ "     Integrate with shell\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shell:lookup" ++ Color.reset ++ "        Lookup shell configuration\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shell:activate" ++ Color.reset ++ "      Activate shell integration\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
 
     // Shims
-    std.debug.print("    " ++ Color.teal ++ "Shims:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "shim" ++ Color.reset ++ "                Create a shim for a command\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "shim:list" ++ Color.reset ++ "           List all shims\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "shim:remove" ++ Color.reset ++ "         Remove a shim\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Shims:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shim" ++ Color.reset ++ "                Create a shim for a command\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shim:list" ++ Color.reset ++ "           List all shims\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shim:remove" ++ Color.reset ++ "         Remove a shim\n\n", .{});
 
     // Other
-    std.debug.print("    " ++ Color.teal ++ "Other:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "whoami" ++ Color.reset ++ "              Show current user\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "help" ++ Color.reset ++ "                Show this help message\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "version" ++ Color.reset ++ "             Show version information\n\n", .{});
+    std.debug.print("    " ++ Color.bold_teal ++ "Other:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "whoami" ++ Color.reset ++ "              Show current user\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "help" ++ Color.reset ++ "                Show this help message\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "version" ++ Color.reset ++ "             Show version information\n\n", .{});
 
     // Global Options
     std.debug.print("  " ++ Color.bold ++ "GLOBAL OPTIONS:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "-h" ++ Color.reset ++ ", " ++ Color.bold_teal ++ "--help" ++ Color.reset ++ "          Show help information\n", .{});
-    std.debug.print("      " ++ Color.bold_teal ++ "-V" ++ Color.reset ++ ", " ++ Color.bold_teal ++ "--version" ++ Color.reset ++ "       Show version information\n\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "-h" ++ Color.reset ++ ", " ++ Color.teal ++ "--help" ++ Color.reset ++ "          Show help information\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "-V" ++ Color.reset ++ ", " ++ Color.teal ++ "--version" ++ Color.reset ++ "       Show version information\n\n", .{});
 
     // Examples
     std.debug.print("  " ++ Color.bold ++ "EXAMPLES:" ++ Color.reset ++ "\n", .{});
