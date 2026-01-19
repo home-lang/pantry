@@ -2,16 +2,14 @@
  * Pantry Registry S3 Connection Test
  *
  * Tests connection to the pantry-registry S3 bucket using ts-cloud.
- * Credentials are loaded from (in order):
- *   1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
- *   2. ~/.aws/credentials file (uses AWS_PROFILE or 'default')
- *   3. EC2 instance metadata (when running on EC2)
+ * Credentials and region are loaded from ~/.aws/credentials and ~/.aws/config
  */
 
 import { S3Client } from 'ts-cloud/aws'
+import { getAWSRegion } from './aws-config'
 
 const BUCKET_NAME = 'pantry-registry'
-const REGION = process.env.AWS_REGION || 'us-east-1'
+const REGION = getAWSRegion()
 
 async function testS3Connection(): Promise<void> {
   console.log('='.repeat(50))

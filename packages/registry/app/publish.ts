@@ -7,7 +7,8 @@
 
 import { existsSync, readFileSync, statSync, unlinkSync } from 'node:fs'
 import { join, basename } from 'node:path'
-import { S3Client } from 'ts-cloud/aws'
+import { S3Client, DynamoDBClient } from 'ts-cloud/aws'
+import { getAWSRegion } from './aws-config'
 
 // Import pack function
 import { spawn } from 'node:child_process'
@@ -24,7 +25,8 @@ interface PackageJson {
 }
 
 const BUCKET_NAME = 'pantry-registry'
-const REGION = process.env.AWS_REGION || 'us-east-1'
+const TABLE_NAME = 'pantry-packages'
+const REGION = getAWSRegion()
 
 async function publish(targetDir: string = process.cwd()): Promise<void> {
   console.log('🚀 Pantry Publish')
@@ -113,6 +115,48 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
       contentType: 'application/json',
     })
     console.log(`   ✓ Updated ${metadataKey}`)
+
+    // Also update DynamoDB index for package lookup
+    console.log()
+    console.log('📊 Updating registry index...')
+    const dynamodb = new DynamoDBClient(REGION)
+
+    const dbRecord = {
+      packageName: packageJson.name,
+      safeName,
+      s3Path: s3Key,
+      latestVersion: packageJson.version,
+      description: packageJson.description || '',
+      author: typeof packageJson.author === 'string'
+        ? packageJson.author
+        : packageJson.author?.name || '',
+      license: packageJson.license || '',
+      keywords: packageJson.keywords || [],
+      repository: typeof packageJson.repository === 'string'
+        ? packageJson.repository
+        : packageJson.repository?.url || '',
+      homepage: packageJson.homepage || '',
+      updatedAt: new Date().toISOString(),
+    }
+
+    // Check if package exists to preserve createdAt
+    const existingItem = await dynamodb.getItem({
+      TableName: TABLE_NAME,
+      Key: { packageName: { S: packageJson.name } },
+    })
+
+    if (!existingItem.Item) {
+      (dbRecord as any).createdAt = new Date().toISOString()
+    } else {
+      const existing = DynamoDBClient.unmarshal(existingItem.Item)
+      (dbRecord as any).createdAt = existing.createdAt || new Date().toISOString()
+    }
+
+    await dynamodb.putItem({
+      TableName: TABLE_NAME,
+      Item: DynamoDBClient.marshal(dbRecord),
+    })
+    console.log(`   ✓ Updated registry index for ${packageJson.name}`)
   } catch (err) {
     console.error(`   ❌ Upload failed: ${err}`)
     process.exit(1)
@@ -134,6 +178,10 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
   console.log()
   console.log(`   📦 ${packageJson.name}@${packageJson.version}`)
   console.log(`   🔗 s3://${BUCKET_NAME}/${s3Key}`)
+  console.log(`   📊 Indexed in ${TABLE_NAME}`)
+  console.log()
+  console.log('Install with:')
+  console.log(`   pantry install ${packageJson.name}`)
   console.log()
 }
 
@@ -164,7 +212,15 @@ async function getOrCreateMetadata(
 
   try {
     const existing = await s3.getObject(BUCKET_NAME, metadataKey)
-    return JSON.parse(existing)
+    const parsed = JSON.parse(existing)
+
+    // Check if it's valid metadata format (has versions field)
+    if (parsed.versions && typeof parsed.versions === 'object') {
+      return parsed as PackageMetadata
+    }
+
+    // Invalid format, create new metadata
+    throw new Error('Invalid metadata format')
   } catch {
     // Create new metadata
     const author = typeof packageJson.author === 'string'

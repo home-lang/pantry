@@ -6,8 +6,10 @@
   "scripts": {
     "test:s3": "bun run test-s3.ts",
     "test:bucket": "bun run test-s3.ts",
+    "test:dynamodb": "bun run test-dynamodb.ts",
     "pack": "bun run pack.ts",
-    "publish": "bun run publish.ts"
+    "publish": "bun run publish.ts",
+    "lookup": "bun run lookup.ts"
   },
   "dependencies": {
     "ts-cloud": "link:ts-cloud"
