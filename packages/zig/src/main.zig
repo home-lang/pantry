@@ -1588,28 +1588,28 @@ fn printVersion() void {
 fn printHelp() void {
     std.debug.print(
         \\
-        \\  \x1b[1;36mpantry\x1b[0m {s} - Modern dependency manager
+        \\  pantry {s} - Modern dependency manager
         \\
-        \\  \x1b[1mUSAGE:\x1b[0m
+        \\  USAGE:
         \\      pantry <command> [options] [arguments]
         \\
-        \\  \x1b[1mCOMMANDS:\x1b[0m
+        \\  COMMANDS:
         \\
-        \\    \x1b[33mPackage Management:\x1b[0m
+        \\    Package Management:
         \\      install, i          Install packages from pantry.json/package.json
         \\      add                 Add and install new packages
         \\      remove, rm          Remove packages
         \\      update              Update packages to latest versions
         \\      outdated            Check for outdated dependencies
         \\
-        \\    \x1b[33mPackage Info:\x1b[0m
+        \\    Package Info:
         \\      list, ls            List installed packages
         \\      tree                Show dependency tree
         \\      why                 Explain why a package is installed
         \\      search              Search for packages in registry
         \\      info                Show package information
         \\
-        \\    \x1b[33mScripts:\x1b[0m
+        \\    Scripts:
         \\      run                 Run a script from package.json
         \\      dev                 Run development script (alias for 'run dev')
         \\      build               Run build script (alias for 'run build')
@@ -1617,28 +1617,28 @@ fn printHelp() void {
         \\      px                  Execute a package binary
         \\      scripts             List available scripts
         \\
-        \\    \x1b[33mPublishing:\x1b[0m
+        \\    Publishing:
         \\      publish             Publish package to npm (supports OIDC)
         \\      registry:publish    Publish package to Pantry registry (S3)
         \\      publisher:add       Add a trusted publisher (OIDC)
         \\      publisher:list      List trusted publishers
         \\      publisher:remove    Remove a trusted publisher
         \\
-        \\    \x1b[33mSecurity:\x1b[0m
+        \\    Security:
         \\      audit               Check for security vulnerabilities
         \\      verify              Verify package signatures
         \\      sign                Sign a package
         \\      generate-key        Generate signing key pair
         \\      oidc setup          Setup npm trusted publisher
         \\
-        \\    \x1b[33mProject:\x1b[0m
+        \\    Project:
         \\      init                Initialize a new project
         \\      doctor              Check system health
         \\      dedupe              Deduplicate dependencies
         \\      clean               Clean project artifacts
         \\      bootstrap           Bootstrap pantry installation
         \\
-        \\    \x1b[33mServices:\x1b[0m
+        \\    Services:
         \\      services            List all services
         \\      start               Start a service
         \\      stop                Stop a service
@@ -1647,45 +1647,45 @@ fn printHelp() void {
         \\      enable              Enable a service
         \\      disable             Disable a service
         \\
-        \\    \x1b[33mCache:\x1b[0m
+        \\    Cache:
         \\      cache:stats         Show cache statistics
         \\      cache:clear         Clear the cache
         \\      cache:clean         Remove stale cache entries
         \\
-        \\    \x1b[33mEnvironment:\x1b[0m
+        \\    Environment:
         \\      env:list            List project environments
         \\      env:inspect         Inspect environment details
         \\      env:clean           Clean stale environments
         \\      env:remove          Remove an environment
         \\
-        \\    \x1b[33mShell:\x1b[0m
+        \\    Shell:
         \\      shell:integrate     Integrate with shell
         \\      shell:lookup        Lookup shell configuration
         \\      shell:activate      Activate shell integration
         \\      dev:shellcode       Generate shell integration code
         \\
-        \\    \x1b[33mShims:\x1b[0m
+        \\    Shims:
         \\      shim                Create a shim for a command
         \\      shim:list           List all shims
         \\      shim:remove         Remove a shim
         \\
-        \\    \x1b[33mOther:\x1b[0m
+        \\    Other:
         \\      whoami              Show current user
         \\      help                Show this help message
         \\      version             Show version information
         \\
-        \\  \x1b[1mGLOBAL OPTIONS:\x1b[0m
+        \\  GLOBAL OPTIONS:
         \\      -h, --help          Show help information
         \\      -V, --version       Show version information
         \\
-        \\  \x1b[1mEXAMPLES:\x1b[0m
+        \\  EXAMPLES:
         \\      pantry install                  Install all dependencies
         \\      pantry add lodash               Add lodash to dependencies
         \\      pantry add -D typescript        Add typescript to devDependencies
         \\      pantry run build                Run the build script
         \\      pantry publish                  Publish with OIDC (in CI/CD)
         \\
-        \\  \x1b[2mFor more info on a command: pantry <command> --help\x1b[0m
+        \\  For more info on a command: pantry <command> --help
         \\
     , .{version_options.version});
 }
