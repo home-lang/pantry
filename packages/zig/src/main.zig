@@ -1611,6 +1611,9 @@ fn printHelp() void {
         \\
         \\    \x1b[33mScripts:\x1b[0m
         \\      run                 Run a script from package.json
+        \\      dev                 Run development script (alias for 'run dev')
+        \\      build               Run build script (alias for 'run build')
+        \\      test                Run test script (alias for 'run test')
         \\      px                  Execute a package binary
         \\      scripts             List available scripts
         \\
@@ -1625,6 +1628,7 @@ fn printHelp() void {
         \\      audit               Check for security vulnerabilities
         \\      verify              Verify package signatures
         \\      sign                Sign a package
+        \\      generate-key        Generate signing key pair
         \\      oidc setup          Setup npm trusted publisher
         \\
         \\    \x1b[33mProject:\x1b[0m
@@ -1632,6 +1636,16 @@ fn printHelp() void {
         \\      doctor              Check system health
         \\      dedupe              Deduplicate dependencies
         \\      clean               Clean project artifacts
+        \\      bootstrap           Bootstrap pantry installation
+        \\
+        \\    \x1b[33mServices:\x1b[0m
+        \\      services            List all services
+        \\      start               Start a service
+        \\      stop                Stop a service
+        \\      restart             Restart a service
+        \\      status              Show service status
+        \\      enable              Enable a service
+        \\      disable             Disable a service
         \\
         \\    \x1b[33mCache:\x1b[0m
         \\      cache:stats         Show cache statistics
@@ -1642,6 +1656,18 @@ fn printHelp() void {
         \\      env:list            List project environments
         \\      env:inspect         Inspect environment details
         \\      env:clean           Clean stale environments
+        \\      env:remove          Remove an environment
+        \\
+        \\    \x1b[33mShell:\x1b[0m
+        \\      shell:integrate     Integrate with shell
+        \\      shell:lookup        Lookup shell configuration
+        \\      shell:activate      Activate shell integration
+        \\      dev:shellcode       Generate shell integration code
+        \\
+        \\    \x1b[33mShims:\x1b[0m
+        \\      shim                Create a shim for a command
+        \\      shim:list           List all shims
+        \\      shim:remove         Remove a shim
         \\
         \\    \x1b[33mOther:\x1b[0m
         \\      whoami              Show current user
