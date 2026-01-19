@@ -2,10 +2,10 @@
  * Pantry Registry S3 Connection Test
  *
  * Tests connection to the pantry-registry S3 bucket using ts-cloud.
- * Requires AWS credentials to be set in environment variables:
- *   - AWS_ACCESS_KEY_ID
- *   - AWS_SECRET_ACCESS_KEY
- *   - AWS_REGION (optional, defaults to us-east-1)
+ * Credentials are loaded from (in order):
+ *   1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+ *   2. ~/.aws/credentials file (uses AWS_PROFILE or 'default')
+ *   3. EC2 instance metadata (when running on EC2)
  */
 
 import { S3Client } from 'ts-cloud/aws'
@@ -19,20 +19,7 @@ async function testS3Connection(): Promise<void> {
   console.log('='.repeat(50))
   console.log()
 
-  // Check for credentials
-  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-    console.error('Missing AWS credentials!')
-    console.error('Please set the following environment variables:')
-    console.error('  - AWS_ACCESS_KEY_ID')
-    console.error('  - AWS_SECRET_ACCESS_KEY')
-    console.error()
-    console.error('Example:')
-    console.error('  export AWS_ACCESS_KEY_ID="your-access-key"')
-    console.error('  export AWS_SECRET_ACCESS_KEY="your-secret-key"')
-    process.exit(1)
-  }
-
-  const s3 = new S3Client({ region: REGION })
+  const s3 = new S3Client(REGION)
 
   console.log(`Region: ${REGION}`)
   console.log(`Bucket: ${BUCKET_NAME}`)
@@ -47,7 +34,7 @@ async function testS3Connection(): Promise<void> {
     } else {
       console.log(`  ✗ Bucket "${BUCKET_NAME}" does not exist`)
       console.log('  Creating bucket...')
-      await s3.createBucket({ Bucket: BUCKET_NAME })
+      await s3.createBucket(BUCKET_NAME)
       console.log(`  ✓ Bucket "${BUCKET_NAME}" created`)
     }
   } catch (err) {
@@ -67,10 +54,10 @@ async function testS3Connection(): Promise<void> {
 
   try {
     await s3.putObject({
-      Bucket: BUCKET_NAME,
-      Key: testKey,
-      Body: testData,
-      ContentType: 'application/json',
+      bucket: BUCKET_NAME,
+      key: testKey,
+      body: testData,
+      contentType: 'application/json',
     })
     console.log(`  ✓ Successfully wrote "${testKey}"`)
   } catch (err) {
@@ -82,11 +69,7 @@ async function testS3Connection(): Promise<void> {
   // Test 3: Read the test object back
   console.log('[3/4] Reading test object...')
   try {
-    const response = await s3.getObject({
-      Bucket: BUCKET_NAME,
-      Key: testKey,
-    })
-    const body = await response.Body
+    const body = await s3.getObject(BUCKET_NAME, testKey)
     console.log(`  ✓ Successfully read "${testKey}"`)
     console.log(`  Content: ${body}`)
   } catch (err) {
@@ -98,10 +81,10 @@ async function testS3Connection(): Promise<void> {
   // Test 4: List bucket contents
   console.log('[4/4] Listing bucket contents...')
   try {
-    const objects = await s3.list({ Bucket: BUCKET_NAME, MaxKeys: 10 })
+    const objects = await s3.list({ bucket: BUCKET_NAME, maxKeys: 10 })
     console.log(`  ✓ Successfully listed bucket contents`)
-    console.log(`  Found ${objects.Contents?.length || 0} objects:`)
-    for (const obj of objects.Contents || []) {
+    console.log(`  Found ${objects?.length || 0} objects:`)
+    for (const obj of objects || []) {
       console.log(`    - ${obj.Key} (${obj.Size} bytes)`)
     }
   } catch (err) {
@@ -113,10 +96,7 @@ async function testS3Connection(): Promise<void> {
   // Cleanup: Delete test object
   console.log('Cleaning up test object...')
   try {
-    await s3.deleteObject({
-      Bucket: BUCKET_NAME,
-      Key: testKey,
-    })
+    await s3.deleteObject(BUCKET_NAME, testKey)
     console.log(`  ✓ Deleted "${testKey}"`)
   } catch (err) {
     console.log(`  ⚠ Could not delete test object: ${err}`)
