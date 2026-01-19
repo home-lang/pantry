@@ -617,6 +617,17 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     var success_count: usize = 0;
     var failed_count: usize = 0;
 
+    // Track successful installs for lockfile
+    const InstalledPkg = struct { name: []const u8, version: []const u8 };
+    var installed_packages = std.ArrayList(InstalledPkg){};
+    defer {
+        for (installed_packages.items) |pkg| {
+            allocator.free(pkg.name);
+            allocator.free(pkg.version);
+        }
+        installed_packages.deinit(allocator);
+    }
+
     for (args) |pkg_spec_str| {
         // Parse package spec (name@version)
         const at_pos = std.mem.indexOf(u8, pkg_spec_str, "@");
@@ -656,8 +667,48 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         defer result.deinit(allocator);
 
-        std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, name, version });
+        std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, name, result.version });
         success_count += 1;
+
+        // Track for lockfile
+        installed_packages.append(allocator, .{
+            .name = allocator.dupe(u8, name) catch continue,
+            .version = allocator.dupe(u8, result.version) catch continue,
+        }) catch {};
+    }
+
+    // Generate lockfile for installed packages
+    if (installed_packages.items.len > 0) {
+        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{project_root});
+        defer allocator.free(lockfile_path);
+
+        var lockfile = lib.packages.Lockfile.init(allocator, "1.0.0") catch |err| {
+            std.debug.print("{s}⚠{s}  Failed to create lockfile: {}\n", .{ "\x1b[33m", reset, err });
+            return .{ .exit_code = 0 };
+        };
+        defer lockfile.deinit(allocator);
+
+        for (installed_packages.items) |pkg| {
+            const entry = lib.packages.LockfileEntry{
+                .name = allocator.dupe(u8, pkg.name) catch continue,
+                .version = allocator.dupe(u8, pkg.version) catch continue,
+                .source = .pkgx,
+                .url = null,
+                .resolved = null,
+                .integrity = null,
+                .dependencies = null,
+            };
+
+            const key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ pkg.name, pkg.version }) catch continue;
+            defer allocator.free(key);
+            lockfile.addEntry(allocator, key, entry) catch {};
+        }
+
+        // Write lockfile
+        const lockfile_writer = @import("../../../packages/lockfile.zig");
+        lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+            std.debug.print("{s}⚠{s}  Failed to write lockfile: {}\n", .{ "\x1b[33m", reset, err });
+        };
     }
 
     // Clean summary with timing
