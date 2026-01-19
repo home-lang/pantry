@@ -399,7 +399,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
             defer allocator.free(link_path);
             io_helper.deleteFile(link_path) catch {};
-            io_helper.symLink(local_path, link_path) catch {};
+            io_helper.symLink(local_path, link_path) catch |err| {
+                if (options.verbose) {
+                    std.debug.print("    ⚠️  Failed to create bin symlink {s}: {}\n", .{ link_path, err });
+                }
+            };
 
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
             const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{proj_dir});
@@ -424,7 +428,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         defer allocator.free(bin_dst);
 
                         io_helper.deleteFile(bin_dst) catch {};
-                        io_helper.symLink(bin_src, bin_dst) catch {};
+                        io_helper.symLink(bin_src, bin_dst) catch |err| {
+                            if (options.verbose) {
+                                std.debug.print("    ⚠️  Failed to create local bin symlink {s}: {}\n", .{ bin_dst, err });
+                            }
+                        };
                     }
                 }
             } else |_| {

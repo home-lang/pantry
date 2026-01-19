@@ -443,7 +443,7 @@ fn createTarball(
     return tarball_path;
 }
 
-/// Upload tarball to Pantry registry
+/// Upload tarball to Pantry registry using curl with multipart form
 fn uploadToRegistry(
     allocator: std.mem.Allocator,
     registry_url: []const u8,
@@ -453,50 +453,36 @@ fn uploadToRegistry(
     token: []const u8,
     metadata_json: []const u8,
 ) ![]const u8 {
-    // Build multipart form data
-    const boundary = "----PantryFormBoundary7MA4YWxkTrZu0gW";
+    _ = name;
+    _ = version;
 
-    var body: std.ArrayList(u8) = .{};
-    defer body.deinit(allocator);
+    // Write tarball to temp file for curl to read
+    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-upload.tgz" });
+    defer allocator.free(tarball_tmp);
 
-    // Add metadata field
-    try body.appendSlice(allocator, "--");
-    try body.appendSlice(allocator, boundary);
-    try body.appendSlice(allocator, "\r\nContent-Disposition: form-data; name=\"metadata\"\r\n");
-    try body.appendSlice(allocator, "Content-Type: application/json\r\n\r\n");
-    try body.appendSlice(allocator, metadata_json);
-    try body.appendSlice(allocator, "\r\n");
-
-    // Add tarball field
-    try body.appendSlice(allocator, "--");
-    try body.appendSlice(allocator, boundary);
-    try body.appendSlice(allocator, "\r\nContent-Disposition: form-data; name=\"tarball\"; filename=\"");
-    try body.appendSlice(allocator, name);
-    try body.appendSlice(allocator, "-");
-    try body.appendSlice(allocator, version);
-    try body.appendSlice(allocator, ".tgz\"\r\n");
-    try body.appendSlice(allocator, "Content-Type: application/gzip\r\n\r\n");
-    try body.appendSlice(allocator, tarball_data);
-    try body.appendSlice(allocator, "\r\n");
-
-    // End boundary
-    try body.appendSlice(allocator, "--");
-    try body.appendSlice(allocator, boundary);
-    try body.appendSlice(allocator, "--\r\n");
+    // Write tarball data to temp file using io_helper pattern
+    const file = try io_helper.cwd().createFile(io_helper.io, tarball_tmp, .{});
+    try io_helper.writeAllToFile(file, tarball_data);
+    file.close(io_helper.io);
 
     // Build URL
     const publish_url = try std.fmt.allocPrint(allocator, "{s}/publish", .{registry_url});
     defer allocator.free(publish_url);
 
     // Build auth header
-    const auth_header = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+    const auth_header = try std.fmt.allocPrint(allocator, "Authorization: Bearer {s}", .{token});
     defer allocator.free(auth_header);
 
-    // Build content-type header
-    const content_type = try std.fmt.allocPrint(allocator, "multipart/form-data; boundary={s}", .{boundary});
-    defer allocator.free(content_type);
+    // Build tarball form field with @file syntax
+    const tarball_field = try std.fmt.allocPrint(allocator, "tarball=@{s}", .{tarball_tmp});
+    defer allocator.free(tarball_field);
 
-    // Use curl for the HTTP request (simpler than building full HTTP client)
+    // Build metadata form field
+    const metadata_field = try std.fmt.allocPrint(allocator, "metadata={s}", .{metadata_json});
+    defer allocator.free(metadata_field);
+
+    // Use curl with -F for multipart form data (handles binary properly)
     const curl_result = try io_helper.childRun(allocator, &[_][]const u8{
         "curl",
         "-s",
@@ -505,14 +491,18 @@ fn uploadToRegistry(
         publish_url,
         "-H",
         auth_header,
-        "-H",
-        content_type,
-        "--data-binary",
-        @as([]const u8, body.items),
+        "-F",
+        tarball_field,
+        "-F",
+        metadata_field,
     });
     defer allocator.free(curl_result.stderr);
 
+    // Clean up temp file
+    io_helper.deleteFile(tarball_tmp) catch {};
+
     if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+        std.debug.print("curl error: {s}\n", .{curl_result.stderr});
         allocator.free(curl_result.stdout);
         return error.UploadFailed;
     }

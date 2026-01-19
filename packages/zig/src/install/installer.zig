@@ -754,6 +754,7 @@ pub const Installer = struct {
         var downloaded = false;
         var archive_path: []const u8 = undefined;
         var used_format: []const u8 = undefined;
+        var used_url: []const u8 = undefined;
 
         for (formats) |format| {
             // Build download URL
@@ -763,7 +764,6 @@ pub const Installer = struct {
                 spec.version,
                 format,
             );
-            defer self.allocator.free(url);
 
             // Create archive path
             const temp_archive_path = try std.fmt.allocPrint(
@@ -776,12 +776,14 @@ pub const Installer = struct {
             if (options.inline_progress) |progress_opts| {
                 downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
                     self.allocator.free(temp_archive_path);
+                    self.allocator.free(url);
                     std.debug.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
             } else {
                 downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
                     self.allocator.free(temp_archive_path);
+                    self.allocator.free(url);
                     std.debug.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
@@ -791,6 +793,7 @@ pub const Installer = struct {
             downloaded = true;
             archive_path = temp_archive_path;
             used_format = format;
+            used_url = url;
             break;
         }
 
@@ -798,11 +801,12 @@ pub const Installer = struct {
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
+        defer self.allocator.free(used_url);
 
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
                 lines_up,
                 progress_opts.dim_str,
                 "\x1b[0m",
@@ -818,7 +822,7 @@ pub const Installer = struct {
             }
         }
 
-        // Extract archive to temp directory
+        // Extract archive to temp directory with verification
         const extract_dir = try std.fmt.allocPrint(
             self.allocator,
             "{s}/extracted",
@@ -827,7 +831,7 @@ pub const Installer = struct {
         defer self.allocator.free(extract_dir);
 
         try io_helper.makePath(extract_dir);
-        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
+        try extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose);
 
         // Find the actual package root
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
@@ -1140,6 +1144,7 @@ pub const Installer = struct {
         var downloaded = false;
         var archive_path: []const u8 = undefined;
         var used_format: []const u8 = undefined;
+        var used_url: []const u8 = undefined;
 
         for (formats) |format| {
             // Build download URL
@@ -1149,7 +1154,6 @@ pub const Installer = struct {
                 spec.version,
                 format,
             );
-            defer self.allocator.free(url);
 
             // Create archive path
             const temp_archive_path = try std.fmt.allocPrint(
@@ -1162,12 +1166,14 @@ pub const Installer = struct {
             if (options.inline_progress) |progress_opts| {
                 downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
                     self.allocator.free(temp_archive_path);
+                    self.allocator.free(url);
                     std.debug.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
             } else {
                 downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
                     self.allocator.free(temp_archive_path);
+                    self.allocator.free(url);
                     std.debug.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
@@ -1177,6 +1183,7 @@ pub const Installer = struct {
             downloaded = true;
             archive_path = temp_archive_path;
             used_format = format;
+            used_url = url;
             break;
         }
 
@@ -1184,11 +1191,12 @@ pub const Installer = struct {
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
+        defer self.allocator.free(used_url);
 
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
                 lines_up,
                 progress_opts.dim_str,
                 "\x1b[0m",
@@ -1204,7 +1212,7 @@ pub const Installer = struct {
             }
         }
 
-        // Extract archive to temp directory
+        // Extract archive to temp directory with verification
         const extract_dir = try std.fmt.allocPrint(
             self.allocator,
             "{s}/extracted",
@@ -1213,7 +1221,7 @@ pub const Installer = struct {
         defer self.allocator.free(extract_dir);
 
         try io_helper.makePath(extract_dir);
-        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, used_format, options.quiet);
+        try extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose);
 
         // Find the actual package root (might be nested like domain/v{version}/)
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
