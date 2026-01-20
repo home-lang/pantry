@@ -318,7 +318,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
 
     // Create tarball
     std.debug.print("Creating tarball...\n", .{});
-    const tarball_path = try createTarball(allocator, cwd, name, version);
+    const tarball_path = try createTarball(allocator, cwd, name, version, config_content);
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
 
@@ -376,12 +376,13 @@ fn readPantryToken(allocator: std.mem.Allocator) ![]u8 {
     return error.EnvironmentVariableNotFound;
 }
 
-/// Create tarball of the current project
+/// Create tarball of the current project respecting package.json "files" field
 fn createTarball(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
     package_name: []const u8,
     version: []const u8,
+    config_content: []const u8,
 ) ![]const u8 {
     // Sanitize package name for tarball filename
     var sanitized_name = try allocator.alloc(u8, package_name.len);
@@ -410,27 +411,267 @@ fn createTarball(
     defer allocator.free(mkdir_result.stdout);
     defer allocator.free(mkdir_result.stderr);
 
-    // Copy files to staging (excluding common non-publishable files)
+    // Parse package.json to get "files" array and "bin" field
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, config_content, .{}) catch {
+        std.debug.print("Warning: Could not parse package.json, using default file inclusion\n", .{});
+        return createTarballDefault(allocator, package_dir, staging_pkg, staging_base, tarball_path);
+    };
+    defer parsed.deinit();
+    const root = parsed.value;
+
+    // Check if "files" array exists in package.json
+    const files_array = if (root.object.get("files")) |f| switch (f) {
+        .array => |arr| arr,
+        else => null,
+    } else null;
+
+    // Get bin files to include
+    var bin_files_list: [16][]const u8 = undefined;
+    var bin_files_count: usize = 0;
+    if (root.object.get("bin")) |bin_val| {
+        switch (bin_val) {
+            .string => |s| {
+                if (bin_files_count < 16) {
+                    bin_files_list[bin_files_count] = s;
+                    bin_files_count += 1;
+                }
+            },
+            .object => |obj| {
+                for (obj.values()) |v| {
+                    if (bin_files_count < 16) {
+                        if (v == .string) {
+                            bin_files_list[bin_files_count] = v.string;
+                            bin_files_count += 1;
+                        }
+                    }
+                }
+            },
+            else => {},
+        }
+    }
+    const bin_files = bin_files_list[0..bin_files_count];
+
+    if (files_array) |files| {
+        // Use explicit "files" list - only copy specified files/folders
+        std.debug.print("  Using 'files' field from package.json...\n", .{});
+
+        // Always copy package.json first
+        const pkg_json_src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, "package.json" });
+        defer allocator.free(pkg_json_src);
+        const pkg_json_dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, "package.json" });
+        defer allocator.free(pkg_json_dst);
+        _ = io_helper.childRun(allocator, &[_][]const u8{ "cp", pkg_json_src, pkg_json_dst }) catch {};
+
+        // Copy each file/folder from "files" array
+        for (files.items) |item| {
+            if (item == .string) {
+                const file_entry = item.string;
+                const src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, file_entry });
+                defer allocator.free(src);
+                const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, file_entry });
+                defer allocator.free(dst);
+
+                // Create parent directory if needed
+                if (std.fs.path.dirname(dst)) |parent| {
+                    _ = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch {};
+                }
+
+                // Use cp -r to handle both files and directories
+                const cp_result = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-r", src, dst }) catch continue;
+                allocator.free(cp_result.stdout);
+                allocator.free(cp_result.stderr);
+            }
+        }
+
+        // Also copy bin files if not already included
+        for (bin_files) |bin_file| {
+            // Strip leading ./ if present
+            const clean_bin = if (bin_file.len > 2 and bin_file[0] == '.' and bin_file[1] == '/') bin_file[2..] else bin_file;
+            const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, clean_bin });
+            defer allocator.free(bin_src);
+            const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, clean_bin });
+            defer allocator.free(bin_dst);
+
+            if (std.fs.path.dirname(bin_dst)) |parent| {
+                _ = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch {};
+            }
+            const cp_result = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-r", bin_src, bin_dst }) catch continue;
+            allocator.free(cp_result.stdout);
+            allocator.free(cp_result.stderr);
+        }
+
+        // Always include README*, LICENSE*, CHANGELOG* if they exist
+        const always_include = [_][]const u8{ "README*", "LICENSE*", "CHANGELOG*", "readme*", "license*", "changelog*" };
+        for (always_include) |pattern| {
+            const find_cmd = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, pattern });
+            defer allocator.free(find_cmd);
+            // Use shell glob to find matching files
+            const glob_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", try std.fmt.allocPrint(allocator, "cp {s} {s}/ 2>/dev/null || true", .{ find_cmd, staging_pkg }) }) catch continue;
+            allocator.free(glob_result.stdout);
+            allocator.free(glob_result.stderr);
+        }
+    } else {
+        // No "files" field - use default behavior (exclude common non-publishable files)
+        return createTarballDefault(allocator, package_dir, staging_pkg, staging_base, tarball_path);
+    }
+
+    // Create tarball with "package" directory at root
+    const tar_result = try io_helper.childRun(allocator, &[_][]const u8{
+        "tar",
+        "-czf",
+        tarball_path,
+        "-C",
+        staging_base,
+        "package",
+    });
+    defer allocator.free(tar_result.stdout);
+    defer allocator.free(tar_result.stderr);
+
+    // Cleanup staging
+    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+
+    if (tar_result.term != .Exited or tar_result.term.Exited != 0) {
+        std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
+        return error.TarballCreationFailed;
+    }
+
+    return tarball_path;
+}
+
+/// Default tarball creation - use .pantryignore or .gitignore for exclusions
+fn createTarballDefault(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+    staging_pkg: []const u8,
+    staging_base: []const u8,
+    tarball_path: []const u8,
+) ![]const u8 {
     const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
     defer allocator.free(src_path);
     const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
     defer allocator.free(dst_path);
 
-    const cp_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "rsync",
-        "-a",
-        "--exclude=node_modules",
-        "--exclude=pantry",
-        "--exclude=.git",
-        "--exclude=*.tgz",
-        "--exclude=.github",
-        "--exclude=.claude",
-        "--exclude=zig-out",
-        "--exclude=zig-cache",
-        "--exclude=dist",
-        src_path,
-        dst_path,
-    });
+    // Read ignore patterns from .pantryignore or .gitignore
+    var ignore_patterns: [128][]const u8 = undefined;
+    var ignore_count: usize = 0;
+
+    // Always exclude these (npm standard)
+    const always_exclude = [_][]const u8{
+        "node_modules",
+        ".git",
+        "*.tgz",
+        ".DS_Store",
+        "*.log",
+        ".pantryignore",
+        ".gitignore",
+        ".npmignore",
+        "pantry.lock",
+        "package-lock.json",
+        "yarn.lock",
+        "bun.lockb",
+        "pnpm-lock.yaml",
+    };
+    for (always_exclude) |pattern| {
+        if (ignore_count < ignore_patterns.len) {
+            ignore_patterns[ignore_count] = pattern;
+            ignore_count += 1;
+        }
+    }
+
+    // Try to read .pantryignore first, then .gitignore using shell command
+    var dynamic_patterns: [64][]u8 = undefined;
+    var dynamic_count: usize = 0;
+    defer {
+        for (0..dynamic_count) |i| {
+            allocator.free(dynamic_patterns[i]);
+        }
+    }
+
+    const ignore_file_content = blk: {
+        // Try .pantryignore first
+        const pantryignore_cmd = try std.fmt.allocPrint(allocator, "cat {s}/.pantryignore 2>/dev/null", .{package_dir});
+        defer allocator.free(pantryignore_cmd);
+        const pantry_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", pantryignore_cmd }) catch break :blk null;
+        defer allocator.free(pantry_result.stderr);
+
+        if (pantry_result.term == .Exited and pantry_result.term.Exited == 0 and pantry_result.stdout.len > 0) {
+            std.debug.print("  Using .pantryignore for exclusions...\n", .{});
+            break :blk pantry_result.stdout;
+        }
+        allocator.free(pantry_result.stdout);
+
+        // Try .gitignore
+        const gitignore_cmd = try std.fmt.allocPrint(allocator, "cat {s}/.gitignore 2>/dev/null", .{package_dir});
+        defer allocator.free(gitignore_cmd);
+        const git_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", gitignore_cmd }) catch break :blk null;
+        defer allocator.free(git_result.stderr);
+
+        if (git_result.term == .Exited and git_result.term.Exited == 0 and git_result.stdout.len > 0) {
+            std.debug.print("  Using .gitignore for exclusions...\n", .{});
+            break :blk git_result.stdout;
+        }
+        allocator.free(git_result.stdout);
+
+        break :blk null;
+    };
+    defer if (ignore_file_content) |content| allocator.free(content);
+
+    // Parse ignore file content if found
+    if (ignore_file_content) |content| {
+        var lines = std.mem.splitScalar(u8, content, '\n');
+        while (lines.next()) |line| {
+            // Skip empty lines and comments
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+            // Skip negation patterns (we don't support them yet)
+            if (trimmed[0] == '!') continue;
+
+            // Add the pattern
+            if (ignore_count < ignore_patterns.len and dynamic_count < dynamic_patterns.len) {
+                const pattern_copy = try allocator.dupe(u8, trimmed);
+                dynamic_patterns[dynamic_count] = pattern_copy;
+                ignore_patterns[ignore_count] = pattern_copy;
+                ignore_count += 1;
+                dynamic_count += 1;
+            }
+        }
+    }
+
+    // Build rsync command with all exclude patterns
+    var rsync_args: [256][]const u8 = undefined;
+    var arg_count: usize = 0;
+
+    rsync_args[arg_count] = "rsync";
+    arg_count += 1;
+    rsync_args[arg_count] = "-a";
+    arg_count += 1;
+
+    // Add all exclude patterns
+    var exclude_flags: [128][]u8 = undefined;
+    var exclude_flag_count: usize = 0;
+    defer {
+        for (0..exclude_flag_count) |i| {
+            allocator.free(exclude_flags[i]);
+        }
+    }
+
+    for (ignore_patterns[0..ignore_count]) |pattern| {
+        if (arg_count < rsync_args.len - 2 and exclude_flag_count < exclude_flags.len) {
+            const flag = try std.fmt.allocPrint(allocator, "--exclude={s}", .{pattern});
+            exclude_flags[exclude_flag_count] = flag;
+            rsync_args[arg_count] = flag;
+            arg_count += 1;
+            exclude_flag_count += 1;
+        }
+    }
+
+    rsync_args[arg_count] = src_path;
+    arg_count += 1;
+    rsync_args[arg_count] = dst_path;
+    arg_count += 1;
+
+    const cp_result = try io_helper.childRun(allocator, rsync_args[0..arg_count]);
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
 
