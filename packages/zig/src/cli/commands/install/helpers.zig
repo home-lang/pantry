@@ -465,6 +465,7 @@ pub fn addDependencyToPackageJson(
 
 /// Update a JSON string by adding/updating a dependency in the specified section
 /// Preserves all other fields and formatting as much as possible
+/// Also removes the package from the OTHER section if it exists (move behavior like npm/bun)
 fn updateJsonDependency(
     allocator: std.mem.Allocator,
     json_content: []const u8,
@@ -472,6 +473,11 @@ fn updateJsonDependency(
     pkg_name: []const u8,
     pkg_version: []const u8,
 ) ![]const u8 {
+    // Determine the "other" section to remove from
+    const other_section = if (std.mem.eql(u8, dep_section, "dependencies"))
+        "devDependencies"
+    else
+        "dependencies";
     // Parse the JSON to work with it
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch {
         // Invalid JSON, return as-is
@@ -616,6 +622,56 @@ fn updateJsonDependency(
             }
 
             try buf.appendSlice(allocator, "\n  }");
+        } else if (std.mem.eql(u8, key, other_section)) {
+            // Write the OTHER dependency section, but SKIP the package we're moving
+            if (parsed.value.object.get(other_section)) |deps_val| {
+                if (deps_val == .object) {
+                    // Count remaining deps after excluding the one we're moving
+                    var remaining_count: usize = 0;
+                    var count_iter = deps_val.object.iterator();
+                    while (count_iter.next()) |entry| {
+                        if (!std.mem.eql(u8, entry.key_ptr.*, pkg_name)) {
+                            remaining_count += 1;
+                        }
+                    }
+
+                    // Only write section if there are remaining deps
+                    if (remaining_count > 0) {
+                        const line = try std.fmt.allocPrint(allocator, "  \"{s}\": {{\n", .{other_section});
+                        defer allocator.free(line);
+                        try buf.appendSlice(allocator, line);
+
+                        var other_first = true;
+                        var iter = deps_val.object.iterator();
+                        while (iter.next()) |entry| {
+                            // Skip the package we're moving to the other section
+                            if (std.mem.eql(u8, entry.key_ptr.*, pkg_name)) {
+                                continue;
+                            }
+                            if (!other_first) {
+                                try buf.appendSlice(allocator, ",\n");
+                            }
+                            other_first = false;
+                            if (entry.value_ptr.* == .string) {
+                                const dep_line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.string });
+                                defer allocator.free(dep_line);
+                                try buf.appendSlice(allocator, dep_line);
+                            }
+                        }
+                        try buf.appendSlice(allocator, "\n  }");
+                    } else {
+                        // Section would be empty, skip writing it but adjust first_key
+                        // We need to not write the trailing comma for the previous item
+                        // This is tricky - for now just write empty section
+                        // Actually, let's just skip writing entirely
+                        first_key = true; // Reset so next item doesn't have leading comma issue
+                        continue;
+                    }
+                } else {
+                    // Not an object, write as-is
+                    try writeJsonValue(allocator, &buf, key, deps_val, 1);
+                }
+            }
         } else {
             // Write other fields as-is
             if (parsed.value.object.get(key)) |val| {
