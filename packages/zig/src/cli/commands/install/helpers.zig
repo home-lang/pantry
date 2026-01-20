@@ -405,7 +405,7 @@ fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin
 }
 
 /// Update package.json with a new dependency
-/// Creates package.json if it doesn't exist
+/// Creates package.json if it doesn't exist, preserves all existing fields
 pub fn addDependencyToPackageJson(
     allocator: std.mem.Allocator,
     project_root: []const u8,
@@ -416,159 +416,416 @@ pub fn addDependencyToPackageJson(
     const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ project_root, "package.json" });
     defer allocator.free(package_json_path);
 
-    // Data structures to hold the package.json content
-    var name: []const u8 = "my-project";
-    var version: []const u8 = "1.0.0";
-    var deps = std.StringHashMap([]const u8).init(allocator);
-    defer deps.deinit();
-    var dev_deps = std.StringHashMap([]const u8).init(allocator);
-    defer dev_deps.deinit();
-    var has_existing_file = false;
+    // Format version with caret for semver compatibility
+    const version_with_caret = try std.fmt.allocPrint(allocator, "^{s}", .{pkg_version});
+    defer allocator.free(version_with_caret);
 
     // Try to read existing package.json
     if (io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024)) |content| {
         defer allocator.free(content);
-        has_existing_file = true;
 
-        if (std.json.parseFromSlice(std.json.Value, allocator, content, .{})) |parsed| {
-            defer parsed.deinit();
+        // We'll do a simple text-based approach to preserve formatting and all fields
+        // Find the dependencies or devDependencies section and update it
+        const dep_key = if (is_dev) "devDependencies" else "dependencies";
+        const new_content = try updateJsonDependency(allocator, content, dep_key, pkg_name, version_with_caret);
+        defer allocator.free(new_content);
 
-            if (parsed.value == .object) {
-                // Extract name
-                if (parsed.value.object.get("name")) |v| {
-                    if (v == .string) name = try allocator.dupe(u8, v.string);
+        // Write to file
+        const file = try io_helper.cwd().createFile(io_helper.io, package_json_path, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, new_content);
+    } else |_| {
+        // No package.json exists, create minimal one
+        var buf = try std.ArrayList(u8).initCapacity(allocator, 512);
+        defer buf.deinit(allocator);
+
+        try buf.appendSlice(allocator, "{\n");
+        try buf.appendSlice(allocator, "  \"name\": \"my-project\",\n");
+        try buf.appendSlice(allocator, "  \"version\": \"1.0.0\",\n");
+
+        if (is_dev) {
+            try buf.appendSlice(allocator, "  \"devDependencies\": {\n");
+        } else {
+            try buf.appendSlice(allocator, "  \"dependencies\": {\n");
+        }
+
+        const dep_line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"\n", .{ pkg_name, version_with_caret });
+        defer allocator.free(dep_line);
+        try buf.appendSlice(allocator, dep_line);
+
+        try buf.appendSlice(allocator, "  }\n");
+        try buf.appendSlice(allocator, "}\n");
+
+        // Write to file
+        const file = try io_helper.cwd().createFile(io_helper.io, package_json_path, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, buf.items);
+    }
+}
+
+/// Update a JSON string by adding/updating a dependency in the specified section
+/// Preserves all other fields and formatting as much as possible
+fn updateJsonDependency(
+    allocator: std.mem.Allocator,
+    json_content: []const u8,
+    dep_section: []const u8,
+    pkg_name: []const u8,
+    pkg_version: []const u8,
+) ![]const u8 {
+    // Parse the JSON to work with it
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch {
+        // Invalid JSON, return as-is
+        return try allocator.dupe(u8, json_content);
+    };
+    defer parsed.deinit();
+
+    if (parsed.value != .object) {
+        return try allocator.dupe(u8, json_content);
+    }
+
+    // Collect all keys in their original order by scanning the source
+    var key_order = std.ArrayList([]const u8){};
+    defer {
+        for (key_order.items) |k| allocator.free(k);
+        key_order.deinit(allocator);
+    }
+
+    // Simple scan to find key order (look for "key": patterns)
+    var i: usize = 0;
+    while (i < json_content.len) {
+        // Skip whitespace
+        while (i < json_content.len and (json_content[i] == ' ' or json_content[i] == '\t' or json_content[i] == '\n' or json_content[i] == '\r')) {
+            i += 1;
+        }
+        if (i >= json_content.len) break;
+
+        // Look for "key":
+        if (json_content[i] == '"') {
+            const key_start = i + 1;
+            i += 1;
+            while (i < json_content.len and json_content[i] != '"') {
+                if (json_content[i] == '\\') i += 1; // Skip escaped char
+                i += 1;
+            }
+            if (i < json_content.len) {
+                const key_end = i;
+                i += 1;
+                // Skip whitespace after key
+                while (i < json_content.len and (json_content[i] == ' ' or json_content[i] == '\t')) {
+                    i += 1;
                 }
-                // Extract version
-                if (parsed.value.object.get("version")) |v| {
-                    if (v == .string) version = try allocator.dupe(u8, v.string);
-                }
-                // Extract dependencies
-                if (parsed.value.object.get("dependencies")) |deps_val| {
-                    if (deps_val == .object) {
-                        var iter = deps_val.object.iterator();
-                        while (iter.next()) |entry| {
-                            if (entry.value_ptr.* == .string) {
-                                try deps.put(
-                                    try allocator.dupe(u8, entry.key_ptr.*),
-                                    try allocator.dupe(u8, entry.value_ptr.string),
-                                );
+                // Check if followed by colon (meaning it's a key, not a value)
+                if (i < json_content.len and json_content[i] == ':') {
+                    const key = json_content[key_start..key_end];
+                    // Only add top-level keys (crude check: not too deep)
+                    var depth: usize = 0;
+                    for (json_content[0..key_start]) |c| {
+                        if (c == '{') depth += 1;
+                        if (c == '}') depth -|= 1;
+                    }
+                    if (depth == 1) {
+                        // Check if already in list
+                        var found = false;
+                        for (key_order.items) |k| {
+                            if (std.mem.eql(u8, k, key)) {
+                                found = true;
+                                break;
                             }
                         }
-                    }
-                }
-                // Extract devDependencies
-                if (parsed.value.object.get("devDependencies")) |deps_val| {
-                    if (deps_val == .object) {
-                        var iter = deps_val.object.iterator();
-                        while (iter.next()) |entry| {
-                            if (entry.value_ptr.* == .string) {
-                                try dev_deps.put(
-                                    try allocator.dupe(u8, entry.key_ptr.*),
-                                    try allocator.dupe(u8, entry.value_ptr.string),
-                                );
-                            }
+                        if (!found) {
+                            try key_order.append(allocator, try allocator.dupe(u8, key));
                         }
                     }
                 }
             }
-        } else |_| {
-            // Invalid JSON, start fresh
+        } else {
+            i += 1;
         }
-    } else |_| {
-        // No package.json exists
     }
 
-    // Format version with caret for semver compatibility
-    const version_with_caret = try std.fmt.allocPrint(allocator, "^{s}", .{pkg_version});
-
-    // Add new dependency to appropriate section
-    if (is_dev) {
-        // Free old value if exists
-        if (dev_deps.get(pkg_name)) |old_val| {
-            allocator.free(old_val);
-        }
-        try dev_deps.put(try allocator.dupe(u8, pkg_name), version_with_caret);
-    } else {
-        // Free old value if exists
-        if (deps.get(pkg_name)) |old_val| {
-            allocator.free(old_val);
-        }
-        try deps.put(try allocator.dupe(u8, pkg_name), version_with_caret);
-    }
-
-    // Build JSON output manually
-    var buf = try std.ArrayList(u8).initCapacity(allocator, 1024);
-    defer buf.deinit(allocator);
+    // Build the new JSON preserving key order
+    var buf = try std.ArrayList(u8).initCapacity(allocator, json_content.len + 256);
+    errdefer buf.deinit(allocator);
 
     try buf.appendSlice(allocator, "{\n");
-    {
-        const line = try std.fmt.allocPrint(allocator, "  \"name\": \"{s}\",\n", .{name});
-        defer allocator.free(line);
-        try buf.appendSlice(allocator, line);
-    }
-    {
-        const line = try std.fmt.allocPrint(allocator, "  \"version\": \"{s}\"", .{version});
-        defer allocator.free(line);
-        try buf.appendSlice(allocator, line);
+
+    var has_dep_section = false;
+    for (key_order.items) |key| {
+        if (std.mem.eql(u8, key, dep_section)) {
+            has_dep_section = true;
+        }
     }
 
-    // Write dependencies if any
-    if (deps.count() > 0) {
-        try buf.appendSlice(allocator, ",\n  \"dependencies\": {\n");
-        var iter = deps.iterator();
-        var first = true;
-        while (iter.next()) |entry| {
-            if (!first) {
-                try buf.appendSlice(allocator, ",\n");
-            }
-            first = false;
-            const line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.* });
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
-        }
-        try buf.appendSlice(allocator, "\n  }");
+    // If dep section doesn't exist, we'll add it at the end
+    if (!has_dep_section) {
+        try key_order.append(allocator, try allocator.dupe(u8, dep_section));
     }
 
-    // Write devDependencies if any
-    if (dev_deps.count() > 0) {
-        try buf.appendSlice(allocator, ",\n  \"devDependencies\": {\n");
-        var iter = dev_deps.iterator();
-        var first = true;
-        while (iter.next()) |entry| {
-            if (!first) {
-                try buf.appendSlice(allocator, ",\n");
-            }
-            first = false;
-            const line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.* });
+    var first_key = true;
+    for (key_order.items) |key| {
+        if (!first_key) {
+            try buf.appendSlice(allocator, ",\n");
+        }
+        first_key = false;
+
+        if (std.mem.eql(u8, key, dep_section)) {
+            // Write the dependency section with the new/updated package
+            const line = try std.fmt.allocPrint(allocator, "  \"{s}\": {{\n", .{dep_section});
             defer allocator.free(line);
             try buf.appendSlice(allocator, line);
+
+            // Get existing deps from this section
+            var dep_first = true;
+            var found_pkg = false;
+
+            if (parsed.value.object.get(dep_section)) |deps_val| {
+                if (deps_val == .object) {
+                    var iter = deps_val.object.iterator();
+                    while (iter.next()) |entry| {
+                        if (!dep_first) {
+                            try buf.appendSlice(allocator, ",\n");
+                        }
+                        dep_first = false;
+
+                        if (std.mem.eql(u8, entry.key_ptr.*, pkg_name)) {
+                            // Update this package's version
+                            const dep_line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ pkg_name, pkg_version });
+                            defer allocator.free(dep_line);
+                            try buf.appendSlice(allocator, dep_line);
+                            found_pkg = true;
+                        } else {
+                            // Keep existing package
+                            if (entry.value_ptr.* == .string) {
+                                const dep_line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.string });
+                                defer allocator.free(dep_line);
+                                try buf.appendSlice(allocator, dep_line);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add new package if not found
+            if (!found_pkg) {
+                if (!dep_first) {
+                    try buf.appendSlice(allocator, ",\n");
+                }
+                const dep_line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ pkg_name, pkg_version });
+                defer allocator.free(dep_line);
+                try buf.appendSlice(allocator, dep_line);
+            }
+
+            try buf.appendSlice(allocator, "\n  }");
+        } else {
+            // Write other fields as-is
+            if (parsed.value.object.get(key)) |val| {
+                try writeJsonValue(allocator, &buf, key, val, 1);
+            }
         }
-        try buf.appendSlice(allocator, "\n  }");
     }
 
     try buf.appendSlice(allocator, "\n}\n");
 
-    // Write to file
-    const file = try io_helper.cwd().createFile(io_helper.io, package_json_path, .{});
-    defer file.close(io_helper.io);
-    try io_helper.writeAllToFile(file, buf.items);
+    return try buf.toOwnedSlice(allocator);
+}
 
-    // Clean up allocated strings
-    if (has_existing_file) {
-        if (!std.mem.eql(u8, name, "my-project")) allocator.free(name);
-        if (!std.mem.eql(u8, version, "1.0.0")) allocator.free(version);
+/// Error type for JSON writing operations
+const JsonWriteError = std.mem.Allocator.Error || error{OutOfMemory};
+
+/// Write a JSON value with proper formatting
+fn writeJsonValue(
+    allocator: std.mem.Allocator,
+    buf: *std.ArrayList(u8),
+    key: []const u8,
+    value: std.json.Value,
+    indent: usize,
+) JsonWriteError!void {
+    // Write indent
+    var indent_i: usize = 0;
+    while (indent_i < indent) : (indent_i += 1) {
+        try buf.appendSlice(allocator, "  ");
     }
 
-    // Clean up deps maps
-    var deps_iter = deps.iterator();
-    while (deps_iter.next()) |entry| {
-        allocator.free(entry.key_ptr.*);
-        allocator.free(entry.value_ptr.*);
+    const key_str = try std.fmt.allocPrint(allocator, "\"{s}\": ", .{key});
+    defer allocator.free(key_str);
+    try buf.appendSlice(allocator, key_str);
+
+    switch (value) {
+        .string => |s| {
+            // Escape special characters in string
+            try buf.append(allocator, '"');
+            for (s) |c| {
+                switch (c) {
+                    '"' => try buf.appendSlice(allocator, "\\\""),
+                    '\\' => try buf.appendSlice(allocator, "\\\\"),
+                    '\n' => try buf.appendSlice(allocator, "\\n"),
+                    '\r' => try buf.appendSlice(allocator, "\\r"),
+                    '\t' => try buf.appendSlice(allocator, "\\t"),
+                    else => try buf.append(allocator, c),
+                }
+            }
+            try buf.append(allocator, '"');
+        },
+        .number_string => |s| {
+            // Number stored as string - write as-is (no quotes)
+            try buf.appendSlice(allocator, s);
+        },
+        .integer => |n| {
+            const num_str = try std.fmt.allocPrint(allocator, "{d}", .{n});
+            defer allocator.free(num_str);
+            try buf.appendSlice(allocator, num_str);
+        },
+        .float => |f| {
+            const num_str = try std.fmt.allocPrint(allocator, "{d}", .{f});
+            defer allocator.free(num_str);
+            try buf.appendSlice(allocator, num_str);
+        },
+        .bool => |b| {
+            try buf.appendSlice(allocator, if (b) "true" else "false");
+        },
+        .null => {
+            try buf.appendSlice(allocator, "null");
+        },
+        .array => |arr| {
+            if (arr.items.len == 0) {
+                try buf.appendSlice(allocator, "[]");
+            } else {
+                try buf.appendSlice(allocator, "[\n");
+                var first = true;
+                for (arr.items) |item| {
+                    if (!first) {
+                        try buf.appendSlice(allocator, ",\n");
+                    }
+                    first = false;
+                    // Write indent for array item
+                    var arr_indent: usize = 0;
+                    while (arr_indent < indent + 1) : (arr_indent += 1) {
+                        try buf.appendSlice(allocator, "  ");
+                    }
+                    try writeJsonValueOnly(allocator, buf, item, indent + 1);
+                }
+                try buf.append(allocator, '\n');
+                var close_indent: usize = 0;
+                while (close_indent < indent) : (close_indent += 1) {
+                    try buf.appendSlice(allocator, "  ");
+                }
+                try buf.append(allocator, ']');
+            }
+        },
+        .object => |obj| {
+            if (obj.count() == 0) {
+                try buf.appendSlice(allocator, "{}");
+            } else {
+                try buf.appendSlice(allocator, "{\n");
+                var first = true;
+                var iter = obj.iterator();
+                while (iter.next()) |entry| {
+                    if (!first) {
+                        try buf.appendSlice(allocator, ",\n");
+                    }
+                    first = false;
+                    try writeJsonValue(allocator, buf, entry.key_ptr.*, entry.value_ptr.*, indent + 1);
+                }
+                try buf.append(allocator, '\n');
+                var close_indent: usize = 0;
+                while (close_indent < indent) : (close_indent += 1) {
+                    try buf.appendSlice(allocator, "  ");
+                }
+                try buf.append(allocator, '}');
+            }
+        },
     }
-    var dev_deps_iter = dev_deps.iterator();
-    while (dev_deps_iter.next()) |entry| {
-        allocator.free(entry.key_ptr.*);
-        allocator.free(entry.value_ptr.*);
+}
+
+/// Write just the value part (no key) for array items
+fn writeJsonValueOnly(
+    allocator: std.mem.Allocator,
+    buf: *std.ArrayList(u8),
+    value: std.json.Value,
+    indent: usize,
+) JsonWriteError!void {
+    switch (value) {
+        .string => |s| {
+            try buf.append(allocator, '"');
+            for (s) |c| {
+                switch (c) {
+                    '"' => try buf.appendSlice(allocator, "\\\""),
+                    '\\' => try buf.appendSlice(allocator, "\\\\"),
+                    '\n' => try buf.appendSlice(allocator, "\\n"),
+                    '\r' => try buf.appendSlice(allocator, "\\r"),
+                    '\t' => try buf.appendSlice(allocator, "\\t"),
+                    else => try buf.append(allocator, c),
+                }
+            }
+            try buf.append(allocator, '"');
+        },
+        .number_string => |s| {
+            // Number stored as string - write as-is (no quotes)
+            try buf.appendSlice(allocator, s);
+        },
+        .integer => |n| {
+            const num_str = try std.fmt.allocPrint(allocator, "{d}", .{n});
+            defer allocator.free(num_str);
+            try buf.appendSlice(allocator, num_str);
+        },
+        .float => |f| {
+            const num_str = try std.fmt.allocPrint(allocator, "{d}", .{f});
+            defer allocator.free(num_str);
+            try buf.appendSlice(allocator, num_str);
+        },
+        .bool => |b| {
+            try buf.appendSlice(allocator, if (b) "true" else "false");
+        },
+        .null => {
+            try buf.appendSlice(allocator, "null");
+        },
+        .array => |arr| {
+            if (arr.items.len == 0) {
+                try buf.appendSlice(allocator, "[]");
+            } else {
+                try buf.appendSlice(allocator, "[\n");
+                var first = true;
+                for (arr.items) |item| {
+                    if (!first) {
+                        try buf.appendSlice(allocator, ",\n");
+                    }
+                    first = false;
+                    var arr_indent: usize = 0;
+                    while (arr_indent < indent + 1) : (arr_indent += 1) {
+                        try buf.appendSlice(allocator, "  ");
+                    }
+                    try writeJsonValueOnly(allocator, buf, item, indent + 1);
+                }
+                try buf.append(allocator, '\n');
+                var close_indent: usize = 0;
+                while (close_indent < indent) : (close_indent += 1) {
+                    try buf.appendSlice(allocator, "  ");
+                }
+                try buf.append(allocator, ']');
+            }
+        },
+        .object => |obj| {
+            if (obj.count() == 0) {
+                try buf.appendSlice(allocator, "{}");
+            } else {
+                try buf.appendSlice(allocator, "{\n");
+                var first = true;
+                var iter = obj.iterator();
+                while (iter.next()) |entry| {
+                    if (!first) {
+                        try buf.appendSlice(allocator, ",\n");
+                    }
+                    first = false;
+                    try writeJsonValue(allocator, buf, entry.key_ptr.*, entry.value_ptr.*, indent + 1);
+                }
+                try buf.append(allocator, '\n');
+                var close_indent: usize = 0;
+                while (close_indent < indent) : (close_indent += 1) {
+                    try buf.appendSlice(allocator, "  ");
+                }
+                try buf.append(allocator, '}');
+            }
+        },
     }
 }
 
