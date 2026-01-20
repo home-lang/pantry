@@ -7,6 +7,7 @@
 
 import { existsSync, readFileSync, statSync, unlinkSync } from 'node:fs'
 import { join, basename } from 'node:path'
+import { execSync } from 'node:child_process'
 import { S3Client, DynamoDBClient } from 'ts-cloud/aws'
 import { getAWSRegion } from './aws-config'
 
@@ -27,6 +28,41 @@ interface PackageJson {
 const BUCKET_NAME = 'pantry-registry'
 const TABLE_NAME = 'pantry-packages'
 const REGION = getAWSRegion()
+
+/**
+ * Get repository URL from git remote origin
+ * Converts SSH URLs to HTTPS format
+ */
+function getGitRemoteUrl(targetDir: string): string | null {
+  try {
+    const remoteUrl = execSync('git remote get-url origin', {
+      cwd: targetDir,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim()
+
+    if (!remoteUrl) return null
+
+    // Convert SSH URL to HTTPS if needed
+    // git@github.com:user/repo.git -> https://github.com/user/repo
+    if (remoteUrl.startsWith('git@')) {
+      const match = remoteUrl.match(/^git@([^:]+):(.+?)(?:\.git)?$/)
+      if (match) {
+        return `https://${match[1]}/${match[2]}`
+      }
+    }
+
+    // Handle HTTPS URLs - remove .git suffix if present
+    if (remoteUrl.startsWith('https://')) {
+      return remoteUrl.replace(/\.git$/, '')
+    }
+
+    return remoteUrl
+  } catch {
+    // Not a git repo or no remote configured
+    return null
+  }
+}
 
 async function publish(targetDir: string = process.cwd()): Promise<void> {
   console.log('🚀 Pantry Publish')
@@ -97,7 +133,7 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
 
     // Also upload/update package metadata
     const metadataKey = `packages/${safeName}/metadata.json`
-    const metadata = await getOrCreateMetadata(s3, safeName, packageJson)
+    const metadata = await getOrCreateMetadata(s3, safeName, packageJson, targetDir)
 
     // Add this version to metadata
     metadata.versions[packageJson.version] = {
@@ -121,6 +157,13 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
     console.log('📊 Updating registry index...')
     const dynamodb = new DynamoDBClient(REGION)
 
+    // Determine repository URL - use package.json value, git remote, or default to GitHub
+    const repositoryUrl = typeof packageJson.repository === 'string'
+      ? packageJson.repository
+      : packageJson.repository?.url
+        ? packageJson.repository.url
+        : getGitRemoteUrl(targetDir) || `https://github.com/stacksjs/${safeName}`
+
     const dbRecord = {
       packageName: packageJson.name,
       safeName,
@@ -132,9 +175,7 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
         : packageJson.author?.name || '',
       license: packageJson.license || '',
       keywords: packageJson.keywords || [],
-      repository: typeof packageJson.repository === 'string'
-        ? packageJson.repository
-        : packageJson.repository?.url || '',
+      repository: repositoryUrl,
       homepage: packageJson.homepage || '',
       updatedAt: new Date().toISOString(),
     }
@@ -206,7 +247,8 @@ interface PackageMetadata {
 async function getOrCreateMetadata(
   s3: S3Client,
   safeName: string,
-  packageJson: PackageJson
+  packageJson: PackageJson,
+  targetDir: string
 ): Promise<PackageMetadata> {
   const metadataKey = `packages/${safeName}/metadata.json`
 
@@ -227,9 +269,12 @@ async function getOrCreateMetadata(
       ? packageJson.author
       : packageJson.author?.name
 
+    // Use repository from package.json, git remote, or default to GitHub
     const repository = typeof packageJson.repository === 'string'
       ? packageJson.repository
       : packageJson.repository?.url
+        ? packageJson.repository.url
+        : getGitRemoteUrl(targetDir) || `https://github.com/stacksjs/${safeName}`
 
     return {
       name: packageJson.name,
