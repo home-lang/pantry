@@ -584,8 +584,180 @@ fn uploadToS3Direct(
         return error.UploadFailed;
     }
 
+    // Update DynamoDB index
+    std.debug.print("  Updating DynamoDB index...\n", .{});
+    try updateDynamoDBIndex(allocator, name, clean_name, tarball_key, version, metadata_json);
+
     const success_msg = try std.fmt.allocPrint(allocator, "Published to s3://{s}/{s}", .{ bucket, tarball_key });
     return success_msg;
+}
+
+/// Update DynamoDB index for the published package
+fn updateDynamoDBIndex(
+    allocator: std.mem.Allocator,
+    name: []const u8,
+    clean_name: []const u8,
+    s3_path: []const u8,
+    version: []const u8,
+    metadata_json: []const u8,
+) !void {
+    const table_name = "pantry-packages";
+
+    // Parse metadata to extract description, author, etc.
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_json, .{}) catch {
+        std.debug.print("Warning: Could not parse metadata for DynamoDB\n", .{});
+        return;
+    };
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) return;
+
+    // Extract fields from metadata
+    const description = if (root.object.get("description")) |d| if (d == .string) d.string else "" else "";
+    const license = if (root.object.get("license")) |l| if (l == .string) l.string else "" else "";
+    const homepage = if (root.object.get("homepage")) |h| if (h == .string) h.string else "" else "";
+
+    // Get author (can be string or object)
+    var author: []const u8 = "";
+    if (root.object.get("author")) |a| {
+        if (a == .string) {
+            author = a.string;
+        } else if (a == .object) {
+            if (a.object.get("name")) |n| {
+                if (n == .string) author = n.string;
+            }
+        }
+    }
+
+    // Get repository (can be string or object)
+    var repository: []const u8 = "";
+    if (root.object.get("repository")) |r| {
+        if (r == .string) {
+            repository = r.string;
+        } else if (r == .object) {
+            if (r.object.get("url")) |u| {
+                if (u == .string) repository = u.string;
+            }
+        }
+    }
+
+    // If no repository, try to get from git remote
+    if (repository.len == 0) {
+        const git_result = io_helper.childRun(allocator, &[_][]const u8{ "git", "remote", "get-url", "origin" }) catch null;
+        if (git_result) |result| {
+            defer allocator.free(result.stdout);
+            defer allocator.free(result.stderr);
+            if (result.term == .Exited and result.term.Exited == 0 and result.stdout.len > 0) {
+                // Convert SSH to HTTPS if needed
+                const trimmed = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
+                if (std.mem.startsWith(u8, trimmed, "git@")) {
+                    // git@github.com:user/repo.git -> https://github.com/user/repo
+                    if (std.mem.indexOf(u8, trimmed, ":")) |colon_idx| {
+                        const host_start = 4; // after "git@"
+                        const host = trimmed[host_start..colon_idx];
+                        var path = trimmed[colon_idx + 1 ..];
+                        if (std.mem.endsWith(u8, path, ".git")) {
+                            path = path[0 .. path.len - 4];
+                        }
+                        const repo_url = std.fmt.allocPrint(allocator, "https://{s}/{s}", .{ host, path }) catch "";
+                        repository = repo_url;
+                    }
+                } else if (std.mem.startsWith(u8, trimmed, "https://")) {
+                    // Remove .git suffix
+                    var url = trimmed;
+                    if (std.mem.endsWith(u8, url, ".git")) {
+                        url = url[0 .. url.len - 4];
+                    }
+                    repository = allocator.dupe(u8, url) catch "";
+                }
+            }
+        }
+    }
+
+    // Default repository if still empty
+    if (repository.len == 0) {
+        repository = std.fmt.allocPrint(allocator, "https://github.com/stacksjs/{s}", .{clean_name}) catch "";
+    }
+
+    // Get keywords as JSON array - just store as empty for now
+    // DynamoDB will store keywords in a simpler format
+    const keywords_json: []const u8 = "[]";
+
+    // Get current timestamp as ISO 8601 string
+    const date_result = io_helper.childRun(allocator, &[_][]const u8{ "date", "-u", "+%Y-%m-%dT%H:%M:%SZ" }) catch null;
+    var timestamp: []const u8 = "1970-01-01T00:00:00Z";
+    if (date_result) |result| {
+        defer allocator.free(result.stderr);
+        if (result.term == .Exited and result.term.Exited == 0 and result.stdout.len > 0) {
+            timestamp = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
+        } else {
+            allocator.free(result.stdout);
+        }
+    }
+
+    // Build DynamoDB put-item JSON
+    const item_json = try std.fmt.allocPrint(allocator,
+        \\{{
+        \\  "packageName": {{"S": "{s}"}},
+        \\  "safeName": {{"S": "{s}"}},
+        \\  "s3Path": {{"S": "{s}"}},
+        \\  "latestVersion": {{"S": "{s}"}},
+        \\  "description": {{"S": "{s}"}},
+        \\  "author": {{"S": "{s}"}},
+        \\  "license": {{"S": "{s}"}},
+        \\  "repository": {{"S": "{s}"}},
+        \\  "homepage": {{"S": "{s}"}},
+        \\  "keywords": {{"S": "{s}"}},
+        \\  "updatedAt": {{"S": "{s}"}},
+        \\  "createdAt": {{"S": "{s}"}}
+        \\}}
+    , .{
+        name,
+        clean_name,
+        s3_path,
+        version,
+        description,
+        author,
+        license,
+        repository,
+        homepage,
+        keywords_json,
+        timestamp,
+        timestamp, // createdAt (will be preserved if item exists)
+    });
+    defer allocator.free(item_json);
+
+    // Write JSON to temp file
+    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const item_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-dynamodb-item.json" });
+    defer allocator.free(item_tmp);
+
+    const file = try io_helper.cwd().createFile(io_helper.io, item_tmp, .{});
+    try io_helper.writeAllToFile(file, item_json);
+    file.close(io_helper.io);
+    defer io_helper.deleteFile(item_tmp) catch {};
+
+    // Call AWS CLI to put item
+    const result = try io_helper.childRun(allocator, &[_][]const u8{
+        "aws",
+        "dynamodb",
+        "put-item",
+        "--table-name",
+        table_name,
+        "--item",
+        item_json,
+    });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term != .Exited or result.term.Exited != 0) {
+        std.debug.print("DynamoDB update failed: {s}\n", .{result.stderr});
+        // Don't fail the whole publish, just warn
+        return;
+    }
+
+    std.debug.print("  Updated DynamoDB index for {s}\n", .{name});
 }
 
 /// Upload via HTTP to registry server
