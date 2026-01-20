@@ -679,6 +679,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .name = allocator.dupe(u8, name) catch continue,
             .version = allocator.dupe(u8, result.version) catch continue,
         }) catch {};
+
+        // Update package.json with the new dependency
+        helpers.addDependencyToPackageJson(allocator, project_root, name, result.version, false) catch |err| {
+            std.debug.print("{s}⚠{s}  Failed to update package.json: {}\n", .{ "\x1b[33m", reset, err });
+        };
     }
 
     // Generate lockfile for installed packages

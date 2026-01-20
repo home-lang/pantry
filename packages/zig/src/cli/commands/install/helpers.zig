@@ -404,6 +404,174 @@ fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin
     }
 }
 
+/// Update package.json with a new dependency
+/// Creates package.json if it doesn't exist
+pub fn addDependencyToPackageJson(
+    allocator: std.mem.Allocator,
+    project_root: []const u8,
+    pkg_name: []const u8,
+    pkg_version: []const u8,
+    is_dev: bool,
+) !void {
+    const package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ project_root, "package.json" });
+    defer allocator.free(package_json_path);
+
+    // Data structures to hold the package.json content
+    var name: []const u8 = "my-project";
+    var version: []const u8 = "1.0.0";
+    var deps = std.StringHashMap([]const u8).init(allocator);
+    defer deps.deinit();
+    var dev_deps = std.StringHashMap([]const u8).init(allocator);
+    defer dev_deps.deinit();
+    var has_existing_file = false;
+
+    // Try to read existing package.json
+    if (io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024)) |content| {
+        defer allocator.free(content);
+        has_existing_file = true;
+
+        if (std.json.parseFromSlice(std.json.Value, allocator, content, .{})) |parsed| {
+            defer parsed.deinit();
+
+            if (parsed.value == .object) {
+                // Extract name
+                if (parsed.value.object.get("name")) |v| {
+                    if (v == .string) name = try allocator.dupe(u8, v.string);
+                }
+                // Extract version
+                if (parsed.value.object.get("version")) |v| {
+                    if (v == .string) version = try allocator.dupe(u8, v.string);
+                }
+                // Extract dependencies
+                if (parsed.value.object.get("dependencies")) |deps_val| {
+                    if (deps_val == .object) {
+                        var iter = deps_val.object.iterator();
+                        while (iter.next()) |entry| {
+                            if (entry.value_ptr.* == .string) {
+                                try deps.put(
+                                    try allocator.dupe(u8, entry.key_ptr.*),
+                                    try allocator.dupe(u8, entry.value_ptr.string),
+                                );
+                            }
+                        }
+                    }
+                }
+                // Extract devDependencies
+                if (parsed.value.object.get("devDependencies")) |deps_val| {
+                    if (deps_val == .object) {
+                        var iter = deps_val.object.iterator();
+                        while (iter.next()) |entry| {
+                            if (entry.value_ptr.* == .string) {
+                                try dev_deps.put(
+                                    try allocator.dupe(u8, entry.key_ptr.*),
+                                    try allocator.dupe(u8, entry.value_ptr.string),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        } else |_| {
+            // Invalid JSON, start fresh
+        }
+    } else |_| {
+        // No package.json exists
+    }
+
+    // Format version with caret for semver compatibility
+    const version_with_caret = try std.fmt.allocPrint(allocator, "^{s}", .{pkg_version});
+
+    // Add new dependency to appropriate section
+    if (is_dev) {
+        // Free old value if exists
+        if (dev_deps.get(pkg_name)) |old_val| {
+            allocator.free(old_val);
+        }
+        try dev_deps.put(try allocator.dupe(u8, pkg_name), version_with_caret);
+    } else {
+        // Free old value if exists
+        if (deps.get(pkg_name)) |old_val| {
+            allocator.free(old_val);
+        }
+        try deps.put(try allocator.dupe(u8, pkg_name), version_with_caret);
+    }
+
+    // Build JSON output manually
+    var buf = try std.ArrayList(u8).initCapacity(allocator, 1024);
+    defer buf.deinit(allocator);
+
+    try buf.appendSlice(allocator, "{\n");
+    {
+        const line = try std.fmt.allocPrint(allocator, "  \"name\": \"{s}\",\n", .{name});
+        defer allocator.free(line);
+        try buf.appendSlice(allocator, line);
+    }
+    {
+        const line = try std.fmt.allocPrint(allocator, "  \"version\": \"{s}\"", .{version});
+        defer allocator.free(line);
+        try buf.appendSlice(allocator, line);
+    }
+
+    // Write dependencies if any
+    if (deps.count() > 0) {
+        try buf.appendSlice(allocator, ",\n  \"dependencies\": {\n");
+        var iter = deps.iterator();
+        var first = true;
+        while (iter.next()) |entry| {
+            if (!first) {
+                try buf.appendSlice(allocator, ",\n");
+            }
+            first = false;
+            const line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.* });
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
+        try buf.appendSlice(allocator, "\n  }");
+    }
+
+    // Write devDependencies if any
+    if (dev_deps.count() > 0) {
+        try buf.appendSlice(allocator, ",\n  \"devDependencies\": {\n");
+        var iter = dev_deps.iterator();
+        var first = true;
+        while (iter.next()) |entry| {
+            if (!first) {
+                try buf.appendSlice(allocator, ",\n");
+            }
+            first = false;
+            const line = try std.fmt.allocPrint(allocator, "    \"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.* });
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
+        try buf.appendSlice(allocator, "\n  }");
+    }
+
+    try buf.appendSlice(allocator, "\n}\n");
+
+    // Write to file
+    const file = try io_helper.cwd().createFile(io_helper.io, package_json_path, .{});
+    defer file.close(io_helper.io);
+    try io_helper.writeAllToFile(file, buf.items);
+
+    // Clean up allocated strings
+    if (has_existing_file) {
+        if (!std.mem.eql(u8, name, "my-project")) allocator.free(name);
+        if (!std.mem.eql(u8, version, "1.0.0")) allocator.free(version);
+    }
+
+    // Clean up deps maps
+    var deps_iter = deps.iterator();
+    while (deps_iter.next()) |entry| {
+        allocator.free(entry.key_ptr.*);
+        allocator.free(entry.value_ptr.*);
+    }
+    var dev_deps_iter = dev_deps.iterator();
+    while (dev_deps_iter.next()) |entry| {
+        allocator.free(entry.key_ptr.*);
+        allocator.free(entry.value_ptr.*);
+    }
+}
+
 /// Try to load dependencies from a config file (pantry.config.ts, etc.)
 /// Returns null if no config file found or if config has no dependencies
 pub fn loadDependenciesFromConfig(
