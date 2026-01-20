@@ -14,6 +14,7 @@ pub const DepsFile = struct {
         deps_yml,
         dependencies_yaml,
         pkgx_yaml,
+        package_json, // package.json (npm/bun/yarn compatible)
         package_jsonc, // Zig package.jsonc
         zig_json, // zig.json
         cargo_toml,
@@ -48,6 +49,7 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
         "dependencies.yaml",
         "pkgx.yaml",
         // Other package manager formats (lower priority, fallback only)
+        "package.json", // package.json (npm/bun/yarn compatible)
         "package.jsonc", // Zig package.jsonc
         "zig.json", // zig.json
         "Cargo.toml",
@@ -132,6 +134,7 @@ pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
     if (std.mem.eql(u8, filename, "dependencies.yaml")) return .dependencies_yaml;
     if (std.mem.eql(u8, filename, "pkgx.yaml")) return .pkgx_yaml;
     // Other package managers (fallback)
+    if (std.mem.eql(u8, filename, "package.json")) return .package_json;
     if (std.mem.eql(u8, filename, "package.jsonc")) return .package_jsonc;
     if (std.mem.eql(u8, filename, "zig.json")) return .zig_json;
     if (std.mem.eql(u8, filename, "Cargo.toml")) return .cargo_toml;

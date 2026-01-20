@@ -359,7 +359,7 @@ pub fn inferDependencies(
         .config_deps_ts, .pantry_config_ts => try parseTsConfigFile(allocator, deps_file.path),
         .deps_yaml, .deps_yml, .dependencies_yaml, .pkgx_yaml => try parseDepsFile(allocator, deps_file.path),
         // Other package manager formats (fallback)
-        .package_jsonc, .zig_json => try parseZigPackageJson(allocator, deps_file.path),
+        .package_json, .package_jsonc, .zig_json => try parseZigPackageJson(allocator, deps_file.path),
         .cargo_toml => try parseCargoToml(allocator, deps_file.path),
         .pyproject_toml => try parsePyprojectToml(allocator, deps_file.path),
         .requirements_txt => try parseRequirementsTxt(allocator, deps_file.path),
@@ -788,117 +788,126 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
         deps.deinit(allocator);
     }
 
-    // Get dependencies object
-    if (parsed.value.object.get("dependencies")) |deps_value| {
-        if (deps_value != .object) return deps.toOwnedSlice(allocator);
+    // Parse both dependencies and devDependencies
+    const dep_sections = [_]struct { key: []const u8, dep_type: DependencyType }{
+        .{ .key = "dependencies", .dep_type = .normal },
+        .{ .key = "devDependencies", .dep_type = .dev },
+        .{ .key = "peerDependencies", .dep_type = .peer },
+    };
 
-        var it = deps_value.object.iterator();
-        while (it.next()) |entry| {
-            const pkg_name = entry.key_ptr.*;
-            const pkg_spec = entry.value_ptr.*;
+    for (dep_sections) |section| {
+        if (parsed.value.object.get(section.key)) |deps_value| {
+            if (deps_value != .object) continue;
 
-            var version: []const u8 = "latest";
-            var source: []const u8 = "auto";
-            var url: ?[]const u8 = null;
-            var repo: ?[]const u8 = null;
-            var tag: ?[]const u8 = null;
-            var branch: ?[]const u8 = null;
-            var global = false;
-            var parsed_github_ref: ?GitHubRef = null;
+            var it = deps_value.object.iterator();
+            while (it.next()) |entry| {
+                const pkg_name = entry.key_ptr.*;
+                const pkg_spec = entry.value_ptr.*;
 
-            // Handle simplified npm-style syntax: "package": "version"
-            if (pkg_spec == .string) {
-                version = pkg_spec.string;
+                var version: []const u8 = "latest";
+                var source: []const u8 = "auto";
+                var url: ?[]const u8 = null;
+                var repo: ?[]const u8 = null;
+                var tag: ?[]const u8 = null;
+                var branch: ?[]const u8 = null;
+                var global = false;
+                var parsed_github_ref: ?GitHubRef = null;
 
-                // First, check if the version string itself is a GitHub URL
-                if (try parseGitHubUrl(allocator, version)) |github_ref| {
-                    source = "github";
-                    repo = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ github_ref.owner, github_ref.repo });
-                    version = github_ref.ref;
-                    parsed_github_ref = github_ref;
-                } else {
-                    // Auto-detect source from package name
-                    const detection = SourceDetection.fromPackageName(pkg_name);
-                    source = detection.source;
+                // Handle simplified npm-style syntax: "package": "version"
+                if (pkg_spec == .string) {
+                    version = pkg_spec.string;
 
-                    // Set detected metadata
-                    if (detection.repo) |r| {
-                        repo = r;
-                    }
-                    if (detection.url) |u| {
-                        url = u;
+                    // First, check if the version string itself is a GitHub URL
+                    if (try parseGitHubUrl(allocator, version)) |github_ref| {
+                        source = "github";
+                        repo = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ github_ref.owner, github_ref.repo });
+                        version = github_ref.ref;
+                        parsed_github_ref = github_ref;
+                    } else {
+                        // Auto-detect source from package name
+                        const detection = SourceDetection.fromPackageName(pkg_name);
+                        source = detection.source;
+
+                        // Set detected metadata
+                        if (detection.repo) |r| {
+                            repo = r;
+                        }
+                        if (detection.url) |u| {
+                            url = u;
+                        }
                     }
                 }
+                // Handle explicit object format: "package": { ... }
+                else if (pkg_spec == .object) {
+                    if (pkg_spec.object.get("version")) |v| {
+                        if (v == .string) version = v.string;
+                    }
+                    if (pkg_spec.object.get("source")) |s| {
+                        if (s == .string) source = s.string;
+                    }
+                    if (pkg_spec.object.get("url")) |u| {
+                        if (u == .string) url = u.string;
+                    }
+                    if (pkg_spec.object.get("repo")) |r| {
+                        if (r == .string) repo = r.string;
+                    }
+                    if (pkg_spec.object.get("tag")) |t| {
+                        if (t == .string) tag = t.string;
+                    }
+                    if (pkg_spec.object.get("branch")) |b| {
+                        if (b == .string) branch = b.string;
+                    }
+                    if (pkg_spec.object.get("global")) |g| {
+                        if (g == .bool) global = g.bool;
+                    }
+                }
+
+                // Build full name with source prefix for tracking
+                const full_name = blk: {
+                    // If source is explicit and has additional metadata, use it
+                    if (!std.mem.eql(u8, source, "auto")) {
+                        if (std.mem.eql(u8, source, "github")) {
+                            const github_repo = repo orelse pkg_name;
+                            break :blk try std.fmt.allocPrint(allocator, "github:{s}", .{github_repo});
+                        } else if (std.mem.eql(u8, source, "npm")) {
+                            break :blk try std.fmt.allocPrint(allocator, "npm:{s}", .{pkg_name});
+                        } else if (std.mem.eql(u8, source, "http")) {
+                            const http_url = url orelse pkg_name;
+                            break :blk try std.fmt.allocPrint(allocator, "http:{s}", .{http_url});
+                        } else if (std.mem.eql(u8, source, "git")) {
+                            const git_url = url orelse pkg_name;
+                            break :blk try std.fmt.allocPrint(allocator, "git:{s}", .{git_url});
+                        } else if (std.mem.eql(u8, source, "local")) {
+                            const local_path = url orelse pkg_name;
+                            break :blk try std.fmt.allocPrint(allocator, "local:{s}", .{local_path});
+                        } else if (std.mem.eql(u8, source, "pkgx")) {
+                            break :blk try allocator.dupe(u8, pkg_name);
+                        }
+                    }
+
+                    // Auto-detection: mark with "auto:" prefix for later resolution
+                    break :blk try std.fmt.allocPrint(allocator, "auto:{s}", .{pkg_name});
+                };
+
+                // Determine the dependency source
+                const dep_source: DependencySource = if (std.mem.eql(u8, source, "github"))
+                    .github
+                else if (std.mem.eql(u8, source, "git"))
+                    .git
+                else if (std.mem.eql(u8, source, "url") or std.mem.eql(u8, source, "http"))
+                    .url
+                else
+                    .registry;
+
+                try deps.append(allocator, .{
+                    .name = full_name,
+                    .version = try allocator.dupe(u8, version),
+                    .global = global,
+                    .dep_type = section.dep_type,
+                    .source = dep_source,
+                    .github_ref = parsed_github_ref,
+                });
             }
-            // Handle explicit object format: "package": { ... }
-            else if (pkg_spec == .object) {
-                if (pkg_spec.object.get("version")) |v| {
-                    if (v == .string) version = v.string;
-                }
-                if (pkg_spec.object.get("source")) |s| {
-                    if (s == .string) source = s.string;
-                }
-                if (pkg_spec.object.get("url")) |u| {
-                    if (u == .string) url = u.string;
-                }
-                if (pkg_spec.object.get("repo")) |r| {
-                    if (r == .string) repo = r.string;
-                }
-                if (pkg_spec.object.get("tag")) |t| {
-                    if (t == .string) tag = t.string;
-                }
-                if (pkg_spec.object.get("branch")) |b| {
-                    if (b == .string) branch = b.string;
-                }
-                if (pkg_spec.object.get("global")) |g| {
-                    if (g == .bool) global = g.bool;
-                }
-            }
-
-            // Build full name with source prefix for tracking
-            const full_name = blk: {
-                // If source is explicit and has additional metadata, use it
-                if (!std.mem.eql(u8, source, "auto")) {
-                    if (std.mem.eql(u8, source, "github")) {
-                        const github_repo = repo orelse pkg_name;
-                        break :blk try std.fmt.allocPrint(allocator, "github:{s}", .{github_repo});
-                    } else if (std.mem.eql(u8, source, "npm")) {
-                        break :blk try std.fmt.allocPrint(allocator, "npm:{s}", .{pkg_name});
-                    } else if (std.mem.eql(u8, source, "http")) {
-                        const http_url = url orelse pkg_name;
-                        break :blk try std.fmt.allocPrint(allocator, "http:{s}", .{http_url});
-                    } else if (std.mem.eql(u8, source, "git")) {
-                        const git_url = url orelse pkg_name;
-                        break :blk try std.fmt.allocPrint(allocator, "git:{s}", .{git_url});
-                    } else if (std.mem.eql(u8, source, "local")) {
-                        const local_path = url orelse pkg_name;
-                        break :blk try std.fmt.allocPrint(allocator, "local:{s}", .{local_path});
-                    } else if (std.mem.eql(u8, source, "pkgx")) {
-                        break :blk try allocator.dupe(u8, pkg_name);
-                    }
-                }
-
-                // Auto-detection: mark with "auto:" prefix for later resolution
-                break :blk try std.fmt.allocPrint(allocator, "auto:{s}", .{pkg_name});
-            };
-
-            // Determine the dependency source
-            const dep_source: DependencySource = if (std.mem.eql(u8, source, "github"))
-                .github
-            else if (std.mem.eql(u8, source, "git"))
-                .git
-            else if (std.mem.eql(u8, source, "url") or std.mem.eql(u8, source, "http"))
-                .url
-            else
-                .registry;
-
-            try deps.append(allocator, .{
-                .name = full_name,
-                .version = try allocator.dupe(u8, version),
-                .global = global,
-                .source = dep_source,
-                .github_ref = parsed_github_ref,
-            });
         }
     }
 
