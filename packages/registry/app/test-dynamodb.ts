@@ -20,8 +20,8 @@ async function testDynamoDB(): Promise<void> {
   console.log('1. Listing tables...')
   try {
     const tables = await dynamodb.listTables({})
-    console.log(`   Found ${tables.TableNames.length} tables:`)
-    for (const table of tables.TableNames) {
+    console.log(`   Found ${tables.TableNames?.length ?? 0} tables:`)
+    for (const table of tables.TableNames ?? []) {
       console.log(`   - ${table}`)
     }
     console.log()
@@ -34,8 +34,8 @@ async function testDynamoDB(): Promise<void> {
   console.log(`2. Checking if '${TABLE_NAME}' table exists...`)
   try {
     const tableInfo = await dynamodb.describeTable({ TableName: TABLE_NAME })
-    console.log(`   Table exists! Status: ${tableInfo.Table.TableStatus}`)
-    console.log(`   Item count: ${tableInfo.Table.ItemCount}`)
+    console.log(`   Table exists! Status: ${tableInfo.Table?.TableStatus}`)
+    console.log(`   Item count: ${tableInfo.Table?.ItemCount}`)
     console.log()
   } catch (err: any) {
     if (err.message?.includes('ResourceNotFoundException') || err.code === 'ResourceNotFoundException') {
@@ -139,7 +139,7 @@ async function createTable(dynamodb: DynamoDBClient): Promise<void> {
     while (status !== 'ACTIVE') {
       await new Promise(resolve => setTimeout(resolve, 2000))
       const info = await dynamodb.describeTable({ TableName: TABLE_NAME })
-      status = info.Table.TableStatus
+      status = info.Table?.TableStatus ?? 'UNKNOWN'
       console.log(`   Status: ${status}`)
     }
 

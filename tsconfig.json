@@ -13,6 +13,9 @@
       ],
       "ts-pantry/*": [
         "./packages/ts-pantry/src/*"
+      ],
+      "ts-cloud/aws": [
+        "./packages/registry/app/ts-cloud-aws.ts"
       ]
     },
     "resolveJsonModule": true,
