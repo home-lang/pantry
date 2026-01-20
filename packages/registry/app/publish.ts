@@ -189,8 +189,8 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
     if (!existingItem.Item) {
       (dbRecord as any).createdAt = new Date().toISOString()
     } else {
-      const existing = DynamoDBClient.unmarshal(existingItem.Item)
-      (dbRecord as any).createdAt = existing.createdAt || new Date().toISOString()
+      const existingRecord = DynamoDBClient.unmarshal(existingItem.Item) as { createdAt?: string }
+      (dbRecord as any).createdAt = existingRecord.createdAt || new Date().toISOString()
     }
 
     await dynamodb.putItem({

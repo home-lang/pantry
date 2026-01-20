@@ -1,8 +1,5 @@
-import type { BunPressOptions } from '@stacksjs/bunpress'
-
-export default {
+const config = {
   verbose: false,
-  docsDir: './docs',
   outDir: './dist',
 
   nav: [
@@ -155,4 +152,6 @@ export default {
     siteId: 'PANTRY',
     honorDNT: true,
   },
-} satisfies BunPressOptions
+} as const
+
+export default config

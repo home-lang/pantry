@@ -77,7 +77,7 @@ export async function listPackages(): Promise<PackageInfo[]> {
     TableName: TABLE_NAME,
   })
 
-  return (result.Items || []).map(item => DynamoDBClient.unmarshal(item) as PackageInfo)
+  return (result.Items || []).map((item) => DynamoDBClient.unmarshal(item) as PackageInfo)
 }
 
 /**
@@ -95,11 +95,11 @@ export async function searchPackages(query: string): Promise<PackageInfo[]> {
 
   const lowerQuery = query.toLowerCase()
   return (result.Items || [])
-    .map(item => DynamoDBClient.unmarshal(item) as PackageInfo)
-    .filter(pkg =>
+    .map((item) => DynamoDBClient.unmarshal(item) as PackageInfo)
+    .filter((pkg: PackageInfo) =>
       pkg.packageName.toLowerCase().includes(lowerQuery) ||
       pkg.description?.toLowerCase().includes(lowerQuery) ||
-      pkg.keywords?.some(k => k.toLowerCase().includes(lowerQuery))
+      pkg.keywords?.some((k: string) => k.toLowerCase().includes(lowerQuery))
     )
 }
 
