@@ -618,7 +618,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     var failed_count: usize = 0;
 
     // Track successful installs for lockfile
-    const InstalledPkg = struct { name: []const u8, version: []const u8 };
+    const InstalledPkg = struct { name: []const u8, version: []const u8, source: lib.packages.PackageSource };
     var installed_packages = std.ArrayList(InstalledPkg){};
     defer {
         for (installed_packages.items) |pkg| {
@@ -634,13 +634,108 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const name = if (at_pos) |pos| pkg_spec_str[0..pos] else pkg_spec_str;
         const version = if (at_pos) |pos| pkg_spec_str[pos + 1 ..] else "latest";
 
-        const spec = lib.packages.PackageSpec{
+        // Check if package exists in pantry registry first
+        const pkg_registry = @import("../../../packages/generated.zig");
+        const pkg_info = pkg_registry.getPackageByName(name);
+
+        // Determine the package spec - use npm fallback if not in pantry registry
+        const spec = if (pkg_info != null) lib.packages.PackageSpec{
             .name = name,
             .version = version,
+        } else npm_fallback: {
+            // Try npm registry as fallback - use temp file to handle large responses
+            const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+            const tmp_file = std.fmt.allocPrint(allocator, "{s}/pantry-npm-{s}.json", .{ tmp_dir, name }) catch {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            defer allocator.free(tmp_file);
+            defer io_helper.deleteFile(tmp_file) catch {};
+
+            const npm_url = std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{name}) catch {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            defer allocator.free(npm_url);
+
+            // Download to temp file
+            const curl_result = io_helper.childRun(allocator, &[_][]const u8{ "curl", "-sL", "-o", tmp_file, npm_url }) catch {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            defer allocator.free(curl_result.stdout);
+            defer allocator.free(curl_result.stderr);
+
+            if (curl_result.term.Exited != 0) {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            }
+
+            // Read and parse the temp file
+            const npm_response = io_helper.readFileAlloc(allocator, tmp_file, 10 * 1024 * 1024) catch {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            defer allocator.free(npm_response);
+
+            if (npm_response.len == 0) {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            }
+
+            // Parse npm response
+            const parsed = std.json.parseFromSlice(std.json.Value, allocator, npm_response, .{}) catch {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            defer parsed.deinit();
+
+            if (parsed.value != .object) {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            }
+
+            // Get target version
+            const target_version = if (std.mem.eql(u8, version, "latest")) version_blk: {
+                const dist_tags = parsed.value.object.get("dist-tags") orelse break :version_blk null;
+                if (dist_tags != .object) break :version_blk null;
+                const latest = dist_tags.object.get("latest") orelse break :version_blk null;
+                if (latest != .string) break :version_blk null;
+                break :version_blk latest.string;
+            } else version;
+
+            if (target_version == null) {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            }
+
+            // Get tarball URL
+            const versions_obj = parsed.value.object.get("versions") orelse {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            if (versions_obj != .object) {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            }
+
+            const version_data = versions_obj.object.get(target_version.?) orelse {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            };
+            if (version_data != .object) {
+                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
+            }
+
+            var tarball_url: ?[]const u8 = null;
+            if (version_data.object.get("dist")) |dist| {
+                if (dist == .object) {
+                    if (dist.object.get("tarball")) |tarball| {
+                        if (tarball == .string) {
+                            tarball_url = allocator.dupe(u8, tarball.string) catch null;
+                        }
+                    }
+                }
+            }
+
+            break :npm_fallback lib.packages.PackageSpec{
+                .name = name,
+                .version = allocator.dupe(u8, target_version.?) catch version,
+                .source = .npm,
+                .url = tarball_url,
+            };
         };
 
         // Show what we're installing
-        std.debug.print("  {s}↓{s} {s}@{s}...", .{ dim, reset, name, version });
+        std.debug.print("  {s}↓{s} {s}@{s}...", .{ dim, reset, name, spec.version });
 
         var result = installer.install(spec, .{
             .project_root = project_root,
@@ -649,18 +744,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             std.debug.print("\r\x1b[K", .{}); // Clear the line
             // Provide friendly error messages
             const error_msg = switch (err) {
-                error.PackageNotFound => "not found in registry (npm packages not yet supported)",
+                error.PackageNotFound => "not found in pantry or npm registry",
+                error.NoTarballUrl => "npm package found but no tarball URL available",
                 else => @errorName(err),
             };
-            std.debug.print("{s}✗{s} {s}@{s} {s}({s}){s}\n", .{ red, reset, name, version, dim, error_msg, reset });
-
-            // Show helpful suggestions for PackageNotFound
-            if (err == error.PackageNotFound) {
-                std.debug.print("\n{s}💡 Suggestions:{s}\n", .{ "\x1b[33m", reset });
-                std.debug.print("   1. This package may be an npm package (not yet supported)\n", .{});
-                std.debug.print("   2. Try 'pantry search {s}' to find available packages\n", .{name});
-                std.debug.print("   3. For npm packages, use: bun install {s} (for now)\n\n", .{name});
-            }
+            std.debug.print("{s}✗{s} {s}@{s} {s}({s}){s}\n", .{ red, reset, name, spec.version, dim, error_msg, reset });
 
             failed_count += 1;
             continue;
@@ -678,6 +766,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         installed_packages.append(allocator, .{
             .name = allocator.dupe(u8, name) catch continue,
             .version = allocator.dupe(u8, result.version) catch continue,
+            .source = spec.source,
         }) catch {};
 
         // Update package.json with the new dependency
@@ -701,7 +790,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             const entry = lib.packages.LockfileEntry{
                 .name = allocator.dupe(u8, pkg.name) catch continue,
                 .version = allocator.dupe(u8, pkg.version) catch continue,
-                .source = .pkgx,
+                .source = pkg.source,
                 .url = null,
                 .resolved = null,
                 .integrity = null,

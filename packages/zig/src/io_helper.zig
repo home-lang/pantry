@@ -588,7 +588,8 @@ pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u
 
     if (fn_info.params.len == 3) {
         // New API: run(allocator, io, args)
-        const result = try ChildType.run(allocator, io, .{
+        // Use getIo() at runtime instead of the comptime-evaluated io constant
+        const result = try ChildType.run(allocator, getIo(), .{
             .argv = argv,
             .cwd = options.cwd,
             .env_map = options.env_map,

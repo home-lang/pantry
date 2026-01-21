@@ -154,6 +154,11 @@ pub const Installer = struct {
             return try self.installFromZiglang(spec, options);
         }
 
+        // Check if this is an npm package
+        if (spec.source == .npm) {
+            return try self.installFromNpm(spec, options);
+        }
+
         // Check if package exists in registry
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
@@ -442,6 +447,126 @@ pub const Installer = struct {
             defer self.allocator.free(dest_path);
 
             try io_helper.rename(src_path, dest_path);
+        }
+
+        // Create project symlinks if installing to project
+        if (options.project_root) |project_root| {
+            try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
+        }
+
+        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, spec.version),
+            .install_path = install_dir,
+            .from_cache = false,
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install a package from npm registry
+    fn installFromNpm(
+        self: *Installer,
+        spec: PackageSpec,
+        options: InstallOptions,
+    ) !InstallResult {
+        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+
+        const tarball_url = spec.url orelse return error.NoTarballUrl;
+
+        // Determine install location
+        const install_dir = if (options.project_root) |project_root| blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry_modules/{s}",
+                .{ project_root, spec.name },
+            );
+        } else blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/packages/npm/{s}/{s}",
+                .{ self.data_dir, spec.name, spec.version },
+            );
+        };
+        errdefer self.allocator.free(install_dir);
+
+        // Check if already installed
+        const already_installed = !options.force and blk: {
+            var check_dir = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
+            check_dir.close(io_helper.io);
+            break :blk true;
+        };
+
+        if (already_installed) {
+            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            return InstallResult{
+                .name = try self.allocator.dupe(u8, spec.name),
+                .version = try self.allocator.dupe(u8, spec.version),
+                .install_path = install_dir,
+                .from_cache = true,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        }
+
+        if (!options.quiet) {
+            std.debug.print("  → Downloading from npm: {s}@{s}\n", .{ spec.name, spec.version });
+        }
+
+        // Create temp directory for download
+        const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+        const tarball_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/pantry-npm-{s}-{s}.tgz",
+            .{ tmp_dir, spec.name, spec.version },
+        );
+        defer {
+            self.allocator.free(tarball_path);
+            io_helper.deleteFile(tarball_path) catch {};
+        }
+
+        // Download tarball using curl
+        const curl_result = try io_helper.childRun(self.allocator, &[_][]const u8{
+            "curl",
+            "-sL",
+            "-o",
+            tarball_path,
+            tarball_url,
+        });
+        defer {
+            self.allocator.free(curl_result.stdout);
+            self.allocator.free(curl_result.stderr);
+        }
+
+        if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+            if (!options.quiet) {
+                std.debug.print("  ✗ Failed to download: {s}\n", .{curl_result.stderr});
+            }
+            return error.DownloadFailed;
+        }
+
+        // Create install directory
+        try io_helper.makePath(install_dir);
+
+        // Extract tarball - npm tarballs have a 'package' directory inside
+        const tar_result = try io_helper.childRun(self.allocator, &[_][]const u8{
+            "tar",
+            "-xzf",
+            tarball_path,
+            "-C",
+            install_dir,
+            "--strip-components=1",
+        });
+        defer {
+            self.allocator.free(tar_result.stdout);
+            self.allocator.free(tar_result.stderr);
+        }
+
+        if (tar_result.term != .Exited or tar_result.term.Exited != 0) {
+            if (!options.quiet) {
+                std.debug.print("  ✗ Failed to extract: {s}\n", .{tar_result.stderr});
+            }
+            return error.ExtractionFailed;
         }
 
         // Create project symlinks if installing to project

@@ -120,18 +120,139 @@ pub fn installSinglePackage(
             .source = .ziglang,
         };
     } else blk: {
-        // Regular registry package
+        // Regular registry package - check pantry first, then fallback to npm
         if (pkg_info == null) {
-            return .{
+            // Try npm registry as fallback using curl
+            const npm_url = try std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{dep.name});
+            defer allocator.free(npm_url);
+
+            const curl_result = io_helper.childRun(allocator, &[_][]const u8{
+                "curl",
+                "-sL",
+                npm_url,
+            }) catch {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "not found in pantry registry and failed to connect to npm", .{}),
+                    .install_time_ms = 0,
+                };
+            };
+            defer allocator.free(curl_result.stdout);
+            defer allocator.free(curl_result.stderr);
+
+            if (curl_result.term.Exited != 0 or curl_result.stdout.len == 0) {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "not found in pantry or npm registry", .{}),
+                    .install_time_ms = 0,
+                };
+            }
+
+            // Parse npm response to get version and tarball URL
+            const parsed = std.json.parseFromSlice(std.json.Value, allocator, curl_result.stdout, .{}) catch {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "failed to parse npm registry response", .{}),
+                    .install_time_ms = 0,
+                };
+            };
+            defer parsed.deinit();
+
+            if (parsed.value != .object) {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "invalid npm registry response", .{}),
+                    .install_time_ms = 0,
+                };
+            }
+
+            // Get the version to install
+            const target_version = if (std.mem.eql(u8, dep.version, "latest")) version_blk: {
+                // Get latest from dist-tags
+                const dist_tags = parsed.value.object.get("dist-tags") orelse break :version_blk null;
+                if (dist_tags != .object) break :version_blk null;
+                const latest = dist_tags.object.get("latest") orelse break :version_blk null;
+                if (latest != .string) break :version_blk null;
+                break :version_blk latest.string;
+            } else dep.version;
+
+            if (target_version == null) {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "could not determine version from npm", .{}),
+                    .install_time_ms = 0,
+                };
+            }
+
+            // Get tarball URL from versions object
+            const versions_obj = parsed.value.object.get("versions") orelse {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "no versions found in npm response", .{}),
+                    .install_time_ms = 0,
+                };
+            };
+
+            if (versions_obj != .object) {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "invalid versions in npm response", .{}),
+                    .install_time_ms = 0,
+                };
+            }
+
+            const version_data = versions_obj.object.get(target_version.?) orelse {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "version {s} not found in npm", .{target_version.?}),
+                    .install_time_ms = 0,
+                };
+            };
+
+            if (version_data != .object) {
+                return .{
+                    .name = dep.name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = try std.fmt.allocPrint(allocator, "invalid version data in npm response", .{}),
+                    .install_time_ms = 0,
+                };
+            }
+
+            // Get tarball URL from dist object
+            var tarball_url: ?[]const u8 = null;
+            if (version_data.object.get("dist")) |dist| {
+                if (dist == .object) {
+                    if (dist.object.get("tarball")) |tarball| {
+                        if (tarball == .string) {
+                            tarball_url = try allocator.dupe(u8, tarball.string);
+                        }
+                    }
+                }
+            }
+
+            // Found in npm - create spec with npm source
+            break :blk lib.packages.PackageSpec{
                 .name = dep.name,
-                .version = dep.version,
-                .success = false,
-                .error_msg = try std.fmt.allocPrint(
-                    allocator,
-                    "not found in registry (npm packages not yet supported). Try: pantry search {s}",
-                    .{dep.name},
-                ),
-                .install_time_ms = 0,
+                .version = try allocator.dupe(u8, target_version.?),
+                .source = .npm,
+                .url = tarball_url,
             };
         }
 
