@@ -1633,8 +1633,8 @@ fn printHelp() void {
 
     // Publishing
     std.debug.print("    " ++ Color.bold_teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "publish" ++ Color.reset ++ "             Publish package to npm (supports OIDC)\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "registry:publish" ++ Color.reset ++ "    Publish package to Pantry registry (S3)\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "publish" ++ Color.reset ++ "             Publish package to Pantry registry (S3)\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "npm:publish" ++ Color.reset ++ "         Publish package to npm (supports OIDC)\n", .{});
     std.debug.print("      " ++ Color.teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
     std.debug.print("      " ++ Color.teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
     std.debug.print("      " ++ Color.teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
@@ -1979,23 +1979,23 @@ pub fn main() !void {
     _ = try root.addCommand(whoami_cmd);
 
     // ========================================================================
-    // Publish Command
+    // npm:publish Command (npm registry with OIDC support)
     // ========================================================================
-    var publish_cmd = try cli.BaseCommand.init(allocator, "publish", "Publish package to registry");
+    var npm_publish_cmd = try cli.BaseCommand.init(allocator, "npm:publish", "Publish package to npm (supports OIDC)");
 
-    const access_opt = cli.Option.init("access", "access", "Package access level (public/restricted)", .string)
+    const npm_access_opt = cli.Option.init("access", "access", "Package access level (public/restricted)", .string)
         .withDefault("public");
-    _ = try publish_cmd.addOption(access_opt);
+    _ = try npm_publish_cmd.addOption(npm_access_opt);
 
-    const tag_opt = cli.Option.init("tag", "tag", "Publish with a tag", .string)
+    const npm_tag_opt = cli.Option.init("tag", "tag", "Publish with a tag", .string)
         .withDefault("latest");
-    _ = try publish_cmd.addOption(tag_opt);
+    _ = try npm_publish_cmd.addOption(npm_tag_opt);
 
-    const registry_opt = cli.Option.init("registry", "registry", "Custom registry URL", .string);
-    _ = try publish_cmd.addOption(registry_opt);
+    const npm_registry_opt = cli.Option.init("registry", "registry", "Custom registry URL", .string);
+    _ = try npm_publish_cmd.addOption(npm_registry_opt);
 
-    _ = publish_cmd.setAction(publishAction);
-    _ = try root.addCommand(publish_cmd);
+    _ = npm_publish_cmd.setAction(publishAction);
+    _ = try root.addCommand(npm_publish_cmd);
 
     // ========================================================================
     // Why Command
@@ -2610,22 +2610,22 @@ pub fn main() !void {
     _ = try root.addCommand(publisher_remove_cmd);
 
     // ========================================================================
-    // Registry Publish Command (Pantry Registry - S3/DynamoDB)
+    // Publish Command (Pantry Registry - S3/DynamoDB)
     // ========================================================================
-    var registry_publish_cmd = try cli.BaseCommand.init(allocator, "registry:publish", "Publish package to Pantry registry (S3)");
+    var publish_cmd = try cli.BaseCommand.init(allocator, "publish", "Publish package to Pantry registry (S3)");
 
-    const reg_pub_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
+    const pub_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
         .withDefault("https://registry.stacksjs.org");
-    _ = try registry_publish_cmd.addOption(reg_pub_registry_opt);
+    _ = try publish_cmd.addOption(pub_registry_opt);
 
-    const reg_pub_token_opt = cli.Option.init("token", "token", "Authentication token", .string);
-    _ = try registry_publish_cmd.addOption(reg_pub_token_opt);
+    const pub_token_opt = cli.Option.init("token", "token", "Authentication token", .string);
+    _ = try publish_cmd.addOption(pub_token_opt);
 
-    const reg_pub_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Show what would be published without uploading", .bool);
-    _ = try registry_publish_cmd.addOption(reg_pub_dry_run_opt);
+    const pub_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Show what would be published without uploading", .bool);
+    _ = try publish_cmd.addOption(pub_dry_run_opt);
 
-    _ = registry_publish_cmd.setAction(registryPublishAction);
-    _ = try root.addCommand(registry_publish_cmd);
+    _ = publish_cmd.setAction(registryPublishAction);
+    _ = try root.addCommand(publish_cmd);
 
     // ========================================================================
     // Help Command
