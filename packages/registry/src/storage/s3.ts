@@ -25,7 +25,7 @@ export class S3Storage implements TarballStorage {
   private getKey(packageName: string, version: string): string {
     // Handle scoped packages (@scope/name -> scope-name)
     const safeName = packageName.replace('@', '').replace('/', '-')
-    return `packages/${safeName}/${version}/${safeName}-${version}.tgz`
+    return `packages/pantry/${safeName}/${version}/${safeName}-${version}.tgz`
   }
 
   async upload(key: string, data: ArrayBuffer): Promise<string> {
@@ -99,17 +99,17 @@ export class S3Storage implements TarballStorage {
    */
   async listPackageVersions(name: string): Promise<string[]> {
     const safeName = name.replace('@', '').replace('/', '-')
-    const prefix = `packages/${safeName}/`
+    const prefix = `packages/pantry/${safeName}/`
 
     const objects = await this.s3.list({
       bucket: this.bucket,
       prefix,
     })
 
-    // Extract versions from keys like "packages/name/1.0.0/name-1.0.0.tgz"
+    // Extract versions from keys like "packages/pantry/name/1.0.0/name-1.0.0.tgz"
     const versions = new Set<string>()
     for (const obj of objects) {
-      const match = obj.Key?.match(/packages\/[^/]+\/([^/]+)\//)
+      const match = obj.Key?.match(/packages\/pantry\/[^/]+\/([^/]+)\//)
       if (match) {
         versions.add(match[1])
       }

@@ -114,9 +114,9 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
 
   const s3 = new S3Client(REGION)
 
-  // Determine S3 key structure: packages/{name}/{version}/{tarball}
+  // Determine S3 key structure: packages/pantry/{name}/{version}/{tarball}
   const safeName = packageJson.name.replace('@', '').replace('/', '-')
-  const s3Key = `packages/${safeName}/${packageJson.version}/${tarballName}`
+  const s3Key = `packages/pantry/${safeName}/${packageJson.version}/${tarballName}`
 
   try {
     // Read tarball as buffer
@@ -132,7 +132,7 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
     console.log(`   ✓ Uploaded ${s3Key}`)
 
     // Also upload/update package metadata
-    const metadataKey = `packages/${safeName}/metadata.json`
+    const metadataKey = `packages/pantry/${safeName}/metadata.json`
     const metadata = await getOrCreateMetadata(s3, safeName, packageJson, targetDir)
 
     // Add this version to metadata
@@ -250,7 +250,7 @@ async function getOrCreateMetadata(
   packageJson: PackageJson,
   targetDir: string
 ): Promise<PackageMetadata> {
-  const metadataKey = `packages/${safeName}/metadata.json`
+  const metadataKey = `packages/pantry/${safeName}/metadata.json`
 
   try {
     const existing = await s3.getObject(BUCKET_NAME, metadataKey)

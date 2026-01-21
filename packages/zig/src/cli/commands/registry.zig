@@ -757,10 +757,10 @@ fn uploadToS3Direct(
     const tarball_filename = try std.fmt.allocPrint(allocator, "{s}-{s}.tgz", .{ clean_name, version });
     defer allocator.free(tarball_filename);
 
-    const tarball_key = try std.fmt.allocPrint(allocator, "packages/{s}/{s}/{s}", .{ clean_name, version, tarball_filename });
+    const tarball_key = try std.fmt.allocPrint(allocator, "packages/pantry/{s}/{s}/{s}", .{ clean_name, version, tarball_filename });
     defer allocator.free(tarball_key);
 
-    const metadata_key = try std.fmt.allocPrint(allocator, "packages/{s}/metadata.json", .{clean_name});
+    const metadata_key = try std.fmt.allocPrint(allocator, "packages/pantry/{s}/metadata.json", .{clean_name});
     defer allocator.free(metadata_key);
 
     // Write tarball to temp file
