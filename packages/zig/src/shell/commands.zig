@@ -337,10 +337,10 @@ pub const ShellCommands = struct {
         });
         defer self.allocator.free(env_bin);
 
-        // Check if pantry/.bin exists in the project
+        // Check if pantry_modules/.bin exists in the project
         const pantry_bin = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry/.bin",
+            "{s}/pantry_modules/.bin",
             .{project_root},
         );
         defer self.allocator.free(pantry_bin);

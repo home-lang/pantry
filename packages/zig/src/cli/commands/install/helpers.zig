@@ -149,7 +149,7 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
         defer allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
@@ -236,7 +236,7 @@ pub fn installSinglePackage(
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
-    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
     defer allocator.free(package_path);
 
     if (!options.ignore_scripts) {
@@ -280,8 +280,8 @@ pub fn installSinglePackage(
     _ = bin_dir;
     _ = cwd;
 
-    // Create symlinks in pantry/.bin for package executables
-    // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
+    // Create symlinks in pantry_modules/.bin for package executables
+    // Use actual_install_path which has the real location (e.g., pantry_modules/github.com/org/pkg/v1.0.0)
     createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose) catch |err| {
         if (options.verbose) {
             std.debug.print("    ⚠️  Could not create bin symlinks for {s}: {}\n", .{ dep.name, err });
@@ -297,15 +297,15 @@ pub fn installSinglePackage(
     };
 }
 
-/// Create symlinks in pantry/.bin for executables in the installed package
+/// Create symlinks in pantry_modules/.bin for executables in the installed package
 /// Called from core.zig after direct package install
 pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8) !void {
     return createBinSymlinks(allocator, proj_dir, package_path, false);
 }
 
 fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool) !void {
-    // Create pantry/.bin directory
-    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", ".bin" });
+    // Create pantry_modules/.bin directory
+    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", ".bin" });
     defer allocator.free(bin_link_dir);
     try io_helper.makePath(bin_link_dir);
 

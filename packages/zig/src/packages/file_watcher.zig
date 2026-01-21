@@ -18,7 +18,7 @@ pub const WatchOptions = struct {
     ignore_patterns: []const []const u8 = &[_][]const u8{
         "node_modules",
         ".git",
-        "pantry",
+        "pantry_modules",
         ".zig-cache",
         "zig-out",
         ".DS_Store",
@@ -345,7 +345,7 @@ test "FileWatcher - shouldIgnore" {
 
     try std.testing.expect(watcher.shouldIgnore("node_modules"));
     try std.testing.expect(watcher.shouldIgnore(".git"));
-    try std.testing.expect(watcher.shouldIgnore("pantry"));
+    try std.testing.expect(watcher.shouldIgnore("pantry_modules"));
     try std.testing.expect(!watcher.shouldIgnore("src"));
     try std.testing.expect(!watcher.shouldIgnore("index.ts"));
 }

@@ -24,17 +24,17 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
     var items_removed: u64 = 0;
 
     if (options.local) {
-        std.debug.print("Cleaning local dependencies (pantry)...\n", .{});
+        std.debug.print("Cleaning local dependencies (pantry_modules)...\n", .{});
 
-        const pantry_path = "pantry";
+        const pantry_path = "pantry_modules";
 
         io_helper.deleteTree(pantry_path) catch |err| {
             if (err != error.FileNotFound) {
-                std.debug.print("Warning: Failed to clean pantry: {}\n", .{err});
+                std.debug.print("Warning: Failed to clean pantry_modules: {}\n", .{err});
             }
         };
 
-        std.debug.print("  ✓ Removed pantry/\n", .{});
+        std.debug.print("  ✓ Removed pantry_modules/\n", .{});
         items_removed += 1;
     }
 
@@ -60,9 +60,9 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
     if (!options.local and !options.global and !options.cache) {
         std.debug.print("Cleaning all (local + cache)...\n", .{});
 
-        io_helper.deleteTree("pantry") catch |err| {
+        io_helper.deleteTree("pantry_modules") catch |err| {
             if (err != error.FileNotFound) {
-                std.debug.print("Warning: Failed to clean pantry: {}\n", .{err});
+                std.debug.print("Warning: Failed to clean pantry_modules: {}\n", .{err});
             }
         };
 
@@ -74,7 +74,7 @@ pub fn cleanCommand(allocator: std.mem.Allocator, options: CleanOptions) !Comman
         total_freed += stats.total_size;
         items_removed += stats.total_packages + 1;
 
-        std.debug.print("  ✓ Removed pantry/\n", .{});
+        std.debug.print("  ✓ Removed pantry_modules/\n", .{});
         std.debug.print("  ✓ Cleared cache\n", .{});
     }
 

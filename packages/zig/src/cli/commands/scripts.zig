@@ -116,11 +116,11 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         argc += 1;
     }
 
-    // Set up environment with pantry/.bin in PATH
-    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{cwd});
+    // Set up environment with pantry_modules/.bin in PATH
+    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/pantry_modules/.bin", .{cwd});
     defer allocator.free(pantry_bin);
 
-    // Get current PATH and prepend pantry/.bin
+    // Get current PATH and prepend pantry_modules/.bin
     const current_path = std.process.getEnvVarOwned(allocator, "PATH") catch try allocator.dupe(u8, "/usr/bin:/bin");
     defer allocator.free(current_path);
     const new_path = try std.fmt.allocPrint(allocator, "{s}:{s}", .{ pantry_bin, current_path });

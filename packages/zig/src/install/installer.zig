@@ -268,19 +268,19 @@ pub const Installer = struct {
         const abs_local_path = try io_helper.realpathAlloc(self.allocator, local_path);
         defer self.allocator.free(abs_local_path);
 
-        // Create symlink in project's pantry if we have a project root
+        // Create symlink in project's pantry_modules if we have a project root
         const symlink_path = if (options.project_root) |project_root| blk: {
             const modules_bin = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/.bin/{s}",
+                "{s}/pantry_modules/.bin/{s}",
                 .{ project_root, spec.name },
             );
             errdefer self.allocator.free(modules_bin);
 
-            // Create pantry/.bin directory
+            // Create pantry_modules/.bin directory
             const modules_bin_dir = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/.bin",
+                "{s}/pantry_modules/.bin",
                 .{project_root},
             );
             defer self.allocator.free(modules_bin_dir);
@@ -349,7 +349,7 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/{s}",
+                "{s}/pantry_modules/{s}",
                 .{ project_root, spec.name },
             );
         } else blk: {
@@ -472,7 +472,7 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/zig/{s}",
+                "{s}/pantry_modules/zig/{s}",
                 .{ project_root, spec.version },
             );
         } else blk: {
@@ -604,10 +604,10 @@ pub const Installer = struct {
 
         // Create project symlinks if installing to project
         if (options.project_root) |project_root| {
-            // Create pantry/.bin directory
+            // Create pantry_modules/.bin directory
             const bin_dir = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/.bin",
+                "{s}/pantry_modules/.bin",
                 .{project_root},
             );
             defer self.allocator.free(bin_dir);
@@ -905,11 +905,11 @@ pub const Installer = struct {
         );
     }
 
-    /// Get project-local package directory (pantry)
+    /// Get project-local package directory (pantry_modules)
     fn getProjectPackageDir(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8) ![]const u8 {
         return std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry/{s}/v{s}",
+            "{s}/pantry_modules/{s}/v{s}",
             .{ project_root, domain, version },
         );
     }
@@ -977,12 +977,12 @@ pub const Installer = struct {
         _ = version; // not used in current implementation
     }
 
-    /// Create symlinks in project's pantry/.bin directory
+    /// Create symlinks in project's pantry_modules/.bin directory
     fn createProjectSymlinks(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8, package_dir: []const u8) !void {
-        // Project bin directory (pantry/.bin)
+        // Project bin directory (pantry_modules/.bin)
         const project_bin_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry/.bin",
+            "{s}/pantry_modules/.bin",
             .{project_root},
         );
         defer self.allocator.free(project_bin_dir);
