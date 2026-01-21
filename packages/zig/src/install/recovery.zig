@@ -112,21 +112,23 @@ pub const InstallCheckpoint = struct {
 
     /// Create a backup of the current state
     pub fn createBackup(self: *InstallCheckpoint, target_dir: []const u8) !void {
-        // Create backup directory with random suffix (timestamp API changed in Zig 0.16)
+        _ = target_dir;
+
+        // Create backup directory in system temp directory (not in project)
+        const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+
         var random_bytes: [8]u8 = undefined;
         std.crypto.random.bytes(&random_bytes);
         const backup_suffix = std.mem.readInt(u64, &random_bytes, .big);
         const backup_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/.pantry-backup-{d}",
-            .{ target_dir, backup_suffix },
+            "{s}/pantry-backup-{d}",
+            .{ tmp_dir, backup_suffix },
         );
         errdefer self.allocator.free(backup_dir);
 
         try io_helper.makePath(backup_dir);
         self.backup_dir = backup_dir;
-
-        std.debug.print("📦 Created backup at: {s}\n", .{backup_dir});
     }
 };
 
