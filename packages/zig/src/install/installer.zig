@@ -569,9 +569,9 @@ pub const Installer = struct {
             return error.ExtractionFailed;
         }
 
-        // Create project symlinks if installing to project
+        // Create shims for npm package binaries
         if (options.project_root) |project_root| {
-            try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
+            try self.createNpmShims(project_root, spec.name, install_dir);
         }
 
         const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
@@ -1233,6 +1233,69 @@ pub const Installer = struct {
 
         _ = version; // not used in current implementation
         _ = domain; // not used with new discovery method
+    }
+
+    /// Create shims for npm package binaries
+    /// Reads bin config from package.json and creates cross-platform shims
+    fn createNpmShims(self: *Installer, project_root: []const u8, package_name: []const u8, install_dir: []const u8) !void {
+        const symlink_mod = @import("symlink.zig");
+
+        // Project bin directory (pantry_modules/.bin)
+        const shim_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/pantry_modules/.bin",
+            .{project_root},
+        );
+        defer self.allocator.free(shim_dir);
+
+        try io_helper.makePath(shim_dir);
+
+        // Read package.json from install directory
+        const pkg_json_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/package.json",
+            .{install_dir},
+        );
+        defer self.allocator.free(pkg_json_path);
+
+        const pkg_content = io_helper.readFileAlloc(self.allocator, pkg_json_path, 1024 * 1024) catch {
+            // No package.json, nothing to do
+            return;
+        };
+        defer self.allocator.free(pkg_content);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, pkg_content, .{}) catch {
+            return;
+        };
+        defer parsed.deinit();
+
+        if (parsed.value != .object) return;
+
+        // Check for bin field
+        const bin_value = parsed.value.object.get("bin") orelse return;
+
+        if (bin_value == .string) {
+            // Single binary with package name
+            symlink_mod.createShimFromBinString(
+                self.allocator,
+                package_name,
+                install_dir,
+                bin_value.string,
+                shim_dir,
+            ) catch |err| {
+                std.debug.print("Warning: Failed to create shim: {}\n", .{err});
+            };
+        } else if (bin_value == .object) {
+            // Multiple binaries
+            symlink_mod.createShimsFromBinConfig(
+                self.allocator,
+                install_dir,
+                bin_value,
+                shim_dir,
+            ) catch |err| {
+                std.debug.print("Warning: Failed to create shims: {}\n", .{err});
+            };
+        }
     }
 
     /// Install from network (download)

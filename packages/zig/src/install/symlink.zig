@@ -367,6 +367,201 @@ pub fn removePackageSymlinks(
     }
 }
 
+/// Shim type based on the target file extension
+pub const ShimType = enum {
+    /// Shell script for native executables (symlink on Unix, copy on Windows)
+    native,
+    /// Node.js script (.js, .mjs, .cjs files)
+    node,
+    /// Shell script (custom shell scripts)
+    shell,
+};
+
+/// Detect shim type from file path
+pub fn detectShimType(file_path: []const u8) ShimType {
+    if (std.mem.endsWith(u8, file_path, ".js") or
+        std.mem.endsWith(u8, file_path, ".mjs") or
+        std.mem.endsWith(u8, file_path, ".cjs"))
+    {
+        return .node;
+    }
+    if (std.mem.endsWith(u8, file_path, ".sh")) {
+        return .shell;
+    }
+    return .native;
+}
+
+/// Create a cross-platform shim for a binary
+/// For JS files: creates shell/cmd scripts that invoke node
+/// For native files: creates symlink (Unix) or copy (Windows)
+pub fn createShim(
+    allocator: std.mem.Allocator,
+    bin_name: []const u8,
+    target_path: []const u8,
+    shim_dir: []const u8,
+) !void {
+    const shim_type = detectShimType(target_path);
+
+    // Create shim directory if it doesn't exist
+    io_helper.makePath(shim_dir) catch {
+        return error.BinDirCreationFailed;
+    };
+
+    // Verify target exists
+    io_helper.cwd().access(io_helper.io, target_path, .{}) catch {
+        std.debug.print("  ✗ Binary not found: {s}\n", .{target_path});
+        return error.TargetNotFound;
+    };
+
+    switch (shim_type) {
+        .native => {
+            // For native binaries, use symlink (or copy on Windows)
+            const shim_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ shim_dir, bin_name });
+            defer allocator.free(shim_path);
+
+            // Remove existing shim if present
+            io_helper.deleteFile(shim_path) catch {};
+
+            try createSymlinkCrossPlatform(target_path, shim_path);
+            std.debug.print("  ✓ Linked: {s}\n", .{bin_name});
+        },
+        .node, .shell => {
+            // For JS/shell files, create wrapper scripts
+            try createScriptShim(allocator, bin_name, target_path, shim_dir, shim_type);
+        },
+    }
+}
+
+/// Create wrapper scripts for JS/shell files
+fn createScriptShim(
+    allocator: std.mem.Allocator,
+    bin_name: []const u8,
+    target_path: []const u8,
+    shim_dir: []const u8,
+    shim_type: ShimType,
+) !void {
+    // Create Unix shell script
+    const unix_shim_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ shim_dir, bin_name });
+    defer allocator.free(unix_shim_path);
+
+    // Remove existing shim
+    io_helper.deleteFile(unix_shim_path) catch {};
+
+    // Generate Unix shim content
+    const unix_content = switch (shim_type) {
+        .node => try std.fmt.allocPrint(allocator,
+            \\#!/bin/sh
+            \\basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+            \\exec node "{s}" "$@"
+            \\
+        , .{target_path}),
+        .shell => try std.fmt.allocPrint(allocator,
+            \\#!/bin/sh
+            \\exec "{s}" "$@"
+            \\
+        , .{target_path}),
+        .native => unreachable,
+    };
+    defer allocator.free(unix_content);
+
+    // Write Unix shim with executable permissions
+    const file = io_helper.cwd().createFile(io_helper.io, unix_shim_path, .{}) catch {
+        return error.SymlinkCreationFailed;
+    };
+    io_helper.writeAllToFile(file, unix_content) catch {
+        file.close(io_helper.io);
+        return error.SymlinkCreationFailed;
+    };
+    file.close(io_helper.io);
+
+    // Make executable on Unix
+    if (builtin.os.tag != .windows) {
+        _ = io_helper.childRun(allocator, &[_][]const u8{ "chmod", "+x", unix_shim_path }) catch {};
+    }
+
+    // Create Windows .cmd shim
+    if (builtin.os.tag == .windows) {
+        const cmd_shim_path = try std.fmt.allocPrint(allocator, "{s}/{s}.cmd", .{ shim_dir, bin_name });
+        defer allocator.free(cmd_shim_path);
+
+        const cmd_content = switch (shim_type) {
+            .node => try std.fmt.allocPrint(allocator,
+                \\@ECHO off
+                \\SETLOCAL
+                \\SET "NODE_EXE=node"
+                \\"%NODE_EXE%" "{s}" %*
+                \\
+            , .{target_path}),
+            .shell => try std.fmt.allocPrint(allocator,
+                \\@ECHO off
+                \\"{s}" %*
+                \\
+            , .{target_path}),
+            .native => unreachable,
+        };
+        defer allocator.free(cmd_content);
+
+        const cmd_file = io_helper.cwd().createFile(io_helper.io, cmd_shim_path, .{}) catch {
+            return error.SymlinkCreationFailed;
+        };
+        io_helper.writeAllToFile(cmd_file, cmd_content) catch {
+            cmd_file.close(io_helper.io);
+            return error.SymlinkCreationFailed;
+        };
+        cmd_file.close(io_helper.io);
+    }
+
+    std.debug.print("  ✓ Shim: {s}\n", .{bin_name});
+}
+
+/// Create shims from a bin config (parsed from package.json)
+/// bin_config is a JSON object mapping bin names to paths
+pub fn createShimsFromBinConfig(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+    bin_config: std.json.Value,
+    shim_dir: []const u8,
+) !void {
+    if (bin_config != .object) return;
+
+    var iter = bin_config.object.iterator();
+    while (iter.next()) |entry| {
+        const bin_name = entry.key_ptr.*;
+        if (entry.value_ptr.* != .string) continue;
+        const bin_rel_path = entry.value_ptr.string;
+
+        // Build absolute path to the binary
+        const bin_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, bin_rel_path });
+        defer allocator.free(bin_path);
+
+        // Create shim
+        createShim(allocator, bin_name, bin_path, shim_dir) catch |err| {
+            std.debug.print("  ! Failed to create shim for {s}: {}\n", .{ bin_name, err });
+        };
+    }
+}
+
+/// Create shims from a single bin string (package name is used as bin name)
+pub fn createShimFromBinString(
+    allocator: std.mem.Allocator,
+    package_name: []const u8,
+    package_dir: []const u8,
+    bin_path: []const u8,
+    shim_dir: []const u8,
+) !void {
+    // Get just the package name without scope
+    const bin_name = if (std.mem.indexOf(u8, package_name, "/")) |idx|
+        package_name[idx + 1 ..]
+    else
+        package_name;
+
+    // Build absolute path
+    const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, bin_path });
+    defer allocator.free(full_path);
+
+    try createShim(allocator, bin_name, full_path, shim_dir);
+}
+
 test "discoverBinaries" {
     const allocator = std.testing.allocator;
 

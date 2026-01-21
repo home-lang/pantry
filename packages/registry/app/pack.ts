@@ -163,6 +163,22 @@ async function collectFiles(dir: string, packageJson: PackageJson): Promise<stri
     files.push(...allFiles)
   }
 
+  // Always include bin files (npm standard behavior)
+  if (packageJson.bin) {
+    const binPaths = typeof packageJson.bin === 'string'
+      ? [packageJson.bin]
+      : Object.values(packageJson.bin)
+
+    for (const binPath of binPaths) {
+      // Normalize path (remove leading ./)
+      const normalizedPath = binPath.replace(/^\.\//, '')
+      if (existsSync(join(dir, normalizedPath)) && !files.includes(normalizedPath)) {
+        files.push(normalizedPath)
+        console.log(`   + Including bin: ${normalizedPath}`)
+      }
+    }
+  }
+
   // Also include common important files if they exist
   const importantFiles = ['README.md', 'README', 'LICENSE', 'LICENSE.md', 'CHANGELOG.md']
   for (const file of importantFiles) {

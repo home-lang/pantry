@@ -23,6 +23,7 @@ interface PackageJson {
   keywords?: string[]
   repository?: string | { type: string; url: string }
   homepage?: string
+  bin?: string | Record<string, string>
 }
 
 const BUCKET_NAME = 'pantry-registry'
@@ -91,6 +92,13 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
 
   console.log(`📋 Package: ${packageJson.name}`)
   console.log(`📋 Version: ${packageJson.version}`)
+  if (packageJson.bin) {
+    const binEntries = typeof packageJson.bin === 'string'
+      ? { [packageJson.name.replace(/^@[^/]+\//, '')]: packageJson.bin }
+      : packageJson.bin
+    const binNames = Object.keys(binEntries)
+    console.log(`📋 Binaries: ${binNames.join(', ')}`)
+  }
   console.log()
 
   // Step 1: Run pack to create tarball
@@ -135,11 +143,19 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
     const metadataKey = `packages/pantry/${safeName}/metadata.json`
     const metadata = await getOrCreateMetadata(s3, safeName, packageJson, targetDir)
 
+    // Normalize bin field: string -> { name: path }, object -> as-is
+    const normalizedBin = packageJson.bin
+      ? typeof packageJson.bin === 'string'
+        ? { [packageJson.name.replace(/^@[^/]+\//, '')]: packageJson.bin }
+        : packageJson.bin
+      : undefined
+
     // Add this version to metadata
     metadata.versions[packageJson.version] = {
       tarball: s3Key,
       publishedAt: new Date().toISOString(),
       size: stats.size,
+      ...(normalizedBin && { bin: normalizedBin }),
     }
     metadata.latest = packageJson.version
     metadata.updatedAt = new Date().toISOString()
@@ -164,7 +180,7 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
         ? packageJson.repository.url
         : getGitRemoteUrl(targetDir) || `https://github.com/stacksjs/${safeName}`
 
-    const dbRecord = {
+    const dbRecord: Record<string, any> = {
       packageName: packageJson.name,
       safeName,
       s3Path: s3Key,
@@ -178,6 +194,11 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
       repository: repositoryUrl,
       homepage: packageJson.homepage || '',
       updatedAt: new Date().toISOString(),
+    }
+
+    // Add bin if present
+    if (normalizedBin) {
+      dbRecord.bin = normalizedBin
     }
 
     // Check if package exists to preserve createdAt
@@ -239,6 +260,7 @@ interface PackageMetadata {
     tarball: string
     publishedAt: string
     size: number
+    bin?: Record<string, string>
   }>
   createdAt: string
   updatedAt: string

@@ -275,6 +275,27 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
         return CommandResult.err(allocator, "Error: Missing 'version' in config");
 
     std.debug.print("Package: {s}@{s}\n", .{ name, version });
+
+    // Display binaries if present
+    if (root.object.get("bin")) |bin_value| {
+        std.debug.print("Binaries: ", .{});
+        if (bin_value == .string) {
+            // Single binary with package name
+            const pkg_name = if (std.mem.indexOf(u8, name, "/")) |idx| name[idx + 1 ..] else name;
+            std.debug.print("{s}\n", .{pkg_name});
+        } else if (bin_value == .object) {
+            // Multiple binaries
+            var first = true;
+            var bin_iter = bin_value.object.iterator();
+            while (bin_iter.next()) |entry| {
+                if (!first) std.debug.print(", ", .{});
+                std.debug.print("{s}", .{entry.key_ptr.*});
+                first = false;
+            }
+            std.debug.print("\n", .{});
+        }
+    }
+
     std.debug.print("Registry: {s}\n", .{options.registry});
 
     // Check if we have AWS credentials for direct S3 upload
@@ -925,6 +946,40 @@ fn updateDynamoDBIndex(
     // DynamoDB will store keywords in a simpler format
     const keywords_json: []const u8 = "[]";
 
+    // Extract bin field and normalize to JSON object string
+    var bin_json: []const u8 = "{}";
+    var bin_json_owned = false;
+    if (root.object.get("bin")) |bin_value| {
+        if (bin_value == .string) {
+            // Single binary: "bin": "./cli.js" -> {"pkg-name": "./cli.js"}
+            const pkg_name = if (std.mem.indexOf(u8, name, "/")) |idx| name[idx + 1 ..] else name;
+            bin_json = std.fmt.allocPrint(allocator, "{{\"{s}\": \"{s}\"}}", .{ pkg_name, bin_value.string }) catch "{}";
+            bin_json_owned = true;
+        } else if (bin_value == .object) {
+            // Multiple binaries: manually build JSON object
+            const maybe_json_buf = std.ArrayList(u8).initCapacity(allocator, 256);
+            if (maybe_json_buf) |json_buf_init| {
+                var json_buf = json_buf_init;
+                json_buf.appendSlice(allocator, "{") catch {};
+                var bin_iter = bin_value.object.iterator();
+                var first_bin = true;
+                while (bin_iter.next()) |entry| {
+                    if (entry.value_ptr.* == .string) {
+                        if (!first_bin) json_buf.appendSlice(allocator, ", ") catch {};
+                        const bin_entry = std.fmt.allocPrint(allocator, "\"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.string }) catch continue;
+                        defer allocator.free(bin_entry);
+                        json_buf.appendSlice(allocator, bin_entry) catch {};
+                        first_bin = false;
+                    }
+                }
+                json_buf.appendSlice(allocator, "}") catch {};
+                bin_json = json_buf.toOwnedSlice(allocator) catch "{}";
+                bin_json_owned = true;
+            } else |_| {}
+        }
+    }
+    defer if (bin_json_owned) allocator.free(bin_json);
+
     // Get current timestamp as ISO 8601 string
     const date_result = io_helper.childRun(allocator, &[_][]const u8{ "date", "-u", "+%Y-%m-%dT%H:%M:%SZ" }) catch null;
     var timestamp: []const u8 = "1970-01-01T00:00:00Z";
@@ -950,6 +1005,7 @@ fn updateDynamoDBIndex(
         \\  "repository": {{"S": "{s}"}},
         \\  "homepage": {{"S": "{s}"}},
         \\  "keywords": {{"S": "{s}"}},
+        \\  "bin": {{"S": "{s}"}},
         \\  "updatedAt": {{"S": "{s}"}},
         \\  "createdAt": {{"S": "{s}"}}
         \\}}
@@ -964,6 +1020,7 @@ fn updateDynamoDBIndex(
         repository,
         homepage,
         keywords_json,
+        bin_json,
         timestamp,
         timestamp, // createdAt (will be preserved if item exists)
     });
