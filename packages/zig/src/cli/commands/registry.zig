@@ -946,17 +946,18 @@ fn updateDynamoDBIndex(
     // DynamoDB will store keywords in a simpler format
     const keywords_json: []const u8 = "[]";
 
-    // Extract bin field and normalize to JSON object string
-    var bin_json: []const u8 = "{}";
-    var bin_json_owned = false;
+    // Extract bin field and normalize to escaped JSON string for DynamoDB
+    // The bin JSON needs escaped quotes since it's embedded in another JSON string
+    var bin_json_escaped: []const u8 = "{}";
+    var bin_json_escaped_owned = false;
     if (root.object.get("bin")) |bin_value| {
         if (bin_value == .string) {
-            // Single binary: "bin": "./cli.js" -> {"pkg-name": "./cli.js"}
+            // Single binary: "bin": "./cli.js" -> {\"pkg-name\": \"./cli.js\"}
             const pkg_name = if (std.mem.indexOf(u8, name, "/")) |idx| name[idx + 1 ..] else name;
-            bin_json = std.fmt.allocPrint(allocator, "{{\"{s}\": \"{s}\"}}", .{ pkg_name, bin_value.string }) catch "{}";
-            bin_json_owned = true;
+            bin_json_escaped = std.fmt.allocPrint(allocator, "{{\\\"" ++ "{s}" ++ "\\\": \\\"" ++ "{s}" ++ "\\\"}}", .{ pkg_name, bin_value.string }) catch "{}";
+            bin_json_escaped_owned = true;
         } else if (bin_value == .object) {
-            // Multiple binaries: manually build JSON object
+            // Multiple binaries: manually build escaped JSON object
             const maybe_json_buf = std.ArrayList(u8).initCapacity(allocator, 256);
             if (maybe_json_buf) |json_buf_init| {
                 var json_buf = json_buf_init;
@@ -966,19 +967,20 @@ fn updateDynamoDBIndex(
                 while (bin_iter.next()) |entry| {
                     if (entry.value_ptr.* == .string) {
                         if (!first_bin) json_buf.appendSlice(allocator, ", ") catch {};
-                        const bin_entry = std.fmt.allocPrint(allocator, "\"{s}\": \"{s}\"", .{ entry.key_ptr.*, entry.value_ptr.string }) catch continue;
+                        // Escape quotes for embedding in JSON string
+                        const bin_entry = std.fmt.allocPrint(allocator, "\\\"{s}\\\": \\\"{s}\\\"", .{ entry.key_ptr.*, entry.value_ptr.string }) catch continue;
                         defer allocator.free(bin_entry);
                         json_buf.appendSlice(allocator, bin_entry) catch {};
                         first_bin = false;
                     }
                 }
                 json_buf.appendSlice(allocator, "}") catch {};
-                bin_json = json_buf.toOwnedSlice(allocator) catch "{}";
-                bin_json_owned = true;
+                bin_json_escaped = json_buf.toOwnedSlice(allocator) catch "{}";
+                bin_json_escaped_owned = true;
             } else |_| {}
         }
     }
-    defer if (bin_json_owned) allocator.free(bin_json);
+    defer if (bin_json_escaped_owned) allocator.free(bin_json_escaped);
 
     // Get current timestamp as ISO 8601 string
     const date_result = io_helper.childRun(allocator, &[_][]const u8{ "date", "-u", "+%Y-%m-%dT%H:%M:%SZ" }) catch null;
@@ -1020,7 +1022,7 @@ fn updateDynamoDBIndex(
         repository,
         homepage,
         keywords_json,
-        bin_json,
+        bin_json_escaped,
         timestamp,
         timestamp, // createdAt (will be preserved if item exists)
     });
