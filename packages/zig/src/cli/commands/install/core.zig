@@ -775,17 +775,28 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         };
     }
 
-    // Generate lockfile for installed packages
+    // Generate/update lockfile for installed packages
     if (installed_packages.items.len > 0) {
         const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{project_root});
         defer allocator.free(lockfile_path);
 
-        var lockfile = lib.packages.Lockfile.init(allocator, "1.0.0") catch |err| {
-            std.debug.print("{s}⚠{s}  Failed to create lockfile: {}\n", .{ "\x1b[33m", reset, err });
+        const lockfile_writer = @import("../../../packages/lockfile.zig");
+
+        // Try to read existing lockfile first, or create a new one
+        var lockfile = lockfile_writer.readLockfile(allocator, lockfile_path) catch |err| blk: {
+            // If file doesn't exist or is invalid, create a new lockfile
+            if (err == error.FileNotFound or err == error.InvalidLockfile) {
+                break :blk lib.packages.Lockfile.init(allocator, "1.0.0") catch |init_err| {
+                    std.debug.print("{s}⚠{s}  Failed to create lockfile: {}\n", .{ "\x1b[33m", reset, init_err });
+                    return .{ .exit_code = 0 };
+                };
+            }
+            std.debug.print("{s}⚠{s}  Failed to read lockfile: {}\n", .{ "\x1b[33m", reset, err });
             return .{ .exit_code = 0 };
         };
         defer lockfile.deinit(allocator);
 
+        // Add new packages to the lockfile (will update if already exists)
         for (installed_packages.items) |pkg| {
             const entry = lib.packages.LockfileEntry{
                 .name = allocator.dupe(u8, pkg.name) catch continue,
@@ -802,8 +813,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             lockfile.addEntry(allocator, key, entry) catch {};
         }
 
-        // Write lockfile
-        const lockfile_writer = @import("../../../packages/lockfile.zig");
+        // Write merged lockfile
         lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
             std.debug.print("{s}⚠{s}  Failed to write lockfile: {}\n", .{ "\x1b[33m", reset, err });
         };

@@ -391,6 +391,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
 
     const green = "\x1b[32m";
     const red = "\x1b[31m";
+    const yellow = "\x1b[33m";
     const dim = "\x1b[2m";
     const reset = "\x1b[0m";
 
@@ -461,10 +462,15 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         success_count += 1;
     }
 
-    // Update lockfile - remove uninstalled packages
+    // Remove packages from package.json/pantry.json
     if (success_count > 0) {
+        removeFromConfigFile(allocator, cwd, args) catch |err| {
+            std.debug.print("{s}⚠{s}  Failed to update config file: {}\n", .{ yellow, reset, err });
+        };
+
+        // Update lockfile - remove uninstalled packages
         updateLockfileAfterUninstall(allocator, lockfile_path, args) catch |err| {
-            std.debug.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ "\x1b[33m", reset, err });
+            std.debug.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ yellow, reset, err });
         };
     }
 
@@ -475,6 +481,194 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     }
 
     return .{ .exit_code = 0 };
+}
+
+/// Remove packages from package.json or pantry.json
+fn removeFromConfigFile(allocator: std.mem.Allocator, cwd: []const u8, packages: []const []const u8) !void {
+    // Find config file
+    const config_path = common.findConfigFile(allocator, cwd) catch return;
+    defer allocator.free(config_path);
+
+    // Read the config file content
+    const content = try io_helper.readFileAlloc(allocator, config_path, 1024 * 1024);
+    defer allocator.free(content);
+
+    // Parse the JSON to verify structure and find packages
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, content, .{});
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return;
+
+    // Track which packages we found and need to remove
+    var packages_to_remove = std.StringHashMap(void).init(allocator);
+    defer packages_to_remove.deinit();
+
+    for (packages) |pkg| {
+        // Check if package is in dependencies
+        if (parsed.value.object.get("dependencies")) |deps| {
+            if (deps == .object and deps.object.contains(pkg)) {
+                try packages_to_remove.put(pkg, {});
+            }
+        }
+        // Check if package is in devDependencies
+        if (parsed.value.object.get("devDependencies")) |deps| {
+            if (deps == .object and deps.object.contains(pkg)) {
+                try packages_to_remove.put(pkg, {});
+            }
+        }
+    }
+
+    if (packages_to_remove.count() == 0) return;
+
+    // Rebuild JSON with packages removed
+    // We need to manually reconstruct to preserve formatting as much as possible
+    var output = std.ArrayList(u8){};
+    defer output.deinit(allocator);
+
+    try serializeJsonWithRemovals(allocator, &output, parsed.value, packages_to_remove);
+
+    // Write the updated content back
+    const file = try io_helper.createFile(config_path, .{ .truncate = true });
+    defer file.close(io_helper.io);
+    try io_helper.writeAllToFile(file, output.items);
+}
+
+/// Serialize JSON value to output, removing specified packages from dependencies
+fn serializeJsonWithRemovals(
+    allocator: std.mem.Allocator,
+    output: *std.ArrayList(u8),
+    value: std.json.Value,
+    packages_to_remove: std.StringHashMap(void),
+) !void {
+    switch (value) {
+        .object => |obj| {
+            try output.appendSlice(allocator, "{\n");
+            var first = true;
+            var iter = obj.iterator();
+            while (iter.next()) |entry| {
+                const key = entry.key_ptr.*;
+                const val = entry.value_ptr.*;
+
+                // Special handling for dependencies and devDependencies
+                if (std.mem.eql(u8, key, "dependencies") or std.mem.eql(u8, key, "devDependencies")) {
+                    if (val == .object) {
+                        // Filter out packages to remove
+                        var filtered_deps = std.json.ObjectMap.init(allocator);
+                        defer filtered_deps.deinit();
+
+                        var dep_iter = val.object.iterator();
+                        while (dep_iter.next()) |dep_entry| {
+                            if (!packages_to_remove.contains(dep_entry.key_ptr.*)) {
+                                try filtered_deps.put(dep_entry.key_ptr.*, dep_entry.value_ptr.*);
+                            }
+                        }
+
+                        // Only include the key if there are remaining deps
+                        if (filtered_deps.count() > 0) {
+                            if (!first) try output.appendSlice(allocator, ",\n");
+                            first = false;
+                            try output.appendSlice(allocator, "  \"");
+                            try output.appendSlice(allocator, key);
+                            try output.appendSlice(allocator, "\": {\n");
+
+                            var dep_first = true;
+                            var filtered_iter = filtered_deps.iterator();
+                            while (filtered_iter.next()) |dep_entry| {
+                                if (!dep_first) try output.appendSlice(allocator, ",\n");
+                                dep_first = false;
+                                try output.appendSlice(allocator, "    \"");
+                                try output.appendSlice(allocator, dep_entry.key_ptr.*);
+                                try output.appendSlice(allocator, "\": ");
+                                try serializeValue(allocator, output, dep_entry.value_ptr.*, 2);
+                            }
+                            try output.appendSlice(allocator, "\n  }");
+                        }
+                        continue;
+                    }
+                }
+
+                // Regular key-value pair
+                if (!first) try output.appendSlice(allocator, ",\n");
+                first = false;
+                try output.appendSlice(allocator, "  \"");
+                try output.appendSlice(allocator, key);
+                try output.appendSlice(allocator, "\": ");
+                try serializeValue(allocator, output, val, 1);
+            }
+            try output.appendSlice(allocator, "\n}");
+        },
+        else => try serializeValue(allocator, output, value, 0),
+    }
+}
+
+/// Serialize a single JSON value
+fn serializeValue(allocator: std.mem.Allocator, output: *std.ArrayList(u8), value: std.json.Value, depth: usize) !void {
+    const indent = "  ";
+    switch (value) {
+        .null => try output.appendSlice(allocator, "null"),
+        .bool => |b| try output.appendSlice(allocator, if (b) "true" else "false"),
+        .integer => |i| {
+            var buf: [32]u8 = undefined;
+            const slice = std.fmt.bufPrint(&buf, "{d}", .{i}) catch "0";
+            try output.appendSlice(allocator, slice);
+        },
+        .float => |f| {
+            var buf: [64]u8 = undefined;
+            const slice = std.fmt.bufPrint(&buf, "{d}", .{f}) catch "0";
+            try output.appendSlice(allocator, slice);
+        },
+        .string => |s| {
+            try output.append(allocator, '"');
+            for (s) |c| {
+                switch (c) {
+                    '"' => try output.appendSlice(allocator, "\\\""),
+                    '\\' => try output.appendSlice(allocator, "\\\\"),
+                    '\n' => try output.appendSlice(allocator, "\\n"),
+                    '\r' => try output.appendSlice(allocator, "\\r"),
+                    '\t' => try output.appendSlice(allocator, "\\t"),
+                    else => try output.append(allocator, c),
+                }
+            }
+            try output.append(allocator, '"');
+        },
+        .array => |arr| {
+            if (arr.items.len == 0) {
+                try output.appendSlice(allocator, "[]");
+            } else {
+                try output.appendSlice(allocator, "[\n");
+                for (arr.items, 0..) |item, i| {
+                    for (0..depth + 1) |_| try output.appendSlice(allocator, indent);
+                    try serializeValue(allocator, output, item, depth + 1);
+                    if (i < arr.items.len - 1) try output.append(allocator, ',');
+                    try output.append(allocator, '\n');
+                }
+                for (0..depth) |_| try output.appendSlice(allocator, indent);
+                try output.append(allocator, ']');
+            }
+        },
+        .object => |obj| {
+            if (obj.count() == 0) {
+                try output.appendSlice(allocator, "{}");
+            } else {
+                try output.appendSlice(allocator, "{\n");
+                var first = true;
+                var iter = obj.iterator();
+                while (iter.next()) |entry| {
+                    if (!first) try output.appendSlice(allocator, ",\n");
+                    first = false;
+                    for (0..depth + 1) |_| try output.appendSlice(allocator, indent);
+                    try output.append(allocator, '"');
+                    try output.appendSlice(allocator, entry.key_ptr.*);
+                    try output.appendSlice(allocator, "\": ");
+                    try serializeValue(allocator, output, entry.value_ptr.*, depth + 1);
+                }
+                try output.append(allocator, '\n');
+                for (0..depth) |_| try output.appendSlice(allocator, indent);
+                try output.append(allocator, '}');
+            }
+        },
+        .number_string => |s| try output.appendSlice(allocator, s),
+    }
 }
 
 /// Update lockfile after uninstalling packages - for now, just remove entries
