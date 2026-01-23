@@ -671,14 +671,53 @@ fn serializeValue(allocator: std.mem.Allocator, output: *std.ArrayList(u8), valu
     }
 }
 
-/// Update lockfile after uninstalling packages - for now, just remove entries
+/// Update lockfile after uninstalling packages - remove only the uninstalled entries
 fn updateLockfileAfterUninstall(allocator: std.mem.Allocator, lockfile_path: []const u8, removed_packages: []const []const u8) !void {
-    _ = allocator;
-    _ = removed_packages;
+    const lockfile_mod = @import("../../packages/lockfile.zig");
 
-    // For now, just delete the lockfile - user can regenerate with `pantry install`
-    // TODO: Parse and update lockfile to remove only uninstalled packages
-    io_helper.deleteFile(lockfile_path) catch {};
+    // Try to read existing lockfile
+    var lockfile = lockfile_mod.readLockfile(allocator, lockfile_path) catch |err| {
+        // If no lockfile exists, nothing to update
+        if (err == error.FileNotFound) return;
+        return err;
+    };
+    defer lockfile.deinit(allocator);
+
+    // Remove uninstalled packages from the lockfile
+    for (removed_packages) |pkg_name| {
+        // Lockfile keys are in format "name@version", so we need to find matching keys
+        var keys_to_remove = std.ArrayList([]const u8){};
+        defer keys_to_remove.deinit(allocator);
+
+        var iter = lockfile.packages.iterator();
+        while (iter.next()) |entry| {
+            const key = entry.key_ptr.*;
+            // Check if key starts with "pkg_name@"
+            if (std.mem.startsWith(u8, key, pkg_name)) {
+                // Verify it's followed by @ (not just a prefix match)
+                if (key.len > pkg_name.len and key[pkg_name.len] == '@') {
+                    keys_to_remove.append(allocator, key) catch continue;
+                }
+            }
+        }
+
+        // Remove the matching keys
+        for (keys_to_remove.items) |key| {
+            if (lockfile.packages.fetchRemove(key)) |kv| {
+                // Free the entry
+                var entry = kv.value;
+                entry.deinit(allocator);
+                allocator.free(kv.key);
+            }
+        }
+    }
+
+    // Write updated lockfile (or delete if empty)
+    if (lockfile.packages.count() == 0) {
+        io_helper.deleteFile(lockfile_path) catch {};
+    } else {
+        lockfile_mod.writeLockfile(allocator, &lockfile, lockfile_path) catch {};
+    }
 }
 
 // ============================================================================
