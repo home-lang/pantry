@@ -369,6 +369,34 @@ fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     std.process.exit(result.exit_code);
 }
+
+fn uninstallAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get variadic package arguments
+    var packages = std.ArrayList([]const u8){};
+    defer packages.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |pkg| : (i += 1) {
+        try packages.append(allocator, pkg);
+    }
+
+    if (packages.items.len == 0) {
+        std.debug.print("Error: No packages specified to uninstall\n", .{});
+        std.process.exit(1);
+    }
+
+    const result = try lib.commands.package_commands.uninstallCommand(allocator, packages.items);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1843,6 +1871,19 @@ pub fn main() !void {
 
     _ = remove_cmd.setAction(removeAction);
     _ = try root.addCommand(remove_cmd);
+
+    // ========================================================================
+    // Uninstall Command
+    // ========================================================================
+    var uninstall_cmd = try cli.BaseCommand.init(allocator, "uninstall", "Uninstall packages from pantry folder");
+
+    const uninstall_packages_arg = cli.Argument.init("packages", "Packages to uninstall", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try uninstall_cmd.addArgument(uninstall_packages_arg);
+
+    _ = uninstall_cmd.setAction(uninstallAction);
+    _ = try root.addCommand(uninstall_cmd);
 
     // ========================================================================
     // List Command
