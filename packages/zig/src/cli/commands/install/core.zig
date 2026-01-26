@@ -796,8 +796,33 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         };
         defer lockfile.deinit(allocator);
 
-        // Add new packages to the lockfile (will update if already exists)
+        // Add new packages to the lockfile (replace existing versions of same package)
         for (installed_packages.items) |pkg| {
+            // First, remove any existing entries for this package (different versions)
+            var keys_to_remove = std.ArrayList([]const u8){};
+            defer keys_to_remove.deinit(allocator);
+
+            var iter = lockfile.packages.iterator();
+            while (iter.next()) |existing| {
+                const existing_key = existing.key_ptr.*;
+                // Check if this is the same package (starts with "name@")
+                if (std.mem.startsWith(u8, existing_key, pkg.name)) {
+                    if (existing_key.len > pkg.name.len and existing_key[pkg.name.len] == '@') {
+                        keys_to_remove.append(allocator, existing_key) catch continue;
+                    }
+                }
+            }
+
+            // Remove old versions
+            for (keys_to_remove.items) |old_key| {
+                if (lockfile.packages.fetchRemove(old_key)) |kv| {
+                    var old_entry = kv.value;
+                    old_entry.deinit(allocator);
+                    allocator.free(kv.key);
+                }
+            }
+
+            // Add the new version
             const entry = lib.packages.LockfileEntry{
                 .name = allocator.dupe(u8, pkg.name) catch continue,
                 .version = allocator.dupe(u8, pkg.version) catch continue,
