@@ -712,12 +712,8 @@ fn updateLockfileAfterUninstall(allocator: std.mem.Allocator, lockfile_path: []c
         }
     }
 
-    // Write updated lockfile (or delete if empty)
-    if (lockfile.packages.count() == 0) {
-        io_helper.deleteFile(lockfile_path) catch {};
-    } else {
-        lockfile_mod.writeLockfile(allocator, &lockfile, lockfile_path) catch {};
-    }
+    // Write updated lockfile (keep it even if empty, like npm does)
+    lockfile_mod.writeLockfile(allocator, &lockfile, lockfile_path) catch {};
 }
 
 // ============================================================================
