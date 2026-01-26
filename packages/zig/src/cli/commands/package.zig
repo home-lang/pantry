@@ -390,7 +390,6 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     }
 
     const green = "\x1b[32m";
-    const red = "\x1b[31m";
     const yellow = "\x1b[33m";
     const dim = "\x1b[2m";
     const reset = "\x1b[0m";
@@ -415,7 +414,6 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     std.debug.print("{s}➤{s} Uninstalling {d} package(s)...\n", .{ green, reset, args.len });
 
     var success_count: usize = 0;
-    var failed_count: usize = 0;
 
     for (args) |pkg_name| {
         // Look up package domain from registry
@@ -425,60 +423,49 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, domain });
         defer allocator.free(pkg_dir);
 
-        // Check if package exists
-        io_helper.accessAbsolute(pkg_dir, .{}) catch {
-            std.debug.print("{s}✗{s} {s} {s}(not installed){s}\n", .{ red, reset, pkg_name, dim, reset });
-            failed_count += 1;
-            continue;
-        };
+        var dir_removed = false;
 
-        // Remove package directory
-        io_helper.deleteTree(pkg_dir) catch |err| {
-            std.debug.print("{s}✗{s} {s} {s}(failed to remove: {}){s}\n", .{ red, reset, pkg_name, dim, err, reset });
-            failed_count += 1;
-            continue;
-        };
+        // Try to remove package directory (if it exists)
+        if (io_helper.accessAbsolute(pkg_dir, .{})) |_| {
+            io_helper.deleteTree(pkg_dir) catch |err| {
+                std.debug.print("{s}⚠{s}  {s} {s}(failed to remove directory: {}){s}\n", .{ yellow, reset, pkg_name, dim, err, reset });
+            };
+            dir_removed = true;
 
-        // Remove symlinks from pantry/.bin - check if they're broken after removing pkg dir
-        if (io_helper.openDirAbsoluteForIteration(bin_dir)) |dir_handle| {
-            var dir = dir_handle;
-            defer dir.close();
-            var iter = dir.iterate();
-            while (iter.next() catch null) |entry| {
-                if (entry.kind == .sym_link) {
-                    const link_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
-                    defer allocator.free(link_path);
+            // Remove symlinks from pantry/.bin - check if they're broken after removing pkg dir
+            if (io_helper.openDirAbsoluteForIteration(bin_dir)) |dir_handle| {
+                var dir = dir_handle;
+                defer dir.close();
+                var iter = dir.iterate();
+                while (iter.next() catch null) |entry| {
+                    if (entry.kind == .sym_link) {
+                        const link_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
+                        defer allocator.free(link_path);
 
-                    // Check if symlink is now broken (target was in removed package)
-                    io_helper.accessAbsolute(link_path, .{}) catch {
-                        // Symlink is broken, remove it
-                        io_helper.deleteFile(link_path) catch {};
-                    };
+                        // Check if symlink is now broken (target was in removed package)
+                        io_helper.accessAbsolute(link_path, .{}) catch {
+                            // Symlink is broken, remove it
+                            io_helper.deleteFile(link_path) catch {};
+                        };
+                    }
                 }
-            }
+            } else |_| {}
         } else |_| {}
 
-        std.debug.print("{s}✓{s} {s}\n", .{ green, reset, pkg_name });
+        std.debug.print("{s}✓{s} {s}{s}\n", .{ green, reset, pkg_name, if (!dir_removed) " (from config only)" else "" });
         success_count += 1;
     }
 
-    // Remove packages from package.json/pantry.json
-    if (success_count > 0) {
-        removeFromConfigFile(allocator, cwd, args) catch |err| {
-            std.debug.print("{s}⚠{s}  Failed to update config file: {}\n", .{ yellow, reset, err });
-        };
+    // Always remove packages from package.json/pantry.json and lockfile
+    removeFromConfigFile(allocator, cwd, args) catch |err| {
+        std.debug.print("{s}⚠{s}  Failed to update config file: {}\n", .{ yellow, reset, err });
+    };
 
-        // Update lockfile - remove uninstalled packages
-        updateLockfileAfterUninstall(allocator, lockfile_path, args) catch |err| {
-            std.debug.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ yellow, reset, err });
-        };
-    }
+    updateLockfileAfterUninstall(allocator, lockfile_path, args) catch |err| {
+        std.debug.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ yellow, reset, err });
+    };
 
     std.debug.print("\nRemoved {s}{d}{s} package(s)\n", .{ green, success_count, reset });
-
-    if (failed_count > 0) {
-        std.debug.print("{s}{d} package(s) failed to uninstall{s}\n", .{ red, failed_count, reset });
-    }
 
     return .{ .exit_code = 0 };
 }
