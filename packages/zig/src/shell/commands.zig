@@ -137,7 +137,8 @@ pub const ShellCommands = struct {
                 // Just update last_validated timestamp for bookkeeping
                 cached_entry.last_validated = now;
                 const project_basename = std.fs.path.basename(project_root);
-                std.debug.print("✓ Environment ready: {s}\n", .{project_basename});
+                std.debug.print("✓ Environment cached: {s}\n", .{project_basename});
+                std.debug.print("  Dependencies already installed. Use --force to reinstall.\n", .{});
                 return try self.generateShellCode(project_root, cached_entry.path);
             }
             // File mtime changed: invalidate cache and do full activation
