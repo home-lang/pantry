@@ -332,6 +332,35 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
         std.debug.print("Using direct S3 upload (AWS credentials found)\n", .{});
     }
 
+    // Check if version already exists or is lower than published
+    std.debug.print("Checking existing versions...\n", .{});
+    const version_check: ?VersionCheckResult = checkExistingVersion(allocator, name, version) catch |err| blk: {
+        // If we can't check (e.g., network error), warn but continue
+        std.debug.print("  Warning: Could not check existing versions: {any}\n", .{err});
+        break :blk null;
+    };
+
+    if (version_check) |check| {
+        defer allocator.free(check.latest_version);
+        if (check.version_exists) {
+            const err_msg = try std.fmt.allocPrint(
+                allocator,
+                "Error: Version {s} already exists in registry.\nBump the version in package.json before publishing.",
+                .{version},
+            );
+            return CommandResult.err(allocator, err_msg);
+        }
+        if (check.is_lower_version) {
+            const err_msg = try std.fmt.allocPrint(
+                allocator,
+                "Error: Version {s} is lower than the latest published version ({s}).\nVersion must be greater than the latest published version.",
+                .{ version, check.latest_version },
+            );
+            return CommandResult.err(allocator, err_msg);
+        }
+        std.debug.print("  Latest version: {s}, publishing: {s} ✓\n", .{ check.latest_version, version });
+    }
+
     if (options.dry_run) {
         std.debug.print("\n[DRY RUN] Would publish {s}@{s} to {s}\n", .{ name, version, options.registry });
         return .{ .exit_code = 0 };
@@ -1120,4 +1149,114 @@ fn uploadViaHttp(
     }
 
     return curl_result.stdout;
+}
+
+/// Result of version check
+const VersionCheckResult = struct {
+    version_exists: bool,
+    is_lower_version: bool,
+    latest_version: []const u8,
+};
+
+/// Check if a version already exists in the registry
+fn checkExistingVersion(allocator: std.mem.Allocator, name: []const u8, version: []const u8) !?VersionCheckResult {
+    const table_name = "pantry-packages";
+
+    // Build key JSON (DynamoDB uses "packageName" as the key)
+    const key_json = try std.fmt.allocPrint(allocator, "{{\"packageName\": {{\"S\": \"{s}\"}}}}", .{name});
+    defer allocator.free(key_json);
+
+    // Query DynamoDB for the package
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "aws",
+        "dynamodb",
+        "get-item",
+        "--table-name",
+        table_name,
+        "--key",
+        key_json,
+        "--projection-expression",
+        "latestVersion",
+    }) catch {
+        return null; // Can't check, let it proceed
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term != .Exited or result.term.Exited != 0) {
+        return null; // Query failed, let it proceed
+    }
+
+    // Parse the response
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, result.stdout, .{}) catch {
+        return null;
+    };
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) return null;
+
+    const item = root.object.get("Item") orelse {
+        // No item found, first publish
+        return VersionCheckResult{
+            .version_exists = false,
+            .is_lower_version = false,
+            .latest_version = try allocator.dupe(u8, "none"),
+        };
+    };
+    if (item != .object) return null;
+
+    // Check for empty item (package doesn't exist)
+    if (item.object.count() == 0) {
+        return VersionCheckResult{
+            .version_exists = false,
+            .is_lower_version = false,
+            .latest_version = try allocator.dupe(u8, "none"),
+        };
+    }
+
+    const version_obj = item.object.get("latestVersion") orelse return null;
+    if (version_obj != .object) return null;
+
+    const latest_version = if (version_obj.object.get("S")) |v|
+        if (v == .string) v.string else return null
+    else return null;
+
+    // Check if same version
+    if (std.mem.eql(u8, latest_version, version)) {
+        return VersionCheckResult{
+            .version_exists = true,
+            .is_lower_version = false,
+            .latest_version = try allocator.dupe(u8, latest_version),
+        };
+    }
+
+    // Compare versions (simple semver comparison)
+    const is_lower = isLowerVersion(version, latest_version);
+
+    return VersionCheckResult{
+        .version_exists = false,
+        .is_lower_version = is_lower,
+        .latest_version = try allocator.dupe(u8, latest_version),
+    };
+}
+
+/// Simple semver comparison: returns true if v1 < v2
+fn isLowerVersion(v1: []const u8, v2: []const u8) bool {
+    var v1_parts = std.mem.splitScalar(u8, v1, '.');
+    var v2_parts = std.mem.splitScalar(u8, v2, '.');
+
+    // Compare each part
+    inline for (0..3) |_| {
+        const p1_str = v1_parts.next() orelse "0";
+        const p2_str = v2_parts.next() orelse "0";
+
+        const p1 = std.fmt.parseInt(u32, p1_str, 10) catch 0;
+        const p2 = std.fmt.parseInt(u32, p2_str, 10) catch 0;
+
+        if (p1 < p2) return true;
+        if (p1 > p2) return false;
+    }
+
+    return false; // Equal versions
 }
