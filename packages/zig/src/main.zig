@@ -767,6 +767,8 @@ fn publisherRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
 fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
+    const access = ctx.getOption("access") orelse "public";
+    const tag = ctx.getOption("tag") orelse "latest";
     const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.org";
     const token = ctx.getOption("token");
     const dry_run = ctx.hasOption("dry-run");
@@ -774,6 +776,8 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const options = lib.commands.RegistryPublishOptions{
         .registry = registry,
         .token = token,
+        .access = access,
+        .tag = tag,
         .dry_run = dry_run,
     };
 
@@ -2654,6 +2658,14 @@ pub fn main() !void {
     // Publish Command (Pantry Registry - S3/DynamoDB)
     // ========================================================================
     var publish_cmd = try cli.BaseCommand.init(allocator, "publish", "Publish package to Pantry registry (S3)");
+
+    const pub_access_opt = cli.Option.init("access", "access", "Package access level (public/restricted)", .string)
+        .withDefault("public");
+    _ = try publish_cmd.addOption(pub_access_opt);
+
+    const pub_tag_opt = cli.Option.init("tag", "tag", "Publish with a tag", .string)
+        .withDefault("latest");
+    _ = try publish_cmd.addOption(pub_tag_opt);
 
     const pub_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
         .withDefault("https://registry.stacksjs.org");
