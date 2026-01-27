@@ -1111,10 +1111,10 @@ fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     if (result.message) |msg| {
         if (msg.len > 0) {
-            // Write to stdout for eval to capture
-            const stdout = std.Io.File.stdout();
-            io_helper.writeAllToFile(stdout, msg) catch {};
-            io_helper.writeAllToFile(stdout, "\n") catch {};
+            // Output shell code to stdout (for eval to capture)
+            const stdout_file = std.Io.File.stdout();
+            io_helper.writeAllToFile(stdout_file, msg) catch {};
+            io_helper.writeAllToFile(stdout_file, "\n") catch {};
         } else {
             std.debug.print("No project detected in current directory\n", .{});
         }
@@ -1653,6 +1653,7 @@ const Color = struct {
     const teal = "\x1b[36m";
     const bold_teal = "\x1b[1;36m";
     const yellow = "\x1b[33m";
+    const green = "\x1b[32m";
 };
 
 /// Print help information
