@@ -1096,6 +1096,35 @@ fn shellActivateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get current working directory
+    const cwd = std.process.getCwdAlloc(allocator) catch {
+        std.debug.print("Error: Could not get current directory\n", .{});
+        std.process.exit(1);
+    };
+    defer allocator.free(cwd);
+
+    const result = try lib.commands.shellActivateCommand(allocator, cwd);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        if (msg.len > 0) {
+            // Write to stdout for eval to capture
+            const stdout = std.Io.File.stdout();
+            io_helper.writeAllToFile(stdout, msg) catch {};
+            io_helper.writeAllToFile(stdout, "\n") catch {};
+        } else {
+            std.debug.print("No project detected in current directory\n", .{});
+        }
+    } else {
+        std.debug.print("No project detected in current directory\n", .{});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn devShellcodeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1710,11 +1739,10 @@ fn printHelp() void {
     std.debug.print("      " ++ Color.teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
     std.debug.print("      " ++ Color.teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
 
-    // Shell
-    std.debug.print("    " ++ Color.bold_teal ++ "Shell:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shell:integrate" ++ Color.reset ++ "     Integrate with shell\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shell:lookup" ++ Color.reset ++ "        Lookup shell configuration\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shell:activate" ++ Color.reset ++ "      Activate shell integration\n", .{});
+    // Shell / Environment
+    std.debug.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "env" ++ Color.reset ++ "                 Activate project environment (eval \"$(pantry env)\")\n", .{});
+    std.debug.print("      " ++ Color.teal ++ "shell:integrate" ++ Color.reset ++ "     Install automatic shell integration\n", .{});
     std.debug.print("      " ++ Color.teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
 
     // Shims
@@ -2285,6 +2313,12 @@ pub fn main() !void {
     // ========================================================================
     // Shell Commands
     // ========================================================================
+
+    // Main user-facing command: `eval "$(pantry env)"` to activate environment
+    var env_cmd = try cli.BaseCommand.init(allocator, "env", "Activate project environment (use: eval \"$(pantry env)\")");
+    _ = env_cmd.setAction(envAction);
+    _ = try root.addCommand(env_cmd);
+
     var shell_integrate_cmd = try cli.BaseCommand.init(allocator, "shell:integrate", "Install shell integration");
     _ = shell_integrate_cmd.setAction(shellIntegrateAction);
     _ = try root.addCommand(shell_integrate_cmd);
