@@ -250,6 +250,9 @@ pub const ShellCommands = struct {
 
             std.debug.print("✅ Environment ready: {s}\n", .{env_name});
 
+            // Install global dependencies (global: true in deps.yaml)
+            try self.installGlobalDeps(project_root);
+
             // Auto-start services if configured
             try self.autoStartServices(project_root);
         } else if (env_exists and dep_file != null) {
@@ -301,6 +304,9 @@ pub const ShellCommands = struct {
                     }
 
                     std.debug.print("✅ Environment updated\n", .{});
+
+                    // Re-check global dependencies after update
+                    try self.installGlobalDeps(project_root);
                 }
             }
         }
@@ -358,11 +364,32 @@ pub const ShellCommands = struct {
         const runtime_paths = try self.getRuntimePaths(project_root);
         defer self.allocator.free(runtime_paths);
 
-        // Build PATH with runtime bins first (highest precedence)
+        // Check if global bin directory exists
+        const home_dir = lib.core.Paths.home(self.allocator) catch null;
+        defer if (home_dir) |h| self.allocator.free(h);
+
+        const global_bin_path = if (home_dir) |h|
+            std.fmt.allocPrint(self.allocator, "{s}/.pantry/global/bin", .{h}) catch null
+        else
+            null;
+        defer if (global_bin_path) |p| self.allocator.free(p);
+
+        const has_global_bin = if (global_bin_path) |p| blk: {
+            var dir = io_helper.cwd().openDir(io_helper.io, p, .{}) catch break :blk false;
+            dir.close(io_helper.io);
+            break :blk true;
+        } else false;
+
+        // Build PATH (highest precedence first)
         var path_components: std.ArrayList([]const u8) = .{};
         defer path_components.deinit(self.allocator);
 
-        // 1. Runtime binaries (highest priority)
+        // 0. Global binaries (highest priority - always available)
+        if (has_global_bin) {
+            try path_components.append(self.allocator, global_bin_path.?);
+        }
+
+        // 1. Runtime binaries
         if (runtime_paths.len > 0) {
             try path_components.append(self.allocator, runtime_paths);
         }
@@ -452,6 +479,113 @@ pub const ShellCommands = struct {
         }
 
         return try std.mem.join(self.allocator, ":", runtime_paths.items);
+    }
+
+    /// Install dependencies marked with global: true to ~/.pantry/global/
+    fn installGlobalDeps(self: *ShellCommands, project_root_path: []const u8) !void {
+        const parser = @import("../deps/parser.zig");
+
+        // Look specifically for deps.yaml/deps.yml files (global: true is a YAML concept)
+        const yaml_files = [_][]const u8{
+            "deps.yaml",
+            "deps.yml",
+            "dependencies.yaml",
+            "dependencies.yml",
+        };
+
+        var deps_file_path: ?[]const u8 = null;
+        defer if (deps_file_path) |p| self.allocator.free(p);
+
+        for (yaml_files) |yaml_name| {
+            const candidate = std.fs.path.join(self.allocator, &[_][]const u8{
+                project_root_path,
+                yaml_name,
+            }) catch continue;
+
+            io_helper.cwd().access(io_helper.io, candidate, .{}) catch {
+                self.allocator.free(candidate);
+                continue;
+            };
+
+            deps_file_path = candidate;
+            break;
+        }
+
+        const yaml_path = deps_file_path orelse return; // No deps.yaml found
+
+        // Parse deps.yaml using the dedicated YAML parser
+        const deps = parser.parseDepsFile(self.allocator, yaml_path) catch return;
+        defer {
+            for (deps) |*dep| {
+                var d = dep.*;
+                d.deinit(self.allocator);
+            }
+            self.allocator.free(deps);
+        }
+
+        // Filter for global deps
+        var has_global = false;
+        for (deps) |dep| {
+            if (dep.global) {
+                has_global = true;
+                break;
+            }
+        }
+        if (!has_global) return;
+
+        // Determine global install directory
+        const home_dir = lib.core.Paths.home(self.allocator) catch return;
+        defer self.allocator.free(home_dir);
+
+        const global_dir = std.fmt.allocPrint(self.allocator, "{s}/.pantry/global", .{home_dir}) catch return;
+        defer self.allocator.free(global_dir);
+
+        const global_bin = std.fmt.allocPrint(self.allocator, "{s}/bin", .{global_dir}) catch return;
+        defer self.allocator.free(global_bin);
+
+        // Create global directories
+        io_helper.makePath(global_dir) catch return;
+        io_helper.makePath(global_bin) catch return;
+
+        std.debug.print("🌐 Installing global dependencies...\n", .{});
+
+        var pkg_cache = lib.cache.PackageCache.init(self.allocator) catch return;
+        defer pkg_cache.deinit();
+
+        for (deps) |dep| {
+            if (!dep.global) continue;
+
+            std.debug.print("  → {s}@{s} (global)", .{ dep.name, dep.version });
+
+            const spec = lib.packages.PackageSpec{
+                .name = dep.name,
+                .version = dep.version,
+            };
+
+            var installer = lib.install.Installer.init(self.allocator, &pkg_cache) catch {
+                std.debug.print(" ... failed to init installer\n", .{});
+                continue;
+            };
+            // Override data_dir to global directory
+            self.allocator.free(installer.data_dir);
+            installer.data_dir = self.allocator.dupe(u8, global_dir) catch {
+                std.debug.print(" ... failed\n", .{});
+                continue;
+            };
+            defer installer.deinit();
+
+            var result = installer.install(spec, .{}) catch {
+                std.debug.print(" ... failed\n", .{});
+                continue;
+            };
+            defer result.deinit(self.allocator);
+
+            std.debug.print(" ... {s}\n", .{
+                if (result.from_cache) "cached" else "installed",
+            });
+        }
+
+        std.debug.print("✅ Global packages available in ~/.pantry/global/bin\n", .{});
     }
 
     /// Auto-start services configured in pantry.json
