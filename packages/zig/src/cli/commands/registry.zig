@@ -1220,7 +1220,8 @@ fn checkExistingVersion(allocator: std.mem.Allocator, name: []const u8, version:
 
     const latest_version = if (version_obj.object.get("S")) |v|
         if (v == .string) v.string else return null
-    else return null;
+    else
+        return null;
 
     // Check if same version
     if (std.mem.eql(u8, latest_version, version)) {
