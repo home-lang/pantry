@@ -89,15 +89,29 @@ export interface DescribeTableOutput {
 
 export interface CreateTableInput {
   TableName: string
-  KeySchema: Array<{ AttributeName: string; KeyType: string }>
-  AttributeDefinitions: Array<{ AttributeName: string; AttributeType: string }>
+  KeySchema: Array<{
+    AttributeName: string
+    KeyType: string
+  }>
+  AttributeDefinitions: Array<{
+    AttributeName: string
+    AttributeType: string
+  }>
   BillingMode?: string
   GlobalSecondaryIndexes?: Array<{
     IndexName: string
-    KeySchema: Array<{ AttributeName: string; KeyType: string }>
-    Projection: { ProjectionType: string }
+    KeySchema: Array<{
+      AttributeName: string
+      KeyType: string
+    }>
+    Projection: {
+      ProjectionType: string
+    }
   }>
-  Tags?: Array<{ Key: string; Value: string }>
+  Tags?: Array<{
+    Key: string
+    Value: string
+  }>
 }
 
 export class DynamoDBClient {

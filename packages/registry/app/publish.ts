@@ -18,10 +18,16 @@ interface PackageJson {
   name: string
   version: string
   description?: string
-  author?: string | { name: string; email?: string }
+  author?: string | {
+    name: string
+    email?: string
+  }
   license?: string
   keywords?: string[]
-  repository?: string | { type: string; url: string }
+  repository?: string | {
+    type: string
+    url: string
+  }
   homepage?: string
   bin?: string | Record<string, string>
 }
@@ -314,7 +320,10 @@ async function getOrCreateMetadata(
   }
 }
 
-function runPack(targetDir: string): Promise<{ success: boolean; tarballPath?: string }> {
+function runPack(targetDir: string): Promise<{
+  success: boolean
+  tarballPath?: string
+}> {
   return new Promise((resolve) => {
     const packScript = join(import.meta.dir, 'pack.ts')
     const proc = spawn('bun', ['run', packScript, targetDir], {

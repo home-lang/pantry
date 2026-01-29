@@ -16,7 +16,13 @@ declare module 'ts-cloud/aws' {
     }): Promise<void>
     getObject(bucket: string, key: string): Promise<string>
     deleteObject(bucket: string, key: string): Promise<void>
-    list(params: { bucket: string; maxKeys?: number }): Promise<Array<{ Key: string; Size: number }> | null>
+    list(params: {
+      bucket: string
+      maxKeys?: number
+    }): Promise<Array<{
+      Key: string
+      Size: number
+    }> | null>
   }
 
   export class DynamoDBClient {
@@ -27,10 +33,16 @@ declare module 'ts-cloud/aws' {
 
     listTables(params: object): Promise<{ TableNames: string[] }>
     describeTable(params: { TableName: string }): Promise<{
-      Table: { TableStatus: string; ItemCount: number }
+      Table: {
+        TableStatus: string
+        ItemCount: number
+      }
     }>
     createTable(params: CreateTableInput): Promise<void>
-    putItem(params: { TableName: string; Item: Record<string, AttributeValue> }): Promise<void>
+    putItem(params: {
+      TableName: string
+      Item: Record<string, AttributeValue>
+    }): Promise<void>
     getItem(params: {
       TableName: string
       Key: Record<string, AttributeValue>
@@ -64,14 +76,28 @@ declare module 'ts-cloud/aws' {
 
   interface CreateTableInput {
     TableName: string
-    KeySchema: Array<{ AttributeName: string; KeyType: 'HASH' | 'RANGE' }>
-    AttributeDefinitions: Array<{ AttributeName: string; AttributeType: 'S' | 'N' | 'B' }>
+    KeySchema: Array<{
+      AttributeName: string
+      KeyType: 'HASH' | 'RANGE'
+    }>
+    AttributeDefinitions: Array<{
+      AttributeName: string
+      AttributeType: 'S' | 'N' | 'B'
+    }>
     BillingMode?: 'PROVISIONED' | 'PAY_PER_REQUEST'
     GlobalSecondaryIndexes?: Array<{
       IndexName: string
-      KeySchema: Array<{ AttributeName: string; KeyType: 'HASH' | 'RANGE' }>
-      Projection: { ProjectionType: 'ALL' | 'KEYS_ONLY' | 'INCLUDE' }
+      KeySchema: Array<{
+        AttributeName: string
+        KeyType: 'HASH' | 'RANGE'
+      }>
+      Projection: {
+        ProjectionType: 'ALL' | 'KEYS_ONLY' | 'INCLUDE'
+      }
     }>
-    Tags?: Array<{ Key: string; Value: string }>
+    Tags?: Array<{
+      Key: string
+      Value: string
+    }>
   }
 }
