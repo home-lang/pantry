@@ -502,7 +502,7 @@ pub const ShellCommands = struct {
                 yaml_name,
             }) catch continue;
 
-            io_helper.cwd().access(io_helper.io, candidate, .{}) catch {
+            io_helper.accessAbsolute(candidate, .{}) catch {
                 self.allocator.free(candidate);
                 continue;
             };
@@ -511,7 +511,9 @@ pub const ShellCommands = struct {
             break;
         }
 
-        const yaml_path = deps_file_path orelse return; // No deps.yaml found
+        const yaml_path = deps_file_path orelse {
+            return; // No deps.yaml found
+        };
 
         // Parse deps.yaml using the dedicated YAML parser
         const deps = parser.parseDepsFile(self.allocator, yaml_path) catch return;

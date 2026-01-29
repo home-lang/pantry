@@ -250,12 +250,17 @@ pub fn discoverBinaries(
             const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name });
             errdefer allocator.free(full_path);
 
-            // Check if executable using io_helper
+            // Check if executable - try io_helper stat first, fall back to
+            // treating all files in bin/ as executables (mode may be 0 on
+            // some platforms where the Io layer doesn't expose permissions)
             const stat = io_helper.statFile(full_path) catch {
                 allocator.free(full_path);
                 continue;
             };
-            const is_executable = (stat.mode & 0o111) != 0;
+            const is_executable = if (stat.mode != 0)
+                (stat.mode & 0o111) != 0
+            else
+                true; // In bin/ directory, assume executable if mode unavailable
 
             if (is_executable) {
                 try binaries.append(allocator, .{

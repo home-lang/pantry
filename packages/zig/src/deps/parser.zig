@@ -416,6 +416,7 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
     var current_package: ?[]const u8 = null;
     var current_version: ?[]const u8 = null;
     var current_global: ?bool = null;
+    var current_package_indent: usize = 0;
 
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r");
@@ -456,8 +457,12 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
                 const key = std.mem.trim(u8, trimmed[0..colon_pos], " \t");
                 const value = std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t");
 
-                // Level 1 = package name
-                if (indent_level <= 4) {
+                // Determine if this is a new package or a property of current package
+                // A property has greater indentation than its parent package
+                const is_property = current_package != null and indent_level > current_package_indent;
+
+                if (!is_property) {
+                    // New package entry
                     // Save previous package if any
                     if (current_package) |pkg| {
                         if (current_version) |ver| {
@@ -473,16 +478,15 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
                     current_package = key;
                     current_version = null;
                     current_global = null;
+                    current_package_indent = indent_level;
 
                     // If value is present, it's simple format: "package: version"
                     if (value.len > 0) {
-                        // Keep version constraint prefixes (^, ~, >=, etc.) - semver resolver will handle them
                         current_version = value;
                     }
                 } else {
-                    // Level 2+ = package properties (version, global)
+                    // Property of current package (version, global)
                     if (std.mem.eql(u8, key, "version")) {
-                        // Keep version constraint prefixes (^, ~, >=, etc.) - semver resolver will handle them
                         current_version = value;
                     } else if (std.mem.eql(u8, key, "global")) {
                         current_global = std.mem.eql(u8, value, "true");
