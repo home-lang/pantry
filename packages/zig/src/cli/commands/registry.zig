@@ -231,7 +231,7 @@ pub const MonorepoPackage = struct {
     }
 };
 
-/// Detect monorepo packages in the packages/ directory.
+/// Detect monorepo packages in the packages/ directory (recursive).
 /// Returns null if no packages/ directory exists.
 /// Returns a list of non-private packages with their paths.
 pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []const u8) !?[]MonorepoPackage {
@@ -239,10 +239,9 @@ pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []cons
     defer allocator.free(packages_dir);
 
     // Check if packages/ directory exists
-    var dir = io_helper.openDirForIteration(packages_dir) catch {
+    io_helper.accessAbsolute(packages_dir, .{}) catch {
         return null; // No packages/ directory
     };
-    defer dir.close();
 
     var packages = std.ArrayList(MonorepoPackage){};
     errdefer {
@@ -252,78 +251,8 @@ pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []cons
         packages.deinit(allocator);
     }
 
-    var iter = dir.iterate();
-    while (iter.next() catch null) |entry| {
-        if (entry.kind != .directory) continue;
-
-        // Skip common non-package directories
-        if (std.mem.eql(u8, entry.name, "node_modules") or
-            std.mem.eql(u8, entry.name, ".git") or
-            std.mem.startsWith(u8, entry.name, "."))
-        {
-            continue;
-        }
-
-        const entry_path = try std.fs.path.join(allocator, &[_][]const u8{ packages_dir, entry.name });
-        errdefer allocator.free(entry_path);
-
-        const config_path = try std.fs.path.join(allocator, &[_][]const u8{ entry_path, "package.json" });
-        errdefer allocator.free(config_path);
-
-        // Check if package.json exists
-        io_helper.accessAbsolute(config_path, .{}) catch {
-            allocator.free(config_path);
-            allocator.free(entry_path);
-            continue;
-        };
-
-        // Read and parse package.json to check private field
-        const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
-            allocator.free(config_path);
-            allocator.free(entry_path);
-            continue;
-        };
-        defer allocator.free(content);
-
-        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
-            allocator.free(config_path);
-            allocator.free(entry_path);
-            continue;
-        };
-        defer parsed.deinit();
-
-        const root = parsed.value;
-        if (root != .object) {
-            allocator.free(config_path);
-            allocator.free(entry_path);
-            continue;
-        }
-
-        // Check if private
-        const is_private = if (root.object.get("private")) |p|
-            if (p == .bool) p.bool else false
-        else
-            false;
-
-        if (is_private) {
-            std.debug.print("  Skipping {s} (private)\n", .{entry.name});
-            allocator.free(config_path);
-            allocator.free(entry_path);
-            continue;
-        }
-
-        // Get package name from package.json
-        const pkg_name = if (root.object.get("name")) |n|
-            if (n == .string) n.string else entry.name
-        else
-            entry.name;
-
-        try packages.append(allocator, .{
-            .name = try allocator.dupe(u8, pkg_name),
-            .path = entry_path,
-            .config_path = config_path,
-        });
-    }
+    // Recursively scan packages/ for directories containing package.json
+    try scanForPackages(allocator, packages_dir, &packages);
 
     if (packages.items.len == 0) {
         packages.deinit(allocator);
@@ -331,6 +260,97 @@ pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []cons
     }
 
     return try packages.toOwnedSlice(allocator);
+}
+
+/// Recursively scan a directory for subdirectories containing package.json.
+/// If a directory has package.json, it's treated as a package (not recursed further).
+/// If a directory has no package.json, recurse into its subdirectories.
+fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages: *std.ArrayList(MonorepoPackage)) !void {
+    var dir = io_helper.openDirForIteration(dir_path) catch return;
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory) continue;
+
+        // Skip common non-package directories
+        if (std.mem.eql(u8, entry.name, "node_modules") or
+            std.mem.eql(u8, entry.name, ".git") or
+            std.mem.eql(u8, entry.name, "dist") or
+            std.mem.eql(u8, entry.name, "build") or
+            std.mem.eql(u8, entry.name, ".turbo") or
+            std.mem.startsWith(u8, entry.name, "."))
+        {
+            continue;
+        }
+
+        const entry_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
+        errdefer allocator.free(entry_path);
+
+        const config_path = try std.fs.path.join(allocator, &[_][]const u8{ entry_path, "package.json" });
+
+        // Check if this directory has a package.json
+        const has_pkg_json = blk: {
+            io_helper.accessAbsolute(config_path, .{}) catch {
+                break :blk false;
+            };
+            break :blk true;
+        };
+
+        if (has_pkg_json) {
+            // This is a package — check if private and add if not
+            const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
+                allocator.free(config_path);
+                allocator.free(entry_path);
+                continue;
+            };
+            defer allocator.free(content);
+
+            const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+                allocator.free(config_path);
+                allocator.free(entry_path);
+                continue;
+            };
+            defer parsed.deinit();
+
+            const root = parsed.value;
+            if (root != .object) {
+                allocator.free(config_path);
+                allocator.free(entry_path);
+                continue;
+            }
+
+            // Check if private
+            const is_private = if (root.object.get("private")) |p|
+                if (p == .bool) p.bool else false
+            else
+                false;
+
+            if (is_private) {
+                std.debug.print("  Skipping {s} (private)\n", .{entry.name});
+                allocator.free(config_path);
+                allocator.free(entry_path);
+                continue;
+            }
+
+            // Get package name from package.json
+            const pkg_name = if (root.object.get("name")) |n|
+                if (n == .string) n.string else entry.name
+            else
+                entry.name;
+
+            try packages.append(allocator, .{
+                .name = try allocator.dupe(u8, pkg_name),
+                .path = entry_path,
+                .config_path = config_path,
+            });
+        } else {
+            // No package.json — recurse into subdirectories
+            allocator.free(config_path);
+            try scanForPackages(allocator, entry_path, packages);
+            allocator.free(entry_path);
+        }
+    }
 }
 
 // ============================================================================
