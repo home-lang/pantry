@@ -216,6 +216,124 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
 }
 
 // ============================================================================
+// Monorepo Detection
+// ============================================================================
+
+pub const MonorepoPackage = struct {
+    name: []const u8,
+    path: []const u8,
+    config_path: []const u8,
+
+    pub fn deinit(self: *MonorepoPackage, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.path);
+        allocator.free(self.config_path);
+    }
+};
+
+/// Detect monorepo packages in the packages/ directory.
+/// Returns null if no packages/ directory exists.
+/// Returns a list of non-private packages with their paths.
+pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []const u8) !?[]MonorepoPackage {
+    const packages_dir = try std.fs.path.join(allocator, &[_][]const u8{ project_root, "packages" });
+    defer allocator.free(packages_dir);
+
+    // Check if packages/ directory exists
+    var dir = io_helper.openDirForIteration(packages_dir) catch {
+        return null; // No packages/ directory
+    };
+    defer dir.close();
+
+    var packages = std.ArrayList(MonorepoPackage){};
+    errdefer {
+        for (packages.items) |*pkg| {
+            pkg.deinit(allocator);
+        }
+        packages.deinit(allocator);
+    }
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory) continue;
+
+        // Skip common non-package directories
+        if (std.mem.eql(u8, entry.name, "node_modules") or
+            std.mem.eql(u8, entry.name, ".git") or
+            std.mem.startsWith(u8, entry.name, "."))
+        {
+            continue;
+        }
+
+        const entry_path = try std.fs.path.join(allocator, &[_][]const u8{ packages_dir, entry.name });
+        errdefer allocator.free(entry_path);
+
+        const config_path = try std.fs.path.join(allocator, &[_][]const u8{ entry_path, "package.json" });
+        errdefer allocator.free(config_path);
+
+        // Check if package.json exists
+        io_helper.accessAbsolute(config_path, .{}) catch {
+            allocator.free(config_path);
+            allocator.free(entry_path);
+            continue;
+        };
+
+        // Read and parse package.json to check private field
+        const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
+            allocator.free(config_path);
+            allocator.free(entry_path);
+            continue;
+        };
+        defer allocator.free(content);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+            allocator.free(config_path);
+            allocator.free(entry_path);
+            continue;
+        };
+        defer parsed.deinit();
+
+        const root = parsed.value;
+        if (root != .object) {
+            allocator.free(config_path);
+            allocator.free(entry_path);
+            continue;
+        }
+
+        // Check if private
+        const is_private = if (root.object.get("private")) |p|
+            if (p == .bool) p.bool else false
+        else
+            false;
+
+        if (is_private) {
+            std.debug.print("  Skipping {s} (private)\n", .{entry.name});
+            allocator.free(config_path);
+            allocator.free(entry_path);
+            continue;
+        }
+
+        // Get package name from package.json
+        const pkg_name = if (root.object.get("name")) |n|
+            if (n == .string) n.string else entry.name
+        else
+            entry.name;
+
+        try packages.append(allocator, .{
+            .name = try allocator.dupe(u8, pkg_name),
+            .path = entry_path,
+            .config_path = config_path,
+        });
+    }
+
+    if (packages.items.len == 0) {
+        packages.deinit(allocator);
+        return null;
+    }
+
+    return try packages.toOwnedSlice(allocator);
+}
+
+// ============================================================================
 // Registry Publish Command
 // ============================================================================
 
@@ -229,6 +347,7 @@ pub const RegistryPublishOptions = struct {
 
 /// Publish a package to the Pantry registry
 /// This uploads the tarball directly to S3 via the registry API
+/// Auto-detects monorepos (packages/ directory) and publishes all non-private packages.
 pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: RegistryPublishOptions) !CommandResult {
     _ = args;
 
@@ -238,12 +357,68 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
     };
     defer allocator.free(cwd);
 
-    // Find config file (pantry.json or package.json)
+    // Check for monorepo (packages/ directory with package.json files)
+    const monorepo_packages = detectMonorepoPackages(allocator, cwd) catch null;
+    defer if (monorepo_packages) |pkgs| {
+        for (pkgs) |*pkg| {
+            var p = pkg.*;
+            p.deinit(allocator);
+        }
+        allocator.free(pkgs);
+    };
+
+    if (monorepo_packages) |pkgs| {
+        // Monorepo mode — publish each non-private package
+        std.debug.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
+        std.debug.print("----------------------------------------\n", .{});
+
+        var failed: usize = 0;
+        var succeeded: usize = 0;
+
+        for (pkgs) |pkg| {
+            std.debug.print("\nPublishing {s}...\n", .{pkg.name});
+            const result = publishSingleToRegistry(allocator, pkg.path, pkg.config_path, options);
+            if (result) |r| {
+                if (r.exit_code == 0) {
+                    succeeded += 1;
+                } else {
+                    failed += 1;
+                    if (r.message) |msg| std.debug.print("  Error: {s}\n", .{msg});
+                }
+                var res = r;
+                res.deinit(allocator);
+            } else |err| {
+                failed += 1;
+                std.debug.print("  Error: {any}\n", .{err});
+            }
+            std.debug.print("----------------------------------------\n", .{});
+        }
+
+        std.debug.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
+        if (failed > 0) {
+            std.debug.print(" ({d} failed)", .{failed});
+        }
+        std.debug.print("\n", .{});
+
+        return .{ .exit_code = if (failed > 0) 1 else 0 };
+    }
+
+    // Single package mode — publish CWD
     const config_path = common.findConfigFile(allocator, cwd) catch {
         return CommandResult.err(allocator, "Error: No package configuration found (pantry.json, package.json)");
     };
     defer allocator.free(config_path);
 
+    return publishSingleToRegistry(allocator, cwd, config_path, options);
+}
+
+/// Publish a single package directory to the Pantry registry.
+fn publishSingleToRegistry(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+    config_path: []const u8,
+    options: RegistryPublishOptions,
+) !CommandResult {
     std.debug.print("Publishing to Pantry registry...\n", .{});
     std.debug.print("Config: {s}\n", .{config_path});
 
@@ -368,7 +543,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
 
     // Create tarball
     std.debug.print("Creating tarball...\n", .{});
-    const tarball_path = try createTarball(allocator, cwd, name, version, config_content);
+    const tarball_path = try createTarball(allocator, package_dir, name, version, config_content);
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
 

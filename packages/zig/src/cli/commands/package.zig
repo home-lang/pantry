@@ -717,7 +717,8 @@ pub const PublishOptions = struct {
     use_npm: bool = false, // Set to true to publish to npm instead
 };
 
-/// Publish a package to the registry
+/// Publish a package to the registry (npm).
+/// Auto-detects monorepos (packages/ directory) and publishes all non-private packages.
 pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishOptions) !CommandResult {
     _ = args;
 
@@ -726,6 +727,54 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     };
     defer allocator.free(cwd);
 
+    // Check for monorepo (packages/ directory with package.json files)
+    const registry_cmds = @import("registry.zig");
+    const monorepo_packages = registry_cmds.detectMonorepoPackages(allocator, cwd) catch null;
+    defer if (monorepo_packages) |pkgs| {
+        for (pkgs) |*pkg| {
+            var p = pkg.*;
+            p.deinit(allocator);
+        }
+        allocator.free(pkgs);
+    };
+
+    if (monorepo_packages) |pkgs| {
+        // Monorepo mode — publish each non-private package to npm
+        std.debug.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
+        std.debug.print("----------------------------------------\n", .{});
+
+        var failed: usize = 0;
+        var succeeded: usize = 0;
+
+        for (pkgs) |pkg| {
+            std.debug.print("\nPublishing {s}...\n", .{pkg.name});
+            const result = publishSingleToNpm(allocator, pkg.path, pkg.config_path, options);
+            if (result) |r| {
+                if (r.exit_code == 0) {
+                    succeeded += 1;
+                } else {
+                    failed += 1;
+                    if (r.message) |msg| std.debug.print("  Error: {s}\n", .{msg});
+                }
+                var res = r;
+                res.deinit(allocator);
+            } else |err| {
+                failed += 1;
+                std.debug.print("  Error: {any}\n", .{err});
+            }
+            std.debug.print("----------------------------------------\n", .{});
+        }
+
+        std.debug.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
+        if (failed > 0) {
+            std.debug.print(" ({d} failed)", .{failed});
+        }
+        std.debug.print("\n", .{});
+
+        return .{ .exit_code = if (failed > 0) 1 else 0 };
+    }
+
+    // Single package mode — publish CWD
     const config_path = common.findConfigFile(allocator, cwd) catch {
         return .{
             .exit_code = 1,
@@ -734,6 +783,16 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     };
     defer allocator.free(config_path);
 
+    return publishSingleToNpm(allocator, cwd, config_path, options);
+}
+
+/// Publish a single package directory to npm.
+fn publishSingleToNpm(
+    allocator: std.mem.Allocator,
+    package_dir: []const u8,
+    config_path: []const u8,
+    options: PublishOptions,
+) !CommandResult {
     std.debug.print("Publishing package from {s}...\n", .{config_path});
 
     // Import auth modules
@@ -776,7 +835,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     std.debug.print("Registry: {s}\n", .{registry_url});
 
     // Create tarball
-    const tarball_path = try createTarball(allocator, cwd, metadata.name, metadata.version);
+    const tarball_path = try createTarball(allocator, package_dir, metadata.name, metadata.version);
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
 

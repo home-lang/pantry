@@ -773,6 +773,27 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const token = ctx.getOption("token");
     const dry_run = ctx.hasOption("dry-run");
 
+    // Route --registry npm to the npm publish flow
+    if (std.mem.eql(u8, registry, "npm")) {
+        const npm_options = lib.commands.PublishOptions{
+            .access = access,
+            .tag = tag,
+            .registry = "https://registry.npmjs.org",
+        };
+
+        const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, npm_options);
+        defer {
+            var r = result;
+            r.deinit(allocator);
+        }
+
+        if (result.message) |msg| {
+            std.debug.print("{s}\n", .{msg});
+        }
+
+        std.process.exit(result.exit_code);
+    }
+
     const options = lib.commands.RegistryPublishOptions{
         .registry = registry,
         .token = token,
