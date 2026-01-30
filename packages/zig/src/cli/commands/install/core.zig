@@ -648,8 +648,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 var pantry_info = info;
                 defer pantry_info.deinit(allocator);
 
-                std.debug.print("    → Found {s}@{s} in Pantry registry\n", .{ name, pantry_info.version });
-
                 break :npm_fallback lib.packages.PackageSpec{
                     .name = name,
                     .version = try allocator.dupe(u8, pantry_info.version),

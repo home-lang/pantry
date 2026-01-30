@@ -509,10 +509,6 @@ pub const Installer = struct {
             };
         }
 
-        if (!options.quiet) {
-            std.debug.print("  → Downloading from npm: {s}@{s}\n", .{ spec.name, spec.version });
-        }
-
         // Create temp directory for download
         const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
         const tarball_path = try std.fmt.allocPrint(
@@ -574,6 +570,11 @@ pub const Installer = struct {
             try self.createNpmShims(project_root, spec.name, install_dir);
         }
 
+        // Resolve transitive dependencies (dependencies + peerDependencies)
+        if (options.project_root) |project_root| {
+            self.resolveTransitiveDeps(install_dir, project_root, 0) catch {};
+        }
+
         const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         return InstallResult{
@@ -583,6 +584,292 @@ pub const Installer = struct {
             .from_cache = false,
             .install_time_ms = @intCast(end_time - start_time),
         };
+    }
+
+    // ========================================================================
+    // Transitive Dependency Resolution
+    // ========================================================================
+
+    const NpmResolution = struct {
+        version: []const u8,
+        tarball_url: []const u8,
+    };
+
+    /// Read an installed package's package.json and install its dependencies + peerDependencies.
+    /// Skips devDependencies (standard npm behavior for transitive packages).
+    fn resolveTransitiveDeps(
+        self: *Installer,
+        package_dir: []const u8,
+        project_root: []const u8,
+        depth: u32,
+    ) !void {
+        const max_depth = 50;
+        if (depth >= max_depth) return;
+
+        // Read package.json from the installed package
+        const pkg_json_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/package.json",
+            .{package_dir},
+        );
+        defer self.allocator.free(pkg_json_path);
+
+        const content = io_helper.readFileAlloc(self.allocator, pkg_json_path, 10 * 1024 * 1024) catch {
+            return; // No package.json or read error — nothing to resolve
+        };
+        defer self.allocator.free(content);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, content, .{}) catch {
+            return; // Invalid JSON
+        };
+        defer parsed.deinit();
+
+        if (parsed.value != .object) return;
+
+        // Process dependencies and peerDependencies (skip devDependencies)
+        const sections = [_][]const u8{ "dependencies", "peerDependencies" };
+
+        for (sections) |section_key| {
+            const deps_val = parsed.value.object.get(section_key) orelse continue;
+            if (deps_val != .object) continue;
+
+            var it = deps_val.object.iterator();
+            while (it.next()) |entry| {
+                const dep_name = entry.key_ptr.*;
+                const dep_version_val = entry.value_ptr.*;
+
+                const dep_version = if (dep_version_val == .string) dep_version_val.string else "latest";
+
+                // Skip workspace references (monorepo internal deps)
+                if (std.mem.startsWith(u8, dep_version, "workspace:")) continue;
+
+                self.installTransitiveDep(dep_name, dep_version, project_root, depth + 1);
+            }
+        }
+    }
+
+    /// Install a single transitive dependency.
+    /// Checks already-installed, circular deps, then resolves via Pantry DynamoDB or npm.
+    /// Returns void (not error union) — all errors are handled internally.
+    fn installTransitiveDep(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+        project_root: []const u8,
+        depth: u32,
+    ) void {
+        self.installTransitiveDepInner(name, version_constraint, project_root, depth) catch |err| {
+            std.debug.print("    ! {s}: {}\n", .{ name, err });
+        };
+    }
+
+    fn installTransitiveDepInner(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+        project_root: []const u8,
+        depth: u32,
+    ) !void {
+        // 1. Skip if already installed
+        const existing_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/pantry_modules/{s}",
+            .{ project_root, name },
+        );
+        defer self.allocator.free(existing_dir);
+
+        const already_installed = blk: {
+            var check_dir = io_helper.cwd().openDir(io_helper.io, existing_dir, .{}) catch break :blk false;
+            check_dir.close(io_helper.io);
+            break :blk true;
+        };
+
+        if (already_installed) return;
+
+        // 2. Circular dependency check
+        const install_key = try std.fmt.allocPrint(self.allocator, "npm:{s}", .{name});
+        defer self.allocator.free(install_key);
+
+        if (self.installing_stack.contains(install_key)) return;
+
+        try self.installing_stack.put(install_key);
+        defer self.installing_stack.remove(install_key);
+
+        // 3. Try Pantry DynamoDB registry first
+        const helpers_mod = @import("../cli/commands/install/helpers.zig");
+        if (helpers_mod.lookupPantryRegistry(self.allocator, name) catch null) |info| {
+            var pantry_info = info;
+            defer pantry_info.deinit(self.allocator);
+
+            std.debug.print("    + {s}@{s}\n", .{ name, pantry_info.version });
+
+            const spec = PackageSpec{
+                .name = name,
+                .version = try self.allocator.dupe(u8, pantry_info.version),
+                .source = .npm,
+                .url = try self.allocator.dupe(u8, pantry_info.tarball_url),
+            };
+            defer self.allocator.free(spec.version);
+            defer self.allocator.free(spec.url.?);
+
+            var result = try self.installFromNpm(spec, .{
+                .project_root = project_root,
+                .quiet = true,
+            });
+
+            // Recurse into this dep's deps
+            self.resolveTransitiveDeps(result.install_path, project_root, depth) catch {};
+            result.deinit(self.allocator);
+            return;
+        }
+
+        // 4. Fall back to npm registry
+        const npm_info = try self.resolveNpmPackage(name, version_constraint);
+        defer self.allocator.free(npm_info.version);
+        defer self.allocator.free(npm_info.tarball_url);
+
+        std.debug.print("    + {s}@{s}\n", .{ name, npm_info.version });
+
+        const spec = PackageSpec{
+            .name = name,
+            .version = npm_info.version,
+            .source = .npm,
+            .url = npm_info.tarball_url,
+        };
+
+        var result = try self.installFromNpm(spec, .{
+            .project_root = project_root,
+            .quiet = true,
+        });
+
+        // Recurse into this dep's deps
+        self.resolveTransitiveDeps(result.install_path, project_root, depth) catch {};
+        result.deinit(self.allocator);
+    }
+
+    /// Query npm registry to resolve a version constraint to a concrete version + tarball URL.
+    fn resolveNpmPackage(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+    ) !NpmResolution {
+        // Download npm registry response to temp file (can be large)
+        const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+        const tmp_file = try std.fmt.allocPrint(self.allocator, "{s}/pantry-npm-resolve-{s}.json", .{ tmp_dir, name });
+        defer self.allocator.free(tmp_file);
+        defer io_helper.deleteFile(tmp_file) catch {};
+
+        const npm_url = try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}", .{name});
+        defer self.allocator.free(npm_url);
+
+        const curl_result = try io_helper.childRun(self.allocator, &[_][]const u8{
+            "curl", "-sL", "-o", tmp_file, npm_url,
+        });
+        defer self.allocator.free(curl_result.stdout);
+        defer self.allocator.free(curl_result.stderr);
+
+        if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+            return error.NpmRegistryUnavailable;
+        }
+
+        const npm_response = io_helper.readFileAlloc(self.allocator, tmp_file, 10 * 1024 * 1024) catch {
+            return error.NpmRegistryUnavailable;
+        };
+        defer self.allocator.free(npm_response);
+
+        if (npm_response.len == 0) return error.NpmRegistryUnavailable;
+
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, npm_response, .{}) catch {
+            return error.InvalidNpmResponse;
+        };
+        defer parsed.deinit();
+
+        if (parsed.value != .object) return error.InvalidNpmResponse;
+
+        // Resolve version
+        const target_version = try self.resolveNpmVersion(parsed.value, version_constraint);
+
+        // Get tarball URL from versions[target_version].dist.tarball
+        const versions_obj = parsed.value.object.get("versions") orelse return error.NoVersions;
+        if (versions_obj != .object) return error.InvalidNpmResponse;
+
+        const version_data = versions_obj.object.get(target_version) orelse return error.VersionNotFound;
+        if (version_data != .object) return error.InvalidNpmResponse;
+
+        const dist = version_data.object.get("dist") orelse return error.NoTarballUrl;
+        if (dist != .object) return error.NoTarballUrl;
+
+        const tarball = dist.object.get("tarball") orelse return error.NoTarballUrl;
+        if (tarball != .string) return error.NoTarballUrl;
+
+        return NpmResolution{
+            .version = try self.allocator.dupe(u8, target_version),
+            .tarball_url = try self.allocator.dupe(u8, tarball.string),
+        };
+    }
+
+    /// Resolve a version constraint against npm registry data.
+    /// Handles "latest", "*", "^1.2.3", "~1.2.3", ">=1.0.0", exact versions.
+    fn resolveNpmVersion(
+        self: *Installer,
+        npm_response: std.json.Value,
+        constraint_str: []const u8,
+    ) ![]const u8 {
+        _ = self;
+        const npm_zig = @import("../registry/npm.zig");
+
+        // Handle "latest", "*", or empty
+        if (std.mem.eql(u8, constraint_str, "latest") or
+            std.mem.eql(u8, constraint_str, "*") or
+            constraint_str.len == 0)
+        {
+            return getDistTagLatest(npm_response);
+        }
+
+        // Parse the constraint
+        const constraint = npm_zig.SemverConstraint.parse(constraint_str) catch {
+            // If parse fails, try as exact version string
+            return constraint_str;
+        };
+
+        // Get versions object
+        const versions_obj = npm_response.object.get("versions") orelse return error.NoVersions;
+        if (versions_obj != .object) return error.InvalidNpmResponse;
+
+        // Find highest version satisfying the constraint
+        var best_version: ?[]const u8 = null;
+        var it = versions_obj.object.iterator();
+        while (it.next()) |entry| {
+            const ver = entry.key_ptr.*;
+            if (constraint.satisfies(ver)) {
+                if (best_version == null or compareSemver(ver, best_version.?) > 0) {
+                    best_version = ver;
+                }
+            }
+        }
+
+        return best_version orelse getDistTagLatest(npm_response);
+    }
+
+    /// Get dist-tags.latest from npm response
+    fn getDistTagLatest(npm_response: std.json.Value) ![]const u8 {
+        const dist_tags = npm_response.object.get("dist-tags") orelse return error.NoDistTags;
+        if (dist_tags != .object) return error.InvalidNpmResponse;
+        const latest = dist_tags.object.get("latest") orelse return error.NoLatestTag;
+        if (latest != .string) return error.InvalidNpmResponse;
+        return latest.string;
+    }
+
+    /// Compare two semver version strings. Returns >0 if a > b, <0 if a < b, 0 if equal.
+    fn compareSemver(a: []const u8, b: []const u8) i32 {
+        const npm_zig = @import("../registry/npm.zig");
+        const va = npm_zig.SemverConstraint.parseVersion(a) catch return 0;
+        const vb = npm_zig.SemverConstraint.parseVersion(b) catch return 0;
+
+        if (va.major != vb.major) return if (va.major > vb.major) @as(i32, 1) else @as(i32, -1);
+        if (va.minor != vb.minor) return if (va.minor > vb.minor) @as(i32, 1) else @as(i32, -1);
+        if (va.patch != vb.patch) return if (va.patch > vb.patch) @as(i32, 1) else @as(i32, -1);
+        return 0;
     }
 
     /// Install Zig from ziglang.org (handles both stable and dev versions)

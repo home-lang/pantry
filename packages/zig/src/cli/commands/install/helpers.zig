@@ -222,8 +222,6 @@ pub fn installSinglePackage(
                 var pantry_info = info;
                 defer pantry_info.deinit(allocator);
 
-                std.debug.print("    → Found {s}@{s} in Pantry registry\n", .{ dep.name, pantry_info.version });
-
                 break :blk lib.packages.PackageSpec{
                     .name = dep.name,
                     .version = try allocator.dupe(u8, pantry_info.version),
