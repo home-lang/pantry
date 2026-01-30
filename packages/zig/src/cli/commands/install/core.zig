@@ -643,7 +643,22 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .name = name,
             .version = version,
         } else npm_fallback: {
-            // Try npm registry as fallback - use temp file to handle large responses
+            // Try Pantry S3/DynamoDB registry first
+            if (helpers.lookupPantryRegistry(allocator, name) catch null) |info| {
+                var pantry_info = info;
+                defer pantry_info.deinit(allocator);
+
+                std.debug.print("    → Found {s}@{s} in Pantry registry\n", .{ name, pantry_info.version });
+
+                break :npm_fallback lib.packages.PackageSpec{
+                    .name = name,
+                    .version = try allocator.dupe(u8, pantry_info.version),
+                    .source = .npm,
+                    .url = try allocator.dupe(u8, pantry_info.tarball_url),
+                };
+            }
+
+            // Fall back to npm registry - use temp file to handle large responses
             const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
             const tmp_file = std.fmt.allocPrint(allocator, "{s}/pantry-npm-{s}.json", .{ tmp_dir, name }) catch {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };

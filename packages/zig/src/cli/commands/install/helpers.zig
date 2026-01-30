@@ -9,6 +9,101 @@ const types = @import("types.zig");
 const cache = lib.cache;
 const install = lib.install;
 
+// ============================================================================
+// Pantry Registry Lookup (S3/DynamoDB)
+// ============================================================================
+
+pub const PantryPackageInfo = struct {
+    s3_path: []const u8,
+    version: []const u8,
+    tarball_url: []const u8,
+
+    pub fn deinit(self: *PantryPackageInfo, allocator: std.mem.Allocator) void {
+        allocator.free(self.s3_path);
+        allocator.free(self.version);
+        allocator.free(self.tarball_url);
+    }
+};
+
+/// Look up a package in the Pantry DynamoDB registry.
+/// Returns package info if found, null if not found or query fails.
+pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?PantryPackageInfo {
+    const table_name = "pantry-packages";
+
+    // Build DynamoDB key JSON
+    const key_json = try std.fmt.allocPrint(allocator, "{{\"packageName\": {{\"S\": \"{s}\"}}}}", .{name});
+    defer allocator.free(key_json);
+
+    // Query DynamoDB
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "aws",
+        "dynamodb",
+        "get-item",
+        "--table-name",
+        table_name,
+        "--key",
+        key_json,
+        "--projection-expression",
+        "s3Path, latestVersion, safeName",
+    }) catch {
+        return null;
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term != .Exited or result.term.Exited != 0) {
+        return null;
+    }
+
+    if (result.stdout.len == 0) return null;
+
+    // Parse DynamoDB response
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, result.stdout, .{}) catch {
+        return null;
+    };
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) return null;
+
+    const item = root.object.get("Item") orelse return null;
+    if (item != .object) return null;
+    if (item.object.count() == 0) return null;
+
+    // Extract s3Path
+    const s3_path_obj = item.object.get("s3Path") orelse return null;
+    if (s3_path_obj != .object) return null;
+    const s3_path = if (s3_path_obj.object.get("S")) |v|
+        if (v == .string) v.string else return null
+    else
+        return null;
+
+    // Extract latestVersion
+    const version_obj = item.object.get("latestVersion") orelse return null;
+    if (version_obj != .object) return null;
+    const version = if (version_obj.object.get("S")) |v|
+        if (v == .string) v.string else return null
+    else
+        return null;
+
+    // Build S3 tarball URL
+    const tarball_url = try std.fmt.allocPrint(
+        allocator,
+        "https://pantry-registry.s3.us-east-1.amazonaws.com/{s}",
+        .{s3_path},
+    );
+
+    return PantryPackageInfo{
+        .s3_path = try allocator.dupe(u8, s3_path),
+        .version = try allocator.dupe(u8, version),
+        .tarball_url = tarball_url,
+    };
+}
+
+// ============================================================================
+// Install Helpers
+// ============================================================================
+
 /// Check if a version string is a local filesystem path
 pub fn isLocalPath(version: []const u8) bool {
     return std.mem.startsWith(u8, version, "~/") or
@@ -120,9 +215,24 @@ pub fn installSinglePackage(
             .source = .ziglang,
         };
     } else blk: {
-        // Regular registry package - check pantry first, then fallback to npm
+        // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {
-            // Try npm registry as fallback using curl
+            // Try Pantry S3/DynamoDB registry first
+            if (lookupPantryRegistry(allocator, dep.name) catch null) |info| {
+                var pantry_info = info;
+                defer pantry_info.deinit(allocator);
+
+                std.debug.print("    → Found {s}@{s} in Pantry registry\n", .{ dep.name, pantry_info.version });
+
+                break :blk lib.packages.PackageSpec{
+                    .name = dep.name,
+                    .version = try allocator.dupe(u8, pantry_info.version),
+                    .source = .npm,
+                    .url = try allocator.dupe(u8, pantry_info.tarball_url),
+                };
+            }
+
+            // Fall back to npm registry using curl
             const npm_url = try std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{dep.name});
             defer allocator.free(npm_url);
 
