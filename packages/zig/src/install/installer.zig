@@ -590,7 +590,7 @@ pub const Installer = struct {
     // Transitive Dependency Resolution
     // ========================================================================
 
-    const NpmResolution = struct {
+    pub const NpmResolution = struct {
         version: []const u8,
         tarball_url: []const u8,
     };
@@ -748,7 +748,7 @@ pub const Installer = struct {
     }
 
     /// Query npm registry to resolve a version constraint to a concrete version + tarball URL.
-    fn resolveNpmPackage(
+    pub fn resolveNpmPackage(
         self: *Installer,
         name: []const u8,
         version_constraint: []const u8,

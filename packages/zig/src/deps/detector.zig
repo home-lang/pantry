@@ -152,6 +152,7 @@ pub fn findWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !?
     const workspace_file_names = [_][]const u8{
         "pantry.json", // Highest priority for workspace configs
         "pantry.jsonc",
+        "package.json", // npm/bun compatible
     };
 
     var current_dir_buf: [std.fs.max_path_bytes]u8 = undefined;

@@ -201,38 +201,125 @@ fn findDepsFileInDir(allocator: std.mem.Allocator, dir_path: []const u8) !?[]con
 /// Load workspace configuration from a file
 pub fn loadWorkspaceConfig(
     allocator: std.mem.Allocator,
-    _: []const u8, // workspace_file_path (unused for now)
+    workspace_file_path: []const u8,
     workspace_root: []const u8,
 ) !types.WorkspaceConfig {
-    // Load the configuration file
-    var config_result = config_loader.loadpantryConfig(
+    // Try pantry config first (pantry.json, pantry.config.ts, etc.)
+    if (config_loader.loadpantryConfig(
         allocator,
         .{
             .name = "pantry",
             .cwd = workspace_root,
         },
-    ) catch |err| {
-        std.debug.print("Failed to load workspace config: {}\n", .{err});
-        return err;
-    };
-    defer config_result.deinit();
+    )) |config_result_val| {
+        var config_result = config_result_val;
+        defer config_result.deinit();
 
-    // Extract workspace patterns
-    const patterns = (try deps_extractor.extractWorkspacePatterns(allocator, config_result)) orelse {
-        std.debug.print("Error: No 'workspaces' field found in configuration\n", .{});
-        std.debug.print("Expected format: {{\"workspaces\": [\"packages/*\", \"apps/*\"]}}\n", .{});
+        if (try deps_extractor.extractWorkspacePatterns(allocator, config_result)) |patterns| {
+            errdefer {
+                for (patterns) |pattern| allocator.free(pattern);
+                allocator.free(patterns);
+            }
+
+            const fallback_name = std.fs.path.basename(workspace_root);
+            const workspace_name = try deps_extractor.extractWorkspaceName(allocator, config_result, fallback_name);
+            errdefer allocator.free(workspace_name);
+
+            const members = try discoverMembers(allocator, workspace_root, patterns);
+            errdefer {
+                for (members) |*member| {
+                    var m = member.*;
+                    m.deinit(allocator);
+                }
+                allocator.free(members);
+            }
+
+            return types.WorkspaceConfig{
+                .root_path = try allocator.dupe(u8, workspace_root),
+                .name = workspace_name,
+                .patterns = patterns,
+                .members = members,
+            };
+        }
+    } else |_| {
+        // Pantry config not available, fall through to package.json
+    }
+
+    // Fall back to reading package.json directly (npm/bun compatible)
+    return loadWorkspaceConfigFromPackageJson(allocator, workspace_file_path, workspace_root);
+}
+
+/// Load workspace config directly from package.json (npm/bun compatible)
+fn loadWorkspaceConfigFromPackageJson(
+    allocator: std.mem.Allocator,
+    file_path: []const u8,
+    workspace_root: []const u8,
+) !types.WorkspaceConfig {
+    const content = io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024) catch {
         return error.NoWorkspacePatternsFound;
     };
+    defer allocator.free(content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+        return error.NoWorkspacePatternsFound;
+    };
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return error.NoWorkspacePatternsFound;
+
+    // Extract workspaces field
+    const workspaces_val = parsed.value.object.get("workspaces") orelse
+        return error.NoWorkspacePatternsFound;
+
+    // Parse patterns from workspaces field (array or object with "packages" key)
+    var patterns_list = std.ArrayList([]const u8){};
     errdefer {
-        for (patterns) |pattern| {
-            allocator.free(pattern);
-        }
+        for (patterns_list.items) |p| allocator.free(p);
+        patterns_list.deinit(allocator);
+    }
+
+    switch (workspaces_val) {
+        .array => |arr| {
+            for (arr.items) |item| {
+                if (item == .string) {
+                    try patterns_list.append(allocator, try allocator.dupe(u8, item.string));
+                }
+            }
+        },
+        .object => |obj| {
+            // npm also supports { "packages": ["packages/*"] } format
+            if (obj.get("packages")) |pkgs| {
+                if (pkgs == .array) {
+                    for (pkgs.array.items) |item| {
+                        if (item == .string) {
+                            try patterns_list.append(allocator, try allocator.dupe(u8, item.string));
+                        }
+                    }
+                }
+            }
+        },
+        .string => |s| {
+            try patterns_list.append(allocator, try allocator.dupe(u8, s));
+        },
+        else => return error.NoWorkspacePatternsFound,
+    }
+
+    if (patterns_list.items.len == 0) return error.NoWorkspacePatternsFound;
+
+    const patterns = try patterns_list.toOwnedSlice(allocator);
+    errdefer {
+        for (patterns) |p| allocator.free(p);
         allocator.free(patterns);
     }
 
-    // Extract workspace name
-    const fallback_name = std.fs.path.basename(workspace_root);
-    const workspace_name = try deps_extractor.extractWorkspaceName(allocator, config_result, fallback_name);
+    // Extract name
+    const workspace_name = if (parsed.value.object.get("name")) |name_val|
+        if (name_val == .string)
+            try allocator.dupe(u8, name_val.string)
+        else
+            try allocator.dupe(u8, std.fs.path.basename(workspace_root))
+    else
+        try allocator.dupe(u8, std.fs.path.basename(workspace_root));
     errdefer allocator.free(workspace_name);
 
     // Discover members

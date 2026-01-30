@@ -155,6 +155,11 @@ pub fn installWorkspaceCommandWithOptions(
 
         if (member_deps) |deps| {
             for (deps) |dep| {
+                // Skip workspace:* references — these are resolved via symlinks, not installed
+                if (std.mem.startsWith(u8, dep.version, "workspace:")) {
+                    continue;
+                }
+
                 // Resolve catalog references
                 var resolved_dep = dep;
 
@@ -255,6 +260,20 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     for (all_deps_buffer[0..all_deps_count]) |dep| {
+        // Strip source prefixes (auto:, npm:, local:) from package names
+        const clean_name = if (std.mem.startsWith(u8, dep.name, "auto:"))
+            dep.name[5..]
+        else if (std.mem.startsWith(u8, dep.name, "npm:"))
+            dep.name[4..]
+        else if (std.mem.startsWith(u8, dep.name, "local:"))
+            dep.name[6..]
+        else
+            dep.name;
+
+        // Detect if this is an npm/auto package (needs npm fallback path)
+        const is_npm_package = std.mem.startsWith(u8, dep.name, "npm:") or
+            std.mem.startsWith(u8, dep.name, "auto:");
+
         // Map DependencySource to PackageSource
         const pkg_source: lib.packages.PackageSource = switch (dep.source) {
             .registry => .pkgx,
@@ -263,25 +282,95 @@ pub fn installWorkspaceCommandWithOptions(
             .url => .http,
         };
 
-        // Create package spec, parsing GitHub URLs if needed
+        // For npm/auto packages, try Pantry DynamoDB then npm registry
+        if (is_npm_package or (pkg_source == .pkgx and
+            @import("../../../packages/generated.zig").getPackageByName(clean_name) == null))
+        {
+            // Try Pantry DynamoDB registry first
+            const install_helpers = @import("helpers.zig");
+            if (install_helpers.lookupPantryRegistry(allocator, clean_name) catch null) |info| {
+                var pantry_info = info;
+                defer pantry_info.deinit(allocator);
+
+                const npm_spec = lib.packages.PackageSpec{
+                    .name = clean_name,
+                    .version = try allocator.dupe(u8, pantry_info.version),
+                    .source = .npm,
+                    .url = try allocator.dupe(u8, pantry_info.tarball_url),
+                };
+                defer allocator.free(npm_spec.version);
+                defer allocator.free(npm_spec.url.?);
+
+                var result = installer_instance.install(npm_spec, .{
+                    .project_root = workspace_root,
+                    .quiet = true,
+                }) catch |err| {
+                    const red = "\x1b[31m";
+                    std.debug.print("{s}✗{s} {s}@{s} {s}({any}){s}\n", .{ red, reset, clean_name, dep.version, dim, err, reset });
+                    failed_count += 1;
+                    continue;
+                };
+                defer result.deinit(allocator);
+                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, clean_name, result.version });
+                success_count += 1;
+                continue;
+            }
+
+            // Fall back to npm registry — resolve version and get tarball URL
+            var npm_resolver = install.Installer.init(allocator, &pkg_cache) catch {
+                failed_count += 1;
+                continue;
+            };
+            defer npm_resolver.deinit();
+
+            const npm_info = npm_resolver.resolveNpmPackage(clean_name, dep.version) catch {
+                const red = "\x1b[31m";
+                std.debug.print("{s}✗{s} {s}@{s} {s}(not found in pantry or npm){s}\n", .{ red, reset, clean_name, dep.version, dim, reset });
+                failed_count += 1;
+                continue;
+            };
+            defer allocator.free(npm_info.version);
+            defer allocator.free(npm_info.tarball_url);
+
+            const npm_spec = lib.packages.PackageSpec{
+                .name = clean_name,
+                .version = npm_info.version,
+                .source = .npm,
+                .url = npm_info.tarball_url,
+            };
+
+            var result = installer_instance.install(npm_spec, .{
+                .project_root = workspace_root,
+                .quiet = true,
+            }) catch |err| {
+                const red = "\x1b[31m";
+                std.debug.print("{s}✗{s} {s}@{s} {s}({any}){s}\n", .{ red, reset, clean_name, dep.version, dim, err, reset });
+                failed_count += 1;
+                continue;
+            };
+            defer result.deinit(allocator);
+            std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, clean_name, result.version });
+            success_count += 1;
+            continue;
+        }
+
+        // Create package spec for pkgx/GitHub packages
         const spec = if (pkg_source == .github and dep.github_ref != null) blk: {
-            // Use already-parsed GitHub ref from dependency
             const gh_ref = dep.github_ref.?;
 
             const repo_str = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ gh_ref.owner, gh_ref.repo });
             errdefer allocator.free(repo_str);
 
             break :blk lib.packages.PackageSpec{
-                .name = dep.name,
+                .name = clean_name,
                 .version = gh_ref.ref,
                 .source = .github,
                 .repo = repo_str,
             };
         } else if (pkg_source == .github) blk: {
-            // Fallback: try parsing GitHub URL from version string
             const gh_ref = try parser.parseGitHubUrl(allocator, dep.version) orelse {
                 const red = "\x1b[31m";
-                std.debug.print("{s}✗{s} {s}@{s} {s}(invalid GitHub URL){s}\n", .{ red, reset, dep.name, dep.version, dim, reset });
+                std.debug.print("{s}✗{s} {s}@{s} {s}(invalid GitHub URL){s}\n", .{ red, reset, clean_name, dep.version, dim, reset });
                 failed_count += 1;
                 continue;
             };
@@ -295,13 +384,13 @@ pub fn installWorkspaceCommandWithOptions(
             errdefer allocator.free(repo_str);
 
             break :blk lib.packages.PackageSpec{
-                .name = dep.name,
+                .name = clean_name,
                 .version = gh_ref.ref,
                 .source = .github,
                 .repo = repo_str,
             };
         } else lib.packages.PackageSpec{
-            .name = dep.name,
+            .name = clean_name,
             .version = dep.version,
             .source = pkg_source,
         };
@@ -312,13 +401,13 @@ pub fn installWorkspaceCommandWithOptions(
             .quiet = true,
         }) catch |err| {
             const red = "\x1b[31m";
-            std.debug.print("{s}✗{s} {s}@{s} {s}({any}){s}\n", .{ red, reset, dep.name, dep.version, dim, err, reset });
+            std.debug.print("{s}✗{s} {s}@{s} {s}({any}){s}\n", .{ red, reset, clean_name, dep.version, dim, err, reset });
             failed_count += 1;
             continue;
         };
         defer result.deinit(allocator);
 
-        std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, dep.name, dep.version });
+        std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, clean_name, dep.version });
         success_count += 1;
     }
 
@@ -357,6 +446,59 @@ pub fn installWorkspaceCommandWithOptions(
         const yellow = "\x1b[33m";
         std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
     };
+
+    // Link workspace members into root pantry_modules/ so they can reference each other
+    const pantry_modules_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{workspace_root});
+    defer allocator.free(pantry_modules_dir);
+    io_helper.makePath(pantry_modules_dir) catch {};
+
+    var linked_count: usize = 0;
+    for (workspace_config.members) |member| {
+        // Read member's package.json to get its published name
+        const member_pkg_path = try std.fmt.allocPrint(allocator, "{s}/package.json", .{member.abs_path});
+        defer allocator.free(member_pkg_path);
+
+        const pkg_name = blk: {
+            const pkg_content = io_helper.readFileAlloc(allocator, member_pkg_path, 1024 * 1024) catch break :blk member.name;
+            defer allocator.free(pkg_content);
+
+            const pkg_parsed = std.json.parseFromSlice(std.json.Value, allocator, pkg_content, .{}) catch break :blk member.name;
+            defer pkg_parsed.deinit();
+
+            if (pkg_parsed.value == .object) {
+                if (pkg_parsed.value.object.get("name")) |name_val| {
+                    if (name_val == .string) {
+                        break :blk name_val.string;
+                    }
+                }
+            }
+            break :blk member.name;
+        };
+
+        // Handle scoped packages (@scope/name)
+        const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_modules_dir, pkg_name });
+        defer allocator.free(link_path);
+
+        // Create parent directory for scoped packages
+        if (std.mem.indexOf(u8, pkg_name, "/")) |_| {
+            const parent = std.fs.path.dirname(link_path) orelse continue;
+            const parent_owned = try allocator.dupe(u8, parent);
+            defer allocator.free(parent_owned);
+            io_helper.makePath(parent_owned) catch {};
+        }
+
+        // Create symlink: pantry_modules/{name} -> {member.abs_path}
+        io_helper.deleteFile(link_path) catch {};
+        io_helper.symLink(member.abs_path, link_path) catch |err| {
+            std.debug.print("{s}  ! Failed to link {s}: {}{s}\n", .{ dim, pkg_name, err, reset });
+            continue;
+        };
+        linked_count += 1;
+    }
+
+    if (linked_count > 0) {
+        std.debug.print("{s}🔗{s} Linked {d} workspace package(s)\n", .{ blue, reset, linked_count });
+    }
 
     // Summary
     std.debug.print("\n{s}✓{s} Workspace setup complete! Installed {d} package(s)", .{ green, reset, success_count });
