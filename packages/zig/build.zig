@@ -43,6 +43,7 @@ pub fn build(b: *std.Build) void {
     const zig_config_mod = b.addModule("zig-config", .{
         .root_source_file = b.path(zig_config_path),
         .target = target,
+        .link_libc = true,
     });
 
     // Resolve zig-cli path
@@ -77,6 +78,7 @@ pub fn build(b: *std.Build) void {
     const lib_mod = b.addModule("pantry", .{
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
+        .link_libc = true,
     });
 
     // Add zig-config as an import to the library
@@ -119,6 +121,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "zig-config", .module = zig_config_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -134,6 +137,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/core_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -149,6 +153,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/integration_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -164,6 +169,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/env_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -179,6 +185,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/services_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "pantry", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -194,6 +201,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/string_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -208,6 +216,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/path_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -222,6 +231,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/platform_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -236,6 +246,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/lockfile_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -250,6 +261,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/config_comprehensive_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -265,6 +277,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/auth/oidc_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -280,6 +293,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("test/resolution_test.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
@@ -295,6 +309,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("bench/shell_bench.zig"),
         .target = target,
         .optimize = .ReleaseFast,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
         },
@@ -349,6 +364,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("bench/bench.zig"),
         .target = target,
         .optimize = .ReleaseFast,
+        .link_libc = true,
         .imports = &.{
             .{ .name = "lib", .module = lib_mod },
         },

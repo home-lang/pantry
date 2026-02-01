@@ -50,7 +50,13 @@ test "Platform user service directory" {
     }
 
     // Only test if HOME is set
-    const home = std.posix.getenv("HOME") orelse return error.SkipZigTest;
+    const home = blk: {
+        var key_buf: [4096:0]u8 = undefined;
+        @memcpy(key_buf[0..4], "HOME");
+        key_buf[4] = 0;
+        const val = std.c.getenv(&key_buf) orelse return error.SkipZigTest;
+        break :blk std.mem.sliceTo(val, 0);
+    };
 
     const dir = try plat.userServiceDirectory(allocator);
     defer allocator.free(dir);
