@@ -6,10 +6,10 @@ const io_helper = lib.io_helper;
 
 /// Scan common locations for dependency files with global packages
 pub fn scanForGlobalDeps(allocator: std.mem.Allocator) ![]parser.PackageDependency {
-    const home = std.process.getEnvVarOwned(allocator, "HOME") catch |err| {
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch |err| {
         if (err == error.EnvironmentVariableNotFound) {
             // Try USERPROFILE on Windows
-            const userprofile = std.process.getEnvVarOwned(allocator, "USERPROFILE") catch return &[_]parser.PackageDependency{};
+            const userprofile = io_helper.getEnvVarOwned(allocator, "USERPROFILE") catch return &[_]parser.PackageDependency{};
             defer allocator.free(userprofile);
             return scanLocations(allocator, userprofile);
         }

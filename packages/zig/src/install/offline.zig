@@ -19,7 +19,7 @@ pub const OfflineConfig = struct {
 /// Check if we're in offline mode
 pub fn isOfflineMode() bool {
     // Check environment variable
-    const offline_env = std.posix.getenv("PANTRY_OFFLINE") orelse return false;
+    const offline_env = io_helper.getenv("PANTRY_OFFLINE") orelse return false;
     return std.mem.eql(u8, offline_env, "1") or std.mem.eql(u8, offline_env, "true");
 }
 
@@ -74,10 +74,7 @@ fn copyDir(src: []const u8, dest: []const u8) !void {
     defer src_dir.close();
 
     // Create destination directory
-    io_helper.makePath(dest) catch |err| switch (err) {
-        error.PathAlreadyExists => {},
-        else => return err,
-    };
+    try io_helper.makePath(dest);
 
     // Iterate and copy
     var it = src_dir.iterate();
@@ -131,9 +128,9 @@ pub const ProxyConfig = struct {
     /// Load proxy configuration from environment
     pub fn fromEnv() ProxyConfig {
         return .{
-            .http_proxy = std.posix.getenv("HTTP_PROXY") orelse std.posix.getenv("http_proxy"),
-            .https_proxy = std.posix.getenv("HTTPS_PROXY") orelse std.posix.getenv("https_proxy"),
-            .no_proxy = std.posix.getenv("NO_PROXY") orelse std.posix.getenv("no_proxy"),
+            .http_proxy = io_helper.getenv("HTTP_PROXY") orelse io_helper.getenv("http_proxy"),
+            .https_proxy = io_helper.getenv("HTTPS_PROXY") orelse io_helper.getenv("https_proxy"),
+            .no_proxy = io_helper.getenv("NO_PROXY") orelse io_helper.getenv("no_proxy"),
         };
     }
 

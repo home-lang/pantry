@@ -208,7 +208,7 @@ pub fn fixMacOSLibraryPaths(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (result.term.Exited != 0) {
+    if (result.term.exited != 0) {
         return; // Not a Mach-O binary
     }
 
@@ -255,7 +255,7 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(change_result.stdout);
         defer allocator.free(change_result.stderr);
 
-        if (change_result.term.Exited == 0) {
+        if (change_result.term.exited == 0) {
             std.debug.print("  ✓ Fixed library path: {s} -> {s}\n", .{ lib_name, new_path });
         }
     }
@@ -273,7 +273,7 @@ pub fn fixMacOSLibraryPaths(
     defer allocator.free(add_rpath.stdout);
     defer allocator.free(add_rpath.stderr);
 
-    if (add_rpath.term.Exited == 0) {
+    if (add_rpath.term.exited == 0) {
         std.debug.print("  ✓ Added rpath: {s}\n", .{lib_dir});
     }
 }

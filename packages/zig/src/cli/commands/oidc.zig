@@ -73,7 +73,7 @@ fn detectGitHubRepo(allocator: std.mem.Allocator) ![]const u8 {
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (result.term.Exited != 0 or result.stdout.len == 0) {
+    if (result.term != .exited or result.term.exited != 0 or result.stdout.len == 0) {
         return error.EmptyOutput;
     }
 

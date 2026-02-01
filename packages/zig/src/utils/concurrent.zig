@@ -172,10 +172,10 @@ fn executeScript(task: ScriptTask, config: ConcurrentConfig) !ScriptResult {
 
     return ScriptResult{
         .name = try allocator.dupe(u8, task.name),
-        .exit_code = @as(u8, @intCast(result.term.Exited)),
+        .exit_code = @as(u8, @intCast(result.term.exited)),
         .stdout = result.stdout,
         .stderr = result.stderr,
-        .success = result.term.Exited == 0,
+        .success = result.term.exited == 0,
     };
 }
 

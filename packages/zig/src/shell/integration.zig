@@ -15,7 +15,7 @@ pub const Shell = enum {
 
     /// Detect current shell from environment
     pub fn detect() Shell {
-        const shell_env = std.process.getEnvVarOwned(std.heap.page_allocator, "SHELL") catch return .unknown;
+        const shell_env = io_helper.getEnvVarOwned(std.heap.page_allocator, "SHELL") catch return .unknown;
         defer std.heap.page_allocator.free(shell_env);
 
         if (std.mem.endsWith(u8, shell_env, "zsh")) return .zsh;

@@ -458,22 +458,24 @@ pub fn installWorkspaceCommandWithOptions(
         const member_pkg_path = try std.fmt.allocPrint(allocator, "{s}/package.json", .{member.abs_path});
         defer allocator.free(member_pkg_path);
 
-        const pkg_name = blk: {
-            const pkg_content = io_helper.readFileAlloc(allocator, member_pkg_path, 1024 * 1024) catch break :blk member.name;
+        const pkg_name_owned: ?[]const u8 = blk: {
+            const pkg_content = io_helper.readFileAlloc(allocator, member_pkg_path, 1024 * 1024) catch break :blk null;
             defer allocator.free(pkg_content);
 
-            const pkg_parsed = std.json.parseFromSlice(std.json.Value, allocator, pkg_content, .{}) catch break :blk member.name;
+            const pkg_parsed = std.json.parseFromSlice(std.json.Value, allocator, pkg_content, .{}) catch break :blk null;
             defer pkg_parsed.deinit();
 
             if (pkg_parsed.value == .object) {
                 if (pkg_parsed.value.object.get("name")) |name_val| {
                     if (name_val == .string) {
-                        break :blk name_val.string;
+                        break :blk allocator.dupe(u8, name_val.string) catch null;
                     }
                 }
             }
-            break :blk member.name;
+            break :blk null;
         };
+        defer if (pkg_name_owned) |n| allocator.free(n);
+        const pkg_name = pkg_name_owned orelse member.name;
 
         // Handle scoped packages (@scope/name)
         const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_modules_dir, pkg_name });

@@ -81,42 +81,50 @@ pub fn openFile(path: []const u8, flags: File.OpenFlags) !File {
     return try cwd().openFile(io, path, flags);
 }
 
-/// Make a directory path recursively using posix mkdir
+/// Make a directory path recursively using libc mkdir
 pub fn makePath(path: []const u8) !void {
-    // Try to create the directory directly first
-    std.posix.mkdir(path, 0o755) catch |err| switch (err) {
-        error.FileNotFound => {
-            // Parent doesn't exist, create it first
-            if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep| {
-                if (sep > 0) {
-                    try makePath(path[0..sep]);
-                }
+    // Null-terminate the path for C API
+    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (path.len >= path_buf.len) return error.NameTooLong;
+    @memcpy(path_buf[0..path.len], path);
+    path_buf[path.len] = 0;
+
+    const result = c.mkdir(&path_buf, 0o755);
+    if (result == 0) return; // Success
+
+    const err = std.posix.errno(result);
+    if (err == .SUCCESS) return;
+    if (err == .EXIST) return; // Already exists
+    if (err == .NOENT) {
+        // Parent doesn't exist, create it first
+        if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep| {
+            if (sep > 0) {
+                try makePath(path[0..sep]);
             }
-            // Now create this directory
-            try std.posix.mkdir(path, 0o755);
-        },
-        error.PathAlreadyExists => {
-            // Directory already exists, that's fine
-        },
-        else => return err,
-    };
+        }
+        // Now create this directory
+        const result2 = c.mkdir(&path_buf, 0o755);
+        if (result2 == 0) return;
+        const err2 = std.posix.errno(result2);
+        if (err2 == .SUCCESS or err2 == .EXIST) return;
+        return error.MakePathFailed;
+    }
+    return error.MakePathFailed;
 }
 
 /// Check access to a path (relative)
 pub fn access(path: []const u8, flags: Dir.AccessOptions) !void {
     _ = flags;
-    // Try to open the file to check existence
     const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
-    const fd = std.posix.open(path, open_flags, 0) catch return error.FileNotFound;
+    const fd = std.posix.openat(std.posix.AT.FDCWD, path, open_flags, 0) catch return error.FileNotFound;
     std.posix.close(fd);
 }
 
 /// Check access to an absolute path
 pub fn accessAbsolute(path: []const u8, flags: Dir.AccessOptions) !void {
     _ = flags;
-    // Try to open the file to check existence
     const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
-    const fd = std.posix.open(path, open_flags, 0) catch return error.FileNotFound;
+    const fd = std.posix.openat(std.posix.AT.FDCWD, path, open_flags, 0) catch return error.FileNotFound;
     std.posix.close(fd);
 }
 
@@ -188,15 +196,15 @@ pub fn deleteTree(path: []const u8) !void {
 
 /// Get the current working directory as a path string
 pub fn getCwdPath(out_buffer: []u8) ![]u8 {
-    return std.posix.getcwd(out_buffer);
+    const n = try std.process.currentPath(getIo(), out_buffer);
+    return out_buffer[0..n];
 }
 
 /// Get realpath - resolve path to absolute path
-/// Since std.posix.realpath doesn't exist in this Zig version,
-/// we implement a simple version using getcwd for "." and path joining
+/// Simple implementation using cwd for "." and path joining
 pub fn realpath(path: []const u8, out_buffer: []u8) ![]u8 {
     if (std.mem.eql(u8, path, ".")) {
-        return std.posix.getcwd(out_buffer);
+        return getCwdPath(out_buffer);
     }
 
     // For absolute paths, just copy
@@ -207,7 +215,7 @@ pub fn realpath(path: []const u8, out_buffer: []u8) ![]u8 {
     }
 
     // For relative paths, join with cwd
-    const cwd_path = try std.posix.getcwd(out_buffer);
+    const cwd_path = try getCwdPath(out_buffer);
     const cwd_len = cwd_path.len;
 
     // Check if we have enough space
@@ -233,10 +241,14 @@ pub fn writeAllToFile(file: File, bytes: []const u8) !void {
     const handle = file.handle;
     var remaining = bytes;
     while (remaining.len > 0) {
-        const written = std.posix.write(handle, remaining) catch |err| switch (err) {
-            error.WouldBlock => continue,
-            else => return err,
-        };
+        const result = c.write(handle, remaining.ptr, remaining.len);
+        if (result < 0) {
+            // On EAGAIN/EWOULDBLOCK, retry
+            const err = std.posix.errno(result);
+            if (err == .AGAIN) continue;
+            return error.InputOutput;
+        }
+        const written: usize = @intCast(result);
         if (written == 0) return error.UnexpectedEndOfStream;
         remaining = remaining[written..];
     }
@@ -379,7 +391,7 @@ pub const FsDir = struct {
 /// Open a directory for iteration
 pub fn openDirForIteration(path: []const u8) !FsDir {
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
-    const fd = try std.posix.open(path, flags, 0);
+    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, flags, 0);
     return .{ .fd = fd };
 }
 
@@ -391,9 +403,6 @@ pub fn openDirAbsoluteForIteration(path: []const u8) !FsDir {
 /// Open a file with absolute path
 /// Opens from root directory for absolute paths
 pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
-    // For absolute paths, we can use openat with AT.FDCWD
-    // But since we're using Io.Dir, we need to open the root and navigate
-    // Simpler: use posix open directly
     const posix_flags: std.posix.O = blk: {
         var f: std.posix.O = .{};
         if (flags.mode == .read_only) {
@@ -405,17 +414,15 @@ pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
         }
         break :blk f;
     };
-    const fd = try std.posix.open(path, posix_flags, 0);
+    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
     return File{ .handle = fd };
 }
 
 /// Open a directory with absolute path
-/// Since Io.Dir doesn't have openDirAbsolute, we use posix API
 pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
     _ = options;
-    // Use posix open with directory flag
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
-    const fd = try std.posix.open(path, flags, 0);
+    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, flags, 0);
     return Dir{ .handle = fd };
 }
 
@@ -500,65 +507,28 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
     }
 }
 
-/// Spawn a child process and wait for it to complete
-/// Handles cross-platform differences in the spawnAndWait signature
-pub fn spawnAndWait(child: *std.process.Child) !std.process.Child.Term {
-    // Check at compile time which signature is available
-    const ChildType = std.process.Child;
-    const fn_info = @typeInfo(@TypeOf(ChildType.spawnAndWait)).@"fn";
+/// Re-export SpawnOptions for callers
+pub const SpawnOptions = std.process.SpawnOptions;
 
-    if (fn_info.params.len == 2) {
-        // Version with io parameter: spawnAndWait(self, io)
-        return child.spawnAndWait(io);
-    } else {
-        // Version without io parameter: spawnAndWait(self)
-        return child.spawnAndWait();
-    }
+/// Spawn a child process and wait for it to complete
+pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
+    var child = try std.process.spawn(getIo(), options);
+    return try child.wait(getIo());
 }
 
 /// Spawn a child process (without waiting)
-/// Handles cross-platform differences in the spawn signature
-pub fn spawn(child: *std.process.Child) !void {
-    const ChildType = std.process.Child;
-    const fn_info = @typeInfo(@TypeOf(ChildType.spawn)).@"fn";
-
-    if (fn_info.params.len == 2) {
-        // Version with io parameter: spawn(self, io)
-        return child.spawn(io);
-    } else {
-        // Version without io parameter: spawn(self)
-        return child.spawn();
-    }
+pub fn spawn(options: SpawnOptions) !std.process.Child {
+    return try std.process.spawn(getIo(), options);
 }
 
 /// Wait for a spawned child process
-/// Handles cross-platform differences in the wait signature
 pub fn wait(child: *std.process.Child) !std.process.Child.Term {
-    const ChildType = std.process.Child;
-    const fn_info = @typeInfo(@TypeOf(ChildType.wait)).@"fn";
-
-    if (fn_info.params.len == 2) {
-        // Version with io parameter: wait(self, io)
-        return child.wait(io);
-    } else {
-        // Version without io parameter: wait(self)
-        return child.wait();
-    }
+    return try child.wait(getIo());
 }
 
 /// Kill a spawned child process
-/// Handles cross-platform differences in the kill signature
-pub fn kill(child: *std.process.Child) !std.process.Child.Term {
-    const ChildType = std.process.Child;
-    const fn_info = @typeInfo(@TypeOf(ChildType.kill)).@"fn";
-
-    if (fn_info.params.len == 2) {
-        // Version with io parameter: kill(self, io)
-        return child.kill(io);
-    } else {
-        // Version without io parameter: kill(self)
-        return child.kill();
-    }
+pub fn kill(child: *std.process.Child) void {
+    child.kill(getIo());
 }
 
 /// Result type for childRun
@@ -571,7 +541,7 @@ pub const ChildRunResult = struct {
 /// Options for childRunWithOptions
 pub const ChildRunOptions = struct {
     cwd: ?[]const u8 = null,
-    env_map: ?*std.process.EnvMap = null,
+    env_map: ?*std.process.Environ.Map = null,
 };
 
 /// Run a child process and collect output
@@ -581,36 +551,126 @@ pub fn childRun(allocator: std.mem.Allocator, argv: []const []const u8) !ChildRu
 }
 
 /// Run a child process with additional options (cwd, env_map)
-/// Handles cross-platform differences in the Child.run signature
 pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u8, options: ChildRunOptions) !ChildRunResult {
-    const ChildType = std.process.Child;
-    const fn_info = @typeInfo(@TypeOf(ChildType.run)).@"fn";
+    const result = try std.process.run(allocator, getIo(), .{
+        .argv = argv,
+        .cwd = options.cwd,
+        .environ_map = options.env_map,
+    });
+    return .{
+        .term = result.term,
+        .stdout = result.stdout,
+        .stderr = result.stderr,
+    };
+}
 
-    if (fn_info.params.len == 3) {
-        // New API: run(allocator, io, args)
-        // Use getIo() at runtime instead of the comptime-evaluated io constant
-        const result = try ChildType.run(allocator, getIo(), .{
-            .argv = argv,
-            .cwd = options.cwd,
-            .env_map = options.env_map,
-        });
-        return .{
-            .term = result.term,
-            .stdout = result.stdout,
-            .stderr = result.stderr,
-        };
+/// Get an environment variable (non-allocating, POSIX only)
+/// Replacement for std.posix.getenv which was removed
+pub fn getenv(key: []const u8) ?[:0]const u8 {
+    // Use C getenv with null-terminated key
+    var key_buf: [4096:0]u8 = undefined;
+    if (key.len >= key_buf.len) return null;
+    @memcpy(key_buf[0..key.len], key);
+    key_buf[key.len] = 0;
+    const value = c.getenv(&key_buf) orelse return null;
+    return std.mem.sliceTo(value, 0);
+}
+
+/// Get an environment variable with allocation (owned copy)
+/// Replacement for std.process.getEnvVarOwned which was removed
+pub fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) ![]u8 {
+    const value = getenv(key) orelse return error.EnvironmentVariableNotFound;
+    return try allocator.dupe(u8, value);
+}
+
+/// Get the current working directory (allocated)
+/// Replacement for std.process.getCwdAlloc which was removed
+pub fn getCwdAlloc(allocator: std.mem.Allocator) ![]u8 {
+    const result = try std.process.currentPathAlloc(getIo(), allocator);
+    return result;
+}
+
+/// Get process arguments (allocated slice)
+/// Replacement for std.process.argsAlloc which was removed
+/// On macOS/Linux with libc, uses _NSGetArgv / __libc_argv
+pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
+    const native_os = builtin.os.tag;
+    if (native_os == .macos or native_os == .ios or native_os == .watchos or native_os == .tvos) {
+        const NSGetArgv = @extern(*[*:null]?[*:0]u8, .{ .name = "_NSGetArgv" });
+        const NSGetArgc = @extern(*c_int, .{ .name = "_NSGetArgc" });
+        const argc: usize = @intCast(NSGetArgc.*);
+        const argv_raw = NSGetArgv.*;
+        const args = try allocator.alloc([:0]const u8, argc);
+        for (0..argc) |i| {
+            if (argv_raw[i]) |ptr| {
+                args[i] = std.mem.sliceTo(ptr, 0);
+            } else {
+                // Shouldn't happen for valid argc, but be safe
+                const result = args[0..i];
+                allocator.free(args);
+                _ = result;
+                return error.InvalidArgv;
+            }
+        }
+        return args;
+    } else if (native_os == .linux) {
+        // On Linux, read /proc/self/cmdline
+        const file = std.fs.openFileAbsolute("/proc/self/cmdline", .{}) catch return error.InvalidArgv;
+        defer file.close();
+        const content = file.readToEndAlloc(allocator, 1024 * 1024) catch return error.InvalidArgv;
+        defer allocator.free(content);
+
+        // Count null-terminated strings
+        var count: usize = 0;
+        var i: usize = 0;
+        while (i < content.len) {
+            while (i < content.len and content[i] != 0) : (i += 1) {}
+            if (i > 0 and (i == content.len or content[i] == 0)) count += 1;
+            i += 1;
+        }
+
+        const args = try allocator.alloc([:0]const u8, count);
+        var idx: usize = 0;
+        i = 0;
+        while (i < content.len and idx < count) {
+            const start = i;
+            while (i < content.len and content[i] != 0) : (i += 1) {}
+            const duped = try allocator.dupeZ(u8, content[start..i]);
+            args[idx] = duped;
+            idx += 1;
+            i += 1;
+        }
+        return args;
     } else {
-        // Old API: run(.{ .allocator = ..., .argv = ... })
-        const result = try ChildType.run(.{
-            .allocator = allocator,
-            .argv = argv,
-            .cwd = options.cwd,
-            .env_map = options.env_map,
-        });
-        return .{
-            .term = result.term,
-            .stdout = result.stdout,
-            .stderr = result.stderr,
-        };
+        @compileError("argsAlloc not supported on this platform");
     }
+}
+
+/// Fill buffer with random bytes
+/// Replacement for std.crypto.random.bytes which was removed
+pub fn randomBytes(buf: []u8) void {
+    var source: std.Random.IoSource = .{ .io = getIo() };
+    source.interface().bytes(buf);
+}
+
+/// Sleep for the given number of nanoseconds
+/// Replacement for std.posix.nanosleep which was removed
+pub fn nanosleep(secs: u64, nsecs: u64) void {
+    var ts: c.timespec = .{ .sec = @intCast(secs), .nsec = @intCast(nsecs) };
+    _ = c.nanosleep(&ts, &ts);
+}
+
+/// Get the process environment as an Environ.Map
+/// Replacement for std.process.getEnvMap which was removed
+pub fn getEnvMap(allocator: std.mem.Allocator) !std.process.Environ.Map {
+    // Build the Environ from C's environ pointer
+    // c.environ is [*:null]?[*:0]u8, need [:null]const ?[*:0]const u8
+    const raw_environ = c.environ;
+    // Count entries
+    var count: usize = 0;
+    while (raw_environ[count] != null) : (count += 1) {}
+    const environ: std.process.Environ = .{
+        .block = @as([*:null]const ?[*:0]const u8, @ptrCast(raw_environ))[0..count :null],
+    };
+    return try std.process.Environ.createMap(environ, allocator);
 }

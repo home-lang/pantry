@@ -118,11 +118,6 @@ jobs:
           echo "Packaged files:"
           ls -la dist/
 
-      - name: Publish
-        run: pantry npm:publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -135,3 +130,8 @@ jobs:
             dist/pantry-windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish
+        run: pantry npm:publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

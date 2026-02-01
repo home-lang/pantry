@@ -82,33 +82,19 @@ pub fn executeScriptWithTimeout(
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     // Create child process
-    var child = std.process.Child.init(
-        &[_][]const u8{
-            if (@import("builtin").os.tag == .windows) "cmd" else "sh",
-            if (@import("builtin").os.tag == .windows) "/C" else "-c",
-            script_cmd,
-        },
-        allocator,
-    );
-
-    child.cwd = options.base.cwd;
-
-    // Set up environment variables
-    if (options.env_vars) |env_vars| {
-        child.env_map = &env_vars;
-    }
-
-    // Capture output if requested
-    if (options.capture_output) {
-        child.stdout_behavior = .Pipe;
-        child.stderr_behavior = .Pipe;
-    } else {
-        child.stdout_behavior = .Inherit;
-        child.stderr_behavior = .Inherit;
-    }
-
-    // Spawn the process
-    try io_helper.spawn(&child);
+    const shell_argv = [_][]const u8{
+        if (@import("builtin").os.tag == .windows) "cmd" else "sh",
+        if (@import("builtin").os.tag == .windows) "/C" else "-c",
+        script_cmd,
+    };
+    const stdout_opt: io_helper.SpawnOptions.StdIo = if (options.capture_output) .pipe else .inherit;
+    const stderr_opt: io_helper.SpawnOptions.StdIo = if (options.capture_output) .pipe else .inherit;
+    var child = try io_helper.spawn(.{
+        .argv = &shell_argv,
+        .cwd = options.base.cwd,
+        .stdout = stdout_opt,
+        .stderr = stderr_opt,
+    });
 
     // Wait with timeout
     const timeout_result = if (options.timeout_ms > 0)
@@ -121,7 +107,7 @@ pub fn executeScriptWithTimeout(
     // Check if timed out
     if (timeout_result == .timeout) {
         // Kill the process
-        _ = io_helper.kill(&child) catch {};
+        io_helper.kill(&child);
 
         const error_msg = try std.fmt.allocPrint(
             allocator,
@@ -155,7 +141,7 @@ pub fn executeScriptWithTimeout(
 
     const success = switch (timeout_result) {
         .success => |term| switch (term) {
-            .Exited => |code| code == 0,
+            .exited => |code| code == 0,
             else => false,
         },
         .timeout => false,
@@ -163,7 +149,7 @@ pub fn executeScriptWithTimeout(
 
     const exit_code: u8 = switch (timeout_result) {
         .success => |term| switch (term) {
-            .Exited => |code| @intCast(code),
+            .exited => |code| @intCast(code),
             else => 1,
         },
         .timeout => 124,
@@ -540,25 +526,14 @@ pub fn executeScriptSandboxed(
     }
 
     // Create child process with sandboxed command
-    var child = std.process.Child.init(cmd_args.items, allocator);
-    child.cwd = options.base.cwd;
-
-    // Set up environment variables
-    if (options.env_vars) |env_vars| {
-        child.env_map = &env_vars;
-    }
-
-    // Capture output if requested
-    if (options.capture_output) {
-        child.stdout_behavior = .Pipe;
-        child.stderr_behavior = .Pipe;
-    } else {
-        child.stdout_behavior = .Inherit;
-        child.stderr_behavior = .Inherit;
-    }
-
-    // Spawn the process
-    try io_helper.spawn(&child);
+    const sb_stdout_opt: io_helper.SpawnOptions.StdIo = if (options.capture_output) .pipe else .inherit;
+    const sb_stderr_opt: io_helper.SpawnOptions.StdIo = if (options.capture_output) .pipe else .inherit;
+    var child = try io_helper.spawn(.{
+        .argv = cmd_args.items,
+        .cwd = options.base.cwd,
+        .stdout = sb_stdout_opt,
+        .stderr = sb_stderr_opt,
+    });
 
     // Wait with timeout
     const timeout_result = if (options.timeout_ms > 0)
@@ -570,7 +545,7 @@ pub fn executeScriptSandboxed(
 
     // Check if timed out
     if (timeout_result == .timeout) {
-        _ = io_helper.kill(&child) catch {};
+        io_helper.kill(&child);
 
         const error_msg = try std.fmt.allocPrint(
             allocator,
@@ -604,7 +579,7 @@ pub fn executeScriptSandboxed(
 
     const success = switch (timeout_result) {
         .success => |term| switch (term) {
-            .Exited => |code| code == 0,
+            .exited => |code| code == 0,
             else => false,
         },
         .timeout => false,
@@ -612,7 +587,7 @@ pub fn executeScriptSandboxed(
 
     const exit_code: u8 = switch (timeout_result) {
         .success => |term| switch (term) {
-            .Exited => |code| @intCast(code),
+            .exited => |code| @intCast(code),
             else => 1,
         },
         .timeout => 124,

@@ -115,10 +115,10 @@ pub const InstallCheckpoint = struct {
         _ = target_dir;
 
         // Create backup directory in system temp directory (not in project)
-        const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+        const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
 
         var random_bytes: [8]u8 = undefined;
-        std.crypto.random.bytes(&random_bytes);
+        io_helper.randomBytes(&random_bytes);
         const backup_suffix = std.mem.readInt(u64, &random_bytes, .big);
         const backup_dir = try std.fmt.allocPrint(
             self.allocator,

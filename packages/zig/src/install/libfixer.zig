@@ -27,7 +27,7 @@ pub fn fixMacOSLibraryPaths(
     defer allocator.free(otool_result.stdout);
     defer allocator.free(otool_result.stderr);
 
-    if (otool_result.term.Exited != 0) {
+    if (otool_result.term.exited != 0) {
         // Not a Mach-O binary or otool failed
         return;
     }
@@ -101,7 +101,7 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(fix_result.stderr);
 
         // Ignore errors - some libraries might not be patchable
-        _ = fix_result.term.Exited;
+        _ = fix_result.term.exited;
     }
 }
 
@@ -115,7 +115,7 @@ fn addRpathEntries(
     if (builtin.os.tag != .macos) return;
 
     // Get home directory for global package location
-    const home = std.process.getEnvVarOwned(allocator, "HOME") catch return;
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch return;
     defer allocator.free(home);
 
     // Add rpath entries for:
@@ -147,7 +147,7 @@ fn addRpathEntries(
         allocator.free(result.stderr);
 
         // If install_name_tool succeeded, we modified the binary
-        if (result.term.Exited == 0) {
+        if (result.term.exited == 0) {
             needs_codesign = true;
         }
     }

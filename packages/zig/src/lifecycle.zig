@@ -274,12 +274,12 @@ pub fn executeScript(
     };
 
     const success = switch (result.term) {
-        .Exited => |code| code == 0,
+        .exited => |code| code == 0,
         else => false,
     };
 
     const exit_code: u8 = switch (result.term) {
-        .Exited => |code| @intCast(code),
+        .exited => |code| @intCast(code),
         else => 1,
     };
 
@@ -357,7 +357,7 @@ pub fn runLifecycleScript(
     const script_cmd = scripts.get(script_name) orelse return null;
 
     // Load trusted dependencies from root package.json
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "package.json" });

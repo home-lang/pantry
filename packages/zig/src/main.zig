@@ -138,7 +138,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     // Save packages to config file
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     // Find config file
@@ -1121,7 +1121,7 @@ fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get current working directory
-    const cwd = std.process.getCwdAlloc(allocator) catch {
+    const cwd = io_helper.getCwdAlloc(allocator) catch {
         std.debug.print("Error: Could not get current directory\n", .{});
         std.process.exit(1);
     };
@@ -2751,8 +2751,8 @@ pub fn main() !void {
     _ = try root.addCommand(version_cmd);
 
     // Parse arguments
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
+    const args = try io_helper.argsAlloc(allocator);
+    defer allocator.free(args);
 
     // Handle no arguments or --help flag
     if (args.len <= 1) {

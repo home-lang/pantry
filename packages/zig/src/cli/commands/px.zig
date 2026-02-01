@@ -45,10 +45,10 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     };
 
     // Check global bin
-    const home = std.process.getEnvVarOwned(allocator, "HOME") catch |err| blk: {
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch |err| blk: {
         if (err == error.EnvironmentVariableNotFound) {
             // Try USERPROFILE on Windows
-            break :blk std.process.getEnvVarOwned(allocator, "USERPROFILE") catch "/tmp";
+            break :blk io_helper.getEnvVarOwned(allocator, "USERPROFILE") catch "/tmp";
         }
         break :blk "/tmp";
     };
@@ -151,7 +151,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     allocator.free(result.stderr);
 
     const exit_code: u8 = switch (result.term) {
-        .Exited => |code| @intCast(code),
+        .exited => |code| @intCast(code),
         else => 1,
     };
 

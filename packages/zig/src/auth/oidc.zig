@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 const http = std.http;
 
 /// OIDC Token containing claims from the CI/CD provider
@@ -679,13 +680,13 @@ pub fn getTokenFromEnvironment(allocator: std.mem.Allocator, provider: *const OI
 pub fn getTokenFromEnvironmentWithAudience(allocator: std.mem.Allocator, provider: *const OIDCProvider, audience: []const u8) !?[]const u8 {
     // For GitHub Actions, we need to request the token from the OIDC endpoint
     if (provider.request_url_env_var != null and provider.request_token_env_var != null) {
-        const request_url = std.process.getEnvVarOwned(
+        const request_url = io_helper.getEnvVarOwned(
             allocator,
             provider.request_url_env_var.?,
         ) catch return null;
         defer allocator.free(request_url);
 
-        const request_token = std.process.getEnvVarOwned(
+        const request_token = io_helper.getEnvVarOwned(
             allocator,
             provider.request_token_env_var.?,
         ) catch return null;
@@ -696,7 +697,7 @@ pub fn getTokenFromEnvironmentWithAudience(allocator: std.mem.Allocator, provide
     }
 
     // For other providers, token is directly in environment variable
-    return std.process.getEnvVarOwned(allocator, provider.token_env_var) catch null;
+    return io_helper.getEnvVarOwned(allocator, provider.token_env_var) catch null;
 }
 
 /// Request OIDC token from GitHub Actions
@@ -765,43 +766,43 @@ fn requestGitHubOIDCToken(allocator: std.mem.Allocator, request_url: []const u8,
 /// Detect OIDC provider from environment
 pub fn detectProvider(allocator: std.mem.Allocator) !?OIDCProvider {
     // Check for GitHub Actions
-    if (std.process.getEnvVarOwned(allocator, "GITHUB_ACTIONS") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "GITHUB_ACTIONS") catch null) |val| {
         allocator.free(val);
         return try Providers.github(allocator);
     }
 
     // Check for GitLab CI
-    if (std.process.getEnvVarOwned(allocator, "GITLAB_CI") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "GITLAB_CI") catch null) |val| {
         allocator.free(val);
         return try Providers.gitlab(allocator);
     }
 
     // Check for Azure Pipelines
-    if (std.process.getEnvVarOwned(allocator, "AZURE_PIPELINES") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "AZURE_PIPELINES") catch null) |val| {
         allocator.free(val);
         return try Providers.azure(allocator);
     }
 
     // Check for Bitbucket Pipelines
-    if (std.process.getEnvVarOwned(allocator, "BITBUCKET_BUILD_NUMBER") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "BITBUCKET_BUILD_NUMBER") catch null) |val| {
         allocator.free(val);
         return try Providers.bitbucket(allocator);
     }
 
     // Check for CircleCI
-    if (std.process.getEnvVarOwned(allocator, "CIRCLECI") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "CIRCLECI") catch null) |val| {
         allocator.free(val);
         return try Providers.circleci(allocator);
     }
 
     // Check for Jenkins
-    if (std.process.getEnvVarOwned(allocator, "JENKINS_HOME") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "JENKINS_HOME") catch null) |val| {
         allocator.free(val);
         return try Providers.jenkins(allocator);
     }
 
     // Check for Travis CI
-    if (std.process.getEnvVarOwned(allocator, "TRAVIS") catch null) |val| {
+    if (io_helper.getEnvVarOwned(allocator, "TRAVIS") catch null) |val| {
         allocator.free(val);
         return try Providers.travis(allocator);
     }
@@ -999,7 +1000,12 @@ pub fn fetchJWKSWithRetry(allocator: std.mem.Allocator, jwks_uri: []const u8, co
 
             // Sleep before retry (exponential backoff)
             const delay_ns = delay_ms * std.time.ns_per_ms;
-            std.posix.nanosleep(delay_ns / std.time.ns_per_s, delay_ns % std.time.ns_per_s);
+            {
+                const secs = delay_ns / std.time.ns_per_s;
+                const nsecs = delay_ns % std.time.ns_per_s;
+                var ts: std.c.timespec = .{ .sec = @intCast(secs), .nsec = @intCast(nsecs) };
+                _ = std.c.nanosleep(&ts, &ts);
+            }
 
             // Increase delay for next attempt
             delay_ms = @min(delay_ms * config.backoff_multiplier, config.max_delay_ms);

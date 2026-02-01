@@ -54,7 +54,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const detector = @import("../../../deps/detector.zig");
         const parser = @import("../../../deps/parser.zig");
 
-        const cwd = try std.process.getCwdAlloc(allocator);
+        const cwd = try io_helper.getCwdAlloc(allocator);
         defer allocator.free(cwd);
 
         // Start timing for install operation
@@ -575,7 +575,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
     // Detect if we're in a project directory
     const detector = @import("../../../deps/detector.zig");
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     const project_root = blk: {
@@ -657,7 +657,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
 
             // Fall back to npm registry - use temp file to handle large responses
-            const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+            const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
             const tmp_file = std.fmt.allocPrint(allocator, "{s}/pantry-npm-{s}.json", .{ tmp_dir, name }) catch {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
             };
@@ -676,7 +676,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             defer allocator.free(curl_result.stdout);
             defer allocator.free(curl_result.stderr);
 
-            if (curl_result.term.Exited != 0) {
+            if (curl_result.term.exited != 0) {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
             }
 

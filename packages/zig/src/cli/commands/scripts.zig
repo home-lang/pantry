@@ -121,13 +121,13 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     defer allocator.free(pantry_bin);
 
     // Get current PATH and prepend pantry_modules/.bin
-    const current_path = std.process.getEnvVarOwned(allocator, "PATH") catch try allocator.dupe(u8, "/usr/bin:/bin");
+    const current_path = io_helper.getEnvVarOwned(allocator, "PATH") catch try allocator.dupe(u8, "/usr/bin:/bin");
     defer allocator.free(current_path);
     const new_path = try std.fmt.allocPrint(allocator, "{s}:{s}", .{ pantry_bin, current_path });
     defer allocator.free(new_path);
 
     // Build environment array
-    var env_map = try std.process.getEnvMap(allocator);
+    var env_map = try io_helper.getEnvMap(allocator);
     defer env_map.deinit();
     try env_map.put("PATH", new_path);
 
@@ -154,7 +154,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     }
 
     return .{
-        .exit_code = if (result.term.Exited == 0) @as(u8, 0) else @as(u8, 1),
+        .exit_code = if (result.term.exited == 0) @as(u8, 0) else @as(u8, 1),
     };
 }
 

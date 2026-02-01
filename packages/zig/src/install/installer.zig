@@ -411,7 +411,7 @@ pub const Installer = struct {
         var clone_result = try io_helper.childRun(self.allocator, &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir });
 
         // If the branch-specific clone failed, try without branch (use default branch)
-        if (clone_result.term.Exited != 0) {
+        if (clone_result.term.exited != 0) {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
 
@@ -422,7 +422,7 @@ pub const Installer = struct {
             self.allocator.free(clone_result.stderr);
         }
 
-        if (clone_result.term.Exited != 0) {
+        if (clone_result.term.exited != 0) {
             if (!options.quiet) {
                 std.debug.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
             }
@@ -510,11 +510,14 @@ pub const Installer = struct {
         }
 
         // Create temp directory for download
-        const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+        const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+        // Sanitize name for temp file (replace / with __ for scoped packages like @actions/core)
+        const safe_name = try std.mem.replaceOwned(u8, self.allocator, spec.name, "/", "__");
+        defer self.allocator.free(safe_name);
         const tarball_path = try std.fmt.allocPrint(
             self.allocator,
             "{s}/pantry-npm-{s}-{s}.tgz",
-            .{ tmp_dir, spec.name, spec.version },
+            .{ tmp_dir, safe_name, spec.version },
         );
         defer {
             self.allocator.free(tarball_path);
@@ -534,7 +537,7 @@ pub const Installer = struct {
             self.allocator.free(curl_result.stderr);
         }
 
-        if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+        if (curl_result.term != .exited or curl_result.term.exited != 0) {
             if (!options.quiet) {
                 std.debug.print("  ✗ Failed to download: {s}\n", .{curl_result.stderr});
             }
@@ -558,7 +561,7 @@ pub const Installer = struct {
             self.allocator.free(tar_result.stderr);
         }
 
-        if (tar_result.term != .Exited or tar_result.term.Exited != 0) {
+        if (tar_result.term != .exited or tar_result.term.exited != 0) {
             if (!options.quiet) {
                 std.debug.print("  ✗ Failed to extract: {s}\n", .{tar_result.stderr});
             }
@@ -754,8 +757,11 @@ pub const Installer = struct {
         version_constraint: []const u8,
     ) !NpmResolution {
         // Download npm registry response to temp file (can be large)
-        const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
-        const tmp_file = try std.fmt.allocPrint(self.allocator, "{s}/pantry-npm-resolve-{s}.json", .{ tmp_dir, name });
+        // Sanitize name for temp file (replace / with __ for scoped packages)
+        const safe_name = try std.mem.replaceOwned(u8, self.allocator, name, "/", "__");
+        defer self.allocator.free(safe_name);
+        const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+        const tmp_file = try std.fmt.allocPrint(self.allocator, "{s}/pantry-npm-resolve-{s}.json", .{ tmp_dir, safe_name });
         defer self.allocator.free(tmp_file);
         defer io_helper.deleteFile(tmp_file) catch {};
 
@@ -768,11 +774,11 @@ pub const Installer = struct {
         defer self.allocator.free(curl_result.stdout);
         defer self.allocator.free(curl_result.stderr);
 
-        if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+        if (curl_result.term != .exited or curl_result.term.exited != 0) {
             return error.NpmRegistryUnavailable;
         }
 
-        const npm_response = io_helper.readFileAlloc(self.allocator, tmp_file, 10 * 1024 * 1024) catch {
+        const npm_response = io_helper.readFileAlloc(self.allocator, tmp_file, 50 * 1024 * 1024) catch {
             return error.NpmRegistryUnavailable;
         };
         defer self.allocator.free(npm_response);
@@ -1984,8 +1990,7 @@ pub const Installer = struct {
     fn makeExecutable(self: *Installer, path: []const u8) void {
         _ = self;
         // Use chmod to make the file executable
-        var child = std.process.Child.init(&.{ "chmod", "+x", path }, std.heap.page_allocator);
-        io_helper.spawn(&child) catch return;
+        var child = io_helper.spawn(.{ .argv = &.{ "chmod", "+x", path } }) catch return;
         _ = io_helper.wait(&child) catch {};
     }
 

@@ -364,7 +364,7 @@ pub fn runScriptWithFilter(
                 allocator.free(result.stderr);
             }
 
-            if (result.term.Exited == 0) {
+            if (result.term.exited == 0) {
                 std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     std.debug.print("{s}", .{result.stdout});
@@ -376,7 +376,7 @@ pub fn runScriptWithFilter(
                     reset,
                     member.name,
                     dim,
-                    result.term.Exited,
+                    result.term.exited,
                     reset,
                 });
                 if (result.stderr.len > 0) {
@@ -499,7 +499,7 @@ fn watchAndRerun(
             std.debug.print("{s}───────────────────────────────────────{s}\n\n", .{ dim, reset });
 
             // Wait for debounce
-            std.posix.nanosleep(0, watcher.options.debounce_ms * std.time.ns_per_ms);
+            io_helper.nanosleep(0, watcher.options.debounce_ms * std.time.ns_per_ms);
 
             // Re-run the script execution logic
             try executeScriptsInMembers(
@@ -514,7 +514,7 @@ fn watchAndRerun(
         }
 
         // Sleep for poll interval
-        std.posix.nanosleep(0, watcher.options.poll_interval_ms * std.time.ns_per_ms);
+        io_helper.nanosleep(0, watcher.options.poll_interval_ms * std.time.ns_per_ms);
     }
 }
 
@@ -660,14 +660,14 @@ fn executeScriptsInMembers(
                 allocator.free(result.stderr);
             }
 
-            if (result.term.Exited == 0) {
+            if (result.term.exited == 0) {
                 std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     std.debug.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
-                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, result.term.Exited, reset });
+                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, result.term.exited, reset });
                 if (result.stderr.len > 0) {
                     std.debug.print("{s}", .{result.stderr});
                 }

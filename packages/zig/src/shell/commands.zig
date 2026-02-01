@@ -221,14 +221,24 @@ pub const ShellCommands = struct {
             const install_types = @import("../cli/commands/install/types.zig");
 
             // Change to project directory temporarily
-            const original_cwd = try std.process.getCwdAlloc(self.allocator);
+            const original_cwd = try io_helper.getCwdAlloc(self.allocator);
             defer self.allocator.free(original_cwd);
 
-            std.posix.chdir(project_root) catch |err| {
-                std.debug.print("❌ Failed to change to project directory: {s}\n", .{@errorName(err)});
-                return try self.allocator.dupe(u8, "");
-            };
-            defer std.posix.chdir(original_cwd) catch {};
+            {
+                var project_root_z: [std.fs.max_path_bytes:0]u8 = undefined;
+                @memcpy(project_root_z[0..project_root.len], project_root);
+                project_root_z[project_root.len] = 0;
+                if (std.c.chdir(&project_root_z) != 0) {
+                    std.debug.print("Failed to change to project directory: {s}\n", .{project_root});
+                    return try self.allocator.dupe(u8, "");
+                }
+            }
+            defer {
+                var cwd_z: [std.fs.max_path_bytes:0]u8 = undefined;
+                @memcpy(cwd_z[0..original_cwd.len], original_cwd);
+                cwd_z[original_cwd.len] = 0;
+                _ = std.c.chdir(&cwd_z);
+            }
 
             // Run install command (no args = auto-detect from dep file)
             var install_result = install_cmd.installCommandWithOptions(
@@ -276,14 +286,24 @@ pub const ShellCommands = struct {
                     const install_types = @import("../cli/commands/install/types.zig");
 
                     // Change to project directory temporarily
-                    const original_cwd = try std.process.getCwdAlloc(self.allocator);
+                    const original_cwd = try io_helper.getCwdAlloc(self.allocator);
                     defer self.allocator.free(original_cwd);
 
-                    std.posix.chdir(project_root) catch |err| {
-                        std.debug.print("❌ Failed to change to project directory: {s}\n", .{@errorName(err)});
-                        return try self.allocator.dupe(u8, "");
-                    };
-                    defer std.posix.chdir(original_cwd) catch {};
+                    {
+                        var pr_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+                        @memcpy(pr_buf[0..project_root.len], project_root);
+                        pr_buf[project_root.len] = 0;
+                        if (std.c.chdir(&pr_buf) != 0) {
+                            std.debug.print("Failed to change to project directory: {s}\n", .{project_root});
+                            return try self.allocator.dupe(u8, "");
+                        }
+                    }
+                    defer {
+                        var oc_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+                        @memcpy(oc_buf[0..original_cwd.len], original_cwd);
+                        oc_buf[original_cwd.len] = 0;
+                        _ = std.c.chdir(&oc_buf);
+                    }
 
                     // Run install command (no args = auto-detect from dep file)
                     var install_result = install_cmd.installCommandWithOptions(

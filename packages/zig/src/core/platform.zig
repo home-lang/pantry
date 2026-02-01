@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const io_helper = @import("../io_helper.zig");
 
 /// Supported platforms
 pub const Platform = enum {
@@ -88,14 +89,14 @@ pub const Paths = struct {
     pub fn home(allocator: std.mem.Allocator) ![]const u8 {
         return switch (Platform.current()) {
             .darwin, .linux => blk: {
-                if (std.process.getEnvVarOwned(allocator, "HOME")) |h| {
+                if (io_helper.getEnvVarOwned(allocator, "HOME")) |h| {
                     break :blk h;
                 } else |_| {
                     return error.HomeNotFound;
                 }
             },
             .windows => blk: {
-                if (std.process.getEnvVarOwned(allocator, "USERPROFILE")) |h| {
+                if (io_helper.getEnvVarOwned(allocator, "USERPROFILE")) |h| {
                     break :blk h;
                 } else |_| {
                     return error.HomeNotFound;
@@ -113,7 +114,7 @@ pub const Paths = struct {
             .darwin => try std.fmt.allocPrint(allocator, "{s}/.cache/pantry", .{home_dir}),
             .linux => blk: {
                 // Try XDG_CACHE_HOME first
-                if (std.process.getEnvVarOwned(allocator, "XDG_CACHE_HOME")) |xdg| {
+                if (io_helper.getEnvVarOwned(allocator, "XDG_CACHE_HOME")) |xdg| {
                     defer allocator.free(xdg);
                     break :blk try std.fmt.allocPrint(allocator, "{s}/pantry", .{xdg});
                 } else |_| {
@@ -133,7 +134,7 @@ pub const Paths = struct {
             .darwin => try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry", .{home_dir}),
             .linux => blk: {
                 // Try XDG_DATA_HOME first
-                if (std.process.getEnvVarOwned(allocator, "XDG_DATA_HOME")) |xdg| {
+                if (io_helper.getEnvVarOwned(allocator, "XDG_DATA_HOME")) |xdg| {
                     defer allocator.free(xdg);
                     break :blk try std.fmt.allocPrint(allocator, "{s}/pantry", .{xdg});
                 } else |_| {
@@ -153,7 +154,7 @@ pub const Paths = struct {
             .darwin => try std.fmt.allocPrint(allocator, "{s}/.config/pantry", .{home_dir}),
             .linux => blk: {
                 // Try XDG_CONFIG_HOME first
-                if (std.process.getEnvVarOwned(allocator, "XDG_CONFIG_HOME")) |xdg| {
+                if (io_helper.getEnvVarOwned(allocator, "XDG_CONFIG_HOME")) |xdg| {
                     defer allocator.free(xdg);
                     break :blk try std.fmt.allocPrint(allocator, "{s}/pantry", .{xdg});
                 } else |_| {

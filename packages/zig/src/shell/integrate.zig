@@ -82,7 +82,7 @@ pub const ShellIntegrator = struct {
         const home_dir = try lib.Paths.home(self.allocator);
         defer self.allocator.free(home_dir);
 
-        const zdotdir = std.process.getEnvVarOwned(self.allocator, "ZDOTDIR") catch
+        const zdotdir = io_helper.getEnvVarOwned(self.allocator, "ZDOTDIR") catch
             try self.allocator.dupe(u8, home_dir);
         defer self.allocator.free(zdotdir);
 

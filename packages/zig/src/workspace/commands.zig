@@ -201,15 +201,10 @@ fn runPackageScript(
     // Execute script
     std.debug.print("Running '{s}' in {s}...\n", .{ script_name, pkg.name });
 
-    var child = std.process.Child.init(&[_][]const u8{ "sh", "-c", script.string }, allocator);
-    child.cwd = pkg_path;
-    child.stdout_behavior = .Inherit;
-    child.stderr_behavior = .Inherit;
-
-    const term = try io_helper.spawnAndWait(&child);
+    const term = try io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "sh", "-c", script.string }, .cwd = pkg_path });
 
     return switch (term) {
-        .Exited => |code| code == 0,
+        .exited => |code| code == 0,
         else => false,
     };
 }
@@ -361,15 +356,10 @@ pub fn exec(
     );
     defer allocator.free(pkg_path);
 
-    var child = std.process.Child.init(command, allocator);
-    child.cwd = pkg_path;
-    child.stdout_behavior = .Inherit;
-    child.stderr_behavior = .Inherit;
-
-    const term = try io_helper.spawnAndWait(&child);
+    const term = try io_helper.spawnAndWait(.{ .argv = command, .cwd = pkg_path });
 
     const success = switch (term) {
-        .Exited => |code| code == 0,
+        .exited => |code| code == 0,
         else => false,
     };
 

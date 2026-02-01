@@ -146,7 +146,7 @@ pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !Command
 /// Display the currently authenticated user
 pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
     // Try to get user from Pantry config
-    const home = std.process.getEnvVarOwned(allocator, "HOME") catch {
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
         return CommandResult.err(allocator, "Error: Could not determine home directory");
     };
     defer allocator.free(home);
@@ -392,12 +392,69 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
         std.debug.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
         std.debug.print("----------------------------------------\n", .{});
 
+        // Detect root files to propagate to packages that don't have their own
+        const root_files = [_][]const u8{ "README.md", "LICENSE", "LICENSE.md" };
+        var has_root_file: [root_files.len]bool = undefined;
+        var root_file_paths: [root_files.len]?[]const u8 = undefined;
+        for (root_files, 0..) |file_name, i| {
+            const root_path = std.fs.path.join(allocator, &[_][]const u8{ cwd, file_name }) catch null;
+            root_file_paths[i] = root_path;
+            has_root_file[i] = if (root_path) |p| blk: {
+                io_helper.accessAbsolute(p, .{}) catch break :blk false;
+                break :blk true;
+            } else false;
+        }
+        defer for (&root_file_paths) |*p| {
+            if (p.*) |path| allocator.free(path);
+        };
+
         var failed: usize = 0;
         var succeeded: usize = 0;
 
         for (pkgs) |pkg| {
             std.debug.print("\nPublishing {s}...\n", .{pkg.name});
+
+            // Propagate root files (README, LICENSE) to package if missing
+            var copied_files: [root_files.len]?[]const u8 = .{null} ** root_files.len;
+            for (root_files, 0..) |file_name, i| {
+                if (!has_root_file[i]) continue;
+                const pkg_file_path = std.fs.path.join(allocator, &[_][]const u8{ pkg.path, file_name }) catch continue;
+                // Check if package already has its own copy
+                io_helper.accessAbsolute(pkg_file_path, .{}) catch {
+                    // Package doesn't have this file — copy from root
+                    if (root_file_paths[i]) |root_path| {
+                        if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
+                            if (r.term == .exited and r.term.exited == 0) {
+                                copied_files[i] = pkg_file_path;
+                                std.debug.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
+                            } else {
+                                allocator.free(pkg_file_path);
+                            }
+                            allocator.free(r.stdout);
+                            allocator.free(r.stderr);
+                        } else |_| {
+                            allocator.free(pkg_file_path);
+                        }
+                    } else {
+                        allocator.free(pkg_file_path);
+                    }
+                    continue;
+                };
+                // File exists in package — don't overwrite
+                allocator.free(pkg_file_path);
+            }
+
             const result = publishSingleToRegistry(allocator, pkg.path, pkg.config_path, options);
+
+            // Cleanup: remove propagated files after publish
+            for (&copied_files) |*cf| {
+                if (cf.*) |path| {
+                    io_helper.deleteFile(path) catch {};
+                    allocator.free(path);
+                    cf.* = null;
+                }
+            }
+
             if (result) |r| {
                 if (r.exit_code == 0) {
                     succeeded += 1;
@@ -494,7 +551,7 @@ fn publishSingleToRegistry(
     std.debug.print("Registry: {s}\n", .{options.registry});
 
     // Check if we have AWS credentials for direct S3 upload
-    const aws_key = std.posix.getenv("AWS_ACCESS_KEY_ID");
+    const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
     const has_aws_creds = aws_key != null or awsCredentialsFileExists();
 
     // Get auth token (from options, env, or ~/.pantry/credentials)
@@ -502,7 +559,7 @@ fn publishSingleToRegistry(
     var token: ?[]const u8 = options.token;
     var token_owned = false;
     if (token == null) {
-        token = std.process.getEnvVarOwned(allocator, "PANTRY_REGISTRY_TOKEN") catch null;
+        token = io_helper.getEnvVarOwned(allocator, "PANTRY_REGISTRY_TOKEN") catch null;
         if (token != null) token_owned = true;
     }
     if (token == null) {
@@ -592,7 +649,7 @@ fn publishSingleToRegistry(
 
 /// Read PANTRY_TOKEN from ~/.pantry/credentials
 fn readPantryToken(allocator: std.mem.Allocator) ![]u8 {
-    const home = std.posix.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
+    const home = io_helper.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
 
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
     const credentials_path = try std.fmt.bufPrint(&path_buf, "{s}/.pantry/credentials", .{home});
@@ -641,7 +698,7 @@ fn createTarball(
     defer allocator.free(tarball_name);
 
     // Create tarball in temp directory
-    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // Create staging directory: /tmp/pantry-staging/package/
@@ -775,7 +832,7 @@ fn createTarball(
     // Cleanup staging
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    if (tar_result.term != .Exited or tar_result.term.Exited != 0) {
+    if (tar_result.term != .exited or tar_result.term.exited != 0) {
         std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -839,7 +896,7 @@ fn createTarballDefault(
         const pantry_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", pantryignore_cmd }) catch break :blk null;
         defer allocator.free(pantry_result.stderr);
 
-        if (pantry_result.term == .Exited and pantry_result.term.Exited == 0 and pantry_result.stdout.len > 0) {
+        if (pantry_result.term == .exited and pantry_result.term.exited == 0 and pantry_result.stdout.len > 0) {
             std.debug.print("  Using .pantryignore for exclusions...\n", .{});
             break :blk pantry_result.stdout;
         }
@@ -851,7 +908,7 @@ fn createTarballDefault(
         const git_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", gitignore_cmd }) catch break :blk null;
         defer allocator.free(git_result.stderr);
 
-        if (git_result.term == .Exited and git_result.term.Exited == 0 and git_result.stdout.len > 0) {
+        if (git_result.term == .exited and git_result.term.exited == 0 and git_result.stdout.len > 0) {
             std.debug.print("  Using .gitignore for exclusions...\n", .{});
             break :blk git_result.stdout;
         }
@@ -920,7 +977,7 @@ fn createTarballDefault(
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
 
-    if (cp_result.term != .Exited or cp_result.term.Exited != 0) {
+    if (cp_result.term != .exited or cp_result.term.exited != 0) {
         std.debug.print("rsync failed: {s}\n", .{cp_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -940,7 +997,7 @@ fn createTarballDefault(
     // Cleanup staging
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    if (tar_result.term != .Exited or tar_result.term.Exited != 0) {
+    if (tar_result.term != .exited or tar_result.term.exited != 0) {
         std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -959,7 +1016,7 @@ fn uploadToRegistry(
     metadata_json: []const u8,
 ) ![]const u8 {
     // Check if we should use direct S3 upload (AWS credentials available)
-    const aws_key = std.posix.getenv("AWS_ACCESS_KEY_ID");
+    const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
     const has_aws_creds = aws_key != null or awsCredentialsFileExists();
 
     if (has_aws_creds) {
@@ -972,7 +1029,7 @@ fn uploadToRegistry(
 
 /// Check if ~/.aws/credentials file exists
 fn awsCredentialsFileExists() bool {
-    const home = std.posix.getenv("HOME") orelse return false;
+    const home = io_helper.getenv("HOME") orelse return false;
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
     const creds_path = std.fmt.bufPrint(&path_buf, "{s}/.aws/credentials", .{home}) catch return false;
     io_helper.accessAbsolute(creds_path, .{}) catch return false;
@@ -988,7 +1045,7 @@ fn uploadToS3Direct(
     metadata_json: []const u8,
 ) ![]const u8 {
     const bucket = "pantry-registry";
-    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
 
     // Sanitize package name for S3 key
     var sanitized_name = try allocator.alloc(u8, name.len);
@@ -1043,7 +1100,7 @@ fn uploadToS3Direct(
     defer allocator.free(tarball_result.stdout);
     defer allocator.free(tarball_result.stderr);
 
-    if (tarball_result.term != .Exited or tarball_result.term.Exited != 0) {
+    if (tarball_result.term != .exited or tarball_result.term.exited != 0) {
         std.debug.print("S3 upload failed: {s}\n", .{tarball_result.stderr});
         return error.UploadFailed;
     }
@@ -1065,7 +1122,7 @@ fn uploadToS3Direct(
     defer allocator.free(metadata_result.stdout);
     defer allocator.free(metadata_result.stderr);
 
-    if (metadata_result.term != .Exited or metadata_result.term.Exited != 0) {
+    if (metadata_result.term != .exited or metadata_result.term.exited != 0) {
         std.debug.print("S3 metadata upload failed: {s}\n", .{metadata_result.stderr});
         return error.UploadFailed;
     }
@@ -1134,7 +1191,7 @@ fn updateDynamoDBIndex(
         if (git_result) |result| {
             defer allocator.free(result.stdout);
             defer allocator.free(result.stderr);
-            if (result.term == .Exited and result.term.Exited == 0 and result.stdout.len > 0) {
+            if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
                 // Convert SSH to HTTPS if needed
                 const trimmed = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
                 if (std.mem.startsWith(u8, trimmed, "git@")) {
@@ -1211,7 +1268,7 @@ fn updateDynamoDBIndex(
     var timestamp: []const u8 = "1970-01-01T00:00:00Z";
     if (date_result) |result| {
         defer allocator.free(result.stderr);
-        if (result.term == .Exited and result.term.Exited == 0 and result.stdout.len > 0) {
+        if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
             timestamp = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
         } else {
             allocator.free(result.stdout);
@@ -1253,7 +1310,7 @@ fn updateDynamoDBIndex(
     defer allocator.free(item_json);
 
     // Write JSON to temp file
-    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
     const item_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-dynamodb-item.json" });
     defer allocator.free(item_tmp);
 
@@ -1275,7 +1332,7 @@ fn updateDynamoDBIndex(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (result.term != .Exited or result.term.Exited != 0) {
+    if (result.term != .exited or result.term.exited != 0) {
         std.debug.print("DynamoDB update failed: {s}\n", .{result.stderr});
         // Don't fail the whole publish, just warn
         return;
@@ -1293,7 +1350,7 @@ fn uploadViaHttp(
     metadata_json: []const u8,
 ) ![]const u8 {
     // Write tarball to temp file for curl to read
-    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
     const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-upload.tgz" });
     defer allocator.free(tarball_tmp);
 
@@ -1337,7 +1394,7 @@ fn uploadViaHttp(
     // Clean up temp file
     io_helper.deleteFile(tarball_tmp) catch {};
 
-    if (curl_result.term != .Exited or curl_result.term.Exited != 0) {
+    if (curl_result.term != .exited or curl_result.term.exited != 0) {
         std.debug.print("curl error: {s}\n", .{curl_result.stderr});
         allocator.free(curl_result.stdout);
         return error.UploadFailed;
@@ -1378,7 +1435,7 @@ fn checkExistingVersion(allocator: std.mem.Allocator, name: []const u8, version:
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (result.term != .Exited or result.term.Exited != 0) {
+    if (result.term != .exited or result.term.exited != 0) {
         return null; // Query failed, let it proceed
     }
 

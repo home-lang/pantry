@@ -257,7 +257,7 @@ fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]c
         defer allocator.free(result.stderr);
 
         switch (result.term) {
-            .Exited => |code| {
+            .exited => |code| {
                 if (code == 0) {
                     return try allocator.dupe(u8, result.stdout);
                 }

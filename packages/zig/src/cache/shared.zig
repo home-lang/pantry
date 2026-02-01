@@ -177,7 +177,7 @@ pub const SharedCache = struct {
     fn getCacheDirectory(allocator: std.mem.Allocator, config: SharedCacheConfig) ![]const u8 {
         return switch (config.location) {
             .user => blk: {
-                const home = try std.process.getEnvVarOwned(allocator, "HOME");
+                const home = try io_helper.getEnvVarOwned(allocator, "HOME");
                 defer allocator.free(home);
 
                 const platform = Platform.current();

@@ -51,7 +51,7 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (result.term != .Exited or result.term.Exited != 0) {
+    if (result.term != .exited or result.term.exited != 0) {
         return null;
     }
 
@@ -250,7 +250,7 @@ pub fn installSinglePackage(
             defer allocator.free(curl_result.stdout);
             defer allocator.free(curl_result.stderr);
 
-            if (curl_result.term.Exited != 0 or curl_result.stdout.len == 0) {
+            if (curl_result.term.exited != 0 or curl_result.stdout.len == 0) {
                 return .{
                     .name = dep.name,
                     .version = dep.version,
@@ -585,8 +585,7 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
 /// Make a file executable (chmod +x)
 fn makeExecutable(path: []const u8) void {
     // Use child process to chmod
-    var child = std.process.Child.init(&.{ "chmod", "+x", path }, std.heap.page_allocator);
-    io_helper.spawn(&child) catch return;
+    var child = io_helper.spawn(.{ .argv = &.{ "chmod", "+x", path } }) catch return;
     _ = io_helper.wait(&child) catch {};
 }
 

@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Package signature for verifying integrity and authenticity
 pub const PackageSignature = struct {
@@ -232,7 +233,7 @@ pub fn generateEd25519KeyPair(allocator: std.mem.Allocator) !struct {
 } {
     // Generate random seed
     var seed: [32]u8 = undefined;
-    std.crypto.random.bytes(&seed);
+    io_helper.randomBytes(&seed);
 
     // Create keypair
     const key_pair = try std.crypto.sign.Ed25519.KeyPair.generateDeterministic(seed);

@@ -849,7 +849,7 @@ fn generateEphemeralKeypair(allocator: std.mem.Allocator) !EphemeralKeypair {
 
     // Generate random seed
     var seed: [EcdsaP256.KeyPair.seed_length]u8 = undefined;
-    std.crypto.random.bytes(&seed);
+    io_helper.randomBytes(&seed);
 
     // Generate keypair deterministically from seed
     const keypair = try EcdsaP256.KeyPair.generateDeterministic(seed);

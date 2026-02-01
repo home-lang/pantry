@@ -395,7 +395,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     const reset = "\x1b[0m";
 
     // Get current working directory
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     // Build paths - packages are in pantry_modules/
@@ -743,12 +743,69 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
         std.debug.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
         std.debug.print("----------------------------------------\n", .{});
 
+        // Detect root files to propagate to packages that don't have their own
+        const root_files = [_][]const u8{ "README.md", "LICENSE", "LICENSE.md" };
+        var has_root_file: [root_files.len]bool = undefined;
+        var root_file_paths: [root_files.len]?[]const u8 = undefined;
+        for (root_files, 0..) |file_name, i| {
+            const root_path = std.fs.path.join(allocator, &[_][]const u8{ cwd, file_name }) catch null;
+            root_file_paths[i] = root_path;
+            has_root_file[i] = if (root_path) |p| blk: {
+                io_helper.accessAbsolute(p, .{}) catch break :blk false;
+                break :blk true;
+            } else false;
+        }
+        defer for (&root_file_paths) |*p| {
+            if (p.*) |path| allocator.free(path);
+        };
+
         var failed: usize = 0;
         var succeeded: usize = 0;
 
         for (pkgs) |pkg| {
             std.debug.print("\nPublishing {s}...\n", .{pkg.name});
+
+            // Propagate root files (README, LICENSE) to package if missing
+            var copied_files: [root_files.len]?[]const u8 = .{null} ** root_files.len;
+            for (root_files, 0..) |file_name, i| {
+                if (!has_root_file[i]) continue;
+                const pkg_file_path = std.fs.path.join(allocator, &[_][]const u8{ pkg.path, file_name }) catch continue;
+                // Check if package already has its own copy
+                io_helper.accessAbsolute(pkg_file_path, .{}) catch {
+                    // Package doesn't have this file — copy from root
+                    if (root_file_paths[i]) |root_path| {
+                        if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
+                            if (r.term == .exited and r.term.exited == 0) {
+                                copied_files[i] = pkg_file_path;
+                                std.debug.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
+                            } else {
+                                allocator.free(pkg_file_path);
+                            }
+                            allocator.free(r.stdout);
+                            allocator.free(r.stderr);
+                        } else |_| {
+                            allocator.free(pkg_file_path);
+                        }
+                    } else {
+                        allocator.free(pkg_file_path);
+                    }
+                    continue;
+                };
+                // File exists in package — don't overwrite
+                allocator.free(pkg_file_path);
+            }
+
             const result = publishSingleToNpm(allocator, pkg.path, pkg.config_path, options);
+
+            // Cleanup: remove propagated files after publish
+            for (&copied_files) |*cf| {
+                if (cf.*) |path| {
+                    io_helper.deleteFile(path) catch {};
+                    allocator.free(path);
+                    cf.* = null;
+                }
+            }
+
             if (result) |r| {
                 if (r.exit_code == 0) {
                     succeeded += 1;
@@ -874,14 +931,14 @@ fn publishSingleToNpm(
 
     // Fallback to token authentication
     // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action), then ~/.pantry/credentials
-    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch
-        std.process.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch
+    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch
+        io_helper.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch
         readPantryCredential(allocator, "NPM_TOKEN") catch
         readPantryCredential(allocator, "npm_token") catch
         promptAndSaveToken(allocator) catch |err| {
         if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound or err == error.EndOfStream) {
             // Check if running in CI (non-interactive)
-            const is_ci = std.process.getEnvVarOwned(allocator, "CI") catch null;
+            const is_ci = io_helper.getEnvVarOwned(allocator, "CI") catch null;
             if (is_ci) |ci| {
                 allocator.free(ci);
                 return CommandResult.err(
@@ -1250,7 +1307,7 @@ fn createTarball(
     defer allocator.free(tarball_name);
 
     // Create tarball in temp directory to avoid "file changed as we read it" error
-    const tmp_dir = std.posix.getenv("TMPDIR") orelse std.posix.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // npm requires all files to be inside a "package/" directory in the tarball
@@ -1291,7 +1348,7 @@ fn createTarball(
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
 
-    if (cp_result.term != .Exited or cp_result.term.Exited != 0) {
+    if (cp_result.term != .exited or cp_result.term.exited != 0) {
         std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -1311,7 +1368,7 @@ fn createTarball(
     // Cleanup staging
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    if (result.term != .Exited or result.term.Exited != 0) {
+    if (result.term != .exited or result.term.exited != 0) {
         std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
         std.debug.print("stderr: {s}\n", .{result.stderr});
         return error.TarballCreationFailed;
@@ -1459,7 +1516,7 @@ pub fn trustedPublisherAddCommand(
     }
 
     // Get authentication token
-    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
         if (err == error.EnvironmentVariableNotFound) {
             return CommandResult.err(
                 allocator,
@@ -1525,7 +1582,7 @@ pub fn trustedPublisherListCommand(
     const registry = @import("../../auth/registry.zig");
 
     // Get authentication token
-    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
         if (err == error.EnvironmentVariableNotFound) {
             return CommandResult.err(
                 allocator,
@@ -1628,7 +1685,7 @@ pub fn trustedPublisherRemoveCommand(
     });
 
     // Get authentication token
-    const auth_token = std.process.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
+    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
         if (err == error.EnvironmentVariableNotFound) {
             return CommandResult.err(
                 allocator,
@@ -1877,7 +1934,7 @@ fn createIndent(allocator: std.mem.Allocator, depth: usize) ![]u8 {
 ///   github_token=ghp_xxxxxxxxxxxx
 fn readPantryCredential(allocator: std.mem.Allocator, key: []const u8) ![]u8 {
     // Get home directory
-    const home = std.posix.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
+    const home = io_helper.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
 
     // Build path to credentials file
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -1916,7 +1973,7 @@ fn readPantryCredential(allocator: std.mem.Allocator, key: []const u8) ![]u8 {
 /// Creates the file and directory if they don't exist
 pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value: []const u8) !void {
     // Get home directory
-    const home = std.posix.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
+    const home = io_helper.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
 
     // Build paths
     var dir_buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -2027,7 +2084,7 @@ fn saveToProjectEnv(allocator: std.mem.Allocator, key: []const u8, value: []cons
 /// Prompt user for NPM token and save it to ~/.pantry/credentials
 fn promptAndSaveToken(allocator: std.mem.Allocator) ![]u8 {
     // Check if running in CI - don't prompt in non-interactive environments
-    if (std.process.getEnvVarOwned(allocator, "CI")) |ci| {
+    if (io_helper.getEnvVarOwned(allocator, "CI")) |ci| {
         allocator.free(ci);
         return error.EnvironmentVariableNotFound;
     } else |_| {}

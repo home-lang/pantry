@@ -61,10 +61,34 @@ for dir in "$ROOT_DIR"/packages/*/ ; do
     if [ "$is_private" = "true" ]; then
       echo "Skipping $package_name (private package)"
     else
+      # Propagate root README.md and LICENSE to package if missing
+      COPIED_README=""
+      COPIED_LICENSE=""
+
+      if [ -f "$ROOT_DIR/README.md" ] && [ ! -f "$dir/README.md" ]; then
+        cp "$ROOT_DIR/README.md" "$dir/README.md"
+        COPIED_README="$dir/README.md"
+        echo "  Copied root README.md to $package_name"
+      fi
+
+      if [ -f "$ROOT_DIR/LICENSE" ] && [ ! -f "$dir/LICENSE" ] && [ ! -f "$dir/LICENSE.md" ]; then
+        cp "$ROOT_DIR/LICENSE" "$dir/LICENSE"
+        COPIED_LICENSE="$dir/LICENSE"
+        echo "  Copied root LICENSE to $package_name"
+      elif [ -f "$ROOT_DIR/LICENSE.md" ] && [ ! -f "$dir/LICENSE" ] && [ ! -f "$dir/LICENSE.md" ]; then
+        cp "$ROOT_DIR/LICENSE.md" "$dir/LICENSE.md"
+        COPIED_LICENSE="$dir/LICENSE.md"
+        echo "  Copied root LICENSE.md to $package_name"
+      fi
+
       echo "Publishing $package_name with OIDC..."
       cd "$dir"
       $PANTRY_BIN publish --access public $DRY_RUN
       cd - > /dev/null  # Suppress the directory change message
+
+      # Cleanup propagated files
+      [ -n "$COPIED_README" ] && rm -f "$COPIED_README"
+      [ -n "$COPIED_LICENSE" ] && rm -f "$COPIED_LICENSE"
     fi
 
     echo "----------------------------------------"

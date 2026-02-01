@@ -3,6 +3,7 @@
 //! Display package dependencies in a tree format
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 
 const CommandResult = struct {
@@ -79,7 +80,7 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         }
     }
 
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     // Find and parse dependency file

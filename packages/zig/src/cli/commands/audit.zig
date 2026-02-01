@@ -133,7 +133,7 @@ pub fn auditCommand(
     options: AuditOptions,
 ) !CommandResult {
     // Get current working directory
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     // Find config file
@@ -282,7 +282,7 @@ fn runSecurityScanner(
     severity: ScannerSeverity,
 ) !CommandResult {
     // Get current working directory
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     // Try to find the scanner in node_modules
@@ -341,7 +341,7 @@ fn runSecurityScanner(
             );
             return .{
                 .exit_code = switch (term) {
-                    .Exited => |code| code,
+                    .exited => |code| code,
                     else => 1,
                 },
                 .message = msg,
@@ -551,7 +551,7 @@ fn generateScannerReport(
     const exit_code: u8 = if (fatal_count > 0)
         1
     else switch (term_status) {
-        .Exited => |code| code,
+        .exited => |code| code,
         else => 1,
     };
 
@@ -644,7 +644,12 @@ fn createVulnerability(
     const cve_id = try std.fmt.allocPrint(
         allocator,
         "CVE-2024-{d}",
-        .{std.crypto.random.intRangeAtMost(u32, 10000, 99999)},
+        .{blk: {
+            var seed: [8]u8 = undefined;
+            io_helper.randomBytes(&seed);
+            var prng = std.Random.DefaultPrng.init(@bitCast(seed));
+            break :blk prng.random().intRangeAtMost(u32, 10000, 99999);
+        }},
     );
 
     const title = try std.fmt.allocPrint(

@@ -19,7 +19,7 @@ const CommandResult = struct {
 pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     _ = args;
 
-    const cwd = try std.process.getCwdAlloc(allocator);
+    const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
     // Check if pantry.json already exists
