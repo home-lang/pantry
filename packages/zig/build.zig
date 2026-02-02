@@ -444,7 +444,7 @@ pub fn build(b: *std.Build) void {
 fn getPackageVersion(b: *std.Build) ![]const u8 {
     _ = b;
     // Temporarily return fixed version until build.zig API is updated
-    return "0.7.6";
+    return "0.7.7";
 
     // TODO: Re-enable when Zig API stabilizes
     // Try to read from parent directory (monorepo structure)
