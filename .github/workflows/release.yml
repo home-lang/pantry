@@ -68,8 +68,6 @@ jobs:
       - name: Create GitHub Release
         uses: stacksjs/action-releaser@v1.2.7
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          generate_release_notes: true
           files: |
             dist/pantry-linux-x64.zip
             dist/pantry-linux-arm64.zip
