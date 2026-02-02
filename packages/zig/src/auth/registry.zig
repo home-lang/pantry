@@ -853,25 +853,22 @@ pub const RegistryClient = struct {
             package_name;
 
         // Build attestations section if we have a Sigstore bundle
-        // npm expects attestations as an array under _attachments
+        // npm expects _attestations as an array of {predicateType, bundle} objects
         var attestations_section = std.ArrayList(u8).empty;
         defer attestations_section.deinit(self.allocator);
 
         if (sigstore_bundle) |bundle| {
-            // npm expects attestations to be associated with the tarball attachment
-            // The format is: attestations array with predicateType and bundle
             const attestation_json = try std.fmt.allocPrint(
                 self.allocator,
                 \\,
-                \\  "_attestations": {{
-                \\    "url": "/.well-known/npm/attestation/{s}@{s}",
-                \\    "provenance": {{
+                \\  "_attestations": [
+                \\    {{
                 \\      "predicateType": "https://slsa.dev/provenance/v1",
                 \\      "bundle": {s}
                 \\    }}
-                \\  }}
+                \\  ]
             ,
-                .{ package_name, version, bundle },
+                .{bundle},
             );
             defer self.allocator.free(attestation_json);
             try attestations_section.appendSlice(self.allocator, attestation_json);
