@@ -83,6 +83,8 @@ jobs:
 
       - name: Setup pantry
         uses: ./packages/action
+        with:
+          setup-only: 'true'
 
       - name: Unit Test
         run: bun test
