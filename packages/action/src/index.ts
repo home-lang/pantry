@@ -157,10 +157,12 @@ async function ensurePantryBinary(): Promise<void> {
       ])
     }
 
-    // Clone dependencies
+    // Clone dependencies into packages/zig/pantry/ where build.zig expects them
+    const pantryDepsDir = path.join(pantryZigDir, 'pantry')
+    await fs.mkdir(pantryDepsDir, { recursive: true })
     const deps = ['zig-cli', 'zig-config', 'zig-test-framework']
     for (const dep of deps) {
-      const depPath = path.join(parentDir, dep)
+      const depPath = path.join(pantryDepsDir, dep)
       try {
         await fs.access(depPath)
         core.info(`${dep} already exists`)
