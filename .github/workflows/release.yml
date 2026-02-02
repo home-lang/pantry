@@ -55,7 +55,7 @@ jobs:
             esac
 
             echo "Packaging $target -> $name"
-            (cd "$dir" && zip -r "../../../../dist/$name" "$bin")
+            (cd "$dir" && zip -r "../../../../../dist/$name" "$bin")
           done
 
           echo "Packaged files:"
