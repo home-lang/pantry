@@ -17,7 +17,14 @@ pub const File = std.Io.File;
 
 /// Global Threaded I/O backend for single-threaded blocking I/O
 /// For production code that needs an Io instance
-var io_instance: Threaded = .init_single_threaded;
+/// NOTE: We override .allocator from .failing to page_allocator because
+/// std.process.run -> spawn -> spawnPosix creates an ArenaAllocator backed
+/// by this allocator. With .failing, every child process spawn OOMs.
+var io_instance: Threaded = blk: {
+    var inst: Threaded = .init_single_threaded;
+    inst.allocator = std.heap.page_allocator;
+    break :blk inst;
+};
 
 /// Get the global Io instance for blocking operations
 /// This can be used anywhere an Io is needed for synchronous file operations
@@ -36,10 +43,29 @@ pub fn cwd() Dir {
 
 /// Read entire file contents using Io.Dir.readFile
 pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
-    var buffer = try allocator.alloc(u8, max_size);
+    // Get actual file size first to avoid over-allocating
+    const file_size: usize = blk: {
+        const stat = statFile(path) catch break :blk 4096; // fallback to small buffer
+        break :blk @intCast(@min(stat.size, max_size));
+    };
+    const alloc_size = if (file_size == 0) @min(max_size, 4096) else file_size;
+
+    var buffer = try allocator.alloc(u8, alloc_size);
     errdefer allocator.free(buffer);
 
-    const result = try cwd().readFile(io, path, buffer);
+    const result = cwd().readFile(io, path, buffer) catch |err| {
+        // If buffer was too small, retry with max_size
+        if (err == error.BufferTooSmall and alloc_size < max_size) {
+            allocator.free(buffer);
+            buffer = try allocator.alloc(u8, max_size);
+            const retry = try cwd().readFile(io, path, buffer);
+            if (retry.len < buffer.len) {
+                buffer = try allocator.realloc(buffer, retry.len);
+            }
+            return buffer;
+        }
+        return err;
+    };
     // Resize to actual content size
     if (result.len < buffer.len) {
         buffer = try allocator.realloc(buffer, result.len);

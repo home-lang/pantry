@@ -1375,12 +1375,10 @@ fn createTarball(
     }
 
     // Check tarball size - warn if too big (npm limit is ~200MB but packages should be small)
-    const stat_result = try io_helper.childRun(allocator, &[_][]const u8{ "stat", "-c", "%s", tarball_path });
-    defer allocator.free(stat_result.stdout);
-    defer allocator.free(stat_result.stderr);
-
-    const size_str = std.mem.trim(u8, stat_result.stdout, " \n\r\t");
-    const size = std.fmt.parseInt(u64, size_str, 10) catch 0;
+    const size: u64 = blk: {
+        const stat = io_helper.statFile(tarball_path) catch break :blk 0;
+        break :blk @intCast(stat.size);
+    };
     std.debug.print("Tarball size: {d} bytes ({d} MB)\n", .{ size, size / (1024 * 1024) });
 
     if (size > 50 * 1024 * 1024) { // 50MB warning
