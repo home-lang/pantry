@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.7.6)'
+        required: true
 
 jobs:
   pantry:
@@ -62,8 +66,9 @@ jobs:
           ls -la dist/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: stacksjs/action-releaser@v1.2.7
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           generate_release_notes: true
           files: |
             dist/pantry-linux-x64.zip
