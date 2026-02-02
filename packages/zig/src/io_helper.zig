@@ -615,7 +615,7 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
         return args;
     } else if (native_os == .linux) {
         // On Linux, read /proc/self/cmdline
-        const file = std.fs.openFileAbsolute("/proc/self/cmdline", .{}) catch return error.InvalidArgv;
+        const file = openFileAbsolute("/proc/self/cmdline", .{}) catch return error.InvalidArgv;
         defer file.close();
         const content = file.readToEndAlloc(allocator, 1024 * 1024) catch return error.InvalidArgv;
         defer allocator.free(content);

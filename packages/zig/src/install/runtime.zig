@@ -195,7 +195,7 @@ pub const RuntimeInstaller = struct {
         };
 
         // Make binary executable
-        const file = try std.fs.openFileAbsolute(binary_path, .{});
+        const file = try io_helper.openFileAbsolute(binary_path, .{});
         defer file.close();
 
         const metadata = try file.metadata();

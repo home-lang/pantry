@@ -530,7 +530,7 @@ test "parseDepsFile" {
 
 /// Parse package.json to infer Node.js version from engines field
 fn parsePackageJson(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
-    const file = try std.fs.openFileAbsolute(file_path, .{});
+    const file = try io_helper.openFileAbsolute(file_path, .{});
     defer file.close();
 
     const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
