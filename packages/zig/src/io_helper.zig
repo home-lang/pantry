@@ -596,19 +596,19 @@ pub fn getCwdAlloc(allocator: std.mem.Allocator) ![]u8 {
 pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
     const native_os = builtin.os.tag;
     if (native_os == .macos or native_os == .ios or native_os == .watchos or native_os == .tvos) {
-        const NSGetArgv = @extern(*[*:null]?[*:0]u8, .{ .name = "_NSGetArgv" });
-        const NSGetArgc = @extern(*c_int, .{ .name = "_NSGetArgc" });
-        const argc: usize = @intCast(NSGetArgc.*);
-        const argv_raw = NSGetArgv.*;
+        const _NSGetArgc = @extern(*const fn () callconv(.c) *c_int, .{ .name = "_NSGetArgc" });
+        const _NSGetArgv = @extern(*const fn () callconv(.c) *[*:null]?[*:0]u8, .{ .name = "_NSGetArgv" });
+        const argc_ptr = _NSGetArgc();
+        const argv_ptr = _NSGetArgv();
+        if (argc_ptr.* <= 0) return error.InvalidArgv;
+        const argc: usize = @intCast(argc_ptr.*);
+        const argv_raw = argv_ptr.*;
         const args = try allocator.alloc([:0]const u8, argc);
         for (0..argc) |i| {
             if (argv_raw[i]) |ptr| {
                 args[i] = std.mem.sliceTo(ptr, 0);
             } else {
-                // Shouldn't happen for valid argc, but be safe
-                const result = args[0..i];
                 allocator.free(args);
-                _ = result;
                 return error.InvalidArgv;
             }
         }
