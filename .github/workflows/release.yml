@@ -6,40 +6,21 @@ on:
       - 'v*'
 
 jobs:
-  npm:
-    name: npm
+  pantry:
+    name: pantry
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Use cached node_modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            node-modules-
-
-      - name: Install Dependencies
-        run: bun install
 
       - name: Setup Zig
         uses: goto-bus-stop/setup-zig@v2
         with:
           version: master
 
-      - name: Bootstrap Zig Dependencies (for building pantry)
+      - name: Bootstrap Zig Dependencies
         run: |
           cd packages/zig
           mkdir -p pantry
@@ -48,72 +29,34 @@ jobs:
           git clone --depth 1 https://github.com/zig-utils/zig-config.git
           git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
-      - name: Build Native Binary
-        run: |
-          cd packages/zig
-          zig build
-          echo "$PWD/zig-out/bin" >> $GITHUB_PATH
-
-      - name: Build Zig Package for All Platforms
+      - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all
 
       - name: Package Binaries
         run: |
           mkdir -p dist
 
-          # List what was actually built
           echo "Built binaries:"
           ls -la packages/zig/zig-out/bin/
 
-          # Package Linux x64
-          if [ -d "packages/zig/zig-out/bin/linux-x86_64" ]; then
-            echo "Packaging Linux x64..."
-            cd packages/zig/zig-out/bin/linux-x86_64
-            zip -r ../../../../../dist/pantry-linux-x64.zip pantry
-            cd ../../../../..
-          else
-            echo "Warning: linux-x86_64 directory not found"
-          fi
+          for target in linux-x86_64 linux-aarch64 macos-x86_64 macos-aarch64 windows-x86_64; do
+            dir="packages/zig/zig-out/bin/$target"
+            if [ ! -d "$dir" ]; then
+              echo "Warning: $target not found"
+              continue
+            fi
 
-          # Package Linux ARM64
-          if [ -d "packages/zig/zig-out/bin/linux-aarch64" ]; then
-            echo "Packaging Linux ARM64..."
-            cd packages/zig/zig-out/bin/linux-aarch64
-            zip -r ../../../../../dist/pantry-linux-arm64.zip pantry
-            cd ../../../../..
-          else
-            echo "Warning: linux-aarch64 directory not found"
-          fi
+            case "$target" in
+              linux-x86_64)   name="pantry-linux-x64.zip" ; bin="pantry" ;;
+              linux-aarch64)  name="pantry-linux-arm64.zip" ; bin="pantry" ;;
+              macos-x86_64)   name="pantry-darwin-x64.zip" ; bin="pantry" ;;
+              macos-aarch64)  name="pantry-darwin-arm64.zip" ; bin="pantry" ;;
+              windows-x86_64) name="pantry-windows-x64.zip" ; bin="pantry.exe" ;;
+            esac
 
-          # Package macOS x64
-          if [ -d "packages/zig/zig-out/bin/macos-x86_64" ]; then
-            echo "Packaging macOS x64..."
-            cd packages/zig/zig-out/bin/macos-x86_64
-            zip -r ../../../../../dist/pantry-darwin-x64.zip pantry
-            cd ../../../../..
-          else
-            echo "Warning: macos-x86_64 directory not found"
-          fi
-
-          # Package macOS ARM64
-          if [ -d "packages/zig/zig-out/bin/macos-aarch64" ]; then
-            echo "Packaging macOS ARM64..."
-            cd packages/zig/zig-out/bin/macos-aarch64
-            zip -r ../../../../../dist/pantry-darwin-arm64.zip pantry
-            cd ../../../../..
-          else
-            echo "Warning: macos-aarch64 directory not found"
-          fi
-
-          # Package Windows x64
-          if [ -d "packages/zig/zig-out/bin/windows-x86_64" ]; then
-            echo "Packaging Windows x64..."
-            cd packages/zig/zig-out/bin/windows-x86_64
-            zip -r ../../../../../dist/pantry-windows-x64.zip pantry.exe
-            cd ../../../../..
-          else
-            echo "Warning: windows-x86_64 directory not found"
-          fi
+            echo "Packaging $target -> $name"
+            (cd "$dir" && zip -r "../../../../dist/$name" "$bin")
+          done
 
           echo "Packaged files:"
           ls -la dist/
@@ -130,8 +73,3 @@ jobs:
             dist/pantry-windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish
-        run: pantry npm:publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
