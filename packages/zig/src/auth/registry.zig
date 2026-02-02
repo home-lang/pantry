@@ -86,6 +86,70 @@ fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) 
     return result;
 }
 
+/// Escape a string for embedding inside a JSON string value.
+/// Handles: " → \", \ → \\, and control characters.
+fn jsonEscapeAlloc(allocator: std.mem.Allocator, input: []const u8) ![]u8 {
+    var escaped_len: usize = 0;
+    for (input) |c| {
+        escaped_len += switch (c) {
+            '"', '\\' => @as(usize, 2),
+            '\n', '\r', '\t' => @as(usize, 2),
+            else => if (c < 0x20) @as(usize, 6) else @as(usize, 1),
+        };
+    }
+
+    const result = try allocator.alloc(u8, escaped_len);
+    errdefer allocator.free(result);
+
+    var i: usize = 0;
+    for (input) |c| {
+        switch (c) {
+            '"' => {
+                result[i] = '\\';
+                result[i + 1] = '"';
+                i += 2;
+            },
+            '\\' => {
+                result[i] = '\\';
+                result[i + 1] = '\\';
+                i += 2;
+            },
+            '\n' => {
+                result[i] = '\\';
+                result[i + 1] = 'n';
+                i += 2;
+            },
+            '\r' => {
+                result[i] = '\\';
+                result[i + 1] = 'r';
+                i += 2;
+            },
+            '\t' => {
+                result[i] = '\\';
+                result[i + 1] = 't';
+                i += 2;
+            },
+            else => {
+                if (c < 0x20) {
+                    const hex_chars_ctrl = "0123456789abcdef";
+                    result[i] = '\\';
+                    result[i + 1] = 'u';
+                    result[i + 2] = '0';
+                    result[i + 3] = '0';
+                    result[i + 4] = hex_chars_ctrl[c >> 4];
+                    result[i + 5] = hex_chars_ctrl[c & 0x0F];
+                    i += 6;
+                } else {
+                    result[i] = c;
+                    i += 1;
+                }
+            },
+        }
+    }
+
+    return result;
+}
+
 /// Registry client for publishing packages
 pub const RegistryClient = struct {
     allocator: std.mem.Allocator,
@@ -852,29 +916,50 @@ pub const RegistryClient = struct {
         else
             package_name;
 
-        // Build attestations section if we have a Sigstore bundle
-        // npm expects _attestations as an array of {predicateType, bundle} objects
-        var attestations_section = std.ArrayList(u8).empty;
-        defer attestations_section.deinit(self.allocator);
+        // Build sigstore attachment section if we have a Sigstore bundle
+        // npm CLI adds the sigstore bundle as _attachments["{name}-{version}.sigstore"]
+        // See: https://github.com/npm/cli/blob/latest/workspaces/libnpmpublish/lib/publish.js
+        var sigstore_attachment = std.ArrayList(u8).empty;
+        defer sigstore_attachment.deinit(self.allocator);
 
         if (sigstore_bundle) |bundle| {
-            const attestation_json = try std.fmt.allocPrint(
+            // Extract mediaType from the bundle JSON
+            const media_type: []const u8 = mt_blk: {
+                const bundle_parsed = std.json.parseFromSlice(std.json.Value, self.allocator, bundle, .{}) catch
+                    break :mt_blk try self.allocator.dupe(u8, "application/vnd.dev.sigstore.bundle.v0.3+json");
+                defer bundle_parsed.deinit();
+                if (bundle_parsed.value == .object) {
+                    if (bundle_parsed.value.object.get("mediaType")) |mt| {
+                        if (mt == .string) {
+                            break :mt_blk try self.allocator.dupe(u8, mt.string);
+                        }
+                    }
+                }
+                break :mt_blk try self.allocator.dupe(u8, "application/vnd.dev.sigstore.bundle.v0.3+json");
+            };
+            defer self.allocator.free(media_type);
+
+            // JSON-escape the bundle for embedding as a string value in _attachments
+            const escaped_bundle = try jsonEscapeAlloc(self.allocator, bundle);
+            defer self.allocator.free(escaped_bundle);
+
+            const attachment_json = try std.fmt.allocPrint(
                 self.allocator,
                 \\,
-                \\  "_attestations": [
-                \\    {{
-                \\      "predicateType": "https://slsa.dev/provenance/v1",
-                \\      "bundle": {s}
+                \\    "{s}-{s}.sigstore": {{
+                \\      "content_type": "{s}",
+                \\      "data": "{s}",
+                \\      "length": {d}
                 \\    }}
-                \\  ]
             ,
-                .{bundle},
+                .{ package_name, version, media_type, escaped_bundle, bundle.len },
             );
-            defer self.allocator.free(attestation_json);
-            try attestations_section.appendSlice(self.allocator, attestation_json);
+            defer self.allocator.free(attachment_json);
+            try sigstore_attachment.appendSlice(self.allocator, attachment_json);
         }
 
         // Create JSON metadata with provenance (NPM registry format)
+        // The sigstore bundle is added as a second _attachments entry (npm CLI format)
         const metadata = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -901,8 +986,8 @@ pub const RegistryClient = struct {
             \\      "content_type": "application/octet-stream",
             \\      "data": "{s}",
             \\      "length": {d}
-            \\    }}
-            \\  }}{s}
+            \\    }}{s}
+            \\  }}
             \\}}
         ,
             .{
@@ -917,10 +1002,10 @@ pub const RegistryClient = struct {
                 &shasum_buf, // dist.shasum
                 self.registry_url, encoded_name, // dist.tarball (registry/encoded_name)
                 tarball_basename, version, // dist.tarball (/-/name-version.tgz)
-                tarball_basename, version, // _attachments key
-                encoded_tarball, // _attachments data
-                tarball.len, // _attachments length
-                attestations_section.items, // attestations section (or empty)
+                tarball_basename, version, // _attachments key (tgz)
+                encoded_tarball, // _attachments data (tgz)
+                tarball.len, // _attachments length (tgz)
+                sigstore_attachment.items, // sigstore attachment (inside _attachments, or empty)
             },
         );
 
