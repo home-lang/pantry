@@ -378,13 +378,12 @@ pub fn build(b: *std.Build) void {
     const bench_step = b.step("bench", "Run benchmarks");
     bench_step.dependOn(&run_bench.step);
 
-    // Cross-compilation targets
+    // Cross-compilation targets (macOS + Linux only; Windows needs POSIX compat work)
     const targets = [_]std.Target.Query{
         .{ .cpu_arch = .aarch64, .os_tag = .macos },
         .{ .cpu_arch = .x86_64, .os_tag = .macos },
         .{ .cpu_arch = .aarch64, .os_tag = .linux },
         .{ .cpu_arch = .x86_64, .os_tag = .linux },
-        .{ .cpu_arch = .x86_64, .os_tag = .windows },
     };
 
     const compile_all_step = b.step("compile-all", "Compile for all platforms");
@@ -396,11 +395,13 @@ pub fn build(b: *std.Build) void {
         const cross_zig_config_mod = b.addModule("zig-config", .{
             .root_source_file = b.path(zig_config_path),
             .target = resolved_target,
+            .link_libc = true,
         });
 
         const cross_lib_mod = b.addModule("pantry", .{
             .root_source_file = b.path("src/lib.zig"),
             .target = resolved_target,
+            .link_libc = true,
         });
 
         // Add zig-config to the cross-compiled library
@@ -415,9 +416,11 @@ pub fn build(b: *std.Build) void {
                 .root_source_file = b.path("src/main.zig"),
                 .target = resolved_target,
                 .optimize = .ReleaseFast,
+                .link_libc = true,
                 .imports = &.{
                     .{ .name = "lib", .module = cross_lib_mod },
                     .{ .name = "zig-cli", .module = cli_mod },
+                    .{ .name = "version", .module = version_mod },
                 },
             }),
         });

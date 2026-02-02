@@ -616,8 +616,16 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
     } else if (native_os == .linux) {
         // On Linux, read /proc/self/cmdline
         const file = openFileAbsolute("/proc/self/cmdline", .{}) catch return error.InvalidArgv;
-        defer file.close();
-        const content = file.readToEndAlloc(allocator, 1024 * 1024) catch return error.InvalidArgv;
+        defer _ = c.close(file.handle);
+
+        var buf: [1024 * 1024]u8 = undefined;
+        var total: usize = 0;
+        while (total < buf.len) {
+            const n = c.read(file.handle, buf[total..].ptr, buf.len - total);
+            if (n <= 0) break;
+            total += @intCast(n);
+        }
+        const content = try allocator.dupe(u8, buf[0..total]);
         defer allocator.free(content);
 
         // Count null-terminated strings
