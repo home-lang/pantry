@@ -311,12 +311,7 @@ pub const RekorClient = struct {
         );
         defer self.allocator.free(url);
 
-        // Escape the DSSE envelope JSON for embedding in another JSON string
-        // Need to escape: \ -> \\, " -> \", newlines, etc.
-        const escaped_envelope = try escapeJsonString(self.allocator, dsse_envelope_json);
-        defer self.allocator.free(escaped_envelope);
-
-        // Base64 encode the full PEM certificate (Rekor expects base64 -> PEM)
+        // Base64 encode the full PEM certificate
         const encoder = std.base64.standard.Encoder;
         const cert_b64_len = encoder.calcSize(certificate_pem.len);
         const cert_b64 = try self.allocator.alloc(u8, cert_b64_len);
@@ -327,10 +322,16 @@ pub const RekorClient = struct {
         std.debug.print("Certificate PEM length: {d}, Base64 length: {d}\n", .{ certificate_pem.len, cert_b64.len });
         std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
 
-        // Create Rekor entry request using "intoto" type for v0.2 bundle compatibility
-        // npm expects v0.2 bundles which use "intoto" Rekor type
-        // The envelope must be a "stringified JSON object" (escaped JSON string, NOT base64)
-        // The verifier is base64(PEM certificate)
+        // Parse the DSSE envelope to extract its fields
+        const parsed = try std.json.parseFromSlice(std.json.Value, self.allocator, dsse_envelope_json, .{});
+        defer parsed.deinit();
+
+        const payload = parsed.value.object.get("payload").?.string;
+        const payload_type = parsed.value.object.get("payloadType").?.string;
+        const sig = parsed.value.object.get("signatures").?.array.items[0].object.get("sig").?.string;
+
+        // Create Rekor entry request using intoto v0.0.2
+        // Per the schema: publicKey goes INSIDE each signature object, not at top level
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -338,13 +339,21 @@ pub const RekorClient = struct {
             \\  "apiVersion": "0.0.2",
             \\  "spec": {{
             \\    "content": {{
-            \\      "envelope": "{s}",
-            \\      "publicKey": "{s}"
+            \\      "envelope": {{
+            \\        "payloadType": "{s}",
+            \\        "payload": "{s}",
+            \\        "signatures": [
+            \\          {{
+            \\            "sig": "{s}",
+            \\            "publicKey": "{s}"
+            \\          }}
+            \\        ]
+            \\      }}
             \\    }}
             \\  }}
             \\}}
         ,
-            .{ escaped_envelope, cert_b64 },
+            .{ payload_type, payload, sig, cert_b64 },
         );
         defer self.allocator.free(request_body);
 
