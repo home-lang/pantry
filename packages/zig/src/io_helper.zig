@@ -441,7 +441,12 @@ pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
         break :blk f;
     };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
-    return File{ .handle = fd };
+    // Newer Zig versions require .flags field on File struct
+    if (@hasField(File, "flags")) {
+        return File{ .handle = fd, .flags = posix_flags };
+    } else {
+        return File{ .handle = fd };
+    }
 }
 
 /// Open a directory with absolute path
@@ -449,7 +454,12 @@ pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
     _ = options;
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, flags, 0);
-    return Dir{ .handle = fd };
+    // Newer Zig versions require .flags field on Dir struct
+    if (@hasField(Dir, "flags")) {
+        return Dir{ .handle = fd, .flags = flags };
+    } else {
+        return Dir{ .handle = fd };
+    }
 }
 
 /// Read from stdin
