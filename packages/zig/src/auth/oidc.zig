@@ -42,6 +42,15 @@ pub const OIDCToken = struct {
         /// Repository owner ID (GitHub specific)
         repository_owner_id: ?[]const u8 = null,
 
+        /// Repository ID (GitHub specific)
+        repository_id: ?[]const u8 = null,
+
+        /// Run ID (GitHub specific)
+        run_id: ?[]const u8 = null,
+
+        /// Run attempt (GitHub specific)
+        run_attempt: ?[]const u8 = null,
+
         /// Workflow ref (GitHub specific, e.g., "owner/repo/.github/workflows/release.yml@refs/heads/main")
         workflow_ref: ?[]const u8 = null,
 
@@ -82,6 +91,9 @@ pub const OIDCToken = struct {
             if (self.repository_owner) |ro| allocator.free(ro);
             if (self.repository) |r| allocator.free(r);
             if (self.repository_owner_id) |roi| allocator.free(roi);
+            if (self.repository_id) |ri| allocator.free(ri);
+            if (self.run_id) |rid| allocator.free(rid);
+            if (self.run_attempt) |ra| allocator.free(ra);
             if (self.workflow_ref) |wr| allocator.free(wr);
             if (self.actor) |a| allocator.free(a);
             if (self.event_name) |en| allocator.free(en);
@@ -501,6 +513,9 @@ fn extractClaims(allocator: std.mem.Allocator, obj: std.json.ObjectMap) !OIDCTok
     const repository_owner = if (obj.get("repository_owner")) |ro| if (ro == .string) try allocator.dupe(u8, ro.string) else null else null;
     const repository = if (obj.get("repository")) |r| if (r == .string) try allocator.dupe(u8, r.string) else null else null;
     const repository_owner_id = if (obj.get("repository_owner_id")) |roi| if (roi == .string) try allocator.dupe(u8, roi.string) else null else null;
+    const repository_id = if (obj.get("repository_id")) |ri| if (ri == .string) try allocator.dupe(u8, ri.string) else null else null;
+    const run_id = if (obj.get("run_id")) |rid| if (rid == .string) try allocator.dupe(u8, rid.string) else null else null;
+    const run_attempt = if (obj.get("run_attempt")) |ra| if (ra == .string) try allocator.dupe(u8, ra.string) else null else null;
     const workflow_ref = if (obj.get("workflow_ref")) |wr| if (wr == .string) try allocator.dupe(u8, wr.string) else null else null;
     const actor = if (obj.get("actor")) |a| if (a == .string) try allocator.dupe(u8, a.string) else null else null;
     const event_name = if (obj.get("event_name")) |en| if (en == .string) try allocator.dupe(u8, en.string) else null else null;
@@ -529,6 +544,9 @@ fn extractClaims(allocator: std.mem.Allocator, obj: std.json.ObjectMap) !OIDCTok
         .repository_owner = repository_owner,
         .repository = repository,
         .repository_owner_id = repository_owner_id,
+        .repository_id = repository_id,
+        .run_id = run_id,
+        .run_attempt = run_attempt,
         .workflow_ref = workflow_ref,
         .actor = actor,
         .event_name = event_name,

@@ -449,16 +449,16 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
 }
 
 /// Create an in-toto SLSA provenance statement for npm package
-pub fn createSLSAProvenance(
+/// This matches the format npm expects for GitHub Actions provenance
+pub fn createSLSAProvenanceFromToken(
     allocator: std.mem.Allocator,
+    token: *const oidc.OIDCToken,
     package_name: []const u8,
     package_version: []const u8,
     tarball_sha512: []const u8,
-    repository: []const u8,
-    commit_sha: []const u8,
-    workflow_ref: []const u8,
-    runner_environment: []const u8,
 ) ![]const u8 {
+    const claims = &token.claims;
+
     // Create the PURL (Package URL) for npm
     const purl = try std.fmt.allocPrint(
         allocator,
@@ -467,12 +467,30 @@ pub fn createSLSAProvenance(
     );
     defer allocator.free(purl);
 
-    // Get current timestamp using posix clock
-    const ts = std.posix.clock_gettime(.REALTIME) catch return error.SigstoreError;
-    const now = ts.sec;
-    const build_started = now - 60; // Approximate
+    // Extract workflow path from job_workflow_ref
+    // Format: "owner/repo/.github/workflows/file.yml@refs/tags/v1.0.0"
+    const workflow_path: []const u8 = if (claims.job_workflow_ref) |jwr| blk: {
+        // Find the .github/workflows part
+        if (std.mem.indexOf(u8, jwr, ".github/workflows/")) |start| {
+            // Find the @ that separates path from ref
+            if (std.mem.indexOf(u8, jwr[start..], "@")) |end| {
+                break :blk jwr[start .. start + end];
+            }
+            break :blk jwr[start..];
+        }
+        break :blk ".github/workflows/publish.yml";
+    } else ".github/workflows/publish.yml";
 
-    // Create SLSA v1.0 provenance predicate
+    const repository = claims.repository orelse "unknown";
+    const ref = claims.ref orelse "refs/heads/main";
+    const sha = claims.sha orelse "unknown";
+    const event_name = claims.event_name orelse "push";
+    const repository_id = claims.repository_id orelse "";
+    const repository_owner_id = claims.repository_owner_id orelse "";
+    const run_id = claims.run_id orelse "0";
+    const run_attempt = claims.run_attempt orelse "1";
+
+    // Create SLSA v1.0 provenance predicate matching npm's expected format
     const statement = try std.fmt.allocPrint(
         allocator,
         \\{{
@@ -498,9 +516,9 @@ pub fn createSLSAProvenance(
         \\      }},
         \\      "internalParameters": {{
         \\        "github": {{
-        \\          "event_name": "push",
-        \\          "repository_id": "",
-        \\          "repository_owner_id": ""
+        \\          "event_name": "{s}",
+        \\          "repository_id": "{s}",
+        \\          "repository_owner_id": "{s}"
         \\        }}
         \\      }},
         \\      "resolvedDependencies": [
@@ -514,33 +532,31 @@ pub fn createSLSAProvenance(
         \\    }},
         \\    "runDetails": {{
         \\      "builder": {{
-        \\        "id": "https://github.com/actions/runner/{s}"
+        \\        "id": "https://github.com/actions/runner"
         \\      }},
         \\      "metadata": {{
-        \\        "invocationId": "https://github.com/{s}/actions/runs/{d}",
-        \\        "startedOn": "{d}",
-        \\        "finishedOn": "{d}"
-        \\      }},
-        \\      "byproducts": []
+        \\        "invocationId": "https://github.com/{s}/actions/runs/{s}/attempts/{s}"
+        \\      }}
         \\    }}
         \\  }}
         \\}}
     ,
         .{
-            purl,
-            tarball_sha512,
-            SLSA_PREDICATE_TYPE_V1,
-            workflow_ref,
-            repository,
-            workflow_ref,
-            repository,
-            commit_sha, // git ref
-            commit_sha, // gitCommit digest
-            runner_environment, // builder id suffix
-            repository,
-            now, // Use timestamp as run ID placeholder
-            build_started,
-            now,
+            purl, // subject.name
+            tarball_sha512, // subject.digest.sha512
+            SLSA_PREDICATE_TYPE_V1, // predicateType
+            ref, // workflow.ref
+            repository, // workflow.repository
+            workflow_path, // workflow.path
+            event_name, // github.event_name
+            repository_id, // github.repository_id
+            repository_owner_id, // github.repository_owner_id
+            repository, // resolvedDependencies.uri (repo part)
+            ref, // resolvedDependencies.uri (ref part) - npm expects ref, not commit
+            sha, // resolvedDependencies.digest.gitCommit
+            repository, // invocationId (repo part)
+            run_id, // invocationId (run_id part)
+            run_attempt, // invocationId (attempt part)
         },
     );
 
@@ -786,20 +802,13 @@ pub fn createSignedProvenance(
         mut_cert.deinit(allocator);
     }
 
-    // 4. Create SLSA provenance statement
-    const repository = oidc_token.claims.repository orelse "unknown";
-    const commit_sha = oidc_token.claims.sha orelse "unknown";
-    const workflow_ref = oidc_token.claims.ref orelse "refs/heads/main";
-
-    const provenance = try createSLSAProvenance(
+    // 4. Create SLSA provenance statement using full token claims
+    const provenance = try createSLSAProvenanceFromToken(
         allocator,
+        oidc_token,
         package_name,
         package_version,
         tarball_hash,
-        repository,
-        commit_sha,
-        workflow_ref,
-        "github-hosted",
     );
     defer allocator.free(provenance);
 
