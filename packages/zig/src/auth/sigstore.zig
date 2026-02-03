@@ -661,7 +661,7 @@ pub fn createSigstoreBundle(
         \\    }},
         \\    "tlogEntries": [
         \\      {{
-        \\        "logIndex": "{d}",
+        \\        "logIndex": {d},
         \\        "logId": {{
         \\          "keyId": "{s}"
         \\        }},
@@ -669,7 +669,7 @@ pub fn createSigstoreBundle(
         \\          "kind": "dsse",
         \\          "version": "0.0.1"
         \\        }},
-        \\        "integratedTime": "{d}",
+        \\        "integratedTime": {d},
         \\        "inclusionPromise": {{
         \\          "signedEntryTimestamp": "{s}"
         \\        }}
