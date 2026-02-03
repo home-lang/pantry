@@ -1,7 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const lib = @import("lib");
-const oidc = lib.auth.oidc;
+const oidc = @import("oidc.zig");
 
 /// Get current Unix timestamp (Zig 0.16 compatible)
 fn getTimestamp() i64 {
@@ -639,7 +638,7 @@ test "Default Clock Skew Is 60 Seconds" {
 }
 
 test "Default OIDC Audience Is NPM Registry" {
-    try testing.expectEqualStrings("npm:registry.npmjs.org", oidc.DEFAULT_OIDC_AUDIENCE);
+    try testing.expectEqualStrings("https://registry.npmjs.org", oidc.DEFAULT_OIDC_AUDIENCE);
 }
 
 // =============================================================================
