@@ -598,14 +598,35 @@ pub const SpawnOptions = struct {
     };
 };
 
+/// Convert our StdIo to the native type (handles version differences)
+fn toNativeStdIo(stdio: SpawnOptions.StdIo) std.process.Child.StdIo {
+    // Check if the native type uses lowercase (newer) or capitalized (older) names
+    if (comptime @hasField(std.process.Child.StdIo, "inherit")) {
+        // Newer Zig: lowercase enum values
+        return switch (stdio) {
+            .inherit => .inherit,
+            .ignore => .ignore,
+            .pipe => .pipe,
+        };
+    } else {
+        // Older Zig: capitalized enum values
+        return switch (stdio) {
+            .inherit => .Inherit,
+            .ignore => .Ignore,
+            .pipe => .Pipe,
+        };
+    }
+}
+
 /// Spawn a child process and wait for it to complete
 pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
     if (comptime @hasDecl(std.process, "spawn")) {
-        // New API - use std.process.spawn with native SpawnOptions
-        // The newer Zig has SpawnOptions at std.process level, not Child level
+        // New API - convert our options to native SpawnOptions
         var child = try std.process.spawn(getIo(), .{
             .argv = options.argv,
             .cwd = options.cwd,
+            .stdout = toNativeStdIo(options.stdout),
+            .stderr = toNativeStdIo(options.stderr),
         });
         return try child.wait(getIo());
     } else {
@@ -620,33 +641,19 @@ pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
 /// Spawn a child process (without waiting)
 pub fn spawn(options: SpawnOptions) !std.process.Child {
     if (comptime @hasDecl(std.process, "spawn")) {
-        // New API - use std.process.spawn
+        // New API
         return try std.process.spawn(getIo(), .{
             .argv = options.argv,
             .cwd = options.cwd,
+            .stdout = toNativeStdIo(options.stdout),
+            .stderr = toNativeStdIo(options.stderr),
         });
-    } else if (comptime @hasDecl(std.process.Child, "StdIo")) {
-        // Older API with Child.StdIo
-        const native_stdout: std.process.Child.StdIo = switch (options.stdout) {
-            .inherit => .Inherit,
-            .ignore => .Ignore,
-            .pipe => .Pipe,
-        };
-        const native_stderr: std.process.Child.StdIo = switch (options.stderr) {
-            .inherit => .Inherit,
-            .ignore => .Ignore,
-            .pipe => .Pipe,
-        };
-        var child = std.process.Child.init(options.argv, std.heap.page_allocator);
-        child.cwd = options.cwd;
-        child.stdout_behavior = native_stdout;
-        child.stderr_behavior = native_stderr;
-        try child.spawn(getIo());
-        return child;
     } else {
-        // Fallback - just use basic spawn
+        // Old API - use Child.init and set fields
         var child = std.process.Child.init(options.argv, std.heap.page_allocator);
         child.cwd = options.cwd;
+        child.stdout_behavior = toNativeStdIo(options.stdout);
+        child.stderr_behavior = toNativeStdIo(options.stderr);
         try child.spawn(getIo());
         return child;
     }
