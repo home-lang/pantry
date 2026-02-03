@@ -8,8 +8,8 @@ pub const FULCIO_URL = "https://fulcio.sigstore.dev";
 pub const REKOR_URL = "https://rekor.sigstore.dev";
 
 /// Sigstore bundle media types
+/// npm uses v0.2 format
 pub const BUNDLE_V02_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle+json;version=0.2";
-pub const BUNDLE_V03_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle.v0.3+json";
 
 /// In-toto statement types
 pub const INTOTO_PAYLOAD_TYPE = "application/vnd.in-toto+json";
@@ -651,30 +651,41 @@ pub fn createSigstoreBundle(
     const payload_type = parsed.value.object.get("payloadType").?.string;
     const sig = parsed.value.object.get("signatures").?.array.items[0].object.get("sig").?.string;
 
+    // npm expects bundle v0.2 format with:
+    // - logIndex/integratedTime as STRINGS (quoted numbers)
+    // - x509CertificateChain instead of certificate
+    // - kindVersion.kind = "intoto" not "dsse"
     const bundle = try std.fmt.allocPrint(
         allocator,
         \\{{
         \\  "mediaType": "{s}",
         \\  "verificationMaterial": {{
-        \\    "certificate": {{
-        \\      "rawBytes": "{s}"
+        \\    "x509CertificateChain": {{
+        \\      "certificates": [
+        \\        {{
+        \\          "rawBytes": "{s}"
+        \\        }}
+        \\      ]
         \\    }},
         \\    "tlogEntries": [
         \\      {{
-        \\        "logIndex": {d},
+        \\        "logIndex": "{d}",
         \\        "logId": {{
         \\          "keyId": "{s}"
         \\        }},
         \\        "kindVersion": {{
-        \\          "kind": "dsse",
-        \\          "version": "0.0.1"
+        \\          "kind": "intoto",
+        \\          "version": "0.0.2"
         \\        }},
-        \\        "integratedTime": {d},
+        \\        "integratedTime": "{d}",
         \\        "inclusionPromise": {{
         \\          "signedEntryTimestamp": "{s}"
         \\        }}
         \\      }}
-        \\    ]
+        \\    ],
+        \\    "timestampVerificationData": {{
+        \\      "rfc3161Timestamps": []
+        \\    }}
         \\  }},
         \\  "dsseEnvelope": {{
         \\    "payload": "{s}",
@@ -689,7 +700,7 @@ pub fn createSigstoreBundle(
         \\}}
     ,
         .{
-            BUNDLE_V03_MEDIA_TYPE,
+            BUNDLE_V02_MEDIA_TYPE,
             cert_der_b64,
             rekor_entry.log_index,
             rekor_entry.log_id,
