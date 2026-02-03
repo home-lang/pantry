@@ -444,9 +444,8 @@ pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
     // Newer Zig versions require flags field on File
     if (comptime hasField(File, "flags")) {
-        var result: File = undefined;
+        var result: File = std.mem.zeroes(File);
         result.handle = fd;
-        @field(result, "flags") = .{};
         return result;
     } else {
         return .{ .handle = fd };
@@ -460,9 +459,8 @@ pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
     // Newer Zig versions require flags field on Dir
     if (comptime hasField(Dir, "flags")) {
-        var result: Dir = undefined;
+        var result: Dir = std.mem.zeroes(Dir);
         result.handle = fd;
-        @field(result, "flags") = .{};
         return result;
     } else {
         return .{ .handle = fd };
