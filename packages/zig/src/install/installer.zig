@@ -411,7 +411,7 @@ pub const Installer = struct {
         var clone_result = try io_helper.childRun(self.allocator, &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir });
 
         // If the branch-specific clone failed, try without branch (use default branch)
-        if (!io_helper.termExitedSuccessfully(clone_result.term)) {
+        if (clone_result.term.exited != 0) {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
 
@@ -422,7 +422,7 @@ pub const Installer = struct {
             self.allocator.free(clone_result.stderr);
         }
 
-        if (!io_helper.termExitedSuccessfully(clone_result.term)) {
+        if (clone_result.term.exited != 0) {
             if (!options.quiet) {
                 std.debug.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
             }
@@ -537,7 +537,7 @@ pub const Installer = struct {
             self.allocator.free(curl_result.stderr);
         }
 
-        if (!io_helper.termExitedSuccessfully(curl_result.term)) {
+        if (curl_result.term != .exited or curl_result.term.exited != 0) {
             if (!options.quiet) {
                 std.debug.print("  ✗ Failed to download: {s}\n", .{curl_result.stderr});
             }
@@ -561,7 +561,7 @@ pub const Installer = struct {
             self.allocator.free(tar_result.stderr);
         }
 
-        if (!io_helper.termExitedSuccessfully(tar_result.term)) {
+        if (tar_result.term != .exited or tar_result.term.exited != 0) {
             if (!options.quiet) {
                 std.debug.print("  ✗ Failed to extract: {s}\n", .{tar_result.stderr});
             }
@@ -774,7 +774,7 @@ pub const Installer = struct {
         defer self.allocator.free(curl_result.stdout);
         defer self.allocator.free(curl_result.stderr);
 
-        if (!io_helper.termExitedSuccessfully(curl_result.term)) {
+        if (curl_result.term != .exited or curl_result.term.exited != 0) {
             return error.NpmRegistryUnavailable;
         }
 

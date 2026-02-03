@@ -51,7 +51,7 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term != .exited or result.term.exited != 0) {
         return null;
     }
 
@@ -250,7 +250,7 @@ pub fn installSinglePackage(
             defer allocator.free(curl_result.stdout);
             defer allocator.free(curl_result.stderr);
 
-            if (!io_helper.termExitedSuccessfully(curl_result.term) or curl_result.stdout.len == 0) {
+            if (curl_result.term.exited != 0 or curl_result.stdout.len == 0) {
                 return .{
                     .name = dep.name,
                     .version = dep.version,

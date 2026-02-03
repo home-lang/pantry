@@ -127,8 +127,13 @@ pub const pantryConfigLoader = struct {
             defer self.allocator.free(result.stdout);
             defer self.allocator.free(result.stderr);
 
-            if (io_helper.termExitedSuccessfully(result.term)) {
-                return try self.allocator.dupe(u8, result.stdout);
+            switch (result.term) {
+                .exited => |code| {
+                    if (code == 0) {
+                        return try self.allocator.dupe(u8, result.stdout);
+                    }
+                },
+                else => {}, // Signal or other termination
             }
         }
 

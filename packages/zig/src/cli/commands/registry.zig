@@ -424,7 +424,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
                     // Package doesn't have this file — copy from root
                     if (root_file_paths[i]) |root_path| {
                         if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
-                            if (io_helper.termExitedSuccessfully(r.term)) {
+                            if (r.term == .exited and r.term.exited == 0) {
                                 copied_files[i] = pkg_file_path;
                                 std.debug.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
                             } else {
@@ -832,7 +832,7 @@ fn createTarball(
     // Cleanup staging
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    if (!io_helper.termExitedSuccessfully(tar_result.term)) {
+    if (tar_result.term != .exited or tar_result.term.exited != 0) {
         std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -896,7 +896,7 @@ fn createTarballDefault(
         const pantry_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", pantryignore_cmd }) catch break :blk null;
         defer allocator.free(pantry_result.stderr);
 
-        if (io_helper.termExitedSuccessfully(pantry_result.term) and pantry_result.stdout.len > 0) {
+        if (pantry_result.term == .exited and pantry_result.term.exited == 0 and pantry_result.stdout.len > 0) {
             std.debug.print("  Using .pantryignore for exclusions...\n", .{});
             break :blk pantry_result.stdout;
         }
@@ -908,7 +908,7 @@ fn createTarballDefault(
         const git_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", gitignore_cmd }) catch break :blk null;
         defer allocator.free(git_result.stderr);
 
-        if (io_helper.termExitedSuccessfully(git_result.term) and git_result.stdout.len > 0) {
+        if (git_result.term == .exited and git_result.term.exited == 0 and git_result.stdout.len > 0) {
             std.debug.print("  Using .gitignore for exclusions...\n", .{});
             break :blk git_result.stdout;
         }
@@ -977,7 +977,7 @@ fn createTarballDefault(
     defer allocator.free(cp_result.stdout);
     defer allocator.free(cp_result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(cp_result.term)) {
+    if (cp_result.term != .exited or cp_result.term.exited != 0) {
         std.debug.print("rsync failed: {s}\n", .{cp_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -997,7 +997,7 @@ fn createTarballDefault(
     // Cleanup staging
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    if (!io_helper.termExitedSuccessfully(tar_result.term)) {
+    if (tar_result.term != .exited or tar_result.term.exited != 0) {
         std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
         return error.TarballCreationFailed;
     }
@@ -1100,7 +1100,7 @@ fn uploadToS3Direct(
     defer allocator.free(tarball_result.stdout);
     defer allocator.free(tarball_result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(tarball_result.term)) {
+    if (tarball_result.term != .exited or tarball_result.term.exited != 0) {
         std.debug.print("S3 upload failed: {s}\n", .{tarball_result.stderr});
         return error.UploadFailed;
     }
@@ -1122,7 +1122,7 @@ fn uploadToS3Direct(
     defer allocator.free(metadata_result.stdout);
     defer allocator.free(metadata_result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(metadata_result.term)) {
+    if (metadata_result.term != .exited or metadata_result.term.exited != 0) {
         std.debug.print("S3 metadata upload failed: {s}\n", .{metadata_result.stderr});
         return error.UploadFailed;
     }
@@ -1191,7 +1191,7 @@ fn updateDynamoDBIndex(
         if (git_result) |result| {
             defer allocator.free(result.stdout);
             defer allocator.free(result.stderr);
-            if (io_helper.termExitedSuccessfully(result.term) and result.stdout.len > 0) {
+            if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
                 // Convert SSH to HTTPS if needed
                 const trimmed = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
                 if (std.mem.startsWith(u8, trimmed, "git@")) {
@@ -1268,7 +1268,7 @@ fn updateDynamoDBIndex(
     var timestamp: []const u8 = "1970-01-01T00:00:00Z";
     if (date_result) |result| {
         defer allocator.free(result.stderr);
-        if (io_helper.termExitedSuccessfully(result.term) and result.stdout.len > 0) {
+        if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
             timestamp = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
         } else {
             allocator.free(result.stdout);
@@ -1332,7 +1332,7 @@ fn updateDynamoDBIndex(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term != .exited or result.term.exited != 0) {
         std.debug.print("DynamoDB update failed: {s}\n", .{result.stderr});
         // Don't fail the whole publish, just warn
         return;
@@ -1394,7 +1394,7 @@ fn uploadViaHttp(
     // Clean up temp file
     io_helper.deleteFile(tarball_tmp) catch {};
 
-    if (!io_helper.termExitedSuccessfully(curl_result.term)) {
+    if (curl_result.term != .exited or curl_result.term.exited != 0) {
         std.debug.print("curl error: {s}\n", .{curl_result.stderr});
         allocator.free(curl_result.stdout);
         return error.UploadFailed;
@@ -1435,7 +1435,7 @@ fn checkExistingVersion(allocator: std.mem.Allocator, name: []const u8, version:
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term != .exited or result.term.exited != 0) {
         return null; // Query failed, let it proceed
     }
 

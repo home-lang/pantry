@@ -676,7 +676,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             defer allocator.free(curl_result.stdout);
             defer allocator.free(curl_result.stderr);
 
-            if (!io_helper.termExitedSuccessfully(curl_result.term)) {
+            if (curl_result.term.exited != 0) {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
             }
 

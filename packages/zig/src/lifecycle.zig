@@ -273,9 +273,15 @@ pub fn executeScript(
         };
     };
 
-    const success = io_helper.termExitedSuccessfully(result.term);
+    const success = switch (result.term) {
+        .exited => |code| code == 0,
+        else => false,
+    };
 
-    const exit_code: u8 = io_helper.termGetExitCode(result.term) orelse 1;
+    const exit_code: u8 = switch (result.term) {
+        .exited => |code| @intCast(code),
+        else => 1,
+    };
 
     const stdout = if (result.stdout.len > 0)
         try allocator.dupe(u8, result.stdout)

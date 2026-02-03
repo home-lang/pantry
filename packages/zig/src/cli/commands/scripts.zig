@@ -154,7 +154,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     }
 
     return .{
-        .exit_code = if (io_helper.termExitedSuccessfully(result.term)) @as(u8, 0) else @as(u8, 1),
+        .exit_code = if (result.term.exited == 0) @as(u8, 0) else @as(u8, 1),
     };
 }
 

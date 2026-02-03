@@ -150,7 +150,10 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     allocator.free(result.stdout);
     allocator.free(result.stderr);
 
-    const exit_code: u8 = io_helper.termGetExitCode(result.term) orelse 1;
+    const exit_code: u8 = switch (result.term) {
+        .exited => |code| @intCast(code),
+        else => 1,
+    };
 
     return .{ .exit_code = exit_code };
 }

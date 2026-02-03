@@ -8,8 +8,8 @@ pub const FULCIO_URL = "https://fulcio.sigstore.dev";
 pub const REKOR_URL = "https://rekor.sigstore.dev";
 
 /// Sigstore bundle media types
-/// npm uses v0.1 format (as seen in working npm packages with provenance)
-pub const BUNDLE_V01_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle+json;version=0.1";
+/// npm uses v0.2 format
+pub const BUNDLE_V02_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle+json;version=0.2";
 
 /// In-toto statement types
 pub const INTOTO_PAYLOAD_TYPE = "application/vnd.in-toto+json";
@@ -41,8 +41,6 @@ pub const RekorEntry = struct {
     log_id: []const u8,
     /// Signed entry timestamp (SET)
     signed_entry_timestamp: []const u8,
-    /// Canonicalized body (base64-encoded)
-    canonicalized_body: []const u8,
     /// Inclusion proof
     inclusion_proof: ?InclusionProof,
 
@@ -51,17 +49,14 @@ pub const RekorEntry = struct {
         root_hash: []const u8,
         tree_size: i64,
         hashes: []const []const u8,
-        checkpoint: []const u8,
     };
 
     pub fn deinit(self: *RekorEntry, allocator: std.mem.Allocator) void {
         allocator.free(self.uuid);
         allocator.free(self.log_id);
         allocator.free(self.signed_entry_timestamp);
-        allocator.free(self.canonicalized_body);
         if (self.inclusion_proof) |proof| {
             allocator.free(proof.root_hash);
-            allocator.free(proof.checkpoint);
             for (proof.hashes) |h| allocator.free(h);
             allocator.free(proof.hashes);
         }
@@ -434,81 +429,13 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
         return error.InvalidRekorResponse;
     errdefer allocator.free(log_id);
 
-    // Get the canonicalized body (required for bundle)
-    const body_obj = entry_obj.object.get("body") orelse return error.InvalidRekorResponse;
-    const canonicalized_body = if (body_obj == .string)
-        try allocator.dupe(u8, body_obj.string)
-    else
-        return error.InvalidRekorResponse;
-    errdefer allocator.free(canonicalized_body);
-
-    // Get verification object for SET and inclusion proof
+    // Get verification object for SET
     var signed_entry_timestamp: []const u8 = "";
-    var inclusion_proof: ?RekorEntry.InclusionProof = null;
-
     if (entry_obj.object.get("verification")) |verification| {
         if (verification == .object) {
             if (verification.object.get("signedEntryTimestamp")) |set| {
                 if (set == .string) {
                     signed_entry_timestamp = try allocator.dupe(u8, set.string);
-                }
-            }
-
-            // Parse inclusion proof if present
-            if (verification.object.get("inclusionProof")) |proof_obj| {
-                if (proof_obj == .object) {
-                    const proof_log_index = if (proof_obj.object.get("logIndex")) |li|
-                        if (li == .integer) li.integer else null
-                    else
-                        null;
-
-                    const root_hash = if (proof_obj.object.get("rootHash")) |rh|
-                        if (rh == .string) try allocator.dupe(u8, rh.string) else null
-                    else
-                        null;
-
-                    const tree_size = if (proof_obj.object.get("treeSize")) |ts|
-                        if (ts == .integer) ts.integer else null
-                    else
-                        null;
-
-                    const checkpoint = if (proof_obj.object.get("checkpoint")) |cp|
-                        if (cp == .string) try allocator.dupe(u8, cp.string) else null
-                    else
-                        null;
-
-                    // Parse hashes array
-                    var hashes_list = std.ArrayList([]const u8){};
-                    errdefer {
-                        for (hashes_list.items) |h| allocator.free(h);
-                        hashes_list.deinit(allocator);
-                    }
-
-                    if (proof_obj.object.get("hashes")) |hashes_arr| {
-                        if (hashes_arr == .array) {
-                            for (hashes_arr.array.items) |hash_item| {
-                                if (hash_item == .string) {
-                                    try hashes_list.append(allocator, try allocator.dupe(u8, hash_item.string));
-                                }
-                            }
-                        }
-                    }
-
-                    if (proof_log_index != null and root_hash != null and tree_size != null and checkpoint != null) {
-                        inclusion_proof = RekorEntry.InclusionProof{
-                            .log_index = proof_log_index.?,
-                            .root_hash = root_hash.?,
-                            .tree_size = tree_size.?,
-                            .hashes = try hashes_list.toOwnedSlice(allocator),
-                            .checkpoint = checkpoint.?,
-                        };
-                    } else {
-                        // Clean up partial allocations
-                        if (root_hash) |rh| allocator.free(rh);
-                        if (checkpoint) |cp| allocator.free(cp);
-                        for (hashes_list.items) |h| allocator.free(h);
-                        hashes_list.deinit(allocator);
-                    }
                 }
             }
         }
@@ -520,8 +447,7 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
         .integrated_time = integrated_time,
         .log_id = log_id,
         .signed_entry_timestamp = signed_entry_timestamp,
-        .canonicalized_body = canonicalized_body,
-        .inclusion_proof = inclusion_proof,
+        .inclusion_proof = null, // Would need to fetch separately or be included in response
     };
 }
 
@@ -728,57 +654,61 @@ pub fn createSigstoreBundle(
     const payload_type = parsed.value.object.get("payloadType").?.string;
     const sig = parsed.value.object.get("signatures").?.array.items[0].object.get("sig").?.string;
 
-    // Build the inclusion proof JSON if available
-    var inclusion_proof_json: []const u8 = "";
-    var hashes_json: []const u8 = "";
-    defer if (hashes_json.len > 0) allocator.free(@constCast(hashes_json));
-
-    if (rekor_entry.inclusion_proof) |proof| {
-        // Build hashes array
-        var hashes_builder = std.ArrayList(u8){};
-        errdefer hashes_builder.deinit(allocator);
-
-        try hashes_builder.appendSlice(allocator, "[");
-        for (proof.hashes, 0..) |hash, i| {
-            if (i > 0) try hashes_builder.appendSlice(allocator, ",");
-            try hashes_builder.appendSlice(allocator, "\"");
-            try hashes_builder.appendSlice(allocator, hash);
-            try hashes_builder.appendSlice(allocator, "\"");
-        }
-        try hashes_builder.appendSlice(allocator, "]");
-        hashes_json = try hashes_builder.toOwnedSlice(allocator);
-
-        // Escape checkpoint for JSON
-        const escaped_checkpoint = try escapeJsonString(allocator, proof.checkpoint);
-        defer allocator.free(escaped_checkpoint);
-
-        inclusion_proof_json = try std.fmt.allocPrint(
-            allocator,
-            \\,"inclusionProof":{{"logIndex":"{d}","rootHash":"{s}","treeSize":"{d}","hashes":{s},"checkpoint":"{s}"}}
-        ,
-            .{ proof.log_index, proof.root_hash, proof.tree_size, hashes_json, escaped_checkpoint },
-        );
-    }
-    defer if (inclusion_proof_json.len > 0) allocator.free(@constCast(inclusion_proof_json));
-
-    // npm expects bundle v0.1 format (as seen in working npm packages) with:
-    // - x509CertificateChain with certificates[].rawBytes
-    // - tlogEntries with canonicalizedBody and inclusionProof
-    // - kindVersion.kind = "intoto", version = "0.0.2"
-    // - timestampVerificationData: null (not an empty object)
+    // npm expects bundle v0.2 format with:
+    // - logIndex/integratedTime as STRINGS (quoted numbers)
+    // - x509CertificateChain instead of certificate
+    // - kindVersion.kind = "intoto" (v0.2 bundles use intoto, v0.3+ uses dsse)
     const bundle = try std.fmt.allocPrint(
         allocator,
-        \\{{"mediaType":"{s}","verificationMaterial":{{"x509CertificateChain":{{"certificates":[{{"rawBytes":"{s}"}}]}},"tlogEntries":[{{"logIndex":"{d}","logId":{{"keyId":"{s}"}},"kindVersion":{{"kind":"intoto","version":"0.0.2"}},"integratedTime":"{d}","inclusionPromise":{{"signedEntryTimestamp":"{s}"}}{s},"canonicalizedBody":"{s}"}}],"timestampVerificationData":null}},"dsseEnvelope":{{"payload":"{s}","payloadType":"{s}","signatures":[{{"sig":"{s}","keyid":""}}]}}}}
+        \\{{
+        \\  "mediaType": "{s}",
+        \\  "verificationMaterial": {{
+        \\    "x509CertificateChain": {{
+        \\      "certificates": [
+        \\        {{
+        \\          "rawBytes": "{s}"
+        \\        }}
+        \\      ]
+        \\    }},
+        \\    "tlogEntries": [
+        \\      {{
+        \\        "logIndex": "{d}",
+        \\        "logId": {{
+        \\          "keyId": "{s}"
+        \\        }},
+        \\        "kindVersion": {{
+        \\          "kind": "intoto",
+        \\          "version": "0.0.2"
+        \\        }},
+        \\        "integratedTime": "{d}",
+        \\        "inclusionPromise": {{
+        \\          "signedEntryTimestamp": "{s}"
+        \\        }}
+        \\      }}
+        \\    ],
+        \\    "timestampVerificationData": {{
+        \\      "rfc3161Timestamps": []
+        \\    }}
+        \\  }},
+        \\  "dsseEnvelope": {{
+        \\    "payload": "{s}",
+        \\    "payloadType": "{s}",
+        \\    "signatures": [
+        \\      {{
+        \\        "keyid": "",
+        \\        "sig": "{s}"
+        \\      }}
+        \\    ]
+        \\  }}
+        \\}}
     ,
         .{
-            BUNDLE_V01_MEDIA_TYPE,
+            BUNDLE_V02_MEDIA_TYPE,
             cert_der_b64,
             rekor_entry.log_index,
             rekor_entry.log_id,
             rekor_entry.integrated_time,
             rekor_entry.signed_entry_timestamp,
-            inclusion_proof_json,
-            rekor_entry.canonicalized_body,
             payload,
             payload_type,
             sig,

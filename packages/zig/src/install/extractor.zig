@@ -56,7 +56,7 @@ pub fn extractArchiveQuiet(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term.exited != 0) {
         std.debug.print("Extraction failed: {s}\n", .{result.stderr});
         return error.ExtractionFailed;
     }
@@ -103,7 +103,7 @@ pub fn verifyArchiveIntegrity(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term.exited != 0) {
         return false;
     }
 
@@ -122,7 +122,7 @@ pub fn computeChecksum(allocator: std.mem.Allocator, file_path: []const u8) ![]c
     });
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term.exited != 0) {
         allocator.free(result.stdout);
         return error.ExtractionFailed;
     }
@@ -165,7 +165,7 @@ pub fn tryVerifyWithSidecarChecksum(
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
-    if (!io_helper.termExitedSuccessfully(result.term)) {
+    if (result.term.exited != 0) {
         // No checksum file available
         return false;
     }

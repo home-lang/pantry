@@ -139,7 +139,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
         defer allocator.free(r.stdout);
         defer allocator.free(r.stderr);
 
-        if (io_helper.termExitedSuccessfully(r.term)) {
+        if (r.term == .exited and r.term.exited == 0) {
             if (verbose) {
                 const version = std.mem.trim(u8, r.stdout, &std.ascii.whitespace);
                 std.debug.print("       Bun already installed: v{s}\n", .{version});
@@ -157,7 +157,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
         defer allocator.free(r.stdout);
         defer allocator.free(r.stderr);
 
-        if (!io_helper.termExitedSuccessfully(r.term)) {
+        if (r.term.exited != 0) {
             return error.BunInstallFailed;
         }
     } else |err| {
