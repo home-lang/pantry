@@ -1283,7 +1283,7 @@ fn attemptOIDCPublishUnverified(
     return .{ .success = true };
 }
 
-/// Create tarball for package
+/// Create tarball for package following npm's `files` array and publish standards
 fn createTarball(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
@@ -1324,33 +1324,194 @@ fn createTarball(
     defer allocator.free(mkdir_result.stdout);
     defer allocator.free(mkdir_result.stderr);
 
-    // Copy files to staging/package/ using rsync (available on Ubuntu)
-    const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
-    defer allocator.free(src_path);
-    const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
-    defer allocator.free(dst_path);
+    // Read package.json to check for `files` array
+    const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, "package.json" });
+    defer allocator.free(pkg_json_path);
 
-    const cp_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "rsync",
-        "-a",
-        "--exclude=node_modules",
-        "--exclude=pantry",
-        "--exclude=.git",
-        "--exclude=*.tgz",
-        "--exclude=.github",
-        "--exclude=.claude",
-        "--exclude=zig",
-        "--exclude=zig.tar.xz",
-        "--exclude=*.tar.xz",
-        src_path,
-        dst_path,
-    });
-    defer allocator.free(cp_result.stdout);
-    defer allocator.free(cp_result.stderr);
+    const files_array = getFilesArrayFromPackageJson(allocator, pkg_json_path) catch null;
+    defer if (files_array) |arr| {
+        for (arr) |f| allocator.free(f);
+        allocator.free(arr);
+    };
 
-    if (cp_result.term != .exited or cp_result.term.exited != 0) {
-        std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
-        return error.TarballCreationFailed;
+    // Always-included files (npm behavior) - case-insensitive patterns
+    const always_include = [_][]const u8{
+        "package.json",
+        "README",
+        "README.md",
+        "README.txt",
+        "readme",
+        "readme.md",
+        "readme.txt",
+        "LICENSE",
+        "LICENSE.md",
+        "LICENSE.txt",
+        "license",
+        "license.md",
+        "license.txt",
+        "LICENCE",
+        "LICENCE.md",
+        "licence",
+        "CHANGELOG",
+        "CHANGELOG.md",
+        "changelog",
+        "changelog.md",
+        "HISTORY",
+        "HISTORY.md",
+        "history",
+        "history.md",
+        "NOTICE",
+        "NOTICE.md",
+        "notice",
+    };
+
+    if (files_array) |files| {
+        // Whitelist mode: only copy files specified in `files` array + always-included files
+        std.debug.print("Using 'files' array from package.json ({d} entries)\n", .{files.len});
+
+        // Copy always-included files first
+        for (always_include) |filename| {
+            const src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, filename });
+            defer allocator.free(src);
+            const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, filename });
+            defer allocator.free(dst);
+
+            // Check if file exists
+            io_helper.accessAbsolute(src, .{}) catch continue;
+
+            // Copy the file
+            const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-p", src, dst }) catch continue;
+            allocator.free(cp.stdout);
+            allocator.free(cp.stderr);
+        }
+
+        // Copy each file/directory from the `files` array
+        for (files) |file_entry| {
+            const src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, file_entry });
+            defer allocator.free(src);
+
+            // Check if source exists
+            io_helper.accessAbsolute(src, .{}) catch {
+                std.debug.print("  Warning: '{s}' in files array not found, skipping\n", .{file_entry});
+                continue;
+            };
+
+            // Check if it's a directory or file
+            const stat = io_helper.statFile(src) catch continue;
+            const is_dir = stat.kind == .directory;
+
+            if (is_dir) {
+                // Copy directory recursively
+                const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, file_entry });
+                defer allocator.free(dst);
+
+                // Create parent directory if needed
+                if (std.fs.path.dirname(dst)) |parent| {
+                    const mkdir = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch continue;
+                    allocator.free(mkdir.stdout);
+                    allocator.free(mkdir.stderr);
+                }
+
+                // Use cp -r for directories
+                const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-rp", src, dst }) catch continue;
+                allocator.free(cp.stdout);
+                allocator.free(cp.stderr);
+            } else {
+                // Copy single file
+                const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, file_entry });
+                defer allocator.free(dst);
+
+                // Create parent directory if needed
+                if (std.fs.path.dirname(dst)) |parent| {
+                    const mkdir = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch continue;
+                    allocator.free(mkdir.stdout);
+                    allocator.free(mkdir.stderr);
+                }
+
+                const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-p", src, dst }) catch continue;
+                allocator.free(cp.stdout);
+                allocator.free(cp.stderr);
+            }
+        }
+    } else {
+        // No `files` array - use exclusion-based approach (legacy behavior)
+        std.debug.print("No 'files' array in package.json, using exclusion-based copy\n", .{});
+
+        const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
+        defer allocator.free(src_path);
+        const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
+        defer allocator.free(dst_path);
+
+        // Default npm behavior: copy everything EXCEPT files that should never be published
+        const cp_result = try io_helper.childRun(allocator, &[_][]const u8{
+            "rsync",
+            "-a",
+            // === Version control (never publish) ===
+            "--exclude=.git",
+            "--exclude=.gitignore",
+            "--exclude=.gitattributes",
+            "--exclude=.gitmodules",
+            "--exclude=.svn",
+            "--exclude=.hg",
+            "--exclude=CVS",
+            // === npm/package manager configs ===
+            "--exclude=.npmignore",
+            "--exclude=.npmrc",
+            "--exclude=.yarnrc",
+            "--exclude=.yarnrc.yml",
+            // === Lockfiles (never publish) ===
+            "--exclude=package-lock.json",
+            "--exclude=yarn.lock",
+            "--exclude=pnpm-lock.yaml",
+            "--exclude=bun.lockb",
+            "--exclude=shrinkwrap.yaml",
+            "--exclude=pantry.lock",
+            // === Dependencies (never publish) ===
+            "--exclude=node_modules",
+            "--exclude=pantry_modules",
+            // === Build/test artifacts ===
+            "--exclude=.nyc_output",
+            "--exclude=coverage",
+            "--exclude=.coverage",
+            "--exclude=*.tgz",
+            "--exclude=*.tar.xz",
+            // === OS files ===
+            "--exclude=.DS_Store",
+            "--exclude=Thumbs.db",
+            "--exclude=._*",
+            "--exclude=*.swp",
+            "--exclude=*.orig",
+            // === IDE/editor ===
+            "--exclude=.idea",
+            "--exclude=.vscode",
+            "--exclude=*.sublime-*",
+            // === CI configs ===
+            "--exclude=.github",
+            "--exclude=.gitlab-ci.yml",
+            "--exclude=.travis.yml",
+            "--exclude=.circleci",
+            // === Environment/secrets (NEVER publish) ===
+            "--exclude=.env",
+            "--exclude=.env.*",
+            "--exclude=*.pem",
+            "--exclude=*.key",
+            // === Logs ===
+            "--exclude=*.log",
+            "--exclude=npm-debug.log",
+            // === Pantry-specific ===
+            "--exclude=deps.yaml",
+            "--exclude=.claude",
+            "--exclude=pantry",
+            src_path,
+            dst_path,
+        });
+        defer allocator.free(cp_result.stdout);
+        defer allocator.free(cp_result.stderr);
+
+        if (cp_result.term != .exited or cp_result.term.exited != 0) {
+            std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
+            return error.TarballCreationFailed;
+        }
     }
 
     // Create tarball with "package" directory at root
@@ -1379,7 +1540,7 @@ fn createTarball(
         const stat = io_helper.statFile(tarball_path) catch break :blk 0;
         break :blk @intCast(stat.size);
     };
-    std.debug.print("Tarball size: {d} bytes ({d} MB)\n", .{ size, size / (1024 * 1024) });
+    std.debug.print("Tarball size: {d} bytes ({d:.2} KB)\n", .{ size, @as(f64, @floatFromInt(size)) / 1024.0 });
 
     if (size > 50 * 1024 * 1024) { // 50MB warning
         std.debug.print("WARNING: Tarball is very large! Check for unwanted files.\n", .{});
@@ -1393,6 +1554,46 @@ fn createTarball(
     }
 
     return tarball_path;
+}
+
+/// Extract the `files` array from package.json
+fn getFilesArrayFromPackageJson(allocator: std.mem.Allocator, pkg_json_path: []const u8) ![][]const u8 {
+    const content = try io_helper.readFileAlloc(allocator, pkg_json_path, 1024 * 1024);
+    defer allocator.free(content);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, content, .{});
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return error.InvalidJson;
+
+    const files_val = parsed.value.object.get("files") orelse return error.NoFilesArray;
+    if (files_val != .array) return error.NoFilesArray;
+
+    var result = try allocator.alloc([]const u8, files_val.array.items.len);
+    var count: usize = 0;
+    errdefer {
+        for (result[0..count]) |f| allocator.free(f);
+        allocator.free(result);
+    }
+
+    for (files_val.array.items) |item| {
+        if (item == .string) {
+            result[count] = try allocator.dupe(u8, item.string);
+            count += 1;
+        }
+    }
+
+    // Resize if some items weren't strings
+    if (count < result.len) {
+        result = try allocator.realloc(result, count);
+    }
+
+    if (count == 0) {
+        allocator.free(result);
+        return error.NoFilesArray;
+    }
+
+    return result;
 }
 
 /// Generate provenance metadata
