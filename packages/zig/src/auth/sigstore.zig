@@ -327,18 +327,19 @@ pub const RekorClient = struct {
         std.debug.print("Certificate PEM length: {d}, Base64 length: {d}\n", .{ certificate_pem.len, cert_b64.len });
         std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
 
-        // Create Rekor entry request (using "dsse" type with verifiers)
+        // Create Rekor entry request using "intoto" type for v0.2 bundle compatibility
+        // npm expects v0.2 bundles which use "intoto" Rekor type
         // The envelope must be a "stringified JSON object" (escaped JSON string, NOT base64)
         // The verifier is base64(PEM certificate)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
-            \\  "kind": "dsse",
-            \\  "apiVersion": "0.0.1",
+            \\  "kind": "intoto",
+            \\  "apiVersion": "0.0.2",
             \\  "spec": {{
-            \\    "proposedContent": {{
+            \\    "content": {{
             \\      "envelope": "{s}",
-            \\      "verifiers": ["{s}"]
+            \\      "publicKey": "{s}"
             \\    }}
             \\  }}
             \\}}
