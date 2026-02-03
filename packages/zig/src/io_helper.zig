@@ -426,39 +426,46 @@ pub fn openDirAbsoluteForIteration(path: []const u8) !FsDir {
     return openDirForIteration(path);
 }
 
+/// Check if a type has a field with the given name
+fn hasField(comptime T: type, comptime name: []const u8) bool {
+    const info = @typeInfo(T);
+    if (info != .@"struct") return false;
+    for (info.@"struct".fields) |field| {
+        if (std.mem.eql(u8, field.name, name)) return true;
+    }
+    return false;
+}
+
 /// Open a file with absolute path
 /// Opens from root directory for absolute paths
 pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
-    const posix_flags: std.posix.O = blk: {
-        var f: std.posix.O = .{};
-        if (flags.mode == .read_only) {
-            f.ACCMODE = .RDONLY;
-        } else if (flags.mode == .read_write) {
-            f.ACCMODE = .RDWR;
-        } else if (flags.mode == .write_only) {
-            f.ACCMODE = .WRONLY;
-        }
-        break :blk f;
-    };
+    _ = flags;
+    const posix_flags: std.posix.O = .{ .ACCMODE = .RDONLY };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
-    // Newer Zig versions require .flags field on File struct
-    if (@hasField(File, "flags")) {
-        return File{ .handle = fd, .flags = posix_flags };
+    // Newer Zig versions require flags field on File
+    if (comptime hasField(File, "flags")) {
+        var result: File = undefined;
+        result.handle = fd;
+        @field(result, "flags") = .{};
+        return result;
     } else {
-        return File{ .handle = fd };
+        return .{ .handle = fd };
     }
 }
 
 /// Open a directory with absolute path
 pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
     _ = options;
-    const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
-    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, flags, 0);
-    // Newer Zig versions require .flags field on Dir struct
-    if (@hasField(Dir, "flags")) {
-        return Dir{ .handle = fd, .flags = flags };
+    const posix_flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
+    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
+    // Newer Zig versions require flags field on Dir
+    if (comptime hasField(Dir, "flags")) {
+        var result: Dir = undefined;
+        result.handle = fd;
+        @field(result, "flags") = .{};
+        return result;
     } else {
-        return Dir{ .handle = fd };
+        return .{ .handle = fd };
     }
 }
 
