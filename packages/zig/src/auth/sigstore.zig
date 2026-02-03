@@ -322,38 +322,31 @@ pub const RekorClient = struct {
         std.debug.print("Certificate PEM length: {d}, Base64 length: {d}\n", .{ certificate_pem.len, cert_b64.len });
         std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
 
-        // Parse the DSSE envelope to extract its fields
-        const parsed = try std.json.parseFromSlice(std.json.Value, self.allocator, dsse_envelope_json, .{});
-        defer parsed.deinit();
+        // Escape the DSSE envelope JSON for embedding as a string value
+        const escaped_envelope = try escapeJsonString(self.allocator, dsse_envelope_json);
+        defer self.allocator.free(escaped_envelope);
 
-        const payload = parsed.value.object.get("payload").?.string;
-        const payload_type = parsed.value.object.get("payloadType").?.string;
-        const sig = parsed.value.object.get("signatures").?.array.items[0].object.get("sig").?.string;
+        std.debug.print("Envelope length: {d}, escaped length: {d}\n", .{ dsse_envelope_json.len, escaped_envelope.len });
 
-        // Create Rekor entry request using intoto v0.0.2
-        // Per the schema: publicKey goes INSIDE each signature object, not at top level
+        // Create Rekor entry request using DSSE v0.0.1 type
+        // The envelope must be a stringified JSON object (escaped string)
+        // verifiers is an array of base64-encoded certificates
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
-            \\  "kind": "intoto",
-            \\  "apiVersion": "0.0.2",
+            \\  "kind": "dsse",
+            \\  "apiVersion": "0.0.1",
             \\  "spec": {{
-            \\    "content": {{
-            \\      "envelope": {{
-            \\        "payloadType": "{s}",
-            \\        "payload": "{s}",
-            \\        "signatures": [
-            \\          {{
-            \\            "sig": "{s}",
-            \\            "publicKey": "{s}"
-            \\          }}
-            \\        ]
-            \\      }}
+            \\    "proposedContent": {{
+            \\      "envelope": "{s}",
+            \\      "verifiers": [
+            \\        "{s}"
+            \\      ]
             \\    }}
             \\  }}
             \\}}
         ,
-            .{ payload_type, payload, sig, cert_b64 },
+            .{ escaped_envelope, cert_b64 },
         );
         defer self.allocator.free(request_body);
 
@@ -664,7 +657,7 @@ pub fn createSigstoreBundle(
     // npm expects bundle v0.2 format with:
     // - logIndex/integratedTime as STRINGS (quoted numbers)
     // - x509CertificateChain instead of certificate
-    // - kindVersion.kind = "intoto" not "dsse"
+    // - kindVersion matches what was submitted to Rekor
     const bundle = try std.fmt.allocPrint(
         allocator,
         \\{{
@@ -684,8 +677,8 @@ pub fn createSigstoreBundle(
         \\          "keyId": "{s}"
         \\        }},
         \\        "kindVersion": {{
-        \\          "kind": "intoto",
-        \\          "version": "0.0.2"
+        \\          "kind": "dsse",
+        \\          "version": "0.0.1"
         \\        }},
         \\        "integratedTime": "{d}",
         \\        "inclusionPromise": {{
