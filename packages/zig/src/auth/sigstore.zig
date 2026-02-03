@@ -677,8 +677,8 @@ pub fn createSigstoreBundle(
         \\          "keyId": "{s}"
         \\        }},
         \\        "kindVersion": {{
-        \\          "kind": "intoto",
-        \\          "version": "0.0.2"
+        \\          "kind": "dsse",
+        \\          "version": "0.0.1"
         \\        }},
         \\        "integratedTime": "{d}",
         \\        "inclusionPromise": {{
