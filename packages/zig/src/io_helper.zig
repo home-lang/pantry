@@ -584,8 +584,19 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
     }
 }
 
-/// Re-export SpawnOptions for callers
-pub const SpawnOptions = std.process.SpawnOptions;
+/// Cross-version compatible spawn options
+pub const SpawnOptions = struct {
+    argv: []const []const u8,
+    cwd: ?[]const u8 = null,
+    stdout: StdIo = .inherit,
+    stderr: StdIo = .inherit,
+
+    pub const StdIo = enum {
+        inherit,
+        ignore,
+        pipe,
+    };
+};
 
 /// Spawn a child process and wait for it to complete
 pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
@@ -603,7 +614,35 @@ pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
 
 /// Spawn a child process (without waiting)
 pub fn spawn(options: SpawnOptions) !std.process.Child {
-    return try std.process.spawn(getIo(), options);
+    // Convert our StdIo to the native type
+    const native_stdout: std.process.Child.StdIo = switch (options.stdout) {
+        .inherit => .Inherit,
+        .ignore => .Ignore,
+        .pipe => .Pipe,
+    };
+    const native_stderr: std.process.Child.StdIo = switch (options.stderr) {
+        .inherit => .Inherit,
+        .ignore => .Ignore,
+        .pipe => .Pipe,
+    };
+
+    if (comptime @hasDecl(std.process, "spawn")) {
+        // New API
+        return try std.process.spawn(getIo(), .{
+            .argv = options.argv,
+            .cwd = options.cwd,
+            .stdout = native_stdout,
+            .stderr = native_stderr,
+        });
+    } else {
+        // Old API - use Child.init and set fields
+        var child = std.process.Child.init(options.argv, std.heap.page_allocator);
+        child.cwd = options.cwd;
+        child.stdout_behavior = native_stdout;
+        child.stderr_behavior = native_stderr;
+        try child.spawn(getIo());
+        return child;
+    }
 }
 
 /// Wait for a spawned child process
@@ -618,7 +657,7 @@ pub fn wait(child: *std.process.Child) !std.process.Child.Term {
 /// Kill a spawned child process
 pub fn kill(child: *std.process.Child) void {
     if (comptime @hasDecl(@TypeOf(child.*), "kill")) {
-        child.kill(getIo());
+        _ = child.kill(getIo()) catch {};
     }
 }
 
@@ -628,6 +667,36 @@ pub const ChildRunResult = struct {
     stdout: []u8,
     stderr: []u8,
 };
+
+/// Check if a process terminated with exit code (cross-version compatible)
+/// Handles both Exited (0.16.0-dev.1859) and exited (0.16.0-dev.2368+) enum names
+pub fn termIsExited(term: std.process.Child.Term) bool {
+    // Use @hasField to check which version we're on
+    if (comptime @hasField(std.process.Child.Term, "exited")) {
+        return term == .exited;
+    } else if (comptime @hasField(std.process.Child.Term, "Exited")) {
+        return term == .Exited;
+    } else {
+        return false;
+    }
+}
+
+/// Get exit code from a process term (cross-version compatible)
+pub fn termGetExitCode(term: std.process.Child.Term) ?u8 {
+    if (comptime @hasField(std.process.Child.Term, "exited")) {
+        return if (term == .exited) term.exited else null;
+    } else if (comptime @hasField(std.process.Child.Term, "Exited")) {
+        return if (term == .Exited) term.Exited else null;
+    } else {
+        return null;
+    }
+}
+
+/// Check if process exited successfully (exit code 0)
+pub fn termExitedSuccessfully(term: std.process.Child.Term) bool {
+    const code = termGetExitCode(term);
+    return code != null and code.? == 0;
+}
 
 /// Options for childRunWithOptions
 pub const ChildRunOptions = struct {

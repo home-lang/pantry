@@ -32,7 +32,7 @@ fn maybeDecompressGzip(allocator: std.mem.Allocator, data: []const u8) ![]const 
         // Clean up temp file
         io_helper.deleteFile(tmp_gz) catch {};
 
-        if (result.term == .exited and result.term.exited == 0) {
+        if (io_helper.termExitedSuccessfully(result.term)) {
             return result.stdout; // Already allocated
         }
 

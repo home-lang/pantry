@@ -203,10 +203,7 @@ fn runPackageScript(
 
     const term = try io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "sh", "-c", script.string }, .cwd = pkg_path });
 
-    return switch (term) {
-        .exited => |code| code == 0,
-        else => false,
-    };
+    return io_helper.termExitedSuccessfully(term);
 }
 
 /// Link all workspace packages
@@ -358,10 +355,7 @@ pub fn exec(
 
     const term = try io_helper.spawnAndWait(.{ .argv = command, .cwd = pkg_path });
 
-    const success = switch (term) {
-        .exited => |code| code == 0,
-        else => false,
-    };
+    const success = io_helper.termExitedSuccessfully(term);
 
     const message = if (success)
         try std.fmt.allocPrint(allocator, "Command executed successfully in {s}", .{package_name})

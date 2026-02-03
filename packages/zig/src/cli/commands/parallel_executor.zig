@@ -114,12 +114,12 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
     };
 
     const duration = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
-    const success = result.term.exited == 0;
+    const success = io_helper.termExitedSuccessfully(result.term);
 
     return ScriptResult{
         .member_name = try ctx.allocator.dupe(u8, ctx.member.name),
         .success = success,
-        .exit_code = result.term.exited,
+        .exit_code = io_helper.termGetExitCode(result.term) orelse 1,
         .stdout = result.stdout,
         .stderr = result.stderr,
         .duration_ms = duration,

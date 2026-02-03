@@ -27,7 +27,7 @@ pub fn fixMacOSLibraryPaths(
     defer allocator.free(otool_result.stdout);
     defer allocator.free(otool_result.stderr);
 
-    if (otool_result.term.exited != 0) {
+    if (!io_helper.termExitedSuccessfully(otool_result.term)) {
         // Not a Mach-O binary or otool failed
         return;
     }
@@ -101,7 +101,7 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(fix_result.stderr);
 
         // Ignore errors - some libraries might not be patchable
-        _ = fix_result.term.exited;
+        _ = io_helper.termGetExitCode(fix_result.term);
     }
 }
 
@@ -147,7 +147,7 @@ fn addRpathEntries(
         allocator.free(result.stderr);
 
         // If install_name_tool succeeded, we modified the binary
-        if (result.term.exited == 0) {
+        if (io_helper.termExitedSuccessfully(result.term)) {
             needs_codesign = true;
         }
     }

@@ -364,7 +364,7 @@ pub fn runScriptWithFilter(
                 allocator.free(result.stderr);
             }
 
-            if (result.term.exited == 0) {
+            if (io_helper.termExitedSuccessfully(result.term)) {
                 std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     std.debug.print("{s}", .{result.stdout});
@@ -376,7 +376,7 @@ pub fn runScriptWithFilter(
                     reset,
                     member.name,
                     dim,
-                    result.term.exited,
+                    io_helper.termGetExitCode(result.term) orelse 1,
                     reset,
                 });
                 if (result.stderr.len > 0) {
@@ -660,14 +660,14 @@ fn executeScriptsInMembers(
                 allocator.free(result.stderr);
             }
 
-            if (result.term.exited == 0) {
+            if (io_helper.termExitedSuccessfully(result.term)) {
                 std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     std.debug.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
-                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, result.term.exited, reset });
+                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, io_helper.termGetExitCode(result.term) orelse 1, reset });
                 if (result.stderr.len > 0) {
                     std.debug.print("{s}", .{result.stderr});
                 }

@@ -140,18 +140,12 @@ pub fn executeScriptWithTimeout(
     }
 
     const success = switch (timeout_result) {
-        .success => |term| switch (term) {
-            .exited => |code| code == 0,
-            else => false,
-        },
+        .success => |term| io_helper.termExitedSuccessfully(term),
         .timeout => false,
     };
 
     const exit_code: u8 = switch (timeout_result) {
-        .success => |term| switch (term) {
-            .exited => |code| @intCast(code),
-            else => 1,
-        },
+        .success => |term| io_helper.termGetExitCode(term) orelse 1,
         .timeout => 124,
     };
 
@@ -578,18 +572,12 @@ pub fn executeScriptSandboxed(
     }
 
     const success = switch (timeout_result) {
-        .success => |term| switch (term) {
-            .exited => |code| code == 0,
-            else => false,
-        },
+        .success => |term| io_helper.termExitedSuccessfully(term),
         .timeout => false,
     };
 
     const exit_code: u8 = switch (timeout_result) {
-        .success => |term| switch (term) {
-            .exited => |code| @intCast(code),
-            else => 1,
-        },
+        .success => |term| io_helper.termGetExitCode(term) orelse 1,
         .timeout => 124,
     };
 

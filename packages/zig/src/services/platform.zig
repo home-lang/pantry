@@ -154,7 +154,7 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "launchctl", "load", service_file };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(result)) {
             return error.ServiceStartFailed;
         }
     }
@@ -166,7 +166,7 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "launchctl", "unload", service_file };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(result)) {
             return error.ServiceStopFailed;
         }
     }
@@ -176,10 +176,11 @@ pub const ServiceController = struct {
         defer self.allocator.free(label);
 
         const argv = [_][]const u8{ "launchctl", "list", label };
-        var child = try io_helper.spawn(.{ .argv = &argv, .stdout = .pipe, .stderr = .pipe });
-        const result = try io_helper.wait(&child);
+        const result = try io_helper.childRun(self.allocator, &argv);
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
 
-        return if (result == .exited and result.exited == 0)
+        return if (io_helper.termExitedSuccessfully(result.term))
             .running
         else
             .stopped;
@@ -219,7 +220,7 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "start", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(result)) {
             return error.ServiceStartFailed;
         }
     }
@@ -231,7 +232,7 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "stop", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(result)) {
             return error.ServiceStopFailed;
         }
     }
@@ -243,7 +244,7 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "enable", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(result)) {
             return error.ServiceEnableFailed;
         }
     }
@@ -255,7 +256,7 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "disable", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(result)) {
             return error.ServiceDisableFailed;
         }
     }

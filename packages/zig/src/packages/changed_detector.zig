@@ -60,7 +60,7 @@ fn getChangedFiles(
         allocator.free(diff_result.stderr);
     }
 
-    if (diff_result.term.exited == 0) {
+    if (io_helper.termExitedSuccessfully(diff_result.term)) {
         var lines = std.mem.splitScalar(u8, diff_result.stdout, '\n');
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t\r");
@@ -80,7 +80,7 @@ fn getChangedFiles(
             allocator.free(status_result.stderr);
         }
 
-        if (status_result.term.exited == 0) {
+        if (io_helper.termExitedSuccessfully(status_result.term)) {
             var lines = std.mem.splitScalar(u8, status_result.stdout, '\n');
             while (lines.next()) |line| {
                 const trimmed = std.mem.trim(u8, line, " \t\r");
@@ -111,7 +111,7 @@ fn getChangedFiles(
             allocator.free(untracked_result.stderr);
         }
 
-        if (untracked_result.term.exited == 0) {
+        if (io_helper.termExitedSuccessfully(untracked_result.term)) {
             var lines = std.mem.splitScalar(u8, untracked_result.stdout, '\n');
             while (lines.next()) |line| {
                 const trimmed = std.mem.trim(u8, line, " \t\r");

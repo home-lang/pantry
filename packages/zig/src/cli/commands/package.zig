@@ -775,7 +775,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                     // Package doesn't have this file — copy from root
                     if (root_file_paths[i]) |root_path| {
                         if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
-                            if (r.term == .exited and r.term.exited == 0) {
+                            if (io_helper.termExitedSuccessfully(r.term)) {
                                 copied_files[i] = pkg_file_path;
                                 std.debug.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
                             } else {
@@ -1508,7 +1508,7 @@ fn createTarball(
         defer allocator.free(cp_result.stdout);
         defer allocator.free(cp_result.stderr);
 
-        if (cp_result.term != .exited or cp_result.term.exited != 0) {
+        if (!io_helper.termExitedSuccessfully(cp_result.term)) {
             std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
             return error.TarballCreationFailed;
         }
@@ -1529,7 +1529,7 @@ fn createTarball(
     // Cleanup staging
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    if (result.term != .exited or result.term.exited != 0) {
+    if (!io_helper.termExitedSuccessfully(result.term)) {
         std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
         std.debug.print("stderr: {s}\n", .{result.stderr});
         return error.TarballCreationFailed;

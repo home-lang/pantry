@@ -340,10 +340,7 @@ fn runSecurityScanner(
                 .{ scanner_name, result.stdout },
             );
             return .{
-                .exit_code = switch (term) {
-                    .exited => |code| code,
-                    else => 1,
-                },
+                .exit_code = io_helper.termGetExitCode(term) orelse 1,
                 .message = msg,
             };
         };
@@ -550,10 +547,8 @@ fn generateScannerReport(
     const message = try output.toOwnedSlice(allocator);
     const exit_code: u8 = if (fatal_count > 0)
         1
-    else switch (term_status) {
-        .exited => |code| code,
-        else => 1,
-    };
+    else
+        io_helper.termGetExitCode(term_status) orelse 1;
 
     return .{
         .exit_code = exit_code,

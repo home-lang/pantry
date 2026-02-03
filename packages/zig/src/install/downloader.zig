@@ -85,7 +85,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     defer allocator.free(size_result.stderr);
 
     var total_bytes: ?u64 = null;
-    if (size_result.term.exited == 0) {
+    if (io_helper.termExitedSuccessfully(size_result.term)) {
         var lines = std.mem.splitSequence(u8, size_result.stdout, "\n");
         while (lines.next()) |line| {
             if (std.mem.startsWith(u8, line, "Content-Length:") or
@@ -274,14 +274,14 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     if (!quiet and shown_progress) {
         _ = io_helper.statFile(dest_path) catch |err| {
             std.debug.print("\n", .{});
-            if (term.exited != 0) return error.HttpRequestFailed;
+            if (!io_helper.termExitedSuccessfully(term)) return error.HttpRequestFailed;
             return err;
         };
         // Clear line completely (let caller print final status)
         std.debug.print("\r\x1b[K", .{});
     }
 
-    if (term.exited != 0) {
+    if (!io_helper.termExitedSuccessfully(term)) {
         if (shown_progress) std.debug.print("\n", .{});
         return error.HttpRequestFailed;
     }
