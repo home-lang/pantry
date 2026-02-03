@@ -657,7 +657,7 @@ pub fn createSigstoreBundle(
     // npm expects bundle v0.2 format with:
     // - logIndex/integratedTime as STRINGS (quoted numbers)
     // - x509CertificateChain instead of certificate
-    // - kindVersion matches what was submitted to Rekor
+    // - kindVersion.kind = "intoto" (v0.2 bundles use intoto, v0.3+ uses dsse)
     const bundle = try std.fmt.allocPrint(
         allocator,
         \\{{
@@ -677,8 +677,8 @@ pub fn createSigstoreBundle(
         \\          "keyId": "{s}"
         \\        }},
         \\        "kindVersion": {{
-        \\          "kind": "dsse",
-        \\          "version": "0.0.1"
+        \\          "kind": "intoto",
+        \\          "version": "0.0.2"
         \\        }},
         \\        "integratedTime": "{d}",
         \\        "inclusionPromise": {{
