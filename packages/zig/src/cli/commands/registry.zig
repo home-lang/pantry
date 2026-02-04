@@ -880,7 +880,7 @@ fn createTarballDefault(
         }
     }
 
-    // Try to read .pantryignore first, then .gitignore using shell command
+    // Try to read ignore files in priority order: .pantryignore > .npmignore > .gitignore
     var dynamic_patterns: [64][]u8 = undefined;
     var dynamic_count: usize = 0;
     defer {
@@ -890,30 +890,43 @@ fn createTarballDefault(
     }
 
     const ignore_file_content = blk: {
-        // Try .pantryignore first
-        const pantryignore_cmd = try std.fmt.allocPrint(allocator, "cat {s}/.pantryignore 2>/dev/null", .{package_dir});
-        defer allocator.free(pantryignore_cmd);
-        const pantry_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", pantryignore_cmd }) catch break :blk null;
-        defer allocator.free(pantry_result.stderr);
-
-        if (pantry_result.term == .exited and pantry_result.term.exited == 0 and pantry_result.stdout.len > 0) {
-            std.debug.print("  Using .pantryignore for exclusions...\n", .{});
-            break :blk pantry_result.stdout;
+        // Priority 1: .pantryignore (pantry-specific)
+        const pantryignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".pantryignore" }) catch break :blk null;
+        defer allocator.free(pantryignore_path);
+        const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch null;
+        if (pantry_content) |content| {
+            if (content.len > 0) {
+                std.debug.print("  Using .pantryignore for exclusions...\n", .{});
+                break :blk content;
+            }
+            allocator.free(content);
         }
-        allocator.free(pantry_result.stdout);
 
-        // Try .gitignore
-        const gitignore_cmd = try std.fmt.allocPrint(allocator, "cat {s}/.gitignore 2>/dev/null", .{package_dir});
-        defer allocator.free(gitignore_cmd);
-        const git_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", gitignore_cmd }) catch break :blk null;
-        defer allocator.free(git_result.stderr);
-
-        if (git_result.term == .exited and git_result.term.exited == 0 and git_result.stdout.len > 0) {
-            std.debug.print("  Using .gitignore for exclusions...\n", .{});
-            break :blk git_result.stdout;
+        // Priority 2: .npmignore (npm-compatible)
+        const npmignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".npmignore" }) catch break :blk null;
+        defer allocator.free(npmignore_path);
+        const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch null;
+        if (npm_content) |content| {
+            if (content.len > 0) {
+                std.debug.print("  Using .npmignore for exclusions...\n", .{});
+                break :blk content;
+            }
+            allocator.free(content);
         }
-        allocator.free(git_result.stdout);
 
+        // Priority 3: .gitignore (fallback)
+        const gitignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".gitignore" }) catch break :blk null;
+        defer allocator.free(gitignore_path);
+        const git_content = io_helper.readFileAlloc(allocator, gitignore_path, 64 * 1024) catch null;
+        if (git_content) |content| {
+            if (content.len > 0) {
+                std.debug.print("  Using .gitignore for exclusions...\n", .{});
+                break :blk content;
+            }
+            allocator.free(content);
+        }
+
+        std.debug.print("  No ignore file found, using default exclusions only\n", .{});
         break :blk null;
     };
     defer if (ignore_file_content) |content| allocator.free(content);
@@ -936,6 +949,7 @@ fn createTarballDefault(
                 ignore_patterns[ignore_count] = pattern_copy;
                 ignore_count += 1;
                 dynamic_count += 1;
+                std.debug.print("    + exclude: {s}\n", .{trimmed});
             }
         }
     }

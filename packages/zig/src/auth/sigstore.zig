@@ -592,11 +592,13 @@ fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload
     return try pae.toOwnedSlice(allocator);
 }
 
-/// Create a DSSE envelope from an in-toto statement and signature
+/// Create a DSSE envelope from an in-toto statement, signature, and certificate
+/// For intoto v0.0.2, the publicKey must be included in each signature object
 pub fn createDSSEEnvelope(
     allocator: std.mem.Allocator,
     payload: []const u8,
     signature: []const u8,
+    certificate_pem: []const u8,
 ) ![]const u8 {
     // Base64 encode payload and signature
     const encoder = std.base64.standard.Encoder;
@@ -611,6 +613,13 @@ pub fn createDSSEEnvelope(
     defer allocator.free(sig_b64);
     _ = encoder.encode(sig_b64, signature);
 
+    // Base64 encode the certificate for the publicKey field
+    // intoto v0.0.2 requires publicKey in each signature object
+    const cert_b64_len = encoder.calcSize(certificate_pem.len);
+    const cert_b64 = try allocator.alloc(u8, cert_b64_len);
+    defer allocator.free(cert_b64);
+    _ = encoder.encode(cert_b64, certificate_pem);
+
     const envelope = try std.fmt.allocPrint(
         allocator,
         \\{{
@@ -619,12 +628,13 @@ pub fn createDSSEEnvelope(
         \\  "signatures": [
         \\    {{
         \\      "keyid": "",
-        \\      "sig": "{s}"
+        \\      "sig": "{s}",
+        \\      "publicKey": "{s}"
         \\    }}
         \\  ]
         \\}}
     ,
-        .{ payload_b64, INTOTO_PAYLOAD_TYPE, sig_b64 },
+        .{ payload_b64, INTOTO_PAYLOAD_TYPE, sig_b64, cert_b64 },
     );
 
     return envelope;
@@ -831,8 +841,8 @@ pub fn createSignedProvenance(
     const signature = try signData(allocator, pae_message, keypair.private_key);
     defer allocator.free(signature);
 
-    // 7. Create DSSE envelope
-    const dsse_envelope = try createDSSEEnvelope(allocator, provenance, signature);
+    // 7. Create DSSE envelope (with certificate for intoto v0.0.2)
+    const dsse_envelope = try createDSSEEnvelope(allocator, provenance, signature, cert.signing_cert);
     defer allocator.free(dsse_envelope);
 
     // 8. Submit to Rekor (pass certificate for verification)
