@@ -593,42 +593,32 @@ fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload
 }
 
 /// Create a DSSE envelope from an in-toto statement, signature, and certificate
-/// For intoto v0.0.2, publicKey (raw PEM) must be in each signature object
+/// For intoto v0.0.2, publicKey (base64-encoded PEM) must be in each signature object
 pub fn createDSSEEnvelope(
     allocator: std.mem.Allocator,
     payload: []const u8,
     signature: []const u8,
     certificate_pem: []const u8,
 ) ![]const u8 {
-    // Base64 encode payload and signature
     const encoder = std.base64.standard.Encoder;
 
+    // Base64 encode payload
     const payload_b64_len = encoder.calcSize(payload.len);
     const payload_b64 = try allocator.alloc(u8, payload_b64_len);
     defer allocator.free(payload_b64);
     _ = encoder.encode(payload_b64, payload);
 
+    // Base64 encode signature
     const sig_b64_len = encoder.calcSize(signature.len);
     const sig_b64 = try allocator.alloc(u8, sig_b64_len);
     defer allocator.free(sig_b64);
     _ = encoder.encode(sig_b64, signature);
 
-    // Escape the PEM certificate for JSON embedding (handle newlines)
-    var escaped_cert = std.ArrayList(u8){};
-    defer escaped_cert.deinit(allocator);
-    for (certificate_pem) |c| {
-        if (c == '\n') {
-            try escaped_cert.appendSlice(allocator, "\\n");
-        } else if (c == '\r') {
-            // Skip carriage returns
-        } else if (c == '"') {
-            try escaped_cert.appendSlice(allocator, "\\\"");
-        } else if (c == '\\') {
-            try escaped_cert.appendSlice(allocator, "\\\\");
-        } else {
-            try escaped_cert.append(allocator, c);
-        }
-    }
+    // Base64 encode the PEM certificate for publicKey field
+    const cert_b64_len = encoder.calcSize(certificate_pem.len);
+    const cert_b64 = try allocator.alloc(u8, cert_b64_len);
+    defer allocator.free(cert_b64);
+    _ = encoder.encode(cert_b64, certificate_pem);
 
     const envelope = try std.fmt.allocPrint(
         allocator,
@@ -644,7 +634,7 @@ pub fn createDSSEEnvelope(
         \\  ]
         \\}}
     ,
-        .{ payload_b64, INTOTO_PAYLOAD_TYPE, sig_b64, escaped_cert.items },
+        .{ payload_b64, INTOTO_PAYLOAD_TYPE, sig_b64, cert_b64 },
     );
 
     return envelope;
