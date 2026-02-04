@@ -328,20 +328,19 @@ pub const RekorClient = struct {
 
         std.debug.print("Envelope length: {d}, escaped length: {d}\n", .{ dsse_envelope_json.len, escaped_envelope.len });
 
-        // Create Rekor entry request using DSSE v0.0.1 type
+        // Create Rekor entry request using intoto v0.0.2 type for v0.2 bundles
+        // npm requires intoto type for v0.2 bundle compatibility
         // The envelope must be a stringified JSON object (escaped string)
-        // verifiers is an array of base64-encoded certificates
+        // publicKey is a base64-encoded PEM certificate
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
-            \\  "kind": "dsse",
-            \\  "apiVersion": "0.0.1",
+            \\  "kind": "intoto",
+            \\  "apiVersion": "0.0.2",
             \\  "spec": {{
-            \\    "proposedContent": {{
+            \\    "content": {{
             \\      "envelope": "{s}",
-            \\      "verifiers": [
-            \\        "{s}"
-            \\      ]
+            \\      "publicKey": "{s}"
             \\    }}
             \\  }}
             \\}}
@@ -657,7 +656,8 @@ pub fn createSigstoreBundle(
     // npm expects bundle v0.2 format with:
     // - logIndex/integratedTime as STRINGS (quoted numbers)
     // - x509CertificateChain instead of certificate
-    // - kindVersion.kind = "intoto" (v0.2 bundles use intoto, v0.3+ uses dsse)
+    // - kindVersion.kind = "intoto", version = "0.0.2" (v0.2 bundles use intoto, v0.3+ uses dsse)
+    // - Rekor entry must be submitted as "intoto" type, not "dsse"
     const bundle = try std.fmt.allocPrint(
         allocator,
         \\{{
@@ -677,8 +677,8 @@ pub fn createSigstoreBundle(
         \\          "keyId": "{s}"
         \\        }},
         \\        "kindVersion": {{
-        \\          "kind": "dsse",
-        \\          "version": "0.0.1"
+        \\          "kind": "intoto",
+        \\          "version": "0.0.2"
         \\        }},
         \\        "integratedTime": "{d}",
         \\        "inclusionPromise": {{
