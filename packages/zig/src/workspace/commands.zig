@@ -201,7 +201,7 @@ fn runPackageScript(
     // Execute script
     std.debug.print("Running '{s}' in {s}...\n", .{ script_name, pkg.name });
 
-    const term = try io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "sh", "-c", script.string }, .cwd = pkg_path });
+    const term = try io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "sh", "-c", script.string }, .cwd = io_helper.toCwd(pkg_path) });
 
     return switch (term) {
         .exited => |code| code == 0,
@@ -356,7 +356,7 @@ pub fn exec(
     );
     defer allocator.free(pkg_path);
 
-    const term = try io_helper.spawnAndWait(.{ .argv = command, .cwd = pkg_path });
+    const term = try io_helper.spawnAndWait(.{ .argv = command, .cwd = io_helper.toCwd(pkg_path) });
 
     const success = switch (term) {
         .exited => |code| code == 0,

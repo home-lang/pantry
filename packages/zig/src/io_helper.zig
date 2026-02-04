@@ -587,6 +587,11 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
 /// Re-export SpawnOptions for callers
 pub const SpawnOptions = std.process.SpawnOptions;
 
+/// Convert optional path string to Cwd type (handles API differences)
+pub fn toCwd(path: ?[]const u8) std.process.Child.Cwd {
+    return if (path) |p| .{ .path = p } else .inherit;
+}
+
 /// Spawn a child process and wait for it to complete
 pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
     if (comptime @hasDecl(std.process, "spawn")) {
@@ -647,9 +652,20 @@ pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u
 
     // Try new API first (0.16.0-dev.2368+)
     if (comptime @hasDecl(std.process, "run")) {
+        const RunOptions = std.process.RunOptions;
+        const CwdField = @TypeOf(@as(RunOptions, undefined).cwd);
+
+        // Handle both old (?[]const u8) and new (union Cwd) API
+        const cwd_value: CwdField = if (@typeInfo(CwdField) == .optional)
+            options.cwd // Old API: ?[]const u8
+        else if (options.cwd) |p|
+            .{ .path = p } // New API: union with path variant
+        else
+            .inherit; // New API: inherit from parent
+
         const result = try std.process.run(allocator, getIo(), .{
             .argv = argv,
-            .cwd = options.cwd,
+            .cwd = cwd_value,
         });
         return .{
             .term = result.term,
