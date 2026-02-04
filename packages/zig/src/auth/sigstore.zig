@@ -323,6 +323,7 @@ pub const RekorClient = struct {
         std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
 
         std.debug.print("Envelope length: {d}\n", .{dsse_envelope_json.len});
+        std.debug.print("Envelope preview: {s}...\n", .{dsse_envelope_json[0..@min(200, dsse_envelope_json.len)]});
 
         // Note: cert_b64 computed above for debug output; publicKey is now inside envelope.signatures
 
