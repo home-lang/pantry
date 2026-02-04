@@ -625,19 +625,10 @@ pub fn createDSSEEnvelope(
     defer allocator.free(cert_b64);
     _ = std_encoder.encode(cert_b64, certificate_pem);
 
+    // Compact JSON (no newlines) to avoid any parsing issues
     const envelope = try std.fmt.allocPrint(
         allocator,
-        \\{{
-        \\  "payload": "{s}",
-        \\  "payloadType": "{s}",
-        \\  "signatures": [
-        \\    {{
-        \\      "keyid": "",
-        \\      "sig": "{s}",
-        \\      "publicKey": "{s}"
-        \\    }}
-        \\  ]
-        \\}}
+        \\{{"payload":"{s}","payloadType":"{s}","signatures":[{{"keyid":"","sig":"{s}","publicKey":"{s}"}}]}}
     ,
         .{ payload_b64, INTOTO_PAYLOAD_TYPE, sig_b64, cert_b64 },
     );

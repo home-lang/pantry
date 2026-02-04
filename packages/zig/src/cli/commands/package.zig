@@ -891,6 +891,49 @@ fn publishSingleToNpm(
 
     std.debug.print("Registry: {s}\n", .{registry_url});
 
+    // Run prepublish lifecycle scripts if defined
+    // Priority: prepublishOnly > prepublish > build (pantry convenience fallback)
+    const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch null;
+    defer if (config_content) |c| allocator.free(c);
+
+    if (config_content) |content| {
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch null;
+        defer if (parsed) |p| p.deinit();
+
+        if (parsed) |p| {
+            if (p.value == .object) {
+                if (p.value.object.get("scripts")) |scripts_val| {
+                    if (scripts_val == .object) {
+                        const script_info: struct { script: ?[]const u8, name: []const u8 } =
+                            if (scripts_val.object.get("prepublishOnly")) |s|
+                                .{ .script = if (s == .string) s.string else null, .name = "prepublishOnly" }
+                            else if (scripts_val.object.get("prepublish")) |s|
+                                .{ .script = if (s == .string) s.string else null, .name = "prepublish" }
+                            else if (scripts_val.object.get("build")) |s|
+                                .{ .script = if (s == .string) s.string else null, .name = "build" }
+                            else
+                                .{ .script = null, .name = "" };
+
+                        if (script_info.script) |script| {
+                            std.debug.print("Running {s} script...\n", .{script_info.name});
+                            const result = lib.lifecycle.executeScript(allocator, script_info.name, script, .{
+                                .cwd = package_dir,
+                            }) catch |err| {
+                                const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed: {any}", .{ script_info.name, err });
+                                return CommandResult.err(allocator, err_msg);
+                            };
+                            if (!result.success) {
+                                const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed with exit code {d}", .{ script_info.name, result.exit_code });
+                                return CommandResult.err(allocator, err_msg);
+                            }
+                            std.debug.print("✓ {s} completed\n", .{script_info.name});
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Create tarball
     const tarball_path = try createTarball(allocator, package_dir, metadata.name, metadata.version);
     defer allocator.free(tarball_path);
