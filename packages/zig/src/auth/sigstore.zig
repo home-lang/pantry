@@ -595,31 +595,35 @@ fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload
 
 /// Create a DSSE envelope from an in-toto statement, signature, and certificate
 /// For intoto v0.0.2, publicKey (base64-encoded PEM) must be in each signature object
+/// DSSE spec requires base64url encoding WITHOUT padding for payload and sig
 pub fn createDSSEEnvelope(
     allocator: std.mem.Allocator,
     payload: []const u8,
     signature: []const u8,
     certificate_pem: []const u8,
 ) ![]const u8 {
-    const encoder = std.base64.standard.Encoder;
+    // DSSE uses base64url without padding for payload and signature
+    const url_encoder = std.base64.url_safe_no_pad.Encoder;
+    // publicKey uses standard base64 (PEM is already base64 internally)
+    const std_encoder = std.base64.standard.Encoder;
 
-    // Base64 encode payload
-    const payload_b64_len = encoder.calcSize(payload.len);
+    // Base64url encode payload (no padding per DSSE spec)
+    const payload_b64_len = url_encoder.calcSize(payload.len);
     const payload_b64 = try allocator.alloc(u8, payload_b64_len);
     defer allocator.free(payload_b64);
-    _ = encoder.encode(payload_b64, payload);
+    _ = url_encoder.encode(payload_b64, payload);
 
-    // Base64 encode signature
-    const sig_b64_len = encoder.calcSize(signature.len);
+    // Base64url encode signature (no padding per DSSE spec)
+    const sig_b64_len = url_encoder.calcSize(signature.len);
     const sig_b64 = try allocator.alloc(u8, sig_b64_len);
     defer allocator.free(sig_b64);
-    _ = encoder.encode(sig_b64, signature);
+    _ = url_encoder.encode(sig_b64, signature);
 
-    // Base64 encode the PEM certificate for publicKey field
-    const cert_b64_len = encoder.calcSize(certificate_pem.len);
+    // Base64 encode the PEM certificate for publicKey field (standard base64)
+    const cert_b64_len = std_encoder.calcSize(certificate_pem.len);
     const cert_b64 = try allocator.alloc(u8, cert_b64_len);
     defer allocator.free(cert_b64);
-    _ = encoder.encode(cert_b64, certificate_pem);
+    _ = std_encoder.encode(cert_b64, certificate_pem);
 
     const envelope = try std.fmt.allocPrint(
         allocator,
