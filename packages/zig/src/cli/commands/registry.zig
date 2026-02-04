@@ -889,44 +889,52 @@ fn createTarballDefault(
         }
     }
 
+    std.debug.print("  Scanning for ignore files in: {s}\n", .{package_dir});
+
     const ignore_file_content = blk: {
         // Priority 1: .pantryignore (pantry-specific)
-        const pantryignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".pantryignore" }) catch break :blk null;
+        const pantryignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".pantryignore" }) catch {
+            std.debug.print("    Failed to join .pantryignore path\n", .{});
+            break :blk null;
+        };
         defer allocator.free(pantryignore_path);
-        const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch null;
-        if (pantry_content) |content| {
-            if (content.len > 0) {
-                std.debug.print("  Using .pantryignore for exclusions...\n", .{});
-                break :blk content;
+        std.debug.print("    Checking: {s}\n", .{pantryignore_path});
+        const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch |err| {
+            std.debug.print("    .pantryignore not found or unreadable: {any}\n", .{err});
+            // Continue to next option
+            const npmignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".npmignore" }) catch break :blk null;
+            defer allocator.free(npmignore_path);
+            std.debug.print("    Checking: {s}\n", .{npmignore_path});
+            const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch |err2| {
+                std.debug.print("    .npmignore not found or unreadable: {any}\n", .{err2});
+                // Continue to .gitignore
+                const gitignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".gitignore" }) catch break :blk null;
+                defer allocator.free(gitignore_path);
+                std.debug.print("    Checking: {s}\n", .{gitignore_path});
+                const git_content = io_helper.readFileAlloc(allocator, gitignore_path, 64 * 1024) catch |err3| {
+                    std.debug.print("    .gitignore not found or unreadable: {any}\n", .{err3});
+                    break :blk null;
+                };
+                if (git_content.len > 0) {
+                    std.debug.print("  Using .gitignore for exclusions ({d} bytes)\n", .{git_content.len});
+                    break :blk git_content;
+                }
+                allocator.free(git_content);
+                break :blk null;
+            };
+            if (npm_content.len > 0) {
+                std.debug.print("  Using .npmignore for exclusions ({d} bytes)\n", .{npm_content.len});
+                break :blk npm_content;
             }
-            allocator.free(content);
+            allocator.free(npm_content);
+            break :blk null;
+        };
+        if (pantry_content.len > 0) {
+            std.debug.print("  Using .pantryignore for exclusions ({d} bytes)\n", .{pantry_content.len});
+            break :blk pantry_content;
         }
-
-        // Priority 2: .npmignore (npm-compatible)
-        const npmignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".npmignore" }) catch break :blk null;
-        defer allocator.free(npmignore_path);
-        const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch null;
-        if (npm_content) |content| {
-            if (content.len > 0) {
-                std.debug.print("  Using .npmignore for exclusions...\n", .{});
-                break :blk content;
-            }
-            allocator.free(content);
-        }
-
-        // Priority 3: .gitignore (fallback)
-        const gitignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".gitignore" }) catch break :blk null;
-        defer allocator.free(gitignore_path);
-        const git_content = io_helper.readFileAlloc(allocator, gitignore_path, 64 * 1024) catch null;
-        if (git_content) |content| {
-            if (content.len > 0) {
-                std.debug.print("  Using .gitignore for exclusions...\n", .{});
-                break :blk content;
-            }
-            allocator.free(content);
-        }
-
-        std.debug.print("  No ignore file found, using default exclusions only\n", .{});
+        allocator.free(pantry_content);
+        std.debug.print("  .pantryignore is empty\n", .{});
         break :blk null;
     };
     defer if (ignore_file_content) |content| allocator.free(content);

@@ -326,8 +326,9 @@ pub const RekorClient = struct {
 
         // Create Rekor entry request using intoto v0.0.2 type for v0.2 bundles
         // npm requires intoto type for v0.2 bundle compatibility
-        // The envelope must be a JSON object (not stringified) with payload, payloadType, signatures
-        // publicKey is a base64-encoded PEM certificate
+        // The envelope must be a JSON object with payload, payloadType, signatures
+        // For intoto v0.0.2, publicKey is inside each signature (added in createDSSEEnvelope)
+        // Do NOT include publicKey at spec.content level - it's already in the envelope
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -335,13 +336,12 @@ pub const RekorClient = struct {
             \\  "apiVersion": "0.0.2",
             \\  "spec": {{
             \\    "content": {{
-            \\      "envelope": {s},
-            \\      "publicKey": "{s}"
+            \\      "envelope": {s}
             \\    }}
             \\  }}
             \\}}
         ,
-            .{ dsse_envelope_json, cert_b64 },
+            .{dsse_envelope_json},
         );
         defer self.allocator.free(request_body);
 
