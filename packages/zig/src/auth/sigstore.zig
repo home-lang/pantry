@@ -322,15 +322,11 @@ pub const RekorClient = struct {
         std.debug.print("Certificate PEM length: {d}, Base64 length: {d}\n", .{ certificate_pem.len, cert_b64.len });
         std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
 
-        // Escape the DSSE envelope JSON for embedding as a string value
-        const escaped_envelope = try escapeJsonString(self.allocator, dsse_envelope_json);
-        defer self.allocator.free(escaped_envelope);
-
-        std.debug.print("Envelope length: {d}, escaped length: {d}\n", .{ dsse_envelope_json.len, escaped_envelope.len });
+        std.debug.print("Envelope length: {d}\n", .{dsse_envelope_json.len});
 
         // Create Rekor entry request using intoto v0.0.2 type for v0.2 bundles
         // npm requires intoto type for v0.2 bundle compatibility
-        // The envelope must be a stringified JSON object (escaped string)
+        // The envelope must be a JSON object (not stringified) with payload, payloadType, signatures
         // publicKey is a base64-encoded PEM certificate
         const request_body = try std.fmt.allocPrint(
             self.allocator,
@@ -339,13 +335,13 @@ pub const RekorClient = struct {
             \\  "apiVersion": "0.0.2",
             \\  "spec": {{
             \\    "content": {{
-            \\      "envelope": "{s}",
+            \\      "envelope": {s},
             \\      "publicKey": "{s}"
             \\    }}
             \\  }}
             \\}}
         ,
-            .{ escaped_envelope, cert_b64 },
+            .{ dsse_envelope_json, cert_b64 },
         );
         defer self.allocator.free(request_body);
 

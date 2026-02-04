@@ -982,6 +982,17 @@ fn createTarballDefault(
         return error.TarballCreationFailed;
     }
 
+    // Always include root-level markdown files, LICENSE, and CHANGELOG
+    // These are important for npm registry display
+    const always_include = [_][]const u8{ "*.md", "LICENSE", "LICENSE.*", "CHANGELOG", "CHANGELOG.*" };
+    for (always_include) |pattern| {
+        const cp_cmd = try std.fmt.allocPrint(allocator, "cp {s}/{s} {s}/ 2>/dev/null || true", .{ package_dir, pattern, staging_pkg });
+        defer allocator.free(cp_cmd);
+        const include_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", cp_cmd }) catch continue;
+        allocator.free(include_result.stdout);
+        allocator.free(include_result.stderr);
+    }
+
     // Create tarball with "package" directory at root
     const tar_result = try io_helper.childRun(allocator, &[_][]const u8{
         "tar",
