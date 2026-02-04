@@ -490,55 +490,10 @@ pub fn createSLSAProvenanceFromToken(
     const run_attempt = claims.run_attempt orelse "1";
 
     // Create SLSA v1.0 provenance predicate matching npm's expected format
+    // Compact JSON (no newlines) to avoid base64 encoding issues
     const statement = try std.fmt.allocPrint(
         allocator,
-        \\{{
-        \\  "_type": "https://in-toto.io/Statement/v1",
-        \\  "subject": [
-        \\    {{
-        \\      "name": "{s}",
-        \\      "digest": {{
-        \\        "sha512": "{s}"
-        \\      }}
-        \\    }}
-        \\  ],
-        \\  "predicateType": "{s}",
-        \\  "predicate": {{
-        \\    "buildDefinition": {{
-        \\      "buildType": "https://github.com/npm/cli/gha/v2",
-        \\      "externalParameters": {{
-        \\        "workflow": {{
-        \\          "ref": "{s}",
-        \\          "repository": "https://github.com/{s}",
-        \\          "path": "{s}"
-        \\        }}
-        \\      }},
-        \\      "internalParameters": {{
-        \\        "github": {{
-        \\          "event_name": "{s}",
-        \\          "repository_id": "{s}",
-        \\          "repository_owner_id": "{s}"
-        \\        }}
-        \\      }},
-        \\      "resolvedDependencies": [
-        \\        {{
-        \\          "uri": "git+https://github.com/{s}@{s}",
-        \\          "digest": {{
-        \\            "gitCommit": "{s}"
-        \\          }}
-        \\        }}
-        \\      ]
-        \\    }},
-        \\    "runDetails": {{
-        \\      "builder": {{
-        \\        "id": "https://github.com/actions/runner"
-        \\      }},
-        \\      "metadata": {{
-        \\        "invocationId": "https://github.com/{s}/actions/runs/{s}/attempts/{s}"
-        \\      }}
-        \\    }}
-        \\  }}
-        \\}}
+        \\{{"_type":"https://in-toto.io/Statement/v1","subject":[{{"name":"{s}","digest":{{"sha512":"{s}"}}}}],"predicateType":"{s}","predicate":{{"buildDefinition":{{"buildType":"https://github.com/npm/cli/gha/v2","externalParameters":{{"workflow":{{"ref":"{s}","repository":"https://github.com/{s}","path":"{s}"}}}},"internalParameters":{{"github":{{"event_name":"{s}","repository_id":"{s}","repository_owner_id":"{s}"}}}},"resolvedDependencies":[{{"uri":"git+https://github.com/{s}@{s}","digest":{{"gitCommit":"{s}"}}}}]}},"runDetails":{{"builder":{{"id":"https://github.com/actions/runner"}},"metadata":{{"invocationId":"https://github.com/{s}/actions/runs/{s}/attempts/{s}"}}}}}}}}
     ,
         .{
             purl, // subject.name
@@ -551,7 +506,7 @@ pub fn createSLSAProvenanceFromToken(
             repository_id, // github.repository_id
             repository_owner_id, // github.repository_owner_id
             repository, // resolvedDependencies.uri (repo part)
-            ref, // resolvedDependencies.uri (ref part) - npm expects ref, not commit
+            ref, // resolvedDependencies.uri (ref part)
             sha, // resolvedDependencies.digest.gitCommit
             repository, // invocationId (repo part)
             run_id, // invocationId (run_id part)
