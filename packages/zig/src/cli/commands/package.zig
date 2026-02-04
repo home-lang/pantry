@@ -1485,11 +1485,70 @@ fn createTarball(
         const dst_path = try std.fmt.allocPrint(allocator, "{s}/", .{staging_pkg});
         defer allocator.free(dst_path);
 
-        // Default npm behavior: copy everything EXCEPT files that should never be published
-        const cp_result = try io_helper.childRun(allocator, &[_][]const u8{
-            "rsync",
-            "-a",
-            // === Version control (never publish) ===
+        // Read additional exclusion patterns from .pantryignore or .npmignore
+        var extra_excludes: [64][]u8 = undefined;
+        var extra_exclude_count: usize = 0;
+        defer for (extra_excludes[0..extra_exclude_count]) |e| allocator.free(e);
+
+        const ignore_content = blk: {
+            // Priority: .pantryignore > .npmignore
+            const pantryignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".pantryignore" }) catch break :blk null;
+            defer allocator.free(pantryignore_path);
+            const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch null;
+            if (pantry_content) |c| {
+                if (c.len > 0) {
+                    std.debug.print("Using .pantryignore for additional exclusions\n", .{});
+                    break :blk c;
+                }
+                allocator.free(c);
+            }
+
+            const npmignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".npmignore" }) catch break :blk null;
+            defer allocator.free(npmignore_path);
+            const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch null;
+            if (npm_content) |c| {
+                if (c.len > 0) {
+                    std.debug.print("Using .npmignore for additional exclusions\n", .{});
+                    break :blk c;
+                }
+                allocator.free(c);
+            }
+
+            break :blk null;
+        };
+        defer if (ignore_content) |c| allocator.free(c);
+
+        // Parse ignore file patterns
+        if (ignore_content) |content| {
+            var lines = std.mem.splitScalar(u8, content, '\n');
+            while (lines.next()) |line| {
+                const trimmed = std.mem.trim(u8, line, " \t\r");
+                if (trimmed.len == 0 or trimmed[0] == '#' or trimmed[0] == '!') continue;
+                if (extra_exclude_count < extra_excludes.len) {
+                    extra_excludes[extra_exclude_count] = std.fmt.allocPrint(allocator, "--exclude={s}", .{trimmed}) catch continue;
+                    std.debug.print("  + exclude: {s}\n", .{trimmed});
+                    extra_exclude_count += 1;
+                }
+            }
+        }
+
+        // Build rsync args with both default and custom exclusions
+        var rsync_args: [128][]const u8 = undefined;
+        var rsync_argc: usize = 0;
+
+        rsync_args[rsync_argc] = "rsync";
+        rsync_argc += 1;
+        rsync_args[rsync_argc] = "-a";
+        rsync_argc += 1;
+
+        // Add custom exclusions first
+        for (extra_excludes[0..extra_exclude_count]) |e| {
+            rsync_args[rsync_argc] = e;
+            rsync_argc += 1;
+        }
+
+        // Default exclusions
+        const default_excludes = [_][]const u8{
             "--exclude=.git",
             "--exclude=.gitignore",
             "--exclude=.gitattributes",
@@ -1497,57 +1556,57 @@ fn createTarball(
             "--exclude=.svn",
             "--exclude=.hg",
             "--exclude=CVS",
-            // === npm/package manager configs ===
             "--exclude=.npmignore",
+            "--exclude=.pantryignore",
             "--exclude=.npmrc",
             "--exclude=.yarnrc",
             "--exclude=.yarnrc.yml",
-            // === Lockfiles (never publish) ===
             "--exclude=package-lock.json",
             "--exclude=yarn.lock",
             "--exclude=pnpm-lock.yaml",
             "--exclude=bun.lockb",
             "--exclude=shrinkwrap.yaml",
             "--exclude=pantry.lock",
-            // === Dependencies (never publish) ===
             "--exclude=node_modules",
             "--exclude=pantry_modules",
-            // === Build/test artifacts ===
             "--exclude=.nyc_output",
             "--exclude=coverage",
             "--exclude=.coverage",
             "--exclude=*.tgz",
             "--exclude=*.tar.xz",
-            // === OS files ===
             "--exclude=.DS_Store",
             "--exclude=Thumbs.db",
             "--exclude=._*",
             "--exclude=*.swp",
             "--exclude=*.orig",
-            // === IDE/editor ===
             "--exclude=.idea",
             "--exclude=.vscode",
             "--exclude=*.sublime-*",
-            // === CI configs ===
             "--exclude=.github",
             "--exclude=.gitlab-ci.yml",
             "--exclude=.travis.yml",
             "--exclude=.circleci",
-            // === Environment/secrets (NEVER publish) ===
             "--exclude=.env",
             "--exclude=.env.*",
             "--exclude=*.pem",
             "--exclude=*.key",
-            // === Logs ===
             "--exclude=*.log",
             "--exclude=npm-debug.log",
-            // === Pantry-specific ===
             "--exclude=deps.yaml",
             "--exclude=.claude",
             "--exclude=pantry",
-            src_path,
-            dst_path,
-        });
+        };
+        for (default_excludes) |e| {
+            rsync_args[rsync_argc] = e;
+            rsync_argc += 1;
+        }
+
+        rsync_args[rsync_argc] = src_path;
+        rsync_argc += 1;
+        rsync_args[rsync_argc] = dst_path;
+        rsync_argc += 1;
+
+        const cp_result = try io_helper.childRun(allocator, rsync_args[0..rsync_argc]);
         defer allocator.free(cp_result.stdout);
         defer allocator.free(cp_result.stderr);
 
