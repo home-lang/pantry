@@ -1063,14 +1063,19 @@ pub fn createSignedProvenance(
     defer allocator.free(pae_message);
 
     // 6. Sign the PAE message with private key
-    const signature = try signData(allocator, pae_message, keypair.private_key);
+    const raw_signature = try signData(allocator, pae_message, keypair.private_key);
+    defer allocator.free(raw_signature);
+
+    // Convert raw ECDSA r||s (64 bytes) to DER format
+    // npm/sigstore-js uses Node.js crypto.verify() which expects DER-encoded signatures
+    const signature = try encodeSigToDER(allocator, raw_signature);
     defer allocator.free(signature);
 
-    // 7. Create DSSE envelope (with raw PEM certificate for intoto v0.0.2)
+    // 7. Create DSSE envelope (with DER signature and PEM certificate)
     const dsse_envelope = try createDSSEEnvelope(allocator, provenance, signature, cert.signing_cert);
     defer allocator.free(dsse_envelope);
 
-    // 8. Submit to Rekor (pass certificate for verification)
+    // 8. Submit to Rekor (pass DER signature - consistent with DSSE envelope)
     var rekor = try RekorClient.init(allocator, null);
     defer rekor.deinit();
 
