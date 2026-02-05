@@ -43,20 +43,25 @@ pub const RekorEntry = struct {
     signed_entry_timestamp: []const u8,
     /// Inclusion proof
     inclusion_proof: ?InclusionProof,
+    /// Canonicalized body (base64-encoded Rekor entry body)
+    body: []const u8,
 
     pub const InclusionProof = struct {
         log_index: i64,
         root_hash: []const u8,
         tree_size: i64,
         hashes: []const []const u8,
+        checkpoint: []const u8,
     };
 
     pub fn deinit(self: *RekorEntry, allocator: std.mem.Allocator) void {
         allocator.free(self.uuid);
         allocator.free(self.log_id);
-        allocator.free(self.signed_entry_timestamp);
+        if (self.signed_entry_timestamp.len > 0) allocator.free(self.signed_entry_timestamp);
+        if (self.body.len > 0) allocator.free(self.body);
         if (self.inclusion_proof) |proof| {
             allocator.free(proof.root_hash);
+            allocator.free(proof.checkpoint);
             for (proof.hashes) |h| allocator.free(h);
             allocator.free(proof.hashes);
         }
@@ -447,6 +452,69 @@ pub const RekorClient = struct {
         std.debug.print("✓ Attestation recorded in Rekor transparency log\n", .{});
 
         // Parse the response to extract log entry details
+        var entry = try parseRekorResponse(self.allocator, body);
+
+        // If inclusionProof is missing, fetch the entry by UUID to get it
+        // (the POST response may not include it immediately)
+        if (entry.inclusion_proof == null) {
+            std.debug.print("Fetching inclusion proof from Rekor...\n", .{});
+            if (self.fetchEntryByUUID(entry.uuid)) |full_entry| {
+                // Copy over the inclusion proof and body
+                entry.inclusion_proof = full_entry.inclusion_proof;
+                if (entry.body.len == 0 and full_entry.body.len > 0) {
+                    self.allocator.free(entry.body);
+                    entry.body = full_entry.body;
+                } else {
+                    if (full_entry.body.len > 0) self.allocator.free(full_entry.body);
+                }
+                // Free the rest of the fetched entry (but not the fields we moved)
+                self.allocator.free(full_entry.uuid);
+                self.allocator.free(full_entry.log_id);
+                if (full_entry.signed_entry_timestamp.len > 0) self.allocator.free(full_entry.signed_entry_timestamp);
+            } else |_| {
+                std.debug.print("Warning: Could not fetch inclusion proof\n", .{});
+            }
+        }
+
+        return entry;
+    }
+
+    /// Fetch a Rekor entry by UUID to get full details including inclusion proof
+    fn fetchEntryByUUID(self: *RekorClient, uuid: []const u8) !RekorEntry {
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/api/v1/log/entries/{s}",
+            .{ self.base_url, uuid },
+        );
+        defer self.allocator.free(url);
+
+        const uri = try std.Uri.parse(url);
+
+        const extra_headers = [_]http.Header{
+            .{ .name = "Accept", .value = "application/json" },
+        };
+
+        var req = try self.http_client.request(.GET, uri, .{
+            .extra_headers = &extra_headers,
+        });
+        defer req.deinit();
+
+        try req.sendBodiless();
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        const body_reader = response.reader(&.{});
+        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+            error.StreamTooLong => return error.ResponseTooLarge,
+            else => |e| return e,
+        };
+        defer self.allocator.free(body);
+
+        if (response.head.status != .ok) {
+            return error.RekorFetchFailed;
+        }
+
         return try parseRekorResponse(self.allocator, body);
     }
 };
@@ -491,8 +559,9 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
         return error.InvalidRekorResponse;
     errdefer allocator.free(log_id);
 
-    // Get verification object for SET
+    // Get verification object for SET and inclusion proof
     var signed_entry_timestamp: []const u8 = "";
+    var inclusion_proof: ?RekorEntry.InclusionProof = null;
     if (entry_obj.object.get("verification")) |verification| {
         if (verification == .object) {
             if (verification.object.get("signedEntryTimestamp")) |set| {
@@ -500,8 +569,62 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
                     signed_entry_timestamp = try allocator.dupe(u8, set.string);
                 }
             }
+            // Parse inclusion proof (required for v0.2 bundles)
+            if (verification.object.get("inclusionProof")) |proof_obj| {
+                if (proof_obj == .object) {
+                    const proof_log_index = if (proof_obj.object.get("logIndex")) |li|
+                        if (li == .integer) li.integer else log_index
+                    else
+                        log_index;
+
+                    const root_hash = if (proof_obj.object.get("rootHash")) |rh|
+                        if (rh == .string) try allocator.dupe(u8, rh.string) else try allocator.dupe(u8, "")
+                    else
+                        try allocator.dupe(u8, "");
+
+                    const tree_size = if (proof_obj.object.get("treeSize")) |ts|
+                        if (ts == .integer) ts.integer else @as(i64, 0)
+                    else
+                        @as(i64, 0);
+
+                    const checkpoint = if (proof_obj.object.get("checkpoint")) |cp|
+                        if (cp == .string) try allocator.dupe(u8, cp.string) else try allocator.dupe(u8, "")
+                    else
+                        try allocator.dupe(u8, "");
+
+                    // Parse hashes array
+                    var hashes_list = std.ArrayList([]const u8){};
+                    errdefer {
+                        for (hashes_list.items) |h| allocator.free(h);
+                        hashes_list.deinit(allocator);
+                    }
+                    if (proof_obj.object.get("hashes")) |hashes_arr| {
+                        if (hashes_arr == .array) {
+                            for (hashes_arr.array.items) |hash_val| {
+                                if (hash_val == .string) {
+                                    try hashes_list.append(allocator, try allocator.dupe(u8, hash_val.string));
+                                }
+                            }
+                        }
+                    }
+
+                    inclusion_proof = RekorEntry.InclusionProof{
+                        .log_index = proof_log_index,
+                        .root_hash = root_hash,
+                        .tree_size = tree_size,
+                        .hashes = try hashes_list.toOwnedSlice(allocator),
+                        .checkpoint = checkpoint,
+                    };
+                }
+            }
         }
     }
+
+    // Get the canonicalized body (base64-encoded entry body from Rekor)
+    const body = if (entry_obj.object.get("body")) |b|
+        if (b == .string) try allocator.dupe(u8, b.string) else try allocator.dupe(u8, "")
+    else
+        try allocator.dupe(u8, "");
 
     return RekorEntry{
         .uuid = uuid,
@@ -509,7 +632,8 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
         .integrated_time = integrated_time,
         .log_id = log_id,
         .signed_entry_timestamp = signed_entry_timestamp,
-        .inclusion_proof = null, // Would need to fetch separately or be included in response
+        .inclusion_proof = inclusion_proof,
+        .body = body,
     };
 }
 
@@ -655,6 +779,7 @@ pub fn createDSSEEnvelope(
 }
 
 /// Create a Sigstore bundle from signing certificate, DSSE envelope, and Rekor entry
+/// npm v0.2 bundles REQUIRE inclusionProof with checkpoint (validated by @sigstore/bundle)
 pub fn createSigstoreBundle(
     allocator: std.mem.Allocator,
     certificate_pem: []const u8,
@@ -673,69 +798,113 @@ pub fn createSigstoreBundle(
     const payload_type = parsed.value.object.get("payloadType").?.string;
     const sig = parsed.value.object.get("signatures").?.array.items[0].object.get("sig").?.string;
 
-    // npm expects bundle v0.2 format with:
-    // - logIndex/integratedTime as STRINGS (quoted numbers)
-    // - x509CertificateChain instead of certificate
-    // - kindVersion.kind = "intoto", version = "0.0.2" (v0.2 bundles use intoto, v0.3+ uses dsse)
-    // - Rekor entry must be submitted as "intoto" type, not "dsse"
-    const bundle = try std.fmt.allocPrint(
-        allocator,
-        \\{{
-        \\  "mediaType": "{s}",
-        \\  "verificationMaterial": {{
-        \\    "x509CertificateChain": {{
-        \\      "certificates": [
-        \\        {{
-        \\          "rawBytes": "{s}"
-        \\        }}
-        \\      ]
-        \\    }},
-        \\    "tlogEntries": [
-        \\      {{
-        \\        "logIndex": "{d}",
-        \\        "logId": {{
-        \\          "keyId": "{s}"
-        \\        }},
-        \\        "kindVersion": {{
-        \\          "kind": "intoto",
-        \\          "version": "0.0.2"
-        \\        }},
-        \\        "integratedTime": "{d}",
-        \\        "inclusionPromise": {{
-        \\          "signedEntryTimestamp": "{s}"
-        \\        }}
-        \\      }}
-        \\    ],
-        \\    "timestampVerificationData": {{
-        \\      "rfc3161Timestamps": []
-        \\    }}
-        \\  }},
-        \\  "dsseEnvelope": {{
-        \\    "payload": "{s}",
-        \\    "payloadType": "{s}",
-        \\    "signatures": [
-        \\      {{
-        \\        "keyid": "",
-        \\        "sig": "{s}"
-        \\      }}
-        \\    ]
-        \\  }}
-        \\}}
-    ,
-        .{
-            BUNDLE_V02_MEDIA_TYPE,
-            cert_der_b64,
-            rekor_entry.log_index,
-            rekor_entry.log_id,
-            rekor_entry.integrated_time,
-            rekor_entry.signed_entry_timestamp,
-            payload,
-            payload_type,
-            sig,
-        },
-    );
+    // Build the bundle JSON dynamically since inclusionProof has variable-length arrays
+    var json = std.ArrayList(u8){};
+    errdefer json.deinit(allocator);
 
-    return bundle;
+    // Open root object
+    try json.appendSlice(allocator, "{\"mediaType\":\"");
+    try json.appendSlice(allocator, BUNDLE_V02_MEDIA_TYPE);
+
+    // verificationMaterial.x509CertificateChain
+    try json.appendSlice(allocator, "\",\"verificationMaterial\":{\"x509CertificateChain\":{\"certificates\":[{\"rawBytes\":\"");
+    try json.appendSlice(allocator, cert_der_b64);
+    try json.appendSlice(allocator, "\"}]}");
+
+    // tlogEntries
+    try json.appendSlice(allocator, ",\"tlogEntries\":[{");
+
+    // logIndex as string
+    const log_index_str = try std.fmt.allocPrint(allocator, "{d}", .{rekor_entry.log_index});
+    defer allocator.free(log_index_str);
+    try json.appendSlice(allocator, "\"logIndex\":\"");
+    try json.appendSlice(allocator, log_index_str);
+    try json.appendSlice(allocator, "\"");
+
+    // logId
+    try json.appendSlice(allocator, ",\"logId\":{\"keyId\":\"");
+    try json.appendSlice(allocator, rekor_entry.log_id);
+    try json.appendSlice(allocator, "\"}");
+
+    // kindVersion
+    try json.appendSlice(allocator, ",\"kindVersion\":{\"kind\":\"intoto\",\"version\":\"0.0.2\"}");
+
+    // integratedTime as string
+    const integrated_time_str = try std.fmt.allocPrint(allocator, "{d}", .{rekor_entry.integrated_time});
+    defer allocator.free(integrated_time_str);
+    try json.appendSlice(allocator, ",\"integratedTime\":\"");
+    try json.appendSlice(allocator, integrated_time_str);
+    try json.appendSlice(allocator, "\"");
+
+    // inclusionPromise (SET)
+    if (rekor_entry.signed_entry_timestamp.len > 0) {
+        try json.appendSlice(allocator, ",\"inclusionPromise\":{\"signedEntryTimestamp\":\"");
+        try json.appendSlice(allocator, rekor_entry.signed_entry_timestamp);
+        try json.appendSlice(allocator, "\"}");
+    }
+
+    // inclusionProof (REQUIRED for v0.2 bundles)
+    if (rekor_entry.inclusion_proof) |proof| {
+        try json.appendSlice(allocator, ",\"inclusionProof\":{");
+
+        const proof_log_index_str = try std.fmt.allocPrint(allocator, "{d}", .{proof.log_index});
+        defer allocator.free(proof_log_index_str);
+        try json.appendSlice(allocator, "\"logIndex\":\"");
+        try json.appendSlice(allocator, proof_log_index_str);
+        try json.appendSlice(allocator, "\"");
+
+        try json.appendSlice(allocator, ",\"rootHash\":\"");
+        try json.appendSlice(allocator, proof.root_hash);
+        try json.appendSlice(allocator, "\"");
+
+        const tree_size_str = try std.fmt.allocPrint(allocator, "{d}", .{proof.tree_size});
+        defer allocator.free(tree_size_str);
+        try json.appendSlice(allocator, ",\"treeSize\":\"");
+        try json.appendSlice(allocator, tree_size_str);
+        try json.appendSlice(allocator, "\"");
+
+        // Hashes array
+        try json.appendSlice(allocator, ",\"hashes\":[");
+        for (proof.hashes, 0..) |hash, i| {
+            if (i > 0) try json.append(allocator, ',');
+            try json.append(allocator, '"');
+            try json.appendSlice(allocator, hash);
+            try json.append(allocator, '"');
+        }
+        try json.append(allocator, ']');
+
+        // Checkpoint (REQUIRED for v0.2) - must JSON-escape newlines
+        try json.appendSlice(allocator, ",\"checkpoint\":{\"envelope\":\"");
+        const escaped_checkpoint = try escapeJsonString(allocator, proof.checkpoint);
+        defer allocator.free(escaped_checkpoint);
+        try json.appendSlice(allocator, escaped_checkpoint);
+        try json.appendSlice(allocator, "\"}");
+
+        try json.append(allocator, '}'); // close inclusionProof
+    }
+
+    // canonicalizedBody (base64-encoded Rekor entry body)
+    if (rekor_entry.body.len > 0) {
+        try json.appendSlice(allocator, ",\"canonicalizedBody\":\"");
+        try json.appendSlice(allocator, rekor_entry.body);
+        try json.appendSlice(allocator, "\"");
+    }
+
+    try json.appendSlice(allocator, "}]"); // close tlogEntries array and entry object
+
+    // timestampVerificationData
+    try json.appendSlice(allocator, ",\"timestampVerificationData\":{\"rfc3161Timestamps\":[]}}");
+
+    // dsseEnvelope (note: no publicKey field in bundle's DSSE, only in Rekor submission)
+    try json.appendSlice(allocator, ",\"dsseEnvelope\":{\"payload\":\"");
+    try json.appendSlice(allocator, payload);
+    try json.appendSlice(allocator, "\",\"payloadType\":\"");
+    try json.appendSlice(allocator, payload_type);
+    try json.appendSlice(allocator, "\",\"signatures\":[{\"keyid\":\"\",\"sig\":\"");
+    try json.appendSlice(allocator, sig);
+    try json.appendSlice(allocator, "\"}]}}");
+
+    return try json.toOwnedSlice(allocator);
 }
 
 /// Convert PEM certificate to base64-encoded DER

@@ -258,11 +258,15 @@ pub fn executeScript(
     const is_windows = @import("builtin").os.tag == .windows;
 
     // Prepend node_modules/.bin to PATH like npm does, so local binaries
-    // (tsc, eslint, etc.) are found without global installation
+    // (tsc, eslint, etc.) are found without global installation.
+    // We bake the actual parent PATH value into the command instead of relying
+    // on $PATH expansion, because some child process environments may not
+    // properly inherit the parent's PATH (e.g., in CI environments).
+    const current_path = io_helper.getenv("PATH") orelse "/usr/local/bin:/usr/bin:/bin";
     const wrapped_cmd = if (is_windows)
         script_cmd
     else
-        try std.fmt.allocPrint(allocator, "export PATH=\"{s}/node_modules/.bin:$PATH\" && {s}", .{ options.cwd, script_cmd });
+        try std.fmt.allocPrint(allocator, "export PATH=\"{s}/node_modules/.bin:{s}\" && {s}", .{ options.cwd, current_path, script_cmd });
     defer if (!is_windows) allocator.free(wrapped_cmd);
 
     const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{
