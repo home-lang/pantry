@@ -649,10 +649,17 @@ pub fn createSLSAProvenanceFromToken(
     const claims = &token.claims;
 
     // Create the PURL (Package URL) for npm
+    // For scoped packages (@scope/name), the @ must be URL-encoded as %40
+    const encoded_name = if (package_name.len > 0 and package_name[0] == '@')
+        try std.fmt.allocPrint(allocator, "%40{s}", .{package_name[1..]})
+    else
+        try allocator.dupe(u8, package_name);
+    defer allocator.free(encoded_name);
+
     const purl = try std.fmt.allocPrint(
         allocator,
         "pkg:npm/{s}@{s}",
-        .{ package_name, package_version },
+        .{ encoded_name, package_version },
     );
     defer allocator.free(purl);
 
