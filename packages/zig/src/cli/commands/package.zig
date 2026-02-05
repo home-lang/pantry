@@ -1436,6 +1436,8 @@ fn createTarball(
         for (files) |file_entry| {
             const src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, file_entry });
             defer allocator.free(src);
+            const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, file_entry });
+            defer allocator.free(dst);
 
             // Check if source exists
             io_helper.accessAbsolute(src, .{}) catch {
@@ -1443,41 +1445,34 @@ fn createTarball(
                 continue;
             };
 
-            // Check if it's a directory or file
-            const stat = io_helper.statFile(src) catch continue;
-            const is_dir = stat.kind == .directory;
+            // Create parent directory if needed
+            if (std.fs.path.dirname(dst)) |parent| {
+                const mkdir = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch continue;
+                allocator.free(mkdir.stdout);
+                allocator.free(mkdir.stderr);
+            }
 
-            if (is_dir) {
-                // Copy directory recursively
-                const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, file_entry });
-                defer allocator.free(dst);
+            // Use cp -rp which works correctly for both files and directories.
+            // Previously we checked statFile().kind to decide cp -p vs cp -rp,
+            // but on Linux openFile() can succeed on directories, causing
+            // statFile to return kind=.file for dirs. cp -p then silently
+            // skips directories ("omitting directory"), so only package.json
+            // ended up in the tarball.
+            const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-rp", src, dst }) catch |err| {
+                std.debug.print("  Warning: Failed to copy '{s}': {}\n", .{ file_entry, err });
+                continue;
+            };
+            defer allocator.free(cp.stdout);
+            defer allocator.free(cp.stderr);
 
-                // Create parent directory if needed
-                if (std.fs.path.dirname(dst)) |parent| {
-                    const mkdir = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch continue;
-                    allocator.free(mkdir.stdout);
-                    allocator.free(mkdir.stderr);
-                }
-
-                // Use cp -r for directories
-                const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-rp", src, dst }) catch continue;
-                allocator.free(cp.stdout);
-                allocator.free(cp.stderr);
+            const cp_ok = switch (cp.term) {
+                .exited => |code| code == 0,
+                else => false,
+            };
+            if (!cp_ok) {
+                std.debug.print("  Warning: cp failed for '{s}': {s}\n", .{ file_entry, cp.stderr });
             } else {
-                // Copy single file
-                const dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, file_entry });
-                defer allocator.free(dst);
-
-                // Create parent directory if needed
-                if (std.fs.path.dirname(dst)) |parent| {
-                    const mkdir = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch continue;
-                    allocator.free(mkdir.stdout);
-                    allocator.free(mkdir.stderr);
-                }
-
-                const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-p", src, dst }) catch continue;
-                allocator.free(cp.stdout);
-                allocator.free(cp.stderr);
+                std.debug.print("  + {s}\n", .{file_entry});
             }
         }
     } else {
@@ -1617,6 +1612,22 @@ fn createTarball(
         if (cp_result.term != .exited or cp_result.term.exited != 0) {
             std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
             return error.TarballCreationFailed;
+        }
+    }
+
+    // Debug: list staging directory contents before creating tarball
+    {
+        const ls_cmd = try std.fmt.allocPrint(allocator, "find {s} -type f | head -50", .{staging_pkg});
+        defer allocator.free(ls_cmd);
+        const ls = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", ls_cmd }) catch null;
+        if (ls) |l| {
+            defer allocator.free(l.stdout);
+            defer allocator.free(l.stderr);
+            if (l.stdout.len > 0) {
+                std.debug.print("Staging contents:\n{s}\n", .{l.stdout});
+            } else {
+                std.debug.print("WARNING: Staging directory is empty!\n", .{});
+            }
         }
     }
 
