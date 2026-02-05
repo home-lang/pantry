@@ -299,10 +299,13 @@ pub const RekorClient = struct {
     }
 
     /// Submit a DSSE envelope to Rekor transparency log
+    /// raw_payload is the original SLSA statement (before any base64 encoding)
     pub fn submitDSSE(
         self: *RekorClient,
         dsse_envelope_json: []const u8,
         certificate_pem: []const u8,
+        raw_payload: []const u8,
+        raw_signature: []const u8,
     ) !RekorEntry {
         const url = try std.fmt.allocPrint(
             self.allocator,
@@ -311,25 +314,68 @@ pub const RekorClient = struct {
         );
         defer self.allocator.free(url);
 
-        // Base64 encode the full PEM certificate
         const encoder = std.base64.standard.Encoder;
+
+        // For Rekor intoto v0.0.2, payload and sig must be DOUBLE base64 encoded:
+        // Rekor expects: base64(base64(raw_payload)) and base64(base64(raw_signature))
+        // This is because the DSSE envelope stores base64(payload), and Rekor
+        // base64-encodes the entire envelope fields again.
+
+        // Step 1: base64 encode raw payload (this is what goes in standard DSSE)
+        const payload_b64_len = encoder.calcSize(raw_payload.len);
+        const payload_b64 = try self.allocator.alloc(u8, payload_b64_len);
+        defer self.allocator.free(payload_b64);
+        _ = encoder.encode(payload_b64, raw_payload);
+
+        // Step 2: base64 encode AGAIN for Rekor (double encoding)
+        const payload_double_len = encoder.calcSize(payload_b64.len);
+        const payload_double = try self.allocator.alloc(u8, payload_double_len);
+        defer self.allocator.free(payload_double);
+        _ = encoder.encode(payload_double, payload_b64);
+
+        // Step 1: base64 encode raw signature
+        const sig_b64_len = encoder.calcSize(raw_signature.len);
+        const sig_b64 = try self.allocator.alloc(u8, sig_b64_len);
+        defer self.allocator.free(sig_b64);
+        _ = encoder.encode(sig_b64, raw_signature);
+
+        // Step 2: base64 encode AGAIN for Rekor (double encoding)
+        const sig_double_len = encoder.calcSize(sig_b64.len);
+        const sig_double = try self.allocator.alloc(u8, sig_double_len);
+        defer self.allocator.free(sig_double);
+        _ = encoder.encode(sig_double, sig_b64);
+
+        // Base64 encode PEM certificate for publicKey (single encoding)
         const cert_b64_len = encoder.calcSize(certificate_pem.len);
         const cert_b64 = try self.allocator.alloc(u8, cert_b64_len);
         defer self.allocator.free(cert_b64);
         _ = encoder.encode(cert_b64, certificate_pem);
 
-        // Debug: print certificate info
-        std.debug.print("Certificate PEM length: {d}, Base64 length: {d}\n", .{ certificate_pem.len, cert_b64.len });
-        std.debug.print("Certificate starts with: {s}\n", .{certificate_pem[0..@min(50, certificate_pem.len)]});
+        // Compute SHA-256 hash of the canonical envelope JSON
+        var envelope_hash: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(dsse_envelope_json, &envelope_hash, .{});
+        const hex_chars = "0123456789abcdef";
+        var envelope_hash_hex: [64]u8 = undefined;
+        for (envelope_hash, 0..) |byte, i| {
+            envelope_hash_hex[i * 2] = hex_chars[byte >> 4];
+            envelope_hash_hex[i * 2 + 1] = hex_chars[byte & 0x0F];
+        }
 
-        std.debug.print("Envelope length: {d}\n", .{dsse_envelope_json.len});
-        std.debug.print("Envelope first 300 chars: {s}\n", .{dsse_envelope_json[0..@min(300, dsse_envelope_json.len)]});
+        // Compute SHA-256 hash of the raw payload (SLSA statement)
+        var payload_hash: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(raw_payload, &payload_hash, .{});
+        var payload_hash_hex: [64]u8 = undefined;
+        for (payload_hash, 0..) |byte, i| {
+            payload_hash_hex[i * 2] = hex_chars[byte >> 4];
+            payload_hash_hex[i * 2 + 1] = hex_chars[byte & 0x0F];
+        }
 
-        // Note: cert_b64 computed above for debug output; publicKey is now inside envelope.signatures
+        std.debug.print("Submitting attestation to Rekor transparency log...\n", .{});
 
-        // Create Rekor entry request using intoto v0.0.2 type for v0.2 bundles
-        // npm requires intoto type for v0.2 bundle compatibility
-        // The envelope contains payload, payloadType, signatures (with publicKey in each signature)
+        // Build Rekor intoto v0.0.2 entry with:
+        // - Double-base64 payload and sig (required by Rekor intoto v0.0.2)
+        // - publicKey inside signatures (required by Rekor)
+        // - hash of envelope and payloadHash (required by Rekor)
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -337,16 +383,36 @@ pub const RekorClient = struct {
             \\  "apiVersion": "0.0.2",
             \\  "spec": {{
             \\    "content": {{
-            \\      "envelope": {s}
+            \\      "envelope": {{
+            \\        "payloadType": "{s}",
+            \\        "payload": "{s}",
+            \\        "signatures": [{{
+            \\          "sig": "{s}",
+            \\          "publicKey": "{s}"
+            \\        }}]
+            \\      }},
+            \\      "hash": {{
+            \\        "algorithm": "sha256",
+            \\        "value": "{s}"
+            \\      }},
+            \\      "payloadHash": {{
+            \\        "algorithm": "sha256",
+            \\        "value": "{s}"
+            \\      }}
             \\    }}
             \\  }}
             \\}}
         ,
-            .{dsse_envelope_json},
+            .{
+                INTOTO_PAYLOAD_TYPE, // payloadType
+                payload_double, // double-base64 payload
+                sig_double, // double-base64 signature
+                cert_b64, // base64(PEM certificate)
+                &envelope_hash_hex, // SHA-256 of envelope JSON
+                &payload_hash_hex, // SHA-256 of raw payload
+            },
         );
         defer self.allocator.free(request_body);
-
-        std.debug.print("Submitting attestation to Rekor transparency log...\n", .{});
 
         const uri = try std.Uri.parse(url);
 
@@ -797,7 +863,7 @@ pub fn createSignedProvenance(
     var rekor = try RekorClient.init(allocator, null);
     defer rekor.deinit();
 
-    var rekor_entry = try rekor.submitDSSE(dsse_envelope, cert.signing_cert);
+    var rekor_entry = try rekor.submitDSSE(dsse_envelope, cert.signing_cert, provenance, signature);
     defer rekor_entry.deinit(allocator);
 
     // 9. Create Sigstore bundle
