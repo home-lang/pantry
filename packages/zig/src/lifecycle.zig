@@ -257,10 +257,18 @@ pub fn executeScript(
     // Execute the script using Child.run for simplicity
     const is_windows = @import("builtin").os.tag == .windows;
 
+    // Prepend node_modules/.bin to PATH like npm does, so local binaries
+    // (tsc, eslint, etc.) are found without global installation
+    const wrapped_cmd = if (is_windows)
+        script_cmd
+    else
+        try std.fmt.allocPrint(allocator, "export PATH=\"{s}/node_modules/.bin:$PATH\" && {s}", .{ options.cwd, script_cmd });
+    defer if (!is_windows) allocator.free(wrapped_cmd);
+
     const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{
         if (is_windows) "cmd" else "sh",
         if (is_windows) "/C" else "-c",
-        script_cmd,
+        wrapped_cmd,
     }, .{
         .cwd = options.cwd,
     }) catch |err| {

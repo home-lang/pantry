@@ -155,6 +155,9 @@ pub const RegistryClient = struct {
     allocator: std.mem.Allocator,
     registry_url: []const u8,
     http_client: http.Client,
+    /// Raw package.json content — set before publishing so npm metadata
+    /// includes all fields (types, exports, module, dependencies, etc.)
+    package_json: ?[]const u8 = null,
 
     io: *std.Io.Threaded,
 
@@ -787,92 +790,7 @@ pub const RegistryClient = struct {
         version: []const u8,
         tarball: []const u8,
     ) ![]u8 {
-        // Base64 encode tarball
-        const encoder = std.base64.standard.Encoder;
-        const encoded_len = encoder.calcSize(tarball.len);
-        const encoded_tarball = try self.allocator.alloc(u8, encoded_len);
-        defer self.allocator.free(encoded_tarball);
-        _ = encoder.encode(encoded_tarball, tarball);
-
-        // Calculate SHA-1 shasum (hex)
-        var sha1: [20]u8 = undefined;
-        std.crypto.hash.Sha1.hash(tarball, &sha1, .{});
-        const hex_chars = "0123456789abcdef";
-        var shasum_buf: [40]u8 = undefined;
-        for (sha1, 0..) |byte, i| {
-            shasum_buf[i * 2] = hex_chars[byte >> 4];
-            shasum_buf[i * 2 + 1] = hex_chars[byte & 0x0F];
-        }
-
-        // Calculate SHA-512 integrity (base64)
-        var sha512: [64]u8 = undefined;
-        std.crypto.hash.sha2.Sha512.hash(tarball, &sha512, .{});
-        var integrity_buf: [88]u8 = undefined; // base64 of 64 bytes
-        const integrity_len = std.base64.standard.Encoder.encode(&integrity_buf, &sha512);
-        _ = integrity_len;
-
-        // Build tarball URL - for scoped packages, encode the / as %2f
-        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
-        defer self.allocator.free(encoded_name);
-
-        // npm tarball URLs use: registry/package/-/package-version.tgz
-        // For scoped packages: registry/@scope%2fname/-/name-version.tgz
-        // Extract just the package name part (after the scope) for the tarball filename
-        const tarball_basename = if (std.mem.indexOf(u8, package_name, "/")) |idx|
-            package_name[idx + 1 ..]
-        else
-            package_name;
-
-        // Create JSON metadata (NPM registry format)
-        const metadata = try std.fmt.allocPrint(
-            self.allocator,
-            \\{{
-            \\  "_id": "{s}",
-            \\  "name": "{s}",
-            \\  "dist-tags": {{
-            \\    "latest": "{s}"
-            \\  }},
-            \\  "versions": {{
-            \\    "{s}": {{
-            \\      "_id": "{s}@{s}",
-            \\      "name": "{s}",
-            \\      "version": "{s}",
-            \\      "dist": {{
-            \\        "integrity": "sha512-{s}",
-            \\        "shasum": "{s}",
-            \\        "tarball": "{s}/{s}/-/{s}-{s}.tgz"
-            \\      }}
-            \\    }}
-            \\  }},
-            \\  "access": "public",
-            \\  "_attachments": {{
-            \\    "{s}-{s}.tgz": {{
-            \\      "content_type": "application/octet-stream",
-            \\      "data": "{s}",
-            \\      "length": {d}
-            \\    }}
-            \\  }}
-            \\}}
-        ,
-            .{
-                package_name, // _id
-                package_name, // name
-                version, // dist-tags.latest
-                version, // versions key
-                package_name, version, // versions[v]._id
-                package_name, // versions[v].name
-                version, // versions[v].version
-                &integrity_buf, // dist.integrity
-                &shasum_buf, // dist.shasum
-                self.registry_url, encoded_name, // dist.tarball (registry/encoded_name)
-                tarball_basename, version, // dist.tarball (/-/name-version.tgz)
-                tarball_basename, version, // _attachments key
-                encoded_tarball, // _attachments data
-                tarball.len, // _attachments length
-            },
-        );
-
-        return metadata;
+        return self.createPackageMetadataWithProvenance(package_name, version, tarball, null);
     }
 
     /// Create package metadata with optional Sigstore provenance attestation
@@ -906,24 +824,65 @@ pub const RegistryClient = struct {
         var integrity_buf: [88]u8 = undefined;
         _ = std.base64.standard.Encoder.encode(&integrity_buf, &sha512);
 
-        // Build tarball URL - for scoped packages, encode the / as %2f
+        // Build tarball URL
         const encoded_name = try urlEncodePackageName(self.allocator, package_name);
         defer self.allocator.free(encoded_name);
 
-        // Extract just the package name part (after the scope) for the tarball filename
         const tarball_basename = if (std.mem.indexOf(u8, package_name, "/")) |idx|
             package_name[idx + 1 ..]
         else
             package_name;
 
+        // Build the version object from package.json (includes all fields npm needs:
+        // types, exports, module, dependencies, bin, etc.)
+        var version_obj = std.ArrayList(u8).empty;
+        defer version_obj.deinit(self.allocator);
+
+        if (self.package_json) |pkg_json| {
+            // Use the full package.json as the version object base,
+            // then inject _id and dist fields.
+            // Find the last '}' and insert our fields before it.
+            const last_brace = std.mem.lastIndexOf(u8, pkg_json, "}") orelse
+                return error.InvalidPackageJson;
+
+            try version_obj.appendSlice(self.allocator, pkg_json[0..last_brace]);
+            // Add _id and dist fields
+            const dist_fields = try std.fmt.allocPrint(
+                self.allocator,
+                \\,"_id":"{s}@{s}","dist":{{"integrity":"sha512-{s}","shasum":"{s}","tarball":"{s}/{s}/-/{s}-{s}.tgz"}}}}
+            ,
+                .{
+                    package_name, version,
+                    &integrity_buf, &shasum_buf,
+                    self.registry_url, encoded_name,
+                    tarball_basename, version,
+                },
+            );
+            defer self.allocator.free(dist_fields);
+            try version_obj.appendSlice(self.allocator, dist_fields);
+        } else {
+            // Fallback: minimal version object (legacy behavior)
+            const minimal = try std.fmt.allocPrint(
+                self.allocator,
+                \\{{"_id":"{s}@{s}","name":"{s}","version":"{s}","dist":{{"integrity":"sha512-{s}","shasum":"{s}","tarball":"{s}/{s}/-/{s}-{s}.tgz"}}}}
+            ,
+                .{
+                    package_name, version,
+                    package_name, version,
+                    &integrity_buf, &shasum_buf,
+                    self.registry_url, encoded_name,
+                    tarball_basename, version,
+                },
+            );
+            defer self.allocator.free(minimal);
+            try version_obj.appendSlice(self.allocator, minimal);
+        }
+
         // Build sigstore attachment section if we have a Sigstore bundle
-        // npm CLI adds the sigstore bundle as _attachments["{name}-{version}.sigstore"]
-        // See: https://github.com/npm/cli/blob/latest/workspaces/libnpmpublish/lib/publish.js
         var sigstore_attachment = std.ArrayList(u8).empty;
         defer sigstore_attachment.deinit(self.allocator);
 
         if (sigstore_bundle) |bundle| {
-            // Extract mediaType from the bundle JSON
             const media_type: []const u8 = mt_blk: {
                 const bundle_parsed = std.json.parseFromSlice(std.json.Value, self.allocator, bundle, .{}) catch
                     break :mt_blk try self.allocator.dupe(u8, "application/vnd.dev.sigstore.bundle.v0.3+json");
@@ -939,7 +898,6 @@ pub const RegistryClient = struct {
             };
             defer self.allocator.free(media_type);
 
-            // JSON-escape the bundle for embedding as a string value in _attachments
             const escaped_bundle = try jsonEscapeAlloc(self.allocator, bundle);
             defer self.allocator.free(escaped_bundle);
 
@@ -958,8 +916,8 @@ pub const RegistryClient = struct {
             try sigstore_attachment.appendSlice(self.allocator, attachment_json);
         }
 
-        // Create JSON metadata with provenance (NPM registry format)
-        // The sigstore bundle is added as a second _attachments entry (npm CLI format)
+        // Create JSON metadata (NPM registry format)
+        // The version object contains the full package.json + _id + dist
         const metadata = try std.fmt.allocPrint(
             self.allocator,
             \\{{
@@ -969,16 +927,7 @@ pub const RegistryClient = struct {
             \\    "latest": "{s}"
             \\  }},
             \\  "versions": {{
-            \\    "{s}": {{
-            \\      "_id": "{s}@{s}",
-            \\      "name": "{s}",
-            \\      "version": "{s}",
-            \\      "dist": {{
-            \\        "integrity": "sha512-{s}",
-            \\        "shasum": "{s}",
-            \\        "tarball": "{s}/{s}/-/{s}-{s}.tgz"
-            \\      }}
-            \\    }}
+            \\    "{s}": {s}
             \\  }},
             \\  "access": "public",
             \\  "_attachments": {{
@@ -995,17 +944,11 @@ pub const RegistryClient = struct {
                 package_name, // name
                 version, // dist-tags.latest
                 version, // versions key
-                package_name, version, // versions[v]._id
-                package_name, // versions[v].name
-                version, // versions[v].version
-                &integrity_buf, // dist.integrity
-                &shasum_buf, // dist.shasum
-                self.registry_url, encoded_name, // dist.tarball (registry/encoded_name)
-                tarball_basename, version, // dist.tarball (/-/name-version.tgz)
+                version_obj.items, // full version object (package.json + _id + dist)
                 tarball_basename, version, // _attachments key (tgz)
                 encoded_tarball, // _attachments data (tgz)
                 tarball.len, // _attachments length (tgz)
-                sigstore_attachment.items, // sigstore attachment (inside _attachments, or empty)
+                sigstore_attachment.items, // sigstore attachment (or empty)
             },
         );
 

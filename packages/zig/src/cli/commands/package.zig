@@ -943,6 +943,10 @@ fn publishSingleToNpm(
     var registry_client = try registry.RegistryClient.init(allocator, registry_url);
     defer registry_client.deinit();
 
+    // Set package.json content so npm metadata includes all fields
+    // (types, exports, module, dependencies, bin, etc.)
+    registry_client.package_json = config_content;
+
     // Try OIDC authentication first if enabled
     if (options.use_oidc) {
         const result = try attemptOIDCPublish(
