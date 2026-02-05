@@ -305,7 +305,15 @@ pub fn executeScript(
     allocator.free(result.stdout);
     allocator.free(result.stderr);
 
-    if (options.verbose) {
+    // Always print output on failure so users can debug script issues
+    if (!success) {
+        if (stdout) |out| {
+            std.debug.print("  stdout: {s}\n", .{out});
+        }
+        if (stderr) |err| {
+            std.debug.print("  stderr: {s}\n", .{err});
+        }
+    } else if (options.verbose) {
         if (stdout) |out| {
             std.debug.print("  stdout: {s}\n", .{out});
         }

@@ -916,17 +916,17 @@ fn publishSingleToNpm(
 
                         if (script_info.script) |script| {
                             std.debug.print("Running {s} script...\n", .{script_info.name});
-                            const result = lib.lifecycle.executeScript(allocator, script_info.name, script, .{
+                            if (lib.lifecycle.executeScript(allocator, script_info.name, script, .{
                                 .cwd = package_dir,
-                            }) catch |err| {
-                                const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed: {any}", .{ script_info.name, err });
-                                return CommandResult.err(allocator, err_msg);
-                            };
-                            if (!result.success) {
-                                const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed with exit code {d}", .{ script_info.name, result.exit_code });
-                                return CommandResult.err(allocator, err_msg);
+                            })) |result| {
+                                if (!result.success) {
+                                    std.debug.print("Warning: {s} script failed with exit code {d} (continuing publish)\n", .{ script_info.name, result.exit_code });
+                                } else {
+                                    std.debug.print("✓ {s} completed\n", .{script_info.name});
+                                }
+                            } else |_| {
+                                std.debug.print("Warning: {s} script failed to execute (continuing publish)\n", .{script_info.name});
                             }
-                            std.debug.print("✓ {s} completed\n", .{script_info.name});
                         }
                     }
                 }
