@@ -852,10 +852,10 @@ pub const RegistryClient = struct {
                 \\,"_id":"{s}@{s}","dist":{{"integrity":"sha512-{s}","shasum":"{s}","tarball":"{s}/{s}/-/{s}-{s}.tgz"}}}}
             ,
                 .{
-                    package_name, version,
-                    &integrity_buf, &shasum_buf,
+                    package_name,      version,
+                    &integrity_buf,    &shasum_buf,
                     self.registry_url, encoded_name,
-                    tarball_basename, version,
+                    tarball_basename,  version,
                 },
             );
             defer self.allocator.free(dist_fields);
@@ -867,11 +867,11 @@ pub const RegistryClient = struct {
                 \\{{"_id":"{s}@{s}","name":"{s}","version":"{s}","dist":{{"integrity":"sha512-{s}","shasum":"{s}","tarball":"{s}/{s}/-/{s}-{s}.tgz"}}}}
             ,
                 .{
-                    package_name, version,
-                    package_name, version,
-                    &integrity_buf, &shasum_buf,
+                    package_name,      version,
+                    package_name,      version,
+                    &integrity_buf,    &shasum_buf,
                     self.registry_url, encoded_name,
-                    tarball_basename, version,
+                    tarball_basename,  version,
                 },
             );
             defer self.allocator.free(minimal);
