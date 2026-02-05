@@ -821,9 +821,13 @@ pub fn createSigstoreBundle(
     try json.appendSlice(allocator, log_index_str);
     try json.appendSlice(allocator, "\"");
 
-    // logId
+    // logId - must be base64(raw_bytes), NOT hex
+    // Rekor API returns logID as hex, but the bundle protobuf uses bytes (base64 in JSON)
+    // sigstore-js verification does keyId.toString('hex') to reconstruct the hex for SET check
+    const log_id_b64 = try hexToBase64(allocator, rekor_entry.log_id);
+    defer allocator.free(log_id_b64);
     try json.appendSlice(allocator, ",\"logId\":{\"keyId\":\"");
-    try json.appendSlice(allocator, rekor_entry.log_id);
+    try json.appendSlice(allocator, log_id_b64);
     try json.appendSlice(allocator, "\"}");
 
     // kindVersion
@@ -853,8 +857,11 @@ pub fn createSigstoreBundle(
         try json.appendSlice(allocator, proof_log_index_str);
         try json.appendSlice(allocator, "\"");
 
+        // rootHash - Rekor returns hex, bundle protobuf expects bytes (base64 in JSON)
+        const root_hash_b64 = hexToBase64(allocator, proof.root_hash) catch proof.root_hash;
+        defer if (root_hash_b64.ptr != proof.root_hash.ptr) allocator.free(root_hash_b64);
         try json.appendSlice(allocator, ",\"rootHash\":\"");
-        try json.appendSlice(allocator, proof.root_hash);
+        try json.appendSlice(allocator, root_hash_b64);
         try json.appendSlice(allocator, "\"");
 
         const tree_size_str = try std.fmt.allocPrint(allocator, "{d}", .{proof.tree_size});
@@ -863,12 +870,14 @@ pub fn createSigstoreBundle(
         try json.appendSlice(allocator, tree_size_str);
         try json.appendSlice(allocator, "\"");
 
-        // Hashes array
+        // Hashes array - Rekor returns hex, bundle protobuf expects bytes (base64 in JSON)
         try json.appendSlice(allocator, ",\"hashes\":[");
         for (proof.hashes, 0..) |hash, i| {
             if (i > 0) try json.append(allocator, ',');
             try json.append(allocator, '"');
-            try json.appendSlice(allocator, hash);
+            const hash_b64 = hexToBase64(allocator, hash) catch hash;
+            defer if (hash_b64.ptr != hash.ptr) allocator.free(hash_b64);
+            try json.appendSlice(allocator, hash_b64);
             try json.append(allocator, '"');
         }
         try json.append(allocator, ']');
@@ -905,6 +914,39 @@ pub fn createSigstoreBundle(
     try json.appendSlice(allocator, "\"}]}}");
 
     return try json.toOwnedSlice(allocator);
+}
+
+/// Convert a hex string to base64
+/// E.g., "c0d23d6a..." → "wNI9at..."
+/// Used to convert Rekor's hex logID to the base64 format expected in bundles
+fn hexToBase64(allocator: std.mem.Allocator, hex: []const u8) ![]const u8 {
+    // Hex string must have even length
+    if (hex.len % 2 != 0) return error.InvalidHex;
+    const byte_len = hex.len / 2;
+    const raw_bytes = try allocator.alloc(u8, byte_len);
+    defer allocator.free(raw_bytes);
+
+    for (0..byte_len) |i| {
+        const hi = hexCharToNibble(hex[i * 2]) orelse return error.InvalidHex;
+        const lo = hexCharToNibble(hex[i * 2 + 1]) orelse return error.InvalidHex;
+        raw_bytes[i] = (@as(u8, hi) << 4) | @as(u8, lo);
+    }
+
+    // Base64 encode
+    const encoder = std.base64.standard.Encoder;
+    const b64_len = encoder.calcSize(byte_len);
+    const b64 = try allocator.alloc(u8, b64_len);
+    _ = encoder.encode(b64, raw_bytes);
+    return b64;
+}
+
+fn hexCharToNibble(c: u8) ?u4 {
+    return switch (c) {
+        '0'...'9' => @intCast(c - '0'),
+        'a'...'f' => @intCast(c - 'a' + 10),
+        'A'...'F' => @intCast(c - 'A' + 10),
+        else => null,
+    };
 }
 
 /// Convert PEM certificate to base64-encoded DER
