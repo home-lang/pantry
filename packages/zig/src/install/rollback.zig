@@ -1,5 +1,6 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 pub const RollbackError = error{
     RollbackFailed,
@@ -122,7 +123,7 @@ pub const RollbackManager = struct {
 
     /// Perform rollback (reverse all actions)
     pub fn rollback(self: *RollbackManager) !void {
-        std.debug.print("\n  Rolling back installation...\n", .{});
+        style.print("\n  Rolling back installation...\n", .{});
 
         var i = self.actions.items.len;
         while (i > 0) {
@@ -131,13 +132,13 @@ pub const RollbackManager = struct {
 
             switch (action) {
                 .file_created => |path| {
-                    std.debug.print("  Removing created file: {s}\n", .{path});
+                    style.print("  Removing created file: {s}\n", .{path});
                     io_helper.deleteFile(path) catch |err| {
-                        std.debug.print("  ! Failed to remove {s}: {}\n", .{ path, err });
+                        style.print("  ! Failed to remove {s}: {}\n", .{ path, err });
                     };
                 },
                 .file_modified => |info| {
-                    std.debug.print("  Restoring modified file: {s}\n", .{info.path});
+                    style.print("  Restoring modified file: {s}\n", .{info.path});
                     io_helper.cwd().copyFile(
                         io_helper.io,
                         info.backup_path,
@@ -145,29 +146,29 @@ pub const RollbackManager = struct {
                         info.path,
                         .{},
                     ) catch |err| {
-                        std.debug.print("  ! Failed to restore {s}: {}\n", .{ info.path, err });
+                        style.print("  ! Failed to restore {s}: {}\n", .{ info.path, err });
                     };
                     io_helper.deleteFile(info.backup_path) catch {};
                 },
                 .file_deleted => |path| {
-                    std.debug.print("  ! Cannot restore deleted file: {s}\n", .{path});
+                    style.print("  ! Cannot restore deleted file: {s}\n", .{path});
                 },
                 .dir_created => |path| {
-                    std.debug.print("  Removing created directory: {s}\n", .{path});
+                    style.print("  Removing created directory: {s}\n", .{path});
                     io_helper.deleteTree(path) catch |err| {
-                        std.debug.print("  ! Failed to remove directory {s}: {}\n", .{ path, err });
+                        style.print("  ! Failed to remove directory {s}: {}\n", .{ path, err });
                     };
                 },
                 .symlink_created => |path| {
-                    std.debug.print("  Removing created symlink: {s}\n", .{path});
+                    style.print("  Removing created symlink: {s}\n", .{path});
                     io_helper.deleteFile(path) catch |err| {
-                        std.debug.print("  ! Failed to remove symlink {s}: {}\n", .{ path, err });
+                        style.print("  ! Failed to remove symlink {s}: {}\n", .{ path, err });
                     };
                 },
             }
         }
 
-        std.debug.print("  ✓ Rollback complete\n", .{});
+        style.print("  ✓ Rollback complete\n", .{});
     }
 
     /// Commit changes (clear rollback actions)

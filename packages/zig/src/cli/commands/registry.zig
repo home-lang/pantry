@@ -10,6 +10,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 const http = std.http;
 
 const CommandResult = common.CommandResult;
@@ -29,7 +30,7 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     const packages = @import("../../packages/generated.zig");
     const search_term = args[0];
 
-    std.debug.print("Searching for '{s}'...\n\n", .{search_term});
+    style.print("Searching for '{s}'...\n\n", .{search_term});
 
     var found: usize = 0;
     for (packages.packages) |pkg| {
@@ -37,17 +38,17 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
             std.ascii.indexOfIgnoreCase(pkg.name, search_term) != null or
             std.ascii.indexOfIgnoreCase(pkg.description, search_term) != null)
         {
-            std.debug.print("  {s}\n", .{pkg.name});
-            std.debug.print("    Domain: {s}\n", .{pkg.domain});
-            std.debug.print("    {s}\n\n", .{pkg.description});
+            style.print("  {s}\n", .{pkg.name});
+            style.print("    Domain: {s}\n", .{pkg.domain});
+            style.print("    {s}\n\n", .{pkg.description});
             found += 1;
         }
     }
 
     if (found == 0) {
-        std.debug.print("No packages found.\n", .{});
+        style.print("No packages found.\n", .{});
     } else {
-        std.debug.print("Found {d} package(s)\n", .{found});
+        style.print("Found {d} package(s)\n", .{found});
     }
 
     return .{ .exit_code = 0 };
@@ -76,43 +77,43 @@ pub fn infoCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         };
     }
 
-    std.debug.print("\n{s}\n", .{pkg.?.name});
-    std.debug.print("  Domain: {s}\n", .{pkg.?.domain});
-    std.debug.print("  Description: {s}\n", .{pkg.?.description});
+    style.print("\n{s}\n", .{pkg.?.name});
+    style.print("  Domain: {s}\n", .{pkg.?.domain});
+    style.print("  Description: {s}\n", .{pkg.?.description});
 
     if (pkg.?.homepage_url) |url| {
-        std.debug.print("  Homepage: {s}\n", .{url});
+        style.print("  Homepage: {s}\n", .{url});
     }
 
     if (pkg.?.programs.len > 0) {
-        std.debug.print("  Programs:\n", .{});
+        style.print("  Programs:\n", .{});
         for (pkg.?.programs) |program| {
-            std.debug.print("    - {s}\n", .{program});
+            style.print("    - {s}\n", .{program});
         }
     }
 
     if (pkg.?.dependencies.len > 0) {
-        std.debug.print("  Dependencies:\n", .{});
+        style.print("  Dependencies:\n", .{});
         for (pkg.?.dependencies) |dep| {
-            std.debug.print("    - {s}\n", .{dep});
+            style.print("    - {s}\n", .{dep});
         }
     }
 
     if (pkg.?.build_dependencies.len > 0) {
-        std.debug.print("  Build Dependencies:\n", .{});
+        style.print("  Build Dependencies:\n", .{});
         for (pkg.?.build_dependencies) |dep| {
-            std.debug.print("    - {s}\n", .{dep});
+            style.print("    - {s}\n", .{dep});
         }
     }
 
     if (pkg.?.aliases.len > 0) {
-        std.debug.print("  Aliases:\n", .{});
+        style.print("  Aliases:\n", .{});
         for (pkg.?.aliases) |alias| {
-            std.debug.print("    - {s}\n", .{alias});
+            style.print("    - {s}\n", .{alias});
         }
     }
 
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -125,7 +126,7 @@ pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !Command
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    std.debug.print("Installed packages:\n\n", .{});
+    style.print("Installed packages:\n\n", .{});
 
     var installed = try installer.listInstalled();
     defer {
@@ -136,10 +137,10 @@ pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !Command
     }
 
     for (installed.items) |pkg| {
-        std.debug.print("  {s}@{s}\n", .{ pkg.name, pkg.version });
+        style.print("  {s}@{s}\n", .{ pkg.name, pkg.version });
     }
 
-    std.debug.print("\n{d} package(s) installed\n", .{installed.items.len});
+    style.print("\n{d} package(s) installed\n", .{installed.items.len});
 
     return .{ .exit_code = 0 };
 }
@@ -161,12 +162,12 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
     // Try to read .pantryrc to find username
     const file = io_helper.openFileAbsolute(pantryrc_path, .{}) catch |err| {
         if (err == error.FileNotFound) {
-            std.debug.print("Not logged in (no .pantryrc found)\n", .{});
-            std.debug.print("\nTo authenticate:\n", .{});
-            std.debug.print("  1. Get an authentication token from the Pantry registry\n", .{});
-            std.debug.print("  2. Add it to ~/.pantry/credentials as: PANTRY_TOKEN=your_token\n", .{});
-            std.debug.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
-            std.debug.print("  pantry publisher add --help\n", .{});
+            style.print("Not logged in (no .pantryrc found)\n", .{});
+            style.print("\nTo authenticate:\n", .{});
+            style.print("  1. Get an authentication token from the Pantry registry\n", .{});
+            style.print("  2. Add it to ~/.pantry/credentials as: PANTRY_TOKEN=your_token\n", .{});
+            style.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
+            style.print("  pantry publisher add --help\n", .{});
             return .{ .exit_code = 1 };
         }
         return err;
@@ -198,20 +199,20 @@ pub fn whoamiCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comma
     }
 
     if (username) |u| {
-        std.debug.print("{s}\n", .{u});
+        style.print("{s}\n", .{u});
         return .{ .exit_code = 0 };
     } else if (found_auth) {
-        std.debug.print("Authenticated (token found in .pantryrc)\n", .{});
-        std.debug.print("Note: Username not configured. Add 'username=YOUR_USERNAME' to ~/.pantryrc\n", .{});
+        style.print("Authenticated (token found in .pantryrc)\n", .{});
+        style.print("Note: Username not configured. Add 'username=YOUR_USERNAME' to ~/.pantryrc\n", .{});
         return .{ .exit_code = 0 };
     } else {
-        std.debug.print("Not logged in\n", .{});
-        std.debug.print("\nTo authenticate:\n", .{});
-        std.debug.print("  1. Get an authentication token from the Pantry registry\n", .{});
-        std.debug.print("  2. Add it to ~/.pantry/credentials as: PANTRY_TOKEN=your_token\n", .{});
-        std.debug.print("  3. Optionally add: username=YOUR_USERNAME\n", .{});
-        std.debug.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
-        std.debug.print("  pantry publisher add --help\n", .{});
+        style.print("Not logged in\n", .{});
+        style.print("\nTo authenticate:\n", .{});
+        style.print("  1. Get an authentication token from the Pantry registry\n", .{});
+        style.print("  2. Add it to ~/.pantry/credentials as: PANTRY_TOKEN=your_token\n", .{});
+        style.print("  3. Optionally add: username=YOUR_USERNAME\n", .{});
+        style.print("\nOr use OIDC for tokenless publishing from CI/CD:\n", .{});
+        style.print("  pantry publisher add --help\n", .{});
         return .{ .exit_code = 1 };
     }
 }
@@ -328,7 +329,7 @@ fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages:
                 false;
 
             if (is_private) {
-                std.debug.print("  Skipping {s} (private)\n", .{entry.name});
+                style.print("  Skipping {s} (private)\n", .{entry.name});
                 allocator.free(config_path);
                 allocator.free(entry_path);
                 continue;
@@ -390,8 +391,8 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
 
     if (monorepo_packages) |pkgs| {
         // Monorepo mode — publish each non-private package
-        std.debug.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
-        std.debug.print("----------------------------------------\n", .{});
+        style.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
+        style.print("----------------------------------------\n", .{});
 
         // Detect root files to propagate to packages that don't have their own
         const root_files = [_][]const u8{ "README.md", "LICENSE", "LICENSE.md" };
@@ -413,7 +414,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
         var succeeded: usize = 0;
 
         for (pkgs) |pkg| {
-            std.debug.print("\nPublishing {s}...\n", .{pkg.name});
+            style.print("\nPublishing {s}...\n", .{pkg.name});
 
             // Propagate root files (README, LICENSE) to package if missing
             var copied_files: [root_files.len]?[]const u8 = .{null} ** root_files.len;
@@ -427,7 +428,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
                         if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
                             if (r.term == .exited and r.term.exited == 0) {
                                 copied_files[i] = pkg_file_path;
-                                std.debug.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
+                                style.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
                             } else {
                                 allocator.free(pkg_file_path);
                             }
@@ -461,22 +462,22 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
                     succeeded += 1;
                 } else {
                     failed += 1;
-                    if (r.message) |msg| std.debug.print("  Error: {s}\n", .{msg});
+                    if (r.message) |msg| style.print("  Error: {s}\n", .{msg});
                 }
                 var res = r;
                 res.deinit(allocator);
             } else |err| {
                 failed += 1;
-                std.debug.print("  Error: {any}\n", .{err});
+                style.print("  Error: {any}\n", .{err});
             }
-            std.debug.print("----------------------------------------\n", .{});
+            style.print("----------------------------------------\n", .{});
         }
 
-        std.debug.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
+        style.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
         if (failed > 0) {
-            std.debug.print(" ({d} failed)", .{failed});
+            style.print(" ({d} failed)", .{failed});
         }
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
 
         return .{ .exit_code = if (failed > 0) 1 else 0 };
     }
@@ -497,8 +498,8 @@ fn publishSingleToRegistry(
     config_path: []const u8,
     options: RegistryPublishOptions,
 ) !CommandResult {
-    std.debug.print("Publishing to Pantry registry...\n", .{});
-    std.debug.print("Config: {s}\n", .{config_path});
+    style.print("Publishing to Pantry registry...\n", .{});
+    style.print("Config: {s}\n", .{config_path});
 
     // Read and parse config
     const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
@@ -527,29 +528,29 @@ fn publishSingleToRegistry(
     else
         return CommandResult.err(allocator, "Error: Missing 'version' in config");
 
-    std.debug.print("Package: {s}@{s}\n", .{ name, version });
+    style.print("Package: {s}@{s}\n", .{ name, version });
 
     // Display binaries if present
     if (root.object.get("bin")) |bin_value| {
-        std.debug.print("Binaries: ", .{});
+        style.print("Binaries: ", .{});
         if (bin_value == .string) {
             // Single binary with package name
             const pkg_name = if (std.mem.indexOf(u8, name, "/")) |idx| name[idx + 1 ..] else name;
-            std.debug.print("{s}\n", .{pkg_name});
+            style.print("{s}\n", .{pkg_name});
         } else if (bin_value == .object) {
             // Multiple binaries
             var first = true;
             var bin_iter = bin_value.object.iterator();
             while (bin_iter.next()) |entry| {
-                if (!first) std.debug.print(", ", .{});
-                std.debug.print("{s}", .{entry.key_ptr.*});
+                if (!first) style.print(", ", .{});
+                style.print("{s}", .{entry.key_ptr.*});
                 first = false;
             }
-            std.debug.print("\n", .{});
+            style.print("\n", .{});
         }
     }
 
-    std.debug.print("Registry: {s}\n", .{options.registry});
+    style.print("Registry: {s}\n", .{options.registry});
 
     // Check if we have AWS credentials for direct S3 upload
     const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
@@ -582,14 +583,14 @@ fn publishSingleToRegistry(
     }
 
     if (has_aws_creds) {
-        std.debug.print("Using direct S3 upload (AWS credentials found)\n", .{});
+        style.print("Using direct S3 upload (AWS credentials found)\n", .{});
     }
 
     // Check if version already exists or is lower than published
-    std.debug.print("Checking existing versions...\n", .{});
+    style.print("Checking existing versions...\n", .{});
     const version_check: ?VersionCheckResult = checkExistingVersion(allocator, name, version) catch |err| blk: {
         // If we can't check (e.g., network error), warn but continue
-        std.debug.print("  Warning: Could not check existing versions: {any}\n", .{err});
+        style.print("  Warning: Could not check existing versions: {any}\n", .{err});
         break :blk null;
     };
 
@@ -611,11 +612,11 @@ fn publishSingleToRegistry(
             );
             return CommandResult.err(allocator, err_msg);
         }
-        std.debug.print("  Latest version: {s}, publishing: {s} ✓\n", .{ check.latest_version, version });
+        style.print("  Latest version: {s}, publishing: {s} ✓\n", .{ check.latest_version, version });
     }
 
     if (options.dry_run) {
-        std.debug.print("\n[DRY RUN] Would publish {s}@{s} to {s}\n", .{ name, version, options.registry });
+        style.print("\n[DRY RUN] Would publish {s}@{s} to {s}\n", .{ name, version, options.registry });
         return .{ .exit_code = 0 };
     }
 
@@ -634,7 +635,7 @@ fn publishSingleToRegistry(
                     .{ .script = null, .name = "" };
 
             if (script_info.script) |script| {
-                std.debug.print("Running {s} script...\n", .{script_info.name});
+                style.print("Running {s} script...\n", .{script_info.name});
                 const result = lifecycle.executeScript(allocator, script_info.name, script, .{
                     .cwd = package_dir,
                 }) catch |err| {
@@ -645,13 +646,13 @@ fn publishSingleToRegistry(
                     const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed with exit code {d}", .{ script_info.name, result.exit_code });
                     return CommandResult.err(allocator, err_msg);
                 }
-                std.debug.print("✓ {s} completed\n", .{script_info.name});
+                style.print("✓ {s} completed\n", .{script_info.name});
             }
         }
     }
 
     // Create tarball
-    std.debug.print("Creating tarball...\n", .{});
+    style.print("Creating tarball...\n", .{});
     const tarball_path = try createTarball(allocator, package_dir, name, version, config_content);
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
@@ -662,10 +663,10 @@ fn publishSingleToRegistry(
     };
     defer allocator.free(tarball_data);
 
-    std.debug.print("Tarball size: {d} bytes\n", .{tarball_data.len});
+    style.print("Tarball size: {d} bytes\n", .{tarball_data.len});
 
     // Upload to registry
-    std.debug.print("Uploading to registry...\n", .{});
+    style.print("Uploading to registry...\n", .{});
 
     const result = uploadToRegistry(allocator, options.registry, name, version, tarball_data, token orelse "", config_content) catch |err| {
         const err_msg = try std.fmt.allocPrint(allocator, "Error: Failed to upload to registry: {any}", .{err});
@@ -673,8 +674,8 @@ fn publishSingleToRegistry(
     };
     defer allocator.free(result);
 
-    std.debug.print("\n{s}\n", .{result});
-    std.debug.print("Published {s}@{s} to Pantry registry\n", .{ name, version });
+    style.print("\n{s}\n", .{result});
+    style.print("Published {s}@{s} to Pantry registry\n", .{ name, version });
 
     return .{ .exit_code = 0 };
 }
@@ -747,7 +748,7 @@ fn createTarball(
 
     // Parse package.json to get "files" array and "bin" field
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, config_content, .{}) catch {
-        std.debug.print("Warning: Could not parse package.json, using default file inclusion\n", .{});
+        style.print("Warning: Could not parse package.json, using default file inclusion\n", .{});
         return createTarballDefault(allocator, package_dir, staging_pkg, staging_base, tarball_path);
     };
     defer parsed.deinit();
@@ -787,7 +788,7 @@ fn createTarball(
 
     if (files_array) |files| {
         // Use explicit "files" list - only copy specified files/folders
-        std.debug.print("  Using 'files' field from package.json...\n", .{});
+        style.print("  Using 'files' field from package.json...\n", .{});
 
         // Always copy package.json first
         const pkg_json_src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, "package.json" });
@@ -865,7 +866,7 @@ fn createTarball(
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
     if (tar_result.term != .exited or tar_result.term.exited != 0) {
-        std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
+        style.print("tar failed: {s}\n", .{tar_result.stderr});
         return error.TarballCreationFailed;
     }
 
@@ -921,52 +922,52 @@ fn createTarballDefault(
         }
     }
 
-    std.debug.print("  Scanning for ignore files in: {s}\n", .{package_dir});
+    style.print("  Scanning for ignore files in: {s}\n", .{package_dir});
 
     const ignore_file_content = blk: {
         // Priority 1: .pantryignore (pantry-specific)
         const pantryignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".pantryignore" }) catch {
-            std.debug.print("    Failed to join .pantryignore path\n", .{});
+            style.print("    Failed to join .pantryignore path\n", .{});
             break :blk null;
         };
         defer allocator.free(pantryignore_path);
-        std.debug.print("    Checking: {s}\n", .{pantryignore_path});
+        style.print("    Checking: {s}\n", .{pantryignore_path});
         const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch |err| {
-            std.debug.print("    .pantryignore not found or unreadable: {any}\n", .{err});
+            style.print("    .pantryignore not found or unreadable: {any}\n", .{err});
             // Continue to next option
             const npmignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".npmignore" }) catch break :blk null;
             defer allocator.free(npmignore_path);
-            std.debug.print("    Checking: {s}\n", .{npmignore_path});
+            style.print("    Checking: {s}\n", .{npmignore_path});
             const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch |err2| {
-                std.debug.print("    .npmignore not found or unreadable: {any}\n", .{err2});
+                style.print("    .npmignore not found or unreadable: {any}\n", .{err2});
                 // Continue to .gitignore
                 const gitignore_path = std.fs.path.join(allocator, &[_][]const u8{ package_dir, ".gitignore" }) catch break :blk null;
                 defer allocator.free(gitignore_path);
-                std.debug.print("    Checking: {s}\n", .{gitignore_path});
+                style.print("    Checking: {s}\n", .{gitignore_path});
                 const git_content = io_helper.readFileAlloc(allocator, gitignore_path, 64 * 1024) catch |err3| {
-                    std.debug.print("    .gitignore not found or unreadable: {any}\n", .{err3});
+                    style.print("    .gitignore not found or unreadable: {any}\n", .{err3});
                     break :blk null;
                 };
                 if (git_content.len > 0) {
-                    std.debug.print("  Using .gitignore for exclusions ({d} bytes)\n", .{git_content.len});
+                    style.print("  Using .gitignore for exclusions ({d} bytes)\n", .{git_content.len});
                     break :blk git_content;
                 }
                 allocator.free(git_content);
                 break :blk null;
             };
             if (npm_content.len > 0) {
-                std.debug.print("  Using .npmignore for exclusions ({d} bytes)\n", .{npm_content.len});
+                style.print("  Using .npmignore for exclusions ({d} bytes)\n", .{npm_content.len});
                 break :blk npm_content;
             }
             allocator.free(npm_content);
             break :blk null;
         };
         if (pantry_content.len > 0) {
-            std.debug.print("  Using .pantryignore for exclusions ({d} bytes)\n", .{pantry_content.len});
+            style.print("  Using .pantryignore for exclusions ({d} bytes)\n", .{pantry_content.len});
             break :blk pantry_content;
         }
         allocator.free(pantry_content);
-        std.debug.print("  .pantryignore is empty\n", .{});
+        style.print("  .pantryignore is empty\n", .{});
         break :blk null;
     };
     defer if (ignore_file_content) |content| allocator.free(content);
@@ -989,7 +990,7 @@ fn createTarballDefault(
                 ignore_patterns[ignore_count] = pattern_copy;
                 ignore_count += 1;
                 dynamic_count += 1;
-                std.debug.print("    + exclude: {s}\n", .{trimmed});
+                style.print("    + exclude: {s}\n", .{trimmed});
             }
         }
     }
@@ -1032,7 +1033,7 @@ fn createTarballDefault(
     defer allocator.free(cp_result.stderr);
 
     if (cp_result.term != .exited or cp_result.term.exited != 0) {
-        std.debug.print("rsync failed: {s}\n", .{cp_result.stderr});
+        style.print("rsync failed: {s}\n", .{cp_result.stderr});
         return error.TarballCreationFailed;
     }
 
@@ -1063,7 +1064,7 @@ fn createTarballDefault(
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
     if (tar_result.term != .exited or tar_result.term.exited != 0) {
-        std.debug.print("tar failed: {s}\n", .{tar_result.stderr});
+        style.print("tar failed: {s}\n", .{tar_result.stderr});
         return error.TarballCreationFailed;
     }
 
@@ -1152,7 +1153,7 @@ fn uploadToS3Direct(
     const s3_tarball_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, tarball_key });
     defer allocator.free(s3_tarball_uri);
 
-    std.debug.print("  Uploading tarball to S3...\n", .{});
+    style.print("  Uploading tarball to S3...\n", .{});
     const tarball_result = try io_helper.childRun(allocator, &[_][]const u8{
         "aws",
         "s3",
@@ -1166,7 +1167,7 @@ fn uploadToS3Direct(
     defer allocator.free(tarball_result.stderr);
 
     if (tarball_result.term != .exited or tarball_result.term.exited != 0) {
-        std.debug.print("S3 upload failed: {s}\n", .{tarball_result.stderr});
+        style.print("S3 upload failed: {s}\n", .{tarball_result.stderr});
         return error.UploadFailed;
     }
 
@@ -1174,7 +1175,7 @@ fn uploadToS3Direct(
     const s3_metadata_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, metadata_key });
     defer allocator.free(s3_metadata_uri);
 
-    std.debug.print("  Uploading metadata to S3...\n", .{});
+    style.print("  Uploading metadata to S3...\n", .{});
     const metadata_result = try io_helper.childRun(allocator, &[_][]const u8{
         "aws",
         "s3",
@@ -1188,12 +1189,12 @@ fn uploadToS3Direct(
     defer allocator.free(metadata_result.stderr);
 
     if (metadata_result.term != .exited or metadata_result.term.exited != 0) {
-        std.debug.print("S3 metadata upload failed: {s}\n", .{metadata_result.stderr});
+        style.print("S3 metadata upload failed: {s}\n", .{metadata_result.stderr});
         return error.UploadFailed;
     }
 
     // Update DynamoDB index
-    std.debug.print("  Updating DynamoDB index...\n", .{});
+    style.print("  Updating DynamoDB index...\n", .{});
     try updateDynamoDBIndex(allocator, name, clean_name, tarball_key, version, metadata_json);
 
     const success_msg = try std.fmt.allocPrint(allocator, "Published to s3://{s}/{s}", .{ bucket, tarball_key });
@@ -1213,7 +1214,7 @@ fn updateDynamoDBIndex(
 
     // Parse metadata to extract description, author, etc.
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_json, .{}) catch {
-        std.debug.print("Warning: Could not parse metadata for DynamoDB\n", .{});
+        style.print("Warning: Could not parse metadata for DynamoDB\n", .{});
         return;
     };
     defer parsed.deinit();
@@ -1399,12 +1400,12 @@ fn updateDynamoDBIndex(
     defer allocator.free(result.stderr);
 
     if (result.term != .exited or result.term.exited != 0) {
-        std.debug.print("DynamoDB update failed: {s}\n", .{result.stderr});
+        style.print("DynamoDB update failed: {s}\n", .{result.stderr});
         // Don't fail the whole publish, just warn
         return;
     }
 
-    std.debug.print("  Updated DynamoDB index for {s}\n", .{name});
+    style.print("  Updated DynamoDB index for {s}\n", .{name});
 }
 
 /// Upload via HTTP to registry server
@@ -1461,7 +1462,7 @@ fn uploadViaHttp(
     io_helper.deleteFile(tarball_tmp) catch {};
 
     if (curl_result.term != .exited or curl_result.term.exited != 0) {
-        std.debug.print("curl error: {s}\n", .{curl_result.stderr});
+        style.print("curl error: {s}\n", .{curl_result.stderr});
         allocator.free(curl_result.stdout);
         return error.UploadFailed;
     }

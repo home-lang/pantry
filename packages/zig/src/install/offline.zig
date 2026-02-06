@@ -5,6 +5,7 @@
 const std = @import("std");
 const lib = @import("../lib.zig");
 const io_helper = lib.io_helper;
+const style = @import("../cli/style.zig");
 
 /// Offline mode configuration
 pub const OfflineConfig = struct {
@@ -43,14 +44,14 @@ pub fn installFromCache(
 
     // Check if directory exists
     io_helper.accessAbsolute(cached_path, .{}) catch {
-        std.debug.print("❌ {s}@{s} not found in cache (offline mode)\n", .{ package_name, version });
+        style.print("❌ {s}@{s} not found in cache (offline mode)\n", .{ package_name, version });
         return false;
     };
 
     // Copy from cache to destination
     try copyDir(cached_path, dest_dir);
 
-    std.debug.print("✅ {s}@{s} installed from cache\n", .{ package_name, version });
+    style.print("✅ {s}@{s} installed from cache\n", .{ package_name, version });
     return true;
 }
 

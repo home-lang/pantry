@@ -2,6 +2,7 @@ const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const core = @import("core.zig");
 const http = std.http;
+const style = @import("../cli/style.zig");
 
 /// NPM Registry implementation
 pub const NpmRegistry = struct {
@@ -378,7 +379,7 @@ pub const NpmRegistry = struct {
                 const error_body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(10 * 1024)) catch "";
                 defer allocator.free(error_body);
 
-                std.debug.print("Publish failed with status {}: {s}\n", .{ response.head.status, error_body });
+                style.print("Publish failed with status {}: {s}\n", .{ response.head.status, error_body });
                 return error.PublishFailed;
             },
         }

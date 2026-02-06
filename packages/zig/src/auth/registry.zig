@@ -2,6 +2,7 @@ const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const http = std.http;
 const oidc = @import("oidc.zig");
+const style = @import("../cli/style.zig");
 
 /// Decompress gzip data if it looks like gzip (starts with magic bytes 0x1f 0x8b)
 /// Returns a copy of the data if not gzip, or the decompressed data if it is
@@ -243,7 +244,7 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
-        std.debug.print("Publishing to URL: {s}\n", .{url});
+        style.print("Publishing to URL: {s}\n", .{url});
 
         // Read tarball using io_helper (blocking std.fs API)
         const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024); // 100 MB max
@@ -338,8 +339,8 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
-        std.debug.print("Exchanging OIDC token with npm registry for {s}...\n", .{package_name});
-        std.debug.print("Token exchange URL: {s}\n", .{url});
+        style.print("Exchanging OIDC token with npm registry for {s}...\n", .{package_name});
+        style.print("Token exchange URL: {s}\n", .{url});
 
         const uri = try std.Uri.parse(url);
 
@@ -376,25 +377,25 @@ pub const RegistryClient = struct {
         defer self.allocator.free(body);
 
         if (response.head.status != .ok and response.head.status != .created) {
-            std.debug.print("npm token exchange failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
+            style.print("npm token exchange failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
             return null;
         }
 
         // Parse JSON response to extract token
         const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, body, .{}) catch {
-            std.debug.print("Failed to parse npm token response\n", .{});
+            style.print("Failed to parse npm token response\n", .{});
             return null;
         };
         defer parsed.deinit();
 
         if (parsed.value.object.get("token")) |token_val| {
             if (token_val == .string) {
-                std.debug.print("✓ Received npm publish token\n", .{});
+                style.print("✓ Received npm publish token\n", .{});
                 return try self.allocator.dupe(u8, token_val.string);
             }
         }
 
-        std.debug.print("npm token response missing 'token' field: {s}\n", .{body});
+        style.print("npm token response missing 'token' field: {s}\n", .{body});
         return null;
     }
 
@@ -438,7 +439,7 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
-        std.debug.print("Publishing to URL: {s}\n", .{url});
+        style.print("Publishing to URL: {s}\n", .{url});
 
         // Read tarball using io_helper (blocking std.fs API)
         const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024); // 100 MB max
@@ -542,7 +543,7 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
-        std.debug.print("Publishing to URL (token): {s}\n", .{url});
+        style.print("Publishing to URL (token): {s}\n", .{url});
 
         // Read tarball using io_helper (blocking std.fs API)
         const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024);

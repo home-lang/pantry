@@ -4,6 +4,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 const string = lib.string;
@@ -230,7 +231,7 @@ pub fn devMd5Command(allocator: std.mem.Allocator, path: []const u8) !CommandRes
     const hex = try string.hashToHex(digest, allocator);
     defer allocator.free(hex);
 
-    std.debug.print("{s}\n", .{hex});
+    style.print("{s}\n", .{hex});
 
     return .{ .exit_code = 0 };
 }
@@ -249,7 +250,7 @@ pub fn devFindProjectRootCommand(allocator: std.mem.Allocator, start_dir: []cons
     // Get the directory of the dependency file
     const project_dir = std.fs.path.dirname(deps_file.path) orelse start_dir;
 
-    std.debug.print("{s}\n", .{project_dir});
+    style.print("{s}\n", .{project_dir});
 
     return .{ .exit_code = 0 };
 }

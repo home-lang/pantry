@@ -5,6 +5,7 @@ const config_loader = @import("../config/loader.zig");
 const deps_extractor = @import("../config/dependencies.zig");
 const lib = @import("../lib.zig");
 const io_helper = lib.io_helper;
+const style = @import("../cli/style.zig");
 
 /// Discover workspace members based on glob patterns
 /// This is a simple glob matcher that supports * wildcards
@@ -24,8 +25,8 @@ pub fn discoverMembers(
 
         for (pattern_members) |member| {
             if (member_count >= members_buffer.len) {
-                std.debug.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
-                std.debug.print("Consider splitting into multiple workspaces or increasing the buffer size\n", .{});
+                style.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
+                style.print("Consider splitting into multiple workspaces or increasing the buffer size\n", .{});
                 return error.TooManyWorkspaceMembers;
             }
             members_buffer[member_count] = member;
@@ -104,7 +105,7 @@ fn discoverMembersForPattern(
                 // Only add as member if it has a config or deps file
                 if (config_path != null or deps_file_path != null) {
                     if (member_count >= members_buffer.len) {
-                        std.debug.print("Error: Too many workspace members in pattern (limit: {d})\n", .{members_buffer.len});
+                        style.print("Error: Too many workspace members in pattern (limit: {d})\n", .{members_buffer.len});
                         return error.TooManyWorkspaceMembers;
                     }
                     members_buffer[member_count] = .{
@@ -140,7 +141,7 @@ fn discoverMembersForPattern(
         if (config_path != null or deps_file_path != null) {
             const member_name = std.fs.path.basename(pattern);
             if (member_count >= members_buffer.len) {
-                std.debug.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
+                style.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
                 return error.TooManyWorkspaceMembers;
             }
             members_buffer[member_count] = .{

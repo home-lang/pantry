@@ -4,6 +4,7 @@
 
 const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
+const style = @import("../style.zig");
 
 const CommandResult = struct {
     exit_code: u8,
@@ -33,8 +34,8 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     if (file_exists) {
         // File exists
-        std.debug.print("pantry.json already exists\n", .{});
-        std.debug.print("Do you want to overwrite it? (y/N): ", .{});
+        style.print("pantry.json already exists\n", .{});
+        style.print("Do you want to overwrite it? (y/N): ", .{});
 
         var buf: [10]u8 = undefined;
         const bytes_read = try io_helper.readStdin(&buf);
@@ -51,9 +52,9 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     const dir_name = std.fs.path.basename(cwd);
 
     // Interactive prompts
-    std.debug.print("\n Initializing pantry.json\n\n", .{});
+    style.print("\n Initializing pantry.json\n\n", .{});
 
-    std.debug.print("Project name ({s}): ", .{dir_name});
+    style.print("Project name ({s}): ", .{dir_name});
     var name_buf: [256]u8 = undefined;
     const name_bytes = try io_helper.readStdin(&name_buf);
     const project_name = blk: {
@@ -62,7 +63,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         break :blk if (trimmed.len > 0) trimmed else dir_name;
     };
 
-    std.debug.print("Version (1.0.0): ", .{});
+    style.print("Version (1.0.0): ", .{});
     var version_buf: [64]u8 = undefined;
     const version_bytes = try io_helper.readStdin(&version_buf);
     const version = blk: {
@@ -71,7 +72,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         break :blk if (trimmed.len > 0) trimmed else "1.0.0";
     };
 
-    std.debug.print("Description: ", .{});
+    style.print("Description: ", .{});
     var desc_buf: [512]u8 = undefined;
     const desc_bytes = try io_helper.readStdin(&desc_buf);
     const description = blk: {
@@ -103,13 +104,13 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     defer file.close(io_helper.io);
     try io_helper.writeAllToFile(file, template);
 
-    std.debug.print("\n✅ Created pantry.json\n", .{});
-    std.debug.print("\n📝 Next steps:\n", .{});
-    std.debug.print("   1. Add dependencies: pantry add <package>@<version>\n", .{});
-    std.debug.print("   2. Install packages: pantry install\n", .{});
-    std.debug.print("   3. Add scripts to the 'scripts' section\n", .{});
+    style.print("\n✅ Created pantry.json\n", .{});
+    style.print("\n📝 Next steps:\n", .{});
+    style.print("   1. Add dependencies: pantry add <package>@<version>\n", .{});
+    style.print("   2. Install packages: pantry install\n", .{});
+    style.print("   3. Add scripts to the 'scripts' section\n", .{});
     if (!has_package_json) {
-        std.debug.print("   4. Consider adding services in 'services' section\n", .{});
+        style.print("   4. Consider adding services in 'services' section\n", .{});
     }
 
     return .{ .exit_code = 0 };

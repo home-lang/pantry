@@ -13,6 +13,7 @@ const version_options = @import("version");
 const lockfile_hooks = @import("lockfile_hooks.zig");
 const offline = @import("../../../install/offline.zig");
 const recovery = @import("../../../install/recovery.zig");
+const style = @import("../../style.zig");
 
 const cache = lib.cache;
 const string = lib.string;
@@ -157,7 +158,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 override_map = try lib.deps.overrides.parseFromPackageJson(allocator, parsed);
 
                 if (override_map.count() > 0) {
-                    std.debug.print("Found {d} package override(s)\n", .{override_map.count()});
+                    style.print("Found {d} package override(s)\n", .{override_map.count()});
                 }
             } else |_| {
                 // Failed to parse package.json, continue without overrides
@@ -181,9 +182,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         if (deps_to_install.len == 0) {
             if (deps_file_path) |path| {
-                std.debug.print("No dependencies to install from {s}\n", .{path});
+                style.print("No dependencies to install from {s}\n", .{path});
             } else {
-                std.debug.print("No dependencies to install from config file\n", .{});
+                style.print("No dependencies to install from config file\n", .{});
             }
             return .{ .exit_code = 0 };
         }
@@ -239,7 +240,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Check if we're in offline mode
         const is_offline = offline.isOfflineMode();
         if (is_offline) {
-            std.debug.print("🔌 Offline mode enabled - using cache only\n", .{});
+            style.printOffline();
         }
 
         // Try to resume from a previous interrupted install, or create a fresh checkpoint
@@ -248,22 +249,20 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         const resuming = checkpoint.installed_packages.count() > 0;
         if (resuming) {
-            std.debug.print("{s}  ↳ Resuming from previous interrupted install ({d} packages already done){s}\n", .{
-                "\x1b[2m", checkpoint.installed_packages.count(), "\x1b[0m",
-            });
+            style.printResuming(checkpoint.installed_packages.count());
         }
 
         // Set checkpoint path for persistence (enables resume on interrupt)
         checkpoint.setCheckpointPath(proj_dir) catch |err| {
             if (options.verbose) {
-                std.debug.print("Warning: Could not set checkpoint path: {}\n", .{err});
+                style.print("Warning: Could not set checkpoint path: {}\n", .{err});
             }
         };
 
         // Create backup of current state
         checkpoint.createBackup(proj_dir) catch |err| {
             if (options.verbose) {
-                std.debug.print("⚠️  Could not create backup: {}\n", .{err});
+                style.print("Could not create backup: {}\n", .{err});
             }
         };
 
@@ -280,7 +279,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             if (!pre_result.success) {
                 // Rollback on pre-install hook failure
                 checkpoint.rollback() catch |err| {
-                    std.debug.print("⚠️  Rollback failed: {}\n", .{err});
+                    style.print("Rollback failed: {}\n", .{err});
                 };
                 return .{
                     .exit_code = 1,
@@ -296,11 +295,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var existing_lockfile: ?lib.packages.Lockfile = lockfile_reader.readLockfile(allocator, lockfile_path_for_read) catch null;
         defer if (existing_lockfile) |*lf| lf.deinit(allocator);
 
-        // Clean Yarn/Bun-style output - just show what we're installing
-        const green = "\x1b[32m";
-        const dim = "\x1b[2m";
-        const reset = "\x1b[0m";
-        std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, deps_to_install.len });
+        // Clean Bun-style output - just show what we're installing
+        style.printInstalling(deps_to_install.len);
 
         // Install each dependency concurrently using a shared installer for deduplication
         var pkg_cache = try cache.PackageCache.init(allocator);
@@ -326,20 +322,15 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // All packages already installed and match lockfile - nothing to do
             const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
             const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-            const bold = "\x1b[1m";
             const pantry_version = version_options.version;
             const pantry_hash = version_options.commit_hash;
-            std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{ bold, reset, dim, pantry_version, pantry_hash, reset });
-            std.debug.print("{s}✓{s} All {d} packages already up to date [{s}{d:.2}ms{s}]\n", .{
-                green, reset, deps_to_install.len, bold, elapsed_ms, reset,
-            });
+            style.printHeader("install", pantry_version, pantry_hash);
+            style.printUpToDate(deps_to_install.len, elapsed_ms);
             return .{ .exit_code = 0 };
         }
 
         if (skipped_count > 0) {
-            std.debug.print("{s}  ↳ {d} package(s) already up to date, installing {d} remaining...{s}\n", .{
-                dim, skipped_count, deps_to_install.len - skipped_count, reset,
-            });
+            style.printSkipping(skipped_count, deps_to_install.len - skipped_count);
         }
 
         // Install results storage
@@ -456,13 +447,21 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .resume_packages = if (resuming) &checkpoint.installed_packages else null,
         };
 
-        // Spawn worker threads (one fewer since main thread also works)
+        // Spawn worker threads
         for (0..thread_count) |t| {
             threads[t] = std.Thread.spawn(.{}, ThreadContext.worker, .{&ctx}) catch null;
         }
 
-        // Main thread also participates
-        ctx.worker();
+        // Main thread shows spinner progress
+        var frame: usize = 0;
+        while (next_dep.load(.monotonic) < deps_to_install.len) {
+            const current = @min(next_dep.load(.monotonic), deps_to_install.len);
+            const pkg_name = if (current < deps_to_install.len) helpers.stripDisplayPrefix(deps_to_install[current].name) else "...";
+            style.printProgress(current, deps_to_install.len, pkg_name, frame);
+            frame +%= 1;
+            io_helper.nanosleep(0, 80 * std.time.ns_per_ms);
+        }
+        style.clearProgress();
 
         // Join all threads
         for (threads) |*t| {
@@ -480,16 +479,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             if (result.name.len == 0) continue;
             const display_name = helpers.stripDisplayPrefix(result.name);
             if (result.success) {
-                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, display_name, result.version });
+                style.printInstalled(display_name, result.version);
                 success_count += 1;
             } else {
-                const red = "\x1b[31m";
-                std.debug.print("{s}✗{s} {s}@{s}", .{ red, reset, display_name, result.version });
-                if (result.error_msg) |msg| {
-                    std.debug.print(" {s}({s}){s}\n", .{ dim, msg, reset });
-                } else {
-                    std.debug.print("\n", .{});
-                }
+                style.printFailed(display_name, result.version, result.error_msg);
                 failed_count += 1;
             }
         }
@@ -507,8 +500,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             const local_path = if (helpers.isLinkDependency(dep.version)) blk: {
                 const resolved = try helpers.resolveLinkVersion(allocator, dep.version);
                 break :blk resolved orelse {
-                    const red = "\x1b[31m";
-                    std.debug.print("{s}✗{s} {s}@{s} {s}(not linked - run 'pantry link' in the package directory){s}\n", .{ red, reset, dep.name, dep.version, dim, reset });
+                    style.printFailed(dep.name, dep.version, "not linked - run 'pantry link' in the package directory");
                     failed_count += 1;
                     continue;
                 };
@@ -525,8 +517,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
             // Check if local path exists
             io_helper.accessAbsolute(local_path, .{}) catch {
-                const yellow = "\x1b[33m";
-                std.debug.print("{s}⚠{s}  {s}@{s} {s}(path not found){s}\n", .{ yellow, reset, dep.name, dep.version, dim, reset });
+                style.printWarning(dep.name, dep.version, "path not found");
                 failed_count += 1;
                 continue;
             };
@@ -545,8 +536,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             if (std.mem.indexOf(u8, pkg_name, "..") != null or
                 std.mem.indexOfScalar(u8, pkg_name, '\\') != null)
             {
-                const red = "\x1b[31m";
-                std.debug.print("{s}x{s} {s} {s}(invalid package name){s}\n", .{ red, reset, dep.name, dim, reset });
+                style.printFailed(dep.name, "", "invalid package name");
                 failed_count += 1;
                 continue;
             }
@@ -562,18 +552,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             io_helper.symLink(src_path, src_link_path) catch |err| switch (err) {
                 error.PathAlreadyExists => {
                     io_helper.deleteFile(src_link_path) catch {};
-                    io_helper.symLink(src_path, src_link_path) catch |err2| {
-                        const red2 = "\x1b[31m";
-                        const display_name2 = helpers.stripDisplayPrefix(dep.name);
-                        std.debug.print("{s}x{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red2, reset, display_name2, dep.version, dim, err2, reset });
+                    io_helper.symLink(src_path, src_link_path) catch {
+                        style.printFailed(helpers.stripDisplayPrefix(dep.name), dep.version, "symlink failed");
                         failed_count += 1;
                         continue;
                     };
                 },
                 else => {
-                    const red3 = "\x1b[31m";
-                    const display_name3 = helpers.stripDisplayPrefix(dep.name);
-                    std.debug.print("{s}x{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red3, reset, display_name3, dep.version, dim, err, reset });
+                    style.printFailed(helpers.stripDisplayPrefix(dep.name), dep.version, "symlink failed");
                     failed_count += 1;
                     continue;
                 },
@@ -589,13 +575,13 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     io_helper.deleteFile(link_path) catch {};
                     io_helper.symLink(local_path, link_path) catch |err2| {
                         if (options.verbose) {
-                            std.debug.print("    Warning: Failed to create bin symlink {s}: {}\n", .{ link_path, err2 });
+                            style.print("    Warning: Failed to create bin symlink {s}: {}\n", .{ link_path, err2 });
                         }
                     };
                 },
                 else => {
                     if (options.verbose) {
-                        std.debug.print("    Warning: Failed to create bin symlink {s}: {}\n", .{ link_path, symlink_err });
+                        style.print("    Warning: Failed to create bin symlink {s}: {}\n", .{ link_path, symlink_err });
                     }
                 },
             };
@@ -637,7 +623,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                             },
                             else => {
                                 if (options.verbose) {
-                                    std.debug.print("    Warning: Failed to create local bin symlink {s}: {}\n", .{ bin_dst, sym_err });
+                                    style.print("    Warning: Failed to create local bin symlink {s}: {}\n", .{ bin_dst, sym_err });
                                 }
                             },
                         };
@@ -648,7 +634,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
 
             const display_name = helpers.stripDisplayPrefix(dep.name);
-            std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, display_name, dep.version, dim, reset });
+            style.printLinked(display_name, dep.version);
             success_count += 1;
         }
 
@@ -697,11 +683,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Write lockfile
+        style.printLockfileSaving();
         const lockfile_writer = @import("../../../packages/lockfile.zig");
         lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-            const yellow = "\x1b[33m";
-            std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
+            style.printWarn("Failed to write lockfile: {}\n", .{err});
         };
+        style.printLockfileSaved();
 
         // Add successful packages to pantry.lock and record in checkpoint
         for (install_results) |result| {
@@ -714,7 +701,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 // Record successful package installation in checkpoint
                 checkpoint.recordPackage(clean_name) catch |err| {
                     if (options.verbose) {
-                        std.debug.print("⚠️  Could not record package in checkpoint: {}\n", .{err});
+                        style.print("Could not record package in checkpoint: {}\n", .{err});
                     }
                 };
 
@@ -723,7 +710,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 defer allocator.free(pkg_dir);
                 checkpoint.recordDir(pkg_dir) catch |err| {
                     if (options.verbose) {
-                        std.debug.print("⚠️  Could not record directory in checkpoint: {}\n", .{err});
+                        style.print("Could not record directory in checkpoint: {}\n", .{err});
                     }
                 };
             }
@@ -736,32 +723,18 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const pantry_version = version_options.version;
         const pantry_hash = version_options.commit_hash;
 
-        // Clean summary - Bun style with formatting
-        const bold = "\x1b[1m";
-
-        // First line: "pantry install v0.1.0 (abc1234)"
-        std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{ bold, reset, dim, pantry_version, pantry_hash, reset });
-
-        // Second line: "Checked X installs across Y packages (no changes) [Zms]"
         const total_deps = deps.len;
         const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
-        std.debug.print("Checked {s}{d}{s} installs across {s}{d}{s} packages {s}(no changes){s} [{s}{d:.2}ms{s}]\n", .{
-            green,      success_count, reset,
-            green,      total_deps,    reset,
-            dim,        reset,         bold,
-            elapsed_ms, reset,
-        });
+        style.printHeader("install", pantry_version, pantry_hash);
+        style.printCheckedSummary(success_count, total_deps, elapsed_ms);
 
         if (failed_count > 0) {
-            const red = "\x1b[31m";
-            std.debug.print("\n{s}{d} packages failed to install{s}\n", .{ red, failed_count, reset });
+            style.printFailureCount(failed_count);
 
-            // Optional: Rollback on any failure (can be configured)
-            // For now, we keep partial installs but show warning
             if (options.verbose) {
-                std.debug.print("⚠️  Some packages failed. Use 'pantry clean' to reset, or fix errors and retry.\n", .{});
+                style.printWarn("Some packages failed. Use 'pantry clean' to reset, or fix errors and retry.\n", .{});
             }
         }
 
@@ -772,8 +745,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 r.deinit(allocator);
             }
             if (!post_result.success) {
-                const yellow = "\x1b[33m";
-                std.debug.print("\n{s}⚠{s}  Post-install hook failed\n", .{ yellow, reset });
+                style.printWarn("Post-install hook failed\n", .{});
                 // Don't fail the install, just warn
             }
         }
@@ -810,22 +782,15 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    // Clean Yarn/Bun-style output
-    const green = "\x1b[32m";
-    const red = "\x1b[31m";
-    const dim = "\x1b[2m";
-    const bold = "\x1b[1m";
-    const reset = "\x1b[0m";
-
     // Start timing
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
     // Print header with Pantry version info
     const pantry_version = version_options.version;
     const pantry_hash = version_options.commit_hash;
-    std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{ bold, reset, dim, pantry_version, pantry_hash, reset });
+    style.printHeader("install", pantry_version, pantry_hash);
 
-    std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, args.len });
+    style.printInstalling(args.len);
 
     var success_count: usize = 0;
     var failed_count: usize = 0;
@@ -858,7 +823,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         } else npm_fallback: {
             // Try Pantry S3/DynamoDB registry first
             if (helpers.lookupPantryRegistry(allocator, name) catch |err| lkup: {
-                std.debug.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ name, err });
+                style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, name, err, style.reset });
                 break :lkup null;
             }) |info| {
                 var pantry_info = info;
@@ -974,20 +939,20 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         };
 
         // Show what we're installing
-        std.debug.print("  {s}↓{s} {s}@{s}...", .{ dim, reset, name, spec.version });
+        style.print("  {s}>{s} {s}@{s}...", .{ style.dim, style.reset, name, spec.version });
 
         var result = installer.install(spec, .{
             .project_root = project_root,
             .quiet = false, // Show download progress
         }) catch |err| {
-            std.debug.print("\r\x1b[K", .{}); // Clear the line
+            style.clearLine();
             // Provide friendly error messages
             const error_msg = switch (err) {
                 error.PackageNotFound => "not found in pantry or npm registry",
                 error.NoTarballUrl => "npm package found but no tarball URL available",
                 else => @errorName(err),
             };
-            std.debug.print("{s}✗{s} {s}@{s} {s}({s}){s}\n", .{ red, reset, name, spec.version, dim, error_msg, reset });
+            style.printFailed(name, spec.version, error_msg);
 
             failed_count += 1;
             continue;
@@ -995,12 +960,13 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Create symlinks in pantry/.bin for package executables
         helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path) catch |err| {
-            std.debug.print("Warning: Failed to create bin symlinks for {s}: {}\n", .{ name, err });
+            style.print("Warning: Failed to create bin symlinks for {s}: {}\n", .{ name, err });
         };
 
         defer result.deinit(allocator);
 
-        std.debug.print("\r\x1b[K{s}✓{s} {s}@{s}\n", .{ green, reset, name, result.version });
+        style.clearLine();
+        style.printInstalled(name, result.version);
         success_count += 1;
 
         // Track for lockfile
@@ -1009,12 +975,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .version = allocator.dupe(u8, result.version) catch continue,
             .source = spec.source,
         }) catch |err| {
-            std.debug.print("Warning: Failed to track installed package {s}: {}\n", .{ name, err });
+            style.print("Warning: Failed to track installed package {s}: {}\n", .{ name, err });
         };
 
         // Update package.json with the new dependency
         helpers.addDependencyToPackageJson(allocator, project_root, name, result.version, options.dev_only) catch |err| {
-            std.debug.print("{s}⚠{s}  Failed to update package.json: {}\n", .{ "\x1b[33m", reset, err });
+            style.printWarn("Failed to update package.json: {}\n", .{err});
         };
     }
 
@@ -1030,11 +996,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // If file doesn't exist or is invalid, create a new lockfile
             if (err == error.FileNotFound or err == error.InvalidLockfile) {
                 break :blk lib.packages.Lockfile.init(allocator, "1.0.0") catch |init_err| {
-                    std.debug.print("{s}⚠{s}  Failed to create lockfile: {}\n", .{ "\x1b[33m", reset, init_err });
+                    style.printWarn("Failed to create lockfile: {}\n", .{init_err});
                     return .{ .exit_code = 0 };
                 };
             }
-            std.debug.print("{s}⚠{s}  Failed to read lockfile: {}\n", .{ "\x1b[33m", reset, err });
+            style.printWarn("Failed to read lockfile: {}\n", .{err});
             return .{ .exit_code = 0 };
         };
         defer lockfile.deinit(allocator);
@@ -1079,28 +1045,26 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             const key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ pkg.name, pkg.version }) catch continue;
             defer allocator.free(key);
             lockfile.addEntry(allocator, key, entry) catch |err| {
-                std.debug.print("Warning: Failed to add lockfile entry for {s}: {}\n", .{ pkg.name, err });
+                style.print("Warning: Failed to add lockfile entry for {s}: {}\n", .{ pkg.name, err });
             };
         }
 
         // Write merged lockfile
+        style.printLockfileSaving();
         lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-            std.debug.print("{s}⚠{s}  Failed to write lockfile: {}\n", .{ "\x1b[33m", reset, err });
+            style.printWarn("Failed to write lockfile: {}\n", .{err});
         };
+        style.printLockfileSaved();
     }
 
     // Clean summary with timing
     const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
-    std.debug.print("\nChecked {s}{d}{s} installs across {s}{d}{s} packages {s}{d:.2}ms{s}\n", .{
-        green, success_count, reset,
-        green, args.len,      reset,
-        bold,  elapsed_ms,    reset,
-    });
+    style.printSummary(success_count, args.len, elapsed_ms);
 
     if (failed_count > 0) {
-        std.debug.print("\n{s}{d} packages failed to install{s}\n", .{ red, failed_count, reset });
+        style.printFailureCount(failed_count);
     }
 
     return .{ .exit_code = 0 };

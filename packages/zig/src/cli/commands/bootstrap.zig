@@ -10,6 +10,7 @@ const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 const shell_cmd = @import("shell.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 const shell = lib.shell;
@@ -23,11 +24,11 @@ pub const BootstrapOptions = struct {
 
 /// Bootstrap the development environment
 pub fn bootstrapCommand(allocator: std.mem.Allocator, options: BootstrapOptions) !CommandResult {
-    std.debug.print("\n", .{});
-    std.debug.print("╔══════════════════════════════════════════════════════════════╗\n", .{});
-    std.debug.print("║              pantry - Development Environment Setup          ║\n", .{});
-    std.debug.print("╚══════════════════════════════════════════════════════════════╝\n", .{});
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
+    style.print("╔══════════════════════════════════════════════════════════════╗\n", .{});
+    style.print("║              pantry - Development Environment Setup          ║\n", .{});
+    style.print("╚══════════════════════════════════════════════════════════════╝\n", .{});
+    style.print("\n", .{});
 
     var steps_completed: u8 = 0;
     var steps_total: u8 = 0;
@@ -55,75 +56,75 @@ pub fn bootstrapCommand(allocator: std.mem.Allocator, options: BootstrapOptions)
     const effective_path = install_path orelse "/usr/local";
 
     if (options.verbose) {
-        std.debug.print("Installation path: {s}\n\n", .{effective_path});
+        style.print("Installation path: {s}\n\n", .{effective_path});
     }
 
     // Step 2: Install Bun (if not skipped)
     if (!options.skip_bun) {
-        std.debug.print("[{d}/{d}] Installing Bun runtime...\n", .{ steps_completed + 1, steps_total });
+        style.print("[{d}/{d}] Installing Bun runtime...\n", .{ steps_completed + 1, steps_total });
 
         const bun_result = installBun(allocator, effective_path, options.verbose);
         if (bun_result) |_| {
-            std.debug.print("     ✓ Bun installed successfully\n", .{});
+            style.print("     ✓ Bun installed successfully\n", .{});
             steps_completed += 1;
         } else |err| {
-            std.debug.print("     ⚠ Bun installation skipped: {}\n", .{err});
+            style.print("     ⚠ Bun installation skipped: {}\n", .{err});
             if (options.verbose) {
-                std.debug.print("       You can install Bun manually: curl -fsSL https://bun.sh/install | bash\n", .{});
+                style.print("       You can install Bun manually: curl -fsSL https://bun.sh/install | bash\n", .{});
             }
         }
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
     }
 
     // Step 3: Configure PATH
-    std.debug.print("[{d}/{d}] Configuring PATH...\n", .{ steps_completed + 1, steps_total });
+    style.print("[{d}/{d}] Configuring PATH...\n", .{ steps_completed + 1, steps_total });
 
     const path_result = configurePath(allocator, effective_path, options.verbose);
     if (path_result) |msg| {
-        std.debug.print("     ✓ {s}\n", .{msg});
+        style.print("     ✓ {s}\n", .{msg});
         allocator.free(msg);
         steps_completed += 1;
     } else |err| {
-        std.debug.print("     ⚠ PATH configuration skipped: {}\n", .{err});
+        style.print("     ⚠ PATH configuration skipped: {}\n", .{err});
     }
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 
     // Step 4: Shell integration (if not skipped)
     if (!options.skip_shell_integration) {
-        std.debug.print("[{d}/{d}] Setting up shell integration...\n", .{ steps_completed + 1, steps_total });
+        style.print("[{d}/{d}] Setting up shell integration...\n", .{ steps_completed + 1, steps_total });
 
         const detected_shell = shell.Shell.detect();
         if (detected_shell != .unknown) {
             shell.install(allocator) catch |err| {
-                std.debug.print("     ⚠ Shell integration failed: {}\n", .{err});
+                style.print("     ⚠ Shell integration failed: {}\n", .{err});
             };
-            std.debug.print("     ✓ Shell integration installed for {s}\n", .{detected_shell.name()});
+            style.print("     ✓ Shell integration installed for {s}\n", .{detected_shell.name()});
             steps_completed += 1;
         } else {
-            std.debug.print("     ⚠ Could not detect shell type\n", .{});
+            style.print("     ⚠ Could not detect shell type\n", .{});
         }
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
     }
 
     // Summary
-    std.debug.print("══════════════════════════════════════════════════════════════════\n", .{});
-    std.debug.print("\n", .{});
+    style.print("══════════════════════════════════════════════════════════════════\n", .{});
+    style.print("\n", .{});
 
     if (steps_completed == steps_total) {
-        std.debug.print("✅ Bootstrap complete! ({d}/{d} steps)\n", .{ steps_completed, steps_total });
+        style.print("✅ Bootstrap complete! ({d}/{d} steps)\n", .{ steps_completed, steps_total });
     } else {
-        std.debug.print("⚠️  Bootstrap completed with warnings ({d}/{d} steps)\n", .{ steps_completed, steps_total });
+        style.print("⚠️  Bootstrap completed with warnings ({d}/{d} steps)\n", .{ steps_completed, steps_total });
     }
 
-    std.debug.print("\n", .{});
-    std.debug.print("Next steps:\n", .{});
-    std.debug.print("  1. Restart your shell or run: source ~/.{s}rc\n", .{shell.Shell.detect().name()});
-    std.debug.print("  2. Create a project with dependencies:\n", .{});
-    std.debug.print("     echo 'dependencies:\\n  - node@22' > deps.yaml\n", .{});
-    std.debug.print("  3. Enter the directory - environment activates automatically!\n", .{});
-    std.debug.print("\n", .{});
-    std.debug.print("For more info: https://stacks-pantry.netlify.app/quickstart\n", .{});
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
+    style.print("Next steps:\n", .{});
+    style.print("  1. Restart your shell or run: source ~/.{s}rc\n", .{shell.Shell.detect().name()});
+    style.print("  2. Create a project with dependencies:\n", .{});
+    style.print("     echo 'dependencies:\\n  - node@22' > deps.yaml\n", .{});
+    style.print("  3. Enter the directory - environment activates automatically!\n", .{});
+    style.print("\n", .{});
+    style.print("For more info: https://stacks-pantry.netlify.app/quickstart\n", .{});
+    style.print("\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -142,7 +143,7 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
         if (r.term == .exited and r.term.exited == 0) {
             if (verbose) {
                 const version = std.mem.trim(u8, r.stdout, &std.ascii.whitespace);
-                std.debug.print("       Bun already installed: v{s}\n", .{version});
+                style.print("       Bun already installed: v{s}\n", .{version});
             }
             return;
         }
@@ -202,7 +203,7 @@ fn configurePath(allocator: std.mem.Allocator, install_path: []const u8, verbose
     try io_helper.appendToFile(rc_file, path_line);
 
     if (verbose) {
-        std.debug.print("       Added to {s}\n", .{rc_file});
+        style.print("       Added to {s}\n", .{rc_file});
     }
 
     return try std.fmt.allocPrint(allocator, "PATH configured in {s}", .{std.fs.path.basename(rc_file)});

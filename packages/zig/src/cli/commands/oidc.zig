@@ -2,6 +2,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -9,11 +10,11 @@ const CommandResult = common.CommandResult;
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     _ = args;
 
-    std.debug.print("\n", .{});
-    std.debug.print("╭─────────────────────────────────────────────────────────╮\n", .{});
-    std.debug.print("│           npm Trusted Publisher Setup                   │\n", .{});
-    std.debug.print("╰─────────────────────────────────────────────────────────╯\n", .{});
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
+    style.print("╭─────────────────────────────────────────────────────────╮\n", .{});
+    style.print("│           npm Trusted Publisher Setup                   │\n", .{});
+    style.print("╰─────────────────────────────────────────────────────────╯\n", .{});
+    style.print("\n", .{});
 
     // 1. Read package.json to get package name
     const package_name = getPackageName(allocator) catch |err| {
@@ -22,28 +23,28 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     };
     defer allocator.free(package_name);
 
-    std.debug.print("📦 Package: {s}\n", .{package_name});
+    style.print("📦 Package: {s}\n", .{package_name});
 
     // 2. Detect GitHub repository
     const repo = detectGitHubRepo(allocator) catch |err| {
-        std.debug.print("⚠️  Could not detect GitHub repository: {any}\n", .{err});
-        std.debug.print("   You'll need to enter the repository manually on npm.\n\n", .{});
+        style.print("⚠️  Could not detect GitHub repository: {any}\n", .{err});
+        style.print("   You'll need to enter the repository manually on npm.\n\n", .{});
         return printManualInstructions(allocator, package_name, null, null);
     };
     defer allocator.free(repo);
 
-    std.debug.print("🔗 Repository: {s}\n", .{repo});
+    style.print("🔗 Repository: {s}\n", .{repo});
 
     // 3. Find workflow files
     const workflow = findWorkflowFile(allocator) catch |err| {
-        std.debug.print("⚠️  Could not find workflow file: {any}\n", .{err});
-        std.debug.print("   You'll need to enter the workflow filename manually on npm.\n\n", .{});
+        style.print("⚠️  Could not find workflow file: {any}\n", .{err});
+        style.print("   You'll need to enter the workflow filename manually on npm.\n\n", .{});
         return printManualInstructions(allocator, package_name, repo, null);
     };
     defer allocator.free(workflow);
 
-    std.debug.print("⚙️  Workflow: {s}\n", .{workflow});
-    std.debug.print("\n", .{});
+    style.print("⚙️  Workflow: {s}\n", .{workflow});
+    style.print("\n", .{});
 
     return printSetupInstructions(allocator, package_name, repo, workflow);
 }
@@ -145,28 +146,28 @@ fn printSetupInstructions(allocator: std.mem.Allocator, package_name: []const u8
     const encoded_name = try urlEncode(allocator, package_name);
     defer allocator.free(encoded_name);
 
-    std.debug.print("────────────────────────────────────────────────────────────\n", .{});
-    std.debug.print("To enable OIDC trusted publishing, configure on npm:\n\n", .{});
+    style.print("────────────────────────────────────────────────────────────\n", .{});
+    style.print("To enable OIDC trusted publishing, configure on npm:\n\n", .{});
 
-    std.debug.print("1. Go to: https://www.npmjs.com/package/{s}/access\n\n", .{encoded_name});
+    style.print("1. Go to: https://www.npmjs.com/package/{s}/access\n\n", .{encoded_name});
 
-    std.debug.print("2. Under \"Trusted Publishing\", click \"Add Trusted Publisher\"\n\n", .{});
+    style.print("2. Under \"Trusted Publishing\", click \"Add Trusted Publisher\"\n\n", .{});
 
-    std.debug.print("3. Enter these values:\n", .{});
-    std.debug.print("   • Repository:     {s}\n", .{repo});
-    std.debug.print("   • Workflow file:  {s}\n", .{workflow});
-    std.debug.print("   • Environment:    (leave empty unless using GitHub environments)\n\n", .{});
+    style.print("3. Enter these values:\n", .{});
+    style.print("   • Repository:     {s}\n", .{repo});
+    style.print("   • Workflow file:  {s}\n", .{workflow});
+    style.print("   • Environment:    (leave empty unless using GitHub environments)\n\n", .{});
 
-    std.debug.print("4. Click \"Add Trusted Publisher\"\n\n", .{});
+    style.print("4. Click \"Add Trusted Publisher\"\n\n", .{});
 
-    std.debug.print("────────────────────────────────────────────────────────────\n", .{});
-    std.debug.print("Once configured, you can publish without any secrets:\n\n", .{});
-    std.debug.print("  pantry publish --access public\n\n", .{});
+    style.print("────────────────────────────────────────────────────────────\n", .{});
+    style.print("Once configured, you can publish without any secrets:\n\n", .{});
+    style.print("  pantry publish --access public\n\n", .{});
 
-    std.debug.print("Your workflow needs these permissions:\n\n", .{});
-    std.debug.print("  permissions:\n", .{});
-    std.debug.print("    contents: read\n", .{});
-    std.debug.print("    id-token: write\n\n", .{});
+    style.print("Your workflow needs these permissions:\n\n", .{});
+    style.print("  permissions:\n", .{});
+    style.print("    contents: read\n", .{});
+    style.print("    id-token: write\n\n", .{});
 
     return CommandResult.success(allocator, null);
 }
@@ -175,23 +176,23 @@ fn printManualInstructions(allocator: std.mem.Allocator, package_name: []const u
     const encoded_name = try urlEncode(allocator, package_name);
     defer allocator.free(encoded_name);
 
-    std.debug.print("────────────────────────────────────────────────────────────\n", .{});
-    std.debug.print("To enable OIDC trusted publishing:\n\n", .{});
+    style.print("────────────────────────────────────────────────────────────\n", .{});
+    style.print("To enable OIDC trusted publishing:\n\n", .{});
 
-    std.debug.print("1. Go to: https://www.npmjs.com/package/{s}/access\n\n", .{encoded_name});
+    style.print("1. Go to: https://www.npmjs.com/package/{s}/access\n\n", .{encoded_name});
 
-    std.debug.print("2. Under \"Trusted Publishing\", add:\n", .{});
+    style.print("2. Under \"Trusted Publishing\", add:\n", .{});
     if (repo) |r| {
-        std.debug.print("   • Repository:     {s}\n", .{r});
+        style.print("   • Repository:     {s}\n", .{r});
     } else {
-        std.debug.print("   • Repository:     <your-github-org/repo>\n", .{});
+        style.print("   • Repository:     <your-github-org/repo>\n", .{});
     }
     if (workflow) |w| {
-        std.debug.print("   • Workflow file:  {s}\n", .{w});
+        style.print("   • Workflow file:  {s}\n", .{w});
     } else {
-        std.debug.print("   • Workflow file:  <your-workflow.yml>\n", .{});
+        style.print("   • Workflow file:  <your-workflow.yml>\n", .{});
     }
-    std.debug.print("   • Environment:    (optional)\n\n", .{});
+    style.print("   • Environment:    (optional)\n\n", .{});
 
     return CommandResult.success(allocator, null);
 }

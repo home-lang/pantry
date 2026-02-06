@@ -29,6 +29,7 @@
 //! }
 
 const std = @import("std");
+const style = @import("../cli/style.zig");
 
 // ============================================================================
 // Types
@@ -153,7 +154,7 @@ fn parseOverridesObject(
 
         // Validate version range
         if (!isValidVersionRange(version_range)) {
-            std.debug.print("Warning: Invalid version range '{s}' for package '{s}', skipping\n", .{ version_range, package_name });
+            style.print("Warning: Invalid version range '{s}' for package '{s}', skipping\n", .{ version_range, package_name });
             continue;
         }
 

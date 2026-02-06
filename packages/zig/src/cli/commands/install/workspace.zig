@@ -10,6 +10,7 @@ const types = @import("types.zig");
 const cache = lib.cache;
 const install = lib.install;
 const helpers = @import("helpers.zig");
+const style = @import("../../style.zig");
 
 /// Result of a single workspace remote package install
 const WorkspaceInstallResult = struct {
@@ -59,7 +60,7 @@ fn installSingleWorkspaceDep(
     {
         // Try Pantry DynamoDB registry first
         if (helpers.lookupPantryRegistry(allocator, clean_name) catch |err| lkup: {
-            std.debug.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ clean_name, err });
+            style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, clean_name, err, style.reset });
             break :lkup null;
         }) |info| {
             var pantry_info = info;
@@ -276,7 +277,7 @@ pub fn installWorkspaceCommandWithOptions(
             catalog_count += catalog_manager.named_catalogs.count();
 
             if (catalog_count > 0) {
-                std.debug.print("📚 Found {d} catalog(s)\n", .{catalog_count});
+                style.print("Found {d} catalog(s)\n", .{catalog_count});
             }
         } else |_| {
             // Failed to parse package.json, continue without catalogs
@@ -285,13 +286,8 @@ pub fn installWorkspaceCommandWithOptions(
         // No package.json or failed to read, continue without catalogs
     }
 
-    const green = "\x1b[32m";
-    const blue = "\x1b[34m";
-    const dim = "\x1b[2m";
-    const reset = "\x1b[0m";
-
-    std.debug.print("{s}🔍 Workspace:{s} {s}\n", .{ blue, reset, workspace_config.name });
-    std.debug.print("{s}   Found {d} workspace member(s)\n\n", .{ dim, workspace_config.members.len });
+    style.printWorkspaceHeader(workspace_config.name);
+    style.printWorkspaceMembers(workspace_config.members.len);
 
     if (workspace_config.members.len == 0) {
         return .{
@@ -340,7 +336,7 @@ pub fn installWorkspaceCommandWithOptions(
             continue;
         }
 
-        std.debug.print("{s}📦 {s}{s}\n", .{ dim, member.name, reset });
+        style.printWorkspaceMember(member.name);
 
         // Load dependencies for this member
         var member_deps: ?[]parser.PackageDependency = null;
@@ -394,9 +390,9 @@ pub fn installWorkspaceCommandWithOptions(
                         const catalog_name = lib.deps.catalogs.CatalogManager.getCatalogName(dep.version);
                         if (catalog_name) |cat_name| {
                             if (cat_name.len == 0) {
-                                std.debug.print("Warning: Package '{s}' references default catalog but no version found\n", .{dep.name});
+                                style.printWarn("Package '{s}' references default catalog but no version found\n", .{dep.name});
                             } else {
-                                std.debug.print("Warning: Package '{s}' references catalog '{s}' but no version found\n", .{ dep.name, cat_name });
+                                style.printWarn("Package '{s}' references catalog '{s}' but no version found\n", .{ dep.name, cat_name });
                             }
                         }
                         // Skip this dependency
@@ -421,20 +417,20 @@ pub fn installWorkspaceCommandWithOptions(
                     all_deps_count += 1;
                 }
             }
-            std.debug.print("{s}   └─ {d} dependencies\n", .{ dim, deps.len });
+            style.printWorkspaceMemberDeps(deps.len);
         } else {
-            std.debug.print("{s}   └─ No dependencies\n", .{dim});
+            style.printWorkspaceMemberNoDeps();
         }
     }
 
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 
     if (all_deps_count == 0) {
-        std.debug.print("{s}✓{s} No dependencies to install\n", .{ green, reset });
+        style.print("{s}{s}{s} No dependencies to install\n", .{ style.green, style.check, style.reset });
         return .{ .exit_code = 0 };
     }
 
-    std.debug.print("{s}➤{s} Installing {d} unique package(s) for workspace...\n", .{ green, reset, all_deps_count });
+    style.printInstalling(all_deps_count);
 
     // Create workspace environment
     const home = try lib.Paths.home(allocator);
@@ -502,14 +498,12 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     if (ws_skipped_count == all_deps_count) {
-        std.debug.print("{s}✓{s} All {d} packages already up to date\n", .{ green, reset, all_deps_count });
+        style.print("{s}{s}{s} All {d} packages already up to date\n", .{ style.green, style.check, style.reset, all_deps_count });
         return .{ .exit_code = 0 };
     }
 
     if (ws_skipped_count > 0) {
-        std.debug.print("{s}  ↳ {d} package(s) already up to date, installing {d} remaining...{s}\n", .{
-            dim, ws_skipped_count, all_deps_count - ws_skipped_count, reset,
-        });
+        style.printSkipping(ws_skipped_count, all_deps_count - ws_skipped_count);
     }
 
     // ---- Pass 1: Handle local/link deps sequentially (just symlinks, microseconds) ----
@@ -532,7 +526,7 @@ pub fn installWorkspaceCommandWithOptions(
                 continue;
             };
             break :lp resolved orelse {
-                std.debug.print("{s}✗{s} {s}@{s} {s}(not linked - run 'pantry link' in the package directory){s}\n", .{ "\x1b[31m", reset, clean_name, dep.version, dim, reset });
+                style.printFailed(clean_name, dep.version, "not linked - run 'pantry link' in the package directory");
                 failed_count += 1;
                 continue;
             };
@@ -560,7 +554,7 @@ pub fn installWorkspaceCommandWithOptions(
 
         // Check if path exists
         io_helper.accessAbsolute(local_path, .{}) catch {
-            std.debug.print("{s}✗{s} {s}@{s} {s}(path not found){s}\n", .{ "\x1b[31m", reset, clean_name, dep.version, dim, reset });
+            style.printFailed(clean_name, dep.version, "path not found");
             failed_count += 1;
             continue;
         };
@@ -582,13 +576,13 @@ pub fn installWorkspaceCommandWithOptions(
         // Remove existing symlink/dir and create new one
         io_helper.deleteFile(link_path) catch {};
         io_helper.deleteTree(link_path) catch {};
-        io_helper.symLink(local_path, link_path) catch |err| {
-            std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ "\x1b[31m", reset, clean_name, dep.version, dim, err, reset });
+        io_helper.symLink(local_path, link_path) catch {
+            style.printFailed(clean_name, dep.version, "symlink failed");
             failed_count += 1;
             continue;
         };
 
-        std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, clean_name, dep.version, dim, reset });
+        style.printLinked(clean_name, dep.version);
         success_count += 1;
     }
 
@@ -647,8 +641,16 @@ pub fn installWorkspaceCommandWithOptions(
             threads[t] = std.Thread.spawn(.{}, WorkspaceThreadContext.worker, .{&thread_ctx}) catch null;
         }
 
-        // Main thread also participates
-        thread_ctx.worker();
+        // Main thread shows spinner progress instead of participating as worker
+        var frame: usize = 0;
+        while (next_idx.load(.monotonic) < remote_count) {
+            const current = @min(next_idx.load(.monotonic), remote_count);
+            const pkg_name = if (current < remote_deps.len) remote_deps[current].name else "...";
+            style.printProgress(current, remote_count, pkg_name, frame);
+            frame +%= 1;
+            io_helper.nanosleep(0, 80 * std.time.ns_per_ms);
+        }
+        style.clearProgress();
 
         // Join all threads
         for (threads) |*t| {
@@ -662,16 +664,10 @@ pub fn installWorkspaceCommandWithOptions(
         for (remote_results) |result| {
             if (result.name.len == 0) continue;
             if (result.success) {
-                std.debug.print("{s}✓{s} {s}@{s}\n", .{ green, reset, result.name, result.version });
+                style.printInstalled(result.name, result.version);
                 success_count += 1;
             } else {
-                const red = "\x1b[31m";
-                std.debug.print("{s}✗{s} {s}@{s}", .{ red, reset, result.name, result.version });
-                if (result.error_msg) |msg| {
-                    std.debug.print(" {s}({s}){s}\n", .{ dim, msg, reset });
-                } else {
-                    std.debug.print("\n", .{});
-                }
+                style.printFailed(result.name, result.version, result.error_msg);
                 failed_count += 1;
             }
         }
@@ -708,10 +704,11 @@ pub fn installWorkspaceCommandWithOptions(
 
     // Write lockfile
     const lockfile_writer = @import("../../../packages/lockfile.zig");
+    style.printLockfileSaving();
     lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-        const yellow = "\x1b[33m";
-        std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
+        style.printWarn("Failed to write lockfile: {}\n", .{err});
     };
+    style.printLockfileSaved();
 
     // Link workspace members into root pantry/ so they can reference each other
     const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{workspace_root});
@@ -758,23 +755,18 @@ pub fn installWorkspaceCommandWithOptions(
         // Create symlink: pantry/{name} -> {member.abs_path}
         io_helper.deleteFile(link_path) catch {};
         io_helper.symLink(member.abs_path, link_path) catch |err| {
-            std.debug.print("{s}  ! Failed to link {s}: {}{s}\n", .{ dim, pkg_name, err, reset });
+            style.print("{s}  ! Failed to link {s}: {}{s}\n", .{ style.dim, pkg_name, err, style.reset });
             continue;
         };
         linked_count += 1;
     }
 
     if (linked_count > 0) {
-        std.debug.print("{s}🔗{s} Linked {d} workspace package(s)\n", .{ blue, reset, linked_count });
+        style.printWorkspaceLinked(linked_count);
     }
 
     // Summary
-    std.debug.print("\n{s}✓{s} Workspace setup complete! Installed {d} package(s)", .{ green, reset, success_count });
-    if (failed_count > 0) {
-        const red = "\x1b[31m";
-        std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
-    }
-    std.debug.print("\n", .{});
+    style.printWorkspaceComplete(success_count, failed_count);
 
     return .{ .exit_code = 0 };
 }

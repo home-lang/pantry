@@ -2,6 +2,7 @@ const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lifecycle = @import("../lifecycle.zig");
 const enhanced = @import("enhanced.zig");
+const style = @import("../cli/style.zig");
 
 /// Hook execution phase
 pub const HookPhase = enum {
@@ -134,7 +135,7 @@ pub fn executeHook(
     };
 
     if (context.verbose) {
-        std.debug.print("Executing {s} hook...\n", .{script_name});
+        style.print("Executing {s} hook...\n", .{script_name});
     }
 
     // Execute the hook

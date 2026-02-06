@@ -1,6 +1,7 @@
 const std = @import("std");
 const scanner = @import("scanner.zig");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 /// Get current Unix timestamp (Zig 0.16 compatible)
 fn getTimestamp() i64 {
@@ -34,7 +35,7 @@ pub const EnvCommands = struct {
         }
 
         if (envs.len == 0) {
-            std.debug.print("📭 No development environments found\n", .{});
+            style.print("📭 No development environments found\n", .{});
             return;
         }
 
@@ -47,7 +48,7 @@ pub const EnvCommands = struct {
         } else if (std.mem.eql(u8, format, "simple")) {
             // Simple output
             for (envs) |env| {
-                std.debug.print("{s} ({s})\n", .{ env.project_name, env.hash });
+                style.print("{s} ({s})\n", .{ env.project_name, env.hash });
             }
         } else {
             // Table output
@@ -75,42 +76,42 @@ pub const EnvCommands = struct {
         }
 
         if (found == null) {
-            std.debug.print("✗ Environment not found: {s}\n", .{hash});
+            style.print("✗ Environment not found: {s}\n", .{hash});
             return error.EnvironmentNotFound;
         }
 
         const env = found.?;
 
-        std.debug.print("\n📦 Environment Details: {s}\n\n", .{env.project_name});
-        std.debug.print("Hash:      {s}\n", .{env.hash});
-        std.debug.print("Path:      {s}\n", .{env.path});
+        style.print("\n📦 Environment Details: {s}\n\n", .{env.project_name});
+        style.print("Hash:      {s}\n", .{env.hash});
+        style.print("Path:      {s}\n", .{env.path});
 
         const size_str = try formatSize(env.size_bytes, self.allocator);
         defer self.allocator.free(size_str);
-        std.debug.print("Size:      {s}\n", .{size_str});
+        style.print("Size:      {s}\n", .{size_str});
 
-        std.debug.print("Packages:  {d}\n", .{env.packages});
-        std.debug.print("Binaries:  {d}\n", .{env.binaries});
+        style.print("Packages:  {d}\n", .{env.packages});
+        style.print("Binaries:  {d}\n", .{env.binaries});
 
         const created_str = try formatTimestamp(env.created, self.allocator);
         defer self.allocator.free(created_str);
-        std.debug.print("Created:   {s}\n", .{created_str});
+        style.print("Created:   {s}\n", .{created_str});
 
         const modified_str = try formatTimestamp(env.modified, self.allocator);
         defer self.allocator.free(modified_str);
-        std.debug.print("Modified:  {s}\n", .{modified_str});
+        style.print("Modified:  {s}\n", .{modified_str});
 
         if (verbose) {
-            std.debug.print("\nBinaries:\n", .{});
+            style.print("\nBinaries:\n", .{});
             try self.listBinaries(env.path);
         }
 
         if (show_stubs) {
-            std.debug.print("\nStubs:\n", .{});
+            style.print("\nStubs:\n", .{});
             try self.listStubs(env.path);
         }
 
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
     }
 
     /// env:clean - Clean old environments
@@ -129,7 +130,7 @@ pub const EnvCommands = struct {
         }
 
         if (envs.len == 0) {
-            std.debug.print("📭 No environments to clean\n", .{});
+            style.print("📭 No environments to clean\n", .{});
             return;
         }
 
@@ -142,21 +143,21 @@ pub const EnvCommands = struct {
         for (envs) |*env| {
             if (env.modified < cutoff) {
                 if (dry_run) {
-                    std.debug.print("Would remove: {s} ({s})\n", .{ env.project_name, env.hash });
+                    style.print("Would remove: {s} ({s})\n", .{ env.project_name, env.hash });
                 } else {
                     if (!force) {
-                        std.debug.print("Remove {s}? (y/N): ", .{env.project_name});
+                        style.print("Remove {s}? (y/N): ", .{env.project_name});
                         // In production, would read user input
                         // For now, skip without force
                         continue;
                     }
 
-                    std.debug.print("Removing: {s}...", .{env.project_name});
+                    style.print("Removing: {s}...", .{env.project_name});
                     io_helper.deleteTree(env.path) catch |err| {
-                        std.debug.print(" ✗ ({any})\n", .{err});
+                        style.print(" ✗ ({any})\n", .{err});
                         continue;
                     };
-                    std.debug.print(" ✓\n", .{});
+                    style.print(" ✓\n", .{});
                 }
 
                 removed_count += 1;
@@ -168,9 +169,9 @@ pub const EnvCommands = struct {
         defer self.allocator.free(freed_str);
 
         if (dry_run) {
-            std.debug.print("\nWould clean {d} environment(s), freeing {s}\n", .{ removed_count, freed_str });
+            style.print("\nWould clean {d} environment(s), freeing {s}\n", .{ removed_count, freed_str });
         } else {
-            std.debug.print("\nCleaned {d} environment(s), freed {s}\n", .{ removed_count, freed_str });
+            style.print("\nCleaned {d} environment(s), freed {s}\n", .{ removed_count, freed_str });
         }
     }
 
@@ -194,7 +195,7 @@ pub const EnvCommands = struct {
         }
 
         if (found == null) {
-            std.debug.print("✗ Environment not found: {s}\n", .{hash});
+            style.print("✗ Environment not found: {s}\n", .{hash});
             return error.EnvironmentNotFound;
         }
 
@@ -204,23 +205,23 @@ pub const EnvCommands = struct {
             const size_str = try formatSize(env.size_bytes, self.allocator);
             defer self.allocator.free(size_str);
 
-            std.debug.print("Remove environment: {s}\n", .{env.project_name});
-            std.debug.print("  Path: {s}\n", .{env.path});
-            std.debug.print("  Size: {s}\n", .{size_str});
-            std.debug.print("\nThis action cannot be undone. Continue? (y/N): ", .{});
+            style.print("Remove environment: {s}\n", .{env.project_name});
+            style.print("  Path: {s}\n", .{env.path});
+            style.print("  Size: {s}\n", .{size_str});
+            style.print("\nThis action cannot be undone. Continue? (y/N): ", .{});
             // In production, would read user input
             // For now, require force flag
-            std.debug.print("\nUse --force to confirm removal\n", .{});
+            style.print("\nUse --force to confirm removal\n", .{});
             return;
         }
 
-        std.debug.print("Removing environment: {s}...", .{env.project_name});
+        style.print("Removing environment: {s}...", .{env.project_name});
         try io_helper.deleteTree(env.path);
-        std.debug.print(" ✓\n", .{});
+        style.print(" ✓\n", .{});
     }
 
     fn printTable(self: *EnvCommands, envs: []scanner.EnvironmentInfo, verbose: bool) !void {
-        std.debug.print("📦 Development Environments:\n\n", .{});
+        style.print("📦 Development Environments:\n\n", .{});
 
         // Calculate total size
         var total_size: u64 = 0;
@@ -230,17 +231,17 @@ pub const EnvCommands = struct {
 
         // Print header
         if (verbose) {
-            std.debug.print("┌─────────────────────────┬──────────┬──────────┬────────────┬────────────────────┐\n", .{});
-            std.debug.print("│ {s:<23} │ {s:>8} │ {s:>8} │ {s:>10} │ {s:<18} │\n", .{
+            style.print("┌─────────────────────────┬──────────┬──────────┬────────────┬────────────────────┐\n", .{});
+            style.print("│ {s:<23} │ {s:>8} │ {s:>8} │ {s:>10} │ {s:<18} │\n", .{
                 "Project", "Packages", "Binaries", "Size", "Modified",
             });
-            std.debug.print("├─────────────────────────┼──────────┼──────────┼────────────┼────────────────────┤\n", .{});
+            style.print("├─────────────────────────┼──────────┼──────────┼────────────┼────────────────────┤\n", .{});
         } else {
-            std.debug.print("┌─────────────────────────┬────────────┬────────────────────┐\n", .{});
-            std.debug.print("│ {s:<23} │ {s:>10} │ {s:<18} │\n", .{
+            style.print("┌─────────────────────────┬────────────┬────────────────────┐\n", .{});
+            style.print("│ {s:<23} │ {s:>10} │ {s:<18} │\n", .{
                 "Project", "Size", "Modified",
             });
-            std.debug.print("├─────────────────────────┼────────────┼────────────────────┤\n", .{});
+            style.print("├─────────────────────────┼────────────┼────────────────────┤\n", .{});
         }
 
         // Print rows
@@ -260,7 +261,7 @@ pub const EnvCommands = struct {
             } else env.project_name;
 
             if (verbose) {
-                std.debug.print("│ {s:<23} │ {d:>8} │ {d:>8} │ {s:>10} │ {s:<18} │\n", .{
+                style.print("│ {s:<23} │ {d:>8} │ {d:>8} │ {s:>10} │ {s:<18} │\n", .{
                     display_name,
                     env.packages,
                     env.binaries,
@@ -268,7 +269,7 @@ pub const EnvCommands = struct {
                     modified_str,
                 });
             } else {
-                std.debug.print("│ {s:<23} │ {s:>10} │ {s:<18} │\n", .{
+                style.print("│ {s:<23} │ {s:>10} │ {s:<18} │\n", .{
                     display_name,
                     size_str,
                     modified_str,
@@ -278,39 +279,39 @@ pub const EnvCommands = struct {
 
         // Print footer
         if (verbose) {
-            std.debug.print("└─────────────────────────┴──────────┴──────────┴────────────┴────────────────────┘\n", .{});
+            style.print("└─────────────────────────┴──────────┴──────────┴────────────┴────────────────────┘\n", .{});
         } else {
-            std.debug.print("└─────────────────────────┴────────────┴────────────────────┘\n", .{});
+            style.print("└─────────────────────────┴────────────┴────────────────────┘\n", .{});
         }
 
         const total_str = try formatSize(total_size, self.allocator);
         defer self.allocator.free(total_str);
 
-        std.debug.print("\nTotal: {d} environment(s), {s}\n", .{ envs.len, total_str });
+        style.print("\nTotal: {d} environment(s), {s}\n", .{ envs.len, total_str });
     }
 
     fn printJson(self: *EnvCommands, envs: []scanner.EnvironmentInfo) !void {
-        std.debug.print("[", .{});
+        style.print("[", .{});
 
         for (envs, 0..) |env, i| {
-            std.debug.print("\n  {{\n", .{});
-            std.debug.print("    \"hash\": \"{s}\",\n", .{env.hash});
-            std.debug.print("    \"project\": \"{s}\",\n", .{env.project_name});
-            std.debug.print("    \"path\": \"{s}\",\n", .{env.path});
-            std.debug.print("    \"size_bytes\": {d},\n", .{env.size_bytes});
-            std.debug.print("    \"packages\": {d},\n", .{env.packages});
-            std.debug.print("    \"binaries\": {d},\n", .{env.binaries});
-            std.debug.print("    \"created\": {d},\n", .{env.created});
-            std.debug.print("    \"modified\": {d}\n", .{env.modified});
+            style.print("\n  {{\n", .{});
+            style.print("    \"hash\": \"{s}\",\n", .{env.hash});
+            style.print("    \"project\": \"{s}\",\n", .{env.project_name});
+            style.print("    \"path\": \"{s}\",\n", .{env.path});
+            style.print("    \"size_bytes\": {d},\n", .{env.size_bytes});
+            style.print("    \"packages\": {d},\n", .{env.packages});
+            style.print("    \"binaries\": {d},\n", .{env.binaries});
+            style.print("    \"created\": {d},\n", .{env.created});
+            style.print("    \"modified\": {d}\n", .{env.modified});
 
             if (i < envs.len - 1) {
-                std.debug.print("  }},", .{});
+                style.print("  }},", .{});
             } else {
-                std.debug.print("  }}", .{});
+                style.print("  }}", .{});
             }
         }
 
-        std.debug.print("\n]\n", .{});
+        style.print("\n]\n", .{});
         _ = self;
     }
 
@@ -319,14 +320,14 @@ pub const EnvCommands = struct {
         defer self.allocator.free(bin_dir);
 
         var dir = io_helper.cwd().openDir(io_helper.io, bin_dir, .{ .iterate = true }) catch {
-            std.debug.print("  (none)\n", .{});
+            style.print("  (none)\n", .{});
             return;
         };
         defer dir.close(io_helper.io);
 
         var iter = dir.iterate();
         while (try iter.next(io_helper.io)) |entry| {
-            std.debug.print("  • {s}\n", .{entry.name});
+            style.print("  • {s}\n", .{entry.name});
         }
     }
 
@@ -335,14 +336,14 @@ pub const EnvCommands = struct {
         defer self.allocator.free(stubs_dir);
 
         var dir = io_helper.cwd().openDir(io_helper.io, stubs_dir, .{ .iterate = true }) catch {
-            std.debug.print("  (none)\n", .{});
+            style.print("  (none)\n", .{});
             return;
         };
         defer dir.close(io_helper.io);
 
         var iter = dir.iterate();
         while (try iter.next(io_helper.io)) |entry| {
-            std.debug.print("  • {s}\n", .{entry.name});
+            style.print("  • {s}\n", .{entry.name});
         }
     }
 };

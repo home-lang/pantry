@@ -1,5 +1,6 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 pub const ExtractError = error{
     ExtractionFailed,
@@ -57,7 +58,7 @@ pub fn extractArchiveQuiet(
     defer allocator.free(result.stderr);
 
     if (result.term.exited != 0) {
-        std.debug.print("Extraction failed: {s}\n", .{result.stderr});
+        style.print("Extraction failed: {s}\n", .{result.stderr});
         return error.ExtractionFailed;
     }
 }
@@ -196,9 +197,9 @@ pub fn tryVerifyWithSidecarChecksum(
 
     // Compare
     if (!std.mem.eql(u8, actual_checksum, expected_checksum)) {
-        std.debug.print("  ✗ Checksum mismatch!\n", .{});
-        std.debug.print("    Expected: {s}\n", .{expected_checksum});
-        std.debug.print("    Got:      {s}\n", .{actual_checksum});
+        style.print("  ✗ Checksum mismatch!\n", .{});
+        style.print("    Expected: {s}\n", .{expected_checksum});
+        style.print("    Got:      {s}\n", .{actual_checksum});
         return error.ChecksumMismatch;
     }
 
@@ -220,7 +221,7 @@ pub fn extractArchiveWithVerification(
     const is_valid = try verifyArchiveIntegrity(allocator, archive_path, format);
     if (!is_valid) {
         if (verbose) {
-            std.debug.print("  ✗ Archive appears to be corrupt\n", .{});
+            style.print("  ✗ Archive appears to be corrupt\n", .{});
         }
         return error.CorruptArchive;
     }
@@ -236,7 +237,7 @@ pub fn extractArchiveWithVerification(
         };
 
         if (verified and verbose) {
-            std.debug.print("  ✓ Checksum verified\n", .{});
+            style.print("  ✓ Checksum verified\n", .{});
         }
     }
 

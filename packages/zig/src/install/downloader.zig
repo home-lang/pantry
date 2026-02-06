@@ -1,6 +1,7 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
+const style = @import("../cli/style.zig");
 
 pub const DownloadError = error{
     HttpRequestFailed,
@@ -71,13 +72,9 @@ pub fn downloadFileInline(allocator: std.mem.Allocator, url: []const u8, dest_pa
 }
 
 fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) !void {
-    // ANSI codes: dim + italic
-    const dim_italic = "\x1b[2;3m";
-    const reset = "\x1b[0m";
-
     // Validate URL format
     if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
-        std.debug.print("❌ Invalid URL: {s}\n", .{url});
+        style.printInvalidUrl(url);
         return error.InvalidUrl;
     }
 
@@ -171,38 +168,40 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
                     const total_str = try formatBytes(total, &total_buf);
 
                     // Update package line with download progress in source label position
-                    std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}({s} / {s}){s}\n", .{
-                        lines_up,
-                        opts.dim_str,
-                        reset,
+                    style.moveUp(lines_up);
+                    style.clearLine();
+                    style.print("{s}+{s} {s}@{s}{s}{s} {s}({s} / {s}){s}\n", .{
+                        style.dim,
+                        style.reset,
                         opts.pkg_name,
-                        opts.dim_str,
-                        opts.italic_str,
+                        style.dim,
+                        style.italic,
                         opts.pkg_version,
-                        opts.dim_str,
+                        style.dim,
                         current_str,
                         total_str,
-                        reset,
+                        style.reset,
                     });
                 } else {
                     // No total size known, just show current
-                    std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
-                        lines_up,
-                        opts.dim_str,
-                        reset,
+                    style.moveUp(lines_up);
+                    style.clearLine();
+                    style.print("{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
+                        style.dim,
+                        style.reset,
                         opts.pkg_name,
-                        opts.dim_str,
-                        opts.italic_str,
+                        style.dim,
+                        style.italic,
                         opts.pkg_version,
-                        opts.dim_str,
+                        style.dim,
                         current_str,
-                        reset,
+                        style.reset,
                     });
                 }
 
                 // Move cursor back down
                 if (opts.line_offset < opts.total_deps - 1) {
-                    std.debug.print("\x1b[{d}B", .{lines_up - 1});
+                    style.moveDown(lines_up - 1);
                 }
             } else {
                 // Standard newline progress
@@ -220,38 +219,22 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
                         var total_buf: [64]u8 = undefined;
                         const total_str = try formatBytes(total, &total_buf);
 
-                        if (shown_progress) {
-                            std.debug.print("\r{s}  {s} / {s} ({s}){s}", .{ dim_italic, current_str, total_str, speed_str, reset });
-                        } else {
-                            std.debug.print("\n{s}  {s} / {s} ({s}){s}", .{ dim_italic, current_str, total_str, speed_str, reset });
-                            shown_progress = true;
-                        }
+                        style.printDownloadProgress(current_str, total_str, speed_str, !shown_progress);
+                        if (!shown_progress) shown_progress = true;
                     } else {
-                        if (shown_progress) {
-                            std.debug.print("\r{s}  {s} ({s}){s}", .{ dim_italic, current_str, speed_str, reset });
-                        } else {
-                            std.debug.print("\n{s}  {s} ({s}){s}", .{ dim_italic, current_str, speed_str, reset });
-                            shown_progress = true;
-                        }
+                        style.printDownloadProgress(current_str, null, speed_str, !shown_progress);
+                        if (!shown_progress) shown_progress = true;
                     }
                 } else {
                     if (total_bytes) |total| {
                         var total_buf: [64]u8 = undefined;
                         const total_str = try formatBytes(total, &total_buf);
 
-                        if (shown_progress) {
-                            std.debug.print("\r{s}  {s} / {s}{s}", .{ dim_italic, current_str, total_str, reset });
-                        } else {
-                            std.debug.print("\n{s}  {s} / {s}{s}", .{ dim_italic, current_str, total_str, reset });
-                            shown_progress = true;
-                        }
+                        style.printDownloadProgress(current_str, total_str, null, !shown_progress);
+                        if (!shown_progress) shown_progress = true;
                     } else {
-                        if (shown_progress) {
-                            std.debug.print("\r{s}  {s}{s}", .{ dim_italic, current_str, reset });
-                        } else {
-                            std.debug.print("\n{s}  {s}{s}", .{ dim_italic, current_str, reset });
-                            shown_progress = true;
-                        }
+                        style.printDownloadProgress(current_str, null, null, !shown_progress);
+                        if (!shown_progress) shown_progress = true;
                     }
                 }
             }
@@ -285,16 +268,16 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     // Show final download summary on a clean line (skip if quiet mode)
     if (!quiet and shown_progress) {
         _ = io_helper.statFile(dest_path) catch |err| {
-            std.debug.print("\n", .{});
+            style.print("\n", .{});
             if (term.exited != 0) return error.HttpRequestFailed;
             return err;
         };
         // Clear line completely (let caller print final status)
-        std.debug.print("\r\x1b[K", .{});
+        style.clearLine();
     }
 
     if (term.exited != 0) {
-        if (shown_progress) std.debug.print("\n", .{});
+        if (shown_progress) style.print("\n", .{});
         return error.HttpRequestFailed;
     }
 }
@@ -426,9 +409,7 @@ pub fn verifyChecksum(
 
     // Compare with expected
     if (!std.mem.eql(u8, hex, expected_checksum)) {
-        std.debug.print("  ✗ Checksum mismatch:\n", .{});
-        std.debug.print("    Expected: {s}\n", .{expected_checksum});
-        std.debug.print("    Got:      {s}\n", .{hex});
+        style.printChecksumMismatch(expected_checksum, hex);
         return error.ChecksumMismatch;
     }
 
@@ -447,9 +428,9 @@ pub fn downloadFileWithChecksum(
 
     // Verify checksum if provided
     if (expected_checksum) |checksum| {
-        std.debug.print("\n  Verifying checksum...", .{});
+        style.printChecksum(true);
         _ = try verifyChecksum(allocator, dest_path, checksum);
-        std.debug.print(" ✓\n", .{});
+        style.printChecksum(false);
     }
 }
 
@@ -462,17 +443,17 @@ pub fn downloadFileWithRetry(allocator: std.mem.Allocator, url: []const u8, dest
         attempt += 1;
 
         if (attempt > 1) {
-            std.debug.print("  Retry {d}/{d} after {d}ms...\n", .{ attempt - 1, options.max_retries - 1, delay_ms });
+            style.printRetry(attempt - 1, options.max_retries - 1, delay_ms);
             std.Thread.sleep(delay_ms * std.time.ns_per_ms);
         }
 
         downloadFile(allocator, url, dest_path) catch |err| {
             if (attempt >= options.max_retries) {
-                std.debug.print("\n  ✗ Download failed after {d} attempts: {}\n", .{ options.max_retries, err });
+                style.printDownloadFailed(options.max_retries, err);
                 return error.MaxRetriesExceeded;
             }
 
-            std.debug.print("\n  ⚠ Download failed (attempt {d}): {}\n", .{ attempt, err });
+            style.printDownloadAttemptFailed(attempt, err);
 
             // Exponential backoff: double the delay each time
             delay_ms *= 2;

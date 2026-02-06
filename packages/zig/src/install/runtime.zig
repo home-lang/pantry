@@ -4,6 +4,7 @@ const packages = @import("../packages.zig");
 const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 /// Runtime types that can be installed
 pub const RuntimeType = enum {
@@ -105,7 +106,7 @@ pub const RuntimeInstaller = struct {
         const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         if (!options.quiet) {
-            std.debug.print("📦 Installing {s}@{s}...\n", .{ runtime.toString(), version });
+            style.print("📦 Installing {s}@{s}...\n", .{ runtime.toString(), version });
         }
 
         // Check if already installed
@@ -120,7 +121,7 @@ pub const RuntimeInstaller = struct {
                 else => {
                     // Already installed
                     if (!options.quiet) {
-                        std.debug.print("✓ {s}@{s} already installed\n", .{ runtime.toString(), version });
+                        style.print("✓ {s}@{s} already installed\n", .{ runtime.toString(), version });
                     }
                     return RuntimeInstallResult{
                         .runtime = runtime,
@@ -137,7 +138,7 @@ pub const RuntimeInstaller = struct {
         defer self.allocator.free(download_url);
 
         if (options.verbose) {
-            std.debug.print("📥 Downloading from: {s}\n", .{download_url});
+            style.print("📥 Downloading from: {s}\n", .{download_url});
         }
 
         // Create temporary download directory
@@ -179,7 +180,7 @@ pub const RuntimeInstaller = struct {
         };
 
         if (options.verbose) {
-            std.debug.print("📂 Extracting to: {s}\n", .{install_dir});
+            style.print("📂 Extracting to: {s}\n", .{install_dir});
         }
 
         // Extract tarball
@@ -190,7 +191,7 @@ pub const RuntimeInstaller = struct {
 
         // Verify binary exists
         io_helper.accessAbsolute(binary_path, .{}) catch {
-            std.debug.print("❌ Installation failed: binary not found at {s}\n", .{binary_path});
+            style.print("❌ Installation failed: binary not found at {s}\n", .{binary_path});
             return error.BinaryNotFound;
         };
 
@@ -208,7 +209,7 @@ pub const RuntimeInstaller = struct {
         const elapsed_ms = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
 
         if (!options.quiet) {
-            std.debug.print("✅ {s}@{s} installed ({d}ms)\n", .{
+            style.print("✅ {s}@{s} installed ({d}ms)\n", .{
                 runtime.toString(),
                 version,
                 elapsed_ms,
@@ -316,12 +317,12 @@ pub const RuntimeInstaller = struct {
 
         io_helper.deleteTree(install_dir) catch |err| switch (err) {
             error.FileNotFound => {
-                std.debug.print("❌ {s}@{s} not installed\n", .{ runtime.toString(), version });
+                style.print("❌ {s}@{s} not installed\n", .{ runtime.toString(), version });
                 return error.NotInstalled;
             },
             else => return err,
         };
 
-        std.debug.print("✅ Uninstalled {s}@{s}\n", .{ runtime.toString(), version });
+        style.print("✅ Uninstalled {s}@{s}\n", .{ runtime.toString(), version });
     }
 };

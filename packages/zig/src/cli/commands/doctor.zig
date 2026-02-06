@@ -2,6 +2,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 const Platform = lib.Platform;
@@ -25,7 +26,7 @@ pub const CheckResult = struct {
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     _ = args;
 
-    std.debug.print("Running pantry diagnostics...\n\n", .{});
+    style.print("Running pantry diagnostics...\n\n", .{});
 
     var checks = std.ArrayList(CheckResult){};
     defer {
@@ -51,14 +52,14 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     for (checks.items) |check| {
         const icon = if (check.passed) "[32m✓[0m" else "[31m✗[0m";
 
-        std.debug.print("{s} {s}\n", .{ icon, check.name });
-        std.debug.print("  {s}\n", .{check.message});
+        style.print("{s} {s}\n", .{ icon, check.name });
+        style.print("  {s}\n", .{check.message});
 
         if (check.suggestion) |suggestion| {
-            std.debug.print("  Suggestion: {s}\n", .{suggestion});
+            style.print("  Suggestion: {s}\n", .{suggestion});
         }
 
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
 
         if (check.passed) {
             passed += 1;
@@ -68,11 +69,11 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     // Summary
-    std.debug.print("────────────────────────────────────────────────────────────\n", .{});
-    std.debug.print("Summary: {d}/{d} checks passed\n", .{ passed, checks.items.len });
+    style.print("────────────────────────────────────────────────────────────\n", .{});
+    style.print("Summary: {d}/{d} checks passed\n", .{ passed, checks.items.len });
 
     if (failed == 0) {
-        std.debug.print("\nYour pantry installation is healthy!\n", .{});
+        style.print("\nYour pantry installation is healthy!\n", .{});
         return CommandResult.success(allocator, null);
     } else {
         const message = try std.fmt.allocPrint(

@@ -2,6 +2,7 @@ const std = @import("std");
 const http = std.http;
 const io_helper = @import("../io_helper.zig");
 const oidc = @import("oidc.zig");
+const style = @import("../cli/style.zig");
 
 /// Sigstore public good instance URLs
 pub const FULCIO_URL = "https://fulcio.sigstore.dev";
@@ -188,7 +189,7 @@ pub const FulcioClient = struct {
         );
         defer self.allocator.free(request_body);
 
-        std.debug.print("Requesting signing certificate from Fulcio...\n", .{});
+        style.print("Requesting signing certificate from Fulcio...\n", .{});
 
         const uri = try std.Uri.parse(url);
 
@@ -216,11 +217,11 @@ pub const FulcioClient = struct {
         defer self.allocator.free(body);
 
         if (response.head.status != .ok and response.head.status != .created) {
-            std.debug.print("Fulcio request failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
+            style.print("Fulcio request failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
             return error.FulcioCertificateRequestFailed;
         }
 
-        std.debug.print("✓ Received signing certificate from Fulcio\n", .{});
+        style.print("✓ Received signing certificate from Fulcio\n", .{});
 
         // The response may have escaped newlines (\n as literal characters)
         // Unescape them to get proper PEM format
@@ -375,7 +376,7 @@ pub const RekorClient = struct {
             payload_hash_hex[i * 2 + 1] = hex_chars[byte & 0x0F];
         }
 
-        std.debug.print("Submitting attestation to Rekor transparency log...\n", .{});
+        style.print("Submitting attestation to Rekor transparency log...\n", .{});
 
         // Build Rekor intoto v0.0.2 entry with:
         // - Double-base64 payload and sig (required by Rekor intoto v0.0.2)
@@ -445,11 +446,11 @@ pub const RekorClient = struct {
         defer self.allocator.free(body);
 
         if (response.head.status != .ok and response.head.status != .created) {
-            std.debug.print("Rekor submission failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
+            style.print("Rekor submission failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
             return error.RekorSubmissionFailed;
         }
 
-        std.debug.print("✓ Attestation recorded in Rekor transparency log\n", .{});
+        style.print("✓ Attestation recorded in Rekor transparency log\n", .{});
 
         // Parse the response to extract log entry details
         var entry = try parseRekorResponse(self.allocator, body);
@@ -457,7 +458,7 @@ pub const RekorClient = struct {
         // If inclusionProof is missing, fetch the entry by UUID to get it
         // (the POST response may not include it immediately)
         if (entry.inclusion_proof == null) {
-            std.debug.print("Fetching inclusion proof from Rekor...\n", .{});
+            style.print("Fetching inclusion proof from Rekor...\n", .{});
             if (self.fetchEntryByUUID(entry.uuid)) |full_entry| {
                 // Copy over the inclusion proof and body
                 entry.inclusion_proof = full_entry.inclusion_proof;
@@ -472,7 +473,7 @@ pub const RekorClient = struct {
                 self.allocator.free(full_entry.log_id);
                 if (full_entry.signed_entry_timestamp.len > 0) self.allocator.free(full_entry.signed_entry_timestamp);
             } else |_| {
-                std.debug.print("Warning: Could not fetch inclusion proof\n", .{});
+                style.print("Warning: Could not fetch inclusion proof\n", .{});
             }
         }
 
@@ -1048,7 +1049,7 @@ pub fn createSignedProvenance(
     // 2. Generate ephemeral ECDSA keypair
     // Note: Zig's std.crypto has ECDSA support
     // For now, we'll use a simplified approach
-    std.debug.print("Generating ephemeral signing key...\n", .{});
+    style.print("Generating ephemeral signing key...\n", .{});
 
     // TODO: Generate actual ECDSA P-256 keypair
     // For now, this is a placeholder - real implementation needs crypto
@@ -1113,7 +1114,7 @@ pub fn createSignedProvenance(
         &rekor_entry,
     );
 
-    std.debug.print("✓ Created Sigstore bundle with provenance attestation\n", .{});
+    style.print("✓ Created Sigstore bundle with provenance attestation\n", .{});
 
     return bundle;
 }

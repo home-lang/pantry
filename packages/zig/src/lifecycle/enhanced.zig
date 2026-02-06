@@ -1,6 +1,7 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lifecycle = @import("../lifecycle.zig");
+const style = @import("../cli/style.zig");
 
 const LifecycleScript = lifecycle.LifecycleScript;
 const ScriptResult = lifecycle.ScriptResult;
@@ -157,8 +158,8 @@ pub fn executeScriptWithTimeout(
     };
 
     if (options.base.verbose) {
-        std.debug.print("  Duration: {d}ms\n", .{duration_ms});
-        std.debug.print("  Exit code: {d}\n", .{exit_code});
+        style.print("  Duration: {d}ms\n", .{duration_ms});
+        style.print("  Exit code: {d}\n", .{exit_code});
     }
 
     return ScriptResult{
@@ -216,7 +217,7 @@ pub fn executeScriptWithRetry(
     while (attempts <= options.retry_attempts) : (attempts += 1) {
         if (attempts > 0) {
             if (options.base.verbose) {
-                std.debug.print("  Retry attempt {d}/{d}\n", .{ attempts, options.retry_attempts });
+                style.print("  Retry attempt {d}/{d}\n", .{ attempts, options.retry_attempts });
             }
             std.time.sleep(options.retry_delay_ms * std.time.ns_per_ms);
         }
@@ -284,7 +285,7 @@ pub fn executeScriptsParallel(
     // Real parallel implementation would use thread pool
     for (scripts, 0..) |script, i| {
         if (options.base.verbose) {
-            std.debug.print("Running {s} for {s}...\n", .{ script.script_name, script.package_name });
+            style.print("Running {s} for {s}...\n", .{ script.script_name, script.package_name });
         }
 
         var script_options = options;
@@ -451,7 +452,7 @@ pub fn executeScriptSandboxed(
             if (!sandbox_config.allow_network) {
                 // Remove --share-net and use --unshare-net instead
                 // This requires rebuilding the command - for now, log warning
-                std.debug.print("Warning: Network restriction not fully implemented\n", .{});
+                style.print("Warning: Network restriction not fully implemented\n", .{});
             }
 
             // Execute the actual command
@@ -517,12 +518,12 @@ pub fn executeScriptSandboxed(
         .windows => {
             // Windows: AppContainer would require Win32 API calls
             // For now, fall back to regular execution with a warning
-            std.debug.print("Warning: Sandboxing not fully supported on Windows\n", .{});
+            style.print("Warning: Sandboxing not fully supported on Windows\n", .{});
             return try executeScriptWithRetry(allocator, script_name, script_cmd, options);
         },
         else => {
             // Unsupported OS - execute without sandboxing but warn
-            std.debug.print("Warning: Sandboxing not supported on this platform\n", .{});
+            style.print("Warning: Sandboxing not supported on this platform\n", .{});
             return try executeScriptWithRetry(allocator, script_name, script_cmd, options);
         },
     }
@@ -596,8 +597,8 @@ pub fn executeScriptSandboxed(
     };
 
     if (options.base.verbose) {
-        std.debug.print("  Sandboxed execution duration: {d}ms\n", .{duration_ms});
-        std.debug.print("  Exit code: {d}\n", .{exit_code});
+        style.print("  Sandboxed execution duration: {d}ms\n", .{duration_ms});
+        style.print("  Exit code: {d}\n", .{exit_code});
     }
 
     return ScriptResult{

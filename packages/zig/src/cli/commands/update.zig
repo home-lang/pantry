@@ -5,6 +5,7 @@ const lib = @import("../../lib.zig");
 const outdated_cmd = @import("outdated.zig");
 const npm = @import("../../registry/npm.zig");
 const registry_core = @import("../../registry/core.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -220,7 +221,7 @@ fn updatePackage(
         if (!dry_run) {
             updateConfigFile(allocator, package_name, new_version) catch |err| {
                 // Log but don't fail - config update is best effort
-                std.debug.print("Warning: Failed to update config for {s}: {}\n", .{ package_name, err });
+                style.print("Warning: Failed to update config for {s}: {}\n", .{ package_name, err });
             };
         }
 

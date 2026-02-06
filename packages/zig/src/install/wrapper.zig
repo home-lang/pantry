@@ -1,6 +1,7 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
+const style = @import("../cli/style.zig");
 
 pub const WrapperError = error{
     WrapperCreationFailed,
@@ -47,7 +48,7 @@ pub fn createBinaryWrapper(
 ) !void {
     // Verify binary exists
     io_helper.cwd().access(io_helper.io, binary_path, .{}) catch {
-        std.debug.print("  ✗ Binary not found: {s}\n", .{binary_path});
+        style.print("  ✗ Binary not found: {s}\n", .{binary_path});
         return error.BinaryNotFound;
     };
 
@@ -77,7 +78,7 @@ pub fn createBinaryWrapper(
         return error.WrapperCreationFailed;
     };
 
-    std.debug.print("  ✓ Created wrapper: {s}\n", .{wrapper_path});
+    style.print("  ✓ Created wrapper: {s}\n", .{wrapper_path});
 }
 
 /// Create wrappers for all binaries in a package
@@ -97,7 +98,7 @@ pub fn createPackageWrappers(
 
     // Open bin directory
     var dir = io_helper.cwd().openDir(io_helper.io, package_bin_dir, .{ .iterate = true }) catch {
-        std.debug.print("  ! No bin directory found: {s}\n", .{package_bin_dir});
+        style.print("  ! No bin directory found: {s}\n", .{package_bin_dir});
         return;
     };
     defer dir.close(io_helper.io);
@@ -133,7 +134,7 @@ pub fn createPackageWrappers(
                     wrapper_dir,
                     env_vars,
                 ) catch |err| {
-                    std.debug.print("  ! Failed to create wrapper for {s}: {}\n", .{ entry.name, err });
+                    style.print("  ! Failed to create wrapper for {s}: {}\n", .{ entry.name, err });
                     continue;
                 };
                 created_count += 1;
@@ -142,7 +143,7 @@ pub fn createPackageWrappers(
     }
 
     if (created_count > 0) {
-        std.debug.print("  ✓ Created {d} wrapper(s)\n", .{created_count});
+        style.print("  ✓ Created {d} wrapper(s)\n", .{created_count});
     }
 }
 
@@ -256,7 +257,7 @@ pub fn fixMacOSLibraryPaths(
         defer allocator.free(change_result.stderr);
 
         if (change_result.term.exited == 0) {
-            std.debug.print("  ✓ Fixed library path: {s} -> {s}\n", .{ lib_name, new_path });
+            style.print("  ✓ Fixed library path: {s} -> {s}\n", .{ lib_name, new_path });
         }
     }
 
@@ -274,7 +275,7 @@ pub fn fixMacOSLibraryPaths(
     defer allocator.free(add_rpath.stderr);
 
     if (add_rpath.term.exited == 0) {
-        std.debug.print("  ✓ Added rpath: {s}\n", .{lib_dir});
+        style.print("  ✓ Added rpath: {s}\n", .{lib_dir});
     }
 }
 

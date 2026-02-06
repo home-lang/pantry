@@ -7,6 +7,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -72,9 +73,9 @@ pub fn runScriptWithFilter(
     var filter = if (options.filter) |filter_str| blk: {
         // Check if it's a named filter from config
         if (filter_configs.get(filter_str)) |named_filter| {
-            std.debug.print("Using named filter '{s}'\n", .{filter_str});
+            style.print("Using named filter '{s}'\n", .{filter_str});
             if (named_filter.description) |desc| {
-                std.debug.print("  {s}\n", .{desc});
+                style.print("  {s}\n", .{desc});
             }
 
             // Resolve inheritance chain
@@ -96,7 +97,7 @@ pub fn runScriptWithFilter(
             }
 
             if (named_filter.extends) |parent| {
-                std.debug.print("  (extends '{s}')\n", .{parent});
+                style.print("  (extends '{s}')\n", .{parent});
             }
 
             // Create a copy of patterns since they'll be freed
@@ -168,7 +169,7 @@ pub fn runScriptWithFilter(
             };
         }
 
-        std.debug.print("Detected {d} changed package(s) since {s}\n\n", .{
+        style.print("Detected {d} changed package(s) since {s}\n\n", .{
             matching_members.items.len,
             options.changed_base,
         });
@@ -200,21 +201,21 @@ pub fn runScriptWithFilter(
     const dim = "\x1b[2m";
     const reset = "\x1b[0m";
 
-    std.debug.print("{s}Running script '{s}' in {d} package(s)", .{
+    style.print("{s}Running script '{s}' in {d} package(s)", .{
         blue,
         script_name,
         matching_members.items.len,
     });
 
     if (options.respect_order and ordered_result.parallel_groups.len > 1) {
-        std.debug.print(" ({d} parallel groups)", .{ordered_result.parallel_groups.len});
+        style.print(" ({d} parallel groups)", .{ordered_result.parallel_groups.len});
     }
-    std.debug.print(":{s}\n", .{reset});
+    style.print(":{s}\n", .{reset});
 
     for (ordered_result.order) |member| {
-        std.debug.print("{s}  • {s}{s}\n", .{ dim, member.name, reset });
+        style.print("{s}  • {s}{s}\n", .{ dim, member.name, reset });
     }
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 
     // Execute scripts - either in parallel groups or sequentially
     var success_count: usize = 0;
@@ -233,7 +234,7 @@ pub fn runScriptWithFilter(
             if (group.len == 0) continue;
 
             if (ordered_result.parallel_groups.len > 1) {
-                std.debug.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
+                style.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
             }
 
             // Execute group in parallel
@@ -244,7 +245,7 @@ pub fn runScriptWithFilter(
                 script_args,
                 options.verbose,
             ) catch |err| {
-                std.debug.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
+                style.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
                 failed_count += group.len;
                 continue;
             };
@@ -258,21 +259,21 @@ pub fn runScriptWithFilter(
             // Display results
             for (results) |result| {
                 if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "No scripts defined") != null) {
-                    std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
                     skipped_count += 1;
                 } else if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "Script not found") != null) {
-                    std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
                     skipped_count += 1;
                 } else if (result.success) {
-                    std.debug.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
+                    style.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
                     if (options.verbose and result.stdout.len > 0) {
-                        std.debug.print("{s}", .{result.stdout});
+                        style.print("{s}", .{result.stdout});
                     }
                     success_count += 1;
                 } else {
-                    std.debug.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
+                    style.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
                     if (result.stderr.len > 0) {
-                        std.debug.print("{s}", .{result.stderr});
+                        style.print("{s}", .{result.stderr});
                     }
                     failed_count += 1;
                 }
@@ -283,7 +284,7 @@ pub fn runScriptWithFilter(
         for (ordered_result.order) |member| {
             // Load scripts for this member
             const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
-                std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
+                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
                     yellow,
                     reset,
                     member.name,
@@ -295,7 +296,7 @@ pub fn runScriptWithFilter(
             };
 
             if (scripts_map == null) {
-                std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
+                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
                     yellow,
                     reset,
                     member.name,
@@ -318,7 +319,7 @@ pub fn runScriptWithFilter(
 
             // Check if the script exists for this member
             const script_command = scripts.get(script_name) orelse {
-                std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{
+                style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{
                     yellow,
                     reset,
                     member.name,
@@ -330,7 +331,7 @@ pub fn runScriptWithFilter(
             };
 
             // Execute the script
-            std.debug.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
+            style.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
 
             // Build command with args
             var command_list = std.ArrayList(u8){};
@@ -348,7 +349,7 @@ pub fn runScriptWithFilter(
             const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", full_command }, .{
                 .cwd = member.abs_path,
             }) catch |err| {
-                std.debug.print("{s}✗{s} {s} {s}({any}){s}\n", .{
+                style.print("{s}✗{s} {s} {s}({any}){s}\n", .{
                     red,
                     reset,
                     member.name,
@@ -365,13 +366,13 @@ pub fn runScriptWithFilter(
             }
 
             if (result.term.exited == 0) {
-                std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
+                style.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
-                    std.debug.print("{s}", .{result.stdout});
+                    style.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
-                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{
+                style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{
                     red,
                     reset,
                     member.name,
@@ -380,7 +381,7 @@ pub fn runScriptWithFilter(
                     reset,
                 });
                 if (result.stderr.len > 0) {
-                    std.debug.print("{s}", .{result.stderr});
+                    style.print("{s}", .{result.stderr});
                 }
                 failed_count += 1;
             }
@@ -388,14 +389,14 @@ pub fn runScriptWithFilter(
     }
 
     // Summary
-    std.debug.print("\n{s}✓{s} {d} succeeded", .{ green, reset, success_count });
+    style.print("\n{s}✓{s} {d} succeeded", .{ green, reset, success_count });
     if (failed_count > 0) {
-        std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        style.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
     }
     if (skipped_count > 0) {
-        std.debug.print(", {s}{d} skipped{s}", .{ yellow, skipped_count, reset });
+        style.print(", {s}{d} skipped{s}", .{ yellow, skipped_count, reset });
     }
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 
     const exit_code: u8 = if (failed_count > 0) 1 else 0;
 
@@ -435,8 +436,8 @@ fn watchAndRerun(
     defer watcher.deinit();
 
     // Create a simple polling loop
-    std.debug.print("👀 Watching for changes in {d} package(s)...\n", .{members.len});
-    std.debug.print("   Press Ctrl+C to stop\n\n", .{});
+    style.print("👀 Watching for changes in {d} package(s)...\n", .{members.len});
+    style.print("   Press Ctrl+C to stop\n\n", .{});
 
     // Initial scan
     try watcher.scanAllFiles();
@@ -457,8 +458,8 @@ fn watchAndRerun(
             const reset = "\x1b[0m";
             const blue = "\x1b[34m";
 
-            std.debug.print("\n{s}───────────────────────────────────────{s}\n", .{ dim, reset });
-            std.debug.print("{s}Detected {d} file change(s):{s}\n", .{ blue, changes.len, reset });
+            style.print("\n{s}───────────────────────────────────────{s}\n", .{ dim, reset });
+            style.print("{s}Detected {d} file change(s):{s}\n", .{ blue, changes.len, reset });
 
             var affected_members = std.StringHashMap(void).init(allocator);
             defer affected_members.deinit();
@@ -476,7 +477,7 @@ fn watchAndRerun(
                 else
                     event.file_path;
 
-                std.debug.print("  {s}{s}{s} in {s} ({s})\n", .{
+                style.print("  {s}{s}{s} in {s} ({s})\n", .{
                     dim,
                     rel_path,
                     reset,
@@ -487,16 +488,16 @@ fn watchAndRerun(
                 try affected_members.put(event.member.name, {});
             }
             if (changes.len > 5) {
-                std.debug.print("  ... and {d} more\n", .{changes.len - 5});
+                style.print("  ... and {d} more\n", .{changes.len - 5});
             }
 
-            std.debug.print("\n{s}Re-running script '{s}' in {d} affected package(s)...{s}\n", .{
+            style.print("\n{s}Re-running script '{s}' in {d} affected package(s)...{s}\n", .{
                 blue,
                 script_name,
                 affected_members.count(),
                 reset,
             });
-            std.debug.print("{s}───────────────────────────────────────{s}\n\n", .{ dim, reset });
+            style.print("{s}───────────────────────────────────────{s}\n\n", .{ dim, reset });
 
             // Wait for debounce
             io_helper.nanosleep(0, watcher.options.debounce_ms * std.time.ns_per_ms);
@@ -510,7 +511,7 @@ fn watchAndRerun(
                 options,
             );
 
-            std.debug.print("\n{s}👀 Watching for changes...{s}\n", .{ dim, reset });
+            style.print("\n{s}👀 Watching for changes...{s}\n", .{ dim, reset });
         }
 
         // Sleep for poll interval
@@ -561,7 +562,7 @@ fn executeScriptsInMembers(
             if (group.len == 0) continue;
 
             if (ordered_result.parallel_groups.len > 1) {
-                std.debug.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
+                style.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
             }
 
             const results = parallel_executor.executeParallelGroup(
@@ -571,7 +572,7 @@ fn executeScriptsInMembers(
                 script_args,
                 options.verbose,
             ) catch |err| {
-                std.debug.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
+                style.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
                 failed_count += group.len;
                 continue;
             };
@@ -584,21 +585,21 @@ fn executeScriptsInMembers(
 
             for (results) |result| {
                 if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "No scripts defined") != null) {
-                    std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
                     skipped_count += 1;
                 } else if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "Script not found") != null) {
-                    std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
                     skipped_count += 1;
                 } else if (result.success) {
-                    std.debug.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
+                    style.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
                     if (options.verbose and result.stdout.len > 0) {
-                        std.debug.print("{s}", .{result.stdout});
+                        style.print("{s}", .{result.stdout});
                     }
                     success_count += 1;
                 } else {
-                    std.debug.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
+                    style.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
                     if (result.stderr.len > 0) {
-                        std.debug.print("{s}", .{result.stderr});
+                        style.print("{s}", .{result.stderr});
                     }
                     failed_count += 1;
                 }
@@ -608,13 +609,13 @@ fn executeScriptsInMembers(
         // Sequential execution
         for (ordered_result.order) |member| {
             const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
-                std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, member.name, dim, reset });
+                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, member.name, dim, reset });
                 skipped_count += 1;
                 continue;
             };
 
             if (scripts_map == null) {
-                std.debug.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, member.name, dim, reset });
+                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, member.name, dim, reset });
                 skipped_count += 1;
                 continue;
             }
@@ -630,12 +631,12 @@ fn executeScriptsInMembers(
             }
 
             const script_command = scripts.get(script_name) orelse {
-                std.debug.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, member.name, dim, reset });
+                style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, member.name, dim, reset });
                 skipped_count += 1;
                 continue;
             };
 
-            std.debug.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
+            style.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
 
             var command_list = std.ArrayList(u8){};
             defer command_list.deinit(allocator);
@@ -651,7 +652,7 @@ fn executeScriptsInMembers(
             const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", full_command }, .{
                 .cwd = member.abs_path,
             }) catch |err| {
-                std.debug.print("{s}✗{s} {s} {s}({any}){s}\n", .{ red, reset, member.name, dim, err, reset });
+                style.print("{s}✗{s} {s} {s}({any}){s}\n", .{ red, reset, member.name, dim, err, reset });
                 failed_count += 1;
                 continue;
             };
@@ -661,15 +662,15 @@ fn executeScriptsInMembers(
             }
 
             if (result.term.exited == 0) {
-                std.debug.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
+                style.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
-                    std.debug.print("{s}", .{result.stdout});
+                    style.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
-                std.debug.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, result.term.exited, reset });
+                style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, result.term.exited, reset });
                 if (result.stderr.len > 0) {
-                    std.debug.print("{s}", .{result.stderr});
+                    style.print("{s}", .{result.stderr});
                 }
                 failed_count += 1;
             }
@@ -677,12 +678,12 @@ fn executeScriptsInMembers(
     }
 
     // Summary
-    std.debug.print("\n{s}✓{s} {d} succeeded", .{ green, reset, success_count });
+    style.print("\n{s}✓{s} {d} succeeded", .{ green, reset, success_count });
     if (failed_count > 0) {
-        std.debug.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        style.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
     }
     if (skipped_count > 0) {
-        std.debug.print(", {s}{d} skipped{s}", .{ yellow, skipped_count, reset });
+        style.print(", {s}{d} skipped{s}", .{ yellow, skipped_count, reset });
     }
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 }

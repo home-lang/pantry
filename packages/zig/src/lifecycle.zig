@@ -20,6 +20,7 @@
 const std = @import("std");
 const lib = @import("lib.zig");
 const io_helper = @import("io_helper.zig");
+const style = @import("cli/style.zig");
 
 // ============================================================================
 // Sub-modules
@@ -267,9 +268,9 @@ pub fn executeScript(
     }
 
     if (options.verbose) {
-        std.debug.print("Running script: {s}\n", .{script_name});
-        std.debug.print("  Command: {s}\n", .{script_cmd});
-        std.debug.print("  CWD: {s}\n", .{options.cwd});
+        style.print("Running script: {s}\n", .{script_name});
+        style.print("  Command: {s}\n", .{script_cmd});
+        style.print("  CWD: {s}\n", .{options.cwd});
     }
 
     // Execute the script using Child.run for simplicity
@@ -330,19 +331,19 @@ pub fn executeScript(
     // Always print output on failure so users can debug script issues
     if (!success) {
         if (stdout) |out| {
-            std.debug.print("  stdout: {s}\n", .{out});
+            style.print("  stdout: {s}\n", .{out});
         }
         if (stderr) |err| {
-            std.debug.print("  stderr: {s}\n", .{err});
+            style.print("  stderr: {s}\n", .{err});
         }
     } else if (options.verbose) {
         if (stdout) |out| {
-            std.debug.print("  stdout: {s}\n", .{out});
+            style.print("  stdout: {s}\n", .{out});
         }
         if (stderr) |err| {
-            std.debug.print("  stderr: {s}\n", .{err});
+            style.print("  stderr: {s}\n", .{err});
         }
-        std.debug.print("  exit code: {d}\n", .{exit_code});
+        style.print("  exit code: {d}\n", .{exit_code});
     }
 
     return ScriptResult{
@@ -408,7 +409,7 @@ pub fn runLifecycleScript(
 
         if (!isTrusted(package_name, empty_trusted)) {
             if (options.verbose) {
-                std.debug.print("Skipping script for untrusted package: {s}\n", .{package_name});
+                style.print("Skipping script for untrusted package: {s}\n", .{package_name});
             }
             return null;
         }
@@ -437,8 +438,8 @@ pub fn runLifecycleScript(
     // Check if package is trusted
     if (!isTrusted(package_name, trusted_deps)) {
         if (options.verbose) {
-            std.debug.print("Skipping script for untrusted package: {s}\n", .{package_name});
-            std.debug.print("  Add to trustedDependencies in package.json to enable\n", .{});
+            style.print("Skipping script for untrusted package: {s}\n", .{package_name});
+            style.print("  Add to trustedDependencies in package.json to enable\n", .{});
         }
         return null;
     }
@@ -479,9 +480,9 @@ pub fn runLifecycleScriptsForPackages(
             }
 
             if (!r.success) {
-                std.debug.print("Lifecycle script failed for {s}\n", .{pkg.name});
+                style.print("Lifecycle script failed for {s}\n", .{pkg.name});
                 if (r.stderr) |err| {
-                    std.debug.print("{s}\n", .{err});
+                    style.print("{s}\n", .{err});
                 }
                 return error.LifecycleScriptFailed;
             }
@@ -507,20 +508,20 @@ pub fn runScriptIfExists(
         else => return true, // Invalid script value = skip
     };
 
-    std.debug.print("Running {s} script...\n", .{script_name});
+    style.print("Running {s} script...\n", .{script_name});
     if (executeScript(allocator, script_name, script_cmd, .{ .cwd = cwd })) |result| {
         defer {
             var r = result;
             r.deinit(allocator);
         }
         if (!result.success) {
-            std.debug.print("  ✗ {s} failed with exit code {d}\n", .{ script_name, result.exit_code });
+            style.print("  ✗ {s} failed with exit code {d}\n", .{ script_name, result.exit_code });
             return false;
         }
-        std.debug.print("  ✓ {s} completed\n", .{script_name});
+        style.print("  ✓ {s} completed\n", .{script_name});
         return true;
     } else |_| {
-        std.debug.print("  ✗ {s} failed to execute\n", .{script_name});
+        style.print("  ✗ {s} failed to execute\n", .{script_name});
         return false;
     }
 }

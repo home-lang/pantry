@@ -2,6 +2,7 @@ const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
 const builtin = @import("builtin");
+const style = @import("../cli/style.zig");
 
 pub const SymlinkError = error{
     SymlinkCreationFailed,
@@ -52,7 +53,7 @@ pub fn createBinarySymlinkFromPath(
 
     // Verify target exists
     io_helper.cwd().access(io_helper.io, bin_path, .{}) catch {
-        std.debug.print("  ✗ Binary not found: {s}\n", .{bin_path});
+        style.print("  ✗ Binary not found: {s}\n", .{bin_path});
         return error.TargetNotFound;
     };
 
@@ -66,11 +67,11 @@ pub fn createBinarySymlinkFromPath(
 
     // Create symlink (cross-platform)
     createSymlinkCrossPlatform(bin_path, symlink_path) catch |err| {
-        std.debug.print("  ✗ Failed to create symlink: {}\n", .{err});
+        style.print("  ✗ Failed to create symlink: {}\n", .{err});
         return error.SymlinkCreationFailed;
     };
 
-    std.debug.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, bin_path });
+    style.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, bin_path });
 }
 
 /// Create symlink for a package binary (legacy - builds path from package info)
@@ -127,7 +128,7 @@ pub fn createVersionSymlink(
         return error.SymlinkCreationFailed;
     };
 
-    std.debug.print("  ✓ Version symlink: v{s} -> v{s}\n", .{ major_version, full_version });
+    style.print("  ✓ Version symlink: v{s} -> v{s}\n", .{ major_version, full_version });
 }
 
 /// Result of discovering binaries - contains bin name and its full path
@@ -299,13 +300,13 @@ pub fn createPackageSymlinks(
     }
 
     if (binaries.len == 0) {
-        std.debug.print("  ! No binaries found in {s}\n", .{package_dir});
+        style.print("  ! No binaries found in {s}\n", .{package_dir});
         // Even without binaries, still create version symlink for libraries
     } else {
         // Create symlinks for each binary using the discovered paths
         for (binaries) |bin_info| {
             createBinarySymlinkFromPath(allocator, bin_info.name, bin_info.path, install_base) catch |err| {
-                std.debug.print("  ! Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
+                style.print("  ! Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
     }
@@ -314,7 +315,7 @@ pub fn createPackageSymlinks(
     var parts = std.mem.splitScalar(u8, version, '.');
     if (parts.next()) |major| {
         createVersionSymlink(allocator, package_name, version, major, install_base) catch |err| {
-            std.debug.print("  ! Failed to create version symlink: {}\n", .{err});
+            style.print("  ! Failed to create version symlink: {}\n", .{err});
         };
     }
 }
@@ -354,7 +355,7 @@ pub fn removePackageSymlinks(
         defer allocator.free(symlink_path);
 
         io_helper.deleteFile(symlink_path) catch |err| {
-            std.debug.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });
+            style.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });
         };
     }
 
@@ -414,7 +415,7 @@ pub fn createShim(
 
     // Verify target exists
     io_helper.cwd().access(io_helper.io, target_path, .{}) catch {
-        std.debug.print("  ✗ Binary not found: {s}\n", .{target_path});
+        style.print("  ✗ Binary not found: {s}\n", .{target_path});
         return error.TargetNotFound;
     };
 
@@ -428,7 +429,7 @@ pub fn createShim(
             io_helper.deleteFile(shim_path) catch {};
 
             try createSymlinkCrossPlatform(target_path, shim_path);
-            std.debug.print("  ✓ Linked: {s}\n", .{bin_name});
+            style.print("  ✓ Linked: {s}\n", .{bin_name});
         },
         .node, .shell => {
             // For JS/shell files, create wrapper scripts
@@ -482,7 +483,7 @@ fn createScriptShim(
     // Make executable on Unix
     if (builtin.os.tag != .windows) {
         _ = io_helper.childRun(allocator, &[_][]const u8{ "chmod", "+x", unix_shim_path }) catch |err| {
-            std.debug.print("Warning: Failed to make {s} executable: {}\n", .{ unix_shim_path, err });
+            style.print("Warning: Failed to make {s} executable: {}\n", .{ unix_shim_path, err });
         };
     }
 
@@ -518,7 +519,7 @@ fn createScriptShim(
         cmd_file.close(io_helper.io);
     }
 
-    std.debug.print("  ✓ Shim: {s}\n", .{bin_name});
+    style.print("  ✓ Shim: {s}\n", .{bin_name});
 }
 
 /// Create shims from a bin config (parsed from package.json)
@@ -543,7 +544,7 @@ pub fn createShimsFromBinConfig(
 
         // Create shim
         createShim(allocator, bin_name, bin_path, shim_dir) catch |err| {
-            std.debug.print("  ! Failed to create shim for {s}: {}\n", .{ bin_name, err });
+            style.print("  ! Failed to create shim for {s}: {}\n", .{ bin_name, err });
         };
     }
 }

@@ -7,6 +7,7 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const types = @import("types.zig");
+const style = @import("../cli/style.zig");
 
 /// Options for file watching
 pub const WatchOptions = struct {
@@ -84,8 +85,8 @@ pub const FileWatcher = struct {
         // Initial scan to populate timestamps
         try self.scanAllFiles();
 
-        std.debug.print("👀 Watching for changes in {d} package(s)...\n", .{self.members.len});
-        std.debug.print("   Press Ctrl+C to stop\n\n", .{});
+        style.print("👀 Watching for changes in {d} package(s)...\n", .{self.members.len});
+        style.print("   Press Ctrl+C to stop\n\n", .{});
 
         while (!self.should_stop.load(.acquire)) {
             // Poll for changes

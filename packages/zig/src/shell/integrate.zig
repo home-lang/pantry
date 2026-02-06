@@ -1,6 +1,7 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
+const style = @import("../cli/style.zig");
 
 pub const ShellIntegrator = struct {
     allocator: std.mem.Allocator,
@@ -28,7 +29,7 @@ pub const ShellIntegrator = struct {
         for (shell_files.items) |file| {
             // Check if hook already exists
             if (try self.hasHook(file)) {
-                std.debug.print("✓ Hook already integrated: {s}\n", .{file});
+                style.print("✓ Hook already integrated: {s}\n", .{file});
                 continue;
             }
 
@@ -36,7 +37,7 @@ pub const ShellIntegrator = struct {
                 try self.appendHook(file, hook_line);
             }
 
-            std.debug.print("✓ {s} {s} << `{s}`\n", .{
+            style.print("✓ {s} {s} << `{s}`\n", .{
                 if (dry_run) "Would add" else "Added",
                 file,
                 hook_line,
@@ -63,7 +64,7 @@ pub const ShellIntegrator = struct {
                 try self.removeHook(file);
             }
 
-            std.debug.print("✓ {s} hook: {s}\n", .{
+            style.print("✓ {s} hook: {s}\n", .{
                 if (dry_run) "Would remove" else "Removed",
                 file,
             });

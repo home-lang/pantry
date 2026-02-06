@@ -4,6 +4,7 @@ const core = @import("../core/platform.zig");
 const string = @import("../core/string.zig");
 const errors = @import("../core/error.zig");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 const pantryError = errors.pantryError;
 
@@ -120,7 +121,7 @@ pub const EnvCache = struct {
     pub fn deinit(self: *EnvCache) void {
         // Save to disk before deinit
         self.save() catch |err| {
-            std.debug.print("Warning: Failed to persist environment cache: {}\n", .{err});
+            style.print("Warning: Failed to persist environment cache: {}\n", .{err});
         };
 
         self.lock.lock();

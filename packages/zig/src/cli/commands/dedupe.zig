@@ -1,6 +1,7 @@
 const std = @import("std");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -31,7 +32,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (dry_run) {
-        std.debug.print("Dry run mode - no changes will be made\n\n", .{});
+        style.print("Dry run mode - no changes will be made\n\n", .{});
     }
 
     // Load pantry.json
@@ -43,7 +44,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         mut_result.deinit();
     }
 
-    std.debug.print("Analyzing dependency tree...\n\n", .{});
+    style.print("Analyzing dependency tree...\n\n", .{});
 
     // Find duplicates
     var duplicates = std.ArrayList(DuplicatePackage){};
@@ -57,12 +58,12 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     try findDuplicates(allocator, &duplicates);
 
     if (duplicates.items.len == 0) {
-        std.debug.print("No duplicate packages found!\n", .{});
+        style.print("No duplicate packages found!\n", .{});
         return CommandResult.success(allocator, "Dependency tree is already optimized");
     }
 
     // Display duplicates
-    std.debug.print("Found {d} duplicate package{s}:\n\n", .{
+    style.print("Found {d} duplicate package{s}:\n\n", .{
         duplicates.items.len,
         if (duplicates.items.len == 1) "" else "s",
     });
@@ -70,20 +71,20 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     var total_size_saved: usize = 0;
 
     for (duplicates.items) |dup| {
-        std.debug.print("{s}\n", .{dup.name});
-        std.debug.print("  Versions: ", .{});
+        style.print("{s}\n", .{dup.name});
+        style.print("  Versions: ", .{});
 
         for (dup.versions, 0..) |version, i| {
-            if (i > 0) std.debug.print(", ", .{});
-            std.debug.print("{s}", .{version});
+            if (i > 0) style.print(", ", .{});
+            style.print("{s}", .{version});
         }
 
-        std.debug.print("\n  Locations: {d}\n", .{dup.locations.len});
+        style.print("\n  Locations: {d}\n", .{dup.locations.len});
 
         const size_str = try formatSize(allocator, dup.total_size);
         defer allocator.free(size_str);
 
-        std.debug.print("  Size: {s}\n\n", .{size_str});
+        style.print("  Size: {s}\n\n", .{size_str});
 
         // Calculate potential savings (keep newest version)
         if (dup.versions.len > 1) {
@@ -92,18 +93,18 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (!dry_run) {
-        std.debug.print("Deduplicating...\n\n", .{});
+        style.print("Deduplicating...\n\n", .{});
 
         var deduped: usize = 0;
         for (duplicates.items) |dup| {
             const result = try deduplicatePackage(allocator, &dup);
             if (result) {
                 deduped += 1;
-                std.debug.print("Deduplicated {s}\n", .{dup.name});
+                style.print("Deduplicated {s}\n", .{dup.name});
             }
         }
 
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
 
         const size_str = try formatSize(allocator, total_size_saved);
         defer allocator.free(size_str);

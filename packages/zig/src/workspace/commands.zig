@@ -1,6 +1,7 @@
 const std = @import("std");
 const core = @import("core.zig");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 const Workspace = core.Workspace;
 const WorkspaceConfig = core.WorkspaceConfig;
@@ -199,7 +200,7 @@ fn runPackageScript(
     if (script != .string) return false;
 
     // Execute script
-    std.debug.print("Running '{s}' in {s}...\n", .{ script_name, pkg.name });
+    style.print("Running '{s}' in {s}...\n", .{ script_name, pkg.name });
 
     const term = try io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "sh", "-c", script.string }, .cwd = io_helper.toCwd(pkg_path) });
 

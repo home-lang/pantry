@@ -4,6 +4,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -100,7 +101,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     defer allocator.free(display_command);
 
     // Print what we're running
-    std.debug.print("\x1b[2m$ {s}\x1b[0m\n", .{display_command});
+    style.print("\x1b[2m$ {s}\x1b[0m\n", .{display_command});
 
     // Build argv for shell execution
     var argv_buf: [128][]const u8 = undefined;
@@ -147,10 +148,10 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
 
     // Print output
     if (result.stdout.len > 0) {
-        std.debug.print("{s}", .{result.stdout});
+        style.print("{s}", .{result.stdout});
     }
     if (result.stderr.len > 0) {
-        std.debug.print("{s}", .{result.stderr});
+        style.print("{s}", .{result.stderr});
     }
 
     return .{

@@ -1,5 +1,6 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 pub const DepsFile = struct {
     path: []const u8,
@@ -208,6 +209,6 @@ test "findDepsFile" {
     const result = try findDepsFile(allocator, ".");
     if (result) |deps_file| {
         defer allocator.free(deps_file.path);
-        std.debug.print("Found: {s}\n", .{deps_file.path});
+        style.print("Found: {s}\n", .{deps_file.path});
     }
 }

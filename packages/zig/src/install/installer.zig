@@ -8,6 +8,7 @@ const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
 const libfixer = @import("libfixer.zig");
 const semver = @import("../packages/semver.zig");
+const style = @import("../cli/style.zig");
 
 const pantryError = errors.pantryError;
 const Paths = core.Paths;
@@ -376,7 +377,7 @@ pub const Installer = struct {
 
         // Verify the local path exists
         var local_dir = io_helper.cwd().openDir(io_helper.io, local_path, .{}) catch |err| {
-            std.debug.print("Error: Local path '{s}' does not exist or is not accessible: {}\n", .{ local_path, err });
+            style.print("Error: Local path '{s}' does not exist or is not accessible: {}\n", .{ local_path, err });
             return error.FileNotFound;
         };
         local_dir.close(io_helper.io);
@@ -424,7 +425,7 @@ pub const Installer = struct {
 
             const symlink_module = @import("symlink.zig");
             symlink_module.createSymlinkCrossPlatform(target, modules_bin) catch |err| {
-                std.debug.print("Warning: Failed to create symlink {s} -> {s}: {}\n", .{ modules_bin, target, err });
+                style.print("Warning: Failed to create symlink {s} -> {s}: {}\n", .{ modules_bin, target, err });
             };
 
             break :blk modules_bin;
@@ -435,7 +436,7 @@ pub const Installer = struct {
         const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
 
         if (!options.quiet) {
-            std.debug.print("  ✓ linked to {s}\n", .{local_path});
+            style.print("  ✓ linked to {s}\n", .{local_path});
         }
 
         return InstallResult{
@@ -497,7 +498,7 @@ pub const Installer = struct {
         }
 
         if (!options.quiet) {
-            std.debug.print("  → Cloning from GitHub: {s}#{s}\n", .{ repo, spec.version });
+            style.print("  → Cloning from GitHub: {s}#{s}\n", .{ repo, spec.version });
         }
 
         // Create temp directory for cloning
@@ -536,7 +537,7 @@ pub const Installer = struct {
 
         if (clone_result.term.exited != 0) {
             if (!options.quiet) {
-                std.debug.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
+                style.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
             }
             return error.GitCloneFailed;
         }
@@ -651,7 +652,7 @@ pub const Installer = struct {
 
         if (curl_result.term != .exited or curl_result.term.exited != 0) {
             if (!options.quiet) {
-                std.debug.print("  ✗ Failed to download: {s}\n", .{curl_result.stderr});
+                style.print("  ✗ Failed to download: {s}\n", .{curl_result.stderr});
             }
             return error.DownloadFailed;
         }
@@ -675,7 +676,7 @@ pub const Installer = struct {
 
         if (tar_result.term != .exited or tar_result.term.exited != 0) {
             if (!options.quiet) {
-                std.debug.print("  ✗ Failed to extract: {s}\n", .{tar_result.stderr});
+                style.print("  ✗ Failed to extract: {s}\n", .{tar_result.stderr});
             }
             return error.ExtractionFailed;
         }
@@ -688,7 +689,7 @@ pub const Installer = struct {
         // Resolve transitive dependencies (dependencies + peerDependencies)
         if (options.project_root) |project_root| {
             self.resolveTransitiveDeps(install_dir, project_root, 0) catch |err| {
-                std.debug.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ spec.name, err });
+                style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ spec.name, err });
             };
         }
 
@@ -776,7 +777,7 @@ pub const Installer = struct {
         depth: u32,
     ) void {
         self.installTransitiveDepInner(name, version_constraint, project_root, depth) catch |err| {
-            std.debug.print("    ! {s}: {}\n", .{ name, err });
+            style.print("    ! {s}: {}\n", .{ name, err });
         };
     }
 
@@ -818,7 +819,7 @@ pub const Installer = struct {
             var pantry_info = info;
             defer pantry_info.deinit(self.allocator);
 
-            std.debug.print("    + {s}@{s}\n", .{ name, pantry_info.version });
+            style.print("    + {s}@{s}\n", .{ name, pantry_info.version });
 
             const spec = PackageSpec{
                 .name = name,
@@ -836,7 +837,7 @@ pub const Installer = struct {
 
             // Recurse into this dep's deps
             self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {
-                std.debug.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
+                style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
             };
             result.deinit(self.allocator);
             return;
@@ -847,7 +848,7 @@ pub const Installer = struct {
         defer self.allocator.free(npm_info.version);
         defer self.allocator.free(npm_info.tarball_url);
 
-        std.debug.print("    + {s}@{s}\n", .{ name, npm_info.version });
+        style.print("    + {s}@{s}\n", .{ name, npm_info.version });
 
         const spec = PackageSpec{
             .name = name,
@@ -863,7 +864,7 @@ pub const Installer = struct {
 
         // Recurse into this dep's deps
         self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {
-            std.debug.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
+            style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
         };
         result.deinit(self.allocator);
     }
@@ -1059,9 +1060,9 @@ pub const Installer = struct {
         if (!options.quiet) {
             const is_dev = downloader.isZigDevVersion(spec.version);
             if (is_dev) {
-                std.debug.print("  → Downloading Zig dev from ziglang.org: {s}\n", .{spec.version});
+                style.print("  → Downloading Zig dev from ziglang.org: {s}\n", .{spec.version});
             } else {
-                std.debug.print("  → Downloading Zig from ziglang.org: {s}\n", .{spec.version});
+                style.print("  → Downloading Zig from ziglang.org: {s}\n", .{spec.version});
             }
         }
 
@@ -1103,7 +1104,7 @@ pub const Installer = struct {
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+            style.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
                 lines_up,
                 progress_opts.dim_str,
                 "\x1b[0m",
@@ -1115,7 +1116,7 @@ pub const Installer = struct {
                 "\x1b[0m",
             });
             if (progress_opts.line_offset < progress_opts.total_deps - 1) {
-                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+                style.print("\x1b[{d}B", .{lines_up - 1});
             }
         }
 
@@ -1183,7 +1184,7 @@ pub const Installer = struct {
             // Remove existing symlink if it exists
             io_helper.deleteFile(zig_link) catch {};
             io_helper.symLink(zig_binary, zig_link) catch |err| {
-                std.debug.print("Warning: Failed to create zig symlink: {}\n", .{err});
+                style.print("Warning: Failed to create zig symlink: {}\n", .{err});
             };
         }
 
@@ -1234,7 +1235,7 @@ pub const Installer = struct {
             self.data_dir,
         ) catch |err| {
             // Log error but don't fail the install
-            std.debug.print("Warning: Failed to create symlinks: {}\n", .{err});
+            style.print("Warning: Failed to create symlinks: {}\n", .{err});
         };
 
         return install_path;
@@ -1336,14 +1337,14 @@ pub const Installer = struct {
                 downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
                     self.allocator.free(temp_archive_path);
                     self.allocator.free(url);
-                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    style.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
             } else {
                 downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
                     self.allocator.free(temp_archive_path);
                     self.allocator.free(url);
-                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    style.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
             }
@@ -1365,7 +1366,7 @@ pub const Installer = struct {
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
+            style.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
                 lines_up,
                 progress_opts.dim_str,
                 "\x1b[0m",
@@ -1377,7 +1378,7 @@ pub const Installer = struct {
                 "\x1b[0m",
             });
             if (progress_opts.line_offset < progress_opts.total_deps - 1) {
-                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+                style.print("\x1b[{d}B", .{lines_up - 1});
             }
         }
 
@@ -1511,7 +1512,7 @@ pub const Installer = struct {
             // Check if source exists
             io_helper.accessAbsolute(source, .{}) catch |err| {
                 if (err == error.FileNotFound) {
-                    std.debug.print("Warning: Program not found: {s}\n", .{source});
+                    style.print("Warning: Program not found: {s}\n", .{source});
                     continue;
                 }
                 return err;
@@ -1522,7 +1523,7 @@ pub const Installer = struct {
 
             // Create symlink
             io_helper.symLink(source, link) catch |err| {
-                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+                style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
 
@@ -1600,7 +1601,7 @@ pub const Installer = struct {
                         // Check if source exists
                         io_helper.accessAbsolute(source, .{}) catch |err| {
                             if (err == error.FileNotFound) {
-                                std.debug.print("Warning: Bin not found: {s}\n", .{source});
+                                style.print("Warning: Bin not found: {s}\n", .{source});
                                 continue;
                             }
                             return err;
@@ -1611,7 +1612,7 @@ pub const Installer = struct {
 
                         // Create symlink
                         io_helper.symLink(source, link) catch |err| {
-                            std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
+                            style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
                             continue;
                         };
 
@@ -1654,7 +1655,7 @@ pub const Installer = struct {
 
             // Create symlink using absolute paths
             io_helper.symLink(bin_info.path, link) catch |err| {
-                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
+                style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
 
@@ -1710,7 +1711,7 @@ pub const Installer = struct {
                 bin_value.string,
                 shim_dir,
             ) catch |err| {
-                std.debug.print("Warning: Failed to create shim: {}\n", .{err});
+                style.print("Warning: Failed to create shim: {}\n", .{err});
             };
         } else if (bin_value == .object) {
             // Multiple binaries
@@ -1720,7 +1721,7 @@ pub const Installer = struct {
                 bin_value,
                 shim_dir,
             ) catch |err| {
-                std.debug.print("Warning: Failed to create shims: {}\n", .{err});
+                style.print("Warning: Failed to create shims: {}\n", .{err});
             };
         }
     }
@@ -1789,14 +1790,14 @@ pub const Installer = struct {
                 downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
                     self.allocator.free(temp_archive_path);
                     self.allocator.free(url);
-                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    style.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
             } else {
                 downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
                     self.allocator.free(temp_archive_path);
                     self.allocator.free(url);
-                    std.debug.print("Failed to download {s}: {}\n", .{ url, err });
+                    style.print("Failed to download {s}: {}\n", .{ url, err });
                     continue;
                 };
             }
@@ -1818,7 +1819,7 @@ pub const Installer = struct {
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            std.debug.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
+            style.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
                 lines_up,
                 progress_opts.dim_str,
                 "\x1b[0m",
@@ -1830,7 +1831,7 @@ pub const Installer = struct {
                 "\x1b[0m",
             });
             if (progress_opts.line_offset < progress_opts.total_deps - 1) {
-                std.debug.print("\x1b[{d}B", .{lines_up - 1});
+                style.print("\x1b[{d}B", .{lines_up - 1});
             }
         }
 
@@ -1908,7 +1909,7 @@ pub const Installer = struct {
             // Check if source exists
             io_helper.accessAbsolute(source, .{}) catch |err| {
                 if (err == error.FileNotFound) {
-                    std.debug.print("Warning: Program not found: {s}\n", .{source});
+                    style.print("Warning: Program not found: {s}\n", .{source});
                     continue;
                 }
                 return err;
@@ -1919,7 +1920,7 @@ pub const Installer = struct {
 
             // Create symlink
             io_helper.symLink(source, link) catch |err| {
-                std.debug.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+                style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
     }
@@ -2126,7 +2127,7 @@ pub const Installer = struct {
         // Use chmod to make the file executable
         var child = io_helper.spawn(.{ .argv = &.{ "chmod", "+x", path } }) catch return;
         _ = io_helper.wait(&child) catch |err| {
-            std.debug.print("Warning: chmod +x failed for {s}: {}\n", .{ path, err });
+            style.print("Warning: chmod +x failed for {s}: {}\n", .{ path, err });
         };
     }
 
@@ -2166,7 +2167,7 @@ pub const Installer = struct {
 
                 // Install the actual dependency
                 self.installDependency(actual_dep, options) catch |err| {
-                    std.debug.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
+                    style.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
                     if (!is_optional and !has_critical_failure) {
                         has_critical_failure = true;
                         first_error = err;
@@ -2175,7 +2176,7 @@ pub const Installer = struct {
             } else {
                 // Regular dependency
                 self.installDependency(dep_str, options) catch |err| {
-                    std.debug.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
+                    style.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
                     if (!is_optional and !has_critical_failure) {
                         has_critical_failure = true;
                         first_error = err;
@@ -2245,7 +2246,7 @@ pub const Installer = struct {
 
         // Resolve version
         const resolved_version = semver.resolveVersion(domain, version) orelse {
-            std.debug.print("  ! Could not resolve version for {s}{s}\n", .{ name, version });
+            style.print("  ! Could not resolve version for {s}{s}\n", .{ name, version });
             return error.VersionNotFound;
         };
 
@@ -2261,11 +2262,11 @@ pub const Installer = struct {
                 .version = resolved_version,
             };
 
-            std.debug.print("    → Installing dependency: {s}@{s}\n", .{ name, resolved_version });
+            style.print("    → Installing dependency: {s}@{s}\n", .{ name, resolved_version });
 
             // Install the dependency (this will recursively install its dependencies)
             const result = self.install(spec, options) catch |e| {
-                std.debug.print("  ! Failed to install dependency: {}\n", .{e});
+                style.print("  ! Failed to install dependency: {}\n", .{e});
                 return e;
             };
             var mut_result = result;
@@ -2275,7 +2276,7 @@ pub const Installer = struct {
         check_dir.close(io_helper.io);
 
         // Already installed, skip
-        std.debug.print("    ✓ Dependency already installed: {s}@{s}\n", .{ name, resolved_version });
+        style.print("    ✓ Dependency already installed: {s}@{s}\n", .{ name, resolved_version });
     }
 };
 

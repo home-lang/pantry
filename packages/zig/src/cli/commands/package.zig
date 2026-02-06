@@ -4,6 +4,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -99,16 +100,16 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
     // Print results
     if (!options.silent) {
         if (removed_packages.items.len > 0) {
-            std.debug.print("\x1b[32m✓\x1b[0m Removed {d} package(s):\n", .{removed_packages.items.len});
+            style.print("\x1b[32m✓\x1b[0m Removed {d} package(s):\n", .{removed_packages.items.len});
             for (removed_packages.items) |pkg| {
-                std.debug.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
+                style.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
             }
         }
 
         if (not_found_packages.items.len > 0) {
-            std.debug.print("\x1b[33m⚠\x1b[0m Not found in dependencies:\n", .{});
+            style.print("\x1b[33m⚠\x1b[0m Not found in dependencies:\n", .{});
             for (not_found_packages.items) |pkg| {
-                std.debug.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
+                style.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
             }
         }
     }
@@ -163,14 +164,14 @@ pub fn updateCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
 
     if (!options.silent) {
         if (args.len > 0) {
-            std.debug.print("\x1b[34m📦 Updating specific packages\x1b[0m\n", .{});
+            style.print("\x1b[34m📦 Updating specific packages\x1b[0m\n", .{});
             for (args) |pkg| {
-                std.debug.print("  → {s}\n", .{pkg});
+                style.print("  → {s}\n", .{pkg});
             }
         } else {
-            std.debug.print("\x1b[34m📦 Updating all packages\x1b[0m\n", .{});
+            style.print("\x1b[34m📦 Updating all packages\x1b[0m\n", .{});
         }
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
     }
 
     // For now, delegate to install command
@@ -349,8 +350,8 @@ pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, o
     }
 
     // Print table header
-    std.debug.print("\n\x1b[1m{s: <35} | {s: <10} | {s: <10} | {s: <10}\x1b[0m\n", .{ "Package", "Current", "Update", "Latest" });
-    std.debug.print("{s:-<35}-+-{s:-<10}-+-{s:-<10}-+-{s:-<10}\n", .{ "", "", "", "" });
+    style.print("\n\x1b[1m{s: <35} | {s: <10} | {s: <10} | {s: <10}\x1b[0m\n", .{ "Package", "Current", "Update", "Latest" });
+    style.print("{s:-<35}-+-{s:-<10}-+-{s:-<10}-+-{s:-<10}\n", .{ "", "", "", "" });
 
     // Print each outdated package
     for (outdated_packages.items) |pkg| {
@@ -358,14 +359,14 @@ pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, o
         const pkg_display = try std.fmt.allocPrint(allocator, "{s}{s}", .{ pkg.name, dev_marker });
         defer allocator.free(pkg_display);
 
-        std.debug.print("{s: <35} | {s: <10} | {s: <10} | {s: <10}\n", .{
+        style.print("{s: <35} | {s: <10} | {s: <10} | {s: <10}\n", .{
             pkg_display,
             pkg.current,
             pkg.update,
             pkg.latest,
         });
     }
-    std.debug.print("\n", .{});
+    style.print("\n", .{});
 
     const summary = try std.fmt.allocPrint(
         allocator,
@@ -411,7 +412,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{cwd});
     defer allocator.free(lockfile_path);
 
-    std.debug.print("{s}➤{s} Uninstalling {d} package(s)...\n", .{ green, reset, args.len });
+    style.print("{s}➤{s} Uninstalling {d} package(s)...\n", .{ green, reset, args.len });
 
     var success_count: usize = 0;
 
@@ -428,7 +429,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         // Try to remove package directory (if it exists)
         if (io_helper.accessAbsolute(pkg_dir, .{})) |_| {
             io_helper.deleteTree(pkg_dir) catch |err| {
-                std.debug.print("{s}⚠{s}  {s} {s}(failed to remove directory: {}){s}\n", .{ yellow, reset, pkg_name, dim, err, reset });
+                style.print("{s}⚠{s}  {s} {s}(failed to remove directory: {}){s}\n", .{ yellow, reset, pkg_name, dim, err, reset });
             };
             dir_removed = true;
 
@@ -452,20 +453,20 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
             } else |_| {}
         } else |_| {}
 
-        std.debug.print("{s}✓{s} {s}{s}\n", .{ green, reset, pkg_name, if (!dir_removed) " (from config only)" else "" });
+        style.print("{s}✓{s} {s}{s}\n", .{ green, reset, pkg_name, if (!dir_removed) " (from config only)" else "" });
         success_count += 1;
     }
 
     // Always remove packages from package.json/pantry.json and lockfile
     removeFromConfigFile(allocator, cwd, args) catch |err| {
-        std.debug.print("{s}⚠{s}  Failed to update config file: {}\n", .{ yellow, reset, err });
+        style.print("{s}⚠{s}  Failed to update config file: {}\n", .{ yellow, reset, err });
     };
 
     updateLockfileAfterUninstall(allocator, lockfile_path, args) catch |err| {
-        std.debug.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ yellow, reset, err });
+        style.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ yellow, reset, err });
     };
 
-    std.debug.print("\nRemoved {s}{d}{s} package(s)\n", .{ green, success_count, reset });
+    style.print("\nRemoved {s}{d}{s} package(s)\n", .{ green, success_count, reset });
 
     return .{ .exit_code = 0 };
 }
@@ -740,8 +741,8 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
     if (monorepo_packages) |pkgs| {
         // Monorepo mode — publish each non-private package to npm
-        std.debug.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
-        std.debug.print("----------------------------------------\n", .{});
+        style.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
+        style.print("----------------------------------------\n", .{});
 
         // Detect root files to propagate to packages that don't have their own
         const root_files = [_][]const u8{ "README.md", "LICENSE", "LICENSE.md" };
@@ -763,7 +764,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
         var succeeded: usize = 0;
 
         for (pkgs) |pkg| {
-            std.debug.print("\nPublishing {s}...\n", .{pkg.name});
+            style.print("\nPublishing {s}...\n", .{pkg.name});
 
             // Propagate root files (README, LICENSE) to package if missing
             var copied_files: [root_files.len]?[]const u8 = .{null} ** root_files.len;
@@ -777,7 +778,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                         if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
                             if (r.term == .exited and r.term.exited == 0) {
                                 copied_files[i] = pkg_file_path;
-                                std.debug.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
+                                style.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
                             } else {
                                 allocator.free(pkg_file_path);
                             }
@@ -811,22 +812,22 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                     succeeded += 1;
                 } else {
                     failed += 1;
-                    if (r.message) |msg| std.debug.print("  Error: {s}\n", .{msg});
+                    if (r.message) |msg| style.print("  Error: {s}\n", .{msg});
                 }
                 var res = r;
                 res.deinit(allocator);
             } else |err| {
                 failed += 1;
-                std.debug.print("  Error: {any}\n", .{err});
+                style.print("  Error: {any}\n", .{err});
             }
-            std.debug.print("----------------------------------------\n", .{});
+            style.print("----------------------------------------\n", .{});
         }
 
-        std.debug.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
+        style.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
         if (failed > 0) {
-            std.debug.print(" ({d} failed)", .{failed});
+            style.print(" ({d} failed)", .{failed});
         }
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
 
         return .{ .exit_code = if (failed > 0) 1 else 0 };
     }
@@ -850,7 +851,7 @@ fn publishSingleToNpm(
     config_path: []const u8,
     options: PublishOptions,
 ) !CommandResult {
-    std.debug.print("Publishing package from {s}...\n", .{config_path});
+    style.print("Publishing package from {s}...\n", .{config_path});
 
     // Import auth modules
     const registry = @import("../../auth/registry.zig");
@@ -879,7 +880,7 @@ fn publishSingleToNpm(
         return CommandResult.err(allocator, "Error: Invalid package version");
     };
 
-    std.debug.print("Publishing {s}@{s}...\n", .{ metadata.name, metadata.version });
+    style.print("Publishing {s}@{s}...\n", .{ metadata.name, metadata.version });
 
     // Determine registry URL (priority: CLI flag > publishConfig > default)
     const registry_url = if (!std.mem.eql(u8, options.registry, "https://registry.npmjs.org"))
@@ -889,7 +890,7 @@ fn publishSingleToNpm(
     else
         options.registry; // Fall back to default
 
-    std.debug.print("Registry: {s}\n", .{registry_url});
+    style.print("Registry: {s}\n", .{registry_url});
 
     // Parse package.json for lifecycle scripts
     const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch null;
@@ -948,7 +949,7 @@ fn publishSingleToNpm(
         );
 
         if (result.success) {
-            std.debug.print("✓ Package published successfully using OIDC\n", .{});
+            style.print("✓ Package published successfully using OIDC\n", .{});
             // Run post-publish scripts: publish → postpublish
             if (scripts_obj) |scripts| {
                 _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
@@ -965,7 +966,7 @@ fn publishSingleToNpm(
                 return CommandResult.err(allocator, err_msg);
             }
             // Fall through to token authentication (handles first-time publish, no trusted publisher configured, etc.)
-            std.debug.print("OIDC authentication not available, falling back to token...\n", .{});
+            style.print("OIDC authentication not available, falling back to token...\n", .{});
         }
     }
 
@@ -1029,7 +1030,7 @@ fn publishSingleToNpm(
     }
 
     if (response.success) {
-        std.debug.print("✓ Package published successfully\n", .{});
+        style.print("✓ Package published successfully\n", .{});
         // Run post-publish scripts: publish → postpublish
         if (scripts_obj) |scripts| {
             _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
@@ -1071,7 +1072,7 @@ fn attemptOIDCPublish(
     };
     defer provider.deinit(allocator);
 
-    std.debug.print("Detected OIDC provider: {s}\n", .{provider.name});
+    style.print("Detected OIDC provider: {s}\n", .{provider.name});
 
     // Get OIDC token from environment
     const raw_token = try oidc.getTokenFromEnvironment(allocator, &provider) orelse return .{
@@ -1081,27 +1082,27 @@ fn attemptOIDCPublish(
     defer allocator.free(raw_token);
 
     // Verify token signature against provider's JWKS
-    std.debug.print("Verifying OIDC token signature...\n", .{});
+    style.print("Verifying OIDC token signature...\n", .{});
     const sig_valid = oidc.verifyTokenSignature(allocator, raw_token, &provider) catch |err| {
-        std.debug.print("Warning: Could not verify token signature: {any}\n", .{err});
-        std.debug.print("Proceeding with unverified token (registry will validate)\n", .{});
+        style.print("Warning: Could not verify token signature: {any}\n", .{err});
+        style.print("Proceeding with unverified token (registry will validate)\n", .{});
         // Continue anyway - registry will do final validation
         return attemptOIDCPublishUnverified(allocator, registry_client, package_name, version, tarball_path, generate_provenance, raw_token, &provider);
     };
 
     if (!sig_valid) {
-        std.debug.print("Error: OIDC token signature verification failed\n", .{});
+        style.print("Error: OIDC token signature verification failed\n", .{});
         return .{
             .success = false,
             .error_message = try allocator.dupe(u8, "OIDC token signature verification failed"),
         };
     }
 
-    std.debug.print("✓ Token signature verified\n", .{});
+    style.print("✓ Token signature verified\n", .{});
 
     // Decode and validate token (signature already verified)
     var token = oidc.validateTokenComplete(allocator, raw_token, &provider, null) catch |err| {
-        std.debug.print("Error: Token validation failed: {any}\n", .{err});
+        style.print("Error: Token validation failed: {any}\n", .{err});
         return .{
             .success = false,
             .error_message = try std.fmt.allocPrint(allocator, "Token validation failed: {any}", .{err}),
@@ -1110,24 +1111,24 @@ fn attemptOIDCPublish(
     defer token.deinit(allocator);
 
     // Print token info for transparency
-    std.debug.print("OIDC Claims:\n", .{});
-    std.debug.print("  Issuer: {s}\n", .{token.claims.iss});
-    std.debug.print("  Audience: {s}\n", .{token.claims.aud});
-    std.debug.print("  Subject: {s}\n", .{token.claims.sub});
+    style.print("OIDC Claims:\n", .{});
+    style.print("  Issuer: {s}\n", .{token.claims.iss});
+    style.print("  Audience: {s}\n", .{token.claims.aud});
+    style.print("  Subject: {s}\n", .{token.claims.sub});
     if (token.claims.repository) |repo| {
-        std.debug.print("  Repository: {s}\n", .{repo});
+        style.print("  Repository: {s}\n", .{repo});
     }
     if (token.claims.ref) |ref| {
-        std.debug.print("  Ref: {s}\n", .{ref});
+        style.print("  Ref: {s}\n", .{ref});
     }
     if (token.claims.sha) |sha| {
-        std.debug.print("  SHA: {s}\n", .{sha});
+        style.print("  SHA: {s}\n", .{sha});
     }
     if (token.claims.job_workflow_ref) |jwr| {
-        std.debug.print("  Job Workflow Ref: {s}\n", .{jwr});
+        style.print("  Job Workflow Ref: {s}\n", .{jwr});
     }
     if (token.claims.event_name) |event| {
-        std.debug.print("  Event: {s}\n", .{event});
+        style.print("  Event: {s}\n", .{event});
     }
 
     // Generate Sigstore provenance bundle if requested
@@ -1135,11 +1136,11 @@ fn attemptOIDCPublish(
     defer if (sigstore_bundle) |bundle| allocator.free(bundle);
 
     if (generate_provenance) {
-        std.debug.print("\nGenerating Sigstore provenance attestation...\n", .{});
+        style.print("\nGenerating Sigstore provenance attestation...\n", .{});
 
         // Read tarball for hashing
         const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch |err| {
-            std.debug.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
+            style.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
             return .{
                 .success = false,
                 .error_message = try std.fmt.allocPrint(allocator, "Could not read tarball: {any}", .{err}),
@@ -1155,13 +1156,13 @@ fn attemptOIDCPublish(
             version,
             tarball_data,
         ) catch |err| blk: {
-            std.debug.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
-            std.debug.print("Continuing without provenance attestation...\n", .{});
+            style.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
+            style.print("Continuing without provenance attestation...\n", .{});
             break :blk null;
         };
 
         if (sigstore_bundle != null) {
-            std.debug.print("✓ Sigstore provenance bundle created\n", .{});
+            style.print("✓ Sigstore provenance bundle created\n", .{});
         }
     }
 
@@ -1179,9 +1180,9 @@ fn attemptOIDCPublish(
     }
 
     if (!response.success) {
-        std.debug.print("OIDC publish failed with status {d}\n", .{response.status_code});
+        style.print("OIDC publish failed with status {d}\n", .{response.status_code});
         if (response.message) |msg| {
-            std.debug.print("Response: {s}\n", .{msg});
+            style.print("Response: {s}\n", .{msg});
         }
 
         // Build error message from response
@@ -1190,19 +1191,19 @@ fn attemptOIDCPublish(
 
         if (response.error_details) |details| {
             if (details.code) |code| {
-                std.debug.print("Error code: {s}\n", .{code});
+                style.print("Error code: {s}\n", .{code});
                 if (std.mem.eql(u8, code, "EPUBLISHCONFLICT")) {
                     is_version_conflict = true;
                 }
             }
             if (details.summary) |summary| {
-                std.debug.print("Error: {s}\n", .{summary});
+                style.print("Error: {s}\n", .{summary});
                 error_msg = try allocator.dupe(u8, summary);
             } else {
                 error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
             }
             if (details.suggestion) |suggestion| {
-                std.debug.print("Suggestion: {s}\n", .{suggestion});
+                style.print("Suggestion: {s}\n", .{suggestion});
             }
         } else {
             error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
@@ -1240,7 +1241,7 @@ fn attemptOIDCPublishUnverified(
 
     // At least validate expiration
     oidc.validateExpiration(&token.claims) catch |err| {
-        std.debug.print("Error: Token validation failed: {any}\n", .{err});
+        style.print("Error: Token validation failed: {any}\n", .{err});
         return .{
             .success = false,
             .error_message = try std.fmt.allocPrint(allocator, "Token expired or invalid: {any}", .{err}),
@@ -1248,11 +1249,11 @@ fn attemptOIDCPublishUnverified(
     };
 
     // Print token info
-    std.debug.print("OIDC Claims (unverified):\n", .{});
-    std.debug.print("  Issuer: {s}\n", .{token.claims.iss});
-    std.debug.print("  Subject: {s}\n", .{token.claims.sub});
+    style.print("OIDC Claims (unverified):\n", .{});
+    style.print("  Issuer: {s}\n", .{token.claims.iss});
+    style.print("  Subject: {s}\n", .{token.claims.sub});
     if (token.claims.repository) |repo| {
-        std.debug.print("  Repository: {s}\n", .{repo});
+        style.print("  Repository: {s}\n", .{repo});
     }
 
     // Generate Sigstore provenance bundle if requested
@@ -1260,7 +1261,7 @@ fn attemptOIDCPublishUnverified(
     defer if (sigstore_bundle) |bundle| allocator.free(bundle);
 
     if (generate_provenance) {
-        std.debug.print("\nGenerating Sigstore provenance attestation...\n", .{});
+        style.print("\nGenerating Sigstore provenance attestation...\n", .{});
 
         // Read tarball for hashing
         if (io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024)) |tarball_data| {
@@ -1273,15 +1274,15 @@ fn attemptOIDCPublishUnverified(
                 version,
                 tarball_data,
             ) catch |err| blk: {
-                std.debug.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
+                style.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
                 break :blk null;
             };
 
             if (sigstore_bundle != null) {
-                std.debug.print("✓ Sigstore provenance bundle created\n", .{});
+                style.print("✓ Sigstore provenance bundle created\n", .{});
             }
         } else |err| {
-            std.debug.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
+            style.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
         }
     }
 
@@ -1411,7 +1412,7 @@ fn createTarball(
 
     if (files_array) |files| {
         // Whitelist mode: only copy files specified in `files` array + always-included files
-        std.debug.print("Using 'files' array from package.json ({d} entries)\n", .{files.len});
+        style.print("Using 'files' array from package.json ({d} entries)\n", .{files.len});
 
         // Copy always-included files first
         for (always_include) |filename| {
@@ -1438,7 +1439,7 @@ fn createTarball(
 
             // Check if source exists
             io_helper.accessAbsolute(src, .{}) catch {
-                std.debug.print("  Warning: '{s}' in files array not found, skipping\n", .{file_entry});
+                style.print("  Warning: '{s}' in files array not found, skipping\n", .{file_entry});
                 continue;
             };
 
@@ -1456,7 +1457,7 @@ fn createTarball(
             // skips directories ("omitting directory"), so only package.json
             // ended up in the tarball.
             const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-rp", src, dst }) catch |err| {
-                std.debug.print("  Warning: Failed to copy '{s}': {}\n", .{ file_entry, err });
+                style.print("  Warning: Failed to copy '{s}': {}\n", .{ file_entry, err });
                 continue;
             };
             defer allocator.free(cp.stdout);
@@ -1467,14 +1468,14 @@ fn createTarball(
                 else => false,
             };
             if (!cp_ok) {
-                std.debug.print("  Warning: cp failed for '{s}': {s}\n", .{ file_entry, cp.stderr });
+                style.print("  Warning: cp failed for '{s}': {s}\n", .{ file_entry, cp.stderr });
             } else {
-                std.debug.print("  + {s}\n", .{file_entry});
+                style.print("  + {s}\n", .{file_entry});
             }
         }
     } else {
         // No `files` array - use exclusion-based approach (legacy behavior)
-        std.debug.print("No 'files' array in package.json, using exclusion-based copy\n", .{});
+        style.print("No 'files' array in package.json, using exclusion-based copy\n", .{});
 
         const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
         defer allocator.free(src_path);
@@ -1493,7 +1494,7 @@ fn createTarball(
             const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch null;
             if (pantry_content) |c| {
                 if (c.len > 0) {
-                    std.debug.print("Using .pantryignore for additional exclusions\n", .{});
+                    style.print("Using .pantryignore for additional exclusions\n", .{});
                     break :blk c;
                 }
                 allocator.free(c);
@@ -1504,7 +1505,7 @@ fn createTarball(
             const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch null;
             if (npm_content) |c| {
                 if (c.len > 0) {
-                    std.debug.print("Using .npmignore for additional exclusions\n", .{});
+                    style.print("Using .npmignore for additional exclusions\n", .{});
                     break :blk c;
                 }
                 allocator.free(c);
@@ -1522,7 +1523,7 @@ fn createTarball(
                 if (trimmed.len == 0 or trimmed[0] == '#' or trimmed[0] == '!') continue;
                 if (extra_exclude_count < extra_excludes.len) {
                     extra_excludes[extra_exclude_count] = std.fmt.allocPrint(allocator, "--exclude={s}", .{trimmed}) catch continue;
-                    std.debug.print("  + exclude: {s}\n", .{trimmed});
+                    style.print("  + exclude: {s}\n", .{trimmed});
                     extra_exclude_count += 1;
                 }
             }
@@ -1607,7 +1608,7 @@ fn createTarball(
         defer allocator.free(cp_result.stderr);
 
         if (cp_result.term != .exited or cp_result.term.exited != 0) {
-            std.debug.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
+            style.print("rsync failed. stderr: {s}\n", .{cp_result.stderr});
             return error.TarballCreationFailed;
         }
     }
@@ -1621,9 +1622,9 @@ fn createTarball(
             defer allocator.free(l.stdout);
             defer allocator.free(l.stderr);
             if (l.stdout.len > 0) {
-                std.debug.print("Staging contents:\n{s}\n", .{l.stdout});
+                style.print("Staging contents:\n{s}\n", .{l.stdout});
             } else {
-                std.debug.print("WARNING: Staging directory is empty!\n", .{});
+                style.print("WARNING: Staging directory is empty!\n", .{});
             }
         }
     }
@@ -1644,8 +1645,8 @@ fn createTarball(
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
     if (result.term != .exited or result.term.exited != 0) {
-        std.debug.print("Tarball creation failed. Exit: {any}\n", .{result.term});
-        std.debug.print("stderr: {s}\n", .{result.stderr});
+        style.print("Tarball creation failed. Exit: {any}\n", .{result.term});
+        style.print("stderr: {s}\n", .{result.stderr});
         return error.TarballCreationFailed;
     }
 
@@ -1654,17 +1655,17 @@ fn createTarball(
         const stat = io_helper.statFile(tarball_path) catch break :blk 0;
         break :blk @intCast(stat.size);
     };
-    std.debug.print("Tarball size: {d} bytes ({d:.2} KB)\n", .{ size, @as(f64, @floatFromInt(size)) / 1024.0 });
+    style.print("Tarball size: {d} bytes ({d:.2} KB)\n", .{ size, @as(f64, @floatFromInt(size)) / 1024.0 });
 
     if (size > 50 * 1024 * 1024) { // 50MB warning
-        std.debug.print("WARNING: Tarball is very large! Check for unwanted files.\n", .{});
+        style.print("WARNING: Tarball is very large! Check for unwanted files.\n", .{});
         // List first few entries to debug
         const peek_cmd = try std.fmt.allocPrint(allocator, "tar -tzf {s} | head -20", .{tarball_path});
         defer allocator.free(peek_cmd);
         const peek = try io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", peek_cmd });
         defer allocator.free(peek.stdout);
         defer allocator.free(peek.stderr);
-        std.debug.print("First 20 entries:\n{s}\n", .{peek.stdout});
+        style.print("First 20 entries:\n{s}\n", .{peek.stdout});
     }
 
     return tarball_path;
@@ -1789,7 +1790,7 @@ fn generateProvenance(
     defer fs_file.close(io_helper.io);
     try io_helper.writeAllToFile(fs_file, provenance);
 
-    std.debug.print("Generated provenance: {s}\n", .{provenance_path});
+    style.print("Generated provenance: {s}\n", .{provenance_path});
 }
 
 // ============================================================================
@@ -1817,15 +1818,15 @@ pub fn trustedPublisherAddCommand(
     const oidc = @import("../../auth/oidc.zig");
     const registry = @import("../../auth/registry.zig");
 
-    std.debug.print("Adding trusted publisher for {s}...\n", .{options.package});
-    std.debug.print("  Type: {s}\n", .{options.type});
-    std.debug.print("  Owner: {s}\n", .{options.owner});
-    std.debug.print("  Repository: {s}\n", .{options.repository});
+    style.print("Adding trusted publisher for {s}...\n", .{options.package});
+    style.print("  Type: {s}\n", .{options.type});
+    style.print("  Owner: {s}\n", .{options.owner});
+    style.print("  Repository: {s}\n", .{options.repository});
     if (options.workflow) |w| {
-        std.debug.print("  Workflow: {s}\n", .{w});
+        style.print("  Workflow: {s}\n", .{w});
     }
     if (options.environment) |e| {
-        std.debug.print("  Environment: {s}\n", .{e});
+        style.print("  Environment: {s}\n", .{e});
     }
 
     // Get authentication token
@@ -1868,8 +1869,8 @@ pub fn trustedPublisherAddCommand(
         return CommandResult.err(allocator, err_msg);
     };
 
-    std.debug.print("✓ Trusted publisher added successfully\n", .{});
-    std.debug.print("\nYou can now publish {s} from {s}/{s} using OIDC authentication.\n", .{
+    style.print("✓ Trusted publisher added successfully\n", .{});
+    style.print("\nYou can now publish {s} from {s}/{s} using OIDC authentication.\n", .{
         options.package,
         options.owner,
         options.repository,
@@ -1932,43 +1933,43 @@ pub fn trustedPublisherListCommand(
 
     if (options.json) {
         // Output JSON format
-        std.debug.print("[\n", .{});
+        style.print("[\n", .{});
         for (publishers, 0..) |pub_item, i| {
-            std.debug.print("  {{\n", .{});
-            std.debug.print("    \"type\": \"{s}\",\n", .{pub_item.type});
-            std.debug.print("    \"owner\": \"{s}\",\n", .{pub_item.owner});
-            std.debug.print("    \"repository\": \"{s}\"", .{pub_item.repository});
+            style.print("  {{\n", .{});
+            style.print("    \"type\": \"{s}\",\n", .{pub_item.type});
+            style.print("    \"owner\": \"{s}\",\n", .{pub_item.owner});
+            style.print("    \"repository\": \"{s}\"", .{pub_item.repository});
             if (pub_item.workflow) |w| {
-                std.debug.print(",\n    \"workflow\": \"{s}\"", .{w});
+                style.print(",\n    \"workflow\": \"{s}\"", .{w});
             }
             if (pub_item.environment) |e| {
-                std.debug.print(",\n    \"environment\": \"{s}\"", .{e});
+                style.print(",\n    \"environment\": \"{s}\"", .{e});
             }
-            std.debug.print("\n  }}", .{});
+            style.print("\n  }}", .{});
             if (i < publishers.len - 1) {
-                std.debug.print(",", .{});
+                style.print(",", .{});
             }
-            std.debug.print("\n", .{});
+            style.print("\n", .{});
         }
-        std.debug.print("]\n", .{});
+        style.print("]\n", .{});
     } else {
         // Output table format
         if (publishers.len == 0) {
-            std.debug.print("No trusted publishers configured for {s}\n", .{options.package});
-            std.debug.print("\nUse 'pantry publisher add' to add a trusted publisher.\n", .{});
+            style.print("No trusted publishers configured for {s}\n", .{options.package});
+            style.print("\nUse 'pantry publisher add' to add a trusted publisher.\n", .{});
         } else {
-            std.debug.print("Trusted Publishers for {s}:\n\n", .{options.package});
+            style.print("Trusted Publishers for {s}:\n\n", .{options.package});
             for (publishers, 0..) |pub_item, i| {
-                std.debug.print("{}. Type: {s}\n", .{ i + 1, pub_item.type });
-                std.debug.print("   Owner: {s}\n", .{pub_item.owner});
-                std.debug.print("   Repository: {s}\n", .{pub_item.repository});
+                style.print("{}. Type: {s}\n", .{ i + 1, pub_item.type });
+                style.print("   Owner: {s}\n", .{pub_item.owner});
+                style.print("   Repository: {s}\n", .{pub_item.repository});
                 if (pub_item.workflow) |w| {
-                    std.debug.print("   Workflow: {s}\n", .{w});
+                    style.print("   Workflow: {s}\n", .{w});
                 }
                 if (pub_item.environment) |e| {
-                    std.debug.print("   Environment: {s}\n", .{e});
+                    style.print("   Environment: {s}\n", .{e});
                 }
-                std.debug.print("\n", .{});
+                style.print("\n", .{});
             }
         }
     }
@@ -1992,7 +1993,7 @@ pub fn trustedPublisherRemoveCommand(
 
     const registry = @import("../../auth/registry.zig");
 
-    std.debug.print("Removing trusted publisher {s} from {s}...\n", .{
+    style.print("Removing trusted publisher {s} from {s}...\n", .{
         options.publisher_id,
         options.package,
     });
@@ -2027,7 +2028,7 @@ pub fn trustedPublisherRemoveCommand(
         return CommandResult.err(allocator, err_msg);
     };
 
-    std.debug.print("✓ Trusted publisher removed successfully\n", .{});
+    style.print("✓ Trusted publisher removed successfully\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -2121,7 +2122,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
     for (matches.items) |pkg_name| {
         const dep_info = deps_map.get(pkg_name).?;
 
-        std.debug.print("{s}@{s}\n", .{ pkg_name, dep_info.version });
+        style.print("{s}@{s}\n", .{ pkg_name, dep_info.version });
 
         if (options.top) {
             // Show only top-level dependency
@@ -2138,7 +2139,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
             else
                 "project";
 
-            std.debug.print("  └─ {s}{s}@1.0.0 (requires {s})\n", .{
+            style.print("  └─ {s}{s}@1.0.0 (requires {s})\n", .{
                 dep_type_str,
                 project_name,
                 dep_info.version,
@@ -2148,7 +2149,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
             try displayDependencyTree(allocator, pkg_name, dep_info, parsed, 1, options.depth orelse 999);
         }
 
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
     }
 
     const summary = try std.fmt.allocPrint(
@@ -2195,7 +2196,7 @@ fn displayDependencyTree(
     if (current_depth > max_depth) {
         const indent = try createIndent(allocator, current_depth);
         defer allocator.free(indent);
-        std.debug.print("{s}└─ (deeper dependencies hidden)\n", .{indent});
+        style.print("{s}└─ (deeper dependencies hidden)\n", .{indent});
         return;
     }
 
@@ -2215,7 +2216,7 @@ fn displayDependencyTree(
     const indent = try createIndent(allocator, current_depth);
     defer allocator.free(indent);
 
-    std.debug.print("{s}└─ {s}{s}@1.0.0 (requires {s})\n", .{
+    style.print("{s}└─ {s}{s}@1.0.0 (requires {s})\n", .{
         indent,
         dep_type_str,
         project_name,
@@ -2402,15 +2403,15 @@ fn promptAndSaveToken(allocator: std.mem.Allocator) ![]u8 {
         return error.EnvironmentVariableNotFound;
     } else |_| {}
 
-    std.debug.print("\n", .{});
-    std.debug.print("+-----------------------------------------------------------------+\n", .{});
-    std.debug.print("|  No NPM token found. Let's set one up!                          |\n", .{});
-    std.debug.print("|                                                                 |\n", .{});
-    std.debug.print("|  Get your token from: https://www.npmjs.com/settings/tokens    |\n", .{});
-    std.debug.print("|  Create a new \"Automation\" or \"Publish\" token.                  |\n", .{});
-    std.debug.print("+-----------------------------------------------------------------+\n", .{});
-    std.debug.print("\n", .{});
-    std.debug.print("Enter your NPM token: ", .{});
+    style.print("\n", .{});
+    style.print("+-----------------------------------------------------------------+\n", .{});
+    style.print("|  No NPM token found. Let's set one up!                          |\n", .{});
+    style.print("|                                                                 |\n", .{});
+    style.print("|  Get your token from: https://www.npmjs.com/settings/tokens    |\n", .{});
+    style.print("|  Create a new \"Automation\" or \"Publish\" token.                  |\n", .{});
+    style.print("+-----------------------------------------------------------------+\n", .{});
+    style.print("\n", .{});
+    style.print("Enter your NPM token: ", .{});
 
     // Read token from stdin
     var buf: [512]u8 = undefined;
@@ -2427,18 +2428,18 @@ fn promptAndSaveToken(allocator: std.mem.Allocator) ![]u8 {
     const token = std.mem.trim(u8, token_line, &std.ascii.whitespace);
 
     if (token.len == 0) {
-        std.debug.print("Error: No token provided.\n", .{});
+        style.print("Error: No token provided.\n", .{});
         return error.EndOfStream;
     }
 
     // Validate token format (should start with npm_)
     if (!std.mem.startsWith(u8, token, "npm_")) {
-        std.debug.print("\nWarning: Token doesn't start with 'npm_'. Make sure you copied the full token.\n", .{});
+        style.print("\nWarning: Token doesn't start with 'npm_'. Make sure you copied the full token.\n", .{});
     }
 
     // Save to ~/.pantry/credentials (user-level persistence)
     savePantryCredential(allocator, "NPM_TOKEN", token) catch |err| {
-        std.debug.print("Warning: Could not save token to ~/.pantry/credentials: {any}\n", .{err});
+        style.print("Warning: Could not save token to ~/.pantry/credentials: {any}\n", .{err});
         // Continue anyway - we have the token in memory
     };
 
@@ -2447,10 +2448,10 @@ fn promptAndSaveToken(allocator: std.mem.Allocator) ![]u8 {
         // Silently ignore - .env storage is optional
     };
 
-    std.debug.print("Token saved to:\n", .{});
-    std.debug.print("  ~/.pantry/credentials (user-level)\n", .{});
-    std.debug.print("  .env (project-level, if writable)\n", .{});
-    std.debug.print("\nNote: Make sure .env is in your .gitignore!\n\n", .{});
+    style.print("Token saved to:\n", .{});
+    style.print("  ~/.pantry/credentials (user-level)\n", .{});
+    style.print("  .env (project-level, if writable)\n", .{});
+    style.print("\nNote: Make sure .env is in your .gitignore!\n\n", .{});
 
     return try allocator.dupe(u8, token);
 }

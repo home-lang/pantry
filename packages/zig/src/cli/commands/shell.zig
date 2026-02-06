@@ -3,6 +3,7 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 const shell = lib.shell;
@@ -14,8 +15,8 @@ pub fn shellIntegrateCommand(allocator: std.mem.Allocator) !CommandResult {
         return CommandResult.err(allocator, "Error: Could not detect shell");
     }
 
-    std.debug.print("Detected shell: {s}\n", .{detected_shell.name()});
-    std.debug.print("Installing shell integration...\n", .{});
+    style.print("Detected shell: {s}\n", .{detected_shell.name()});
+    style.print("Installing shell integration...\n", .{});
 
     shell.install(allocator) catch |err| {
         const msg = try std.fmt.allocPrint(
@@ -29,11 +30,11 @@ pub fn shellIntegrateCommand(allocator: std.mem.Allocator) !CommandResult {
         };
     };
 
-    std.debug.print("Done! Restart your shell or run:\n", .{});
+    style.print("Done! Restart your shell or run:\n", .{});
     switch (detected_shell) {
-        .zsh => std.debug.print("  source ~/.zshrc\n", .{}),
-        .bash => std.debug.print("  source ~/.bashrc\n", .{}),
-        .fish => std.debug.print("  source ~/.config/fish/config.fish\n", .{}),
+        .zsh => style.print("  source ~/.zshrc\n", .{}),
+        .bash => style.print("  source ~/.bashrc\n", .{}),
+        .fish => style.print("  source ~/.config/fish/config.fish\n", .{}),
         .unknown => {},
     }
 

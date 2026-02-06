@@ -3,6 +3,7 @@ const cli = @import("zig-cli");
 const lib = @import("lib");
 const io_helper = lib.io_helper;
 const version_options = @import("version");
+const style = lib.style;
 
 // ============================================================================
 // Command Actions
@@ -32,15 +33,15 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const filter = ctx.getOption("filter");
 
     if (force) {
-        std.debug.print("Warning: --force option is not yet implemented\n", .{});
+        style.print("Warning: --force option is not yet implemented\n", .{});
     }
 
     // Note: --offline flag sets offline mode for this process
     // The offline module checks PANTRY_OFFLINE env var, but we can't easily set it in Zig 0.16
     // Instead, we inform the user and the install code will check this flag
     if (offline) {
-        std.debug.print("Offline mode: Installing from cache only\n", .{});
-        std.debug.print("Note: Set PANTRY_OFFLINE=1 environment variable for full offline support\n\n", .{});
+        style.print("Offline mode: Installing from cache only\n", .{});
+        style.print("Note: Set PANTRY_OFFLINE=1 environment variable for full offline support\n\n", .{});
     }
 
     // If global flag is set and no packages specified, install global dependencies
@@ -52,7 +53,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         defer result.deinit(allocator);
 
         if (result.message) |msg| {
-            std.debug.print("{s}\n", .{msg});
+            style.print("{s}\n", .{msg});
         }
 
         std.process.exit(result.exit_code);
@@ -64,7 +65,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         defer result.deinit(allocator);
 
         if (result.message) |msg| {
-            std.debug.print("{s}\n", .{msg});
+            style.print("{s}\n", .{msg});
         }
 
         std.process.exit(result.exit_code);
@@ -83,7 +84,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -102,7 +103,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (packages.items.len == 0) {
-        std.debug.print("Error: No packages specified. Usage: pantry add <package>[@version] ...\n", .{});
+        style.print("Error: No packages specified. Usage: pantry add <package>[@version] ...\n", .{});
         std.process.exit(1);
     }
 
@@ -113,7 +114,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // TODO: Implement global add (add to global dependencies)
     if (global) {
-        std.debug.print("Warning: --global option is not yet implemented for add command\n", .{});
+        style.print("Warning: --global option is not yet implemented for add command\n", .{});
     }
 
     // Install the packages
@@ -129,7 +130,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     // Exit if install failed
@@ -159,14 +160,14 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
         // Save dependencies to config file
         saveDependenciesToConfig(allocator, path, packages.items, dev, peer) catch |err| {
-            std.debug.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
-            std.debug.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
+            style.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
+            style.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
             std.process.exit(0);
         };
 
-        std.debug.print("\n[32m✓[0m Installed and saved {d} package(s) to {s}\n", .{ packages.items.len, std.fs.path.basename(path) });
+        style.print("\n[32m✓[0m Installed and saved {d} package(s) to {s}\n", .{ packages.items.len, std.fs.path.basename(path) });
     } else {
-        std.debug.print("\n[32m✓[0m Packages installed\n", .{});
+        style.print("\n[32m✓[0m Packages installed\n", .{});
         // No config file, so dev and peer flags are not used
     }
 
@@ -364,7 +365,7 @@ fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -383,7 +384,7 @@ fn uninstallAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (packages.items.len == 0) {
-        std.debug.print("Error: No packages specified to uninstall\n", .{});
+        style.print("Error: No packages specified to uninstall\n", .{});
         std.process.exit(1);
     }
 
@@ -391,7 +392,7 @@ fn uninstallAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -401,7 +402,7 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const script_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: No script name provided\n", .{});
+        style.print("Error: No script name provided\n", .{});
         std.process.exit(1);
     };
 
@@ -447,7 +448,7 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
         defer result.deinit(allocator);
 
         if (result.message) |msg| {
-            std.debug.print("{s}\n", .{msg});
+            style.print("{s}\n", .{msg});
         }
 
         std.process.exit(result.exit_code);
@@ -458,7 +459,7 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -502,7 +503,7 @@ fn updateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -536,7 +537,7 @@ fn pxAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -574,7 +575,7 @@ fn outdatedAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -587,7 +588,7 @@ fn scriptsListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -601,17 +602,17 @@ fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // TODO: Implement format and verbose options
     if (!std.mem.eql(u8, format, "table")) {
-        std.debug.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
+        style.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
     }
     if (verbose) {
-        std.debug.print("Warning: --verbose option is not yet implemented for list command\n\n", .{});
+        style.print("Warning: --verbose option is not yet implemented for list command\n\n", .{});
     }
 
     const result = try lib.commands.listCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -624,7 +625,7 @@ fn whoamiAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -650,7 +651,7 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -660,17 +661,17 @@ fn publisherAddAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const package_name = ctx.getOption("package") orelse {
-        std.debug.print("Error: --package is required\n", .{});
+        style.print("Error: --package is required\n", .{});
         std.process.exit(1);
     };
 
     const publisher_type = ctx.getOption("type") orelse "github-action";
     const owner = ctx.getOption("owner") orelse {
-        std.debug.print("Error: --owner is required\n", .{});
+        style.print("Error: --owner is required\n", .{});
         std.process.exit(1);
     };
     const repository = ctx.getOption("repository") orelse {
-        std.debug.print("Error: --repository is required\n", .{});
+        style.print("Error: --repository is required\n", .{});
         std.process.exit(1);
     };
     const workflow = ctx.getOption("workflow");
@@ -694,7 +695,7 @@ fn publisherAddAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -704,7 +705,7 @@ fn publisherListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const package_name = ctx.getOption("package") orelse {
-        std.debug.print("Error: --package is required\n", .{});
+        style.print("Error: --package is required\n", .{});
         std.process.exit(1);
     };
 
@@ -724,7 +725,7 @@ fn publisherListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -734,12 +735,12 @@ fn publisherRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const package_name = ctx.getOption("package") orelse {
-        std.debug.print("Error: --package is required\n", .{});
+        style.print("Error: --package is required\n", .{});
         std.process.exit(1);
     };
 
     const publisher_id = ctx.getOption("publisher-id") orelse {
-        std.debug.print("Error: --publisher-id is required\n", .{});
+        style.print("Error: --publisher-id is required\n", .{});
         std.process.exit(1);
     };
 
@@ -758,7 +759,7 @@ fn publisherRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -788,7 +789,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
         }
 
         if (result.message) |msg| {
-            std.debug.print("{s}\n", .{msg});
+            style.print("{s}\n", .{msg});
         }
 
         std.process.exit(result.exit_code);
@@ -809,7 +810,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -844,7 +845,7 @@ fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -887,7 +888,7 @@ fn auditAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -900,14 +901,14 @@ fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // TODO: Implement format option
     if (!std.mem.eql(u8, format, "table")) {
-        std.debug.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
+        style.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
     }
 
     const result = try lib.commands.cacheStatsCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -925,7 +926,7 @@ fn cacheClearAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -938,7 +939,7 @@ fn cacheCleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -966,7 +967,7 @@ fn cleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -980,17 +981,17 @@ fn envListAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // TODO: Implement format and verbose options
     if (!std.mem.eql(u8, format, "table")) {
-        std.debug.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
+        style.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
     }
     if (verbose) {
-        std.debug.print("Warning: --verbose option is not yet implemented for env:list command\n\n", .{});
+        style.print("Warning: --verbose option is not yet implemented for env:list command\n\n", .{});
     }
 
     const result = try lib.commands.envListCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1000,7 +1001,7 @@ fn envInspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const hash = ctx.getArgument(0) orelse {
-        std.debug.print("Error: env:inspect requires a hash argument\n", .{});
+        style.print("Error: env:inspect requires a hash argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1008,14 +1009,14 @@ fn envInspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // TODO: Implement verbose option (show more details like timestamps, sizes)
     if (verbose) {
-        std.debug.print("Warning: --verbose option is not yet implemented for env:inspect command\n\n", .{});
+        style.print("Warning: --verbose option is not yet implemented for env:inspect command\n\n", .{});
     }
 
     const result = try lib.commands.envInspectCommand(allocator, hash);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1029,17 +1030,17 @@ fn envCleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // TODO: Implement dry_run and force options
     if (dry_run) {
-        std.debug.print("Warning: --dry-run option is not yet implemented for env:clean command\n\n", .{});
+        style.print("Warning: --dry-run option is not yet implemented for env:clean command\n\n", .{});
     }
     if (force) {
-        std.debug.print("Warning: --force option is not yet implemented for env:clean command\n\n", .{});
+        style.print("Warning: --force option is not yet implemented for env:clean command\n\n", .{});
     }
 
     const result = try lib.commands.envCleanCommand(allocator, &[_][]const u8{});
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1049,7 +1050,7 @@ fn envRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const hash = ctx.getArgument(0) orelse {
-        std.debug.print("Error: env:remove requires a hash argument\n", .{});
+        style.print("Error: env:remove requires a hash argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1062,7 +1063,7 @@ fn envRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1075,7 +1076,7 @@ fn shellIntegrateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1085,7 +1086,7 @@ fn shellLookupAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const dir = ctx.getArgument(0) orelse {
-        std.debug.print("Error: shell:lookup requires a directory argument\n", .{});
+        style.print("Error: shell:lookup requires a directory argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1093,7 +1094,7 @@ fn shellLookupAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1103,7 +1104,7 @@ fn shellActivateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const dir = ctx.getArgument(0) orelse {
-        std.debug.print("Error: shell:activate requires a directory argument\n", .{});
+        style.print("Error: shell:activate requires a directory argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1111,7 +1112,7 @@ fn shellActivateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1122,7 +1123,7 @@ fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // Get current working directory
     const cwd = io_helper.getCwdAlloc(allocator) catch {
-        std.debug.print("Error: Could not get current directory\n", .{});
+        style.print("Error: Could not get current directory\n", .{});
         std.process.exit(1);
     };
     defer allocator.free(cwd);
@@ -1135,14 +1136,14 @@ fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
             // Output shell code to stdout (for eval to capture)
             const stdout_file = std.Io.File.stdout();
             io_helper.writeAllToFile(stdout_file, msg) catch |err| {
-                std.debug.print("Error writing to stdout: {}\n", .{err});
+                style.print("Error writing to stdout: {}\n", .{err});
             };
             io_helper.writeAllToFile(stdout_file, "\n") catch {}; // newline best-effort
         } else {
-            std.debug.print("No project detected in current directory\n", .{});
+            style.print("No project detected in current directory\n", .{});
         }
     } else {
-        std.debug.print("No project detected in current directory\n", .{});
+        style.print("No project detected in current directory\n", .{});
     }
 
     std.process.exit(result.exit_code);
@@ -1170,7 +1171,7 @@ fn servicesAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1180,7 +1181,7 @@ fn startAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: start requires a service name argument\n", .{});
+        style.print("Error: start requires a service name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1189,7 +1190,7 @@ fn startAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1199,7 +1200,7 @@ fn stopAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: stop requires a service name argument\n", .{});
+        style.print("Error: stop requires a service name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1208,7 +1209,7 @@ fn stopAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1218,7 +1219,7 @@ fn restartAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: restart requires a service name argument\n", .{});
+        style.print("Error: restart requires a service name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1227,7 +1228,7 @@ fn restartAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1237,7 +1238,7 @@ fn statusAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: status requires a service name argument\n", .{});
+        style.print("Error: status requires a service name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1246,7 +1247,7 @@ fn statusAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1256,7 +1257,7 @@ fn enableAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: enable requires a service name argument\n", .{});
+        style.print("Error: enable requires a service name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1265,7 +1266,7 @@ fn enableAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1275,7 +1276,7 @@ fn disableAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: disable requires a service name argument\n", .{});
+        style.print("Error: disable requires a service name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1284,7 +1285,7 @@ fn disableAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1309,7 +1310,7 @@ fn bootstrapAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1341,7 +1342,7 @@ fn shimAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1354,7 +1355,7 @@ fn shimListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1376,7 +1377,7 @@ fn shimRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1386,7 +1387,7 @@ fn verifyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const package_path = ctx.getArgument(0) orelse {
-        std.debug.print("Error: verify requires a package path argument\n", .{});
+        style.print("Error: verify requires a package path argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1412,7 +1413,7 @@ fn verifyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1422,12 +1423,12 @@ fn signAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const package_path = ctx.getArgument(0) orelse {
-        std.debug.print("Error: sign requires a package path argument\n", .{});
+        style.print("Error: sign requires a package path argument\n", .{});
         std.process.exit(1);
     };
 
     const key = ctx.getArgument(1) orelse {
-        std.debug.print("Error: sign requires a private key argument\n", .{});
+        style.print("Error: sign requires a private key argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1454,7 +1455,7 @@ fn signAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1484,7 +1485,7 @@ fn generateKeyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1509,7 +1510,7 @@ fn initAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1525,7 +1526,7 @@ fn doctorAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1541,7 +1542,7 @@ fn oidcSetupAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1566,7 +1567,7 @@ fn dedupeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1576,7 +1577,7 @@ fn searchAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const query = ctx.getArgument(0) orelse {
-        std.debug.print("Error: search requires a query argument\n", .{});
+        style.print("Error: search requires a query argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1588,7 +1589,7 @@ fn searchAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1598,7 +1599,7 @@ fn infoAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const package_name = ctx.getArgument(0) orelse {
-        std.debug.print("Error: info requires a package name argument\n", .{});
+        style.print("Error: info requires a package name argument\n", .{});
         std.process.exit(1);
     };
 
@@ -1610,7 +1611,7 @@ fn infoAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1653,7 +1654,7 @@ fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1672,7 +1673,7 @@ fn linkAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1691,7 +1692,7 @@ fn unlinkAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     if (result.message) |msg| {
-        std.debug.print("{s}\n", .{msg});
+        style.print("{s}\n", .{msg});
     }
 
     std.process.exit(result.exit_code);
@@ -1703,7 +1704,7 @@ fn unlinkAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
 /// Print version information
 fn printVersion() void {
-    std.debug.print("pantry {s} ({s})\n", .{ version_options.version, version_options.commit_hash });
+    style.print("pantry {s} ({s})\n", .{ version_options.version, version_options.commit_hash });
 }
 
 // ANSI color codes
@@ -1720,119 +1721,119 @@ const Color = struct {
 /// Print help information
 fn printHelp() void {
     // Header
-    std.debug.print("\n  " ++ Color.bold_teal ++ "pantry" ++ Color.reset ++ " {s} - Modern dependency manager\n\n", .{version_options.version});
+    style.print("\n  " ++ Color.bold_teal ++ "pantry" ++ Color.reset ++ " {s} - Modern dependency manager\n\n", .{version_options.version});
 
     // Usage
-    std.debug.print("  " ++ Color.bold ++ "USAGE:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      pantry <command> [options] [arguments]\n\n", .{});
+    style.print("  " ++ Color.bold ++ "USAGE:" ++ Color.reset ++ "\n", .{});
+    style.print("      pantry <command> [options] [arguments]\n\n", .{});
 
     // Commands
-    std.debug.print("  " ++ Color.bold ++ "COMMANDS:" ++ Color.reset ++ "\n\n", .{});
+    style.print("  " ++ Color.bold ++ "COMMANDS:" ++ Color.reset ++ "\n\n", .{});
 
     // Package Management
-    std.debug.print("    " ++ Color.bold_teal ++ "Package Management:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "install" ++ Color.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "add" ++ Color.reset ++ "                 Add and install new packages\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "remove" ++ Color.reset ++ ", rm          Remove packages\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "update" ++ Color.reset ++ "              Update packages to latest versions\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "outdated" ++ Color.reset ++ "            Check for outdated dependencies\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Package Management:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "install" ++ Color.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
+    style.print("      " ++ Color.teal ++ "add" ++ Color.reset ++ "                 Add and install new packages\n", .{});
+    style.print("      " ++ Color.teal ++ "remove" ++ Color.reset ++ ", rm          Remove packages\n", .{});
+    style.print("      " ++ Color.teal ++ "update" ++ Color.reset ++ "              Update packages to latest versions\n", .{});
+    style.print("      " ++ Color.teal ++ "outdated" ++ Color.reset ++ "            Check for outdated dependencies\n\n", .{});
 
     // Package Info
-    std.debug.print("    " ++ Color.bold_teal ++ "Package Info:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "list" ++ Color.reset ++ ", ls            List installed packages\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "tree" ++ Color.reset ++ "                Show dependency tree\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "why" ++ Color.reset ++ "                 Explain why a package is installed\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "search" ++ Color.reset ++ "              Search for packages in registry\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "info" ++ Color.reset ++ "                Show package information\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Package Info:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "list" ++ Color.reset ++ ", ls            List installed packages\n", .{});
+    style.print("      " ++ Color.teal ++ "tree" ++ Color.reset ++ "                Show dependency tree\n", .{});
+    style.print("      " ++ Color.teal ++ "why" ++ Color.reset ++ "                 Explain why a package is installed\n", .{});
+    style.print("      " ++ Color.teal ++ "search" ++ Color.reset ++ "              Search for packages in registry\n", .{});
+    style.print("      " ++ Color.teal ++ "info" ++ Color.reset ++ "                Show package information\n\n", .{});
 
     // Scripts
-    std.debug.print("    " ++ Color.bold_teal ++ "Scripts:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "run" ++ Color.reset ++ "                 Run a script from package.json\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "dev" ++ Color.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "build" ++ Color.reset ++ "               Run build script (alias for 'run build')\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "test" ++ Color.reset ++ "                Run test script (alias for 'run test')\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "px" ++ Color.reset ++ "                  Execute a package binary\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "scripts" ++ Color.reset ++ "             List available scripts\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Scripts:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "run" ++ Color.reset ++ "                 Run a script from package.json\n", .{});
+    style.print("      " ++ Color.teal ++ "dev" ++ Color.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
+    style.print("      " ++ Color.teal ++ "build" ++ Color.reset ++ "               Run build script (alias for 'run build')\n", .{});
+    style.print("      " ++ Color.teal ++ "test" ++ Color.reset ++ "                Run test script (alias for 'run test')\n", .{});
+    style.print("      " ++ Color.teal ++ "px" ++ Color.reset ++ "                  Execute a package binary\n", .{});
+    style.print("      " ++ Color.teal ++ "scripts" ++ Color.reset ++ "             List available scripts\n\n", .{});
 
     // Publishing
-    std.debug.print("    " ++ Color.bold_teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "publish" ++ Color.reset ++ "             Publish package to Pantry registry (S3)\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "npm:publish" ++ Color.reset ++ "         Publish package to npm (supports OIDC)\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "publish" ++ Color.reset ++ "             Publish package to Pantry registry (S3)\n", .{});
+    style.print("      " ++ Color.teal ++ "npm:publish" ++ Color.reset ++ "         Publish package to npm (supports OIDC)\n", .{});
+    style.print("      " ++ Color.teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
+    style.print("      " ++ Color.teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
+    style.print("      " ++ Color.teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
 
     // Security
-    std.debug.print("    " ++ Color.bold_teal ++ "Security:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "audit" ++ Color.reset ++ "               Check for security vulnerabilities\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "verify" ++ Color.reset ++ "              Verify package signatures\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "sign" ++ Color.reset ++ "                Sign a package\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "generate-key" ++ Color.reset ++ "        Generate signing key pair\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "oidc setup" ++ Color.reset ++ "          Setup npm trusted publisher\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Security:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "audit" ++ Color.reset ++ "               Check for security vulnerabilities\n", .{});
+    style.print("      " ++ Color.teal ++ "verify" ++ Color.reset ++ "              Verify package signatures\n", .{});
+    style.print("      " ++ Color.teal ++ "sign" ++ Color.reset ++ "                Sign a package\n", .{});
+    style.print("      " ++ Color.teal ++ "generate-key" ++ Color.reset ++ "        Generate signing key pair\n", .{});
+    style.print("      " ++ Color.teal ++ "oidc setup" ++ Color.reset ++ "          Setup npm trusted publisher\n\n", .{});
 
     // Project
-    std.debug.print("    " ++ Color.bold_teal ++ "Project:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "init" ++ Color.reset ++ "                Initialize a new project\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "doctor" ++ Color.reset ++ "              Check system health\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "dedupe" ++ Color.reset ++ "              Deduplicate dependencies\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "clean" ++ Color.reset ++ "               Clean project artifacts\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "bootstrap" ++ Color.reset ++ "           Bootstrap pantry installation\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Project:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "init" ++ Color.reset ++ "                Initialize a new project\n", .{});
+    style.print("      " ++ Color.teal ++ "doctor" ++ Color.reset ++ "              Check system health\n", .{});
+    style.print("      " ++ Color.teal ++ "dedupe" ++ Color.reset ++ "              Deduplicate dependencies\n", .{});
+    style.print("      " ++ Color.teal ++ "clean" ++ Color.reset ++ "               Clean project artifacts\n", .{});
+    style.print("      " ++ Color.teal ++ "bootstrap" ++ Color.reset ++ "           Bootstrap pantry installation\n\n", .{});
 
     // Services
-    std.debug.print("    " ++ Color.bold_teal ++ "Services:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "services" ++ Color.reset ++ "            List all services\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "start" ++ Color.reset ++ "               Start a service\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "stop" ++ Color.reset ++ "                Stop a service\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "restart" ++ Color.reset ++ "             Restart a service\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "status" ++ Color.reset ++ "              Show service status\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "enable" ++ Color.reset ++ "              Enable a service\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "disable" ++ Color.reset ++ "             Disable a service\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Services:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "services" ++ Color.reset ++ "            List all services\n", .{});
+    style.print("      " ++ Color.teal ++ "start" ++ Color.reset ++ "               Start a service\n", .{});
+    style.print("      " ++ Color.teal ++ "stop" ++ Color.reset ++ "                Stop a service\n", .{});
+    style.print("      " ++ Color.teal ++ "restart" ++ Color.reset ++ "             Restart a service\n", .{});
+    style.print("      " ++ Color.teal ++ "status" ++ Color.reset ++ "              Show service status\n", .{});
+    style.print("      " ++ Color.teal ++ "enable" ++ Color.reset ++ "              Enable a service\n", .{});
+    style.print("      " ++ Color.teal ++ "disable" ++ Color.reset ++ "             Disable a service\n\n", .{});
 
     // Cache
-    std.debug.print("    " ++ Color.bold_teal ++ "Cache:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "cache:stats" ++ Color.reset ++ "         Show cache statistics\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "cache:clear" ++ Color.reset ++ "         Clear the cache\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "cache:clean" ++ Color.reset ++ "         Remove stale cache entries\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Cache:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "cache:stats" ++ Color.reset ++ "         Show cache statistics\n", .{});
+    style.print("      " ++ Color.teal ++ "cache:clear" ++ Color.reset ++ "         Clear the cache\n", .{});
+    style.print("      " ++ Color.teal ++ "cache:clean" ++ Color.reset ++ "         Remove stale cache entries\n\n", .{});
 
     // Environment
-    std.debug.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "env:list" ++ Color.reset ++ "            List project environments\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "env:inspect" ++ Color.reset ++ "         Inspect environment details\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "env:list" ++ Color.reset ++ "            List project environments\n", .{});
+    style.print("      " ++ Color.teal ++ "env:inspect" ++ Color.reset ++ "         Inspect environment details\n", .{});
+    style.print("      " ++ Color.teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
+    style.print("      " ++ Color.teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
 
     // Shell / Environment
-    std.debug.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "env" ++ Color.reset ++ "                 Activate project environment (eval \"$(pantry env)\")\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shell:integrate" ++ Color.reset ++ "     Install automatic shell integration\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "env" ++ Color.reset ++ "                 Activate project environment (eval \"$(pantry env)\")\n", .{});
+    style.print("      " ++ Color.teal ++ "shell:integrate" ++ Color.reset ++ "     Install automatic shell integration\n", .{});
+    style.print("      " ++ Color.teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
 
     // Shims
-    std.debug.print("    " ++ Color.bold_teal ++ "Shims:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shim" ++ Color.reset ++ "                Create a shim for a command\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shim:list" ++ Color.reset ++ "           List all shims\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "shim:remove" ++ Color.reset ++ "         Remove a shim\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Shims:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "shim" ++ Color.reset ++ "                Create a shim for a command\n", .{});
+    style.print("      " ++ Color.teal ++ "shim:list" ++ Color.reset ++ "           List all shims\n", .{});
+    style.print("      " ++ Color.teal ++ "shim:remove" ++ Color.reset ++ "         Remove a shim\n\n", .{});
 
     // Other
-    std.debug.print("    " ++ Color.bold_teal ++ "Other:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "whoami" ++ Color.reset ++ "              Show current user\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "help" ++ Color.reset ++ "                Show this help message\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "version" ++ Color.reset ++ "             Show version information\n\n", .{});
+    style.print("    " ++ Color.bold_teal ++ "Other:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "whoami" ++ Color.reset ++ "              Show current user\n", .{});
+    style.print("      " ++ Color.teal ++ "help" ++ Color.reset ++ "                Show this help message\n", .{});
+    style.print("      " ++ Color.teal ++ "version" ++ Color.reset ++ "             Show version information\n\n", .{});
 
     // Global Options
-    std.debug.print("  " ++ Color.bold ++ "GLOBAL OPTIONS:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "-h" ++ Color.reset ++ ", " ++ Color.teal ++ "--help" ++ Color.reset ++ "          Show help information\n", .{});
-    std.debug.print("      " ++ Color.teal ++ "-V" ++ Color.reset ++ ", " ++ Color.teal ++ "--version" ++ Color.reset ++ "       Show version information\n\n", .{});
+    style.print("  " ++ Color.bold ++ "GLOBAL OPTIONS:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.teal ++ "-h" ++ Color.reset ++ ", " ++ Color.teal ++ "--help" ++ Color.reset ++ "          Show help information\n", .{});
+    style.print("      " ++ Color.teal ++ "-V" ++ Color.reset ++ ", " ++ Color.teal ++ "--version" ++ Color.reset ++ "       Show version information\n\n", .{});
 
     // Examples
-    std.debug.print("  " ++ Color.bold ++ "EXAMPLES:" ++ Color.reset ++ "\n", .{});
-    std.debug.print("      " ++ Color.dim ++ "pantry install" ++ Color.reset ++ "                  Install all dependencies\n", .{});
-    std.debug.print("      " ++ Color.dim ++ "pantry add lodash" ++ Color.reset ++ "               Add lodash to dependencies\n", .{});
-    std.debug.print("      " ++ Color.dim ++ "pantry add -D typescript" ++ Color.reset ++ "        Add typescript to devDependencies\n", .{});
-    std.debug.print("      " ++ Color.dim ++ "pantry run build" ++ Color.reset ++ "                Run the build script\n", .{});
-    std.debug.print("      " ++ Color.dim ++ "pantry publish" ++ Color.reset ++ "                  Publish with OIDC (in CI/CD)\n\n", .{});
+    style.print("  " ++ Color.bold ++ "EXAMPLES:" ++ Color.reset ++ "\n", .{});
+    style.print("      " ++ Color.dim ++ "pantry install" ++ Color.reset ++ "                  Install all dependencies\n", .{});
+    style.print("      " ++ Color.dim ++ "pantry add lodash" ++ Color.reset ++ "               Add lodash to dependencies\n", .{});
+    style.print("      " ++ Color.dim ++ "pantry add -D typescript" ++ Color.reset ++ "        Add typescript to devDependencies\n", .{});
+    style.print("      " ++ Color.dim ++ "pantry run build" ++ Color.reset ++ "                Run the build script\n", .{});
+    style.print("      " ++ Color.dim ++ "pantry publish" ++ Color.reset ++ "                  Publish with OIDC (in CI/CD)\n\n", .{});
 
-    std.debug.print("  " ++ Color.dim ++ "For more info on a command: pantry <command> --help" ++ Color.reset ++ "\n\n", .{});
+    style.print("  " ++ Color.dim ++ "For more info on a command: pantry <command> --help" ++ Color.reset ++ "\n\n", .{});
 }
 
 /// Help command action
@@ -2260,7 +2261,7 @@ pub fn main() !void {
                 defer result.deinit(alloc);
 
                 if (result.message) |msg| {
-                    std.debug.print("{s}\n", .{msg});
+                    style.print("{s}\n", .{msg});
                 }
 
                 std.process.exit(result.exit_code);
@@ -2842,7 +2843,7 @@ pub fn main() !void {
     var parser = cli.Parser.init(allocator);
     parser.parse(root, args[1..]) catch |err| {
         if (err == error.UnknownOption or err == error.TooManyArguments) {
-            std.debug.print("Error: {}\n\n", .{err});
+            style.print("Error: {}\n\n", .{err});
             printHelp();
             std.process.exit(1);
         }

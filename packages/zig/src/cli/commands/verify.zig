@@ -6,6 +6,7 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const signing = @import("../../auth/signing.zig");
+const style = @import("../style.zig");
 
 const CommandResult = struct {
     exit_code: u8,
@@ -35,7 +36,7 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
         keyring_path = args[2];
     }
 
-    std.debug.print("🔍 Verifying package: {s}\n", .{package_path});
+    style.print("🔍 Verifying package: {s}\n", .{package_path});
 
     // Load keyring
     var keyring = signing.Keyring.init(allocator);
@@ -57,14 +58,14 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
 
         loadKeyringFromFile(&keyring, allocator, default_keyring) catch |err| {
             if (err == error.FileNotFound) {
-                std.debug.print("⚠️  No keyring found. Use --keyring to specify a keyring.\n", .{});
+                style.print("⚠️  No keyring found. Use --keyring to specify a keyring.\n", .{});
                 return .{ .exit_code = 1 };
             }
             return err;
         };
     }
 
-    std.debug.print("📋 Loaded keyring with {d} key(s)\n", .{keyring.keys.count()});
+    style.print("📋 Loaded keyring with {d} key(s)\n", .{keyring.keys.count()});
 
     // Read package signature file
     const sig_path = try std.fmt.allocPrint(allocator, "{s}.sig", .{package_path});
@@ -117,10 +118,10 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     const checksum = try signing.computeSHA256(allocator, package_data);
     defer allocator.free(checksum);
 
-    std.debug.print("✅ Signature verified successfully!\n", .{});
-    std.debug.print("   Algorithm: {s}\n", .{signature.algorithm});
-    std.debug.print("   Key ID: {s}\n", .{signature.key_id});
-    std.debug.print("   SHA256: {s}\n", .{checksum});
+    style.print("✅ Signature verified successfully!\n", .{});
+    style.print("   Algorithm: {s}\n", .{signature.algorithm});
+    style.print("   Key ID: {s}\n", .{signature.key_id});
+    style.print("   SHA256: {s}\n", .{checksum});
 
     return .{ .exit_code = 0 };
 }
@@ -151,7 +152,7 @@ fn loadKeyringFromFile(keyring: *signing.Keyring, allocator: std.mem.Allocator, 
 pub fn generateKeyCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     _ = args;
 
-    std.debug.print("🔑 Generating new Ed25519 keypair...\n", .{});
+    style.print("🔑 Generating new Ed25519 keypair...\n", .{});
 
     const keypair = try signing.generateEd25519KeyPair(allocator);
     defer {
@@ -159,19 +160,19 @@ pub fn generateKeyCommand(allocator: std.mem.Allocator, args: []const []const u8
         allocator.free(keypair.key_id);
     }
 
-    std.debug.print("✅ Keypair generated!\n\n", .{});
-    std.debug.print("Key ID: {s}\n\n", .{keypair.key_id});
-    std.debug.print("Public Key (PEM):\n{s}\n", .{keypair.public_key_pem});
-    std.debug.print("Private Key Seed (hex): ", .{});
+    style.print("✅ Keypair generated!\n\n", .{});
+    style.print("Key ID: {s}\n\n", .{keypair.key_id});
+    style.print("Public Key (PEM):\n{s}\n", .{keypair.public_key_pem});
+    style.print("Private Key Seed (hex): ", .{});
     for (keypair.private_key_seed) |byte| {
-        std.debug.print("{x:0>2}", .{byte});
+        style.print("{x:0>2}", .{byte});
     }
-    std.debug.print("\n\n", .{});
-    std.debug.print("⚠️  Store the private key seed securely!\n", .{});
-    std.debug.print("💾 Add the public key to your keyring.json:\n", .{});
-    std.debug.print("   {{\n", .{});
-    std.debug.print("     \"{s}\": \"{s}\"\n", .{ keypair.key_id, keypair.public_key_pem });
-    std.debug.print("   }}\n", .{});
+    style.print("\n\n", .{});
+    style.print("⚠️  Store the private key seed securely!\n", .{});
+    style.print("💾 Add the public key to your keyring.json:\n", .{});
+    style.print("   {{\n", .{});
+    style.print("     \"{s}\": \"{s}\"\n", .{ keypair.key_id, keypair.public_key_pem });
+    style.print("   }}\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -201,7 +202,7 @@ pub fn signCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         seed[i] = try std.fmt.parseInt(u8, seed_hex[i * 2 .. i * 2 + 2], 16);
     }
 
-    std.debug.print("✍️  Signing package: {s}\n", .{package_path});
+    style.print("✍️  Signing package: {s}\n", .{package_path});
 
     // Read package data
     const package_data = try io_helper.readFileAlloc(allocator, package_path, 100 * 1024 * 1024); // 100MB max
@@ -238,9 +239,9 @@ pub fn signCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     defer sig_file.close(io_helper.io);
     try io_helper.writeAllToFile(sig_file, sig_json);
 
-    std.debug.print("✅ Package signed successfully!\n", .{});
-    std.debug.print("   Signature file: {s}\n", .{sig_path});
-    std.debug.print("   Key ID: {s}\n", .{signature.key_id});
+    style.print("✅ Package signed successfully!\n", .{});
+    style.print("   Signature file: {s}\n", .{sig_path});
+    style.print("   Key ID: {s}\n", .{signature.key_id});
 
     return .{ .exit_code = 0 };
 }

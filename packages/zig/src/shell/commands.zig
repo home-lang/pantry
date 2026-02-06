@@ -1,6 +1,7 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const lib = @import("../lib.zig");
+const style = @import("../cli/style.zig");
 
 pub const ShellCommands = struct {
     allocator: std.mem.Allocator,
@@ -32,7 +33,7 @@ pub const ShellCommands = struct {
             const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
             const elapsed_us = @divFloor(elapsed_ns, std.time.ns_per_us);
             if (elapsed_us > 1000) {
-                std.debug.print("! shell:lookup took {d}μs (> 1ms target)\n", .{elapsed_us});
+                style.print("! shell:lookup took {d}μs (> 1ms target)\n", .{elapsed_us});
             }
         }
 
@@ -103,7 +104,7 @@ pub const ShellCommands = struct {
             const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
             const elapsed_ms = @divFloor(elapsed_ns, std.time.ns_per_ms);
             if (elapsed_ms > 50) {
-                std.debug.print("⏱️  shell:activate took {d}ms\n", .{elapsed_ms});
+                style.print("⏱️  shell:activate took {d}ms\n", .{elapsed_ms});
             }
         }
 
@@ -137,8 +138,8 @@ pub const ShellCommands = struct {
                 // Just update last_validated timestamp for bookkeeping
                 cached_entry.last_validated = now;
                 const project_basename = std.fs.path.basename(project_root);
-                std.debug.print("✓ Environment cached: {s}\n", .{project_basename});
-                std.debug.print("  Dependencies already installed. Use --force to reinstall.\n", .{});
+                style.print("✓ Environment cached: {s}\n", .{project_basename});
+                style.print("  Dependencies already installed. Use --force to reinstall.\n", .{});
                 return try self.generateShellCode(project_root, cached_entry.path);
             }
             // File mtime changed: invalidate cache and do full activation
@@ -199,20 +200,20 @@ pub const ShellCommands = struct {
 
         if (!env_exists and dep_file != null) {
             // 6. Install dependencies with progress feedback
-            std.debug.print("🔧 Setting up environment for {s}...\n", .{project_basename});
+            style.print("🔧 Setting up environment for {s}...\n", .{project_basename});
 
             // Parse dependency file to detect version changes
             const dep_file_content = io_helper.readFileAlloc(self.allocator, dep_file.?, 10 * 1024 * 1024) catch { // 10MB max
-                std.debug.print("⚠️  Could not read {s}\n", .{dep_file.?});
+                style.print("⚠️  Could not read {s}\n", .{dep_file.?});
                 return try self.allocator.dupe(u8, "");
             };
             defer self.allocator.free(dep_file_content);
 
-            std.debug.print("📦 Installing dependencies from {s}\n", .{std.fs.path.basename(dep_file.?)});
+            style.print("📦 Installing dependencies from {s}\n", .{std.fs.path.basename(dep_file.?)});
 
             // Create env directory
             io_helper.makePath(env_dir) catch |err| {
-                std.debug.print("❌ Failed to create environment: {s}\n", .{@errorName(err)});
+                style.print("❌ Failed to create environment: {s}\n", .{@errorName(err)});
                 return try self.allocator.dupe(u8, "");
             };
 
@@ -229,7 +230,7 @@ pub const ShellCommands = struct {
                 @memcpy(project_root_z[0..project_root.len], project_root);
                 project_root_z[project_root.len] = 0;
                 if (std.c.chdir(&project_root_z) != 0) {
-                    std.debug.print("Failed to change to project directory: {s}\n", .{project_root});
+                    style.print("Failed to change to project directory: {s}\n", .{project_root});
                     return try self.allocator.dupe(u8, "");
                 }
             }
@@ -246,19 +247,19 @@ pub const ShellCommands = struct {
                 &[_][]const u8{},
                 install_types.InstallOptions{},
             ) catch |err| {
-                std.debug.print("❌ Installation failed: {s}\n", .{@errorName(err)});
+                style.print("❌ Installation failed: {s}\n", .{@errorName(err)});
                 return try self.allocator.dupe(u8, "");
             };
             defer install_result.deinit(self.allocator);
 
             if (install_result.exit_code != 0) {
                 if (install_result.message) |msg| {
-                    std.debug.print("❌ {s}\n", .{msg});
+                    style.print("❌ {s}\n", .{msg});
                 }
                 return try self.allocator.dupe(u8, "");
             }
 
-            std.debug.print("✅ Environment ready: {s}\n", .{env_name});
+            style.print("✅ Environment ready: {s}\n", .{env_name});
 
             // Install global dependencies (global: true in deps.yaml)
             try self.installGlobalDeps(project_root);
@@ -278,8 +279,8 @@ pub const ShellCommands = struct {
             // Check if dep file was modified recently (cache was invalidated)
             if (try self.env_cache.get(project_hash_quick)) |cached| {
                 if (current_dep_mtime != cached.dep_mtime) {
-                    std.debug.print("🔄 Dependencies changed, updating environment...\n", .{});
-                    std.debug.print("📦 Processing updates from {s}\n", .{std.fs.path.basename(dep_file.?)});
+                    style.print("🔄 Dependencies changed, updating environment...\n", .{});
+                    style.print("📦 Processing updates from {s}\n", .{std.fs.path.basename(dep_file.?)});
 
                     // Actually re-install dependencies
                     const install_cmd = @import("../cli/commands/install/core.zig");
@@ -294,7 +295,7 @@ pub const ShellCommands = struct {
                         @memcpy(pr_buf[0..project_root.len], project_root);
                         pr_buf[project_root.len] = 0;
                         if (std.c.chdir(&pr_buf) != 0) {
-                            std.debug.print("Failed to change to project directory: {s}\n", .{project_root});
+                            style.print("Failed to change to project directory: {s}\n", .{project_root});
                             return try self.allocator.dupe(u8, "");
                         }
                     }
@@ -311,19 +312,19 @@ pub const ShellCommands = struct {
                         &[_][]const u8{},
                         install_types.InstallOptions{},
                     ) catch |err| {
-                        std.debug.print("❌ Update failed: {s}\n", .{@errorName(err)});
+                        style.print("❌ Update failed: {s}\n", .{@errorName(err)});
                         return try self.allocator.dupe(u8, "");
                     };
                     defer install_result.deinit(self.allocator);
 
                     if (install_result.exit_code != 0) {
                         if (install_result.message) |msg| {
-                            std.debug.print("❌ {s}\n", .{msg});
+                            style.print("❌ {s}\n", .{msg});
                         }
                         return try self.allocator.dupe(u8, "");
                     }
 
-                    std.debug.print("✅ Environment updated\n", .{});
+                    style.print("✅ Environment updated\n", .{});
 
                     // Re-check global dependencies after update
                     try self.installGlobalDeps(project_root);
@@ -569,7 +570,7 @@ pub const ShellCommands = struct {
         io_helper.makePath(global_dir) catch return;
         io_helper.makePath(global_bin) catch return;
 
-        std.debug.print("🌐 Installing global dependencies...\n", .{});
+        style.print("🌐 Installing global dependencies...\n", .{});
 
         var pkg_cache = lib.cache.PackageCache.init(self.allocator) catch return;
         defer pkg_cache.deinit();
@@ -577,7 +578,7 @@ pub const ShellCommands = struct {
         for (deps) |dep| {
             if (!dep.global) continue;
 
-            std.debug.print("  → {s}@{s} (global)", .{ dep.name, dep.version });
+            style.print("  → {s}@{s} (global)", .{ dep.name, dep.version });
 
             const spec = lib.packages.PackageSpec{
                 .name = dep.name,
@@ -585,29 +586,29 @@ pub const ShellCommands = struct {
             };
 
             var installer = lib.install.Installer.init(self.allocator, &pkg_cache) catch {
-                std.debug.print(" ... failed to init installer\n", .{});
+                style.print(" ... failed to init installer\n", .{});
                 continue;
             };
             // Override data_dir to global directory
             self.allocator.free(installer.data_dir);
             installer.data_dir = self.allocator.dupe(u8, global_dir) catch {
-                std.debug.print(" ... failed\n", .{});
+                style.print(" ... failed\n", .{});
                 continue;
             };
             defer installer.deinit();
 
             var result = installer.install(spec, .{}) catch {
-                std.debug.print(" ... failed\n", .{});
+                style.print(" ... failed\n", .{});
                 continue;
             };
             defer result.deinit(self.allocator);
 
-            std.debug.print(" ... {s}\n", .{
+            style.print(" ... {s}\n", .{
                 if (result.from_cache) "cached" else "installed",
             });
         }
 
-        std.debug.print("✅ Global packages available in ~/.pantry/global/bin\n", .{});
+        style.print("✅ Global packages available in ~/.pantry/global/bin\n", .{});
     }
 
     /// Auto-start services configured in pantry.json
@@ -633,21 +634,21 @@ pub const ShellCommands = struct {
         for (services_list) |svc| {
             if (!svc.auto_start) continue;
 
-            std.debug.print("🚀 Starting service: {s}...\n", .{svc.name});
+            style.print("🚀 Starting service: {s}...\n", .{svc.name});
 
             // Use the service commands module to start the service
             const service_cmd = @import("../cli/commands/services.zig");
             var result = service_cmd.startCommand(self.allocator, &[_][]const u8{svc.name}) catch |err| {
-                std.debug.print("⚠️  Failed to start {s}: {s}\n", .{ svc.name, @errorName(err) });
+                style.print("⚠️  Failed to start {s}: {s}\n", .{ svc.name, @errorName(err) });
                 continue;
             };
             defer result.deinit(self.allocator);
 
             if (result.exit_code == 0) {
-                std.debug.print("✅ {s} started\n", .{svc.name});
+                style.print("✅ {s} started\n", .{svc.name});
             } else {
                 if (result.message) |msg| {
-                    std.debug.print("⚠️  {s}\n", .{msg});
+                    style.print("⚠️  {s}\n", .{msg});
                 }
             }
         }

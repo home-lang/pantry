@@ -3,6 +3,7 @@
 const std = @import("std");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 const env = lib.env;
@@ -16,15 +17,15 @@ pub fn envListCommand(allocator: std.mem.Allocator, _: []const []const u8) !Comm
     defer envs.deinit(allocator);
 
     if (envs.items.len == 0) {
-        std.debug.print("No environments found.\n", .{});
+        style.print("No environments found.\n", .{});
         return .{ .exit_code = 0 };
     }
 
-    std.debug.print("Environments ({d}):\n\n", .{envs.items.len});
+    style.print("Environments ({d}):\n\n", .{envs.items.len});
     for (envs.items) |hash| {
         const hex = try string.hashToHex(hash, allocator);
         defer allocator.free(hex);
-        std.debug.print("  {s}\n", .{hex});
+        style.print("  {s}\n", .{hex});
     }
 
     return .{ .exit_code = 0 };
@@ -43,9 +44,9 @@ pub fn envRemoveCommand(allocator: std.mem.Allocator, hash_str: []const u8) !Com
         return CommandResult.err(allocator, "Error: Invalid hex string");
     };
 
-    std.debug.print("Removing environment {s}...\n", .{hash_str});
+    style.print("Removing environment {s}...\n", .{hash_str});
     try manager.remove(hash);
-    std.debug.print("Done.\n", .{});
+    style.print("Done.\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -63,10 +64,10 @@ pub fn envInspectCommand(allocator: std.mem.Allocator, hash_str: []const u8) !Co
         return CommandResult.err(allocator, "Error: Invalid hex string");
     };
 
-    std.debug.print("Environment: {s}\n\n", .{hash_str});
-    std.debug.print("  Status: Active\n", .{});
-    std.debug.print("  Created: (timestamp)\n", .{});
-    std.debug.print("  Packages: (package list)\n", .{});
+    style.print("Environment: {s}\n\n", .{hash_str});
+    style.print("  Status: Active\n", .{});
+    style.print("  Created: (timestamp)\n", .{});
+    style.print("  Packages: (package list)\n", .{});
 
     return .{ .exit_code = 0 };
 }
@@ -75,8 +76,8 @@ pub fn envCleanCommand(allocator: std.mem.Allocator, _: []const []const u8) !Com
     var manager = try env.EnvManager.init(allocator);
     defer manager.deinit();
 
-    std.debug.print("Cleaning old environments...\n", .{});
-    std.debug.print("Removed 0 environment(s)\n", .{});
+    style.print("Cleaning old environments...\n", .{});
+    style.print("Removed 0 environment(s)\n", .{});
 
     return .{ .exit_code = 0 };
 }

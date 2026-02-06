@@ -1,4 +1,5 @@
 const std = @import("std");
+const style = @import("cli/style.zig");
 
 /// Benchmark result
 pub const BenchmarkResult = struct {
@@ -10,12 +11,12 @@ pub const BenchmarkResult = struct {
     max_ns: u64,
 
     pub fn format(self: BenchmarkResult) void {
-        std.debug.print("\nBenchmark: {s}\n", .{self.name});
-        std.debug.print("  Iterations: {d}\n", .{self.iterations});
-        std.debug.print("  Total: {d}ns ({d}ms)\n", .{ self.total_ns, self.total_ns / std.time.ns_per_ms });
-        std.debug.print("  Average: {d}ns ({d}μs)\n", .{ self.avg_ns, self.avg_ns / std.time.ns_per_us });
-        std.debug.print("  Min: {d}ns\n", .{self.min_ns});
-        std.debug.print("  Max: {d}ns\n", .{self.max_ns});
+        style.print("\nBenchmark: {s}\n", .{self.name});
+        style.print("  Iterations: {d}\n", .{self.iterations});
+        style.print("  Total: {d}ns ({d}ms)\n", .{ self.total_ns, self.total_ns / std.time.ns_per_ms });
+        style.print("  Average: {d}ns ({d}μs)\n", .{ self.avg_ns, self.avg_ns / std.time.ns_per_us });
+        style.print("  Min: {d}ns\n", .{self.min_ns});
+        style.print("  Max: {d}ns\n", .{self.max_ns});
     }
 };
 

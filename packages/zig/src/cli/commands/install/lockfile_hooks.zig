@@ -8,6 +8,7 @@ const io_helper = @import("../../../io_helper.zig");
 const lib = @import("../../../lib.zig");
 const lockfile_mod = @import("../../../deps/resolution/lockfile.zig");
 const lifecycle = @import("../../../lifecycle.zig");
+const style = @import("../../style.zig");
 
 const LockFile = lockfile_mod.LockFile;
 
@@ -95,7 +96,7 @@ pub fn executePreInstallHook(
     const preinstall_cmd = scripts.get("preinstall") orelse return null;
 
     if (verbose) {
-        std.debug.print("Running preinstall hook...\n", .{});
+        style.print("Running preinstall hook...\n", .{});
     }
 
     return try lifecycle.executeScript(allocator, "preinstall", preinstall_cmd, .{
@@ -149,7 +150,7 @@ pub fn executePostInstallHook(
     const postinstall_cmd = scripts.get("postinstall") orelse return null;
 
     if (verbose) {
-        std.debug.print("Running postinstall hook...\n", .{});
+        style.print("Running postinstall hook...\n", .{});
     }
 
     return try lifecycle.executeScript(allocator, "postinstall", postinstall_cmd, .{

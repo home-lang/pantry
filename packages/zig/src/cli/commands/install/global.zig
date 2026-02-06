@@ -7,6 +7,7 @@ const std = @import("std");
 const io_helper = @import("../../../io_helper.zig");
 const lib = @import("../../../lib.zig");
 const types = @import("types.zig");
+const style = @import("../../style.zig");
 
 const cache = lib.cache;
 const install = lib.install;
@@ -78,7 +79,7 @@ pub fn installGlobalDepsCommandUserLocal(allocator: std.mem.Allocator) !types.Co
 fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local: bool) !types.CommandResult {
     const global_scanner = @import("../../../deps/global_scanner.zig");
 
-    std.debug.print("Scanning for global dependencies...\n", .{});
+    style.print("Scanning for global dependencies...\n", .{});
 
     const global_deps = try global_scanner.scanForGlobalDeps(allocator);
     defer {
@@ -90,11 +91,11 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
     }
 
     if (global_deps.len == 0) {
-        std.debug.print("No global dependencies found.\n", .{});
+        style.print("No global dependencies found.\n", .{});
         return .{ .exit_code = 0 };
     }
 
-    std.debug.print("Found {d} global package(s).\n", .{global_deps.len});
+    style.print("Found {d} global package(s).\n", .{global_deps.len});
 
     // Determine installation directory
     const global_dir = if (user_local) blk: {
@@ -110,7 +111,7 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
         io_helper.makePath(global_dir) catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 // No sudo privileges - automatically fallback to user-local
-                std.debug.print("⚠️  No permission for system-wide install, using ~/.pantry/global instead\n\n", .{});
+                style.printWarn("No permission for system-wide install, using ~/.pantry/global instead\n\n", .{});
                 return installGlobalDepsCommandWithOptions(allocator, true);
             }
             return err;
@@ -119,7 +120,7 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
         try io_helper.makePath(global_dir);
     }
 
-    std.debug.print("Installing to {s}...\n", .{global_dir});
+    style.print("Installing to {s}...\n", .{global_dir});
 
     // Create shared installer + package cache for all packages
     var pkg_cache = try cache.PackageCache.init(allocator);
@@ -179,23 +180,13 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
     // Print results
     for (results) |result| {
         if (result.success) {
-            std.debug.print("  ✓ {s}@{s} ({s}, {d}ms)\n", .{
-                result.name,
-                result.version,
-                if (result.from_cache) "cached" else "installed",
-                result.install_time_ms,
-            });
+            style.printGlobalInstalled(result.name, result.version, result.from_cache, result.install_time_ms);
         } else {
-            std.debug.print("  ✗ {s}@{s}", .{ result.name, result.version });
-            if (result.error_msg) |msg| {
-                std.debug.print(" ({s})\n", .{msg});
-            } else {
-                std.debug.print("\n", .{});
-            }
+            style.printFailed(result.name, result.version, result.error_msg);
         }
     }
 
-    std.debug.print("\n✅ Global packages installed to: {s}\n", .{global_dir});
+    style.printGlobalComplete(global_dir);
 
     return .{ .exit_code = 0 };
 }
@@ -213,7 +204,7 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
                 defer allocator.free(home);
                 const user_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home});
                 global_dir_owned = user_dir;
-                std.debug.print("⚠️  No permission for system-wide install, using ~/.pantry/global\n\n", .{});
+                style.printWarn("No permission for system-wide install, using ~/.pantry/global\n\n", .{});
                 try io_helper.makePath(user_dir);
                 break :blk user_dir;
             }
@@ -223,7 +214,7 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
     };
     defer if (global_dir_owned) |dir| allocator.free(dir);
 
-    std.debug.print("Installing {d} package(s) globally to {s}...\n", .{ packages.len, global_dir });
+    style.print("Installing {d} package(s) globally to {s}...\n", .{ packages.len, global_dir });
 
     // Create shared installer
     var pkg_cache = try cache.PackageCache.init(allocator);
@@ -289,18 +280,13 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
     // Print results
     for (results) |result| {
         if (result.success) {
-            std.debug.print("  ✓ {s}@{s}\n", .{ result.name, result.version });
+            style.printInstalled(result.name, result.version);
         } else {
-            std.debug.print("  ✗ {s}@{s}", .{ result.name, result.version });
-            if (result.error_msg) |msg| {
-                std.debug.print(" ({s})\n", .{msg});
-            } else {
-                std.debug.print("\n", .{});
-            }
+            style.printFailed(result.name, result.version, result.error_msg);
         }
     }
 
-    std.debug.print("\n✅ Packages installed globally to: {s}\n", .{global_dir});
+    style.printGlobalComplete(global_dir);
 
     return .{ .exit_code = 0 };
 }

@@ -8,6 +8,7 @@ const io_helper = @import("../../../io_helper.zig");
 const types = @import("types.zig");
 const cache = lib.cache;
 const install = lib.install;
+const style = @import("../../style.zig");
 
 // ============================================================================
 // Pantry Registry Lookup (S3/DynamoDB)
@@ -318,7 +319,7 @@ pub fn installSinglePackage(
             // Uses the shared installer's resolveNpmPackage which handles semver ranges,
             // dist-tags, and deduplication via InstallingStack
             if (lookupPantryRegistry(allocator, dep.name) catch |err| lkup: {
-                std.debug.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ dep.name, err });
+                style.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ dep.name, err });
                 break :lkup null;
             }) |info| {
                 var pantry_info = info;
@@ -496,7 +497,7 @@ pub fn installSinglePackage(
     // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
     createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose) catch |err| {
         if (options.verbose) {
-            std.debug.print("    ⚠️  Could not create bin symlinks for {s}: {}\n", .{ dep.name, err });
+            style.print("    ⚠️  Could not create bin symlinks for {s}: {}\n", .{ dep.name, err });
         }
     };
 
@@ -557,13 +558,13 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
                             io_helper.deleteFile(bin_dst) catch {};
                             io_helper.symLink(bin_src, bin_dst) catch |err2| {
                                 if (verbose) {
-                                    std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
+                                    style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
                                 }
                             };
                         },
                         else => {
                             if (verbose) {
-                                std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
+                                style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
                             }
                         },
                     };
@@ -642,13 +643,13 @@ fn findAndLinkBinDirsWithDepth(allocator: std.mem.Allocator, search_path: []cons
                                 io_helper.deleteFile(bin_dst) catch {};
                                 io_helper.symLink(bin_src, bin_dst) catch |err2| {
                                     if (verbose) {
-                                        std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
+                                        style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
                                     }
                                 };
                             },
                             else => {
                                 if (verbose) {
-                                    std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
+                                    style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
                                 }
                             },
                         };

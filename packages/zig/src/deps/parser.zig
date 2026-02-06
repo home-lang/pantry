@@ -1,6 +1,7 @@
 const std = @import("std");
 const detector = @import("detector.zig");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 pub const DependencyType = enum {
     normal,
@@ -275,8 +276,8 @@ pub fn parseTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![
     // Execute the TypeScript file
     const json_output = executeTsConfigFile(allocator, file_path) catch |err| {
         if (err == error.NoRuntimeAvailable) {
-            std.debug.print("Error: No JavaScript runtime found (bun or node required)\n", .{});
-            std.debug.print("Install bun or node to use TypeScript config files\n", .{});
+            style.print("Error: No JavaScript runtime found (bun or node required)\n", .{});
+            style.print("Install bun or node to use TypeScript config files\n", .{});
         }
         return err;
     };

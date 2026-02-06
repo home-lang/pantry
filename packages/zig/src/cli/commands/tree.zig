@@ -5,6 +5,7 @@
 const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
+const style = @import("../style.zig");
 
 const CommandResult = struct {
     exit_code: u8,
@@ -130,18 +131,18 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     if (options.json) {
         try printTreeJson(allocator, root);
     } else {
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
         try printTree(root, "", true, options);
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
 
         // Print legend
-        std.debug.print("Legend:\n", .{});
-        std.debug.print("  {s}⚬{s} normal dependency\n", .{ "\x1b[32m", "\x1b[0m" });
+        style.print("Legend:\n", .{});
+        style.print("  {s}⚬{s} normal dependency\n", .{ "\x1b[32m", "\x1b[0m" });
         if (options.show_dev) {
-            std.debug.print("  {s}⚬{s} dev dependency\n", .{ "\x1b[33m", "\x1b[0m" });
+            style.print("  {s}⚬{s} dev dependency\n", .{ "\x1b[33m", "\x1b[0m" });
         }
         if (options.show_peer) {
-            std.debug.print("  {s}⚬{s} peer dependency\n", .{ "\x1b[36m", "\x1b[0m" });
+            style.print("  {s}⚬{s} peer dependency\n", .{ "\x1b[36m", "\x1b[0m" });
         }
     }
 
@@ -166,14 +167,14 @@ fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: Tre
     };
     const reset = "\x1b[0m";
 
-    std.debug.print("{s}", .{prefix});
-    std.debug.print("{s}", .{if (is_last) "└── " else "├── "});
-    std.debug.print("{s}⚬{s} ", .{ color, reset });
+    style.print("{s}", .{prefix});
+    style.print("{s}", .{if (is_last) "└── " else "├── "});
+    style.print("{s}⚬{s} ", .{ color, reset });
 
     if (options.show_versions) {
-        std.debug.print("{s}@{s}\n", .{ node.name, node.version });
+        style.print("{s}@{s}\n", .{ node.name, node.version });
     } else {
-        std.debug.print("{s}\n", .{node.name});
+        style.print("{s}\n", .{node.name});
     }
 
     // Print children
@@ -209,7 +210,7 @@ fn printTreeJson(allocator: std.mem.Allocator, root: *PackageNode) !void {
     try output.appendSlice(allocator, "  ]\n");
     try output.appendSlice(allocator, "}\n");
 
-    std.debug.print("{s}", .{output.items});
+    style.print("{s}", .{output.items});
 }
 
 fn printNodeJson(allocator: std.mem.Allocator, output: *std.ArrayList(u8), node: *PackageNode, indent: usize) !void {

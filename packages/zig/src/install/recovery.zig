@@ -4,6 +4,7 @@
 
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 /// Installation checkpoint for rollback and resume
 pub const InstallCheckpoint = struct {
@@ -74,7 +75,7 @@ pub const InstallCheckpoint = struct {
         try self.installed_packages.put(owned, {});
         // Persist to disk after each package
         self.persist() catch |err| {
-            std.debug.print("Warning: Failed to persist install checkpoint: {}\n", .{err});
+            style.print("Warning: Failed to persist install checkpoint: {}\n", .{err});
         };
     }
 
@@ -115,7 +116,7 @@ pub const InstallCheckpoint = struct {
         const file = io_helper.cwd().createFile(io_helper.io, path, .{}) catch return;
         defer file.close(io_helper.io);
         io_helper.writeAllToFile(file, buf.items) catch |err| {
-            std.debug.print("Warning: Failed to write checkpoint file: {}\n", .{err});
+            style.print("Warning: Failed to write checkpoint file: {}\n", .{err});
         };
     }
 
@@ -157,7 +158,7 @@ pub const InstallCheckpoint = struct {
 
     /// Rollback all changes
     pub fn rollback(self: *InstallCheckpoint) !void {
-        std.debug.print("Rolling back installation...\n", .{});
+        style.print("Rolling back installation...\n", .{});
 
         var failed_count: usize = 0;
 
@@ -167,7 +168,7 @@ pub const InstallCheckpoint = struct {
             i -= 1;
             const file = self.created_files.items[i];
             io_helper.deleteFile(file) catch |err| {
-                std.debug.print("  Failed to delete {s}: {}\n", .{ file, err });
+                style.print("  Failed to delete {s}: {}\n", .{ file, err });
                 failed_count += 1;
             };
         }
@@ -178,7 +179,7 @@ pub const InstallCheckpoint = struct {
             i -= 1;
             const dir = self.created_dirs.items[i];
             io_helper.deleteTree(dir) catch |err| {
-                std.debug.print("  Failed to delete {s}: {}\n", .{ dir, err });
+                style.print("  Failed to delete {s}: {}\n", .{ dir, err });
                 failed_count += 1;
             };
         }
@@ -186,15 +187,15 @@ pub const InstallCheckpoint = struct {
         // Restore from backup if available
         if (self.backup_dir) |backup| {
             restoreFromBackup(backup) catch |err| {
-                std.debug.print("  Failed to restore from backup: {}\n", .{err});
+                style.print("  Failed to restore from backup: {}\n", .{err});
                 failed_count += 1;
             };
         }
 
         if (failed_count > 0) {
-            std.debug.print("Rollback completed with {d} error(s)\n", .{failed_count});
+            style.print("Rollback completed with {d} error(s)\n", .{failed_count});
         } else {
-            std.debug.print("Rollback completed successfully\n", .{});
+            style.print("Rollback completed successfully\n", .{});
         }
     }
 
@@ -222,7 +223,7 @@ pub const InstallCheckpoint = struct {
 
 fn restoreFromBackup(backup_dir: []const u8) !void {
     // Implementation: copy files from backup back to original location
-    std.debug.print("Restoring from backup: {s}\n", .{backup_dir});
+    style.print("Restoring from backup: {s}\n", .{backup_dir});
 
     // After restore, clean up backup
     defer io_helper.deleteTree(backup_dir) catch {};
@@ -359,16 +360,12 @@ pub const RecoverySuggestion = struct {
     }
 
     pub fn print(self: *const RecoverySuggestion) void {
-        const red = "\x1b[31m";
-        const yellow = "\x1b[33m";
-        const reset = "\x1b[0m";
-
-        std.debug.print("\n{s}Error:{s} {s}\n\n", .{ red, reset, self.message });
-        std.debug.print("{s}Suggestions:{s}\n", .{ yellow, reset });
+        style.print("\n{s}Error:{s} {s}\n\n", .{ style.red, style.reset, self.message });
+        style.print("{s}Suggestions:{s}\n", .{ style.yellow, style.reset });
         for (self.suggestions, 1..) |suggestion, i| {
-            std.debug.print("   {d}. {s}\n", .{ i, suggestion });
+            style.print("   {d}. {s}\n", .{ i, suggestion });
         }
-        std.debug.print("\n", .{});
+        style.print("\n", .{});
     }
 };
 

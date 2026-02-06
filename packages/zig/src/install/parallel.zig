@@ -1,5 +1,6 @@
 const std = @import("std");
 const downloader = @import("downloader.zig");
+const style = @import("../cli/style.zig");
 
 pub const DownloadTask = struct {
     url: []const u8,
@@ -33,7 +34,7 @@ const DownloadThreadContext = struct {
             if (i >= ctx.tasks.len) break;
 
             const task = ctx.tasks[i];
-            std.debug.print("  [{d}/{d}] {s}...", .{ i + 1, ctx.total, task.name });
+            style.print("  [{d}/{d}] {s}...", .{ i + 1, ctx.total, task.name });
 
             downloader.downloadFile(ctx.alloc, task.url, task.dest_path) catch |err| {
                 ctx.results[i] = .{
@@ -45,7 +46,7 @@ const DownloadThreadContext = struct {
                         .{err},
                     ) catch null,
                 };
-                std.debug.print(" failed\n", .{});
+                style.print(" failed\n", .{});
                 return;
             };
 
@@ -54,7 +55,7 @@ const DownloadThreadContext = struct {
                 .success = true,
                 .error_msg = null,
             };
-            std.debug.print(" done\n", .{});
+            style.print(" done\n", .{});
         }
     }
 };
@@ -81,14 +82,14 @@ pub fn downloadParallel(
 
     // For single task, just do it directly (no thread overhead)
     if (tasks.len == 1) {
-        std.debug.print("  [1/1] {s}...", .{tasks[0].name});
+        style.print("  [1/1] {s}...", .{tasks[0].name});
         downloader.downloadFile(allocator, tasks[0].url, tasks[0].dest_path) catch |err| {
             results[0].error_msg = try std.fmt.allocPrint(allocator, "Download failed: {}", .{err});
-            std.debug.print(" failed\n", .{});
+            style.print(" failed\n", .{});
             return results;
         };
         results[0].success = true;
-        std.debug.print(" done\n", .{});
+        style.print(" done\n", .{});
         return results;
     }
 
@@ -145,7 +146,7 @@ const RetryDownloadThreadContext = struct {
             if (i >= ctx.tasks.len) break;
 
             const task = ctx.tasks[i];
-            std.debug.print("  [{d}/{d}] {s}...", .{ i + 1, ctx.total, task.name });
+            style.print("  [{d}/{d}] {s}...", .{ i + 1, ctx.total, task.name });
 
             downloader.downloadFileWithRetry(ctx.alloc, task.url, task.dest_path, ctx.options) catch |err| {
                 ctx.results[i] = .{
@@ -157,7 +158,7 @@ const RetryDownloadThreadContext = struct {
                         .{err},
                     ) catch null,
                 };
-                std.debug.print(" failed\n", .{});
+                style.print(" failed\n", .{});
                 return;
             };
 
@@ -166,7 +167,7 @@ const RetryDownloadThreadContext = struct {
                 .success = true,
                 .error_msg = null,
             };
-            std.debug.print(" done\n", .{});
+            style.print(" done\n", .{});
         }
     }
 };
@@ -194,14 +195,14 @@ pub fn downloadParallelWithRetry(
 
     // For single task, just do it directly
     if (tasks.len == 1) {
-        std.debug.print("  [1/1] {s}...", .{tasks[0].name});
+        style.print("  [1/1] {s}...", .{tasks[0].name});
         downloader.downloadFileWithRetry(allocator, tasks[0].url, tasks[0].dest_path, options) catch |err| {
             results[0].error_msg = try std.fmt.allocPrint(allocator, "Download failed after retries: {}", .{err});
-            std.debug.print(" failed\n", .{});
+            style.print(" failed\n", .{});
             return results;
         };
         results[0].success = true;
-        std.debug.print(" done\n", .{});
+        style.print(" done\n", .{});
         return results;
     }
 

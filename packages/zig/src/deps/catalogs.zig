@@ -33,6 +33,7 @@
 //! }
 
 const std = @import("std");
+const style = @import("../cli/style.zig");
 
 // ============================================================================
 // Types
@@ -258,7 +259,7 @@ fn parseCatalogObject(
 
         // Validate version
         if (!isValidVersion(version)) {
-            std.debug.print("Warning: Invalid version '{s}' for package '{s}' in catalog, skipping\n", .{ version, package_name });
+            style.print("Warning: Invalid version '{s}' for package '{s}' in catalog, skipping\n", .{ version, package_name });
             continue;
         }
 
