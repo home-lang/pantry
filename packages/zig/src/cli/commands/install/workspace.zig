@@ -270,6 +270,78 @@ pub fn installWorkspaceCommandWithOptions(
         else
             dep.name;
 
+        // Handle local path dependencies (~/..., ./..., ../..., /...)
+        const helpers = @import("helpers.zig");
+        if (helpers.isLocalDependency(dep)) {
+            // Resolve the local path (handles link:, ~/, absolute, and relative paths)
+            const local_path = if (helpers.isLinkDependency(dep.version)) lp: {
+                const resolved = helpers.resolveLinkVersion(allocator, dep.version) catch {
+                    failed_count += 1;
+                    continue;
+                };
+                break :lp resolved orelse {
+                    std.debug.print("{s}✗{s} {s}@{s} {s}(not linked - run 'pantry link' in the package directory){s}\n", .{ "\x1b[31m", reset, clean_name, dep.version, dim, reset });
+                    failed_count += 1;
+                    continue;
+                };
+            } else if (std.mem.startsWith(u8, dep.version, "~/")) lp: {
+                const home_path = lib.Paths.home(allocator) catch {
+                    failed_count += 1;
+                    continue;
+                };
+                defer allocator.free(home_path);
+                break :lp std.fmt.allocPrint(allocator, "{s}/{s}", .{ home_path, dep.version[2..] }) catch {
+                    failed_count += 1;
+                    continue;
+                };
+            } else if (std.mem.startsWith(u8, dep.version, "/"))
+                allocator.dupe(u8, dep.version) catch {
+                    failed_count += 1;
+                    continue;
+                }
+            else
+                std.fmt.allocPrint(allocator, "{s}/{s}", .{ workspace_root, dep.version }) catch {
+                    failed_count += 1;
+                    continue;
+                };
+            defer allocator.free(local_path);
+
+            // Check if path exists
+            io_helper.accessAbsolute(local_path, .{}) catch {
+                std.debug.print("{s}✗{s} {s}@{s} {s}(path not found){s}\n", .{ "\x1b[31m", reset, clean_name, dep.version, dim, reset });
+                failed_count += 1;
+                continue;
+            };
+
+            // Create pantry/{package} symlink in each workspace member that needs it
+            // For workspace, link into the workspace root's pantry/ directory
+            const pantry_dir = std.fmt.allocPrint(allocator, "{s}/pantry", .{workspace_root}) catch {
+                failed_count += 1;
+                continue;
+            };
+            defer allocator.free(pantry_dir);
+            io_helper.makePath(pantry_dir) catch {};
+
+            const link_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, clean_name }) catch {
+                failed_count += 1;
+                continue;
+            };
+            defer allocator.free(link_path);
+
+            // Remove existing symlink/dir and create new one
+            io_helper.deleteFile(link_path) catch {};
+            io_helper.deleteTree(link_path) catch {};
+            io_helper.symLink(local_path, link_path) catch |err| {
+                std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ "\x1b[31m", reset, clean_name, dep.version, dim, err, reset });
+                failed_count += 1;
+                continue;
+            };
+
+            std.debug.print("{s}✓{s} {s}@{s} {s}(linked){s}\n", .{ green, reset, clean_name, dep.version, dim, reset });
+            success_count += 1;
+            continue;
+        }
+
         // Detect if this is an npm/auto package (needs npm fallback path)
         const is_npm_package = std.mem.startsWith(u8, dep.name, "npm:") or
             std.mem.startsWith(u8, dep.name, "auto:");
@@ -447,10 +519,10 @@ pub fn installWorkspaceCommandWithOptions(
         std.debug.print("\n{s}⚠{s}  Failed to write lockfile: {}\n", .{ yellow, reset, err });
     };
 
-    // Link workspace members into root pantry_modules/ so they can reference each other
-    const pantry_modules_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{workspace_root});
-    defer allocator.free(pantry_modules_dir);
-    io_helper.makePath(pantry_modules_dir) catch {};
+    // Link workspace members into root pantry/ so they can reference each other
+    const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{workspace_root});
+    defer allocator.free(pantry_dir);
+    io_helper.makePath(pantry_dir) catch {};
 
     var linked_count: usize = 0;
     for (workspace_config.members) |member| {
@@ -478,7 +550,7 @@ pub fn installWorkspaceCommandWithOptions(
         const pkg_name = pkg_name_owned orelse member.name;
 
         // Handle scoped packages (@scope/name)
-        const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_modules_dir, pkg_name });
+        const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, pkg_name });
         defer allocator.free(link_path);
 
         // Create parent directory for scoped packages
@@ -489,7 +561,7 @@ pub fn installWorkspaceCommandWithOptions(
             io_helper.makePath(parent_owned) catch {};
         }
 
-        // Create symlink: pantry_modules/{name} -> {member.abs_path}
+        // Create symlink: pantry/{name} -> {member.abs_path}
         io_helper.deleteFile(link_path) catch {};
         io_helper.symLink(member.abs_path, link_path) catch |err| {
             std.debug.print("{s}  ! Failed to link {s}: {}{s}\n", .{ dim, pkg_name, err, reset });

@@ -1,2 +1,0 @@
-#!/bin/bash
-exec "$(dirname "$0")/packages/zig/zig-out/bin/pantry" "$@"

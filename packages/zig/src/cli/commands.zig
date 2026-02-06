@@ -48,6 +48,7 @@ pub const doctor_cmd = @import("commands/doctor.zig");
 pub const clean_cmd = @import("commands/clean.zig");
 pub const why_cmd = @import("commands/why.zig");
 pub const dedupe_cmd = @import("commands/dedupe.zig");
+pub const link_commands = @import("commands/link.zig");
 pub const bootstrap_commands = @import("commands/bootstrap.zig");
 pub const shim_commands = @import("commands/shim.zig");
 pub const oidc_cmd = @import("commands/oidc.zig");
@@ -248,3 +249,11 @@ pub const initCommand = init_commands.initCommand;
 
 pub const tree_commands = @import("commands/tree.zig");
 pub const treeCommand = tree_commands.treeCommand;
+
+// ============================================================================
+// Re-export Link Commands
+// ============================================================================
+
+pub const linkCommand = link_commands.linkCommand;
+pub const unlinkCommand = link_commands.unlinkCommand;
+pub const resolveLinkPath = link_commands.resolveLinkPath;

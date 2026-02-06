@@ -91,7 +91,6 @@ jobs:
 
       - name: Bootstrap Zig Dependencies
         run: |
-          cd packages/zig
           mkdir -p pantry
           cd pantry
           [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git

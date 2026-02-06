@@ -112,10 +112,16 @@ pub fn isLocalPath(version: []const u8) bool {
         std.mem.startsWith(u8, version, "/");
 }
 
-/// Check if a dependency is local (either has local: prefix or is a filesystem path)
+/// Check if a version string is a link: dependency
+pub fn isLinkDependency(version: []const u8) bool {
+    return std.mem.startsWith(u8, version, "link:");
+}
+
+/// Check if a dependency is local (either has local: prefix, is a filesystem path, or is a link:)
 pub fn isLocalDependency(dep: lib.deps.parser.PackageDependency) bool {
     return std.mem.startsWith(u8, dep.name, "local:") or
         std.mem.startsWith(u8, dep.name, "auto:") or
+        isLinkDependency(dep.version) or
         isLocalPath(dep.version);
 }
 
@@ -127,6 +133,16 @@ pub fn stripDisplayPrefix(name: []const u8) []const u8 {
         return name[6..]; // Skip "local:"
     }
     return name;
+}
+
+/// Resolve a `link:` version string to its actual filesystem path.
+/// Reads the symlink at `~/.pantry/links/{name}` to find the real path.
+/// Returns null if the link is not registered.
+pub fn resolveLinkVersion(allocator: std.mem.Allocator, version: []const u8) !?[]const u8 {
+    if (!isLinkDependency(version)) return null;
+    const link_name = version[5..]; // Skip "link:"
+    const link_cmds = @import("../link.zig");
+    return try link_cmds.resolveLinkPath(allocator, link_name);
 }
 
 /// Worker function for concurrent package installation
@@ -378,7 +394,7 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
         defer allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
@@ -465,7 +481,7 @@ pub fn installSinglePackage(
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
-    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", dep.name });
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
     defer allocator.free(package_path);
 
     if (!options.ignore_scripts) {
@@ -509,8 +525,8 @@ pub fn installSinglePackage(
     _ = bin_dir;
     _ = cwd;
 
-    // Create symlinks in pantry_modules/.bin for package executables
-    // Use actual_install_path which has the real location (e.g., pantry_modules/github.com/org/pkg/v1.0.0)
+    // Create symlinks in pantry/.bin for package executables
+    // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
     createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose) catch |err| {
         if (options.verbose) {
             std.debug.print("    ⚠️  Could not create bin symlinks for {s}: {}\n", .{ dep.name, err });
@@ -526,15 +542,15 @@ pub fn installSinglePackage(
     };
 }
 
-/// Create symlinks in pantry_modules/.bin for executables in the installed package
+/// Create symlinks in pantry/.bin for executables in the installed package
 /// Called from core.zig after direct package install
 pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8) !void {
     return createBinSymlinks(allocator, proj_dir, package_path, false);
 }
 
 fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool) !void {
-    // Create pantry_modules/.bin directory
-    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry_modules", ".bin" });
+    // Create pantry/.bin directory
+    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", ".bin" });
     defer allocator.free(bin_link_dir);
     try io_helper.makePath(bin_link_dir);
 

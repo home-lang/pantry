@@ -113,9 +113,9 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
         }
     }
 
-    // Remove from pantry_modules
+    // Remove from pantry
     if (!options.dry_run) {
-        const modules_dir = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry_modules" });
+        const modules_dir = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry" });
         defer allocator.free(modules_dir);
 
         for (removed_packages.items) |pkg| {
@@ -398,8 +398,8 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
-    // Build paths - packages are in pantry_modules/
-    const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{cwd});
+    // Build paths - packages are in pantry/
+    const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{cwd});
     defer allocator.free(pantry_dir);
 
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/.bin", .{pantry_dir});
@@ -1564,7 +1564,7 @@ fn createTarball(
             "--exclude=shrinkwrap.yaml",
             "--exclude=pantry.lock",
             "--exclude=node_modules",
-            "--exclude=pantry_modules",
+            "--exclude=pantry",
             "--exclude=.nyc_output",
             "--exclude=coverage",
             "--exclude=.coverage",

@@ -1657,6 +1657,44 @@ fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn linkAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get optional package name argument
+    const name = ctx.getArgument(0);
+
+    const result = try lib.commands.linkCommand(allocator, name);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn unlinkAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Get optional package name argument
+    const name = ctx.getArgument(0);
+
+    const result = try lib.commands.unlinkCommand(allocator, name);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        std.debug.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 // ============================================================================
 // Main
 // ============================================================================
@@ -2735,6 +2773,33 @@ pub fn main() !void {
 
     _ = publish_cmd.setAction(registryPublishAction);
     _ = try root.addCommand(publish_cmd);
+
+    // ========================================================================
+    // Help Command
+    // ========================================================================
+    // ========================================================================
+    // Link Command
+    // ========================================================================
+    var link_cmd = try cli.BaseCommand.init(allocator, "link", "Register or link a local package");
+
+    const link_name_arg = cli.Argument.init("name", "Package name to link", .string)
+        .withRequired(false);
+    _ = try link_cmd.addArgument(link_name_arg);
+
+    _ = link_cmd.setAction(linkAction);
+    _ = try root.addCommand(link_cmd);
+
+    // ========================================================================
+    // Unlink Command
+    // ========================================================================
+    var unlink_cmd = try cli.BaseCommand.init(allocator, "unlink", "Unregister or unlink a local package");
+
+    const unlink_name_arg = cli.Argument.init("name", "Package name to unlink", .string)
+        .withRequired(false);
+    _ = try unlink_cmd.addArgument(unlink_name_arg);
+
+    _ = unlink_cmd.setAction(unlinkAction);
+    _ = try root.addCommand(unlink_cmd);
 
     // ========================================================================
     // Help Command

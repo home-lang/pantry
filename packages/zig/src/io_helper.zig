@@ -584,6 +584,24 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
     }
 }
 
+/// Read a symbolic link target
+pub fn readLink(path: []const u8, buf: []u8) ![]const u8 {
+    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (path.len >= path_buf.len) return error.NameTooLong;
+    @memcpy(path_buf[0..path.len], path);
+    path_buf[path.len] = 0;
+    const result = c.readlink(&path_buf, buf.ptr, buf.len);
+    if (result < 0) return error.ReadLinkError;
+    return buf[0..@intCast(result)];
+}
+
+/// Read a symbolic link target with allocation
+pub fn readLinkAlloc(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
+    var buf: [std.fs.max_path_bytes]u8 = undefined;
+    const target = try readLink(path, &buf);
+    return try allocator.dupe(u8, target);
+}
+
 /// Re-export SpawnOptions for callers
 pub const SpawnOptions = std.process.SpawnOptions;
 

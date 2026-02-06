@@ -304,19 +304,76 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
         }
 
-        // Install packages sequentially
-        // TODO: Re-add parallel installation using std.Io.Group when API stabilizes
-        for (deps_to_install, 0..) |dep, i| {
-            install_results[i] = try helpers.installSinglePackage(
-                allocator,
-                dep,
-                proj_dir,
-                env_dir,
-                bin_dir,
-                cwd,
-                &pkg_cache,
-                options,
-            );
+        // Install remote packages in parallel using threads
+        // (link: and local deps are skipped by installSinglePackage and handled below)
+        const max_threads = 8;
+        const thread_count = @min(deps_to_install.len, max_threads);
+        var threads: [max_threads]?std.Thread = .{null} ** max_threads;
+        var next_dep = std.atomic.Value(usize).init(0);
+
+        const ThreadContext = struct {
+            deps: []const lib.deps.parser.PackageDependency,
+            results: []types.InstallTaskResult,
+            next: *std.atomic.Value(usize),
+            alloc: std.mem.Allocator,
+            proj: []const u8,
+            env: []const u8,
+            bin: []const u8,
+            cwd_path: []const u8,
+            cache: *cache.PackageCache,
+            opts: types.InstallOptions,
+
+            fn worker(ctx: *@This()) void {
+                while (true) {
+                    const i = ctx.next.fetchAdd(1, .monotonic);
+                    if (i >= ctx.deps.len) break;
+                    ctx.results[i] = helpers.installSinglePackage(
+                        ctx.alloc,
+                        ctx.deps[i],
+                        ctx.proj,
+                        ctx.env,
+                        ctx.bin,
+                        ctx.cwd_path,
+                        ctx.cache,
+                        ctx.opts,
+                    ) catch .{
+                        .name = ctx.deps[i].name,
+                        .version = ctx.deps[i].version,
+                        .success = false,
+                        .error_msg = null,
+                        .install_time_ms = 0,
+                    };
+                }
+            }
+        };
+
+        var ctx = ThreadContext{
+            .deps = deps_to_install,
+            .results = install_results,
+            .next = &next_dep,
+            .alloc = allocator,
+            .proj = proj_dir,
+            .env = env_dir,
+            .bin = bin_dir,
+            .cwd_path = cwd,
+            .cache = &pkg_cache,
+            .opts = options,
+        };
+
+        // Spawn worker threads (one fewer since main thread also works)
+        for (0..thread_count) |t| {
+            threads[t] = std.Thread.spawn(.{}, ThreadContext.worker, .{&ctx}) catch null;
+        }
+
+        // Main thread also participates
+        ctx.worker();
+
+        // Join all threads
+        for (&threads) |*t| {
+            if (t.*) |thread| {
+                thread.join();
+                t.* = null;
+            }
         }
 
         // Print clean Yarn/Bun-style summary - only show what was installed or failed
@@ -342,16 +399,24 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Handle local packages separately (they need special symlink handling)
-        // Create pantry_modules directory if it doesn't exist
-        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules", .{proj_dir});
+        // Create pantry directory if it doesn't exist
+        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{proj_dir});
         defer allocator.free(pantry_dir);
         try io_helper.makePath(pantry_dir);
 
         for (deps) |dep| {
             if (!helpers.isLocalDependency(dep)) continue;
 
-            // Resolve local path
-            const local_path = if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
+            // Resolve local path (handles link:, ~/, absolute, and relative paths)
+            const local_path = if (helpers.isLinkDependency(dep.version)) blk: {
+                const resolved = try helpers.resolveLinkVersion(allocator, dep.version);
+                break :blk resolved orelse {
+                    const red = "\x1b[31m";
+                    std.debug.print("{s}✗{s} {s}@{s} {s}(not linked - run 'pantry link' in the package directory){s}\n", .{ red, reset, dep.name, dep.version, dim, reset });
+                    failed_count += 1;
+                    continue;
+                };
+            } else if (std.mem.startsWith(u8, dep.version, "~/")) blk: {
                 const home_path = try lib.Paths.home(allocator);
                 defer allocator.free(home_path);
                 const rel_path = dep.version[2..]; // Remove "~/"
@@ -375,7 +440,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             else
                 dep.name;
 
-            // Create pantry_modules/{package} directory structure
+            // Create pantry/{package} directory structure
             const pkg_modules_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, pkg_name });
             defer allocator.free(pkg_modules_dir);
             try io_helper.makePath(pkg_modules_dir);
@@ -405,8 +470,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 }
             };
 
-            // Create pantry_modules/.bin directory and symlink binaries from zig-out/bin
-            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules/.bin", .{proj_dir});
+            // Create pantry/.bin directory and symlink binaries from zig-out/bin
+            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{proj_dir});
             defer allocator.free(local_bin_dir);
             try io_helper.makePath(local_bin_dir);
 
@@ -421,7 +486,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 var iter = dir.iterate();
                 while (iter.next() catch null) |entry| {
                     if (entry.kind == .file or entry.kind == .sym_link) {
-                        // Create symlink in pantry_modules/.bin
+                        // Create symlink in pantry/.bin
                         const bin_src = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ zig_out_bin, entry.name });
                         defer allocator.free(bin_src);
                         const bin_dst = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ local_bin_dir, entry.name });
@@ -511,7 +576,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 };
 
                 // Record installed files/directories
-                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry_modules/{s}", .{ proj_dir, clean_name });
+                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name });
                 defer allocator.free(pkg_dir);
                 checkpoint.recordDir(pkg_dir) catch |err| {
                     if (options.verbose) {
