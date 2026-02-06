@@ -481,7 +481,9 @@ fn createScriptShim(
 
     // Make executable on Unix
     if (builtin.os.tag != .windows) {
-        _ = io_helper.childRun(allocator, &[_][]const u8{ "chmod", "+x", unix_shim_path }) catch {};
+        _ = io_helper.childRun(allocator, &[_][]const u8{ "chmod", "+x", unix_shim_path }) catch |err| {
+            std.debug.print("Warning: Failed to make {s} executable: {}\n", .{ unix_shim_path, err });
+        };
     }
 
     // Create Windows .cmd shim

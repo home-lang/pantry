@@ -119,7 +119,9 @@ pub const EnvCache = struct {
 
     pub fn deinit(self: *EnvCache) void {
         // Save to disk before deinit
-        self.save() catch {};
+        self.save() catch |err| {
+            std.debug.print("Warning: Failed to persist environment cache: {}\n", .{err});
+        };
 
         self.lock.lock();
         defer self.lock.unlock();

@@ -10,7 +10,11 @@ fn maybeDecompressGzip(allocator: std.mem.Allocator, data: []const u8) ![]const 
     if (data.len >= 2 and data[0] == 0x1f and data[1] == 0x8b) {
         // It's gzip compressed - use gunzip to decompress
         // Write to temp file, decompress, read result
-        const tmp_gz = "/tmp/pantry_resp.gz";
+        const tmp_dir = io_helper.getTempDir();
+        var tmp_gz_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const tmp_gz = std.fmt.bufPrint(&tmp_gz_buf, "{s}/pantry_resp.gz", .{tmp_dir}) catch {
+            return try allocator.dupe(u8, data);
+        };
 
         // Write compressed data to temp file
         const gz_file = io_helper.createFile(tmp_gz, .{}) catch {

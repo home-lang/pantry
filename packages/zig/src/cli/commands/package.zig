@@ -1351,7 +1351,7 @@ fn createTarball(
     defer allocator.free(tarball_name);
 
     // Create tarball in temp directory to avoid "file changed as we read it" error
-    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getTempDir();
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // npm requires all files to be inside a "package/" directory in the tarball

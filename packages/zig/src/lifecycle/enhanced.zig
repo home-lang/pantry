@@ -495,7 +495,8 @@ pub fn executeScriptSandboxed(
             }
 
             // Write profile to temp file
-            const profile_path = try std.fmt.allocPrint(allocator, "/tmp/pantry-sandbox-{d}.sb", .{@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000))});
+            const tmp_dir = io_helper.getTempDir();
+            const profile_path = try std.fmt.allocPrint(allocator, "{s}/pantry-sandbox-{d}.sb", .{ tmp_dir, @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) });
             defer allocator.free(profile_path);
 
             const profile_file = try io_helper.cwd().createFile(io_helper.io, profile_path, .{});

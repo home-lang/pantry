@@ -254,7 +254,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Set checkpoint path for persistence (enables resume on interrupt)
-        checkpoint.setCheckpointPath(proj_dir) catch {};
+        checkpoint.setCheckpointPath(proj_dir) catch |err| {
+            if (options.verbose) {
+                std.debug.print("Warning: Could not set checkpoint path: {}\n", .{err});
+            }
+        };
 
         // Create backup of current state
         checkpoint.createBackup(proj_dir) catch |err| {
@@ -869,7 +873,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
 
             // Fall back to npm registry - use temp file to handle large responses
-            const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+            const tmp_dir = io_helper.getTempDir();
 
             // Use random suffix to prevent TOCTOU race conditions
             var random_bytes: [8]u8 = undefined;
@@ -990,7 +994,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         };
 
         // Create symlinks in pantry/.bin for package executables
-        helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path) catch {};
+        helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path) catch |err| {
+            std.debug.print("Warning: Failed to create bin symlinks for {s}: {}\n", .{ name, err });
+        };
 
         defer result.deinit(allocator);
 
@@ -1002,7 +1008,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .name = allocator.dupe(u8, name) catch continue,
             .version = allocator.dupe(u8, result.version) catch continue,
             .source = spec.source,
-        }) catch {};
+        }) catch |err| {
+            std.debug.print("Warning: Failed to track installed package {s}: {}\n", .{ name, err });
+        };
 
         // Update package.json with the new dependency
         helpers.addDependencyToPackageJson(allocator, project_root, name, result.version, options.dev_only) catch |err| {
@@ -1070,7 +1078,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
             const key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ pkg.name, pkg.version }) catch continue;
             defer allocator.free(key);
-            lockfile.addEntry(allocator, key, entry) catch {};
+            lockfile.addEntry(allocator, key, entry) catch |err| {
+                std.debug.print("Warning: Failed to add lockfile entry for {s}: {}\n", .{ pkg.name, err });
+            };
         }
 
         // Write merged lockfile

@@ -821,6 +821,12 @@ pub fn randomBytes(buf: []u8) void {
     }
 }
 
+/// Get the system temporary directory, respecting TMPDIR/TMP/TEMP env vars
+/// Falls back to /tmp on POSIX systems
+pub fn getTempDir() []const u8 {
+    return getenv("TMPDIR") orelse getenv("TMP") orelse getenv("TEMP") orelse "/tmp";
+}
+
 /// Sleep for the given number of nanoseconds
 /// Replacement for std.posix.nanosleep which was removed
 pub fn nanosleep(secs: u64, nsecs: u64) void {

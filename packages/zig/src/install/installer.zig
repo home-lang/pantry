@@ -622,7 +622,7 @@ pub const Installer = struct {
         }
 
         // Create temp directory for download
-        const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+        const tmp_dir = io_helper.getTempDir();
         // Sanitize name for temp file (replace / with __ for scoped packages like @actions/core)
         const safe_name = try std.mem.replaceOwned(u8, self.allocator, spec.name, "/", "__");
         defer self.allocator.free(safe_name);
@@ -687,7 +687,9 @@ pub const Installer = struct {
 
         // Resolve transitive dependencies (dependencies + peerDependencies)
         if (options.project_root) |project_root| {
-            self.resolveTransitiveDeps(install_dir, project_root, 0) catch {};
+            self.resolveTransitiveDeps(install_dir, project_root, 0) catch |err| {
+                std.debug.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ spec.name, err });
+            };
         }
 
         const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
@@ -833,7 +835,9 @@ pub const Installer = struct {
             });
 
             // Recurse into this dep's deps
-            self.resolveTransitiveDeps(result.install_path, project_root, depth) catch {};
+            self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {
+                std.debug.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
+            };
             result.deinit(self.allocator);
             return;
         }
@@ -858,7 +862,9 @@ pub const Installer = struct {
         });
 
         // Recurse into this dep's deps
-        self.resolveTransitiveDeps(result.install_path, project_root, depth) catch {};
+        self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {
+            std.debug.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
+        };
         result.deinit(self.allocator);
     }
 
@@ -2119,7 +2125,9 @@ pub const Installer = struct {
         _ = self;
         // Use chmod to make the file executable
         var child = io_helper.spawn(.{ .argv = &.{ "chmod", "+x", path } }) catch return;
-        _ = io_helper.wait(&child) catch {};
+        _ = io_helper.wait(&child) catch |err| {
+            std.debug.print("Warning: chmod +x failed for {s}: {}\n", .{ path, err });
+        };
     }
 
     /// Install package dependencies recursively

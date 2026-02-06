@@ -1134,8 +1134,10 @@ fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
         if (msg.len > 0) {
             // Output shell code to stdout (for eval to capture)
             const stdout_file = std.Io.File.stdout();
-            io_helper.writeAllToFile(stdout_file, msg) catch {};
-            io_helper.writeAllToFile(stdout_file, "\n") catch {};
+            io_helper.writeAllToFile(stdout_file, msg) catch |err| {
+                std.debug.print("Error writing to stdout: {}\n", .{err});
+            };
+            io_helper.writeAllToFile(stdout_file, "\n") catch {}; // newline best-effort
         } else {
             std.debug.print("No project detected in current directory\n", .{});
         }

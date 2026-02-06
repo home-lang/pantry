@@ -48,11 +48,15 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     const home = io_helper.getEnvVarOwned(allocator, "HOME") catch |err| blk: {
         if (err == error.EnvironmentVariableNotFound) {
             // Try USERPROFILE on Windows
-            break :blk io_helper.getEnvVarOwned(allocator, "USERPROFILE") catch "/tmp";
+            break :blk io_helper.getEnvVarOwned(allocator, "USERPROFILE") catch {
+                return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Error: Could not determine home directory (set HOME or USERPROFILE)") };
+            };
         }
-        break :blk "/tmp";
+        break :blk io_helper.getEnvVarOwned(allocator, "USERPROFILE") catch {
+            return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Error: Could not determine home directory (set HOME or USERPROFILE)") };
+        };
     };
-    defer if (!std.mem.eql(u8, home, "/tmp")) allocator.free(home);
+    defer allocator.free(home);
 
     const global_bin = try std.fs.path.join(allocator, &[_][]const u8{ home, ".local", "share", "pantry", "bin", executable_name });
     defer allocator.free(global_bin);

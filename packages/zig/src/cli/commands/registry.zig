@@ -730,7 +730,7 @@ fn createTarball(
     defer allocator.free(tarball_name);
 
     // Create tarball in temp directory
-    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getTempDir();
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
     // Create staging directory: /tmp/pantry-staging/package/
@@ -1110,7 +1110,7 @@ fn uploadToS3Direct(
     metadata_json: []const u8,
 ) ![]const u8 {
     const bucket = "pantry-registry";
-    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getTempDir();
 
     // Sanitize package name for S3 key
     var sanitized_name = try allocator.alloc(u8, name.len);
@@ -1307,20 +1307,21 @@ fn updateDynamoDBIndex(
             const maybe_json_buf = std.ArrayList(u8).initCapacity(allocator, 256);
             if (maybe_json_buf) |json_buf_init| {
                 var json_buf = json_buf_init;
-                json_buf.appendSlice(allocator, "{") catch {};
-                var bin_iter = bin_value.object.iterator();
-                var first_bin = true;
-                while (bin_iter.next()) |entry| {
-                    if (entry.value_ptr.* == .string) {
-                        if (!first_bin) json_buf.appendSlice(allocator, ", ") catch {};
-                        // Escape quotes for embedding in JSON string
-                        const bin_entry = std.fmt.allocPrint(allocator, "\\\"{s}\\\": \\\"{s}\\\"", .{ entry.key_ptr.*, entry.value_ptr.string }) catch continue;
-                        defer allocator.free(bin_entry);
-                        json_buf.appendSlice(allocator, bin_entry) catch {};
-                        first_bin = false;
+                build_bin: {
+                    json_buf.appendSlice(allocator, "{") catch break :build_bin;
+                    var bin_iter = bin_value.object.iterator();
+                    var first_bin = true;
+                    while (bin_iter.next()) |entry| {
+                        if (entry.value_ptr.* == .string) {
+                            if (!first_bin) json_buf.appendSlice(allocator, ", ") catch break :build_bin;
+                            const bin_entry = std.fmt.allocPrint(allocator, "\\\"{s}\\\": \\\"{s}\\\"", .{ entry.key_ptr.*, entry.value_ptr.string }) catch continue;
+                            defer allocator.free(bin_entry);
+                            json_buf.appendSlice(allocator, bin_entry) catch break :build_bin;
+                            first_bin = false;
+                        }
                     }
+                    json_buf.appendSlice(allocator, "}") catch break :build_bin;
                 }
-                json_buf.appendSlice(allocator, "}") catch {};
                 bin_json_escaped = json_buf.toOwnedSlice(allocator) catch "{}";
                 bin_json_escaped_owned = true;
             } else |_| {}
@@ -1375,7 +1376,7 @@ fn updateDynamoDBIndex(
     defer allocator.free(item_json);
 
     // Write JSON to temp file
-    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getTempDir();
     const item_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-dynamodb-item.json" });
     defer allocator.free(item_tmp);
 
@@ -1415,7 +1416,7 @@ fn uploadViaHttp(
     metadata_json: []const u8,
 ) ![]const u8 {
     // Write tarball to temp file for curl to read
-    const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+    const tmp_dir = io_helper.getTempDir();
     const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-upload.tgz" });
     defer allocator.free(tarball_tmp);
 

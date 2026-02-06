@@ -73,7 +73,9 @@ pub const InstallCheckpoint = struct {
         const owned = try self.allocator.dupe(u8, name);
         try self.installed_packages.put(owned, {});
         // Persist to disk after each package
-        self.persist() catch {};
+        self.persist() catch |err| {
+            std.debug.print("Warning: Failed to persist install checkpoint: {}\n", .{err});
+        };
     }
 
     /// Check if a package was already installed (for resume)
@@ -112,7 +114,9 @@ pub const InstallCheckpoint = struct {
 
         const file = io_helper.cwd().createFile(io_helper.io, path, .{}) catch return;
         defer file.close(io_helper.io);
-        io_helper.writeAllToFile(file, buf.items) catch {};
+        io_helper.writeAllToFile(file, buf.items) catch |err| {
+            std.debug.print("Warning: Failed to write checkpoint file: {}\n", .{err});
+        };
     }
 
     /// Load a checkpoint from disk (for resume)
@@ -199,7 +203,7 @@ pub const InstallCheckpoint = struct {
         _ = target_dir;
 
         // Create backup directory in system temp directory (not in project)
-        const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
+        const tmp_dir = io_helper.getTempDir();
 
         var random_bytes: [8]u8 = undefined;
         io_helper.randomBytes(&random_bytes);

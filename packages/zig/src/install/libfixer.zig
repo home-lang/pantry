@@ -206,10 +206,10 @@ pub fn fixDirectoryLibraryPaths(
             defer allocator.free(binary_path);
 
             // Add rpath entries for finding dependencies
-            addRpathEntries(allocator, binary_path, package_dir) catch {};
+            addRpathEntries(allocator, binary_path, package_dir) catch {}; // Expected for non-Mach-O binaries
 
             // Try to fix library paths (will fail silently if not a Mach-O binary)
-            fixMacOSLibraryPaths(allocator, binary_path, lib_dir) catch {};
+            fixMacOSLibraryPaths(allocator, binary_path, lib_dir) catch {}; // Expected for non-Mach-O binaries
         }
     }
 
@@ -231,10 +231,10 @@ pub fn fixDirectoryLibraryPaths(
             defer allocator.free(dylib_path);
 
             // Add rpath entries for dylibs too
-            addRpathEntries(allocator, dylib_path, package_dir) catch {};
+            addRpathEntries(allocator, dylib_path, package_dir) catch {}; // Expected for some dylib formats
 
             // Fix library paths for this dylib
-            fixMacOSLibraryPaths(allocator, dylib_path, lib_dir) catch {};
+            fixMacOSLibraryPaths(allocator, dylib_path, lib_dir) catch {}; // Expected for some dylib formats
         }
     }
 }
