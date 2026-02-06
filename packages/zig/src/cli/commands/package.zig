@@ -891,46 +891,28 @@ fn publishSingleToNpm(
 
     std.debug.print("Registry: {s}\n", .{registry_url});
 
-    // Run prepublish lifecycle scripts if defined
-    // Priority: prepublishOnly > prepublish > build (pantry convenience fallback)
+    // Parse package.json for lifecycle scripts
     const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch null;
     defer if (config_content) |c| allocator.free(c);
 
-    if (config_content) |content| {
-        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch null;
-        defer if (parsed) |p| p.deinit();
+    const parsed_config = if (config_content) |content|
+        std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch null
+    else
+        null;
+    defer if (parsed_config) |p| p.deinit();
 
-        if (parsed) |p| {
-            if (p.value == .object) {
-                if (p.value.object.get("scripts")) |scripts_val| {
-                    if (scripts_val == .object) {
-                        const script_info: struct { script: ?[]const u8, name: []const u8 } =
-                            if (scripts_val.object.get("prepublishOnly")) |s|
-                                .{ .script = if (s == .string) s.string else null, .name = "prepublishOnly" }
-                            else if (scripts_val.object.get("prepublish")) |s|
-                                .{ .script = if (s == .string) s.string else null, .name = "prepublish" }
-                            else if (scripts_val.object.get("build")) |s|
-                                .{ .script = if (s == .string) s.string else null, .name = "build" }
-                            else
-                                .{ .script = null, .name = "" };
+    // Get scripts object for lifecycle hooks
+    const scripts_obj: ?std.json.ObjectMap = if (parsed_config) |p| blk: {
+        if (p.value != .object) break :blk null;
+        const scripts_val = p.value.object.get("scripts") orelse break :blk null;
+        if (scripts_val != .object) break :blk null;
+        break :blk scripts_val.object;
+    } else null;
 
-                        if (script_info.script) |script| {
-                            std.debug.print("Running {s} script...\n", .{script_info.name});
-                            if (lib.lifecycle.executeScript(allocator, script_info.name, script, .{
-                                .cwd = package_dir,
-                            })) |result| {
-                                if (!result.success) {
-                                    std.debug.print("Warning: {s} script failed with exit code {d} (continuing publish)\n", .{ script_info.name, result.exit_code });
-                                } else {
-                                    std.debug.print("✓ {s} completed\n", .{script_info.name});
-                                }
-                            } else |_| {
-                                std.debug.print("Warning: {s} script failed to execute (continuing publish)\n", .{script_info.name});
-                            }
-                        }
-                    }
-                }
-            }
+    // Run pre-publish lifecycle scripts: prepublish → prepare → prepublishOnly → prepack
+    if (scripts_obj) |scripts| {
+        if (!lib.lifecycle.runPrePublishScripts(allocator, scripts, package_dir)) {
+            return CommandResult.err(allocator, "Pre-publish lifecycle script failed");
         }
     }
 
@@ -938,6 +920,13 @@ fn publishSingleToNpm(
     const tarball_path = try createTarball(allocator, package_dir, metadata.name, metadata.version);
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
+
+    // Run postpack script (after tarball creation)
+    if (scripts_obj) |scripts| {
+        if (!lib.lifecycle.runPostPackScripts(allocator, scripts, package_dir)) {
+            return CommandResult.err(allocator, "postpack lifecycle script failed");
+        }
+    }
 
     // Initialize registry client
     var registry_client = try registry.RegistryClient.init(allocator, registry_url);
@@ -960,6 +949,10 @@ fn publishSingleToNpm(
 
         if (result.success) {
             std.debug.print("✓ Package published successfully using OIDC\n", .{});
+            // Run post-publish scripts: publish → postpublish
+            if (scripts_obj) |scripts| {
+                _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
+            }
             return .{ .exit_code = 0 };
         } else {
             // OIDC failed - only fail on version conflict, otherwise fall back to token
@@ -1037,6 +1030,10 @@ fn publishSingleToNpm(
 
     if (response.success) {
         std.debug.print("✓ Package published successfully\n", .{});
+        // Run post-publish scripts: publish → postpublish
+        if (scripts_obj) |scripts| {
+            _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
+        }
         return .{ .exit_code = 0 };
     } else {
         const err_msg = try std.fmt.allocPrint(

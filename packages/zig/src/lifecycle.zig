@@ -34,12 +34,20 @@ pub const hooks = @import("lifecycle/hooks.zig");
 
 /// Lifecycle script types
 pub const LifecycleScript = enum {
+    // Install hooks
     preinstall,
     postinstall,
     preuninstall,
     postuninstall,
-    prepublishOnly,
+    // Publish hooks
+    prepublish,
     prepare,
+    prepublishOnly,
+    prepack,
+    postpack,
+    publish,
+    postpublish,
+    // Prepare sub-hooks
     preprepare,
     postprepare,
 
@@ -49,8 +57,13 @@ pub const LifecycleScript = enum {
             .postinstall => "postinstall",
             .preuninstall => "preuninstall",
             .postuninstall => "postuninstall",
-            .prepublishOnly => "prepublishOnly",
+            .prepublish => "prepublish",
             .prepare => "prepare",
+            .prepublishOnly => "prepublishOnly",
+            .prepack => "prepack",
+            .postpack => "postpack",
+            .publish => "publish",
+            .postpublish => "postpublish",
             .preprepare => "preprepare",
             .postprepare => "postprepare",
         };
@@ -61,8 +74,13 @@ pub const LifecycleScript = enum {
         if (std.mem.eql(u8, s, "postinstall")) return .postinstall;
         if (std.mem.eql(u8, s, "preuninstall")) return .preuninstall;
         if (std.mem.eql(u8, s, "postuninstall")) return .postuninstall;
-        if (std.mem.eql(u8, s, "prepublishOnly")) return .prepublishOnly;
+        if (std.mem.eql(u8, s, "prepublish")) return .prepublish;
         if (std.mem.eql(u8, s, "prepare")) return .prepare;
+        if (std.mem.eql(u8, s, "prepublishOnly")) return .prepublishOnly;
+        if (std.mem.eql(u8, s, "prepack")) return .prepack;
+        if (std.mem.eql(u8, s, "postpack")) return .postpack;
+        if (std.mem.eql(u8, s, "publish")) return .publish;
+        if (std.mem.eql(u8, s, "postpublish")) return .postpublish;
         if (std.mem.eql(u8, s, "preprepare")) return .preprepare;
         if (std.mem.eql(u8, s, "postprepare")) return .postprepare;
         return null;
@@ -469,4 +487,81 @@ pub fn runLifecycleScriptsForPackages(
             }
         }
     }
+}
+
+// ============================================================================
+// Script Helper for Publish Flow
+// ============================================================================
+
+/// Run a named script from a scripts JSON object if it exists.
+/// Returns true if script ran successfully or didn't exist, false if it failed.
+pub fn runScriptIfExists(
+    allocator: std.mem.Allocator,
+    scripts_obj: std.json.ObjectMap,
+    script_name: []const u8,
+    cwd: []const u8,
+) bool {
+    const script_val = scripts_obj.get(script_name) orelse return true; // No script = success
+    const script_cmd = switch (script_val) {
+        .string => |s| s,
+        else => return true, // Invalid script value = skip
+    };
+
+    std.debug.print("Running {s} script...\n", .{script_name});
+    if (executeScript(allocator, script_name, script_cmd, .{ .cwd = cwd })) |result| {
+        defer {
+            var r = result;
+            r.deinit(allocator);
+        }
+        if (!result.success) {
+            std.debug.print("  ✗ {s} failed with exit code {d}\n", .{ script_name, result.exit_code });
+            return false;
+        }
+        std.debug.print("  ✓ {s} completed\n", .{script_name});
+        return true;
+    } else |_| {
+        std.debug.print("  ✗ {s} failed to execute\n", .{script_name});
+        return false;
+    }
+}
+
+/// Run the full npm publish lifecycle sequence.
+/// Order: prepublish → prepare → prepublishOnly → prepack
+/// Returns false if any required script fails.
+pub fn runPrePublishScripts(
+    allocator: std.mem.Allocator,
+    scripts_obj: std.json.ObjectMap,
+    cwd: []const u8,
+) bool {
+    // npm publish lifecycle order (before tarball creation):
+    // 1. prepublish (deprecated but still supported)
+    // 2. prepare
+    // 3. prepublishOnly
+    // 4. prepack
+    if (!runScriptIfExists(allocator, scripts_obj, "prepublish", cwd)) return false;
+    if (!runScriptIfExists(allocator, scripts_obj, "prepare", cwd)) return false;
+    if (!runScriptIfExists(allocator, scripts_obj, "prepublishOnly", cwd)) return false;
+    if (!runScriptIfExists(allocator, scripts_obj, "prepack", cwd)) return false;
+    return true;
+}
+
+/// Run post-pack scripts (after tarball creation, before publish).
+pub fn runPostPackScripts(
+    allocator: std.mem.Allocator,
+    scripts_obj: std.json.ObjectMap,
+    cwd: []const u8,
+) bool {
+    return runScriptIfExists(allocator, scripts_obj, "postpack", cwd);
+}
+
+/// Run post-publish scripts (after successful publish).
+pub fn runPostPublishScripts(
+    allocator: std.mem.Allocator,
+    scripts_obj: std.json.ObjectMap,
+    cwd: []const u8,
+) bool {
+    // publish script runs, then postpublish
+    if (!runScriptIfExists(allocator, scripts_obj, "publish", cwd)) return false;
+    if (!runScriptIfExists(allocator, scripts_obj, "postpublish", cwd)) return false;
+    return true;
 }
