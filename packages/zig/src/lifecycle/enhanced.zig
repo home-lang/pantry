@@ -106,8 +106,9 @@ pub fn executeScriptWithTimeout(
 
     // Check if timed out
     if (timeout_result == .timeout) {
-        // Kill the process
+        // Kill the process and reap to prevent zombie
         io_helper.kill(&child);
+        _ = io_helper.wait(&child) catch {};
 
         const error_msg = try std.fmt.allocPrint(
             allocator,
