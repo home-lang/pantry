@@ -280,9 +280,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const reset = "\x1b[0m";
         std.debug.print("{s}➤{s} Installing {d} package(s)...\n", .{ green, reset, deps_to_install.len });
 
-        // Install each dependency concurrently
+        // Install each dependency concurrently using a shared installer for deduplication
         var pkg_cache = try cache.PackageCache.init(allocator);
         defer pkg_cache.deinit();
+
+        var shared_installer = try install.Installer.init(allocator, &pkg_cache);
+        allocator.free(shared_installer.data_dir);
+        shared_installer.data_dir = try allocator.dupe(u8, env_dir);
+        defer shared_installer.deinit();
 
         // Install results storage
         var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
@@ -320,7 +325,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             env: []const u8,
             bin: []const u8,
             cwd_path: []const u8,
-            cache: *cache.PackageCache,
+            shared_installer: *install.Installer,
             opts: types.InstallOptions,
 
             fn worker(ctx: *@This()) void {
@@ -334,7 +339,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         ctx.env,
                         ctx.bin,
                         ctx.cwd_path,
-                        ctx.cache,
+                        ctx.shared_installer,
                         ctx.opts,
                     ) catch .{
                         .name = ctx.deps[i].name,
@@ -356,7 +361,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .env = env_dir,
             .bin = bin_dir,
             .cwd_path = cwd,
-            .cache = &pkg_cache,
+            .shared_installer = &shared_installer,
             .opts = options,
         };
 

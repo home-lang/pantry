@@ -185,7 +185,7 @@ pub fn installSinglePackage(
     env_dir: []const u8,
     bin_dir: []const u8,
     cwd: []const u8,
-    pkg_cache: *cache.PackageCache,
+    shared_installer: *install.Installer,
     options: types.InstallOptions,
 ) !types.InstallTaskResult {
     const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
@@ -430,14 +430,10 @@ pub fn installSinglePackage(
         }
     }
 
-    // Create installer with project_root option for local installs
-    var custom_installer = try install.Installer.init(allocator, pkg_cache);
-    allocator.free(custom_installer.data_dir);
-    custom_installer.data_dir = try allocator.dupe(u8, env_dir);
-    defer custom_installer.deinit();
+    _ = env_dir;
 
     // Install to project's pantry directory (quiet mode for clean output)
-    var inst_result = custom_installer.install(spec, .{
+    var inst_result = shared_installer.install(spec, .{
         .project_root = proj_dir,
         .quiet = true,
     }) catch |err| {
