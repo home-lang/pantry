@@ -311,9 +311,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Install remote packages in parallel using threads
         // (link: and local deps are skipped by installSinglePackage and handled below)
-        const max_threads = 8;
+        const cpu_count = std.Thread.getCpuCount() catch 4;
+        const max_threads = @min(cpu_count, 32);
         const thread_count = @min(deps_to_install.len, max_threads);
-        var threads: [max_threads]?std.Thread = .{null} ** max_threads;
+        var threads = try allocator.alloc(?std.Thread, max_threads);
+        defer allocator.free(threads);
+        for (threads) |*t| t.* = null;
         var next_dep = std.atomic.Value(usize).init(0);
 
         const ThreadContext = struct {
@@ -374,7 +377,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         ctx.worker();
 
         // Join all threads
-        for (&threads) |*t| {
+        for (threads) |*t| {
             if (t.*) |thread| {
                 thread.join();
                 t.* = null;
@@ -714,7 +717,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .version = version,
         } else npm_fallback: {
             // Try Pantry S3/DynamoDB registry first
-            if (helpers.lookupPantryRegistry(allocator, name) catch null) |info| {
+            if (helpers.lookupPantryRegistry(allocator, name) catch |err| lkup: {
+                std.debug.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ name, err });
+                break :lkup null;
+            }) |info| {
                 var pantry_info = info;
                 defer pantry_info.deinit(allocator);
 

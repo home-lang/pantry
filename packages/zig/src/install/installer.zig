@@ -95,6 +95,68 @@ const InstallingStack = struct {
     }
 };
 
+/// Thread-safe cache for npm resolution results (prevents duplicate registry lookups)
+const NpmResolutionCache = struct {
+    const CacheEntry = struct {
+        version: []const u8,
+        tarball_url: []const u8,
+    };
+
+    map: std.StringHashMap(CacheEntry),
+    mutex: std.Thread.Mutex,
+    allocator: std.mem.Allocator,
+
+    fn init(allocator: std.mem.Allocator) NpmResolutionCache {
+        return .{
+            .map = std.StringHashMap(CacheEntry).init(allocator),
+            .mutex = .{},
+            .allocator = allocator,
+        };
+    }
+
+    fn deinit(self: *NpmResolutionCache) void {
+        var it = self.map.iterator();
+        while (it.next()) |entry| {
+            self.allocator.free(entry.key_ptr.*);
+            self.allocator.free(entry.value_ptr.version);
+            self.allocator.free(entry.value_ptr.tarball_url);
+        }
+        self.map.deinit();
+    }
+
+    /// Look up a cached npm resolution. Returns duped strings (caller owns).
+    fn get(self: *NpmResolutionCache, key: []const u8, allocator: std.mem.Allocator) ?Installer.NpmResolution {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        const entry = self.map.get(key) orelse return null;
+        return Installer.NpmResolution{
+            .version = allocator.dupe(u8, entry.version) catch return null,
+            .tarball_url = allocator.dupe(u8, entry.tarball_url) catch return null,
+        };
+    }
+
+    /// Store a resolution result in the cache.
+    fn put(self: *NpmResolutionCache, key: []const u8, version: []const u8, tarball_url: []const u8) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        const owned_key = self.allocator.dupe(u8, key) catch return;
+        const owned_ver = self.allocator.dupe(u8, version) catch {
+            self.allocator.free(owned_key);
+            return;
+        };
+        const owned_url = self.allocator.dupe(u8, tarball_url) catch {
+            self.allocator.free(owned_key);
+            self.allocator.free(owned_ver);
+            return;
+        };
+        self.map.put(owned_key, .{ .version = owned_ver, .tarball_url = owned_url }) catch {
+            self.allocator.free(owned_key);
+            self.allocator.free(owned_ver);
+            self.allocator.free(owned_url);
+        };
+    }
+};
+
 /// Package installer
 pub const Installer = struct {
     /// Package cache
@@ -105,6 +167,8 @@ pub const Installer = struct {
     allocator: std.mem.Allocator,
     /// Track packages currently being installed to prevent infinite loops (shared across threads)
     installing_stack: *InstallingStack,
+    /// Cache for npm resolution results (prevents duplicate registry lookups across threads)
+    npm_cache: *NpmResolutionCache,
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
@@ -113,11 +177,15 @@ pub const Installer = struct {
         const installing_stack = try allocator.create(InstallingStack);
         installing_stack.* = InstallingStack.init(allocator);
 
+        const npm_cache = try allocator.create(NpmResolutionCache);
+        npm_cache.* = NpmResolutionCache.init(allocator);
+
         return .{
             .cache = pkg_cache,
             .data_dir = data_dir,
             .allocator = allocator,
             .installing_stack = installing_stack,
+            .npm_cache = npm_cache,
         };
     }
 
@@ -125,6 +193,8 @@ pub const Installer = struct {
         self.allocator.free(self.data_dir);
         self.installing_stack.deinit();
         self.allocator.destroy(self.installing_stack);
+        self.npm_cache.deinit();
+        self.allocator.destroy(self.npm_cache);
     }
 
     /// Install a package
@@ -751,11 +821,22 @@ pub const Installer = struct {
     }
 
     /// Query npm registry to resolve a version constraint to a concrete version + tarball URL.
+    /// Results are cached to prevent duplicate registry lookups across threads.
     pub fn resolveNpmPackage(
         self: *Installer,
         name: []const u8,
         version_constraint: []const u8,
     ) !NpmResolution {
+        // Check cache first (thread-safe)
+        const cache_key_buf = std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version_constraint }) catch null;
+        defer if (cache_key_buf) |k| self.allocator.free(k);
+
+        if (cache_key_buf) |cache_key| {
+            if (self.npm_cache.get(cache_key, self.allocator)) |cached| {
+                return cached;
+            }
+        }
+
         // Download npm registry response to temp file (can be large)
         // Sanitize name for temp file (replace / with __ for scoped packages)
         const safe_name = try std.mem.replaceOwned(u8, self.allocator, name, "/", "__");
@@ -808,10 +889,17 @@ pub const Installer = struct {
         const tarball = dist.object.get("tarball") orelse return error.NoTarballUrl;
         if (tarball != .string) return error.NoTarballUrl;
 
-        return NpmResolution{
+        const result = NpmResolution{
             .version = try self.allocator.dupe(u8, target_version),
             .tarball_url = try self.allocator.dupe(u8, tarball.string),
         };
+
+        // Store in cache for other threads
+        if (cache_key_buf) |cache_key| {
+            self.npm_cache.put(cache_key, result.version, result.tarball_url);
+        }
+
+        return result;
     }
 
     /// Resolve a version constraint against npm registry data.

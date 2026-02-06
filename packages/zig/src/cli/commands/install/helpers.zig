@@ -120,7 +120,6 @@ pub fn isLinkDependency(version: []const u8) bool {
 /// Check if a dependency is local (either has local: prefix, is a filesystem path, or is a link:)
 pub fn isLocalDependency(dep: lib.deps.parser.PackageDependency) bool {
     return std.mem.startsWith(u8, dep.name, "local:") or
-        std.mem.startsWith(u8, dep.name, "auto:") or
         isLinkDependency(dep.version) or
         isLocalPath(dep.version);
 }
@@ -233,8 +232,13 @@ pub fn installSinglePackage(
     } else blk: {
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {
-            // Try Pantry S3/DynamoDB registry first
-            if (lookupPantryRegistry(allocator, dep.name) catch null) |info| {
+            // Try Pantry S3/DynamoDB registry first, then fall back to npm
+            // Uses the shared installer's resolveNpmPackage which handles semver ranges,
+            // dist-tags, and deduplication via InstallingStack
+            if (lookupPantryRegistry(allocator, dep.name) catch |err| lkup: {
+                std.debug.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ dep.name, err });
+                break :lkup null;
+            }) |info| {
                 var pantry_info = info;
                 defer pantry_info.deinit(allocator);
 
@@ -246,137 +250,22 @@ pub fn installSinglePackage(
                 };
             }
 
-            // Fall back to npm registry using curl
-            const npm_url = try std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{dep.name});
-            defer allocator.free(npm_url);
-
-            const curl_result = io_helper.childRun(allocator, &[_][]const u8{
-                "curl",
-                "-sL",
-                npm_url,
-            }) catch {
+            // Fall back to npm registry via shared installer (handles semver, caching, dedup)
+            const npm_info = shared_installer.resolveNpmPackage(dep.name, dep.version) catch |err| {
                 return .{
                     .name = dep.name,
                     .version = dep.version,
                     .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "not found in pantry registry and failed to connect to npm", .{}),
-                    .install_time_ms = 0,
-                };
-            };
-            defer allocator.free(curl_result.stdout);
-            defer allocator.free(curl_result.stderr);
-
-            if (curl_result.term.exited != 0 or curl_result.stdout.len == 0) {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "not found in pantry or npm registry", .{}),
-                    .install_time_ms = 0,
-                };
-            }
-
-            // Parse npm response to get version and tarball URL
-            const parsed = std.json.parseFromSlice(std.json.Value, allocator, curl_result.stdout, .{}) catch {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "failed to parse npm registry response", .{}),
-                    .install_time_ms = 0,
-                };
-            };
-            defer parsed.deinit();
-
-            if (parsed.value != .object) {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "invalid npm registry response", .{}),
-                    .install_time_ms = 0,
-                };
-            }
-
-            // Get the version to install
-            const target_version = if (std.mem.eql(u8, dep.version, "latest")) version_blk: {
-                // Get latest from dist-tags
-                const dist_tags = parsed.value.object.get("dist-tags") orelse break :version_blk null;
-                if (dist_tags != .object) break :version_blk null;
-                const latest = dist_tags.object.get("latest") orelse break :version_blk null;
-                if (latest != .string) break :version_blk null;
-                break :version_blk latest.string;
-            } else dep.version;
-
-            if (target_version == null) {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "could not determine version from npm", .{}),
-                    .install_time_ms = 0,
-                };
-            }
-
-            // Get tarball URL from versions object
-            const versions_obj = parsed.value.object.get("versions") orelse {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "no versions found in npm response", .{}),
+                    .error_msg = try std.fmt.allocPrint(allocator, "not found in pantry or npm: {}", .{err}),
                     .install_time_ms = 0,
                 };
             };
 
-            if (versions_obj != .object) {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "invalid versions in npm response", .{}),
-                    .install_time_ms = 0,
-                };
-            }
-
-            const version_data = versions_obj.object.get(target_version.?) orelse {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "version {s} not found in npm", .{target_version.?}),
-                    .install_time_ms = 0,
-                };
-            };
-
-            if (version_data != .object) {
-                return .{
-                    .name = dep.name,
-                    .version = dep.version,
-                    .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "invalid version data in npm response", .{}),
-                    .install_time_ms = 0,
-                };
-            }
-
-            // Get tarball URL from dist object
-            var tarball_url: ?[]const u8 = null;
-            if (version_data.object.get("dist")) |dist| {
-                if (dist == .object) {
-                    if (dist.object.get("tarball")) |tarball| {
-                        if (tarball == .string) {
-                            tarball_url = try allocator.dupe(u8, tarball.string);
-                        }
-                    }
-                }
-            }
-
-            // Found in npm - create spec with npm source
             break :blk lib.packages.PackageSpec{
                 .name = dep.name,
-                .version = try allocator.dupe(u8, target_version.?),
+                .version = npm_info.version,
                 .source = .npm,
-                .url = tarball_url,
+                .url = npm_info.tarball_url,
             };
         }
 

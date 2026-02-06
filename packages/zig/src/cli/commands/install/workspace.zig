@@ -58,7 +58,10 @@ fn installSingleWorkspaceDep(
         pkg_registry.getPackageByName(clean_name) == null))
     {
         // Try Pantry DynamoDB registry first
-        if (helpers.lookupPantryRegistry(allocator, clean_name) catch null) |info| {
+        if (helpers.lookupPantryRegistry(allocator, clean_name) catch |err| lkup: {
+            std.debug.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ clean_name, err });
+            break :lkup null;
+        }) |info| {
             var pantry_info = info;
             defer pantry_info.deinit(allocator);
 
@@ -92,12 +95,12 @@ fn installSingleWorkspaceDep(
         }
 
         // Fall back to npm registry
-        const npm_info = shared_installer.resolveNpmPackage(clean_name, dep.version) catch {
+        const npm_info = shared_installer.resolveNpmPackage(clean_name, dep.version) catch |err| {
             return .{
                 .name = clean_name,
                 .version = dep.version,
                 .success = false,
-                .error_msg = std.fmt.allocPrint(allocator, "not found in pantry or npm", .{}) catch null,
+                .error_msg = std.fmt.allocPrint(allocator, "not found in pantry or npm: {}", .{err}) catch null,
             };
         };
         defer allocator.free(npm_info.version);
@@ -587,10 +590,13 @@ pub fn installWorkspaceCommandWithOptions(
             .shared_installer = &shared_installer,
         };
 
-        // Spawn worker threads
-        const max_threads = 8;
+        // Spawn worker threads scaled to CPU count
+        const cpu_count = std.Thread.getCpuCount() catch 4;
+        const max_threads = @min(cpu_count, 32);
         const thread_count = @min(remote_count, max_threads);
-        var threads: [max_threads]?std.Thread = .{null} ** max_threads;
+        var threads = try allocator.alloc(?std.Thread, max_threads);
+        defer allocator.free(threads);
+        for (threads) |*t| t.* = null;
 
         for (0..thread_count) |t| {
             threads[t] = std.Thread.spawn(.{}, WorkspaceThreadContext.worker, .{&thread_ctx}) catch null;
@@ -600,7 +606,7 @@ pub fn installWorkspaceCommandWithOptions(
         thread_ctx.worker();
 
         // Join all threads
-        for (&threads) |*t| {
+        for (threads) |*t| {
             if (t.*) |thread| {
                 thread.join();
                 t.* = null;

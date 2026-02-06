@@ -1,6 +1,13 @@
 const std = @import("std");
 const generated = @import("generated.zig");
 
+/// Parsed semver version
+pub const Version = struct {
+    major: u32,
+    minor: u32,
+    patch: u32,
+};
+
 /// Semver constraint types
 pub const ConstraintType = enum {
     exact, // 1.2.3
@@ -20,7 +27,7 @@ pub const Constraint = struct {
 };
 
 /// Parse a semver version string into major.minor.patch
-pub fn parseVersion(version: []const u8) !struct { major: u32, minor: u32, patch: u32 } {
+pub fn parseVersion(version: []const u8) !Version {
     var clean_version = version;
 
     // Strip 'v' prefix if present
@@ -130,6 +137,72 @@ pub fn satisfiesConstraint(version_str: []const u8, constraint: Constraint) bool
             (version.major == constraint.major and version.minor < constraint.minor) or
             (version.major == constraint.major and version.minor == constraint.minor and version.patch < constraint.patch),
     };
+}
+
+/// Check if a version string looks like a semver range (^, ~, >=, etc.)
+pub fn isSemverRange(version: []const u8) bool {
+    if (version.len == 0) return false;
+    return version[0] == '^' or version[0] == '~' or version[0] == '>' or version[0] == '<' or version[0] == '=';
+}
+
+/// Find the best (highest) matching version from a list of version strings.
+/// Returns the version string that best matches the constraint, or null.
+pub fn findBestMatch(versions: []const []const u8, constraint_str: []const u8) ?[]const u8 {
+    const constraint = parseConstraint(constraint_str) catch return null;
+
+    var best: ?[]const u8 = null;
+    var best_v: ?Version = null;
+
+    for (versions) |ver| {
+        if (!satisfiesConstraint(ver, constraint)) continue;
+        const v = parseVersion(ver) catch continue;
+        if (best_v) |bv| {
+            // Pick higher version
+            if (v.major > bv.major or
+                (v.major == bv.major and v.minor > bv.minor) or
+                (v.major == bv.major and v.minor == bv.minor and v.patch > bv.patch))
+            {
+                best = ver;
+                best_v = v;
+            }
+        } else {
+            best = ver;
+            best_v = v;
+        }
+    }
+    return best;
+}
+
+/// Find the best matching version from a JSON object's keys (e.g., npm versions object).
+/// The keys are version strings like "1.2.3", "1.3.0", etc.
+pub fn findBestMatchFromJsonKeys(
+    versions_obj: std.json.ObjectMap,
+    constraint_str: []const u8,
+) ?[]const u8 {
+    const constraint = parseConstraint(constraint_str) catch return null;
+
+    var best: ?[]const u8 = null;
+    var best_v: ?Version = null;
+
+    var it = versions_obj.iterator();
+    while (it.next()) |entry| {
+        const ver = entry.key_ptr.*;
+        if (!satisfiesConstraint(ver, constraint)) continue;
+        const v = parseVersion(ver) catch continue;
+        if (best_v) |bv| {
+            if (v.major > bv.major or
+                (v.major == bv.major and v.minor > bv.minor) or
+                (v.major == bv.major and v.minor == bv.minor and v.patch > bv.patch))
+            {
+                best = ver;
+                best_v = v;
+            }
+        } else {
+            best = ver;
+            best_v = v;
+        }
+    }
+    return best;
 }
 
 /// Resolve a version constraint to the latest matching version for a package
