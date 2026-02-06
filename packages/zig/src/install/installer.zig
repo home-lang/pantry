@@ -95,50 +95,69 @@ const InstallingStack = struct {
     }
 };
 
-/// Thread-safe cache for npm resolution results (prevents duplicate registry lookups)
-const NpmResolutionCache = struct {
-    const CacheEntry = struct {
+/// Thread-safe two-level npm cache.
+/// Level 1: package name → raw registry JSON bytes (avoids duplicate HTTP fetches).
+/// Level 2: name@constraint → resolved version + tarball URL (avoids duplicate parsing).
+const NpmCache = struct {
+    // --- Level 2: resolution cache (name@constraint → version + tarball) ---
+    const ResolutionEntry = struct {
         version: []const u8,
         tarball_url: []const u8,
     };
 
-    map: std.StringHashMap(CacheEntry),
-    mutex: std.Thread.Mutex,
+    resolution_map: std.StringHashMap(ResolutionEntry),
+    resolution_mutex: std.Thread.Mutex,
+
+    // --- Level 1: registry response cache (package name → raw JSON bytes) ---
+    registry_map: std.StringHashMap([]const u8),
+    registry_mutex: std.Thread.Mutex,
+
     allocator: std.mem.Allocator,
 
-    fn init(allocator: std.mem.Allocator) NpmResolutionCache {
+    fn init(allocator: std.mem.Allocator) NpmCache {
         return .{
-            .map = std.StringHashMap(CacheEntry).init(allocator),
-            .mutex = .{},
+            .resolution_map = std.StringHashMap(ResolutionEntry).init(allocator),
+            .resolution_mutex = .{},
+            .registry_map = std.StringHashMap([]const u8).init(allocator),
+            .registry_mutex = .{},
             .allocator = allocator,
         };
     }
 
-    fn deinit(self: *NpmResolutionCache) void {
-        var it = self.map.iterator();
+    fn deinit(self: *NpmCache) void {
+        // Free resolution entries
+        var it = self.resolution_map.iterator();
         while (it.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.version);
             self.allocator.free(entry.value_ptr.tarball_url);
         }
-        self.map.deinit();
+        self.resolution_map.deinit();
+
+        // Free registry entries
+        var rit = self.registry_map.iterator();
+        while (rit.next()) |entry| {
+            self.allocator.free(entry.key_ptr.*);
+            self.allocator.free(entry.value_ptr.*);
+        }
+        self.registry_map.deinit();
     }
 
-    /// Look up a cached npm resolution. Returns duped strings (caller owns).
-    fn get(self: *NpmResolutionCache, key: []const u8, allocator: std.mem.Allocator) ?Installer.NpmResolution {
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        const entry = self.map.get(key) orelse return null;
+    /// Level 2: Look up a cached resolution. Returns duped strings (caller owns).
+    fn getResolution(self: *NpmCache, key: []const u8, allocator: std.mem.Allocator) ?Installer.NpmResolution {
+        self.resolution_mutex.lock();
+        defer self.resolution_mutex.unlock();
+        const entry = self.resolution_map.get(key) orelse return null;
         return Installer.NpmResolution{
             .version = allocator.dupe(u8, entry.version) catch return null,
             .tarball_url = allocator.dupe(u8, entry.tarball_url) catch return null,
         };
     }
 
-    /// Store a resolution result in the cache.
-    fn put(self: *NpmResolutionCache, key: []const u8, version: []const u8, tarball_url: []const u8) void {
-        self.mutex.lock();
-        defer self.mutex.unlock();
+    /// Level 2: Store a resolution result.
+    fn putResolution(self: *NpmCache, key: []const u8, version: []const u8, tarball_url: []const u8) void {
+        self.resolution_mutex.lock();
+        defer self.resolution_mutex.unlock();
         const owned_key = self.allocator.dupe(u8, key) catch return;
         const owned_ver = self.allocator.dupe(u8, version) catch {
             self.allocator.free(owned_key);
@@ -149,10 +168,33 @@ const NpmResolutionCache = struct {
             self.allocator.free(owned_ver);
             return;
         };
-        self.map.put(owned_key, .{ .version = owned_ver, .tarball_url = owned_url }) catch {
+        self.resolution_map.put(owned_key, .{ .version = owned_ver, .tarball_url = owned_url }) catch {
             self.allocator.free(owned_key);
             self.allocator.free(owned_ver);
             self.allocator.free(owned_url);
+        };
+    }
+
+    /// Level 1: Get cached raw registry JSON bytes. Returns duped bytes (caller owns).
+    fn getRegistryJson(self: *NpmCache, package_name: []const u8, allocator: std.mem.Allocator) ?[]const u8 {
+        self.registry_mutex.lock();
+        defer self.registry_mutex.unlock();
+        const data = self.registry_map.get(package_name) orelse return null;
+        return allocator.dupe(u8, data) catch null;
+    }
+
+    /// Level 1: Store raw registry JSON bytes.
+    fn putRegistryJson(self: *NpmCache, package_name: []const u8, json_bytes: []const u8) void {
+        self.registry_mutex.lock();
+        defer self.registry_mutex.unlock();
+        const owned_key = self.allocator.dupe(u8, package_name) catch return;
+        const owned_data = self.allocator.dupe(u8, json_bytes) catch {
+            self.allocator.free(owned_key);
+            return;
+        };
+        self.registry_map.put(owned_key, owned_data) catch {
+            self.allocator.free(owned_key);
+            self.allocator.free(owned_data);
         };
     }
 };
@@ -167,8 +209,8 @@ pub const Installer = struct {
     allocator: std.mem.Allocator,
     /// Track packages currently being installed to prevent infinite loops (shared across threads)
     installing_stack: *InstallingStack,
-    /// Cache for npm resolution results (prevents duplicate registry lookups across threads)
-    npm_cache: *NpmResolutionCache,
+    /// Two-level npm cache: registry JSON by name + resolution by name@constraint
+    npm_cache: *NpmCache,
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
@@ -177,8 +219,8 @@ pub const Installer = struct {
         const installing_stack = try allocator.create(InstallingStack);
         installing_stack.* = InstallingStack.init(allocator);
 
-        const npm_cache = try allocator.create(NpmResolutionCache);
-        npm_cache.* = NpmResolutionCache.init(allocator);
+        const npm_cache = try allocator.create(NpmCache);
+        npm_cache.* = NpmCache.init(allocator);
 
         return .{
             .cache = pkg_cache,
@@ -821,51 +863,51 @@ pub const Installer = struct {
     }
 
     /// Query npm registry to resolve a version constraint to a concrete version + tarball URL.
-    /// Results are cached to prevent duplicate registry lookups across threads.
+    /// Uses a two-level cache: L1 caches raw registry JSON by package name (avoids duplicate
+    /// HTTP fetches for the same package with different constraints), L2 caches resolved
+    /// version+tarball by name@constraint (avoids duplicate JSON parsing).
+    /// Uses std.http.Client instead of spawning curl child processes.
     pub fn resolveNpmPackage(
         self: *Installer,
         name: []const u8,
         version_constraint: []const u8,
     ) !NpmResolution {
-        // Check cache first (thread-safe)
-        const cache_key_buf = std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version_constraint }) catch null;
-        defer if (cache_key_buf) |k| self.allocator.free(k);
+        // --- Level 2 cache check: exact name@constraint match ---
+        const cache_key = try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version_constraint });
+        defer self.allocator.free(cache_key);
 
-        if (cache_key_buf) |cache_key| {
-            if (self.npm_cache.get(cache_key, self.allocator)) |cached| {
-                return cached;
+        if (self.npm_cache.getResolution(cache_key, self.allocator)) |cached| {
+            return cached;
+        }
+
+        // --- Level 1 cache: get or fetch raw registry JSON ---
+        const npm_response = if (self.npm_cache.getRegistryJson(name, self.allocator)) |cached_json|
+            cached_json
+        else blk: {
+            // Fetch from npm registry (curl handles gzip, HTTP/2, redirects automatically)
+            const npm_url = try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}", .{name});
+            defer self.allocator.free(npm_url);
+
+            const curl_result = io_helper.childRun(self.allocator, &[_][]const u8{
+                "curl", "-sL", npm_url,
+            }) catch return error.NpmRegistryUnavailable;
+            defer self.allocator.free(curl_result.stderr);
+
+            if (curl_result.term != .exited or curl_result.term.exited != 0) {
+                self.allocator.free(curl_result.stdout);
+                return error.NpmRegistryUnavailable;
             }
-        }
 
-        // Download npm registry response to temp file (can be large)
-        // Sanitize name for temp file (replace / with __ for scoped packages)
-        const safe_name = try std.mem.replaceOwned(u8, self.allocator, name, "/", "__");
-        defer self.allocator.free(safe_name);
-        const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
-        const tmp_file = try std.fmt.allocPrint(self.allocator, "{s}/pantry-npm-resolve-{s}.json", .{ tmp_dir, safe_name });
-        defer self.allocator.free(tmp_file);
-        defer io_helper.deleteFile(tmp_file) catch {};
+            // Store in L1 cache for other threads/constraints (cache takes ownership via dupe)
+            self.npm_cache.putRegistryJson(name, curl_result.stdout);
 
-        const npm_url = try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}", .{name});
-        defer self.allocator.free(npm_url);
-
-        const curl_result = try io_helper.childRun(self.allocator, &[_][]const u8{
-            "curl", "-sL", "-o", tmp_file, npm_url,
-        });
-        defer self.allocator.free(curl_result.stdout);
-        defer self.allocator.free(curl_result.stderr);
-
-        if (curl_result.term != .exited or curl_result.term.exited != 0) {
-            return error.NpmRegistryUnavailable;
-        }
-
-        const npm_response = io_helper.readFileAlloc(self.allocator, tmp_file, 50 * 1024 * 1024) catch {
-            return error.NpmRegistryUnavailable;
+            break :blk curl_result.stdout;
         };
         defer self.allocator.free(npm_response);
 
         if (npm_response.len == 0) return error.NpmRegistryUnavailable;
 
+        // --- Parse and resolve ---
         const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, npm_response, .{}) catch {
             return error.InvalidNpmResponse;
         };
@@ -894,10 +936,8 @@ pub const Installer = struct {
             .tarball_url = try self.allocator.dupe(u8, tarball.string),
         };
 
-        // Store in cache for other threads
-        if (cache_key_buf) |cache_key| {
-            self.npm_cache.put(cache_key, result.version, result.tarball_url);
-        }
+        // Store in L2 cache for other threads with same constraint
+        self.npm_cache.putResolution(cache_key, result.version, result.tarball_url);
 
         return result;
     }
