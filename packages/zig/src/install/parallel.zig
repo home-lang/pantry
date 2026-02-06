@@ -97,7 +97,7 @@ pub fn downloadParallel(
     const effective_max = @min(max_concurrent, @min(cpu_count, 32));
     const thread_count = @min(tasks.len, effective_max);
 
-    var threads = try allocator.alloc(?std.Thread, effective_max);
+    var threads = try allocator.alloc(?std.Thread, thread_count);
     defer allocator.free(threads);
     for (threads) |*t| t.* = null;
 
@@ -210,7 +210,7 @@ pub fn downloadParallelWithRetry(
     const effective_max = @min(max_concurrent, @min(cpu_count, 32));
     const thread_count = @min(tasks.len, effective_max);
 
-    var threads = try allocator.alloc(?std.Thread, effective_max);
+    var threads = try allocator.alloc(?std.Thread, thread_count);
     defer allocator.free(threads);
     for (threads) |*t| t.* = null;
 

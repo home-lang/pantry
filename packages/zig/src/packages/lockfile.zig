@@ -96,22 +96,22 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
     var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
     defer buf.deinit(allocator);
 
-    // Manually build JSON structure
+    // Build JSON structure - write directly to buffer without intermediate allocations
+    // Use appendSlice for literals and a shared format buffer for dynamic values
+    var fmt_buf: [1024]u8 = undefined;
+
     try buf.appendSlice(allocator, "{\n");
     {
-        const line = try std.fmt.allocPrint(allocator, "  \"version\": \"{s}\",\n", .{lockfile.version});
-        defer allocator.free(line);
-        try buf.appendSlice(allocator, line);
+        const s = std.fmt.bufPrint(&fmt_buf, "  \"version\": \"{s}\",\n", .{lockfile.version}) catch return error.FormatError;
+        try buf.appendSlice(allocator, s);
     }
     {
-        const line = try std.fmt.allocPrint(allocator, "  \"lockfileVersion\": {d},\n", .{lockfile.lockfile_version});
-        defer allocator.free(line);
-        try buf.appendSlice(allocator, line);
+        const s = std.fmt.bufPrint(&fmt_buf, "  \"lockfileVersion\": {d},\n", .{lockfile.lockfile_version}) catch return error.FormatError;
+        try buf.appendSlice(allocator, s);
     }
     {
-        const line = try std.fmt.allocPrint(allocator, "  \"generatedAt\": \"{d}\",\n", .{lockfile.generated_at});
-        defer allocator.free(line);
-        try buf.appendSlice(allocator, line);
+        const s = std.fmt.bufPrint(&fmt_buf, "  \"generatedAt\": \"{d}\",\n", .{lockfile.generated_at}) catch return error.FormatError;
+        try buf.appendSlice(allocator, s);
     }
     try buf.appendSlice(allocator, "  \"packages\": {\n");
 
@@ -123,41 +123,31 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         }
         first = false;
 
-        {
-            const line = try std.fmt.allocPrint(allocator, "    \"{s}\": {{\n", .{entry.key_ptr.*});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
-        }
-        {
-            const line = try std.fmt.allocPrint(allocator, "      \"name\": \"{s}\",\n", .{entry.value_ptr.name});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
-        }
-        {
-            const line = try std.fmt.allocPrint(allocator, "      \"version\": \"{s}\",\n", .{entry.value_ptr.version});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
-        }
-        {
-            const line = try std.fmt.allocPrint(allocator, "      \"source\": \"{s}\"", .{entry.value_ptr.source.toString()});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
-        }
+        // For string fields, append parts directly to avoid allocation
+        try buf.appendSlice(allocator, "    \"");
+        try buf.appendSlice(allocator, entry.key_ptr.*);
+        try buf.appendSlice(allocator, "\": {\n      \"name\": \"");
+        try buf.appendSlice(allocator, entry.value_ptr.name);
+        try buf.appendSlice(allocator, "\",\n      \"version\": \"");
+        try buf.appendSlice(allocator, entry.value_ptr.version);
+        try buf.appendSlice(allocator, "\",\n      \"source\": \"");
+        try buf.appendSlice(allocator, entry.value_ptr.source.toString());
+        try buf.appendSlice(allocator, "\"");
 
         if (entry.value_ptr.url) |url| {
-            const line = try std.fmt.allocPrint(allocator, ",\n      \"url\": \"{s}\"", .{url});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
+            try buf.appendSlice(allocator, ",\n      \"url\": \"");
+            try buf.appendSlice(allocator, url);
+            try buf.appendSlice(allocator, "\"");
         }
         if (entry.value_ptr.resolved) |resolved| {
-            const line = try std.fmt.allocPrint(allocator, ",\n      \"resolved\": \"{s}\"", .{resolved});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
+            try buf.appendSlice(allocator, ",\n      \"resolved\": \"");
+            try buf.appendSlice(allocator, resolved);
+            try buf.appendSlice(allocator, "\"");
         }
         if (entry.value_ptr.integrity) |integrity| {
-            const line = try std.fmt.allocPrint(allocator, ",\n      \"integrity\": \"{s}\"", .{integrity});
-            defer allocator.free(line);
-            try buf.appendSlice(allocator, line);
+            try buf.appendSlice(allocator, ",\n      \"integrity\": \"");
+            try buf.appendSlice(allocator, integrity);
+            try buf.appendSlice(allocator, "\"");
         }
 
         // Write dependencies if any
@@ -171,9 +161,11 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
                         try buf.appendSlice(allocator, ",\n");
                     }
                     first_dep = false;
-                    const line = try std.fmt.allocPrint(allocator, "        \"{s}\": \"{s}\"", .{ dep_entry.key_ptr.*, dep_entry.value_ptr.* });
-                    defer allocator.free(line);
-                    try buf.appendSlice(allocator, line);
+                    try buf.appendSlice(allocator, "        \"");
+                    try buf.appendSlice(allocator, dep_entry.key_ptr.*);
+                    try buf.appendSlice(allocator, "\": \"");
+                    try buf.appendSlice(allocator, dep_entry.value_ptr.*);
+                    try buf.appendSlice(allocator, "\"");
                 }
                 try buf.appendSlice(allocator, "\n      }");
             }

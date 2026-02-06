@@ -134,6 +134,28 @@ pub fn stripDisplayPrefix(name: []const u8) []const u8 {
     return name;
 }
 
+/// Validate that a package name contains only safe characters.
+/// Rejects path traversal sequences and other dangerous characters.
+pub fn validatePackageName(name: []const u8) bool {
+    if (name.len == 0 or name.len > 214) return false; // npm limit
+
+    // Reject path traversal
+    if (std.mem.indexOf(u8, name, "..") != null) return false;
+
+    // Reject backslashes (Windows path sep)
+    if (std.mem.indexOfScalar(u8, name, '\\') != null) return false;
+
+    // Allow @scope/name format, alphanumeric, dash, underscore, dot, slash
+    for (name) |c| {
+        switch (c) {
+            'a'...'z', 'A'...'Z', '0'...'9', '-', '_', '.', '/', '@' => {},
+            else => return false,
+        }
+    }
+
+    return true;
+}
+
 /// Resolve a `link:` version string to its actual filesystem path.
 /// Reads the symlink at `~/.pantry/links/{name}` to find the real path.
 /// Returns null if the link is not registered.
@@ -157,8 +179,14 @@ pub fn canSkipFromLockfile(
     const clean_name = stripDisplayPrefix(dep_name);
 
     // Build the lockfile key used during write: "name@version"
-    const key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, dep_version }) catch return false;
-    defer allocator.free(key);
+    // Use stack buffer to avoid heap allocation in hot path
+    var key_buf: [512]u8 = undefined;
+    const key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_name, dep_version }) catch {
+        // Name too long for stack buffer, fall back to heap
+        const heap_key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, dep_version }) catch return false;
+        defer allocator.free(heap_key);
+        return canSkipFromLockfileWithKey(lockfile_packages, heap_key, clean_name, dep_version, proj_dir, allocator);
+    };
 
     // Check if lockfile has this exact entry
     const entry = lockfile_packages.get(key) orelse return false;
@@ -175,6 +203,26 @@ pub fn canSkipFromLockfile(
     var dir = io_helper.cwd().openDir(io_helper.io, dest_dir, .{}) catch return false;
     dir.close(io_helper.io);
 
+    return true;
+}
+
+/// Helper for canSkipFromLockfile when using heap-allocated key
+fn canSkipFromLockfileWithKey(
+    lockfile_packages: *const std.StringHashMap(lib.packages.LockfileEntry),
+    key: []const u8,
+    clean_name: []const u8,
+    dep_version: []const u8,
+    proj_dir: []const u8,
+    allocator: std.mem.Allocator,
+) bool {
+    const entry = lockfile_packages.get(key) orelse return false;
+    if (!std.mem.eql(u8, entry.version, dep_version) and !std.mem.eql(u8, entry.name, clean_name)) {
+        return false;
+    }
+    const dest_dir = std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
+    defer allocator.free(dest_dir);
+    var dir = io_helper.cwd().openDir(io_helper.io, dest_dir, .{}) catch return false;
+    dir.close(io_helper.io);
     return true;
 }
 
@@ -496,13 +544,28 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
                     const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, entry.name });
                     defer allocator.free(bin_dst);
 
-                    // Remove existing symlink if present
-                    io_helper.deleteFile(bin_dst) catch {};
-                    // Create new symlink
-                    io_helper.symLink(bin_src, bin_dst) catch |err| {
-                        if (verbose) {
-                            std.debug.print("    ⚠️  Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
-                        }
+                    // Validate entry name
+                    if (std.mem.indexOfScalar(u8, entry.name, '/') != null or
+                        std.mem.eql(u8, entry.name, ".."))
+                    {
+                        continue;
+                    }
+
+                    // Atomic symlink: try create first, replace if exists
+                    io_helper.symLink(bin_src, bin_dst) catch |err| switch (err) {
+                        error.PathAlreadyExists => {
+                            io_helper.deleteFile(bin_dst) catch {};
+                            io_helper.symLink(bin_src, bin_dst) catch |err2| {
+                                if (verbose) {
+                                    std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
+                                }
+                            };
+                        },
+                        else => {
+                            if (verbose) {
+                                std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
+                            }
+                        },
                     };
                 }
             }
@@ -524,14 +587,29 @@ fn makeExecutable(path: []const u8) void {
     _ = io_helper.wait(&child) catch {};
 }
 
-/// Recursively search for bin directories and create symlinks
+/// Recursively search for bin directories and create symlinks (with depth limit)
 fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin_link_dir: []const u8, verbose: bool) !void {
+    return findAndLinkBinDirsWithDepth(allocator, search_path, bin_link_dir, verbose, 0);
+}
+
+fn findAndLinkBinDirsWithDepth(allocator: std.mem.Allocator, search_path: []const u8, bin_link_dir: []const u8, verbose: bool, depth: u32) !void {
+    const max_depth = 8;
+    if (depth >= max_depth) return;
+
     var dir = io_helper.openDirAbsoluteForIteration(search_path) catch return;
     defer dir.close();
 
     var iter = dir.iterate();
     while (iter.next() catch null) |entry| {
         if (entry.kind == .directory) {
+            // Validate entry name doesn't contain path separators or traversal
+            if (std.mem.indexOfScalar(u8, entry.name, '/') != null or
+                std.mem.eql(u8, entry.name, "..") or
+                std.mem.eql(u8, entry.name, "."))
+            {
+                continue;
+            }
+
             const subpath = try std.fs.path.join(allocator, &[_][]const u8{ search_path, entry.name });
             defer allocator.free(subpath);
 
@@ -543,6 +621,13 @@ fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin
                 var bin_iter = bin_dir.iterate();
                 while (bin_iter.next() catch null) |bin_entry| {
                     if (bin_entry.kind == .file or bin_entry.kind == .sym_link) {
+                        // Validate binary name
+                        if (std.mem.indexOfScalar(u8, bin_entry.name, '/') != null or
+                            std.mem.eql(u8, bin_entry.name, ".."))
+                        {
+                            continue;
+                        }
+
                         const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ subpath, bin_entry.name });
                         defer allocator.free(bin_src);
                         const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, bin_entry.name });
@@ -551,17 +636,27 @@ fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin
                         // Make source executable
                         makeExecutable(bin_src);
 
-                        io_helper.deleteFile(bin_dst) catch {};
-                        io_helper.symLink(bin_src, bin_dst) catch |err| {
-                            if (verbose) {
-                                std.debug.print("    ⚠️  Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
-                            }
+                        // Atomic symlink: try create first, then replace if exists
+                        io_helper.symLink(bin_src, bin_dst) catch |err| switch (err) {
+                            error.PathAlreadyExists => {
+                                io_helper.deleteFile(bin_dst) catch {};
+                                io_helper.symLink(bin_src, bin_dst) catch |err2| {
+                                    if (verbose) {
+                                        std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
+                                    }
+                                };
+                            },
+                            else => {
+                                if (verbose) {
+                                    std.debug.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
+                                }
+                            },
                         };
                     }
                 }
             } else {
-                // Recurse into subdirectory
-                try findAndLinkBinDirs(allocator, subpath, bin_link_dir, verbose);
+                // Recurse into subdirectory (with depth limit)
+                try findAndLinkBinDirsWithDepth(allocator, subpath, bin_link_dir, verbose, depth + 1);
             }
         }
     }
@@ -1145,4 +1240,19 @@ test "canSkipFromLockfile - matching entry but no dir" {
 
     // Has lockfile entry but dir doesn't exist -> should not skip
     try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator));
+}
+
+test "validatePackageName - valid names" {
+    try std.testing.expect(validatePackageName("lodash"));
+    try std.testing.expect(validatePackageName("@scope/package"));
+    try std.testing.expect(validatePackageName("my-package_v2"));
+    try std.testing.expect(validatePackageName("zig-config"));
+}
+
+test "validatePackageName - invalid names" {
+    try std.testing.expect(!validatePackageName(""));
+    try std.testing.expect(!validatePackageName("../../../etc/passwd"));
+    try std.testing.expect(!validatePackageName("pkg\\name"));
+    try std.testing.expect(!validatePackageName("pkg name")); // spaces
+    try std.testing.expect(!validatePackageName("pkg;rm -rf")); // semicolons
 }

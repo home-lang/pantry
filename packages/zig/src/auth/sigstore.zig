@@ -726,7 +726,7 @@ fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload
 
     // Length of payload type as decimal ASCII
     var len_buf: [20]u8 = undefined;
-    const type_len_str = std.fmt.bufPrint(&len_buf, "{d}", .{payload_type.len}) catch unreachable;
+    const type_len_str = std.fmt.bufPrint(&len_buf, "{d}", .{payload_type.len}) catch return error.FormatError;
     try pae.appendSlice(allocator, type_len_str);
     try pae.append(allocator, ' ');
 
@@ -735,7 +735,7 @@ fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload
     try pae.append(allocator, ' ');
 
     // Length of payload as decimal ASCII
-    const payload_len_str = std.fmt.bufPrint(&len_buf, "{d}", .{payload.len}) catch unreachable;
+    const payload_len_str = std.fmt.bufPrint(&len_buf, "{d}", .{payload.len}) catch return error.FormatError;
     try pae.appendSlice(allocator, payload_len_str);
     try pae.append(allocator, ' ');
 
@@ -801,9 +801,25 @@ pub fn createSigstoreBundle(
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, dsse_envelope, .{});
     defer parsed.deinit();
 
-    const payload = parsed.value.object.get("payload").?.string;
-    const payload_type = parsed.value.object.get("payloadType").?.string;
-    const sig = parsed.value.object.get("signatures").?.array.items[0].object.get("sig").?.string;
+    const payload = blk: {
+        const val = parsed.value.object.get("payload") orelse return error.InvalidDSSEEnvelope;
+        if (val != .string) return error.InvalidDSSEEnvelope;
+        break :blk val.string;
+    };
+    const payload_type = blk: {
+        const val = parsed.value.object.get("payloadType") orelse return error.InvalidDSSEEnvelope;
+        if (val != .string) return error.InvalidDSSEEnvelope;
+        break :blk val.string;
+    };
+    const sig = blk: {
+        const sigs = parsed.value.object.get("signatures") orelse return error.InvalidDSSEEnvelope;
+        if (sigs != .array or sigs.array.items.len == 0) return error.InvalidDSSEEnvelope;
+        const first_sig = sigs.array.items[0];
+        if (first_sig != .object) return error.InvalidDSSEEnvelope;
+        const sig_val = first_sig.object.get("sig") orelse return error.InvalidDSSEEnvelope;
+        if (sig_val != .string) return error.InvalidDSSEEnvelope;
+        break :blk sig_val.string;
+    };
 
     // Build the bundle JSON dynamically since inclusionProof has variable-length arrays
     var json = std.ArrayList(u8){};
@@ -1287,7 +1303,7 @@ fn escapeJsonString(allocator: std.mem.Allocator, input: []const u8) ![]const u8
                 if (c < 0x20) {
                     // Control character - encode as \uXXXX
                     var buf: [6]u8 = undefined;
-                    _ = std.fmt.bufPrint(&buf, "\\u{x:0>4}", .{c}) catch unreachable;
+                    _ = std.fmt.bufPrint(&buf, "\\u{x:0>4}", .{c}) catch return error.FormatError;
                     try result.appendSlice(allocator, &buf);
                 } else {
                     try result.append(allocator, c);

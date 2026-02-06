@@ -281,7 +281,7 @@ pub fn computeSHA256(allocator: std.mem.Allocator, data: []const u8) ![]const u8
 
     // Convert to hex string
     const hex_result = try allocator.alloc(u8, 64);
-    _ = std.fmt.bufPrint(hex_result, "{x:0>64}", .{std.mem.readInt(u256, &hash, .big)}) catch unreachable;
+    _ = std.fmt.bufPrint(hex_result, "{x:0>64}", .{std.mem.readInt(u256, &hash, .big)}) catch return error.FormatError;
     return hex_result;
 }
 
@@ -294,7 +294,7 @@ pub fn computeSHA512(allocator: std.mem.Allocator, data: []const u8) ![]const u8
 
     // Convert to hex string - use two u256 chunks
     const hex_result = try allocator.alloc(u8, 128);
-    _ = std.fmt.bufPrint(hex_result[0..64], "{x:0>64}", .{std.mem.readInt(u256, hash[0..32], .big)}) catch unreachable;
-    _ = std.fmt.bufPrint(hex_result[64..], "{x:0>64}", .{std.mem.readInt(u256, hash[32..64], .big)}) catch unreachable;
+    _ = std.fmt.bufPrint(hex_result[0..64], "{x:0>64}", .{std.mem.readInt(u256, hash[0..32], .big)}) catch return error.FormatError;
+    _ = std.fmt.bufPrint(hex_result[64..], "{x:0>64}", .{std.mem.readInt(u256, hash[32..64], .big)}) catch return error.FormatError;
     return hex_result;
 }

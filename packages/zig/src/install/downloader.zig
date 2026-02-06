@@ -25,9 +25,11 @@ fn formatBytes(bytes: u64, buf: []u8) ![]const u8 {
     const k: f64 = 1024.0;
     const sizes = [_][]const u8{ "B", "KB", "MB", "GB", "TB" };
 
-    // Calculate the appropriate unit
+    // Calculate the appropriate unit (with safety for edge cases)
     const bytes_f = @as(f64, @floatFromInt(bytes));
-    const i = @as(usize, @intFromFloat(@floor(@log(bytes_f) / @log(k))));
+    const log_val = @log(bytes_f) / @log(k);
+    const clamped = @max(0.0, @min(log_val, @as(f64, @floatFromInt(sizes.len - 1))));
+    const i = @as(usize, @intFromFloat(@floor(clamped)));
     const size_idx = @min(i, sizes.len - 1);
 
     const value = bytes_f / std.math.pow(f64, k, @as(f64, @floatFromInt(size_idx)));

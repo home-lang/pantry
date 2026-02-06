@@ -169,9 +169,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Apply overrides to dependencies
         for (filtered_deps.items) |*dep| {
             if (lib.deps.overrides.shouldOverride(&override_map, dep.name)) |override_version| {
-                // Free the old version and replace with override
+                // Allocate new version first to prevent double-free if alloc fails
+                const new_version = try allocator.dupe(u8, override_version);
                 allocator.free(dep.version);
-                dep.version = try allocator.dupe(u8, override_version);
+                dep.version = new_version;
             }
         }
 
@@ -536,29 +537,63 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             defer allocator.free(pkg_modules_dir);
             try io_helper.makePath(pkg_modules_dir);
 
+            // Validate the resolved package name for path safety
+            if (std.mem.indexOf(u8, pkg_name, "..") != null or
+                std.mem.indexOfScalar(u8, pkg_name, '\\') != null)
+            {
+                const red = "\x1b[31m";
+                std.debug.print("{s}x{s} {s} {s}(invalid package name){s}\n", .{ red, reset, dep.name, dim, reset });
+                failed_count += 1;
+                continue;
+            }
+
             // Create symlink to source directory for build system
             const src_link_path = try std.fmt.allocPrint(allocator, "{s}/src", .{pkg_modules_dir});
             defer allocator.free(src_link_path);
-            io_helper.deleteFile(src_link_path) catch {};
 
             const src_path = try std.fmt.allocPrint(allocator, "{s}/src", .{local_path});
             defer allocator.free(src_path);
-            io_helper.symLink(src_path, src_link_path) catch |err| {
-                const red = "\x1b[31m";
-                const display_name = helpers.stripDisplayPrefix(dep.name);
-                std.debug.print("{s}✗{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red, reset, display_name, dep.version, dim, err, reset });
-                failed_count += 1;
-                continue;
+
+            // Atomic symlink: try create first, replace if exists
+            io_helper.symLink(src_path, src_link_path) catch |err| switch (err) {
+                error.PathAlreadyExists => {
+                    io_helper.deleteFile(src_link_path) catch {};
+                    io_helper.symLink(src_path, src_link_path) catch |err2| {
+                        const red2 = "\x1b[31m";
+                        const display_name2 = helpers.stripDisplayPrefix(dep.name);
+                        std.debug.print("{s}x{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red2, reset, display_name2, dep.version, dim, err2, reset });
+                        failed_count += 1;
+                        continue;
+                    };
+                },
+                else => {
+                    const red3 = "\x1b[31m";
+                    const display_name3 = helpers.stripDisplayPrefix(dep.name);
+                    std.debug.print("{s}x{s} {s}@{s} {s}(symlink failed: {}){s}\n", .{ red3, reset, display_name3, dep.version, dim, err, reset });
+                    failed_count += 1;
+                    continue;
+                },
             };
 
             // Also create symlink in env bin directory for executables
             const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, pkg_name });
             defer allocator.free(link_path);
-            io_helper.deleteFile(link_path) catch {};
-            io_helper.symLink(local_path, link_path) catch |err| {
-                if (options.verbose) {
-                    std.debug.print("    ⚠️  Failed to create bin symlink {s}: {}\n", .{ link_path, err });
-                }
+
+            // Atomic symlink: try create first, replace if exists
+            io_helper.symLink(local_path, link_path) catch |symlink_err| switch (symlink_err) {
+                error.PathAlreadyExists => {
+                    io_helper.deleteFile(link_path) catch {};
+                    io_helper.symLink(local_path, link_path) catch |err2| {
+                        if (options.verbose) {
+                            std.debug.print("    Warning: Failed to create bin symlink {s}: {}\n", .{ link_path, err2 });
+                        }
+                    };
+                },
+                else => {
+                    if (options.verbose) {
+                        std.debug.print("    Warning: Failed to create bin symlink {s}: {}\n", .{ link_path, symlink_err });
+                    }
+                },
             };
 
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
@@ -577,17 +612,30 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 var iter = dir.iterate();
                 while (iter.next() catch null) |entry| {
                     if (entry.kind == .file or entry.kind == .sym_link) {
+                        // Validate entry name
+                        if (std.mem.indexOfScalar(u8, entry.name, '/') != null or
+                            std.mem.eql(u8, entry.name, ".."))
+                        {
+                            continue;
+                        }
+
                         // Create symlink in pantry/.bin
                         const bin_src = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ zig_out_bin, entry.name });
                         defer allocator.free(bin_src);
                         const bin_dst = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ local_bin_dir, entry.name });
                         defer allocator.free(bin_dst);
 
-                        io_helper.deleteFile(bin_dst) catch {};
-                        io_helper.symLink(bin_src, bin_dst) catch |err| {
-                            if (options.verbose) {
-                                std.debug.print("    ⚠️  Failed to create local bin symlink {s}: {}\n", .{ bin_dst, err });
-                            }
+                        // Atomic symlink: try create first, replace if exists
+                        io_helper.symLink(bin_src, bin_dst) catch |sym_err| switch (sym_err) {
+                            error.PathAlreadyExists => {
+                                io_helper.deleteFile(bin_dst) catch {};
+                                io_helper.symLink(bin_src, bin_dst) catch {};
+                            },
+                            else => {
+                                if (options.verbose) {
+                                    std.debug.print("    Warning: Failed to create local bin symlink {s}: {}\n", .{ bin_dst, sym_err });
+                                }
+                            },
                         };
                     }
                 }
@@ -822,7 +870,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
             // Fall back to npm registry - use temp file to handle large responses
             const tmp_dir = io_helper.getenv("TMPDIR") orelse io_helper.getenv("TMP") orelse "/tmp";
-            const tmp_file = std.fmt.allocPrint(allocator, "{s}/pantry-npm-{s}.json", .{ tmp_dir, name }) catch {
+
+            // Use random suffix to prevent TOCTOU race conditions
+            var random_bytes: [8]u8 = undefined;
+            io_helper.randomBytes(&random_bytes);
+            const random_suffix = std.mem.readInt(u64, &random_bytes, .big);
+            const tmp_file = std.fmt.allocPrint(allocator, "{s}/pantry-npm-{d}.json", .{ tmp_dir, random_suffix }) catch {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
             };
             defer allocator.free(tmp_file);
@@ -897,7 +950,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 if (dist == .object) {
                     if (dist.object.get("tarball")) |tarball| {
                         if (tarball == .string) {
-                            tarball_url = allocator.dupe(u8, tarball.string) catch null;
+                            // Validate URL scheme to prevent SSRF via file:// or other protocols
+                            if (std.mem.startsWith(u8, tarball.string, "https://") or
+                                std.mem.startsWith(u8, tarball.string, "http://"))
+                            {
+                                tarball_url = allocator.dupe(u8, tarball.string) catch null;
+                            }
                         }
                     }
                 }
