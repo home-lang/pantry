@@ -7,6 +7,8 @@ pub const wrapper = @import("install/wrapper.zig");
 pub const rollback = @import("install/rollback.zig");
 pub const runtime = @import("install/runtime.zig");
 pub const downloader = @import("install/downloader.zig");
+pub const recovery = @import("install/recovery.zig");
+pub const offline = @import("install/offline.zig");
 
 // Re-export main types
 pub const Installer = installer.Installer;

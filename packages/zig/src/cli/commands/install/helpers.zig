@@ -144,6 +144,40 @@ pub fn resolveLinkVersion(allocator: std.mem.Allocator, version: []const u8) !?[
     return try link_cmds.resolveLinkPath(allocator, link_name);
 }
 
+/// Check if a package can be skipped based on the lockfile.
+/// Returns true if the lockfile has a matching entry AND the destination directory exists.
+pub fn canSkipFromLockfile(
+    lockfile_packages: *const std.StringHashMap(lib.packages.LockfileEntry),
+    dep_name: []const u8,
+    dep_version: []const u8,
+    proj_dir: []const u8,
+    allocator: std.mem.Allocator,
+) bool {
+    // Clean name (strip auto:, npm:, local: prefixes)
+    const clean_name = stripDisplayPrefix(dep_name);
+
+    // Build the lockfile key used during write: "name@version"
+    const key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, dep_version }) catch return false;
+    defer allocator.free(key);
+
+    // Check if lockfile has this exact entry
+    const entry = lockfile_packages.get(key) orelse return false;
+
+    // Verify the version matches (should always match given the key, but double-check)
+    if (!std.mem.eql(u8, entry.version, dep_version) and !std.mem.eql(u8, entry.name, clean_name)) {
+        return false;
+    }
+
+    // Check if destination directory actually exists
+    const dest_dir = std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
+    defer allocator.free(dest_dir);
+
+    var dir = io_helper.cwd().openDir(io_helper.io, dest_dir, .{}) catch return false;
+    dir.close(io_helper.io);
+
+    return true;
+}
+
 /// Worker function for concurrent package installation
 /// TODO: Re-enable when std.Io.Group API stabilizes
 pub fn installPackageWorker(task_ptr: *types.InstallTask) void {
@@ -1047,4 +1081,68 @@ pub fn loadDependenciesFromConfig(
     }
 
     return deps;
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+test "isLocalPath" {
+    try std.testing.expect(isLocalPath("~/foo"));
+    try std.testing.expect(isLocalPath("./bar"));
+    try std.testing.expect(isLocalPath("../baz"));
+    try std.testing.expect(isLocalPath("/absolute/path"));
+    try std.testing.expect(!isLocalPath("^1.2.3"));
+    try std.testing.expect(!isLocalPath("latest"));
+    try std.testing.expect(!isLocalPath("link:foo"));
+}
+
+test "isLinkDependency" {
+    try std.testing.expect(isLinkDependency("link:zig-config"));
+    try std.testing.expect(isLinkDependency("link:foo"));
+    try std.testing.expect(!isLinkDependency("~/foo"));
+    try std.testing.expect(!isLinkDependency("^1.0.0"));
+    try std.testing.expect(!isLinkDependency("latest"));
+}
+
+test "stripDisplayPrefix" {
+    try std.testing.expectEqualStrings("foo", stripDisplayPrefix("auto:foo"));
+    try std.testing.expectEqualStrings("bar", stripDisplayPrefix("local:bar"));
+    try std.testing.expectEqualStrings("baz", stripDisplayPrefix("baz"));
+}
+
+test "canSkipFromLockfile - no matching entry" {
+    const allocator = std.testing.allocator;
+
+    var packages = std.StringHashMap(lib.packages.LockfileEntry).init(allocator);
+    defer packages.deinit();
+
+    // No entries in lockfile -> should not skip
+    try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator));
+}
+
+test "canSkipFromLockfile - matching entry but no dir" {
+    const allocator = std.testing.allocator;
+
+    var packages = std.StringHashMap(lib.packages.LockfileEntry).init(allocator);
+    defer {
+        var it = packages.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            var e = entry.value_ptr.*;
+            e.deinit(allocator);
+        }
+        packages.deinit();
+    }
+
+    // Add entry to lockfile
+    const entry = lib.packages.LockfileEntry{
+        .name = try allocator.dupe(u8, "foo"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .pkgx,
+    };
+    try packages.put(try allocator.dupe(u8, "foo@1.0.0"), entry);
+
+    // Has lockfile entry but dir doesn't exist -> should not skip
+    try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator));
 }

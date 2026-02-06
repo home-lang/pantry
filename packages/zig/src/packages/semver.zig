@@ -315,3 +315,88 @@ test "resolve version - exact match" {
         try std.testing.expect(false);
     }
 }
+
+test "satisfies constraint - gte" {
+    const c = Constraint{ .type = .gte, .major = 1, .minor = 2, .patch = 0 };
+    try std.testing.expect(satisfiesConstraint("1.2.0", c));
+    try std.testing.expect(satisfiesConstraint("1.2.1", c));
+    try std.testing.expect(satisfiesConstraint("2.0.0", c));
+    try std.testing.expect(!satisfiesConstraint("1.1.9", c));
+    try std.testing.expect(!satisfiesConstraint("0.9.0", c));
+}
+
+test "satisfies constraint - lt" {
+    const c = Constraint{ .type = .lt, .major = 2, .minor = 0, .patch = 0 };
+    try std.testing.expect(satisfiesConstraint("1.9.9", c));
+    try std.testing.expect(satisfiesConstraint("1.0.0", c));
+    try std.testing.expect(!satisfiesConstraint("2.0.0", c));
+    try std.testing.expect(!satisfiesConstraint("3.0.0", c));
+}
+
+test "satisfies constraint - gt" {
+    const c = Constraint{ .type = .gt, .major = 1, .minor = 0, .patch = 0 };
+    try std.testing.expect(satisfiesConstraint("1.0.1", c));
+    try std.testing.expect(satisfiesConstraint("2.0.0", c));
+    try std.testing.expect(!satisfiesConstraint("1.0.0", c));
+    try std.testing.expect(!satisfiesConstraint("0.9.9", c));
+}
+
+test "satisfies constraint - lte" {
+    const c = Constraint{ .type = .lte, .major = 1, .minor = 5, .patch = 0 };
+    try std.testing.expect(satisfiesConstraint("1.5.0", c));
+    try std.testing.expect(satisfiesConstraint("1.4.9", c));
+    try std.testing.expect(satisfiesConstraint("0.0.1", c));
+    try std.testing.expect(!satisfiesConstraint("1.5.1", c));
+    try std.testing.expect(!satisfiesConstraint("2.0.0", c));
+}
+
+test "isSemverRange" {
+    try std.testing.expect(isSemverRange("^1.0.0"));
+    try std.testing.expect(isSemverRange("~1.0.0"));
+    try std.testing.expect(isSemverRange(">=1.0.0"));
+    try std.testing.expect(isSemverRange(">1.0.0"));
+    try std.testing.expect(isSemverRange("<2.0.0"));
+    try std.testing.expect(isSemverRange("<=2.0.0"));
+    try std.testing.expect(isSemverRange("=1.0.0"));
+    try std.testing.expect(!isSemverRange("1.0.0"));
+    try std.testing.expect(!isSemverRange("latest"));
+    try std.testing.expect(!isSemverRange(""));
+}
+
+test "findBestMatch" {
+    const versions = [_][]const u8{ "1.0.0", "1.1.0", "1.2.0", "2.0.0" };
+    const result = findBestMatch(&versions, "^1.0.0");
+    try std.testing.expect(result != null);
+    try std.testing.expectEqualStrings("1.2.0", result.?);
+}
+
+test "findBestMatch - no match" {
+    const versions = [_][]const u8{ "1.0.0", "1.1.0" };
+    const result = findBestMatch(&versions, "^2.0.0");
+    try std.testing.expect(result == null);
+}
+
+test "parse version with v prefix" {
+    const v = try parseVersion("v2.3.4");
+    try std.testing.expectEqual(@as(u32, 2), v.major);
+    try std.testing.expectEqual(@as(u32, 3), v.minor);
+    try std.testing.expectEqual(@as(u32, 4), v.patch);
+}
+
+test "parse constraint with = prefix" {
+    const c = try parseConstraint("=1.5.0");
+    try std.testing.expectEqual(ConstraintType.exact, c.type);
+    try std.testing.expectEqual(@as(u32, 1), c.major);
+    try std.testing.expectEqual(@as(u32, 5), c.minor);
+    try std.testing.expectEqual(@as(u32, 0), c.patch);
+}
+
+test "caret constraint with 0.x" {
+    // ^0.2.3 should only allow 0.2.x where x >= 3
+    const c = Constraint{ .type = .caret, .major = 0, .minor = 2, .patch = 3 };
+    try std.testing.expect(satisfiesConstraint("0.2.3", c));
+    try std.testing.expect(satisfiesConstraint("0.2.4", c));
+    try std.testing.expect(!satisfiesConstraint("0.3.0", c));
+    try std.testing.expect(!satisfiesConstraint("0.2.2", c));
+    try std.testing.expect(!satisfiesConstraint("1.0.0", c));
+}

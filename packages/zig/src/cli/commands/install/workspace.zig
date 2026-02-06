@@ -200,11 +200,27 @@ const WorkspaceThreadContext = struct {
     alloc: std.mem.Allocator,
     workspace_root: []const u8,
     shared_installer: *install.Installer,
+    lockfile_packages: ?*const std.StringHashMap(lib.packages.LockfileEntry),
 
     fn worker(ctx: *WorkspaceThreadContext) void {
         while (true) {
             const i = ctx.next.fetchAdd(1, .monotonic);
             if (i >= ctx.deps.len) break;
+
+            // Skip packages that match lockfile and exist at destination
+            if (ctx.lockfile_packages) |lf_pkgs| {
+                if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.workspace_root, ctx.alloc)) {
+                    const clean = helpers.stripDisplayPrefix(ctx.deps[i].name);
+                    ctx.results[i] = .{
+                        .name = clean,
+                        .version = ctx.deps[i].version,
+                        .success = true,
+                        .error_msg = null,
+                    };
+                    continue;
+                }
+            }
+
             ctx.results[i] = installSingleWorkspaceDep(
                 ctx.alloc,
                 ctx.deps[i],
@@ -458,6 +474,13 @@ pub fn installWorkspaceCommandWithOptions(
     var success_count: usize = 0;
     var failed_count: usize = 0;
 
+    // Read existing lockfile for incremental install skipping
+    const lockfile_reader = @import("../../../packages/lockfile.zig");
+    const ws_lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});
+    defer allocator.free(ws_lockfile_path);
+    var existing_lockfile: ?lib.packages.Lockfile = lockfile_reader.readLockfile(allocator, ws_lockfile_path) catch null;
+    defer if (existing_lockfile) |*lf| lf.deinit(allocator);
+
     // Clean up dependencies after installation
     defer {
         for (all_deps_buffer[0..all_deps_count]) |*dep| {
@@ -467,6 +490,27 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     const all_deps = all_deps_buffer[0..all_deps_count];
+
+    // Check if all packages can be skipped (lockfile + destination match)
+    var ws_skipped_count: usize = 0;
+    if (existing_lockfile) |*lf| {
+        for (all_deps) |dep| {
+            if (helpers.canSkipFromLockfile(&lf.packages, dep.name, dep.version, workspace_root, allocator)) {
+                ws_skipped_count += 1;
+            }
+        }
+    }
+
+    if (ws_skipped_count == all_deps_count) {
+        std.debug.print("{s}✓{s} All {d} packages already up to date\n", .{ green, reset, all_deps_count });
+        return .{ .exit_code = 0 };
+    }
+
+    if (ws_skipped_count > 0) {
+        std.debug.print("{s}  ↳ {d} package(s) already up to date, installing {d} remaining...{s}\n", .{
+            dim, ws_skipped_count, all_deps_count - ws_skipped_count, reset,
+        });
+    }
 
     // ---- Pass 1: Handle local/link deps sequentially (just symlinks, microseconds) ----
     for (all_deps) |dep| {
@@ -588,6 +632,7 @@ pub fn installWorkspaceCommandWithOptions(
             .alloc = allocator,
             .workspace_root = workspace_root,
             .shared_installer = &shared_installer,
+            .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
         };
 
         // Spawn worker threads scaled to CPU count

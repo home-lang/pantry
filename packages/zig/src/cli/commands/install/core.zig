@@ -241,9 +241,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             std.debug.print("🔌 Offline mode enabled - using cache only\n", .{});
         }
 
-        // Create recovery checkpoint for rollback on failure
-        var checkpoint = recovery.InstallCheckpoint.init(allocator);
+        // Try to resume from a previous interrupted install, or create a fresh checkpoint
+        var checkpoint = recovery.InstallCheckpoint.loadFromDisk(allocator, proj_dir) catch null orelse recovery.InstallCheckpoint.init(allocator);
         defer checkpoint.deinit();
+
+        const resuming = checkpoint.installed_packages.count() > 0;
+        if (resuming) {
+            std.debug.print("{s}  ↳ Resuming from previous interrupted install ({d} packages already done){s}\n", .{
+                "\x1b[2m", checkpoint.installed_packages.count(), "\x1b[0m",
+            });
+        }
+
+        // Set checkpoint path for persistence (enables resume on interrupt)
+        checkpoint.setCheckpointPath(proj_dir) catch {};
 
         // Create backup of current state
         checkpoint.createBackup(proj_dir) catch |err| {
@@ -274,6 +284,13 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
+        // Read existing lockfile for incremental install skipping
+        const lockfile_reader = @import("../../../packages/lockfile.zig");
+        const lockfile_path_for_read = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
+        defer allocator.free(lockfile_path_for_read);
+        var existing_lockfile: ?lib.packages.Lockfile = lockfile_reader.readLockfile(allocator, lockfile_path_for_read) catch null;
+        defer if (existing_lockfile) |*lf| lf.deinit(allocator);
+
         // Clean Yarn/Bun-style output - just show what we're installing
         const green = "\x1b[32m";
         const dim = "\x1b[2m";
@@ -288,6 +305,37 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         allocator.free(shared_installer.data_dir);
         shared_installer.data_dir = try allocator.dupe(u8, env_dir);
         defer shared_installer.deinit();
+
+        // Check lockfile for packages that can be skipped (already installed, matching version)
+        var skipped_count: usize = 0;
+        if (existing_lockfile) |*lf| {
+            for (deps_to_install, 0..) |dep, i| {
+                _ = i;
+                if (helpers.canSkipFromLockfile(&lf.packages, dep.name, dep.version, proj_dir, allocator)) {
+                    skipped_count += 1;
+                }
+            }
+        }
+
+        if (skipped_count == deps_to_install.len) {
+            // All packages already installed and match lockfile - nothing to do
+            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+            const bold = "\x1b[1m";
+            const pantry_version = version_options.version;
+            const pantry_hash = version_options.commit_hash;
+            std.debug.print("\n{s}pantry install{s} {s}v{s} ({s}){s}\n\n", .{ bold, reset, dim, pantry_version, pantry_hash, reset });
+            std.debug.print("{s}✓{s} All {d} packages already up to date [{s}{d:.2}ms{s}]\n", .{
+                green, reset, deps_to_install.len, bold, elapsed_ms, reset,
+            });
+            return .{ .exit_code = 0 };
+        }
+
+        if (skipped_count > 0) {
+            std.debug.print("{s}  ↳ {d} package(s) already up to date, installing {d} remaining...{s}\n", .{
+                dim, skipped_count, deps_to_install.len - skipped_count, reset,
+            });
+        }
 
         // Install results storage
         var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
@@ -330,11 +378,44 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             cwd_path: []const u8,
             shared_installer: *install.Installer,
             opts: types.InstallOptions,
+            lockfile_packages: ?*const std.StringHashMap(lib.packages.LockfileEntry),
+            resume_packages: ?*const std.StringHashMap(void),
 
             fn worker(ctx: *@This()) void {
                 while (true) {
                     const i = ctx.next.fetchAdd(1, .monotonic);
                     if (i >= ctx.deps.len) break;
+
+                    const clean_name = helpers.stripDisplayPrefix(ctx.deps[i].name);
+
+                    // Skip packages that match lockfile and exist at destination
+                    if (ctx.lockfile_packages) |lf_pkgs| {
+                        if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc)) {
+                            ctx.results[i] = .{
+                                .name = clean_name,
+                                .version = ctx.deps[i].version,
+                                .success = true,
+                                .error_msg = null,
+                                .install_time_ms = 0,
+                            };
+                            continue;
+                        }
+                    }
+
+                    // Skip packages already installed in a previous interrupted run (resume)
+                    if (ctx.resume_packages) |resume_pkgs| {
+                        if (resume_pkgs.contains(clean_name)) {
+                            ctx.results[i] = .{
+                                .name = clean_name,
+                                .version = ctx.deps[i].version,
+                                .success = true,
+                                .error_msg = null,
+                                .install_time_ms = 0,
+                            };
+                            continue;
+                        }
+                    }
+
                     ctx.results[i] = helpers.installSinglePackage(
                         ctx.alloc,
                         ctx.deps[i],
@@ -366,6 +447,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .cwd_path = cwd,
             .shared_installer = &shared_installer,
             .opts = options,
+            .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
+            .resume_packages = if (resuming) &checkpoint.installed_packages else null,
         };
 
         // Spawn worker threads (one fewer since main thread also works)
@@ -641,6 +724,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 std.debug.print("\n{s}⚠{s}  Post-install hook failed\n", .{ yellow, reset });
                 // Don't fail the install, just warn
             }
+        }
+
+        // Clean up checkpoint file on successful completion (no resume needed)
+        if (failed_count == 0) {
+            checkpoint.cleanup();
         }
 
         return .{ .exit_code = 0 };

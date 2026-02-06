@@ -1,11 +1,11 @@
 //! Installation error recovery
 //!
-//! Provides rollback and recovery mechanisms for failed installations
+//! Provides rollback, recovery, and resume mechanisms for failed installations.
 
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 
-/// Installation checkpoint for rollback
+/// Installation checkpoint for rollback and resume
 pub const InstallCheckpoint = struct {
     /// Packages installed before this operation
     installed_packages: std.StringHashMap(void),
@@ -15,6 +15,8 @@ pub const InstallCheckpoint = struct {
     created_dirs: std.ArrayList([]const u8),
     /// Backup directory for rollback
     backup_dir: ?[]const u8,
+    /// Path to persist checkpoint on disk (for resume)
+    checkpoint_path: ?[]const u8,
     allocator: std.mem.Allocator,
 
     pub fn init(allocator: std.mem.Allocator) InstallCheckpoint {
@@ -23,6 +25,7 @@ pub const InstallCheckpoint = struct {
             .created_files = std.ArrayList([]const u8){},
             .created_dirs = std.ArrayList([]const u8){},
             .backup_dir = null,
+            .checkpoint_path = null,
             .allocator = allocator,
         };
     }
@@ -47,6 +50,10 @@ pub const InstallCheckpoint = struct {
         if (self.backup_dir) |dir| {
             self.allocator.free(dir);
         }
+
+        if (self.checkpoint_path) |path| {
+            self.allocator.free(path);
+        }
     }
 
     /// Record a file creation
@@ -65,11 +72,88 @@ pub const InstallCheckpoint = struct {
     pub fn recordPackage(self: *InstallCheckpoint, name: []const u8) !void {
         const owned = try self.allocator.dupe(u8, name);
         try self.installed_packages.put(owned, {});
+        // Persist to disk after each package
+        self.persist() catch {};
+    }
+
+    /// Check if a package was already installed (for resume)
+    pub fn isPackageInstalled(self: *const InstallCheckpoint, name: []const u8) bool {
+        return self.installed_packages.contains(name);
+    }
+
+    /// Set the checkpoint file path for persistence
+    pub fn setCheckpointPath(self: *InstallCheckpoint, project_dir: []const u8) !void {
+        if (self.checkpoint_path) |old| self.allocator.free(old);
+        self.checkpoint_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/.pantry-checkpoint.json",
+            .{project_dir},
+        );
+    }
+
+    /// Persist checkpoint to disk as JSON
+    fn persist(self: *InstallCheckpoint) !void {
+        const path = self.checkpoint_path orelse return;
+
+        var buf = try std.ArrayList(u8).initCapacity(self.allocator, 1024);
+        defer buf.deinit(self.allocator);
+
+        try buf.appendSlice(self.allocator, "{\"packages\":[");
+        var it = self.installed_packages.keyIterator();
+        var first = true;
+        while (it.next()) |key| {
+            if (!first) try buf.appendSlice(self.allocator, ",");
+            first = false;
+            try buf.append(self.allocator, '"');
+            try buf.appendSlice(self.allocator, key.*);
+            try buf.append(self.allocator, '"');
+        }
+        try buf.appendSlice(self.allocator, "]}");
+
+        const file = io_helper.cwd().createFile(io_helper.io, path, .{}) catch return;
+        defer file.close(io_helper.io);
+        io_helper.writeAllToFile(file, buf.items) catch {};
+    }
+
+    /// Load a checkpoint from disk (for resume)
+    pub fn loadFromDisk(allocator: std.mem.Allocator, project_dir: []const u8) !?InstallCheckpoint {
+        const path = try std.fmt.allocPrint(allocator, "{s}/.pantry-checkpoint.json", .{project_dir});
+        defer allocator.free(path);
+
+        const content = io_helper.readFileAlloc(allocator, path, 1024 * 1024) catch return null;
+        defer allocator.free(content);
+
+        // Parse JSON
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return null;
+        defer parsed.deinit();
+
+        if (parsed.value != .object) return null;
+        const packages_val = parsed.value.object.get("packages") orelse return null;
+        if (packages_val != .array) return null;
+
+        var checkpoint = InstallCheckpoint.init(allocator);
+        checkpoint.checkpoint_path = try std.fmt.allocPrint(allocator, "{s}/.pantry-checkpoint.json", .{project_dir});
+
+        for (packages_val.array.items) |item| {
+            if (item == .string) {
+                const owned = try allocator.dupe(u8, item.string);
+                try checkpoint.installed_packages.put(owned, {});
+            }
+        }
+
+        return checkpoint;
+    }
+
+    /// Remove the checkpoint file (called on successful completion)
+    pub fn cleanup(self: *InstallCheckpoint) void {
+        if (self.checkpoint_path) |path| {
+            io_helper.deleteFile(path) catch {};
+        }
     }
 
     /// Rollback all changes
     pub fn rollback(self: *InstallCheckpoint) !void {
-        std.debug.print("🔄 Rolling back installation...\n", .{});
+        std.debug.print("Rolling back installation...\n", .{});
 
         var failed_count: usize = 0;
 
@@ -79,7 +163,7 @@ pub const InstallCheckpoint = struct {
             i -= 1;
             const file = self.created_files.items[i];
             io_helper.deleteFile(file) catch |err| {
-                std.debug.print("⚠️  Failed to delete {s}: {}\n", .{ file, err });
+                std.debug.print("  Failed to delete {s}: {}\n", .{ file, err });
                 failed_count += 1;
             };
         }
@@ -90,7 +174,7 @@ pub const InstallCheckpoint = struct {
             i -= 1;
             const dir = self.created_dirs.items[i];
             io_helper.deleteTree(dir) catch |err| {
-                std.debug.print("⚠️  Failed to delete {s}: {}\n", .{ dir, err });
+                std.debug.print("  Failed to delete {s}: {}\n", .{ dir, err });
                 failed_count += 1;
             };
         }
@@ -98,15 +182,15 @@ pub const InstallCheckpoint = struct {
         // Restore from backup if available
         if (self.backup_dir) |backup| {
             restoreFromBackup(backup) catch |err| {
-                std.debug.print("⚠️  Failed to restore from backup: {}\n", .{err});
+                std.debug.print("  Failed to restore from backup: {}\n", .{err});
                 failed_count += 1;
             };
         }
 
         if (failed_count > 0) {
-            std.debug.print("⚠️  Rollback completed with {d} error(s)\n", .{failed_count});
+            std.debug.print("Rollback completed with {d} error(s)\n", .{failed_count});
         } else {
-            std.debug.print("✅ Rollback completed successfully\n", .{});
+            std.debug.print("Rollback completed successfully\n", .{});
         }
     }
 
@@ -134,7 +218,7 @@ pub const InstallCheckpoint = struct {
 
 fn restoreFromBackup(backup_dir: []const u8) !void {
     // Implementation: copy files from backup back to original location
-    std.debug.print("🔄 Restoring from backup: {s}\n", .{backup_dir});
+    std.debug.print("Restoring from backup: {s}\n", .{backup_dir});
 
     // After restore, clean up backup
     defer io_helper.deleteTree(backup_dir) catch {};
@@ -275,11 +359,49 @@ pub const RecoverySuggestion = struct {
         const yellow = "\x1b[33m";
         const reset = "\x1b[0m";
 
-        std.debug.print("\n{s}❌ Error:{s} {s}\n\n", .{ red, reset, self.message });
-        std.debug.print("{s}💡 Suggestions:{s}\n", .{ yellow, reset });
+        std.debug.print("\n{s}Error:{s} {s}\n\n", .{ red, reset, self.message });
+        std.debug.print("{s}Suggestions:{s}\n", .{ yellow, reset });
         for (self.suggestions, 1..) |suggestion, i| {
             std.debug.print("   {d}. {s}\n", .{ i, suggestion });
         }
         std.debug.print("\n", .{});
     }
 };
+
+test "checkpoint init and deinit" {
+    const allocator = std.testing.allocator;
+    var cp = InstallCheckpoint.init(allocator);
+    defer cp.deinit();
+
+    try cp.recordPackage("test-pkg");
+    try std.testing.expect(cp.isPackageInstalled("test-pkg"));
+    try std.testing.expect(!cp.isPackageInstalled("other-pkg"));
+}
+
+test "checkpoint record multiple packages" {
+    const allocator = std.testing.allocator;
+    var cp = InstallCheckpoint.init(allocator);
+    defer cp.deinit();
+
+    try cp.recordPackage("pkg-a");
+    try cp.recordPackage("pkg-b");
+    try cp.recordPackage("pkg-c");
+
+    try std.testing.expect(cp.isPackageInstalled("pkg-a"));
+    try std.testing.expect(cp.isPackageInstalled("pkg-b"));
+    try std.testing.expect(cp.isPackageInstalled("pkg-c"));
+    try std.testing.expect(!cp.isPackageInstalled("pkg-d"));
+    try std.testing.expectEqual(@as(usize, 3), cp.installed_packages.count());
+}
+
+test "checkpoint record files and dirs" {
+    const allocator = std.testing.allocator;
+    var cp = InstallCheckpoint.init(allocator);
+    defer cp.deinit();
+
+    try cp.recordFile("/tmp/test-file");
+    try cp.recordDir("/tmp/test-dir");
+
+    try std.testing.expectEqual(@as(usize, 1), cp.created_files.items.len);
+    try std.testing.expectEqual(@as(usize, 1), cp.created_dirs.items.len);
+}
