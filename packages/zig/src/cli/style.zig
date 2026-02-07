@@ -37,7 +37,7 @@ pub const link_sym = "~";
 
 /// Print to stdout (user-facing output). Thread-safe via write() syscall.
 pub fn print(comptime fmt: []const u8, args: anytype) void {
-    var buf: [8192]u8 = undefined;
+    var buf: [16384]u8 = undefined;
     const msg = std.fmt.bufPrint(&buf, fmt, args) catch {
         // Fallback for messages that exceed buffer
         std.debug.print(fmt, args);

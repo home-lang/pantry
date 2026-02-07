@@ -190,94 +190,9 @@ pub fn generateEnvWrapper(
     return try buffer.toOwnedSlice();
 }
 
-/// Fix macOS library paths using install_name_tool
-pub fn fixMacOSLibraryPaths(
-    allocator: std.mem.Allocator,
-    binary_path: []const u8,
-    lib_dir: []const u8,
-) !void {
-    const platform = lib.Platform.current();
-    if (platform != .darwin) {
-        return; // Only for macOS
-    }
-
-    // Use otool to find dependencies
-    const result = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{ "otool", "-L", binary_path },
-    });
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
-
-    if (result.term.exited != 0) {
-        return; // Not a Mach-O binary
-    }
-
-    var lines = std.mem.split(u8, result.stdout, "\n");
-    _ = lines.next(); // Skip first line (binary path)
-
-    while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r");
-        if (trimmed.len == 0) continue;
-
-        // Parse library path (format: "/path/to/lib (compatibility version ...)")
-        var parts = std.mem.split(u8, trimmed, " ");
-        const lib_path = parts.next() orelse continue;
-
-        // Check if it's a local library (not system library)
-        if (std.mem.startsWith(u8, lib_path, "/usr/lib") or
-            std.mem.startsWith(u8, lib_path, "/System"))
-        {
-            continue;
-        }
-
-        // Extract library name
-        const lib_name = std.fs.path.basename(lib_path);
-
-        // Build new path
-        const new_path = try std.fmt.allocPrint(
-            allocator,
-            "@rpath/{s}",
-            .{lib_name},
-        );
-        defer allocator.free(new_path);
-
-        // Run install_name_tool
-        const change_result = try std.process.Child.run(.{
-            .allocator = allocator,
-            .argv = &[_][]const u8{
-                "install_name_tool",
-                "-change",
-                lib_path,
-                new_path,
-                binary_path,
-            },
-        });
-        defer allocator.free(change_result.stdout);
-        defer allocator.free(change_result.stderr);
-
-        if (change_result.term.exited == 0) {
-            style.print("  ✓ Fixed library path: {s} -> {s}\n", .{ lib_name, new_path });
-        }
-    }
-
-    // Add rpath
-    const add_rpath = try std.process.Child.run(.{
-        .allocator = allocator,
-        .argv = &[_][]const u8{
-            "install_name_tool",
-            "-add_rpath",
-            lib_dir,
-            binary_path,
-        },
-    });
-    defer allocator.free(add_rpath.stdout);
-    defer allocator.free(add_rpath.stderr);
-
-    if (add_rpath.term.exited == 0) {
-        style.print("  ✓ Added rpath: {s}\n", .{lib_dir});
-    }
-}
+/// Fix macOS library paths using install_name_tool.
+/// Delegates to the canonical implementation in libfixer.zig.
+pub const fixMacOSLibraryPaths = @import("libfixer.zig").fixMacOSLibraryPaths;
 
 test "generateShellWrapper" {
     const allocator = std.testing.allocator;
