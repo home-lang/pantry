@@ -168,59 +168,35 @@ pub fn resolveLinkVersion(allocator: std.mem.Allocator, version: []const u8) !?[
 }
 
 /// Check if a package can be skipped based on the lockfile.
-/// Returns true if the lockfile has a matching entry AND the destination directory exists.
+/// Returns true if the lockfile has an entry with a matching name AND the destination directory exists.
+/// The lockfile keys are "name@resolved_version" while dep files have constraints like "^4.17.21",
+/// so we match by name (iterating entries) rather than by exact key.
 pub fn canSkipFromLockfile(
     lockfile_packages: *const std.StringHashMap(lib.packages.LockfileEntry),
     dep_name: []const u8,
-    dep_version: []const u8,
+    _: []const u8,
     proj_dir: []const u8,
-    allocator: std.mem.Allocator,
+    _: std.mem.Allocator,
 ) bool {
     // Clean name (strip auto:, npm:, local: prefixes)
     const clean_name = stripDisplayPrefix(dep_name);
 
-    // Build the lockfile key used during write: "name@version"
-    // Use stack buffer to avoid heap allocation in hot path
-    var key_buf: [512]u8 = undefined;
-    const key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_name, dep_version }) catch {
-        // Name too long for stack buffer, fall back to heap
-        const heap_key = std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, dep_version }) catch return false;
-        defer allocator.free(heap_key);
-        return canSkipFromLockfileWithKey(lockfile_packages, heap_key, clean_name, dep_version, proj_dir, allocator);
-    };
-
-    // Check if lockfile has this exact entry
-    const entry = lockfile_packages.get(key) orelse return false;
-
-    // Verify the version matches (should always match given the key, but double-check)
-    if (!std.mem.eql(u8, entry.version, dep_version) or !std.mem.eql(u8, entry.name, clean_name)) {
-        return false;
+    // Find any lockfile entry with matching name
+    var found = false;
+    var it = lockfile_packages.iterator();
+    while (it.next()) |entry| {
+        if (std.mem.eql(u8, entry.value_ptr.name, clean_name)) {
+            found = true;
+            break;
+        }
     }
+    if (!found) return false;
 
     // Check if destination directory actually exists (use stack buffer + access instead of openDir)
     var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
     const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
     io_helper.accessAbsolute(dest_dir, .{}) catch return false;
 
-    return true;
-}
-
-/// Helper for canSkipFromLockfile when using heap-allocated key
-fn canSkipFromLockfileWithKey(
-    lockfile_packages: *const std.StringHashMap(lib.packages.LockfileEntry),
-    key: []const u8,
-    clean_name: []const u8,
-    dep_version: []const u8,
-    proj_dir: []const u8,
-    _: std.mem.Allocator,
-) bool {
-    const entry = lockfile_packages.get(key) orelse return false;
-    if (!std.mem.eql(u8, entry.version, dep_version) or !std.mem.eql(u8, entry.name, clean_name)) {
-        return false;
-    }
-    var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
-    io_helper.accessAbsolute(dest_dir, .{}) catch return false;
     return true;
 }
 
@@ -281,14 +257,15 @@ pub fn installSinglePackage(
         };
     }
 
-    // Validate package exists in registry
+    // Validate package exists in registry (strip "auto:" prefix for lookups)
     const pkg_registry = @import("../../../packages/generated.zig");
-    const pkg_info = pkg_registry.getPackageByName(dep.name);
+    const lookup_name = stripDisplayPrefix(dep.name);
+    const pkg_info = pkg_registry.getPackageByName(lookup_name);
 
     // Check if this is a zig dev version (should use ziglang.org instead of pkgx)
-    const is_zig_package = std.mem.eql(u8, dep.name, "zig") or
-        std.mem.eql(u8, dep.name, "ziglang") or
-        std.mem.eql(u8, dep.name, "ziglang.org");
+    const is_zig_package = std.mem.eql(u8, lookup_name, "zig") or
+        std.mem.eql(u8, lookup_name, "ziglang") or
+        std.mem.eql(u8, lookup_name, "ziglang.org");
     const is_zig_dev = lib.install.downloader.isZigDevVersion(dep.version);
 
     // Check if this is a GitHub dependency
@@ -298,7 +275,7 @@ pub fn installSinglePackage(
         defer allocator.free(repo_str);
 
         break :blk lib.packages.PackageSpec{
-            .name = dep.name,
+            .name = lookup_name,
             .version = gh_ref.ref,
             .source = .github,
             .repo = try allocator.dupe(u8, repo_str),
@@ -316,15 +293,15 @@ pub fn installSinglePackage(
             // Try Pantry S3/DynamoDB registry first, then fall back to npm
             // Uses the shared installer's resolveNpmPackage which handles semver ranges,
             // dist-tags, and deduplication via InstallingStack
-            if (lookupPantryRegistry(allocator, dep.name) catch |err| lkup: {
-                style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, dep.name, err, style.reset });
+            if (lookupPantryRegistry(allocator, lookup_name) catch |err| lkup: {
+                style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, lookup_name, err, style.reset });
                 break :lkup null;
             }) |info| {
                 var pantry_info = info;
                 defer pantry_info.deinit(allocator);
 
                 break :blk lib.packages.PackageSpec{
-                    .name = dep.name,
+                    .name = lookup_name,
                     .version = try allocator.dupe(u8, pantry_info.version),
                     .source = .npm,
                     .url = try allocator.dupe(u8, pantry_info.tarball_url),
@@ -332,18 +309,18 @@ pub fn installSinglePackage(
             }
 
             // Fall back to npm registry via shared installer (handles semver, caching, dedup)
-            const npm_info = shared_installer.resolveNpmPackage(dep.name, dep.version) catch |err| {
+            const npm_info = shared_installer.resolveNpmPackage(lookup_name, dep.version) catch |err| {
                 return .{
-                    .name = dep.name,
+                    .name = lookup_name,
                     .version = dep.version,
                     .success = false,
-                    .error_msg = try std.fmt.allocPrint(allocator, "not found in pantry or npm: {}", .{err}),
+                    .error_msg = try std.fmt.allocPrint(allocator, "not found in registry ({s})", .{@errorName(err)}),
                     .install_time_ms = 0,
                 };
             };
 
             break :blk lib.packages.PackageSpec{
-                .name = dep.name,
+                .name = lookup_name,
                 .version = npm_info.version,
                 .source = .npm,
                 .url = npm_info.tarball_url,
@@ -351,7 +328,7 @@ pub fn installSinglePackage(
         }
 
         break :blk lib.packages.PackageSpec{
-            .name = dep.name,
+            .name = lookup_name,
             .version = dep.version,
         };
     };
@@ -364,12 +341,12 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", lookup_name });
         defer allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
             allocator,
-            dep.name,
+            lookup_name,
             dep.version,
             dest_dir,
         ) catch false;
@@ -378,7 +355,7 @@ pub fn installSinglePackage(
             const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
             const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
             return .{
-                .name = dep.name,
+                .name = lookup_name,
                 .version = try allocator.dupe(u8, dep.version),
                 .success = true,
                 .error_msg = null,
@@ -392,7 +369,7 @@ pub fn installSinglePackage(
                 .{},
             );
             return .{
-                .name = dep.name,
+                .name = lookup_name,
                 .version = dep.version,
                 .success = false,
                 .error_msg = error_msg,
@@ -412,7 +389,7 @@ pub fn installSinglePackage(
         const suggestion = try recovery_mod.RecoverySuggestion.suggest(
             allocator,
             err,
-            try std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ dep.name, dep.version }),
+            try std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ lookup_name, dep.version }),
         );
         defer if (suggestion.message.len > 0) allocator.free(suggestion.message);
 
@@ -433,7 +410,7 @@ pub fn installSinglePackage(
             try std.fmt.allocPrint(allocator, "failed: {}", .{err});
 
         return .{
-            .name = dep.name,
+            .name = lookup_name,
             .version = dep.version,
             .success = false,
             .error_msg = error_msg,
@@ -448,7 +425,7 @@ pub fn installSinglePackage(
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
-    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", dep.name });
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", lookup_name });
     defer allocator.free(package_path);
 
     if (!options.ignore_scripts) {
@@ -461,7 +438,7 @@ pub fn installSinglePackage(
         // Run postinstall script
         if (try lib.lifecycle.runLifecycleScript(
             allocator,
-            dep.name,
+            lookup_name,
             .postinstall,
             package_path,
             lifecycle_options,
@@ -477,7 +454,7 @@ pub fn installSinglePackage(
                 );
                 allocator.free(installed_version);
                 return .{
-                    .name = dep.name,
+                    .name = lookup_name,
                     .version = "",
                     .success = false,
                     .error_msg = error_msg,
@@ -497,12 +474,12 @@ pub fn installSinglePackage(
     // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
     createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose) catch |err| {
         if (options.verbose) {
-            style.print("    ⚠️  Could not create bin symlinks for {s}: {}\n", .{ dep.name, err });
+            style.print("    Could not create bin symlinks for {s}: {}\n", .{ lookup_name, err });
         }
     };
 
     return .{
-        .name = dep.name,
+        .name = lookup_name,
         .version = installed_version,
         .success = true,
         .error_msg = null,

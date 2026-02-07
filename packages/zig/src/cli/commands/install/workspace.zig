@@ -101,7 +101,7 @@ fn installSingleWorkspaceDep(
                 .name = clean_name,
                 .version = dep.version,
                 .success = false,
-                .error_msg = std.fmt.allocPrint(allocator, "not found in pantry or npm: {}", .{err}) catch null,
+                .error_msg = std.fmt.allocPrint(allocator, "not found in registry ({s})", .{@errorName(err)}) catch null,
             };
         };
         defer allocator.free(npm_info.version);
@@ -401,9 +401,10 @@ pub fn installWorkspaceCommandWithOptions(
                 }
 
                 // Create a unique key for this dependency (stack buffer to avoid heap alloc per dep)
+                const clean_dep_name = helpers.stripDisplayPrefix(resolved_dep.name);
                 var key_buf: [512]u8 = undefined;
-                const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ resolved_dep.name, resolved_dep.version }) catch
-                    try std.fmt.allocPrint(allocator, "{s}@{s}", .{ resolved_dep.name, resolved_dep.version });
+                const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, resolved_dep.version }) catch
+                    try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, resolved_dep.version });
                 const key_is_heap = dep_key.ptr != &key_buf;
                 defer if (key_is_heap) allocator.free(dep_key);
 
@@ -685,8 +686,9 @@ pub fn installWorkspaceCommandWithOptions(
 
     // Add entries for all installed packages
     for (all_deps_buffer[0..all_deps_count]) |dep| {
+        const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
         const entry = lib.packages.LockfileEntry{
-            .name = try allocator.dupe(u8, dep.name),
+            .name = try allocator.dupe(u8, clean_dep_name),
             .version = try allocator.dupe(u8, dep.version),
             .source = switch (dep.source) {
                 .registry => .pkgx,
@@ -700,7 +702,7 @@ pub fn installWorkspaceCommandWithOptions(
             .dependencies = null,
         };
 
-        const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ dep.name, dep.version });
+        const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
         defer allocator.free(key);
         try lockfile.addEntry(allocator, key, entry);
     }

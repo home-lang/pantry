@@ -134,9 +134,8 @@ pub fn computeChecksum(allocator: std.mem.Allocator, file_path: []const u8) ![]c
     hasher.final(&hash);
 
     // Convert to hex string
-    var hex_buf: [64]u8 = undefined;
-    const hex = std.fmt.bufPrint(&hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&hash)}) catch return error.ExtractionFailed;
-    return try allocator.dupe(u8, hex);
+    const hex_buf = std.fmt.bytesToHex(hash, .lower);
+    return try allocator.dupe(u8, &hex_buf);
 }
 
 /// Try to fetch and verify checksum from a sidecar .sha256 file

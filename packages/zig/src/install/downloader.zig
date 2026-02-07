@@ -100,7 +100,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     var shown_progress = false;
 
     while (true) {
-        const n = body_reader.stream(&file_writer, .unlimited) catch |err| switch (err) {
+        const n = body_reader.stream(&file_writer.interface, .unlimited) catch |err| switch (err) {
             error.EndOfStream => break,
             else => return error.HttpRequestFailed,
         };

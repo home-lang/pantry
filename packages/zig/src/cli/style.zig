@@ -122,30 +122,37 @@ pub fn printHeader(command: []const u8, version: []const u8, hash: []const u8) v
 
 /// Print the "all up to date" summary
 pub fn printUpToDate(pkg_count: usize, elapsed_ms: f64) void {
-    print("{s}Checked {s}{d}{s} installs across {s}{d}{s} packages {s}(no changes){s} {s}[{s}{d:.2}ms{s}]{s}\n", .{
-        reset, green, pkg_count, reset,
-        green, pkg_count, reset,
-        dim,   reset,
-        dim,   bold, elapsed_ms, reset, reset,
+    const label = if (pkg_count == 1) "package" else "packages";
+    print("\n{s}{d}{s} {s} up to date {s}[{s}{d:.0}ms{s}]{s}\n", .{
+        green, pkg_count, reset, label,
+        dim, bold, elapsed_ms, reset, reset,
     });
 }
 
 /// Print the install summary line: "N packages installed [Xms]"
 pub fn printSummary(success_count: usize, total_count: usize, elapsed_ms: f64) void {
-    print("{s}{d}{s} packages installed across {s}{d}{s} packages {s}[{s}{d:.2}ms{s}]{s}\n", .{
-        green,  success_count, reset,
-        green,  total_count,   reset,
-        dim,    bold, elapsed_ms, reset, reset,
-    });
+    const label = if (success_count == 1) "package" else "packages";
+    if (success_count == total_count) {
+        print("{s}{d}{s} {s} installed {s}[{s}{d:.0}ms{s}]{s}\n", .{
+            green, success_count, reset, label,
+            dim, bold, elapsed_ms, reset, reset,
+        });
+    } else {
+        print("{s}{d}{s}/{s}{d}{s} {s} installed {s}[{s}{d:.0}ms{s}]{s}\n", .{
+            green, success_count, reset,
+            green, total_count, reset, label,
+            dim, bold, elapsed_ms, reset, reset,
+        });
+    }
 }
 
 /// Print checked summary (no changes)
 pub fn printCheckedSummary(success_count: usize, total_count: usize, elapsed_ms: f64) void {
-    print("Checked {s}{d}{s} installs across {s}{d}{s} packages {s}(no changes){s} {s}[{s}{d:.2}ms{s}]{s}\n", .{
-        green, success_count, reset,
-        green, total_count,   reset,
-        dim,   reset,
-        dim,   bold, elapsed_ms, reset, reset,
+    _ = success_count;
+    const label = if (total_count == 1) "package" else "packages";
+    print("{s}{d}{s} {s} up to date {s}[{s}{d:.0}ms{s}]{s}\n", .{
+        green, total_count, reset, label,
+        dim, bold, elapsed_ms, reset, reset,
     });
 }
 
@@ -189,7 +196,8 @@ pub fn printLockfileSaved() void {
 
 /// Print installing message
 pub fn printInstalling(count: usize) void {
-    print("{s}{s}{s} Installing {d} package(s)...\n", .{ green, arrow, reset, count });
+    const label = if (count == 1) "package" else "packages";
+    print("{s}{s}{s} Installing {d} {s}...\n", .{ green, arrow, reset, count, label });
 }
 
 /// Print resume message

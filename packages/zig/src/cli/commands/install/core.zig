@@ -68,12 +68,16 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
 
     // 4. Filter to non-peer deps (default install behavior)
     //    and check all against lockfile + verify dirs exist
+    var checked_count: usize = 0;
     for (deps) |dep| {
         if (dep.dep_type == .peer) continue; // Skip peer deps by default
         if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator)) {
             return null; // At least one package needs work → fall through to slow path
         }
+        checked_count += 1;
     }
+
+    if (checked_count == 0) return null;
 
     // 5. All up-to-date!
     const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
@@ -82,7 +86,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     const pantry_version = version_options.version;
     const pantry_hash = version_options.commit_hash;
     style.printHeader("install", pantry_version, pantry_hash);
-    style.printUpToDate(deps.len, elapsed_ms);
+    style.printUpToDate(checked_count, elapsed_ms);
     return .{ .exit_code = 0 };
 }
 
@@ -771,7 +775,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
         style.printHeader("install", pantry_version, pantry_hash);
-        style.printCheckedSummary(success_count, total_deps, elapsed_ms);
+        if (success_count > 0) {
+            style.printSummary(success_count, total_deps, elapsed_ms);
+        } else {
+            style.printCheckedSummary(success_count, total_deps, elapsed_ms);
+        }
 
         if (failed_count > 0) {
             style.printFailureCount(failed_count);

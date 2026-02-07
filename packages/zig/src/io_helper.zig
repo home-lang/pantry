@@ -998,10 +998,12 @@ pub fn httpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
         .response_writer = &alloc_writer.writer,
         .redirect_buffer = &redirect_buf,
         .redirect_behavior = @enumFromInt(10),
-    }) catch return error.HttpRequestFailed;
+    }) catch {
+        return error.HttpRequestFailed;
+    };
 
     if (result.status != .ok) {
-        return error.HttpRequestFailed; // errdefer handles cleanup
+        return error.HttpRequestFailed;
     }
 
     // Extract the response data — dupe the written portion, then free the internal buffer.
@@ -1031,7 +1033,7 @@ pub fn httpDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path
 
     const result = client.fetch(.{
         .location = .{ .url = url },
-        .response_writer = &file_writer,
+        .response_writer = &file_writer.interface,
         .redirect_buffer = &redirect_buf,
         .redirect_behavior = @enumFromInt(10),
     }) catch return error.HttpRequestFailed;
