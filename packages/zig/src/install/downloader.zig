@@ -61,9 +61,6 @@ pub const InlineProgressOptions = struct {
     total_deps: usize, // Total number of dependencies
     pkg_name: []const u8, // Package name to display
     pkg_version: []const u8, // Package version to display
-    dim_str: []const u8,
-    italic_str: []const u8,
-    reset_str: []const u8,
 };
 
 /// Download with inline progress (updates a specific line instead of new lines)

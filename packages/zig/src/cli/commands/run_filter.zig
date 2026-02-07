@@ -197,12 +197,8 @@ pub fn runScriptWithFilter(
     defer ordered_result.deinit();
 
     // Display which packages we're running in
-    const blue = "\x1b[34m";
-    const dim = "\x1b[2m";
-    const reset = "\x1b[0m";
-
     style.print("{s}Running script '{s}' in {d} package(s)", .{
-        blue,
+        style.blue,
         script_name,
         matching_members.items.len,
     });
@@ -210,10 +206,10 @@ pub fn runScriptWithFilter(
     if (options.respect_order and ordered_result.parallel_groups.len > 1) {
         style.print(" ({d} parallel groups)", .{ordered_result.parallel_groups.len});
     }
-    style.print(":{s}\n", .{reset});
+    style.print(":{s}\n", .{style.reset});
 
     for (ordered_result.order) |member| {
-        style.print("{s}  • {s}{s}\n", .{ dim, member.name, reset });
+        style.print("{s}  • {s}{s}\n", .{ style.dim, member.name, style.reset });
     }
     style.print("\n", .{});
 
@@ -221,10 +217,6 @@ pub fn runScriptWithFilter(
     var success_count: usize = 0;
     var failed_count: usize = 0;
     var skipped_count: usize = 0;
-
-    const green = "\x1b[32m";
-    const red = "\x1b[31m";
-    const yellow = "\x1b[33m";
 
     if (options.parallel and ordered_result.parallel_groups.len > 0) {
         // Execute in parallel groups
@@ -234,7 +226,7 @@ pub fn runScriptWithFilter(
             if (group.len == 0) continue;
 
             if (ordered_result.parallel_groups.len > 1) {
-                style.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
+                style.print("{s}Group {d} ({d} package(s)){s}\n", .{ style.dim, group_idx + 1, group.len, style.reset });
             }
 
             // Execute group in parallel
@@ -245,7 +237,7 @@ pub fn runScriptWithFilter(
                 script_args,
                 options.verbose,
             ) catch |err| {
-                style.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
+                style.print("{s}✗{s} Group {d} failed: {}\n", .{ style.red, style.reset, group_idx + 1, err });
                 failed_count += group.len;
                 continue;
             };
@@ -259,19 +251,19 @@ pub fn runScriptWithFilter(
             // Display results
             for (results) |result| {
                 if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "No scripts defined") != null) {
-                    style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ style.yellow, style.reset, result.member_name, style.dim, style.reset });
                     skipped_count += 1;
                 } else if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "Script not found") != null) {
-                    style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ style.yellow, style.reset, result.member_name, style.dim, style.reset });
                     skipped_count += 1;
                 } else if (result.success) {
-                    style.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
+                    style.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ style.green, style.reset, result.member_name, style.dim, result.duration_ms, style.reset });
                     if (options.verbose and result.stdout.len > 0) {
                         style.print("{s}", .{result.stdout});
                     }
                     success_count += 1;
                 } else {
-                    style.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
+                    style.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ style.red, style.reset, result.member_name, style.dim, result.exit_code, style.reset });
                     if (result.stderr.len > 0) {
                         style.print("{s}", .{result.stderr});
                     }
@@ -285,11 +277,11 @@ pub fn runScriptWithFilter(
             // Load scripts for this member
             const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
                 style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
-                    yellow,
-                    reset,
+                    style.yellow,
+                    style.reset,
                     member.name,
-                    dim,
-                    reset,
+                    style.dim,
+                    style.reset,
                 });
                 skipped_count += 1;
                 continue;
@@ -297,11 +289,11 @@ pub fn runScriptWithFilter(
 
             if (scripts_map == null) {
                 style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{
-                    yellow,
-                    reset,
+                    style.yellow,
+                    style.reset,
                     member.name,
-                    dim,
-                    reset,
+                    style.dim,
+                    style.reset,
                 });
                 skipped_count += 1;
                 continue;
@@ -320,18 +312,18 @@ pub fn runScriptWithFilter(
             // Check if the script exists for this member
             const script_command = scripts.get(script_name) orelse {
                 style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{
-                    yellow,
-                    reset,
+                    style.yellow,
+                    style.reset,
                     member.name,
-                    dim,
-                    reset,
+                    style.dim,
+                    style.reset,
                 });
                 skipped_count += 1;
                 continue;
             };
 
             // Execute the script
-            style.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
+            style.print("{s}→{s} {s}\n", .{ style.blue, style.reset, member.name });
 
             // Build command with args
             var command_list = std.ArrayList(u8){};
@@ -350,12 +342,12 @@ pub fn runScriptWithFilter(
                 .cwd = member.abs_path,
             }) catch |err| {
                 style.print("{s}✗{s} {s} {s}({any}){s}\n", .{
-                    red,
-                    reset,
+                    style.red,
+                    style.reset,
                     member.name,
-                    dim,
+                    style.dim,
                     err,
-                    reset,
+                    style.reset,
                 });
                 failed_count += 1;
                 continue;
@@ -366,19 +358,19 @@ pub fn runScriptWithFilter(
             }
 
             if (result.term.exited == 0) {
-                style.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
+                style.print("{s}✓{s} {s}\n", .{ style.green, style.reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     style.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
                 style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{
-                    red,
-                    reset,
+                    style.red,
+                    style.reset,
                     member.name,
-                    dim,
+                    style.dim,
                     result.term.exited,
-                    reset,
+                    style.reset,
                 });
                 if (result.stderr.len > 0) {
                     style.print("{s}", .{result.stderr});
@@ -389,12 +381,12 @@ pub fn runScriptWithFilter(
     }
 
     // Summary
-    style.print("\n{s}✓{s} {d} succeeded", .{ green, reset, success_count });
+    style.print("\n{s}✓{s} {d} succeeded", .{ style.green, style.reset, success_count });
     if (failed_count > 0) {
-        style.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        style.print(", {s}{d} failed{s}", .{ style.red, failed_count, style.reset });
     }
     if (skipped_count > 0) {
-        style.print(", {s}{d} skipped{s}", .{ yellow, skipped_count, reset });
+        style.print(", {s}{d} skipped{s}", .{ style.yellow, skipped_count, style.reset });
     }
     style.print("\n", .{});
 
@@ -454,12 +446,8 @@ fn watchAndRerun(
 
         if (changes.len > 0) {
             // Print detected changes
-            const dim = "\x1b[2m";
-            const reset = "\x1b[0m";
-            const blue = "\x1b[34m";
-
-            style.print("\n{s}───────────────────────────────────────{s}\n", .{ dim, reset });
-            style.print("{s}Detected {d} file change(s):{s}\n", .{ blue, changes.len, reset });
+            style.print("\n{s}───────────────────────────────────────{s}\n", .{ style.dim, style.reset });
+            style.print("{s}Detected {d} file change(s):{s}\n", .{ style.blue, changes.len, style.reset });
 
             var affected_members = std.StringHashMap(void).init(allocator);
             defer affected_members.deinit();
@@ -478,9 +466,9 @@ fn watchAndRerun(
                     event.file_path;
 
                 style.print("  {s}{s}{s} in {s} ({s})\n", .{
-                    dim,
+                    style.dim,
                     rel_path,
-                    reset,
+                    style.reset,
                     event.member.name,
                     change_type,
                 });
@@ -492,12 +480,12 @@ fn watchAndRerun(
             }
 
             style.print("\n{s}Re-running script '{s}' in {d} affected package(s)...{s}\n", .{
-                blue,
+                style.blue,
                 script_name,
                 affected_members.count(),
-                reset,
+                style.reset,
             });
-            style.print("{s}───────────────────────────────────────{s}\n\n", .{ dim, reset });
+            style.print("{s}───────────────────────────────────────{s}\n\n", .{ style.dim, style.reset });
 
             // Wait for debounce
             io_helper.nanosleep(0, watcher.options.debounce_ms * std.time.ns_per_ms);
@@ -511,7 +499,7 @@ fn watchAndRerun(
                 options,
             );
 
-            style.print("\n{s}👀 Watching for changes...{s}\n", .{ dim, reset });
+            style.print("\n{s}👀 Watching for changes...{s}\n", .{ style.dim, style.reset });
         }
 
         // Sleep for poll interval
@@ -548,13 +536,6 @@ fn executeScriptsInMembers(
     var failed_count: usize = 0;
     var skipped_count: usize = 0;
 
-    const green = "\x1b[32m";
-    const red = "\x1b[31m";
-    const yellow = "\x1b[33m";
-    const blue = "\x1b[34m";
-    const dim = "\x1b[2m";
-    const reset = "\x1b[0m";
-
     if (options.parallel and ordered_result.parallel_groups.len > 0) {
         const parallel_executor = @import("parallel_executor.zig");
 
@@ -562,7 +543,7 @@ fn executeScriptsInMembers(
             if (group.len == 0) continue;
 
             if (ordered_result.parallel_groups.len > 1) {
-                style.print("{s}Group {d} ({d} package(s)){s}\n", .{ dim, group_idx + 1, group.len, reset });
+                style.print("{s}Group {d} ({d} package(s)){s}\n", .{ style.dim, group_idx + 1, group.len, style.reset });
             }
 
             const results = parallel_executor.executeParallelGroup(
@@ -572,7 +553,7 @@ fn executeScriptsInMembers(
                 script_args,
                 options.verbose,
             ) catch |err| {
-                style.print("{s}✗{s} Group {d} failed: {}\n", .{ red, reset, group_idx + 1, err });
+                style.print("{s}✗{s} Group {d} failed: {}\n", .{ style.red, style.reset, group_idx + 1, err });
                 failed_count += group.len;
                 continue;
             };
@@ -585,19 +566,19 @@ fn executeScriptsInMembers(
 
             for (results) |result| {
                 if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "No scripts defined") != null) {
-                    style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ style.yellow, style.reset, result.member_name, style.dim, style.reset });
                     skipped_count += 1;
                 } else if (result.stderr.len > 0 and std.mem.indexOf(u8, result.stderr, "Script not found") != null) {
-                    style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, result.member_name, dim, reset });
+                    style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ style.yellow, style.reset, result.member_name, style.dim, style.reset });
                     skipped_count += 1;
                 } else if (result.success) {
-                    style.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ green, reset, result.member_name, dim, result.duration_ms, reset });
+                    style.print("{s}✓{s} {s} {s}({d}ms){s}\n", .{ style.green, style.reset, result.member_name, style.dim, result.duration_ms, style.reset });
                     if (options.verbose and result.stdout.len > 0) {
                         style.print("{s}", .{result.stdout});
                     }
                     success_count += 1;
                 } else {
-                    style.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ red, reset, result.member_name, dim, result.exit_code, reset });
+                    style.print("{s}✗{s} {s} {s}(exit code: {d}){s}\n", .{ style.red, style.reset, result.member_name, style.dim, result.exit_code, style.reset });
                     if (result.stderr.len > 0) {
                         style.print("{s}", .{result.stderr});
                     }
@@ -609,13 +590,13 @@ fn executeScriptsInMembers(
         // Sequential execution
         for (ordered_result.order) |member| {
             const scripts_map = lib.config.findProjectScripts(allocator, member.abs_path) catch {
-                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, member.name, dim, reset });
+                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ style.yellow, style.reset, member.name, style.dim, style.reset });
                 skipped_count += 1;
                 continue;
             };
 
             if (scripts_map == null) {
-                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ yellow, reset, member.name, dim, reset });
+                style.print("{s}⊘{s} {s} {s}(no scripts defined){s}\n", .{ style.yellow, style.reset, member.name, style.dim, style.reset });
                 skipped_count += 1;
                 continue;
             }
@@ -631,12 +612,12 @@ fn executeScriptsInMembers(
             }
 
             const script_command = scripts.get(script_name) orelse {
-                style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ yellow, reset, member.name, dim, reset });
+                style.print("{s}⊘{s} {s} {s}(script not found){s}\n", .{ style.yellow, style.reset, member.name, style.dim, style.reset });
                 skipped_count += 1;
                 continue;
             };
 
-            style.print("{s}→{s} {s}\n", .{ blue, reset, member.name });
+            style.print("{s}→{s} {s}\n", .{ style.blue, style.reset, member.name });
 
             var command_list = std.ArrayList(u8){};
             defer command_list.deinit(allocator);
@@ -652,7 +633,7 @@ fn executeScriptsInMembers(
             const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", full_command }, .{
                 .cwd = member.abs_path,
             }) catch |err| {
-                style.print("{s}✗{s} {s} {s}({any}){s}\n", .{ red, reset, member.name, dim, err, reset });
+                style.print("{s}✗{s} {s} {s}({any}){s}\n", .{ style.red, style.reset, member.name, style.dim, err, style.reset });
                 failed_count += 1;
                 continue;
             };
@@ -662,13 +643,13 @@ fn executeScriptsInMembers(
             }
 
             if (result.term.exited == 0) {
-                style.print("{s}✓{s} {s}\n", .{ green, reset, member.name });
+                style.print("{s}✓{s} {s}\n", .{ style.green, style.reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     style.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
-                style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ red, reset, member.name, dim, result.term.exited, reset });
+                style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ style.red, style.reset, member.name, style.dim, result.term.exited, style.reset });
                 if (result.stderr.len > 0) {
                     style.print("{s}", .{result.stderr});
                 }
@@ -678,12 +659,12 @@ fn executeScriptsInMembers(
     }
 
     // Summary
-    style.print("\n{s}✓{s} {d} succeeded", .{ green, reset, success_count });
+    style.print("\n{s}✓{s} {d} succeeded", .{ style.green, style.reset, success_count });
     if (failed_count > 0) {
-        style.print(", {s}{d} failed{s}", .{ red, failed_count, reset });
+        style.print(", {s}{d} failed{s}", .{ style.red, failed_count, style.reset });
     }
     if (skipped_count > 0) {
-        style.print(", {s}{d} skipped{s}", .{ yellow, skipped_count, reset });
+        style.print(", {s}{d} skipped{s}", .{ style.yellow, skipped_count, style.reset });
     }
     style.print("\n", .{});
 }

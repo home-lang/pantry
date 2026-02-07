@@ -1707,133 +1707,125 @@ fn printVersion() void {
     style.print("pantry {s} ({s})\n", .{ version_options.version, version_options.commit_hash });
 }
 
-// ANSI color codes
-const Color = struct {
-    const reset = "\x1b[0m";
-    const bold = "\x1b[1m";
-    const dim = "\x1b[2m";
-    const teal = "\x1b[36m";
-    const bold_teal = "\x1b[1;36m";
-    const yellow = "\x1b[33m";
-    const green = "\x1b[32m";
-};
+// Bold+cyan has no style module equivalent, define locally.
+const bold_cyan = style.bold_cyan;
 
 /// Print help information
 fn printHelp() void {
     // Header
-    style.print("\n  " ++ Color.bold_teal ++ "pantry" ++ Color.reset ++ " {s} - Modern dependency manager\n\n", .{version_options.version});
+    style.print("\n  " ++ bold_cyan ++ "pantry" ++ style.reset ++ " {s} - Modern dependency manager\n\n", .{version_options.version});
 
     // Usage
-    style.print("  " ++ Color.bold ++ "USAGE:" ++ Color.reset ++ "\n", .{});
+    style.print("  " ++ style.bold ++ "USAGE:" ++ style.reset ++ "\n", .{});
     style.print("      pantry <command> [options] [arguments]\n\n", .{});
 
     // Commands
-    style.print("  " ++ Color.bold ++ "COMMANDS:" ++ Color.reset ++ "\n\n", .{});
+    style.print("  " ++ style.bold ++ "COMMANDS:" ++ style.reset ++ "\n\n", .{});
 
     // Package Management
-    style.print("    " ++ Color.bold_teal ++ "Package Management:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "install" ++ Color.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
-    style.print("      " ++ Color.teal ++ "add" ++ Color.reset ++ "                 Add and install new packages\n", .{});
-    style.print("      " ++ Color.teal ++ "remove" ++ Color.reset ++ ", rm          Remove packages\n", .{});
-    style.print("      " ++ Color.teal ++ "update" ++ Color.reset ++ "              Update packages to latest versions\n", .{});
-    style.print("      " ++ Color.teal ++ "outdated" ++ Color.reset ++ "            Check for outdated dependencies\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Package Management:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "install" ++ style.reset ++ ", i          Install packages from pantry.json/package.json\n", .{});
+    style.print("      " ++ style.cyan ++ "add" ++ style.reset ++ "                 Add and install new packages\n", .{});
+    style.print("      " ++ style.cyan ++ "remove" ++ style.reset ++ ", rm          Remove packages\n", .{});
+    style.print("      " ++ style.cyan ++ "update" ++ style.reset ++ "              Update packages to latest versions\n", .{});
+    style.print("      " ++ style.cyan ++ "outdated" ++ style.reset ++ "            Check for outdated dependencies\n\n", .{});
 
     // Package Info
-    style.print("    " ++ Color.bold_teal ++ "Package Info:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "list" ++ Color.reset ++ ", ls            List installed packages\n", .{});
-    style.print("      " ++ Color.teal ++ "tree" ++ Color.reset ++ "                Show dependency tree\n", .{});
-    style.print("      " ++ Color.teal ++ "why" ++ Color.reset ++ "                 Explain why a package is installed\n", .{});
-    style.print("      " ++ Color.teal ++ "search" ++ Color.reset ++ "              Search for packages in registry\n", .{});
-    style.print("      " ++ Color.teal ++ "info" ++ Color.reset ++ "                Show package information\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Package Info:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "list" ++ style.reset ++ ", ls            List installed packages\n", .{});
+    style.print("      " ++ style.cyan ++ "tree" ++ style.reset ++ "                Show dependency tree\n", .{});
+    style.print("      " ++ style.cyan ++ "why" ++ style.reset ++ "                 Explain why a package is installed\n", .{});
+    style.print("      " ++ style.cyan ++ "search" ++ style.reset ++ "              Search for packages in registry\n", .{});
+    style.print("      " ++ style.cyan ++ "info" ++ style.reset ++ "                Show package information\n\n", .{});
 
     // Scripts
-    style.print("    " ++ Color.bold_teal ++ "Scripts:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "run" ++ Color.reset ++ "                 Run a script from package.json\n", .{});
-    style.print("      " ++ Color.teal ++ "dev" ++ Color.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
-    style.print("      " ++ Color.teal ++ "build" ++ Color.reset ++ "               Run build script (alias for 'run build')\n", .{});
-    style.print("      " ++ Color.teal ++ "test" ++ Color.reset ++ "                Run test script (alias for 'run test')\n", .{});
-    style.print("      " ++ Color.teal ++ "px" ++ Color.reset ++ "                  Execute a package binary\n", .{});
-    style.print("      " ++ Color.teal ++ "scripts" ++ Color.reset ++ "             List available scripts\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Scripts:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "run" ++ style.reset ++ "                 Run a script from package.json\n", .{});
+    style.print("      " ++ style.cyan ++ "dev" ++ style.reset ++ "                 Run development script (alias for 'run dev')\n", .{});
+    style.print("      " ++ style.cyan ++ "build" ++ style.reset ++ "               Run build script (alias for 'run build')\n", .{});
+    style.print("      " ++ style.cyan ++ "test" ++ style.reset ++ "                Run test script (alias for 'run test')\n", .{});
+    style.print("      " ++ style.cyan ++ "px" ++ style.reset ++ "                  Execute a package binary\n", .{});
+    style.print("      " ++ style.cyan ++ "scripts" ++ style.reset ++ "             List available scripts\n\n", .{});
 
     // Publishing
-    style.print("    " ++ Color.bold_teal ++ "Publishing:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "publish" ++ Color.reset ++ "             Publish package to Pantry registry (S3)\n", .{});
-    style.print("      " ++ Color.teal ++ "npm:publish" ++ Color.reset ++ "         Publish package to npm (supports OIDC)\n", .{});
-    style.print("      " ++ Color.teal ++ "publisher:add" ++ Color.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
-    style.print("      " ++ Color.teal ++ "publisher:list" ++ Color.reset ++ "      List trusted publishers\n", .{});
-    style.print("      " ++ Color.teal ++ "publisher:remove" ++ Color.reset ++ "    Remove a trusted publisher\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Publishing:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "publish" ++ style.reset ++ "             Publish package to Pantry registry (S3)\n", .{});
+    style.print("      " ++ style.cyan ++ "npm:publish" ++ style.reset ++ "         Publish package to npm (supports OIDC)\n", .{});
+    style.print("      " ++ style.cyan ++ "publisher:add" ++ style.reset ++ "       Add a trusted publisher (OIDC)\n", .{});
+    style.print("      " ++ style.cyan ++ "publisher:list" ++ style.reset ++ "      List trusted publishers\n", .{});
+    style.print("      " ++ style.cyan ++ "publisher:remove" ++ style.reset ++ "    Remove a trusted publisher\n\n", .{});
 
     // Security
-    style.print("    " ++ Color.bold_teal ++ "Security:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "audit" ++ Color.reset ++ "               Check for security vulnerabilities\n", .{});
-    style.print("      " ++ Color.teal ++ "verify" ++ Color.reset ++ "              Verify package signatures\n", .{});
-    style.print("      " ++ Color.teal ++ "sign" ++ Color.reset ++ "                Sign a package\n", .{});
-    style.print("      " ++ Color.teal ++ "generate-key" ++ Color.reset ++ "        Generate signing key pair\n", .{});
-    style.print("      " ++ Color.teal ++ "oidc setup" ++ Color.reset ++ "          Setup npm trusted publisher\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Security:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "audit" ++ style.reset ++ "               Check for security vulnerabilities\n", .{});
+    style.print("      " ++ style.cyan ++ "verify" ++ style.reset ++ "              Verify package signatures\n", .{});
+    style.print("      " ++ style.cyan ++ "sign" ++ style.reset ++ "                Sign a package\n", .{});
+    style.print("      " ++ style.cyan ++ "generate-key" ++ style.reset ++ "        Generate signing key pair\n", .{});
+    style.print("      " ++ style.cyan ++ "oidc setup" ++ style.reset ++ "          Setup npm trusted publisher\n\n", .{});
 
     // Project
-    style.print("    " ++ Color.bold_teal ++ "Project:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "init" ++ Color.reset ++ "                Initialize a new project\n", .{});
-    style.print("      " ++ Color.teal ++ "doctor" ++ Color.reset ++ "              Check system health\n", .{});
-    style.print("      " ++ Color.teal ++ "dedupe" ++ Color.reset ++ "              Deduplicate dependencies\n", .{});
-    style.print("      " ++ Color.teal ++ "clean" ++ Color.reset ++ "               Clean project artifacts\n", .{});
-    style.print("      " ++ Color.teal ++ "bootstrap" ++ Color.reset ++ "           Bootstrap pantry installation\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Project:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "init" ++ style.reset ++ "                Initialize a new project\n", .{});
+    style.print("      " ++ style.cyan ++ "doctor" ++ style.reset ++ "              Check system health\n", .{});
+    style.print("      " ++ style.cyan ++ "dedupe" ++ style.reset ++ "              Deduplicate dependencies\n", .{});
+    style.print("      " ++ style.cyan ++ "clean" ++ style.reset ++ "               Clean project artifacts\n", .{});
+    style.print("      " ++ style.cyan ++ "bootstrap" ++ style.reset ++ "           Bootstrap pantry installation\n\n", .{});
 
     // Services
-    style.print("    " ++ Color.bold_teal ++ "Services:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "services" ++ Color.reset ++ "            List all services\n", .{});
-    style.print("      " ++ Color.teal ++ "start" ++ Color.reset ++ "               Start a service\n", .{});
-    style.print("      " ++ Color.teal ++ "stop" ++ Color.reset ++ "                Stop a service\n", .{});
-    style.print("      " ++ Color.teal ++ "restart" ++ Color.reset ++ "             Restart a service\n", .{});
-    style.print("      " ++ Color.teal ++ "status" ++ Color.reset ++ "              Show service status\n", .{});
-    style.print("      " ++ Color.teal ++ "enable" ++ Color.reset ++ "              Enable a service\n", .{});
-    style.print("      " ++ Color.teal ++ "disable" ++ Color.reset ++ "             Disable a service\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Services:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "services" ++ style.reset ++ "            List all services\n", .{});
+    style.print("      " ++ style.cyan ++ "start" ++ style.reset ++ "               Start a service\n", .{});
+    style.print("      " ++ style.cyan ++ "stop" ++ style.reset ++ "                Stop a service\n", .{});
+    style.print("      " ++ style.cyan ++ "restart" ++ style.reset ++ "             Restart a service\n", .{});
+    style.print("      " ++ style.cyan ++ "status" ++ style.reset ++ "              Show service status\n", .{});
+    style.print("      " ++ style.cyan ++ "enable" ++ style.reset ++ "              Enable a service\n", .{});
+    style.print("      " ++ style.cyan ++ "disable" ++ style.reset ++ "             Disable a service\n\n", .{});
 
     // Cache
-    style.print("    " ++ Color.bold_teal ++ "Cache:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "cache:stats" ++ Color.reset ++ "         Show cache statistics\n", .{});
-    style.print("      " ++ Color.teal ++ "cache:clear" ++ Color.reset ++ "         Clear the cache\n", .{});
-    style.print("      " ++ Color.teal ++ "cache:clean" ++ Color.reset ++ "         Remove stale cache entries\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Cache:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "cache:stats" ++ style.reset ++ "         Show cache statistics\n", .{});
+    style.print("      " ++ style.cyan ++ "cache:clear" ++ style.reset ++ "         Clear the cache\n", .{});
+    style.print("      " ++ style.cyan ++ "cache:clean" ++ style.reset ++ "         Remove stale cache entries\n\n", .{});
 
     // Environment
-    style.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "env:list" ++ Color.reset ++ "            List project environments\n", .{});
-    style.print("      " ++ Color.teal ++ "env:inspect" ++ Color.reset ++ "         Inspect environment details\n", .{});
-    style.print("      " ++ Color.teal ++ "env:clean" ++ Color.reset ++ "           Clean stale environments\n", .{});
-    style.print("      " ++ Color.teal ++ "env:remove" ++ Color.reset ++ "          Remove an environment\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Environment:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "env:list" ++ style.reset ++ "            List project environments\n", .{});
+    style.print("      " ++ style.cyan ++ "env:inspect" ++ style.reset ++ "         Inspect environment details\n", .{});
+    style.print("      " ++ style.cyan ++ "env:clean" ++ style.reset ++ "           Clean stale environments\n", .{});
+    style.print("      " ++ style.cyan ++ "env:remove" ++ style.reset ++ "          Remove an environment\n\n", .{});
 
     // Shell / Environment
-    style.print("    " ++ Color.bold_teal ++ "Environment:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "env" ++ Color.reset ++ "                 Activate project environment (eval \"$(pantry env)\")\n", .{});
-    style.print("      " ++ Color.teal ++ "shell:integrate" ++ Color.reset ++ "     Install automatic shell integration\n", .{});
-    style.print("      " ++ Color.teal ++ "dev:shellcode" ++ Color.reset ++ "       Generate shell integration code\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Environment:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "env" ++ style.reset ++ "                 Activate project environment (eval \"$(pantry env)\")\n", .{});
+    style.print("      " ++ style.cyan ++ "shell:integrate" ++ style.reset ++ "     Install automatic shell integration\n", .{});
+    style.print("      " ++ style.cyan ++ "dev:shellcode" ++ style.reset ++ "       Generate shell integration code\n\n", .{});
 
     // Shims
-    style.print("    " ++ Color.bold_teal ++ "Shims:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "shim" ++ Color.reset ++ "                Create a shim for a command\n", .{});
-    style.print("      " ++ Color.teal ++ "shim:list" ++ Color.reset ++ "           List all shims\n", .{});
-    style.print("      " ++ Color.teal ++ "shim:remove" ++ Color.reset ++ "         Remove a shim\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Shims:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "shim" ++ style.reset ++ "                Create a shim for a command\n", .{});
+    style.print("      " ++ style.cyan ++ "shim:list" ++ style.reset ++ "           List all shims\n", .{});
+    style.print("      " ++ style.cyan ++ "shim:remove" ++ style.reset ++ "         Remove a shim\n\n", .{});
 
     // Other
-    style.print("    " ++ Color.bold_teal ++ "Other:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "whoami" ++ Color.reset ++ "              Show current user\n", .{});
-    style.print("      " ++ Color.teal ++ "help" ++ Color.reset ++ "                Show this help message\n", .{});
-    style.print("      " ++ Color.teal ++ "version" ++ Color.reset ++ "             Show version information\n\n", .{});
+    style.print("    " ++ bold_cyan ++ "Other:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "whoami" ++ style.reset ++ "              Show current user\n", .{});
+    style.print("      " ++ style.cyan ++ "help" ++ style.reset ++ "                Show this help message\n", .{});
+    style.print("      " ++ style.cyan ++ "version" ++ style.reset ++ "             Show version information\n\n", .{});
 
     // Global Options
-    style.print("  " ++ Color.bold ++ "GLOBAL OPTIONS:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.teal ++ "-h" ++ Color.reset ++ ", " ++ Color.teal ++ "--help" ++ Color.reset ++ "          Show help information\n", .{});
-    style.print("      " ++ Color.teal ++ "-V" ++ Color.reset ++ ", " ++ Color.teal ++ "--version" ++ Color.reset ++ "       Show version information\n\n", .{});
+    style.print("  " ++ style.bold ++ "GLOBAL OPTIONS:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "-h" ++ style.reset ++ ", " ++ style.cyan ++ "--help" ++ style.reset ++ "          Show help information\n", .{});
+    style.print("      " ++ style.cyan ++ "-V" ++ style.reset ++ ", " ++ style.cyan ++ "--version" ++ style.reset ++ "       Show version information\n\n", .{});
 
     // Examples
-    style.print("  " ++ Color.bold ++ "EXAMPLES:" ++ Color.reset ++ "\n", .{});
-    style.print("      " ++ Color.dim ++ "pantry install" ++ Color.reset ++ "                  Install all dependencies\n", .{});
-    style.print("      " ++ Color.dim ++ "pantry add lodash" ++ Color.reset ++ "               Add lodash to dependencies\n", .{});
-    style.print("      " ++ Color.dim ++ "pantry add -D typescript" ++ Color.reset ++ "        Add typescript to devDependencies\n", .{});
-    style.print("      " ++ Color.dim ++ "pantry run build" ++ Color.reset ++ "                Run the build script\n", .{});
-    style.print("      " ++ Color.dim ++ "pantry publish" ++ Color.reset ++ "                  Publish with OIDC (in CI/CD)\n\n", .{});
+    style.print("  " ++ style.bold ++ "EXAMPLES:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.dim ++ "pantry install" ++ style.reset ++ "                  Install all dependencies\n", .{});
+    style.print("      " ++ style.dim ++ "pantry add lodash" ++ style.reset ++ "               Add lodash to dependencies\n", .{});
+    style.print("      " ++ style.dim ++ "pantry add -D typescript" ++ style.reset ++ "        Add typescript to devDependencies\n", .{});
+    style.print("      " ++ style.dim ++ "pantry run build" ++ style.reset ++ "                Run the build script\n", .{});
+    style.print("      " ++ style.dim ++ "pantry publish" ++ style.reset ++ "                  Publish with OIDC (in CI/CD)\n\n", .{});
 
-    style.print("  " ++ Color.dim ++ "For more info on a command: pantry <command> --help" ++ Color.reset ++ "\n\n", .{});
+    style.print("  " ++ style.dim ++ "For more info on a command: pantry <command> --help" ++ style.reset ++ "\n\n", .{});
 }
 
 /// Help command action

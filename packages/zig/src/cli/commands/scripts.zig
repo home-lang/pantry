@@ -101,7 +101,7 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     defer allocator.free(display_command);
 
     // Print what we're running
-    style.print("\x1b[2m$ {s}\x1b[0m\n", .{display_command});
+    style.print("{s}$ {s}{s}\n", .{ style.dim, display_command, style.reset });
 
     // Build argv for shell execution
     var argv_buf: [128][]const u8 = undefined;
@@ -201,7 +201,10 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     var output_list = std.ArrayList(u8){};
     defer output_list.deinit(allocator);
 
-    try output_list.appendSlice(allocator, "\x1b[1mAvailable scripts:\x1b[0m\n\n");
+    try output_list.appendSlice(allocator, style.bold);
+    try output_list.appendSlice(allocator, "Available scripts:");
+    try output_list.appendSlice(allocator, style.reset);
+    try output_list.appendSlice(allocator, "\n\n");
 
     // Collect and sort script names
     var script_names_buf: [100][]const u8 = undefined;
@@ -232,9 +235,11 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     // Print scripts in sorted order
     for (script_names) |name| {
         const command = scripts.get(name).?;
-        try output_list.appendSlice(allocator, "  \x1b[36m");
+        try output_list.appendSlice(allocator, "  ");
+        try output_list.appendSlice(allocator, style.cyan);
         try output_list.appendSlice(allocator, name);
-        try output_list.appendSlice(allocator, "\x1b[0m\n    ");
+        try output_list.appendSlice(allocator, style.reset);
+        try output_list.appendSlice(allocator, "\n    ");
         try output_list.appendSlice(allocator, command);
         try output_list.appendSlice(allocator, "\n\n");
     }

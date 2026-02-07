@@ -10,7 +10,7 @@ fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: [
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
 
     // Option to strip debug symbols for smaller binaries
     const strip = b.option(bool, "strip", "Strip debug symbols") orelse false;

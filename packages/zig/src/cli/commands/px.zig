@@ -25,9 +25,9 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     const package_name = options.package_name orelse executable_name;
 
     if (!options.silent) {
-        style.print("\x1b[34m📦 Running package executable\x1b[0m\n", .{});
-        style.print("\x1b[2m   Package: {s}\x1b[0m\n", .{package_name});
-        style.print("\x1b[2m   Executable: {s}\x1b[0m\n\n", .{executable_name});
+        style.print("{s}📦 Running package executable{s}\n", .{ style.blue, style.reset });
+        style.print("{s}   Package: {s}{s}\n", .{ style.dim, package_name, style.reset });
+        style.print("{s}   Executable: {s}{s}\n\n", .{ style.dim, executable_name, style.reset });
     }
 
     // Get current working directory
@@ -73,7 +73,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     // If not found, install the package
     if (!found_local and !found_global) {
         if (!options.silent) {
-            style.print("\x1b[33m📥 Package not found, installing {s}...\x1b[0m\n\n", .{package_name});
+            style.print("{s}📥 Package not found, installing {s}...{s}\n\n", .{ style.yellow, package_name, style.reset });
         }
 
         // Install the package globally temporarily

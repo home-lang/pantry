@@ -80,6 +80,11 @@ pub fn executePreInstallHook(
     };
     defer allocator.free(config_content);
 
+    // Quick check: skip full JSON parsing if "preinstall" doesn't appear in the file
+    if (std.mem.indexOf(u8, config_content, "\"preinstall\"") == null) {
+        return null;
+    }
+
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_content, .{});
     defer parsed.deinit();
 
@@ -133,6 +138,11 @@ pub fn executePostInstallHook(
         return null;
     };
     defer allocator.free(config_content_post);
+
+    // Quick check: skip full JSON parsing if "postinstall" doesn't appear in the file
+    if (std.mem.indexOf(u8, config_content_post, "\"postinstall\"") == null) {
+        return null;
+    }
 
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_content_post, .{});
     defer parsed.deinit();

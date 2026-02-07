@@ -19,6 +19,73 @@ const cache = lib.cache;
 const string = lib.string;
 const install = lib.install;
 
+/// Fast path: check if all packages are already installed without doing expensive
+/// workspace detection, config loading, hook execution, etc.
+/// Returns a CommandResult if everything is up-to-date, null otherwise.
+fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64) !?types.CommandResult {
+    const detector = @import("../../../deps/detector.zig");
+    const parser = @import("../../../deps/parser.zig");
+    const lockfile_reader = @import("../../../packages/lockfile.zig");
+
+    // 1. Find dep file in CWD only (no walking up directories — that's the slow path's job)
+    const dep_file_names = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json" };
+    var dep_path: ?[]const u8 = null;
+    defer if (dep_path) |p| allocator.free(p);
+
+    for (dep_file_names) |name| {
+        const full = try std.fs.path.join(allocator, &[_][]const u8{ cwd, name });
+        io_helper.accessAbsolute(full, .{}) catch {
+            allocator.free(full);
+            continue;
+        };
+        dep_path = full;
+        break;
+    }
+    const found_path = dep_path orelse return null;
+
+    // 2. Check lockfile exists and read it
+    const lockfile_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry.lock" });
+    defer allocator.free(lockfile_path);
+
+    var lockfile = lockfile_reader.readLockfile(allocator, lockfile_path) catch return null;
+    defer lockfile.deinit(allocator);
+
+    if (lockfile.packages.count() == 0) return null;
+
+    // 3. Parse dep file to get dependency list
+    const format = detector.inferFormat(std.fs.path.basename(found_path)) orelse return null;
+    const deps_file = detector.DepsFile{ .path = found_path, .format = format };
+    const deps = parser.inferDependencies(allocator, deps_file) catch return null;
+    defer {
+        for (deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(deps);
+    }
+
+    if (deps.len == 0) return null;
+
+    // 4. Filter to non-peer deps (default install behavior)
+    //    and check all against lockfile + verify dirs exist
+    for (deps) |dep| {
+        if (dep.dep_type == .peer) continue; // Skip peer deps by default
+        if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator)) {
+            return null; // At least one package needs work → fall through to slow path
+        }
+    }
+
+    // 5. All up-to-date!
+    const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
+    const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+    const pantry_version = version_options.version;
+    const pantry_hash = version_options.commit_hash;
+    style.printHeader("install", pantry_version, pantry_hash);
+    style.printUpToDate(deps.len, elapsed_ms);
+    return .{ .exit_code = 0 };
+}
+
 /// Install packages - main entry point
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !types.CommandResult {
     return installCommandWithOptions(allocator, args, .{});
@@ -58,8 +125,15 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const cwd = try io_helper.getCwdAlloc(allocator);
         defer allocator.free(cwd);
 
-        // Start timing for install operation
-        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        // Start timing for install operation (millisecond precision)
+        const start_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_time = @as(i64, @intCast(start_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts.nsec, 1_000_000)));
+
+        // ── FAST PATH: check if everything is already up-to-date ──
+        // This avoids expensive workspace detection, config loading, hooks, etc.
+        if (try tryFastUpToDate(allocator, cwd, start_time)) |result| {
+            return result;
+        }
 
         // First, check if we're in a workspace
         const workspace_file = try detector.findWorkspaceFile(allocator, cwd);
@@ -73,30 +147,28 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             return try workspace.installWorkspaceCommandWithOptions(allocator, ws_file.root_dir, ws_file.path, options);
         }
 
-        // Try to load dependencies from config file first (pantry.config.ts, etc.)
-        const config_deps = try helpers.loadDependenciesFromConfig(allocator, cwd);
-
-        // If config file had dependencies, use those
+        // Try standard dep file detection first (fast: just filesystem access checks)
+        // Only fall back to config loading (slow: may spawn Bun/Node) if no dep file found
         var deps: []parser.PackageDependency = undefined;
         var deps_file_path: ?[]const u8 = null;
+        var used_config = false;
         defer if (deps_file_path) |path| allocator.free(path);
 
-        if (config_deps) |config_dep_list| {
-            // Use dependencies from config file
-            deps = config_dep_list;
-            // Don't set deps_file_path since we're using config
+        if (try detector.findDepsFile(allocator, cwd)) |deps_file| {
+            deps_file_path = deps_file.path;
+            deps = try parser.inferDependencies(allocator, deps_file);
         } else {
-            // Fall back to dependency file detection
-            const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
+            // No standard dep file, try config file (pantry.config.ts, etc.)
+            const config_deps = try helpers.loadDependenciesFromConfig(allocator, cwd);
+            if (config_deps) |config_dep_list| {
+                deps = config_dep_list;
+                used_config = true;
+            } else {
                 return .{
                     .exit_code = 1,
                     .message = try allocator.dupe(u8, "Error: No packages specified and no dependency file found"),
                 };
-            };
-            deps_file_path = deps_file.path;
-
-            // Parse dependencies from file
-            deps = try parser.inferDependencies(allocator, deps_file);
+            }
         }
 
         defer {
@@ -104,8 +176,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 var d = dep.*;
                 d.deinit(allocator);
             }
-            // Only free deps if we allocated it (not if it came from config_deps)
-            if (config_deps == null) {
+            // Only free deps if we allocated it (not if it came from config)
+            if (!used_config) {
                 allocator.free(deps);
             }
         }
@@ -204,12 +276,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
         defer allocator.free(proj_hash_short);
 
-        // Hash dependency file contents (or project dir if using config)
+        // Hash dependency file path (or project dir if using config)
+        // Uses path instead of file contents to avoid re-reading the dep file
         const hash_input = if (deps_file_path) |path|
-            try io_helper.readFileAlloc(allocator, path, 1024 * 1024)
+            path
         else
-            try allocator.dupe(u8, proj_dir);
-        defer allocator.free(hash_input);
+            proj_dir;
 
         var dep_hasher = std.crypto.hash.Md5.init(.{});
         dep_hasher.update(hash_input);
@@ -288,13 +360,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
-        // Read existing lockfile for incremental install skipping
-        const lockfile_reader = @import("../../../packages/lockfile.zig");
-        const lockfile_path_for_read = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
-        defer allocator.free(lockfile_path_for_read);
-        var existing_lockfile: ?lib.packages.Lockfile = lockfile_reader.readLockfile(allocator, lockfile_path_for_read) catch null;
-        defer if (existing_lockfile) |*lf| lf.deinit(allocator);
-
         // Clean Bun-style output - just show what we're installing
         style.printInstalling(deps_to_install.len);
 
@@ -306,32 +371,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         allocator.free(shared_installer.data_dir);
         shared_installer.data_dir = try allocator.dupe(u8, env_dir);
         defer shared_installer.deinit();
-
-        // Check lockfile for packages that can be skipped (already installed, matching version)
-        var skipped_count: usize = 0;
-        if (existing_lockfile) |*lf| {
-            for (deps_to_install, 0..) |dep, i| {
-                _ = i;
-                if (helpers.canSkipFromLockfile(&lf.packages, dep.name, dep.version, proj_dir, allocator)) {
-                    skipped_count += 1;
-                }
-            }
-        }
-
-        if (skipped_count == deps_to_install.len) {
-            // All packages already installed and match lockfile - nothing to do
-            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
-            const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-            const pantry_version = version_options.version;
-            const pantry_hash = version_options.commit_hash;
-            style.printHeader("install", pantry_version, pantry_hash);
-            style.printUpToDate(deps_to_install.len, elapsed_ms);
-            return .{ .exit_code = 0 };
-        }
-
-        if (skipped_count > 0) {
-            style.printSkipping(skipped_count, deps_to_install.len - skipped_count);
-        }
 
         // Install results storage
         var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
@@ -443,7 +482,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .cwd_path = cwd,
             .shared_installer = &shared_installer,
             .opts = options,
-            .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
+            .lockfile_packages = null, // Fast path already checked; slow path installs everything
             .resume_packages = if (resuming) &checkpoint.installed_packages else null,
         };
 
@@ -724,7 +763,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const pantry_hash = version_options.commit_hash;
 
         const total_deps = deps.len;
-        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
         style.printHeader("install", pantry_version, pantry_hash);
@@ -782,8 +822,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
 
-    // Start timing
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    // Start timing (millisecond precision)
+    const start_ts2 = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const start_time = @as(i64, @intCast(start_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts2.nsec, 1_000_000)));
 
     // Print header with Pantry version info
     const pantry_version = version_options.version;
@@ -1058,7 +1099,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     }
 
     // Clean summary with timing
-    const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const end_ts2 = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const end_time = @as(i64, @intCast(end_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts2.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
     style.printSummary(success_count, args.len, elapsed_ms);

@@ -344,8 +344,17 @@ pub fn installWorkspaceCommandWithOptions(
             allocator.free(deps);
         };
 
-        // Try config file first
-        if (member.config_path) |_| {
+        // Try deps file first (fast: just filesystem access)
+        if (member.deps_file_path != null) {
+            const detector = @import("../../../deps/detector.zig");
+            if (try detector.findDepsFile(allocator, member.abs_path)) |deps_file| {
+                defer allocator.free(deps_file.path);
+                member_deps = try parser.inferDependencies(allocator, deps_file);
+            }
+        }
+
+        // Fall back to config file if deps file didn't work (slow: may spawn bun/node)
+        if (member_deps == null and member.config_path != null) {
             var config_result = @import("../../../config/loader.zig").loadpantryConfig(
                 allocator,
                 .{
@@ -358,15 +367,6 @@ pub fn installWorkspaceCommandWithOptions(
                 defer config.deinit();
                 const deps_extractor = @import("../../../config/dependencies.zig");
                 member_deps = try deps_extractor.extractDependencies(allocator, config.*);
-            }
-        }
-
-        // Try deps file if config didn't work
-        if (member_deps == null and member.deps_file_path != null) {
-            const detector = @import("../../../deps/detector.zig");
-            if (try detector.findDepsFile(allocator, member.abs_path)) |deps_file| {
-                defer allocator.free(deps_file.path);
-                member_deps = try parser.inferDependencies(allocator, deps_file);
             }
         }
 
@@ -400,9 +400,12 @@ pub fn installWorkspaceCommandWithOptions(
                     }
                 }
 
-                // Create a unique key for this dependency
-                const dep_key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ resolved_dep.name, resolved_dep.version });
-                defer allocator.free(dep_key);
+                // Create a unique key for this dependency (stack buffer to avoid heap alloc per dep)
+                var key_buf: [512]u8 = undefined;
+                const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ resolved_dep.name, resolved_dep.version }) catch
+                    try std.fmt.allocPrint(allocator, "{s}@{s}", .{ resolved_dep.name, resolved_dep.version });
+                const key_is_heap = dep_key.ptr != &key_buf;
+                defer if (key_is_heap) allocator.free(dep_key);
 
                 // Only add if we haven't seen this exact dep before
                 if (!deps_seen.contains(dep_key)) {

@@ -20,6 +20,7 @@ pub const dim = "\x1b[2m";
 pub const bold = "\x1b[1m";
 pub const italic = "\x1b[3m";
 pub const dim_italic = "\x1b[2;3m";
+pub const bold_cyan = "\x1b[1;36m";
 pub const reset = "\x1b[0m";
 
 // ── Symbols (Bun-style: + for added, - for removed) ────────────────────────

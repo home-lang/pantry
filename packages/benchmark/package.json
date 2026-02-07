@@ -3,8 +3,17 @@
   "type": "module",
   "version": "0.7.5",
   "private": true,
-  "description": "Performance benchmarks for pantry file detection",
+  "description": "Performance benchmarks for pantry",
   "scripts": {
+    "benchmark": "bun run pm-benchmark.ts",
+    "benchmark:small": "bun run pm-benchmark.ts --fixture=small",
+    "benchmark:medium": "bun run pm-benchmark.ts --fixture=medium",
+    "benchmark:large": "bun run pm-benchmark.ts --fixture=large",
+    "benchmark:cold": "bun run pm-benchmark.ts --scenario=cold",
+    "benchmark:warm": "bun run pm-benchmark.ts --scenario=warm",
     "file-detection": "bun run file-detection-comparison.ts"
+  },
+  "devDependencies": {
+    "mitata": "^1.0.34"
   }
 }

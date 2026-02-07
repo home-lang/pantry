@@ -741,10 +741,8 @@ fn createTarball(
     defer allocator.free(staging_pkg);
 
     // Clean and create staging directory
-    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
-    const mkdir_result = try io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", staging_pkg });
-    defer allocator.free(mkdir_result.stdout);
-    defer allocator.free(mkdir_result.stderr);
+    io_helper.deleteTree(staging_base) catch {};
+    try io_helper.makePath(staging_pkg);
 
     // Parse package.json to get "files" array and "bin" field
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, config_content, .{}) catch {
@@ -808,7 +806,7 @@ fn createTarball(
 
                 // Create parent directory if needed
                 if (std.fs.path.dirname(dst)) |parent| {
-                    _ = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch {};
+                    io_helper.makePath(parent) catch {};
                 }
 
                 // Use cp -r to handle both files and directories
@@ -828,7 +826,7 @@ fn createTarball(
             defer allocator.free(bin_dst);
 
             if (std.fs.path.dirname(bin_dst)) |parent| {
-                _ = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch {};
+                io_helper.makePath(parent) catch {};
             }
             const cp_result = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-r", bin_src, bin_dst }) catch continue;
             allocator.free(cp_result.stdout);
@@ -836,15 +834,28 @@ fn createTarball(
         }
 
         // Always include README*, LICENSE*, CHANGELOG* if they exist
-        const always_include = [_][]const u8{ "README*", "LICENSE*", "CHANGELOG*", "readme*", "license*", "changelog*" };
-        for (always_include) |pattern| {
-            const find_cmd = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, pattern });
-            defer allocator.free(find_cmd);
-            // Use shell glob to find matching files
-            const glob_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", try std.fmt.allocPrint(allocator, "cp {s} {s}/ 2>/dev/null || true", .{ find_cmd, staging_pkg }) }) catch continue;
-            allocator.free(glob_result.stdout);
-            allocator.free(glob_result.stderr);
-        }
+        // Use native directory iteration instead of shell glob to avoid command injection
+        const always_include_prefixes = [_][]const u8{ "README", "LICENSE", "CHANGELOG", "readme", "license", "changelog" };
+        if (io_helper.openDirAbsoluteForIteration(package_dir)) |dir_val| {
+            var dir = dir_val;
+            defer dir.close();
+            var iter = dir.iterate();
+            while (iter.next() catch null) |entry| {
+                if (entry.kind != .file) continue;
+                for (always_include_prefixes) |prefix| {
+                    if (std.mem.startsWith(u8, entry.name, prefix)) {
+                        const src = std.fs.path.join(allocator, &[_][]const u8{ package_dir, entry.name }) catch continue;
+                        defer allocator.free(src);
+                        const dst = std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, entry.name }) catch continue;
+                        defer allocator.free(dst);
+                        const cp_result = io_helper.childRun(allocator, &[_][]const u8{ "cp", src, dst }) catch continue;
+                        allocator.free(cp_result.stdout);
+                        allocator.free(cp_result.stderr);
+                        break;
+                    }
+                }
+            }
+        } else |_| {}
     } else {
         // No "files" field - use default behavior (exclude common non-publishable files)
         return createTarballDefault(allocator, package_dir, staging_pkg, staging_base, tarball_path);

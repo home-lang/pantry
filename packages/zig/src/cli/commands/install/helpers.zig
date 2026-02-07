@@ -197,12 +197,10 @@ pub fn canSkipFromLockfile(
         return false;
     }
 
-    // Check if destination directory actually exists
-    const dest_dir = std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
-    defer allocator.free(dest_dir);
-
-    var dir = io_helper.cwd().openDir(io_helper.io, dest_dir, .{}) catch return false;
-    dir.close(io_helper.io);
+    // Check if destination directory actually exists (use stack buffer + access instead of openDir)
+    var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
+    io_helper.accessAbsolute(dest_dir, .{}) catch return false;
 
     return true;
 }
@@ -214,16 +212,15 @@ fn canSkipFromLockfileWithKey(
     clean_name: []const u8,
     dep_version: []const u8,
     proj_dir: []const u8,
-    allocator: std.mem.Allocator,
+    _: std.mem.Allocator,
 ) bool {
     const entry = lockfile_packages.get(key) orelse return false;
     if (!std.mem.eql(u8, entry.version, dep_version) and !std.mem.eql(u8, entry.name, clean_name)) {
         return false;
     }
-    const dest_dir = std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
-    defer allocator.free(dest_dir);
-    var dir = io_helper.cwd().openDir(io_helper.io, dest_dir, .{}) catch return false;
-    dir.close(io_helper.io);
+    var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
+    io_helper.accessAbsolute(dest_dir, .{}) catch return false;
     return true;
 }
 
@@ -319,7 +316,7 @@ pub fn installSinglePackage(
             // Uses the shared installer's resolveNpmPackage which handles semver ranges,
             // dist-tags, and deduplication via InstallingStack
             if (lookupPantryRegistry(allocator, dep.name) catch |err| lkup: {
-                style.print("\x1b[2m  ? {s}: pantry registry lookup failed: {}\x1b[0m\n", .{ dep.name, err });
+                style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, dep.name, err, style.reset });
                 break :lkup null;
             }) |info| {
                 var pantry_info = info;
@@ -581,11 +578,14 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
     try findAndLinkBinDirs(allocator, package_path, bin_link_dir, verbose);
 }
 
-/// Make a file executable (chmod +x)
+/// Make a file executable (chmod +x) using native syscall instead of spawning a process
 fn makeExecutable(path: []const u8) void {
-    // Use child process to chmod
-    var child = io_helper.spawn(.{ .argv = &.{ "chmod", "+x", path } }) catch return;
-    _ = io_helper.wait(&child) catch {};
+    // Use libc chmod — avoids fork+exec overhead per file
+    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (path.len >= std.fs.max_path_bytes) return;
+    @memcpy(path_buf[0..path.len], path);
+    path_buf[path.len] = 0;
+    _ = std.c.chmod(&path_buf, 0o755);
 }
 
 /// Recursively search for bin directories and create symlinks (with depth limit)

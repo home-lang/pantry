@@ -1104,19 +1104,20 @@ pub const Installer = struct {
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            style.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
-                lines_up,
-                progress_opts.dim_str,
-                "\x1b[0m",
+            style.moveUp(lines_up);
+            style.clearLine();
+            style.print("{s}+{s} {s}@{s}{s}{s} {s}(extracting...){s}\n", .{
+                style.dim,
+                style.reset,
                 progress_opts.pkg_name,
-                progress_opts.dim_str,
-                progress_opts.italic_str,
+                style.dim,
+                style.italic,
                 progress_opts.pkg_version,
-                progress_opts.dim_str,
-                "\x1b[0m",
+                style.dim,
+                style.reset,
             });
             if (progress_opts.line_offset < progress_opts.total_deps - 1) {
-                style.print("\x1b[{d}B", .{lines_up - 1});
+                style.moveDown(lines_up - 1);
             }
         }
 
@@ -1366,19 +1367,20 @@ pub const Installer = struct {
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            style.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
-                lines_up,
-                progress_opts.dim_str,
-                "\x1b[0m",
+            style.moveUp(lines_up);
+            style.clearLine();
+            style.print("{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
+                style.dim,
+                style.reset,
                 progress_opts.pkg_name,
-                progress_opts.dim_str,
-                progress_opts.italic_str,
+                style.dim,
+                style.italic,
                 progress_opts.pkg_version,
-                progress_opts.dim_str,
-                "\x1b[0m",
+                style.dim,
+                style.reset,
             });
             if (progress_opts.line_offset < progress_opts.total_deps - 1) {
-                style.print("\x1b[{d}B", .{lines_up - 1});
+                style.moveDown(lines_up - 1);
             }
         }
 
@@ -1819,19 +1821,20 @@ pub const Installer = struct {
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
             const lines_up = progress_opts.total_deps - progress_opts.line_offset;
-            style.print("\x1b[{d}A\r\x1b[K{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
-                lines_up,
-                progress_opts.dim_str,
-                "\x1b[0m",
+            style.moveUp(lines_up);
+            style.clearLine();
+            style.print("{s}+{s} {s}@{s}{s}{s} {s}(verifying...){s}\n", .{
+                style.dim,
+                style.reset,
                 progress_opts.pkg_name,
-                progress_opts.dim_str,
-                progress_opts.italic_str,
+                style.dim,
+                style.italic,
                 progress_opts.pkg_version,
-                progress_opts.dim_str,
-                "\x1b[0m",
+                style.dim,
+                style.reset,
             });
             if (progress_opts.line_offset < progress_opts.total_deps - 1) {
-                style.print("\x1b[{d}B", .{lines_up - 1});
+                style.moveDown(lines_up - 1);
             }
         }
 
@@ -2121,14 +2124,17 @@ pub const Installer = struct {
         }
     }
 
-    /// Make a file executable (chmod +x)
+    /// Make a file executable (chmod +x) using native syscall
     fn makeExecutable(self: *Installer, path: []const u8) void {
         _ = self;
-        // Use chmod to make the file executable
-        var child = io_helper.spawn(.{ .argv = &.{ "chmod", "+x", path } }) catch return;
-        _ = io_helper.wait(&child) catch |err| {
-            style.print("Warning: chmod +x failed for {s}: {}\n", .{ path, err });
-        };
+        var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+        if (path.len >= std.fs.max_path_bytes) return;
+        @memcpy(path_buf[0..path.len], path);
+        path_buf[path.len] = 0;
+        const result = std.c.chmod(&path_buf, 0o755);
+        if (result != 0) {
+            style.print("Warning: chmod +x failed for {s}\n", .{path});
+        }
     }
 
     /// Install package dependencies recursively

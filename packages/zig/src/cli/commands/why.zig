@@ -1,6 +1,7 @@
 const std = @import("std");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -51,7 +52,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     // Check if package is a direct dependency
     if (deps_map.get(package_name)) |dep_info| {
         try stdout.print("\n📦 {s}@{s}\n\n", .{ package_name, dep_info.version });
-        try stdout.print("This package is a {s}direct dependency{s}.\n", .{ "\x1b[1m", "\x1b[0m" });
+        try stdout.print("This package is a {s}direct dependency{s}.\n", .{ style.bold, style.reset });
         try stdout.print("Listed in: dependencies\n\n", .{});
 
         return CommandResult.success(allocator, null);

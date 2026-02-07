@@ -480,11 +480,17 @@ fn createScriptShim(
     };
     file.close(io_helper.io);
 
-    // Make executable on Unix
+    // Make executable on Unix using native syscall
     if (builtin.os.tag != .windows) {
-        _ = io_helper.childRun(allocator, &[_][]const u8{ "chmod", "+x", unix_shim_path }) catch |err| {
-            style.print("Warning: Failed to make {s} executable: {}\n", .{ unix_shim_path, err });
-        };
+        var chmod_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+        if (unix_shim_path.len < std.fs.max_path_bytes) {
+            @memcpy(chmod_buf[0..unix_shim_path.len], unix_shim_path);
+            chmod_buf[unix_shim_path.len] = 0;
+            const result = std.c.chmod(&chmod_buf, 0o755);
+            if (result != 0) {
+                style.print("Warning: Failed to make {s} executable\n", .{unix_shim_path});
+            }
+        }
     }
 
     // Create Windows .cmd shim

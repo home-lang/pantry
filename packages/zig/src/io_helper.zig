@@ -43,19 +43,16 @@ pub fn cwd() Dir {
 
 /// Read entire file contents using Io.Dir.readFile
 pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
-    // Get actual file size first to avoid over-allocating
-    const file_size: usize = blk: {
-        const stat = statFile(path) catch break :blk 4096; // fallback to small buffer
-        break :blk @intCast(@min(stat.size, max_size));
-    };
-    const alloc_size = if (file_size == 0) @min(max_size, 4096) else file_size;
+    // Use a generous initial buffer to avoid a separate stat() call (which opens the file twice).
+    // Most config/dep files are <64KB; the retry path handles larger files.
+    const initial_size = @min(max_size, 65536);
 
-    var buffer = try allocator.alloc(u8, alloc_size);
+    var buffer = try allocator.alloc(u8, initial_size);
     errdefer allocator.free(buffer);
 
     const result = cwd().readFile(io, path, buffer) catch |err| {
         // If buffer was too small, retry with max_size
-        if (err == error.BufferTooSmall and alloc_size < max_size) {
+        if (err == error.BufferTooSmall and initial_size < max_size) {
             allocator.free(buffer);
             buffer = try allocator.alloc(u8, max_size);
             const retry = try cwd().readFile(io, path, buffer);

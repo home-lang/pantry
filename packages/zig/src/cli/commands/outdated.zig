@@ -1,6 +1,7 @@
 const std = @import("std");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
+const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 const DependencyInfo = common.DependencyInfo;
@@ -14,15 +15,15 @@ pub const VersionStatus = enum {
 
     pub fn color(self: VersionStatus) []const u8 {
         return switch (self) {
-            .up_to_date => "\x1b[32m", // Green
-            .minor_update => "\x1b[33m", // Yellow
-            .major_update => "\x1b[31m", // Red
-            .unknown => "\x1b[90m", // Gray
+            .up_to_date => style.green,
+            .minor_update => style.yellow,
+            .major_update => style.red,
+            .unknown => style.dim,
         };
     }
 
     pub fn reset() []const u8 {
-        return "\x1b[0m";
+        return style.reset;
     }
 };
 

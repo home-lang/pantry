@@ -100,16 +100,16 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
     // Print results
     if (!options.silent) {
         if (removed_packages.items.len > 0) {
-            style.print("\x1b[32m✓\x1b[0m Removed {d} package(s):\n", .{removed_packages.items.len});
+            style.print("{s}✓{s} Removed {d} package(s):\n", .{ style.green, style.reset, removed_packages.items.len });
             for (removed_packages.items) |pkg| {
-                style.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
+                style.print("  {s}−{s} {s}\n", .{ style.dim, style.reset, pkg });
             }
         }
 
         if (not_found_packages.items.len > 0) {
-            style.print("\x1b[33m⚠\x1b[0m Not found in dependencies:\n", .{});
+            style.print("{s}⚠{s} Not found in dependencies:\n", .{ style.yellow, style.reset });
             for (not_found_packages.items) |pkg| {
-                style.print("  \x1b[2m−\x1b[0m {s}\n", .{pkg});
+                style.print("  {s}−{s} {s}\n", .{ style.dim, style.reset, pkg });
             }
         }
     }
@@ -164,12 +164,12 @@ pub fn updateCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
 
     if (!options.silent) {
         if (args.len > 0) {
-            style.print("\x1b[34m📦 Updating specific packages\x1b[0m\n", .{});
+            style.print("{s}📦 Updating specific packages{s}\n", .{ style.blue, style.reset });
             for (args) |pkg| {
                 style.print("  → {s}\n", .{pkg});
             }
         } else {
-            style.print("\x1b[34m📦 Updating all packages\x1b[0m\n", .{});
+            style.print("{s}📦 Updating all packages{s}\n", .{ style.blue, style.reset });
         }
         style.print("\n", .{});
     }
@@ -345,12 +345,12 @@ pub fn outdatedCommand(allocator: std.mem.Allocator, args: []const []const u8, o
     if (outdated_packages.items.len == 0) {
         return .{
             .exit_code = 0,
-            .message = try allocator.dupe(u8, "\x1b[32m✓\x1b[0m All dependencies are up to date!"),
+            .message = try std.fmt.allocPrint(allocator, "{s}✓{s} All dependencies are up to date!", .{ style.green, style.reset }),
         };
     }
 
     // Print table header
-    style.print("\n\x1b[1m{s: <35} | {s: <10} | {s: <10} | {s: <10}\x1b[0m\n", .{ "Package", "Current", "Update", "Latest" });
+    style.print("\n{s}{s: <35} | {s: <10} | {s: <10} | {s: <10}{s}\n", .{ style.bold, "Package", "Current", "Update", "Latest", style.reset });
     style.print("{s:-<35}-+-{s:-<10}-+-{s:-<10}-+-{s:-<10}\n", .{ "", "", "", "" });
 
     // Print each outdated package
@@ -390,11 +390,6 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         return CommandResult.err(allocator, common.ERROR_NO_PACKAGES);
     }
 
-    const green = "\x1b[32m";
-    const yellow = "\x1b[33m";
-    const dim = "\x1b[2m";
-    const reset = "\x1b[0m";
-
     // Get current working directory
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
@@ -412,7 +407,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{cwd});
     defer allocator.free(lockfile_path);
 
-    style.print("{s}➤{s} Uninstalling {d} package(s)...\n", .{ green, reset, args.len });
+    style.print("{s}➤{s} Uninstalling {d} package(s)...\n", .{ style.green, style.reset, args.len });
 
     var success_count: usize = 0;
 
@@ -429,7 +424,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         // Try to remove package directory (if it exists)
         if (io_helper.accessAbsolute(pkg_dir, .{})) |_| {
             io_helper.deleteTree(pkg_dir) catch |err| {
-                style.print("{s}⚠{s}  {s} {s}(failed to remove directory: {}){s}\n", .{ yellow, reset, pkg_name, dim, err, reset });
+                style.print("{s}⚠{s}  {s} {s}(failed to remove directory: {}){s}\n", .{ style.yellow, style.reset, pkg_name, style.dim, err, style.reset });
             };
             dir_removed = true;
 
@@ -453,20 +448,20 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
             } else |_| {}
         } else |_| {}
 
-        style.print("{s}✓{s} {s}{s}\n", .{ green, reset, pkg_name, if (!dir_removed) " (from config only)" else "" });
+        style.print("{s}✓{s} {s}{s}\n", .{ style.green, style.reset, pkg_name, if (!dir_removed) " (from config only)" else "" });
         success_count += 1;
     }
 
     // Always remove packages from package.json/pantry.json and lockfile
     removeFromConfigFile(allocator, cwd, args) catch |err| {
-        style.print("{s}⚠{s}  Failed to update config file: {}\n", .{ yellow, reset, err });
+        style.print("{s}⚠{s}  Failed to update config file: {}\n", .{ style.yellow, style.reset, err });
     };
 
     updateLockfileAfterUninstall(allocator, lockfile_path, args) catch |err| {
-        style.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ yellow, reset, err });
+        style.print("{s}⚠{s}  Failed to update lockfile: {}\n", .{ style.yellow, style.reset, err });
     };
 
-    style.print("\nRemoved {s}{d}{s} package(s)\n", .{ green, success_count, reset });
+    style.print("\nRemoved {s}{d}{s} package(s)\n", .{ style.green, success_count, style.reset });
 
     return .{ .exit_code = 0 };
 }
@@ -701,7 +696,9 @@ fn updateLockfileAfterUninstall(allocator: std.mem.Allocator, lockfile_path: []c
     }
 
     // Write updated lockfile (keep it even if empty, like npm does)
-    lockfile_mod.writeLockfile(allocator, &lockfile, lockfile_path) catch {};
+    lockfile_mod.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+        style.printWarn("Failed to write lockfile: {}\n", .{err});
+    };
 }
 
 // ============================================================================
@@ -1365,9 +1362,7 @@ fn createTarball(
     // Clean and create staging directory
     _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
 
-    const mkdir_result = try io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", staging_pkg });
-    defer allocator.free(mkdir_result.stdout);
-    defer allocator.free(mkdir_result.stderr);
+    try io_helper.makePath(staging_pkg);
 
     // Read package.json to check for `files` array
     const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, "package.json" });
@@ -1445,9 +1440,7 @@ fn createTarball(
 
             // Create parent directory if needed
             if (std.fs.path.dirname(dst)) |parent| {
-                const mkdir = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", parent }) catch continue;
-                allocator.free(mkdir.stdout);
-                allocator.free(mkdir.stderr);
+                io_helper.makePath(parent) catch continue;
             }
 
             // Use cp -rp which works correctly for both files and directories.
@@ -2297,7 +2290,7 @@ pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value
     const credentials_path = try std.fmt.bufPrint(&path_buf, "{s}/.pantry/credentials", .{home});
 
     // Create directory if needed
-    _ = io_helper.childRun(allocator, &[_][]const u8{ "mkdir", "-p", pantry_dir }) catch {};
+    io_helper.makePath(pantry_dir) catch {};
 
     // Read existing content or start fresh
     const existing_content = io_helper.readFileAlloc(allocator, credentials_path, 64 * 1024) catch try allocator.alloc(u8, 0);

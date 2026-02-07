@@ -137,12 +137,12 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
         // Print legend
         style.print("Legend:\n", .{});
-        style.print("  {s}⚬{s} normal dependency\n", .{ "\x1b[32m", "\x1b[0m" });
+        style.print("  {s}⚬{s} normal dependency\n", .{ style.green, style.reset });
         if (options.show_dev) {
-            style.print("  {s}⚬{s} dev dependency\n", .{ "\x1b[33m", "\x1b[0m" });
+            style.print("  {s}⚬{s} dev dependency\n", .{ style.yellow, style.reset });
         }
         if (options.show_peer) {
-            style.print("  {s}⚬{s} peer dependency\n", .{ "\x1b[36m", "\x1b[0m" });
+            style.print("  {s}⚬{s} peer dependency\n", .{ style.cyan, style.reset });
         }
     }
 
@@ -161,15 +161,14 @@ fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: Tre
 
     // Print current node
     const color = switch (node.dep_type) {
-        .normal => "\x1b[32m",
-        .dev => "\x1b[33m",
-        .peer => "\x1b[36m",
+        .normal => style.green,
+        .dev => style.yellow,
+        .peer => style.cyan,
     };
-    const reset = "\x1b[0m";
 
     style.print("{s}", .{prefix});
     style.print("{s}", .{if (is_last) "└── " else "├── "});
-    style.print("{s}⚬{s} ", .{ color, reset });
+    style.print("{s}⚬{s} ", .{ color, style.reset });
 
     if (options.show_versions) {
         style.print("{s}@{s}\n", .{ node.name, node.version });

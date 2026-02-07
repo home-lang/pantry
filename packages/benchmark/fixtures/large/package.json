@@ -1,0 +1,24 @@
+{
+  "name": "benchmark-large",
+  "private": true,
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.3",
+    "vite": "^6.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "axios": "^1.7.9",
+    "zustand": "^5.0.3",
+    "@tanstack/react-query": "^5.66.0",
+    "tailwindcss": "^4.0.6",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "eslint": "^9.19.0",
+    "prettier": "^3.4.2",
+    "vitest": "^3.0.5",
+    "@testing-library/react": "^16.2.0",
+    "zod": "^3.24.1",
+    "react-hook-form": "^7.54.2"
+  }
+}
