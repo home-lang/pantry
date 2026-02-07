@@ -74,17 +74,18 @@ const InstallingStack = struct {
         self.map.deinit();
     }
 
-    fn contains(self: *InstallingStack, key: []const u8) bool {
+    /// Atomically check if key exists and insert if not. Returns true if inserted, false if already present.
+    /// Eliminates the TOCTOU race between separate contains() + put() calls.
+    fn tryPut(self: *InstallingStack, key: []const u8) !bool {
         self.mutex.lock();
         defer self.mutex.unlock();
-        return self.map.contains(key);
-    }
-
-    fn put(self: *InstallingStack, key: []const u8) !void {
-        self.mutex.lock();
-        defer self.mutex.unlock();
+        if (self.map.contains(key)) return false;
         const key_owned = try self.allocator.dupe(u8, key);
-        try self.map.put(key_owned, {});
+        self.map.put(key_owned, {}) catch |err| {
+            self.allocator.free(key_owned);
+            return err;
+        };
+        return true;
     }
 
     fn remove(self: *InstallingStack, key: []const u8) void {
@@ -155,10 +156,12 @@ const NpmCache = struct {
         };
     }
 
-    /// Level 2: Store a resolution result.
+    /// Level 2: Store a resolution result (skip if another thread already cached it).
     fn putResolution(self: *NpmCache, key: []const u8, version: []const u8, tarball_url: []const u8) void {
         self.resolution_mutex.lock();
         defer self.resolution_mutex.unlock();
+        // Another thread may have resolved while we were parsing - skip to avoid memory leak
+        if (self.resolution_map.contains(key)) return;
         const owned_key = self.allocator.dupe(u8, key) catch return;
         const owned_ver = self.allocator.dupe(u8, version) catch {
             self.allocator.free(owned_key);
@@ -184,10 +187,12 @@ const NpmCache = struct {
         return allocator.dupe(u8, data) catch null;
     }
 
-    /// Level 1: Store raw registry JSON bytes.
+    /// Level 1: Store raw registry JSON bytes (skip if another thread already cached it).
     fn putRegistryJson(self: *NpmCache, package_name: []const u8, json_bytes: []const u8) void {
         self.registry_mutex.lock();
         defer self.registry_mutex.unlock();
+        // Another thread may have inserted while we were fetching - skip to avoid memory leak
+        if (self.registry_map.contains(package_name)) return;
         const owned_key = self.allocator.dupe(u8, package_name) catch return;
         const owned_data = self.allocator.dupe(u8, json_bytes) catch {
             self.allocator.free(owned_key);
@@ -305,8 +310,8 @@ pub const Installer = struct {
         const key_is_heap = install_key.ptr != &key_buf;
         defer if (key_is_heap) self.allocator.free(@constCast(install_key));
 
-        // Check if we're already installing this package (circular dependency)
-        if (self.installing_stack.contains(install_key)) {
+        // Atomically check+insert to prevent circular dependency loops (race-free)
+        if (!try self.installing_stack.tryPut(install_key)) {
             // Already being installed in the call stack - skip to avoid infinite loop
             const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
             return InstallResult{
@@ -317,9 +322,6 @@ pub const Installer = struct {
                 .install_time_ms = @intCast(end_time - start_time),
             };
         }
-
-        // Mark this package as being installed
-        try self.installing_stack.put(install_key);
         defer {
             // Remove from stack when we're done
             self.installing_stack.remove(install_key);
@@ -479,10 +481,9 @@ pub const Installer = struct {
         };
         errdefer self.allocator.free(install_dir);
 
-        // Check if already installed
+        // Check if already installed (lightweight access check, no dir handle)
         const already_installed = !options.force and blk: {
-            var check_dir = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
-            check_dir.close(io_helper.io);
+            io_helper.accessAbsolute(install_dir, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -649,24 +650,25 @@ pub const Installer = struct {
         try io_helper.makePath(install_dir);
 
         // Extract tarball - npm tarballs have a 'package' directory inside
-        const tar_result = try io_helper.childRun(self.allocator, &[_][]const u8{
-            "tar",
-            "-xzf",
-            tarball_path,
-            "-C",
-            install_dir,
-            "--strip-components=1",
-        });
-        defer {
-            self.allocator.free(tar_result.stdout);
-            self.allocator.free(tar_result.stderr);
-        }
+        // Native Zig tar+gzip extraction with strip_components=1 (no subprocess)
+        {
+            const tarball_data = try io_helper.readFileAlloc(self.allocator, tarball_path, 500 * 1024 * 1024);
+            defer self.allocator.free(tarball_data);
 
-        if (tar_result.term != .exited or tar_result.term.exited != 0) {
-            if (!options.quiet) {
-                style.print("  ✗ Failed to extract: {s}\n", .{tar_result.stderr});
-            }
-            return error.ExtractionFailed;
+            var dest = try io_helper.cwd().openDir(io_helper.io, install_dir, .{});
+            defer dest.close(io_helper.io);
+
+            var input_reader: std.Io.Reader = .fixed(tarball_data);
+            var window_buf: [65536]u8 = undefined;
+            var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+            std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{
+                .strip_components = 1,
+            }) catch |err| {
+                if (!options.quiet) {
+                    style.print("  ✗ Failed to extract tarball: {}\n", .{err});
+                }
+                return error.ExtractionFailed;
+            };
         }
 
         // Create shims for npm package binaries
@@ -794,9 +796,7 @@ pub const Installer = struct {
         const install_key = try std.fmt.allocPrint(self.allocator, "npm:{s}", .{name});
         defer self.allocator.free(install_key);
 
-        if (self.installing_stack.contains(install_key)) return;
-
-        try self.installing_stack.put(install_key);
+        if (!try self.installing_stack.tryPut(install_key)) return;
         defer self.installing_stack.remove(install_key);
 
         // 3. Try Pantry DynamoDB registry first
@@ -1018,10 +1018,9 @@ pub const Installer = struct {
         };
         errdefer self.allocator.free(install_dir);
 
-        // Check if already installed
+        // Check if already installed (lightweight access check, no dir handle)
         const already_installed = !options.force and blk: {
-            var check_dir = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
-            check_dir.close(io_helper.io);
+            io_helper.accessAbsolute(install_dir, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -1191,8 +1190,7 @@ pub const Installer = struct {
         defer self.allocator.free(global_pkg_dir);
 
         const from_cache = !options.force and blk: {
-            var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch break :blk false;
-            check_dir.close(io_helper.io);
+            io_helper.accessAbsolute(global_pkg_dir, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -1233,10 +1231,9 @@ pub const Installer = struct {
         const project_pkg_dir = try self.getProjectPackageDir(project_root, domain, spec.version);
         errdefer self.allocator.free(project_pkg_dir);
 
-        // Check if already installed in project
+        // Check if already installed in project (lightweight access check)
         const already_installed = !options.force and blk: {
-            var check_dir = io_helper.cwd().openDir(io_helper.io, project_pkg_dir, .{}) catch break :blk false;
-            check_dir.close(io_helper.io);
+            io_helper.accessAbsolute(project_pkg_dir, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -1251,13 +1248,12 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
 
-        var global_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| blk: {
-            if (err != error.FileNotFound) return err;
-            break :blk null;
+        const has_global = blk: {
+            io_helper.accessAbsolute(global_pkg_dir, .{}) catch break :blk false;
+            break :blk true;
         };
 
-        if (global_dir) |*dir| {
-            dir.close(io_helper.io);
+        if (has_global) {
             // Copy from global cache to project's pantry
             used_cache.* = true;
             try io_helper.makePath(project_pkg_dir);
@@ -1401,12 +1397,11 @@ pub const Installer = struct {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
 
-        // Verify it exists
-        var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch {
+        // Verify it exists (lightweight access check)
+        io_helper.accessAbsolute(global_pkg_dir, .{}) catch {
             // Not in global cache - shouldn't happen if cache.has() returned true
             return error.CacheInconsistent;
         };
-        check_dir.close(io_helper.io);
 
         // Create symlinks in environment bin directory
         try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);

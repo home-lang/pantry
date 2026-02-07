@@ -41,38 +41,35 @@ pub fn cwd() Dir {
     return Dir.cwd();
 }
 
-/// Read entire file contents using Io.Dir.readFile
+/// Read entire file contents into an allocated buffer.
+/// Uses posix.read directly to avoid Dir.readFile truncation issues.
 pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
-    // Use a generous initial buffer to avoid a separate stat() call (which opens the file twice).
-    // Most config/dep files are <64KB; the retry path doubles until it fits.
-    var size = @min(max_size, 65536);
+    const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch |err| return err;
+    defer file.close(io);
 
-    var buffer = try allocator.alloc(u8, size);
+    var total: usize = 0;
+    var buffer = try allocator.alloc(u8, @min(max_size, 65536));
     errdefer allocator.free(buffer);
 
-    const result = cwd().readFile(io, path, buffer) catch |err| {
-        // If buffer was too small, grow gradually (double each time) instead of jumping to max_size
-        if (err == error.BufferTooSmall) {
-            while (size < max_size) {
-                size = @min(size * 2, max_size);
-                allocator.free(buffer);
-                buffer = try allocator.alloc(u8, size);
-                const retry = cwd().readFile(io, path, buffer) catch |retry_err| {
-                    if (retry_err == error.BufferTooSmall and size < max_size) continue;
-                    return retry_err;
-                };
-                if (retry.len < buffer.len) {
-                    buffer = try allocator.realloc(buffer, retry.len);
-                }
-                return buffer;
-            }
-            return error.BufferTooSmall;
+    while (true) {
+        if (total == buffer.len) {
+            if (buffer.len >= max_size) return error.BufferTooSmall;
+            buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size));
         }
-        return err;
-    };
-    // Resize to actual content size
-    if (result.len < buffer.len) {
-        buffer = try allocator.realloc(buffer, result.len);
+        const n = std.posix.read(file.handle, buffer[total..]) catch |err| switch (err) {
+            error.WouldBlock => continue,
+            else => return err,
+        };
+        if (n == 0) break;
+        total += n;
+    }
+
+    if (total == 0) {
+        allocator.free(buffer);
+        return try allocator.alloc(u8, 0);
+    }
+    if (total < buffer.len) {
+        return try allocator.realloc(buffer, total);
     }
     return buffer;
 }

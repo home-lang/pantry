@@ -20,7 +20,7 @@ pub fn extractArchive(
     return extractArchiveQuiet(allocator, archive_path, dest_dir, format, false);
 }
 
-/// Extract a tar archive with optional quiet mode
+/// Extract a tar archive with optional quiet mode (native Zig, no subprocess)
 pub fn extractArchiveQuiet(
     allocator: std.mem.Allocator,
     archive_path: []const u8,
@@ -31,35 +31,33 @@ pub fn extractArchiveQuiet(
     // Ensure destination directory exists
     try io_helper.makePath(dest_dir);
 
-    // Determine extraction command based on format
-    const result = if (std.mem.eql(u8, format, "tar.xz"))
-        try io_helper.childRun(allocator, &[_][]const u8{
-            "tar",
-            "-xJf",
-            archive_path,
-            "-C",
-            dest_dir,
-            "--no-same-owner",
-            "--no-same-permissions",
-        })
-    else if (std.mem.eql(u8, format, "tar.gz"))
-        try io_helper.childRun(allocator, &[_][]const u8{
-            "tar",
-            "-xzf",
-            archive_path,
-            "-C",
-            dest_dir,
-            "--no-same-owner",
-            "--no-same-permissions",
-        })
-    else
-        return error.UnsupportedFormat;
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    // Read archive into memory
+    const data = try io_helper.readFileAlloc(allocator, archive_path, 500 * 1024 * 1024);
+    defer allocator.free(data);
 
-    if (result.term.exited != 0) {
-        style.print("Extraction failed: {s}\n", .{result.stderr});
-        return error.ExtractionFailed;
+    // Open destination directory
+    var dest = try io_helper.cwd().openDir(io_helper.io, dest_dir, .{});
+    defer dest.close(io_helper.io);
+
+    if (std.mem.eql(u8, format, "tar.gz")) {
+        var input_reader: std.Io.Reader = .fixed(data);
+        var window_buf: [65536]u8 = undefined;
+        var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+        std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch {
+            return error.ExtractionFailed;
+        };
+    } else if (std.mem.eql(u8, format, "tar.xz")) {
+        var input_reader: std.Io.Reader = .fixed(data);
+        const xz_buf = try allocator.alloc(u8, 1 << 16);
+        var decompressor = std.compress.xz.Decompress.init(&input_reader, allocator, xz_buf) catch {
+            return error.ExtractionFailed;
+        };
+        defer decompressor.deinit();
+        std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch {
+            return error.ExtractionFailed;
+        };
+    } else {
+        return error.UnsupportedFormat;
     }
 }
 
@@ -78,38 +76,30 @@ test "isValidArchive" {
     try std.testing.expect(!isValidArchive("package.txt"));
 }
 
-/// Verify archive integrity before extraction
-/// Returns true if archive is valid, false otherwise
+/// Verify archive integrity before extraction (native, no subprocess)
+/// Checks magic bytes to verify the archive format is valid.
 pub fn verifyArchiveIntegrity(
-    allocator: std.mem.Allocator,
+    _: std.mem.Allocator,
     archive_path: []const u8,
     format: []const u8,
 ) !bool {
-    // Try to list archive contents to verify it's not corrupt
-    const result = if (std.mem.eql(u8, format, "tar.xz"))
-        try io_helper.childRun(allocator, &[_][]const u8{
-            "tar",
-            "-tJf",
-            archive_path,
-        })
-    else if (std.mem.eql(u8, format, "tar.gz"))
-        try io_helper.childRun(allocator, &[_][]const u8{
-            "tar",
-            "-tzf",
-            archive_path,
-        })
-    else
-        return error.UnsupportedFormat;
+    const file = io_helper.cwd().openFile(io_helper.io, archive_path, .{ .mode = .read_only }) catch return false;
+    defer file.close(io_helper.io);
 
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    var header: [6]u8 = undefined;
+    const n = std.posix.read(file.handle, &header) catch return false;
+    if (n < 2) return false;
 
-    if (result.term.exited != 0) {
-        return false;
+    if (std.mem.eql(u8, format, "tar.gz")) {
+        // Gzip magic bytes: 0x1f 0x8b
+        return header[0] == 0x1f and header[1] == 0x8b;
+    } else if (std.mem.eql(u8, format, "tar.xz")) {
+        // XZ magic bytes: 0xFD 0x37 0x7A 0x58 0x5A 0x00
+        if (n < 6) return false;
+        return std.mem.eql(u8, header[0..6], &[_]u8{ 0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00 });
     }
 
-    // Also verify archive has at least some contents
-    return result.stdout.len > 0;
+    return false;
 }
 
 /// Compute SHA256 checksum of a file using native Zig crypto (no subprocess)

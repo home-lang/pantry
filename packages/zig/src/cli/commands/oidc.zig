@@ -69,16 +69,30 @@ fn getPackageName(allocator: std.mem.Allocator) ![]const u8 {
 }
 
 fn detectGitHubRepo(allocator: std.mem.Allocator) ![]const u8 {
-    // Try to get the GitHub repo from git remote
-    const result = try io_helper.childRun(allocator, &.{ "git", "remote", "get-url", "origin" });
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    // Read .git/config to get origin URL (native, no subprocess)
+    const config = try io_helper.readFileAlloc(allocator, ".git/config", 64 * 1024);
+    defer allocator.free(config);
 
-    if (result.term != .exited or result.term.exited != 0 or result.stdout.len == 0) {
-        return error.EmptyOutput;
+    var url: []const u8 = "";
+    var in_origin = false;
+    var lines = std.mem.splitScalar(u8, config, '\n');
+    while (lines.next()) |line| {
+        const tl = std.mem.trim(u8, line, " \t\r");
+        if (std.mem.startsWith(u8, tl, "[remote \"origin\"]")) {
+            in_origin = true;
+            continue;
+        }
+        if (in_origin) {
+            if (tl.len > 0 and tl[0] == '[') break;
+            if (std.mem.startsWith(u8, tl, "url = ") or std.mem.startsWith(u8, tl, "url=")) {
+                const sep = if (std.mem.indexOf(u8, tl, "= ")) |i| i + 2 else if (std.mem.indexOf(u8, tl, "=")) |i| i + 1 else continue;
+                url = std.mem.trim(u8, tl[sep..], " \t");
+                break;
+            }
+        }
     }
 
-    var url = std.mem.trim(u8, result.stdout, &[_]u8{ '\n', '\r', ' ' });
+    if (url.len == 0) return error.EmptyOutput;
 
     // Parse GitHub URL formats:
     // https://github.com/owner/repo.git

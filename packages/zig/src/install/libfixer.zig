@@ -1,5 +1,6 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
+const style = @import("../cli/style.zig");
 
 /// Fix macOS library paths using install_name_tool
 /// This discovers @rpath dependencies using otool and fixes them to use absolute paths
@@ -86,14 +87,15 @@ pub fn fixMacOSLibraryPaths(
             absolute_lib_path,
             binary_path,
         }) catch {
-            // install_name_tool failed - just continue
+            style.print("  Warning: install_name_tool failed for {s}\n", .{binary_path});
             continue;
         };
         defer allocator.free(fix_result.stdout);
         defer allocator.free(fix_result.stderr);
 
-        // Ignore errors - some libraries might not be patchable
-        _ = fix_result.term.exited;
+        if (fix_result.term.exited != 0) {
+            style.print("  Warning: install_name_tool returned exit code {d} for {s}\n", .{ fix_result.term.exited, binary_path });
+        }
     }
 }
 
@@ -146,10 +148,17 @@ fn addRpathEntries(
             "-",
             "-f",
             binary_path,
-        }) catch return; // Ignore codesign failures
+        }) catch {
+            style.print("  Warning: codesign failed for {s} - binary may not run correctly\n", .{binary_path});
+            return;
+        };
 
         allocator.free(codesign_result.stdout);
-        allocator.free(codesign_result.stderr);
+        defer allocator.free(codesign_result.stderr);
+
+        if (codesign_result.term.exited != 0) {
+            style.print("  Warning: codesign returned exit code {d} for {s}\n", .{ codesign_result.term.exited, binary_path });
+        }
     }
 }
 

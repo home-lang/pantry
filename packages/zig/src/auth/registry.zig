@@ -5,44 +5,25 @@ const oidc = @import("oidc.zig");
 const style = @import("../cli/style.zig");
 
 /// Decompress gzip data if it looks like gzip (starts with magic bytes 0x1f 0x8b)
-/// Returns a copy of the data if not gzip, or the decompressed data if it is
+/// Returns a copy of the data if not gzip, or the decompressed data if it is.
+/// Uses native std.compress.flate (no subprocess).
 fn maybeDecompressGzip(allocator: std.mem.Allocator, data: []const u8) ![]const u8 {
     // Check for gzip magic bytes
     if (data.len >= 2 and data[0] == 0x1f and data[1] == 0x8b) {
-        // It's gzip compressed - use gunzip to decompress
-        // Write to temp file, decompress, read result
-        const tmp_dir = io_helper.getTempDir();
-        var tmp_gz_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const tmp_gz = std.fmt.bufPrint(&tmp_gz_buf, "{s}/pantry_resp.gz", .{tmp_dir}) catch {
+        var input_reader: std.Io.Reader = .fixed(data);
+        var window_buf: [65536]u8 = undefined;
+        var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+
+        // Stream decompressed data to an allocating writer
+        var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+        _ = decompressor.reader.stream(&alloc_writer.writer, .unlimited) catch {
+            alloc_writer.deinit();
             return try allocator.dupe(u8, data);
         };
 
-        // Write compressed data to temp file
-        const gz_file = io_helper.createFile(tmp_gz, .{}) catch {
-            return try allocator.dupe(u8, data);
-        };
-        io_helper.writeAllToFile(gz_file, data) catch {
-            io_helper.closeFile(gz_file);
-            return try allocator.dupe(u8, data);
-        };
-        io_helper.closeFile(gz_file);
-
-        // Run gunzip
-        const result = io_helper.childRun(allocator, &.{ "gunzip", "-c", tmp_gz }) catch {
-            io_helper.deleteFile(tmp_gz) catch {};
-            return try allocator.dupe(u8, data);
-        };
-        defer allocator.free(result.stderr);
-
-        // Clean up temp file
-        io_helper.deleteFile(tmp_gz) catch {};
-
-        if (result.term == .exited and result.term.exited == 0) {
-            return result.stdout; // Already allocated
-        }
-
-        allocator.free(result.stdout);
-        return try allocator.dupe(u8, data);
+        const result = try allocator.dupe(u8, alloc_writer.writer.buffer[0..alloc_writer.writer.end]);
+        alloc_writer.deinit();
+        return result;
     }
 
     // Not gzip, return a copy

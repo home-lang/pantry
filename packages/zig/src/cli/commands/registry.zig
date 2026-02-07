@@ -1256,34 +1256,43 @@ fn updateDynamoDBIndex(
         }
     }
 
-    // If no repository, try to get from git remote
+    // If no repository, try to get from .git/config (native, no subprocess)
     if (repository.len == 0) {
-        const git_result = io_helper.childRun(allocator, &[_][]const u8{ "git", "remote", "get-url", "origin" }) catch null;
-        if (git_result) |result| {
-            defer allocator.free(result.stdout);
-            defer allocator.free(result.stderr);
-            if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
-                // Convert SSH to HTTPS if needed
-                const trimmed = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
-                if (std.mem.startsWith(u8, trimmed, "git@")) {
-                    // git@github.com:user/repo.git -> https://github.com/user/repo
-                    if (std.mem.indexOf(u8, trimmed, ":")) |colon_idx| {
-                        const host_start = 4; // after "git@"
-                        const host = trimmed[host_start..colon_idx];
-                        var path = trimmed[colon_idx + 1 ..];
-                        if (std.mem.endsWith(u8, path, ".git")) {
-                            path = path[0 .. path.len - 4];
+        const git_config = io_helper.readFileAlloc(allocator, ".git/config", 64 * 1024) catch null;
+        if (git_config) |config| {
+            defer allocator.free(config);
+            // Parse [remote "origin"] url
+            var in_origin = false;
+            var lines = std.mem.splitScalar(u8, config, '\n');
+            while (lines.next()) |line| {
+                const tl = std.mem.trim(u8, line, " \t\r");
+                if (std.mem.startsWith(u8, tl, "[remote \"origin\"]")) {
+                    in_origin = true;
+                    continue;
+                }
+                if (in_origin) {
+                    if (tl.len > 0 and tl[0] == '[') break;
+                    if (std.mem.startsWith(u8, tl, "url = ") or std.mem.startsWith(u8, tl, "url=")) {
+                        const sep = if (std.mem.indexOf(u8, tl, "= ")) |i| i + 2 else if (std.mem.indexOf(u8, tl, "=")) |i| i + 1 else continue;
+                        const trimmed = std.mem.trim(u8, tl[sep..], " \t");
+                        if (std.mem.startsWith(u8, trimmed, "git@")) {
+                            if (std.mem.indexOf(u8, trimmed, ":")) |colon_idx| {
+                                const host = trimmed[4..colon_idx];
+                                var path = trimmed[colon_idx + 1 ..];
+                                if (std.mem.endsWith(u8, path, ".git")) {
+                                    path = path[0 .. path.len - 4];
+                                }
+                                repository = std.fmt.allocPrint(allocator, "https://{s}/{s}", .{ host, path }) catch "";
+                            }
+                        } else if (std.mem.startsWith(u8, trimmed, "https://")) {
+                            var url = trimmed;
+                            if (std.mem.endsWith(u8, url, ".git")) {
+                                url = url[0 .. url.len - 4];
+                            }
+                            repository = allocator.dupe(u8, url) catch "";
                         }
-                        const repo_url = std.fmt.allocPrint(allocator, "https://{s}/{s}", .{ host, path }) catch "";
-                        repository = repo_url;
+                        break;
                     }
-                } else if (std.mem.startsWith(u8, trimmed, "https://")) {
-                    // Remove .git suffix
-                    var url = trimmed;
-                    if (std.mem.endsWith(u8, url, ".git")) {
-                        url = url[0 .. url.len - 4];
-                    }
-                    repository = allocator.dupe(u8, url) catch "";
                 }
             }
         }
@@ -1335,17 +1344,24 @@ fn updateDynamoDBIndex(
     }
     defer if (bin_json_escaped_owned) allocator.free(bin_json_escaped);
 
-    // Get current timestamp as ISO 8601 string
-    const date_result = io_helper.childRun(allocator, &[_][]const u8{ "date", "-u", "+%Y-%m-%dT%H:%M:%SZ" }) catch null;
-    var timestamp: []const u8 = "1970-01-01T00:00:00Z";
-    if (date_result) |result| {
-        defer allocator.free(result.stderr);
-        if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
-            timestamp = std.mem.trim(u8, result.stdout, &std.ascii.whitespace);
-        } else {
-            allocator.free(result.stdout);
-        }
-    }
+    // Get current timestamp as ISO 8601 string (native, no subprocess)
+    var timestamp_buf: [24]u8 = undefined;
+    const timestamp: []const u8 = blk: {
+        const ts = std.posix.clock_gettime(.REALTIME) catch break :blk "1970-01-01T00:00:00Z";
+        const epoch_secs: std.time.epoch.EpochSeconds = .{ .secs = @intCast(ts.sec) };
+        const epoch_day = epoch_secs.getEpochDay();
+        const year_day = epoch_day.calculateYearDay();
+        const month_day = year_day.calculateMonthDay();
+        const day_secs = epoch_secs.getDaySeconds();
+        break :blk std.fmt.bufPrint(&timestamp_buf, "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}Z", .{
+            year_day.year,
+            @intFromEnum(month_day.month),
+            month_day.day_index + 1,
+            day_secs.getHoursIntoDay(),
+            day_secs.getMinutesIntoHour(),
+            day_secs.getSecondsIntoMinute(),
+        }) catch "1970-01-01T00:00:00Z";
+    };
 
     // Build DynamoDB put-item JSON
     const item_json = try std.fmt.allocPrint(allocator,
