@@ -282,16 +282,26 @@ fn updateJsonFile(
 
     // Pattern to find: "package_name": "version" in dependencies
     // We need to handle both dependencies and devDependencies sections
+    // Pre-allocate the search pattern once (not per-iteration)
+    const pattern = try std.fmt.allocPrint(allocator, "\"{s}\"", .{package_name});
+    defer allocator.free(pattern);
+
     var i: usize = 0;
     var in_dependencies = false;
     var brace_depth: usize = 0;
 
     while (i < content.len) {
         // Track if we're inside dependencies object
-        if (i + 14 < content.len) {
+        if (i + 19 < content.len) { // "peerDependencies" = 18 chars + quotes
             if (std.mem.startsWith(u8, content[i..], "\"dependencies\"") or
                 std.mem.startsWith(u8, content[i..], "\"devDependencies\"") or
                 std.mem.startsWith(u8, content[i..], "\"peerDependencies\""))
+            {
+                in_dependencies = true;
+                brace_depth = 0;
+            }
+        } else if (i + 16 < content.len) {
+            if (std.mem.startsWith(u8, content[i..], "\"dependencies\""))
             {
                 in_dependencies = true;
                 brace_depth = 0;
@@ -314,11 +324,7 @@ fn updateJsonFile(
 
         // Look for package name pattern when in dependencies
         if (in_dependencies and brace_depth > 0) {
-            // Check for "package_name": pattern
-            const pattern = try std.fmt.allocPrint(allocator, "\"{s}\"", .{package_name});
-            defer allocator.free(pattern);
-
-            if (i + pattern.len < content.len and std.mem.startsWith(u8, content[i..], pattern)) {
+            if (i + pattern.len <= content.len and std.mem.startsWith(u8, content[i..], pattern)) {
                 // Found the package, copy the key
                 try result.appendSlice(pattern);
                 i += pattern.len;
@@ -337,10 +343,13 @@ fn updateJsonFile(
 
                 // Now we should be at the version string
                 if (i < content.len and content[i] == '"') {
-                    // Find the end of the version string
+                    // Find the end of the version string, handling escape sequences
                     const version_start = i;
                     i += 1; // skip opening quote
                     while (i < content.len and content[i] != '"') {
+                        if (content[i] == '\\' and i + 1 < content.len) {
+                            i += 1; // skip escaped character
+                        }
                         i += 1;
                     }
                     if (i < content.len) {
@@ -348,6 +357,10 @@ fn updateJsonFile(
                     }
 
                     // Check if the old version had a prefix (^, ~, etc.)
+                    // Guard: ensure we found the closing quote
+                    if (i <= version_start + 1) {
+                        continue;
+                    }
                     const old_version = content[version_start + 1 .. i - 1];
                     var prefix: []const u8 = "";
                     if (old_version.len > 0) {

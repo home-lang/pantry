@@ -425,15 +425,9 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
                 io_helper.accessAbsolute(pkg_file_path, .{}) catch {
                     // Package doesn't have this file — copy from root
                     if (root_file_paths[i]) |root_path| {
-                        if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
-                            if (r.term == .exited and r.term.exited == 0) {
-                                copied_files[i] = pkg_file_path;
-                                style.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
-                            } else {
-                                allocator.free(pkg_file_path);
-                            }
-                            allocator.free(r.stdout);
-                            allocator.free(r.stderr);
+                        if (io_helper.copyFile(root_path, pkg_file_path)) {
+                            copied_files[i] = pkg_file_path;
+                            style.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
                         } else |_| {
                             allocator.free(pkg_file_path);
                         }
@@ -793,7 +787,7 @@ fn createTarball(
         defer allocator.free(pkg_json_src);
         const pkg_json_dst = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, "package.json" });
         defer allocator.free(pkg_json_dst);
-        _ = io_helper.childRun(allocator, &[_][]const u8{ "cp", pkg_json_src, pkg_json_dst }) catch {};
+        io_helper.copyFile(pkg_json_src, pkg_json_dst) catch {};
 
         // Copy each file/folder from "files" array
         for (files.items) |item| {
@@ -874,7 +868,7 @@ fn createTarball(
     defer allocator.free(tar_result.stderr);
 
     // Cleanup staging
-    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+    io_helper.deleteTree(staging_base) catch {};
 
     if (tar_result.term != .exited or tar_result.term.exited != 0) {
         style.print("tar failed: {s}\n", .{tar_result.stderr});
@@ -1072,7 +1066,7 @@ fn createTarballDefault(
     defer allocator.free(tar_result.stderr);
 
     // Cleanup staging
-    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+    io_helper.deleteTree(staging_base) catch {};
 
     if (tar_result.term != .exited or tar_result.term.exited != 0) {
         style.print("tar failed: {s}\n", .{tar_result.stderr});

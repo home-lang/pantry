@@ -772,15 +772,9 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                 io_helper.accessAbsolute(pkg_file_path, .{}) catch {
                     // Package doesn't have this file — copy from root
                     if (root_file_paths[i]) |root_path| {
-                        if (io_helper.childRun(allocator, &[_][]const u8{ "cp", root_path, pkg_file_path })) |r| {
-                            if (r.term == .exited and r.term.exited == 0) {
-                                copied_files[i] = pkg_file_path;
-                                style.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
-                            } else {
-                                allocator.free(pkg_file_path);
-                            }
-                            allocator.free(r.stdout);
-                            allocator.free(r.stderr);
+                        if (io_helper.copyFile(root_path, pkg_file_path)) {
+                            copied_files[i] = pkg_file_path;
+                            style.print("  Copied root {s} to {s}\n", .{ file_name, pkg.name });
                         } else |_| {
                             allocator.free(pkg_file_path);
                         }
@@ -1360,7 +1354,7 @@ fn createTarball(
     defer allocator.free(staging_pkg);
 
     // Clean and create staging directory
-    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+    io_helper.deleteTree(staging_base) catch {};
 
     try io_helper.makePath(staging_pkg);
 
@@ -1420,9 +1414,7 @@ fn createTarball(
             io_helper.accessAbsolute(src, .{}) catch continue;
 
             // Copy the file
-            const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-p", src, dst }) catch continue;
-            allocator.free(cp.stdout);
-            allocator.free(cp.stderr);
+            io_helper.copyFile(src, dst) catch continue;
         }
 
         // Copy each file/directory from the `files` array
@@ -1635,7 +1627,7 @@ fn createTarball(
     defer allocator.free(result.stderr);
 
     // Cleanup staging
-    _ = io_helper.childRun(allocator, &[_][]const u8{ "rm", "-rf", staging_base }) catch {};
+    io_helper.deleteTree(staging_base) catch {};
 
     if (result.term != .exited or result.term.exited != 0) {
         style.print("Tarball creation failed. Exit: {any}\n", .{result.term});

@@ -87,12 +87,23 @@ pub fn writeLockfile(allocator: std.mem.Allocator, lockfile: *const types.Lockfi
     try writeLockfileForce(allocator, lockfile, file_path);
 }
 
-/// Write lockfile to disk in JSON format (always writes, internal use)
-fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
-    const file = try io_helper.cwd().createFile(io_helper.io, file_path, .{});
-    defer file.close(io_helper.io);
+/// Append a JSON-escaped string to the buffer (handles quotes, backslashes, control chars)
+fn appendJsonEscaped(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: []const u8) !void {
+    for (s) |c| {
+        switch (c) {
+            '"' => try buf.appendSlice(allocator, "\\\""),
+            '\\' => try buf.appendSlice(allocator, "\\\\"),
+            '\n' => try buf.appendSlice(allocator, "\\n"),
+            '\r' => try buf.appendSlice(allocator, "\\r"),
+            '\t' => try buf.appendSlice(allocator, "\\t"),
+            else => try buf.append(allocator, c),
+        }
+    }
+}
 
-    // Use std.json.stringify instead of manual JSON writing
+/// Write lockfile to disk in JSON format (always writes, internal use)
+/// Uses atomic write (write to temp file, then rename) to prevent corruption.
+fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
     var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
     defer buf.deinit(allocator);
 
@@ -123,30 +134,30 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         }
         first = false;
 
-        // For string fields, append parts directly to avoid allocation
+        // JSON-escape all string values to prevent invalid JSON from special chars
         try buf.appendSlice(allocator, "    \"");
-        try buf.appendSlice(allocator, entry.key_ptr.*);
+        try appendJsonEscaped(&buf, allocator, entry.key_ptr.*);
         try buf.appendSlice(allocator, "\": {\n      \"name\": \"");
-        try buf.appendSlice(allocator, entry.value_ptr.name);
+        try appendJsonEscaped(&buf, allocator, entry.value_ptr.name);
         try buf.appendSlice(allocator, "\",\n      \"version\": \"");
-        try buf.appendSlice(allocator, entry.value_ptr.version);
+        try appendJsonEscaped(&buf, allocator, entry.value_ptr.version);
         try buf.appendSlice(allocator, "\",\n      \"source\": \"");
         try buf.appendSlice(allocator, entry.value_ptr.source.toString());
         try buf.appendSlice(allocator, "\"");
 
         if (entry.value_ptr.url) |url| {
             try buf.appendSlice(allocator, ",\n      \"url\": \"");
-            try buf.appendSlice(allocator, url);
+            try appendJsonEscaped(&buf, allocator, url);
             try buf.appendSlice(allocator, "\"");
         }
         if (entry.value_ptr.resolved) |resolved| {
             try buf.appendSlice(allocator, ",\n      \"resolved\": \"");
-            try buf.appendSlice(allocator, resolved);
+            try appendJsonEscaped(&buf, allocator, resolved);
             try buf.appendSlice(allocator, "\"");
         }
         if (entry.value_ptr.integrity) |integrity| {
             try buf.appendSlice(allocator, ",\n      \"integrity\": \"");
-            try buf.appendSlice(allocator, integrity);
+            try appendJsonEscaped(&buf, allocator, integrity);
             try buf.appendSlice(allocator, "\"");
         }
 
@@ -162,9 +173,9 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
                     }
                     first_dep = false;
                     try buf.appendSlice(allocator, "        \"");
-                    try buf.appendSlice(allocator, dep_entry.key_ptr.*);
+                    try appendJsonEscaped(&buf, allocator, dep_entry.key_ptr.*);
                     try buf.appendSlice(allocator, "\": \"");
-                    try buf.appendSlice(allocator, dep_entry.value_ptr.*);
+                    try appendJsonEscaped(&buf, allocator, dep_entry.value_ptr.*);
                     try buf.appendSlice(allocator, "\"");
                 }
                 try buf.appendSlice(allocator, "\n      }");
@@ -176,8 +187,22 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
 
     try buf.appendSlice(allocator, "\n  }\n}\n");
 
-    // Write to file
+    // Atomic write: write to temp file, then rename over the target.
+    // This prevents corruption if the process is killed mid-write.
+    const tmp_path = try std.fmt.allocPrint(allocator, "{s}.tmp", .{file_path});
+    defer allocator.free(tmp_path);
+
+    const file = try io_helper.cwd().createFile(io_helper.io, tmp_path, .{});
+    defer file.close(io_helper.io);
     try io_helper.writeAllToFile(file, buf.items);
+
+    // Rename temp file to final path (atomic on POSIX)
+    io_helper.rename(tmp_path, file_path) catch {
+        // Fallback: if rename fails (e.g., cross-device), write directly
+        const direct_file = try io_helper.cwd().createFile(io_helper.io, file_path, .{});
+        defer direct_file.close(io_helper.io);
+        try io_helper.writeAllToFile(direct_file, buf.items);
+    };
 }
 
 /// Read lockfile from disk

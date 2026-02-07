@@ -193,7 +193,7 @@ pub fn canSkipFromLockfile(
     const entry = lockfile_packages.get(key) orelse return false;
 
     // Verify the version matches (should always match given the key, but double-check)
-    if (!std.mem.eql(u8, entry.version, dep_version) and !std.mem.eql(u8, entry.name, clean_name)) {
+    if (!std.mem.eql(u8, entry.version, dep_version) or !std.mem.eql(u8, entry.name, clean_name)) {
         return false;
     }
 
@@ -215,7 +215,7 @@ fn canSkipFromLockfileWithKey(
     _: std.mem.Allocator,
 ) bool {
     const entry = lockfile_packages.get(key) orelse return false;
-    if (!std.mem.eql(u8, entry.version, dep_version) and !std.mem.eql(u8, entry.name, clean_name)) {
+    if (!std.mem.eql(u8, entry.version, dep_version) or !std.mem.eql(u8, entry.name, clean_name)) {
         return false;
     }
     var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -267,7 +267,8 @@ pub fn installSinglePackage(
     shared_installer: *install.Installer,
     options: types.InstallOptions,
 ) !types.InstallTaskResult {
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const start_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const start_time = @as(i64, @intCast(start_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts.nsec, 1_000_000)));
 
     // Skip local packages - they're handled separately
     if (isLocalDependency(dep)) {
@@ -374,7 +375,8 @@ pub fn installSinglePackage(
         ) catch false;
 
         if (cache_success) {
-            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
             return .{
                 .name = dep.name,
                 .version = try allocator.dupe(u8, dep.version),
@@ -485,7 +487,8 @@ pub fn installSinglePackage(
         }
     }
 
-    const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const end_ts2 = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const end_time = @as(i64, @intCast(end_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts2.nsec, 1_000_000)));
 
     _ = bin_dir;
     _ = cwd;

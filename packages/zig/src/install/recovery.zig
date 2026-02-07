@@ -108,7 +108,14 @@ pub const InstallCheckpoint = struct {
             if (!first) try buf.appendSlice(self.allocator, ",");
             first = false;
             try buf.append(self.allocator, '"');
-            try buf.appendSlice(self.allocator, key.*);
+            // Escape special JSON characters in package names
+            for (key.*) |c| {
+                switch (c) {
+                    '"' => try buf.appendSlice(self.allocator, "\\\""),
+                    '\\' => try buf.appendSlice(self.allocator, "\\\\"),
+                    else => try buf.append(self.allocator, c),
+                }
+            }
             try buf.append(self.allocator, '"');
         }
         try buf.appendSlice(self.allocator, "]}");
