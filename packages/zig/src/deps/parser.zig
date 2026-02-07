@@ -921,6 +921,7 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
 
 /// Strip JSON comments (// and /* */) and trailing commas for JSONC support
 fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const u8 {
+    // Single-pass: strip comments AND trailing commas in one allocation
     var result = try std.ArrayList(u8).initCapacity(allocator, content.len);
     errdefer result.deinit(allocator);
 
@@ -954,19 +955,17 @@ fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const
 
         // Only strip comments when NOT inside a string
         // Handle // comments
-        if (!in_string and i + 1 < content.len and content[i] == '/' and content[i + 1] == '/') {
-            // Skip until end of line
+        if (i + 1 < content.len and content[i] == '/' and content[i + 1] == '/') {
             while (i < content.len and content[i] != '\n') : (i += 1) {}
             if (i < content.len) {
-                try result.append(allocator, '\n'); // Keep newline
+                try result.append(allocator, '\n');
                 i += 1;
             }
             continue;
         }
 
         // Handle /* */ comments
-        if (!in_string and i + 1 < content.len and content[i] == '/' and content[i + 1] == '*') {
-            // Skip until */
+        if (i + 1 < content.len and content[i] == '/' and content[i + 1] == '*') {
             i += 2;
             while (i + 1 < content.len) : (i += 1) {
                 if (content[i] == '*' and content[i + 1] == '/') {
@@ -977,36 +976,34 @@ fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const
             continue;
         }
 
+        // Strip trailing commas: if we see ',' followed by whitespace then '}' or ']', skip the comma
+        if (c == ',') {
+            var k = i + 1;
+            while (k < content.len and (content[k] == ' ' or content[k] == '\t' or content[k] == '\n' or content[k] == '\r')) : (k += 1) {}
+            // Also skip comments when looking ahead for trailing comma detection
+            if (k + 1 < content.len and content[k] == '/' and content[k + 1] == '/') {
+                // Comment after comma — skip to newline, then check
+                var kk = k + 2;
+                while (kk < content.len and content[kk] != '\n') : (kk += 1) {}
+                if (kk < content.len) kk += 1; // skip newline
+                while (kk < content.len and (content[kk] == ' ' or content[kk] == '\t' or content[kk] == '\n' or content[kk] == '\r')) : (kk += 1) {}
+                if (kk < content.len and (content[kk] == '}' or content[kk] == ']')) {
+                    i += 1;
+                    continue; // Skip trailing comma
+                }
+            }
+            if (k < content.len and (content[k] == '}' or content[k] == ']')) {
+                i += 1;
+                continue; // Skip trailing comma
+            }
+        }
+
         // Regular character
         try result.append(allocator, content[i]);
         i += 1;
     }
 
-    // Strip trailing commas (e.g., ",}" or ",]")
-    const raw_json = result.items;
-    var cleaned = try std.ArrayList(u8).initCapacity(allocator, raw_json.len);
-    defer result.deinit(allocator);
-    errdefer cleaned.deinit(allocator);
-
-    var j: usize = 0;
-    while (j < raw_json.len) {
-        if (raw_json[j] == ',') {
-            // Look ahead to see if this is a trailing comma
-            var k = j + 1;
-            while (k < raw_json.len and (raw_json[k] == ' ' or raw_json[k] == '\t' or raw_json[k] == '\n' or raw_json[k] == '\r')) : (k += 1) {}
-
-            // If next non-whitespace is } or ], skip the comma
-            if (k < raw_json.len and (raw_json[k] == '}' or raw_json[k] == ']')) {
-                j += 1;
-                continue;
-            }
-        }
-
-        try cleaned.append(allocator, raw_json[j]);
-        j += 1;
-    }
-
-    return cleaned.toOwnedSlice(allocator);
+    return result.toOwnedSlice(allocator);
 }
 
 test "stripJsonComments" {

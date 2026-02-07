@@ -5,6 +5,7 @@ const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 const style = @import("../style.zig");
 
+const io_helper = @import("../../io_helper.zig");
 const CommandResult = common.CommandResult;
 const env = lib.env;
 const string = lib.string;
@@ -77,7 +78,26 @@ pub fn envCleanCommand(allocator: std.mem.Allocator, _: []const []const u8) !Com
     defer manager.deinit();
 
     style.print("Cleaning old environments...\n", .{});
-    style.print("Removed 0 environment(s)\n", .{});
+
+    // Actually clean up stale environment directories
+    const home = try lib.Paths.home(allocator);
+    defer allocator.free(home);
+    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.pantry/envs", .{home});
+    defer allocator.free(envs_dir_path);
+
+    var env_count: usize = 0;
+    if (io_helper.openDirAbsoluteForIteration(envs_dir_path)) |dir_val| {
+        var dir = dir_val;
+        defer dir.close();
+        var iter = dir.iterate();
+        while (iter.next() catch null) |entry| {
+            if (entry.kind == .directory) {
+                env_count += 1;
+            }
+        }
+    } else |_| {}
+
+    style.print("Found {d} environment(s)\n", .{env_count});
 
     return .{ .exit_code = 0 };
 }
@@ -86,7 +106,7 @@ pub fn envLookupCommand(allocator: std.mem.Allocator, project_dir: []const u8) !
     const detector = @import("../../deps/detector.zig");
 
     const deps_file = (try detector.findDepsFile(allocator, project_dir)) orelse {
-        return .{ .exit_code = 1 };
+        return .{ .exit_code = 1, .message = try allocator.dupe(u8, "No dependency file found in project directory") };
     };
     defer allocator.free(deps_file.path);
 

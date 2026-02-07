@@ -135,15 +135,18 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             return result;
         }
 
-        // First, check if we're in a workspace
-        const workspace_file = try detector.findWorkspaceFile(allocator, cwd);
-        if (workspace_file) |ws_file| {
+        // Combined lookup: find both deps file and workspace file in a single directory walk
+        // (avoids two separate realpath + directory traversals)
+        const lookup = try detector.findDepsAndWorkspaceFile(allocator, cwd);
+
+        // If we're in a workspace, handle that first
+        if (lookup.workspace_file) |ws_file| {
+            // Free deps_file if we also found one (workspace takes precedence)
+            if (lookup.deps_file) |df| allocator.free(df.path);
             defer {
                 allocator.free(ws_file.path);
                 allocator.free(ws_file.root_dir);
             }
-
-            // We found a workspace! Install all workspace member dependencies
             return try workspace.installWorkspaceCommandWithOptions(allocator, ws_file.root_dir, ws_file.path, options);
         }
 
@@ -154,7 +157,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var used_config = false;
         defer if (deps_file_path) |path| allocator.free(path);
 
-        if (try detector.findDepsFile(allocator, cwd)) |deps_file| {
+        if (lookup.deps_file) |deps_file| {
             deps_file_path = deps_file.path;
             deps = try parser.inferDependencies(allocator, deps_file);
         } else {

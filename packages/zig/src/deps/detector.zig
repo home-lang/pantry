@@ -202,6 +202,85 @@ pub fn findWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !?
     return null;
 }
 
+/// Combined result from findDepsAndWorkspaceFile
+pub const DepsAndWorkspaceResult = struct {
+    deps_file: ?DepsFile = null,
+    workspace_file: ?WorkspaceFile = null,
+};
+
+/// Find both dependency file and workspace file in a single directory walk.
+/// This avoids the overhead of two separate realpath + directory traversals.
+pub fn findDepsAndWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !DepsAndWorkspaceResult {
+    const dep_file_names = [_][]const u8{
+        "pantry.json", "pantry.jsonc", "config/deps.ts", "pantry.config.ts",
+        "deps.yaml", "deps.yml", "dependencies.yaml", "pkgx.yaml",
+        "package.json", "package.jsonc", "zig.json",
+        "Cargo.toml", "pyproject.toml", "requirements.txt", "Gemfile", "go.mod", "composer.json",
+    };
+    const workspace_file_names = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json" };
+
+    var current_dir_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const current_dir = try io_helper.realpath(start_dir, &current_dir_buf);
+
+    var dir_path = try allocator.dupe(u8, current_dir);
+    defer allocator.free(dir_path);
+
+    var result: DepsAndWorkspaceResult = .{};
+
+    while (true) {
+        // Check for deps file (if not already found)
+        if (result.deps_file == null) {
+            for (dep_file_names, 0..) |file_name, i| {
+                const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, file_name });
+                defer allocator.free(full_path);
+                io_helper.accessAbsolute(full_path, .{}) catch continue;
+                const format: DepsFile.FileFormat = @enumFromInt(i);
+                result.deps_file = DepsFile{
+                    .path = try allocator.dupe(u8, full_path),
+                    .format = format,
+                };
+                break;
+            }
+        }
+
+        // Check for workspace file (if not already found)
+        if (result.workspace_file == null) {
+            for (workspace_file_names) |file_name| {
+                const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, file_name });
+                defer allocator.free(full_path);
+                io_helper.accessAbsolute(full_path, .{}) catch continue;
+
+                // Quick read to check for "workspaces" field
+                const contents = io_helper.readFileAlloc(allocator, full_path, 10 * 1024 * 1024) catch continue;
+                defer allocator.free(contents);
+
+                if (std.mem.indexOf(u8, contents, "\"workspaces\"") != null or
+                    std.mem.indexOf(u8, contents, "'workspaces'") != null)
+                {
+                    result.workspace_file = WorkspaceFile{
+                        .path = try allocator.dupe(u8, full_path),
+                        .root_dir = try allocator.dupe(u8, dir_path),
+                    };
+                    break;
+                }
+            }
+        }
+
+        // If we found both, we're done
+        if (result.deps_file != null and result.workspace_file != null) break;
+
+        // Move to parent directory
+        const parent = std.fs.path.dirname(dir_path) orelse break;
+        if (std.mem.eql(u8, parent, dir_path)) break;
+
+        const new_dir = try allocator.dupe(u8, parent);
+        allocator.free(dir_path);
+        dir_path = new_dir;
+    }
+
+    return result;
+}
+
 test "findDepsFile" {
     const allocator = std.testing.allocator;
 
