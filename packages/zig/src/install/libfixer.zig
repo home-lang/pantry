@@ -64,13 +64,9 @@ pub fn fixMacOSLibraryPaths(
 
     // Fix each @rpath dependency
     for (rpath_deps.items) |dep_library| {
-        // Build absolute path: lib_dir/libfoo.dylib
-        const absolute_lib_path = try std.fmt.allocPrint(
-            allocator,
-            "{s}/{s}",
-            .{ lib_dir, dep_library },
-        );
-        defer allocator.free(absolute_lib_path);
+        // Build absolute path using stack buffer: lib_dir/libfoo.dylib
+        var abs_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const absolute_lib_path = std.fmt.bufPrint(&abs_buf, "{s}/{s}", .{ lib_dir, dep_library }) catch continue;
 
         // Check if the library exists in our lib directory
         io_helper.accessAbsolute(absolute_lib_path, .{}) catch {
@@ -78,13 +74,9 @@ pub fn fixMacOSLibraryPaths(
             continue;
         };
 
-        // Build @rpath reference: @rpath/libfoo.dylib
-        const rpath_ref = try std.fmt.allocPrint(
-            allocator,
-            "@rpath/{s}",
-            .{dep_library},
-        );
-        defer allocator.free(rpath_ref);
+        // Build @rpath reference using stack buffer: @rpath/libfoo.dylib
+        var rpath_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const rpath_ref = std.fmt.bufPrint(&rpath_buf, "@rpath/{s}", .{dep_library}) catch continue;
 
         // Fix the library path using install_name_tool
         const fix_result = io_helper.childRun(allocator, &[_][]const u8{
@@ -121,17 +113,11 @@ fn addRpathEntries(
     // Add rpath entries for:
     // 1. The package's own lib directory
     // 2. The global pantry directory (for finding openssl.org, nodejs.org, etc.)
-    const rpath_entries = [_][]const u8{
-        // Package's own lib dir
-        try std.fmt.allocPrint(allocator, "{s}/lib", .{package_dir}),
-        // Global pantry dir (for dependencies like OpenSSL)
-        // This allows @rpath/openssl.org/v1/lib/libcrypto.dylib to resolve
-        try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home}),
-    };
-
-    defer {
-        for (rpath_entries) |entry| allocator.free(entry);
-    }
+    var rp_buf1: [std.fs.max_path_bytes]u8 = undefined;
+    var rp_buf2: [std.fs.max_path_bytes]u8 = undefined;
+    const rp1 = std.fmt.bufPrint(&rp_buf1, "{s}/lib", .{package_dir}) catch return;
+    const rp2 = std.fmt.bufPrint(&rp_buf2, "{s}/.pantry/global", .{home}) catch return;
+    const rpath_entries = [_][]const u8{ rp1, rp2 };
 
     // Add each rpath entry
     var needs_codesign = false;
@@ -176,12 +162,12 @@ pub fn fixDirectoryLibraryPaths(
     const builtin = @import("builtin");
     if (builtin.os.tag != .macos) return;
 
-    // Build paths to bin and lib directories
-    const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{package_dir});
-    defer allocator.free(bin_dir);
+    // Build paths to bin and lib directories using stack buffers
+    var bin_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const bin_dir = std.fmt.bufPrint(&bin_buf, "{s}/bin", .{package_dir}) catch return;
 
-    const lib_dir = try std.fmt.allocPrint(allocator, "{s}/lib", .{package_dir});
-    defer allocator.free(lib_dir);
+    var lib_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const lib_dir = std.fmt.bufPrint(&lib_buf, "{s}/lib", .{package_dir}) catch return;
 
     // Check if lib directory exists (we need it for absolute paths)
     io_helper.accessAbsolute(lib_dir, .{}) catch {
@@ -202,8 +188,8 @@ pub fn fixDirectoryLibraryPaths(
         while (it.next() catch null) |entry| {
             if (entry.kind != .file) continue;
 
-            const binary_path = try std.fs.path.join(allocator, &[_][]const u8{ bin_dir, entry.name });
-            defer allocator.free(binary_path);
+            var bp_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const binary_path = std.fmt.bufPrint(&bp_buf, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
 
             // Add rpath entries for finding dependencies
             addRpathEntries(allocator, binary_path, package_dir) catch {}; // Expected for non-Mach-O binaries
@@ -227,8 +213,8 @@ pub fn fixDirectoryLibraryPaths(
             if (entry.kind != .file) continue;
             if (!std.mem.endsWith(u8, entry.name, ".dylib")) continue;
 
-            const dylib_path = try std.fs.path.join(allocator, &[_][]const u8{ lib_dir, entry.name });
-            defer allocator.free(dylib_path);
+            var dl_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const dylib_path = std.fmt.bufPrint(&dl_buf, "{s}/{s}", .{ lib_dir, entry.name }) catch continue;
 
             // Add rpath entries for dylibs too
             addRpathEntries(allocator, dylib_path, package_dir) catch {}; // Expected for some dylib formats

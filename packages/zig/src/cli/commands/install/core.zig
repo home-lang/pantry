@@ -881,37 +881,13 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 };
             }
 
-            // Fall back to npm registry - use temp file to handle large responses
-            const tmp_dir = io_helper.getTempDir();
-
-            // Use random suffix to prevent TOCTOU race conditions
-            var random_bytes: [8]u8 = undefined;
-            io_helper.randomBytes(&random_bytes);
-            const random_suffix = std.mem.readInt(u64, &random_bytes, .big);
-            const tmp_file = std.fmt.allocPrint(allocator, "{s}/pantry-npm-{d}.json", .{ tmp_dir, random_suffix }) catch {
-                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
-            };
-            defer allocator.free(tmp_file);
-            defer io_helper.deleteFile(tmp_file) catch {};
-
+            // Fall back to npm registry — fetch directly into memory (no temp file, no curl)
             const npm_url = std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{name}) catch {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
             };
             defer allocator.free(npm_url);
 
-            // Download to temp file
-            const curl_result = io_helper.childRun(allocator, &[_][]const u8{ "curl", "-sL", "-o", tmp_file, npm_url }) catch {
-                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
-            };
-            defer allocator.free(curl_result.stdout);
-            defer allocator.free(curl_result.stderr);
-
-            if (curl_result.term.exited != 0) {
-                break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
-            }
-
-            // Read and parse the temp file
-            const npm_response = io_helper.readFileAlloc(allocator, tmp_file, 10 * 1024 * 1024) catch {
+            const npm_response = io_helper.httpGet(allocator, npm_url) catch {
                 break :npm_fallback lib.packages.PackageSpec{ .name = name, .version = version };
             };
             defer allocator.free(npm_response);

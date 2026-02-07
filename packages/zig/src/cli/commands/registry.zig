@@ -1413,7 +1413,7 @@ fn updateDynamoDBIndex(
     style.print("  Updated DynamoDB index for {s}\n", .{name});
 }
 
-/// Upload via HTTP to registry server
+/// Upload via HTTP to registry server (native — no curl subprocess)
 fn uploadViaHttp(
     allocator: std.mem.Allocator,
     registry_url: []const u8,
@@ -1421,58 +1421,94 @@ fn uploadViaHttp(
     token: []const u8,
     metadata_json: []const u8,
 ) ![]const u8 {
-    // Write tarball to temp file for curl to read
-    const tmp_dir = io_helper.getTempDir();
-    const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-upload.tgz" });
-    defer allocator.free(tarball_tmp);
+    const boundary = "----PantryUploadBoundary7MA4YWxkTrZu0gW";
 
-    // Write tarball data to temp file using io_helper pattern
-    const file = try io_helper.cwd().createFile(io_helper.io, tarball_tmp, .{});
-    try io_helper.writeAllToFile(file, tarball_data);
-    file.close(io_helper.io);
+    // Build multipart body
+    // Part 1: tarball (binary)
+    const part1_header = "--" ++ boundary ++ "\r\n" ++
+        "Content-Disposition: form-data; name=\"tarball\"; filename=\"package.tgz\"\r\n" ++
+        "Content-Type: application/octet-stream\r\n\r\n";
+    const part1_footer = "\r\n";
 
-    // Build URL
+    // Part 2: metadata (text)
+    const part2_header = "--" ++ boundary ++ "\r\n" ++
+        "Content-Disposition: form-data; name=\"metadata\"\r\n" ++
+        "Content-Type: text/plain\r\n\r\n";
+    const part2_footer = "\r\n";
+
+    const closing = "--" ++ boundary ++ "--\r\n";
+
+    const body_len = part1_header.len + tarball_data.len + part1_footer.len +
+        part2_header.len + metadata_json.len + part2_footer.len + closing.len;
+
+    // Assemble the full body
+    const body = try allocator.alloc(u8, body_len);
+    defer allocator.free(body);
+    var offset: usize = 0;
+    @memcpy(body[offset..][0..part1_header.len], part1_header);
+    offset += part1_header.len;
+    @memcpy(body[offset..][0..tarball_data.len], tarball_data);
+    offset += tarball_data.len;
+    @memcpy(body[offset..][0..part1_footer.len], part1_footer);
+    offset += part1_footer.len;
+    @memcpy(body[offset..][0..part2_header.len], part2_header);
+    offset += part2_header.len;
+    @memcpy(body[offset..][0..metadata_json.len], metadata_json);
+    offset += metadata_json.len;
+    @memcpy(body[offset..][0..part2_footer.len], part2_footer);
+    offset += part2_footer.len;
+    @memcpy(body[offset..][0..closing.len], closing);
+
+    // Build publish URL
     const publish_url = try std.fmt.allocPrint(allocator, "{s}/publish", .{registry_url});
     defer allocator.free(publish_url);
 
-    // Build auth header
-    const auth_header = try std.fmt.allocPrint(allocator, "Authorization: Bearer {s}", .{token});
-    defer allocator.free(auth_header);
+    // Build auth header value
+    const auth_value = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+    defer allocator.free(auth_value);
 
-    // Build tarball form field with @file syntax
-    const tarball_field = try std.fmt.allocPrint(allocator, "tarball=@{s}", .{tarball_tmp});
-    defer allocator.free(tarball_field);
+    // Perform HTTP POST with native client
+    var client: std.http.Client = .{
+        .allocator = allocator,
+        .io = io_helper.io,
+    };
+    defer client.deinit();
 
-    // Build metadata form field
-    const metadata_field = try std.fmt.allocPrint(allocator, "metadata={s}", .{metadata_json});
-    defer allocator.free(metadata_field);
+    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+    errdefer alloc_writer.deinit();
 
-    // Use curl with -F for multipart form data (handles binary properly)
-    const curl_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "curl",
-        "-s",
-        "-X",
-        "POST",
-        publish_url,
-        "-H",
-        auth_header,
-        "-F",
-        tarball_field,
-        "-F",
-        metadata_field,
-    });
-    defer allocator.free(curl_result.stderr);
+    var redirect_buf: [8192]u8 = undefined;
 
-    // Clean up temp file
-    io_helper.deleteFile(tarball_tmp) catch {};
+    const result = client.fetch(.{
+        .location = .{ .url = publish_url },
+        .method = .POST,
+        .payload = body,
+        .response_writer = &alloc_writer.writer,
+        .redirect_buffer = &redirect_buf,
+        .redirect_behavior = @enumFromInt(5),
+        .headers = .{
+            .content_type = .{ .override = "multipart/form-data; boundary=" ++ boundary },
+            .authorization = .{ .override = auth_value },
+        },
+    }) catch {
+        alloc_writer.deinit();
+        return error.UploadFailed;
+    };
 
-    if (curl_result.term != .exited or curl_result.term.exited != 0) {
-        style.print("curl error: {s}\n", .{curl_result.stderr});
-        allocator.free(curl_result.stdout);
+    if (result.status != .ok and result.status != .created) {
+        const err_data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+        if (err_data.len > 0) {
+            style.print("Upload error: {s}\n", .{err_data});
+        }
+        alloc_writer.deinit();
         return error.UploadFailed;
     }
 
-    return curl_result.stdout;
+    // Return response body (caller owns)
+    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+    const owned = try allocator.dupe(u8, data);
+    alloc_writer.deinit();
+    return owned;
 }
 
 /// Result of version check

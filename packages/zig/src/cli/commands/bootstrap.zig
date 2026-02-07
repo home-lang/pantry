@@ -151,8 +151,25 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
         // Bun not found, try to install it
     }
 
-    // Try to install bun using curl
-    const install_result = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", "curl -fsSL https://bun.sh/install | bash" });
+    // Download bun install script using native HTTP, then execute with bash
+    const install_script = io_helper.httpGet(allocator, "https://bun.sh/install") catch return error.BunInstallFailed;
+    defer allocator.free(install_script);
+
+    // Write script to temp file and execute with bash
+    const tmp_dir = io_helper.getTempDir();
+    var tmp_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const script_path = std.fmt.bufPrint(&tmp_buf, "{s}/pantry-bun-install.sh", .{tmp_dir}) catch return error.BunInstallFailed;
+    {
+        const script_file = io_helper.cwd().createFile(io_helper.io, script_path, .{}) catch return error.BunInstallFailed;
+        io_helper.writeAllToFile(script_file, install_script) catch {
+            script_file.close(io_helper.io);
+            return error.BunInstallFailed;
+        };
+        script_file.close(io_helper.io);
+    }
+    defer io_helper.deleteFile(script_path) catch {};
+
+    const install_result = io_helper.childRun(allocator, &[_][]const u8{ "bash", script_path });
 
     if (install_result) |r| {
         defer allocator.free(r.stdout);

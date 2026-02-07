@@ -46,7 +46,9 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
         return CommandResult.err(allocator, common.ERROR_CONFIG_NOT_OBJECT);
     }
 
-    // Track removed and not found packages
+    // Track removed and not found packages — use HashMap for O(1) dedup
+    var removed_set = std.StringHashMap(void).init(allocator);
+    defer removed_set.deinit();
     var removed_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
     defer removed_packages.deinit(allocator);
 
@@ -59,7 +61,10 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
         if (deps_val == .object) {
             for (args) |package_name| {
                 if (deps_val.object.contains(package_name)) {
-                    try removed_packages.append(allocator, package_name);
+                    if (!removed_set.contains(package_name)) {
+                        try removed_set.put(package_name, {});
+                        try removed_packages.append(allocator, package_name);
+                    }
                     deps_modified = true;
                 } else {
                     var found_in_dev = false;
@@ -81,14 +86,8 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
         if (dev_deps_val == .object) {
             for (args) |package_name| {
                 if (dev_deps_val.object.contains(package_name)) {
-                    var already_added = false;
-                    for (removed_packages.items) |pkg| {
-                        if (std.mem.eql(u8, pkg, package_name)) {
-                            already_added = true;
-                            break;
-                        }
-                    }
-                    if (!already_added) {
+                    if (!removed_set.contains(package_name)) {
+                        try removed_set.put(package_name, {});
                         try removed_packages.append(allocator, package_name);
                     }
                     deps_modified = true;
@@ -120,9 +119,8 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
         defer allocator.free(modules_dir);
 
         for (removed_packages.items) |pkg| {
-            const pkg_dir = try std.fs.path.join(allocator, &[_][]const u8{ modules_dir, pkg });
-            defer allocator.free(pkg_dir);
-
+            var pd_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const pkg_dir = std.fmt.bufPrint(&pd_buf, "{s}/{s}", .{ modules_dir, pkg }) catch continue;
             io_helper.deleteTree(pkg_dir) catch {};
         }
     }

@@ -112,32 +112,31 @@ pub fn verifyArchiveIntegrity(
     return result.stdout.len > 0;
 }
 
-/// Compute SHA256 checksum of a file
+/// Compute SHA256 checksum of a file using native Zig crypto (no subprocess)
 pub fn computeChecksum(allocator: std.mem.Allocator, file_path: []const u8) ![]const u8 {
-    // Use shasum command (available on macOS and Linux)
-    const result = try io_helper.childRun(allocator, &[_][]const u8{
-        "shasum",
-        "-a",
-        "256",
-        file_path,
-    });
-    defer allocator.free(result.stderr);
+    const Sha256 = std.crypto.hash.sha2.Sha256;
 
-    if (result.term.exited != 0) {
-        allocator.free(result.stdout);
-        return error.ExtractionFailed;
+    const file = try io_helper.cwd().openFile(io_helper.io, file_path, .{ .mode = .read_only });
+    defer file.close(io_helper.io);
+
+    var hasher = Sha256.init(.{});
+    var buf: [65536]u8 = undefined; // 64KB read buffer
+    while (true) {
+        const n = std.posix.read(file.handle, &buf) catch |err| switch (err) {
+            error.WouldBlock => continue,
+            else => return err,
+        };
+        if (n == 0) break;
+        hasher.update(buf[0..n]);
     }
 
-    // Output format is: "checksum  filename\n"
-    // Extract just the checksum (first 64 chars)
-    if (result.stdout.len < 64) {
-        allocator.free(result.stdout);
-        return error.ExtractionFailed;
-    }
+    var hash: [32]u8 = undefined;
+    hasher.final(&hash);
 
-    const checksum = try allocator.dupe(u8, result.stdout[0..64]);
-    allocator.free(result.stdout);
-    return checksum;
+    // Convert to hex string
+    var hex_buf: [64]u8 = undefined;
+    const hex = std.fmt.bufPrint(&hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&hash)}) catch return error.ExtractionFailed;
+    return try allocator.dupe(u8, hex);
 }
 
 /// Try to fetch and verify checksum from a sidecar .sha256 file
@@ -155,21 +154,11 @@ pub fn tryVerifyWithSidecarChecksum(
     const checksum_file = try std.fmt.allocPrint(allocator, "{s}.sha256", .{archive_path});
     defer allocator.free(checksum_file);
 
-    // Use curl to fetch checksum (silent, fail quietly if not found)
-    const result = try io_helper.childRun(allocator, &[_][]const u8{
-        "curl",
-        "-sfL",
-        "-o",
-        checksum_file,
-        checksum_url,
-    });
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
-
-    if (result.term.exited != 0) {
-        // No checksum file available
+    // Download checksum file using native HTTP (no curl subprocess)
+    io_helper.httpDownloadFile(allocator, checksum_url, checksum_file) catch {
+        // No checksum file available (404 or network error)
         return false;
-    }
+    };
 
     // Read expected checksum from file (checksum files are small, 256 bytes is plenty)
     const checksum_content = io_helper.readFileAlloc(allocator, checksum_file, 256) catch {

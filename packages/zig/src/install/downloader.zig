@@ -75,207 +75,103 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
-    // First, get the file size from HTTP headers
-    const size_result = try io_helper.childRun(allocator, &[_][]const u8{ "curl", "-sI", url });
-    defer allocator.free(size_result.stdout);
-    defer allocator.free(size_result.stderr);
+    // Native HTTP download — no curl subprocess, no fork/exec overhead.
+    // Uses std.http.Client with native TLS, redirect following, and connection pooling.
+    var stream = io_helper.httpStreamGet(allocator, url) catch return error.NetworkError;
+    defer stream.deinit();
 
-    var total_bytes: ?u64 = null;
-    if (size_result.term.exited == 0) {
-        var lines = std.mem.splitSequence(u8, size_result.stdout, "\n");
-        while (lines.next()) |line| {
-            if (std.mem.startsWith(u8, line, "Content-Length:") or
-                std.mem.startsWith(u8, line, "content-length:"))
-            {
-                const trimmed = std.mem.trim(u8, line[15..], " \r\n\t");
-                total_bytes = std.fmt.parseInt(u64, trimmed, 10) catch null;
-                break;
-            }
-        }
-    }
+    const total_bytes = stream.contentLength();
 
-    // Start curl download
-    var child = try io_helper.spawn(.{
-        .argv = &[_][]const u8{
-            "curl",
-            "-fL",
-            "--silent",
-            "-o",
-            dest_path,
-            url,
-        },
-        .stdout = .ignore,
-        .stderr = .ignore,
-    });
-    var child_waited = false;
-    defer if (!child_waited) {
-        io_helper.kill(&child);
-        _ = io_helper.wait(&child) catch {};
-    };
+    // Create output file
+    const file = io_helper.cwd().createFile(io_helper.io, dest_path, .{}) catch return error.FileWriteFailed;
+    defer file.close(io_helper.io);
 
-    // Monitor download progress
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
-    var last_size: u64 = 0;
-    var last_update = start_time;
-    var last_progress_time = start_time; // Track when we last saw progress
+    var file_buf: [65536]u8 = undefined;
+    var file_writer = file.writerStreaming(io_helper.io, &file_buf);
+
+    // Stream response body to file with progress tracking
+    var transfer_buf: [16384]u8 = undefined; // 16KB transfer buffer for chunked progress
+    const body_reader = stream.reader(&transfer_buf);
+
+    const start_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const start_ms = @as(i64, @intCast(start_ts.sec)) * 1000 + @as(i64, @intCast(start_ts.nsec)) / 1_000_000;
+    var bytes_downloaded: u64 = 0;
+    var last_update_ms: i64 = start_ms;
     var shown_progress = false;
-    const stall_timeout_ms: i64 = 60000; // 60 second stall timeout (no progress)
 
     while (true) {
-        io_helper.nanosleep(0, 100 * std.time.ns_per_ms);
-
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
-
-        const stat = io_helper.statFile(dest_path) catch {
-            // File doesn't exist yet - check for stall timeout
-            if (now - last_progress_time > stall_timeout_ms) {
-                io_helper.kill(&child);
-                _ = io_helper.wait(&child) catch {};
-                child_waited = true;
-                return error.NetworkError;
-            }
-            continue;
+        const n = body_reader.stream(&file_writer, .unlimited) catch |err| switch (err) {
+            error.EndOfStream => break,
+            else => return error.HttpRequestFailed,
         };
+        bytes_downloaded += n;
 
-        const current_size: u64 = @intCast(stat.size);
+        // Update progress display (skip if quiet mode)
+        if (!quiet) {
+            const now_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const now_ms = @as(i64, @intCast(now_ts.sec)) * 1000 + @as(i64, @intCast(now_ts.nsec)) / 1_000_000;
 
-        // Update progress timestamp if size changed
-        if (current_size != last_size) {
-            last_progress_time = now;
-        }
+            if (now_ms - last_update_ms >= 100) {
+                if (inline_progress) |opts| {
+                    // Inline progress: update the package line
+                    const lines_up = opts.total_deps - opts.line_offset;
+                    var current_buf: [32]u8 = undefined;
+                    const current_str = formatBytes(bytes_downloaded, &current_buf) catch "?";
 
-        // Check for stall timeout (no progress for too long)
-        if (now - last_progress_time > stall_timeout_ms) {
-            io_helper.kill(&child);
-            _ = io_helper.wait(&child) catch {};
-            child_waited = true;
-            return error.NetworkError;
-        }
-
-        // Update progress every 100ms if size changed (skip if quiet mode)
-        if (!quiet and current_size != last_size and (now - last_update) >= 100) {
-            if (inline_progress) |opts| {
-                // Inline progress: update the package line itself
-                const lines_up = opts.total_deps - opts.line_offset;
-                var current_buf: [64]u8 = undefined;
-                const current_str = try formatBytes(current_size, &current_buf);
-
-                if (total_bytes) |total| {
-                    var total_buf: [64]u8 = undefined;
-                    const total_str = try formatBytes(total, &total_buf);
-
-                    // Update package line with download progress in source label position
                     style.moveUp(lines_up);
                     style.clearLine();
-                    style.print("{s}+{s} {s}@{s}{s}{s} {s}({s} / {s}){s}\n", .{
-                        style.dim,
-                        style.reset,
-                        opts.pkg_name,
-                        style.dim,
-                        style.italic,
-                        opts.pkg_version,
-                        style.dim,
-                        current_str,
-                        total_str,
-                        style.reset,
-                    });
-                } else {
-                    // No total size known, just show current
-                    style.moveUp(lines_up);
-                    style.clearLine();
-                    style.print("{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
-                        style.dim,
-                        style.reset,
-                        opts.pkg_name,
-                        style.dim,
-                        style.italic,
-                        opts.pkg_version,
-                        style.dim,
-                        current_str,
-                        style.reset,
-                    });
-                }
-
-                // Move cursor back down
-                if (opts.line_offset < opts.total_deps - 1) {
-                    style.moveDown(lines_up - 1);
-                }
-            } else {
-                // Standard newline progress
-                var current_buf: [64]u8 = undefined;
-                const current_str = try formatBytes(current_size, &current_buf);
-
-                const elapsed_sec = @as(f64, @floatFromInt(now - start_time)) / 1000.0;
-
-                if (elapsed_sec > 0.1) {
-                    const speed = @as(f64, @floatFromInt(current_size)) / elapsed_sec;
-                    var speed_buf: [64]u8 = undefined;
-                    const speed_str = try formatSpeed(@intFromFloat(speed), &speed_buf);
-
                     if (total_bytes) |total| {
-                        var total_buf: [64]u8 = undefined;
-                        const total_str = try formatBytes(total, &total_buf);
-
-                        style.printDownloadProgress(current_str, total_str, speed_str, !shown_progress);
-                        if (!shown_progress) shown_progress = true;
+                        var total_buf: [32]u8 = undefined;
+                        const total_str = formatBytes(total, &total_buf) catch "?";
+                        style.print("{s}+{s} {s}@{s}{s}{s} {s}({s}/{s}){s}\n", .{
+                            style.dim,     style.reset,
+                            opts.pkg_name, style.dim, style.italic, opts.pkg_version,
+                            style.dim,     current_str, total_str, style.reset,
+                        });
                     } else {
-                        style.printDownloadProgress(current_str, null, speed_str, !shown_progress);
-                        if (!shown_progress) shown_progress = true;
+                        style.print("{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
+                            style.dim,     style.reset,
+                            opts.pkg_name, style.dim, style.italic, opts.pkg_version,
+                            style.dim,     current_str, style.reset,
+                        });
+                    }
+                    if (opts.line_offset < opts.total_deps - 1) {
+                        style.moveDown(lines_up - 1);
                     }
                 } else {
-                    if (total_bytes) |total| {
-                        var total_buf: [64]u8 = undefined;
-                        const total_str = try formatBytes(total, &total_buf);
+                    // Standard progress line
+                    var current_buf: [32]u8 = undefined;
+                    const current_str = formatBytes(bytes_downloaded, &current_buf) catch "?";
+                    const elapsed_sec = @as(f64, @floatFromInt(now_ms - start_ms)) / 1000.0;
 
-                        style.printDownloadProgress(current_str, total_str, null, !shown_progress);
+                    if (elapsed_sec > 0.1) {
+                        const speed = @as(f64, @floatFromInt(bytes_downloaded)) / elapsed_sec;
+                        var speed_buf: [32]u8 = undefined;
+                        const speed_str = formatSpeed(@intFromFloat(speed), &speed_buf) catch null;
+
+                        const total_str: ?[]const u8 = if (total_bytes) |total| blk: {
+                            var tbuf: [32]u8 = undefined;
+                            break :blk formatBytes(total, &tbuf) catch null;
+                        } else null;
+
+                        style.printDownloadProgress(current_str, total_str, speed_str, !shown_progress);
                         if (!shown_progress) shown_progress = true;
                     } else {
                         style.printDownloadProgress(current_str, null, null, !shown_progress);
                         if (!shown_progress) shown_progress = true;
                     }
                 }
+                last_update_ms = now_ms;
             }
-
-            last_size = current_size;
-            last_update = now;
-        }
-
-        // Update last_size even in quiet mode for download completion check
-        if (quiet and current_size != last_size) {
-            last_size = current_size;
-            last_update = now;
-        }
-
-        // Check if download complete (file size stable for 1 second, or any size after 5 seconds)
-        const time_since_last_change = now - last_update;
-        if (current_size > 0 and current_size == last_size and time_since_last_change > 1000) {
-            break;
-        }
-
-        // Fallback: if we have any data after 5 seconds and size hasn't changed in 1 second, assume done
-        if (current_size > 0 and (now - start_time) > 5000 and time_since_last_change > 1000) {
-            break;
         }
     }
 
-    // Wait for curl to finish
-    const term = try io_helper.wait(&child);
-    child_waited = true;
+    // Flush remaining buffered data to disk
+    file_writer.flush() catch return error.FileWriteFailed;
 
-    // Show final download summary on a clean line (skip if quiet mode)
+    // Clear progress line (let caller print final status)
     if (!quiet and shown_progress) {
-        _ = io_helper.statFile(dest_path) catch |err| {
-            style.print("\n", .{});
-            if (term.exited != 0) return error.HttpRequestFailed;
-            return err;
-        };
-        // Clear line completely (let caller print final status)
         style.clearLine();
-    }
-
-    if (term.exited != 0) {
-        if (shown_progress) style.print("\n", .{});
-        return error.HttpRequestFailed;
     }
 }
 

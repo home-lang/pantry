@@ -44,22 +44,29 @@ pub fn cwd() Dir {
 /// Read entire file contents using Io.Dir.readFile
 pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
     // Use a generous initial buffer to avoid a separate stat() call (which opens the file twice).
-    // Most config/dep files are <64KB; the retry path handles larger files.
-    const initial_size = @min(max_size, 65536);
+    // Most config/dep files are <64KB; the retry path doubles until it fits.
+    var size = @min(max_size, 65536);
 
-    var buffer = try allocator.alloc(u8, initial_size);
+    var buffer = try allocator.alloc(u8, size);
     errdefer allocator.free(buffer);
 
     const result = cwd().readFile(io, path, buffer) catch |err| {
-        // If buffer was too small, retry with max_size
-        if (err == error.BufferTooSmall and initial_size < max_size) {
-            allocator.free(buffer);
-            buffer = try allocator.alloc(u8, max_size);
-            const retry = try cwd().readFile(io, path, buffer);
-            if (retry.len < buffer.len) {
-                buffer = try allocator.realloc(buffer, retry.len);
+        // If buffer was too small, grow gradually (double each time) instead of jumping to max_size
+        if (err == error.BufferTooSmall) {
+            while (size < max_size) {
+                size = @min(size * 2, max_size);
+                allocator.free(buffer);
+                buffer = try allocator.alloc(u8, size);
+                const retry = cwd().readFile(io, path, buffer) catch |retry_err| {
+                    if (retry_err == error.BufferTooSmall and size < max_size) continue;
+                    return retry_err;
+                };
+                if (retry.len < buffer.len) {
+                    buffer = try allocator.realloc(buffer, retry.len);
+                }
+                return buffer;
             }
-            return buffer;
+            return error.BufferTooSmall;
         }
         return err;
     };
@@ -529,15 +536,83 @@ pub fn rename(old_path: []const u8, new_path: []const u8) !void {
     }
 }
 
-/// Copy a file by reading and writing
+/// Copy a file using the fastest platform-specific method:
+/// - macOS APFS: clonefile() for instant copy-on-write clones (zero I/O, zero extra disk space)
+/// - Linux: copy_file_range() for zero-copy kernel-space transfer
+/// - Fallback: buffered read/write with 64KB chunks
 pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
+    // Null-terminate paths for C APIs
+    var src_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    var dest_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (src_path.len >= src_buf.len or dest_path.len >= dest_buf.len) return error.NameTooLong;
+    @memcpy(src_buf[0..src_path.len], src_path);
+    src_buf[src_path.len] = 0;
+    @memcpy(dest_buf[0..dest_path.len], dest_path);
+    dest_buf[dest_path.len] = 0;
+
+    switch (builtin.os.tag) {
+        .macos, .ios, .tvos, .watchos, .visionos => {
+            // Try APFS clonefile() first — instant, zero-copy, no extra disk space
+            const clonefile_fn = @extern(*const fn ([*:0]const u8, [*:0]const u8, u32) callconv(.c) c_int, .{ .name = "clonefile" });
+            const rc = clonefile_fn(&src_buf, &dest_buf, 0);
+            if (rc == 0) return; // Success — instant clone
+            // clonefile fails on non-APFS, cross-device, or if dest exists — fall through
+        },
+        .linux => {
+            // Try copy_file_range() — zero-copy kernel-space transfer
+            const src_fd = std.posix.openat(std.posix.AT.FDCWD, src_path, .{ .ACCMODE = .RDONLY }, 0) catch {
+                return copyFileFallback(src_path, dest_path);
+            };
+            defer std.posix.close(src_fd);
+
+            // Get file size via fstat
+            const stat = std.posix.fstat(src_fd) catch {
+                return copyFileFallback(src_path, dest_path);
+            };
+            const file_size: u64 = @intCast(@max(0, stat.size));
+            if (file_size == 0) {
+                // Just create empty file
+                const dest_fd = std.posix.openat(std.posix.AT.FDCWD, dest_path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true }, 0o644) catch {
+                    return copyFileFallback(src_path, dest_path);
+                };
+                std.posix.close(dest_fd);
+                return;
+            }
+
+            const dest_fd = std.posix.openat(std.posix.AT.FDCWD, dest_path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true }, 0o644) catch {
+                return copyFileFallback(src_path, dest_path);
+            };
+            defer std.posix.close(dest_fd);
+
+            var remaining = file_size;
+            while (remaining > 0) {
+                const chunk = @min(remaining, 1 << 30); // 1GB max per call
+                const rc = std.os.linux.copy_file_range(src_fd, null, dest_fd, null, chunk, 0);
+                const signed_rc = @as(isize, @bitCast(rc));
+                if (signed_rc <= 0) {
+                    // copy_file_range not supported (old kernel) — fall back
+                    return copyFileFallback(src_path, dest_path);
+                }
+                remaining -= @intCast(signed_rc);
+            }
+            return;
+        },
+        else => {},
+    }
+
+    // Fallback for non-macOS, non-Linux, or when platform-specific calls fail
+    return copyFileFallback(src_path, dest_path);
+}
+
+/// Fallback copy using buffered read/write (64KB chunks for better throughput)
+fn copyFileFallback(src_path: []const u8, dest_path: []const u8) !void {
     const src_file = try cwd().openFile(io, src_path, .{ .mode = .read_only });
     defer src_file.close(io);
 
     const dest_file = try cwd().createFile(io, dest_path, .{});
     defer dest_file.close(io);
 
-    var buf: [8192]u8 = undefined;
+    var buf: [65536]u8 = undefined; // 64KB — matches typical OS readahead
     while (true) {
         const bytes_read = std.posix.read(src_file.handle, &buf) catch |err| switch (err) {
             error.WouldBlock => continue,
@@ -545,6 +620,46 @@ pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
         };
         if (bytes_read == 0) break;
         try writeAllToFile(dest_file, buf[0..bytes_read]);
+    }
+}
+
+/// Copy a directory tree using platform-optimized methods.
+/// On macOS APFS, uses clonefile() for instant zero-copy clone of entire directory.
+/// On other platforms, recursively copies files.
+pub fn copyTree(src_path: []const u8, dest_path: []const u8) !void {
+    // On macOS, try clonefile() for the whole directory (works on APFS)
+    if (builtin.os.tag == .macos) {
+        var src_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+        var dest_buf_z: [std.fs.max_path_bytes:0]u8 = undefined;
+        if (src_path.len < src_buf.len and dest_path.len < dest_buf_z.len) {
+            @memcpy(src_buf[0..src_path.len], src_path);
+            src_buf[src_path.len] = 0;
+            @memcpy(dest_buf_z[0..dest_path.len], dest_path);
+            dest_buf_z[dest_path.len] = 0;
+
+            const clonefile_fn = @extern(*const fn ([*:0]const u8, [*:0]const u8, u32) callconv(.c) c_int, .{ .name = "clonefile" });
+            const rc = clonefile_fn(&src_buf, &dest_buf_z, 0);
+            if (rc == 0) return; // Success — entire directory cloned instantly
+        }
+    }
+
+    // Fallback: recursive copy
+    try makePath(dest_path);
+    var dir = openDirForIteration(src_path) catch return;
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        var child_src: [std.fs.max_path_bytes]u8 = undefined;
+        var child_dst: [std.fs.max_path_bytes]u8 = undefined;
+        const cs = std.fmt.bufPrint(&child_src, "{s}/{s}", .{ src_path, entry.name }) catch continue;
+        const cd = std.fmt.bufPrint(&child_dst, "{s}/{s}", .{ dest_path, entry.name }) catch continue;
+
+        if (entry.kind == .directory) {
+            copyTree(cs, cd) catch {};
+        } else {
+            copyFile(cs, cd) catch {};
+        }
     }
 }
 
@@ -757,7 +872,7 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
         const file = openFileAbsolute("/proc/self/cmdline", .{}) catch return error.InvalidArgv;
         defer _ = c.close(file.handle);
 
-        var buf: [1024 * 1024]u8 = undefined;
+        var buf: [65536]u8 = undefined; // 64KB — sufficient for all practical command lines
         var total: usize = 0;
         while (total < buf.len) {
             const n = c.read(file.handle, buf[total..].ptr, buf.len - total);
@@ -852,4 +967,145 @@ pub fn getEnvMap(allocator: std.mem.Allocator) !EnvMap {
         }
     }
     return map;
+}
+
+// ── Native HTTP Client (replaces curl subprocess) ──────────────────────────
+
+pub const HttpError = error{
+    HttpRequestFailed,
+    InvalidUrl,
+    NetworkError,
+    FileWriteFailed,
+};
+
+/// Fetch a URL's response body into allocated memory (replaces `curl -sL <url>`).
+/// Handles HTTPS (native TLS), redirects (up to 10), and content decompression.
+/// Caller owns the returned slice and must free it with `allocator`.
+pub fn httpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
+    var client: std.http.Client = .{
+        .allocator = allocator,
+        .io = io,
+    };
+    defer client.deinit();
+
+    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+    errdefer alloc_writer.deinit();
+
+    var redirect_buf: [8192]u8 = undefined;
+
+    const result = client.fetch(.{
+        .location = .{ .url = url },
+        .response_writer = &alloc_writer.writer,
+        .redirect_buffer = &redirect_buf,
+        .redirect_behavior = @enumFromInt(10),
+    }) catch return error.HttpRequestFailed;
+
+    if (result.status != .ok) {
+        return error.HttpRequestFailed; // errdefer handles cleanup
+    }
+
+    // Extract the response data — dupe the written portion, then free the internal buffer.
+    // On success, errdefer won't run, so we must deinit explicitly.
+    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+    const owned = try allocator.dupe(u8, data); // errdefer handles cleanup on OOM
+    alloc_writer.deinit();
+    return owned;
+}
+
+/// Download a URL to a file on disk (replaces `curl -sfL -o <path> <url>`).
+/// Handles HTTPS (native TLS), redirects (up to 10), and content decompression.
+pub fn httpDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
+    var client: std.http.Client = .{
+        .allocator = allocator,
+        .io = io,
+    };
+    defer client.deinit();
+
+    const file = cwd().createFile(io, dest_path, .{}) catch return error.FileWriteFailed;
+    defer file.close(io);
+
+    var write_buf: [65536]u8 = undefined;
+    var file_writer = file.writerStreaming(io, &write_buf);
+
+    var redirect_buf: [8192]u8 = undefined;
+
+    const result = client.fetch(.{
+        .location = .{ .url = url },
+        .response_writer = &file_writer,
+        .redirect_buffer = &redirect_buf,
+        .redirect_behavior = @enumFromInt(10),
+    }) catch return error.HttpRequestFailed;
+
+    // Flush any remaining buffered data to disk
+    file_writer.flush() catch return error.FileWriteFailed;
+
+    if (result.status != .ok) {
+        return error.HttpRequestFailed;
+    }
+}
+
+/// Start an HTTP GET request and return the response + client for streaming.
+/// This lower-level API is for callers that need Content-Length or progress tracking.
+/// Heap-allocated to prevent pointer invalidation (Response holds *Request internally).
+/// Caller must call deinit() on the returned HttpStream when done.
+pub const HttpStream = struct {
+    client: std.http.Client,
+    req: std.http.Client.Request,
+    response: std.http.Client.Response,
+    redirect_buf: [8192]u8,
+
+    /// Content-Length from the response headers, if provided by the server.
+    pub fn contentLength(self: *const HttpStream) ?u64 {
+        return self.response.head.content_length;
+    }
+
+    /// Get a body reader for streaming the response body.
+    /// `transfer_buffer` is used internally for buffering reads.
+    pub fn reader(self: *HttpStream, transfer_buffer: []u8) *std.Io.Reader {
+        return self.response.reader(transfer_buffer);
+    }
+
+    pub fn deinit(self: *HttpStream) void {
+        const alloc = self.client.allocator;
+        self.req.deinit();
+        self.client.deinit();
+        alloc.destroy(self);
+    }
+};
+
+/// Open a streaming HTTP GET connection (for progress-tracked downloads).
+/// Returns a heap-allocated HttpStream with the response ready for body reading.
+pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream {
+    const stream = try allocator.create(HttpStream);
+    stream.* = .{
+        .client = .{ .allocator = allocator, .io = io },
+        .req = undefined,
+        .response = undefined,
+        .redirect_buf = undefined,
+    };
+    errdefer {
+        stream.client.deinit();
+        allocator.destroy(stream);
+    }
+
+    const uri = std.Uri.parse(url) catch return error.InvalidUrl;
+
+    stream.req = stream.client.request(.GET, uri, .{
+        .redirect_behavior = @enumFromInt(10),
+        .headers = .{
+            // Don't request compression for file downloads — we want raw bytes
+            .accept_encoding = .{ .override = "identity" },
+        },
+    }) catch return error.NetworkError;
+    errdefer stream.req.deinit();
+
+    stream.req.sendBodiless() catch return error.NetworkError;
+
+    stream.response = stream.req.receiveHead(&stream.redirect_buf) catch return error.HttpRequestFailed;
+
+    if (stream.response.head.status != .ok) {
+        return error.HttpRequestFailed;
+    }
+
+    return stream;
 }

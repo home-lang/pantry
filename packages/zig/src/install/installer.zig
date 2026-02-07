@@ -298,12 +298,12 @@ pub const Installer = struct {
         }
 
         // Create a unique key for this package installation (domain@version)
-        const install_key = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}@{s}",
-            .{ domain, resolved_spec.version },
-        );
-        defer self.allocator.free(install_key);
+        // Use stack buffer to avoid heap allocation in hot path
+        var key_buf: [512]u8 = undefined;
+        const install_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ domain, resolved_spec.version }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ domain, resolved_spec.version });
+        const key_is_heap = install_key.ptr != &key_buf;
+        defer if (key_is_heap) self.allocator.free(@constCast(install_key));
 
         // Check if we're already installing this package (circular dependency)
         if (self.installing_stack.contains(install_key)) {
@@ -553,13 +553,13 @@ pub const Installer = struct {
 
         var iter = temp_dir_handle.iterate();
         while (iter.next() catch null) |entry| {
-            const src_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ temp_dir, entry.name });
-            defer self.allocator.free(src_path);
+            var src_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const src_path = std.fmt.bufPrint(&src_buf, "{s}/{s}", .{ temp_dir, entry.name }) catch continue;
 
-            const dest_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ install_dir, entry.name });
-            defer self.allocator.free(dest_path);
+            var dst_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const dest_path = std.fmt.bufPrint(&dst_buf, "{s}/{s}", .{ install_dir, entry.name }) catch continue;
 
-            try io_helper.rename(src_path, dest_path);
+            io_helper.rename(src_path, dest_path) catch continue;
         }
 
         // Create project symlinks if installing to project
@@ -637,25 +637,13 @@ pub const Installer = struct {
             io_helper.deleteFile(tarball_path) catch {};
         }
 
-        // Download tarball using curl
-        const curl_result = try io_helper.childRun(self.allocator, &[_][]const u8{
-            "curl",
-            "-sL",
-            "-o",
-            tarball_path,
-            tarball_url,
-        });
-        defer {
-            self.allocator.free(curl_result.stdout);
-            self.allocator.free(curl_result.stderr);
-        }
-
-        if (curl_result.term != .exited or curl_result.term.exited != 0) {
+        // Download tarball using native HTTP (no curl subprocess)
+        io_helper.httpDownloadFile(self.allocator, tarball_url, tarball_path) catch {
             if (!options.quiet) {
-                style.print("  ✗ Failed to download: {s}\n", .{curl_result.stderr});
+                style.print("  ✗ Failed to download: {s}\n", .{tarball_url});
             }
             return error.DownloadFailed;
-        }
+        };
 
         // Create install directory
         try io_helper.makePath(install_dir);
@@ -724,13 +712,12 @@ pub const Installer = struct {
         const max_depth = 50;
         if (depth >= max_depth) return;
 
-        // Read package.json from the installed package
-        const pkg_json_path = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/package.json",
-            .{package_dir},
-        );
-        defer self.allocator.free(pkg_json_path);
+        // Read package.json from the installed package (stack buffer for path)
+        var pjp_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const pkg_json_path = std.fmt.bufPrint(&pjp_buf, "{s}/package.json", .{package_dir}) catch
+            try std.fmt.allocPrint(self.allocator, "{s}/package.json", .{package_dir});
+        const pjp_is_heap = pkg_json_path.ptr != &pjp_buf;
+        defer if (pjp_is_heap) self.allocator.free(@constCast(pkg_json_path));
 
         const content = io_helper.readFileAlloc(self.allocator, pkg_json_path, 10 * 1024 * 1024) catch {
             return; // No package.json or read error — nothing to resolve
@@ -788,13 +775,12 @@ pub const Installer = struct {
         project_root: []const u8,
         depth: u32,
     ) !void {
-        // 1. Skip if already installed
-        const existing_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/pantry/{s}",
-            .{ project_root, name },
-        );
-        defer self.allocator.free(existing_dir);
+        // 1. Skip if already installed (use stack buffer for path check)
+        var exist_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/pantry/{s}", .{ project_root, name }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}/pantry/{s}", .{ project_root, name });
+        const exist_is_heap = existing_dir.ptr != &exist_buf;
+        defer if (exist_is_heap) self.allocator.free(@constCast(existing_dir));
 
         const already_installed = blk: {
             var check_dir = io_helper.cwd().openDir(io_helper.io, existing_dir, .{}) catch break :blk false;
@@ -873,7 +859,7 @@ pub const Installer = struct {
     /// Uses a two-level cache: L1 caches raw registry JSON by package name (avoids duplicate
     /// HTTP fetches for the same package with different constraints), L2 caches resolved
     /// version+tarball by name@constraint (avoids duplicate JSON parsing).
-    /// Uses std.http.Client instead of spawning curl child processes.
+    /// Uses native HTTP via io_helper.httpGet (std.http.Client with TLS, redirects, decompression).
     pub fn resolveNpmPackage(
         self: *Installer,
         name: []const u8,
@@ -891,24 +877,17 @@ pub const Installer = struct {
         const npm_response = if (self.npm_cache.getRegistryJson(name, self.allocator)) |cached_json|
             cached_json
         else blk: {
-            // Fetch from npm registry (curl handles gzip, HTTP/2, redirects automatically)
+            // Fetch from npm registry using native HTTP (no curl subprocess)
             const npm_url = try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}", .{name});
             defer self.allocator.free(npm_url);
 
-            const curl_result = io_helper.childRun(self.allocator, &[_][]const u8{
-                "curl", "-sL", npm_url,
-            }) catch return error.NpmRegistryUnavailable;
-            defer self.allocator.free(curl_result.stderr);
-
-            if (curl_result.term != .exited or curl_result.term.exited != 0) {
-                self.allocator.free(curl_result.stdout);
+            const response_body = io_helper.httpGet(self.allocator, npm_url) catch
                 return error.NpmRegistryUnavailable;
-            }
 
             // Store in L1 cache for other threads/constraints (cache takes ownership via dupe)
-            self.npm_cache.putRegistryJson(name, curl_result.stdout);
+            self.npm_cache.putRegistryJson(name, response_body);
 
-            break :blk curl_result.stdout;
+            break :blk response_body;
         };
         defer self.allocator.free(npm_response);
 
