@@ -301,8 +301,7 @@ fn updateJsonFile(
                 brace_depth = 0;
             }
         } else if (i + 16 < content.len) {
-            if (std.mem.startsWith(u8, content[i..], "\"dependencies\""))
-            {
+            if (std.mem.startsWith(u8, content[i..], "\"dependencies\"")) {
                 in_dependencies = true;
                 brace_depth = 0;
             }

@@ -70,8 +70,8 @@ pub fn moveDown(n: usize) void {
 /// Print a successfully installed package: + bold(name)@dim(version)
 pub fn printInstalled(name: []const u8, version: []const u8) void {
     print("{s}{s}{s} {s}{s}{s}{s}@{s}{s}\n", .{
-        green, plus,  reset,
-        bold,  name,  reset,
+        green, plus,    reset,
+        bold,  name,    reset,
         dim,   version, reset,
     });
 }
@@ -79,18 +79,18 @@ pub fn printInstalled(name: []const u8, version: []const u8) void {
 /// Print a successfully linked package: + bold(name)@dim(version) dim((linked))
 pub fn printLinked(name: []const u8, version: []const u8) void {
     print("{s}{s}{s} {s}{s}{s}{s}@{s} {s}(linked){s}\n", .{
-        green,  plus,    reset,
-        bold,   name,    reset,
-        dim,    version,
-        dim,    reset,
+        green, plus,    reset,
+        bold,  name,    reset,
+        dim,   version, dim,
+        reset,
     });
 }
 
 /// Print a failed package: - bold(name)@dim(version) dim((reason))
 pub fn printFailed(name: []const u8, version: []const u8, reason: ?[]const u8) void {
     print("{s}{s}{s} {s}{s}{s}{s}@{s}", .{
-        red,  minus, reset,
-        bold, name,  reset,
+        red,  minus,   reset,
+        bold, name,    reset,
         dim,  version,
     });
     if (reason) |msg| {
@@ -105,8 +105,8 @@ pub fn printWarning(name: []const u8, version: []const u8, reason: []const u8) v
     print("{s}{s}{s} {s}{s}{s}{s}@{s} {s}({s}){s}\n", .{
         yellow, warn,    reset,
         bold,   name,    reset,
-        dim,    version,
-        dim,    reason,  reset,
+        dim,    version, dim,
+        reason, reset,
     });
 }
 
@@ -115,8 +115,9 @@ pub fn printWarning(name: []const u8, version: []const u8, reason: []const u8) v
 /// Print the command header: "pantry install v0.x.x (hash)"
 pub fn printHeader(command: []const u8, version: []const u8, hash: []const u8) void {
     print("\n{s}pantry {s}{s} {s}v{s} ({s}){s}\n\n", .{
-        bold, command, reset,
-        dim,  version, hash, reset,
+        bold,  command, reset,
+        dim,   version, hash,
+        reset,
     });
 }
 
@@ -124,8 +125,9 @@ pub fn printHeader(command: []const u8, version: []const u8, hash: []const u8) v
 pub fn printUpToDate(pkg_count: usize, elapsed_ms: f64) void {
     const label = if (pkg_count == 1) "package" else "packages";
     print("\n{s}{d}{s} {s} up to date {s}[{s}{d:.0}ms{s}]{s}\n", .{
-        green, pkg_count, reset, label,
-        dim, bold, elapsed_ms, reset, reset,
+        green, pkg_count, reset,      label,
+        dim,   bold,      elapsed_ms, reset,
+        reset,
     });
 }
 
@@ -134,14 +136,16 @@ pub fn printSummary(success_count: usize, total_count: usize, elapsed_ms: f64) v
     const label = if (success_count == 1) "package" else "packages";
     if (success_count == total_count) {
         print("{s}{d}{s} {s} installed {s}[{s}{d:.0}ms{s}]{s}\n", .{
-            green, success_count, reset, label,
-            dim, bold, elapsed_ms, reset, reset,
+            green, success_count, reset,      label,
+            dim,   bold,          elapsed_ms, reset,
+            reset,
         });
     } else {
         print("{s}{d}{s}/{s}{d}{s} {s} installed {s}[{s}{d:.0}ms{s}]{s}\n", .{
-            green, success_count, reset,
-            green, total_count, reset, label,
-            dim, bold, elapsed_ms, reset, reset,
+            green,      success_count, reset,
+            green,      total_count,   reset,
+            label,      dim,           bold,
+            elapsed_ms, reset,         reset,
         });
     }
 }
@@ -151,8 +155,9 @@ pub fn printCheckedSummary(success_count: usize, total_count: usize, elapsed_ms:
     _ = success_count;
     const label = if (total_count == 1) "package" else "packages";
     print("{s}{d}{s} {s} up to date {s}[{s}{d:.0}ms{s}]{s}\n", .{
-        green, total_count, reset, label,
-        dim, bold, elapsed_ms, reset, reset,
+        green, total_count, reset,      label,
+        dim,   bold,        elapsed_ms, reset,
+        reset,
     });
 }
 
@@ -171,9 +176,10 @@ const spinner_frames = [_][]const u8{ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", 
 pub fn printProgress(current: usize, total: usize, pkg_name: []const u8, frame: usize) void {
     const spinner = spinner_frames[frame % spinner_frames.len];
     print("\r\x1b[K{s}{s}{s} {s}{s}{s} {s}[{d}/{d}]{s}", .{
-        cyan, spinner, reset,
-        bold, pkg_name, reset,
-        dim,  current, total, reset,
+        cyan,  spinner,  reset,
+        bold,  pkg_name, reset,
+        dim,   current,  total,
+        reset,
     });
 }
 
@@ -286,8 +292,8 @@ pub fn printWorkspaceComplete(success: usize, failed: usize) void {
 /// Print global install result (success)
 pub fn printGlobalInstalled(name: []const u8, version: []const u8, from_cache: bool, time_ms: u64) void {
     print("  {s}{s}{s} {s}{s}{s}{s}@{s}", .{
-        green, plus,  reset,
-        bold,  name,  reset,
+        green, plus,    reset,
+        bold,  name,    reset,
         dim,   version,
     });
     print(" {s}({s}, {d}ms){s}\n", .{

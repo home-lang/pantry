@@ -125,14 +125,18 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
                         const total_str = formatBytes(total, &total_buf) catch "?";
                         style.print("{s}+{s} {s}@{s}{s}{s} {s}({s}/{s}){s}\n", .{
                             style.dim,     style.reset,
-                            opts.pkg_name, style.dim, style.italic, opts.pkg_version,
-                            style.dim,     current_str, total_str, style.reset,
+                            opts.pkg_name, style.dim,
+                            style.italic,  opts.pkg_version,
+                            style.dim,     current_str,
+                            total_str,     style.reset,
                         });
                     } else {
                         style.print("{s}+{s} {s}@{s}{s}{s} {s}({s}){s}\n", .{
                             style.dim,     style.reset,
-                            opts.pkg_name, style.dim, style.italic, opts.pkg_version,
-                            style.dim,     current_str, style.reset,
+                            opts.pkg_name, style.dim,
+                            style.italic,  opts.pkg_version,
+                            style.dim,     current_str,
+                            style.reset,
                         });
                     }
                     if (opts.line_offset < opts.total_deps - 1) {

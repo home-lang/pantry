@@ -69,11 +69,17 @@ fn installSingleWorkspaceDep(
             const npm_spec = lib.packages.PackageSpec{
                 .name = clean_name,
                 .version = allocator.dupe(u8, pantry_info.version) catch return .{
-                    .name = clean_name, .version = dep.version, .success = false, .error_msg = null,
+                    .name = clean_name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = null,
                 },
                 .source = .npm,
                 .url = allocator.dupe(u8, pantry_info.tarball_url) catch return .{
-                    .name = clean_name, .version = dep.version, .success = false, .error_msg = null,
+                    .name = clean_name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = null,
                 },
             };
             defer allocator.free(npm_spec.version);
@@ -135,7 +141,10 @@ fn installSingleWorkspaceDep(
     const spec = if (pkg_source == .github and dep.github_ref != null) blk: {
         const gh_ref = dep.github_ref.?;
         repo_owned = std.fmt.allocPrint(allocator, "{s}/{s}", .{ gh_ref.owner, gh_ref.repo }) catch return .{
-            .name = clean_name, .version = dep.version, .success = false, .error_msg = null,
+            .name = clean_name,
+            .version = dep.version,
+            .success = false,
+            .error_msg = null,
         };
         break :blk lib.packages.PackageSpec{
             .name = clean_name,
@@ -145,7 +154,10 @@ fn installSingleWorkspaceDep(
         };
     } else if (pkg_source == .github) blk: {
         const gh_ref = parser.parseGitHubUrl(allocator, dep.version) catch return .{
-            .name = clean_name, .version = dep.version, .success = false, .error_msg = null,
+            .name = clean_name,
+            .version = dep.version,
+            .success = false,
+            .error_msg = null,
         };
         if (gh_ref == null) {
             return .{
@@ -162,7 +174,10 @@ fn installSingleWorkspaceDep(
             allocator.free(ref.ref);
         }
         repo_owned = std.fmt.allocPrint(allocator, "{s}/{s}", .{ ref.owner, ref.repo }) catch return .{
-            .name = clean_name, .version = dep.version, .success = false, .error_msg = null,
+            .name = clean_name,
+            .version = dep.version,
+            .success = false,
+            .error_msg = null,
         };
         break :blk lib.packages.PackageSpec{
             .name = clean_name,
