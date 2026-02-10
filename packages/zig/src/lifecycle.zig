@@ -278,12 +278,36 @@ pub fn executeScript(
 
     // Prepend node_modules/.bin to PATH like npm does, so local binaries
     // (tsc, eslint, etc.) are found without global installation.
+    // We walk UP the directory tree from CWD, adding each node_modules/.bin
+    // found along the way. This is critical for monorepo support where
+    // dependencies (and their .bin stubs) are hoisted to the workspace root.
     // We bake the actual parent PATH value into the command instead of relying
     // on $PATH expansion, because some child process environments may not
     // properly inherit the parent's PATH (e.g., in CI environments).
     const current_path = io_helper.getenv("PATH") orelse "/usr/local/bin:/usr/bin:/bin";
+
+    // Build colon-separated list of node_modules/.bin paths from CWD upward
+    var nm_path_buf = std.ArrayList(u8){};
+    defer nm_path_buf.deinit(allocator);
+
+    {
+        var dir: []const u8 = options.cwd;
+        var depth: usize = 0;
+        while (depth < 20) : (depth += 1) {
+            if (nm_path_buf.items.len > 0) {
+                try nm_path_buf.append(allocator, ':');
+            }
+            try nm_path_buf.appendSlice(allocator, dir);
+            try nm_path_buf.appendSlice(allocator, "/node_modules/.bin");
+
+            dir = std.fs.path.dirname(dir) orelse break;
+        }
+    }
+
     const wrapped_cmd = if (is_windows)
         script_cmd
+    else if (nm_path_buf.items.len > 0)
+        try std.fmt.allocPrint(allocator, "export PATH=\"{s}:{s}\" && {s}", .{ nm_path_buf.items, current_path, script_cmd })
     else
         try std.fmt.allocPrint(allocator, "export PATH=\"{s}/node_modules/.bin:{s}\" && {s}", .{ options.cwd, current_path, script_cmd });
     defer if (!is_windows) allocator.free(wrapped_cmd);

@@ -29,12 +29,16 @@ var io_instance: Threaded = blk: {
 /// Get the global Io instance for blocking operations
 /// This can be used anywhere an Io is needed for synchronous file operations
 pub fn getIo() Io {
+    // In test mode, use the testing IO to avoid conflicts with test harness
+    if (@import("builtin").is_test) {
+        return std.testing.io;
+    }
     return io_instance.io();
 }
 
-/// Convenience constant for the global Io
-/// Usage: io_helper.io
-pub const io: Io = getIo();
+/// Convenience constant for backwards compatibility
+/// In test mode this returns std.testing.io, otherwise the global io_instance
+pub const io: Io = if (@import("builtin").is_test) std.testing.io else io_instance.io();
 
 /// Get the current working directory as an Io.Dir
 pub fn cwd() Dir {

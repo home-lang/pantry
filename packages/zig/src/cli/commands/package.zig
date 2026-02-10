@@ -1456,6 +1456,46 @@ fn createTarball(
                 style.print("  + {s}\n", .{file_entry});
             }
         }
+
+        // Auto-include files referenced by `bin` and `main` fields (npm behavior).
+        // npm always includes these regardless of the `files` array.
+        {
+            const pkg_content = io_helper.readFileAlloc(allocator, pkg_json_path, 1024 * 1024) catch null;
+            defer if (pkg_content) |c| allocator.free(c);
+
+            if (pkg_content) |content| {
+                const parsed_pkg = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch null;
+                defer if (parsed_pkg) |p| p.deinit();
+
+                if (parsed_pkg) |p| {
+                    if (p.value == .object) {
+                        // Auto-include `main` entry
+                        if (p.value.object.get("main")) |main_val| {
+                            if (main_val == .string) {
+                                autoIncludeEntry(allocator, package_dir, staging_pkg, main_val.string);
+                            }
+                        }
+
+                        // Auto-include `bin` entries (string or object map)
+                        if (p.value.object.get("bin")) |bin_val| {
+                            switch (bin_val) {
+                                .string => |s| {
+                                    autoIncludeEntry(allocator, package_dir, staging_pkg, s);
+                                },
+                                .object => |obj| {
+                                    for (obj.values()) |v| {
+                                        if (v == .string) {
+                                            autoIncludeEntry(allocator, package_dir, staging_pkg, v.string);
+                                        }
+                                    }
+                                },
+                                else => {},
+                            }
+                        }
+                    }
+                }
+            }
+        }
     } else {
         // No `files` array - use exclusion-based approach (legacy behavior)
         style.print("No 'files' array in package.json, using exclusion-based copy\n", .{});
@@ -1652,6 +1692,44 @@ fn createTarball(
     }
 
     return tarball_path;
+}
+
+/// Auto-include a single file/directory entry into the staging area.
+/// Used for `bin` and `main` entries that npm always includes regardless of `files` array.
+fn autoIncludeEntry(allocator: std.mem.Allocator, package_dir: []const u8, staging_pkg: []const u8, entry: []const u8) void {
+    // Strip leading ./ if present
+    const clean_entry = if (std.mem.startsWith(u8, entry, "./")) entry[2..] else entry;
+    if (clean_entry.len == 0) return;
+
+    const src = std.fs.path.join(allocator, &[_][]const u8{ package_dir, clean_entry }) catch return;
+    defer allocator.free(src);
+    const dst = std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, clean_entry }) catch return;
+    defer allocator.free(dst);
+
+    // Check if source exists
+    io_helper.accessAbsolute(src, .{}) catch return;
+
+    // Check if already copied (from files array)
+    io_helper.accessAbsolute(dst, .{}) catch {
+        // Not yet copied — copy it now
+        if (std.fs.path.dirname(dst)) |parent| {
+            io_helper.makePath(parent) catch return;
+        }
+
+        const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-rp", src, dst }) catch return;
+        defer allocator.free(cp.stdout);
+        defer allocator.free(cp.stderr);
+
+        const cp_ok = switch (cp.term) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (cp_ok) {
+            style.print("  + {s} (auto-included)\n", .{clean_entry});
+        }
+        return;
+    };
+    // Already exists in staging (copied from files array) — skip
 }
 
 /// Extract the `files` array from package.json
