@@ -736,7 +736,17 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
     if (monorepo_packages) |pkgs| {
         // Monorepo mode — publish each non-private package to npm
+
+        // Sort packages by dependency order so that packages depended on by others
+        // are published first (e.g., core before cli). Without this, `prepublishOnly`
+        // scripts that import workspace siblings (like `tsc` resolving a workspace dep)
+        // would fail because the dependency hasn't been built yet.
+        sortPackagesByDependencyOrder(allocator, pkgs);
+
         style.print("Monorepo detected: {d} publishable package(s) in packages/\n", .{pkgs.len});
+        for (pkgs, 0..) |pkg, i| {
+            style.print("  {d}. {s}\n", .{ i + 1, pkg.name });
+        }
         style.print("----------------------------------------\n", .{});
 
         // Detect root files to propagate to packages that don't have their own
@@ -1692,6 +1702,100 @@ fn createTarball(
     }
 
     return tarball_path;
+}
+
+/// Sort monorepo packages by dependency order using topological sort (Kahn's algorithm).
+/// Packages that are depended on by others come first, so their `prepublishOnly` scripts
+/// run before dependents try to build against them.
+fn sortPackagesByDependencyOrder(
+    allocator: std.mem.Allocator,
+    packages: []@import("registry.zig").MonorepoPackage,
+) void {
+    const n = packages.len;
+    if (n <= 1) return;
+
+    // Map workspace package names to their index
+    var name_to_idx = std.StringHashMap(usize).init(allocator);
+    defer name_to_idx.deinit();
+    for (packages, 0..) |pkg, i| {
+        name_to_idx.put(pkg.name, i) catch continue;
+    }
+
+    // Compute in-degree: how many workspace deps each package has
+    var in_degree_buf: [64]usize = undefined;
+    const in_degree = in_degree_buf[0..n];
+    @memset(in_degree, 0);
+
+    // dependents[i] stores indices of packages that depend on packages[i]
+    var dep_buf: [64]std.ArrayList(usize) = undefined;
+    const dependents = dep_buf[0..n];
+    for (0..n) |i| dependents[i] = std.ArrayList(usize){};
+    defer for (0..n) |i| dependents[i].deinit(allocator);
+
+    for (packages, 0..) |pkg, i| {
+        const content = io_helper.readFileAlloc(allocator, pkg.config_path, 1024 * 1024) catch continue;
+        defer allocator.free(content);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch continue;
+        defer parsed.deinit();
+
+        if (parsed.value != .object) continue;
+
+        const dep_fields = [_][]const u8{ "dependencies", "devDependencies", "peerDependencies" };
+        for (dep_fields) |field| {
+            const deps_val = parsed.value.object.get(field) orelse continue;
+            if (deps_val != .object) continue;
+
+            var iter = deps_val.object.iterator();
+            while (iter.next()) |entry| {
+                if (name_to_idx.get(entry.key_ptr.*)) |dep_idx| {
+                    // Package i depends on dep_idx → dep_idx must come first
+                    in_degree[i] += 1;
+                    dependents[dep_idx].append(allocator, i) catch continue;
+                }
+            }
+        }
+    }
+
+    // Kahn's algorithm: process 0 in-degree first
+    var sorted_buf: [64]usize = undefined;
+    const sorted = sorted_buf[0..n];
+    var sorted_count: usize = 0;
+
+    var queue = std.ArrayList(usize){};
+    defer queue.deinit(allocator);
+    for (0..n) |i| {
+        if (in_degree[i] == 0) queue.append(allocator, i) catch continue;
+    }
+
+    while (queue.items.len > 0) {
+        const idx = queue.orderedRemove(0);
+        sorted[sorted_count] = idx;
+        sorted_count += 1;
+
+        for (dependents[idx].items) |dep| {
+            in_degree[dep] -= 1;
+            if (in_degree[dep] == 0) {
+                queue.append(allocator, dep) catch continue;
+            }
+        }
+    }
+
+    // Append any remaining (circular deps) in original order
+    for (0..n) |i| {
+        if (in_degree[i] > 0) {
+            sorted[sorted_count] = i;
+            sorted_count += 1;
+        }
+    }
+
+    // Reorder packages in-place using the sorted indices
+    var tmp_buf: [64]@import("registry.zig").MonorepoPackage = undefined;
+    const tmp = tmp_buf[0..n];
+    for (0..n) |i| {
+        tmp[i] = packages[sorted[i]];
+    }
+    @memcpy(packages, tmp);
 }
 
 /// Auto-include a single file/directory entry into the staging area.
