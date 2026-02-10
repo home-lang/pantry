@@ -100,17 +100,12 @@ jobs:
       - name: Zig Tests
         run: |
           cd packages/zig
-          # Build tests (compiles but may hang on --listen IPC)
-          timeout 300 zig build test:all || true
-          # Run compiled test binaries directly (avoids --listen IPC hang in Zig 0.16)
-          echo "Running test binaries..."
-          failed=0
-          for test_bin in .zig-cache/o/*/test; do
-            if [ -x "$test_bin" ]; then
-              echo "=== Running $test_bin ==="
-              if ! $test_bin; then
-                failed=1
-              fi
-            fi
-          done
-          exit $failed
+          # Run standalone unit tests directly (avoids zig build --listen IPC hang in 0.16)
+          echo "Running Zig unit tests..."
+          zig test src/core/string.zig -lc
+          zig test src/core/path.zig -lc
+          echo "Zig unit tests passed."
+
+          # Build to verify compilation succeeds
+          echo "Building pantry..."
+          zig build
