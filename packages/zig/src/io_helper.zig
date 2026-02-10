@@ -560,44 +560,11 @@ pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
             // clonefile fails on non-APFS, cross-device, or if dest exists — fall through
         },
         .linux => {
-            // Try copy_file_range() — zero-copy kernel-space transfer
-            const src_fd = std.posix.openat(std.posix.AT.FDCWD, src_path, .{ .ACCMODE = .RDONLY }, 0) catch {
-                return copyFileFallback(src_path, dest_path);
-            };
-            defer std.posix.close(src_fd);
-
-            // Get file size via fstat (use c.fstat for Zig 0.16 compat)
-            var stat_buf: c.Stat = undefined;
-            if (c.fstat(src_fd, &stat_buf) != 0) {
-                return copyFileFallback(src_path, dest_path);
-            }
-            const file_size: u64 = @intCast(@max(0, stat_buf.size));
-            if (file_size == 0) {
-                // Just create empty file
-                const dest_fd = std.posix.openat(std.posix.AT.FDCWD, dest_path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true }, 0o644) catch {
-                    return copyFileFallback(src_path, dest_path);
-                };
-                std.posix.close(dest_fd);
-                return;
-            }
-
-            const dest_fd = std.posix.openat(std.posix.AT.FDCWD, dest_path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true }, 0o644) catch {
-                return copyFileFallback(src_path, dest_path);
-            };
-            defer std.posix.close(dest_fd);
-
-            var remaining = file_size;
-            while (remaining > 0) {
-                const chunk = @min(remaining, 1 << 30); // 1GB max per call
-                const rc = std.os.linux.copy_file_range(src_fd, null, dest_fd, null, chunk, 0);
-                const signed_rc = @as(isize, @bitCast(rc));
-                if (signed_rc <= 0) {
-                    // copy_file_range not supported (old kernel) — fall back
-                    return copyFileFallback(src_path, dest_path);
-                }
-                remaining -= @intCast(signed_rc);
-            }
-            return;
+            // On Linux, use the buffered fallback which is reliable across all kernels.
+            // copy_file_range requires fstat to get file size, but std.posix.fstat
+            // was removed in Zig 0.16 and c.fstat is not available on Linux.
+            // The fallback is still fast (64KB chunks with kernel readahead).
+            return copyFileFallback(src_path, dest_path);
         },
         else => {},
     }
