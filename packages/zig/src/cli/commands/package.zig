@@ -934,7 +934,17 @@ fn publishSingleToNpm(
 
     // Set package.json content so npm metadata includes all fields
     // (types, exports, module, dependencies, bin, etc.)
-    registry_client.package_json = config_content;
+    // Resolve workspace: protocol deps so npm metadata has real versions
+    const resolved_pkg_json = if (config_content) |content|
+        resolveWorkspaceProtocol(allocator, content, package_dir) catch content
+    else
+        null;
+    defer if (resolved_pkg_json) |r| {
+        if (config_content) |c| {
+            if (r.ptr != c.ptr) allocator.free(r);
+        }
+    };
+    registry_client.package_json = resolved_pkg_json;
 
     // Try OIDC authentication first if enabled
     if (options.use_oidc) {
@@ -1646,6 +1656,32 @@ fn createTarball(
         }
     }
 
+    // Resolve workspace: protocol dependencies in the staged package.json.
+    // e.g., "workspace:*" → "0.2.9", "workspace:^" → "^0.2.9", "workspace:~" → "~0.2.9"
+    // npm doesn't understand workspace: protocol — the published package.json must have real versions.
+    {
+        const staged_pkg_json = try std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, "package.json" });
+        defer allocator.free(staged_pkg_json);
+
+        const pkg_content = io_helper.readFileAlloc(allocator, staged_pkg_json, 1024 * 1024) catch null;
+        if (pkg_content) |content| {
+            defer allocator.free(content);
+            const resolved_content = resolveWorkspaceProtocol(allocator, content, package_dir) catch content;
+            defer if (resolved_content.ptr != content.ptr) allocator.free(resolved_content);
+
+            if (resolved_content.ptr != content.ptr) {
+                if (io_helper.createFile(staged_pkg_json, .{ .truncate = true })) |file| {
+                    defer file.close(io_helper.io);
+                    io_helper.writeAllToFile(file, resolved_content) catch |err| {
+                        style.print("  Warning: Failed to write resolved package.json: {}\n", .{err});
+                    };
+                } else |err| {
+                    style.print("  Warning: Failed to create resolved package.json: {}\n", .{err});
+                }
+            }
+        }
+    }
+
     // Debug: list staging directory contents before creating tarball
     {
         const ls_cmd = try std.fmt.allocPrint(allocator, "find {s} -type f | head -50", .{staging_pkg});
@@ -1834,6 +1870,127 @@ fn autoIncludeEntry(allocator: std.mem.Allocator, package_dir: []const u8, stagi
         return;
     };
     // Already exists in staging (copied from files array) — skip
+}
+
+/// Resolve workspace: protocol dependencies in package.json content.
+/// Returns a new allocation with resolved versions, or the original content if nothing to resolve.
+/// Caller must free the result if it differs from the input (check ptr equality).
+fn resolveWorkspaceProtocol(allocator: std.mem.Allocator, content: []const u8, package_dir: []const u8) ![]const u8 {
+    // Quick check: if no workspace: refs, return original content
+    if (std.mem.indexOf(u8, content, "\"workspace:") == null) return content;
+
+    const packages_parent = std.fs.path.dirname(package_dir) orelse return content;
+
+    // Parse the package.json properly with std.json
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return content;
+    defer parsed.deinit();
+    if (parsed.value != .object) return content;
+
+    // Collect workspace dep resolutions: dep_name -> resolved_version
+    const dep_sections = [_][]const u8{ "dependencies", "devDependencies", "peerDependencies", "optionalDependencies" };
+    var resolutions = std.StringHashMap([]const u8).init(allocator);
+    defer {
+        var it = resolutions.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            allocator.free(entry.value_ptr.*);
+        }
+        resolutions.deinit();
+    }
+
+    for (dep_sections) |section| {
+        const deps_val = parsed.value.object.get(section) orelse continue;
+        if (deps_val != .object) continue;
+        for (deps_val.object.keys(), deps_val.object.values()) |dep_name, dep_ver| {
+            if (dep_ver != .string) continue;
+            if (!std.mem.startsWith(u8, dep_ver.string, "workspace:")) continue;
+            const ws_spec = dep_ver.string["workspace:".len..];
+
+            // Look up the actual version from sibling package
+            var dir_iter = io_helper.openDirForIteration(packages_parent) catch continue;
+            defer dir_iter.close();
+            var iter = dir_iter.iterate();
+            while (iter.next() catch null) |entry| {
+                if (entry.kind != .directory) continue;
+                const sibling_path = std.fs.path.join(allocator, &[_][]const u8{ packages_parent, entry.name, "package.json" }) catch continue;
+                defer allocator.free(sibling_path);
+                const sib_content = io_helper.readFileAlloc(allocator, sibling_path, 64 * 1024) catch continue;
+                defer allocator.free(sib_content);
+                const sib_parsed = std.json.parseFromSlice(std.json.Value, allocator, sib_content, .{}) catch continue;
+                defer sib_parsed.deinit();
+                if (sib_parsed.value != .object) continue;
+                const sib_name = if (sib_parsed.value.object.get("name")) |n| (if (n == .string) n.string else null) else null;
+                const sib_version = if (sib_parsed.value.object.get("version")) |v| (if (v == .string) v.string else null) else null;
+                if (sib_name != null and sib_version != null and std.mem.eql(u8, sib_name.?, dep_name)) {
+                    // Determine version prefix based on workspace spec
+                    const prefix: []const u8 = if (std.mem.eql(u8, ws_spec, "^")) "^" else if (std.mem.eql(u8, ws_spec, "~")) "~" else "";
+                    const resolved_ver = std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, sib_version.? }) catch continue;
+                    const key_dup = allocator.dupe(u8, dep_name) catch {
+                        allocator.free(resolved_ver);
+                        continue;
+                    };
+                    resolutions.put(key_dup, resolved_ver) catch {
+                        allocator.free(key_dup);
+                        allocator.free(resolved_ver);
+                    };
+                    style.print("  Resolved {s}: workspace:{s} → {s}{s}\n", .{ dep_name, ws_spec, prefix, sib_version.? });
+                    break;
+                }
+            }
+        }
+    }
+
+    if (resolutions.count() == 0) return content;
+
+    // Do string replacements in the original content
+    var result = std.ArrayList(u8){};
+    defer result.deinit(allocator);
+
+    var i: usize = 0;
+    while (i < content.len) {
+        if (i + 12 < content.len and std.mem.startsWith(u8, content[i..], "\"workspace:")) {
+            // Find the closing quote
+            if (std.mem.indexOfPos(u8, content, i + 1, "\"")) |close_q| {
+                // Find which dep name this belongs to by scanning backwards
+                var dep_name: ?[]const u8 = null;
+                if (i >= 4) {
+                    var j = i - 1;
+                    while (j > 0 and (content[j] == ' ' or content[j] == '\t' or content[j] == '\n' or content[j] == '\r')) : (j -= 1) {}
+                    if (j > 0 and content[j] == ':') {
+                        j -= 1;
+                        while (j > 0 and (content[j] == ' ' or content[j] == '\t')) : (j -= 1) {}
+                        if (content[j] == '"') {
+                            const key_end = j;
+                            j -= 1;
+                            while (j > 0 and content[j] != '"') : (j -= 1) {}
+                            if (content[j] == '"') {
+                                dep_name = content[j + 1 .. key_end];
+                            }
+                        }
+                    }
+                }
+
+                if (dep_name) |name| {
+                    if (resolutions.get(name)) |resolved_ver| {
+                        try result.append(allocator, '"');
+                        try result.appendSlice(allocator, resolved_ver);
+                        try result.append(allocator, '"');
+                        i = close_q + 1;
+                        continue;
+                    }
+                }
+
+                // No resolution found, copy as-is
+                try result.appendSlice(allocator, content[i .. close_q + 1]);
+                i = close_q + 1;
+                continue;
+            }
+        }
+        try result.append(allocator, content[i]);
+        i += 1;
+    }
+
+    return try result.toOwnedSlice(allocator);
 }
 
 /// Extract the `files` array from package.json
