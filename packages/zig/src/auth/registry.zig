@@ -537,15 +537,27 @@ pub const RegistryClient = struct {
         // Parse URI
         const uri = try std.Uri.parse(url);
 
+        // Trim whitespace/newlines from auth token (GitHub secrets may have trailing whitespace)
+        const trimmed_token = std.mem.trim(u8, auth_token, " \t\r\n");
+
         // Create authorization header
         const auth_header = try std.fmt.allocPrint(
             self.allocator,
             "Bearer {s}",
-            .{auth_token},
+            .{trimmed_token},
         );
         defer self.allocator.free(auth_header);
 
-        // Create extra headers (npm requires specific headers)
+        // Extract scope from scoped package name (e.g., "@glenn123/foo" → "@glenn123")
+        // npm's CDN uses this header for routing, especially for first-time publishes
+        const npm_scope: []const u8 = if (package_name[0] == '@')
+            if (std.mem.indexOf(u8, package_name, "/")) |idx| package_name[0..idx] else ""
+        else
+            "";
+
+        // Create extra headers matching npm CLI behavior
+        // npm-auth-type: legacy — tells npm this is token auth (vs OIDC/web)
+        // npm-scope — helps npm's CDN route requests for scoped packages
         // Accept-Encoding: identity prevents gzip responses we can't decode
         const extra_headers = [_]http.Header{
             .{ .name = "Authorization", .value = auth_header },
@@ -554,6 +566,8 @@ pub const RegistryClient = struct {
             .{ .name = "Accept-Encoding", .value = "identity" },
             .{ .name = "User-Agent", .value = "pantry/0.1.0" },
             .{ .name = "npm-command", .value = "publish" },
+            .{ .name = "npm-auth-type", .value = "legacy" },
+            .{ .name = "npm-scope", .value = npm_scope },
         };
 
         // Make HTTP request
@@ -931,7 +945,7 @@ pub const RegistryClient = struct {
                 version, // dist-tags.latest
                 version, // versions key
                 version_obj.items, // full version object (package.json + _id + dist)
-                tarball_basename, version, // _attachments key (tgz)
+                package_name, version, // _attachments key (tgz) — must use full scoped name like npm CLI
                 encoded_tarball, // _attachments data (tgz)
                 tarball.len, // _attachments length (tgz)
                 sigstore_attachment.items, // sigstore attachment (or empty)
