@@ -566,11 +566,12 @@ pub fn copyFile(src_path: []const u8, dest_path: []const u8) !void {
             };
             defer std.posix.close(src_fd);
 
-            // Get file size via fstat
-            const stat = std.posix.fstat(src_fd) catch {
+            // Get file size via fstat (use c.fstat for Zig 0.16 compat)
+            var stat_buf: c.Stat = undefined;
+            if (c.fstat(src_fd, &stat_buf) != 0) {
                 return copyFileFallback(src_path, dest_path);
-            };
-            const file_size: u64 = @intCast(@max(0, stat.size));
+            }
+            const file_size: u64 = @intCast(@max(0, stat_buf.size));
             if (file_size == 0) {
                 // Just create empty file
                 const dest_fd = std.posix.openat(std.posix.AT.FDCWD, dest_path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true }, 0o644) catch {
