@@ -1,0 +1,34 @@
+distributable:
+  url: https://github.com/tummychow/git-absorb/archive/refs/tags/{{ version }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/git-absorb
+
+versions:
+  github: tummychow/git-absorb
+  strip: /v/
+
+dependencies:
+  libgit2.org: ~1.7 # links to libgit2.so.1.7
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.65'
+    rust-lang.org/cargo: '*'
+  script: cargo install --locked --path . --root {{prefix}}
+
+test:
+  dependencies:
+    git-scm.org: '*'
+  script:
+    - git init
+    - git config user.email "hello@pkgx.dev"
+    - git config user.name "pkgx"
+    - touch foo
+    - git add foo
+    - git commit -m "Add foo"
+    - echo a > foo
+    - git add foo
+    - git absorb
+    - test -z "$(git status --porcelain)"

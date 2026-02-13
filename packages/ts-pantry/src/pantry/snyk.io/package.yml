@@ -1,0 +1,43 @@
+distributable:
+  url: https://registry.npmjs.org/snyk/-/snyk-{{version}}.tgz
+  strip-components: 1
+
+versions:
+  npm: snyk
+
+dependencies:
+  nodejs.org: ^20
+
+build:
+  dependencies:
+    npmjs.com: ^10
+  script:
+    - npm i $ARGS .
+    - run: ln -s ../libexec/bin/snyk snyk
+      working-directory: '{{prefix}}/bin'
+  env:
+    ARGS:
+      - -ddd
+      - --global
+      - --build-from-source
+      - --prefix={{prefix}}/libexec
+      - --install-links
+      - --unsafe-perm
+
+provides:
+  - bin/snyk
+
+test:
+  - snyk version | grep {{version}}
+  - run: cp $FIXTURE package.json
+    fixture: |
+      {
+        "name": "test",
+        "version": "1.0.0",
+        "dependencies": {
+          "lodash": "*"
+        }
+      }
+  - npm i
+  - (snyk test || true) | tee out.log
+  - grep -E '(requires an authenticated account.|Authentication failed.|Authentication error)' out.log

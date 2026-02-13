@@ -1,0 +1,67 @@
+distributable:
+  url: https://dlcdn.apache.org/thrift/{{version}}/thrift-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: apache/thrift
+
+dependencies:
+  openssl.org: '1.1'
+  zlib.net: '*'
+
+build:
+  dependencies:
+    gnu.org/automake: '*'
+    gnu.org/autoconf: '*'
+    gnu.org/libtool: '*'
+    freedesktop.org/pkg-config: '*'
+    gnu.org/bison: '*'
+    boost.org: '*'
+  script:
+    # find pkg.m4
+    - cp {{deps.freedesktop.org/pkg-config.prefix}}/share/aclocal/pkg.m4 aclocal/
+    - ./bootstrap.sh
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --disable-debug
+      - --disable-tests
+      - --prefix={{prefix}}
+      - --libdir={{prefix}}/lib
+      - --with-openssl={{deps.openssl.org.prefix}}
+      - --with-boost={{deps.boost.org.prefix}}
+      - --without-java
+      - --without-kotlin
+      - --without-python
+      - --without-py3
+      - --without-ruby
+      - --without-haxe
+      - --without-netstd
+      - --without-perl
+      - --without-php
+      - --without-php_extension
+      - --without-dart
+      - --without-erlang
+      - --without-go
+      - --without-d
+      - --without-nodejs
+      - --without-nodets
+      - --without-lua
+      - --without-rs
+      - --without-swift
+      - --with-qt5=no
+    PY_PREFIX: '{{prefix}}'
+    PHP_PREFIX: '{{prefix}}'
+    # 0.19.0 has an unused `int j = 0;`.
+    CXXFLAGS: $CXXFLAGS -Wno-unused-but-set-variable
+    linux/aarch64:
+      CXXFLAGS: $CXXFLAGS -Wno-unused-but-set-variable -fPIC
+    darwin:
+      MACOSX_DEPLOYMENT_TARGET: 11.0
+
+provides:
+  - bin/thrift
+
+test: thrift --version | grep {{version}}

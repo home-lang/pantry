@@ -1,0 +1,41 @@
+distributable:
+  url: https://mujs.com/downloads/mujs-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://mujs.com/downloads
+  match: /mujs-\d+\.\d+\.\d+\.tar\.gz/
+  strip:
+    - /^mujs-/
+    - /\.tar\.gz/
+
+dependencies:
+  gnu.org/readline: ~8.1
+  linux:
+    invisible-island.net/ncurses: '*'
+
+build:
+  dependencies:
+    python.org: ^3 # since 1.3.7
+    linux:
+      gnu.org/gcc: '*'
+      gnu.org/make: '*'
+  script:
+    - run: sed -i "s|-lreadline|-lreadline -lncurses|g" Makefile
+      if: linux
+    - make prefix='{{prefix}}' release
+    - make prefix='{{prefix}}' install
+    - make prefix='{{prefix}}' install-shared
+    - run: 'sed -i "s/Version: \([^\ ]*\)/Version: {{version}}/g" *.pc'
+      working-directory: '{{prefix}}/lib/pkgconfig'
+
+provides:
+  - bin/mujs
+  - bin/mujs-pp
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: '*'
+  script:
+    - mujs test.js | grep 104
+    - pkg-config --modversion mujs | grep {{version}}

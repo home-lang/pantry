@@ -1,0 +1,49 @@
+distributable:
+  # it looks like they stopped distributing tarballs on their website as of
+  # v1.8.0
+  # url: https://xkbcommon.org/download/libxkbcommon-{{version}}.tar.xz
+  url: https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: xkbcommon/libxkbcommon
+  strip: /^xkbcommon-/
+
+dependencies:
+  x.org/x11: '*'
+  x.org/xcb: '*'
+  freedesktop.org/XKeyboardConfig: '*'
+  gnome.org/libxml2: '*'
+
+build:
+  dependencies:
+    gnu.org/bison: '*'
+    mesonbuild.com: '*'
+    ninja-build.org: '*'
+  script:
+    - meson $MESON_ARGS build
+    - meson compile -C build
+    - meson install -C build
+  env:
+    MESON_ARGS:
+      - --prefix="{{prefix}}"
+      - --libdir="{{prefix}}/lib"
+      - --buildtype=release
+      - --wrap-mode=nofallback
+      - -Denable-wayland=false
+      - -Denable-docs=false
+      - -Dxkb-config-root={{deps.freedesktop.org/XKeyboardConfig.prefix}}/share/X11/xkb
+      - -Dx-locale-root={{deps.freedesktop.org/XKeyboardConfig.prefix}}/share/locale
+    darwin:
+      MESON_ARGS:
+        # has invalid attributes for darwin linking
+        - -Denable-x11=false
+
+provides:
+  - bin/xkbcli
+
+test:
+  - pkg-config --modversion xkbcommon | grep {{version}}
+  - cc test.c -lxkbcommon -o test
+  - ./test
+  - xkbcli --version | grep {{version}}

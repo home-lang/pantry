@@ -1,0 +1,55 @@
+distributable:
+  url: https://prdownloads.sourceforge.net/zsh/zsh/{{version.raw}}/zsh-{{version.raw}}.tar.xz
+  strip-components: 1
+
+versions:
+  url: https://sourceforge.net/projects/zsh/files/zsh/
+  match: /files\/zsh\/\d+\.\d+(\.\d+)?\//
+  strip:
+    - /files\/zsh\//
+    - /\//
+
+provides:
+  - bin/zsh
+
+dependencies:
+  #TODO tighten these up
+  invisible-island.net/ncurses: '*'
+  pcre.org: '*'
+
+runtime:
+  env:
+    FPATH: ${{prefix}}/functions:$FPATH
+    MODULE_PATH: ${{prefix}}/lib/zsh/{{version.marketing}}
+
+build:
+  script:
+    # We need to be able to set MODULE_PATH to the correct location, so we have
+    # to break a small piece of zsh security
+    - run: |
+        sed -i.bak -e 's/^\(IPDEF8("MODULE_PATH",.*\)PM_DONTIMPORT|\(.*\)$/\1\2/' params.c
+        rm params.c.bak
+      working-directory: Src
+
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --enable-fndir={{prefix}}/functions
+      - --enable-scriptdir={{prefix}}/scripts
+      - --enable-runhelpdir=#{pkgshare}/help
+      - --enable-cap
+      - --enable-maildir-support
+      - --enable-multibyte
+      - --enable-pcre
+      - --enable-zsh-secure-free
+      - --enable-unicode9
+      - --enable-etcdir=/etc
+      - --with-tcsetpgrp
+      - DL_EXT=bundle
+
+test:
+  - test "$(zsh -c echo\ fancy-a-cuppa)" = 'fancy-a-cuppa'
+  - zsh -c "printf -v hello -- '%s'"
+  - zsh -c "autoload -Uz compinit && compinit"

@@ -1,0 +1,77 @@
+distributable:
+  url: https://cairographics.org/releases/cairo-{{ version }}.tar.xz
+  strip-components: 1
+
+versions:
+  url: https://cairographics.org/releases/
+  match: /cairo-\d+\.\d+(\.\d+)?\.tar\.xz/
+  strip:
+    - /cairo-/
+    - /.tar.xz/
+
+dependencies:
+  libpng.org: 1
+  pixman.org: ^0.40.0
+  freetype.org: 2
+  gnome.org/glib: 2
+  freedesktop.org/fontconfig: 2
+  sourceware.org/bzip2: 1
+  x.org/x11: "*"
+  x.org/xcb: "*"
+  x.org/exts: "*"
+  x.org/xrender: "*"
+  oberhumer.com/lzo: "*"
+
+build:
+  dependencies:
+    freedesktop.org/pkg-config: ^0.29
+    #FIXME or fontconfig detection fails
+    #FIXME build looks for 2.4.9 even when it has 2.5.0
+    libexpat.github.io: =2.4.9
+    gnome.org/gobject-introspection: 1
+    gnu.org/libtool: ^2
+    mesonbuild.com: ^1
+    ninja-build.org: ^1
+  script:
+    - run: |
+        ./configure --prefix={{ prefix }} --disable-dependency-tracking
+        make --jobs {{ hw.concurrency }}
+        make install
+      if: <1.18.0
+
+    - run: |
+        meson setup build --prefix={{ prefix }} --buildtype=release $ARGS
+        ninja -C build
+        ninja -C build install
+      if: ">=1.18.0"
+
+    - rm -rf {{prefix}}/share # docs are online
+
+    - run: |
+        if [ -d cairo ]; then
+          tmp_dir=cairo
+        else
+          tmp_dir=$(ls)
+        fi
+        mv $tmp_dir/* .
+        rmdir $tmp_dir
+        ln -s . $tmp_dir
+      working-directory: ${{ prefix }}/lib
+  env:
+    ARGS:
+      - -Dfreetype=enabled
+      - -Dfontconfig=enabled
+      - -Dpng=enabled
+      - -Dglib=enabled
+      - -Dxcb=enabled
+      - -Dxlib=enabled
+      - -Dzlib=enabled
+      - -Dglib=enabled
+
+test:
+  script:
+    - cc test.c -lcairo
+    - ./a.out
+
+provides:
+  - bin/cairo-trace

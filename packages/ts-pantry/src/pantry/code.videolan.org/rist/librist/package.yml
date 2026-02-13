@@ -1,0 +1,41 @@
+distributable:
+  url: https://code.videolan.org/rist/librist/-/archive/v{{version}}/librist-v{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  gitlab: code.videolan.org:rist/librist
+
+build:
+  dependencies:
+    mesonbuild.com: '>=0.47<1'
+    ninja-build.org: 1
+    linux:
+      sourceware.org/libffi: 3 # since 0.2.11
+  working-directory: build
+  script:
+    # POSIX compliance issue between the code and the environment
+    - run: |
+        if test "{{hw.platform}}" = "darwin"; then
+          sed -i -e 's/generation = (buf\.st_mtim\.tv_sec << 32).*/generation = buf.st_mtime << 32;/' srp_shared.c
+        fi
+      working-directory: ../tools
+      if: ^0.2.8
+    # trying to require brew is awful - since 0.2.11
+    - run: sed -i '/^if (host_machine.system() == '\''darwin'\'')/,/^endif$/s/^/# /' meson.build
+      working-directory: ..
+      if: darwin
+    - meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release
+    - ninja -v
+    - ninja install
+  env:
+    CC: clang
+
+test:
+  script: |
+    ristsrppasswd test test
+
+provides:
+  - bin/rist2rist
+  - bin/ristreceiver
+  - bin/ristsender
+  - bin/ristsrppasswd

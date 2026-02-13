@@ -1,0 +1,24 @@
+distributable:
+  url: https://gnupg.org/ftp/gcrypt/libksba/libksba-{{version}}.tar.bz2
+  strip-components: 1
+
+versions:
+  url: https://gnupg.org/ftp/gcrypt/libksba/
+  match: /libksba-(\d+\.\d+(\.\d+)?)\.tar\.bz2/
+  strip:
+    - /libksba-/
+    - /.tar.bz2/
+
+build:
+  script: |
+    ./configure --prefix={{prefix}}
+    make
+    make check
+    make install
+  dependencies:
+    gnupg.org/libgpg-error: 1
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: '*'
+  script: test "$(pkg-config --modversion ksba)" = "{{version}}"

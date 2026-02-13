@@ -1,0 +1,74 @@
+distributable:
+  #FIXME: pandoc and pandoc-cli have been split :/
+  # url: https://hackage.haskell.org/package/pandoc-cli{{ version }}/pandoc-cli-{{ version }}.tar.gz
+  url: https://github.com/jgm/pandoc/archive/refs/tags/{{ version.tag }}.tar.gz
+  strip-components: 1
+
+#FIXME pandoc has 4 digit versions : /
+# so we miss a whole bunch
+versions:
+  github: jgm/pandoc
+  strip: /^pandoc /
+
+provides:
+  - bin/pandoc
+
+dependencies:
+  gnu.org/gmp: 6
+  zlib.net: 1
+  sourceware.org/libffi: 3
+
+build:
+  dependencies:
+    haskell.org: ~9.4
+    haskell.org/cabal: ~3.10 # 3.12 complains when using --installdir about relative library paths
+    linux:
+      gnu.org/binutils: ~2.44 # ld.gold
+  working-directory: pandoc-cli
+  script:
+    # pandoc 2.x - no pandoc-cli subdirectory
+    - run: cd ..
+      if: <3
+
+    - cabal update
+    - mkdir -p {{prefix}}/bin
+
+    # FIXME: this isn't great, but it'll fix any ghc install at build time
+    # needs install-time customization for a true fix
+    - run: |
+        if ! grep -q 'rpath,{{pkgx.prefix}}' settings; then
+          sed -i \
+            -e 's|\(C compiler flags.*\)")|\1 -Wl,-rpath,{{pkgx.prefix}}")|' \
+            -e 's|\(C++ compiler flags.*\)")|\1 -Wl,-rpath,{{pkgx.prefix}}")|' \
+            -e 's|\(C compiler link flags.*\)")|\1 -Wl,-rpath,{{pkgx.prefix}}")|' \
+            settings
+        fi
+      if: darwin
+      working-directory: ${{deps.haskell.org.prefix}}/.ghcup/ghc/{{deps.haskell.org.version}}/lib/ghc-{{deps.haskell.org.version}}/lib
+
+    - run: sed -i -f $PROP pandoc-cli.cabal ../pandoc.cabal
+      prop: >
+        s/build-depends:.*base.*/build-depends: base >=4.8 \&\& <5/
+    - cabal v2-install $ARGS
+  # else x86-64 segfaults
+  skip: fix-patchelf
+  env:
+    ARGS:
+      - --install-method=copy
+      - --installdir={{prefix}}/bin
+      - --jobs={{hw.concurrency}}
+      # https://pandoc.org/installing.html#creating-a-relocatable-binary
+      - -fembed_data_files
+    linux:
+      ARGS:
+        # else segfaults
+        - --enable-relocatable
+        - --ghc-option=-fPIC
+        - --ghc-option=-optl=-pie
+
+test:
+  fixture: |
+    # tea
+    brew2 for you
+  script: pandoc -f markdown -t html5 $FIXTURE
+  #TODO check output is HTML!

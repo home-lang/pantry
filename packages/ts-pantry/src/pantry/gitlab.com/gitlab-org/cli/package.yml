@@ -1,0 +1,41 @@
+distributable:
+  url: https://gitlab.com/gitlab-org/cli/-/archive/v{{version}}/cli-v{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  gitlab: gitlab-org/cli/tags
+
+provides:
+  - bin/glab
+
+build:
+  script:
+    - go mod download
+    - go build -v -trimpath -ldflags="$GO_LDFLAGS" -o '{{prefix}}/bin/glab' ./cmd/glab
+  dependencies:
+    go.dev: ^1.18
+  env:
+    GO111MODULE: 'on'
+    GO_LDFLAGS:
+      - -s
+      - -w
+      - -X main.version={{version}}
+      - -X main.buildDate=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+      - -X main.debugMode=false
+    linux:
+      # or segmentation fault
+      # fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      GO_LDFLAGS:
+        - -buildmode=pie
+
+test:
+  dependencies:
+    git-scm.org: '*'
+  script:
+    - glab --version
+    - glab --version | grep -E "glab.*{{version}}"
+    - git clone https://gitlab.com/cli-automated-testing/homebrew-testing.git
+    - run:
+        - glab repo contributors | grep "Matt Nohr"
+        - glab issue list --all | grep "This is a test issue"
+      working-directory: homebrew-testing

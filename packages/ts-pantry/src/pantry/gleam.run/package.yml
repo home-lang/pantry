@@ -1,0 +1,37 @@
+distributable:
+  url: https://github.com/gleam-lang/gleam/archive/refs/tags/v{{ version }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/gleam
+
+versions:
+  github: gleam-lang/gleam
+  strip: /v/
+
+build:
+  dependencies:
+    # edition2024 in v1.9.0
+    rust-lang.org: '>=1.85'
+    rust-lang.org/cargo: '>=0.86'
+  script:
+    - run: cargo install --path compiler-cli --force --locked --root {{prefix}}
+      if: <1.9
+    - run: cargo install --path gleam-bin --force --locked --root {{prefix}}
+      if: '>=1.9'
+
+test:
+  dependencies:
+    erlang.org: '*'
+  script:
+    - gleam --version
+    - gleam new pkgx_test_project
+    - run: cp $FIXTURE pkgx_test_project/src/pkgx_test_project.gleam
+      fixture: |
+        import gleam/io
+
+        pub fn main() {
+          io.print("Hello, world!")
+        }
+    - run: gleam run | grep "Hello, world!"
+      working-directory: pkgx_test_project

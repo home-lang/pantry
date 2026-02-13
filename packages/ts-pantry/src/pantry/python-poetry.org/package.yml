@@ -1,0 +1,40 @@
+distributable:
+  url: https://github.com/python-poetry/poetry/releases/download/{{version}}/poetry-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: python-poetry/poetry
+
+dependencies:
+  pkgx.sh: ">=1"
+
+build:
+  dependencies:
+    python.org: ~3.11
+    cmake.org: ^3
+    linux:
+      rust-lang.org/cargo: "*" # for cryptographic bindings
+  script:
+    - bkpyvenv stage {{prefix}} {{version}}
+    - ${{prefix}}/venv/bin/pip install .
+    - bkpyvenv seal {{prefix}} poetry
+
+test:
+  script:
+    - poetry new teaxyz
+    - cd teaxyz
+    - poetry config virtualenvs.in-project true
+
+    # 2.30.0 uses urllib2 which conflicts with boto3, at this time.
+    - poetry add requests==2.29.0
+
+    - poetry add boto3
+
+    - test -f pyproject.toml
+    - test -f poetry.lock
+  env:
+    LC_ALL: en_US.UTF-8
+    PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+
+provides:
+  - bin/poetry

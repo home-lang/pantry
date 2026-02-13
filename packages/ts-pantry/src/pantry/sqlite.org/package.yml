@@ -1,0 +1,64 @@
+distributable:
+  - url: https://sqlite.org/2022/sqlite-autoconf-{{version.major}}{{version.minor}}0{{version.patch}}00.tar.gz
+    strip-components: 1
+  - url: https://sqlite.org/2023/sqlite-autoconf-{{version.major}}{{version.minor}}0{{version.patch}}00.tar.gz
+    strip-components: 1
+  - url: https://sqlite.org/2024/sqlite-autoconf-{{version.major}}{{version.minor}}0{{version.patch}}00.tar.gz
+    strip-components: 1
+  - url: https://sqlite.org/2025/sqlite-autoconf-{{version.major}}{{version.minor}}0{{version.patch}}00.tar.gz
+    strip-components: 1
+  - url: https://sqlite.org/2026/sqlite-autoconf-{{version.major}}{{version.minor}}0{{version.patch}}00.tar.gz
+    strip-components: 1
+
+versions:
+  github: sqlite/sqlite/tags
+  strip: /^version-/
+
+dependencies:
+  zlib.net: 1
+  gnu.org/readline: 8
+
+build:
+  script:
+    - ./configure $ARGS --with-readline-ldflags="-L{{deps.gnu.org/readline.prefix}}/lib -lreadline"
+    - make --jobs {{ hw.concurrency }} install
+    - run: |
+        if [ ! -f libsqlite3.$SUFFIX ]; then
+          ln -s libsqlite3.0.$SUFFIX libsqlite3.$SUFFIX
+        fi
+      working-directory: ${{prefix}}/lib
+  env:
+    linux:
+      SUFFIX: so
+    darwin:
+      SUFFIX: dylib
+    ARGS:
+      - --prefix={{ prefix }}
+      - --enable-readline
+      - --disable-editline
+      - --enable-session
+      - --with-readline-cflags=-I{{deps.gnu.org/readline.prefix}}/include
+    CPPFLAGS:
+      # copied without explanation from brew
+      - -DSQLITE_ENABLE_COLUMN_METADATA=1
+      - -DSQLITE_ENABLE_RTREE=1
+      - -DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS3_PARENTHESIS=1
+      - -DSQLITE_ENABLE_JSON1=1
+      # Default value of MAX_VARIABLE_NUMBER is 999 which is too low for many
+      # applications. Set to 250000 (Same value used in Debian and Ubuntu).
+      - -DSQLITE_MAX_VARIABLE_NUMBER=250000
+
+test:
+  - sqlite3 --version
+  - sqlite3 --version | grep '{{version}}'
+  - run: sqlite3 <$FIXTURE | tee out.log
+    fixture: |
+      create table students (name text, age integer);
+      insert into students (name, age) values ('Bob', 14);
+      insert into students (name, age) values ('Sue', 12);
+      insert into students (name, age) values ('Tim', 13);
+      select name from students order by age asc;
+  - test "SueTimBob" = "$(cat out.log | tr -d '\n')"
+
+provides:
+  - bin/sqlite3

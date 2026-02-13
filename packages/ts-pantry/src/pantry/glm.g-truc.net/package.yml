@@ -1,0 +1,59 @@
+distributable:
+  - url: https://github.com/g-truc/glm/releases/download/{{version.tag}}/glm-{{version.tag}}.zip
+  # v1.0.0 added -light
+  - url: https://github.com/g-truc/glm/releases/download/{{version.tag}}/glm-{{version.tag}}-light.zip
+
+versions:
+  github: g-truc/glm
+
+build:
+  dependencies:
+    cmake.org: ^3
+  working-directory: glm
+  script:
+    - cmake -S . -B build $ARGS
+    - cmake --build build -- all
+
+    - mkdir -p {{prefix}}/include {{prefix}}/lib/pkgconfig
+    - cp -a detail ext gtc gtx simd *.hpp '{{prefix}}/include'
+    - run: ln -s . glm
+      working-directory: '{{prefix}}/include'
+  env:
+    ARGS:
+      - -DCMAKE_INSTALL_PREFIX={{prefix}}
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -DBUILD_SHARED_LIBS=ON
+    CXXFLAGS:
+      - -std=c++17
+      # or fails to build with clang 15
+      - -Wno-error=implicit-int-conversion
+      - -Wno-error=unused-but-set-variable
+      - -Wno-error=deprecated-declarations
+    linux:
+      CXXFLAGS:
+        - -Wno-error=implicit-int-float-conversion
+    linux/x86-64:
+      CXXFLAGS:
+        - -fPIC
+
+test:
+  script:
+    - run: c++ $FIXTURE
+      fixture:
+        extname: cpp
+        content: |
+          #include <glm/vec2.hpp>// glm::vec2
+          int main() {
+            std::size_t const VertexCount = 4;
+            std::size_t const PositionSizeF32 = VertexCount * sizeof(glm::vec2);
+            glm::vec2 const PositionDataF32[VertexCount] = {
+              glm::vec2(-1.0f,-1.0f),
+              glm::vec2( 1.0f,-1.0f),
+              glm::vec2( 1.0f, 1.0f),
+              glm::vec2(-1.0f, 1.0f)
+            };
+            return 0;
+          }
+
+    - ./a.out

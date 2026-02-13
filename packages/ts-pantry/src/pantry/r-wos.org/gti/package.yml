@@ -1,0 +1,20 @@
+distributable:
+  url: https://github.com/rwos/gti/archive/v{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: rwos/gti/tags
+
+provides:
+  - bin/gti
+
+build:
+  script: |
+    make gti
+    mkdir -p "{{prefix}}"/bin
+    mv gti "{{prefix}}"/bin
+
+test:
+  dependencies:
+    git-scm.org: ^2
+  script: gti init

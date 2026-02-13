@@ -1,0 +1,45 @@
+distributable:
+  url: https://www.gaia-gis.it/gaia-sins/freexl-sources/freexl-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://www.gaia-gis.it/gaia-sins/freexl-sources/
+  match: /freexl-\d+\.\d+(\.\d+)?\.tar\.gz/
+  strip:
+    - /freexl-/
+    - /.tar.gz/
+
+dependencies:
+  # starting with v2
+  zlib.net/minizip: ^1
+  libexpat.github.io: ^2
+
+build:
+  dependencies:
+    doxygen.nl: 1
+  script: |
+    ./configure $ARGS
+    make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+    linux/aarch64:
+      ARGS:
+        - --build=aarch64-unknown-linux-gnu
+    linux/x86-64:
+      ARGS:
+        - --build=x86_64-unknown-linux-gnu
+
+test:
+  fixture: |
+    #include <stdio.h>
+    #include "freexl.h"
+    int main()
+    {
+        printf("%s", freexl_version());
+        return 0;
+    }
+  script: |
+    mv $FIXTURE test.c
+    cc test.c -lfreexl
+    ./a.out

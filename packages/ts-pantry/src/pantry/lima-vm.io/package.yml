@@ -1,0 +1,55 @@
+distributable:
+  url: https://github.com/lima-vm/lima/archive/v{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: lima-vm/lima
+
+dependencies:
+  qemu.org: '*'
+
+build:
+  dependencies:
+    go.dev: '*'
+    linux:
+      gnu.org/gcc: '*'
+  script:
+    - run:
+        - sed -i -e's/ldflags="/ldflags="-buildmode=pie /' Makefile
+        - mkdir .bin
+        - ln -s "$(command -v gcc)" .bin/$ARCH-linux-gnu-gcc
+      if: linux
+    - make $ARGS binaries
+    - mkdir -p {{prefix}}
+    - mv ./_output/* {{prefix}}/
+  env:
+    darwin:
+      CC: clang
+      CXX: clang++
+      LD: clang
+    ARGS:
+      - VERSION={{version}}
+    linux:
+      PATH: '$SRCROOT/.bin:$PATH'
+      ARGS:
+        - CONFIG_GUESTAGENT_ARCH_ARMV7L=n
+        - CONFIG_GUESTAGENT_ARCH_RISCV64=n
+        - CONFIG_GUESTAGENT_ARCH_S390X=n
+    x86-64:
+      ARCH: x86_64
+    aarch64:
+      ARCH: aarch64
+
+provides:
+  - bin/apptainer.lima
+  - bin/docker.lima
+  - bin/kubectl.lima
+  - bin/lima
+  - bin/limactl
+  - bin/nerdctl.lima
+  - bin/podman.lima
+
+test:
+  # can't even call --version as root.
+  - if test "$(id -u)" = 0; then echo "Skipping test as root user"; exit 0; fi
+  - limactl --version | grep {{version}}

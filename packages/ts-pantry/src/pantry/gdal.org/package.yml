@@ -1,0 +1,153 @@
+distributable:
+  url: https://github.com/OSGeo/gdal/releases/download/v{{version}}/gdal-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: OSGeo/gdal
+
+dependencies:
+  apache.org/arrow: 19
+  heasarc.gsfc.nasa.gov/cfitsio: '*'
+  epsilon-project.sourceforge.io: '*'
+  libexpat.github.io: '*'
+  gaia-gis.it/fossil/freexl: '*'
+  libgeos.org: '*'
+  giflib.sourceforge.io: '*'
+  # removed due to cmake duplication of libaec.
+  # hdfgroup.org/HDF5: '*'
+  libjpeg-turbo.org: '*'
+  jpeg.org/jpegxl: '*'
+  github.com/json-c/json-c: '*'
+  libarchive.org: '*'
+  github.com/OSGeo/libgeotiff: '*'
+  github.com/strukturag/libheif: '*'
+  github.com/libkml/libkml: '*'
+  github.com/Esri/lerc: '*'
+  libpng.org: '*'
+  postgresql.org/libpq: '*'
+  gaia-gis.it/libspatialite: '*'
+  simplesystems.org/libtiff: '*'
+  gnome.org/libxml2: ~2.13 # 2.14 changed the soname
+  # removed due to cmake duplication of libaec.
+  # unidata.ucar.edu/netcdf: '*'
+  numpy.org: '*'
+  openexr.com: '*'
+  openjpeg.org: '*'
+  openssl.org: '*'
+  pcre.org/v2: '*'
+  poppler.freedesktop.org: '*'
+  proj.org: '*'
+  python.org: ~3.11
+  qhull.org: '*'
+  sqlite.org: '*'
+  unixodbc.org: '*'
+  google.com/webp: '*'
+  xerces.apache.org/xerces-c: '*'
+  tukaani.org/xz: '*'
+  facebook.com/zstd: '*'
+  protobuf.dev: '*'
+  abseil.io: '*'
+  zlib.net: '*'
+  dkrz.de/libaec: '*'
+  github.com/ebiggers/libdeflate: '*' # since 3.9.3
+  linux:
+    curl.se: '*'
+    github.com/util-linux/util-linux: '*'
+    # apache.org/thrift: =0.20.0 # since 3.9.3
+    # apache.org/thrift: =0.21.0 # since 3.10.0
+    apache.org/thrift: =0.22.0 # since 3.11.1
+
+runtime:
+  env:
+    PYTHONPATH: '{{prefix}}/lib/python{{deps.python.org.version.major}}/site-packages/osgeo:{{prefix}}/lib/python{{deps.python.org.version.major}}/site-packages/osgeo_utils:$PYTHONPATH'
+
+build:
+  dependencies:
+    boost.org: '*'
+    cmake.org: '*'
+    swig.org: '*'
+    doxygen.nl: '*'
+    linux:
+      llvm.org: '*'
+      nixos.org/patchelf: '*'
+  script:
+    - cmake -S . -B build $CMAKE_ARGS
+    - cmake --build build
+    - cmake --install build
+    - run:
+        - sed -i "s|{{prefix}}|\$(dirname \$0)/..|g" gdal-config
+        - sed -i "s|{{pkgx.prefix}}|\$(dirname \$0)/../../..|g" gdal-config
+      working-directory: '{{prefix}}/bin'
+    - run: ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}
+      working-directory: '{{prefix}}/lib'
+    # sqlite3 full path in the bins
+    - run:
+        - ldd lib/libgdal.so
+        - ldd bin/gdalinfo
+        - patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so lib/libgdal.so
+        - patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bin/gdalinfo
+        - ldd lib/libgdal.so
+        - ldd bin/gdalinfo
+      if: linux
+      working-directory: '{{prefix}}'
+  env:
+    CC: clang
+    CXX: clang++
+    LD: clang
+    CMAKE_ARGS:
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}
+      - -DCMAKE_INSTALL_LIBDIR=lib
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_FIND_FRAMEWORK=LAST
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -Wno-dev
+      - -DBUILD_TESTING=OFF
+      - -DENABLE_PAM=ON
+      - -DCMAKE_CXX_STANDARD=17
+    # otherwise is uses libdeflate from openexr
+    darwin:
+      LDFLAGS: $LDFLAGS {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.dylib
+    linux:
+      LDFLAGS: $LDFLAGS {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.so
+
+provides:
+  - bin/gdaladdo
+  - bin/gdalbuildvrt
+  - bin/gdal-config
+  - bin/gdal_contour
+  - bin/gdal_create
+  - bin/gdaldem
+  - bin/gdalenhance
+  - bin/gdal_grid
+  - bin/gdalinfo
+  - bin/gdallocationinfo
+  - bin/gdalmanage
+  - bin/gdalmdiminfo
+  - bin/gdalmdimtranslate
+  - bin/gdal_rasterize
+  - bin/gdalsrsinfo
+  - bin/gdaltindex
+  - bin/gdaltransform
+  - bin/gdal_translate
+  - bin/gdal_viewshed
+  - bin/gdalwarp
+  - bin/gnmanalyse
+  - bin/gnmmanage
+  - bin/nearblack
+  - bin/ogr2ogr
+  - bin/ogrinfo
+  - bin/ogrlineref
+  - bin/ogrtindex
+  - bin/sozip
+
+test:
+  # library debugging
+  - run:
+      - ldd {{prefix}}/lib/libgdal.so | grep sqlite
+      - ldd {{prefix}}/bin/gdalinfo | grep sqlite
+    if: linux
+  - gdalinfo --version
+  - gdalinfo --version | grep {{version}}
+  - gdalinfo --formats
+  - ogrinfo --version | grep {{version}}
+  - ogrinfo --formats

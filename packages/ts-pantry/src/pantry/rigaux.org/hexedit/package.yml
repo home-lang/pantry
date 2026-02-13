@@ -1,0 +1,26 @@
+distributable:
+  url: https://github.com/pixel/hexedit/archive/refs/tags/{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: pixel/hexedit/tags
+
+dependencies:
+  invisible-island.net/ncurses: 6
+
+build:
+  dependencies:
+    gnu.org/autoconf: '*'
+  script: |
+    ./autogen.sh
+    ./configure --prefix={{prefix}}
+    make
+    make install
+
+test:
+  true
+  # FIXME: curses tool, no --version, --help is exit code 1
+  # hexedit -h
+
+provides:
+  - bin/hexedit

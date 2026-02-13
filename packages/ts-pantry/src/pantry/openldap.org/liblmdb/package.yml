@@ -1,0 +1,34 @@
+distributable:
+  url: https://git.openldap.org/openldap/openldap/-/archive/{{version.tag}}/openldap-{{version.tag}}.tar.gz
+  # openldap-{{version.tag}}/libraries/liblmdb
+  strip-components: 3
+
+display-name: liblmdb
+
+versions:
+  gitlab: git.openldap.org:openldap/openldap/tags
+  strip:
+    - /^LMDB_/
+
+build:
+  dependencies:
+    darwin:
+      gnu.org/patch: "*"
+  script:
+    - run: if test "{{hw.platform}}" = "darwin"; then patch -p1 < props/mdb-darwin-fix.patch; fi
+      if: =0.9.34
+    - sed -i -e 's/^prefix\t=/prefix\t?=/' Makefile
+    - make prefix={{prefix}} --jobs {{ hw.concurrency }} install
+  env:
+    linux:
+      CC: clang
+      CXX: clang++
+      LD: clang
+
+provides:
+  - bin/mdb_copy
+  - bin/mdb_dump
+  - bin/mdb_load
+  - bin/mdb_stat
+
+test: test "$(mdb_stat -V|cut -d':' -f1|cut -d' ' -f2)" = {{version}}

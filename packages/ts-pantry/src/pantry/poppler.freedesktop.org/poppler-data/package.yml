@@ -1,0 +1,20 @@
+distributable:
+  url: https://poppler.freedesktop.org/poppler-data-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  gitlab: gitlab.freedesktop.org:poppler/poppler-data/tags
+  strip: /^POPPLER_DATA_/
+
+build:
+  script:
+    # datadir is for pkgconfig files, needed by poppler itself to find its own data files
+    - make install prefix={{prefix}} datadir={{prefix}}/lib pkgdatadir={{prefix}}/share/poppler
+
+    # create a symlink in case something is expecting the .pc in share
+    - ln -s {{prefix}}/lib/pkgconfig {{prefix}}/share/
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: '*'
+  script: pkg-config --cflags poppler-data

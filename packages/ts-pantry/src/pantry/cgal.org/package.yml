@@ -1,0 +1,52 @@
+distributable:
+  url: https://github.com/CGAL/cgal/releases/download/v{{version.marketing}}/CGAL-{{version.marketing}}.tar.xz
+  strip-components: 1
+
+versions:
+  github: CGAL/cgal
+
+dependencies:
+  boost.org: '*'
+  eigen.tuxfamily.org: '*'
+  gnu.org/gmp: '*'
+  gnu.org/mpfr: '*'
+  openssl.org: '*'
+
+build:
+  dependencies:
+    cmake.org: '*'
+    qt.io: ~5
+    linux:
+      gnu.org/gcc: '*'
+  script:
+    - cmake . $CMAKE_ARGS
+    - make install
+  env:
+    CMAKE_ARGS:
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}
+      - -DCMAKE_INSTALL_LIBDIR=lib
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_FIND_FRAMEWORK=LAST
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -Wno-dev
+      - -DBUILD_TESTING=OFF
+      - -DCMAKE_CXX_FLAGS='-std=c++14'
+      - -DWITH_CGAL_Qt5=ON
+      - -DQT_DIRS={{deps.qt.io.prefix}}/cmake/Qt5
+
+provides:
+  - bin/cgal_create_CMakeLists
+  - bin/cgal_create_cmake_script
+
+test:
+  dependencies:
+    cmake.org: '*'
+    qt.io: ~5
+    linux:
+      gnu.org/gcc: '*'
+      gnu.org/make: '*'
+  script:
+    - cgal_create_CMakeLists
+    - cmake -L $ARGS .
+    - cmake --build . -v
+    - ./surprise | grep 15

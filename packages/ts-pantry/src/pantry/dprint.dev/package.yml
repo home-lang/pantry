@@ -1,0 +1,18 @@
+distributable:
+  url: https://github.com/dprint/dprint/archive/refs/tags/{{ version.tag }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/dprint
+
+versions:
+  github: dprint/dprint
+
+build:
+  working-directory: crates/dprint
+  dependencies:
+    rust-lang.org: ^1.91 # edition2024
+    rust-lang.org/cargo: "*"
+  script: cargo install --locked --path . --root {{prefix}}
+
+test: test "$(dprint --version)" = "dprint {{version}}"

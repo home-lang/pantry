@@ -1,0 +1,41 @@
+# gitlab.freedesktop.org has started 403ing from GHA
+distributable: ~
+# url: https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/{{version.tag}}/downloads/wayland-protocols-{{version.tag}}.tar.xz
+# strip-components: 1
+
+display-name: wayland-protocols
+
+versions:
+  gitlab: gitlab.freedesktop.org:wayland/wayland-protocols
+
+platforms:
+  - linux
+
+build:
+  dependencies:
+    mesonbuild.com: '*'
+    ninja-build.org: '*'
+    freedesktop.org/pkg-config: '*'
+    python.org: ~3.11
+    wayland.freedesktop.org: '*'
+    curl.se: '*'
+  working-directory: build
+  script:
+    - run: curl -L 'https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/{{version.tag}}/downloads/wayland-protocols-{{version.tag}}.tar.xz' | tar -xJ --strip-components=1
+      working-directory: ..
+    - meson $ARGS ..
+    - ninja -v
+    - ninja install -v
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --libdir={{prefix}}/lib
+      - --buildtype=release
+      - --wrap-mode=nofallback
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: '*'
+  script:
+    - pkg-config --modversion wayland-protocols
+    - pkg-config --modversion wayland-protocols | grep {{version.marketing}}

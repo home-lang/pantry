@@ -1,0 +1,278 @@
+name: Build Package Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package domain to build'
+        required: true
+        type: choice
+        options:
+          - php.net
+          - postgresql.org
+          - redis.io
+      version:
+        description: 'Version to build (leave empty for latest from pantry)'
+        required: false
+        type: string
+      platforms:
+        description: 'Platforms to build'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - darwin-arm64
+          - darwin-x86-64
+          - linux-x86-64
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: pantry-registry
+
+jobs:
+  prepare:
+    name: Prepare build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd packages/ts-pantry && bun install
+
+      - name: Determine version
+        id: version
+        run: |
+          PACKAGE="${{ github.event.inputs.package }}"
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            # Convert package domain to filename
+            PACKAGE_FILE="packages/ts-pantry/src/packages/${PACKAGE//./}net.ts"
+
+            if [ ! -f "$PACKAGE_FILE" ]; then
+              PACKAGE_FILE="packages/ts-pantry/src/packages/${PACKAGE//./-}.ts"
+            fi
+            if [ ! -f "$PACKAGE_FILE" ]; then
+              PACKAGE_FILE="packages/ts-pantry/src/packages/${PACKAGE//./}.ts"
+            fi
+
+            if [ -f "$PACKAGE_FILE" ]; then
+              VERSION=$(grep -A1 "versions:" "$PACKAGE_FILE" | grep -oE "'[0-9]+\.[0-9]+\.[0-9]+'" | head -1 | tr -d "'")
+            fi
+
+            if [ -z "$VERSION" ]; then
+              echo "Could not determine version from $PACKAGE_FILE, please specify manually"
+              exit 1
+            fi
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building $PACKAGE version $VERSION"
+
+      - name: Set build matrix
+        id: matrix
+        run: |
+          PLATFORMS="${{ github.event.inputs.platforms }}"
+
+          if [ "$PLATFORMS" = "all" ]; then
+            MATRIX='{"include":[{"os":"macos-14","platform":"darwin-arm64"},{"os":"macos-13","platform":"darwin-x86-64"},{"os":"ubuntu-latest","platform":"linux-x86-64"}]}'
+          elif [ "$PLATFORMS" = "darwin-arm64" ]; then
+            MATRIX='{"include":[{"os":"macos-14","platform":"darwin-arm64"}]}'
+          elif [ "$PLATFORMS" = "darwin-x86-64" ]; then
+            MATRIX='{"include":[{"os":"macos-13","platform":"darwin-x86-64"}]}'
+          elif [ "$PLATFORMS" = "linux-x86-64" ]; then
+            MATRIX='{"include":[{"os":"ubuntu-latest","platform":"linux-x86-64"}]}'
+          fi
+
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build ${{ github.event.inputs.package }} (${{ matrix.platform }})
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd packages/ts-pantry && bun install
+
+      - name: Install build tools (macOS)
+        if: contains(matrix.platform, 'darwin')
+        run: |
+          brew install autoconf automake libtool pkg-config bison re2c
+
+          if [ "${{ github.event.inputs.package }}" = "php.net" ]; then
+            brew install postgresql openssl@1.1 libsodium libzip oniguruma sqlite icu4c \
+              freetype libpng webp jpeg curl libxml2 libxslt readline gettext gmp libiconv krb5
+          fi
+
+          if [ "${{ github.event.inputs.package }}" = "postgresql.org" ]; then
+            brew install openssl readline zlib lz4 libxml2 libxslt icu4c flex perl
+          fi
+
+          if [ "${{ github.event.inputs.package }}" = "redis.io" ]; then
+            brew install openssl
+          fi
+
+      - name: Install build tools (Linux)
+        if: contains(matrix.platform, 'linux')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool pkg-config
+
+          if [ "${{ github.event.inputs.package }}" = "php.net" ]; then
+            sudo apt-get install -y \
+              bison re2c \
+              libssl-dev libsodium-dev libzip-dev libonig-dev \
+              libsqlite3-dev libicu-dev libfreetype6-dev libpng-dev \
+              libwebp-dev libjpeg-dev libcurl4-openssl-dev libxml2-dev \
+              libxslt1-dev libedit-dev libffi-dev libpq-dev \
+              libreadline-dev libgmp-dev libkrb5-dev libbz2-dev \
+              default-libmysqlclient-dev liblz4-dev
+          fi
+
+          if [ "${{ github.event.inputs.package }}" = "postgresql.org" ]; then
+            sudo apt-get install -y \
+              libssl-dev libreadline-dev zlib1g-dev liblz4-dev \
+              libxml2-dev libxslt1-dev libicu-dev flex bison perl
+          fi
+
+          if [ "${{ github.event.inputs.package }}" = "redis.io" ]; then
+            sudo apt-get install -y libssl-dev
+          fi
+
+      - name: Build package
+        id: build
+        run: |
+          PACKAGE="${{ github.event.inputs.package }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          PLATFORM="${{ matrix.platform }}"
+
+          BUILD_DIR="${{ runner.temp }}/build-${PACKAGE}-${VERSION}"
+          INSTALL_PREFIX="${{ runner.temp }}/install-${PACKAGE}-${VERSION}"
+          mkdir -p "$BUILD_DIR" "$INSTALL_PREFIX"
+
+          echo "Building $PACKAGE $VERSION for $PLATFORM"
+
+          cd packages/ts-pantry
+          bun scripts/build-package.ts \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --platform "$PLATFORM" \
+            --build-dir "$BUILD_DIR" \
+            --prefix "$INSTALL_PREFIX"
+
+          echo "install_prefix=$INSTALL_PREFIX" >> $GITHUB_OUTPUT
+
+      - name: Package artifacts
+        id: package
+        run: |
+          PACKAGE="${{ github.event.inputs.package }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          PLATFORM="${{ matrix.platform }}"
+          INSTALL_PREFIX="${{ steps.build.outputs.install_prefix }}"
+
+          SAFE_NAME="${PACKAGE//./-}"
+          ARTIFACT_NAME="${SAFE_NAME}-${VERSION}-${PLATFORM}"
+          ARTIFACT_PATH="${{ runner.temp }}/${ARTIFACT_NAME}.tar.gz"
+
+          cd "$INSTALL_PREFIX"
+          tar -czvf "$ARTIFACT_PATH" .
+
+          if [ "${{ matrix.platform }}" = "darwin-arm64" ] || [ "${{ matrix.platform }}" = "darwin-x86-64" ]; then
+            shasum -a 256 "$ARTIFACT_PATH" > "${ARTIFACT_PATH}.sha256"
+          else
+            sha256sum "$ARTIFACT_PATH" > "${ARTIFACT_PATH}.sha256"
+          fi
+
+          echo "artifact_path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: |
+            ${{ steps.package.outputs.artifact_path }}
+            ${{ steps.package.outputs.artifact_path }}.sha256
+          retention-days: 7
+
+  upload-to-s3:
+    name: Upload to S3
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd packages/ts-pantry && bun install
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          PACKAGE="${{ github.event.inputs.package }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+
+          echo "Uploading $PACKAGE $VERSION to S3"
+
+          cd packages/ts-pantry
+          bun scripts/upload-to-s3.ts \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --artifacts-dir "${{ github.workspace }}/artifacts" \
+            --bucket "$S3_BUCKET" \
+            --region "$AWS_REGION"
+
+      - name: Summary
+        run: |
+          PACKAGE="${{ github.event.inputs.package }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+
+          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Package:** $PACKAGE" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Uploaded to S3" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          for artifact_dir in artifacts/*/; do
+            artifact_name=$(basename "$artifact_dir")
+            echo "- \`$artifact_name\`" >> $GITHUB_STEP_SUMMARY
+          done

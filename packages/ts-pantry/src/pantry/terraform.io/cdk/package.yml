@@ -1,0 +1,28 @@
+display-name: terraform-cdk
+
+distributable:
+  url: https://registry.npmjs.org/cdktf-cli/-/cdktf-cli-{{version}}.tgz
+  strip-components: 1
+
+versions:
+  github: hashicorp/terraform-cdk/tags
+  ignore: /-pre\./
+
+provides:
+  - bin/cdktf
+
+# no prebuilt binaries are available online for darwin/x86-64
+platforms: [linux, darwin/aarch64]
+
+dependencies:
+  nodejs.org: ^17 || ^18 || ^19 || ^20
+
+build:
+  dependencies:
+    classic.yarnpkg.com: '*'
+  script:
+    - mkdir -p "{{prefix}}"
+    - npm_config_build_from_source=true yarn install --modules-folder {{prefix}}/node_modules
+    - cp -r bundle/bin package.json {{prefix}}
+
+test: cdktf --version | grep {{version}}

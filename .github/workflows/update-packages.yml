@@ -1,0 +1,320 @@
+name: Update Packages
+
+on:
+  schedule:
+    # Run every 20 minutes
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-packages:
+    name: Update packages and index
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd packages/ts-pantry && bun install
+
+      - name: Fetch all packages
+        id: fetch-packages
+        run: |
+          echo "Starting package fetch..."
+          cd packages/ts-pantry
+
+          TEMP_JSON_FILE=$(mktemp)
+
+          echo "Running fetch command to update packages..."
+          if timeout 3600 bun bin/cli.ts fetch --all --verbose --concurrency 8 --timeout 15000; then
+            echo "Fetch command completed successfully"
+            FETCH_SUCCESS=true
+          else
+            FETCH_EXIT_CODE=$?
+            echo "Fetch command failed with exit code: $FETCH_EXIT_CODE"
+            FETCH_SUCCESS=false
+          fi
+
+          # Determine what was updated by checking git status
+          cd ${{ github.workspace }}
+          echo "Checking git status to determine updated packages..."
+          CHANGED_FILES=$(git status --porcelain packages/ts-pantry/src/packages/ | grep "^ M " | awk '{print $2}' | head -20)
+
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Found changed package files:"
+            echo "$CHANGED_FILES"
+
+            UPDATED_PACKAGES_JSON="["
+            FIRST=true
+            TOTAL_UPDATED=0
+            while IFS= read -r filepath; do
+              if [ -n "$filepath" ] && [ -f "$filepath" ]; then
+                CLEAN_NAME=$(grep -m 1 "name: '" "$filepath" | sed "s/.*name: '//" | sed "s/' as const.*//" | tr -d '\n\r')
+
+                if [ -n "$CLEAN_NAME" ]; then
+                  if [ "$FIRST" = true ]; then
+                    FIRST=false
+                  else
+                    UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON,"
+                  fi
+                  ESC_PKG=$(echo "$CLEAN_NAME" | sed 's/"/\\"/g')
+                  UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON\"$ESC_PKG\""
+                  TOTAL_UPDATED=$((TOTAL_UPDATED + 1))
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+            UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON]"
+          else
+            echo "No package files were changed"
+            UPDATED_PACKAGES_JSON="[]"
+            TOTAL_UPDATED=0
+          fi
+
+          if [ "$FETCH_SUCCESS" = true ]; then
+            printf '{"success":true,"totalUpdated":%d,"totalProcessed":530,"updatedPackages":%s}' \
+              "$TOTAL_UPDATED" "$UPDATED_PACKAGES_JSON" > "$TEMP_JSON_FILE"
+          else
+            printf '{"success":false,"error":"fetch command failed","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
+          fi
+
+          FILE_SIZE=$(wc -c < "$TEMP_JSON_FILE" 2>/dev/null || echo "0")
+          echo "JSON output size: $FILE_SIZE bytes"
+
+          if [ "$FILE_SIZE" -gt 262144 ]; then
+            echo "JSON output too large ($FILE_SIZE bytes), creating summary instead"
+
+            if ! jq empty "$TEMP_JSON_FILE" 2>/dev/null; then
+              echo '{"success":false,"error":"invalid_json_during_truncation","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
+            fi
+
+            SUCCESS=$(jq -r '.success // false' "$TEMP_JSON_FILE" 2>/dev/null || echo "false")
+            TOTAL_UPDATED=$(jq -r '.totalUpdated // 0' "$TEMP_JSON_FILE" 2>/dev/null || echo "0")
+            TOTAL_PROCESSED=$(jq -r '.totalProcessed // 0' "$TEMP_JSON_FILE" 2>/dev/null || echo "0")
+
+            UPDATED_PACKAGES_TEMP=$(mktemp)
+            {
+              jq -r '.updatedPackages[]? // empty' "$TEMP_JSON_FILE" 2>/dev/null || true
+            } 2>/dev/null | head -15 > "$UPDATED_PACKAGES_TEMP" || echo "" > "$UPDATED_PACKAGES_TEMP"
+
+            UPDATED_PACKAGES_JSON="["
+            FIRST=true
+            if [ -f "$UPDATED_PACKAGES_TEMP" ]; then
+              while IFS= read -r pkg; do
+                if [ -n "$pkg" ] && [ "$pkg" != "" ]; then
+                  if [ "$FIRST" = true ]; then
+                    FIRST=false
+                  else
+                    UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON,"
+                  fi
+                  ESC_PKG=$(echo "$pkg" | sed 's/"/\\"/g' | tr -d '\0\n\r')
+                  UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON\"$ESC_PKG\""
+                fi
+              done < "$UPDATED_PACKAGES_TEMP"
+            fi
+            UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON]"
+            rm -f "$UPDATED_PACKAGES_TEMP"
+
+            printf '{"success":%s,"totalUpdated":%s,"totalProcessed":%s,"updatedPackages":%s,"note":"truncated_for_size"}' \
+              "$SUCCESS" "$TOTAL_UPDATED" "$TOTAL_PROCESSED" "$UPDATED_PACKAGES_JSON" > "$TEMP_JSON_FILE"
+
+            if ! jq empty "$TEMP_JSON_FILE" 2>/dev/null; then
+              echo '{"success":false,"error":"summary_json_invalid","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
+            fi
+          fi
+
+          if ! jq empty "$TEMP_JSON_FILE" 2>/dev/null; then
+            echo '{"success":false,"error":"invalid_json","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
+          fi
+
+          JSON_LINE=$(cat "$TEMP_JSON_FILE" | jq -c . 2>/dev/null || cat "$TEMP_JSON_FILE")
+          echo "fetch_result=${JSON_LINE}" >> $GITHUB_OUTPUT
+
+          rm -f "$TEMP_JSON_FILE"
+        timeout-minutes: 65
+
+      - name: Generate index
+        run: cd packages/ts-pantry && bun bin/cli.ts generate-index
+        timeout-minutes: 5
+
+      - name: Generate aliases
+        run: cd packages/ts-pantry && bun bin/cli.ts generate-aliases
+        timeout-minutes: 5
+
+      - name: Generate documentation
+        run: cd packages/ts-pantry && bun bin/cli.ts generate-docs
+        timeout-minutes: 5
+
+      - name: Generate package types
+        run: cd packages/ts-pantry && bun scripts/generate-package-types.ts
+        timeout-minutes: 5
+
+      - name: Generate commit message
+        id: commit-message
+        run: |
+          FETCH_JSON_FILE=$(mktemp)
+          FETCH_RESULT='${{ steps.fetch-packages.outputs.fetch_result }}'
+
+          if [ -z "$FETCH_RESULT" ] || [ "$FETCH_RESULT" = "" ]; then
+            echo '{"success":false,"error":"no_fetch_result","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$FETCH_JSON_FILE"
+          else
+            echo "$FETCH_RESULT" > "$FETCH_JSON_FILE"
+            if ! jq empty "$FETCH_JSON_FILE" 2>/dev/null; then
+              echo '{"success":false,"error":"invalid_json","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$FETCH_JSON_FILE"
+            fi
+          fi
+
+          FETCH_SUCCESS=$(jq -r '.success // false' "$FETCH_JSON_FILE" 2>/dev/null || echo "false")
+
+          if [ "$FETCH_SUCCESS" != "true" ]; then
+            echo "commit_message=chore: fetch failed" >> $GITHUB_OUTPUT
+            echo "total_updated=0" >> $GITHUB_OUTPUT
+            echo "should_commit=false" >> $GITHUB_OUTPUT
+            rm -f "$FETCH_JSON_FILE"
+            exit 0
+          fi
+
+          TOTAL_UPDATED=$(jq -r '.totalUpdated // 0' "$FETCH_JSON_FILE" 2>/dev/null || echo "0")
+
+          UPDATED_PACKAGES=$(jq -r '
+            if .updatedPackages then .updatedPackages[]
+            else empty
+            end' "$FETCH_JSON_FILE" 2>/dev/null | head -15 | tr '\n' ' ' | tr -d '\0' | xargs 2>/dev/null || echo "")
+
+          if [ "$TOTAL_UPDATED" -eq 0 ]; then
+            COMMIT_MSG="chore: update packages (no changes detected)"
+            SHOULD_COMMIT="false"
+          elif [ "$TOTAL_UPDATED" -le 4 ]; then
+            PACKAGE_LIST=$(echo "$UPDATED_PACKAGES" | cut -d' ' -f1-$TOTAL_UPDATED | tr ' ' ',' | sed 's/,/, /g' | sed 's/, $//' | tr -d '\n\r')
+            if [ -n "$PACKAGE_LIST" ] && [ "$PACKAGE_LIST" != "" ] && [ "$PACKAGE_LIST" != " " ]; then
+              COMMIT_MSG="chore: update $PACKAGE_LIST"
+            else
+              COMMIT_MSG="chore: update $TOTAL_UPDATED packages"
+            fi
+            SHOULD_COMMIT="true"
+          else
+            MAX_MSG_LENGTH=72
+            COMMIT_PREFIX="chore: update "
+            PREFIX_LENGTH=${#COMMIT_PREFIX}
+            SUFFIX_RESERVE=19
+            MAX_PACKAGE_CHARS=$((MAX_MSG_LENGTH - PREFIX_LENGTH - SUFFIX_RESERVE))
+
+            PACKAGE_LIST=""
+            PACKAGE_COUNT=0
+            CURRENT_LENGTH=0
+
+            for pkg in $UPDATED_PACKAGES; do
+              if [ -z "$pkg" ] || [ "$pkg" = "" ]; then continue; fi
+              if [ -z "$PACKAGE_LIST" ]; then
+                NEW_LENGTH=${#pkg}
+              else
+                NEW_LENGTH=$((CURRENT_LENGTH + 2 + ${#pkg}))
+              fi
+              if [ $NEW_LENGTH -gt $MAX_PACKAGE_CHARS ]; then break; fi
+              if [ -z "$PACKAGE_LIST" ]; then
+                PACKAGE_LIST="$pkg"
+              else
+                PACKAGE_LIST="$PACKAGE_LIST, $pkg"
+              fi
+              CURRENT_LENGTH=$NEW_LENGTH
+              PACKAGE_COUNT=$((PACKAGE_COUNT + 1))
+            done
+
+            REMAINING=$((TOTAL_UPDATED - PACKAGE_COUNT))
+
+            if [ -n "$PACKAGE_LIST" ] && [ "$REMAINING" -gt 0 ]; then
+              if [ "$REMAINING" -eq 1 ]; then
+                COMMIT_MSG="chore: update $PACKAGE_LIST and 1 other dep"
+              else
+                COMMIT_MSG="chore: update $PACKAGE_LIST and $REMAINING other deps"
+              fi
+            elif [ -n "$PACKAGE_LIST" ]; then
+              COMMIT_MSG="chore: update $PACKAGE_LIST"
+            else
+              COMMIT_MSG="chore: update $TOTAL_UPDATED packages"
+            fi
+            SHOULD_COMMIT="true"
+          fi
+
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | tr -d '\n\r\0' | sed 's/[[:cntrl:]]//g')
+
+          echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "total_updated=$TOTAL_UPDATED" >> $GITHUB_OUTPUT
+          echo "should_commit=$SHOULD_COMMIT" >> $GITHUB_OUTPUT
+
+          rm -f "$FETCH_JSON_FILE"
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts 2>/dev/null || echo "")
+
+          if [[ -z "$CHANGES" ]]; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected:"
+            echo "$CHANGES"
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Safeguard
+        id: deletion-check
+        if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true'
+        run: |
+          DELETIONS=$(git diff --numstat HEAD packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | awk '{deleted += $2} END {print deleted+0}')
+
+          DELETION_THRESHOLD=20000
+          if [ "$DELETIONS" -gt "$DELETION_THRESHOLD" ]; then
+            echo "ERROR: Detected $DELETIONS line deletions, exceeds safety threshold of $DELETION_THRESHOLD"
+            echo "safe_to_commit=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "Deletion count ($DELETIONS) is within acceptable limits."
+            echo "safe_to_commit=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        id: commit
+        if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true' && steps.deletion-check.outputs.safe_to_commit == 'true'
+        run: |
+          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+            git config --global user.name "chrisbbreuer"
+            git config --global user.email "chrisbreuer93@gmail.com"
+            git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
+          else
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
+
+          git add packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts
+          git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated update via GitHub Actions workflow"
+          git push origin main
+
+          echo "committed=true" >> $GITHUB_OUTPUT
+          echo "Successfully committed and pushed changes"
+
+      - name: Trigger S3 Registry Build
+        if: steps.commit.outputs.committed == 'true'
+        run: |
+          # Identify which packages changed and trigger builds
+          CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/packages/ 2>/dev/null | head -20)
+          if [ -n "$CHANGED" ]; then
+            echo "Changed packages detected, triggering registry builds..."
+            for file in $CHANGED; do
+              pkg=$(basename "$file" .ts | sed 's/-/./g')
+              echo "Triggering build for: $pkg"
+              gh workflow run build-registry.yml -f package="$pkg" -f platforms="all" || echo "Failed to trigger build for $pkg (workflow may not exist yet)"
+            done
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}

@@ -1,0 +1,39 @@
+distributable:
+  url: git+https://github.com/a7ex/xcresultparser.git
+  ref: ${{version.tag}}
+
+versions:
+  github: a7ex/xcresultparser
+
+platforms:
+  - darwin
+
+build:
+  dependencies:
+    crates.io/semverator: '*'
+  script:
+    # tweak swift-tools to our installed
+    - run:
+        - "SWIFT_TOOLS=$(grep swift-tools Package.swift | sed 's/.*: //')"
+        - SWIFT_VERSION=$(swift --version 2>&1 | sed -n 's/.*Swift version \([0-9]*\.[0-9]*\).*/\1/p')
+        - |
+          if semverator gt $SWIFT_TOOLS $SWIFT_VERSION; then
+            sed -i "s/swift-tools-version: $SWIFT_TOOLS/swift-tools-version: $SWIFT_VERSION/" Package.swift
+          fi
+
+    - swift build -c release --disable-sandbox --arch $(uname -m)
+    - install -D .build/release/xcresultparser {{prefix}}/bin/xcresultparser
+
+provides:
+  - bin/xcresultparser
+
+test:
+  dependencies:
+    curl.se: '*'
+  script:
+    - xcresultparser --version | grep {{version}}
+    - curl -L "${TESTDATA}" | tar -xz
+    - xcresultparser -o txt SanityResults.xcresult > output.txt
+    - cat output.txt | grep 'Number of tests = 1'
+  env:
+    TESTDATA: https://pub-0b56a3a43f5b4adc91c743afc384fe1a.r2.dev/SanityResults.xcresult.tar.gz

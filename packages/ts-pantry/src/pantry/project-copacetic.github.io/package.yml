@@ -1,0 +1,37 @@
+distributable:
+  url: git+https://github.com/project-copacetic/copacetic.git
+  ref: ${{version.tag}}
+
+versions:
+  github: project-copacetic/copacetic
+
+display-name: copa
+
+build:
+  dependencies:
+    go.dev: ^1.21
+    linux/aarch64:
+      # error: invalid linker name in argument '-fuse-ld=gold'
+      gnu.org/gcc: '*'
+  script: go build $ARGS -ldflags="$GO_LDFLAGS"
+  env:
+    ARGS:
+      - -trimpath
+      - -o={{prefix}}/bin/copa
+    GO_LDFLAGS:
+      - -s
+      - -w
+      - -X github.com/project-copacetic/copacetic/pkg/version.GitVersion={{version.tag}}
+      - -X github.com/project-copacetic/copacetic/pkg/version.GitCommit=$(git describe --always --abbrev=8 --dirty)
+      - -X github.com/project-copacetic/copacetic/pkg/version.BuildDate=$(date -u +%FT%TZ)
+      - -X main.version={{version}}
+    linux:
+      GO_LDFLAGS:
+        - -buildmode=pie
+
+provides:
+  - bin/copa
+
+test:
+  - copa help | grep 'container patching tool'
+  - copa --version | grep {{version}}

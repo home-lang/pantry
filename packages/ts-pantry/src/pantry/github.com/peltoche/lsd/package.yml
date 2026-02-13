@@ -1,0 +1,26 @@
+distributable:
+  url: https://github.com/Peltoche/lsd/archive/refs/tags/v{{ version }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/lsd
+
+versions:
+  github: Peltoche/lsd/tags
+
+dependencies:
+  libgit2.org: ~1.7
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.60'
+    rust-lang.org/cargo: '*'
+  script:
+    # this was missed in 1.1.0, 1.1.2
+    - sed -i '1,20s/^version = ".*"$/version = "{{version}}"/' Cargo.toml
+    - cargo install --path . --root {{prefix}}
+
+test:
+  - test "$(lsd --version)" = "lsd {{version}}"
+  - touch testfile
+  - test "$(lsd --oneline)" = "testfile"

@@ -109,6 +109,7 @@ pub const ServiceManager = struct {
         switch (plat) {
             .macos => try self.generateLaunchdPlist(service),
             .linux => try self.generateSystemdUnit(service),
+            .freebsd => try self.generateRcdScript(service),
             .windows => return error.UnsupportedPlatform,
             .unknown => return error.UnsupportedPlatform,
         }
@@ -263,6 +264,76 @@ pub const ServiceManager = struct {
             if (service.auto_start) {
                 try io_helper.writeAllToFile(file, "WantedBy=multi-user.target\n");
             }
+        };
+    }
+
+    /// Generate FreeBSD rc.d script
+    fn generateRcdScript(self: *ServiceManager, service: *definitions.ServiceConfig) !void {
+        const script_name = try std.fmt.allocPrint(
+            self.allocator,
+            "pantry_{s}",
+            .{service.name},
+        );
+        defer self.allocator.free(script_name);
+
+        const service_dir = "/usr/local/etc/rc.d";
+
+        const script_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}",
+            .{ service_dir, script_name },
+        );
+        defer self.allocator.free(script_path);
+
+        // Check if file already exists
+        io_helper.access(script_path, .{}) catch {
+            // File doesn't exist, create it
+            const file = try io_helper.createFile(script_path, .{});
+            defer io_helper.closeFile(file);
+
+            try io_helper.writeAllToFile(file, "#!/bin/sh\n\n");
+            try io_helper.writeAllToFile(file, "# PROVIDE: ");
+            try io_helper.writeAllToFile(file, script_name);
+            try io_helper.writeAllToFile(file, "\n# REQUIRE: DAEMON\n");
+            try io_helper.writeAllToFile(file, "# KEYWORD: shutdown\n\n");
+
+            try io_helper.writeAllToFile(file, ". /etc/rc.subr\n\n");
+
+            try io_helper.writeAllToFile(file, "name=\"");
+            try io_helper.writeAllToFile(file, script_name);
+            try io_helper.writeAllToFile(file, "\"\n");
+
+            const desc_line = try std.fmt.allocPrint(self.allocator, "rcvar=\"{s}_enable\"\n", .{script_name});
+            defer self.allocator.free(desc_line);
+            try io_helper.writeAllToFile(file, desc_line);
+
+            const cmd_line = try std.fmt.allocPrint(self.allocator, "command=\"{s}\"\n", .{service.start_command});
+            defer self.allocator.free(cmd_line);
+            try io_helper.writeAllToFile(file, cmd_line);
+
+            if (service.working_directory) |wd| {
+                const wd_line = try std.fmt.allocPrint(self.allocator, "{s}_chdir=\"{s}\"\n", .{ script_name, wd });
+                defer self.allocator.free(wd_line);
+                try io_helper.writeAllToFile(file, wd_line);
+            }
+
+            // Environment variables
+            var env_buf = std.ArrayList(u8).init(self.allocator);
+            defer env_buf.deinit();
+            var it = service.env_vars.iterator();
+            var first = true;
+            while (it.next()) |entry| {
+                if (!first) try env_buf.appendSlice(" ");
+                first = false;
+                try env_buf.writer().print("{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
+            }
+            if (env_buf.items.len > 0) {
+                const env_line = try std.fmt.allocPrint(self.allocator, "{s}_env=\"{s}\"\n", .{ script_name, env_buf.items });
+                defer self.allocator.free(env_line);
+                try io_helper.writeAllToFile(file, env_line);
+            }
+
+            try io_helper.writeAllToFile(file, "\nrun_rc_command \"$1\"\n");
         };
     }
 };

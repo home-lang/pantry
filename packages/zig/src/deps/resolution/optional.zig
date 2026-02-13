@@ -230,6 +230,7 @@ fn detectPlatform(allocator: std.mem.Allocator) ![]const u8 {
         .linux => "linux",
         .macos => "darwin",
         .windows => "win32",
+        .freebsd => "freebsd",
         else => "unknown",
     };
 

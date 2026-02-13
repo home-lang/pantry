@@ -1,0 +1,204 @@
+distributable:
+  url: https://cache.ruby-lang.org/pub/ruby/{{version.marketing}}/ruby-{{version}}.tar.xz
+  strip-components: 1
+
+versions:
+  # ruby have *some* releases, but historically only have tags
+  # so if we want to build older releases we can only scan tags
+  github: ruby/ruby/tags
+
+dependencies:
+  openssl.org: ^1.1
+  pyyaml.org: ^0.2
+  zlib.net: ^1
+
+build:
+  dependencies:
+    gnu.org/gettext: ^0.21
+    gnu.org/patch: "*"
+    gnu.org/bison: ^3
+    gnu.org/autoconf: "*"
+    rust-lang.org: ^1 # required to build YJIT
+    rsync.samba.org: "*" # v4 fixes
+    linux:
+      ruby-lang.org: ^3 # ruby requires ruby to build
+      rubygems.org: "*"
+      # ^^ only linux because we got issues on darwin currently and darwin provides ruby (for now)
+  script:
+    - patch -p1 -F5 < props/mkconfig.rb.diff
+
+    - CC=cc CXX=c++ ./configure $ARGS
+
+    # clang17 doesn't like [[maybe_unused]] on types
+    # fix cribbed from https://github.com/ruby/ruby/pull/4603/commits/fbdff085ef3c8a56e0a33404e8795879e3167549
+    - run:
+        - if test -f maybe_unused.h; then
+        - sed -i -e 's/elif RBIMPL_HAS_C_ATTRIBUTE(maybe_unused)/elif RBIMPL_HAS_C_ATTRIBUTE(maybe_unused) \&\& (__STDC_VERSION__ >= 202000L)/' maybe_unused.h
+        - fi
+      if: linux
+      working-directory: include/ruby/internal/attr
+
+    # ^3.1.4 can't find rubygems without help on linux
+    - run:
+        - if test "{{hw.platform}}" = "linux"; then
+        - sed -i "s_^RUBYLIB.*=.*\$_RUBYLIB = ${RUBYLIB}_" uncommon.mk
+        - fi
+      if: ">=3.1.4<3.2"
+    # back in 4.0.0
+    - run:
+        - if test "{{hw.platform}}" = "linux"; then
+        - sed -i "s_^RUBYLIB.*=.*\$_RUBYLIB = ${RUBYLIB}_" common.mk
+        - fi
+      if: ">=4"
+
+    - make install
+
+    # we provide these as `rubygems.org`
+    - run: rm -f bundle bundler gem
+      working-directory: ${{prefix}}/bin
+
+    - fix-shebangs.ts ${{prefix}}/bin/*
+
+    # ruby itself provides the gems for these and we don’t want that
+    # we want to pkg them ourselves as part of rubygems.org
+    # to ensure the user gets a good ruby experience rubygems is marked as
+    # a companion which in most use means gems are automatically added to the
+    # pkgenv. Ruby behaves well if gems isn't around but the user may get
+    # unexpected errors in scenarios where they constructed an pkgenv manually
+    - working-directory: ${{prefix}}/lib/ruby/{{version.marketing}}.0
+      run:
+        - |
+          for x in bundler rubygems bundler.rb rubygems.rb; do
+            if test -d $x; then
+              rm -rf $x
+            else
+              rm -f $x
+            fi
+          done
+        - rm -rf ../gems/3.2.0/gems/bundler-*.*.*
+
+    - run:
+        - rm -rf share/ri
+        - rm -rf share/doc
+        - rm -rf lib/ruby/site_ruby
+        - rm -rf lib/ruby/vendor_ruby
+      working-directory: ${{prefix}}
+
+    # weirdly files get put here and we can't figure out how to stop it
+    - run:
+        - if test -d pkgconfig; then rm -rf pkgconfig; fi
+        - |
+          if test -d *-{{hw.platform}}* ; then
+            mv *-{{hw.platform}}*/* .
+            rmdir *-{{hw.platform}}*
+          fi
+      working-directory: ${{prefix}}/lib
+      if: ">=2.6"
+
+    - run: |
+        if test *-{{hw.platform}}*/bin/ruby ; then
+          unlink bin/ruby
+          mv *-{{hw.platform}}*/bin/ruby bin/ruby
+          rmdir *-{{hw.platform}}*/bin
+          rmdir *-{{hw.platform}}*
+        fi
+      working-directory: ${{prefix}}
+      if: ">=3.4"
+
+    # v4 is adding {{prefix}}/{{prefix}}, oddly.
+    - run:
+        - if test -d include; then rsync include/ {{prefix}}/include/ -a; fi
+        # rbconfig.rb has a nil ref issue
+        # rbconfig.rb:310:in 'RbConfig.expand': undefined method 'gsub' for nil (NoMethodError)
+        # from ~/.pkgx/ruby-lang.org/v4.0.0/lib/ruby/4.0.0/rbconfig.rb:328:in 'block in <module:RbConfig>'
+        - sed -i -f $PROP lib/ruby/{{version.marketing}}.0/rbconfig.rb
+        - if test -d lib; then rsync lib/ {{prefix}}/lib/ -a; fi
+        - cd ..
+        # this './' is IMPORTANT
+        - rm -rf ./{{prefix}}
+      prop: |
+        /def RbConfig::expand/a\
+            val = val || ''
+      if: ">=4"
+      working-directory: ${{prefix}}/{{prefix}}
+
+    - run: sed -i
+        -e 's|$(DESTDIR){{prefix}}|$(topdir)|g'
+        -e 's|CONFIG\["topdir"\] = .*|CONFIG\["topdir"\] = TOPDIR|g'
+        -e 's|CONFIG\["INSTALL"\] =.*|CONFIG\["INSTALL"\] = "/usr/bin/install"|g'
+        -e 's|CONFIG\["MJIT_CC"\] =.*|CONFIG\["MJIT_CC"\] = "/usr/bin/cc"|g'
+        rbconfig.rb
+      working-directory: ${{prefix}}/lib/ruby/{{version.marketing}}.0
+  env:
+    CFLAGS: $CFLAGS -Wno-implicit-function-declaration
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --enable-load-relative # makes us relocatable
+      - --without-gmp
+      - --with-rubyarchprefix={{prefix}}/lib/ruby # no need for architecture specific crap
+      - --with-rubyhdrdir={{prefix}}/include # ^^
+      - --with-rubyarchhdrdir={{prefix}}/include # ^^
+      - --disable-multiarch # ^^
+      - --with-vendordir=no # is empty so don’t pollute
+      - --with-vendorarchdir=no # ^^
+      - --with-sitearchdir=no # ^^
+      - --enable-yjit # https://github.com/pkgxdev/pantry/issues/3538
+      - --disable-install-doc
+
+test:
+  dependencies:
+    rubygems.org: "*" # is a companion __however__ brewkit doesn’t add companions to the test env automatically
+  script:
+    - ruby -e 'puts "Hello World!"'
+
+    # “The terminfo database could not be found.”
+    # all platforms but only happens in the test harness
+    # ie. you can run this locally and it will work
+    # - echo 'puts 1' | irb
+
+    # tests the libraries that come with Ruby can be utilized
+    - run: ruby $FIXTURE
+      fixture:
+        content: |
+          require 'date'
+          puts Date.today
+        extname: rb
+
+    # tests the gems that come with Ruby can be utilized
+    - run: ruby $FIXTURE
+      fixture:
+        content: |
+          require 'matrix'
+          matrix = Matrix[[1, 2], [3, 4]]
+          transpose_matrix = matrix.transpose
+          determinant = matrix.determinant
+          puts "Original matrix:\n#{matrix}"
+          puts "Transposed matrix:\n#{transpose_matrix}"
+          puts "Determinant of the matrix: #{determinant}"
+        extname: rb
+
+    - run: ruby --yjit $FIXTURE
+      if: ^3.1
+      fixture:
+        content: |
+          def fib(n)
+            return n if n <= 1
+            fib(n-1) + fib(n-2)
+          end
+          puts fib(35)
+        extname: rb
+
+provides:
+  - bin/erb
+  - bin/irb
+  - bin/rake
+  - bin/rdoc
+  - bin/ri
+  - bin/ruby
+
+interprets:
+  extensions: rb
+  args: ruby
+
+companions:
+  rubygems.org: "*"

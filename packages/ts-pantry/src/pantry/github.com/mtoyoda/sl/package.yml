@@ -1,0 +1,31 @@
+distributable:
+  url: https://github.com/mtoyoda/sl/archive/{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: mtoyoda/sl/releases/tags
+
+provides:
+  - bin/sl
+
+dependencies:
+  invisible-island.net/ncurses: 6
+
+build:
+  dependencies:
+    gnu.org/patch: '*'
+  script: |
+    # Add -v to allow testing resultant binary
+    patch -p1 < props/version.patch
+    make
+    mkdir -p "{{prefix}}"/bin
+    mv sl "{{prefix}}"/bin
+  env:
+    TEA_VERSION: ${{ version }}
+
+test:
+  # FIXME: best tested with Expect, if possible.
+  # dependencies:
+  #   tcl-lang.org/expect: '*'
+  # script: expect -d ./script.exp
+  test "$(sl -v)" = "sl version {{version}}"

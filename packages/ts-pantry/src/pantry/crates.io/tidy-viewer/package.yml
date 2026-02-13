@@ -1,0 +1,21 @@
+distributable:
+  url: https://github.com/alexhallam/tv/archive/refs/tags/{{ version.tag }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/tidy-viewer
+
+versions:
+  github: alexhallam/tv
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.56'
+    rust-lang.org/cargo: '*'
+  script:
+    - run: cargo install --locked --path . --root {{prefix}}
+      if: <1.8.92
+    - run: cargo install --locked --path tidy-viewer-cli --root {{prefix}}
+      if: '>=1.8.92'
+
+test: test "$(tidy-viewer --version)" = "tv {{version}}"

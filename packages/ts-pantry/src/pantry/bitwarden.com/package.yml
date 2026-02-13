@@ -1,0 +1,46 @@
+distributable:
+  url: https://registry.npmjs.org/@bitwarden/cli/-/cli-{{version}}.tgz
+  strip-components: 1
+
+versions:
+  npm: '@bitwarden/cli'
+
+dependencies:
+  nodejs.org: ^20
+
+build:
+  dependencies:
+    npmjs.com: '*'
+    darwin:
+      github.com/fastfloat/fast_float: ^8 # needed to work with Xcode >=16.2
+    linux:
+      python.org: ^3 # needed to build some native modules
+  script:
+    - npm i husky
+    - run: npm i semver
+      if: '>=2025.5.0'
+    - git init
+    - npm i $ARGS .
+    - run: ln -s ../libexec/bin/bw bw
+      working-directory: ${{prefix}}/bin
+  env:
+    linux:
+      CC: clang
+      CXX: clang++
+      LD: clang
+      CXXFLAGS: -std=c++20
+    ARGS:
+      - -ddd
+      - --global
+      - --build-from-source
+      - --prefix={{prefix}}/libexec
+      - --install-links
+      - --unsafe-perm
+
+provides:
+  - bin/bw
+
+test:
+  - bw generate --length 10
+  - echo "Testing" | bw encode | grep 'VGVzdGluZw'
+  - bw --version | grep {{version}}

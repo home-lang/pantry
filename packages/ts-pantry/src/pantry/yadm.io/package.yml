@@ -1,0 +1,23 @@
+distributable:
+  url: https://github.com/TheLocehiliosan/yadm/archive/refs/tags/{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: TheLocehiliosan/yadm/tags
+
+dependencies:
+  git-scm.org: '*'
+  gnu.org/bash: '*'
+
+build: make install PREFIX={{ prefix }}
+
+provides:
+  - bin/yadm
+
+test:
+  - yadm init -f
+  - test -f ~/.local/share/yadm/repo.git/config
+  - run: test $(yadm gitconfig core.worktree) = $PWD
+    if: <3.3
+  - run: test $(yadm gitconfig core.worktree) = $HOME
+    if: '>=3.3'

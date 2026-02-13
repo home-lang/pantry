@@ -1,0 +1,36 @@
+distributable:
+  url: https://yarnpkg.com/downloads/{{ version }}/yarn-v{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: yarnpkg/yarn
+
+provides:
+  - bin/yarn
+  - bin/yarnpkg
+
+dependencies:
+  nodejs.org: '>=5'
+
+build:
+  dependencies:
+    npmjs.com: '*'
+    gnu.org/patch: '*'
+  script:
+    - patch -p1 < props/global-prefix.patch
+
+    - npm install .
+      --global
+      --prefix={{prefix}}
+      --install-links
+
+test:
+  script:
+    - yarn --version
+    - yarnpkg --version
+
+    # bug shipped in 1.22.0
+    - run: echo {} >package.json
+      if: =1.22.20
+
+    - yarn add jquery

@@ -1,0 +1,28 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/sed/sed-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/sed/
+  match: /sed-(\d+\.\d+(\.\d+)?)\.tar\.gz/
+  strip:
+    - /sed-/
+    - /.tar.gz/
+
+build:
+  script: |
+    ./configure $ARGS
+    make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --disable-debug
+
+provides:
+  - bin/sed
+
+test:
+  fixture: Hello world!
+  script: |
+    sed -i 's/world/World/g' $FIXTURE
+    test "$(cat $FIXTURE)" = 'Hello World!'

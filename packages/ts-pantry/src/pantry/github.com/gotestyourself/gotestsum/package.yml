@@ -1,0 +1,41 @@
+distributable:
+  url: git+https://github.com/gotestyourself/gotestsum
+  ref: ${{version.tag}}
+
+versions:
+  github: gotestyourself/gotestsum
+
+provides:
+  - bin/gotestsum
+
+build:
+  dependencies:
+    go.dev: ^1.19
+    git-scm.org: ^2
+  script:
+    # since 1.13.0
+    - git tag v{{version}} --force
+    - rm -rf props
+    - go mod download
+    - go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .
+  env:
+    GOPROXY: https://proxy.golang.org,direct
+    GOSUMDB: sum.golang.org
+    GO111MODULE: on
+    CGO_ENABLED: 0
+    BUILDLOC: '{{prefix}}/bin/gotestsum'
+    LDFLAGS:
+      - -s
+      - -w
+      - -X gotest.tools/gotestsum/cmd.version={{version}}
+    linux:
+      # or segmentation fault
+      # fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      LDFLAGS:
+        - -buildmode=pie
+
+test:
+  - run: test "$(gotestsum --version)" = "gotestsum version {{version}}"
+    if: <1.13
+  - run: test "$(gotestsum --version)" = "gotestsum version v{{version}}"
+    if: '>=1.13'

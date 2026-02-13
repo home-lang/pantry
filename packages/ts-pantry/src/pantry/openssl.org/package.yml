@@ -1,0 +1,74 @@
+distributable:
+  - url: https://www.openssl.org/source/openssl-{{version.raw}}.tar.gz
+    sha: ${{url}}.sha256
+    sig: ${{url}}.asc
+    strip-components: 1
+  - url: https://github.com/openssl/openssl/releases/download/{{version.tag}}/{{version.tag}}.tar.gz
+    sha: ${{url}}.sha256
+    sig: ${{url}}.asc
+    strip-components: 1
+
+display-name: OpenSSL
+
+versions:
+  github: openssl/openssl
+  strip:
+    - /^openssl-/
+    - /^OpenSSL_/
+
+provides:
+  - bin/openssl
+  - bin/c_rehash
+
+dependencies:
+  curl.se/ca-certs: "*"
+
+build:
+  dependencies:
+    perl.org: 5
+  script:
+    - run: patch -p1 <props/x509_def.c.diff
+      if: <3.4.0
+    - run: patch -p1 <props/x509_def.c.post3.4.0.diff
+      if: ">=3.4.0"
+
+    - ./Configure --prefix={{ prefix }} $ARCH no-tests $ARGS --openssldir={{prefix}}/ssl
+    - make --jobs {{ hw.concurrency }}
+    - make install_sw # `_sw` avoids installing docs
+
+    - cd "{{prefix}}"
+
+    - run: cp $SRCROOT/apps/openssl.cnf .
+      working-directory: "{{prefix}}/ssl"
+  env:
+    darwin/aarch64: { ARCH: "darwin64-arm64-cc" }
+    darwin/x86-64: { ARCH: "darwin64-x86_64-cc" }
+    linux/aarch64: { ARCH: "linux-aarch64" }
+    linux/x86-64: { ARCH: "linux-x86_64" }
+    darwin:
+      # supposedly enables important optimizations
+      ARGS: enable-ec_nistp_64_gcc_128
+  test: make test
+
+#TODO need to test the SSL certs work
+# otherwise we are basically relying on wget etc. to test for it
+
+test:
+  dependencies:
+    pkgx.sh: ">=1"
+  script:
+    - echo "This is a test file" > in
+    - openssl dgst -sha256 -out out ./in
+
+    - run: test "$(cat ./out)" = "SHA2-256(./in)= $SAMPLE"
+      if: ^3
+    - run: test "$(cat ./out)" = "SHA256(./in)= $SAMPLE"
+      if: ^1
+
+    # test the certs work
+    - run: pkgx wget tea.xyz
+      if: ^1
+    # ^^ can't test openssl 3 yet since like, what uses it even?!
+    # especially since our curl and wget are hard-locked to ^1.1 for now
+  env:
+    SAMPLE: c87e2ca771bab6024c269b933389d2a92d4941c848c52f155b9b84e1f109fe35

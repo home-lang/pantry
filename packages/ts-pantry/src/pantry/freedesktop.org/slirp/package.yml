@@ -1,0 +1,49 @@
+distributable:
+  url: https://gitlab.freedesktop.org/slirp/libslirp/-/archive/v{{ version }}/libslirp-v{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  gitlab: gitlab.freedesktop.org:slirp/libslirp
+
+dependencies:
+  gnome.org/glib: ^2
+
+build:
+  dependencies:
+    mesonbuild.com: '*'
+    ninja-build.org: 1
+    freedesktop.org/pkg-config: ^0.29
+  script:
+    - meson build $ARGS
+    - ninja -C build install all
+  env:
+    ARGS:
+      - -Ddefault_library=both
+      - --prefix={{ prefix }}
+      - --libdir={{ prefix }}/lib
+      - --buildtype=release
+      - --wrap-mode=nofallback
+    linux:
+      LDFLAGS:
+        # ld.lld: error: version script assignment of 'SLIRP_4.0' to symbol 'slirp_add_exec' failed: symbol not defined
+        - -Wl,--undefined-version
+
+test:
+  - run: gcc $FIXTURE -lslirp -o test
+    fixture:
+      extname: c
+      content: |
+        #include <stdio.h>
+        #include <string.h>
+        #include <stddef.h>
+        #include <slirp/libslirp.h>
+        int main() {
+          SlirpConfig cfg;
+          memset(&cfg, 0, sizeof(cfg));
+          cfg.version = 1;
+          cfg.in_enabled = true;
+          cfg.vhostname = "testServer";
+          Slirp* ctx = slirp_new(&cfg, NULL, NULL);
+          return 0;
+        }
+  - ./test

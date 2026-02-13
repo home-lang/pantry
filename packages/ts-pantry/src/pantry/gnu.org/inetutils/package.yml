@@ -1,0 +1,70 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/inetutils/inetutils-{{version.marketing}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/inetutils
+  match: /inetutils-\d+\.\d+(\.\d+)?\.tar\.gz/
+  strip:
+    - /inetutils-/
+    - /.tar.gz/
+
+dependencies:
+  gnu.org/libidn2: '*'
+  invisible-island.net/ncurses: '*'
+
+build:
+  dependencies:
+    gnu.org/help2man: 1
+  script:
+    # 2.5.0 has a conflicting definition on darwin
+    - run: |
+        if test "{{hw.platform}}" = "darwin"; then
+          sed -i -e 's/char \*ttymsg (struct iovec \*, int, char \*, int);/char *ttymsg (struct iovec *, int, const char *, int);/' syslogd.c
+        fi
+      working-directory: src
+      if: 2.5.0
+    - ./configure $ARGS
+    - make SUIDMODE= install
+    - mkdir "{{prefix}}"/sbin
+    - run: for x in *; do ln -s ../libexec/$x ../sbin; done
+      working-directory: '{{prefix}}/libexec'
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --disable-silent-rules
+      - --with-idn
+      - --with-ncurses-include-dir="{{ deps.invisible-island.net/ncurses.prefix }}/include"
+    linux:
+      LDFLAGS:
+        - -ltinfo # we split up libncurses into libtinfo and libncursesw on linux
+
+provides:
+  - bin/dnsdomainname
+  - bin/ftp
+  - bin/hostname
+  - bin/ifconfig
+  - bin/logger
+  - bin/ping
+  - bin/ping6
+  - bin/rcp
+  - bin/rexec
+  - bin/rlogin
+  - bin/rsh
+  - bin/talk
+  - bin/telnet
+  - bin/tftp
+  - bin/traceroute
+  - bin/whois
+  - sbin/ftpd
+  - sbin/inetd
+  - sbin/rexecd
+  - sbin/rlogind
+  - sbin/rshd
+  - sbin/syslogd
+  - sbin/talkd
+  - sbin/telnetd
+  - sbin/tftpd
+  - sbin/uucpd
+
+test: test "$(telnet --version | head -n1)" = "telnet (GNU inetutils) {{version.marketing}}"

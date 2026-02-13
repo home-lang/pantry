@@ -1,0 +1,39 @@
+distributable:
+  url: https://github.com/aome510/spotify-player/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/spotify_player
+
+versions:
+  github: aome510/spotify-player
+
+dependencies:
+  openssl.org: ^1.1
+  github.com/libsixel/libsixel: ^1
+  linux:
+    alsa-project.org/alsa-lib: ^1
+    freedesktop.org/dbus: ^1
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.60'
+    rust-lang.org/cargo: '*'
+  script:
+    # they shipped v0.0.0 after v0.20.0; but the release is there, so we can build it.
+    - sed -i '1,10s/^version = ".*"/version = "{{version}}"/' spotify_player/Cargo.toml
+    - cargo install $ARGS
+
+    # link to libsixel properly
+    - run:
+        - SIXEL=$(otool -l {{prefix}}/bin/spotify_player | grep 'libsixel.1.dylib' | sed 's/.*name \(.*\) (offset .*/\1/')
+        - install_name_tool -change "$SIXEL" {{deps.github.com/libsixel/libsixel.prefix}}/lib/libsixel.1.dylib {{prefix}}/bin/spotify_player
+      if: darwin
+  env:
+    ARGS:
+      - --locked
+      - --path spotify_player
+      - --root {{prefix}}
+      - --features sixel,notify,fzf
+
+test: test "$(spotify_player --version)" = "spotify_player {{version}}"

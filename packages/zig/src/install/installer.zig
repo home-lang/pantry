@@ -2126,7 +2126,8 @@ pub const Installer = struct {
             // Skip platform-specific dependencies that don't apply
             if (std.mem.startsWith(u8, dep_str, "linux:") or
                 std.mem.startsWith(u8, dep_str, "darwin:") or
-                std.mem.startsWith(u8, dep_str, "windows:"))
+                std.mem.startsWith(u8, dep_str, "windows:") or
+                std.mem.startsWith(u8, dep_str, "freebsd:"))
             {
                 // Parse platform prefix
                 const colon_pos = std.mem.indexOf(u8, dep_str, ":") orelse continue;
@@ -2140,6 +2141,7 @@ pub const Installer = struct {
                     if (std.mem.eql(u8, platform, "linux") and current_platform == .linux) break :blk true;
                     if (std.mem.eql(u8, platform, "darwin") and current_platform == .darwin) break :blk true;
                     if (std.mem.eql(u8, platform, "windows") and current_platform == .windows) break :blk true;
+                    if (std.mem.eql(u8, platform, "freebsd") and current_platform == .freebsd) break :blk true;
                     break :blk false;
                 };
 

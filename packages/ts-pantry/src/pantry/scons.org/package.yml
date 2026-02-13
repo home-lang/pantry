@@ -1,0 +1,36 @@
+distributable:
+  url: https://downloads.sourceforge.net/project/scons/scons/{{version}}/SCons-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: SCons/scons
+
+dependencies:
+  python.org: ~3.11
+  linux:
+    gnu.org/gcc: '>=10' # scons uses `gcc`
+
+build: python-venv.sh {{prefix}}/bin/scons
+
+provides:
+  - bin/scons
+
+test:
+  - run: mv $FIXTURE fixture.c
+    fixture: |
+      #include <stdio.h>
+      int main() {
+        printf("dev.pkgx.hello-world");
+        return 0;
+      }
+
+  # scons doesn’t import the external environment
+  # this means nobody will enjoy using scons with tea so we have to fix that
+  - run: mv $FIXTURE SConstruct
+    fixture: |
+      import os
+      env = Environment(ENV = os.environ)
+      env.Program('fixture.c')
+
+  - scons --debug=explain
+  - test $(./fixture) = "dev.pkgx.hello-world"

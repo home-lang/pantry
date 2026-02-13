@@ -1,0 +1,39 @@
+distributable:
+  url: https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://xorg.freedesktop.org/archive/individual/proto/
+  match: /xcb-proto-\d+\.\d+(\.\d+)?\.tar\.gz/
+  strip:
+    - /xcb-proto-/
+    - /.tar.gz/
+
+build:
+  dependencies:
+    python.org: ~3.11
+    freedesktop.org/pkg-config: ~0.29
+  script: |
+    ./configure \
+      --prefix="{{prefix}}" \
+      --sysconfdir="$SHELF"/etc \
+      --localstatedir="$SHELF"/var
+    make --jobs {{ hw.concurrency }} install
+  env:
+    SHELF: ${{pkgx.prefix}}/x.org
+
+runtime:
+  env:
+    PYTHONPATH: ${{prefix}}/lib/python3.11/site-packages
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: ~0.29
+    python.org: ~3.11
+  script: |
+    pkg-config --variable=xcbincludedir xcb-proto
+
+    python -c "
+    import collections
+    output = collections.defaultdict(int)
+    from xcbgen import xtypes"

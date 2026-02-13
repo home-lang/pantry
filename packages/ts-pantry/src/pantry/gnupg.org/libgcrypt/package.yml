@@ -1,0 +1,48 @@
+distributable:
+  url: https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-{{version}}.tar.bz2
+  strip-components: 1
+
+versions:
+  url: https://gnupg.org/ftp/gcrypt/libgcrypt/
+  match: /libgcrypt-(\d+\.\d+(\.\d+)?)\.tar\.bz2/
+  strip:
+    - /libgcrypt-/
+    - /.tar.bz2/
+
+provides:
+  - bin/dumpsexp
+  - bin/hmac256
+  - bin/libgcrypt-config
+  - bin/mpicalc
+
+build:
+  dependencies:
+    gnupg.org/libgpg-error: ^1.49
+    darwinsys.com/file: '*' # needed for configure to build dylibs
+    darwin:
+      llvm.org: '*'
+    linux:
+      gnu.org/gcc: '*'
+  script:
+    - ./configure $ARGS
+    - CFLAGS="$CFLAGS -O0" make -C random rndjent.o rndjent.lo
+    - make
+    - make check
+    - make install
+  env:
+    darwin:
+      CC: clang
+      CXX: clang++
+    ARGS:
+      - --prefix={{prefix}}
+      - --enable-static
+      - --enable-shared
+      - --disable-asm
+    linux:
+      LDFLAGS:
+        - -Wl,-lpthread
+
+test:
+  script: |
+    OUT=$(echo foo | hmac256 -)
+    test "$OUT" = "9619c032ccc62b07274634a032c322580848455327d4a9aa3d323702673cf2a2"

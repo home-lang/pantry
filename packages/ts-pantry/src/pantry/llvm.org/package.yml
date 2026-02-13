@@ -1,0 +1,156 @@
+distributable:
+  url: https://github.com/llvm/llvm-project/releases/download/llvmorg-{{ version }}/llvm-project-{{ version }}.src.tar.xz
+  strip-components: 1
+
+versions:
+  github: llvm/llvm-project
+  strip: /^llvmorg-/
+
+provides:
+  - bin/lld
+  - bin/lldb
+  - bin/clang
+  - bin/clang++
+  - bin/clangd
+  - bin/cc
+  - bin/c++
+  - bin/cpp
+  - bin/nm
+  - bin/objcopy
+  - bin/ranlib
+  - bin/readelf
+  - bin/strings
+  - bin/strip
+  - bin/llvm-profdata
+  - bin/llvm-cov
+
+dependencies:
+  zlib.net: 1
+  facebook.com/zstd: '*' # requested in #10856
+
+build:
+  dependencies:
+    # doesn't seem to install a bunch of the libs
+    # with cmake 3.29
+    cmake.org: '>=3<3.29'
+    ninja-build.org: 1
+    python.org: '>=3<3.12'
+    crates.io/semverator: '*'
+  working-directory: build
+  script:
+    # Building compiler-rt on darwin+aarch64 fails for versions less than
+    # 14 with the below configuration. FIXME if possible, of course.
+    - run: |
+        RUNTIMES="-DLLVM_ENABLE_RUNTIMES='compiler-rt'"
+        if test "{{hw.platform}}" = "linux"; then
+          ARGS="$ARGS $RUNTIMES"
+        elif semverator satisfies '>=14' {{version}}; then
+          ARGS="$ARGS $RUNTIMES"
+        elif test "{{hw.arch}}" = "x86-64" && semverator satisfies '>=14' {{version}}; then
+          ARGS="$ARGS $RUNTIMES"
+        fi
+      # if: linux || >=14 || (x86-64 && >=13)  ## Brewkit can't do this. Yet.
+    - cmake ../llvm -G Ninja $ARGS
+    - ninja
+    - ninja install
+
+    # other tools simply expect these symlinks and often fail without them
+    # NOTE forcing symlinks because we build with ourselves and sometimes that
+    # means we're building with the exact same version FIXME
+    - run:
+        - ln -sf clang cc
+        - ln -sf clang++ c++
+        - ln -sf clang-cpp cpp
+        # omitting ar and as as these often mess up gnu.org/gcc builds
+        - |
+          for x in nm objcopy ranlib readelf strings strip; do
+            ln -sf llvm-$x $x
+          done
+      working-directory: ${{prefix}}/bin
+
+    # move linux libs into /lib
+    - run: |
+        TARGET="$(find . -maxdepth 1 -type d -name \*-unknown-linux-gnu)"
+        if test -n "$TARGET"; then
+          mv "$TARGET"/* .
+          rmdir "$TARGET"
+          ln -s . "$TARGET"
+        fi
+      working-directory: ${{prefix}}/lib
+      if: linux
+
+  receipt:
+    - LLVMConfig.cmake
+  env:
+    ARGS:
+      - -DCMAKE_INSTALL_PREFIX="{{ prefix }}"
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DLLVM_ENABLE_PROJECTS='lld;lldb;clang;clang-tools-extra'
+      - -DLLVM_INCLUDE_DOCS=OFF
+      - -DLLVM_INCLUDE_TESTS=OFF
+      - -DLLVM_ENABLE_RTTI=ON
+      - -DLLVM_BUILD_LLVM_DYLIB=ON
+    linux:
+      ARGS:
+        # the default is `ld` however clang when handling linking itself
+        # internally passes flags that, in fact, expect `lld`
+        #NOTE only wanted on linux because on macOS we actually *need* the Apple
+        # provided `ld` or things *also* break 😆
+        - -DCLANG_DEFAULT_LINKER=lld
+        # Needed with the CMAKE_C_COMPILER_TARGET to compile compiler-rt on linux
+        # https://reviews.llvm.org/D147598
+        - -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON
+    darwin:
+      ARGS:
+        #FIXME shouldn’t *have to* require the command line tools package
+        #FIXME this is no good for systems with only Xcode installed
+        #NOTE how do Apple make their LLVM find both? we want the same trick
+        - -DDEFAULT_SYSROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+        - -DLLVM_BUILD_LLVM_C_DYLIB=ON
+        - -DLLVM_ENABLE_LIBCXX=ON
+        - -DLIBCXX_HAS_ATOMIC_LIB=ON
+    linux/x86-64:
+      ARGS:
+        # required to build something that works on linux/x86-64
+        - -DCLANG_DEFAULT_CXX_STDLIB=libstdc++
+        - -DCLANG_DEFAULT_RTLIB=libgcc
+        - -DCOMPILER_RT_INCLUDE_TESTS=OFF
+        - -DCOMPILER_RT_USE_LIBCXX=OFF
+        # otherwise compiler-rt fails to build
+        # https://reviews.llvm.org/D147598
+        - -DCMAKE_C_COMPILER_TARGET="x86_64-unknown-linux-gnu"
+    linux/aarch64:
+      ARGS:
+        # otherwise compiler-rt fails to build
+        # https://reviews.llvm.org/D147598
+        - -DCMAKE_C_COMPILER_TARGET="aarch64-unknown-linux-gnu"
+
+test:
+  fixture: |
+    #include <stdio.h>
+    int main() {
+      printf("Hello World!\n");
+      return 0;
+    }
+  dependencies:
+    crates.io/semverator: '*'
+  script:
+    # Building compiler-rt on darwin+aarch64 fails for versions less than
+    # 14 with the below configuration
+    # FIXME if possible, of course.
+    - run: |
+        if test "{{hw.platform}}" = "linux"; then
+          ARGS="$ARGS -fsanitize=address,undefined"
+        elif test "{{hw.arch}}" = "x86_64" && semverator satisfies '>=13' {{version}}; then
+          ARGS="$ARGS -fsanitize=address,undefined"
+        elif semverator satisfies '>=14' {{version}}; then
+          ARGS="$ARGS -fsanitize=address,undefined"
+        fi
+      # if: linux || >=14 || (x86-64 && >=13)  ## Brewkit can't do this. Yet.
+
+    - mv $FIXTURE $FIXTURE.c
+    - clang $ARGS $FIXTURE.c
+    - ./a.out
+  env:
+    ARGS:
+      - -Wl,-rpath,$PKGX_DIR

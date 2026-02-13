@@ -1,0 +1,42 @@
+distributable:
+  url: https://github.com/PRQL/prql/archive/refs/tags/{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: PRQL/prql/tags
+
+build:
+  dependencies:
+    rust-lang.org: ^1.65
+    rust-lang.org/cargo: '*'
+    linux:
+      llvm.org: 18 # 19 has template issues with duckdb build
+  script:
+    - run: cargo install --path prql-compiler --root {{prefix}}
+      if: <0.4.0
+    - run: cargo install --path prql-compiler --root {{prefix}} --all-features
+      if: =0.4.0
+    - run: cargo install --path prql-compiler/prqlc --root {{prefix}}
+      if: '>=0.4.1<0.9.0'
+    - run: cargo install --path crates/prqlc --root {{prefix}} --all-features
+      if: '>=0.9.0<0.10.0'
+    - run: cargo install --path prqlc/prqlc --root {{prefix}} --locked --all-features
+      if: '>=0.10.0'
+
+    # Bin got renamed; this is one way to keep ourselves working
+    - run: ln -s prql-compiler prqlc
+      working-directory: '{{prefix}}/bin'
+      if: <0.4.0
+    - run: ln -s prqlc prql-compiler
+      working-directory: '{{prefix}}/bin'
+      if: '>=0.4.0'
+  env:
+    linux:
+      AR: llvm-ar
+
+test:
+  - echo "from employees | filter has_dog | select salary" | prqlc compile
+
+provides:
+  - bin/prql-compiler
+  - bin/prqlc

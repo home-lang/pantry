@@ -1,0 +1,37 @@
+distributable:
+  url: https://ijg.org/files/jpegsrc.v{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ijg.org/files/
+  match: /jpegsrc\.v\d+[a-z]?\.tar\.gz/
+  strip:
+    - /jpegsrc\.v/
+    - /\.tar\.gz/
+
+build:
+  script:
+    # config.guess from 2011 doesn't recognize aarch64
+    - run: cp props/config.guess props/config.sub .
+      if: ^8
+    - ./configure
+      --disable-dependency-tracking
+      --disable-silent-rules
+      --prefix="{{ prefix }}"
+    - make --jobs {{ hw.concurrency }} install
+
+test:
+  dependencies:
+    curl.se: "*"
+  env:
+    FIXTURE: https://samplelib.com/lib/preview/jpeg/sample-clouds-400x300.jpg
+  script:
+    - curl $FIXTURE > test.jpeg
+    - djpeg test.jpeg
+
+provides:
+  - bin/cjpeg
+  - bin/djpeg
+  - bin/jpegtran
+  - bin/rdjpgcom
+  - bin/wrjpgcom

@@ -1,0 +1,93 @@
+distributable:
+  url: https://poppler.freedesktop.org/poppler-{{version.raw}}.tar.xz
+  strip-components: 1
+
+versions:
+  url: https://poppler.freedesktop.org/releases.html
+  match: /poppler-(\d+\.\d+\.\d+)\.tar\.xz/
+  strip:
+    - /^poppler-/
+    - /\.tar\.xz$/
+
+provides:
+  - bin/pdfattach
+  - bin/pdfdetach
+  - bin/pdffonts
+  - bin/pdfimages
+  - bin/pdfinfo
+  - bin/pdfseparate
+  - bin/pdftocairo
+  - bin/pdftohtml
+  - bin/pdftoppm
+  - bin/pdftops
+  - bin/pdftotext
+  - bin/pdfunite
+
+# TODO: Add in libopenjpeg, libtiff
+dependencies:
+  boost.org: ">=1.58.0"
+  cairographics.org: ">=1.16.0"
+  curl.se: "*"
+  freedesktop.org/fontconfig: ">=2.13"
+  freetype.org: ">=2.10"
+  gnome.org/glib: ">=2.64"
+  gnome.org/libxml2: ~2.13 # since 25.4.0, 2.14 changed the API version
+  libjpeg-turbo.org: "*"
+  libpng.org: "*"
+  openjpeg.org: "*"
+  poppler.freedesktop.org/poppler-data: "*"
+  simplesystems.org/libtiff: "*"
+  zlib.net: "*"
+  mozilla.org/nss: ">=3.68"
+  gnupg.org/gpgme: "~1.19"
+  gnupg.org/libgpg-error: 1
+  gnupg.org/libassuan: 2
+  littlecms.com: ^2.9
+  linux:
+    gnu.org/gcc/libstdcxx: 14 # apparently, clang c++20 std isn't good enough
+
+build:
+  dependencies:
+    cmake.org: ">=3.16.0"
+    gnome.org/gobject-introspection: ">=1.64.0"
+    linux:
+      gnu.org/gcc: 14
+  script:
+    - cmake -S . -B build_shared $ARGS
+    - cmake --build build_shared
+    - cmake --install build_shared
+
+    - cmake -S . -B build_static $ARGS -DBUILD_SHARED_LIBS=OFF
+    - cmake --build build_static
+    - install -c build_static/libpoppler.a build_static/cpp/libpoppler-cpp.a build_static/glib/libpoppler-glib.a {{prefix}}/lib
+    - run: |
+        for d in poppler cpp glib; do
+          if [ -d $d ]; then
+            mv $d/* .
+            rmdir $d
+            ln -s . $d
+          fi
+        done
+      working-directory: ${{prefix}}/include
+  env:
+    ARGS:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}"
+      - -DENABLE_QT5=OFF
+      - -DENABLE_QT6=OFF
+    linux/x86-64:
+      ARGS:
+        - -DCMAKE_C_FLAGS=-fPIC
+        - -DCMAKE_CXX_FLAGS=-fPIC
+        # references to gettid()
+        - -DCMAKE_EXE_LINKER_FLAGS=-Wl,-pie,-lstdc++fs,--unresolved-symbols=ignore-in-shared-libs
+      # references to gettid()
+      LDFLAGS: $LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs
+    linux/aarch64:
+      ARGS:
+        # references to gettid()
+        - -DCMAKE_EXE_LINKER_FLAGS=-Wl,-lstdc++fs,--unresolved-symbols=ignore-in-shared-libs
+      # references to gettid()
+      LDFLAGS: $LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs
+
+test: pdfinfo test.pdf

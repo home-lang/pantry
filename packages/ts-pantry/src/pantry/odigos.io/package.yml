@@ -1,0 +1,42 @@
+distributable:
+  url: https://github.com/keyval-dev/odigos/archive/refs/tags/v{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: keyval-dev/odigos
+
+provides:
+  - bin/odigos
+
+build:
+  dependencies:
+    go.dev: ^1.22
+  working-directory: cli
+  script:
+    - go mod download
+    - go build $ARGS -ldflags="$GO_LDFLAGS" ./
+  env:
+    CGO_ENABLED: 0
+    GO_LDFLAGS:
+      - -s
+      - -w
+      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosVersion=v{{version}}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosVersion=v{{version}}
+    ARGS:
+      - -v
+      - -trimpath
+      - -o={{prefix}}/bin/odigos
+      - -tags embed_manifests
+    linux:
+      # or segmentation fault
+      # fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      GO_LDFLAGS:
+        - -buildmode=pie
+
+test:
+  # Odigos Cli Version: version.Info{Version:'v1.0.1', GitCommit:'', BuildDate:''}
+  - run: odigos version | grep {{version}}
+    if: <1.0.124
+  # as of 1.0.124, it won't return the version without a Kube server to connect to
+  - run: odigos --help | grep OpenTelemetry
+    if: '>=1.0.124'

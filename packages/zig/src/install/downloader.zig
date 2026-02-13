@@ -197,6 +197,7 @@ pub fn buildZiglangUrl(
         .darwin => "macos",
         .linux => "linux",
         .windows => "windows",
+        .freebsd => "freebsd",
     };
 
     const arch = lib.Architecture.current();
@@ -234,6 +235,7 @@ pub fn buildPackageUrl(
         .darwin => "darwin",
         .linux => "linux",
         .windows => "windows",
+        .freebsd => "freebsd",
     };
 
     const arch = lib.Architecture.current();

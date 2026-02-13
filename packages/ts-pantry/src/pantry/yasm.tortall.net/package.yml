@@ -1,0 +1,31 @@
+distributable:
+  url: https://www.tortall.net/projects/yasm/releases/yasm-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://www.tortall.net/projects/yasm/releases/
+  match: /yasm-\d+\.\d+\.\d+\.tar\.gz/
+  strip:
+    - /yasm-/
+    - /.tar.gz/
+
+build:
+  script: |
+    ./configure $ARGS
+    make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --disable-python
+      - --disable-debug
+
+provides:
+  - bin/yasm
+
+test:
+  fixture: |
+    mov eax, 0
+    mov ebx, 0
+    int 0x80
+  script: |
+    yasm $FIXTURE

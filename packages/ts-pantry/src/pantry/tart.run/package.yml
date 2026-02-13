@@ -1,0 +1,62 @@
+warnings:
+  - vendored
+
+versions:
+  github: cirruslabs/tart/releases
+
+platforms:
+  - darwin
+
+#FIXME proper system for re-using pre-built binaries
+# we must require the vendor to provide signatures against a published public
+# key. If they don’t then really we should build ourselves or warn the user
+# about the fact.
+# The thing is, we trust the sources implicitly currently because signing is
+# so rare. The only way wide spread signing will occur is via our protocol.
+
+# This only works on macOS, arm64, monterey and above. It requires xcode 14.1 to build
+
+build:
+  dependencies:
+    curl.se: "*"
+  script:
+    - mkdir -p "{{prefix}}/bin"
+    - run: curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -
+      if: ">=2.24"
+    - run: curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart-$ARCH.tar.gz | tar -xzf -
+      if: ">=2.5<2.24"
+    - run: |
+        if test "{{hw.arch}}" = "aarch64"; then
+          curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -
+        else
+          # not available on x86-64
+          false
+        fi
+      if: <2.5
+    - cp -a tart.app "{{prefix}}"
+    - cp props/tart-shim "{{prefix}}"/bin/tart
+  env:
+    aarch64:
+      ARCH: arm64
+    x86-64:
+      ARCH: amd64
+
+provides:
+  - bin/tart
+
+test:
+  script:
+    # FIXME: doesn't work on the older macOS versions we test with in CI, unfortunately
+    - run: test -e /usr/lib/swift/libswift_StringProcessing.dylib || exit 0
+      if: darwin/x86-64
+
+    - ": >empty.ispw"
+    - OUT=$(tart create
+      --from-ipsw empty.ipsw
+      test 2>&1 || true)
+    - >
+      test "$OUT" = "Error: The restore image failed to load. Unable to create sandbox extensions." ||
+      test "$OUT" = "Error: The restore image is invalid. The restore image does not exist."
+
+  env:
+    TART_HOME: $PWD

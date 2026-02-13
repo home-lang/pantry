@@ -1,0 +1,26 @@
+distributable:
+  url: https://registry.npmjs.org/pnpm/-/pnpm-{{version}}.tgz
+  strip-components: 1
+
+versions:
+  github: pnpm/pnpm
+  ignore: /-\d+$/ # ignore pre-releases
+
+provides:
+  - bin/pnpm
+  - bin/pnpx
+
+dependencies:
+  nodejs.org: '*'
+
+build:
+  script: |
+    mkdir -p "{{prefix}}"
+    mv bin/pnpm.cjs bin/pnpm
+    mv bin/pnpx.cjs bin/pnpx
+    cp props/pnpmrc dist
+    cp -r bin dist package.json {{prefix}}
+
+test:
+  script: |
+    pnpm doctor

@@ -1,0 +1,39 @@
+distributable:
+  url: https://github.com/sigstore/gitsign/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: sigstore/gitsign
+
+dependencies:
+  git-scm.org: '*'
+
+build:
+  dependencies:
+    go.dev: ~1.23.4
+  script:
+    - go mod download
+    - go build -v -trimpath -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/gitsign
+    - go build -v -trimpath -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/gitsign-credential-cache ./cmd/gitsign-credential-cache
+  env:
+    GOPROXY: https://proxy.golang.org,direct
+    GOSUMDB: sum.golang.org
+    GO111MODULE: on
+    CGO_ENABLED: 0
+    GO_LDFLAGS:
+      - -buildid=
+      - -X github.com/sigstore/gitsign/pkg/version.gitVersion={{version}}
+    linux:
+      # or segmentation fault
+      # fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      GO_LDFLAGS:
+        - -buildmode=pie
+
+test:
+  - gitsign version
+  - gitsign version | grep {{version}}
+  - gitsign-credential-cache --version | grep {{version}}
+
+provides:
+  - bin/gitsign
+  - bin/gitsign-credential-cache

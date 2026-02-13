@@ -1,0 +1,91 @@
+distributable:
+  url: https://github.com/linux-test-project/lcov/releases/download/v{{ version.raw }}/lcov-{{ version.raw }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: linux-test-project/lcov
+  strip: /^v/
+
+provides:
+  - bin/lcov
+  - bin/geninfo
+  - bin/genhtml
+  - bin/gendesc
+  - bin/genpng
+
+dependencies:
+  perl.org: '>=5'
+  python.org: 3
+
+runtime:
+  env:
+    PERL5LIB: ${{prefix}}/lib/perl5
+
+build:
+  dependencies:
+    cpanmin.us: ^1
+  script:
+    - cpanm -l {{prefix}} $PKGS --notest --force
+    - make --jobs {{ hw.concurrency }} $ARGS install
+    - fix-shebangs.ts {{prefix}}/bin/*
+
+    # v2 installs to lib/lcov
+    - run: |
+        if test -d lcov; then
+          mv lcov/* perl5/
+          rmdir lcov
+          ln -s perl5 lcov
+        fi
+      if: '>=2'
+      working-directory: ${{prefix}}/lib
+
+    # cpanm installs without write perms
+    - run: chmod -Rf +w *
+      working-directory: ${{prefix}}/lib/perl5
+
+    # need to clean up paths in the scripts
+    - run: sed -i
+        -e '2i use File::Basename qw(dirname);'
+        -e 's|"{{prefix}}|dirname($0) . "/..|g'
+        ../lib/perl5/lcovutil.pm *
+      working-directory: ${{prefix}}/bin
+  env:
+    PKGS:
+      - Capture::Tiny
+      - DateTime
+      - DateTime::Locale
+      - Devel::Cover
+      - Digest::MD5
+      - ExtUtils::Helpers
+      - File::Find
+      - File::Spec
+      - IPC::System::Simple
+      - JSON::XS
+      - Module::Build::Tiny
+      - Readonly
+      - Time::HiRes
+    linux:
+      PKGS:
+        - Memory::Process
+    ARGS:
+      - PREFIX="{{prefix}}"
+      - BIN_DR="{{prefix}}/bin"
+
+test:
+  dependencies:
+    linux:
+      gnu.org/gcc: '*'
+  script:
+    - run: mv $FIXTURE hello_world.c
+      fixture: |
+        #include <stdio.h>
+        int main(void)
+        {
+          puts("hello world");
+          return 0;
+        }
+    - cc -g -O2 --coverage -o hello_world hello_world.c
+    - ./hello_world
+    - lcov --gcov-tool gcov --directory . --capture --output-file all_coverage.info
+    - test -f all_coverage.info
+    - grep hello_world.c all_coverage.info

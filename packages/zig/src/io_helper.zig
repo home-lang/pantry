@@ -369,7 +369,7 @@ pub const FsDir = struct {
                 if (self.index >= self.end) {
                     // Need to read more entries - platform specific
                     switch (builtin.os.tag) {
-                        .macos, .ios, .tvos, .watchos, .visionos => {
+                        .macos, .ios, .tvos, .watchos, .visionos, .freebsd => {
                             const rc = c.getdirentries(self.fd, &self.buf, self.buf.len, &self.seek);
                             if (rc == 0) return null;
                             if (rc < 0) return error.ReadDirError;
@@ -391,7 +391,7 @@ pub const FsDir = struct {
 
                 // Platform-specific entry parsing
                 switch (builtin.os.tag) {
-                    .macos, .ios, .tvos, .watchos, .visionos => {
+                    .macos, .ios, .tvos, .watchos, .visionos, .freebsd => {
                         const entry: *align(1) c.dirent = @ptrCast(&self.buf[self.index]);
                         self.index += entry.reclen;
 
@@ -948,7 +948,7 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
             }
         }
         return args;
-    } else if (native_os == .linux) {
+    } else if (native_os == .linux or native_os == .freebsd) {
         // On Linux, read /proc/self/cmdline
         const file = openFileAbsolute("/proc/self/cmdline", .{}) catch return error.InvalidArgv;
         defer _ = c.close(file.handle);
@@ -984,6 +984,9 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
             i += 1;
         }
         return args;
+    } else if (native_os == .windows) {
+        // Windows: use kernel32 GetCommandLineW (placeholder — returns empty for now)
+        return try allocator.alloc([:0]const u8, 0);
     } else {
         @compileError("argsAlloc not supported on this platform");
     }

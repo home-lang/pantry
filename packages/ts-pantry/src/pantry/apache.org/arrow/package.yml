@@ -1,0 +1,128 @@
+distributable:
+  url: https://archive.apache.org/dist/arrow/arrow-{{version}}/apache-arrow-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://archive.apache.org/dist/arrow/
+  match: /arrow-\d+\.\d+\.\d+/
+  strip:
+    - /^arrow-/
+
+dependencies:
+  github.com/aws/aws-sdk-cpp: "*"
+  github.com/google/brotli: "*"
+  sourceware.org/bzip2: "*"
+  google.com/glog: "*"
+  grpc.io: "*"
+  lz4.org: "*"
+  openssl.org: "*"
+  rapidjson.org: "*"
+  github.com/google/re2: "*"
+  google.github.io/snappy: "*"
+  apache.org/thrift: "*"
+  github.com/JuliaStrings/utf8proc: "*"
+  facebook.com/zstd: "*"
+  darwin:
+    c-ares.org: 1
+    libcxx.llvm.org: ~17
+  linux:
+    protobuf.dev: 30.0.0 # match grpc.io, so gdal.org can build, we bundle on darwin
+    gnu.org/gcc/libstdcxx: 14
+
+build:
+  dependencies:
+    boost.org: "*"
+    cmake.org: 3
+    ninja-build.org: "*"
+    python.org: "<3.12"
+    llvm.org: ~17
+    linux:
+      gnu.org/gcc: 14
+  working-directory: cpp
+  script:
+    - cmake -B $BUILD_DIR $CMAKE_ARGS
+    - cmake --build $BUILD_DIR
+    - cmake --install $BUILD_DIR
+    - run: sed -i "s|$PKGX_DIR|\${pcfiledir}/../../../..|g" ./*.pc
+      working-directory: "{{prefix}}/lib/pkgconfig"
+  env:
+    BUILD_DIR: $(mktemp -d)
+    darwin:
+      CC: clang
+      CXX: clang++
+      LD: clang
+    CMAKE_ARGS:
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}
+      - -DCMAKE_INSTALL_LIBDIR=lib
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_CXX_STANDARD=20 # needed as of v23
+      - -DCMAKE_FIND_FRAMEWORK=LAST
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -Wno-dev
+      - -DBUILD_TESTING=OFF
+      - -DCMAKE_INSTALL_RPATH={{prefix}}
+      - -DARROW_ACERO=ON
+      - -DARROW_COMPUTE=ON
+      - -DARROW_CSV=ON
+      - -DARROW_DATASET=ON
+      - -DARROW_FILESYSTEM=ON
+      - -DARROW_GANDIVA=ON
+      - -DARROW_HDFS=ON
+      - -DARROW_JSON=ON
+      - -DARROW_ORC=OFF
+      - -DARROW_PARQUET=ON
+      - -DARROW_PROTOBUF_USE_SHARED=ON
+      - -DARROW_S3=ON
+      - -DARROW_WITH_BZ2=ON
+      - -DARROW_WITH_ZLIB=ON
+      - -DARROW_WITH_ZSTD=ON
+      - -DARROW_WITH_LZ4=ON
+      - -DARROW_WITH_SNAPPY=ON
+      - -DARROW_WITH_BROTLI=ON
+      - -DARROW_WITH_UTF8PROC=ON
+      - -DARROW_INSTALL_NAME_RPATH=OFF
+      - -DPARQUET_BUILD_EXECUTABLES=ON
+      - -GNinja
+    linux:
+      CC: gcc
+      CXX: g++
+      LD: gcc
+      # version script issues with newer LLVMs
+      LDFLAGS: $LDFLAGS -Wl,--undefined-version
+    x86-64:
+      CMAKE_ARGS:
+        - -DARROW_MIMALLOC=ON
+
+provides:
+  - bin/parquet-dump-schema
+  - bin/parquet-reader
+  - bin/parquet-scan
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: "*"
+  env:
+  script:
+    - run: c++ $FIXTURE -std=c++20 -larrow -o test
+      fixture:
+        extname: cpp
+        content: |
+          #include "arrow/api.h"
+          int main(void) {
+            arrow::int64();
+            return 0;
+          }
+    - ./test
+    - run: c++ $FIXTURE -std=c++20 -larrow -o version
+      fixture:
+        extname: cpp
+        content: |
+          #include <arrow/api.h>
+          #include <iostream>
+
+          int main() {
+              std::cout << "Apache Arrow Version: " << ARROW_VERSION_STRING << std::endl;
+              return 0;
+          }
+    - ./version | grep {{version}}
+    - pkg-config --modversion arrow | grep {{version}}

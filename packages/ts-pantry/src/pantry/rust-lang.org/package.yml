@@ -1,0 +1,96 @@
+distributable:
+  url: https://static.rust-lang.org/dist/rustc-{{ version }}-src.tar.gz
+  strip-components: 1
+
+versions:
+  github: rust-lang/rust
+  strip: /^Rust /
+
+companions:
+  rust-lang.org/cargo: '*'
+  linux:
+    llvm.org: '*'
+
+display-name: rust
+
+provides:
+  - bin/cargo-clippy
+  - bin/cargo-fmt
+  - bin/clippy-driver
+  - bin/rust-analyzer
+  - bin/rust-gdb
+  - bin/rust-gdbgui
+  - bin/rust-lldb
+  - bin/rustc
+  - bin/rustdoc
+  - bin/rustfmt
+
+#TODO: unimplemented idea for the “options” feature
+options:
+  - clippy
+  - rustfmt
+  - analysis
+  - { name: rust-demangler, default: false }
+
+dependencies:
+  #FIXME ^^ strictly rustc only needs a linker
+  zlib.net: 1
+
+build:
+  dependencies:
+    cmake.org: ^3.20
+    ninja-build.org: ^1.10
+    python.org: '>=3<3.12'
+    openssl.org: '*' # needed to build openssl-sys
+    crates.io/semverator: 0
+    linux:
+      llvm.org: 21 # as of 1.91.0
+  script:
+    # --enable-optimize not available as of 1.63.0
+    - run: export ARGS="$ARGS --enable-optimize"
+      if: <1.63.0
+
+    # 1.68.0 introduced a regression w.r.t. CI builds
+    # https://github.com/rust-lang/rust/issues/108959
+    - run: sed -i -e 's/CiEnv::is_ci()/CiEnv::is_ci() \&\& config.rust_info.is_managed_git_subrepository()/' native.rs
+      if: '>=1.68<1.70'
+      working-directory: src/bootstrap
+
+    - ./configure $ARGS
+    - make install
+
+    - |
+      for tool in $tools; do
+        ./x.py install $tool
+      done
+
+    - rm -rf {{prefix}}/share/doc
+  env:
+    ARGS:
+      - --enable-vendor
+      - --prefix={{ prefix }}
+      - --enable-ninja
+      - --disable-docs # docs are online
+      - --tools=clippy,rustdoc,rustfmt,analysis
+      - --sysconfdir={{ prefix }}/etc
+    tools:
+      - clippy
+      - rustfmt
+      - rust-analyzer
+    linux:
+      AR: llvm-ar
+    darwin:
+      RUSTFLAGS:
+        # for fix-machos
+        - -C link-args=-headerpad_max_install_names
+
+test:
+  script:
+    - run: rustc $FIXTURE -o hello --crate-name hello
+      fixture:
+        extname: rs
+        content: |
+          fn main() {
+            println!("Hello World!");
+          }
+    - ./hello

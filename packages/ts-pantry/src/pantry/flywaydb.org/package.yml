@@ -1,0 +1,37 @@
+distributable:
+  ~
+  # FIXME: AlreadyExists: File exists (os error 17): mkdir '~/pantry/srcs/flywaydb.org-10.10.0'
+  # https://github.com/pkgxdev/brewkit/issues/321
+
+versions:
+  url: https://search.maven.org/remotecontent?filepath=org/flywaydb/flyway-commandline/maven-metadata.xml
+  match: /<version>\d+\.\d+\.\d+<\/version>/
+  strip:
+    - /^<version>/
+    - /<\/version>$/
+
+warnings:
+  - vendored
+
+dependencies:
+  openjdk.org: ^21
+
+build:
+  dependencies:
+    curl.se: '*'
+  script:
+    - run: URL='https://search.maven.org/remotecontent?filepath=org/flywaydb/flyway-commandline/{{version.raw}}/flyway-commandline-{{version.raw}}.tar.gz'
+      if: <11.11
+    - run: URL='https://github.com/flyway/flyway/releases/download/flyway-{{version.raw}}/flyway-commandline-{{version.raw}}.tar.gz'
+    - curl -L "$URL" | tar xz
+    - mkdir -p {{prefix}}/libexec
+    - cp -r ./flyway-{{version}}/* {{prefix}}/libexec/
+    - run: ln -s ../libexec/flyway flyway
+      working-directory: ${{prefix}}/bin
+
+provides:
+  - bin/flyway
+
+test:
+  - flyway -v | grep {{version.raw}}
+  - flyway -url=jdbc:h2:mem:flywaydb validate | grep 'Successfully validated'

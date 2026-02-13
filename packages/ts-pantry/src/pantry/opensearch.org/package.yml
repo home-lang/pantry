@@ -1,0 +1,200 @@
+distributable:
+  url: https://github.com/opensearch-project/OpenSearch/archive/refs/tags/{{version}}.tar.gz
+  strip-components: 1
+
+display-name: opensearch
+
+versions:
+  github: opensearch-project/OpenSearch
+
+dependencies:
+  openjdk.org: ^21 # since v3
+  openmp.llvm.org: ^19
+
+build:
+  dependencies:
+    cmake.org: 3
+    git-scm.org: '*'
+    gnu.org/wget: '*'
+    gnu.org/gcc: ^11 # for gfortran
+    linux:
+      # on mac we use the Accelerate framework instead, on linux this is linked statically
+      netlib.org/lapack: '*'
+
+  script:
+    # there seems to be a loader bug with trying to dlopen libc on macos 12 and earlier.
+    # remove this step when macos 12 and under are no longer supported.
+    - run:
+        - if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then
+        - sed -i 's|JNAKernel32Library.getInstance();|//JNAKernel32Library.getInstance();|' server/src/main/java/org/opensearch/bootstrap/Bootstrap.java
+        - fi
+      if: ^2
+    - ./gradlew -Dbuild.snapshot=false ":distribution:archives:no-jdk-{{hw.platform}}-tar:assemble"
+    - run: tar --strip-components=1 -xf $SRCROOT/distribution/archives/no-jdk-{{hw.platform}}-tar/build/distributions/opensearch-*.tar.gz
+      working-directory: ${{prefix}}
+    # there seems to be a loader bug with trying to dlopen libc on macos 12 and earlier.
+    # remove this step when macos 12 and under are no longer supported.
+    - run:
+        - if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then
+        - rm -f lib/jna-*.jar
+        - fi
+      if: ^2
+      working-directory: ${{prefix}}
+    - run: 'sed -i "s|#\s*cluster.name: .*|cluster.name: opensearch_pkgx|" opensearch.yml'
+      working-directory: ${{prefix}}/config
+
+    # checkout k-NN plugin
+    - run:
+        - |
+          if [ -d .git ]; then
+            git fetch
+          else
+            git clone https://github.com/opensearch-project/k-NN .
+          fi
+        - git checkout {{version}}.0
+        - git reset --hard
+        - git submodule foreach --recursive git reset --hard
+        - git submodule update --init --recursive
+        - git config --global user.email "hello@pkgx.dev"
+        - git config --global user.name "pkgx"
+      working-directory: k-NN
+
+    # workarounds for m1 build. see: https://github.com/opensearch-project/k-NN/blob/main/DEVELOPER_GUIDE.md#extra-setup-for-mac-m1-machines
+    - run:
+        - if test "{{hw.platform}}+{{hw.arch}}" = "darwin+aarch64"; then
+        - sed -i -e 's/-march=native/-mcpu=apple-m1/g' nmslib/similarity_search/CMakeLists.txt
+        - sed -i -e 's/-mcpu=apple-a14/-mcpu=apple-m1/g' nmslib/python_bindings/setup.py
+        - sed -i -e 's/__aarch64__/__undefine_aarch64__/g' faiss/faiss/utils/distances_simd.cpp
+        - fi
+      if: <3.4.0
+      working-directory: k-NN/jni/external
+
+    - run:
+        - sed -i -f $PROP jni/CMakeLists.txt jni/cmake/*.cmake
+        - export CC=clang
+        - export CXX=clang++
+      prop: |
+        s|/usr/local/opt/libomp/|{{deps.openmp.llvm.org.prefix}}/|g
+        s|/opt/homebrew/opt/libomp/|{{deps.openmp.llvm.org.prefix}}/|g
+      if: darwin
+      working-directory: k-NN
+
+    # this is recommended in https://github.com/opensearch-project/k-NN/blob/45e9e542aef60ef7073ee726e6ac14dec27bfa04/scripts/build.sh#L91-L94
+    - run: |
+        if test "{{hw.arch}}" = "x86-64"; then
+          sed -i -e 's/-march=native/-march=x86-64/g' CMakeLists.txt
+        fi
+      working-directory: k-NN/jni/external/nmslib/similarity_search
+      if: ^2
+    - run:
+        - cmake . $CMAKE_ARGS
+        - make
+      working-directory: k-NN/jni
+    - run: |
+        for LIB in *.jnilib; do
+          install_name_tool -add_rpath @loader_path $LIB
+        done
+      working-directory: k-NN/jni/release
+      if: darwin
+    - run:
+        - ./gradlew build --refresh-dependencies -x integTest -x test -DskipTests=true -Dopensearch.version={{version}} -Dbuild.snapshot=false -Dbuild.version_qualifier=
+        - ./gradlew publishPluginZipPublicationToZipStagingRepository -Dopensearch.version={{version}} -Dbuild.snapshot=false -Dbuild.version_qualifier=
+        - ./gradlew publishPluginZipPublicationToMavenLocal -Dbuild.snapshot=false -Dbuild.version_qualifier= -Dopensearch.version={{version}}
+      working-directory: k-NN
+    - run:
+        - mkdir -p ./build/distributions/lib
+        - cp -v ./jni/release/libopensearchknn* ./build/distributions/lib
+        - cd ./build/distributions
+        - zip -r opensearch-knn-{{version}}.0.zip lib/
+        # the code doesn't like the + in the path
+        - TMP=$(mktemp -d /tmp/opensearch-knn-XXXXXX)
+        - rmdir $TMP
+        - ln -s {{prefix}} $TMP
+        - '$TMP/bin/opensearch-plugin install --batch file:`pwd`/opensearch-knn-{{version}}.0.zip'
+      working-directory: k-NN
+    - run: echo 'export JAVA_LIBRARY_PATH="$OPENSEARCH_HOME/plugins/opensearch-knn/lib:$JAVA_LIBRARY_PATH"' >> opensearch-env
+      working-directory: ${{prefix}}/bin
+      if: darwin
+    - run: echo 'export LD_LIBRARY_PATH="$OPENSEARCH_HOME/plugins/opensearch-knn/lib:$LD_LIBRARY_PATH"' >> opensearch-env
+      working-directory: ${{prefix}}/bin
+      if: linux
+  env:
+    linux/x86-64:
+      # /opt/gnu.org/binutils/v2.43.1/bin/ld: release/libopensearchknn_faiss_avx2.so: undefined reference to `_gfortran_concat_string'
+      LDFLAGS: $LDFLAGS -Wl,-lgfortran
+    linux:
+      CMAKE_ARGS:
+        - -DLAPACK_LIBRARIES={{deps.netlib.org/lapack.prefix}}/lib/liblapack.so.{{deps.netlib.org/lapack.version.major}}
+        - -DBLAS_LIBRARIES={{deps.netlib.org/lapack.prefix}}/lib/libblas.so.{{deps.netlib.org/lapack.version.major}}
+
+provides:
+  - bin/opensearch
+  - bin/opensearch-keystore
+  - bin/opensearch-plugin
+  - bin/opensearch-shard
+
+test:
+  dependencies:
+    gnu.org/coreutils: ^9
+    stedolan.github.io/jq: '*'
+    curl.se: '*'
+  script:
+    - opensearch-plugin list
+
+    # While we'd love a good test like this, `opensearch` doesn't run as root, and managing
+    # all the environment passthrough with `sudo` is a nightmare.
+    - run:
+        - 'opensearch -version | grep "Version: {{version}}"'
+        - exit 0
+      if: linux
+
+    - mkdir -p test/{data,logs}
+    - PORT=$(shuf -i 2000-65000 -n 1)
+    - run: ADDED_ARGS=-Ediscovery.type=single-node
+      if: '>=2.17.1'
+    - opensearch -Ehttp.port=$PORT -Epath.data=$PWD/test/data -Epath.logs=$PWD/test/logs $ADDED_ARGS &
+    - pid=$!
+    - |
+      for i in $(seq 1 60); do
+        curl -k --silent --fail http://localhost:$PORT/ | tee output.txt && break || sleep 1
+      done
+    - test "$(jq .version.number output.txt)" = "\"{{version}}\""
+    - run: "curl --fail -XPUT http://localhost:$PORT/my-test-knn-index -H 'Content-Type: application/json' -d @$FIXTURE"
+      fixture: |
+        {
+          "settings": {
+            "index.knn": true
+          },
+          "mappings": {
+            "properties": {
+              "my_vector1": {
+                "type": "knn_vector",
+                "dimension": 2
+              },
+              "my_vector2": {
+                "type": "knn_vector",
+                "dimension": 4
+              }
+            }
+          }
+        }
+    - run: "curl --fail -XPUT http://localhost:$PORT/my-test-knn-index/_doc/1?refresh=true -H 'Content-Type: application/json' -d @$FIXTURE"
+      fixture: |
+        {
+          "my_vector1": [1, 2],
+          "my_vector2": [1, 2, 3, 4]
+        }
+    - run: "curl --fail -XPOST http://localhost:$PORT/my-test-knn-index/_search -H 'Content-Type: application/json' -d @$FIXTURE | tee output.txt"
+      fixture: |
+        {
+          "query": {
+            "knn": {
+              "my_vector1": {
+                "vector": [1, 2],
+                "k": 1
+              }
+            }
+          }
+        }
+    - kill $pid
+    - test "$(jq .hits.total.value output.txt)" = 1

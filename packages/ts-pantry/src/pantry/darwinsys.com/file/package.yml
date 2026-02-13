@@ -1,0 +1,35 @@
+distributable:
+  url: https://astron.com/pub/file/file-{{version.raw}}.tar.gz
+  #TODO url: ftp://ftp.astron.com/pub/file/file-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://astron.com/pub/file/
+  match: /file-\d+\.\d+\.tar\.gz/
+  strip:
+    - /file-/
+    - /.tar.gz/
+
+dependencies:
+  zlib.net: 1 #FIXME this is actually an optional dep
+
+build:
+  dependencies:
+    gnu.org/patch: '*'
+  script:
+    - patch -p1 <props/relocatable.diff
+
+    # Our diff has old labels
+    - run: sed -i -e 's/^protected const char/file_protected const char/' magic.c
+      working-directory: src
+      if: '>=5.45'
+
+    - ./configure --prefix={{prefix}}
+    - make --jobs {{hw.concurrency}} install
+    - cp -a magic/Magdir {{prefix}}/share/misc/magic
+
+test: file {{prefix}}/bin/file
+#TODO check output, we don’t since it varies by platform annoyingly
+
+provides:
+  - bin/file

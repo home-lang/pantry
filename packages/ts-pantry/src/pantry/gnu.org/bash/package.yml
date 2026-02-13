@@ -1,0 +1,31 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/bash/bash-{{ version.raw }}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/bash/
+  match: /bash-\d+\.\d+(\.\d+)?.tar.gz/
+  strip:
+    - /^bash-/
+    - /\.tar\.gz$/
+
+provides:
+  - bin/bash
+  - bin/bashbug
+
+interprets:
+  extensions: bash
+  args: [bash, -e]
+
+build:
+  script: |
+    ./configure --prefix={{ prefix }}
+    make --jobs {{ hw.concurrency }} install
+  env:
+    CFLAGS:
+      # causes bash to source ~/.bashrc when instantiated
+      # non-interactively from sshd. macOS’s bash does this so users expect it.
+      - -DSSH_SOURCE_BASHRC
+      - -Wno-implicit-function-declaration
+
+test: bash -c "set -o pipefail"

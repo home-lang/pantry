@@ -7,6 +7,7 @@ pub const Platform = enum {
     darwin,
     linux,
     windows,
+    freebsd,
 
     /// Get the current platform at compile time
     pub fn current() Platform {
@@ -14,6 +15,7 @@ pub const Platform = enum {
             .macos => .darwin,
             .linux => .linux,
             .windows => .windows,
+            .freebsd => .freebsd,
             else => @compileError("Unsupported platform"),
         };
     }
@@ -24,6 +26,7 @@ pub const Platform = enum {
             .darwin => "darwin",
             .linux => "linux",
             .windows => "windows",
+            .freebsd => "freebsd",
         };
     }
 
@@ -38,6 +41,7 @@ pub const Platform = enum {
             .darwin => "darwin",
             .linux => "linux",
             .windows => "win",
+            .freebsd => "freebsd",
         };
     }
 
@@ -47,6 +51,7 @@ pub const Platform = enum {
             .darwin => "apple-darwin",
             .linux => "unknown-linux-gnu",
             .windows => "pc-windows-msvc",
+            .freebsd => "unknown-freebsd",
         };
     }
 
@@ -88,7 +93,7 @@ pub const Paths = struct {
     /// Get user's home directory
     pub fn home(allocator: std.mem.Allocator) ![]const u8 {
         return switch (Platform.current()) {
-            .darwin, .linux => blk: {
+            .darwin, .linux, .freebsd => blk: {
                 if (io_helper.getEnvVarOwned(allocator, "HOME")) |h| {
                     break :blk h;
                 } else |_| {
@@ -112,7 +117,7 @@ pub const Paths = struct {
 
         return switch (Platform.current()) {
             .darwin => try std.fmt.allocPrint(allocator, "{s}/.cache/pantry", .{home_dir}),
-            .linux => blk: {
+            .linux, .freebsd => blk: {
                 // Try XDG_CACHE_HOME first
                 if (io_helper.getEnvVarOwned(allocator, "XDG_CACHE_HOME")) |xdg| {
                     defer allocator.free(xdg);
@@ -132,7 +137,7 @@ pub const Paths = struct {
 
         return switch (Platform.current()) {
             .darwin => try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry", .{home_dir}),
-            .linux => blk: {
+            .linux, .freebsd => blk: {
                 // Try XDG_DATA_HOME first
                 if (io_helper.getEnvVarOwned(allocator, "XDG_DATA_HOME")) |xdg| {
                     defer allocator.free(xdg);
@@ -152,7 +157,7 @@ pub const Paths = struct {
 
         return switch (Platform.current()) {
             .darwin => try std.fmt.allocPrint(allocator, "{s}/.config/pantry", .{home_dir}),
-            .linux => blk: {
+            .linux, .freebsd => blk: {
                 // Try XDG_CONFIG_HOME first
                 if (io_helper.getEnvVarOwned(allocator, "XDG_CONFIG_HOME")) |xdg| {
                     defer allocator.free(xdg);
@@ -169,7 +174,7 @@ pub const Paths = struct {
     pub fn libraryPathVar() []const u8 {
         return switch (Platform.current()) {
             .darwin => "DYLD_LIBRARY_PATH",
-            .linux => "LD_LIBRARY_PATH",
+            .linux, .freebsd => "LD_LIBRARY_PATH",
             .windows => "PATH",
         };
     }
@@ -177,7 +182,7 @@ pub const Paths = struct {
     /// Get path separator for current platform
     pub fn pathSeparator() u8 {
         return switch (Platform.current()) {
-            .darwin, .linux => ':',
+            .darwin, .linux, .freebsd => ':',
             .windows => ';',
         };
     }

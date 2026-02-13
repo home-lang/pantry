@@ -1,0 +1,79 @@
+distributable:
+  url: https://github.com/facebook/fb303/archive/v{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: facebook/fb303/tags
+
+dependencies:
+  # these need to version match, but we don't have a method for that
+  github.com/facebookincubator/fizz: "*"
+  facebook.com/wangle: "*"
+  facebook.com/folly: "*"
+  facebook.com/fbthrift: ">=2023.12.18.0"
+  fmt.dev: ^12
+  gflags.github.io: ^2.2.2
+  google.com/glog: ^0.6
+  libsodium.org: ^1.0.19
+  openssl.org: ^1.1
+  github.com/Cyan4973/xxHash: ^0.8 # since 2024.10.14.0
+  linux:
+    zlib.net: ^1
+    gnu.org/gcc/libstdcxx: 14
+
+build:
+  dependencies:
+    cmake.org: "*"
+    facebook.com/mvfst: "*"
+    boost.org: ^1.84
+    linux:
+      gnu.org/gcc: 14
+  script:
+    - cmake -S . -B build $CMAKE_ARGS
+    - cmake --build build
+    - cmake --install build
+  env:
+    CMAKE_ARGS:
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}
+      - -DCMAKE_INSTALL_LIBDIR=lib
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_FIND_FRAMEWORK=LAST
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -Wno-dev
+      - -DBUILD_TESTING=OFF
+      - -DPYTHON_EXTENSIONS=OFF
+      - -DBUILD_SHARED_LIBS=ON
+      - -DCMAKE_CXX_STANDARD=20
+    darwin:
+      CMAKE_ARGS:
+        # fbthrift's libthrift_dynamic_value.a has an undefined typeDisplayName
+        # (Path.cpp not compiled due to fmt v12 incompatibility)
+        - -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-undefined,dynamic_lookup
+    linux:
+      CMAKE_ARGS:
+        - -DCMAKE_C_FLAGS=-fPIC
+        - -DCMAKE_CXX_FLAGS=-fPIC
+    linux/x86-64:
+      CMAKE_ARGS:
+        - -DCMAKE_EXE_LINKER_FLAGS=-Wl,-pie
+    linux/aarch64:
+      CMAKE_ARGS:
+        - -DCMAKE_EXE_LINKER_FLAGS=-Wl,-pie,-latomic
+
+test:
+  dependencies:
+    boost.org: ^1.84
+    linux:
+      gnu.org/gcc: 14
+  script:
+    - c++ -std=c++20 test.cpp -o test $LDFLAGS $EXTRA_LIBS -lfb303_thrift_cpp -lfolly -lglog -lthriftprotocol -lthriftcpp2 -ldl -lboost_context -lfmt
+    - ./test | grep 'BaseService'
+  env:
+    linux:
+      EXTRA_LIBS: -latomic
+    # libfb303_thrift_cpp.so references typeDisplayName from fbthrift's Path.cpp
+    # which isn't compiled (doesn't build with fmt v12). The symbol is only used
+    # in error paths so it's safe to ignore at link time.
+    LDFLAGS: -Wl,--allow-shlib-undefined
+    darwin:
+      LDFLAGS: -Wl,-undefined,dynamic_lookup

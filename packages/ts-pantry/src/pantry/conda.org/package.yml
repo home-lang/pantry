@@ -1,0 +1,90 @@
+# this is what docs.conda.io refers to as `miniconda`
+
+# conda requires conda to build conda since 23.11. so, we use miniconda's installer script
+# into a venv
+
+warnings:
+  - vendored
+
+versions:
+  url: https://repo.anaconda.com/miniconda/
+  match: /Miniconda3-py311_\d+\.\d+\.\d+-\d+-MacOSX-arm64.sh/
+  strip:
+    - /Miniconda3-py311_/
+    - /-\d+-MacOSX-arm64.sh/
+
+dependencies:
+  pkgx.sh: ">=1"
+  openssl.org: ^1.1
+
+runtime:
+  env:
+    CRYPTOGRAPHY_OPENSSL_NO_LEGACY: 1
+
+build:
+  dependencies:
+    # https://docs.conda.io/projects/miniconda/en/latest/#latest-miniconda-installer-links
+    python.org: =3.11.5
+    gnu.org/patch: "*"
+    curl.se: "*"
+  script:
+    - bkpyvenv stage {{prefix}} {{version}}
+    # FIXME: we need a way to handle suffix versions
+    - |
+      for v in 9 8 7 6 5 4 3 2 1 0; do
+        if curl -fLS https://repo.anaconda.com/miniconda/Miniconda3-py311_{{version}}-$v-${SUFFIX}.sh -o miniconda.sh; then
+          break
+        fi
+      done
+      test -f miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b -f -s -p {{prefix}}/venv
+
+    # stops conda from installing to our versioned prefix by default
+    - run: |
+        cd conda-{{version}}-*/lib/python3.11/site-packages
+        patch -p1 < $SRCROOT/props/context.py.diff
+      working-directory: ${{prefix}}/venv/pkgs
+    - run: patch -p1 < $SRCROOT/props/context.py.diff
+      working-directory: ${{prefix}}/venv/lib/python3.11/site-packages
+
+    - bkpyvenv seal {{prefix}} conda
+
+    # we desire to provide a conda that doesn’t require you to force it into
+    # your shellrc this command modifies the installation to prevent it
+    # erroring so we have to do prior to pkging it
+    - "{{prefix}}/bin/conda init"
+
+    # put the conda libs in a findable path
+    - run: ln -s venv/lib lib
+      working-directory: ${{prefix}}
+  env:
+    darwin/aarch64:
+      SUFFIX: MacOSX-arm64
+    darwin/x86-64:
+      SUFFIX: MacOSX-x86_64
+    linux/x86-64:
+      SUFFIX: Linux-x86_64
+    linux/aarch64:
+      SUFFIX: Linux-aarch64 # not arm64. weird.
+
+provides:
+  - bin/conda
+
+test:
+  - conda --version | grep {{version}}
+  - source /dev/stdin <<<"$(conda shell.bash hook)"
+  - run:
+      - conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+      - conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+    if: ">=25.7.0"
+  - conda create --yes --name snowflakes biopython
+  - conda activate snowflakes
+  - conda info --envs | grep snowflakes
+  - conda deactivate
+
+  # check env has been restored
+  - |
+    if ! conda info --envs | grep snowflakes; then
+      exit 1
+    fi

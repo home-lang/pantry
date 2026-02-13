@@ -1,0 +1,30 @@
+distributable:
+  url: https://github.com/stedolan/jq/releases/download/jq-{{version.raw}}/jq-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: stedolan/jq/releases
+  strip: /jq /
+
+dependencies:
+  github.com/kkos/oniguruma: 6
+
+build:
+  dependencies:
+    git-scm.org: 2
+  script:
+    - run: |
+        if test "{{hw.platform}}" = "darwin"; then
+          git apply props/darwin.diff
+          git apply props/lgamma_r.diff
+        fi
+      if: <1.7
+    - ./configure --disable-maintainer-mode --prefix={{prefix}}
+    - make -j {{hw.concurrency}}
+    - make install
+
+test:
+  script: test $(jq .devs[1].github < test.json) = '"jhheider"'
+
+provides:
+  - bin/jq

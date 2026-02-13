@@ -1,0 +1,32 @@
+distributable:
+  url: https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/App-cpanminus-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: miyagawa/cpanminus/tags
+  ignore:
+    - /^1.9/ # invalid versions in the tags for some reason
+    - /^1.79/ # ^^
+    - /^1.71/ # ^^ like wtf?
+
+dependencies:
+  perl.org: '*'
+
+companions:
+
+provides:
+  - bin/cpanm
+
+build:
+  script: |
+    perl Makefile.PL INSTALL_BASE={{prefix}}
+    make install
+
+    fix-shebangs.ts {{prefix}}/bin/cpanm
+
+test:
+  dependencies:
+    linux:
+      gnu.org/make: '*'
+  script:
+    - cpanm --verbose --local-lib=./out Test::More

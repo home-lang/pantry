@@ -1,0 +1,35 @@
+distributable:
+  url: git+https://github.com/sigstore/cosign.git
+  ref: ${{version.tag}}
+
+versions:
+  github: sigstore/cosign
+
+provides:
+  - bin/cosign
+
+build:
+  dependencies:
+    go.dev: ~1.24.3
+  script:
+    - go mod download
+    - go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/cosign ./cmd/cosign
+  env:
+    GO111MODULE: on
+    CGO_ENABLED: 0
+    GO_LDFLAGS:
+      - -s
+      - -w
+      - -X sigs.k8s.io/release-utils/version.gitVersion=v{{version}}
+      - -X sigs.k8s.io/release-utils/version.gitCommit=pkgx
+      - -X sigs.k8s.io/release-utils/version.gitTreeState=clean
+      - -X sigs.k8s.io/release-utils/version.buildDate=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+    linux:
+      # or segmentation fault
+      # fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      GO_LDFLAGS:
+        - -buildmode=pie
+
+test:
+  - cosign version
+  - cosign version 2>&1 | grep {{version}}

@@ -1,0 +1,36 @@
+distributable:
+  url: https://prdownloads.sourceforge.net/tcl/tcl{{ version }}-src.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://sourceforge.net/projects/tcl/files/Tcl/
+  match: /files\/Tcl\/\d+\.\d+\.\d+\//
+  strip:
+    - /files\/Tcl\//
+    - /\//
+
+build:
+  working-directory: unix
+  script:
+    - ./configure --prefix={{ prefix }}
+    - make --jobs {{ hw.concurrency }}
+    - make install
+    - make install-private-headers
+
+    # fix-machos breaks tclsh, but we need to fix the path to libtcl
+    - run: install_name_tool -change {{prefix}}/lib/libtcl{{version.major}}.{{version.minor}}.dylib @loader_path/../lib/libtcl{{version.major}}.{{version.minor}}.dylib  {{prefix}}/bin/tclsh{{version.major}}.{{version.minor}}
+      if: darwin
+
+    - run: ln -s tclsh{{version.major}}.{{version.minor}} tclsh
+      working-directory: ${{prefix}}/bin
+  test: make test
+  skip: fix-machos
+
+test:
+  - echo 'puts "Hello, World!";' | tclsh
+  - test "$(echo 'puts "Hello, World!";' | tclsh)" = 'Hello, World!'
+
+provides:
+  - bin/sqlite3_analyzer
+  - bin/tclsh{{version.major}}.{{version.minor}}
+  - bin/tclsh

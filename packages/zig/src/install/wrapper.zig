@@ -166,7 +166,7 @@ pub fn generateEnvWrapper(
         const platform = lib.Platform.current();
         const var_name = switch (platform) {
             .darwin => "DYLD_LIBRARY_PATH",
-            .linux => "LD_LIBRARY_PATH",
+            .linux, .freebsd => "LD_LIBRARY_PATH",
             .windows => "PATH",
         };
         try buffer.writer().print("export {s}=\"{s}:${s}\"\n", .{ var_name, path, var_name });

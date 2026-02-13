@@ -1,0 +1,56 @@
+distributable:
+  url: https://github.com/fish-shell/fish-shell/archive/refs/tags/{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: fish-shell/fish-shell
+
+dependencies:
+  gnu.org/gettext: '*'
+  invisible-island.net/ncurses: '>=6.0'
+
+build:
+  dependencies:
+    cmake.org: '>=3.5'
+    freedesktop.org/pkg-config: '*'
+    gnu.org/patch: '*'
+    git-scm.org: ^2 # needed for fish's pcre
+    rust-lang.org: ^1.56 # v4
+    rust-lang.org/cargo: '*'
+  script:
+    # By default, fish's fish_command_not_found handler will redirect to stderr,
+    # return an exit code of 127. Always. This patch fixes it. Hopefully, it will
+    # be merged upstream soon. https://github.com/fish-shell/fish-shell/pull/9517
+    - run: patch -p1 <props/command_not_found_handler.diff
+      if: ^3
+
+    - echo {{version}} >version
+
+    - run:
+        - cmake .. $ARGS
+        - make install
+      working-directory: build
+
+    - run: sed -i -e "s| $PKGX_DIR/| \$PKGX_DIR/|g" __fish_build_paths.fish
+      working-directory: ${{prefix}}/share/fish
+  env:
+    ARGS:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}"
+
+test:
+  script:
+    - fish $FIXTURE
+    - fish $FIXTURE | grep "variable1variable2variable3variable4variable5variable6variable7variable8variable9variable10"
+  fixture: |
+    #!/usr/bin/env fish
+
+    set -lx V variable
+    for x in (seq 1 10)
+      echo -n $V$x
+    end
+
+provides:
+  - bin/fish
+  - bin/fish_indent
+  - bin/fish_key_reader

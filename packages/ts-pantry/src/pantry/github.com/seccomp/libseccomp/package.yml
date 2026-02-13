@@ -1,0 +1,37 @@
+distributable:
+  url: https://github.com/seccomp/libseccomp/releases/download/{{version.tag}}/libseccomp-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: seccomp/libseccomp
+
+display-name: libseccomp
+
+platforms: [linux]
+
+build:
+  dependencies:
+    gnu.org/libtool: "*"
+    gnu.org/gperf: "*"
+  script:
+    - ./configure --prefix={{prefix}} --disable-silent-rules
+    - make install
+
+provides:
+  - bin/scmp_sys_resolver
+
+test:
+  - scmp_sys_resolver 0
+  - run: cc $FIXTURE -lseccomp -o test
+    fixture:
+      extname: c
+      content: |
+        #include <seccomp.h>
+
+        int main(int argc, char *argv[]) {
+          if(SCMP_VER_MAJOR != {{version.major}})
+            return 1;
+          if(SCMP_VER_MINOR != {{version.minor}})
+            return 1;
+        }
+  - ./test

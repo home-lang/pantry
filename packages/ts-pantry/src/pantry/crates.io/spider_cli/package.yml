@@ -1,0 +1,27 @@
+distributable:
+  url: https://github.com/spider-rs/spider/archive/refs/tags/{{ version.tag }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/spider
+
+versions:
+  github: spider-rs/spider
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.56'
+    rust-lang.org/cargo: '*'
+  script:
+    # needs openssl 3 on linux, but our rust locks us to 1.1.1
+    - run: sed -f $PROP -i Cargo.toml
+      working-directory: spider_cli
+      if: linux
+      prop: |
+        /^serde_json =/a\
+        openssl-sys = { version = "*", features = ["vendored"] }
+    # _requires_ spider/serde to build since 2.37.120
+    - cargo install --path spider_cli --root {{prefix}} --features smart,spider/serde
+  skip: fix-patchelf # dumps on x86-64
+
+test: spider -v --url https://choosealicense.com crawl

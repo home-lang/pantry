@@ -9,6 +9,7 @@ pub const Platform = enum {
     macos,
     linux,
     windows,
+    freebsd,
     unknown,
 
     pub fn detect() Platform {
@@ -16,6 +17,7 @@ pub const Platform = enum {
             .macos => .macos,
             .linux => .linux,
             .windows => .windows,
+            .freebsd => .freebsd,
             else => .unknown,
         };
     }
@@ -25,6 +27,7 @@ pub const Platform = enum {
             .macos => "launchd",
             .linux => "systemd",
             .windows => "sc",
+            .freebsd => "rc.d",
             .unknown => "unsupported",
         };
     }
@@ -34,6 +37,7 @@ pub const Platform = enum {
             .macos => ".plist",
             .linux => ".service",
             .windows => ".xml",
+            .freebsd => "",
             .unknown => "",
         };
     }
@@ -43,6 +47,7 @@ pub const Platform = enum {
             .macos => try allocator.dupe(u8, "/Library/LaunchDaemons"),
             .linux => try allocator.dupe(u8, "/etc/systemd/system"),
             .windows => try allocator.dupe(u8, "C:\\Windows\\System32\\config\\systemprofile\\AppData\\Roaming"),
+            .freebsd => try allocator.dupe(u8, "/usr/local/etc/rc.d"),
             .unknown => error.UnsupportedPlatform,
         };
     }
@@ -60,6 +65,7 @@ pub const Platform = enum {
         return switch (self) {
             .macos => try std.fmt.allocPrint(allocator, "{s}/Library/LaunchAgents", .{home}),
             .linux => try std.fmt.allocPrint(allocator, "{s}/.config/systemd/user", .{home}),
+            .freebsd => try std.fmt.allocPrint(allocator, "{s}/.config/pantry/services", .{home}),
             .windows => error.UnsupportedPlatform,
             .unknown => error.UnsupportedPlatform,
         };
@@ -83,6 +89,7 @@ pub const ServiceController = struct {
         switch (self.platform) {
             .macos => try self.launchdStart(service_name),
             .linux => try self.systemdStart(service_name),
+            .freebsd => try self.rcdStart(service_name),
             .windows => return error.UnsupportedPlatform,
             .unknown => return error.UnsupportedPlatform,
         }
@@ -93,6 +100,7 @@ pub const ServiceController = struct {
         switch (self.platform) {
             .macos => {}, // launchd handles this via RunAtLoad in plist
             .linux => try self.systemdEnable(service_name),
+            .freebsd => try self.rcdEnable(service_name),
             .windows => return error.UnsupportedPlatform,
             .unknown => return error.UnsupportedPlatform,
         }
@@ -103,6 +111,7 @@ pub const ServiceController = struct {
         switch (self.platform) {
             .macos => {}, // launchd handles this via plist modification
             .linux => try self.systemdDisable(service_name),
+            .freebsd => try self.rcdDisable(service_name),
             .windows => return error.UnsupportedPlatform,
             .unknown => return error.UnsupportedPlatform,
         }
@@ -113,6 +122,7 @@ pub const ServiceController = struct {
         switch (self.platform) {
             .macos => try self.launchdStop(service_name),
             .linux => try self.systemdStop(service_name),
+            .freebsd => try self.rcdStop(service_name),
             .windows => return error.UnsupportedPlatform,
             .unknown => return error.UnsupportedPlatform,
         }
@@ -132,6 +142,7 @@ pub const ServiceController = struct {
         return switch (self.platform) {
             .macos => try self.launchdStatus(service_name),
             .linux => try self.systemdStatus(service_name),
+            .freebsd => try self.rcdStatus(service_name),
             .windows => error.UnsupportedPlatform,
             .unknown => error.UnsupportedPlatform,
         };
@@ -286,6 +297,90 @@ pub const ServiceController = struct {
         return try std.fmt.allocPrint(
             self.allocator,
             "pantry-{s}.service",
+            .{service_name},
+        );
+    }
+
+    // ========================================================================
+    // FreeBSD rc.d implementation
+    // ========================================================================
+
+    fn rcdStart(self: *ServiceController, service_name: []const u8) !void {
+        const rcd_name = try self.getRcdName(service_name);
+        defer self.allocator.free(rcd_name);
+
+        const argv = [_][]const u8{ "service", rcd_name, "onestart" };
+        const result = try io_helper.spawnAndWait(.{ .argv = &argv });
+
+        if (result != .exited or result.exited != 0) {
+            return error.ServiceStartFailed;
+        }
+    }
+
+    fn rcdStop(self: *ServiceController, service_name: []const u8) !void {
+        const rcd_name = try self.getRcdName(service_name);
+        defer self.allocator.free(rcd_name);
+
+        const argv = [_][]const u8{ "service", rcd_name, "onestop" };
+        const result = try io_helper.spawnAndWait(.{ .argv = &argv });
+
+        if (result != .exited or result.exited != 0) {
+            return error.ServiceStopFailed;
+        }
+    }
+
+    fn rcdEnable(self: *ServiceController, service_name: []const u8) !void {
+        const rcd_name = try self.getRcdName(service_name);
+        defer self.allocator.free(rcd_name);
+
+        // Enable via sysrc: sysrc pantry_<name>_enable=YES
+        const var_name = try std.fmt.allocPrint(self.allocator, "{s}_enable=YES", .{rcd_name});
+        defer self.allocator.free(var_name);
+
+        const argv = [_][]const u8{ "sysrc", var_name };
+        const result = try io_helper.spawnAndWait(.{ .argv = &argv });
+
+        if (result != .exited or result.exited != 0) {
+            return error.ServiceEnableFailed;
+        }
+    }
+
+    fn rcdDisable(self: *ServiceController, service_name: []const u8) !void {
+        const rcd_name = try self.getRcdName(service_name);
+        defer self.allocator.free(rcd_name);
+
+        // Disable via sysrc: sysrc pantry_<name>_enable=NO
+        const var_name = try std.fmt.allocPrint(self.allocator, "{s}_enable=NO", .{rcd_name});
+        defer self.allocator.free(var_name);
+
+        const argv = [_][]const u8{ "sysrc", var_name };
+        const result = try io_helper.spawnAndWait(.{ .argv = &argv });
+
+        if (result != .exited or result.exited != 0) {
+            return error.ServiceDisableFailed;
+        }
+    }
+
+    fn rcdStatus(self: *ServiceController, service_name: []const u8) !definitions.ServiceStatus {
+        const rcd_name = try self.getRcdName(service_name);
+        defer self.allocator.free(rcd_name);
+
+        const argv = [_][]const u8{ "service", rcd_name, "status" };
+        const result = try io_helper.childRun(self.allocator, &argv);
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
+
+        // rc.d status returns 0 if running, non-zero if stopped
+        return switch (result.term) {
+            .exited => |code| if (code == 0) .running else .stopped,
+            else => .unknown,
+        };
+    }
+
+    fn getRcdName(self: *ServiceController, service_name: []const u8) ![]const u8 {
+        return try std.fmt.allocPrint(
+            self.allocator,
+            "pantry_{s}",
             .{service_name},
         );
     }

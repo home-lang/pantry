@@ -1,0 +1,63 @@
+distributable:
+  url: git+https://github.com/mudler/LocalAI
+  ref: ${{version.tag}}
+
+display-name: LocalAI
+
+versions:
+  github: mudler/LocalAI
+
+companions:
+  linux:
+    openssl.org: '*'
+
+dependencies:
+  darwin:
+    openmp.llvm.org: 18
+
+build:
+  dependencies:
+    go.dev: ^1.21
+    cmake.org: ^3
+    grpc.io: =1.72.1 # as of v3
+    gnu.org/wget: ^1
+    gnu.org/coreutils: ^9
+    git-scm.org: ^2
+    google.com/protobuf-go: ^1
+    grpc.io/grpc-go: ^1
+    info-zip.org/unzip: '*' # since 3.2.0
+    linux:
+      gnu.org/gcc: 14 # linux needs omp.h
+    darwin:
+      protobuf.dev: ~28.1.0
+      llvm.org: 18 # apple doens't support -fopenmp
+  env:
+    linux:
+      # one of these will do it. probably.
+      CGO_LDFLAGS:
+        - -lstdc++fs
+      LD_FLAGS:
+        - -buildmode=pie
+    darwin:
+      # strangely, it doesn't find the libomp.dylib
+      CGO_LDFLAGS: -L{{deps.openmp.llvm.org.prefix}}/lib
+  script:
+    # compiler complains about `visionOS 2.0,` in the metal file
+    - run: |
+        if test "{{hw.platform}}" = "darwin"; then
+          LLAMA_VERSION='CPPLLAMA_VERSION=387a1598ca094a4755303ec964c3b09b4c5c300e'
+        fi
+      if: '>=2.26<2.29'
+    - make build $LLAMA_VERSION
+    - install -D local-ai {{prefix}}/bin/local-ai
+
+provides:
+  - bin/local-ai
+
+test:
+  - run: local-ai --version | grep {{version}}
+    if: <2.13
+  - run: "local-ai --help | grep 'Version: v{{version}}'"
+    if: '>=2.13<2.16'
+  - run: local-ai models list | grep ' - localai@'
+    if: '>=2.16'

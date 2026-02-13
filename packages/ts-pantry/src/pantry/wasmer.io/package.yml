@@ -1,0 +1,40 @@
+distributable:
+  strip-components: 1
+  url: https://github.com/wasmerio/wasmer/archive/refs/tags/{{version.tag}}.tar.gz
+
+versions:
+  github: wasmerio/wasmer
+
+interprets:
+  extensions: wasm
+  args: [wasmer, run]
+
+dependencies:
+  linux:
+    sourceware.org/libffi: "*" # as of v7
+
+build:
+  dependencies:
+    rust-lang.org: ^1.65
+    rust-lang.org/cargo: ^0
+    nodejs.org: ^18
+    gnu.org/make: ^4
+  env:
+    RUSTFLAGS:
+      # Ignore warnings (to focus on errors)
+      - -A warnings
+      # Remove debug information (to reduce binary size)
+      - -C debuginfo=0
+    linux:
+      CC: clang
+      CXX: clang++
+      LD: clang
+  script:
+    - mkdir -p "{{prefix}}"/bin
+    - make build-wasmer
+    - mv target/release/wasmer "{{prefix}}"/bin
+
+provides:
+  - bin/wasmer
+
+test: test "$(wasmer --version)" = "wasmer {{version.raw}}"

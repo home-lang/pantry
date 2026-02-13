@@ -1,0 +1,30 @@
+distributable:
+  url: https://github.com/pressly/sup/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: pressly/sup
+
+build:
+  dependencies:
+    go.dev: '*'
+  env:
+    GO_ARGS:
+    - -o "{{prefix}}/bin/"
+    GO_LDFLAGS:
+    - -s
+    - -w
+    - -X sup.VERSION={{ version }}
+    linux:
+      CGO_ENABLED: 0
+  script:
+  - test -f go.mod || go mod init 
+  - go mod tidy
+  - go mod vendor
+  - sed -i "s/^const VERSION.*/var VERSION = \"{{ version }}\"/" sup.go
+  - go build ${GO_ARGS} -ldflags="${GO_LDFLAGS}" ./cmd/sup
+
+provides:
+- bin/sup
+
+test: test "$(sup --version 2>&1)" = {{ version }}

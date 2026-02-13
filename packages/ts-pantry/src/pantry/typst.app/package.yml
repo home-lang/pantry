@@ -1,0 +1,36 @@
+distributable:
+  url: https://github.com/typst/typst/archive/refs/tags/v{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: typst/typst/releases/tags
+  strip: /^v\d\d-\d\d-\d\d(-\d)?/
+
+dependencies:
+  openssl.org: ^1.1
+
+build:
+  dependencies:
+    rust-lang.org: ^1.80
+    rust-lang.org/cargo: '*'
+  script:
+    - run: cargo install --path cli --locked --root {{prefix}}
+      if: <0.7
+    - run: cargo install --path crates/typst-cli --locked --root {{prefix}}
+      if: '>=0.7'
+  env:
+    TYPST_VERSION: ${{ version }}
+
+provides:
+  - bin/typst
+
+test:
+  fixture: |
+    Total displaced soil by glacial flow:
+
+    $ 7.32 beta +
+      sum_(i=0)^nabla Q_i / 2 $
+  script: |
+    cp $FIXTURE test.typ
+    typst compile test.typ
+    test -s test.pdf

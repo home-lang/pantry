@@ -1,0 +1,39 @@
+distributable:
+  url: https://github.com/pkgxdev/pkgx/releases/download/v{{ version }}/pkgx-{{ version }}.tar.xz
+  strip-components: 1
+
+display-name: pkgx
+
+versions:
+  github: pkgxdev/pkgx
+
+provides:
+  - bin/pkgx
+
+build:
+  dependencies:
+    deno.land: ~2 # since 1.3.0
+    rust-lang.org: ^1.56 # since 2.0
+    perl.org: 5 # since 2.0
+  # patchelf messes with Deno's ability to find the DATA block, making it
+  # operate as only a bloated Deno binary
+  skip: fix-patchelf
+  script:
+    - run: deno task --config "$SRCROOT"/deno.jsonc compile
+      working-directory: ${{prefix}}/bin
+      if: <2
+    - run:
+        - cargo install --path crates/cli --root "{{prefix}}"
+        - strip '{{prefix}}/bin/pkgx'
+      if: ">=2"
+  env:
+    linux/aarch64:
+      # deno's pre-built runtime doesn't support glibc old enough
+      DENORT_BIN: "{{deps.deno.land.prefix}}/bin/denort"
+    linux:
+      # llvm-ar is required for rust builds
+      AR: llvm-ar
+      # otherwise it complains about XZ_5.4 symbols
+      LZMA_API_STATIC: 1
+
+test: test "$(pkgx --version)" = "pkgx {{ version }}"

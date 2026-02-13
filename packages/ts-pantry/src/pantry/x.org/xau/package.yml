@@ -1,0 +1,38 @@
+distributable:
+  url: https://www.x.org/archive/individual/lib/libXau-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://www.x.org/archive/individual/lib/
+  match: /libXau-\d+\.\d+\.\d+.tar.gz/
+  strip:
+    - /libXau-/
+    - /.tar.gz/
+
+dependencies:
+  x.org/util-macros: '*'
+  x.org/protocol: '*'
+
+build:
+  dependencies:
+    freedesktop.org/pkg-config: ~0.29
+  script: |
+    ./configure \
+      --prefix="{{prefix}}" \
+      --sysconfdir="$SHELF"/etc \
+      --localstatedir="$SHELF"/var
+    make --jobs {{ hw.concurrency }} install
+  env:
+    SHELF: ${{pkgx.prefix}}/x.org
+
+test:
+  script: |
+    mv $FIXTURE test.c
+    cc test.c
+    ./a.out
+  fixture: |
+    #include "X11/Xauth.h"
+    int main(int argc, char* argv[]) {
+      Xauth auth;
+      return 0;
+    }

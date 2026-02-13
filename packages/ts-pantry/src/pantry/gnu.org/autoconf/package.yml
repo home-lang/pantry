@@ -1,0 +1,63 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/autoconf/autoconf-{{ version.raw }}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/autoconf/
+  match: /autoconf-(\d+\.\d+(\.\d+)?)\.tar\.gz/
+  strip:
+    - /autoconf-/
+    - /.tar.gz/
+
+provides:
+  - bin/autoconf
+  - bin/autoheader
+  - bin/autom4te
+  - bin/autoreconf
+  - bin/autoscan
+  - bin/autoupdate
+  - bin/ifnames
+
+dependencies:
+  gnu.org/m4: 1
+  perl.org: '*'
+
+build:
+  - ./configure
+    --build={{ hw.target }}
+    --prefix="{{ prefix }}"
+  - make --jobs {{ hw.concurrency }} install
+
+  - cd "{{prefix}}"
+
+  - fix-shebangs.ts bin/*
+
+  - perl -pi -e 's|'\''{{prefix}}|"\$PREFIX"'\''|g' bin/autoconf
+
+  # fix specific m4 and perl paths
+  - perl -pi -e 's|{{ deps.perl.org.prefix }}/bin/perl|perl|g' bin/*
+  - perl -pi -e 's|{{ deps.gnu.org/m4.prefix }}/bin/m4|m4|g' bin/*
+
+  # fix hardcoded paths
+  # this was a patch, but patches are fragile. this is more robust. for now.
+  - PREFIX="$(echo '{{prefix}}' | sed 's/\+/\\+/g')"
+  - perl -pi -e "s|'$PREFIX/|\\\$prefix.'/|g" bin/*
+  - run: patch -p1 < $SRCROOT/props/relocatable.diff
+    if: <2.72.0
+  - run: |
+      perl -p0i -e 's/\nBEGIN\n\{/use Cwd qw(abs_path);\nuse File::Basename;\n\nmy \$prefix;\nBEGIN\n{\n  \$prefix = dirname(dirname(abs_path(__FILE__)));\n  \$ENV{'\''PREFIX'\''} = \$prefix;\n/s' bin/*
+      perl -p0i -e 's|\n  \# Normalize the|\n  \# added by pkgx\n  \@prepend_include = map { \$_ =~ s/\\\$PREFIX/\$prefix/r } \@prepend_include;\n\n  \# Normalize the|g' bin/autom4te
+    if: '>=2.72.0'
+
+  - perl -pi -e "s|$PREFIX|\\\$PREFIX|" share/autoconf/autom4te.cfg
+
+test:
+  dependencies:
+    llvm.org: '*' # requires a C compiler to configure
+  env:
+    CC: clang
+  script:
+    - autoconf --verbose --debug
+    - ./configure
+    - test -f config.status
+    - test -f config.log

@@ -1,0 +1,50 @@
+distributable:
+  url: https://nmap.org/dist/nmap-{{version.raw}}.tgz
+  strip-components: 1
+
+versions:
+  url: https://nmap.org/dist/
+  match: /nmap-\d+\.\d+(\.\d+)?\.tgz/
+  strip:
+    - /nmap-/
+    - /.tgz/
+
+dependencies:
+  openssl.org: ^1.1
+  pcre.org/v2: ^10
+
+build:
+  dependencies:
+    gnu.org/patch: '*'
+    python.org: 3
+  script:
+    # https://github.com/openresty/openresty/issues/372
+    - run: patch -p1 <props/openssl-1.1.1.patch
+      if: '<7.94.0'
+
+    # missing python modules
+    - python -m venv $HOME/venv
+    - source $HOME/venv/bin/activate
+    - python -m pip install build setuptools
+
+    - ./configure $ARGS
+
+    # 7.96 is looking for libpcap/VERSION, but it's still named VERSION.txt, as in prior versions
+    - run: sed -i 's|/VERSION`|/VERSION.txt`|' Makefile
+      working-directory: libpcap
+
+    - make -j {{hw.concurrency}}
+    - make install
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --with-libpcre={{deps.pcre.org/v2.prefix}}
+      - --without-zenmap
+  test: make test
+
+test: nmap -vvvv localhost
+
+provides:
+  - bin/nmap
+  - bin/ncat
+  - bin/nping

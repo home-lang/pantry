@@ -1,0 +1,40 @@
+distributable:
+  url: https://download.gnome.org/sources/libxslt/{{ version.marketing }}/libxslt-{{ version }}.tar.xz
+  strip-components: 1
+
+versions:
+  github: GNOME/libxslt/tags
+
+dependencies:
+  gnome.org/libxml2: "*" # varies by version :(
+
+build:
+  dependencies:
+    gnu.org/patch: "*"
+    gnome.org/libxml2: ~2.15.1 # since 1.1.45
+  script:
+    - patch -p1 < props/xslt-config.patch.in
+
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }}
+    - make install
+
+    - run: sed -i
+        -e 's|{{prefix}}|"$prefix"|g'
+        -e 's|{{deps.gnome.org/libxml2.prefix}}|""$libxml2_prefix""|g'
+        xslt-config
+      working-directory: "{{prefix}}/bin"
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --without-python # we don’t yet know how to support this
+      - --without-plugins # doesn’t build and we couldn’t debug
+
+test:
+  script: |
+    cc `xslt-config --cflags --libs` test.c
+    ./a.out
+
+provides:
+  - bin/xslt-config
+  - bin/xsltproc

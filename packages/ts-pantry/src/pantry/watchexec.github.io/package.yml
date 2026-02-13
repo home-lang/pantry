@@ -1,0 +1,47 @@
+distributable:
+  url: https://github.com/watchexec/watchexec/archive/refs/tags/{{ version.tag }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/watchexec
+
+versions:
+  github: watchexec/watchexec
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.56'
+    rust-lang.org/cargo: '*'
+    linux/aarch64:
+      gnu.org/gcc: '*'
+  script:
+    # linux/aarch64 looks for aarch64-linux-gnu-gcc
+    - run: ln -s {{deps.gnu.org/gcc.prefix}}/bin/aarch64-unknown-linux-gnu-gcc aarch64-linux-gnu-gcc
+      working-directory: $HOME/.local/bin
+
+    - cargo install --locked --path crates/cli --root {{prefix}}
+  env:
+    PATH: $HOME/.local/bin:$PATH
+
+test:
+  - watchexec --version | grep 'watchexec {{version}}'
+  # in case of orphans
+  - (killall watchexec; sleep 11) || true
+  - run: watchexec -w bar touch foo &
+    if: <2.3
+  - run:
+      - touch bar
+      - (watchexec -p -w bar --poll 1s touch foo 2>&1 | tee out.log ) &
+    if: '>=2.3'
+  - PID=$!
+  - sleep 3
+  - test ! -f foo
+  - touch bar
+  - sleep 15
+  - |
+    if test ! -f foo; then
+      echo "watchexec did not trigger"
+      cat out.log
+      exit 1
+    fi
+  - kill $PID

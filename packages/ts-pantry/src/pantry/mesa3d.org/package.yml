@@ -1,0 +1,153 @@
+distributable:
+  url: https://mesa.freedesktop.org/archive/mesa-{{version}}.tar.xz
+  strip-components: 1
+
+versions:
+  url: https://mesa.freedesktop.org/archive
+  match: /mesa-\d+\.\d+\.\d+\.tar\.xz/
+  strip:
+    - /^mesa-/
+    - /\.tar\.xz/
+
+dependencies:
+  libexpat.github.io: '*'
+  x.org/x11: '*'
+  x.org/xcb: '*'
+  x.org/xdamage: '*'
+  x.org/exts: '*'
+  invisible-island.net/ncurses: '*'
+  zlib.net: '*'
+  x.org/xrandr: '*'
+  darwin:
+    gnu.org/gettext: '*'
+  linux:
+    gnome.org/libxml2: ~2.13 # since 25.0.3, 2.14 changed the API version
+    elfutils.org: '*'
+    khronos.org/glslang: '*'
+    info-zip.org/zip: '*'
+    dri.freedesktop.org: ^2.4.110
+    intel.com/libva: '*'
+    freedesktop.org/vdpau: '*'
+    x.org/xfixes: '*'
+    x.org/xshmfence: '*'
+    x.org/xv: '*'
+    x.org/xxf86vm: '*'
+    llvm.org: '*'
+    github.com/lm-sensors/lm-sensors: '*'
+    wayland.freedesktop.org: '*'
+    wayland.freedesktop.org/protocols: '*'
+
+build:
+  dependencies:
+    gnu.org/bison: '*'
+    mesonbuild.com: '*'
+    ninja-build.org: '*'
+    freedesktop.org/pkg-config: '*'
+    pygments.org: '*'
+    python.org: ~3.11
+    x.org/protocol: '*'
+    github.com/westes/flex: '*'
+    llvm.org: '*' # since 24.2, for llvmpipe
+    linux:
+      curl.se: '*'
+      cmake.org: 3 # since 24.3
+      rust-lang.org: '*' # since 24.3
+      rust-lang.org/rust-bindgen: '*' # since 24.3
+  script:
+    - curl -L "$Mako" | tar zxf -
+    - curl -L "$MarkupSafe" | tar zxf -
+
+    # removed in 24.3.0
+    - run: |
+        if test "{{hw.platform}}" = "linux"; then
+          MESON_ARGS="$MESON_ARGS -Ddri3=enabled -Dgallium-omx=disabled"
+        fi
+      if: <24.3
+    # removed in 25.2.0
+    - run: |
+        if test "{{hw.platform}}" = "darwin"; then
+          MESON_ARGS="$MESON_ARGS -Dosmesa=true"
+        fi
+      if: <25.2
+
+    - run:
+        - python -m venv venv
+        - source venv/bin/activate
+        - python setup.py install
+        - deactivate
+        - export PYTHONPATH=$PWD/venv/lib/python{{deps.python.org.version.marketing}}/site-packages/Mako-1.2.4-py3.11.egg:$PYTHONPATH
+        - export PATH=$PWD/venv/bin/mako-render:$PATH
+      working-directory: Mako-1.2.4
+
+    - run:
+        - python -m venv venv
+        - source venv/bin/activate
+        - python setup.py install
+        - deactivate
+        - cd venv/lib/python{{deps.python.org.version.marketing}}/site-packages
+        - EGG="$(echo MarkupSafe*)"
+        - export PYTHONPATH=$PWD/$EGG:$PYTHONPATH
+      working-directory: MarkupSafe-2.1.2
+
+    - run:
+        - python -m venv venv
+        - source venv/bin/activate
+        - python -m pip install pyyaml
+        - deactivate
+        - export PYTHONPATH=$SRCROOT/venv/lib/python{{deps.python.org.version.marketing}}/site-packages:$PYTHONPATH
+      if: '>=24.2'
+
+    - meson setup build $MESON_ARGS
+    - meson compile -C build --verbose
+    - meson install -C build
+  env:
+    Mako: https://files.pythonhosted.org/packages/05/5f/2ba6e026d33a0e6ddc1dddf9958677f76f5f80c236bd65309d280b166d3e/Mako-1.2.4.tar.gz
+    MarkupSafe: https://files.pythonhosted.org/packages/95/7e/68018b70268fb4a2a605e2be44ab7b4dd7ce7808adae6c5ef32e34f4b55a/MarkupSafe-2.1.2.tar.gz
+    PYTHONPATH: '{{deps.pygments.org.prefix}}/venv/lib/python{{deps.python.org.version.marketing}}/site-packages:$PYTHONPATH'
+    MESON_ARGS:
+      - --libdir=lib
+      - --prefix={{prefix}}
+      - --buildtype=release
+      - --wrap-mode=nofallback
+    darwin:
+      MESON_ARGS:
+        - -Dglx=xlib
+    linux:
+      MESON_ARGS:
+        - -Dplatforms=x11,wayland
+        - -Dglx=auto
+        - -Dgallium-drivers=lima
+        - -Dvulkan-drivers=
+        - -Degl=enabled
+        - -Dgbm=enabled
+        - -Dopengl=true
+        - -Dgles1=enabled
+        - -Dgles2=enabled
+        - -Dvalgrind=disabled
+        - -Dtools=drm-shim,etnaviv,freedreno,glsl,nir,nouveau,lima
+      # https://gitlab.freedesktop.org/mesa/mesa/-/issues/8003#note_1781344
+      LDFLAGS:
+        - -Wl,--undefined-version
+        # since v25.1.0
+        # ld.lld: error: undefined symbol: std::filesystem::create_directory(std::filesystem::__cxx11::path const&)
+        - -Wl,-lstdc++fs
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: '*'
+    linux:
+      gnu.org/gcc/libstdcxx: '*' # libgcc
+  env:
+    FLAGS:
+      - -lX11
+      - -lXext
+      - -lm
+    darwin:
+      FLAGS:
+        - -lGl
+    linux:
+      FLAGS:
+        - '{{prefix}}/lib/libGL.so.1'
+  script:
+    - clang glxgears.c -o gears $FLAGS
+    - pkg-config --modversion gl | grep {{version}}

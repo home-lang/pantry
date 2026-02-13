@@ -1,0 +1,22 @@
+distributable:
+  url: https://github.com/PyO3/maturin/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/maturin
+
+versions:
+  github: PyO3/maturin
+
+build:
+  dependencies:
+    rust-lang.org: ^1.85
+    rust-lang.org/cargo: "*"
+  script:
+    # missing version bump
+    - sed -i '1,10s/^version = ".*"/version = "{{version}}"/' Cargo.toml
+    - run: EXTRA_ARGS="-Znext-lockfile-bump"
+      if: ">=1.10"
+    - cargo install --locked --path . --root {{prefix}} $EXTRA_ARGS
+
+test: maturin --version | grep {{version}}

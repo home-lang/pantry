@@ -1,0 +1,172 @@
+distributable:
+  url: https://www.php.net/distributions/php-{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: php/php-src/tags
+  strip: /^php-/
+
+dependencies:
+  gnu.org/bison: ^3
+  re2c.org: ^3
+  apache.org/apr: ^1
+  apache.org/apr-util: ^1
+  bcrypt.sourceforge.net: ^1
+  gnu.org/autoconf: ^2
+  curl.se: ^8
+  nghttp2.org: "*"
+  gnu.org/gettext: ^0
+  gnu.org/gmp: ^6
+  libsodium.org: "<1.0.19" # dylib version changed from 23 > 26
+  libzip.org: ~1.9
+  github.com/kkos/oniguruma: ^6
+  openssl.org: "*"
+  pcre.org/v2: ">=10.30"
+  sqlite.org: ^3
+  unicode.org: ^71
+  gnu.org/libiconv: ^1
+  kerberos.org: ^1
+  gnome.org/libxml2: "*" # varies by version, match our deps
+  thrysoee.dk/editline: ^3
+  sourceware.org/libffi: ">=3.4.7"
+  gnome.org/libxslt: ">=1.1.0<1.1.43" # changed xmlCtxtParseDocument behavior
+  libpng.org: ^1
+  google.com/webp: ^1
+  ijg.org: ^9
+  gnu.org/sed: ^4 # phpize requires this
+  openldap.org: ^2 # since 8.1.31, 8.2.26, 8.3.14, 8.4.0
+  gnu.org/gcc/libstdcxx: 14
+  darwin:
+    sourceware.org/bzip2: ^1
+    zlib.net: ^1
+
+build:
+  dependencies:
+    freetype.org: "*"
+    darwin:
+      tukaani.org/xz: "*"
+    gnu.org/libtool: "*"
+
+  script:
+    # this is annoying. install-pear-nozlib.phar relies on finding /usr/bin/cpp.
+    # and editing the archive messes with the offsets
+    - run: |
+        if command -v sudo >/dev/null; then
+          SUDO=sudo
+        fi
+      if: linux
+    - run: |
+        if [ ! -f /usr/bin/cpp ]; then
+          $SUDO ln -s "{{deps.gnu.org/gcc.prefix}}/bin/cpp" /usr/bin/cpp
+          FAKE_CPP=1
+        fi
+      if: linux
+    - ./configure $ARGS
+    - make install
+
+    # clean up our fake /usr/bin/cpp
+    - run: |
+        if [ -n "$FAKE_CPP" ]; then
+          $SUDO rm /usr/bin/cpp
+        fi
+      if: linux
+
+    - run:
+        - sed -i
+          -e's|^prefix=.*|prefix="$(dirname "$(dirname "$0")")"|g'
+          -e's|^datarootdir=.*|datarootdir="${prefix}/share"|g'
+          -e's|^ini_path=.*|ini_path="${prefix}/etc"|g'
+          -e's|^extension_dir='\''{{prefix}}\(.*\)'\''|extension_dir="${prefix}\1"|g'
+          -e's|^SED=.*|SED="$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")/gnu.org/sed/v4/bin/sed"|g'
+          -e's|#{{prefix}}#|#$(dirname "$(dirname "$0")")#|g'
+          -e's|{{pkgx.prefix}}|${prefix}/../..|g'
+          php-config
+          phpize
+
+        - fix-shebangs.ts "{{prefix}}/bin/phar"
+
+        - sed -i
+          -e's|{{prefix}}|$(dirname "$(dirname "$0")")|g'
+          pear peardev pecl
+      working-directory: ${{prefix}}/bin
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --enable-bcmath
+      - --enable-calendar
+      - --enable-dba
+      - --enable-exif
+      - --enable-ftp
+      - --enable-fpm
+      - --enable-gd
+      - --enable-intl
+      - --enable-mbregex
+      - --enable-mbstring
+      - --enable-mysqlnd
+      - --enable-pcntl
+      - --enable-phpdbg
+      - --enable-phpdbg-readline
+      - --enable-shmop
+      - --enable-soap
+      - --enable-sockets
+      - --enable-sysvmsg
+      - --enable-sysvsem
+      - --enable-sysvshm
+      - --with-pear
+      - --with-curl
+      - --with-external-pcre
+      - --with-ffi
+      - --with-gettext={{deps.gnu.org/gettext.prefix}}
+      - --with-gmp={{deps.gnu.org/gmp.prefix}}
+      - --with-iconv={{deps.gnu.org/libiconv.prefix}}
+      - --with-kerberos
+      - --with-layout=GNU
+      - --with-libxml
+      - --with-libedit
+      - --with-openssl
+      - --with-pdo-sqlite
+      - --with-pic
+      - --with-sodium
+      - --with-sqlite3
+      - --with-xsl
+      - --with-zlib
+      - --disable-dtrace
+      - --without-ldap-sasl
+      - --without-ndbm
+      - --without-gdbm
+      - CC=gcc
+    linux:
+      LDFLAGS: -Wl,-rpath,{{pkgx.prefix}}
+    darwin:
+      CC: clang
+      CXX: clang++
+      LD: /usr/bin/ld
+      # ... we need to link with headerpad...
+      LDFLAGS: -Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names
+      ARGS:
+        # FIXME: we'd like zip support for linux, but libzip's zip.h is using
+        # clang _Nullable and gcc doesn't like it.
+        - --with-zip
+        - --enable-dtrace
+        - --with-ldap-sasl
+    darwin/x86-64:
+      # causes libtool to:
+      # <unknown>:0: error: invalid CFI advance_loc expression
+      CFLAGS:
+        - -fno-sanitize=all
+      CXXFLAGS:
+        - -fno-sanitize=all
+
+provides:
+  - bin/pear
+  - bin/pecl
+  - bin/phar
+  - bin/php
+  - bin/php-cgi
+  - bin/php-config
+  - bin/phpdbg
+  - bin/phpize
+
+test:
+  - php --version | grep {{ version }}
+  - php -r 'echo "Hello World!\n";'

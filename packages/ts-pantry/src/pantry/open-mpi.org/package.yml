@@ -1,0 +1,140 @@
+distributable:
+  url: https://download.open-mpi.org/release/open-mpi/v{{version.marketing}}/openmpi-{{version}}.tar.bz2
+  strip-components: 1
+
+versions:
+  github: open-mpi/ompi/tags
+
+dependencies:
+  open-mpi.org/hwloc: "*"
+  openpmix.github.io: 5
+  libevent.org: "*"
+
+companions:
+  gnu.org/gcc: "*" # for gfortran
+  gnu.org/inetutils: "*" # for rsh
+
+runtime:
+  env:
+    OPAL_PREFIX: "{{prefix}}"
+    # OMPI_CC: gcc
+    # OMPI_CXX: g++
+    # OMPI_FC: gfortran
+    OMPI_CFLAGS: $CFLAGS
+    OMPI_CXXFLAGS: $CXXFLAGS
+    OMPI_FCFLAGS: $FCFLAGS -I{{prefix}}/include
+    OMPI_CPPFLAGS: $CPPFLAGS
+    OMPI_LDFLAGS: $LDFLAGS
+    OMPI_F77FLAGS: $FCFLAGS -I{{prefix}}/include
+    OMPI_F90FLAGS: $FCFLAGS -I{{prefix}}/include
+
+build:
+  dependencies:
+    zlib.net: ^1
+    python.org: ^3
+    # needed for gfortran
+    gnu.org/binutils: "*"
+    gnu.org/gcc: "*"
+  script:
+    - run: rm -rf hwloc* libevent* openpmix*
+      working-directory: 3rd-party
+
+    - ./configure $CONFIGURE_ARGS
+    - make --jobs {{ hw.concurrency }} all
+    - make --jobs {{ hw.concurrency }} install
+
+    - run: sed -i "s|linker_flags=.*|linker_flags=|g" *-wrapper-data.txt
+      working-directory: "{{prefix}}/share/openmpi"
+
+    - install {{prefix}}/lib/*.mod {{prefix}}/include/
+  env:
+    CXXFLAGS:
+      - -std=c++11
+    darwin:
+      # prevent gcc from taking over
+      CC: clang
+      CXX: clang++
+      LD: /usr/bin/ld
+      CFLAGS:
+        - -Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names
+        - -Wno-unused-command-line-argument
+      CXXFLAGS:
+        - -Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names
+        - -Wno-unused-command-line-argument
+      FCFLAGS:
+        - -Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names
+        - -Wno-unused-command-line-argument
+      LDFLAGS:
+        - -Wl,-headerpad_max_install_names
+        - -Wno-unused-command-line-argument
+    darwin/x86-64:
+      # causes libtool to:
+      # <unknown>:0: error: invalid CFI advance_loc expression
+      CFLAGS:
+        - -fno-sanitize=all
+      CXXFLAGS:
+        - -fno-sanitize=all
+    CONFIGURE_ARGS:
+      - --disable-debug
+      - --disable-dependency-tracking
+      - --prefix="{{prefix}}"
+      - --libdir="{{prefix}}/lib"
+      - --disable-silent-rules
+      - --enable-ipv6
+      - --enable-mca-no-build=reachable-netlink
+      - --sysconfdir="{{prefix}}/etc"
+      - --with-libevent="{{deps.libevent.org.prefix}}"
+      - --with-hwloc="{{deps.open-mpi.org/hwloc.prefix}}"
+      - --with-pmix="{{deps.openpmix.github.io.prefix}}"
+      - --with-sge
+      - --disable-dlopen
+
+provides:
+  - bin/mpic++
+  - bin/mpiCC
+  - bin/mpicc
+  - bin/mpicxx
+  - bin/mpiexec
+  - bin/mpif77
+  - bin/mpif90
+  - bin/mpifort
+  - bin/mpirun
+  - bin/ompi_info
+  - bin/opal_wrapper
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: "*"
+  script:
+    # some gha mac runners have broken SDKs...
+    - run: |
+        if ! test -f /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/AvailabilityInternalLegacy.h; then
+          echo "Missing SDK; skipping remaining tests"
+          exit 0
+        fi
+      if: darwin
+    - mpicc hello.c -o hello
+    - ./hello
+    - mpirun ./hello
+    - mpifort hellof.f90 -o hellof
+    - ./hellof
+    - mpirun ./hellof
+    - mpifort hellousempi.f90 -o hellousempi
+    - ./hellousempi
+    - mpirun ./hellousempi
+    - mpifort hellousempif08.f90 -o hellousempif08
+    - ./hellousempif08
+    - mpirun ./hellousempif08
+    - pkg-config --modversion ompi
+  env:
+    linux/x86-64: # GHA hosts run as root
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+    darwin:
+      OMPI_CC: clang
+      OMPI_CXX: clang++
+      OMPI_FC: gfortran
+    linux:
+      OMPI_CC: gcc
+      OMPI_CXX: g++
+      OMPI_FC: gfortran

@@ -1,0 +1,33 @@
+distributable:
+  url: https://github.com/arzzen/git-quick-stats/archive/refs/tags/{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: arzzen/git-quick-stats
+  strip: /^Version /
+
+companions:
+  # requires GNU `date` since 2.5.5
+  gnu.org/coreutils: '*'
+  invisible-island.net/ncurses: '*' # needs `tput` since 2.7.0
+
+provides:
+  - bin/git-quick-stats
+
+dependencies:
+  git-scm.org: '*'
+  gnu.org/bash: '*'
+  linux:
+    # bin/column
+    github.com/util-linux/util-linux: '*'
+
+build:
+  script: make PREFIX={{prefix}} install
+  test: make test
+
+test:
+  script:
+    - git clone https://github.com/pkgxdev/pkgx
+    - git -C pkgx quick-stats -T
+  env:
+    TERM: xterm-256color

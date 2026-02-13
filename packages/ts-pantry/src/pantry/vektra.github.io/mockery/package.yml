@@ -1,0 +1,30 @@
+distributable:
+  url: https://github.com/vektra/mockery/archive/v{{version}}.tar.gz
+  strip-components: 1
+versions:
+  github: vektra/mockery
+build:
+  dependencies:
+    go.dev: '*'
+  script:
+    - go build $ARGS -ldflags="$LDFLAGS"
+  env:
+    ARGS:
+      - -trimpath
+      - -o={{prefix}}/bin/mockery
+    LDFLAGS:
+      - -s
+      - -w
+      - -X github.com/vektra/mockery/v2/pkg/logging.SemVer=v{{version}}
+      - -X github.com/vektra/mockery/v3/internal/logging.SemVer=v{{version}}
+    linux:
+      LDFLAGS:
+        - -buildmode=pie
+
+provides:
+  - bin/mockery
+test:
+  - run: mockery --version | grep {{version}}
+    if: <3
+  - run: mockery version | grep {{version}}
+    if: '>=3'

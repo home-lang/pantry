@@ -1,0 +1,75 @@
+distributable:
+  url: https://nodejs.org/dist/v{{ version }}/node-v{{ version }}.tar.xz
+  strip-components: 1
+
+versions:
+  github: nodejs/node/tags
+
+companions:
+  npmjs.com: "*"
+
+dependencies:
+  unicode.org: ^73 # v25
+  openssl.org: 1.1
+  zlib.net: 1
+  linux:
+    gnu.org/gcc/libstdcxx: "*" # libstdc++, since 22.2.0
+
+provides:
+  - bin/node
+
+interprets:
+  extensions: js
+  args: node
+
+build:
+  dependencies:
+    python.org: ~3.9
+    ninja-build.org: "*" # speeds up builds
+    linux:
+      gnu.org/gcc: "*" # needs the <version> include
+  script:
+    - run: python configure.py $ARGS
+      if: <14
+    - run: ./configure $ARGS
+      if: ">=14"
+    # v22 didn't include iomanip for std::precision in one file
+    - run: |
+        sed -i '/wasm-disassembler.h/a\
+        \
+        #include <iomanip>' wasm-disassembler.cc
+      working-directory: deps/v8/src/wasm
+      if: ^22
+    # -pie breaks module build in v23.5.0
+    - run: export LDFLAGS="$(echo $LDFLAGS | sed 's/-pie//')"
+      if: ^23.5.0
+
+    # Fix simdutf atomic function calls in v25 breaking darwin builds
+    - run: sed -i -f $PROP builtins-typed-array.cc
+      prop: |
+        s/simdutf::atomic_base64_to_binary_safe/simdutf::base64_to_binary_safe/g
+        s/simdutf::atomic_binary_to_base64/simdutf::binary_to_base64/g
+      working-directory: deps/v8/src/builtins
+      if: ^25
+
+    # ninja doesn't like if if JOBS isn't set on darwin, it seems.
+    - make --jobs {{ hw.concurrency }} JOBS={{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --ninja # speed!
+      - --with-intl=system-icu # skip a long build
+      - --without-npm
+      - --prefix={{ prefix }}
+      - --shared-openssl
+      - --shared-zlib
+    linux/x86-64:
+      CFLAGS: -fPIC
+      CXXFLAGS: -fPIC
+    linux:
+      CC: gcc
+
+test:
+  script:
+    - out=$(node $FIXTURE)
+    - test "$out" = "Hello, world!"
+  fixture: console.log("Hello, world!");

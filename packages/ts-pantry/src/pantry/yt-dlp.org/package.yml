@@ -1,0 +1,20 @@
+distributable:
+  url: https://github.com/yt-dlp/yt-dlp/releases/download/{{version.raw}}/yt-dlp.tar.gz
+  strip-components: 1
+
+versions:
+  github: yt-dlp/yt-dlp
+  strip: /^yt-dlp /
+
+dependencies:
+  python.org: '>=3<3.12'
+  ffmpeg.org: '*'
+
+build: python-venv.sh {{prefix}}/bin/yt-dlp
+
+test:
+  - ( yt-dlp --simulate https://youtu.be/pOtd1cbOP7k 2>&1 | tee out ) || true
+  - "grep -E '(pOtd1cbOP7k: Downloading 1|Sign in to confirm you’re not a bot)' out"
+
+provides:
+  - bin/yt-dlp

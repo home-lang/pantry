@@ -1,0 +1,30 @@
+distributable:
+  url: https://github.com/jemalloc/jemalloc/releases/download/{{version}}/jemalloc-{{version}}.tar.bz2
+  strip-components: 1
+
+versions:
+  github: jemalloc/jemalloc
+
+build:
+  dependencies:
+    gnu.org/autoconf: "*"
+    docbook.org: "*"
+  script:
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }}
+    - make install
+
+    # jemalloc has a long-running issue on clang
+    # https://github.com/jemalloc/jemalloc/issues/1557
+    - run: sed -i 's/defined(JEMALLOC_USE_CXX_THROW)/defined(JEMALLOC_USE_CXX_THROW) \&\& \!defined(__clang__)/g' jemalloc.h
+      working-directory: ${{prefix}}/include
+      if: linux
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --disable-debug
+      - --with-jemalloc-prefix=
+
+test:
+  - cc test.c -L {{prefix}}/lib -ljemalloc -o test
+  - ./test

@@ -1,0 +1,20 @@
+distributable:
+  url: https://github.com/permitio/cedar-agent/archive/refs/tags/{{ version.tag }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/cedar-agent
+
+versions:
+  github: permitio/cedar-agent
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.65'
+    rust-lang.org/cargo: '*'
+  script:
+    # missed version bump
+    - sed -i '1,10s/^version = .*/version = "{{ version }}"/' Cargo.toml
+    - cargo install --locked --path . --root {{prefix}}
+
+test: test "$(cedar-agent --version)" = "cedar-agent {{version}}"

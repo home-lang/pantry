@@ -1,0 +1,48 @@
+distributable:
+  url: https://gitlab.com/OldManProgrammer/unix-tree/-/archive/{{version}}/unix-tree-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  gitlab: OldManProgrammer/unix-tree/tags
+
+build:
+  dependencies:
+    linux:
+      gnu.org/gcc: "*"
+  script:
+    # v2.3.0 references SELinux-only `secontext` field unconditionally
+    - run: sed -i '/secontext/d' tree.c
+      if: darwin
+    - make
+    - make $ARGS install
+
+  env:
+    ARGS:
+      - PREFIX={{prefix}}
+    #FIXME seems to work ok, but someone needs to take a second look at these LDFLAGS/CFLAGS, I don't really know what I'm doing here
+    LDFLAGS:
+      - -s
+    linux:
+      CC: gcc
+      CFLAGS: -O3
+    darwin:
+      CC: cc
+      CFLAGS: -O2 -Wall -fomit-frame-pointer -no-cpp-precomp
+
+test:
+  script:
+    # prepare for tests
+    - mkdir -p foo/bar
+    - mkdir -p foo/buzz
+    - touch foo/buzz/lupus.txt
+    # run tests
+    - tree --version | grep 'tree v{{version}}'
+    - out="$(tree . )"
+    - echo $out | grep lupus.txt # test for files found
+    - echo $out | grep bar # test for level 2 dirs found
+    - echo $out | grep buzz # ^
+    - echo $out | grep '4 directories, 1 file'
+    - tree .
+
+provides:
+  - bin/tree

@@ -1,0 +1,58 @@
+distributable:
+  url: https://codeload.github.com/rustls/rustls-ffi/tar.gz/refs/tags/{{version.tag}}
+  strip-components: 1
+
+versions:
+  github: rustls/rustls-ffi/tags
+  strip: /v/
+
+companions:
+  curl.se/ca-certs: '*'
+
+build:
+  dependencies:
+    rust-lang.org: ^1.65
+    rust-lang.org/cargo: '*'
+    mozilla.org/cbindgen: '*'
+    github.com/lu-zero/cargo-c: '*' # as of 0.15.0
+  script:
+    - make DESTDIR={{prefix}}
+    - make DESTDIR={{prefix}} install
+  env:
+    linux:
+      # error: -lpthread: 'linker' input unused
+      AWS_LC_SYS_CFLAGS: -Wno-unused-command-line-argument
+
+test:
+  dependencies:
+    curl.se: '*'
+  env:
+    ARGS:
+      - -lrustls
+    linux:
+      ARGS:
+        - -Wl,--gc-sections
+        - -lpthread
+        - -ldl
+    darwin:
+      ARGS:
+        - -Wl,-dead_strip
+        - -framework Security
+        - -framework Foundation
+    TESTFILES:
+      - client.c
+      - client.h # since 0.15.0, 404 won't break anything
+      - common.c
+      - common.h
+    CA_FILE: $SSL_CERT_FILE
+  script:
+    - run: URL="https://raw.githubusercontent.com/rustls/rustls-ffi/{{ version.tag }}/tests"
+      if: <0.15
+    - run: URL="https://raw.githubusercontent.com/rustls/rustls-ffi/{{ version.tag }}/librustls/tests"
+      if: '>=0.15'
+    - |
+      for file in $TESTFILES; do
+        curl -O $URL/$file
+      done
+    - cc client.c common.c -o client $ARGS
+    - ./client pkgx.dev 443 /

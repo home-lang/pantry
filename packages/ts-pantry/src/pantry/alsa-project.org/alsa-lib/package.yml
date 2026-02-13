@@ -1,0 +1,48 @@
+distributable:
+  url: https://www.alsa-project.org/files/pub/lib/alsa-lib-{{version}}.tar.bz2
+  strip-components: 1
+
+versions:
+  url: https://www.alsa-project.org/files/pub/lib/
+  match: /alsa-lib-\d+\.(\d+\.)+tar\.bz2/
+  strip:
+    - /^alsa-lib-/
+    - /\.tar\.bz2$/
+
+platforms:
+  - linux
+
+build:
+  script:
+    # add def for older kernels
+    - run: sed -i '1i int close_range(unsigned int first, unsigned int last, int flags);' ucm_exec.c
+      working-directory: src/ucm
+      if: '>=1.2.15'
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --disable-debug
+      - --disable-dependency-tracking
+      - --disable-silent-rules
+    linux:
+      CFLAGS:
+        # undefined symbol errors in newer llvms prevent building shared libs
+        - -Wl,--undefined-version
+
+provides:
+  - bin/aserver
+
+test:
+  - run: cc $FIXTURE -lasound -o test
+    fixture:
+      extname: c
+      content: |
+        #include <alsa/asoundlib.h>
+        int main(void) {
+            snd_ctl_card_info_t *info;
+            snd_ctl_card_info_alloca(&info);
+            return 0;
+        }
+  - ./test

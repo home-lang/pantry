@@ -1,0 +1,31 @@
+distributable:
+  url: https://github.com/extrawurst/gitui/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/gitui
+
+versions:
+  github: extrawurst/gitui/tags
+
+dependencies:
+  perl.org: '*'
+  openssl.org: ^1.1
+  zlib.net: ^1
+  libgit2.org: ~1.7 # links to libgit2.so.1.7
+
+build:
+  dependencies:
+    rust-lang.org: ^1.78 # stdsimd changes
+    rust-lang.org/cargo: '*'
+    cmake.org: 3 # as over 0.27.0
+  script: cargo install --path . --locked --root {{prefix}}
+  env:
+    linux:
+      AR: llvm-ar
+      RUSTFLAGS: '-C linker=cc'
+      # See: https://docs.rs/openssl/latest/openssl/#manual
+      OPENSSL_NO_VENDOR: true # Always find OpenSSL in the system, even if the vendored feature is enabled.
+      OPENSSL_DIR: '{{ deps.openssl.org.prefix }}' # Use pkgx's openssl installation directory
+
+test: gitui --version

@@ -1,0 +1,138 @@
+display-name: swift
+
+warnings:
+  - vendored
+
+versions:
+  github: apple/swift
+  strip:
+    - /^swift-/
+    - /-RELEASE$/
+
+platforms:
+  - darwin
+# It is ready to run on linux. It going to work with ubuntu 22.04,
+# and not with debian-buster and tests going to fail
+#  - linux/x86-64
+#  - linux/aarch64
+
+dependencies:
+  linux:
+    gnu.org/gcc: '*'
+    gnu.org/binutils: '*'
+    gnupg.org: ^2
+    gnome.org/libxml2: '*'
+    libgit2.org: ~1.7 # links to libgit2.so.1.7
+    curl.se: '*'
+    sqlite.org: ^3
+
+runtime:
+  env:
+    TOOLCHAINS: ${{prefix}}/usr/bin/swift
+
+build:
+  dependencies:
+    curl.se: '*'
+  script:
+    - mkdir -p {{prefix}}/bin
+    - run:
+        - curl -SfL "$DOWNLOAD_URL" | tar xzf - --strip-components=2
+        - tar xzf Payload -C {{prefix}}
+        - rm -rf {{prefix}}/_CodeSignature
+        - rm -rf {{prefix}}/Info.plist
+      if: darwin
+    - run: ln -sh ../usr/bin/* {{prefix}}/bin
+      working-directory: ${{prefix}}/bin
+      if: darwin
+    - run: curl -SfL "$DOWNLOAD_URL" | tar xzf - -C {{ prefix }} --strip-components=2
+      if: linux
+  env:
+    darwin:
+      DOWNLOAD_URL: 'https://download.swift.org/swift-{{version.raw}}-release/xcode/swift-{{version.raw}}-RELEASE/swift-{{version.raw}}-RELEASE-osx.pkg'
+    linux/aarch64:
+      DOWNLOAD_URL: 'https://download.swift.org/swift-{{version.raw}}-release/ubuntu2204-aarch64/swift-{{version.raw}}-RELEASE/swift-{{version.raw}}-RELEASE-ubuntu22.04-aarch64.tar.gz'
+    linux/x86-64:
+      DOWNLOAD_URL: 'https://download.swift.org/swift-{{version.raw}}-release/ubuntu2204/swift-{{version.raw}}-RELEASE/swift-{{version.raw}}-RELEASE-ubuntu22.04.tar.gz'
+
+# We don't want to smash the llvm dependencies everywhere; this is a secondary provide
+provides:
+  darwin:
+    # - bin/clang-13
+    # - bin/clangd
+    - bin/docc
+    - bin/dsymutil
+    # - bin/llvm-ar
+    # - bin/llvm-cov
+    # - bin/llvm-profdata
+    - bin/sourcekit-lsp
+    - bin/swift-api-checker.py
+    - bin/swift-build-sdk-interfaces
+    - bin/swift-build-tool
+    - bin/swift-demangle
+    - bin/swift-driver
+    - bin/swift-format
+    - bin/swift-frontend
+    - bin/swift-help
+    - bin/swift-package
+    - bin/swift-plugin-server
+    - bin/swift-stdlib-tool
+    # - bin/clang
+    # - bin/clang-cache
+    # - bin/clang-cl
+    # - bin/clang-cpp
+    # - bin/clang++
+    - bin/swift
+    - bin/swift-api-digester
+    - bin/swift-autolink-extract
+    - bin/swift-build
+    - bin/swift-experimental-sdk
+    - bin/swift-package-collection
+    - bin/swift-package-registry
+    - bin/swift-run
+    - bin/swift-symbolgraph-extract
+    - bin/swift-test
+    - bin/swiftc
+  linux:
+    # - bin/clang-13
+    # - bin/clangd
+    - bin/docc
+    # - bin/lld
+    # - bin/lldb
+    # - bin/lldb-argdumper
+    # - bin/lldb-server
+    # - bin/llvm-ar
+    # - bin/llvm-cov
+    # - bin/llvm-profdata
+    - bin/plutil
+    - bin/repl_swift
+    - bin/sourcekit-lsp
+    - bin/swift-api-checker.py
+    - bin/swift-build-sdk-interfaces
+    - bin/swift-build-tool
+    - bin/swift-demangle
+    - bin/swift-driver
+    - bin/swift-frontend
+    - bin/swift-help
+    - bin/swift-package
+    - bin/swift-plugin-server
+    # - bin/clang
+    # - bin/clang-cache
+    # - bin/clang-cl
+    # - bin/clang-cpp
+    # - bin/clang++
+    # - bin/ld.lld
+    # - bin/ld64.lld
+    # - bin/lld-link
+    - bin/swift
+    - bin/swift-api-digester
+    - bin/swift-autolink-extract
+    - bin/swift-build
+    - bin/swift-experimental-sdk
+    - bin/swift-package-collection
+    - bin/swift-package-registry
+    - bin/swift-run
+    - bin/swift-symbolgraph-extract
+    - bin/swift-test
+    - bin/swiftc
+
+test: swift --version

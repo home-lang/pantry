@@ -1,0 +1,40 @@
+distributable:
+  url: https://dlcdn.apache.org/apr/apr-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: apache/apr/tags
+
+build:
+  script: |
+    ./configure $ARGS
+    make --jobs {{ hw.concurrency }}
+    make install
+
+    cd {{prefix}}/bin
+    sed -i.bak "s_{{prefix}}_\$(cd \$(dirname \$0)/.. \&\& pwd)_g" apr-{{version.major}}-config
+    rm apr-{{version.major}}-config.bak
+
+    cd ../build-1
+    sed -i.bak \
+      -e "s_{{prefix}}_\$(subst /bin/apr-{{version.major}}-config,,\$(shell command -v apr-{{version.major}}-config))_g" \
+      -e "s_${PKGX_DIR}_\$(subst /apache.org/apr/v{{version}}/bin/apr-{{version.major}}-config,,\$(shell command -v apr-{{version.major}}-config))_g" \
+      apr_rules.mk
+    rm apr_rules.mk.bak
+  env:
+    # add any environment variables here
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --disable-debug
+
+test:
+  fixture: |
+    #include <stdio.h>
+    #include <apr-1/apr_version.h>
+    int main() {
+      printf("%s", apr_version_string());
+      return 0;
+    }
+  script: |
+    mv $FIXTURE b.c
+    cc b.c -lapr-{{version.major}}

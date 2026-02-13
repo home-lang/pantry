@@ -1,0 +1,25 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/libtasn1/libtasn1-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/libtasn1/
+  match: /libtasn1-(\d+\.\d+(\.\d+)?)\.tar\.gz/
+  strip:
+    - /libtasn1-/
+    - /.tar.gz/
+
+build:
+  script: |
+    ./configure --prefix={{ prefix }}
+    make --jobs {{ hw.concurrency }} install
+
+test:
+  script: |
+    asn1Coding pkix.asn assign.asn1
+    asn1Decoding pkix.asn assign.out PKIX1.Dss-Sig-Value 2>&1 | grep 'Decoding: SUCCESS'
+
+provides:
+  - bin/asn1Coding
+  - bin/asn1Decoding
+  - bin/asn1Parser

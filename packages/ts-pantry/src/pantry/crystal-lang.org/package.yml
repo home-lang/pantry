@@ -1,0 +1,97 @@
+distributable:
+  url: https://github.com/crystal-lang/crystal/archive/refs/tags/{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: crystal-lang/crystal
+
+# Crystal is needed to build itself…
+# So we cannot build it from source.
+warnings:
+  - vendored
+
+companions:
+  crystal-lang.org/shards: '*'
+
+dependencies:
+  hboehm.info/gc: ^8
+  gnu.org/gmp: ^6
+  libevent.org: ^2
+  pyyaml.org/libyaml: ^0
+  llvm.org: <17
+  openssl.org: ^1.1
+  pcre.org/v2: ^10
+  freedesktop.org/pkg-config: ^0
+  sourceware.org/libffi: ^3
+  invisible-island.net/ncurses: ^6
+
+runtime:
+  env:
+    CRYSTAL_LINK_FLAGS: -Wl,-rpath,{{pkgx.prefix}}
+    CRYSTAL_PATH: ${{prefix}}/lib:$CRYSTAL_PATH
+
+build:
+  dependencies:
+    curl.se: '*'
+    linux/aarch64:
+      gnu.org/binutils: '*' # ar
+  script:
+    # third party support for linux-aarch64
+    - run: |
+        if test '{{hw.platform}}+{{hw.arch}}' = 'linux+aarch64'; then
+          curl -L "https://packagecloud.io/84codes/crystal/packages/any/any/crystal_1.13.3-145_arm64.deb/download.deb?distro_version_id=35" -o crystal.deb
+          ar x crystal.deb
+          tar zxf data.tar.gz --strip-components=2
+        else
+          curl -Lf "https://github.com/crystal-lang/crystal/releases/download/{{version}}/crystal-{{version}}-1-$PLATFORM.tar.gz" | tar --strip-components=1 -zxf -
+        fi
+      working-directory: .bootstrap
+    - mkdir -p .build
+    - make deps
+    # tinfow isn't being picked up by the linker after splitting up ncurses
+    - run: export LDFLAGS="$LDFLAGS -Wl,-ltinfow"
+      if: linux
+    - make crystal $ARGS
+    - mkdir -p "{{prefix}}/bin"
+    - cp .build/crystal "{{prefix}}/bin/crystal.bin"
+    - cp props/shim "{{prefix}}/bin/crystal"
+    - cp -a src "{{prefix}}/lib"
+
+    # regression in 1.14.0
+    - run: |
+        if test "{{hw.platform}}" = "darwin"; then
+          sed -i 's/mask = LibC::SigsetT.new$/mask = LibC::SigsetT.new(0_u32)/' pthread.cr
+        fi
+      working-directory: ${{prefix}}/lib/crystal/system/unix
+      if: =1.14.0
+
+  env:
+    CRYSTAL_LIBRARY_PATH: $LD_LIBRARY_PATH
+    PATH: $SRCROOT/.bootstrap/bin:$PATH
+    darwin: { PLATFORM: darwin-universal }
+    linux/x86-64: { PLATFORM: linux-x86_64 }
+    LDFLAGS: -Wl,-rpath,{{pkgx.prefix}}
+    ARGS:
+      - release=true
+      - FLAGS=--no-debug
+      - interpreter=true
+      - CRYSTAL_CONFIG_PATH=../lib
+    linux:
+      CC: clang
+      CXX: clang++
+      LD: clang
+
+provides:
+  - bin/crystal
+
+test:
+  - run: crystal build -o test $FIXTURE
+    fixture:
+      extname: cr
+      content: puts {{Crystal::VERSION}}
+  - test "$(./test)" = "{{version}}"
+  - test "$(crystal eval 'puts {{Crystal::VERSION}}')" = "{{version}}"
+  - run: test "$(cat $FIXTURE | crystal eval)" = "{{version}}"
+    fixture:
+      extname: cr
+      content: puts {{Crystal::VERSION}}

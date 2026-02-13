@@ -1,0 +1,48 @@
+distributable:
+  ~
+  # Their git repo stopped responding to https requests. :/
+  # url: https://opendev.org/opendev/git-review/archive/{{version}}.tar.gz
+  # strip-components: 1
+
+versions:
+  url: https://opendev.org/api/v1/repos/opendev/git-review/tags
+  match: /"name":"\d+\.\d+\.\d+"/
+  strip:
+    - /^"name":"/
+    - /"$/
+
+dependencies:
+  pkgx.sh: ">=1"
+
+build:
+  dependencies:
+    python.org: ^3
+  script:
+    - 'pip download --no-deps --no-binary :all: --dest . git_review=={{version}}'
+    - tar zxvf git_review-{{version}}.tar.gz --strip-components=1
+    - bkpyvenv stage {{prefix}} {{version}}
+    - ${{prefix}}/venv/bin/pip install .
+    - run: ${{prefix}}/venv/bin/pip install setuptools
+      if: <2.4
+    - bkpyvenv seal {{prefix}} git-review
+
+provides:
+  - bin/git-review
+
+test:
+  dependencies:
+    git-scm.org: '*'
+  working-directory: test
+  script:
+    # broken in 2.4.0
+    - run: git-review --version | tee /dev/stderr | grep -q -w '{{version}}'
+      if: <2.4.0 || >=2.4.1
+
+    - git init --initial-branch main
+    - git config user.name PkgxTestBot
+    - git config user.email PkgxTestBot@test.com
+    - git remote add gerrit https://github.com/pkgxdev/pkgx
+    - touch .git/hooks/commit-msg
+    - chmod +x .git/hooks/commit-msg
+    - git commit --message "Test commit" --allow-empty
+    - git-review --dry-run main | tee /dev/stderr | grep -q -w -E 'git +push'

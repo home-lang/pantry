@@ -1,0 +1,32 @@
+distributable:
+  url: https://prdownloads.sourceforge.net/project/lame/lame/{{version.raw}}/lame-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://sourceforge.net/projects/lame/files/lame/
+  match: /lame-(\d+\.\d+(\.\d+)?)\.tar\.gz/
+  strip:
+    - /lame-/
+    - /.tar.gz/
+
+provides:
+  - bin/lame
+
+build:
+  script: |
+    # Fix for Undefined symbols ... "_lame_init_old"
+    # https://sourceforge.net/p/lame/mailman/message/36081038/
+    sed -i.bak "/lame_init_old/d" include/libmp3lame.sym
+
+    ./configure --prefix={{prefix}} \
+                --disable-debug \
+                --disable-dependency-tracking \
+                --enable-nasm
+    make install
+  env:
+    linux/x86-64:
+      CFLAGS: -fPIC
+      CXXFLAGS: -fPIC
+      LDFLAGS: -pie
+
+test: lame --genre-list

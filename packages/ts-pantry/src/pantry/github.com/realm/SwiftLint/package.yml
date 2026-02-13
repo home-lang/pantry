@@ -1,0 +1,38 @@
+distributable: ~
+
+versions:
+  github: realm/SwiftLint/releases/tags
+
+warnings:
+  - vendored
+
+dependencies:
+  linux:
+    curl.se: 8
+    gnome.org/libxml2: 2
+
+build:
+  dependencies:
+    curl.se: '*'
+    info-zip.org/unzip: '*'
+  working-directory: '{{prefix}}/bin'
+  script:
+    - curl -Lfo swiftlint.zip "https://github.com/realm/SwiftLint/releases/download/{{version}}/$ZIP_NAME"
+    - unzip -o swiftlint.zip
+  skip: fix-machos
+  env:
+    darwin:
+      ZIP_NAME: portable_swiftlint.zip
+    linux/x86-64:
+      ZIP_NAME: swiftlint_linux_amd64.zip
+    linux/aarch64:
+      ZIP_NAME: swiftlint_linux_arm64.zip
+
+provides:
+  - bin/swiftlint
+
+test:
+  # we can't actually test swiftlint for linux, because it requires a newer glibc
+  # but it's vendored, so we're probably fine?
+  - run: test "$(swiftlint --version)" = {{version}}
+    if: darwin

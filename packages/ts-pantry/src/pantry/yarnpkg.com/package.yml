@@ -1,0 +1,36 @@
+distributable:
+  url: https://github.com/yarnpkg/berry/archive/refs/tags/@yarnpkg/cli/{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: yarnpkg/berry/releases
+
+provides:
+  - bin/yarn
+  - bin/yarnpkg
+
+dependencies:
+  nodejs.org: '*'
+
+build:
+  dependencies:
+    classic.yarnpkg.com: ^1 # works and prevents bootstrapping issues
+    nodejs.org: '>=18.3<23'
+  script:
+    - yarn install --immutable --mode=skip-build
+    - yarn build:cli
+
+    - run: |
+        chmod +x yarn.js
+        mkdir -p {{prefix}}/bin
+        cp yarn.js {{prefix}}/bin/yarn
+      working-directory: packages/yarnpkg-cli/bundles
+
+    - run: ln -s yarn yarnpkg
+      working-directory: ${{prefix}}/bin
+
+test:
+  script: |
+    yarn --version
+    yarnpkg --version
+    yarn add jquery

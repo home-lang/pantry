@@ -1,0 +1,30 @@
+distributable:
+  url: https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-{{ version.raw }}.tar.xz
+  strip-components: 1
+
+versions:
+  url: https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2
+  match: /libcap-\d+\.\d+\.tar\.xz/
+  strip:
+    - /libcap-/
+    - /\.tar\.xz/
+
+platforms: linux/x86-64
+
+build:
+  script: make $ARGS --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - prefix="{{prefix}}"
+      - lib=lib
+      - RAISE_SETFCAP=no
+    # references to gettid()
+    CFLAGS: $CFLAGS -Wno-implicit-function-declaration
+
+provides:
+  - sbin/capsh
+  - sbin/getcap
+  - sbin/getpcaps
+  - sbin/setcap
+
+test: getcap "{{ prefix }}/sbin/capsh"

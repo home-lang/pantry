@@ -1,0 +1,68 @@
+distributable:
+  url: https://github.com/ansible/ansible/archive/{{version.tag}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: ansible/ansible/tags # reads github *tags*
+
+dependencies:
+  pkgx.sh: ">=1"
+
+runtime:
+  env:
+    # otherwise it doesn't use the path, for mysterious reasons, and checks /usr/bin preferentially.
+    ANSIBLE_PYTHON_INTERPRETER: "{{prefix}}/venv/bin/python"
+
+build:
+  dependencies:
+    python.org: ">=3.12" # as of 2.20.0
+  script:
+    - bkpyvenv stage {{prefix}} {{version}}
+
+    - ${{prefix}}/venv/bin/pip install .
+    # install paramiko, a python ssh library sometimes used with ansible
+    - ${{prefix}}/venv/bin/pip install paramiko
+
+    - bkpyvenv seal {{prefix}} ansible ansible-config ansible-connection ansible-console ansible-doc ansible-galaxy ansible-inventory ansible-playbook ansible-pull ansible-test ansible-vault
+    - run: cp {{deps.python.org.prefix}}/lib/libpython{{deps.python.org.version.marketing}}.so* .
+      if: linux
+      working-directory: ${{prefix}}/lib
+test:
+  script:
+    - ansible --version
+    - ansible-playbook playbook.yml -i hosts.ini
+
+    #FIXME below is a test from the brew formula, but I'm not sure what it's testing
+    # ^ especially considering that 'requests' is not a part of ansible's dependencies
+    # Ensure requests[security] is activated
+    # py_script="import requests as r; r.get('https://mozilla-modern.badssl.com')"
+    # {{prefix}}/venv/bin/python -c "$py_script"
+
+    # Ensure ansible-vault can encrypt/decrypt files.
+    - echo $SECRET_MESSAGE > vault-test-file.txt
+    - echo $VAULT_PASSWORD > vault-password.txt
+
+    - ansible-vault encrypt --vault-password-file vault-password.txt vault-test-file.txt
+    - test "$(cat vault-test-file.txt)" != "$SECRET_MESSAGE" # encrypted
+
+    - ansible-vault decrypt --vault-password-file vault-password.txt vault-test-file.txt
+    - test "$(cat vault-test-file.txt)" = "$SECRET_MESSAGE" # decrypted
+
+    # ensure paramiko is installed
+    - ${{prefix}}/venv/bin/python -c "import paramiko"
+  env:
+    VAULT_PASSWORD: "123456789"
+    SECRET_MESSAGE: "Hello world!"
+
+provides:
+  - bin/ansible
+  - bin/ansible-config
+  - bin/ansible-connection
+  - bin/ansible-console
+  - bin/ansible-doc
+  - bin/ansible-galaxy
+  - bin/ansible-inventory
+  - bin/ansible-playbook
+  - bin/ansible-pull
+  - bin/ansible-test
+  - bin/ansible-vault

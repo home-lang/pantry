@@ -1,0 +1,27 @@
+distributable:
+  url: https://github.com/MathisRosenhauer/libaec/releases/download/v{{version}}/libaec-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: MathisRosenhauer/libaec
+
+build:
+  dependencies:
+    cmake.org: "*" # updates
+  script:
+    - run:
+        - ./configure $ARGS
+        - make --jobs {{ hw.concurrency }} install
+      if: <1.1.4
+    - run:
+        - cmake -S . -B build $CMAKE_ARGS
+        - cmake --build build
+        - cmake --install build
+      if: ">=1.1.4"
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+    CMAKE_ARGS:
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}"
+
+test: cc -o testlibaec fixture.cpp -laec

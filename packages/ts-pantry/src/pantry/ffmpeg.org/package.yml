@@ -1,0 +1,65 @@
+distributable:
+  url: https://ffmpeg.org/releases/ffmpeg-{{version.raw}}.tar.gz
+  sig: ${{url}}.asc
+  strip-components: 1
+
+# docs: https://trac.ffmpeg.org/wiki/CompilationGuide
+
+versions:
+  url: https://ffmpeg.org/releases/
+  match: /ffmpeg-\d+\.\d+(\.\d+)?\.tar\.gz/
+  strip:
+    - /ffmpeg-/
+    - /.tar.gz/
+
+provides:
+  - bin/ffmpeg
+  - bin/ffprobe
+
+dependencies:
+  lame.sourceforge.io: '>=3.98.3'
+  libsdl.org: ^2
+  freetype.org: ^2
+  harfbuzz.org: ^8
+  videolan.org/x264: ^0.164
+  videolan.org/x265: ^3
+  webmproject.org/libvpx: ~1.14 # libvpx abi changes in 1.15
+  opus-codec.org: ^1
+  google.com/webp: ^1
+
+build:
+  dependencies:
+    x86-64:
+      nasm.us: 2
+  script:
+    # not available in all versions
+    - run: |
+        if grep -q -- --enable-libharfbuzz configure; then
+          ARGS="$ARGS --enable-libharfbuzz"
+        fi
+    - ./configure $ARGS
+    - make --jobs {{hw.concurrency}}
+    - make install
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+      - --enable-libfreetype
+      - --enable-libmp3lame
+      - --enable-shared
+      - --enable-libx264
+      - --enable-gpl # required for x264
+      - --enable-libx265
+      - --enable-libvpx
+      - --enable-libopus
+      - --enable-libwebp
+    CFLAGS:
+      - -Wno-incompatible-function-pointer-types
+
+test:
+  dependencies:
+    gnu.org/wget: '*'
+    info-zip.org/unzip: '*'
+  script:
+    - wget --content-disposition https://github.com/googlefonts/RobotoMono/raw/main/fonts/ttf/RobotoMono-Regular.ttf
+    - ffmpeg -filter_complex testsrc=rate=1:duration=1,drawtext=fontfile=RobotoMono-Regular.ttf:text=hello out.mp4
+    - test -f out.mp4

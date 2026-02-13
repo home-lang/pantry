@@ -1,0 +1,42 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/libunistring/libunistring-{{version.raw}}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/libunistring/
+  match: /libunistring-(\d+\.\d+(\.\d+)?)\.tar\.gz/
+  strip:
+    - /libunistring-/
+    - /.tar.gz/
+
+dependencies:
+  darwin:
+    # https://savannah.gnu.org/bugs/?65686
+    gnu.org/libiconv: '*'
+
+build:
+  dependencies:
+    gnu.org/gmp: '*'
+    gnu.org/m4: '*'
+  script:
+    - ./configure --prefix={{ prefix }}
+    - make --jobs {{ hw.concurrency }} install
+
+test:
+  - run: cc -lunistring -o test $FIXTURE
+    fixture:
+      extname: c
+      content: |
+        #include <uniname.h>
+        #include <unistdio.h>
+        #include <unistr.h>
+        #include <stdlib.h>
+        int main (void) {
+          uint32_t s[2] = {};
+          uint8_t buff[12] = {};
+          if (u32_uctomb (s, unicode_name_character ("TEAPOT"), sizeof s) != 1) abort();
+          if (u8_sprintf (buff, "%llU", s) != 4) abort();
+          printf ("%s\n", buff);
+          return 0;
+        }
+  - test "$(./test)" = "🫖"

@@ -1,0 +1,106 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/ncurses/ncurses-{{ version.raw }}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/ncurses/
+  match: /ncurses-\d+(\.\d+)+.tar.gz/
+  strip:
+    - /ncurses-/
+    - /.tar.gz/
+
+build:
+  script:
+    #FIXME because our build infra is recursive
+    - |
+      if [ -d {{prefix}}/include ]; then
+        rm -rf {{prefix}}/include
+      fi
+
+    - mkdir -p $PCDIR
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }} install
+
+    # fix up symlinks
+    - run: |
+        for lib in form menu ncurses panel curses++; do
+          for ii in $(find . -name lib${lib}w\*); do
+            # hopefully no new w's will be introduced
+            ln -sf $ii $(echo $ii | tr -d w)
+          done
+        done
+      working-directory: ${{prefix}}/lib
+
+    # things often expect either no namespace or namespace
+    - run:
+        - mv ncursesw/* .
+        - rmdir ncursesw
+        - ln -sf . ncursesw
+      working-directory: ${{prefix}}/include
+
+    # fix hardcoded paths
+    - sed -i 's|{{prefix}}|\${pcfiledir}/../..|g' {{prefix}}/lib/pkgconfig/*.pc
+    - sed -i 's|{{prefix}}|\$(dirname "\$0")/..|g' {{prefix}}/bin/ncursesw{{version.major}}-config
+
+    - run:
+        # libtermcap is provided by ncurses and has the
+        # same api. Help some older packages to find this dependencies.
+        - ln -s libncurses.so libtermcap.so
+        # ghc needs to find libtinfo.so.5, which is built from v6 on ubuntu 18.04...
+        - ln -s libtinfo.so libtinfo.so.5
+        - ln -s libtinfow.so libtinfo.so
+        - ln -s libtinfow.so libtinfow.so.5
+      working-directory: ${{prefix}}/lib
+      if: linux
+
+    # some older software, like tmate, wants `ncurses.pc`
+    - run: ln -s ncursesw.pc ncurses.pc
+      working-directory: ${{prefix}}/lib/pkgconfig
+
+  env:
+    PCDIR: ${{prefix}}/lib/pkgconfig
+    ARGS:
+      - --prefix={{ prefix }}
+      - --enable-pc-files
+      - --enable-sigwinch
+      - --enable-widec
+      - --with-shared
+      - --with-cxx-shared
+      - --with-gpm=no
+      - --without-ada
+      - --with-pkg-config-libdir=$PCDIR
+    linux:
+      ARGS:
+        - --with-termlib
+        - --enable-symlinks
+
+runtime:
+  env:
+    TERMINFO_DIRS: /usr/share/terminfo:{{prefix}}/share/terminfo
+    # ^^ we delegate to the system first since they may apply platform specific info
+
+test:
+  dependencies:
+    github.com/tmux/tmux: ^3
+    freedesktop.org/pkg-config: ^0.29
+  script:
+    - ncursesw6-config --version | grep {{version.marketing}}
+    - ncursesw6-config --terminfo-dirs | grep '{{prefix}}'
+    - pkg-config --modversion ncursesw | grep {{version.marketing}}
+    - pkg-config --libs ncursesw | grep '{{prefix}}'
+
+    # https://github.com/pkgxdev/pantry/issues/1658
+    - tmux -c ls
+
+provides:
+  - bin/captoinfo
+  - bin/clear
+  - bin/infocmp
+  - bin/infotocap
+  - bin/ncursesw6-config
+  - bin/reset
+  - bin/tabs
+  - bin/tic
+  - bin/toe
+  - bin/tput
+  - bin/tset

@@ -1,0 +1,47 @@
+distributable:
+  url: https://github.com/libimobiledevice/libusbmuxd/releases/download/{{version.tag}}/libusbmuxd-{{version.tag}}.tar.bz2
+  strip-components: 1
+
+versions:
+  github: libimobiledevice/libusbmuxd
+
+dependencies:
+  libimobiledevice.org/libplist: ^2.4
+  libimobiledevice.org/libimobiledevice-glue: ^1.2
+
+build:
+  dependencies:
+    gnu.org/libtool: "*"
+  script:
+    - ./configure $ARGS
+    - make --jobs {{hw.concurrency}} install
+    - run:
+        # FIXME: this is a hack; we need to fix fixup.ts
+        - sed -i 's/\+brewing//g' pkgconfig/*.pc
+      working-directory: "{{prefix}}/lib"
+  env:
+    ARGS:
+      - --disable-debug
+      - --disable-dependency-tracking
+      - --disable-silent-rules
+      - --prefix={{prefix}}
+      - --libdir={{prefix}}/lib
+
+provides:
+  - bin/iproxy
+  - bin/inetcat
+
+test:
+  dependencies:
+    curl.se: "*"
+  script:
+    - iproxy -s localhost 2222:2223 &
+    - PID=$!
+    - sleep 2
+    - curl -v telnet://localhost:2222 2>&1 | tee out
+    - grep 'Connected to localhost' out || grep 'Established connection to localhost' out
+    - kill $PID
+    - iproxy -v | tee out
+    - grep {{version}} out
+    - inetcat -v | tee out
+    - grep {{version}} out

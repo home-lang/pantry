@@ -1,0 +1,22 @@
+distributable:
+  url: git+https://github.com/Diniboy1123/usque
+  ref: ${{version.tag}}
+
+versions:
+  github: Diniboy1123/usque
+
+build:
+  dependencies:
+    go.dev: ~1.24.2
+    goreleaser.com: '*'
+  script:
+    - goreleaser build --clean --single-target --skip=validate
+    - mkdir -p "{{ prefix }}"/bin
+    - mv dist/{{hw.platform}}*/usque "{{ prefix }}"/bin
+  env:
+    CGO_ENABLED: 0
+
+provides:
+  - bin/usque
+
+test: 'usque version | grep "usque version: v{{ version }}"'

@@ -1,0 +1,42 @@
+distributable:
+  - url: https://archives.boost.io/release/{{version}}/source/boost_{{version.major}}_{{version.minor}}_{{version.patch}}.tar.gz
+    strip-components: 1
+  # these appear to 404 now
+  - url: https://boostorg.jfrog.io/artifactory/main/release/{{ version }}/source/boost_{{version.major}}_{{version.minor}}_{{version.patch}}.tar.gz
+    strip-components: 1
+
+versions:
+  github: boostorg/boost
+  strip: /^boost-/
+
+dependencies:
+  facebook.com/zstd: ^1
+
+build:
+  script:
+    - ./bootstrap.sh --prefix={{ prefix }}
+    - ./b2 $ARGS
+
+    # boost.org has libs that end up with name @rpath/libboost_atomic.dylib (offset 24)
+    # so we need to add @loader_path to the rpath
+    - run: |
+        for LIB in *.dylib; do
+          install_name_tool -add_rpath @loader_path $LIB
+        done
+      working-directory: ${{prefix}}/lib
+      if: darwin
+  env:
+    ARGS:
+      - install
+      - --prefix={{ prefix }}
+    darwin:
+      ARGS:
+        - linkflags=-Wl,-headerpad_max_install_names
+    linux:
+      ARGS:
+        - cxxflags=-fPIC
+        - linkflags=-fPIC
+
+test:
+  - c++ test.cpp -std=c++14 -lboost_iostreams -lzstd
+  - ./a.out

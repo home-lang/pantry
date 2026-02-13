@@ -1,0 +1,25 @@
+distributable: ~
+
+versions:
+  url: "https://curl.se/docs/caextract.html"
+  match: /cacert-2\d+-\d+-\d+.pem/
+  strip:
+    - /cacert-/
+    - /\.pem/
+
+runtime:
+  env:
+    SSL_CERT_FILE: ${{prefix}}/ssl/cert.pem
+
+build:
+  dependencies:
+    curl.se: '*'
+  script: |
+    mkdir -p "{{prefix}}/ssl"
+    URL_VER=$(echo {{version.raw}} | tr -- . -)
+    curl -k https://curl.se/ca/cacert-$URL_VER.pem -o "{{prefix}}"/ssl/cert.pem
+
+test:
+  dependencies:
+    curl.se: '*'
+  script: curl https://tea.xyz

@@ -1,0 +1,21 @@
+distributable:
+  url: https://github.com/create-dmg/create-dmg/archive/v{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: create-dmg/create-dmg/tags
+  strip: /^v/
+
+platforms: darwin
+
+provides:
+  - bin/create-dmg
+
+build: make prefix={{prefix}} install
+test: |
+  create-dmg --version
+  touch Brew-Eula.txt
+  echo "Eula" >> Brew-Eula.txt
+  mkdir -p Test-Source
+  mkdir -p Test-Source/Brew.app
+  create-dmg --sandbox-safe --eula Brew-Eula.txt Brew-Test.dmg Test-Source

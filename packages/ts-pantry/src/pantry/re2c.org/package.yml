@@ -1,0 +1,22 @@
+distributable:
+  url: https://github.com/skvadrik/re2c/releases/download/{{ version.raw }}/re2c-{{ version.raw }}.tar.xz
+  strip-components: 1
+
+versions:
+  github: skvadrik/re2c
+
+build:
+  dependencies:
+    python.org: ^3.10
+  script:
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }} install
+  env:
+    ARGS:
+      - --prefix="{{prefix}}"
+
+provides:
+  - bin/re2c
+  - man/man1/re2c.1
+
+test: re2c --version | grep {{version.marketing}}

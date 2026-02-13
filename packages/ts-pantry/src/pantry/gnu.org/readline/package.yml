@@ -1,0 +1,37 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/readline/readline-{{ version.raw }}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://ftp.gnu.org/gnu/readline/
+  match: /readline-\d+\.\d+(\.\d+)?\.tar\.gz/
+  strip:
+    - /readline-/
+    - /.tar.gz/
+  #TODO brew has a couple patches we should apply
+
+dependencies:
+  invisible-island.net/ncurses: ^6
+
+build:
+  script:
+    - ./configure --prefix={{ prefix }} --with-curses
+    - make --jobs {{ hw.concurrency }} install
+  env:
+    linux:
+      # otherwise it weirdly omits the linkage
+      # https://stackoverflow.com/a/65623630
+      LDFLAGS: '$LDFLAGS -lncursesw'
+
+test:
+  - run:
+      - ldd {{prefix}}/lib/libreadline.so | grep ncurses
+      - cc -lreadline -lncurses -ltinfo fixture.c
+    if: linux
+  - run:
+      - otool -L {{prefix}}/lib/libreadline.dylib | grep ncurses
+      - cc -lreadline -lncurses fixture.c
+    if: darwin
+  - |
+    test "$(echo "Hello, World!" | ./a.out)" = "test> Hello, World!
+    Hello, World!\\n"

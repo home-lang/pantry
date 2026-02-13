@@ -1,0 +1,57 @@
+distributable:
+  url: https://git.musl-libc.org/cgit/musl/snapshot/musl-{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  url: https://git.musl-libc.org/cgit/musl/refs/tags
+  match: /musl-\d+\.\d+\.\d+\.tar\.gz/
+  strip:
+    - /musl-/
+    - /.tar.gz/
+
+relocatable: true
+
+platforms: linux
+
+provides:
+  - bin/ld.musl-clang
+  - bin/musl-clang
+
+dependencies:
+  llvm.org: '*' # needs clang
+
+build:
+  script:
+    - ./configure --prefix={{ prefix }} --syslibdir={{ prefix }}/lib
+
+    - make --jobs {{ hw.concurrency }}
+    - make install
+
+    - run: ln -sf libc.so ld-musl-{{hw.arch}}.so.1
+      working-directory: '{{prefix}}/lib'
+
+    # fix script paths; might be a better way
+    #FIXME probably: dynamic linker causes segfaults
+    - run: sed -i
+        -e 's/-dynamic-linker "\$ldso"//'
+        -e 's/^sflags=$/sflags="-static"/'
+        -e 's/^libc=".*/libc="$(dirname $(dirname $(command -v ld.musl-clang)))"/'
+        -e 's#^libc_inc=".*#libc_inc="$libc/include"#'
+        -e 's#^libc_lib=".*#libc_lib="$libc/lib"#'
+        -e 's/print-prog-name=ld/print-prog-name=ld.lld/'
+        musl-clang ld.musl-clang
+      working-directory: '{{prefix}}/bin'
+  env:
+    CC: clang
+
+test:
+  fixture: |
+    #include <stdio.h>
+    int main() {
+      printf("Hello World!");
+      return 0;
+    }
+  script: |
+    mv $FIXTURE $FIXTURE.c
+    musl-clang $FIXTURE.c
+    test "$(./a.out)" = "Hello World!"

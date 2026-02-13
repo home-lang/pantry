@@ -1,0 +1,44 @@
+distributable:
+  url: https://github.com/pkgxdev/brewkit/archive/refs/tags/v{{ version }}.tar.gz
+  strip-components: 1
+
+display-name: brewkit
+
+versions:
+  github: pkgxdev/brewkit
+
+dependencies:
+  deno.land: ~1.39 # 1.40 shouts unskippable deprecation warnings
+  gnu.org/bash: ^5
+  pkgx.sh: ">=1"
+
+provides:
+  - bin/bk
+
+build:
+  script:
+    - mkdir -p {{prefix}}
+
+    - |
+      for x in $PARTS; do
+        test -e $x && cp -a $x "{{prefix}}"
+      done
+  env:
+    PARTS:
+      - bin
+      - libexec
+      - lib
+      - share
+      - deno.*
+      - audit
+      - build
+      - test
+
+test:
+  # we can’t test builds since brewkit is not designed to be invoked
+  # recursively and fails in the toolchain setup on Linux and fails due to
+  # Ruby 2 not liking unicode paths on macOS
+  #- bk build pkgx.sh/brewkit
+  #- bk test pkgx.sh/brewkit
+  - bk --help
+  - bk build --help

@@ -1,0 +1,22 @@
+distributable:
+  url: https://ftp.gnu.org/gnu/m4/m4-{{ version }}.tar.xz
+  strip-components: 1
+
+versions:
+  github: autotools-mirror/m4/tags
+  ignore: [v1.9a, v1.5.89a]
+
+build:
+  script: |
+    ./configure --prefix="{{ prefix }}"
+    make --jobs {{ hw.concurrency }} install
+
+test:
+  script: |
+    OUTPUT=$(cat $FIXTURE | m4)
+    test $OUTPUT = tea.xyz
+  fixture: |
+    define(TEST, tea.xyz)TEST
+
+provides:
+  - bin/m4

@@ -1,0 +1,134 @@
+name: Update Pantry
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-pantry:
+    name: Update pantry data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd packages/ts-pantry && bun install
+
+      - name: Update pantry
+        id: update-pantry
+        run: |
+          echo "Starting pantry update..."
+          cd packages/ts-pantry
+
+          if bun bin/cli.ts update-pantry; then
+            echo "Pantry update completed successfully"
+            UPDATE_SUCCESS=true
+          else
+            echo "Pantry update failed with exit code: $?"
+            UPDATE_SUCCESS=false
+          fi
+
+          cd ${{ github.workspace }}
+
+          CHANGED_FILES=$(git status --porcelain packages/ts-pantry/src/pantry/ | wc -l)
+          CHANGED_CONSTS=$(git status --porcelain packages/ts-pantry/src/consts.ts | wc -l)
+          TOTAL_CHANGES=$((CHANGED_FILES + CHANGED_CONSTS))
+
+          echo "Pantry files changed: $CHANGED_FILES"
+          echo "Consts file changed: $CHANGED_CONSTS"
+          echo "Total changes: $TOTAL_CHANGES"
+
+          echo "success=$UPDATE_SUCCESS" >> $GITHUB_OUTPUT
+          echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
+          echo "pantry_files_changed=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "consts_changed=$CHANGED_CONSTS" >> $GITHUB_OUTPUT
+        timeout-minutes: 10
+
+      - name: Update consts file
+        if: steps.update-pantry.outputs.success == 'true'
+        run: cd packages/ts-pantry && bun bin/cli.ts generate-consts --source pantry
+        timeout-minutes: 5
+
+      - name: Generate package types
+        if: steps.update-pantry.outputs.success == 'true'
+        run: cd packages/ts-pantry && bun scripts/generate-package-types.ts
+        timeout-minutes: 5
+
+      - name: Generate commit message
+        id: commit-message
+        run: |
+          UPDATE_SUCCESS="${{ steps.update-pantry.outputs.success }}"
+          TOTAL_CHANGES="${{ steps.update-pantry.outputs.total_changes }}"
+          PANTRY_FILES_CHANGED="${{ steps.update-pantry.outputs.pantry_files_changed }}"
+          CONSTS_CHANGED="${{ steps.update-pantry.outputs.consts_changed }}"
+
+          if [ "$UPDATE_SUCCESS" != "true" ]; then
+            echo "commit_message=chore: registry update failed" >> $GITHUB_OUTPUT
+            echo "should_commit=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [ "$TOTAL_CHANGES" -eq 0 ]; then
+            echo "commit_message=chore: pantry update (no changes)" >> $GITHUB_OUTPUT
+            echo "should_commit=false" >> $GITHUB_OUTPUT
+          else
+            if [ "$PANTRY_FILES_CHANGED" -gt 0 ] && [ "$CONSTS_CHANGED" -gt 0 ]; then
+              echo "commit_message=chore: update registry data and package constants" >> $GITHUB_OUTPUT
+            elif [ "$PANTRY_FILES_CHANGED" -gt 0 ]; then
+              if [ "$PANTRY_FILES_CHANGED" -eq 1 ]; then
+                echo "commit_message=chore: update registry data (1 file)" >> $GITHUB_OUTPUT
+              else
+                echo "commit_message=chore: update registry data ($PANTRY_FILES_CHANGED files)" >> $GITHUB_OUTPUT
+              fi
+            elif [ "$CONSTS_CHANGED" -gt 0 ]; then
+              echo "commit_message=chore: update package constants" >> $GITHUB_OUTPUT
+            else
+              echo "commit_message=chore: update registry data" >> $GITHUB_OUTPUT
+            fi
+            echo "should_commit=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          CHANGES=$(git status --porcelain packages/ts-pantry/src/pantry/ packages/ts-pantry/src/consts.ts packages/ts-pantry/src/generated-package-names.ts 2>/dev/null || echo "")
+
+          if [[ -z "$CHANGES" ]]; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected:"
+            echo "$CHANGES"
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true'
+        run: |
+          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+            git config --global user.name "chrisbbreuer"
+            git config --global user.email "chrisbreuer93@gmail.com"
+            git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
+          else
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
+
+          git add packages/ts-pantry/src/pantry/ packages/ts-pantry/src/consts.ts packages/ts-pantry/src/generated-package-names.ts
+          git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated pantry update via GitHub Actions workflow"
+          git push origin main
+
+          echo "Successfully committed and pushed pantry changes"

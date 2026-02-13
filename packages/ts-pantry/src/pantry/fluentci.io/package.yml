@@ -1,0 +1,38 @@
+distributable:
+  url: https://github.com/fluentci-io/fluentci/archive/refs/tags/v{{ version }}.tar.gz
+  strip-components: 1
+
+display-name: fluentci
+
+versions:
+  github: fluentci-io/fluentci
+
+dependencies:
+  dagger.io: ^0.10
+  deno.land: ^1.42
+  charm.sh/glow: ^1.5.1
+
+build:
+  script:
+    # 0.12.0 didn't bump version
+    - run: sed -i -e 's/export const VERSION = ".*";/export const VERSION = "{{ version }}";/' consts.ts
+      working-directory: src
+    # 0.12.7+ shipped with a deno.lock that prevents building, 0.16.5 shipped with a v4, 0.16.7 shipper with a v5
+    - run: rm deno.lock
+      if: '>=0.12.7<0.14 || =0.16.5 || >=0.16.7'
+    - deno compile -A --unstable --import-map="$SRCROOT"/import_map.json --output fluentci ./main.ts
+    - mkdir -p "{{ prefix }}"/bin
+    - cp fluentci "{{ prefix }}"/bin
+  skip: fix-patchelf
+  env:
+    linux/aarch64:
+      # deno's pre-built runtime doesn't support glibc old enough
+      DENORT_BIN: '{{deps.deno.land.prefix}}/bin/denort'
+
+provides:
+  - bin/fluentci
+
+test:
+  - fluentci --version
+  # contains shell escapes; can't use test
+  - fluentci --version | grep {{ version }}

@@ -1,0 +1,20 @@
+distributable:
+  url: https://gnupg.org/ftp/gcrypt/npth/npth-{{version.raw}}.tar.bz2
+  strip-components: 1
+
+versions:
+  url: https://gnupg.org/ftp/gcrypt/npth/
+  match: /npth-(\d+\.\d+(\.\d+)?)\.tar\.bz2/
+  strip:
+    - /npth-/
+    - /.tar.bz2/
+
+build:
+  script:
+    - ./configure --prefix={{prefix}}
+    - make
+    - make check
+    - make install
+
+#FIXME we test using our version, not theirs
+test: test "$(pkg-config --modversion npth)" = "{{version.marketing}}"

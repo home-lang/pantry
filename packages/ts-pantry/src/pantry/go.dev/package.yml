@@ -1,0 +1,69 @@
+distributable:
+  url: https://go.dev/dl/go{{version.raw}}.src.tar.gz
+  strip-components: 1
+
+versions:
+  github: golang/go/tags
+  strip: /^go/
+
+provides:
+  - bin/go
+  - bin/gofmt
+
+interprets:
+  extensions: go
+  args: [go, run]
+
+dependencies:
+  openssl.org: 1  # for ca-certificates
+
+companions:
+
+build:
+  dependencies:
+    gnu.org/m4: 1
+    go.dev: '*'
+  working-directory: src
+  # will only segfault if updated with patchelf
+  skip: fix-patchelf
+  script:
+    - ./make.bash
+
+    # cleanup
+    - rm *.{bash,bat,rc} Make.dist
+    - run: find . -mindepth 1 -delete
+      working-directory: ${{ prefix }}
+    - run: |
+        cp -a api bin doc lib misc pkg src test "{{prefix}}"
+        if test -f go.env; then
+          cp go.env "{{prefix}}"
+        fi
+      working-directory: $SRCROOT
+  env:
+    # `make.bash` complains about unset GOCACHE and HOME otherwise
+    GOCACHE: "$SRCROOT/.gocache"
+    GOROOT_FINAL: ${{ prefix }}
+    GOROOT_BOOTSTRAP: ${{ deps.go.dev.prefix }}
+
+bootstrap:
+  dependencies:
+    curl.se: '*'
+  env:
+    '*/aarch64': {GOARCH: arm64}
+    '*/x86-64':  {GOARCH: amd64}
+  script: |
+    curl -L "$URL" | tar xzf - -C "{{ prefix }}" --strip-components=1
+
+test:
+  script: |
+    mv $FIXTURE $FIXTURE.go
+    OUTPUT=$(go run $FIXTURE.go)
+    test "Hello World" = "$OUTPUT"
+    go build -o my-artifact $FIXTURE.go
+    ls -la $FIXTURE.go
+  fixture: |
+    package main
+    import "fmt"
+    func main() {
+      fmt.Println("Hello World")
+    }

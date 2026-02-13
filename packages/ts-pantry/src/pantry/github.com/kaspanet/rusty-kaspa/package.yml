@@ -1,0 +1,30 @@
+distributable:
+  url: https://github.com/kaspanet/rusty-kaspa/archive/refs/tags/v{{ version }}.tar.gz
+  strip-components: 1
+
+provides:
+  - bin/kaspad
+  - bin/kaspa-cli
+
+versions:
+  github: kaspanet/rusty-kaspa/tags
+  strip: /v/
+
+dependencies:
+  linux:
+    openssl.org: ^1.1
+
+build:
+  dependencies:
+    rust-lang.org: '>=1.56'
+    rust-lang.org/cargo: '*'
+    protobuf.dev: '*'
+    abseil.io: ^20250127
+    curl.se: '*'
+  script:
+    # >=0.13.2 requires --features=heap or segfaults
+    - cargo install --path kaspad --locked --root {{prefix}} --features=heap
+    - cargo install --path cli --locked --root {{prefix}}
+
+test:
+  - (kaspad --version || true) | grep "{{version}}"

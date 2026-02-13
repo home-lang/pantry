@@ -1,0 +1,48 @@
+distributable:
+  url: https://github.com/cloudamqp/lavinmq/archive/refs/tags/{{version.tag}}.tar.gz
+  strip-components: 1
+
+versions:
+  github: cloudamqp/lavinmq
+
+dependencies:
+  openssl.org: ^1.1
+  pcre.org/v2: 10
+  libevent.org: 2
+  hboehm.info/gc: 8
+
+build:
+  dependencies:
+    crystal-lang.org: ~1.18 # since 2.4.5
+    crystal-lang.org/shards: "*"
+    lz4.org: ^1
+    gnu.org/help2man: "*"
+    perl.org: =5.42.0
+    etcd.io: "*"
+  script:
+    # else fix-machos.rb fails
+    - run: sed -i 's/--link-flags=-pie/--link-flags=-Wl,-pie,-headerpad_max_install_names/' Makefile
+      if: darwin
+    # why is this a good idea? don't add users
+    - run: sed -i -f $PROP Makefile
+      prop: |
+        /useradd/s/^/#/g
+        s/-o lavinmq -g lavinmq//g
+      if: ">=2.3.0"
+    - make -j {{hw.concurrency}} install $ARGS
+  env:
+    ARGS:
+      - PREFIX="{{prefix}}"
+      - SYSCONFDIR="{{prefix}}/etc"
+      - SHAREDSTATEDIR="{{prefix}}/var"
+      - UNITDIR="{{prefix}}/etc"
+      - DOCS=
+      - CRYSTAL_FLAGS=-Dbake_static
+    CRYSTAL_PATH: "./lib:$CRYSTAL_PATH"
+
+provides:
+  - bin/lavinmq
+  - bin/lavinmqctl
+  - bin/lavinmqperf
+
+test: test "$(lavinmq --version)" = {{version}}

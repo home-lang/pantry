@@ -378,12 +378,15 @@ pub fn build(b: *std.Build) void {
     const bench_step = b.step("bench", "Run benchmarks");
     bench_step.dependOn(&run_bench.step);
 
-    // Cross-compilation targets (macOS + Linux only; Windows needs POSIX compat work)
+    // Cross-compilation targets
     const targets = [_]std.Target.Query{
         .{ .cpu_arch = .aarch64, .os_tag = .macos },
         .{ .cpu_arch = .x86_64, .os_tag = .macos },
         .{ .cpu_arch = .aarch64, .os_tag = .linux },
         .{ .cpu_arch = .x86_64, .os_tag = .linux },
+        .{ .cpu_arch = .x86_64, .os_tag = .windows },
+        .{ .cpu_arch = .x86_64, .os_tag = .freebsd },
+        .{ .cpu_arch = .aarch64, .os_tag = .freebsd },
     };
 
     const compile_all_step = b.step("compile-all", "Compile for all platforms");

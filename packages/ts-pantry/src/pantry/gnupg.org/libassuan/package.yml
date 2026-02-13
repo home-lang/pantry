@@ -1,0 +1,31 @@
+distributable:
+  url: https://gnupg.org/ftp/gcrypt/libassuan/libassuan-{{version}}.tar.bz2
+  strip-components: 1
+
+versions:
+  url: https://gnupg.org/ftp/gcrypt/libassuan/
+  match: /libassuan-(\d+\.\d+(\.\d+)?)\.tar\.bz2/
+  strip:
+    - /libassuan-/
+    - /.tar.bz2/
+
+provides:
+  - bin/libassuan-config
+
+build:
+  script:
+    - ./configure --prefix={{prefix}}
+    - make
+    - make check
+    - make install
+
+  dependencies:
+    gnupg.org/libgpg-error: 1
+  env:
+    darwin:
+      # otherwise it tries to link both libc++ and libstdc++, which gives
+      # duplicate symbol errors.
+      CFLAGS: $CFLAGS -std=gnu89
+      CXXFLAGS: "$CXXFLAGS -stdlib=libstdc++ -std=c++03"
+
+test: test "$(libassuan-config --version)" = "{{version}}"

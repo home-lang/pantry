@@ -1,0 +1,45 @@
+distributable:
+  url: https://gitlab.com/libeigen/eigen/-/archive/{{version}}/eigen-{{version}}.tar.gz
+  strip-components: 1
+
+versions:
+  gitlab: libeigen/eigen/tags
+
+dependencies:
+  linux:
+    gnu.org/gcc/libstdcxx: 14
+
+build:
+  working-directory: build
+  dependencies:
+    cmake.org: "^3"
+  script:
+    - cmake .. -DCMAKE_INSTALL_PREFIX={{prefix}}
+    - make install
+
+    # the libraries are in share for some reason
+    - run: ln -s share lib
+      working-directory: ${{prefix}}
+  test: make test
+
+test:
+  dependencies:
+    freedesktop.org/pkg-config: ^0.29
+  script:
+    - run: g++ $FIXTURE $(pkg-config --cflags eigen3) -o test --std=c++14
+      fixture:
+        extname: cpp
+        content: |
+          #include <iostream>
+          #include <Eigen/Dense>
+          using Eigen::MatrixXd;
+          int main()
+          {
+            MatrixXd m(2,2);
+            m(0,0) = 3;
+            m(1,0) = 2.5;
+            m(0,1) = -1;
+            m(1,1) = m(1,0) + m(0,1);
+            std::cout << m << std::endl;
+          }
+    - test "$(./test | tr '\n' ':')" = '  3  -1:2.5 1.5:'
