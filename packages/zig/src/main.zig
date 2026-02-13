@@ -413,6 +413,12 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const changed = ctx.getOption("changed");
     const watch = ctx.hasOption("watch");
 
+    // Parse --timeout option (milliseconds, default 0 = no timeout)
+    const timeout_ms: u64 = if (ctx.getOption("timeout")) |timeout_str|
+        std.fmt.parseInt(u64, timeout_str, 10) catch 0
+    else
+        0;
+
     // Use a stack-allocated array for args
     var args_buf: [32][]const u8 = undefined;
     var args_len: usize = 0;
@@ -454,8 +460,10 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
         std.process.exit(result.exit_code);
     }
 
-    // Otherwise, run normally
-    var result = try lib.commands.runScriptCommand(allocator, args_buf[0..args_len]);
+    // Otherwise, run normally (with timeout if specified)
+    var result = try lib.commands.runScriptCommandWithOptions(allocator, args_buf[0..args_len], .{
+        .timeout_ms = timeout_ms,
+    });
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -2194,6 +2202,9 @@ pub fn main() !void {
     const run_watch_opt = cli.Option.init("watch", "watch", "Watch for changes and re-run script", .bool)
         .withShort('w');
     _ = try run_cmd.addOption(run_watch_opt);
+
+    const run_timeout_opt = cli.Option.init("timeout", "timeout", "Timeout in milliseconds (0 = no timeout)", .string);
+    _ = try run_cmd.addOption(run_timeout_opt);
 
     _ = run_cmd.setAction(runAction);
     _ = try root.addCommand(run_cmd);

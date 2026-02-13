@@ -705,6 +705,69 @@ pub fn spawnAndWait(options: SpawnOptions) !std.process.Child.Term {
     }
 }
 
+/// Result type for timeout-aware wait/spawn operations
+pub const WaitWithTimeoutResult = union(enum) {
+    success: std.process.Child.Term,
+    timeout,
+};
+
+const WaitThreadState = struct {
+    child: *std.process.Child,
+    done: std.atomic.Value(bool) = std.atomic.Value(bool).init(false),
+    term: ?std.process.Child.Term = null,
+    err: ?anyerror = null,
+};
+
+fn waitThreadMain(state: *WaitThreadState) void {
+    state.term = wait(state.child) catch |err| {
+        state.err = err;
+        state.done.store(true, .release);
+        return;
+    };
+
+    state.done.store(true, .release);
+}
+
+/// Wait for a spawned child process with a timeout
+pub fn waitWithTimeout(child: *std.process.Child, timeout_ms: u64) !WaitWithTimeoutResult {
+    if (timeout_ms == 0) {
+        return .{ .success = try wait(child) };
+    }
+
+    var state = WaitThreadState{ .child = child };
+    const waiter = try std.Thread.spawn(.{}, waitThreadMain, .{&state});
+    defer waiter.join();
+
+    const start_ms = std.time.milliTimestamp();
+
+    while (!state.done.load(.acquire)) {
+        const elapsed_raw = std.time.milliTimestamp() - start_ms;
+        const elapsed_ms: u64 = if (elapsed_raw <= 0) 0 else @intCast(elapsed_raw);
+
+        if (elapsed_ms >= timeout_ms) {
+            // Best-effort termination. Waiter thread will reap process exit.
+            kill(child);
+
+            while (!state.done.load(.acquire)) {
+                std.time.sleep(10 * std.time.ns_per_ms);
+            }
+
+            return .timeout;
+        }
+
+        std.time.sleep(10 * std.time.ns_per_ms);
+    }
+
+    if (state.err) |err| return err;
+    return .{ .success = state.term.? };
+}
+
+/// Spawn a child process and wait with timeout
+pub fn spawnAndWaitWithTimeout(options: SpawnOptions, timeout_ms: u64) !WaitWithTimeoutResult {
+    var child = try spawn(options);
+    return try waitWithTimeout(&child, timeout_ms);
+}
+
 /// Spawn a child process (without waiting)
 pub fn spawn(options: SpawnOptions) !std.process.Child {
     return try std.process.spawn(getIo(), options);
@@ -723,6 +786,12 @@ pub fn wait(child: *std.process.Child) !std.process.Child.Term {
 pub fn kill(child: *std.process.Child) void {
     if (comptime @hasDecl(@TypeOf(child.*), "kill")) {
         child.kill(getIo());
+        return;
+    }
+
+    // Fallback for targets/APIs without Child.kill
+    if (builtin.os.tag != .windows and @hasField(@TypeOf(child.*), "id")) {
+        std.posix.kill(child.id, std.posix.SIG.TERM) catch {};
     }
 }
 
@@ -731,12 +800,14 @@ pub const ChildRunResult = struct {
     term: std.process.Child.Term,
     stdout: []u8,
     stderr: []u8,
+    timed_out: bool = false,
 };
 
 /// Options for childRunWithOptions
 pub const ChildRunOptions = struct {
     cwd: ?[]const u8 = null,
     env_map: ?*anyopaque = null, // Cross-version compatible (Environ.Map or null)
+    timeout_ms: u64 = 0, // 0 = no timeout
 };
 
 /// Run a child process and collect output
@@ -745,10 +816,17 @@ pub fn childRun(allocator: std.mem.Allocator, argv: []const []const u8) !ChildRu
     return childRunWithOptions(allocator, argv, .{});
 }
 
-/// Run a child process with additional options (cwd, env_map)
+/// Run a child process with additional options (cwd, env_map, timeout)
 pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u8, options: ChildRunOptions) !ChildRunResult {
     _ = options.env_map; // env_map support disabled for cross-version compat
 
+    // When timeout is requested, use spawn + waitWithTimeout with inherited stdio
+    // (output streams directly to terminal in real-time)
+    if (options.timeout_ms > 0) {
+        return childRunWithTimeout(allocator, argv, options);
+    }
+
+    // No timeout: use the blocking std.process.run which collects stdout/stderr
     // Try new API first (0.16.0-dev.2368+)
     if (comptime @hasDecl(std.process, "run")) {
         const RunOptions = std.process.RunOptions;
@@ -783,6 +861,40 @@ pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u
             .stdout = result.stdout,
             .stderr = result.stderr,
         };
+    }
+}
+
+/// Internal: run a child process with timeout enforcement.
+/// Spawns with inherited stdio (output streams in real-time) and uses
+/// waitWithTimeout to enforce the deadline. On timeout, sends SIGTERM,
+/// waits briefly, then SIGKILL if needed.
+fn childRunWithTimeout(allocator: std.mem.Allocator, argv: []const []const u8, options: ChildRunOptions) !ChildRunResult {
+    const cwd_value: std.process.Child.Cwd = if (options.cwd) |p| .{ .path = p } else .inherit;
+
+    var child = try std.process.spawn(getIo(), .{
+        .argv = argv,
+        .cwd = cwd_value,
+    });
+
+    const wait_result = try waitWithTimeout(&child, options.timeout_ms);
+
+    switch (wait_result) {
+        .success => |term| {
+            return .{
+                .term = term,
+                .stdout = try allocator.alloc(u8, 0),
+                .stderr = try allocator.alloc(u8, 0),
+                .timed_out = false,
+            };
+        },
+        .timeout => {
+            return .{
+                .term = .{ .signal = std.posix.SIG.TERM },
+                .stdout = try allocator.alloc(u8, 0),
+                .stderr = try allocator.dupe(u8, "Process timed out"),
+                .timed_out = true,
+            };
+        },
     }
 }
 

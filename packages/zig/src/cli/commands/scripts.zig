@@ -8,12 +8,25 @@ const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
+pub const RunScriptOptions = struct {
+    timeout_ms: u64 = 120000,
+};
+
 // ============================================================================
 // Run Script Command
 // ============================================================================
 
 /// Run a script from pantry.json
 pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    return runScriptCommandWithOptions(allocator, args, .{});
+}
+
+/// Run a script from pantry.json with advanced options
+pub fn runScriptCommandWithOptions(
+    allocator: std.mem.Allocator,
+    args: []const []const u8,
+    options: RunScriptOptions,
+) !CommandResult {
     if (args.len == 0) {
         return CommandResult.err(allocator, "Error: No script name provided\nUsage: pantry run <script-name> [args...]");
     }
@@ -97,45 +110,29 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         try command_list.append(allocator, ' ');
         try command_list.appendSlice(allocator, arg);
     }
-    const display_command = try allocator.dupe(u8, command_list.items);
-    defer allocator.free(display_command);
+    const display_command = command_list.items;
 
     // Print what we're running
     style.print("{s}$ {s}{s}\n", .{ style.dim, display_command, style.reset });
 
-    // Build argv for shell execution
-    var argv_buf: [128][]const u8 = undefined;
-    argv_buf[0] = "sh";
-    argv_buf[1] = "-c";
-    argv_buf[2] = script_command;
-    argv_buf[3] = "_"; // sh placeholder for $0
-
-    var argc: usize = 4;
-    for (script_args) |arg| {
-        if (argc >= argv_buf.len) break;
-        argv_buf[argc] = arg;
-        argc += 1;
-    }
-
-    // Set up environment with pantry/.bin in PATH
+    // Set up command wrapper with pantry/.bin in PATH
     const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{cwd});
     defer allocator.free(pantry_bin);
 
     // Get current PATH and prepend pantry/.bin
     const current_path = io_helper.getEnvVarOwned(allocator, "PATH") catch try allocator.dupe(u8, "/usr/bin:/bin");
     defer allocator.free(current_path);
-    const new_path = try std.fmt.allocPrint(allocator, "{s}:{s}", .{ pantry_bin, current_path });
-    defer allocator.free(new_path);
+    const wrapped_command = try std.fmt.allocPrint(
+        allocator,
+        "export PATH=\"{s}:{s}\" && {s}",
+        .{ pantry_bin, current_path, display_command },
+    );
+    defer allocator.free(wrapped_command);
 
-    // Build environment array
-    var env_map = try io_helper.getEnvMap(allocator);
-    defer env_map.deinit();
-    try env_map.put("PATH", new_path);
-
-    // Execute the script using io_helper for cross-platform compatibility
-    const result = io_helper.childRunWithOptions(allocator, argv_buf[0..argc], .{
+    // Execute with timeout support
+    const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", wrapped_command }, .{
         .cwd = cwd,
-        .env_map = &env_map,
+        .timeout_ms = options.timeout_ms,
     }) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Error executing script: {}", .{err});
         return .{
@@ -146,6 +143,17 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
 
+    // Check for timeout
+    if (result.timed_out) {
+        style.print("{s}Error: Script '{s}' timed out after {d}ms{s}\n", .{
+            style.red,
+            script_name,
+            options.timeout_ms,
+            style.reset,
+        });
+        return .{ .exit_code = 1 };
+    }
+
     // Print output
     if (result.stdout.len > 0) {
         style.print("{s}", .{result.stdout});
@@ -154,9 +162,12 @@ pub fn runScriptCommand(allocator: std.mem.Allocator, args: []const []const u8) 
         style.print("{s}", .{result.stderr});
     }
 
-    return .{
-        .exit_code = if (result.term.exited == 0) @as(u8, 0) else @as(u8, 1),
+    const exit_code: u8 = switch (result.term) {
+        .exited => |code| @intCast(code),
+        else => 1,
     };
+
+    return .{ .exit_code = if (exit_code == 0) 0 else 1 };
 }
 
 // ============================================================================

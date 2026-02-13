@@ -108,6 +108,8 @@ pub const pxCommand = px_commands.pxCommand;
 // ============================================================================
 
 pub const runScriptCommand = scripts_commands.runScriptCommand;
+pub const runScriptCommandWithOptions = scripts_commands.runScriptCommandWithOptions;
+pub const RunScriptOptions = scripts_commands.RunScriptOptions;
 pub const listScriptsCommand = scripts_commands.listScriptsCommand;
 pub const runScriptWithFilter = run_filter.runScriptWithFilter;
 pub const RunFilterOptions = run_filter.RunFilterOptions;
