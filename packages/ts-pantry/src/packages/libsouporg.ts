@@ -2,7 +2,7 @@
  * **libsoup** - pkgx package
  *
  * @domain `libsoup.org`
- * @version `3.6.5` (10 versions available)
+ * @version `3.6.6` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install libsoup.org`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.libsouporg
  * console.log(pkg.name)        // "libsoup"
- * console.log(pkg.versions[0]) // "3.6.5" (latest)
+ * console.log(pkg.versions[0]) // "3.6.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/libsoup-org.md
@@ -77,6 +77,7 @@ export const libsouporgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.6.6',
     '3.6.5',
     '3.6.4',
     '3.6.3',
