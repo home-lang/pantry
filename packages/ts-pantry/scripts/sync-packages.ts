@@ -213,31 +213,24 @@ const packages: Record<string, PackageConfig> = {
       return `${current.major}.${current.latestMinor}`
     },
     download: async (version, platform, destDir) => {
-      const { os, arch } = detectPlatform()
+      // Compile from source on both macOS and Linux
+      const buildDir = '/tmp/postgres-build'
+      rmSync(buildDir, { recursive: true, force: true })
+      mkdirSync(buildDir, { recursive: true })
 
-      if (os === 'darwin') {
-        // Use Postgres.app binaries or EDB installer
-        // For simplicity, we'll compile from source (it's relatively fast)
-        const buildDir = '/tmp/postgres-build'
-        rmSync(buildDir, { recursive: true, force: true })
-        mkdirSync(buildDir, { recursive: true })
+      const url = `https://ftp.postgresql.org/pub/source/v${version}/postgresql-${version}.tar.gz`
 
-        const url = `https://ftp.postgresql.org/pub/source/v${version}/postgresql-${version}.tar.gz`
+      console.log(`   Downloading from ${url}`)
+      execSync(`curl -L -o "${buildDir}/postgres.tar.gz" "${url}"`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && tar -xf postgres.tar.gz --strip-components=1`, { stdio: 'pipe' })
 
-        console.log(`   Downloading from ${url}`)
-        execSync(`curl -L -o "${buildDir}/postgres.tar.gz" "${url}"`, { stdio: 'inherit' })
-        execSync(`cd "${buildDir}" && tar -xf postgres.tar.gz --strip-components=1`, { stdio: 'pipe' })
+      console.log(`   Compiling PostgreSQL...`)
+      const cpuCount = require('os').cpus().length
+      execSync(`cd "${buildDir}" && ./configure --prefix="${destDir}" --without-icu`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && make -j${cpuCount}`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && make install`, { stdio: 'inherit' })
 
-        console.log(`   Compiling PostgreSQL...`)
-        const cpuCount = require('os').cpus().length
-        execSync(`cd "${buildDir}" && ./configure --prefix="${destDir}" --without-icu`, { stdio: 'inherit' })
-        execSync(`cd "${buildDir}" && make -j${cpuCount}`, { stdio: 'inherit' })
-        execSync(`cd "${buildDir}" && make install`, { stdio: 'inherit' })
-
-        rmSync(buildDir, { recursive: true, force: true })
-      } else {
-        throw new Error('Linux PostgreSQL binaries not implemented yet')
-      }
+      rmSync(buildDir, { recursive: true, force: true })
     },
     needsCompile: true,
   },
@@ -253,7 +246,6 @@ const packages: Record<string, PackageConfig> = {
       const { os, arch } = detectPlatform()
 
       if (os === 'darwin') {
-        // MySQL provides pre-built binaries for macOS
         const mysqlArch = arch === 'arm64' ? 'arm64' : 'x86_64'
         const url = `https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-${version}-macos14-${mysqlArch}.tar.gz`
 
@@ -263,7 +255,15 @@ const packages: Record<string, PackageConfig> = {
         execSync(`cd "${destDir}" && tar -xf mysql.tar.gz --strip-components=1`, { stdio: 'pipe' })
         execSync(`rm "${destDir}/mysql.tar.gz"`)
       } else {
-        throw new Error('Linux MySQL binaries not implemented yet')
+        // Linux generic binary
+        const mysqlArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
+        const url = `https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-${version}-linux-glibc2.17-${mysqlArch}.tar.xz`
+
+        console.log(`   Downloading from ${url}`)
+        console.log(`   (MySQL downloads can be slow...)`)
+        execSync(`curl -L -o "${destDir}/mysql.tar.xz" "${url}"`, { stdio: 'inherit' })
+        execSync(`cd "${destDir}" && tar -xf mysql.tar.xz --strip-components=1`, { stdio: 'pipe' })
+        execSync(`rm "${destDir}/mysql.tar.xz"`)
       }
     },
   },
@@ -356,22 +356,22 @@ exec node "$(dirname "$0")/yarn.js" "$@"
     domain: 'python.org',
     name: 'python',
     getLatestVersion: async () => {
-      // Use a stable version - Python standalone builds
-      return '3.12.0'
+      // Use python-build-standalone which provides install_only tarballs
+      return '3.13.2'
     },
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
 
-      // Use python-build-standalone releases
+      // Use python-build-standalone releases from astral-sh (formerly indygreg)
       const pyArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
       const pyPlatform = os === 'darwin' ? 'apple-darwin' : 'unknown-linux-gnu'
 
-      // Python standalone build tag format
-      const tag = '20231002'
-      const url = `https://github.com/indygreg/python-build-standalone/releases/download/${tag}/cpython-${version}+${tag}-${pyArch}-${pyPlatform}-install_only.tar.gz`
+      // Find the latest release tag for this Python version
+      const tag = '20250204'
+      const url = `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${version}+${tag}-${pyArch}-${pyPlatform}-install_only.tar.gz`
 
       console.log(`   Downloading from ${url}`)
-      execSync(`curl -L -o "${destDir}/python.tar.gz" "${url}"`, { stdio: 'inherit' })
+      execSync(`curl -fL -o "${destDir}/python.tar.gz" "${url}"`, { stdio: 'inherit' })
       execSync(`cd "${destDir}" && tar -xf python.tar.gz --strip-components=1`, { stdio: 'pipe' })
       execSync(`rm "${destDir}/python.tar.gz"`)
     },
