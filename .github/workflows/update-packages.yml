@@ -271,6 +271,15 @@ jobs:
         id: deletion-check
         if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true'
         run: |
+          # Check if the tracked paths already exist in HEAD (i.e., this is not the initial run)
+          TRACKED_FILES=$(git ls-tree -r --name-only HEAD -- packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts 2>/dev/null | head -1)
+
+          if [ -z "$TRACKED_FILES" ]; then
+            echo "Initial run detected (files not yet tracked in HEAD). Skipping deletion safeguard."
+            echo "safe_to_commit=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           DELETIONS=$(git diff --numstat HEAD packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | awk '{deleted += $2} END {print deleted+0}')
 
           DELETION_THRESHOLD=20000

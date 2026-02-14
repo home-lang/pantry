@@ -781,9 +781,10 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.org";
     const token = ctx.getOption("token");
     const dry_run = ctx.hasOption("dry-run");
+    const use_npm = ctx.hasOption("npm");
 
-    // Route --registry npm to the npm publish flow
-    if (std.mem.eql(u8, registry, "npm")) {
+    // Route --npm or --registry npm to the npm publish flow
+    if (use_npm or std.mem.eql(u8, registry, "npm")) {
         const npm_options = lib.commands.PublishOptions{
             .access = access,
             .tag = tag,
@@ -2776,6 +2777,9 @@ pub fn main() !void {
 
     const pub_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Show what would be published without uploading", .bool);
     _ = try publish_cmd.addOption(pub_dry_run_opt);
+
+    const pub_npm_opt = cli.Option.init("npm", "npm", "Publish to npm registry instead of Pantry registry", .bool);
+    _ = try publish_cmd.addOption(pub_npm_opt);
 
     _ = publish_cmd.setAction(registryPublishAction);
     _ = try root.addCommand(publish_cmd);

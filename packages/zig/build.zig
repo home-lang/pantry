@@ -5,8 +5,8 @@ const std = @import("std");
 /// For CI: workflow clones deps into pantry/
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
     _ = fallback_path;
-    // pantry/ folder is inside packages/zig/, not at repo root
-    return b.fmt("pantry/{s}/{s}", .{ package_name, entry_point });
+    // pantry/ folder is at the workspace root (../../ from packages/zig/)
+    return b.fmt("../../pantry/{s}/{s}", .{ package_name, entry_point });
 }
 
 pub fn build(b: *std.Build) void {
