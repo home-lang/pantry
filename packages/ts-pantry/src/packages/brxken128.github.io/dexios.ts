@@ -25,31 +25,31 @@
  */
 export const brxken128githubiodexiosPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'dexios' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'brxken128.github.io/dexios' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A secure file encryption utility, written in Rust.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/brxken128.github.io/dexios/package.yml' as const,
   homepageUrl: 'https://brxken128.github.io/dexios/' as const,
   githubUrl: 'https://github.com/brxken128/dexios' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install brxken128.github.io/dexios' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +brxken128.github.io/dexios -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install brxken128.github.io/dexios' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'dexios',
   ] as const,
@@ -57,9 +57,9 @@ export const brxken128githubiodexiosPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '8.8.1',
   ] as const,

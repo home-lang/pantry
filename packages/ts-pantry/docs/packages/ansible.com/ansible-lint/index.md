@@ -51,7 +51,7 @@ sh <(curl https://pkgx.sh) +ansible.com/ansible-lint@26.1.1 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

@@ -26,31 +26,31 @@
  */
 export const freedesktoporgdbusPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'dbus' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'freedesktop.org/dbus' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Message bus system, providing inter-application communication' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/dbus/package.yml' as const,
   homepageUrl: 'https://wiki.freedesktop.org/www/Software/dbus' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install freedesktop.org/dbus' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/dbus -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install freedesktop.org/dbus' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'dbus-cleanup-sockets',
     'dbus-daemon',
@@ -65,10 +65,10 @@ export const freedesktoporgdbusPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'pagure.io/xmlto',
     'libexpat.github.io',
@@ -76,9 +76,9 @@ export const freedesktoporgdbusPackage = {
     'darwin:gnu.org/patch',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.16.2',
     '1.16.0',

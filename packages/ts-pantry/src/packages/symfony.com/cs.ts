@@ -3,7 +3,7 @@
  *
  * @domain `symfony.com/cs`
  * @programs `php-cs-fixer`
- * @version `3.92.5` (82 versions available)
+ * @version `3.94.0` (85 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install symfony.com/cs`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "php-cs-fixer"
  * console.log(pkg.description) // "A tool to automatically fix PHP Coding Standard..."
  * console.log(pkg.programs)    // ["php-cs-fixer"]
- * console.log(pkg.versions[0]) // "3.92.5" (latest)
+ * console.log(pkg.versions[0]) // "3.94.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/symfony-com/cs.md
@@ -26,48 +26,51 @@
  */
 export const symfonycomcsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'php-cs-fixer' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'symfony.com/cs' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A tool to automatically fix PHP Coding Standards issues' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/symfony.com/cs/package.yml' as const,
   homepageUrl: 'https://cs.symfony.com/' as const,
   githubUrl: 'https://github.com/PHP-CS-Fixer/PHP-CS-Fixer' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install symfony.com/cs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +symfony.com/cs -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install symfony.com/cs' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'php-cs-fixer',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'php.net>=7.4<8.4',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.94.0',
+    '3.93.1',
+    '3.93.0',
     '3.92.5',
     '3.92.4',
     '3.92.3',

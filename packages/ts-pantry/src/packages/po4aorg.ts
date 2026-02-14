@@ -28,31 +28,31 @@
  */
 export const po4aorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'po4a' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'po4a.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Maintain the translations of your documentation with ease  (PO for anything)' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/po4a.org/package.yml' as const,
   homepageUrl: 'http://po4a.org/' as const,
   githubUrl: 'https://github.com/mquinson/po4a' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install po4a.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +po4a.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install po4a.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'msguntypot',
     'po4a',
@@ -64,34 +64,34 @@ export const po4aorgPackage = {
     'podselect',
   ] as const,
   /**
-   * Related packages that work well with this package.
-   * Consider installing these for enhanced functionality.
-   */
+  * Related packages that work well with this package.
+  * Consider installing these for enhanced functionality.
+  */
   companions: [
     'PERL5LIB^${{prefix}}/libexec/lib/perl5:$PERL5LIB',
   ] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'gnu.org/gettext^0.22',
     'perl.org^5.22',
     'gnome.org/libxslt^1.1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cpanmin.us',
     'docbook.org/xsl',
     'curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.74.0',
     '0.73.0',

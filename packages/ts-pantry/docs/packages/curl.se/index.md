@@ -59,6 +59,7 @@ This package depends on:
 - `openssl.org^1.1`
 - `curl.se/ca-certs`
 - `zlib.net^1.2.11`
+- `nghttp2.org`
 
 ## Usage Examples
 

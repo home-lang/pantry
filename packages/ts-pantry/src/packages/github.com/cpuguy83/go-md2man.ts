@@ -25,47 +25,47 @@
  */
 export const gomd2manPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'go-md2man' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/cpuguy83/go-md2man' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Converts markdown into roff (man pages)' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/cpuguy83/go-md2man/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/cpuguy83/go-md2man' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/cpuguy83/go-md2man' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/cpuguy83/go-md2man -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/cpuguy83/go-md2man' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'go-md2man',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.19',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.0.7',
     '2.0.6',

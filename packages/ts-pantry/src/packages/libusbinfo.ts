@@ -24,24 +24,24 @@
  */
 export const libusbinfoPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'libusb.info' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'libusb.info' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A cross-platform library to access USB devices ' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/libusb.info/package.yml' as const,
   homepageUrl: 'https://libusb.info' as const,
   githubUrl: 'https://github.com/libusb/libusb' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install libusb.info' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libusb.info -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install libusb.info' as const,
@@ -49,19 +49,19 @@ export const libusbinfoPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'gnu.org/autoconf',
     'gnu.org/libtool',
     'linux:systemd.io',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.0.29',
     '1.0.28',

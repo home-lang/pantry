@@ -3,7 +3,7 @@
  *
  * @domain `buf.build`
  * @programs `buf`
- * @version `1.64.0` (55 versions available)
+ * @version `1.65.0` (56 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install buf.build`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "buf"
  * console.log(pkg.description) // "The best way of working with Protocol Buffers."
  * console.log(pkg.programs)    // ["buf"]
- * console.log(pkg.versions[0]) // "1.64.0" (latest)
+ * console.log(pkg.versions[0]) // "1.65.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/buf-build.md
@@ -26,48 +26,49 @@
  */
 export const bufbuildPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'buf' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'buf.build' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The best way of working with Protocol Buffers.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/buf.build/package.yml' as const,
   homepageUrl: 'https://buf.build' as const,
   githubUrl: 'https://github.com/bufbuild/buf' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install buf.build' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +buf.build -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install buf.build' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'buf',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.20',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.65.0',
     '1.64.0',
     '1.63.0',
     '1.62.1',

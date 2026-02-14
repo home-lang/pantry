@@ -25,29 +25,29 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `1.18.1`, `1.18.0`, `1.17.2`, `1.17.1`, `1.17.0`
-- `1.16.5`, `1.16.4`, `1.16.3`, `1.16.2`, `1.16.1`
-- `1.16.0`, `1.15.2`, `1.15.1`, `1.14.1`, `1.14.0`
-- `1.13.3`, `1.13.2`
+- `1.18.4`, `1.18.3`, `1.18.2`, `1.18.1`, `1.18.0`
+- `1.17.2`, `1.17.1`, `1.17.0`, `1.16.5`, `1.16.4`
+- `1.16.3`, `1.16.2`, `1.16.1`, `1.16.0`, `1.15.2`
+- `1.15.1`, `1.14.1`, `1.14.0`, `1.13.3`, `1.13.2`
 
 </details>
 
-**Latest Version**: `1.18.1`
+**Latest Version**: `1.18.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +alembic.sqlalchemy.org@1.18.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +alembic.sqlalchemy.org@1.18.4 -- $SHELL -i
 ```
 
 ## Dependencies
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

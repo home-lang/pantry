@@ -40,20 +40,46 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 4 versions</summary>
 
-- `7.1.1.27`, `7.1.1.12`, `7.1.0.61`
+- `7.1.2.13`, `7.1.1.27`, `7.1.1.12`, `7.1.0.61`
 
 </details>
 
-**Latest Version**: `7.1.1.27`
+**Latest Version**: `7.1.2.13`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +imagemagick.org@7.1.1.27 -- $SHELL -i
+sh <(curl https://pkgx.sh) +imagemagick.org@7.1.2.13 -- $SHELL -i
 ```
+
+## Dependencies
+
+This package depends on:
+
+- `libpng.org`
+- `ijg.org=8.4`
+- `freetype.org`
+- `libjpeg-turbo.org`
+- `liblqr.wikidot.com`
+- `simplesystems.org/libtiff`
+- `gnu.org/libtool`
+- `littlecms.com`
+- `openexr.com`
+- `openjpeg.org`
+- `google.com/webp`
+- `tukaani.org/xz`
+- `sourceware.org/bzip2`
+- `gnome.org/libxml2`
+- `zlib.net^1`
+- `jpeg.org/jpegxl`
+- `perl.org`
+- `libzip.org`
+- `darwin:openmp.llvm.org`
+- `darwin:github.com/strukturag/libheif`
+- `linux:x.org/x11`
 
 ## Usage Examples
 

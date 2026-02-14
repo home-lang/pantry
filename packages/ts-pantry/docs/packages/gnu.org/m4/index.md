@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `1.4.20`, `1.4.19`
+- `1.4.21`, `1.4.20`, `1.4.19`
 
 </details>
 
-**Latest Version**: `1.4.20`
+**Latest Version**: `1.4.21`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnu.org/m4@1.4.20 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnu.org/m4@1.4.21 -- $SHELL -i
 ```
 
 ## Usage Examples

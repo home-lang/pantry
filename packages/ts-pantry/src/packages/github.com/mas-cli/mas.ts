@@ -3,7 +3,7 @@
  *
  * @domain `github.com/mas-cli/mas`
  * @programs `mas`
- * @version `5.0.2` (19 versions available)
+ * @version `5.1.0` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/mas-cli/mas`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "mas"
  * console.log(pkg.description) // ":package: Mac App Store command line interface"
  * console.log(pkg.programs)    // ["mas"]
- * console.log(pkg.versions[0]) // "5.0.2" (latest)
+ * console.log(pkg.versions[0]) // "5.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/mas-cli/mas.md
@@ -24,31 +24,31 @@
  */
 export const masPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mas' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/mas-cli/mas' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: ':package: Mac App Store command line interface' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/mas-cli/mas/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/mas-cli/mas' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/mas-cli/mas' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mas-cli/mas -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/mas-cli/mas' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'mas',
   ] as const,
@@ -56,10 +56,11 @@ export const masPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '5.1.0',
     '5.0.2',
     '5.0.1',
     '5.0.0',

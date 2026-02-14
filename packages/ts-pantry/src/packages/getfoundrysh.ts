@@ -26,31 +26,31 @@
  */
 export const getfoundryshPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'getfoundry.sh' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'getfoundry.sh' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/getfoundry.sh/package.yml' as const,
   homepageUrl: 'https://getfoundry.sh' as const,
   githubUrl: 'https://github.com/foundry-rs/foundry' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install getfoundry.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +getfoundry.sh -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install getfoundry.sh' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'forge',
     'anvil',
@@ -59,17 +59,17 @@ export const getfoundryshPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'git-scm.org^2',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2024.4.12',
     '2023.12.7',

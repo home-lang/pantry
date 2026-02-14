@@ -26,22 +26,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 16 versions</summary>
+<summary>Show all 17 versions</summary>
 
-- `0.8.7`, `0.8.6`, `0.8.5`, `0.8.4`, `0.8.3`
-- `0.8.2`, `0.8.1`, `0.8.0`, `0.7.5`, `0.7.4`
-- `0.7.3`, `0.7.2`, `0.7.1`, `0.7.0`, `0.6.2`
-- `0.6.1`
+- `0.8.8`, `0.8.7`, `0.8.6`, `0.8.5`, `0.8.4`
+- `0.8.3`, `0.8.2`, `0.8.1`, `0.8.0`, `0.7.5`
+- `0.7.4`, `0.7.3`, `0.7.2`, `0.7.1`, `0.7.0`
+- `0.6.2`, `0.6.1`
 
 </details>
 
-**Latest Version**: `0.8.7`
+**Latest Version**: `0.8.8`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/containers/gvisor-tap-vsock@0.8.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/containers/gvisor-tap-vsock@0.8.8 -- $SHELL -i
 ```
 
 ## Usage Examples

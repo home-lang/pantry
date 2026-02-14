@@ -3,7 +3,7 @@
  *
  * @domain `jfrog.com/jfrog-cli`
  * @programs `jf`, `jfrog`
- * @version `2.89.0` (110 versions available)
+ * @version `2.91.0` (112 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install jfrog.com/jfrog-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "jfrog-cli"
  * console.log(pkg.description) // "JFrog CLI is a client that provides a simple in..."
  * console.log(pkg.programs)    // ["jf", "jfrog"]
- * console.log(pkg.versions[0]) // "2.89.0" (latest)
+ * console.log(pkg.versions[0]) // "2.91.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/jfrog-com/jfrog-cli.md
@@ -26,31 +26,31 @@
  */
 export const jfrogcomjfrogcliPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'jfrog-cli' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'jfrog.com/jfrog-cli' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'JFrog CLI is a client that provides a simple interface that automates access to the JFrog products.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/jfrog.com/jfrog-cli/package.yml' as const,
   homepageUrl: 'https://www.jfrog.com/confluence/display/CLI/JFrog+CLI' as const,
   githubUrl: 'https://github.com/jfrog/jfrog-cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install jfrog.com/jfrog-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jfrog.com/jfrog-cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install jfrog.com/jfrog-cli' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'jf',
     'jfrog',
@@ -58,17 +58,19 @@ export const jfrogcomjfrogcliPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.20',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.91.0',
+    '2.90.0',
     '2.89.0',
     '2.88.0',
     '2.87.0',

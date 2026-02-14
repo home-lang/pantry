@@ -25,31 +25,31 @@
  */
 export const lamesourceforgeioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'lame' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'lame.sourceforge.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'High quality MPEG Audio Layer III (MP3) encoder' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/lame.sourceforge.io/package.yml' as const,
   homepageUrl: 'https://lame.sourceforge.io/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install lame.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lame.sourceforge.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install lame.sourceforge.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'lame',
   ] as const,
@@ -57,9 +57,9 @@ export const lamesourceforgeioPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '3.100.0',
   ] as const,

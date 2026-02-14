@@ -51,7 +51,7 @@ sh <(curl https://pkgx.sh) +mesonbuild.com@1.10.1 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

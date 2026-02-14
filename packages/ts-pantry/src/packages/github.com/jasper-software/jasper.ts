@@ -27,53 +27,53 @@
  */
 export const jasperPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'jasper' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/jasper-software/jasper' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Official Repository for the JasPer Image Coding Toolkit' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/jasper-software/jasper/package.yml' as const,
   homepageUrl: 'https://ece.engr.uvic.ca/~frodo/jasper/' as const,
   githubUrl: 'https://github.com/jasper-software/jasper' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/jasper-software/jasper' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jasper-software/jasper -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/jasper-software/jasper' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'jasper',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'libjpeg-turbo.org^2',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org@^3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '4.2.8',
     '4.2.7',

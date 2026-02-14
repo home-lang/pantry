@@ -25,49 +25,49 @@
  */
 export const cffiPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cffi' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/python-cffi/cffi' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A Foreign Function Interface package for calling C libraries from Python.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/python-cffi/cffi/package.yml' as const,
   homepageUrl: 'https://cffi.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/python-cffi/cffi' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/python-cffi/cffi' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/python-cffi/cffi -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/python-cffi/cffi' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org>=3.11',
     'github.com/eliben/pycparser^2.21',
     'sourceware.org/libffi^3.4',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'llvm.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.0.0',
     '1.17.1',

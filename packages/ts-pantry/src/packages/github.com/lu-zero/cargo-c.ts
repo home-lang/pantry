@@ -3,11 +3,11 @@
  *
  * @domain `github.com/lu-zero/cargo-c`
  * @programs `cargo-capi`, `cargo-cbuild`, `cargo-cinstall`, `cargo-ctest`
- * @version `0.10.19` (31 versions available)
+ * @version `0.10.20` (32 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/lu-zero/cargo-c`
- * @dependencies `libgit2.org~1.7 # links to libgit2.so.1.7`, `libssh2.org`, `openssl.org^1.1`, ... (+1 more)
+ * @dependencies `libgit2.org~1.7 # links to libgit2.so.1.7`, `libssh2.org`, `openssl.org^1.1`, ... (+2 more)
  *
  * @example
  * ```typescript
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "cargo-c"
  * console.log(pkg.description) // "Helper program to build and install c-like libr..."
  * console.log(pkg.programs)    // ["cargo-capi", "cargo-cbuild", ...]
- * console.log(pkg.versions[0]) // "0.10.19" (latest)
+ * console.log(pkg.versions[0]) // "0.10.20" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/lu-zero/cargo-c.md
@@ -25,31 +25,31 @@
  */
 export const cargocPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cargo-c' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/lu-zero/cargo-c' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Helper program to build and install c-like libraries' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/lu-zero/cargo-c/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/lu-zero/cargo-c' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/lu-zero/cargo-c' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/lu-zero/cargo-c -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/lu-zero/cargo-c' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cargo-capi',
     'cargo-cbuild',
@@ -58,21 +58,23 @@ export const cargocPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'libgit2.org~1.7 # links to libgit2.so.1.7',
     'libssh2.org',
     'openssl.org^1.1',
     'zlib.net',
+    'curl.se^8 # as of v0.10.20 for libcurl',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.10.20',
     '0.10.19',
     '0.10.18',
     '0.10.17',

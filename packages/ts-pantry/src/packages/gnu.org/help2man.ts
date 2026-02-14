@@ -8,7 +8,7 @@
  *
  * @install `launchpad install gnu.org/help2man`
  * @homepage https://www.gnu.org/software/help2man/
- * @dependencies `gnu.org/gettext`, `perl.org^5.38 # perl modules require matching minors`
+ * @dependencies `gnu.org/gettext^0`, `perl.org~5.42 # perl modules require matching minors; must match gettext`
  * @buildDependencies `cpanmin.us` - required only when building from source
  * @companions `PERL5LIB^{{prefix}}/lib/perl5:{{prefix}}/libexec/lib/perl5:$PERL5LIB`
  *
@@ -28,60 +28,60 @@
  */
 export const gnuorghelp2manPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'help2man' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnu.org/help2man' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Automatically generate simple man pages' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/help2man/package.yml' as const,
   homepageUrl: 'https://www.gnu.org/software/help2man/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnu.org/help2man' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/help2man -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnu.org/help2man' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'help2man',
   ] as const,
   /**
-   * Related packages that work well with this package.
-   * Consider installing these for enhanced functionality.
-   */
+  * Related packages that work well with this package.
+  * Consider installing these for enhanced functionality.
+  */
   companions: [
     'PERL5LIB^{{prefix}}/lib/perl5:{{prefix}}/libexec/lib/perl5:$PERL5LIB',
   ] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'gnu.org/gettext',
-    'perl.org^5.38 # perl modules require matching minors',
+    'gnu.org/gettext^0',
+    'perl.org~5.42 # perl modules require matching minors; must match gettext',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cpanmin.us',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.49.3',
   ] as const,

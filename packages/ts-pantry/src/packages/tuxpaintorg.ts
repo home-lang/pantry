@@ -23,34 +23,34 @@
  */
 export const tuxpaintorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'tuxpaint' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'tuxpaint.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/tuxpaint.org/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install tuxpaint.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tuxpaint.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tuxpaint.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'cairographics.org',
     'ferzkopp.net/SDL2_gfx',
@@ -69,9 +69,9 @@ export const tuxpaintorgPackage = {
     'linux:github.com/rrthomas/libpaper',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'freedesktop.org/appstream',
     'gnu.org/bash',
@@ -79,9 +79,9 @@ export const tuxpaintorgPackage = {
     'imagemagick.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.9.35',
   ] as const,

@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +localstack.cloud/awscli-local@2023.12.28 -- $SHELL -
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `aws.amazon.com/cli^2`
 
 ## Usage Examples

@@ -25,31 +25,31 @@
  */
 export const getzolaorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'zola' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'getzola.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A fast static site generator in a single binary with everything built-in. https://www.getzola.org' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/getzola.org/package.yml' as const,
   homepageUrl: 'https://www.getzola.org/' as const,
   githubUrl: 'https://github.com/getzola/zola' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install getzola.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +getzola.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install getzola.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'zola',
   ] as const,
@@ -57,9 +57,9 @@ export const getzolaorgPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.22.1',
     '0.22.0',

@@ -3,7 +3,7 @@
  *
  * @domain `odigos.io`
  * @programs `odigos`
- * @version `1.15.0` (261 versions available)
+ * @version `1.17.3` (279 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install odigos.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "odigos"
  * console.log(pkg.description) // "Distributed tracing without code changes. 🚀 In..."
  * console.log(pkg.programs)    // ["odigos"]
- * console.log(pkg.versions[0]) // "1.15.0" (latest)
+ * console.log(pkg.versions[0]) // "1.17.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/odigos-io.md
@@ -26,48 +26,66 @@
  */
 export const odigosioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'odigos' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'odigos.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Distributed tracing without code changes. 🚀 Instantly monitor any application using OpenTelemetry and eBPF' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/odigos.io/package.yml' as const,
   homepageUrl: 'https://odigos.io' as const,
   githubUrl: 'https://github.com/keyval-dev/odigos' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install odigos.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +odigos.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install odigos.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'odigos',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.22',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.17.3',
+    '1.17.2',
+    '1.17.1',
+    '1.17.0',
+    '1.16.9',
+    '1.16.8',
+    '1.16.7',
+    '1.16.6',
+    '1.16.5',
+    '1.16.4',
+    '1.16.3',
+    '1.16.2',
+    '1.16.1',
+    '1.16.0',
+    '1.15.4',
+    '1.15.3',
+    '1.15.2',
+    '1.15.1',
     '1.15.0',
     '1.14.4',
     '1.14.3',

@@ -3,7 +3,7 @@
  *
  * @domain `astral.sh/ruff`
  * @programs `ruff`
- * @version `0.14.14` (115 versions available)
+ * @version `0.15.1` (117 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install astral.sh/ruff`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "ruff"
  * console.log(pkg.description) // "An extremely fast Python linter and code format..."
  * console.log(pkg.programs)    // ["ruff"]
- * console.log(pkg.versions[0]) // "0.14.14" (latest)
+ * console.log(pkg.versions[0]) // "0.15.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/astral-sh/ruff.md
@@ -25,31 +25,31 @@
  */
 export const astralshruffPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ruff' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'astral.sh/ruff' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An extremely fast Python linter and code formatter, written in Rust.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/astral.sh/ruff/package.yml' as const,
   homepageUrl: 'https://docs.astral.sh/ruff/' as const,
   githubUrl: 'https://github.com/astral-sh/ruff' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install astral.sh/ruff' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +astral.sh/ruff -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install astral.sh/ruff' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ruff',
   ] as const,
@@ -57,10 +57,12 @@ export const astralshruffPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.15.1',
+    '0.15.0',
     '0.14.14',
     '0.14.13',
     '0.14.11',

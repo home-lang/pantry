@@ -3,7 +3,7 @@
  *
  * @domain `arkade.dev`
  * @programs `arkade`
- * @version `0.11.65` (60 versions available)
+ * @version `0.11.80` (72 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install arkade.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "Arkade"
  * console.log(pkg.description) // "Open Source Marketplace For Developer Tools"
  * console.log(pkg.programs)    // ["arkade"]
- * console.log(pkg.versions[0]) // "0.11.65" (latest)
+ * console.log(pkg.versions[0]) // "0.11.80" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/arkade-dev.md
@@ -26,48 +26,60 @@
  */
 export const arkadedevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'Arkade' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'arkade.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Open Source Marketplace For Developer Tools' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/arkade.dev/package.yml' as const,
   homepageUrl: 'https://blog.alexellis.io/kubernetes-marketplace-two-year-update/' as const,
   githubUrl: 'https://github.com/alexellis/arkade' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install arkade.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +arkade.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install arkade.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'arkade',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.11.80',
+    '0.11.79',
+    '0.11.76',
+    '0.11.75',
+    '0.11.74',
+    '0.11.73',
+    '0.11.72',
+    '0.11.71',
+    '0.11.70',
+    '0.11.69',
+    '0.11.67',
+    '0.11.66',
     '0.11.65',
     '0.11.64',
     '0.11.63',

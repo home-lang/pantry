@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/spider_cli`
  * @programs `spider`
- * @version `2.39.14` (341 versions available)
+ * @version `2.44.13` (353 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/spider_cli`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "spider"
  * console.log(pkg.description) // "A web crawler and scraper for Rust"
  * console.log(pkg.programs)    // ["spider"]
- * console.log(pkg.versions[0]) // "2.39.14" (latest)
+ * console.log(pkg.versions[0]) // "2.44.13" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/spider_cli.md
@@ -25,31 +25,31 @@
  */
 export const cratesiospider_cliPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'spider' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'crates.io/spider_cli' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A web crawler and scraper for Rust' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/spider_cli/package.yml' as const,
   homepageUrl: 'https://spider.cloud' as const,
   githubUrl: 'https://github.com/spider-rs/spider' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install crates.io/spider_cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/spider_cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/spider_cli' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'spider',
   ] as const,
@@ -57,10 +57,22 @@ export const cratesiospider_cliPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.44.13',
+    '2.43.20',
+    '2.43.18',
+    '2.43.13',
+    '2.43.3',
+    '2.43.2',
+    '2.43.1',
+    '2.43.0',
+    '2.42.0',
+    '2.41.1',
+    '2.40.2',
+    '2.40.1',
     '2.39.14',
     '2.39.12',
     '2.39.10',

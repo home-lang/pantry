@@ -3,7 +3,7 @@
  *
  * @domain `scala-sbt.org`
  * @programs `sbt`
- * @version `1.12.0` (27 versions available)
+ * @version `1.12.2` (29 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install scala-sbt.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "sbt"
  * console.log(pkg.description) // "sbt, the interactive build tool"
  * console.log(pkg.programs)    // ["sbt"]
- * console.log(pkg.versions[0]) // "1.12.0" (latest)
+ * console.log(pkg.versions[0]) // "1.12.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/scala-sbt-org.md
@@ -26,48 +26,50 @@
  */
 export const scalasbtorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'sbt' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'scala-sbt.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'sbt, the interactive build tool' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/scala-sbt.org/package.yml' as const,
   homepageUrl: 'https://www.scala-sbt.org/' as const,
   githubUrl: 'https://github.com/sbt/sbt' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install scala-sbt.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +scala-sbt.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install scala-sbt.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'sbt',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openjdk.org',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.12.2',
+    '1.12.1',
     '1.12.0',
     '1.11.7',
     '1.11.6',

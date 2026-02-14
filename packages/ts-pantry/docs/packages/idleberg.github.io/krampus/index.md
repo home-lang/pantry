@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `0.2.1`, `0.2.0`
+- `0.3.0`, `0.2.1`, `0.2.0`
 
 </details>
 
-**Latest Version**: `0.2.1`
+**Latest Version**: `0.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +idleberg.github.io/krampus@0.2.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +idleberg.github.io/krampus@0.3.0 -- $SHELL -i
 ```
 
 ## Usage Examples

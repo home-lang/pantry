@@ -2,7 +2,7 @@
  * **fna-xna.github** - FAudio - Accuracy-focused XAudio reimplementation for open platforms
  *
  * @domain `fna-xna.github.io`
- * @version `26.1.0` (25 versions available)
+ * @version `26.2.0` (26 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fna-xna.github.io`
@@ -17,7 +17,7 @@
  * const pkg = pantry.fnaxnagithubio
  * console.log(pkg.name)        // "fna-xna.github"
  * console.log(pkg.description) // "FAudio - Accuracy-focused XAudio reimplementati..."
- * console.log(pkg.versions[0]) // "26.1.0" (latest)
+ * console.log(pkg.versions[0]) // "26.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fna-xna-github-io.md
@@ -25,48 +25,49 @@
  */
 export const fnaxnagithubioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'fna-xna.github' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'fna-xna.github.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'FAudio - Accuracy-focused XAudio reimplementation for open platforms' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/fna-xna.github.io/package.yml' as const,
   homepageUrl: 'https://fna-xna.github.io/' as const,
   githubUrl: 'https://github.com/FNA-XNA/FAudio' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install fna-xna.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fna-xna.github.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install fna-xna.github.io' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'libsdl.org^2.28',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '26.2.0',
     '26.1.0',
     '25.12.0',
     '25.11.0',

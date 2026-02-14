@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
-- `1.1.0`, `1.0.20`, `1.0.19`, `1.0.18`, `1.0.17`
-- `1.0.16`, `1.0.15`, `1.0.14`, `1.0.13`, `1.0.12`
-- `1.0.11`, `1.0.10`, `1.0.9`, `1.0.8`, `1.0.7`
-- `1.0.6`, `1.0.5`
+- `1.2.0`, `1.1.0`, `1.0.20`, `1.0.19`, `1.0.18`
+- `1.0.17`, `1.0.16`, `1.0.15`, `1.0.14`, `1.0.13`
+- `1.0.12`, `1.0.11`, `1.0.10`, `1.0.9`, `1.0.8`
+- `1.0.7`, `1.0.6`, `1.0.5`
 
 </details>
 
-**Latest Version**: `1.1.0`
+**Latest Version**: `1.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +versity.com/versitygw@1.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +versity.com/versitygw@1.2.0 -- $SHELL -i
 ```
 
 ## Usage Examples

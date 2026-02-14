@@ -3,7 +3,7 @@
  *
  * @domain `maturin.rs`
  * @programs `maturin`
- * @version `1.11.5` (34 versions available)
+ * @version `1.12.0` (35 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install maturin.rs`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "maturin"
  * console.log(pkg.description) // "Build and publish crates with pyo3, cffi and un..."
  * console.log(pkg.programs)    // ["maturin"]
- * console.log(pkg.versions[0]) // "1.11.5" (latest)
+ * console.log(pkg.versions[0]) // "1.12.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/maturin-rs.md
@@ -25,31 +25,31 @@
  */
 export const maturinrsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'maturin' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'maturin.rs' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Build and publish crates with pyo3, cffi and uniffi bindings as well as rust binaries as python packages' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/maturin.rs/package.yml' as const,
   homepageUrl: 'https://maturin.rs' as const,
   githubUrl: 'https://github.com/PyO3/maturin' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install maturin.rs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +maturin.rs -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install maturin.rs' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'maturin',
   ] as const,
@@ -57,10 +57,11 @@ export const maturinrsPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.12.0',
     '1.11.5',
     '1.11.4',
     '1.11.2',

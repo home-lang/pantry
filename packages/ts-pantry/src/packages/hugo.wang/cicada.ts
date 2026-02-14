@@ -3,7 +3,7 @@
  *
  * @domain `hugo.wang/cicada`
  * @programs `cicada`
- * @version `1.2.1` (14 versions available)
+ * @version `1.2.2` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install hugo.wang/cicada`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "cicada"
  * console.log(pkg.description) // "An old-school bash-like Unix shell written in Rust"
  * console.log(pkg.programs)    // ["cicada"]
- * console.log(pkg.versions[0]) // "1.2.1" (latest)
+ * console.log(pkg.versions[0]) // "1.2.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/hugo-wang/cicada.md
@@ -25,31 +25,31 @@
  */
 export const hugowangcicadaPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cicada' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'hugo.wang/cicada' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An old-school bash-like Unix shell written in Rust' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/hugo.wang/cicada/package.yml' as const,
   homepageUrl: 'https://hugo.wang/cicada/' as const,
   githubUrl: 'https://github.com/mitnk/cicada' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install hugo.wang/cicada' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +hugo.wang/cicada -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install hugo.wang/cicada' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cicada',
   ] as const,
@@ -57,10 +57,11 @@ export const hugowangcicadaPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.2.2',
     '1.2.1',
     '1.2.0',
     '1.1.4',

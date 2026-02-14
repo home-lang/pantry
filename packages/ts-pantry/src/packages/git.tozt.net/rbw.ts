@@ -25,31 +25,31 @@
  */
 export const gittoztnetrbwPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'rbw' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'git.tozt.net/rbw' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Unofficial Bitwarden CLI client' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/git.tozt.net/rbw/package.yml' as const,
   homepageUrl: 'https://git.tozt.net/rbw' as const,
   githubUrl: 'https://github.com/doy/rbw' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install git.tozt.net/rbw' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +git.tozt.net/rbw -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install git.tozt.net/rbw' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'rbw',
   ] as const,
@@ -57,9 +57,9 @@ export const gittoztnetrbwPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.15.0',
     '1.14.1',

@@ -42,19 +42,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 4 versions</summary>
 
-- `1.14.4`, `1.14.3`, `1.14.1`
+- `1.14.5`, `1.14.4`, `1.14.3`, `1.14.1`
 
 </details>
 
-**Latest Version**: `1.14.4`
+**Latest Version**: `1.14.5`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +wimlib.net@1.14.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +wimlib.net@1.14.5 -- $SHELL -i
 ```
 
 ## Dependencies

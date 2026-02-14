@@ -27,31 +27,31 @@
  */
 export const gnomeorglibxml2Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'xml' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnome.org/libxml2' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Read-only mirror of https://gitlab.gnome.org/GNOME/libxml2' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/libxml2/package.yml' as const,
   homepageUrl: 'http://xmlsoft.org/' as const,
   githubUrl: 'https://github.com/GNOME/libxml2' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnome.org/libxml2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/libxml2 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnome.org/libxml2' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'xml2-config',
     'xmlcatalog',
@@ -59,24 +59,24 @@ export const gnomeorglibxml2Package = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'zlib.net^1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@>=3<3.12',
     'doxygen.nl',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.15.1',
     '2.15.0',

@@ -2,7 +2,7 @@
  * **browser-use** - Make websites accessible for AI agents
  *
  * @domain `browser-use.com`
- * @version `0.11.4` (72 versions available)
+ * @version `0.11.9` (77 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install browser-use.com`
@@ -16,7 +16,7 @@
  * const pkg = pantry.browserusecom
  * console.log(pkg.name)        // "browser-use"
  * console.log(pkg.description) // "Make websites accessible for AI agents"
- * console.log(pkg.versions[0]) // "0.11.4" (latest)
+ * console.log(pkg.versions[0]) // "0.11.9" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/browser-use-com.md
@@ -24,42 +24,47 @@
  */
 export const browserusecomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'browser-use' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'browser-use.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Make websites accessible for AI agents' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/browser-use.com/package.yml' as const,
   homepageUrl: 'https://browser-use.com/' as const,
   githubUrl: 'https://github.com/browser-use/browser-use' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install browser-use.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +browser-use.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install browser-use.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org~3.12 # no torch<2.3.0 for 3.13',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.11.9',
+    '0.11.8',
+    '0.11.7',
+    '0.11.6',
+    '0.11.5',
     '0.11.4',
     '0.11.3',
     '0.11.2',

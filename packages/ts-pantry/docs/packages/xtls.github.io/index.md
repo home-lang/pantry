@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 44 versions</summary>
+<summary>Show all 49 versions</summary>
 
+- `26.2.6`, `26.2.4`, `26.2.2`, `26.1.31`, `26.1.23`
 - `26.1.18`, `26.1.13`, `25.12.8`, `25.12.2`, `25.12.1`
 - `25.10.15`, `25.9.11`, `25.9.10`, `25.9.5`, `25.8.31`
 - `25.8.3`, `25.7.26`, `25.7.25`, `25.6.8`, `25.5.16`
@@ -39,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `26.1.18`
+**Latest Version**: `26.2.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +xtls.github.io@26.1.18 -- $SHELL -i
+sh <(curl https://pkgx.sh) +xtls.github.io@26.2.6 -- $SHELL -i
 ```
 
 ## Usage Examples

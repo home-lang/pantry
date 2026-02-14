@@ -46,7 +46,7 @@ sh <(curl https://pkgx.sh) +github.com/canonical/charmcraft@4.1.0 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `libgit2.org~1.9 # as of v4.1.0`
 
 ## Usage Examples

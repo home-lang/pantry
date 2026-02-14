@@ -25,23 +25,23 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 22 versions</summary>
+<summary>Show all 23 versions</summary>
 
-- `3.3.1`, `3.3.0`, `3.2.1`, `3.2.0`, `3.1.0`
-- `3.0.1`, `3.0.0`, `2.8.0`, `2.7.1`, `2.7.0`
-- `2.6.2`, `2.6.1`, `2.6.0`, `2.5.0`, `2.4.0`
-- `2.3.0`, `2.2.2`, `2.2.1`, `2.2.0`, `2.1.1`
-- `2.1.0`, `2.0.1`
+- `3.3.2`, `3.3.1`, `3.3.0`, `3.2.1`, `3.2.0`
+- `3.1.0`, `3.0.1`, `3.0.0`, `2.8.0`, `2.7.1`
+- `2.7.0`, `2.6.2`, `2.6.1`, `2.6.0`, `2.5.0`
+- `2.4.0`, `2.3.0`, `2.2.2`, `2.2.1`, `2.2.0`
+- `2.1.1`, `2.1.0`, `2.0.1`
 
 </details>
 
-**Latest Version**: `3.3.1`
+**Latest Version**: `3.3.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/imessage-exporter@3.3.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/imessage-exporter@3.3.2 -- $SHELL -i
 ```
 
 ## Usage Examples

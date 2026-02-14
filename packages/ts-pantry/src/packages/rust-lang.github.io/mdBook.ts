@@ -25,31 +25,31 @@
  */
 export const rustlanggithubiomdbookPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mdbook' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'rust-lang.github.io/mdBook' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Create book from markdown files. Like Gitbook but implemented in Rust' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.github.io/mdBook/package.yml' as const,
   homepageUrl: 'https://rust-lang.github.io/mdBook/' as const,
   githubUrl: 'https://github.com/rust-lang/mdBook' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install rust-lang.github.io/mdBook' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rust-lang.github.io/mdBook -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install rust-lang.github.io/mdBook' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'mdbook',
   ] as const,
@@ -57,9 +57,9 @@ export const rustlanggithubiomdbookPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.5.2',
     '0.5.1',

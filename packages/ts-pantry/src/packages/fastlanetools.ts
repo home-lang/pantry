@@ -3,7 +3,7 @@
  *
  * @domain `fastlane.tools`
  * @programs `fastlane`
- * @version `2.231.1` (28 versions available)
+ * @version `2.232.1` (30 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fastlane.tools`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fastlane"
  * console.log(pkg.description) // "🚀 The easiest way to automate building and rel..."
  * console.log(pkg.programs)    // ["fastlane"]
- * console.log(pkg.versions[0]) // "2.231.1" (latest)
+ * console.log(pkg.versions[0]) // "2.232.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fastlane-tools.md
@@ -26,49 +26,51 @@
  */
 export const fastlanetoolsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'fastlane' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'fastlane.tools' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '🚀 The easiest way to automate building and releasing your iOS and Android apps' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/fastlane.tools/package.yml' as const,
   homepageUrl: 'https://fastlane.tools' as const,
   githubUrl: 'https://github.com/fastlane/fastlane' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install fastlane.tools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fastlane.tools -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install fastlane.tools' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'fastlane',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'ruby-lang.org~3.2',
     'rubygems.org',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.232.1',
+    '2.232.0',
     '2.231.1',
     '2.231.0',
     '2.230.0',

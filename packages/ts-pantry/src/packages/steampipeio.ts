@@ -3,7 +3,7 @@
  *
  * @domain `steampipe.io`
  * @programs `steampipe`
- * @version `2.3.4` (43 versions available)
+ * @version `2.3.5` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install steampipe.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "steampipe"
  * console.log(pkg.description) // "Zero-ETL, infinite possibilities. Live query AP..."
  * console.log(pkg.programs)    // ["steampipe"]
- * console.log(pkg.versions[0]) // "2.3.4" (latest)
+ * console.log(pkg.versions[0]) // "2.3.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/steampipe-io.md
@@ -26,49 +26,50 @@
  */
 export const steampipeioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'steampipe' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'steampipe.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Zero-ETL, infinite possibilities. Live query APIs, code & more with SQL. No DB required.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/steampipe.io/package.yml' as const,
   homepageUrl: 'https://steampipe.io/' as const,
   githubUrl: 'https://github.com/turbot/steampipe' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install steampipe.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +steampipe.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install steampipe.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'steampipe',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.24',
     'goreleaser.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.3.5',
     '2.3.4',
     '2.3.3',
     '2.3.2',

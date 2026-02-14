@@ -24,33 +24,33 @@
  */
 export const lxmldePackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'lxml.de' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'lxml.de' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The lxml XML toolkit for Python' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/lxml.de/package.yml' as const,
   homepageUrl: 'https://lxml.de/' as const,
   githubUrl: 'https://github.com/lxml/lxml' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install lxml.de' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lxml.de -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install lxml.de' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org^3.10',
     'gnome.org/libxml2~2.12',
@@ -58,9 +58,9 @@ export const lxmldePackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '6.0.2',
     '6.0.1',

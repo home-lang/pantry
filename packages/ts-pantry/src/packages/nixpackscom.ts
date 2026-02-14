@@ -25,31 +25,31 @@
  */
 export const nixpackscomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'nixpacks' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'nixpacks.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'App source + Nix packages + Docker = Image' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/nixpacks.com/package.yml' as const,
   homepageUrl: 'https://nixpacks.com/' as const,
   githubUrl: 'https://github.com/railwayapp/nixpacks' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install nixpacks.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nixpacks.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install nixpacks.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'nixpacks',
   ] as const,
@@ -57,9 +57,9 @@ export const nixpackscomPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.41.0',
     '1.40.0',

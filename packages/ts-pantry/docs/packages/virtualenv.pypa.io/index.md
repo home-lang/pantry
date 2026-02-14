@@ -54,7 +54,7 @@ sh <(curl https://pkgx.sh) +virtualenv.pypa.io@20.36.1 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `libexpat.github.io^2`
 - `openssl.org^1.1`
 

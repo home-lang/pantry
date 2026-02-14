@@ -3,12 +3,12 @@
  *
  * @domain `pip.pypa.io`
  * @programs `pip`, `pip3.8`, `pip3.9`, `pip3.10`, `pip3.11`
- * @version `25.3.0` (29 versions available)
+ * @version `26.0.1` (31 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pip.pypa.io`
  * @homepage https://pip.pypa.io/
- * @dependencies `pkgx.sh^1`
+ * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@~3.11`, `crates.io/semverator@^0.4.3` - required only when building from source
  *
  * @example
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "pip"
  * console.log(pkg.description) // "The Python package installer"
  * console.log(pkg.programs)    // ["pip", "pip3.8", ...]
- * console.log(pkg.versions[0]) // "25.3.0" (latest)
+ * console.log(pkg.versions[0]) // "26.0.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pip-pypa-io.md
@@ -27,31 +27,31 @@
  */
 export const pippypaioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'pip' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'pip.pypa.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The Python package installer' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/pip.pypa.io/package.yml' as const,
   homepageUrl: 'https://pip.pypa.io/' as const,
   githubUrl: 'https://github.com/pypa/pip' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install pip.pypa.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pip.pypa.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pip.pypa.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'pip',
     'pip3.8',
@@ -61,25 +61,27 @@ export const pippypaioPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@~3.11',
     'crates.io/semverator@^0.4.3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '26.0.1',
+    '26.0.0',
     '25.3.0',
     '25.2.0',
     '25.1.1',

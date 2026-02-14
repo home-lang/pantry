@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 8 versions</summary>
+<summary>Show all 9 versions</summary>
 
-- `0.13.0`, `0.12.0`, `0.11.0`, `0.10.0`, `0.9.1`
-- `0.9.0`, `0.8.2`, `0.8.1`
+- `0.14.0`, `0.13.0`, `0.12.0`, `0.11.0`, `0.10.0`
+- `0.9.1`, `0.9.0`, `0.8.2`, `0.8.1`
 
 </details>
 
-**Latest Version**: `0.13.0`
+**Latest Version**: `0.14.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/sccache@0.13.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/sccache@0.14.0 -- $SHELL -i
 ```
 
 ## Dependencies

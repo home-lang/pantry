@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/ducker`
  * @programs `ducker`
- * @version `0.5.6` (12 versions available)
+ * @version `0.6.1` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/ducker`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "ducker"
  * console.log(pkg.description) // "A slightly quackers Docker TUI based on k9s 🦆"
  * console.log(pkg.programs)    // ["ducker"]
- * console.log(pkg.versions[0]) // "0.5.6" (latest)
+ * console.log(pkg.versions[0]) // "0.6.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/ducker.md
@@ -25,31 +25,31 @@
  */
 export const cratesioduckerPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ducker' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'crates.io/ducker' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A slightly quackers Docker TUI based on k9s 🦆' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/ducker/package.yml' as const,
   homepageUrl: 'https://crates.io/crates/ducker' as const,
   githubUrl: 'https://github.com/robertpsoane/ducker' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install crates.io/ducker' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/ducker -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/ducker' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ducker',
   ] as const,
@@ -57,10 +57,13 @@ export const cratesioduckerPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.6.1',
+    '0.6.0',
+    '0.5.7',
     '0.5.6',
     '0.5.5',
     '0.5.4',

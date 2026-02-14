@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/typos`
  * @programs `typos`
- * @version `1.42.1` (128 versions available)
+ * @version `1.43.4` (135 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/typos`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "typos"
  * console.log(pkg.description) // "Source code spell checker"
  * console.log(pkg.programs)    // ["typos"]
- * console.log(pkg.versions[0]) // "1.42.1" (latest)
+ * console.log(pkg.versions[0]) // "1.43.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/typos.md
@@ -24,31 +24,31 @@
  */
 export const cratesiotyposPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'typos' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'crates.io/typos' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Source code spell checker' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/typos/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/crate-ci/typos' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install crates.io/typos' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/typos -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/typos' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'typos',
   ] as const,
@@ -56,10 +56,17 @@ export const cratesiotyposPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.43.4',
+    '1.43.3',
+    '1.43.2',
+    '1.43.1',
+    '1.43.0',
+    '1.42.3',
+    '1.42.2',
     '1.42.1',
     '1.42.0',
     '1.41.0',

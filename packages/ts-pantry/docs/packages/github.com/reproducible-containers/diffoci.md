@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4 versions</summary>
+<summary>Show all 5 versions</summary>
 
-- `0.1.7`, `0.1.6`, `0.1.5`, `0.1.4`
+- `0.1.8`, `0.1.7`, `0.1.6`, `0.1.5`, `0.1.4`
 
 </details>
 
-**Latest Version**: `0.1.7`
+**Latest Version**: `0.1.8`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/reproducible-containers/diffoci@0.1.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/reproducible-containers/diffoci@0.1.8 -- $SHELL -i
 ```
 
 ## Usage Examples

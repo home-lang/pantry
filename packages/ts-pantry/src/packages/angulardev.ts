@@ -3,7 +3,7 @@
  *
  * @domain `angular.dev`
  * @programs `ng`
- * @version `21.1.1` (151 versions available)
+ * @version `21.1.4` (156 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install angular.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ng"
  * console.log(pkg.description) // "CLI tool for Angular"
  * console.log(pkg.programs)    // ["ng"]
- * console.log(pkg.versions[0]) // "21.1.1" (latest)
+ * console.log(pkg.versions[0]) // "21.1.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/angular-dev.md
@@ -27,54 +27,57 @@
  */
 export const angulardevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ng' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'angular.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'CLI tool for Angular' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/angular.dev/package.yml' as const,
   homepageUrl: 'https://angular.dev/cli/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install angular.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +angular.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install angular.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ng',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'nodejs.org^20',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'npmjs.com@^10',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '21.1.4',
+    '21.1.3',
+    '21.1.2',
     '21.1.1',
     '21.1.0',
     '21.0.6',
@@ -84,6 +87,7 @@ export const angulardevPackage = {
     '21.0.2',
     '21.0.1',
     '21.0.0',
+    '20.3.16',
     '20.3.15',
     '20.3.14',
     '20.3.12',
@@ -116,6 +120,7 @@ export const angulardevPackage = {
     '20.0.2',
     '20.0.1',
     '20.0.0',
+    '19.2.20',
     '19.2.19',
     '19.2.18',
     '19.2.17',

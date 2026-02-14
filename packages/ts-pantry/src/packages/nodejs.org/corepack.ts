@@ -3,7 +3,7 @@
  *
  * @domain `nodejs.org/corepack`
  * @programs `corepack`
- * @version `0.34.5` (18 versions available)
+ * @version `0.34.6` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install nodejs.org/corepack`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "corepack"
  * console.log(pkg.description) // "Platform built on V8 to build network applications"
  * console.log(pkg.programs)    // ["corepack"]
- * console.log(pkg.versions[0]) // "0.34.5" (latest)
+ * console.log(pkg.versions[0]) // "0.34.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/nodejs-org/corepack.md
@@ -27,54 +27,55 @@
  */
 export const nodejsorgcorepackPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'corepack' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'nodejs.org/corepack' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Platform built on V8 to build network applications' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/nodejs.org/corepack/package.yml' as const,
   homepageUrl: 'https://nodejs.org/' as const,
   githubUrl: 'https://github.com/nodejs/node' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install nodejs.org/corepack' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nodejs.org/corepack -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install nodejs.org/corepack' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'corepack',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'nodejs.org^20',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'npmjs.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.34.6',
     '0.34.5',
     '0.34.4',
     '0.34.3',

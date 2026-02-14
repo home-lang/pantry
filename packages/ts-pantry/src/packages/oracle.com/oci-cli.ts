@@ -3,7 +3,7 @@
  *
  * @domain `oracle.com/oci-cli`
  * @programs `oci`
- * @version `3.72.1` (93 versions available)
+ * @version `3.74.0` (97 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install oracle.com/oci-cli`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "oci"
  * console.log(pkg.description) // "Command Line Interface for Oracle Cloud Infrast..."
  * console.log(pkg.programs)    // ["oci"]
- * console.log(pkg.versions[0]) // "3.72.1" (latest)
+ * console.log(pkg.versions[0]) // "3.74.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/oracle-com/oci-cli.md
@@ -27,39 +27,39 @@
  */
 export const oraclecomocicliPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'oci' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'oracle.com/oci-cli' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Command Line Interface for Oracle Cloud Infrastructure' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/oracle.com/oci-cli/package.yml' as const,
   homepageUrl: 'https://docs.cloud.oracle.com/iaas/Content/API/Concepts/cliconcepts.htm' as const,
   githubUrl: 'https://github.com/oracle/oci-cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install oracle.com/oci-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +oracle.com/oci-cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install oracle.com/oci-cli' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'oci',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'certifi.io/python-certifi^2024',
     'pyyaml.org/libyaml^0.2',
@@ -67,17 +67,21 @@ export const oraclecomocicliPackage = {
     'python.org^3.11',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.74.0',
+    '3.73.2',
+    '3.73.1',
+    '3.73.0',
     '3.72.1',
     '3.72.0',
     '3.71.4',

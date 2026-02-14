@@ -3,7 +3,7 @@
  *
  * @domain `gnome.org/librsvg`
  * @programs `rsvg-convert`
- * @version `2.61.3` (38 versions available)
+ * @version `2.61.4` (40 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnome.org/librsvg`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "rsvg-convert"
  * console.log(pkg.description) // "Read-only mirror of https://gitlab.gnome.org/GN..."
  * console.log(pkg.programs)    // ["rsvg-convert"]
- * console.log(pkg.versions[0]) // "2.61.3" (latest)
+ * console.log(pkg.versions[0]) // "2.61.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnome-org/librsvg.md
@@ -27,39 +27,39 @@
  */
 export const gnomeorglibrsvgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'rsvg-convert' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnome.org/librsvg' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Read-only mirror of https://gitlab.gnome.org/GNOME/librsvg' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/librsvg/package.yml' as const,
   homepageUrl: 'https://wiki.gnome.org/Projects/LibRsvg' as const,
   githubUrl: 'https://github.com/GNOME/librsvg' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnome.org/librsvg' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/librsvg -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnome.org/librsvg' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'rsvg-convert',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'cairographics.org^1.18',
     'gnome.org/pango@1',
@@ -68,22 +68,24 @@ export const gnomeorglibrsvgPackage = {
     'gnu.org/gettext^0.21',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@>=3<3.12',
     'mesonbuild.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.61.4',
     '2.61.3',
     '2.61.2',
     '2.61.1',
     '2.61.0',
+    '2.60.2',
     '2.60.1',
     '2.60.0',
     '2.59.2',

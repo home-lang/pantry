@@ -3,7 +3,7 @@
  *
  * @domain `fly.io`
  * @programs `fly`, `flyctl`
- * @version `0.4.4` (492 versions available)
+ * @version `0.4.11` (499 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fly.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fly"
  * console.log(pkg.description) // "Command line tools for fly.io services"
  * console.log(pkg.programs)    // ["fly", "flyctl"]
- * console.log(pkg.versions[0]) // "0.4.4" (latest)
+ * console.log(pkg.versions[0]) // "0.4.11" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fly-io.md
@@ -26,31 +26,31 @@
  */
 export const flyioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'fly' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'fly.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Command line tools for fly.io services' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/fly.io/package.yml' as const,
   homepageUrl: 'https://fly.io' as const,
   githubUrl: 'https://github.com/superfly/flyctl' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install fly.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fly.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install fly.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'fly',
     'flyctl',
@@ -58,17 +58,24 @@ export const flyioPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.4.11',
+    '0.4.10',
+    '0.4.9',
+    '0.4.8',
+    '0.4.7',
+    '0.4.6',
+    '0.4.5',
     '0.4.4',
     '0.4.3',
     '0.4.2',

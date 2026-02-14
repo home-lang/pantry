@@ -52,7 +52,7 @@ sh <(curl https://pkgx.sh) +gnu.org/texinfo@7.2.0 -- $SHELL -i
 
 This package depends on:
 
-- `perl.org`
+- `perl.org~5.42 # requires stable minor; must match gettext`
 
 ## Usage Examples
 

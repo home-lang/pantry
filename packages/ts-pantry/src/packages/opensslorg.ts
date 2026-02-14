@@ -3,7 +3,7 @@
  *
  * @domain `openssl.org`
  * @programs `openssl`, `c_rehash`
- * @version `3.6.0` (38 versions available)
+ * @version `3.6.1` (43 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openssl.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "OpenSSL"
  * console.log(pkg.description) // "TLS/SSL and crypto library with QUIC APIs"
  * console.log(pkg.programs)    // ["openssl", "c_rehash"]
- * console.log(pkg.versions[0]) // "3.6.0" (latest)
+ * console.log(pkg.versions[0]) // "3.6.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/openssl-org.md
@@ -27,62 +27,66 @@
  */
 export const opensslorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'OpenSSL' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'openssl.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'TLS/SSL and crypto library with QUIC APIs' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/openssl.org/package.yml' as const,
   homepageUrl: 'https://quictls.github.io/openssl' as const,
   githubUrl: 'https://github.com/quictls/openssl' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install openssl.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openssl.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install openssl.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'openssl',
     'c_rehash',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'curl.se/ca-certs',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'perl.org@5',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.6.1',
     '3.6.0',
+    '3.5.5',
     '3.5.4',
     '3.5.3',
     '3.5.2',
     '3.5.0',
+    '3.4.4',
     '3.4.3',
     '3.4.0',
+    '3.3.6',
     '3.3.5',
     '3.3.2',
     '3.3.1',
@@ -100,6 +104,7 @@ export const opensslorgPackage = {
     '3.1.2',
     '3.1.1',
     '3.1.0',
+    '3.0.19',
     '3.0.18',
     '3.0.15',
     '3.0.14',

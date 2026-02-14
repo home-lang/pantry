@@ -26,47 +26,47 @@
  */
 export const tailcallrunPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'tailcall' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'tailcall.run' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'High Performance GraphQL Runtime' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/tailcall.run/package.yml' as const,
   homepageUrl: 'https://tailcall.run' as const,
   githubUrl: 'https://github.com/tailcallhq/tailcall' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install tailcall.run' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tailcall.run -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tailcall.run' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'tailcall',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'protobuf.dev',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.6.14',
     '1.6.13',

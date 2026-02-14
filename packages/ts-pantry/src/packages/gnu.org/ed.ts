@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/ed`
  * @programs `ed`
- * @version `1.22.4` (8 versions available)
+ * @version `1.22.5` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/ed`
@@ -16,7 +16,7 @@
  * const pkg = pantry.gnuorged
  * console.log(pkg.name)        // "ed"
  * console.log(pkg.programs)    // ["ed"]
- * console.log(pkg.versions[0]) // "1.22.4" (latest)
+ * console.log(pkg.versions[0]) // "1.22.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/ed.md
@@ -24,49 +24,50 @@
  */
 export const gnuorgedPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ed' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnu.org/ed' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/ed/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnu.org/ed' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/ed -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnu.org/ed' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ed',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'curl.se',
     'nongnu.org/lzip',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.22.5',
     '1.22.4',
     '1.22.3',
     '1.22.2',

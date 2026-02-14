@@ -26,39 +26,39 @@
  */
 export const appiumioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'appium' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'appium.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Cross-platform automation framework for all kinds of apps, built on top of the W3C WebDriver protocol' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/appium.io/package.yml' as const,
   homepageUrl: 'https://appium.io/' as const,
   githubUrl: 'https://github.com/appium/appium' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install appium.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +appium.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install appium.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'appium',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'npmjs.com',
     'nodejs.org^10.13.0 || ^12 || ^14 || ^16 || ^18 || ^20',
@@ -66,9 +66,9 @@ export const appiumioPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '3.0.2',
     '3.0.1',

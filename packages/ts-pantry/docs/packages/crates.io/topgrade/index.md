@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 19 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `16.8.0`, `16.7.0`, `16.6.1`, `16.6.0`, `16.5.0`
-- `16.4.2`, `16.3.0`, `16.2.1`, `16.2.0`, `16.1.2`
-- `16.1.1`, `16.1.0`, `16.0.4`, `16.0.3`, `16.0.2`
-- `16.0.1`, `16.0.0`, `15.0.0`, `14.0.1`
+- `16.9.0`, `16.8.0`, `16.7.0`, `16.6.1`, `16.6.0`
+- `16.5.0`, `16.4.2`, `16.3.0`, `16.2.1`, `16.2.0`
+- `16.1.2`, `16.1.1`, `16.1.0`, `16.0.4`, `16.0.3`
+- `16.0.2`, `16.0.1`, `16.0.0`, `15.0.0`, `14.0.1`
 
 </details>
 
-**Latest Version**: `16.8.0`
+**Latest Version**: `16.9.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/topgrade@16.8.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/topgrade@16.9.0 -- $SHELL -i
 ```
 
 ## Usage Examples

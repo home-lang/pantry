@@ -26,40 +26,40 @@
  */
 export const scrcpyPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'scrcpy' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/Genymobile/scrcpy' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Display and control your Android device' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/Genymobile/scrcpy/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/Genymobile/scrcpy' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/Genymobile/scrcpy' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Genymobile/scrcpy -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/Genymobile/scrcpy' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'scrcpy',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'ffmpeg.org',
     'libusb.info',
@@ -69,18 +69,18 @@ export const scrcpyPackage = {
     'darwin:zlib.net',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'mesonbuild.com',
     'gnu.org/wget',
     'gnu.org/patch',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '3.3.4',
     '3.3.3',

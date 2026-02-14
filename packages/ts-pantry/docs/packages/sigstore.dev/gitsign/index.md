@@ -26,20 +26,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 10 versions</summary>
+<summary>Show all 11 versions</summary>
 
-- `0.13.0`, `0.12.0`, `0.11.0`, `0.10.2`, `0.10.1`
-- `0.10.0`, `0.9.0`, `0.8.1`, `0.8.0`, `0.7.1`
+- `0.14.0`, `0.13.0`, `0.12.0`, `0.11.0`, `0.10.2`
+- `0.10.1`, `0.10.0`, `0.9.0`, `0.8.1`, `0.8.0`
+- `0.7.1`
 
 </details>
 
-**Latest Version**: `0.13.0`
+**Latest Version**: `0.14.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +sigstore.dev/gitsign@0.13.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +sigstore.dev/gitsign@0.14.0 -- $SHELL -i
 ```
 
 ## Dependencies

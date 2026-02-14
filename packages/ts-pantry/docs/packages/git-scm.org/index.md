@@ -34,7 +34,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 34 versions</summary>
 
-- `2.52.0`, `2.51.2`, `2.51.1`, `2.51.0`, `2.50.1`
+- `2.53.0`, `2.51.2`, `2.51.1`, `2.51.0`, `2.50.1`
 - `2.50.0`, `2.49.1`, `2.49.0`, `2.48.2`, `2.48.0`
 - `2.47.3`, `2.47.1`, `2.47.0`, `2.46.4`, `2.46.2`
 - `2.46.1`, `2.46.0`, `2.45.4`, `2.45.2`, `2.45.0`
@@ -44,13 +44,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.52.0`
+**Latest Version**: `2.53.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +git-scm.org@2.52.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +git-scm.org@2.53.0 -- $SHELL -i
 ```
 
 ## Dependencies
@@ -58,11 +58,12 @@ sh <(curl https://pkgx.sh) +git-scm.org@2.52.0 -- $SHELL -i
 This package depends on:
 
 - `zlib.net@1`
-- `gnu.org/gettext^0.21`
 - `curl.se>=5`
 - `curl.se/ca-certs`
 - `perl.org`
 - `libexpat.github.io~2`
+- `linux:gnu.org/gettext^0.21`
+- `linux:gnu.org/libiconv`
 
 ## Usage Examples
 

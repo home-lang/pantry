@@ -3,7 +3,7 @@
  *
  * @domain `xtls.github.io`
  * @programs `xray`
- * @version `26.1.18` (44 versions available)
+ * @version `26.2.6` (49 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install xtls.github.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "xray-core"
  * console.log(pkg.description) // "Xray, Penetrates Everything. Also the best v2ra..."
  * console.log(pkg.programs)    // ["xray"]
- * console.log(pkg.versions[0]) // "26.1.18" (latest)
+ * console.log(pkg.versions[0]) // "26.2.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/xtls-github-io.md
@@ -26,49 +26,54 @@
  */
 export const xtlsgithubioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'xray-core' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'xtls.github.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Xray, Penetrates Everything. Also the best v2ray-core, with XTLS support. Fully compatible configuration.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/xtls.github.io/package.yml' as const,
   homepageUrl: 'https://xtls.github.io/' as const,
   githubUrl: 'https://github.com/XTLS/Xray-core' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install xtls.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xtls.github.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install xtls.github.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'xray',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21.4',
     'curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '26.2.6',
+    '26.2.4',
+    '26.2.2',
+    '26.1.31',
+    '26.1.23',
     '26.1.18',
     '26.1.13',
     '25.12.8',

@@ -3,7 +3,7 @@
  *
  * @domain `cnquery.io`
  * @programs `cnquery`
- * @version `12.19.2` (193 versions available)
+ * @version `12.22.0` (197 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cnquery.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "cnquery"
  * console.log(pkg.description) // "open source, cloud-native, graph-based asset in..."
  * console.log(pkg.programs)    // ["cnquery"]
- * console.log(pkg.versions[0]) // "12.19.2" (latest)
+ * console.log(pkg.versions[0]) // "12.22.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/cnquery-io.md
@@ -26,48 +26,52 @@
  */
 export const cnqueryioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cnquery' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'cnquery.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'open source, cloud-native, graph-based asset inventory' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/cnquery.io/package.yml' as const,
   homepageUrl: 'https://cnquery.io' as const,
   githubUrl: 'https://github.com/mondoohq/cnquery' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install cnquery.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cnquery.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install cnquery.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cnquery',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@~1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '12.22.0',
+    '12.21.0',
+    '12.20.1',
+    '12.20.0',
     '12.19.2',
     '12.19.1',
     '12.19.0',

@@ -25,31 +25,31 @@
  */
 export const mpg123dePackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mpg123' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'mpg123.de' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'MP3 player for Linux and UNIX' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/mpg123.de/package.yml' as const,
   homepageUrl: 'https://www.mpg123.de/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install mpg123.de' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mpg123.de -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install mpg123.de' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'mpg123',
   ] as const,
@@ -57,9 +57,9 @@ export const mpg123dePackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.33.4',
     '1.33.3',

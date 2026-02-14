@@ -44,8 +44,8 @@ sh <(curl https://pkgx.sh) +gnu.org/help2man@1.49.3 -- $SHELL -i
 
 This package depends on:
 
-- `gnu.org/gettext`
-- `perl.org^5.38 # perl modules require matching minors`
+- `gnu.org/gettext^0`
+- `perl.org~5.42 # perl modules require matching minors; must match gettext`
 
 ## Usage Examples
 

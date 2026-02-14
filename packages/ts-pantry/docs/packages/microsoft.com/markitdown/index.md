@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +microsoft.com/markitdown@0.0.1.3 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

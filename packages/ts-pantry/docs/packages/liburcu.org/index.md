@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `0.15.5`, `0.15.4`, `0.15.3`, `0.15.2`, `0.15.1`
-- `0.15.0`
+- `0.15.6`, `0.15.5`, `0.15.4`, `0.15.3`, `0.15.2`
+- `0.15.1`, `0.15.0`, `0.14.2`
 
 </details>
 
-**Latest Version**: `0.15.5`
+**Latest Version**: `0.15.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +liburcu.org@0.15.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +liburcu.org@0.15.6 -- $SHELL -i
 ```
 
 ## Usage Examples

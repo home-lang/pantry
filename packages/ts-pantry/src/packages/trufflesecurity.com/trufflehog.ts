@@ -3,7 +3,7 @@
  *
  * @domain `trufflesecurity.com/trufflehog`
  * @programs `trufflehog`
- * @version `3.92.5` (166 versions available)
+ * @version `3.93.3` (170 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install trufflesecurity.com/trufflehog`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "trufflehog"
  * console.log(pkg.description) // "Find, verify, and analyze leaked credentials"
  * console.log(pkg.programs)    // ["trufflehog"]
- * console.log(pkg.versions[0]) // "3.92.5" (latest)
+ * console.log(pkg.versions[0]) // "3.93.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/trufflesecurity-com/trufflehog.md
@@ -26,48 +26,52 @@
  */
 export const trufflesecuritycomtrufflehogPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'trufflehog' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'trufflesecurity.com/trufflehog' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Find, verify, and analyze leaked credentials' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/trufflesecurity.com/trufflehog/package.yml' as const,
   homepageUrl: 'https://trufflesecurity.com/' as const,
   githubUrl: 'https://github.com/trufflesecurity/trufflehog' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install trufflesecurity.com/trufflehog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +trufflesecurity.com/trufflehog -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install trufflesecurity.com/trufflehog' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'trufflehog',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.93.3',
+    '3.93.2',
+    '3.93.1',
+    '3.93.0',
     '3.92.5',
     '3.92.4',
     '3.92.3',

@@ -24,31 +24,31 @@
  */
 export const cratesiocomrakPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'comrak' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'crates.io/comrak' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'CommonMark + GFM compatible Markdown parser and renderer' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/comrak/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/kivikakk/comrak' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install crates.io/comrak' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/comrak -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/comrak' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'comrak',
   ] as const,
@@ -56,9 +56,9 @@ export const cratesiocomrakPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.50.0',
     '0.49.0',

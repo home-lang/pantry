@@ -22,24 +22,24 @@
  */
 export const freedesktoporgxkeyboardconfigPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'XKeyboardConfig' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'freedesktop.org/XKeyboardConfig' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/XKeyboardConfig/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install freedesktop.org/XKeyboardConfig' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/XKeyboardConfig -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install freedesktop.org/XKeyboardConfig' as const,
@@ -47,9 +47,9 @@ export const freedesktoporgxkeyboardconfigPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/gettext',
     'mesonbuild.com',
@@ -57,9 +57,9 @@ export const freedesktoporgxkeyboardconfigPackage = {
     'gnome.org/libxslt',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.46.0',
     '2.45.0',

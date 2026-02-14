@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 11 versions</summary>
+<summary>Show all 12 versions</summary>
 
-- `8.2.1`, `8.2.0`, `8.0.3`, `8.0.2`, `8.0.1`
-- `8.0.0`, `7.3.1`, `7.1.2`, `7.1.1`, `7.1.0`
-- `6.4.0`
+- `8.5.1`, `8.2.1`, `8.2.0`, `8.0.3`, `8.0.2`
+- `8.0.1`, `8.0.0`, `7.3.1`, `7.1.2`, `7.1.1`
+- `7.1.0`, `6.4.0`
 
 </details>
 
-**Latest Version**: `8.2.1`
+**Latest Version**: `8.5.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/bazelbuild/buildtools@8.2.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/bazelbuild/buildtools@8.5.1 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -2,7 +2,7 @@
  * **Vulkan-Loader** - Vulkan Loader
  *
  * @domain `github.com/KhronosGroup/Vulkan-Loader`
- * @version `1.4.340` (78 versions available)
+ * @version `1.4.343` (81 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/KhronosGroup/Vulkan-Loader`
@@ -17,7 +17,7 @@
  * const pkg = pantry.githubcomkhronosgroupvulkanloader
  * console.log(pkg.name)        // "Vulkan-Loader"
  * console.log(pkg.description) // "Vulkan Loader"
- * console.log(pkg.versions[0]) // "1.4.340" (latest)
+ * console.log(pkg.versions[0]) // "1.4.343" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/KhronosGroup/Vulkan-Loader.md
@@ -25,34 +25,34 @@
  */
 export const vulkanloaderPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'Vulkan-Loader' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/KhronosGroup/Vulkan-Loader' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Vulkan Loader' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/KhronosGroup/Vulkan-Loader/package.yml' as const,
   homepageUrl: 'https://vulkan.lunarg.com/doc/sdk/latest/linux/LoaderInterfaceArchitecture.html' as const,
   githubUrl: 'https://github.com/KhronosGroup/Vulkan-Loader' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/KhronosGroup/Vulkan-Loader' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/KhronosGroup/Vulkan-Loader -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/KhronosGroup/Vulkan-Loader' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'github.com/KhronosGroup/Vulkan-Headers',
     'linux:x.org/x11',
@@ -60,10 +60,10 @@ export const vulkanloaderPackage = {
     'linux:wayland.freedesktop.org',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'gnu.org/make',
     'cmake.org',
@@ -71,10 +71,13 @@ export const vulkanloaderPackage = {
     'linux:x.org/xrandr',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.4.343',
+    '1.4.342',
+    '1.4.341',
     '1.4.340',
     '1.4.339',
     '1.4.338',

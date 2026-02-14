@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
-- `25.1.0`, `25.0.0`, `24.1.4`, `24.1.3`, `24.1.2`
-- `24.1.1`, `24.1.0`, `24.0.5`, `24.0.4`, `24.0.2`
-- `24.0.1`, `24.0.0`, `23.1.1`, `23.1.0`
+- `25.2.0`, `25.1.0`, `25.0.0`, `24.1.4`, `24.1.3`
+- `24.1.2`, `24.1.1`, `24.1.0`, `24.0.5`, `24.0.4`
+- `24.0.2`, `24.0.1`, `24.0.0`, `23.1.1`, `23.1.0`
 
 </details>
 
-**Latest Version**: `25.1.0`
+**Latest Version**: `25.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dgraph.io@25.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dgraph.io@25.2.0 -- $SHELL -i
 ```
 
 ## Usage Examples

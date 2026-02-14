@@ -3,7 +3,7 @@
  *
  * @domain `facebook.com/watchman`
  * @programs `watchman`, `watchman-diag`, `watchman-make`, `watchman-wait`, `watchman-replicate-subscription`, ... (+1 more)
- * @version `2026.1.5.0` (72 versions available)
+ * @version `2026.2.9.0` (74 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/watchman`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "watchman"
  * console.log(pkg.description) // "Watches files and records, or triggers actions,..."
  * console.log(pkg.programs)    // ["watchman", "watchman-diag", ...]
- * console.log(pkg.versions[0]) // "2026.1.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.9.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/facebook-com/watchman.md
@@ -27,31 +27,31 @@
  */
 export const facebookcomwatchmanPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'watchman' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'facebook.com/watchman' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Watches files and records, or triggers actions, when they change. ' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/watchman/package.yml' as const,
   homepageUrl: 'https://facebook.github.io/watchman/' as const,
   githubUrl: 'https://github.com/facebook/watchman' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install facebook.com/watchman' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/watchman -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install facebook.com/watchman' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'watchman',
     'watchman-diag',
@@ -62,10 +62,10 @@ export const facebookcomwatchmanPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'facebook.com/edencommon',
     'facebook.com/fb303',
@@ -79,27 +79,29 @@ export const facebookcomwatchmanPackage = {
     'pcre.org/v2^10',
     'python.org~3.11',
     'linux:libcxx.llvm.org^18 # libunwind',
-    'linux:gnu.org/gcc/libstdcxx@13',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org',
     'github.com/skystrife/cpptoml',
     'facebook.com/fbthrift',
     'facebook.com/mvfst',
     'google.com/googletest',
-    'linux:gnu.org/gcc@13',
+    'linux:gnu.org/gcc@14',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.9.0',
     '2026.1.5.0',
+    '2026.1.26.0',
     '2026.1.19.0',
     '2026.1.12.0',
     '2025.4.7.0',

@@ -25,21 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 15 versions</summary>
+<summary>Show all 17 versions</summary>
 
-- `1.28.0`, `1.27.2`, `1.27.1`, `1.27.0`, `1.26.3`
-- `1.26.2`, `1.26.1`, `1.26.0`, `1.25.4`, `1.25.3`
-- `1.25.2`, `1.25.1`, `1.25.0`, `1.24.4`, `1.24.3`
+- `1.28.1`, `1.28.0`, `1.27.3`, `1.27.2`, `1.27.1`
+- `1.27.0`, `1.26.3`, `1.26.2`, `1.26.1`, `1.26.0`
+- `1.25.4`, `1.25.3`, `1.25.2`, `1.25.1`, `1.25.0`
+- `1.24.4`, `1.24.3`
 
 </details>
 
-**Latest Version**: `1.28.0`
+**Latest Version**: `1.28.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cloudnative-pg.io@1.28.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cloudnative-pg.io@1.28.1 -- $SHELL -i
 ```
 
 ## Usage Examples

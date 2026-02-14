@@ -47,7 +47,7 @@ sh <(curl https://pkgx.sh) +github.com/AntonOsika/gpt-engineer@0.3.1 -- $SHELL -
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

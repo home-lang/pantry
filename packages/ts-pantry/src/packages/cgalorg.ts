@@ -3,7 +3,7 @@
  *
  * @domain `cgal.org`
  * @programs `cgal_create_CMakeLists`, `cgal_create_cmake_script`, `cgal_make_macosx_app`
- * @version `6.1.0` (7 versions available)
+ * @version `6.1.0` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cgal.org`
@@ -27,31 +27,31 @@
  */
 export const cgalorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cgal' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'cgal.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The public CGAL repository, see the README below' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/cgal.org/package.yml' as const,
   homepageUrl: 'https://github.com/CGAL/cgal#readme' as const,
   githubUrl: 'https://github.com/CGAL/cgal' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install cgal.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cgal.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install cgal.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cgal_create_CMakeLists',
     'cgal_create_cmake_script',
@@ -59,9 +59,9 @@ export const cgalorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'boost.org',
     'eigen.tuxfamily.org',
@@ -70,21 +70,22 @@ export const cgalorgPackage = {
     'openssl.org',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org',
     'qt.io@~5',
     'linux:gnu.org/gcc',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '6.1.0',
+    '6.0.3',
     '6.0.2',
     '6.0.1',
     '6.0.0',

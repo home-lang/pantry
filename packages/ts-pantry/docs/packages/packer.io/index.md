@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
-- `1.14.3`, `1.14.2`, `1.14.1`, `1.14.0`, `1.13.1`
-- `1.13.0`, `1.12.0`, `1.11.2`, `1.11.1`, `1.11.0`
-- `1.10.3`, `1.10.2`, `1.10.1`, `1.9.5`, `1.9.4`
-- `1.9.3`, `1.9.2`
+- `1.15.0`, `1.14.3`, `1.14.2`, `1.14.1`, `1.14.0`
+- `1.13.1`, `1.13.0`, `1.12.0`, `1.11.2`, `1.11.1`
+- `1.11.0`, `1.10.3`, `1.10.2`, `1.10.1`, `1.9.5`
+- `1.9.4`, `1.9.3`, `1.9.2`
 
 </details>
 
-**Latest Version**: `1.14.3`
+**Latest Version**: `1.15.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +packer.io@1.14.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +packer.io@1.15.0 -- $SHELL -i
 ```
 
 ## Usage Examples

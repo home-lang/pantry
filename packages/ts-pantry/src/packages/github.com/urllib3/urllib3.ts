@@ -24,41 +24,41 @@
  */
 export const urllib3Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'urllib3' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/urllib3/urllib3' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'urllib3 is a user-friendly HTTP client library for Python' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/urllib3/urllib3/package.yml' as const,
   homepageUrl: 'https://urllib3.readthedocs.io' as const,
   githubUrl: 'https://github.com/urllib3/urllib3' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/urllib3/urllib3' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/urllib3/urllib3 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/urllib3/urllib3' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org~3.11',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.6.3',
     '2.6.2',

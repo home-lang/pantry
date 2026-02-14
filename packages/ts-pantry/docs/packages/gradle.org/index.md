@@ -25,23 +25,24 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 25 versions</summary>
+<summary>Show all 27 versions</summary>
 
-- `9.3.0`, `9.2.1`, `9.2.0`, `9.1.0`, `9.0.0`
-- `8.14.3`, `8.14.2`, `8.14.1`, `8.14.0`, `8.13.0`
-- `8.12.1`, `8.12.0`, `8.11.1`, `8.11.0`, `8.10.2`
-- `8.10.1`, `8.10.0`, `8.9.0`, `8.8.0`, `8.7.0`
-- `8.6.0`, `8.5.0`, `8.2.1`, `7.6.6`, `7.6.5`
+- `9.3.1`, `9.3.0`, `9.2.1`, `9.2.0`, `9.1.0`
+- `9.0.0`, `8.14.4`, `8.14.3`, `8.14.2`, `8.14.1`
+- `8.14.0`, `8.13.0`, `8.12.1`, `8.12.0`, `8.11.1`
+- `8.11.0`, `8.10.2`, `8.10.1`, `8.10.0`, `8.9.0`
+- `8.8.0`, `8.7.0`, `8.6.0`, `8.5.0`, `8.2.1`
+- `7.6.6`, `7.6.5`
 
 </details>
 
-**Latest Version**: `9.3.0`
+**Latest Version**: `9.3.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gradle.org@9.3.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gradle.org@9.3.1 -- $SHELL -i
 ```
 
 ## Dependencies

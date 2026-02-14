@@ -37,21 +37,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 13 versions</summary>
+<summary>Show all 12 versions</summary>
 
-- `2.4.9`, `2.4.8`, `2.4.7`, `2.4.6`, `2.4.5`
-- `2.4.4`, `2.4.3`, `2.4.2`, `2.3.7`, `2.2.45`
-- `2.2.44`, `2.2.43`, `2.2.42`
+- `2.4.8`, `2.4.7`, `2.4.6`, `2.4.5`, `2.4.4`
+- `2.4.3`, `2.4.2`, `2.3.7`, `2.2.45`, `2.2.44`
+- `2.2.43`, `2.2.42`
 
 </details>
 
-**Latest Version**: `2.4.9`
+**Latest Version**: `2.4.8`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnupg.org@2.4.9 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnupg.org@2.4.8 -- $SHELL -i
 ```
 
 ## Dependencies

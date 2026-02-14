@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
-- `3.6.2`, `3.6.1`, `3.6.0`, `3.5.1`, `3.5.0`
-- `3.4.10`, `3.4.9`, `3.4.8`, `3.4.7`, `3.4.6`
-- `3.4.5`, `3.4.4`, `3.4.3`, `3.4.2`
+- `3.7.0`, `3.6.2`, `3.6.1`, `3.6.0`, `3.5.1`
+- `3.5.0`, `3.4.10`, `3.4.9`, `3.4.8`, `3.4.7`
+- `3.4.6`, `3.4.5`, `3.4.4`, `3.4.3`, `3.4.2`
 
 </details>
 
-**Latest Version**: `3.6.2`
+**Latest Version**: `3.7.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +projectdiscovery.io/nuclei@3.6.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +projectdiscovery.io/nuclei@3.7.0 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +github.com/astanin/python-tabulate@0.9.0 -- $SHELL -
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

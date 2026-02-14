@@ -3,7 +3,7 @@
  *
  * @domain `github.com/fiatjaf/nak`
  * @programs `nak`
- * @version `0.18.1` (34 versions available)
+ * @version `0.18.4` (37 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/fiatjaf/nak`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "nak"
  * console.log(pkg.description) // "a command line tool for doing all things nostr"
  * console.log(pkg.programs)    // ["nak"]
- * console.log(pkg.versions[0]) // "0.18.1" (latest)
+ * console.log(pkg.versions[0]) // "0.18.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/fiatjaf/nak.md
@@ -25,41 +25,41 @@
  */
 export const nakPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'nak' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/fiatjaf/nak' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'a command line tool for doing all things nostr' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/fiatjaf/nak/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/fiatjaf/nak' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/fiatjaf/nak' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/fiatjaf/nak -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/fiatjaf/nak' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'nak',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'go.dev@~1.25',
     'linux:gnu.org/gcc',
@@ -67,10 +67,13 @@ export const nakPackage = {
     'darwin:macfuse.github.io/v2',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.18.4',
+    '0.18.3',
+    '0.18.2',
     '0.18.1',
     '0.18.0',
     '0.17.9',

@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 68 versions</summary>
+<summary>Show all 73 versions</summary>
 
+- `3.41.1`, `3.41.0`, `3.38.10`, `3.38.9`, `3.38.8`
 - `3.38.7`, `3.38.6`, `3.38.5`, `3.38.4`, `3.38.3`
 - `3.38.2`, `3.38.1`, `3.38.0`, `3.35.7`, `3.35.6`
 - `3.35.5`, `3.35.4`, `3.35.3`, `3.35.2`, `3.35.1`
@@ -45,13 +46,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.38.7`
+**Latest Version**: `3.41.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +flutter.dev@3.38.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +flutter.dev@3.41.1 -- $SHELL -i
 ```
 
 ## Dependencies

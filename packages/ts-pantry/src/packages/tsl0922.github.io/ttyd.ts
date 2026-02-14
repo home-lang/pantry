@@ -27,39 +27,39 @@
  */
 export const tsl0922githubiottydPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ttyd' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'tsl0922.github.io/ttyd' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Command-line tool for sharing terminal over the web' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/tsl0922.github.io/ttyd/package.yml' as const,
   homepageUrl: 'https://tsl0922.github.io/ttyd/' as const,
   githubUrl: 'https://github.com/tsl0922/ttyd' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install tsl0922.github.io/ttyd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tsl0922.github.io/ttyd -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tsl0922.github.io/ttyd' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ttyd',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'libuv.org@1',
     'github.com/json-c/json-c^0.16',
@@ -67,16 +67,16 @@ export const tsl0922githubiottydPackage = {
     'zlib.net@1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org@3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.7.7',
     '1.7.6',

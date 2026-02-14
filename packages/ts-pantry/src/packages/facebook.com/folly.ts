@@ -2,12 +2,12 @@
  * **folly** - An open-source C++ library developed and used at Facebook.
  *
  * @domain `facebook.com/folly`
- * @version `2026.1.5.0` (137 versions available)
+ * @version `2026.2.9.0` (140 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/folly`
  * @dependencies `boost.org<1.89 # doesn`, `gflags.github.io~2.2 # looking for glog`, `google.com/glog<0.7`, ... (+17 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `cmake.org@^3.0.2`, `linux:gnu.org/gcc@13` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @buildDependencies `cmake.org@^3.0.2`, `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -16,7 +16,7 @@
  * const pkg = pantry.facebookcomfolly
  * console.log(pkg.name)        // "folly"
  * console.log(pkg.description) // "An open-source C++ library developed and used a..."
- * console.log(pkg.versions[0]) // "2026.1.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.9.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/facebook-com/folly.md
@@ -24,34 +24,34 @@
  */
 export const facebookcomfollyPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'folly' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'facebook.com/folly' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An open-source C++ library developed and used at Facebook.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/folly/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebook/folly' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install facebook.com/folly' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/folly -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install facebook.com/folly' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'boost.org<1.89 # doesn',
     'gflags.github.io~2.2 # looking for glog',
@@ -72,23 +72,26 @@ export const facebookcomfollyPackage = {
     'linux:libcxx.llvm.org^18 # libunwind, since 2024.5.13.0',
     'linux:jemalloc.net^5 # since 2024.5.13.0',
     'linux:elfutils.org^0 # for dwarf.h, since 2024.5.13.0',
-    'linux:gnu.org/gcc/libstdcxx@13',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org@^3.0.2',
-    'linux:gnu.org/gcc@13',
+    'linux:gnu.org/gcc@14',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.9.0',
+    '2026.2.2.0',
     '2026.1.5.0',
+    '2026.1.26.0',
     '2026.1.19.0',
     '2026.1.12.0',
     '2025.9.8.0',

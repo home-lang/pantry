@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
-- `1.5.0`, `1.4.2`, `1.4.1`, `1.4.0`, `1.3.0`
-- `1.2.2`
+- `1.5.1`, `1.5.0`, `1.4.2`, `1.4.1`, `1.4.0`
+- `1.3.0`, `1.2.2`
 
 </details>
 
-**Latest Version**: `1.5.0`
+**Latest Version**: `1.5.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +svenstaro.github.io/genact@1.5.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +svenstaro.github.io/genact@1.5.1 -- $SHELL -i
 ```
 
 ## Usage Examples

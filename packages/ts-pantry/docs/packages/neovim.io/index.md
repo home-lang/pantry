@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 18 versions</summary>
+<summary>Show all 19 versions</summary>
 
-- `0.11.5`, `0.11.4`, `0.11.3`, `0.11.2`, `0.11.1`
-- `0.11.0`, `0.10.4`, `0.10.3`, `0.10.2`, `0.10.1`
-- `0.10.0`, `0.9.5`, `0.9.4`, `0.9.2`, `0.9.1`
-- `0.9.0`, `0.8.2`, `0.8.1`
+- `0.11.6`, `0.11.5`, `0.11.4`, `0.11.3`, `0.11.2`
+- `0.11.1`, `0.11.0`, `0.10.4`, `0.10.3`, `0.10.2`
+- `0.10.1`, `0.10.0`, `0.9.5`, `0.9.4`, `0.9.2`
+- `0.9.1`, `0.9.0`, `0.8.2`, `0.8.1`
 
 </details>
 
-**Latest Version**: `0.11.5`
+**Latest Version**: `0.11.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +neovim.io@0.11.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +neovim.io@0.11.6 -- $SHELL -i
 ```
 
 ## Dependencies

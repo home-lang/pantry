@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +nike.com/gimme-aws-creds@2.8.2 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

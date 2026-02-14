@@ -2,7 +2,7 @@
  * **opencode.ai** - pkgx package
  *
  * @domain `opencode.ai`
- * @version `1.1.34` (450 versions available)
+ * @version `1.2.2` (484 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install opencode.ai`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.opencodeai
  * console.log(pkg.name)        // "opencode.ai"
- * console.log(pkg.versions[0]) // "1.1.34" (latest)
+ * console.log(pkg.versions[0]) // "1.2.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/opencode-ai.md
@@ -22,24 +22,24 @@
  */
 export const opencodeaiPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'opencode.ai' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'opencode.ai' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/opencode.ai/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install opencode.ai' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opencode.ai -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install opencode.ai' as const,
@@ -47,9 +47,9 @@ export const opencodeaiPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'stedolan.github.io/jq',
     'pkgx.sh',
@@ -58,10 +58,44 @@ export const opencodeaiPackage = {
     'npmjs.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.2.2',
+    '1.2.1',
+    '1.2.0',
+    '1.1.65',
+    '1.1.64',
+    '1.1.63',
+    '1.1.62',
+    '1.1.61',
+    '1.1.60',
+    '1.1.59',
+    '1.1.58',
+    '1.1.57',
+    '1.1.56',
+    '1.1.55',
+    '1.1.54',
+    '1.1.53',
+    '1.1.52',
+    '1.1.51',
+    '1.1.50',
+    '1.1.49',
+    '1.1.48',
+    '1.1.47',
+    '1.1.46',
+    '1.1.45',
+    '1.1.44',
+    '1.1.43',
+    '1.1.42',
+    '1.1.41',
+    '1.1.40',
+    '1.1.39',
+    '1.1.38',
+    '1.1.37',
+    '1.1.36',
+    '1.1.35',
     '1.1.34',
     '1.1.33',
     '1.1.32',

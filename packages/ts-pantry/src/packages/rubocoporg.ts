@@ -3,7 +3,7 @@
  *
  * @domain `rubocop.org`
  * @programs `rubocop`
- * @version `1.82.1` (41 versions available)
+ * @version `1.84.2` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rubocop.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "rubocop"
  * console.log(pkg.description) // "A Ruby static code analyzer and formatter, base..."
  * console.log(pkg.programs)    // ["rubocop"]
- * console.log(pkg.versions[0]) // "1.82.1" (latest)
+ * console.log(pkg.versions[0]) // "1.84.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rubocop-org.md
@@ -26,49 +26,52 @@
  */
 export const rubocoporgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'rubocop' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'rubocop.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A Ruby static code analyzer and formatter, based on the community Ruby style guide.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/rubocop.org/package.yml' as const,
   homepageUrl: 'https://docs.rubocop.org' as const,
   githubUrl: 'https://github.com/rubocop/rubocop' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install rubocop.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rubocop.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install rubocop.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'rubocop',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'ruby-lang.org>=3.1<3.3.7',
     'rubygems.org',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.84.2',
+    '1.84.1',
+    '1.84.0',
     '1.82.1',
     '1.82.0',
     '1.81.7',

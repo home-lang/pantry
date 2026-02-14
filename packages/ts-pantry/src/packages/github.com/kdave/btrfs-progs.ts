@@ -3,12 +3,12 @@
  *
  * @domain `github.com/kdave/btrfs-progs`
  * @programs `btrfs`, `btrfsck`, `btrfs-convert`, `btrfs-find-root`, `btrfs-image`, ... (+5 more)
- * @version `6.17.1` (17 versions available)
+ * @version `6.19.0` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/kdave/btrfs-progs`
  * @homepage https://btrfs.readthedocs.io/en/latest/
- * @dependencies `python.org~3.11`, `sourceforge.net/e2fsprogs^1.47`, `oberhumer.com/lzo^2.10`, ... (+4 more)
+ * @dependencies `python.org~3.14`, `sourceforge.net/e2fsprogs^1.47`, `oberhumer.com/lzo^2.10`, ... (+4 more)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
  *
  * @example
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "btrfs-progs"
  * console.log(pkg.description) // "Userspace utilities to manage btrfs filesystems"
  * console.log(pkg.programs)    // ["btrfs", "btrfsck", ...]
- * console.log(pkg.versions[0]) // "6.17.1" (latest)
+ * console.log(pkg.versions[0]) // "6.19.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/kdave/btrfs-progs.md
@@ -27,31 +27,31 @@
  */
 export const btrfsprogsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'btrfs-progs' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/kdave/btrfs-progs' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Userspace utilities to manage btrfs filesystems' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/kdave/btrfs-progs/package.yml' as const,
   homepageUrl: 'https://btrfs.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/kdave/btrfs-progs' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/kdave/btrfs-progs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/kdave/btrfs-progs -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/kdave/btrfs-progs' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'btrfs',
     'btrfsck',
@@ -66,11 +66,11 @@ export const btrfsprogsPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'python.org~3.11',
+    'python.org~3.14',
     'sourceforge.net/e2fsprogs^1.47',
     'oberhumer.com/lzo^2.10',
     'systemd.io^255 # for libudev',
@@ -79,19 +79,20 @@ export const btrfsprogsPackage = {
     'facebook.com/zstd^1.5',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/autoconf',
     'gnu.org/automake',
     'gnu.org/libtool',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '6.19.0',
     '6.17.1',
     '6.17.0',
     '6.16.1',

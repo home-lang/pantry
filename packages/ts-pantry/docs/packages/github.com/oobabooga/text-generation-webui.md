@@ -55,7 +55,7 @@ sh <(curl https://pkgx.sh) +github.com/oobabooga/text-generation-webui@3.23.0 --
 This package depends on:
 
 - `python.org~3.10`
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

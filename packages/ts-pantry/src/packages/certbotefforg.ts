@@ -3,7 +3,7 @@
  *
  * @domain `certbot.eff.org`
  * @programs `certbot`
- * @version `5.2.2` (24 versions available)
+ * @version `5.3.1` (26 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install certbot.eff.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "certbot"
  * console.log(pkg.description) // "Certbot is EFF's tool to obtain certs from Let'..."
  * console.log(pkg.programs)    // ["certbot"]
- * console.log(pkg.versions[0]) // "5.2.2" (latest)
+ * console.log(pkg.versions[0]) // "5.3.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/certbot-eff-org.md
@@ -26,48 +26,50 @@
  */
 export const certbotefforgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'certbot' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'certbot.eff.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Certbot is EFF\'s tool to obtain certs from Let\'s Encrypt and (optionally) auto-enable HTTPS on your server.  It can also act as a client for any other CA that uses the ACME protocol.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/certbot.eff.org/package.yml' as const,
   homepageUrl: 'https://certbot.eff.org/' as const,
   githubUrl: 'https://github.com/certbot/certbot' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install certbot.eff.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +certbot.eff.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install certbot.eff.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'certbot',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org~3.11',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '5.3.1',
+    '5.3.0',
     '5.2.2',
     '5.2.1',
     '5.1.0',

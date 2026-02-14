@@ -3,7 +3,7 @@
  *
  * @domain `terraform.io`
  * @programs `terraform`
- * @version `1.14.3` (85 versions available)
+ * @version `1.14.5` (87 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install terraform.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "terraform"
  * console.log(pkg.description) // "Terraform enables you to safely and predictably..."
  * console.log(pkg.programs)    // ["terraform"]
- * console.log(pkg.versions[0]) // "1.14.3" (latest)
+ * console.log(pkg.versions[0]) // "1.14.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/terraform-io.md
@@ -26,48 +26,50 @@
  */
 export const terraformioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'terraform' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'terraform.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Terraform enables you to safely and predictably create, change, and improve infrastructure. It is a source-available tool that codifies APIs into declarative configuration files that can be shared amongst team members, treated as code, edited, reviewed, and versioned.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/terraform.io/package.yml' as const,
   homepageUrl: 'https://www.terraform.io' as const,
   githubUrl: 'https://github.com/hashicorp/terraform' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install terraform.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +terraform.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install terraform.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'terraform',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@~1.24.1',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.14.5',
+    '1.14.4',
     '1.14.3',
     '1.14.2',
     '1.14.1',

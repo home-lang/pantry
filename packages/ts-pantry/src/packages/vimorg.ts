@@ -3,7 +3,7 @@
  *
  * @domain `vim.org`
  * @programs `vim`, `vi`
- * @version `9.1.2102` (2642 versions available)
+ * @version `9.2.0` (2687 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install vim.org`
@@ -25,7 +25,7 @@
  * console.log(pkg.name)        // "vim"
  * console.log(pkg.description) // "The official Vim repository"
  * console.log(pkg.programs)    // ["vim", "vi"]
- * console.log(pkg.versions[0]) // "9.1.2102" (latest)
+ * console.log(pkg.versions[0]) // "9.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/vim-org.md
@@ -33,40 +33,40 @@
  */
 export const vimPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'vim' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'vim.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The official Vim repository' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/vim.org/package.yml' as const,
   homepageUrl: 'https://www.vim.org' as const,
   githubUrl: 'https://github.com/vim/vim' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install vim.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vim.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install vim.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'vim',
     'vi',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org~3.11',
     'lua.org>=5.4',
@@ -75,17 +75,62 @@ export const vimPackage = {
     'ruby-lang.org>=3.2',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/make@^4.3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '9.2.0',
+    '9.1.2148',
+    '9.1.2147',
+    '9.1.2146',
+    '9.1.2145',
+    '9.1.2144',
+    '9.1.2143',
+    '9.1.2142',
+    '9.1.2141',
+    '9.1.2140',
+    '9.1.2139',
+    '9.1.2138',
+    '9.1.2136',
+    '9.1.2135',
+    '9.1.2134',
+    '9.1.2133',
+    '9.1.2132',
+    '9.1.2131',
+    '9.1.2130',
+    '9.1.2129',
+    '9.1.2128',
+    '9.1.2127',
+    '9.1.2126',
+    '9.1.2125',
+    '9.1.2124',
+    '9.1.2123',
+    '9.1.2122',
+    '9.1.2121',
+    '9.1.2120',
+    '9.1.2119',
+    '9.1.2118',
+    '9.1.2117',
+    '9.1.2116',
+    '9.1.2115',
+    '9.1.2114',
+    '9.1.2113',
+    '9.1.2112',
+    '9.1.2111',
+    '9.1.2110',
+    '9.1.2109',
+    '9.1.2108',
+    '9.1.2107',
+    '9.1.2106',
+    '9.1.2105',
+    '9.1.2104',
     '9.1.2102',
     '9.1.2101',
     '9.1.2100',
@@ -2730,9 +2775,9 @@ export const vimPackage = {
     '9.0.1294',
   ] as const,
   /**
-   * Alternative names for this package.
-   * You can use any of these names to access the package.
-   */
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [
     'vi',
   ] as const,

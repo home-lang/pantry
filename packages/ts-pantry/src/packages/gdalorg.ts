@@ -3,7 +3,7 @@
  *
  * @domain `gdal.org`
  * @programs `gdaladdo`, `gdalbuildvrt`, `gdal-config`, `gdal_contour`, `gdal_create`, ... (+23 more)
- * @version `3.12.1` (24 versions available)
+ * @version `3.12.2` (25 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gdal.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "gdal"
  * console.log(pkg.description) // "GDAL is an open source MIT licensed translator ..."
  * console.log(pkg.programs)    // ["gdaladdo", "gdalbuildvrt", ...]
- * console.log(pkg.versions[0]) // "3.12.1" (latest)
+ * console.log(pkg.versions[0]) // "3.12.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gdal-org.md
@@ -27,31 +27,31 @@
  */
 export const gdalorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'gdal' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gdal.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'GDAL is an open source MIT licensed translator library for raster and vector geospatial data formats.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gdal.org/package.yml' as const,
   homepageUrl: 'https://www.gdal.org/' as const,
   githubUrl: 'https://github.com/OSGeo/gdal' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gdal.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gdal.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gdal.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'gdaladdo',
     'gdalbuildvrt',
@@ -84,10 +84,10 @@ export const gdalorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'apache.org/arrow@19',
     'heasarc.gsfc.nasa.gov/cfitsio',
@@ -134,10 +134,10 @@ export const gdalorgPackage = {
     'linux:apache.org/thrift=0.22.0 # since 3.11.1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'boost.org',
     'cmake.org',
@@ -147,10 +147,11 @@ export const gdalorgPackage = {
     'linux:nixos.org/patchelf',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.12.2',
     '3.12.1',
     '3.12.0',
     '3.11.5',

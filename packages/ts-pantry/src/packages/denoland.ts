@@ -3,7 +3,7 @@
  *
  * @domain `deno.land`
  * @programs `deno`
- * @version `2.6.6` (156 versions available)
+ * @version `2.6.9` (160 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install deno.land`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "deno"
  * console.log(pkg.description) // "A modern runtime for JavaScript and TypeScript."
  * console.log(pkg.programs)    // ["deno"]
- * console.log(pkg.versions[0]) // "2.6.6" (latest)
+ * console.log(pkg.versions[0]) // "2.6.9" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/deno-land.md
@@ -26,40 +26,40 @@
  */
 export const denolandPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'deno' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'deno.land' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A modern runtime for JavaScript and TypeScript.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/deno.land/package.yml' as const,
   homepageUrl: 'https://deno.com/' as const,
   githubUrl: 'https://github.com/denoland/deno' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install deno.land' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +deno.land -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install deno.land' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'deno',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'llvm.org',
     'curl.se',
@@ -70,10 +70,13 @@ export const denolandPackage = {
     'sourceware.org/libffi@>=3.2.1',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.6.9',
+    '2.6.8',
+    '2.6.7',
     '2.6.6',
     '2.6.5',
     '2.6.4',
@@ -81,6 +84,7 @@ export const denolandPackage = {
     '2.6.2',
     '2.6.1',
     '2.6.0',
+    '2.5.7',
     '2.5.6',
     '2.5.5',
     '2.5.4',

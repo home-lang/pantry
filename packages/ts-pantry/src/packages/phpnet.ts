@@ -3,13 +3,13 @@
  *
  * @domain `php.net`
  * @programs `pear`, `pecl`, `phar`, `php`, `php-cgi`, ... (+3 more)
- * @version `8.5.2` (95 versions available)
+ * @version `8.5.3` (97 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install php.net`
  * @name `php`
  * @homepage https://www.php.net/
- * @dependencies `gnu.org/bison^3`, `re2c.org^3`, `apache.org/apr^1`, ... (+27 more) (includes OS-specific dependencies with `os:package` format)
+ * @dependencies `gnu.org/bison^3`, `re2c.org^3`, `apache.org/apr^1`, ... (+28 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `freetype.org`, `darwin:tukaani.org/xz`, `gnu.org/libtool` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
@@ -24,7 +24,7 @@
  * console.log(pkg.name)        // "php"
  * console.log(pkg.description) // "General-purpose scripting language"
  * console.log(pkg.programs)    // ["pear", "pecl", ...]
- * console.log(pkg.versions[0]) // "8.5.2" (latest)
+ * console.log(pkg.versions[0]) // "8.5.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/php-net.md
@@ -32,31 +32,31 @@
  */
 export const phpPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'php' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'php.net' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'General-purpose scripting language' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/php.net/package.yml' as const,
   homepageUrl: 'https://www.php.net/' as const,
   githubUrl: 'https://github.com/php/php-src' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install php.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +php.net -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install php.net' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'pear',
     'pecl',
@@ -69,10 +69,10 @@ export const phpPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'gnu.org/bison^3',
     're2c.org^3',
@@ -81,6 +81,7 @@ export const phpPackage = {
     'bcrypt.sourceforge.net^1',
     'gnu.org/autoconf^2',
     'curl.se^8',
+    'nghttp2.org',
     'gnu.org/gettext^0',
     'gnu.org/gmp^6',
     'libsodium.org<1.0.19',
@@ -106,23 +107,25 @@ export const phpPackage = {
     'darwin:zlib.net^1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'freetype.org',
     'darwin:tukaani.org/xz',
     'gnu.org/libtool',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '8.5.3',
     '8.5.2',
     '8.5.1',
     '8.5.0',
+    '8.4.18',
     '8.4.17',
     '8.4.16',
     '8.4.15',
@@ -217,9 +220,9 @@ export const phpPackage = {
     '7.4.33',
   ] as const,
   /**
-   * Alternative names for this package.
-   * You can use any of these names to access the package.
-   */
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 

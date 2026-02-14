@@ -2,7 +2,7 @@
  * **setuptools** - Official project repository for the Setuptools build system
  *
  * @domain `pypa.io/setuptools`
- * @version `80.10.1` (66 versions available)
+ * @version `82.0.0` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pypa.io/setuptools`
@@ -16,7 +16,7 @@
  * const pkg = pantry.pypaiosetuptools
  * console.log(pkg.name)        // "setuptools"
  * console.log(pkg.description) // "Official project repository for the Setuptools ..."
- * console.log(pkg.versions[0]) // "80.10.1" (latest)
+ * console.log(pkg.versions[0]) // "82.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pypa-io/setuptools.md
@@ -24,42 +24,45 @@
  */
 export const pypaiosetuptoolsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'setuptools' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'pypa.io/setuptools' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Official project repository for the Setuptools build system' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/pypa.io/setuptools/package.yml' as const,
   homepageUrl: 'https://pypi.org/project/setuptools/' as const,
   githubUrl: 'https://github.com/pypa/setuptools' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install pypa.io/setuptools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pypa.io/setuptools -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pypa.io/setuptools' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org~3.12',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '82.0.0',
+    '81.0.0',
+    '80.10.2',
     '80.10.1',
     '80.9.0',
     '80.8.0',
@@ -92,6 +95,7 @@ export const pypaiosetuptoolsPackage = {
     '75.6.0',
     '75.5.0',
     '75.4.0',
+    '75.3.4',
     '75.3.3',
     '75.3.1',
     '75.3.0',

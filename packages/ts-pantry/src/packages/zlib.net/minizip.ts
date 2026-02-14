@@ -24,24 +24,24 @@
  */
 export const zlibnetminizipPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'minizip' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'zlib.net/minizip' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A massively spiffy yet delicately unobtrusive compression library.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/zlib.net/minizip/package.yml' as const,
   homepageUrl: 'http://zlib.net/' as const,
   githubUrl: 'https://github.com/madler/zlib' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install zlib.net/minizip' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zlib.net/minizip -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install zlib.net/minizip' as const,
@@ -49,18 +49,18 @@ export const zlibnetminizipPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/autoconf@^2',
     'gnu.org/automake@^1',
     'gnu.org/libtool@^2',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.3.1',
     '1.3.0',

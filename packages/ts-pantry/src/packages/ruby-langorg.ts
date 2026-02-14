@@ -32,31 +32,31 @@
  */
 export const rubyPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ruby-lang' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'ruby-lang.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Powerful, clean, object-oriented scripting language' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/ruby-lang.org/package.yml' as const,
   homepageUrl: 'https://www.ruby-lang.org/' as const,
   githubUrl: 'https://github.com/ruby/ruby' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install ruby-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ruby-lang.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install ruby-lang.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'erb',
     'irb',
@@ -67,19 +67,19 @@ export const rubyPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssl.org^1.1',
     'pyyaml.org^0.2',
     'zlib.net^1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'gnu.org/gettext@^0.21',
     'gnu.org/patch',
@@ -89,9 +89,9 @@ export const rubyPackage = {
     'linux:rubygems.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '4.0.1',
     '4.0.0',
@@ -147,9 +147,9 @@ export const rubyPackage = {
     '2.5.9',
   ] as const,
   /**
-   * Alternative names for this package.
-   * You can use any of these names to access the package.
-   */
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [
     'ruby',
   ] as const,

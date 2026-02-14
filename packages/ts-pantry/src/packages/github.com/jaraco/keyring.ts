@@ -7,7 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/jaraco/keyring`
- * @dependencies `pkgx.sh^1`, `github.com/python-cffi/cffi^1.16`, `github.com/eliben/pycparser^2.21`, ... (+1 more)
+ * @dependencies `pkgx.sh>=1`, `github.com/python-cffi/cffi^1.16`, `github.com/eliben/pycparser^2.21`, ... (+1 more)
  * @buildDependencies `python.org@>=3.11` - required only when building from source
  *
  * @example
@@ -26,56 +26,56 @@
  */
 export const keyringPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'keyring' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/jaraco/keyring' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Easy way to access the system keyring service from python' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/jaraco/keyring/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jaraco/keyring' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/jaraco/keyring' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jaraco/keyring -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/jaraco/keyring' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'keyring',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
     'github.com/python-cffi/cffi^1.16',
     'github.com/eliben/pycparser^2.21',
     'cryptography.io^42',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@>=3.11',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '25.7.0',
     '25.6.0',

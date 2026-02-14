@@ -6,7 +6,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install curl.se/ssl3`
- * @dependencies `openssl.org^3`, `curl.se/ca-certs`, `zlib.net^1.2.11`
+ * @dependencies `openssl.org^3`, `curl.se/ca-certs`, `zlib.net^1.2.11`, ... (+1 more)
  *
  * @example
  * ```typescript
@@ -22,43 +22,44 @@
  */
 export const curlsessl3Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ssl3' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'curl.se/ssl3' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/curl.se/ssl3/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install curl.se/ssl3' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +curl.se/ssl3 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install curl.se/ssl3' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssl.org^3',
     'curl.se/ca-certs',
     'zlib.net^1.2.11',
+    'nghttp2.org',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '8.18.0',
   ] as const,

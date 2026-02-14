@@ -3,7 +3,7 @@
  *
  * @domain `numbat.dev`
  * @programs `numbat`
- * @version `1.19.0` (13 versions available)
+ * @version `1.23.0` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install numbat.dev`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "numbat"
  * console.log(pkg.description) // "A statically typed programming language for sci..."
  * console.log(pkg.programs)    // ["numbat"]
- * console.log(pkg.versions[0]) // "1.19.0" (latest)
+ * console.log(pkg.versions[0]) // "1.23.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/numbat-dev.md
@@ -25,31 +25,31 @@
  */
 export const numbatdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'numbat' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'numbat.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A statically typed programming language for scientific computations with first class support for physical dimensions and units' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/numbat.dev/package.yml' as const,
   homepageUrl: 'https://numbat.dev' as const,
   githubUrl: 'https://github.com/sharkdp/numbat' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install numbat.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +numbat.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install numbat.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'numbat',
   ] as const,
@@ -57,10 +57,14 @@ export const numbatdevPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.23.0',
+    '1.22.0',
+    '1.21.0',
+    '1.20.0',
     '1.19.0',
     '1.18.0',
     '1.17.0',

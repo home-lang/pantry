@@ -23,24 +23,24 @@
  */
 export const leethomasongithubiotinyxml2Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'tinyxml2' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'leethomason.github.io/tinyxml2' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'TinyXML2 is a simple, small, efficient, C++ XML parser that can be easily integrated into other programs.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/leethomason.github.io/tinyxml2/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/leethomason/tinyxml2' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install leethomason.github.io/tinyxml2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +leethomason.github.io/tinyxml2 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install leethomason.github.io/tinyxml2' as const,
@@ -48,16 +48,16 @@ export const leethomasongithubiotinyxml2Package = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '11.0.0',
     '10.1.0',

@@ -3,7 +3,7 @@
  *
  * @domain `tilt.dev`
  * @programs `tilt`
- * @version `0.36.1` (28 versions available)
+ * @version `0.36.3` (29 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install tilt.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "tilt"
  * console.log(pkg.description) // "Define your dev environment as code. For micros..."
  * console.log(pkg.programs)    // ["tilt"]
- * console.log(pkg.versions[0]) // "0.36.1" (latest)
+ * console.log(pkg.versions[0]) // "0.36.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/tilt-dev.md
@@ -26,50 +26,51 @@
  */
 export const tiltdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'tilt' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'tilt.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Define your dev environment as code. For microservice apps on Kubernetes.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/tilt.dev/package.yml' as const,
   homepageUrl: 'https://tilt.dev/' as const,
   githubUrl: 'https://github.com/tilt-dev/tilt' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install tilt.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tilt.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tilt.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'tilt',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@~1.21',
     'nodejs.org@^20',
     'classic.yarnpkg.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.36.3',
     '0.36.1',
     '0.36.0',
     '0.35.2',

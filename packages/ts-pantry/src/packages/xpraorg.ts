@@ -3,12 +3,12 @@
  *
  * @domain `xpra.org`
  * @programs `xpra`
- * @version `6.4.1` (17 versions available)
+ * @version `6.4.3` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install xpra.org`
  * @homepage https://xpra.org/
- * @dependencies `pkgx.sh^1`, `python.org~3.11`, `cython.org`, ... (+6 more)
+ * @dependencies `pkgx.sh>=1`, `python.org~3.11`, `cython.org`, ... (+6 more)
  *
  * @example
  * ```typescript
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "xpra"
  * console.log(pkg.description) // "Persistent remote applications for X11; screen ..."
  * console.log(pkg.programs)    // ["xpra"]
- * console.log(pkg.versions[0]) // "6.4.1" (latest)
+ * console.log(pkg.versions[0]) // "6.4.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/xpra-org.md
@@ -26,41 +26,41 @@
  */
 export const xpraorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'xpra' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'xpra.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Persistent remote applications for X11; screen sharing for X11, MacOS and MSWindows.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/xpra.org/package.yml' as const,
   homepageUrl: 'https://xpra.org/' as const,
   githubUrl: 'https://github.com/Xpra-org/xpra' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install xpra.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xpra.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install xpra.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'xpra',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
     'python.org~3.11',
     'cython.org',
     'tukaani.org/xz',
@@ -72,10 +72,12 @@ export const xpraorgPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '6.4.3',
+    '6.4.2',
     '6.4.1',
     '6.4.0',
     '6.3.6',

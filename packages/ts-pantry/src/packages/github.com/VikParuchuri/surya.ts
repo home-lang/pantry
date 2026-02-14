@@ -3,12 +3,12 @@
  *
  * @domain `github.com/VikParuchuri/surya`
  * @programs `surya_detect`
- * @version `0.17.0` (79 versions available)
+ * @version `0.17.1` (80 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/VikParuchuri/surya`
  * @homepage https://www.datalab.to
- * @dependencies `pkgx.sh^1`, `linux:mesa3d.org^23.3`, `linux:gnome.org/glib^2`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
+ * @dependencies `pkgx.sh>=1`, `linux:mesa3d.org^23.3`, `linux:gnome.org/glib^2`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `python.org@~3.11` - required only when building from source
  *
  * @example
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "Surya"
  * console.log(pkg.description) // "OCR, layout analysis, reading order, table reco..."
  * console.log(pkg.programs)    // ["surya_detect"]
- * console.log(pkg.versions[0]) // "0.17.0" (latest)
+ * console.log(pkg.versions[0]) // "0.17.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/VikParuchuri/surya.md
@@ -27,58 +27,59 @@
  */
 export const suryaPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'Surya' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/VikParuchuri/surya' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'OCR, layout analysis, reading order, table recognition in 90+ languages' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/VikParuchuri/surya/package.yml' as const,
   homepageUrl: 'https://www.datalab.to' as const,
   githubUrl: 'https://github.com/VikParuchuri/surya' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/VikParuchuri/surya' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/VikParuchuri/surya -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/VikParuchuri/surya' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'surya_detect',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
     'linux:mesa3d.org^23.3',
     'linux:gnome.org/glib^2',
     'linux:mupdf.com',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@~3.11',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.17.1',
     '0.17.0',
     '0.16.7',
     '0.16.6',

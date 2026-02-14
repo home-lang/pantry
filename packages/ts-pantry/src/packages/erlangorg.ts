@@ -3,7 +3,7 @@
  *
  * @domain `erlang.org`
  * @programs `ct_run`, `dialyzer`, `epmd`, `erl`, `erlc`, ... (+4 more)
- * @version `28.3.1` (91 versions available)
+ * @version `28.3.1` (92 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install erlang.org`
@@ -27,31 +27,31 @@
  */
 export const erlangorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'erlang' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'erlang.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Programming language for highly scalable real-time systems' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/erlang.org/package.yml' as const,
   homepageUrl: 'https://www.erlang.org/' as const,
   githubUrl: 'https://github.com/erlang/otp' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install erlang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +erlang.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install erlang.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ct_run',
     'dialyzer',
@@ -65,24 +65,24 @@ export const erlangorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssl.org^1.1',
     'invisible-island.net/ncurses',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'perl.org@>=5',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '28.3.1',
     '28.3.0',
@@ -94,6 +94,7 @@ export const erlangorgPackage = {
     '28.0.2',
     '28.0.1',
     '28.0.0',
+    '27.3.4.7',
     '27.3.4.6',
     '27.3.4.5',
     '27.3.4.4',

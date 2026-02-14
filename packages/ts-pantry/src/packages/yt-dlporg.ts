@@ -3,7 +3,7 @@
  *
  * @domain `yt-dlp.org`
  * @programs `yt-dlp`
- * @version `2025.12.8` (61 versions available)
+ * @version `2026.2.4` (64 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install yt-dlp.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "yt-dlp"
  * console.log(pkg.description) // "A feature-rich command-line audio/video downloader"
  * console.log(pkg.programs)    // ["yt-dlp"]
- * console.log(pkg.versions[0]) // "2025.12.8" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/yt-dlp-org.md
@@ -26,49 +26,52 @@
  */
 export const ytdlporgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'yt-dlp' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'yt-dlp.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A feature-rich command-line audio/video downloader' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/yt-dlp.org/package.yml' as const,
   homepageUrl: 'https://discord.gg/H5MNcFW63r' as const,
   githubUrl: 'https://github.com/yt-dlp/yt-dlp' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install yt-dlp.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +yt-dlp.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install yt-dlp.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'yt-dlp',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'python.org>=3<3.12',
     'ffmpeg.org',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.4',
+    '2026.1.31',
+    '2026.1.29',
     '2025.12.8',
     '2025.11.12',
     '2025.10.22',

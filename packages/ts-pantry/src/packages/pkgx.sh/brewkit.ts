@@ -3,11 +3,11 @@
  *
  * @domain `pkgx.sh/brewkit`
  * @programs `bk`
- * @version `1.16.0` (61 versions available)
+ * @version `1.19.2` (68 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pkgx.sh/brewkit`
- * @dependencies `deno.land~1.39  # 1.40 shouts unskippable deprecation warnings`, `gnu.org/bash^5`, `pkgx.sh^1`
+ * @dependencies `deno.land~1.39 # 1.40 shouts unskippable deprecation warnings`, `gnu.org/bash^5`, `pkgx.sh>=1`
  *
  * @example
  * ```typescript
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "brewkit"
  * console.log(pkg.description) // "build infra & `$ bk build`"
  * console.log(pkg.programs)    // ["bk"]
- * console.log(pkg.versions[0]) // "1.16.0" (latest)
+ * console.log(pkg.versions[0]) // "1.19.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pkgx-sh/brewkit.md
@@ -25,50 +25,57 @@
  */
 export const pkgxshbrewkitPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'brewkit' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'pkgx.sh/brewkit' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'build infra & `$ bk build`' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/pkgx.sh/brewkit/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/pkgxdev/brewkit' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install pkgx.sh/brewkit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh/brewkit -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pkgx.sh/brewkit' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'bk',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'deno.land~1.39  # 1.40 shouts unskippable deprecation warnings',
+    'deno.land~1.39 # 1.40 shouts unskippable deprecation warnings',
     'gnu.org/bash^5',
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.19.2',
+    '1.19.1',
+    '1.19.0',
+    '1.18.2',
+    '1.18.1',
+    '1.18.0',
+    '1.17.0',
     '1.16.0',
     '1.15.0',
     '1.14.3',

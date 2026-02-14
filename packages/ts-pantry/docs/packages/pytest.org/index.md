@@ -50,7 +50,7 @@ sh <(curl https://pkgx.sh) +pytest.org@9.0.2 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

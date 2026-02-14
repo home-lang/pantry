@@ -3,11 +3,12 @@
  *
  * @domain `railway.app`
  * @programs `railway`
- * @version `4.26.0` (88 versions available)
+ * @version `4.30.2` (99 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install railway.app`
  * @homepage https://railway.app/
+ * @buildDependencies `darwin:gnu.org/libiconv` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -17,7 +18,7 @@
  * console.log(pkg.name)        // "railway"
  * console.log(pkg.description) // "Develop and deploy code with zero configuration"
  * console.log(pkg.programs)    // ["railway"]
- * console.log(pkg.versions[0]) // "4.26.0" (latest)
+ * console.log(pkg.versions[0]) // "4.30.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/railway-app.md
@@ -25,42 +26,60 @@
  */
 export const railwayappPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'railway' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'railway.app' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Develop and deploy code with zero configuration' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/railway.app/package.yml' as const,
   homepageUrl: 'https://railway.app/' as const,
   githubUrl: 'https://github.com/railwayapp/cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install railway.app' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +railway.app -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install railway.app' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'railway',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
-  buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
+  buildDependencies: [
+    'darwin:gnu.org/libiconv',
+  ] as const,
+  /**
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '4.30.2',
+    '4.30.1',
+    '4.30.0',
+    '4.29.0',
+    '4.28.0',
+    '4.27.6',
+    '4.27.5',
+    '4.27.4',
+    '4.27.3',
+    '4.27.1',
+    '4.27.0',
     '4.26.0',
     '4.25.3',
     '4.25.2',

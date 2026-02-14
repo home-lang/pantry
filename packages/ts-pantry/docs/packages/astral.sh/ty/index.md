@@ -45,7 +45,7 @@ sh <(curl https://pkgx.sh) +astral.sh/ty@0.0.1.8 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh@1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

@@ -46,7 +46,7 @@ sh <(curl https://pkgx.sh) +github.com/jaraco/keyring@25.7.0 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `github.com/python-cffi/cffi^1.16`
 - `github.com/eliben/pycparser^2.21`
 - `cryptography.io^42`

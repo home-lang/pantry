@@ -3,7 +3,7 @@
  *
  * @domain `dotnet.microsoft.com`
  * @programs `dotnet`
- * @version `10.0.102` (45 versions available)
+ * @version `10.0.103` (50 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dotnet.microsoft.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "dotnet"
  * console.log(pkg.description) // "Home of .NET's Virtual Monolithic Repository wh..."
  * console.log(pkg.programs)    // ["dotnet"]
- * console.log(pkg.versions[0]) // "10.0.102" (latest)
+ * console.log(pkg.versions[0]) // "10.0.103" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dotnet-microsoft-com.md
@@ -27,68 +27,72 @@
  */
 export const dotnetmicrosoftcomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'dotnet' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'dotnet.microsoft.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Home of .NET\'s Virtual Monolithic Repository which includes all the code needed to build the .NET SDK from source' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/dotnet.microsoft.com/package.yml' as const,
   homepageUrl: 'https://dotnet.microsoft.com/' as const,
   githubUrl: 'https://github.com/dotnet/dotnet' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install dotnet.microsoft.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dotnet.microsoft.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install dotnet.microsoft.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'dotnet',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'linux:unicode.org^71',
     'linux:openssl.org',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '10.0.103',
     '10.0.102',
     '10.0.101',
+    '9.0.311',
     '9.0.310',
     '9.0.309',
     '9.0.308',
     '9.0.306',
     '9.0.303',
     '9.0.202',
+    '9.0.114',
     '9.0.113',
     '9.0.111',
     '9.0.102',
     '9.0.100',
+    '8.0.418',
     '8.0.417',
     '8.0.415',
     '8.0.410',
@@ -105,6 +109,7 @@ export const dotnetmicrosoftcomPackage = {
     '8.0.206',
     '8.0.204',
     '8.0.203',
+    '8.0.124',
     '8.0.121',
     '8.0.112',
     '8.0.107',

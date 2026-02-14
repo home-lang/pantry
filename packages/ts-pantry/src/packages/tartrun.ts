@@ -3,7 +3,7 @@
  *
  * @domain `tart.run`
  * @programs `tart`
- * @version `2.30.1` (65 versions available)
+ * @version `2.30.6` (69 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install tart.run`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "tart"
  * console.log(pkg.description) // "macOS and Linux VMs on Apple Silicon to use in ..."
  * console.log(pkg.programs)    // ["tart"]
- * console.log(pkg.versions[0]) // "2.30.1" (latest)
+ * console.log(pkg.versions[0]) // "2.30.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/tart-run.md
@@ -26,48 +26,52 @@
  */
 export const tartrunPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'tart' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'tart.run' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'macOS and Linux VMs on Apple Silicon to use in CI and other automations' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/tart.run/package.yml' as const,
   homepageUrl: 'https://tart.run' as const,
   githubUrl: 'https://github.com/cirruslabs/tart' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install tart.run' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tart.run -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tart.run' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'tart',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.30.6',
+    '2.30.5',
+    '2.30.4',
+    '2.30.3',
     '2.30.1',
     '2.30.0',
     '2.29.0',

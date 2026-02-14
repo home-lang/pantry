@@ -3,12 +3,12 @@
  *
  * @domain `github.com/ggerganov/llama.cpp`
  * @programs `llama-cli`, `llama.cpp`, `convert.py`
- * @version `7815.0.0` (4231 versions available)
+ * @version `8046.0.0` (4397 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/ggerganov/llama.cpp`
- * @dependencies `pkgx.sh^1`, `curl.se^8 # libcurl, since b5064`, `linux:gnu.org/gcc/libstdcxx` (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `gnu.org/coreutils`, `python.org@~3.11`, `cmake.org@3`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies `pkgx.sh>=1`, `curl.se^8 # libcurl, since b5064`, `linux:gnu.org/gcc/libstdcxx^14 # clang doesn`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
+ * @buildDependencies `gnu.org/coreutils`, `python.org@~3.11`, `cmake.org@3` - required only when building from source
  *
  * @example
  * ```typescript
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "LLaMA.cpp"
  * console.log(pkg.description) // "LLM inference in C/C++"
  * console.log(pkg.programs)    // ["llama-cli", "llama.cpp", ...]
- * console.log(pkg.versions[0]) // "7815.0.0" (latest)
+ * console.log(pkg.versions[0]) // "8046.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/ggerganov/llama-cpp.md
@@ -26,31 +26,31 @@
  */
 export const llamacppPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'LLaMA.cpp' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/ggerganov/llama.cpp' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'LLM inference in C/C++' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/ggerganov/llama.cpp/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/ggerganov/llama.cpp' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/ggerganov/llama.cpp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ggerganov/llama.cpp -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/ggerganov/llama.cpp' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'llama-cli',
     'llama.cpp',
@@ -58,31 +58,196 @@ export const llamacppPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
     'curl.se^8 # libcurl, since b5064',
-    'linux:gnu.org/gcc/libstdcxx',
+    'linux:gnu.org/gcc/libstdcxx^14 # clang doesn',
+    'linux:gnu.org/gcc^14 # needs libgomp.so.1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/coreutils',
     'python.org@~3.11',
     'cmake.org@3',
-    'linux:gnu.org/gcc',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '8046.0.0',
+    '8043.0.0',
+    '8042.0.0',
+    '8041.0.0',
+    '8040.0.0',
+    '8038.0.0',
+    '8037.0.0',
+    '8036.0.0',
+    '8035.0.0',
+    '8034.0.0',
+    '8033.0.0',
+    '8032.0.0',
+    '8030.0.0',
+    '8028.0.0',
+    '8027.0.0',
+    '8026.0.0',
+    '8025.0.0',
+    '8024.0.0',
+    '8023.0.0',
+    '8022.0.0',
+    '8021.0.0',
+    '8020.0.0',
+    '8018.0.0',
+    '8017.0.0',
+    '8012.0.0',
+    '8011.0.0',
+    '8008.0.0',
+    '8007.0.0',
+    '8006.0.0',
+    '8005.0.0',
+    '8004.0.0',
+    '8003.0.0',
+    '8001.0.0',
+    '7999.0.0',
+    '7998.0.0',
+    '7997.0.0',
+    '7996.0.0',
+    '7995.0.0',
+    '7994.0.0',
+    '7993.0.0',
+    '7992.0.0',
+    '7991.0.0',
+    '7990.0.0',
+    '7989.0.0',
+    '7988.0.0',
+    '7987.0.0',
+    '7984.0.0',
+    '7983.0.0',
+    '7982.0.0',
+    '7981.0.0',
+    '7976.0.0',
+    '7974.0.0',
+    '7973.0.0',
+    '7972.0.0',
+    '7971.0.0',
+    '7970.0.0',
+    '7969.0.0',
+    '7968.0.0',
+    '7966.0.0',
+    '7965.0.0',
+    '7964.0.0',
+    '7962.0.0',
+    '7961.0.0',
+    '7960.0.0',
+    '7959.0.0',
+    '7958.0.0',
+    '7957.0.0',
+    '7956.0.0',
+    '7955.0.0',
+    '7954.0.0',
+    '7952.0.0',
+    '7951.0.0',
+    '7950.0.0',
+    '7947.0.0',
+    '7946.0.0',
+    '7945.0.0',
+    '7944.0.0',
+    '7943.0.0',
+    '7942.0.0',
+    '7941.0.0',
+    '7940.0.0',
+    '7938.0.0',
+    '7936.0.0',
+    '7935.0.0',
+    '7933.0.0',
+    '7932.0.0',
+    '7931.0.0',
+    '7930.0.0',
+    '7929.0.0',
+    '7928.0.0',
+    '7927.0.0',
+    '7926.0.0',
+    '7925.0.0',
+    '7924.0.0',
+    '7923.0.0',
+    '7922.0.0',
+    '7921.0.0',
+    '7920.0.0',
+    '7919.0.0',
+    '7918.0.0',
+    '7917.0.0',
+    '7913.0.0',
+    '7911.0.0',
+    '7910.0.0',
+    '7909.0.0',
+    '7907.0.0',
+    '7905.0.0',
+    '7904.0.0',
+    '7903.0.0',
+    '7902.0.0',
+    '7899.0.0',
+    '7898.0.0',
+    '7897.0.0',
+    '7896.0.0',
+    '7895.0.0',
+    '7885.0.0',
+    '7883.0.0',
+    '7881.0.0',
+    '7880.0.0',
+    '7879.0.0',
+    '7876.0.0',
+    '7875.0.0',
+    '7872.0.0',
+    '7871.0.0',
+    '7870.0.0',
+    '7869.0.0',
+    '7868.0.0',
+    '7867.0.0',
+    '7865.0.0',
+    '7864.0.0',
+    '7862.0.0',
+    '7861.0.0',
+    '7860.0.0',
+    '7858.0.0',
+    '7857.0.0',
+    '7856.0.0',
+    '7855.0.0',
+    '7853.0.0',
+    '7852.0.0',
+    '7851.0.0',
+    '7850.0.0',
+    '7849.0.0',
+    '7847.0.0',
+    '7845.0.0',
+    '7844.0.0',
+    '7843.0.0',
+    '7842.0.0',
+    '7841.0.0',
+    '7839.0.0',
+    '7837.0.0',
+    '7836.0.0',
+    '7835.0.0',
+    '7833.0.0',
+    '7832.0.0',
+    '7830.0.0',
+    '7828.0.0',
+    '7827.0.0',
+    '7826.0.0',
+    '7825.0.0',
+    '7824.0.0',
+    '7823.0.0',
+    '7822.0.0',
+    '7821.0.0',
+    '7820.0.0',
+    '7819.0.0',
+    '7818.0.0',
     '7815.0.0',
     '7814.0.0',
     '7813.0.0',

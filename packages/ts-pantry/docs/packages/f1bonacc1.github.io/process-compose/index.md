@@ -25,23 +25,23 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 22 versions</summary>
+<summary>Show all 23 versions</summary>
 
-- `1.87.0`, `1.85.0`, `1.78.0`, `1.76.1`, `1.76.0`
-- `1.75.2`, `1.75.1`, `1.73.0`, `1.64.1`, `1.63.0`
-- `1.46.0`, `1.40.1`, `1.40.0`, `1.34.0`, `1.27.0`
-- `1.24.2`, `1.24.0`, `1.18.0`, `1.9.0`, `1.6.1`
-- `1.5.0`, `1.2.0`
+- `1.90.0`, `1.87.0`, `1.85.0`, `1.78.0`, `1.76.1`
+- `1.76.0`, `1.75.2`, `1.75.1`, `1.73.0`, `1.64.1`
+- `1.63.0`, `1.46.0`, `1.40.1`, `1.40.0`, `1.34.0`
+- `1.27.0`, `1.24.2`, `1.24.0`, `1.18.0`, `1.9.0`
+- `1.6.1`, `1.5.0`, `1.2.0`
 
 </details>
 
-**Latest Version**: `1.87.0`
+**Latest Version**: `1.90.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +f1bonacc1.github.io/process-compose@1.87.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +f1bonacc1.github.io/process-compose@1.90.0 -- $SHELL -i
 ```
 
 ## Usage Examples

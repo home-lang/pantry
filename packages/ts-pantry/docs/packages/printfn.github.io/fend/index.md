@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 19 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `1.5.7`, `1.5.6`, `1.5.5`, `1.5.3`, `1.5.2`
-- `1.5.1`, `1.5.0`, `1.4.9`, `1.4.8`, `1.4.7`
-- `1.4.6`, `1.4.5`, `1.4.4`, `1.4.3`, `1.4.2`
-- `1.4.1`, `1.4.0`, `1.3.3`, `1.3.2`
+- `1.5.8`, `1.5.7`, `1.5.6`, `1.5.5`, `1.5.3`
+- `1.5.2`, `1.5.1`, `1.5.0`, `1.4.9`, `1.4.8`
+- `1.4.7`, `1.4.6`, `1.4.5`, `1.4.4`, `1.4.3`
+- `1.4.2`, `1.4.1`, `1.4.0`, `1.3.3`, `1.3.2`
 
 </details>
 
-**Latest Version**: `1.5.7`
+**Latest Version**: `1.5.8`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +printfn.github.io/fend@1.5.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +printfn.github.io/fend@1.5.8 -- $SHELL -i
 ```
 
 ## Dependencies

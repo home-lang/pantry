@@ -3,12 +3,12 @@
  *
  * @domain `aws.amazon.com/cli`
  * @programs `aws`
- * @version `2.33.5` (1209 versions available)
+ * @version `2.33.22` (1242 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install aws.amazon.com/cli`
  * @homepage https://aws.amazon.com/cli/
- * @dependencies `sourceware.org/libffi^3`, `pkgx.sh^1`
+ * @dependencies `sourceware.org/libffi^3`, `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.7<3.12` - required only when building from source
  *
  * @example
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "aws/cli"
  * console.log(pkg.description) // "Universal Command Line Interface for Amazon Web..."
  * console.log(pkg.programs)    // ["aws"]
- * console.log(pkg.versions[0]) // "2.33.5" (latest)
+ * console.log(pkg.versions[0]) // "2.33.22" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/aws-amazon-com/cli.md
@@ -27,55 +27,72 @@
  */
 export const awsamazoncomcliPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'aws/cli' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'aws.amazon.com/cli' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Universal Command Line Interface for Amazon Web Services' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/aws.amazon.com/cli/package.yml' as const,
   homepageUrl: 'https://aws.amazon.com/cli/' as const,
   githubUrl: 'https://github.com/aws/aws-cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install aws.amazon.com/cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aws.amazon.com/cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install aws.amazon.com/cli' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'aws',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'sourceware.org/libffi^3',
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@>=3.7<3.12',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.33.22',
+    '2.33.21',
+    '2.33.20',
+    '2.33.19',
+    '2.33.18',
+    '2.33.17',
+    '2.33.16',
+    '2.33.15',
+    '2.33.14',
+    '2.33.13',
+    '2.33.12',
+    '2.33.11',
+    '2.33.10',
+    '2.33.9',
+    '2.33.8',
+    '2.33.7',
+    '2.33.6',
     '2.33.5',
     '2.33.4',
     '2.33.3',
@@ -608,6 +625,22 @@ export const awsamazoncomcliPackage = {
     '2.11.7',
     '2.10.4',
     '2.10.3',
+    '1.44.39',
+    '1.44.38',
+    '1.44.37',
+    '1.44.36',
+    '1.44.35',
+    '1.44.34',
+    '1.44.33',
+    '1.44.32',
+    '1.44.31',
+    '1.44.30',
+    '1.44.29',
+    '1.44.28',
+    '1.44.27',
+    '1.44.26',
+    '1.44.25',
+    '1.44.24',
     '1.44.23',
     '1.44.22',
     '1.44.21',

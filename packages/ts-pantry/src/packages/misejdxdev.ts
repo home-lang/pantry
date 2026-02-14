@@ -3,7 +3,7 @@
  *
  * @domain `mise.jdx.dev`
  * @programs `rtx`, `mise`
- * @version `2026.1.6` (417 versions available)
+ * @version `2026.2.11` (434 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mise.jdx.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mise"
  * console.log(pkg.description) // "dev tools, env vars, task runner"
  * console.log(pkg.programs)    // ["rtx", "mise"]
- * console.log(pkg.versions[0]) // "2026.1.6" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.11" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/mise-jdx-dev.md
@@ -27,56 +27,73 @@
  */
 export const misejdxdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mise' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'mise.jdx.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'dev tools, env vars, task runner' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/mise.jdx.dev/package.yml' as const,
   homepageUrl: 'https://mise.jdx.dev' as const,
   githubUrl: 'https://github.com/jdx/mise' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install mise.jdx.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mise.jdx.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install mise.jdx.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'rtx',
     'mise',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssl.org^1.1 # newer mise after 1.35.2 versions require openssl',
     'libgit2.org^1 # newer mise after 2024.5.12 versions require libgit2',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org@3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.11',
+    '2026.2.10',
+    '2026.2.9',
+    '2026.2.8',
+    '2026.2.7',
+    '2026.2.6',
+    '2026.2.5',
+    '2026.2.4',
+    '2026.2.3',
+    '2026.2.2',
+    '2026.2.1',
+    '2026.2.0',
+    '2026.1.12',
+    '2026.1.11',
+    '2026.1.9',
+    '2026.1.8',
+    '2026.1.7',
     '2026.1.6',
     '2026.1.5',
     '2026.1.4',

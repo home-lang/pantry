@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/spotify_player`
  * @programs `spotify_player`
- * @version `0.21.3` (19 versions available)
+ * @version `0.22.1` (21 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/spotify_player`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "spotify_player"
  * console.log(pkg.description) // "A Spotify player in the terminal with full feat..."
  * console.log(pkg.programs)    // ["spotify_player"]
- * console.log(pkg.versions[0]) // "0.21.3" (latest)
+ * console.log(pkg.versions[0]) // "0.22.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/spotify_player.md
@@ -25,40 +25,40 @@
  */
 export const cratesiospotify_playerPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'spotify_player' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'crates.io/spotify_player' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A Spotify player in the terminal with full feature parity' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/spotify_player/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/aome510/spotify-player' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install crates.io/spotify_player' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/spotify_player -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/spotify_player' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'spotify_player',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'openssl.org^1.1',
     'github.com/libsixel/libsixel^1',
@@ -67,10 +67,12 @@ export const cratesiospotify_playerPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.22.1',
+    '0.22.0',
     '0.21.3',
     '0.21.2',
     '0.21.1',

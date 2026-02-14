@@ -2,12 +2,12 @@
  * **edencommon** - Shared library for Watchman and Eden projects.
  *
  * @domain `facebook.com/edencommon`
- * @version `2026.1.5.0` (123 versions available)
+ * @version `2026.2.9.0` (126 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/edencommon`
  * @dependencies `facebook.com/folly`, `gflags.github.io`, `google.com/glog`, ... (+6 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `cmake.org`, `google.com/googletest`, `linux:gnu.org/gcc@13` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @buildDependencies `cmake.org`, `google.com/googletest`, `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -16,7 +16,7 @@
  * const pkg = pantry.facebookcomedencommon
  * console.log(pkg.name)        // "edencommon"
  * console.log(pkg.description) // "Shared library for Watchman and Eden projects. "
- * console.log(pkg.versions[0]) // "2026.1.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.9.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/facebook-com/edencommon.md
@@ -24,34 +24,34 @@
  */
 export const facebookcomedencommonPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'edencommon' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'facebook.com/edencommon' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Shared library for Watchman and Eden projects. ' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/edencommon/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebookexperimental/edencommon' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install facebook.com/edencommon' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/edencommon -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install facebook.com/edencommon' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'facebook.com/folly',
     'gflags.github.io',
@@ -61,24 +61,27 @@ export const facebookcomedencommonPackage = {
     'openssl.org^1.1',
     'sourceware.org/bzip2^1',
     'boost.org~1.88',
-    'linux:gnu.org/gcc/libstdcxx@13',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org',
     'google.com/googletest',
-    'linux:gnu.org/gcc@13',
+    'linux:gnu.org/gcc@14',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.9.0',
+    '2026.2.2.0',
     '2026.1.5.0',
+    '2026.1.26.0',
     '2026.1.19.0',
     '2026.1.12.0',
     '2025.9.8.0',

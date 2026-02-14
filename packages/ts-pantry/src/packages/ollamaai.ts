@@ -3,7 +3,7 @@
  *
  * @domain `ollama.ai`
  * @programs `ollama`
- * @version `0.14.3` (138 versions available)
+ * @version `0.16.1` (146 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install ollama.ai`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ollama"
  * console.log(pkg.description) // "Get up and running with Llama 3.3, DeepSeek-R1,..."
  * console.log(pkg.programs)    // ["ollama"]
- * console.log(pkg.versions[0]) // "0.14.3" (latest)
+ * console.log(pkg.versions[0]) // "0.16.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/ollama-ai.md
@@ -27,57 +27,65 @@
  */
 export const ollamaaiPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ollama' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'ollama.ai' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Get up and running with Llama 3.3, DeepSeek-R1, Phi-4, Gemma 2, and other large language models.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/ollama.ai/package.yml' as const,
   homepageUrl: 'https://ollama.com/' as const,
   githubUrl: 'https://github.com/ollama/ollama' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install ollama.ai' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ollama.ai -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install ollama.ai' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ollama',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'curl.se/ca-certs',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'go.dev@^1.21',
     'cmake.org@^3',
     'linux:gnu.org/binutils',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.16.1',
+    '0.16.0',
+    '0.15.6',
+    '0.15.5',
+    '0.15.4',
+    '0.15.2',
+    '0.15.1',
+    '0.15.0',
     '0.14.3',
     '0.14.2',
     '0.14.1',

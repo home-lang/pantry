@@ -28,19 +28,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 1 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `0.9.33`
+- `0.9.35`, `0.9.34`, `0.9.33`
 
 </details>
 
-**Latest Version**: `0.9.33`
+**Latest Version**: `0.9.35`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +openldap.org/liblmdb@0.9.33 -- $SHELL -i
+sh <(curl https://pkgx.sh) +openldap.org/liblmdb@0.9.35 -- $SHELL -i
 ```
 
 ## Usage Examples

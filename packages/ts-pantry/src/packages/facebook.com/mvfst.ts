@@ -2,12 +2,12 @@
  * **mvfst** - An implementation of the QUIC transport protocol.
  *
  * @domain `facebook.com/mvfst`
- * @version `2026.1.5.0` (108 versions available)
+ * @version `2026.2.9.0` (111 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/mvfst`
  * @dependencies `boost.org`, `github.com/facebookincubator/fizz`, `fmt.dev^12`, ... (+6 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `cmake.org`, `linux:gnu.org/gcc@13`, `linux:gnu.org/binutils`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @buildDependencies `cmake.org`, `linux:gnu.org/gcc@14`, `linux:gnu.org/binutils`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -16,7 +16,7 @@
  * const pkg = pantry.facebookcommvfst
  * console.log(pkg.name)        // "mvfst"
  * console.log(pkg.description) // "An implementation of the QUIC transport protocol."
- * console.log(pkg.versions[0]) // "2026.1.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.9.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/facebook-com/mvfst.md
@@ -24,34 +24,34 @@
  */
 export const facebookcommvfstPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mvfst' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'facebook.com/mvfst' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An implementation of the QUIC transport protocol.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/mvfst/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebook/mvfst' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install facebook.com/mvfst' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/mvfst -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install facebook.com/mvfst' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'boost.org',
     'github.com/facebookincubator/fizz',
@@ -61,25 +61,28 @@ export const facebookcommvfstPackage = {
     'google.com/glog',
     'openssl.org',
     'linux:libsodium.org^1.0.19',
-    'linux:gnu.org/gcc/libstdcxx@13',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org',
-    'linux:gnu.org/gcc@13',
+    'linux:gnu.org/gcc@14',
     'linux:gnu.org/binutils',
     'linux:gnu.org/make',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.9.0',
+    '2026.2.2.0',
     '2026.1.5.0',
+    '2026.1.26.0',
     '2026.1.19.0',
     '2026.1.12.0',
     '2025.9.8.0',

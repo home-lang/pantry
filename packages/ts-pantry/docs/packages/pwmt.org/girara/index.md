@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 5 versions</summary>
 
-- `0.4.5`, `0.4.4`
+- `2026.2.4`, `2026.2.3`, `2026.1.30`, `0.4.5`, `0.4.4`
 
 </details>
 
-**Latest Version**: `0.4.5`
+**Latest Version**: `2026.2.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pwmt.org/girara@0.4.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pwmt.org/girara@2026.2.4 -- $SHELL -i
 ```
 
 ## Dependencies

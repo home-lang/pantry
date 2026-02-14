@@ -28,31 +28,31 @@
  */
 export const openmpiorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'open-mpi' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'open-mpi.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Open MPI main development repository' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/open-mpi.org/package.yml' as const,
   homepageUrl: 'https://www.open-mpi.org' as const,
   githubUrl: 'https://github.com/open-mpi/ompi' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install open-mpi.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +open-mpi.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install open-mpi.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'mpic++',
     'mpiCC',
@@ -67,26 +67,26 @@ export const openmpiorgPackage = {
     'opal_wrapper',
   ] as const,
   /**
-   * Related packages that work well with this package.
-   * Consider installing these for enhanced functionality.
-   */
+  * Related packages that work well with this package.
+  * Consider installing these for enhanced functionality.
+  */
   companions: [
     'OMPI_F77FLAGS^$FCFLAGS -I{{prefix}}/include',
     'OMPI_F90FLAGS^$FCFLAGS -I{{prefix}}/include',
   ] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'open-mpi.org/hwloc',
     'openpmix.github.io@5',
     'libevent.org',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'zlib.net@^1',
     'python.org@^3',
@@ -94,9 +94,9 @@ export const openmpiorgPackage = {
     'gnu.org/gcc',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '5.0.9',
     '5.0.8',

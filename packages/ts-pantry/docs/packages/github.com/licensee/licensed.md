@@ -44,11 +44,8 @@ sh <(curl https://pkgx.sh) +github.com/licensee/licensed@5.0.4 -- $SHELL -i
 
 This package depends on:
 
-- `ruby-lang.org^3.1`
+- `ruby-lang.org~3.4`
 - `rubygems.org`
-- `linux:gnome.org/libxml2~2.13.8 # for nokogiri`
-- `linux:gnome.org/libxslt~1.1.43 # for nokogiri`
-- `linux:pcre.org^8 # for nokogiri`
 
 ## Usage Examples
 

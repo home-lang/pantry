@@ -45,7 +45,7 @@ sh <(curl https://pkgx.sh) +borgbackup.org@1.4.3 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `github.com/Cyan4973/xxHash^0.8`
 
 ## Usage Examples

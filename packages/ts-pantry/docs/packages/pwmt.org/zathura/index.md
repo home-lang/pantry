@@ -25,20 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 12 versions</summary>
 
-- `0.5.14`, `0.5.13`, `0.5.12`, `0.5.11`, `0.5.10`
-- `0.5.9`, `0.5.8`, `0.5.7`, `0.5.6`
+- `2026.2.9`, `2026.2.3`, `2026.1.30`, `0.5.14`, `0.5.13`
+- `0.5.12`, `0.5.11`, `0.5.10`, `0.5.9`, `0.5.8`
+- `0.5.7`, `0.5.6`
 
 </details>
 
-**Latest Version**: `0.5.14`
+**Latest Version**: `2026.2.9`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pwmt.org/zathura@0.5.14 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pwmt.org/zathura@2026.2.9 -- $SHELL -i
 ```
 
 ## Dependencies

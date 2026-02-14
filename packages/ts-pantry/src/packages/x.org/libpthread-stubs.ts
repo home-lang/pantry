@@ -21,24 +21,24 @@
  */
 export const xorglibpthreadstubsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'libpthread-stubs' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'x.org/libpthread-stubs' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/x.org/libpthread-stubs/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install x.org/libpthread-stubs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/libpthread-stubs -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install x.org/libpthread-stubs' as const,
@@ -47,9 +47,9 @@ export const xorglibpthreadstubsPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.5.0',
     '0.4.0',

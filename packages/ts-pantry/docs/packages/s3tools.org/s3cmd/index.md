@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +s3tools.org/s3cmd@2.4.0 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

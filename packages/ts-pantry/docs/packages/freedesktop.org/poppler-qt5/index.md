@@ -37,24 +37,24 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 29 versions</summary>
+<summary>Show all 30 versions</summary>
 
-- `26.1.0`, `25.12.0`, `25.11.0`, `25.10.0`, `25.9.1`
-- `25.9.0`, `25.8.0`, `25.7.0`, `25.6.0`, `25.5.0`
-- `25.4.0`, `25.3.0`, `25.2.0`, `25.1.0`, `24.12.0`
-- `24.11.0`, `24.10.0`, `24.9.0`, `24.8.0`, `24.7.0`
-- `24.6.1`, `24.6.0`, `24.5.0`, `24.4.0`, `24.3.0`
-- `24.2.0`, `24.1.0`, `23.12.0`, `23.11.0`
+- `26.2.0`, `26.1.0`, `25.12.0`, `25.11.0`, `25.10.0`
+- `25.9.1`, `25.9.0`, `25.8.0`, `25.7.0`, `25.6.0`
+- `25.5.0`, `25.4.0`, `25.3.0`, `25.2.0`, `25.1.0`
+- `24.12.0`, `24.11.0`, `24.10.0`, `24.9.0`, `24.8.0`
+- `24.7.0`, `24.6.1`, `24.6.0`, `24.5.0`, `24.4.0`
+- `24.3.0`, `24.2.0`, `24.1.0`, `23.12.0`, `23.11.0`
 
 </details>
 
-**Latest Version**: `26.1.0`
+**Latest Version**: `26.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +freedesktop.org/poppler-qt5@26.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +freedesktop.org/poppler-qt5@26.2.0 -- $SHELL -i
 ```
 
 ## Dependencies

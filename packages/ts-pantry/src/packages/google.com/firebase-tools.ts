@@ -3,7 +3,7 @@
  *
  * @domain `google.com/firebase-tools`
  * @programs `firebase`
- * @version `15.4.0` (135 versions available)
+ * @version `15.6.0` (138 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install google.com/firebase-tools`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "firebase"
  * console.log(pkg.description) // "The Firebase Command Line Tools"
  * console.log(pkg.programs)    // ["firebase"]
- * console.log(pkg.versions[0]) // "15.4.0" (latest)
+ * console.log(pkg.versions[0]) // "15.6.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/google-com/firebase-tools.md
@@ -27,54 +27,57 @@
  */
 export const googlecomfirebasetoolsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'firebase' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'google.com/firebase-tools' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The Firebase Command Line Tools' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/google.com/firebase-tools/package.yml' as const,
   homepageUrl: 'https://firebase.google.com/docs/cli/' as const,
   githubUrl: 'https://github.com/firebase/firebase-tools' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install google.com/firebase-tools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/firebase-tools -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install google.com/firebase-tools' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'firebase',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'nodejs.org',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'npmjs.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '15.6.0',
+    '15.5.1',
+    '15.5.0',
     '15.4.0',
     '15.3.1',
     '15.3.0',

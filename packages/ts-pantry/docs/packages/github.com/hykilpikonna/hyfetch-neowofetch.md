@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +github.com/hykilpikonna/hyfetch/neowofetch@2.0.5 -- 
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

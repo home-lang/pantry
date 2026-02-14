@@ -24,33 +24,33 @@
  */
 export const libsdlorgsdl_imagePackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'SDL_image' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'libsdl.org/SDL_image' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Image decoding for many popular formats for Simple Directmedia Layer.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/libsdl.org/SDL_image/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/libsdl-org/SDL_image' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install libsdl.org/SDL_image' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsdl.org/SDL_image -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install libsdl.org/SDL_image' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'libjpeg-turbo.org^2',
     'github.com/AOMediaCodec/libavif^0.11',
@@ -60,16 +60,16 @@ export const libsdlorgsdl_imagePackage = {
     'google.com/webp^1.3',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/gcc/libstdcxx',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '3.4.0',
     '3.2.6',

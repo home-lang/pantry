@@ -26,47 +26,47 @@
  */
 export const bcryptsourceforgenetPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'bcrypt' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'bcrypt.sourceforge.net' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Cross platform file encryption utility using blowfish' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/bcrypt.sourceforge.net/package.yml' as const,
   homepageUrl: 'https://bcrypt.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install bcrypt.sourceforge.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bcrypt.sourceforge.net -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install bcrypt.sourceforge.net' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'bcrypt',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'zlib.net',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.1.0',
   ] as const,

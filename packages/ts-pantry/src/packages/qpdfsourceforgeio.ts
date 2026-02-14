@@ -3,7 +3,7 @@
  *
  * @domain `qpdf.sourceforge.io`
  * @programs `qpdf`
- * @version `12.3.1` (12 versions available)
+ * @version `12.3.2` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install qpdf.sourceforge.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "qpdf"
  * console.log(pkg.description) // "qpdf: A content-preserving PDF document transfo..."
  * console.log(pkg.programs)    // ["qpdf"]
- * console.log(pkg.versions[0]) // "12.3.1" (latest)
+ * console.log(pkg.versions[0]) // "12.3.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/qpdf-sourceforge-io.md
@@ -27,64 +27,65 @@
  */
 export const qpdfsourceforgeioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'qpdf' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'qpdf.sourceforge.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'qpdf: A content-preserving PDF document transformer' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/qpdf.sourceforge.io/package.yml' as const,
   homepageUrl: 'https://qpdf.sourceforge.io/' as const,
   githubUrl: 'https://github.com/qpdf/qpdf' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install qpdf.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +qpdf.sourceforge.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install qpdf.sourceforge.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'qpdf',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'zlib.net^1',
     'libjpeg-turbo.org^2',
     'openssl.org^1.1',
     'gnutls.org^3',
-    'linux:gnu.org/gcc/libstdcxx^13 # needs newer libstdc++ for C++20 support',
+    'linux:gnu.org/gcc/libstdcxx^14 # needs newer libstdc++ for C++20 support',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org@^3',
     'pyyaml.org/libyaml',
     'python.org@^3',
     'pip.pypa.io',
-    'linux:gnu.org/gcc@^13',
+    'linux:gnu.org/gcc@^14',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '12.3.2',
     '12.3.1',
     '12.3.0',
     '12.2.0',

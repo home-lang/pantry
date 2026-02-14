@@ -3,7 +3,7 @@
  *
  * @domain `microsoft.com/azure-cli`
  * @programs `az`
- * @version `2.82.0` (41 versions available)
+ * @version `2.83.0` (42 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install microsoft.com/azure-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "az"
  * console.log(pkg.description) // "Azure Command-Line Interface"
  * console.log(pkg.programs)    // ["az"]
- * console.log(pkg.versions[0]) // "2.82.0" (latest)
+ * console.log(pkg.versions[0]) // "2.83.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/microsoft-com/azure-cli.md
@@ -26,39 +26,39 @@
  */
 export const microsoftcomazurecliPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'az' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'microsoft.com/azure-cli' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Azure Command-Line Interface' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/microsoft.com/azure-cli/package.yml' as const,
   homepageUrl: 'https://docs.microsoft.com/cli/azure/overview' as const,
   githubUrl: 'https://github.com/Azure/azure-cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install microsoft.com/azure-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +microsoft.com/azure-cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install microsoft.com/azure-cli' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'az',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssl.org@1.1',
     'python.org>=3.10<3.12',
@@ -66,10 +66,11 @@ export const microsoftcomazurecliPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.83.0',
     '2.82.0',
     '2.81.0',
     '2.80.0',

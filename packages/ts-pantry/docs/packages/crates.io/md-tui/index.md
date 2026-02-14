@@ -26,21 +26,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
-- `0.9.3`, `0.9.2`, `0.9.1`, `0.9.0`, `0.8.7`
-- `0.8.6`, `0.8.5`, `0.8.4`, `0.8.3`, `0.8.2`
-- `0.8.1`, `0.8.0`, `0.7.4`, `0.7.3`
+- `0.9.4`, `0.9.3`, `0.9.2`, `0.9.1`, `0.9.0`
+- `0.8.7`, `0.8.6`, `0.8.5`, `0.8.4`, `0.8.3`
+- `0.8.2`, `0.8.1`, `0.8.0`, `0.7.4`, `0.7.3`
 
 </details>
 
-**Latest Version**: `0.9.3`
+**Latest Version**: `0.9.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/md-tui@0.9.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/md-tui@0.9.4 -- $SHELL -i
 ```
 
 ## Usage Examples

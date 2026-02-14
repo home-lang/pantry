@@ -3,7 +3,7 @@
  *
  * @domain `cloudflare.com/cloudflared`
  * @programs `cloudflared`
- * @version `2026.1.1` (38 versions available)
+ * @version `2026.2.0` (40 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cloudflare.com/cloudflared`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "cloudflared"
  * console.log(pkg.description) // "Cloudflare Tunnel client (formerly Argo Tunnel)"
  * console.log(pkg.programs)    // ["cloudflared"]
- * console.log(pkg.versions[0]) // "2026.1.1" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/cloudflare-com/cloudflared.md
@@ -26,48 +26,50 @@
  */
 export const cloudflarecomcloudflaredPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cloudflared' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'cloudflare.com/cloudflared' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Cloudflare Tunnel client (formerly Argo Tunnel)' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/cloudflare.com/cloudflared/package.yml' as const,
   homepageUrl: 'https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide' as const,
   githubUrl: 'https://github.com/cloudflare/cloudflared' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install cloudflare.com/cloudflared' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cloudflare.com/cloudflared -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install cloudflare.com/cloudflared' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cloudflared',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@~1.24',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.0',
+    '2026.1.2',
     '2026.1.1',
     '2025.11.1',
     '2025.11.0',

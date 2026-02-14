@@ -3,7 +3,7 @@
  *
  * @domain `freedesktop.org/poppler-qt5`
  * @programs `pdfattach`, `pdfdetach`, `pdffonts`, `pdfimages`, `pdfinfo`, ... (+8 more)
- * @version `26.1.0` (29 versions available)
+ * @version `26.2.0` (30 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install freedesktop.org/poppler-qt5`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "poppler-qt5"
  * console.log(pkg.description) // "PDF rendering library (based on the xpdf-3.0 co..."
  * console.log(pkg.programs)    // ["pdfattach", "pdfdetach", ...]
- * console.log(pkg.versions[0]) // "26.1.0" (latest)
+ * console.log(pkg.versions[0]) // "26.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/poppler-qt5.md
@@ -27,31 +27,31 @@
  */
 export const freedesktoporgpopplerqt5Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'poppler-qt5' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'freedesktop.org/poppler-qt5' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'PDF rendering library (based on the xpdf-3.0 code base)' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/poppler-qt5/package.yml' as const,
   homepageUrl: 'https://poppler.freedesktop.org/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install freedesktop.org/poppler-qt5' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/poppler-qt5 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install freedesktop.org/poppler-qt5' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'pdfattach',
     'pdfdetach',
@@ -69,10 +69,10 @@ export const freedesktoporgpopplerqt5Package = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'gnupg.org/libassuan^2',
     'cairographics.org^1',
@@ -96,20 +96,21 @@ export const freedesktoporgpopplerqt5Package = {
     'linux:gnu.org/gcc',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org',
     'linux:gnu.org/binutils@^2',
     'linux:llvm.org@~21.1',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '26.2.0',
     '26.1.0',
     '25.12.0',
     '25.11.0',

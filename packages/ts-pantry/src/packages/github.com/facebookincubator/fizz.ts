@@ -3,12 +3,12 @@
  *
  * @domain `github.com/facebookincubator/fizz`
  * @programs `fizz`
- * @version `2026.1.5.0` (132 versions available)
+ * @version `2026.2.9.0` (135 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/facebookincubator/fizz`
  * @dependencies `boost.org`, `google.com/double-conversion^3`, `fmt.dev^12`, ... (+12 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `cmake.org@^3`, `linux:gnu.org/gcc@13` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @buildDependencies `cmake.org@^3`, `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fizz"
  * console.log(pkg.description) // "C++14 implementation of the TLS-1.3 standard"
  * console.log(pkg.programs)    // ["fizz"]
- * console.log(pkg.versions[0]) // "2026.1.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.9.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/facebookincubator/fizz.md
@@ -26,40 +26,40 @@
  */
 export const fizzPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'fizz' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/facebookincubator/fizz' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'C++14 implementation of the TLS-1.3 standard' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/facebookincubator/fizz/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebookincubator/fizz' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/facebookincubator/fizz' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/facebookincubator/fizz -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/facebookincubator/fizz' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'fizz',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'boost.org',
     'google.com/double-conversion^3',
@@ -75,23 +75,26 @@ export const fizzPackage = {
     'facebook.com/zstd@1',
     'sourceware.org/bzip2@1',
     'zlib.net^1',
-    'linux:gnu.org/gcc/libstdcxx@13',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org@^3',
-    'linux:gnu.org/gcc@13',
+    'linux:gnu.org/gcc@14',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.9.0',
+    '2026.2.2.0',
     '2026.1.5.0',
+    '2026.1.26.0',
     '2026.1.19.0',
     '2026.1.12.0',
     '2025.9.8.0',

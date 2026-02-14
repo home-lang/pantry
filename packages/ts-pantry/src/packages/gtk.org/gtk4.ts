@@ -3,7 +3,7 @@
  *
  * @domain `gtk.org/gtk4`
  * @programs `gtk4-builder-tool`, `gtk4-demo`, `gtk4-demo-application`, `gtk4-encode-symbolic-svg`, `gtk4-launch`, ... (+6 more)
- * @version `4.21.4` (57 versions available)
+ * @version `4.21.5` (58 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gtk.org/gtk4`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "gtk4"
  * console.log(pkg.description) // "Toolkit for creating graphical user interfaces"
  * console.log(pkg.programs)    // ["gtk4-builder-tool", "gtk4-demo", ...]
- * console.log(pkg.versions[0]) // "4.21.4" (latest)
+ * console.log(pkg.versions[0]) // "4.21.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gtk-org/gtk4.md
@@ -27,31 +27,31 @@
  */
 export const gtkorggtk4Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'gtk4' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gtk.org/gtk4' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Toolkit for creating graphical user interfaces' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gtk.org/gtk4/package.yml' as const,
   homepageUrl: 'https://gtk.org/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gtk.org/gtk4' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gtk.org/gtk4 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gtk.org/gtk4' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'gtk4-builder-tool',
     'gtk4-demo',
@@ -67,10 +67,10 @@ export const gtkorggtk4Package = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'gnome.org/gdk-pixbuf^2.42',
     'gnome.org/glib^2.78',
@@ -93,10 +93,10 @@ export const gtkorggtk4Package = {
     'linux:wayland.freedesktop.org/protocols^1.43 # since 4.19.1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'docbook.org',
     'docbook.org/xsl',
@@ -108,10 +108,11 @@ export const gtkorggtk4Package = {
     'linux:gnu.org/binutils',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '4.21.5',
     '4.21.4',
     '4.21.3',
     '4.21.2',

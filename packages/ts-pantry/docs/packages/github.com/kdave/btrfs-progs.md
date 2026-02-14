@@ -34,29 +34,29 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
-- `6.17.1`, `6.17.0`, `6.16.1`, `6.16.0`, `6.15.0`
-- `6.14.0`, `6.13.0`, `6.12.0`, `6.11.0`, `6.10.1`
-- `6.10.0`, `6.9.2`, `6.9.1`, `6.9.0`, `6.8.1`
-- `6.8.0`, `6.7.1`
+- `6.19.0`, `6.17.1`, `6.17.0`, `6.16.1`, `6.16.0`
+- `6.15.0`, `6.14.0`, `6.13.0`, `6.12.0`, `6.11.0`
+- `6.10.1`, `6.10.0`, `6.9.2`, `6.9.1`, `6.9.0`
+- `6.8.1`, `6.8.0`, `6.7.1`
 
 </details>
 
-**Latest Version**: `6.17.1`
+**Latest Version**: `6.19.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/kdave/btrfs-progs@6.17.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/kdave/btrfs-progs@6.19.0 -- $SHELL -i
 ```
 
 ## Dependencies
 
 This package depends on:
 
-- `python.org~3.11`
+- `python.org~3.14`
 - `sourceforge.net/e2fsprogs^1.47`
 - `oberhumer.com/lzo^2.10`
 - `systemd.io^255 # for libudev`

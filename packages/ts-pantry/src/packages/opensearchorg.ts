@@ -3,7 +3,7 @@
  *
  * @domain `opensearch.org`
  * @programs `opensearch`, `opensearch-keystore`, `opensearch-plugin`, `opensearch-shard`
- * @version `3.4.0` (16 versions available)
+ * @version `3.5.0` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install opensearch.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "opensearch"
  * console.log(pkg.description) // "🔎 Open source distributed and RESTful search e..."
  * console.log(pkg.programs)    // ["opensearch", "opensearch-keystore", ...]
- * console.log(pkg.versions[0]) // "3.4.0" (latest)
+ * console.log(pkg.versions[0]) // "3.5.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/opensearch-org.md
@@ -27,31 +27,31 @@
  */
 export const opensearchorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'opensearch' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'opensearch.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '🔎 Open source distributed and RESTful search engine.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/opensearch.org/package.yml' as const,
   homepageUrl: 'https://opensearch.org/docs/latest/opensearch/index/' as const,
   githubUrl: 'https://github.com/opensearch-project/OpenSearch' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install opensearch.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opensearch.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install opensearch.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'opensearch',
     'opensearch-keystore',
@@ -60,18 +60,18 @@ export const opensearchorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openjdk.org^21 # since v3',
     'openmp.llvm.org^19',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org@3',
     'gnu.org/wget',
@@ -79,10 +79,11 @@ export const opensearchorgPackage = {
     'linux:netlib.org/lapack',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.5.0',
     '3.4.0',
     '3.2.0',
     '3.1.0',

@@ -25,24 +25,24 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 27 versions</summary>
+<summary>Show all 28 versions</summary>
 
-- `0.9.1`, `0.9.0`, `0.8.4`, `0.8.3`, `0.8.2`
-- `0.8.1`, `0.8.0`, `0.7.6`, `0.7.5`, `0.7.4`
-- `0.7.3`, `0.7.2`, `0.7.1`, `0.7.0`, `0.6.10`
-- `0.6.9`, `0.6.8`, `0.6.7`, `0.6.6`, `0.6.5`
-- `0.6.4`, `0.6.3`, `0.6.2`, `0.6.1`, `0.6.0`
-- `0.5.6`, `0.5.5`
+- `0.10.0`, `0.9.1`, `0.9.0`, `0.8.4`, `0.8.3`
+- `0.8.2`, `0.8.1`, `0.8.0`, `0.7.6`, `0.7.5`
+- `0.7.4`, `0.7.3`, `0.7.2`, `0.7.1`, `0.7.0`
+- `0.6.10`, `0.6.9`, `0.6.8`, `0.6.7`, `0.6.6`
+- `0.6.5`, `0.6.4`, `0.6.3`, `0.6.2`, `0.6.1`
+- `0.6.0`, `0.5.6`, `0.5.5`
 
 </details>
 
-**Latest Version**: `0.9.1`
+**Latest Version**: `0.10.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/abiosoft/colima@0.9.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/abiosoft/colima@0.10.0 -- $SHELL -i
 ```
 
 ## Dependencies

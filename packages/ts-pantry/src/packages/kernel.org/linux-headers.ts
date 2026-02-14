@@ -2,7 +2,7 @@
  * **linux-headers** - pkgx package
  *
  * @domain `kernel.org/linux-headers`
- * @version `6.18.6` (237 versions available)
+ * @version `6.18.9` (248 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install kernel.org/linux-headers`
@@ -13,7 +13,7 @@
  *
  * const pkg = pantry.kernelorglinuxheaders
  * console.log(pkg.name)        // "linux-headers"
- * console.log(pkg.versions[0]) // "6.18.6" (latest)
+ * console.log(pkg.versions[0]) // "6.18.9" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/kernel-org/linux-headers.md
@@ -21,24 +21,24 @@
  */
 export const kernelorglinuxheadersPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'linux-headers' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'kernel.org/linux-headers' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/kernel.org/linux-headers/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install kernel.org/linux-headers' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kernel.org/linux-headers -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install kernel.org/linux-headers' as const,
@@ -47,10 +47,13 @@ export const kernelorglinuxheadersPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '6.18.9',
+    '6.18.8',
+    '6.18.7',
     '6.18.6',
     '6.18.5',
     '6.18.4',
@@ -62,6 +65,10 @@ export const kernelorglinuxheadersPackage = {
     '6.17.11',
     '6.17.10',
     '6.17.9',
+    '6.12.71',
+    '6.12.69',
+    '6.12.68',
+    '6.12.67',
     '6.12.66',
     '6.12.65',
     '6.12.64',
@@ -69,8 +76,11 @@ export const kernelorglinuxheadersPackage = {
     '6.12.62',
     '6.12.61',
     '6.12.60',
+    '6.6.123',
+    '6.6.122',
     '6.6.121',
     '6.6.118',
+    '6.1.162',
     '6.1.161',
     '6.1.160',
     '6.1.159',
@@ -163,6 +173,7 @@ export const kernelorglinuxheadersPackage = {
     '5.15.111',
     '5.15.110',
     '5.15.108',
+    '5.10.249',
     '5.10.248',
     '5.10.247',
     '5.10.246',

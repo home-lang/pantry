@@ -3,7 +3,7 @@
  *
  * @domain `python.org`
  * @programs `python`, `python{{ version.major }}`, `python{{ version.marketing }}`
- * @version `3.14.2` (165 versions available)
+ * @version `3.14.3` (167 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install python.org`
@@ -25,7 +25,7 @@
  * console.log(pkg.name)        // "python"
  * console.log(pkg.description) // "The Python programming language"
  * console.log(pkg.programs)    // ["python", "python{{ version.major }}", ...]
- * console.log(pkg.versions[0]) // "3.14.2" (latest)
+ * console.log(pkg.versions[0]) // "3.14.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/python-org.md
@@ -33,31 +33,31 @@
  */
 export const pythonPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'python' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'python.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The Python programming language' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/python.org/package.yml' as const,
   homepageUrl: 'https://www.python.org' as const,
   githubUrl: 'https://github.com/python/cpython' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install python.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +python.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install python.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'python',
     'python{{ version.major }}',
@@ -65,10 +65,10 @@ export const pythonPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'zlib.net@1',
     'sourceware.org/bzip2@1',
@@ -85,21 +85,23 @@ export const pythonPackage = {
     'darwin:tcl-lang.org=8.6.16 # 9.0.2 introduced a build issue on darwin',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/patch',
     'curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.14.3',
     '3.14.2',
     '3.14.1',
     '3.14.0',
+    '3.13.12',
     '3.13.11',
     '3.13.10',
     '3.13.9',
@@ -264,9 +266,9 @@ export const pythonPackage = {
     '2.7.18',
   ] as const,
   /**
-   * Alternative names for this package.
-   * You can use any of these names to access the package.
-   */
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [
     'py',
   ] as const,

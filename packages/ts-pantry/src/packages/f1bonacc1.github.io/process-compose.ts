@@ -3,7 +3,7 @@
  *
  * @domain `f1bonacc1.github.io/process-compose`
  * @programs `process-compose`
- * @version `1.87.0` (22 versions available)
+ * @version `1.90.0` (23 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install f1bonacc1.github.io/process-compose`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "process-compose"
  * console.log(pkg.description) // "Process Compose is a simple and flexible schedu..."
  * console.log(pkg.programs)    // ["process-compose"]
- * console.log(pkg.versions[0]) // "1.87.0" (latest)
+ * console.log(pkg.versions[0]) // "1.90.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/f1bonacc1-github-io/process-compose.md
@@ -26,48 +26,49 @@
  */
 export const f1bonacc1githubioprocesscomposePackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'process-compose' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'f1bonacc1.github.io/process-compose' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Process Compose is a simple and flexible scheduler and orchestrator to manage non-containerized applications.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/f1bonacc1.github.io/process-compose/package.yml' as const,
   homepageUrl: 'https://f1bonacc1.github.io/process-compose/' as const,
   githubUrl: 'https://github.com/F1bonacc1/process-compose' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install f1bonacc1.github.io/process-compose' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +f1bonacc1.github.io/process-compose -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install f1bonacc1.github.io/process-compose' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'process-compose',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@=1.24.2',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.90.0',
     '1.87.0',
     '1.85.0',
     '1.78.0',

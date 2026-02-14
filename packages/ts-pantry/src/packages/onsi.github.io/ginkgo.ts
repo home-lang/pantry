@@ -3,7 +3,7 @@
  *
  * @domain `onsi.github.io/ginkgo`
  * @programs `ginkgo`
- * @version `2.27.5` (27 versions available)
+ * @version `2.28.1` (29 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install onsi.github.io/ginkgo`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "ginkgo"
  * console.log(pkg.description) // "A Modern Testing Framework for Go"
  * console.log(pkg.programs)    // ["ginkgo"]
- * console.log(pkg.versions[0]) // "2.27.5" (latest)
+ * console.log(pkg.versions[0]) // "2.28.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/onsi-github-io/ginkgo.md
@@ -26,48 +26,50 @@
  */
 export const onsigithubioginkgoPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ginkgo' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'onsi.github.io/ginkgo' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A Modern Testing Framework for Go' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/onsi.github.io/ginkgo/package.yml' as const,
   homepageUrl: 'http://onsi.github.io/ginkgo/' as const,
   githubUrl: 'https://github.com/onsi/ginkgo' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install onsi.github.io/ginkgo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +onsi.github.io/ginkgo -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install onsi.github.io/ginkgo' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ginkgo',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.20',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.28.1',
+    '2.28.0',
     '2.27.5',
     '2.27.4',
     '2.27.3',

@@ -23,24 +23,24 @@
  */
 export const pngquantorglibPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'libimagequant' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'pngquant.org/lib' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Palette quantization library that powers pngquant and other PNG optimizers' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/pngquant.org/lib/package.yml' as const,
   homepageUrl: 'https://pngquant.org/lib' as const,
   githubUrl: 'https://github.com/ImageOptim/libimagequant' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install pngquant.org/lib' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pngquant.org/lib -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pngquant.org/lib' as const,
@@ -49,9 +49,9 @@ export const pngquantorglibPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '4.4.1',
     '4.4.0',

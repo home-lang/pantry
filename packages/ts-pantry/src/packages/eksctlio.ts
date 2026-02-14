@@ -3,7 +3,7 @@
  *
  * @domain `eksctl.io`
  * @programs `eksctl`
- * @version `0.221.0` (68 versions available)
+ * @version `0.223.0` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install eksctl.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "eksctl"
  * console.log(pkg.description) // "Simple command-line tool for creating clusters ..."
  * console.log(pkg.programs)    // ["eksctl"]
- * console.log(pkg.versions[0]) // "0.221.0" (latest)
+ * console.log(pkg.versions[0]) // "0.223.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/eksctl-io.md
@@ -27,46 +27,46 @@
  */
 export const eksctlioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'eksctl' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'eksctl.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Simple command-line tool for creating clusters on Amazon EKS' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/eksctl.io/package.yml' as const,
   homepageUrl: 'https://eksctl.io' as const,
   githubUrl: 'https://github.com/eksctl-io/eksctl' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install eksctl.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +eksctl.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install eksctl.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'eksctl',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'github.com/kubernetes-sigs/aws-iam-authenticator',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'github.com/maxbrunsfeld/counterfeiter',
     'go.dev@~1.25',
@@ -74,10 +74,12 @@ export const eksctlioPackage = {
     'vektra.github.io/mockery@^2',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.223.0',
+    '0.222.0',
     '0.221.0',
     '0.220.0',
     '0.219.0',

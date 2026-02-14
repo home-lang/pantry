@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 19 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `5.0.2`, `5.0.1`, `5.0.0`, `4.1.2`, `4.1.1`
-- `4.1.0`, `4.0.0`, `3.1.0`, `3.0.1`, `3.0.0`
-- `2.3.0`, `2.2.2`, `2.2.1`, `2.2.0`, `2.1.0`
-- `2.0.0`, `1.9.0`, `1.8.8`, `1.8.7`
+- `5.1.0`, `5.0.2`, `5.0.1`, `5.0.0`, `4.1.2`
+- `4.1.1`, `4.1.0`, `4.0.0`, `3.1.0`, `3.0.1`
+- `3.0.0`, `2.3.0`, `2.2.2`, `2.2.1`, `2.2.0`
+- `2.1.0`, `2.0.0`, `1.9.0`, `1.8.8`, `1.8.7`
 
 </details>
 
-**Latest Version**: `5.0.2`
+**Latest Version**: `5.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/mas-cli/mas@5.0.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/mas-cli/mas@5.1.0 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -48,7 +48,7 @@ sh <(curl https://pkgx.sh) +kislyuk.github.io/argcomplete@3.6.3 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

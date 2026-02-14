@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/skim`
  * @programs `sk`
- * @version `1.5.3` (44 versions available)
+ * @version `3.2.0` (65 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/skim`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "sk"
  * console.log(pkg.description) // "Fuzzy Finder in rust!"
  * console.log(pkg.programs)    // ["sk"]
- * console.log(pkg.versions[0]) // "1.5.3" (latest)
+ * console.log(pkg.versions[0]) // "3.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/skim.md
@@ -24,31 +24,31 @@
  */
 export const cratesioskimPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'sk' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'crates.io/skim' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Fuzzy Finder in rust!' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/skim/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/lotabout/skim' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install crates.io/skim' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/skim -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/skim' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'sk',
   ] as const,
@@ -56,10 +56,31 @@ export const cratesioskimPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.2.0',
+    '3.1.1',
+    '3.1.0',
+    '3.0.1',
+    '3.0.0',
+    '2.0.2',
+    '2.0.1',
+    '2.0.0',
+    '1.11.2',
+    '1.11.1',
+    '1.11.0',
+    '1.10.0',
+    '1.9.1',
+    '1.9.0',
+    '1.8.1',
+    '1.8.0',
+    '1.7.2',
+    '1.7.1',
+    '1.7.0',
+    '1.6.0',
+    '1.5.4',
     '1.5.3',
     '1.5.2',
     '1.5.1',

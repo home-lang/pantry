@@ -8,7 +8,7 @@
  *
  * @install `launchpad install robotframework.org`
  * @homepage https://robotframework.org/
- * @dependencies `pkgx.sh^1`
+ * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@^3`, `cryptography.io`, `libsodium.org` - required only when building from source
  *
  * @example
@@ -27,55 +27,55 @@
  */
 export const robotframeworkorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'robot' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'robotframework.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Generic automation framework for acceptance testing and RPA' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/robotframework.org/package.yml' as const,
   homepageUrl: 'https://robotframework.org/' as const,
   githubUrl: 'https://github.com/robotframework/robotframework' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install robotframework.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +robotframework.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install robotframework.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'robot',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@^3',
     'cryptography.io',
     'libsodium.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '7.4.1',
     '7.4.0',

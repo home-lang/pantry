@@ -3,7 +3,7 @@
  *
  * @domain `github.com/mikefarah/yq`
  * @programs `yq`
- * @version `4.50.1` (41 versions available)
+ * @version `4.52.4` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/mikefarah/yq`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "yq"
  * console.log(pkg.description) // "yq is a portable command-line YAML, JSON, XML, ..."
  * console.log(pkg.programs)    // ["yq"]
- * console.log(pkg.versions[0]) // "4.50.1" (latest)
+ * console.log(pkg.versions[0]) // "4.52.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/mikefarah/yq.md
@@ -26,49 +26,52 @@
  */
 export const yqPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'yq' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/mikefarah/yq' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'yq is a portable command-line YAML, JSON, XML, CSV, TOML  and properties processor' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/mikefarah/yq/package.yml' as const,
   homepageUrl: 'https://mikefarah.gitbook.io/yq/' as const,
   githubUrl: 'https://github.com/mikefarah/yq' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/mikefarah/yq' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mikefarah/yq -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/mikefarah/yq' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'yq',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.18',
     'pandoc.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '4.52.4',
+    '4.52.2',
+    '4.52.1',
     '4.50.1',
     '4.49.2',
     '4.49.1',

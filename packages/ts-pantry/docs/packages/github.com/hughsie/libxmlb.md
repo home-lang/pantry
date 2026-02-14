@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
-- `0.3.24`, `0.3.23`, `0.3.22`, `0.3.21`, `0.3.20`
-- `0.3.19`
+- `0.3.25`, `0.3.24`, `0.3.23`, `0.3.22`, `0.3.21`
+- `0.3.20`, `0.3.19`
 
 </details>
 
-**Latest Version**: `0.3.24`
+**Latest Version**: `0.3.25`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/hughsie/libxmlb@0.3.24 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/hughsie/libxmlb@0.3.25 -- $SHELL -i
 ```
 
 ## Dependencies

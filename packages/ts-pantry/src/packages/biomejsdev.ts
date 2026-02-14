@@ -3,7 +3,7 @@
  *
  * @domain `biomejs.dev`
  * @programs `biome`
- * @version `2.3.11` (36 versions available)
+ * @version `2.3.15` (40 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install biomejs.dev`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "biome"
  * console.log(pkg.description) // "A toolchain for web projects, aimed to provide ..."
  * console.log(pkg.programs)    // ["biome"]
- * console.log(pkg.versions[0]) // "2.3.11" (latest)
+ * console.log(pkg.versions[0]) // "2.3.15" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/biomejs-dev.md
@@ -25,31 +25,31 @@
  */
 export const biomejsdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'biome' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'biomejs.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/biomejs.dev/package.yml' as const,
   homepageUrl: 'https://biomejs.dev/' as const,
   githubUrl: 'https://github.com/biomejs/biome' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install biomejs.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +biomejs.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install biomejs.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'biome',
   ] as const,
@@ -57,10 +57,14 @@ export const biomejsdevPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.3.15',
+    '2.3.14',
+    '2.3.13',
+    '2.3.12',
     '2.3.11',
     '2.3.10',
     '2.3.9',

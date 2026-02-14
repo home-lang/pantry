@@ -3,7 +3,7 @@
  *
  * @domain `dart.dev`
  * @programs `dart`, `dartaotruntime`
- * @version `3.10.7` (51 versions available)
+ * @version `3.11.0` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dart.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "dart"
  * console.log(pkg.description) // "The Dart SDK, including the VM, JS and Wasm com..."
  * console.log(pkg.programs)    // ["dart", "dartaotruntime"]
- * console.log(pkg.versions[0]) // "3.10.7" (latest)
+ * console.log(pkg.versions[0]) // "3.11.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dart-dev.md
@@ -26,31 +26,31 @@
  */
 export const dartdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'dart' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'dart.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries, and more.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/dart.dev/package.yml' as const,
   homepageUrl: 'https://dart.dev' as const,
   githubUrl: 'https://github.com/dart-lang/sdk' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install dart.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dart.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install dart.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'dart',
     'dartaotruntime',
@@ -58,19 +58,22 @@ export const dartdevPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'curl.se',
     'python.org@>=3<3.12',
     'tukaani.org/xz',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.11.0',
+    '3.10.9',
+    '3.10.8',
     '3.10.7',
     '3.10.6',
     '3.10.5',

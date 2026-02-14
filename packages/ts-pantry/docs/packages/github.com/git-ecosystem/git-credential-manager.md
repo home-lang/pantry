@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 4 versions</summary>
 
-- `2.7.0`, `2.6.1`
+- `2.7.2`, `2.7.1`, `2.7.0`, `2.6.1`
 
 </details>
 
-**Latest Version**: `2.7.0`
+**Latest Version**: `2.7.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/git-ecosystem/git-credential-manager@2.7.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/git-ecosystem/git-credential-manager@2.7.2 -- $SHELL -i
 ```
 
 ## Dependencies

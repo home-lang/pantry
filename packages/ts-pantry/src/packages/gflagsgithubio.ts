@@ -24,24 +24,24 @@
  */
 export const gflagsgithubioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'gflags.github' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gflags.github.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The gflags package contains a C++ library that implements commandline flags processing. It includes built-in support for standard types such as string and the ability to define flags in the source file in which they are used. Online documentation available at:' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gflags.github.io/package.yml' as const,
   homepageUrl: 'https://gflags.github.io/gflags/' as const,
   githubUrl: 'https://github.com/gflags/gflags' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gflags.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gflags.github.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gflags.github.io' as const,
@@ -49,16 +49,16 @@ export const gflagsgithubioPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.3.0',
     '2.2.2',

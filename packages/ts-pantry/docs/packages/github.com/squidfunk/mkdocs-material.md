@@ -58,7 +58,7 @@ sh <(curl https://pkgx.sh) +github.com/squidfunk/mkdocs-material@9.7.1 -- $SHELL
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `sass-lang.com/libsass^3.6`
 
 ## Usage Examples

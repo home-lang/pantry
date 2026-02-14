@@ -3,7 +3,7 @@
  *
  * @domain `qemu.org`
  * @programs `qemu-img`, `qemu-edid`, `qemu-io`, `qemu-nbd`, `qemu-storage-daemon`, ... (+29 more)
- * @version `10.2.0` (65 versions available)
+ * @version `10.2.1` (68 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install qemu.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "qemu"
  * console.log(pkg.description) // "Generic machine emulator and virtualizer"
  * console.log(pkg.programs)    // ["qemu-img", "qemu-edid", ...]
- * console.log(pkg.versions[0]) // "10.2.0" (latest)
+ * console.log(pkg.versions[0]) // "10.2.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/qemu-org.md
@@ -27,31 +27,31 @@
  */
 export const qemuorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'qemu' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'qemu.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Generic machine emulator and virtualizer' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/qemu.org/package.yml' as const,
   homepageUrl: 'https://www.qemu.org/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install qemu.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +qemu.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install qemu.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'qemu-img',
     'qemu-edid',
@@ -90,9 +90,9 @@ export const qemuorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'gnome.org/glib@2',
     'capstone-engine.org^4',
@@ -106,9 +106,9 @@ export const qemuorgPackage = {
     'libpng.org^1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/bison',
     'github.com/westes/flex',
@@ -116,15 +116,18 @@ export const qemuorgPackage = {
     'mesonbuild.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '10.2.1',
     '10.2.0',
+    '10.1.4',
     '10.1.3',
     '10.1.2',
     '10.1.1',
     '10.1.0',
+    '10.0.8',
     '10.0.7',
     '10.0.6',
     '10.0.5',

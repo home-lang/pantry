@@ -3,7 +3,7 @@
  *
  * @domain `github.com/anchore/grype`
  * @programs `grype`
- * @version `0.105.0` (75 versions available)
+ * @version `0.108.0` (79 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/anchore/grype`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "grype"
  * console.log(pkg.description) // "A vulnerability scanner for container images an..."
  * console.log(pkg.programs)    // ["grype"]
- * console.log(pkg.versions[0]) // "0.105.0" (latest)
+ * console.log(pkg.versions[0]) // "0.108.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/anchore/grype.md
@@ -25,48 +25,52 @@
  */
 export const grypePackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'grype' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/anchore/grype' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A vulnerability scanner for container images and filesystems' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/anchore/grype/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/anchore/grype' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/anchore/grype' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/anchore/grype -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/anchore/grype' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'grype',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.108.0',
+    '0.107.1',
+    '0.107.0',
+    '0.106.0',
     '0.105.0',
     '0.104.4',
     '0.104.3',

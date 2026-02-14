@@ -37,8 +37,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 179 versions</summary>
+<summary>Show all 184 versions</summary>
 
+- `3.220.0`, `3.219.0`, `3.218.0`, `3.217.1`, `3.217.0`
 - `3.216.0`, `3.215.0`, `3.214.1`, `3.214.0`, `3.213.0`
 - `3.212.0`, `3.211.0`, `3.210.0`, `3.209.0`, `3.208.0`
 - `3.207.0`, `3.206.0`, `3.205.0`, `3.204.0`, `3.203.0`
@@ -78,13 +79,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.216.0`
+**Latest Version**: `3.220.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pulumi.io@3.216.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pulumi.io@3.220.0 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -3,7 +3,7 @@
  *
  * @domain `bytebase.com`
  * @programs `bytebase`
- * @version `3.14.0` (47 versions available)
+ * @version `3.15.0` (49 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install bytebase.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "bytebase"
  * console.log(pkg.description) // "World's most advanced database DevSecOps soluti..."
  * console.log(pkg.programs)    // ["bytebase"]
- * console.log(pkg.versions[0]) // "3.14.0" (latest)
+ * console.log(pkg.versions[0]) // "3.15.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/bytebase-com.md
@@ -27,47 +27,47 @@
  */
 export const bytebasecomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'bytebase' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'bytebase.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'World\'s most advanced database DevSecOps solution for Developer, Security, DBA and Platform Engineering teams. The GitHub/GitLab for database DevSecOps.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/bytebase.com/package.yml' as const,
   homepageUrl: 'https://www.bytebase.com' as const,
   githubUrl: 'https://github.com/bytebase/bytebase' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install bytebase.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bytebase.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install bytebase.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'bytebase',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'nodejs.org~24.1 # 24.4 has oom errors',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'go.dev@~1.24.2',
     'pnpm.io',
@@ -76,10 +76,12 @@ export const bytebasecomPackage = {
     'linux:python.org@~3.10',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.15.0',
+    '3.14.1',
     '3.14.0',
     '3.13.1',
     '3.13.0',

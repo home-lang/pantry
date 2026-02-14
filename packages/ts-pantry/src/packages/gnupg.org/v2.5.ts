@@ -2,7 +2,7 @@
  * **v2.5** - pkgx package
  *
  * @domain `gnupg.org/v2.5`
- * @version `2.5.16` (16 versions available)
+ * @version `2.5.17` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnupg.org/v2.5`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.gnupgorgv25
  * console.log(pkg.name)        // "v2.5"
- * console.log(pkg.versions[0]) // "2.5.16" (latest)
+ * console.log(pkg.versions[0]) // "2.5.17" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnupg-org/v2-5.md
@@ -22,33 +22,33 @@
  */
 export const gnupgorgv25Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'v2.5' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnupg.org/v2.5' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnupg.org/v2.5/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnupg.org/v2.5' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnupg.org/v2.5 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnupg.org/v2.5' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'zlib.net^1.1',
     'sourceware.org/bzip2',
@@ -65,10 +65,11 @@ export const gnupgorgv25Package = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.5.17',
     '2.5.16',
     '2.5.14',
     '2.5.13',

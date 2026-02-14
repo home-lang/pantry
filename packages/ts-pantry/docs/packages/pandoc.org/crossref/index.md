@@ -25,20 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 10 versions</summary>
+<summary>Show all 11 versions</summary>
 
-- `0.3.22`, `0.3.21`, `0.3.20`, `0.3.19`, `0.3.18.2`
-- `0.3.18.1`, `0.3.17.1`, `0.3.17.0`, `0.3.16.0`, `0.3.15.2`
+- `0.3.23`, `0.3.22`, `0.3.21`, `0.3.20`, `0.3.19`
+- `0.3.18.2`, `0.3.18.1`, `0.3.17.1`, `0.3.17.0`, `0.3.16.0`
+- `0.3.15.2`
 
 </details>
 
-**Latest Version**: `0.3.22`
+**Latest Version**: `0.3.23`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pandoc.org/crossref@0.3.22 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pandoc.org/crossref@0.3.23 -- $SHELL -i
 ```
 
 ## Dependencies

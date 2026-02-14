@@ -27,31 +27,31 @@
  */
 export const libvipsorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'vips' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'libvips.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'A fast image processing library with low memory needs.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/libvips.org/package.yml' as const,
   homepageUrl: 'https://libvips.github.io/libvips/' as const,
   githubUrl: 'https://github.com/libvips/libvips' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install libvips.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libvips.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install libvips.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'vips',
     'vipsedit',
@@ -61,9 +61,9 @@ export const libvipsorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'mozilla.org/mozjpeg',
     'cairographics.org',
@@ -94,16 +94,16 @@ export const libvipsorgPackage = {
     'zlib.net',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'mesonbuild.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '8.18.0',
     '8.17.3',

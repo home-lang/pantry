@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `0.8.0`, `0.7.0`
+- `0.9.0`, `0.8.0`, `0.7.0`
 
 </details>
 
-**Latest Version**: `0.8.0`
+**Latest Version**: `0.9.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/jbeder/yaml-cpp@0.8.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/jbeder/yaml-cpp@0.9.0 -- $SHELL -i
 ```
 
 ## Usage Examples

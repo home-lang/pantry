@@ -46,7 +46,7 @@ sh <(curl https://pkgx.sh) +github.com/essembeh/gnome-extensions-cli@0.10.8 -- $
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

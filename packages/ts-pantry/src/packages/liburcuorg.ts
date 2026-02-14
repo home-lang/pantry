@@ -2,7 +2,7 @@
  * **liburcu** - liburcu is a LGPLv2.1 userspace RCU (read-copy-update) library. This data synchronization library provides read-side access which scales linearly with the number of cores.
  *
  * @domain `liburcu.org`
- * @version `0.15.5` (6 versions available)
+ * @version `0.15.6` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install liburcu.org`
@@ -15,7 +15,7 @@
  * const pkg = pantry.liburcuorg
  * console.log(pkg.name)        // "liburcu"
  * console.log(pkg.description) // "liburcu is a LGPLv2.1 userspace RCU (read-copy-..."
- * console.log(pkg.versions[0]) // "0.15.5" (latest)
+ * console.log(pkg.versions[0]) // "0.15.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/liburcu-org.md
@@ -23,24 +23,24 @@
  */
 export const liburcuorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'liburcu' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'liburcu.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'liburcu is a LGPLv2.1 userspace RCU (read-copy-update) library. This data synchronization library provides read-side access which scales linearly with the number of cores.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/liburcu.org/package.yml' as const,
   homepageUrl: 'http://liburcu.org' as const,
   githubUrl: 'https://github.com/urcu/userspace-rcu' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install liburcu.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +liburcu.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install liburcu.org' as const,
@@ -49,16 +49,18 @@ export const liburcuorgPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.15.6',
     '0.15.5',
     '0.15.4',
     '0.15.3',
     '0.15.2',
     '0.15.1',
     '0.15.0',
+    '0.14.2',
   ] as const,
   aliases: [] as const,
 }

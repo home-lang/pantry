@@ -3,7 +3,7 @@
  *
  * @domain `github.com/nodenv/node-build`
  * @programs `node-build`
- * @version `5.4.24` (110 versions available)
+ * @version `5.4.26` (112 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/nodenv/node-build`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "node-build"
  * console.log(pkg.description) // "Install NodeJS versions"
  * console.log(pkg.programs)    // ["node-build"]
- * console.log(pkg.versions[0]) // "5.4.24" (latest)
+ * console.log(pkg.versions[0]) // "5.4.26" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/nodenv/node-build.md
@@ -26,54 +26,56 @@
  */
 export const nodebuildPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'node-build' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/nodenv/node-build' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Install NodeJS versions' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/nodenv/node-build/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/nodenv/node-build' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/nodenv/node-build' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/nodenv/node-build -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/nodenv/node-build' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'node-build',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssl.org>=3.0.0',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/autoconf',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '5.4.26',
+    '5.4.25',
     '5.4.24',
     '5.4.23',
     '5.4.22',

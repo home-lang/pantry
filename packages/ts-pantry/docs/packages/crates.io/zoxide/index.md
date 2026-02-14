@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
-- `0.9.8`, `0.9.7`, `0.9.6`, `0.9.5`, `0.9.4`
-- `0.9.3`, `0.9.2`, `0.9.1`, `0.9.0`
+- `0.9.9`, `0.9.8`, `0.9.7`, `0.9.6`, `0.9.5`
+- `0.9.4`, `0.9.3`, `0.9.2`, `0.9.1`, `0.9.0`
 
 </details>
 
-**Latest Version**: `0.9.8`
+**Latest Version**: `0.9.9`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/zoxide@0.9.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/zoxide@0.9.9 -- $SHELL -i
 ```
 
 ## Usage Examples

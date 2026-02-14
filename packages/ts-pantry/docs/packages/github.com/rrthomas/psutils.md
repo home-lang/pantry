@@ -52,7 +52,7 @@ sh <(curl https://pkgx.sh) +github.com/rrthomas/psutils@3.3.14 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `github.com/rrthomas/libpaper`
 
 ## Usage Examples

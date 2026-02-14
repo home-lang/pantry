@@ -2,7 +2,7 @@
  * **tailscale** - pkgx package
  *
  * @domain `tailscale.com`
- * @version `1.92.5` (12 versions available)
+ * @version `1.94.1` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install tailscale.com`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.tailscalecom
  * console.log(pkg.name)        // "tailscale"
- * console.log(pkg.versions[0]) // "1.92.5" (latest)
+ * console.log(pkg.versions[0]) // "1.94.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/tailscale-com.md
@@ -22,24 +22,24 @@
  */
 export const tailscalecomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'tailscale' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'tailscale.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/tailscale.com/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install tailscale.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tailscale.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tailscale.com' as const,
@@ -47,17 +47,18 @@ export const tailscalecomPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@=1.25.1',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.94.1',
     '1.92.5',
     '1.92.3',
     '1.92.2',

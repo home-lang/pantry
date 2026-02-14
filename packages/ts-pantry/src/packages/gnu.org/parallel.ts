@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/parallel`
  * @programs `env_parallel`, `niceload`, `parallel`, `parcat`, `parset`, ... (+3 more)
- * @version `20251222.0.0` (24 versions available)
+ * @version `20260122.0.0` (25 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/parallel`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "parallel"
  * console.log(pkg.description) // "Shell command parallelization utility"
  * console.log(pkg.programs)    // ["env_parallel", "niceload", ...]
- * console.log(pkg.versions[0]) // "20251222.0.0" (latest)
+ * console.log(pkg.versions[0]) // "20260122.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/parallel.md
@@ -26,31 +26,31 @@
  */
 export const gnuorgparallelPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'parallel' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnu.org/parallel' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Shell command parallelization utility' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/parallel/package.yml' as const,
   homepageUrl: 'https://savannah.gnu.org/projects/parallel/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnu.org/parallel' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/parallel -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnu.org/parallel' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'env_parallel',
     'niceload',
@@ -63,18 +63,19 @@ export const gnuorgparallelPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'perl.org@5',
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '20260122.0.0',
     '20251222.0.0',
     '20251122.0.0',
     '20251022.0.0',

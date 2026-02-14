@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +github.com/cookiecutter/cookiecutter@2.6.0 -- $SHELL
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

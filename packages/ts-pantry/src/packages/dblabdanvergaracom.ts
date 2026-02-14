@@ -3,7 +3,7 @@
  *
  * @domain `dblab.danvergara.com`
  * @programs `dblab`
- * @version `0.34.2` (19 versions available)
+ * @version `0.34.3` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dblab.danvergara.com`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "dblab"
  * console.log(pkg.description) // "The database client every command line junkie d..."
  * console.log(pkg.programs)    // ["dblab"]
- * console.log(pkg.versions[0]) // "0.34.2" (latest)
+ * console.log(pkg.versions[0]) // "0.34.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dblab-danvergara-com.md
@@ -25,48 +25,49 @@
  */
 export const dblabdanvergaracomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'dblab' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'dblab.danvergara.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The database client every command line junkie deserves.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/dblab.danvergara.com/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/danvergara/dblab' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install dblab.danvergara.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dblab.danvergara.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install dblab.danvergara.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'dblab',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.34.3',
     '0.34.2',
     '0.34.1',
     '0.34.0',

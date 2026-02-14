@@ -25,29 +25,29 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 19 versions</summary>
 
-- `6.4.1`, `6.4.0`, `6.3.6`, `6.3.5`, `6.3.4`
-- `6.3.3`, `6.3.2`, `6.3.1`, `6.3.0`, `6.2.5`
-- `6.2.4`, `6.2.3`, `6.2.2`, `6.2.1`, `6.2.0`
-- `6.1.3`, `6.1.2`
+- `6.4.3`, `6.4.2`, `6.4.1`, `6.4.0`, `6.3.6`
+- `6.3.5`, `6.3.4`, `6.3.3`, `6.3.2`, `6.3.1`
+- `6.3.0`, `6.2.5`, `6.2.4`, `6.2.3`, `6.2.2`
+- `6.2.1`, `6.2.0`, `6.1.3`, `6.1.2`
 
 </details>
 
-**Latest Version**: `6.4.1`
+**Latest Version**: `6.4.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +xpra.org@6.4.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +xpra.org@6.4.3 -- $SHELL -i
 ```
 
 ## Dependencies
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `python.org~3.11`
 - `cython.org`
 - `tukaani.org/xz`

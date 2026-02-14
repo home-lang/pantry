@@ -3,7 +3,7 @@
  *
  * @domain `docker.com/cli`
  * @programs `docker`
- * @version `29.1.5` (71 versions available)
+ * @version `29.2.1` (73 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install docker.com/cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "docker/cli"
  * console.log(pkg.description) // "Pack, ship and run any application as a lightwe..."
  * console.log(pkg.programs)    // ["docker"]
- * console.log(pkg.versions[0]) // "29.1.5" (latest)
+ * console.log(pkg.versions[0]) // "29.2.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/docker-com/cli.md
@@ -26,48 +26,50 @@
  */
 export const dockercomcliPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'docker/cli' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'docker.com/cli' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Pack, ship and run any application as a lightweight container' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/docker.com/cli/package.yml' as const,
   homepageUrl: 'https://www.docker.com/' as const,
   githubUrl: 'https://github.com/docker/cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install docker.com/cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +docker.com/cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install docker.com/cli' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'docker',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '29.2.1',
+    '29.2.0',
     '29.1.5',
     '29.1.4',
     '29.1.3',

@@ -3,7 +3,7 @@
  *
  * @domain `groonga.org`
  * @programs `groonga`, `groonga-suggest-create-dataset`
- * @version `15.2.3` (37 versions available)
+ * @version `16.0.0` (40 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install groonga.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "groonga"
  * console.log(pkg.description) // "An embeddable fulltext search engine. Groonga i..."
  * console.log(pkg.programs)    // ["groonga", "groonga-suggest-create-dataset"]
- * console.log(pkg.versions[0]) // "15.2.3" (latest)
+ * console.log(pkg.versions[0]) // "16.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/groonga-org.md
@@ -27,41 +27,41 @@
  */
 export const groongaorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'groonga' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'groonga.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An embeddable fulltext search engine. Groonga is the successor project to Senna.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/groonga.org/package.yml' as const,
   homepageUrl: 'https://groonga.org/' as const,
   githubUrl: 'https://github.com/groonga/groonga' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install groonga.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +groonga.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install groonga.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'groonga',
     'groonga-suggest-create-dataset',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'darwin:taku910.github.io/mecab',
     'darwin:taku910.github.io/mecab-ipadic',
@@ -72,18 +72,21 @@ export const groongaorgPackage = {
     'linux:gnome.org/glib',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'linux:curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '16.0.0',
+    '15.2.5',
+    '15.2.4',
     '15.2.3',
     '15.2.1',
     '15.2.0',

@@ -44,7 +44,7 @@ sh <(curl https://pkgx.sh) +paulfitz.github.io/daff@1.4.2 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

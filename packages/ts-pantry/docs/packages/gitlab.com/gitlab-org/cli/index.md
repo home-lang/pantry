@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 78 versions</summary>
+<summary>Show all 83 versions</summary>
 
+- `1.85.1`, `1.85.0`, `1.84.0`, `1.83.0`, `1.82.0`
 - `1.81.0`, `1.80.4`, `1.80.3`, `1.80.2`, `1.80.1`
 - `1.80.0`, `1.79.0`, `1.78.3`, `1.78.2`, `1.78.1`
 - `1.78.0`, `1.77.0`, `1.76.2`, `1.76.1`, `1.76.0`
@@ -46,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.81.0`
+**Latest Version**: `1.85.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gitlab.com/gitlab-org/cli@1.81.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gitlab.com/gitlab-org/cli@1.85.1 -- $SHELL -i
 ```
 
 ## Usage Examples

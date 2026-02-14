@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 13 versions</summary>
+<summary>Show all 14 versions</summary>
 
-- `4.12.2`, `4.12.1`, `4.12.0`, `4.11.3`, `4.11.2`
-- `4.11.1`, `4.11.0`, `4.10.2`, `4.10.1`, `4.10.0`
-- `4.9.1`, `4.9.0`, `4.8.3`
+- `4.12.3`, `4.12.2`, `4.12.1`, `4.12.0`, `4.11.3`
+- `4.11.2`, `4.11.1`, `4.11.0`, `4.10.2`, `4.10.1`
+- `4.10.0`, `4.9.1`, `4.9.0`, `4.8.3`
 
 </details>
 
-**Latest Version**: `4.12.2`
+**Latest Version**: `4.12.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +ccache.dev@4.12.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +ccache.dev@4.12.3 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -23,24 +23,24 @@
  */
 export const rpmorgpoptPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'popt' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'rpm.org/popt' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'C library for parsing command line parameters' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/rpm.org/popt/package.yml' as const,
   homepageUrl: 'http://ftp.rpm.org/popt/' as const,
   githubUrl: 'https://github.com/rpm-software-management/popt' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install rpm.org/popt' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/popt -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install rpm.org/popt' as const,
@@ -49,9 +49,9 @@ export const rpmorgpoptPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.19.0',
   ] as const,

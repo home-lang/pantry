@@ -3,7 +3,7 @@
  *
  * @domain `zarf.dev`
  * @programs `zarf`
- * @version `0.70.1` (63 versions available)
+ * @version `0.71.1` (65 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install zarf.dev`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "zarf"
  * console.log(pkg.description) // "DevSecOps for Air Gap & Limited-Connection Syst..."
  * console.log(pkg.programs)    // ["zarf"]
- * console.log(pkg.versions[0]) // "0.70.1" (latest)
+ * console.log(pkg.versions[0]) // "0.71.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/zarf-dev.md
@@ -25,48 +25,50 @@
  */
 export const zarfdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'zarf' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'zarf.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'DevSecOps for Air Gap & Limited-Connection Systems. https://zarf.dev/' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/zarf.dev/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/defenseunicorns/zarf' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install zarf.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zarf.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install zarf.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'zarf',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.71.1',
+    '0.71.0',
     '0.70.1',
     '0.69.0',
     '0.68.1',

@@ -27,31 +27,31 @@
  */
 export const libgdgithubioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'libgd.github' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'libgd.github.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Graphics library to dynamically manipulate images' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/libgd.github.io/package.yml' as const,
   homepageUrl: 'https://libgd.github.io/' as const,
   githubUrl: 'https://github.com/libgd/libgd' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install libgd.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libgd.github.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install libgd.github.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'bdftogd',
     'gd2copypal',
@@ -61,9 +61,9 @@ export const libgdgithubioPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'freedesktop.org/fontconfig',
     'freetype.org',
@@ -75,17 +75,17 @@ export const libgdgithubioPackage = {
     'zlib.net',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/autoconf',
     'gnu.org/libtool',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.3.3',
   ] as const,

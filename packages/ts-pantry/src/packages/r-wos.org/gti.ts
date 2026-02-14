@@ -25,31 +25,31 @@
  */
 export const rwosorggtiPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'gti' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'r-wos.org/gti' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'ASCII-art displaying typo-corrector for commands' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/r-wos.org/gti/package.yml' as const,
   homepageUrl: 'https://r-wos.org/hacks/gti' as const,
   githubUrl: 'https://github.com/rwos/gti' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install r-wos.org/gti' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +r-wos.org/gti -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install r-wos.org/gti' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'gti',
   ] as const,
@@ -57,9 +57,9 @@ export const rwosorggtiPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.9.1',
     '1.9.1',

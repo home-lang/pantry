@@ -2,7 +2,7 @@
  * **crush** - pkgx package
  *
  * @domain `charm.sh/crush`
- * @version `0.34.0` (17 versions available)
+ * @version `0.43.0` (30 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install charm.sh/crush`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.charmshcrush
  * console.log(pkg.name)        // "crush"
- * console.log(pkg.versions[0]) // "0.34.0" (latest)
+ * console.log(pkg.versions[0]) // "0.43.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/charm-sh/crush.md
@@ -22,24 +22,24 @@
  */
 export const charmshcrushPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'crush' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'charm.sh/crush' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/charm.sh/crush/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install charm.sh/crush' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +charm.sh/crush -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install charm.sh/crush' as const,
@@ -47,17 +47,30 @@ export const charmshcrushPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@=1.25.5',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.43.0',
+    '0.42.0',
+    '0.41.0',
+    '0.40.0',
+    '0.39.3',
+    '0.39.2',
+    '0.39.1',
+    '0.39.0',
+    '0.38.1',
+    '0.38.0',
+    '0.37.0',
+    '0.36.0',
+    '0.35.0',
     '0.34.0',
     '0.33.3',
     '0.33.2',

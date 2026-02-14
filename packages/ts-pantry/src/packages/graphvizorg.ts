@@ -3,7 +3,7 @@
  *
  * @domain `graphviz.org`
  * @programs `acyclic`, `bcomps`, `ccomps`, `circo`, `cluster`, ... (+30 more)
- * @version `14.1.1` (23 versions available)
+ * @version `14.1.2` (24 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install graphviz.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "graphviz"
  * console.log(pkg.description) // "Graph visualization software from AT&T and Bell..."
  * console.log(pkg.programs)    // ["acyclic", "bcomps", ...]
- * console.log(pkg.versions[0]) // "14.1.1" (latest)
+ * console.log(pkg.versions[0]) // "14.1.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/graphviz-org.md
@@ -26,31 +26,31 @@
  */
 export const graphvizorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'graphviz' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'graphviz.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Graph visualization software from AT&T and Bell Labs' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/graphviz.org/package.yml' as const,
   homepageUrl: 'https://graphviz.org/' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install graphviz.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +graphviz.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install graphviz.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'acyclic',
     'bcomps',
@@ -90,9 +90,9 @@ export const graphvizorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'cairographics.org^1.1.10',
     'freedesktop.org/fontconfig^2.3.95',
@@ -107,10 +107,11 @@ export const graphvizorgPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '14.1.2',
     '14.1.1',
     '14.1.0',
     '14.0.5',

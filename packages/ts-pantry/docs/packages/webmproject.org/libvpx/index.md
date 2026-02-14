@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 7 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `1.15.2`, `1.15.1`, `1.15.0`, `1.14.1`, `1.14.0`
-- `1.13.1`, `1.13.0`
+- `1.16.0`, `1.15.2`, `1.15.1`, `1.15.0`, `1.14.1`
+- `1.14.0`, `1.13.1`, `1.13.0`
 
 </details>
 
-**Latest Version**: `1.15.2`
+**Latest Version**: `1.16.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +webmproject.org/libvpx@1.15.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +webmproject.org/libvpx@1.16.0 -- $SHELL -i
 ```
 
 ## Usage Examples

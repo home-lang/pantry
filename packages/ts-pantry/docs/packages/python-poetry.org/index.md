@@ -25,31 +25,31 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 26 versions</summary>
+<summary>Show all 27 versions</summary>
 
-- `2.3.1`, `2.3.0`, `2.2.1`, `2.2.0`, `2.1.4`
-- `2.1.3`, `2.1.2`, `2.1.1`, `2.1.0`, `2.0.1`
-- `2.0.0`, `1.8.5`, `1.8.4`, `1.8.3`, `1.8.2`
-- `1.8.1`, `1.8.0`, `1.7.1`, `1.7.0`, `1.6.1`
-- `1.6.0`, `1.5.1`, `1.5.0`, `1.4.2`, `1.4.0`
-- `1.3.2`
+- `2.3.2`, `2.3.1`, `2.3.0`, `2.2.1`, `2.2.0`
+- `2.1.4`, `2.1.3`, `2.1.2`, `2.1.1`, `2.1.0`
+- `2.0.1`, `2.0.0`, `1.8.5`, `1.8.4`, `1.8.3`
+- `1.8.2`, `1.8.1`, `1.8.0`, `1.7.1`, `1.7.0`
+- `1.6.1`, `1.6.0`, `1.5.1`, `1.5.0`, `1.4.2`
+- `1.4.0`, `1.3.2`
 
 </details>
 
-**Latest Version**: `2.3.1`
+**Latest Version**: `2.3.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +python-poetry.org@2.3.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +python-poetry.org@2.3.2 -- $SHELL -i
 ```
 
 ## Dependencies
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

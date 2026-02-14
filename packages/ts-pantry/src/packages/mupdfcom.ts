@@ -3,7 +3,7 @@
  *
  * @domain `mupdf.com`
  * @programs `mupdf-gl`, `muraster`, `mutool`
- * @version `1.27.0` (39 versions available)
+ * @version `1.27.1` (40 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mupdf.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "mupdf"
  * console.log(pkg.description) // "Lightweight PDF and XPS viewer"
  * console.log(pkg.programs)    // ["mupdf-gl", "muraster", ...]
- * console.log(pkg.versions[0]) // "1.27.0" (latest)
+ * console.log(pkg.versions[0]) // "1.27.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/mupdf-com.md
@@ -26,31 +26,31 @@
  */
 export const mupdfcomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mupdf' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'mupdf.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Lightweight PDF and XPS viewer' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/mupdf.com/package.yml' as const,
   homepageUrl: 'https://mupdf.com/' as const,
   githubUrl: 'https://github.com/ArtifexSoftware/mupdf' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install mupdf.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mupdf.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install mupdf.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'mupdf-gl',
     'muraster',
@@ -58,10 +58,10 @@ export const mupdfcomPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'zlib.net^1',
     'openssl.org^1.1',
@@ -86,10 +86,11 @@ export const mupdfcomPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.27.1',
     '1.27.0',
     '1.26.12',
     '1.26.11',

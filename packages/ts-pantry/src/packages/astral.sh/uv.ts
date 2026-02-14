@@ -3,7 +3,7 @@
  *
  * @domain `astral.sh/uv`
  * @programs `uv`, `uvx`
- * @version `0.9.26` (241 versions available)
+ * @version `0.10.2` (248 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install astral.sh/uv`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "uv"
  * console.log(pkg.description) // "An extremely fast Python package and project ma..."
  * console.log(pkg.programs)    // ["uv", "uvx"]
- * console.log(pkg.versions[0]) // "0.9.26" (latest)
+ * console.log(pkg.versions[0]) // "0.10.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/astral-sh/uv.md
@@ -27,48 +27,48 @@
  */
 export const astralshuvPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'uv' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'astral.sh/uv' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An extremely fast Python package and project manager, written in Rust.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/astral.sh/uv/package.yml' as const,
   homepageUrl: 'https://docs.astral.sh/uv' as const,
   githubUrl: 'https://github.com/astral-sh/uv' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install astral.sh/uv' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +astral.sh/uv -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install astral.sh/uv' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'uv',
     'uvx',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'libgit2.org~1.7 # links to libgit2.so.1.7',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'linux:nixos.org/patchelf@^0.18',
     'linux:sqlite.org',
@@ -76,10 +76,17 @@ export const astralshuvPackage = {
     'maturin.rs@^1.4.0',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.10.2',
+    '0.10.1',
+    '0.10.0',
+    '0.9.30',
+    '0.9.29',
+    '0.9.28',
+    '0.9.27',
     '0.9.26',
     '0.9.25',
     '0.9.24',

@@ -3,7 +3,7 @@
  *
  * @domain `gnutls.org`
  * @programs `certtool`, `danetool`, `gnutls-cli`, `gnutls-cli-debug`, `gnutls-serv`, ... (+3 more)
- * @version `3.8.11` (12 versions available)
+ * @version `3.8.12` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnutls.org`
@@ -17,7 +17,7 @@
  * const pkg = pantry.gnutlsorg
  * console.log(pkg.name)        // "gnutls"
  * console.log(pkg.programs)    // ["certtool", "danetool", ...]
- * console.log(pkg.versions[0]) // "3.8.11" (latest)
+ * console.log(pkg.versions[0]) // "3.8.12" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnutls-org.md
@@ -25,31 +25,31 @@
  */
 export const gnutlsorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'gnutls' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'gnutls.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnutls.org/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install gnutls.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnutls.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnutls.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'certtool',
     'danetool',
@@ -62,33 +62,34 @@ export const gnutlsorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'freedesktop.org/p11-kit',
     'gnu.org/libidn2',
     'gnu.org/libunistring^1',
     'gnu.org/libtasn1^4',
-    'gnu.org/nettle',
+    'gnu.org/nettle^3',
     'gnu.org/gettext',
     'gnu.org/gmp',
     'unbound.net^1',
     'curl.se/ca-certs',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'linux:gnu.org/gcc',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.8.12',
     '3.8.11',
     '3.8.10',
     '3.8.9',

@@ -25,31 +25,31 @@
  */
 export const wilfredmeukdifftasticPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'difft' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'wilfred.me.uk/difftastic' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'a structural diff that understands syntax 🟥🟩' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/wilfred.me.uk/difftastic/package.yml' as const,
   homepageUrl: 'https://difftastic.wilfred.me.uk/' as const,
   githubUrl: 'https://github.com/Wilfred/difftastic' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install wilfred.me.uk/difftastic' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wilfred.me.uk/difftastic -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install wilfred.me.uk/difftastic' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'difft',
   ] as const,
@@ -57,9 +57,9 @@ export const wilfredmeukdifftasticPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '0.67.0',
     '0.65.0',

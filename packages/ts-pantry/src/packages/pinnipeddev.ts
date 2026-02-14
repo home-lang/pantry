@@ -3,7 +3,7 @@
  *
  * @domain `pinniped.dev`
  * @programs `pinniped`
- * @version `0.43.0` (18 versions available)
+ * @version `0.44.0` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pinniped.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "pinniped"
  * console.log(pkg.description) // "Pinniped is the easy, secure way to log in to y..."
  * console.log(pkg.programs)    // ["pinniped"]
- * console.log(pkg.versions[0]) // "0.43.0" (latest)
+ * console.log(pkg.versions[0]) // "0.44.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pinniped-dev.md
@@ -26,48 +26,49 @@
  */
 export const pinnipeddevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'pinniped' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'pinniped.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Pinniped is the easy, secure way to log in to your Kubernetes clusters.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/pinniped.dev/package.yml' as const,
   homepageUrl: 'https://pinniped.dev' as const,
   githubUrl: 'https://github.com/vmware-tanzu/pinniped' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install pinniped.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pinniped.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pinniped.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'pinniped',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.44.0',
     '0.43.0',
     '0.42.0',
     '0.41.0',

@@ -3,7 +3,7 @@
  *
  * @domain `coder.com`
  * @programs `coder`
- * @version `2.29.2` (108 versions available)
+ * @version `2.30.1` (118 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install coder.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "coder"
  * console.log(pkg.description) // "Tool for provisioning self-hosted development e..."
  * console.log(pkg.programs)    // ["coder"]
- * console.log(pkg.versions[0]) // "2.29.2" (latest)
+ * console.log(pkg.versions[0]) // "2.30.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/coder-com.md
@@ -26,51 +26,60 @@
  */
 export const codercomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'coder' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'coder.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Tool for provisioning self-hosted development environments with Terraform' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/coder.com/package.yml' as const,
   homepageUrl: 'https://coder.com' as const,
   githubUrl: 'https://github.com/coder/coder' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install coder.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +coder.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install coder.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'coder',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@~1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.30.1',
+    '2.30.0',
+    '2.29.6',
+    '2.29.5',
+    '2.29.4',
+    '2.29.3',
     '2.29.2',
     '2.29.1',
     '2.29.0',
+    '2.28.10',
+    '2.28.9',
+    '2.28.8',
     '2.28.7',
     '2.28.6',
     '2.28.5',
@@ -79,6 +88,7 @@ export const codercomPackage = {
     '2.28.2',
     '2.28.1',
     '2.28.0',
+    '2.27.11',
     '2.27.10',
     '2.27.9',
     '2.27.8',

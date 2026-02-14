@@ -25,47 +25,47 @@
  */
 export const fullstorycomgrpcurlPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'grpcurl' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'fullstory.com/grpcurl' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Like cURL, but for gRPC: Command-line tool for interacting with gRPC servers' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/fullstory.com/grpcurl/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/fullstorydev/grpcurl' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install fullstory.com/grpcurl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fullstory.com/grpcurl -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install fullstory.com/grpcurl' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'grpcurl',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.19',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.9.3',
     '1.9.2',

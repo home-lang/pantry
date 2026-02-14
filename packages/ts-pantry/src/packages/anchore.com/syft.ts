@@ -3,7 +3,7 @@
  *
  * @domain `anchore.com/syft`
  * @programs `syft`
- * @version `1.40.1` (57 versions available)
+ * @version `1.42.0` (61 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install anchore.com/syft`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "syft"
  * console.log(pkg.description) // "CLI tool and library for generating a Software ..."
  * console.log(pkg.programs)    // ["syft"]
- * console.log(pkg.versions[0]) // "1.40.1" (latest)
+ * console.log(pkg.versions[0]) // "1.42.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/anchore-com/syft.md
@@ -25,48 +25,52 @@
  */
 export const anchorecomsyftPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'syft' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'anchore.com/syft' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'CLI tool and library for generating a Software Bill of Materials from container images and filesystems' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/anchore.com/syft/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/anchore/syft' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install anchore.com/syft' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +anchore.com/syft -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install anchore.com/syft' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'syft',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.42.0',
+    '1.41.2',
+    '1.41.1',
+    '1.41.0',
     '1.40.1',
     '1.40.0',
     '1.39.0',

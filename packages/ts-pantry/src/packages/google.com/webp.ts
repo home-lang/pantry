@@ -27,31 +27,31 @@
  */
 export const googlecomwebpPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'webp' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'google.com/webp' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Mirror only. Please do not send pull requests. See https://chromium.googlesource.com/webm/libwebp/+/HEAD/CONTRIBUTING.md.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/google.com/webp/package.yml' as const,
   homepageUrl: 'https://developers.google.com/speed/webp/' as const,
   githubUrl: 'https://github.com/webmproject/libwebp' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install google.com/webp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/webp -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install google.com/webp' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cwebp',
     'dwebp',
@@ -63,9 +63,9 @@ export const googlecomwebpPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'giflib.sourceforge.io^5',
     'libjpeg-turbo.org^2',
@@ -73,16 +73,16 @@ export const googlecomwebpPackage = {
     'simplesystems.org/libtiff^4',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/wget',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.6.0',
     '1.5.0',

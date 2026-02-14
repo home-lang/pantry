@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
-- `0.8.0`, `0.7.0`, `0.6.17`, `0.6.16`, `0.6.15`
-- `0.6.13`, `0.6.12`, `0.6.11`, `0.6.10`
+- `0.9.0`, `0.8.0`, `0.7.0`, `0.6.17`, `0.6.16`
+- `0.6.15`, `0.6.13`, `0.6.12`, `0.6.11`, `0.6.10`
 
 </details>
 
-**Latest Version**: `0.8.0`
+**Latest Version**: `0.9.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/git-absorb@0.8.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/git-absorb@0.9.0 -- $SHELL -i
 ```
 
 ## Dependencies

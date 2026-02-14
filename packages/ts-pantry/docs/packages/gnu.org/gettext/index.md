@@ -46,20 +46,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 7 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `0.22.5`, `0.22.4`, `0.22.3`, `0.22.2`, `0.22.1`
-- `0.22.0`, `0.21.1`
+- `1.0.0`, `0.22.5`, `0.22.4`, `0.22.3`, `0.22.2`
+- `0.22.1`, `0.22.0`, `0.21.1`
 
 </details>
 
-**Latest Version**: `0.22.5`
+**Latest Version**: `1.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnu.org/gettext@0.22.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnu.org/gettext@1.0.0 -- $SHELL -i
 ```
 
 ## Dependencies

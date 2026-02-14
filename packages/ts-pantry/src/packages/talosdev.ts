@@ -3,7 +3,7 @@
  *
  * @domain `talos.dev`
  * @programs `talosctl`
- * @version `1.12.2` (43 versions available)
+ * @version `1.12.4` (45 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install talos.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "talosctl"
  * console.log(pkg.description) // "CLI for out-of-band management of Kubernetes no..."
  * console.log(pkg.programs)    // ["talosctl"]
- * console.log(pkg.versions[0]) // "1.12.2" (latest)
+ * console.log(pkg.versions[0]) // "1.12.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/talos-dev.md
@@ -26,51 +26,53 @@
  */
 export const talosdevPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'talosctl' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'talos.dev' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'CLI for out-of-band management of Kubernetes nodes created by Talos' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/talos.dev/package.yml' as const,
   homepageUrl: 'https://www.talos.dev/' as const,
   githubUrl: 'https://github.com/siderolabs/talos' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install talos.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +talos.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install talos.dev' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'talosctl',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'go.dev@^1.21',
     'linux:gnu.org/gcc',
     'linux:gnu.org/binutils@~2.44',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.12.4',
+    '1.12.3',
     '1.12.2',
     '1.12.1',
     '1.12.0',

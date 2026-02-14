@@ -3,7 +3,7 @@
  *
  * @domain `cmake.org`
  * @programs `cmake`, `ccmake`, `cpack`, `ctest`
- * @version `4.2.2` (74 versions available)
+ * @version `4.2.3` (78 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cmake.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "cmake"
  * console.log(pkg.description) // "Mirror of CMake upstream repository"
  * console.log(pkg.programs)    // ["cmake", "ccmake", ...]
- * console.log(pkg.versions[0]) // "4.2.2" (latest)
+ * console.log(pkg.versions[0]) // "4.2.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/cmake-org.md
@@ -26,31 +26,31 @@
  */
 export const cmakeorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'cmake' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'cmake.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Mirror of CMake upstream repository' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/cmake.org/package.yml' as const,
   homepageUrl: 'https://www.cmake.org/' as const,
   githubUrl: 'https://github.com/Kitware/CMake' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install cmake.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cmake.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install cmake.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cmake',
     'ccmake',
@@ -59,9 +59,9 @@ export const cmakeorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'curl.se>=5<8.13',
     'zlib.net@1',
@@ -69,24 +69,28 @@ export const cmakeorgPackage = {
   ] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '4.2.3',
     '4.2.2',
     '4.2.1',
     '4.2.0',
+    '4.1.5',
     '4.1.4',
     '4.1.3',
     '4.1.2',
     '4.1.1',
     '4.1.0',
+    '4.0.6',
     '4.0.5',
     '4.0.4',
     '4.0.3',
     '4.0.2',
     '4.0.1',
     '4.0.0',
+    '3.31.11',
     '3.31.10',
     '3.31.9',
     '3.31.8',

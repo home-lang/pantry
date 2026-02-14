@@ -25,20 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 10 versions</summary>
+<summary>Show all 11 versions</summary>
 
-- `1.51.0`, `1.50.0`, `1.49.2`, `1.49.1`, `1.49.0`
-- `1.48.0`, `1.47.0`, `1.46.0`, `1.45.0`, `1.44.2`
+- `1.52.0`, `1.51.0`, `1.50.0`, `1.49.2`, `1.49.1`
+- `1.49.0`, `1.48.0`, `1.47.0`, `1.46.0`, `1.45.0`
+- `1.44.2`
 
 </details>
 
-**Latest Version**: `1.51.0`
+**Latest Version**: `1.52.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +libuv.org@1.51.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +libuv.org@1.52.0 -- $SHELL -i
 ```
 
 ## Usage Examples

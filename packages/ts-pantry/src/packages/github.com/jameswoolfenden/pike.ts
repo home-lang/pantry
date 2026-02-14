@@ -3,7 +3,7 @@
  *
  * @domain `github.com/jameswoolfenden/pike`
  * @programs `pike`
- * @version `0.3.91` (75 versions available)
+ * @version `0.3.93` (77 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/jameswoolfenden/pike`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "pike"
  * console.log(pkg.description) // "Pike is a tool for determining the permissions ..."
  * console.log(pkg.programs)    // ["pike"]
- * console.log(pkg.versions[0]) // "0.3.91" (latest)
+ * console.log(pkg.versions[0]) // "0.3.93" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/jameswoolfenden/pike.md
@@ -26,48 +26,50 @@
  */
 export const pikePackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'pike' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/jameswoolfenden/pike' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Pike is a tool for determining the permissions or policy required for IAC code' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/jameswoolfenden/pike/package.yml' as const,
   homepageUrl: 'https://pike.lysator.liu.se/' as const,
   githubUrl: 'https://github.com/JamesWoolfenden/pike' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/jameswoolfenden/pike' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jameswoolfenden/pike -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/jameswoolfenden/pike' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'pike',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.22',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.3.93',
+    '0.3.92',
     '0.3.91',
     '0.3.90',
     '0.3.89',

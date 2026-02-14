@@ -3,7 +3,7 @@
  *
  * @domain `circleci.com`
  * @programs `circleci`
- * @version `0.1.34038` (66 versions available)
+ * @version `0.1.34422` (68 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install circleci.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "circleci"
  * console.log(pkg.description) // "Enables you to reproduce the CircleCI environme..."
  * console.log(pkg.programs)    // ["circleci"]
- * console.log(pkg.versions[0]) // "0.1.34038" (latest)
+ * console.log(pkg.versions[0]) // "0.1.34422" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/circleci-com.md
@@ -26,48 +26,50 @@
  */
 export const circlecicomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'circleci' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'circleci.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Enables you to reproduce the CircleCI environment locally' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/circleci.com/package.yml' as const,
   homepageUrl: 'https://circleci.com/docs/2.0/local-cli/' as const,
   githubUrl: 'https://github.com/CircleCI-Public/circleci-cli' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install circleci.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +circleci.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install circleci.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'circleci',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.1.34422',
+    '0.1.34283',
     '0.1.34038',
     '0.1.33826',
     '0.1.33721',

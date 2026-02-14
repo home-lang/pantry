@@ -47,7 +47,7 @@ sh <(curl https://pkgx.sh) +deepwisdom.ai@0.8.2 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 - `git-scm.org^2 # v0.7.0 requires it`
 
 ## Usage Examples

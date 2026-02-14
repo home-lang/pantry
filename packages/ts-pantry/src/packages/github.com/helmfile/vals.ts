@@ -3,7 +3,7 @@
  *
  * @domain `github.com/helmfile/vals`
  * @programs `vals`
- * @version `0.43.1` (42 versions available)
+ * @version `0.43.3` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/helmfile/vals`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "vals"
  * console.log(pkg.description) // "Helm-like configuration values loader with supp..."
  * console.log(pkg.programs)    // ["vals"]
- * console.log(pkg.versions[0]) // "0.43.1" (latest)
+ * console.log(pkg.versions[0]) // "0.43.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/helmfile/vals.md
@@ -25,48 +25,50 @@
  */
 export const valsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'vals' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/helmfile/vals' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Helm-like configuration values loader with support for various sources' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/helmfile/vals/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/helmfile/vals' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/helmfile/vals' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/helmfile/vals -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/helmfile/vals' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'vals',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '0.43.3',
+    '0.43.2',
     '0.43.1',
     '0.43.0',
     '0.42.6',

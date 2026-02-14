@@ -56,7 +56,7 @@ sh <(curl https://pkgx.sh) +docutils.org@0.22.4 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

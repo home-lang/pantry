@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 19 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `1.18.5`, `1.18.3`, `1.18.0`, `1.17.5`, `1.17.3`
-- `1.17.2`, `1.17.1`, `1.17.0`, `1.16.6`, `1.16.5`
-- `1.16.4`, `1.16.3`, `1.16.2`, `1.16.1`, `1.16.0`
-- `0.13.6`, `0.13.5`, `0.13.4`, `0.13.3`
+- `1.18.6`, `1.18.5`, `1.18.3`, `1.18.0`, `1.17.5`
+- `1.17.3`, `1.17.2`, `1.17.1`, `1.17.0`, `1.16.6`
+- `1.16.5`, `1.16.4`, `1.16.3`, `1.16.2`, `1.16.1`
+- `1.16.0`, `0.13.6`, `0.13.5`, `0.13.4`, `0.13.3`
 
 </details>
 
-**Latest Version**: `1.18.5`
+**Latest Version**: `1.18.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cilium.io/hubble@1.18.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cilium.io/hubble@1.18.6 -- $SHELL -i
 ```
 
 ## Usage Examples

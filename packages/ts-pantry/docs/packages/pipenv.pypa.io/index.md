@@ -54,7 +54,7 @@ sh <(curl https://pkgx.sh) +pipenv.pypa.io@3000.0.0 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

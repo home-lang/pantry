@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 7 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `0.40.3`, `0.40.2`, `0.40.1`, `0.40.0`, `0.39.7`
-- `0.39.6`, `0.39.5`
+- `0.40.4`, `0.40.3`, `0.40.2`, `0.40.1`, `0.40.0`
+- `0.39.7`, `0.39.6`, `0.39.5`
 
 </details>
 
-**Latest Version**: `0.40.3`
+**Latest Version**: `0.40.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/nvm-sh/nvm@0.40.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/nvm-sh/nvm@0.40.4 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -23,24 +23,24 @@
  */
 export const libatomic_opsPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'libatomic_ops' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/ivmai/libatomic_ops' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The atomic_ops project (Atomic memory update operations portable implementation)' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/ivmai/libatomic_ops/package.yml' as const,
   homepageUrl: 'https://github.com/ivmai/libatomic_ops/wiki/Download' as const,
   githubUrl: 'https://github.com/ivmai/libatomic_ops' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/ivmai/libatomic_ops' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ivmai/libatomic_ops -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/ivmai/libatomic_ops' as const,
@@ -49,9 +49,9 @@ export const libatomic_opsPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '7.10.0',
     '7.8.4',

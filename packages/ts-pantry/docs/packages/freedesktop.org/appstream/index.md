@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
-- `1.1.1`, `1.1.0`, `1.0.6`, `1.0.5`, `1.0.4`
-- `1.0.3`
+- `1.1.2`, `1.1.1`, `1.1.0`, `1.0.6`, `1.0.5`
+- `1.0.4`, `1.0.3`
 
 </details>
 
-**Latest Version**: `1.1.1`
+**Latest Version**: `1.1.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +freedesktop.org/appstream@1.1.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +freedesktop.org/appstream@1.1.2 -- $SHELL -i
 ```
 
 ## Dependencies

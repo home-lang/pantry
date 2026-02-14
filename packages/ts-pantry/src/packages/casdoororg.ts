@@ -2,7 +2,7 @@
  * **casdoor** - pkgx package
  *
  * @domain `casdoor.org`
- * @version `2.257.0` (104 versions available)
+ * @version `2.315.0` (165 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install casdoor.org`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.casdoororg
  * console.log(pkg.name)        // "casdoor"
- * console.log(pkg.versions[0]) // "2.257.0" (latest)
+ * console.log(pkg.versions[0]) // "2.315.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/casdoor-org.md
@@ -22,24 +22,24 @@
  */
 export const casdoororgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'casdoor' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'casdoor.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/casdoor.org/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install casdoor.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +casdoor.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install casdoor.org' as const,
@@ -47,19 +47,80 @@ export const casdoororgPackage = {
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.21',
     'nodejs.org@18.19.0',
     'classic.yarnpkg.com@^1',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.315.0',
+    '2.314.0',
+    '2.313.1',
+    '2.313.0',
+    '2.312.0',
+    '2.311.0',
+    '2.310.0',
+    '2.309.0',
+    '2.308.0',
+    '2.307.0',
+    '2.306.0',
+    '2.305.0',
+    '2.304.0',
+    '2.303.0',
+    '2.302.0',
+    '2.301.0',
+    '2.300.0',
+    '2.299.0',
+    '2.298.0',
+    '2.297.0',
+    '2.296.0',
+    '2.295.0',
+    '2.294.0',
+    '2.293.0',
+    '2.292.0',
+    '2.291.2',
+    '2.291.1',
+    '2.291.0',
+    '2.290.0',
+    '2.289.0',
+    '2.288.0',
+    '2.287.0',
+    '2.286.0',
+    '2.285.0',
+    '2.284.0',
+    '2.283.0',
+    '2.282.0',
+    '2.281.0',
+    '2.280.0',
+    '2.279.0',
+    '2.278.0',
+    '2.277.0',
+    '2.276.0',
+    '2.275.0',
+    '2.274.0',
+    '2.273.0',
+    '2.272.0',
+    '2.271.0',
+    '2.270.0',
+    '2.269.0',
+    '2.268.0',
+    '2.267.0',
+    '2.266.0',
+    '2.265.0',
+    '2.264.0',
+    '2.263.0',
+    '2.262.0',
+    '2.261.0',
+    '2.260.0',
+    '2.259.0',
+    '2.258.0',
     '2.257.0',
     '2.256.0',
     '2.255.1',

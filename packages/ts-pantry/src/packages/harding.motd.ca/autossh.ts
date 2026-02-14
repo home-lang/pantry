@@ -27,54 +27,54 @@
  */
 export const hardingmotdcaautosshPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'autossh' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'harding.motd.ca/autossh' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Automatically restart SSH sessions and tunnels' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/harding.motd.ca/autossh/package.yml' as const,
   homepageUrl: 'https://www.harding.motd.ca/autossh/' as const,
   githubUrl: 'https://github.com/Autossh/autossh' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install harding.motd.ca/autossh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +harding.motd.ca/autossh -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install harding.motd.ca/autossh' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'autossh',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'openssh.com',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'gnu.org/make',
     'gnu.org/gcc',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.4f',
   ] as const,

@@ -47,7 +47,7 @@ sh <(curl https://pkgx.sh) +pypa.github.io/pipx@1.8.0 -- $SHELL -i
 
 This package depends on:
 
-- `pkgx.sh^1`
+- `pkgx.sh>=1`
 
 ## Usage Examples
 

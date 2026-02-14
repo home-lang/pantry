@@ -25,24 +25,31 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 26 versions</summary>
 
-- `20260107.0.0`, `20250814.1.0`, `20250814.0.0`, `20250512.1.0`, `20250512.0.0`
-- `20250127.1.0`, `20250127.0.0`, `20240722.1.0`, `20240722.0.0`, `20240116.3.0`
+- `20260107.1.0`, `20260107.0.0`, `20250814.2.0`, `20250814.1.0`, `20250814.0.0`
+- `20250512.2.0`, `20250512.1.0`, `20250512.0.0`, `20250127.2.0`, `20250127.1.0`
+- `20250127.0.0`, `20240722.2.0`, `20240722.1.0`, `20240722.0.0`, `20240116.3.0`
 - `20240116.2.0`, `20240116.1.0`, `20240116.0.0`, `20230802.3.0`, `20230802.2.0`
 - `20230802.1.0`, `20230802.0.0`, `20230125.4.0`, `20230125.3.0`, `20230125.2.0`
 - `20220623.2.0`
 
 </details>
 
-**Latest Version**: `20260107.0.0`
+**Latest Version**: `20260107.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +abseil.io@20260107.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +abseil.io@20260107.1.0 -- $SHELL -i
 ```
+
+## Dependencies
+
+This package depends on:
+
+- `linux:gnu.org/gcc/libstdcxx^14 # since 20250814.0`
 
 ## Usage Examples
 

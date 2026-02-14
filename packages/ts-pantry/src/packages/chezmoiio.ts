@@ -3,7 +3,7 @@
  *
  * @domain `chezmoi.io`
  * @programs `chezmoi`
- * @version `2.69.3` (94 versions available)
+ * @version `2.69.4` (95 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install chezmoi.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "chezmoi"
  * console.log(pkg.description) // "Manage your dotfiles across multiple diverse ma..."
  * console.log(pkg.programs)    // ["chezmoi"]
- * console.log(pkg.versions[0]) // "2.69.3" (latest)
+ * console.log(pkg.versions[0]) // "2.69.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/chezmoi-io.md
@@ -26,51 +26,52 @@
  */
 export const chezmoiioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'chezmoi' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'chezmoi.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Manage your dotfiles across multiple diverse machines, securely.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/chezmoi.io/package.yml' as const,
   homepageUrl: 'https://chezmoi.io/' as const,
   githubUrl: 'https://github.com/twpayne/chezmoi' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install chezmoi.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +chezmoi.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install chezmoi.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'chezmoi',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'go.dev@^1.18',
     'linux:gnu.org/gcc',
     'linux:gnu.org/binutils',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.69.4',
     '2.69.3',
     '2.69.2',
     '2.69.1',

@@ -3,7 +3,7 @@
  *
  * @domain `rust-lang.org`
  * @programs `cargo-clippy`, `cargo-fmt`, `clippy-driver`, `rust-analyzer`, `rust-gdb`, ... (+5 more)
- * @version `1.93.0` (41 versions available)
+ * @version `1.93.1` (42 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rust-lang.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "rust"
  * console.log(pkg.description) // "Empowering everyone to build reliable and effic..."
  * console.log(pkg.programs)    // ["cargo-clippy", "cargo-fmt", ...]
- * console.log(pkg.versions[0]) // "1.93.0" (latest)
+ * console.log(pkg.versions[0]) // "1.93.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rust-lang-org.md
@@ -27,31 +27,31 @@
  */
 export const rustlangorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'rust' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'rust-lang.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Empowering everyone to build reliable and efficient software.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.org/package.yml' as const,
   homepageUrl: 'https://www.rust-lang.org/' as const,
   githubUrl: 'https://github.com/rust-lang/rust' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install rust-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rust-lang.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install rust-lang.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'cargo-clippy',
     'cargo-fmt',
@@ -66,17 +66,17 @@ export const rustlangorgPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'zlib.net@1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org@^3.20',
     'python.org@>=3<3.12',
@@ -85,10 +85,11 @@ export const rustlangorgPackage = {
     'linux:llvm.org@21',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.93.1',
     '1.93.0',
     '1.92.0',
     '1.91.1',

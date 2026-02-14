@@ -3,7 +3,7 @@
  *
  * @domain `jenkins-x.io`
  * @programs `jx`
- * @version `3.16.43` (83 versions available)
+ * @version `3.16.45` (84 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install jenkins-x.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "Jenkins X"
  * console.log(pkg.description) // "Jenkins X provides automated CI+CD for Kubernet..."
  * console.log(pkg.programs)    // ["jx"]
- * console.log(pkg.versions[0]) // "3.16.43" (latest)
+ * console.log(pkg.versions[0]) // "3.16.45" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/jenkins-x-io.md
@@ -26,48 +26,49 @@
  */
 export const jenkinsxioPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'Jenkins X' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'jenkins-x.io' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Jenkins X provides automated CI+CD for Kubernetes with Preview Environments on Pull Requests using Cloud Native pipelines from Tekton' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/jenkins-x.io/package.yml' as const,
   homepageUrl: 'https://jenkins-x.io/' as const,
   githubUrl: 'https://github.com/jenkins-x/jx' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install jenkins-x.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jenkins-x.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install jenkins-x.io' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'jx',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@~1.23',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '3.16.45',
     '3.16.43',
     '3.16.41',
     '3.16.40',

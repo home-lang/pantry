@@ -3,7 +3,7 @@
  *
  * @domain `openshift.com`
  * @programs `oc`
- * @version `4.20.11` (326 versions available)
+ * @version `4.21.2` (343 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openshift.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "oc"
  * console.log(pkg.description) // "The OpenShift Command Line, part of OKD"
  * console.log(pkg.programs)    // ["oc"]
- * console.log(pkg.versions[0]) // "4.20.11" (latest)
+ * console.log(pkg.versions[0]) // "4.21.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/openshift-com.md
@@ -27,57 +27,63 @@
  */
 export const openshiftcomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'oc' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'openshift.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'The OpenShift Command Line, part of OKD' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/openshift.com/package.yml' as const,
   homepageUrl: 'https://www.openshift.com/' as const,
   githubUrl: 'https://github.com/openshift/oc' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install openshift.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openshift.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install openshift.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'oc',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'kerberos.org^1.21',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'go.dev@^1.21',
     'linux:gnu.org/gcc',
     'linux:gnu.org/binutils@~2.44',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '4.21.2',
+    '4.21.1',
+    '4.21.0',
+    '4.20.14',
+    '4.20.13',
+    '4.20.12',
     '4.20.11',
     '4.20.10',
     '4.20.9',
@@ -89,6 +95,8 @@ export const openshiftcomPackage = {
     '4.20.2',
     '4.20.1',
     '4.20.0',
+    '4.19.24',
+    '4.19.23',
     '4.19.22',
     '4.19.21',
     '4.19.20',
@@ -112,6 +120,8 @@ export const openshiftcomPackage = {
     '4.19.2',
     '4.19.1',
     '4.19.0',
+    '4.18.33',
+    '4.18.32',
     '4.18.31',
     '4.18.30',
     '4.18.29',
@@ -143,6 +153,8 @@ export const openshiftcomPackage = {
     '4.18.3',
     '4.18.2',
     '4.18.1',
+    '4.17.49',
+    '4.17.48',
     '4.17.47',
     '4.17.46',
     '4.17.45',
@@ -191,6 +203,8 @@ export const openshiftcomPackage = {
     '4.17.2',
     '4.17.1',
     '4.17.0',
+    '4.16.57',
+    '4.16.56',
     '4.16.55',
     '4.16.54',
     '4.16.53',
@@ -244,6 +258,7 @@ export const openshiftcomPackage = {
     '4.16.3',
     '4.16.2',
     '4.16.1',
+    '4.15.61',
     '4.15.60',
     '4.15.59',
     '4.15.58',
@@ -303,6 +318,7 @@ export const openshiftcomPackage = {
     '4.15.4',
     '4.15.3',
     '4.15.2',
+    '4.14.61',
     '4.14.60',
     '4.14.59',
     '4.14.58',
@@ -371,6 +387,7 @@ export const openshiftcomPackage = {
     '4.13.40',
     '4.13.39',
     '4.13.38',
+    '4.12.85',
     '4.12.84',
     '4.12.83',
     '4.12.82',

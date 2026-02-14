@@ -3,7 +3,7 @@
  *
  * @domain `github.com/evilmartians/lefthook`
  * @programs `lefthook`
- * @version `2.0.15` (145 versions available)
+ * @version `2.1.1` (148 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/evilmartians/lefthook`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "lefthook"
  * console.log(pkg.description) // "Fast and powerful Git hooks manager for any typ..."
  * console.log(pkg.programs)    // ["lefthook"]
- * console.log(pkg.versions[0]) // "2.0.15" (latest)
+ * console.log(pkg.versions[0]) // "2.1.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/evilmartians/lefthook.md
@@ -26,48 +26,51 @@
  */
 export const lefthookPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'lefthook' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'github.com/evilmartians/lefthook' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Fast and powerful Git hooks manager for any type of projects.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/evilmartians/lefthook/package.yml' as const,
   homepageUrl: 'http://lefthook.dev/' as const,
   githubUrl: 'https://github.com/evilmartians/lefthook' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install github.com/evilmartians/lefthook' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/evilmartians/lefthook -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/evilmartians/lefthook' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'lefthook',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'curl.se',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2.1.1',
+    '2.1.0',
+    '2.0.16',
     '2.0.15',
     '2.0.14',
     '2.0.13',

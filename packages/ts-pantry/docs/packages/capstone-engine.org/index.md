@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 7 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `5.0.6`, `5.0.5`, `5.0.3`, `5.0.2`, `5.0.1`
-- `5.0.0`, `4.0.2`
+- `5.0.7`, `5.0.6`, `5.0.5`, `5.0.3`, `5.0.2`
+- `5.0.1`, `5.0.0`, `4.0.2`
 
 </details>
 
-**Latest Version**: `5.0.6`
+**Latest Version**: `5.0.7`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +capstone-engine.org@5.0.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +capstone-engine.org@5.0.7 -- $SHELL -i
 ```
 
 ## Usage Examples

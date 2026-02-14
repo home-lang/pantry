@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `2.8.2`, `2.8.1`
+- `2.8.3`, `2.8.2`, `2.8.1`
 
 </details>
 
-**Latest Version**: `2.8.2`
+**Latest Version**: `2.8.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/adnanh/webhook@2.8.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/adnanh/webhook@2.8.3 -- $SHELL -i
 ```
 
 ## Usage Examples

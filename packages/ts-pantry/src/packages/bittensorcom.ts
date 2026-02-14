@@ -2,12 +2,12 @@
  * **Bittensor** - Internet-scale Neural Networks
  *
  * @domain `bittensor.com`
- * @version `10.0.1` (77 versions available)
+ * @version `10.1.0` (78 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install bittensor.com`
  * @homepage https://www.bittensor.com/
- * @dependencies `pkgx.sh^1`, `openssl.org^1.1`
+ * @dependencies `pkgx.sh>=1`, `openssl.org^1.1`
  * @buildDependencies `python.org@~3.11`, `cmake.org@3` - required only when building from source
  *
  * @example
@@ -17,7 +17,7 @@
  * const pkg = pantry.bittensorcom
  * console.log(pkg.name)        // "Bittensor"
  * console.log(pkg.description) // "Internet-scale Neural Networks"
- * console.log(pkg.versions[0]) // "10.0.1" (latest)
+ * console.log(pkg.versions[0]) // "10.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/bittensor-com.md
@@ -25,50 +25,51 @@
  */
 export const bittensorcomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'Bittensor' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'bittensor.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Internet-scale Neural Networks' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/bittensor.com/package.yml' as const,
   homepageUrl: 'https://www.bittensor.com/' as const,
   githubUrl: 'https://github.com/opentensor/bittensor' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install bittensor.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bittensor.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install bittensor.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'pkgx.sh^1',
+    'pkgx.sh>=1',
     'openssl.org^1.1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@~3.11',
     'cmake.org@3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '10.1.0',
     '10.0.1',
     '10.0.0',
     '9.12.2',

@@ -3,7 +3,7 @@
  *
  * @domain `duckdb.org`
  * @programs `duckdb`
- * @version `1.4.3` (25 versions available)
+ * @version `1.4.4` (26 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install duckdb.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "duckdb"
  * console.log(pkg.description) // "DuckDB is an analytical in-process SQL database..."
  * console.log(pkg.programs)    // ["duckdb"]
- * console.log(pkg.versions[0]) // "1.4.3" (latest)
+ * console.log(pkg.versions[0]) // "1.4.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/duckdb-org.md
@@ -26,49 +26,50 @@
  */
 export const duckdborgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'duckdb' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'duckdb.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'DuckDB is an analytical in-process SQL database management system' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/duckdb.org/package.yml' as const,
   homepageUrl: 'https://www.duckdb.org' as const,
   githubUrl: 'https://github.com/duckdb/duckdb' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install duckdb.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +duckdb.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install duckdb.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'duckdb',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'cmake.org@^3',
     'python.org@^3',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.4.4',
     '1.4.3',
     '1.4.2',
     '1.4.1',

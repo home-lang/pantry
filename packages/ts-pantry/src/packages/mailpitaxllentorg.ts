@@ -3,7 +3,7 @@
  *
  * @domain `mailpit.axllent.org`
  * @programs `mailpit`
- * @version `1.28.3` (84 versions available)
+ * @version `1.29.1` (87 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mailpit.axllent.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mailpit"
  * console.log(pkg.description) // "An email and SMTP testing tool with API for dev..."
  * console.log(pkg.programs)    // ["mailpit"]
- * console.log(pkg.versions[0]) // "1.28.3" (latest)
+ * console.log(pkg.versions[0]) // "1.29.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/mailpit-axllent-org.md
@@ -27,57 +27,60 @@
  */
 export const mailpitaxllentorgPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'mailpit' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'mailpit.axllent.org' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'An email and SMTP testing tool with API for developers' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/mailpit.axllent.org/package.yml' as const,
   homepageUrl: 'https://mailpit.axllent.org/' as const,
   githubUrl: 'https://github.com/axllent/mailpit' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install mailpit.axllent.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mailpit.axllent.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install mailpit.axllent.org' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'mailpit',
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'linux:curl.se/ca-certs',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'go.dev@^1.20',
     'nodejs.org@^18',
     'npmjs.com',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '1.29.1',
+    '1.29.0',
+    '1.28.4',
     '1.28.3',
     '1.28.2',
     '1.28.1',

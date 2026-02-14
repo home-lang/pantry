@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 105 versions</summary>
+<summary>Show all 110 versions</summary>
 
+- `0.99.12`, `0.99.11`, `0.99.10`, `0.99.9`, `0.99.8`
 - `0.99.7`, `0.99.6`, `0.99.5`, `0.99.4`, `0.99.3`
 - `0.99.2`, `0.99.1`, `0.99.0`, `0.98.34`, `0.98.33`
 - `0.98.32`, `0.98.31`, `0.98.30`, `0.98.29`, `0.98.28`
@@ -51,13 +52,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.99.7`
+**Latest Version**: `0.99.12`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +projen.io@0.99.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +projen.io@0.99.12 -- $SHELL -i
 ```
 
 ## Dependencies

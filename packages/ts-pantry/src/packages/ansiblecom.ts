@@ -3,12 +3,12 @@
  *
  * @domain `ansible.com`
  * @programs `ansible`, `ansible-config`, `ansible-connection`, `ansible-console`, `ansible-doc`, ... (+6 more)
- * @version `2.20.1` (86 versions available)
+ * @version `2.20.1` (88 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install ansible.com`
  * @homepage https://www.ansible.com/
- * @dependencies `pkgx.sh@1`
+ * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.12` - required only when building from source
  *
  * @example
@@ -27,31 +27,31 @@
  */
 export const ansiblecomPackage = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'ansible' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'ansible.com' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'Ansible is a radically simple IT automation platform that makes your applications and systems easier to deploy and maintain. Automate everything from code deployment to network configuration to cloud management, in a language that approaches plain English, using SSH, with no agents to install on remote systems. https://docs.ansible.com.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/ansible.com/package.yml' as const,
   homepageUrl: 'https://www.ansible.com/' as const,
   githubUrl: 'https://github.com/ansible/ansible' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install ansible.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ansible.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install ansible.com' as const,
   /**
-   * Executable programs provided by this package.
-   * These can be run after installation.
-   */
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'ansible',
     'ansible-config',
@@ -67,26 +67,27 @@ export const ansiblecomPackage = {
   ] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
-    'pkgx.sh@1',
+    'pkgx.sh>=1',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
   buildDependencies: [
     'python.org@>=3.12',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '2.20.1',
     '2.20.0',
+    '2.19.6',
     '2.19.5',
     '2.19.4',
     '2.19.3',
@@ -120,6 +121,7 @@ export const ansiblecomPackage = {
     '2.17.2',
     '2.17.1',
     '2.17.0',
+    '2.16.16',
     '2.16.15',
     '2.16.14',
     '2.16.13',

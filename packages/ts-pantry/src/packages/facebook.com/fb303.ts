@@ -2,7 +2,7 @@
  * **fb303** - fb303 is a core set of thrift functions that provide a common mechanism for querying stats and other information from a service.
  *
  * @domain `facebook.com/fb303`
- * @version `2026.1.5.0` (102 versions available)
+ * @version `2026.2.9.0` (105 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/fb303`
@@ -16,7 +16,7 @@
  * const pkg = pantry.facebookcomfb303
  * console.log(pkg.name)        // "fb303"
  * console.log(pkg.description) // "fb303 is a core set of thrift functions that pr..."
- * console.log(pkg.versions[0]) // "2026.1.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.9.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/facebook-com/fb303.md
@@ -24,34 +24,34 @@
  */
 export const facebookcomfb303Package = {
   /**
-   * The display name of this package.
-   */
+  * The display name of this package.
+  */
   name: 'fb303' as const,
   /**
-   * The canonical domain name for this package.
-   */
+  * The canonical domain name for this package.
+  */
   domain: 'facebook.com/fb303' as const,
   /**
-   * Brief description of what this package does.
-   */
+  * Brief description of what this package does.
+  */
   description: 'fb303 is a core set of thrift functions that provide a common mechanism for querying stats and other information from a service.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/fb303/package.yml' as const,
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebook/fb303' as const,
   /**
-   * Command to install this package using launchpad.
-   * @example launchpad install package-name
-   */
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
+  */
   installCommand: 'launchpad install facebook.com/fb303' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/fb303 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install facebook.com/fb303' as const,
   programs: [] as const,
   companions: [] as const,
   /**
-   * Runtime dependencies for this package.
-   * These are required when running the package.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
-   */
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  */
   dependencies: [
     'github.com/facebookincubator/fizz',
     'facebook.com/wangle',
@@ -64,25 +64,28 @@ export const facebookcomfb303Package = {
     'openssl.org^1.1',
     'github.com/Cyan4973/xxHash^0.8 # since 2024.10.14.0',
     'linux:zlib.net^1',
-    'linux:gnu.org/gcc/libstdcxx@13',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
   /**
-   * Build dependencies for this package.
-   * These are only required when building the package from source.
-   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
-   */
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  */
   buildDependencies: [
     'cmake.org',
     'facebook.com/mvfst',
     'boost.org@^1.84',
-    'linux:gnu.org/gcc@13',
+    'linux:gnu.org/gcc@14',
   ] as const,
   /**
-   * Available versions from newest to oldest.
-   * @see https://ts-pkgx.netlify.app/usage for installation instructions
-   */
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
+    '2026.2.9.0',
+    '2026.2.2.0',
     '2026.1.5.0',
+    '2026.1.26.0',
     '2026.1.19.0',
     '2026.1.12.0',
     '2025.9.8.0',
