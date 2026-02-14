@@ -1,9 +1,0 @@
-{
-  "description": "Laravel-compatible PHP build with database and additional extensions",
-  "extraConfigureArgs": [
-    "--with-pdo-mysql=mysqlnd",
-    "--with-pdo-pgsql",
-    "--with-mysqli=mysqlnd",
-    "--with-pgsql"
-  ]
-}
