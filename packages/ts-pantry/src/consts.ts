@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-13T03:08:17.641Z
+ * Generated on 2026-02-14T04:10:47.542Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1638 total)
+ * List of all known packages (1643 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -430,6 +430,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'flywaydb.org',
   'fmt.dev',
   'fna-xna.github.io',
+  'fossies.org/libelf',
   'freedesktop.org/XKeyboardConfig',
   'freedesktop.org/appstream',
   'freedesktop.org/at-spi2-atk',
@@ -850,6 +851,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/util-linux/util-linux',
   'github.com/vburenin/ifacemaker',
   'github.com/vitor-mariano/regex-tui',
+  'github.com/vmware/tdnf',
   'github.com/volatiletech/sqlboiler',
   'github.com/wagoodman/dive',
   'github.com/westes/flex',
@@ -1302,6 +1304,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'openslide.org',
   'openssh.com',
   'openssl.org',
+  'opensuse.org/libsolv',
   'opentofu.org',
   'openvpn.net',
   'operatorframework.io/operator-sdk',
@@ -1429,6 +1432,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'rockdaboot.github.io/libpsl',
   'rome.tools',
   'rpm.org/popt',
+  'rpm.org/rpm',
   'rsync.samba.org',
   'rtmpdump.mplayerhq.hu',
   'rtomayko.github.io/ronn',
@@ -1501,6 +1505,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'sqlfluff.com',
   'sqlite.org',
   'squawkhq.com',
+  'sr.ht/scdoc',
   'srtalliance.org',
   'sshx.io',
   'starship.rs',
