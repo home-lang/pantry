@@ -314,6 +314,7 @@ jobs:
 
           git add packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts
           git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated update via GitHub Actions workflow"
+          git pull --rebase origin main
           git push origin main
 
           echo "committed=true" >> $GITHUB_OUTPUT

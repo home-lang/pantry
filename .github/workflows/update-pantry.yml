@@ -129,6 +129,7 @@ jobs:
 
           git add packages/ts-pantry/src/pantry/ packages/ts-pantry/src/consts.ts packages/ts-pantry/src/generated-package-names.ts
           git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated pantry update via GitHub Actions workflow"
+          git pull --rebase origin main
           git push origin main
 
           echo "Successfully committed and pushed pantry changes"
