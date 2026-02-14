@@ -55,6 +55,12 @@ jobs:
           mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
           ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
 
+      - name: Install build dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libreadline-dev zlib1g-dev
+
       - name: Sync pre-built binaries to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

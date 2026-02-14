@@ -356,18 +356,33 @@ exec node "$(dirname "$0")/yarn.js" "$@"
     domain: 'python.org',
     name: 'python',
     getLatestVersion: async () => {
-      // Use python-build-standalone which provides install_only tarballs
-      return '3.13.2'
+      // Get latest from astral-sh/python-build-standalone
+      const response = await fetch('https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest', { headers: githubHeaders() })
+      if (!response.ok) return '3.13.12'
+      const data = await response.json() as { tag_name: string; assets: { name: string }[] }
+      // Find the highest 3.x version from the asset names
+      const versions = data.assets
+        .map(a => a.name.match(/cpython-(\d+\.\d+\.\d+)\+/)?.[1])
+        .filter((v): v is string => !!v)
+      const unique = [...new Set(versions)].sort((a, b) => {
+        const [a1, a2, a3] = a.split('.').map(Number)
+        const [b1, b2, b3] = b.split('.').map(Number)
+        return b1 - a1 || b2 - a2 || b3 - a3
+      })
+      return unique[0] || '3.13.12'
     },
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
 
-      // Use python-build-standalone releases from astral-sh (formerly indygreg)
+      // Use python-build-standalone releases from astral-sh
       const pyArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
       const pyPlatform = os === 'darwin' ? 'apple-darwin' : 'unknown-linux-gnu'
 
-      // Find the latest release tag for this Python version
-      const tag = '20250204'
+      // Get the latest release tag
+      const tagResponse = await fetch('https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest', { headers: githubHeaders() })
+      const tagData = await tagResponse.json() as { tag_name: string }
+      const tag = tagData.tag_name
+
       const url = `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${version}+${tag}-${pyArch}-${pyPlatform}-install_only.tar.gz`
 
       console.log(`   Downloading from ${url}`)
