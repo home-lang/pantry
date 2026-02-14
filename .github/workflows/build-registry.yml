@@ -43,7 +43,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: cd packages/ts-pantry && bun install
+        run: bun install
 
       - name: Determine version
         id: version
@@ -112,7 +112,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: cd packages/ts-pantry && bun install
+        run: bun install
 
       - name: Install build tools (macOS)
         if: contains(matrix.platform, 'darwin')
@@ -231,7 +231,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: cd packages/ts-pantry && bun install
+        run: bun install
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4

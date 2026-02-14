@@ -69,6 +69,21 @@ function createTarball(sourceDir: string, artifactsDir: string, domain: string, 
   console.log(`   Created: ${tarball}`)
 }
 
+// GitHub API helper with optional auth token
+function githubHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Accept': 'application/vnd.github.v3+json' }
+  const token = process.env.GITHUB_TOKEN
+  if (token) headers['Authorization'] = `token ${token}`
+  return headers
+}
+
+async function githubLatestVersion(repo: string, prefix: string = 'v'): Promise<string> {
+  const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, { headers: githubHeaders() })
+  if (!response.ok) throw new Error(`GitHub API ${response.status}: ${await response.text()}`)
+  const data = await response.json() as { tag_name: string }
+  return data.tag_name.replace(new RegExp(`^${prefix}`), '')
+}
+
 // ============================================
 // Package Configurations
 // ============================================
@@ -77,11 +92,7 @@ const packages: Record<string, PackageConfig> = {
   'getcomposer.org': {
     domain: 'getcomposer.org',
     name: 'composer',
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/composer/composer/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^v/, '')
-    },
+    getLatestVersion: () => githubLatestVersion('composer/composer'),
     download: async (version, platform, destDir) => {
       // Composer is a single PHAR file
       const url = `https://getcomposer.org/download/${version}/composer.phar`
@@ -96,11 +107,7 @@ const packages: Record<string, PackageConfig> = {
   'bun.sh': {
     domain: 'bun.sh',
     name: 'bun',
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/oven-sh/bun/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^bun-v?/, '')
-    },
+    getLatestVersion: () => githubLatestVersion('oven-sh/bun', 'bun-v?'),
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
       const bunArch = arch === 'arm64' ? 'aarch64' : 'x64'
@@ -150,11 +157,7 @@ const packages: Record<string, PackageConfig> = {
   'meilisearch.com': {
     domain: 'meilisearch.com',
     name: 'meilisearch',
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/meilisearch/meilisearch/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^v/, '')
-    },
+    getLatestVersion: () => githubLatestVersion('meilisearch/meilisearch'),
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
       const msArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
@@ -173,11 +176,7 @@ const packages: Record<string, PackageConfig> = {
     domain: 'redis.io',
     name: 'redis',
     needsCompile: true,
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/redis/redis/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^v?/, '')
-    },
+    getLatestVersion: () => githubLatestVersion('redis/redis', 'v?'),
     download: async (version, platform, destDir) => {
       const buildDir = '/tmp/redis-build'
       rmSync(buildDir, { recursive: true, force: true })
@@ -268,11 +267,7 @@ const packages: Record<string, PackageConfig> = {
   'pnpm.io': {
     domain: 'pnpm.io',
     name: 'pnpm',
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/pnpm/pnpm/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^v/, '')
-    },
+    getLatestVersion: () => githubLatestVersion('pnpm/pnpm'),
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
       const pnpmArch = arch === 'arm64' ? 'arm64' : 'x64'
@@ -290,11 +285,7 @@ const packages: Record<string, PackageConfig> = {
   'yarnpkg.com': {
     domain: 'yarnpkg.com',
     name: 'yarn',
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/yarnpkg/berry/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^v?@yarnpkg\/cli\//, '')
-    },
+    getLatestVersion: () => githubLatestVersion('yarnpkg/berry', 'v?@yarnpkg/cli/'),
     download: async (version, platform, destDir) => {
       // Yarn is distributed as a JS file, needs Node to run
       const url = `https://repo.yarnpkg.com/${version}/packages/yarnpkg-cli/bin/yarn.js`
@@ -340,11 +331,7 @@ exec node "$(dirname "$0")/yarn.js" "$@"
   'deno.land': {
     domain: 'deno.land',
     name: 'deno',
-    getLatestVersion: async () => {
-      const response = await fetch('https://api.github.com/repos/denoland/deno/releases/latest')
-      const data = await response.json() as { tag_name: string }
-      return data.tag_name.replace(/^v/, '')
-    },
+    getLatestVersion: () => githubLatestVersion('denoland/deno'),
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
       const denoArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
