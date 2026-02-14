@@ -456,7 +456,7 @@ async function main() {
     options: {
       bucket: { type: 'string', short: 'b' },
       region: { type: 'string', short: 'r', default: 'us-east-1' },
-      package: { type: 'string', short: 'p' },
+      package: { type: 'string', short: 'p', multiple: true },
       force: { type: 'boolean', short: 'f', default: false },
       'dry-run': { type: 'boolean', default: false },
       'list': { type: 'boolean', short: 'l', default: false },
@@ -532,8 +532,8 @@ Examples:
   // Determine which packages to sync
   let packagesToSync = Object.entries(packages)
 
-  if (values.package) {
-    const pkgNames = Array.isArray(values.package) ? values.package : [values.package]
+  if (values.package && values.package.length > 0) {
+    const pkgNames = values.package
     packagesToSync = packagesToSync.filter(([key]) =>
       pkgNames.some(p => key.includes(p) || packages[key]?.name === p)
     )

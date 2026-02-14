@@ -116,6 +116,7 @@ jobs:
           fi
 
       - name: Commit and push changes
+        id: commit
         if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true'
         run: |
           if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
@@ -134,4 +135,16 @@ jobs:
           git stash pop || true
           git push origin main
 
+          echo "committed=true" >> $GITHUB_OUTPUT
           echo "Successfully committed and pushed pantry changes"
+
+      - name: Sync metadata to registry
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          echo "Syncing all package metadata to DynamoDB..."
+          cd packages/ts-pantry
+          bun scripts/sync-metadata-to-registry.ts --all
+        timeout-minutes: 10

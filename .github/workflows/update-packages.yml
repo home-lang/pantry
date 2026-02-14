@@ -322,18 +322,20 @@ jobs:
           echo "committed=true" >> $GITHUB_OUTPUT
           echo "Successfully committed and pushed changes"
 
-      - name: Trigger S3 Registry Build
+      - name: Sync metadata to registry
         if: steps.commit.outputs.committed == 'true'
-        run: |
-          # Identify which packages changed and trigger builds
-          CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/packages/ 2>/dev/null | head -20)
-          if [ -n "$CHANGED" ]; then
-            echo "Changed packages detected, triggering registry builds..."
-            for file in $CHANGED; do
-              pkg=$(basename "$file" .ts | sed 's/-/./g')
-              echo "Triggering build for: $pkg"
-              gh workflow run build-registry.yml -f package="$pkg" -f platforms="all" || echo "Failed to trigger build for $pkg (workflow may not exist yet)"
-            done
-          fi
         env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/packages/ 2>/dev/null)
+          if [ -n "$CHANGED" ]; then
+            echo "Syncing metadata for changed packages to DynamoDB..."
+            # Convert repo-relative paths to paths relative to packages/ts-pantry/
+            RELATIVE_CHANGED=$(echo "$CHANGED" | sed 's|^packages/ts-pantry/||')
+            cd packages/ts-pantry
+            bun scripts/sync-metadata-to-registry.ts --changed-files $RELATIVE_CHANGED
+          else
+            echo "No package changes to sync"
+          fi
+        timeout-minutes: 5

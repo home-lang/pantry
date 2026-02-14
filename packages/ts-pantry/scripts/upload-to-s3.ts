@@ -10,8 +10,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
-import { createHash } from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { S3Client } from '@stacksjs/ts-cloud/aws'
+
+const DYNAMO_TABLE = process.env.DYNAMODB_TABLE || 'pantry-packages'
 
 interface UploadOptions {
   package: string
@@ -33,6 +35,91 @@ interface PackageMetadata {
     }>
   }>
   updatedAt: string
+}
+
+async function dynamoRequest(action: string, params: Record<string, unknown>, region: string): Promise<unknown> {
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('AWS credentials not found for DynamoDB sync')
+  }
+
+  const host = `dynamodb.${region}.amazonaws.com`
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.slice(0, 8)
+
+  const payload = JSON.stringify(params)
+  const payloadHash = crypto.createHash('sha256').update(payload).digest('hex')
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/x-amz-json-1.0',
+    'x-amz-target': `DynamoDB_20120810.${action}`,
+    'host': host,
+    'x-amz-date': amzDate,
+    'x-amz-content-sha256': payloadHash,
+  }
+
+  if (process.env.AWS_SESSION_TOKEN) {
+    headers['x-amz-security-token'] = process.env.AWS_SESSION_TOKEN
+  }
+
+  const signedHeaderKeys = Object.keys(headers).sort()
+  const signedHeadersStr = signedHeaderKeys.join(';')
+  const canonicalHeaders = signedHeaderKeys.map(k => `${k}:${headers[k]}\n`).join('')
+
+  const canonicalRequest = [
+    'POST', '/', '', canonicalHeaders, signedHeadersStr, payloadHash,
+  ].join('\n')
+
+  const scope = `${dateStamp}/${region}/dynamodb/aws4_request`
+  const stringToSign = [
+    'AWS4-HMAC-SHA256', amzDate, scope,
+    crypto.createHash('sha256').update(canonicalRequest).digest('hex'),
+  ].join('\n')
+
+  const hmac = (key: Buffer | string, data: string) =>
+    crypto.createHmac('sha256', key).update(data).digest()
+
+  const kDate = hmac(`AWS4${secretAccessKey}`, dateStamp)
+  const kRegion = hmac(kDate, region)
+  const kService = hmac(kRegion, 'dynamodb')
+  const kSigning = hmac(kService, 'aws4_request')
+  const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex')
+
+  headers['authorization'] = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${scope}, SignedHeaders=${signedHeadersStr}, Signature=${signature}`
+
+  const response = await fetch(`https://${host}/`, {
+    method: 'POST',
+    headers,
+    body: payload,
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`DynamoDB ${action} failed: ${response.status} ${text}`)
+  }
+
+  return response.json()
+}
+
+async function syncToDynamoDB(pkgName: string, version: string, region: string): Promise<void> {
+  const safeName = pkgName.replace(/[^a-zA-Z0-9.-]/g, '-')
+
+  await dynamoRequest('UpdateItem', {
+    TableName: DYNAMO_TABLE,
+    Key: {
+      packageName: { S: pkgName },
+    },
+    UpdateExpression: 'SET latestVersion = :v, s3Path = :s, safeName = :sn, updatedAt = :u',
+    ExpressionAttributeValues: {
+      ':v': { S: version },
+      ':s': { S: `binaries/${pkgName}/metadata.json` },
+      ':sn': { S: safeName },
+      ':u': { S: new Date().toISOString() },
+    },
+  }, region)
 }
 
 async function uploadToS3(options: UploadOptions): Promise<void> {
@@ -100,7 +187,7 @@ async function uploadToS3(options: UploadOptions): Promise<void> {
       const sha256Content = readFileSync(join(artifactPath, sha256File), 'utf-8')
       sha256Hash = sha256Content.split(' ')[0].trim()
     } else {
-      sha256Hash = createHash('sha256').update(tarballContent).digest('hex')
+      sha256Hash = crypto.createHash('sha256').update(tarballContent).digest('hex')
     }
 
     // S3 keys
@@ -179,6 +266,15 @@ async function uploadToS3(options: UploadOptions): Promise<void> {
     contentType: 'application/json',
   })
   console.log(`   ✓ Updated metadata at s3://${bucket}/${metadataKey}`)
+
+  // Sync to DynamoDB so the Zig CLI can discover this package
+  console.log(`\n📊 Syncing to DynamoDB registry...`)
+  try {
+    await syncToDynamoDB(pkgName, version, region)
+    console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE})`)
+  } catch (error: any) {
+    console.log(`   ⚠ DynamoDB sync failed (non-fatal): ${error.message}`)
+  }
 
   console.log(`\n${'='.repeat(60)}`)
   console.log(`✅ Upload complete!`)

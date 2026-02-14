@@ -33,9 +33,9 @@
     "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
     "publish:oidc": "./scripts/publish-oidc.sh",
     "publish:dry-run": "./scripts/publish-oidc.sh --dry-run",
-    "dev:docs": "bun vitepress dev docs",
-    "build:docs": "bun vitepress build docs",
-    "preview:docs": "bun vitepress preview docs",
+    "dev:docs": "bun bunpress dev docs",
+    "build:docs": "bun bunpress build docs",
+    "preview:docs": "bun bunpress preview docs",
     "typecheck": "bun --bun tsc --noEmit"
   },
   "devDependencies": {

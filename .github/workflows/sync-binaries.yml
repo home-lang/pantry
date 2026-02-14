@@ -1,0 +1,76 @@
+name: Sync Pre-Built Binaries
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Comma-separated package domains (empty = all pre-built)'
+        required: false
+        type: string
+      force:
+        description: 'Force re-upload even if already in S3'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: pantry-registry
+
+jobs:
+  sync:
+    name: Sync binaries (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: darwin-arm64
+          - os: ubuntu-latest
+            platform: linux-x86-64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: cd packages/ts-pantry && bun install
+
+      - name: Sync pre-built binaries to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd packages/ts-pantry
+
+          PKGS="${{ github.event.inputs.packages || '' }}"
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+
+          ARGS="-b $S3_BUCKET -r $AWS_REGION"
+
+          if [ "$FORCE" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+
+          if [ -n "$PKGS" ]; then
+            IFS=',' read -ra DOMAINS <<< "$PKGS"
+            for d in "${DOMAINS[@]}"; do
+              d=$(echo "$d" | xargs) # trim whitespace
+              ARGS="$ARGS -p $d"
+            done
+          fi
+
+          echo "Running: bun scripts/sync-packages.ts $ARGS"
+          bun scripts/sync-packages.ts $ARGS
+        timeout-minutes: 60

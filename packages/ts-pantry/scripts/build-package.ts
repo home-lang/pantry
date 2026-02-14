@@ -201,13 +201,18 @@ function interpolate(template: string | any, vars: Record<string, string>): stri
     })
 }
 
-// Get PHP custom configure arguments
-function getPhpCustomArgs(): string[] {
-  return [
-    '--with-pdo-mysql=mysqlnd',
-    '--with-pdo-pgsql',
-    '--with-mysqli=mysqlnd',
-  ]
+// Load build overrides from src/pantry/{domain}/build-overrides.json
+function getBuildOverrides(pkgName: string): { description?: string; extraConfigureArgs?: string[] } | null {
+  const overridesPath = join(process.cwd(), 'src', 'pantry', pkgName, 'build-overrides.json')
+  if (!existsSync(overridesPath)) return null
+
+  try {
+    const content = readFileSync(overridesPath, 'utf-8')
+    return JSON.parse(content)
+  } catch (error: any) {
+    console.log(`Warning: Failed to parse build-overrides.json for ${pkgName}: ${error.message}`)
+    return null
+  }
 }
 
 async function downloadSource(url: string, destDir: string, stripComponents: number = 1): Promise<void> {
@@ -465,10 +470,11 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       args.push(...platformArgs)
     }
 
-    // For PHP, add custom database extensions
-    if (pkgName === 'php.net') {
-      console.log('🔧 Adding custom PHP extensions (pdo-mysql, pdo-pgsql)')
-      args.push(...getPhpCustomArgs())
+    // Apply build overrides from build-overrides.json (if any)
+    const overrides = getBuildOverrides(pkgName)
+    if (overrides?.extraConfigureArgs?.length) {
+      console.log(`🔧 Applying build overrides for ${pkgName}: ${overrides.description || 'custom args'}`)
+      args.push(...overrides.extraConfigureArgs)
     }
 
     // Interpolate ARGS

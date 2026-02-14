@@ -71,7 +71,7 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     if (item != .object) return null;
     if (item.object.count() == 0) return null;
 
-    // Extract s3Path
+    // Extract s3Path (points to metadata.json in S3)
     const s3_path_obj = item.object.get("s3Path") orelse return null;
     if (s3_path_obj != .object) return null;
     const s3_path = if (s3_path_obj.object.get("S")) |v|
@@ -87,11 +87,61 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     else
         return null;
 
-    // Build S3 tarball URL
-    const tarball_url = try std.fmt.allocPrint(
+    // Detect current platform
+    const os_str = comptime switch (@import("builtin").os.tag) {
+        .macos => "darwin",
+        .linux => "linux",
+        else => "linux",
+    };
+    const arch_str = comptime switch (@import("builtin").cpu.arch) {
+        .aarch64 => "arm64",
+        .x86_64 => "x86-64",
+        else => "x86-64",
+    };
+    const platform = os_str ++ "-" ++ arch_str;
+
+    // Fetch metadata.json from S3 to get the exact platform-specific tarball path
+    const metadata_url = try std.fmt.allocPrint(
         allocator,
         "https://pantry-registry.s3.us-east-1.amazonaws.com/{s}",
         .{s3_path},
+    );
+    defer allocator.free(metadata_url);
+
+    const metadata_response = io_helper.httpGet(allocator, metadata_url) catch {
+        return null;
+    };
+    defer allocator.free(metadata_response);
+
+    // Parse metadata JSON to find platform-specific tarball
+    const meta_parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch {
+        return null;
+    };
+    defer meta_parsed.deinit();
+
+    const meta_root = meta_parsed.value;
+    if (meta_root != .object) return null;
+
+    const versions_obj = meta_root.object.get("versions") orelse return null;
+    if (versions_obj != .object) return null;
+
+    const version_info = versions_obj.object.get(version) orelse return null;
+    if (version_info != .object) return null;
+
+    const platforms_obj = version_info.object.get("platforms") orelse return null;
+    if (platforms_obj != .object) return null;
+
+    const platform_info = platforms_obj.object.get(platform) orelse return null;
+    if (platform_info != .object) return null;
+
+    const tarball_path_val = platform_info.object.get("tarball") orelse return null;
+    const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
+
+    // Build full S3 URL from the tarball path in metadata
+    const tarball_url = try std.fmt.allocPrint(
+        allocator,
+        "https://pantry-registry.s3.us-east-1.amazonaws.com/{s}",
+        .{tarball_path},
     );
 
     return PantryPackageInfo{
