@@ -47,6 +47,12 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Link ts-cloud from source
+        run: |
+          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
+          cd /tmp/ts-cloud/packages/ts-cloud && bun link
+          cd ${{ github.workspace }} && bun link @stacksjs/ts-cloud
+
       - name: Sync pre-built binaries to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

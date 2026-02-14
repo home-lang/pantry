@@ -21,6 +21,8 @@ import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
+import { S3Client } from '@stacksjs/ts-cloud/aws'
+import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 
 interface PackageConfig {
   domain: string
@@ -38,7 +40,6 @@ function detectPlatform(): { platform: string; os: string; arch: string } {
 
 async function checkExistsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
   try {
-    const { S3Client } = await import('@stacksjs/ts-cloud/aws')
     const s3 = new S3Client(region)
     const metadataKey = `binaries/${domain}/metadata.json`
 
@@ -52,10 +53,13 @@ async function checkExistsInS3(domain: string, version: string, platform: string
 }
 
 async function uploadToS3(artifactsDir: string, domain: string, version: string, bucket: string, region: string): Promise<void> {
-  execSync(
-    `bun scripts/upload-to-s3.ts --package "${domain}" --version "${version}" --artifacts-dir "${artifactsDir}" --bucket "${bucket}" --region "${region}"`,
-    { stdio: 'inherit', cwd: process.cwd() }
-  )
+  await uploadToS3Impl({
+    package: domain,
+    version,
+    artifactsDir,
+    bucket,
+    region,
+  })
 }
 
 function createTarball(sourceDir: string, artifactsDir: string, domain: string, version: string, platform: string): void {

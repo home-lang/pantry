@@ -15,7 +15,7 @@ import { S3Client } from '@stacksjs/ts-cloud/aws'
 
 const DYNAMO_TABLE = process.env.DYNAMODB_TABLE || 'pantry-packages'
 
-interface UploadOptions {
+export interface UploadOptions {
   package: string
   version: string
   artifactsDir: string
@@ -122,7 +122,7 @@ async function syncToDynamoDB(pkgName: string, version: string, region: string):
   }, region)
 }
 
-async function uploadToS3(options: UploadOptions): Promise<void> {
+export async function uploadToS3(options: UploadOptions): Promise<void> {
   const { package: pkgName, version, artifactsDir, bucket, region } = options
 
   console.log(`\n${'='.repeat(60)}`)
@@ -194,7 +194,7 @@ async function uploadToS3(options: UploadOptions): Promise<void> {
     const tarballKey = `binaries/${pkgName}/${version}/${platform}/${tarball}`
     const sha256Key = `binaries/${pkgName}/${version}/${platform}/${tarball}.sha256`
 
-    // Upload tarball using ts-cloud
+    // Upload tarball
     console.log(`   📁 Uploading ${tarball} (${(tarballSize / 1024 / 1024).toFixed(2)} MB)`)
     await s3.putObject({
       bucket,
@@ -258,7 +258,7 @@ async function uploadToS3(options: UploadOptions): Promise<void> {
   metadata.latestVersion = version
   metadata.updatedAt = new Date().toISOString()
 
-  // Upload metadata using ts-cloud's putObjectJson helper
+  // Upload metadata JSON
   await s3.putObject({
     bucket,
     key: metadataKey,
@@ -312,7 +312,11 @@ async function main() {
   })
 }
 
-main().catch((error) => {
-  console.error('❌ Upload failed:', error.message)
-  process.exit(1)
-})
+// Only run CLI when executed directly (not when imported)
+const isDirectRun = import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('upload-to-s3.ts')
+if (isDirectRun) {
+  main().catch((error) => {
+    console.error('❌ Upload failed:', error.message)
+    process.exit(1)
+  })
+}
