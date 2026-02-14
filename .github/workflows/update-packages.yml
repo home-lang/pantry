@@ -271,24 +271,31 @@ jobs:
         id: deletion-check
         if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true'
         run: |
-          # Check if the tracked paths already exist in HEAD (i.e., this is not the initial run)
-          TRACKED_FILES=$(git ls-tree -r --name-only HEAD -- packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts 2>/dev/null | head -1)
+          # Count files that are completely deleted (not just modified/added)
+          DELETED_FILES=$(git diff --diff-filter=D --name-only HEAD -- packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | wc -l | tr -d ' ')
 
-          if [ -z "$TRACKED_FILES" ]; then
-            echo "Initial run detected (files not yet tracked in HEAD). Skipping deletion safeguard."
-            echo "safe_to_commit=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          # Count net line loss (deletions minus additions) to catch bulk content removal
+          # Normal regeneration has roughly balanced additions/deletions, so net should be low
+          read ADDITIONS DELETIONS <<< $(git diff --numstat HEAD -- packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | awk '{added += $1; deleted += $2} END {print added+0, deleted+0}')
+          NET_DELETIONS=$((DELETIONS - ADDITIONS))
 
-          DELETIONS=$(git diff --numstat HEAD packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | awk '{deleted += $2} END {print deleted+0}')
+          echo "Files completely deleted: $DELETED_FILES"
+          echo "Lines added: $ADDITIONS, deleted: $DELETIONS, net loss: $NET_DELETIONS"
 
-          DELETION_THRESHOLD=20000
-          if [ "$DELETIONS" -gt "$DELETION_THRESHOLD" ]; then
-            echo "ERROR: Detected $DELETIONS line deletions, exceeds safety threshold of $DELETION_THRESHOLD"
+          # Fail if more than 50 files are completely deleted or net line loss exceeds threshold
+          FILE_DELETION_THRESHOLD=50
+          NET_DELETION_THRESHOLD=20000
+
+          if [ "$DELETED_FILES" -gt "$FILE_DELETION_THRESHOLD" ]; then
+            echo "ERROR: $DELETED_FILES files completely deleted, exceeds threshold of $FILE_DELETION_THRESHOLD"
+            echo "safe_to_commit=false" >> $GITHUB_OUTPUT
+            exit 1
+          elif [ "$NET_DELETIONS" -gt "$NET_DELETION_THRESHOLD" ]; then
+            echo "ERROR: Net line loss of $NET_DELETIONS exceeds threshold of $NET_DELETION_THRESHOLD"
             echo "safe_to_commit=false" >> $GITHUB_OUTPUT
             exit 1
           else
-            echo "Deletion count ($DELETIONS) is within acceptable limits."
+            echo "Changes are within acceptable limits."
             echo "safe_to_commit=true" >> $GITHUB_OUTPUT
           fi
 
