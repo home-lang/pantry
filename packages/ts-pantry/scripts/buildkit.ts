@@ -460,7 +460,8 @@ export function generateBuildScript(
   } else if (osName === 'linux' && archName === 'x86-64') {
     sections.push('export CFLAGS="-fPIC ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-fPIC ${CXXFLAGS:-}"')
-    sections.push('export LDFLAGS="-pie ${LDFLAGS:-}"')
+    // Note: Do NOT add -pie to LDFLAGS — it breaks shared library builds
+    // (causes "undefined reference to main" when linking .so files)
   }
   sections.push('')
 
@@ -495,13 +496,10 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
-  // Go toolchain
-  sections.push('# Go toolchain')
-  sections.push('if command -v go &>/dev/null; then')
-  sections.push('  export GOPATH="$REAL_HOME/go"')
-  sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
-  sections.push('  export PATH="$GOPATH/bin:${GOROOT:+$GOROOT/bin:}$PATH"')
-  sections.push('fi')
+  // Go toolchain — detect GOPATH but defer GOROOT until after deps are on PATH
+  sections.push('# Go toolchain (GOPATH only; GOROOT set after deps)')
+  sections.push('export GOPATH="$REAL_HOME/go"')
+  sections.push('mkdir -p "$GOPATH"')
   sections.push('')
 
   // Node.js / npm
@@ -596,6 +594,25 @@ export function generateBuildScript(
     }
     sections.push('')
   }
+
+  // Now set GOROOT from whichever `go` binary is first on PATH (deps or system)
+  // This must come AFTER dep paths are added to avoid GOROOT/go version mismatch
+  sections.push('# Set GOROOT from the go binary now on PATH (after deps)')
+  // Check if go.dev is a dep — use its directory directly as GOROOT
+  const goDevPrefix = depPaths['deps.go.dev.prefix']
+  if (goDevPrefix) {
+    sections.push(`if [ -x "${goDevPrefix}/bin/go" ]; then`)
+    sections.push(`  export GOROOT="${goDevPrefix}"`)
+    sections.push('elif command -v go &>/dev/null; then')
+    sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
+    sections.push('fi')
+  } else {
+    sections.push('if command -v go &>/dev/null; then')
+    sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
+    sections.push('fi')
+  }
+  sections.push('export PATH="$GOPATH/bin:${GOROOT:+$GOROOT/bin:}$PATH"')
+  sections.push('')
 
   // Working directory
   const wd = recipe.build?.['working-directory']

@@ -178,6 +178,7 @@ interface BuildablePackage {
   domain: string
   name: string
   latestVersion: string
+  versions: string[] // All available versions for fallback
   pantryYamlPath: string
   hasDistributable: boolean
   hasBuildScript: boolean
@@ -244,6 +245,7 @@ function discoverPackages(): BuildablePackage[] {
             domain,
             name: pkg.name || domain,
             latestVersion: pkg.versions[0],
+            versions: pkg.versions,
             pantryYamlPath: yamlPath,
             hasDistributable,
             hasBuildScript,
@@ -281,6 +283,42 @@ async function checkExistsInS3(domain: string, version: string, platform: string
 
 // --- Build & Upload ---
 
+function tryBuildVersion(
+  domain: string,
+  version: string,
+  platform: string,
+  buildDir: string,
+  installDir: string,
+  depsDir: string,
+  bucket: string,
+  region: string,
+): void {
+  // Cleanup from previous attempt
+  try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
+  try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+  mkdirSync(buildDir, { recursive: true })
+  mkdirSync(installDir, { recursive: true })
+
+  const args = [
+    'scripts/build-package.ts',
+    '--package', domain,
+    '--version', version,
+    '--platform', platform,
+    '--build-dir', buildDir,
+    '--prefix', installDir,
+    '--deps-dir', depsDir,
+    '--bucket', bucket,
+    '--region', region,
+  ]
+
+  execSync(`bun ${args.join(' ')}`, {
+    cwd: join(process.cwd()),
+    env: { ...process.env },
+    stdio: 'inherit',
+    timeout: 30 * 60 * 1000, // 30 min per package
+  })
+}
+
 async function buildAndUpload(
   pkg: BuildablePackage,
   bucket: string,
@@ -288,13 +326,27 @@ async function buildAndUpload(
   platform: string,
   force: boolean,
 ): Promise<{ status: 'skipped' | 'uploaded' | 'failed'; error?: string }> {
-  const { domain, name, latestVersion: version } = pkg
+  const { domain, name, versions } = pkg
+  let version = pkg.latestVersion
 
   console.log(`\n${'─'.repeat(60)}`)
   console.log(`📦 ${name} (${domain}) v${version}`)
   console.log(`${'─'.repeat(60)}`)
 
-  // Check if already in S3
+  // Skip sentinel/placeholder versions
+  if (version === '999.999.999' || version === '0.0.0') {
+    // Try to find a real version
+    const realVersions = versions.filter(v => v !== '999.999.999' && v !== '0.0.0')
+    if (realVersions.length > 0) {
+      version = realVersions[0]
+      console.log(`   ⚠️  Skipped sentinel version, using ${version}`)
+    } else {
+      console.log(`   ⚠️  Only sentinel versions available, skipping`)
+      return { status: 'skipped' }
+    }
+  }
+
+  // Check if already in S3 (check latest real version first, then try others)
   if (!force) {
     const exists = await checkExistsInS3(domain, version, platform, bucket, region)
     if (exists) {
@@ -308,43 +360,75 @@ async function buildAndUpload(
   const artifactsDir = `/tmp/buildkit-artifacts`
   const depsDir = `/tmp/buildkit-deps`
 
-  // Cleanup from previous builds (use execSync rm -rf for permission issues)
-  try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
-  try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
-  mkdirSync(buildDir, { recursive: true })
-  mkdirSync(installDir, { recursive: true })
   mkdirSync(artifactsDir, { recursive: true })
   mkdirSync(depsDir, { recursive: true })
 
+  // Build version candidates: try latest first, then fallback to previous versions
+  const versionCandidates = [version]
+  if (versions && versions.length > 1) {
+    // Add up to 3 previous versions as fallbacks
+    for (const v of versions) {
+      if (v !== version && v !== '999.999.999' && v !== '0.0.0' && versionCandidates.length < 4) {
+        versionCandidates.push(v)
+      }
+    }
+  }
+
+  let lastError: Error | null = null
+  let usedVersion = version
+
+  for (const candidateVersion of versionCandidates) {
+    try {
+      if (candidateVersion !== version) {
+        // Check if this fallback version already in S3
+        if (!force) {
+          const exists = await checkExistsInS3(domain, candidateVersion, platform, bucket, region)
+          if (exists) {
+            console.log(`   ✓ Fallback version ${candidateVersion} already in S3, skipping`)
+            return { status: 'skipped' }
+          }
+        }
+        console.log(`   ⚠️  Trying fallback version ${candidateVersion}...`)
+      }
+
+      console.log(`   Building ${domain}@${candidateVersion} for ${platform}...`)
+
+      tryBuildVersion(domain, candidateVersion, platform, buildDir, installDir, depsDir, bucket, region)
+
+      usedVersion = candidateVersion
+      lastError = null
+      break // Build succeeded
+    } catch (error: any) {
+      lastError = error
+      const errMsg = error.message || ''
+
+      // Only try fallback versions if the error is a source download failure (404/curl error)
+      const isDownloadError = errMsg.includes('curl') ||
+        errMsg.includes('404') ||
+        errMsg.includes('The requested URL returned error')
+      if (!isDownloadError) {
+        // Not a download error — don't try other versions, this is a build error
+        break
+      }
+
+      console.log(`   ⚠️  Version ${candidateVersion} source not available`)
+    }
+  }
+
+  if (lastError) {
+    console.error(`   ❌ Failed: ${lastError.message}`)
+    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+    return { status: 'failed', error: lastError.message }
+  }
+
   try {
-    // Build using build-package.ts
-    console.log(`   Building ${domain}@${version} for ${platform}...`)
-
-    const args = [
-      'scripts/build-package.ts',
-      '--package', domain,
-      '--version', version,
-      '--platform', platform,
-      '--build-dir', buildDir,
-      '--prefix', installDir,
-      '--deps-dir', depsDir,
-      '--bucket', bucket,
-      '--region', region,
-    ]
-
-    execSync(`bun ${args.join(' ')}`, {
-      cwd: join(process.cwd()),
-      env: { ...process.env },
-      stdio: 'inherit',
-      timeout: 30 * 60 * 1000, // 30 min per package
-    })
-
     // Create tarball
     console.log(`   Packaging...`)
-    const artifactDir = join(artifactsDir, `${domain}-${version}-${platform}`)
+    const artifactDir = join(artifactsDir, `${domain}-${usedVersion}-${platform}`)
     mkdirSync(artifactDir, { recursive: true })
 
-    const tarball = `${domain.replace(/\//g, '-')}-${version}.tar.gz`
+    const tarball = `${domain.replace(/\//g, '-')}-${usedVersion}.tar.gz`
     execSync(`cd "${installDir}" && tar -czf "${join(artifactDir, tarball)}" .`)
     execSync(`cd "${artifactDir}" && shasum -a 256 "${tarball}" > "${tarball}.sha256"`)
 
@@ -352,7 +436,7 @@ async function buildAndUpload(
     console.log(`   Uploading to S3...`)
     await uploadToS3Impl({
       package: domain,
-      version,
+      version: usedVersion,
       artifactsDir,
       bucket,
       region,
@@ -363,16 +447,12 @@ async function buildAndUpload(
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
     try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) } catch {}
 
-    console.log(`   ✅ Uploaded ${domain}@${version}`)
+    console.log(`   ✅ Uploaded ${domain}@${usedVersion}`)
     return { status: 'uploaded' }
-
   } catch (error: any) {
-    console.error(`   ❌ Failed: ${error.message}`)
-
-    // Cleanup on failure (use exec for permission issues)
+    console.error(`   ❌ Failed packaging/upload: ${error.message}`)
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
-
     return { status: 'failed', error: error.message }
   }
 }
@@ -480,10 +560,9 @@ Options:
     'vlang.io', // Need V compiler
   ])
 
-  // Packages with known broken recipes or that can't build in standard CI
+  // Packages with known broken recipes or that fundamentally can't build in standard CI
+  // Keep this list MINIMAL — fix issues rather than skip packages
   const knownBrokenDomains = new Set([
-    'apache.org/arrow', // Massive dep chain, CMake issues
-    'apache.org/thrift', // Complex autotools build
     'apache.org/subversion', // Needs APR/APR-util chain
     'apache.org/serf', // Needs scons + apr
     'apache.org/zookeeper', // Java/Maven build
@@ -494,24 +573,6 @@ Options:
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex configure/FFI
     'chiark.greenend.org.uk/puzzles', // Needs GTK
-    'classic.yarnpkg.com', // Needs npm/node setup
-    'cpanmin.us', // Perl CPAN deps
-    'debian.org/bash-completion', // Complex autotools
-    'debian.org/iso-codes', // Build system issues
-    'docbook.org/xsl', // XSL stylesheet install
-    'crates.io/rustls-ffi', // Needs cargo-c
-    'crates.io/semverator', // Virtual manifest workspace
-    'crates.io/skim', // Wrong source dir layout
-    'crates.io/kaspa-miner', // GPU mining deps
-    'crates.io/lighthouse', // Complex Rust + node
-    'crates.io/imessage-exporter', // macOS-only APIs
-    'crates.io/spotify_player', // Audio deps
-    'crates.io/termusic', // Audio deps
-    'crates.io/joshuto', // Terminal UI deps on Linux
-    'crates.io/alacritty', // GPU/display deps
-    'crates.io/jnv', // Complex deps
-    'bitcoin.org', // Download 404
-    'abseil.io', // Version mismatch 404
   ])
 
   let platformSkipped = 0
