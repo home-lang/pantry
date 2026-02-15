@@ -477,6 +477,16 @@ export function generateBuildScript(
   sections.push(`export SRCROOT="${buildDir}"`)
   sections.push(`export HOME="${buildDir}/.home"`)
   sections.push('mkdir -p "$HOME"')
+
+  // macOS: use GNU sed if available (pantry scripts expect GNU sed -i behavior)
+  if (osName === 'darwin') {
+    sections.push('')
+    sections.push('# Use GNU sed on macOS (pantry scripts expect GNU sed -i)')
+    sections.push('if command -v gsed &>/dev/null; then')
+    sections.push('  sed() { gsed "$@"; }')
+    sections.push('  export -f sed')
+    sections.push('fi')
+  }
   sections.push('')
 
   // Add dependency paths to PATH and pkg-config

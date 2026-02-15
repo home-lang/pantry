@@ -213,13 +213,25 @@ function interpolate(template: string | any, vars: Record<string, string>): stri
  */
 function determineVersionTag(yamlContent: string, version: string): string {
   // Look for explicit strip pattern in the YAML
-  const stripMatch = yamlContent.match(/strip:\s*\/\^?([^/]+)\//)
-  if (stripMatch) {
-    const prefix = stripMatch[1]
-    // /^v/ -> tag = v + version
-    if (prefix === 'v') return `v${version}`
-    // /^hdf5_/ -> tag = hdf5_ + version
-    return prefix + version
+  // Match from first / to last / on the line (handles / inside pattern like /(cli/v|...)/
+  const stripMatch = yamlContent.match(/strip:\s*\/(.+)\/$/)
+  const stripMatchML = stripMatch ?? yamlContent.match(/strip:\s*\/(.+)\//)
+  if (stripMatchML) {
+    const pattern = stripMatchML[1]
+
+    // Handle alternation patterns like (cli/v|@biomejs/biome@)
+    // Extract the first alternative as the prefix to prepend
+    if (pattern.includes('|')) {
+      const alts = pattern.replace(/^\(/, '').replace(/\)$/, '').split('|')
+      // Use first alternative, strip leading ^
+      const prefix = alts[0].replace(/^\^/, '')
+      return prefix + version
+    }
+
+    // Simple prefix pattern: /^v/, /^hdf5_/, /^mysql-/
+    const simplePrefix = pattern.replace(/^\^/, '')
+    if (simplePrefix === 'v') return `v${version}`
+    return simplePrefix + version
   }
 
   // No explicit strip — check if this is a github source (default strip is /^v/)

@@ -187,7 +187,7 @@ jobs:
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install cmake meson ninja pkg-config autoconf automake libtool gettext
+          brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed
 
       - name: Build batch ${{ matrix.batch }}
         env:
