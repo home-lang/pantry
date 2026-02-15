@@ -184,6 +184,7 @@ interface BuildablePackage {
   hasBuildScript: boolean
   needsProps: boolean
   hasProps: boolean
+  depDomains: string[] // Domains this package depends on (for ordering)
 }
 
 function domainToKey(domain: string): string {
@@ -241,6 +242,15 @@ function discoverPackages(): BuildablePackage[] {
             return
           }
 
+          // Extract dependency domains for ordering
+          const depDomains: string[] = []
+          const allDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
+          for (const dep of allDeps) {
+            // Parse dep domain from strings like "go.dev@^1.18", "python.org@>=3.9<3.13"
+            const depDomain = dep.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim()
+            if (depDomain) depDomains.push(depDomain)
+          }
+
           packages.push({
             domain,
             name: pkg.name || domain,
@@ -251,6 +261,7 @@ function discoverPackages(): BuildablePackage[] {
             hasBuildScript,
             needsProps,
             hasProps: hasPropsDir,
+            depDomains,
           })
         } catch {
           // Skip packages with parse errors
@@ -261,8 +272,23 @@ function discoverPackages(): BuildablePackage[] {
 
   findYamls(pantryDir)
 
-  // Sort by domain for deterministic ordering
-  packages.sort((a, b) => a.domain.localeCompare(b.domain))
+  // Topological sort: packages with fewer deps come first
+  // This ensures dependency packages are built before their dependents
+  const domainSet = new Set(packages.map(p => p.domain))
+
+  // Count how many buildable deps each package has
+  function countBuildableDeps(pkg: BuildablePackage): number {
+    return pkg.depDomains.filter(d => domainSet.has(d)).length
+  }
+
+  // Sort by dependency depth (packages with 0 buildable deps first),
+  // then alphabetically for deterministic ordering within same depth
+  packages.sort((a, b) => {
+    const depCountA = countBuildableDeps(a)
+    const depCountB = countBuildableDeps(b)
+    if (depCountA !== depCountB) return depCountA - depCountB
+    return a.domain.localeCompare(b.domain)
+  })
 
   return packages
 }
