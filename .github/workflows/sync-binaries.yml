@@ -21,8 +21,9 @@ env:
   S3_BUCKET: pantry-registry
 
 jobs:
-  sync:
-    name: Sync binaries (${{ matrix.platform }})
+  # Job 1: Sync the 12 pre-built binary packages (fast downloads, no compilation)
+  sync-prebuilt:
+    name: Sync pre-built (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
@@ -89,3 +90,120 @@ jobs:
           echo "Running: bun scripts/sync-packages.ts $ARGS"
           bun scripts/sync-packages.ts $ARGS
         timeout-minutes: 60
+
+  # Job 2: Discover how many buildable packages exist for batching
+  discover:
+    name: Discover buildable packages
+    runs-on: ubuntu-latest
+    outputs:
+      batches: ${{ steps.discover.outputs.batches }}
+      total: ${{ steps.discover.outputs.total }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Link ts-cloud from source
+        run: |
+          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
+          cd /tmp/ts-cloud && bun install
+          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
+          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
+          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
+
+      - name: Discover packages
+        id: discover
+        run: |
+          cd packages/ts-pantry
+          TOTAL=$(bun scripts/build-all-packages.ts --count-only 2>/dev/null | tail -1)
+          echo "total=$TOTAL"
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+          BATCH_SIZE=50
+          LAST_BATCH=$(( (TOTAL - 1) / BATCH_SIZE ))
+          # Generate JSON array [0, 1, 2, ..., LAST_BATCH]
+          BATCHES=$(python3 -c "import json; print(json.dumps(list(range($LAST_BATCH + 1))))")
+          echo "batches=$BATCHES"
+          echo "batches=$BATCHES" >> $GITHUB_OUTPUT
+
+  # Job 3: Build packages from source in batches
+  build:
+    name: Build batch ${{ matrix.batch }} (${{ matrix.platform.name }})
+    needs: discover
+    if: needs.discover.outputs.total != '0'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        batch: ${{ fromJson(needs.discover.outputs.batches) }}
+        platform:
+          - os: macos-14
+            name: darwin-arm64
+          - os: ubuntu-latest
+            name: linux-x86-64
+    runs-on: ${{ matrix.platform.os }}
+    permissions:
+      contents: read
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Link ts-cloud from source
+        run: |
+          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
+          cd /tmp/ts-cloud && bun install
+          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
+          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
+          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
+
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libreadline-dev zlib1g-dev libssl-dev \
+            cmake meson ninja-build patchelf pkg-config \
+            autoconf automake libtool gettext \
+            libffi-dev libexpat1-dev libbz2-dev liblzma-dev \
+            libncurses5-dev libsqlite3-dev
+
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake meson ninja pkg-config autoconf automake libtool gettext
+
+      - name: Build batch ${{ matrix.batch }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/ts-pantry
+
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --batch ${{ matrix.batch }} --batch-size 50 --platform ${{ matrix.platform.name }}"
+
+          if [ "$FORCE" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+
+          echo "Running: bun scripts/build-all-packages.ts $ARGS"
+          bun scripts/build-all-packages.ts $ARGS
+        timeout-minutes: 110

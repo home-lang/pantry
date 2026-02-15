@@ -2,11 +2,14 @@
 
 // Build Package from Source
 // Reads package metadata from src/packages and build instructions from src/pantry
+// Uses buildkit to generate bash build scripts from YAML recipes (like brewkit)
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
+import { generateBuildScript, getSkips, type PackageRecipe } from './buildkit.ts'
+import { fixUp } from './fix-up.ts'
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
 const { pantry } = await import(packagesPath)
@@ -515,20 +518,51 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     }
   }
 
-  // Execute build - simplified for common autotools packages
-  console.log('\n🔨 Executing build...')
+  // Generate and execute build script from YAML recipe (buildkit)
+  console.log('\n🔨 Generating build script from YAML recipe...')
 
-  // Standard autotools build: ./configure && make && make install
-  const configureArgs = buildEnv.ARGS || `--prefix=${prefix}`
+  const bashScript = generateBuildScript(
+    recipe as PackageRecipe,
+    pkgName,
+    version,
+    platform,
+    prefix,
+    buildDir,
+    depPaths,
+  )
 
-  console.log(`\n🔧 Running: ./configure ...`)
-  runCommand(`./configure ${configureArgs}`, buildDir, buildEnv)
+  const scriptPath = join(buildDir, '_build.sh')
+  writeFileSync(scriptPath, bashScript, { mode: 0o755 })
 
-  console.log(`\n🔧 Running: make -j${templateVars['hw.concurrency']}`)
-  runCommand(`make -j${templateVars['hw.concurrency']}`, buildDir, buildEnv)
+  console.log(`📝 Build script written to ${scriptPath}`)
+  console.log('\n🔨 Executing build script...')
 
-  console.log(`\n🔧 Running: make install`)
-  runCommand('make install', buildDir, buildEnv)
+  try {
+    execSync(`bash "${scriptPath}"`, {
+      cwd: buildDir,
+      env: {
+        ...process.env,
+        ...buildEnv,
+        HOME: join(buildDir, '.home'),
+        SRCROOT: buildDir,
+      },
+      stdio: 'inherit',
+      shell: '/bin/bash',
+    })
+  } catch (error: any) {
+    console.error('❌ Build script failed')
+    // Print the generated script for debugging
+    console.error('\n--- Generated build script ---')
+    console.error(bashScript.slice(0, 2000))
+    if (bashScript.length > 2000) console.error('... (truncated)')
+    console.error('--- End script ---')
+    throw error
+  }
+
+  // Post-build fix-ups for relocatable binaries
+  console.log('\n🔧 Running post-build fix-ups...')
+  const skips = getSkips(recipe as PackageRecipe)
+  await fixUp(prefix, platform, skips)
 
   console.log(`\n✅ Build completed successfully!`)
   console.log(`📁 Installed to: ${prefix}`)
