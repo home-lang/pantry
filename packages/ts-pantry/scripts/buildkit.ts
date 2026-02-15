@@ -447,24 +447,25 @@ export function generateBuildScript(
   sections.push('set -eo pipefail')
   sections.push('')
 
-  // Environment from YAML
-  if (recipe.build?.env) {
-    sections.push('# Environment from recipe')
-    sections.push(expandEnv(recipe.build.env, platform, tokens))
-    sections.push('')
-  }
-
-  // Compiler flags (from brewkit's flags())
-  sections.push('# Compiler flags')
+  // Default compiler flags (from brewkit's flags())
+  // Set BEFORE recipe env so recipes can override if needed
+  sections.push('# Default compiler flags')
   if (osName === 'darwin') {
-    sections.push(`export LDFLAGS="-Wl,-rpath,${prefix} \${LDFLAGS:-}"`)
     sections.push('export MACOSX_DEPLOYMENT_TARGET=11.0')
+    sections.push(`export LDFLAGS="-Wl,-rpath,${prefix} \${LDFLAGS:-}"`)
   } else if (osName === 'linux' && archName === 'x86-64') {
     sections.push('export CFLAGS="-fPIC ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-fPIC ${CXXFLAGS:-}"')
     sections.push('export LDFLAGS="-pie ${LDFLAGS:-}"')
   }
   sections.push('')
+
+  // Environment from YAML recipe (overrides defaults above)
+  if (recipe.build?.env) {
+    sections.push('# Environment from recipe')
+    sections.push(expandEnv(recipe.build.env, platform, tokens))
+    sections.push('')
+  }
 
   // Common setup
   sections.push('# Common setup')

@@ -279,9 +279,9 @@ async function buildAndUpload(
   const artifactsDir = `/tmp/buildkit-artifacts`
   const depsDir = `/tmp/buildkit-deps`
 
-  // Cleanup from previous builds
-  rmSync(buildDir, { recursive: true, force: true })
-  rmSync(installDir, { recursive: true, force: true })
+  // Cleanup from previous builds (use execSync rm -rf for permission issues)
+  try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
+  try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
   mkdirSync(buildDir, { recursive: true })
   mkdirSync(installDir, { recursive: true })
   mkdirSync(artifactsDir, { recursive: true })
@@ -330,9 +330,9 @@ async function buildAndUpload(
     })
 
     // Cleanup
-    rmSync(buildDir, { recursive: true, force: true })
-    rmSync(installDir, { recursive: true, force: true })
-    rmSync(artifactDir, { recursive: true, force: true })
+    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) } catch {}
 
     console.log(`   ✅ Uploaded ${domain}@${version}`)
     return { status: 'uploaded' }
@@ -340,9 +340,9 @@ async function buildAndUpload(
   } catch (error: any) {
     console.error(`   ❌ Failed: ${error.message}`)
 
-    // Cleanup on failure
-    rmSync(buildDir, { recursive: true, force: true })
-    rmSync(installDir, { recursive: true, force: true })
+    // Cleanup on failure (use exec for permission issues)
+    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
 
     return { status: 'failed', error: error.message }
   }
