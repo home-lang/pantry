@@ -317,9 +317,11 @@ export function expandEnv(
       expanded = transformEnvValue(value, tokens)
     }
 
-    // Escape double quotes for POSIX shell (brewkit's approach)
-    const escaped = expanded.trim().replace(/"/g, '\\"')
-    lines.push(`export ${key}="${escaped}"`)
+    // For POSIX shell export: use double quotes around value
+    // Remove inner quotes that came from YAML (e.g. --prefix="{{prefix}}")
+    // since we're already wrapping in double quotes
+    const cleaned = expanded.trim().replace(/"/g, '')
+    lines.push(`export ${key}="${cleaned}"`)
   }
 
   return lines.join('\n')

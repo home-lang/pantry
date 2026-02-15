@@ -105,7 +105,7 @@ function parseYaml(content: string): Record<string, any> {
         i = j - 1
       } else {
         let j = i + 1
-        while (j < lines.length && lines[j].trim() === '') j++
+        while (j < lines.length && (lines[j].trim() === '' || lines[j].trim().startsWith('#'))) j++
         const nextLine = j < lines.length ? lines[j].trim() : ''
         const nextLineIndent = j < lines.length ? lines[j].search(/\S/) : 0
 
@@ -408,7 +408,11 @@ Options:
 
   allPackages = allPackages.filter(p => !preBuiltDomains.has(p.domain))
 
-  console.log(`Found ${allPackages.length} buildable packages (excluding ${preBuiltDomains.size} pre-built)`)
+  // Filter to packages that actually have build scripts (skip metadata-only packages)
+  const withoutScript = allPackages.filter(p => !p.hasBuildScript)
+  allPackages = allPackages.filter(p => p.hasBuildScript)
+
+  console.log(`Found ${allPackages.length} buildable packages (excluding ${preBuiltDomains.size} pre-built, ${withoutScript.length} without build scripts)`)
 
   if (values['count-only']) {
     console.log(allPackages.length)

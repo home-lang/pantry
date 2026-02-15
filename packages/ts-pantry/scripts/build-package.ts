@@ -102,9 +102,9 @@ function parseYaml(content: string): Record<string, any> {
         currentObj[key] = blockLines.join('\n').trim()
         i = j - 1
       } else {
-        // Check if next non-empty line is a list item, key-value, or plain text
+        // Check if next non-empty, non-comment line is a list item, key-value, or plain text
         let j = i + 1
-        while (j < lines.length && lines[j].trim() === '') j++
+        while (j < lines.length && (lines[j].trim() === '' || lines[j].trim().startsWith('#'))) j++
         const nextLine = j < lines.length ? lines[j].trim() : ''
         const nextLineIndent = j < lines.length ? lines[j].search(/\S/) : 0
 
@@ -221,16 +221,40 @@ function getBuildOverrides(pkgName: string): { description?: string; extraConfig
 async function downloadSource(url: string, destDir: string, stripComponents: number = 1): Promise<void> {
   console.log(`📥 Downloading source from ${url}`)
 
-  const tempFile = join(destDir, 'source.tar.gz')
+  // Determine file extension from URL
+  const isZip = url.endsWith('.zip')
+  const tempFile = join(destDir, isZip ? 'source.zip' : 'source.tar.gz')
 
-  // Download using curl
-  execSync(`curl -L -o "${tempFile}" "${url}"`, { stdio: 'inherit' })
+  // Download using curl (follow redirects, fail on HTTP errors)
+  execSync(`curl -fSL -o "${tempFile}" "${url}"`, { stdio: 'inherit' })
 
   console.log(`📦 Extracting source to ${destDir}`)
-  execSync(`tar -xf "${tempFile}" -C "${destDir}" --strip-components=${stripComponents}`, { stdio: 'inherit' })
+
+  if (isZip) {
+    // For zip: extract then move contents up if strip-components > 0
+    const tmpExtract = join(destDir, '__zip_extract__')
+    mkdirSync(tmpExtract, { recursive: true })
+    execSync(`unzip -q -o "${tempFile}" -d "${tmpExtract}"`, { stdio: 'inherit' })
+
+    if (stripComponents > 0) {
+      // Find the single top-level dir and move its contents
+      const entries = execSync(`ls "${tmpExtract}"`, { encoding: 'utf-8' }).trim().split('\n')
+      if (entries.length === 1) {
+        execSync(`cp -a "${join(tmpExtract, entries[0])}/." "${destDir}/"`, { stdio: 'pipe' })
+      } else {
+        execSync(`cp -a "${tmpExtract}/." "${destDir}/"`, { stdio: 'pipe' })
+      }
+    } else {
+      execSync(`cp -a "${tmpExtract}/." "${destDir}/"`, { stdio: 'pipe' })
+    }
+    execSync(`rm -rf "${tmpExtract}"`)
+  } else {
+    // tar auto-detects format (gz, xz, bz2, zstd)
+    execSync(`tar -xf "${tempFile}" -C "${destDir}" --strip-components=${stripComponents}`, { stdio: 'inherit' })
+  }
 
   // Remove temp file
-  execSync(`rm "${tempFile}"`)
+  execSync(`rm -f "${tempFile}"`)
 }
 
 function runCommand(cmd: string, cwd: string, env: Record<string, string>): void {
@@ -348,11 +372,20 @@ async function downloadDependencies(
 
       console.log(`   - ${domain}@${version}`)
 
-      const tarballContent = await s3.getObject(bucket, platformInfo.tarball)
       const tarballPath = join(depInstallDir, 'package.tar.gz')
-      writeFileSync(tarballPath, tarballContent)
 
-      execSync(`tar -xzf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
+      // Use curl to download binary data from S3 (s3.getObject returns string which corrupts binaries)
+      const s3Url = `https://${bucket}.s3.${region}.amazonaws.com/${platformInfo.tarball}`
+      try {
+        // Try AWS CLI first (available on GitHub runners, handles auth properly)
+        execSync(`aws s3 cp "s3://${bucket}/${platformInfo.tarball}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
+      } catch {
+        // Fallback: try direct HTTP (works if bucket allows public reads)
+        execSync(`curl -fsSL -o "${tarballPath}" "${s3Url}"`, { stdio: 'pipe' })
+      }
+
+      // Use tar -xf (auto-detect format) instead of -xzf (gzip only)
+      execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
       execSync(`rm "${tarballPath}"`)
 
       depPaths[domain] = depInstallDir
@@ -431,14 +464,24 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Setup template variables
   const cpuCount = (await import('node:os')).cpus().length
+  const vMajor = version.split('.')[0]
+  const vMinor = version.split('.')[1] || '0'
   const templateVars: Record<string, string> = {
     'version': version,
-    'version.major': version.split('.')[0],
-    'version.minor': version.split('.')[1] || '0',
+    'version.raw': version,
+    'version.tag': `v${version}`,
+    'version.major': vMajor,
+    'version.minor': vMinor,
     'version.patch': version.split('.')[2] || '0',
+    'version.marketing': `${vMajor}.${vMinor}`,
     'prefix': prefix,
     'hw.concurrency': String(cpuCount),
+    'hw.arch': arch === 'arm64' ? 'aarch64' : 'x86-64',
+    'hw.platform': osName,
+    'hw.target': `${arch === 'arm64' ? 'aarch64' : 'x86-64'}-${osName}`,
+    'srcroot': buildDir,
     'pkgx.prefix': prefix,
+    'pkgx.dir': prefix,
     ...depPaths, // Add dependency paths for template interpolation
   }
 
