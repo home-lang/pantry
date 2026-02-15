@@ -4,7 +4,7 @@
 // Reads package metadata from src/packages and build instructions from src/pantry
 // Uses buildkit to generate bash build scripts from YAML recipes (like brewkit)
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -353,7 +353,15 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   const tempFile = join(destDir, isZip ? 'source.zip' : 'source.tar.gz')
 
   // Download using curl (follow redirects, fail on HTTP errors)
-  execSync(`curl -fSL -o "${tempFile}" "${url}"`, { stdio: 'inherit' })
+  // Encode spaces and special chars in URLs (e.g. xpra.org has "xpra 6.4.3" in tag)
+  const encodedUrl = url.replace(/ /g, '%20')
+  execSync(`curl -fSL -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
+
+  // Validate downloaded file is not a tiny error page
+  const fileSize = statSync(tempFile).size
+  if (fileSize < 1000) {
+    throw new Error(`Downloaded file is too small (${fileSize} bytes) — likely an error page, not a source archive`)
+  }
 
   console.log(`📦 Extracting source to ${destDir}`)
 
