@@ -3,7 +3,7 @@
  *
  * @domain `scala-sbt.org`
  * @programs `sbt`
- * @version `1.12.2` (29 versions available)
+ * @version `1.12.3` (30 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install scala-sbt.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "sbt"
  * console.log(pkg.description) // "sbt, the interactive build tool"
  * console.log(pkg.programs)    // ["sbt"]
- * console.log(pkg.versions[0]) // "1.12.2" (latest)
+ * console.log(pkg.versions[0]) // "1.12.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/scala-sbt-org.md
@@ -68,6 +68,7 @@ export const scalasbtorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.12.3',
     '1.12.2',
     '1.12.1',
     '1.12.0',
