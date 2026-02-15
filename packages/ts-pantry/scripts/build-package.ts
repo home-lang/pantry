@@ -44,9 +44,52 @@ function parseYaml(content: string): Record<string, any> {
 
       // Find the array in the parent - it should be the current object if it's an array
       if (Array.isArray(currentObj)) {
-        // Handle multi-line run blocks
-        if (value.startsWith('run:')) {
+        // Handle object-style list items (run:, if:)
+        if (value.startsWith('if:')) {
+          // Object list item starting with if: — collect sibling keys
+          const itemObj: Record<string, any> = {}
+          const ci = value.indexOf(':')
+          itemObj['if'] = value.slice(ci + 1).trim()
+          // Collect sibling keys (run:, working-directory:, prop:, etc.)
+          const siblingIndent = indent + 2
+          while (i + 1 < lines.length) {
+            const nextLine = lines[i + 1]
+            const nextTrimmed = nextLine.trim()
+            if (!nextTrimmed || nextTrimmed.startsWith('#')) { i++; continue }
+            const nextIndent = nextLine.search(/\S/)
+            if (nextIndent >= siblingIndent && !nextTrimmed.startsWith('- ')) {
+              if (nextTrimmed.startsWith('run:')) {
+                const runVal = nextTrimmed.slice(4).trim()
+                if (runVal === '|' || runVal === '') {
+                  const blockLines: string[] = []
+                  let j = i + 2
+                  const blockIndent = nextIndent + 2
+                  while (j < lines.length) {
+                    const bl = lines[j]
+                    const bli = bl.search(/\S/)
+                    if (bl.trim() === '' || bli >= blockIndent) { blockLines.push(bl.slice(blockIndent) || ''); j++ } else break
+                  }
+                  itemObj.run = blockLines.join('\n').trim()
+                  i = j - 1
+                } else {
+                  itemObj.run = runVal
+                  i++
+                }
+              } else if (nextTrimmed.includes(':')) {
+                const sc = nextTrimmed.indexOf(':')
+                const sk = nextTrimmed.slice(0, sc).trim()
+                let sv: any = nextTrimmed.slice(sc + 1).trim()
+                if (sv.startsWith("'") && sv.endsWith("'")) sv = sv.slice(1, -1)
+                if (sv.startsWith('"') && sv.endsWith('"')) sv = sv.slice(1, -1)
+                itemObj[sk] = sv
+                i++
+              } else break
+            } else break
+          }
+          currentObj.push(itemObj)
+        } else if (value.startsWith('run:')) {
           const runValue = value.slice(4).trim()
+          const itemObj: Record<string, any> = {}
           if (runValue === '|' || runValue === '') {
             // Multi-line block
             const blockLines: string[] = []
@@ -62,11 +105,31 @@ function parseYaml(content: string): Record<string, any> {
                 break
               }
             }
-            currentObj.push({ run: blockLines.join('\n').trim() })
+            itemObj.run = blockLines.join('\n').trim()
             i = j - 1
           } else {
-            currentObj.push({ run: runValue })
+            itemObj.run = runValue
           }
+          // Check for sibling keys (working-directory:, if:, prop:) at indent+2
+          const siblingIndent = indent + 2
+          while (i + 1 < lines.length) {
+            const nextLine = lines[i + 1]
+            const nextTrimmed = nextLine.trim()
+            if (!nextTrimmed || nextTrimmed.startsWith('#')) { i++; continue }
+            const nextIndent = nextLine.search(/\S/)
+            if (nextIndent === siblingIndent && !nextTrimmed.startsWith('- ') && nextTrimmed.includes(':')) {
+              const ci = nextTrimmed.indexOf(':')
+              const sibKey = nextTrimmed.slice(0, ci).trim()
+              let sibVal: any = nextTrimmed.slice(ci + 1).trim()
+              if (sibVal.startsWith("'") && sibVal.endsWith("'")) sibVal = sibVal.slice(1, -1)
+              if (sibVal.startsWith('"') && sibVal.endsWith('"')) sibVal = sibVal.slice(1, -1)
+              itemObj[sibKey] = sibVal
+              i++
+            } else {
+              break
+            }
+          }
+          currentObj.push(itemObj)
         } else {
           currentObj.push(value)
         }
