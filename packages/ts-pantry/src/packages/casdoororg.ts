@@ -2,7 +2,7 @@
  * **casdoor** - pkgx package
  *
  * @domain `casdoor.org`
- * @version `2.319.1` (171 versions available)
+ * @version `2.320.0` (172 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install casdoor.org`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.casdoororg
  * console.log(pkg.name)        // "casdoor"
- * console.log(pkg.versions[0]) // "2.319.1" (latest)
+ * console.log(pkg.versions[0]) // "2.320.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/casdoor-org.md
@@ -60,6 +60,7 @@ export const casdoororgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.320.0',
     '2.319.1',
     '2.319.0',
     '2.318.0',
