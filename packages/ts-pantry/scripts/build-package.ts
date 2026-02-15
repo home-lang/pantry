@@ -14,6 +14,106 @@ import { fixUp } from './fix-up.ts'
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
 const { pantry } = await import(packagesPath)
 
+// Parse a YAML value that follows a key: — handles block scalars (|), arrays (- item), or plain strings
+// For `run:` keys, also detects YAML arrays (lines starting with `- `)
+// Returns the value, or { value, _newIndex } if it advanced the line pointer
+function parseYamlValue(
+  rawVal: string,
+  lines: string[],
+  currentLineIdx: number,
+  blockIndent: number,
+  canBeArray: boolean = false,
+): any {
+  if (rawVal === '|' || rawVal === '|-') {
+    // Block scalar — detect actual content indent from first content line
+    // This prevents sibling keys (working-directory:, if:) from being consumed
+    let j = currentLineIdx + 1
+    // Skip empty lines to find first content line
+    while (j < lines.length && !lines[j].trim()) j++
+    const actualIndent = j < lines.length ? lines[j].search(/\S/) : blockIndent
+    // Use the higher of blockIndent or actualIndent (actual content is typically further indented)
+    const effectiveIndent = Math.max(blockIndent, actualIndent)
+    const blockLines: string[] = []
+    j = currentLineIdx + 1
+    while (j < lines.length) {
+      const bl = lines[j]
+      const bli = bl.search(/\S/)
+      if (bl.trim() === '' || bli >= effectiveIndent) {
+        blockLines.push(bl.slice(effectiveIndent) || '')
+        j++
+      } else break
+    }
+    return { value: blockLines.join('\n').trim(), _newIndex: j - 1 }
+  }
+
+  if (rawVal === '' && canBeArray) {
+    // Peek at next non-empty line to detect if it's a YAML array
+    let peekJ = currentLineIdx + 1
+    while (peekJ < lines.length && (!lines[peekJ].trim() || lines[peekJ].trim().startsWith('#'))) peekJ++
+    const firstContent = peekJ < lines.length ? lines[peekJ] : ''
+    const firstTrimmed = firstContent.trim()
+    const firstIndent = firstContent.search(/\S/)
+
+    if (firstTrimmed.startsWith('- ') && firstIndent >= blockIndent) {
+      // It's a YAML array under run: — parse list items
+      const runArr: string[] = []
+      let j = peekJ
+      while (j < lines.length) {
+        const bl = lines[j]
+        const blt = bl.trim()
+        if (!blt || blt.startsWith('#')) { j++; continue }
+        const bli = bl.search(/\S/)
+        if (bli >= blockIndent && blt.startsWith('- ')) {
+          const itemContent = blt.slice(2)
+          if (itemContent.trimStart().startsWith('|')) {
+            // Multi-line block scalar item (- |)
+            const mlLines: string[] = []
+            const mlIndent = bli + 2
+            j++
+            while (j < lines.length) {
+              const ml = lines[j]
+              const mli = ml.search(/\S/)
+              if (ml.trim() === '' || mli >= mlIndent) { mlLines.push(ml.slice(mlIndent) || ''); j++ } else break
+            }
+            runArr.push(mlLines.join('\n').trim())
+          } else {
+            runArr.push(itemContent)
+            j++
+          }
+        } else if (bli > blockIndent && !blt.startsWith('- ')) {
+          // Continuation of previous item
+          if (runArr.length > 0) runArr[runArr.length - 1] += '\n' + blt
+          j++
+        } else break
+      }
+      return { value: runArr, _newIndex: j - 1 }
+    }
+  }
+
+  if (rawVal === '') {
+    // Multi-line block without | marker
+    const blockLines: string[] = []
+    let j = currentLineIdx + 1
+    while (j < lines.length) {
+      const bl = lines[j]
+      const bli = bl.search(/\S/)
+      if (bl.trim() === '' || bli >= blockIndent) {
+        blockLines.push(bl.slice(blockIndent) || '')
+        j++
+      } else break
+    }
+    const joined = blockLines.join('\n').trim()
+    if (joined) return { value: joined, _newIndex: j - 1 }
+    return ''
+  }
+
+  // Plain inline value
+  let val = rawVal
+  if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1)
+  if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
+  return val
+}
+
 // Simple YAML parser for package.yml files
 function parseYaml(content: string): Record<string, any> {
   const result: Record<string, any> = {}
@@ -44,90 +144,62 @@ function parseYaml(content: string): Record<string, any> {
 
       // Find the array in the parent - it should be the current object if it's an array
       if (Array.isArray(currentObj)) {
-        // Handle object-style list items (run:, if:)
-        if (value.startsWith('if:')) {
-          // Object list item starting with if: — collect sibling keys
+        // Check if this list item is an object-style entry (has a key: value)
+        const firstColonIdx = value.indexOf(':')
+        // Only treat as object item if key looks like a YAML key (lowercase, starts with letter)
+        // This avoids misinterpreting `-DCMAKE_FOO:BOOL=ON` as a key-value pair
+        const isObjectItem = firstColonIdx > 0 && /^[a-z][a-z0-9-]*$/.test(value.slice(0, firstColonIdx).trim())
+
+        if (isObjectItem) {
+          // Parse object-style list item: collect all keys at this indent level
           const itemObj: Record<string, any> = {}
-          const ci = value.indexOf(':')
-          itemObj['if'] = value.slice(ci + 1).trim()
-          // Collect sibling keys (run:, working-directory:, prop:, etc.)
           const siblingIndent = indent + 2
+
+          // Parse the first key from this line
+          const firstKey = value.slice(0, firstColonIdx).trim()
+          let firstVal: any = value.slice(firstColonIdx + 1).trim()
+
+          // Handle the first key's value
+          if (firstKey === 'run' || firstKey === 'if' || firstKey === 'prop') {
+            firstVal = parseYamlValue(firstVal, lines, i, indent + 2, firstKey === 'run')
+            if (typeof firstVal === 'object' && firstVal._newIndex !== undefined) {
+              i = firstVal._newIndex
+              firstVal = firstVal.value
+            }
+          } else {
+            if (firstVal.startsWith("'") && firstVal.endsWith("'")) firstVal = firstVal.slice(1, -1)
+            if (firstVal.startsWith('"') && firstVal.endsWith('"')) firstVal = firstVal.slice(1, -1)
+          }
+          itemObj[firstKey] = firstVal
+
+          // Collect sibling keys at indent+2
           while (i + 1 < lines.length) {
             const nextLine = lines[i + 1]
             const nextTrimmed = nextLine.trim()
             if (!nextTrimmed || nextTrimmed.startsWith('#')) { i++; continue }
             const nextIndent = nextLine.search(/\S/)
             if (nextIndent >= siblingIndent && !nextTrimmed.startsWith('- ')) {
-              if (nextTrimmed.startsWith('run:')) {
-                const runVal = nextTrimmed.slice(4).trim()
-                if (runVal === '|' || runVal === '') {
-                  const blockLines: string[] = []
-                  let j = i + 2
-                  const blockIndent = nextIndent + 2
-                  while (j < lines.length) {
-                    const bl = lines[j]
-                    const bli = bl.search(/\S/)
-                    if (bl.trim() === '' || bli >= blockIndent) { blockLines.push(bl.slice(blockIndent) || ''); j++ } else break
+              const nc = nextTrimmed.indexOf(':')
+              if (nc > 0) {
+                const sibKey = nextTrimmed.slice(0, nc).trim()
+                let sibVal: any = nextTrimmed.slice(nc + 1).trim()
+
+                if (sibKey === 'run' || sibKey === 'prop') {
+                  sibVal = parseYamlValue(sibVal, lines, i + 1, nextIndent + 2, sibKey === 'run')
+                  if (typeof sibVal === 'object' && sibVal._newIndex !== undefined) {
+                    i = sibVal._newIndex
+                    sibVal = sibVal.value
+                  } else {
+                    i++
                   }
-                  itemObj.run = blockLines.join('\n').trim()
-                  i = j - 1
                 } else {
-                  itemObj.run = runVal
+                  if (sibVal.startsWith("'") && sibVal.endsWith("'")) sibVal = sibVal.slice(1, -1)
+                  if (sibVal.startsWith('"') && sibVal.endsWith('"')) sibVal = sibVal.slice(1, -1)
                   i++
                 }
-              } else if (nextTrimmed.includes(':')) {
-                const sc = nextTrimmed.indexOf(':')
-                const sk = nextTrimmed.slice(0, sc).trim()
-                let sv: any = nextTrimmed.slice(sc + 1).trim()
-                if (sv.startsWith("'") && sv.endsWith("'")) sv = sv.slice(1, -1)
-                if (sv.startsWith('"') && sv.endsWith('"')) sv = sv.slice(1, -1)
-                itemObj[sk] = sv
-                i++
+                itemObj[sibKey] = sibVal
               } else break
             } else break
-          }
-          currentObj.push(itemObj)
-        } else if (value.startsWith('run:')) {
-          const runValue = value.slice(4).trim()
-          const itemObj: Record<string, any> = {}
-          if (runValue === '|' || runValue === '') {
-            // Multi-line block
-            const blockLines: string[] = []
-            let j = i + 1
-            const blockIndent = indent + 2
-            while (j < lines.length) {
-              const blockLine = lines[j]
-              const blockLineIndent = blockLine.search(/\S/)
-              if (blockLine.trim() === '' || blockLineIndent >= blockIndent) {
-                blockLines.push(blockLine.slice(blockIndent) || '')
-                j++
-              } else {
-                break
-              }
-            }
-            itemObj.run = blockLines.join('\n').trim()
-            i = j - 1
-          } else {
-            itemObj.run = runValue
-          }
-          // Check for sibling keys (working-directory:, if:, prop:) at indent+2
-          const siblingIndent = indent + 2
-          while (i + 1 < lines.length) {
-            const nextLine = lines[i + 1]
-            const nextTrimmed = nextLine.trim()
-            if (!nextTrimmed || nextTrimmed.startsWith('#')) { i++; continue }
-            const nextIndent = nextLine.search(/\S/)
-            if (nextIndent === siblingIndent && !nextTrimmed.startsWith('- ') && nextTrimmed.includes(':')) {
-              const ci = nextTrimmed.indexOf(':')
-              const sibKey = nextTrimmed.slice(0, ci).trim()
-              let sibVal: any = nextTrimmed.slice(ci + 1).trim()
-              if (sibVal.startsWith("'") && sibVal.endsWith("'")) sibVal = sibVal.slice(1, -1)
-              if (sibVal.startsWith('"') && sibVal.endsWith('"')) sibVal = sibVal.slice(1, -1)
-              itemObj[sibKey] = sibVal
-              i++
-            } else {
-              break
-            }
           }
           currentObj.push(itemObj)
         } else {
@@ -211,6 +283,34 @@ function parseYaml(content: string): Record<string, any> {
       currentObj[key] = false
     } else if (/^\d+$/.test(value)) {
       currentObj[key] = parseInt(value, 10)
+    } else if (value.startsWith('{') && value.endsWith('}')) {
+      // Inline YAML flow mapping: { key: val, key: val }
+      const inner = value.slice(1, -1).trim()
+      const obj: Record<string, any> = {}
+      // Split by comma, handling possible quoted values
+      for (const pair of inner.split(',')) {
+        const colonPos = pair.indexOf(':')
+        if (colonPos > 0) {
+          const k = pair.slice(0, colonPos).trim()
+          let v: any = pair.slice(colonPos + 1).trim()
+          if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1)
+          if (v.startsWith("'") && v.endsWith("'")) v = v.slice(1, -1)
+          if (v === 'true') v = true
+          else if (v === 'false') v = false
+          else if (/^\d+$/.test(v)) v = parseInt(v, 10)
+          obj[k] = v
+        }
+      }
+      currentObj[key] = obj
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      // Inline YAML flow sequence: [val1, val2]
+      const inner = value.slice(1, -1).trim()
+      currentObj[key] = inner ? inner.split(',').map(v => {
+        v = v.trim()
+        if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1)
+        if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1)
+        return v
+      }) : []
     } else {
       currentObj[key] = value
     }
@@ -489,7 +589,11 @@ async function downloadDependencies(
         const metadataContent = await s3.getObject(bucket, metadataKey)
         metadata = JSON.parse(metadataContent)
       } catch {
-        console.log(`   - ${domain}: not in S3, skipping`)
+        console.log(`   - ${domain}: not in S3, falling back to system path`)
+        // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
+        const fallbackPrefix = existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+        depPaths[domain] = fallbackPrefix
+        depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
       }
 
@@ -497,7 +601,10 @@ async function downloadDependencies(
       const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
 
       if (!platformInfo) {
-        console.log(`   - ${domain}@${version}: no binary for ${platform}`)
+        console.log(`   - ${domain}@${version}: no binary for ${platform}, falling back to system path`)
+        const fallbackPrefix = existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+        depPaths[domain] = fallbackPrefix
+        depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
       }
 
@@ -525,6 +632,14 @@ async function downloadDependencies(
 
       depPaths[domain] = depInstallDir
       depPaths[`deps.${domain}.prefix`] = depInstallDir
+      // Add version-related template variables for this dependency
+      const depV = String(version)
+      const depVParts = depV.split('.')
+      depPaths[`deps.${domain}.version`] = depV
+      depPaths[`deps.${domain}.version.major`] = depVParts[0] || '0'
+      depPaths[`deps.${domain}.version.minor`] = depVParts[1] || '0'
+      depPaths[`deps.${domain}.version.patch`] = depVParts[2] || '0'
+      depPaths[`deps.${domain}.version.marketing`] = `${depVParts[0] || '0'}.${depVParts[1] || '0'}`
 
     } catch (error: any) {
       console.log(`   - ${domain}: failed (${error.message})`)

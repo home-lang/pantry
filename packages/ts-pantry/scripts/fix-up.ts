@@ -75,11 +75,14 @@ function fixMachoRpaths(prefix: string): void {
           }
         }
 
-        // Add relative rpath if not present
+        // Add relative rpath if not already present
         const relRpath = dir === 'lib' ? '@loader_path' : '@loader_path/../lib'
-        try {
-          execSync(`install_name_tool -add_rpath "${relRpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-        } catch { /* rpath might already exist */ }
+        const existingRpaths = [...otoolOutput.matchAll(/path\s+(.+?)\s+\(offset/g)].map(m => m[1])
+        if (!existingRpaths.includes(relRpath)) {
+          try {
+            execSync(`install_name_tool -add_rpath "${relRpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+          } catch { /* ignore */ }
+        }
 
         // Fix install_names that reference build paths
         const idOutput = execSync(`otool -D "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
