@@ -160,6 +160,8 @@ interface BuildablePackage {
   pantryYamlPath: string
   hasDistributable: boolean
   hasBuildScript: boolean
+  needsProps: boolean
+  hasProps: boolean
 }
 
 function domainToKey(domain: string): string {
@@ -199,6 +201,10 @@ function discoverPackages(): BuildablePackage[] {
           const hasDistributable = !!(recipe.distributable?.url)
           const hasBuildScript = !!(recipe.build?.script)
 
+          // Check if build script references props/
+          const needsProps = content.includes('props/')
+          const hasPropsDir = existsSync(join(dir, 'props'))
+
           // Look up version from package metadata
           const key = domainToKey(domain)
           const pkg = (pantry as Record<string, any>)[key]
@@ -220,6 +226,8 @@ function discoverPackages(): BuildablePackage[] {
             pantryYamlPath: yamlPath,
             hasDistributable,
             hasBuildScript,
+            needsProps,
+            hasProps: hasPropsDir,
           })
         } catch {
           // Skip packages with parse errors
@@ -412,7 +420,69 @@ Options:
   const withoutScript = allPackages.filter(p => !p.hasBuildScript)
   allPackages = allPackages.filter(p => p.hasBuildScript)
 
-  console.log(`Found ${allPackages.length} buildable packages (excluding ${preBuiltDomains.size} pre-built, ${withoutScript.length} without build scripts)`)
+  // Platform-aware filtering: skip packages that can't build on this platform
+  const { platform: detectedPlatformEarly } = detectPlatform()
+  const targetPlatform = values.platform || detectedPlatformEarly
+  const targetOs = targetPlatform.split('-')[0]
+
+  // Packages that are platform-specific (skip on wrong platform)
+  const linuxOnlyDomains = new Set([
+    'alsa-project.org/alsa-lib', 'alsa-project.org/alsa-plugins', 'alsa-project.org/alsa-utils',
+    'elfutils.org', 'freedesktop.org/libbsd', 'kernel.org/linux-headers',
+    'musl.libc.org', 'pagure.io/libaio', 'strace.io', 'systemd.io',
+    'spawn.link', 'postgrest.org', 'gitlab.com/procps-ng/procps',
+    'apptainer.org', // Linux container runtime
+    'apple.com/remote_cmds', // ironically Linux-buildable only in certain configs
+  ])
+  const darwinOnlyDomains = new Set([
+    'apple.com/container', 'tuist.io/xcbeautify', 'veracode.com/gen-ir',
+    'github.com/mas-cli/mas', 'github.com/XcodesOrg/xcodes',
+    'github.com/nicklockwood/SwiftFormat', 'github.com/peripheryapp/periphery',
+    'github.com/unsignedapps/swift-create-xcframework',
+    'github.com/XCTestHTMLReport/XCTestHTMLReport', 'github.com/yonaskolb/Mint',
+    'github.com/mxcl/swift-sh', 'github.com/kiliankoe/swift-outdated',
+    'github.com/a7ex/xcresultparser', 'github.com/create-dmg/create-dmg',
+    'portaudio.com',
+  ])
+
+  // Packages needing specialized toolchains not available in CI
+  const haskellPackages = new Set([
+    'dhall-lang.org', 'pandoc.org', 'pandoc.org/crossref',
+    'shellcheck.net', 'haskell.org', 'haskell.org/cabal',
+  ])
+  const specializedToolchainPackages = new Set([
+    ...haskellPackages, // Need GHC/cabal
+    'nim-lang.org', // Need Nim compiler
+  ])
+
+  let platformSkipped = 0
+  let toolchainSkipped = 0
+  let propsSkipped = 0
+
+  allPackages = allPackages.filter(p => {
+    // Platform filtering
+    if (targetOs === 'darwin' && linuxOnlyDomains.has(p.domain)) {
+      platformSkipped++
+      return false
+    }
+    if (targetOs === 'linux' && darwinOnlyDomains.has(p.domain)) {
+      platformSkipped++
+      return false
+    }
+    // Toolchain filtering
+    if (specializedToolchainPackages.has(p.domain)) {
+      toolchainSkipped++
+      return false
+    }
+    // Missing props filtering (props/ referenced but directory doesn't exist)
+    if (p.needsProps && !p.hasProps) {
+      propsSkipped++
+      return false
+    }
+    return true
+  })
+
+  console.log(`Found ${allPackages.length} buildable packages (excluding ${preBuiltDomains.size} pre-built, ${withoutScript.length} without build scripts, ${platformSkipped} wrong platform, ${toolchainSkipped} missing toolchain, ${propsSkipped} missing props)`)
 
   if (values['count-only']) {
     console.log(allPackages.length)

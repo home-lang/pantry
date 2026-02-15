@@ -526,6 +526,14 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   mkdirSync(buildDir, { recursive: true })
   mkdirSync(prefix, { recursive: true })
 
+  // Copy props directory if it exists (patches, proxy scripts, etc.)
+  const propsDir = join(dirname(pantryPath), 'props')
+  if (existsSync(propsDir)) {
+    const destProps = join(buildDir, 'props')
+    execSync(`cp -a "${propsDir}" "${destProps}"`, { stdio: 'pipe' })
+    console.log(`📋 Copied props/ directory to build dir`)
+  }
+
   // Determine version.tag from the versions.strip pattern in YAML
   // In pkgx, version.tag is the original git tag before strip was applied
   // Default strip for github: sources is /^v/ — but only if tag actually has v prefix
@@ -680,8 +688,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       env: {
         ...process.env,
         ...buildEnv,
-        HOME: join(buildDir, '.home'),
         SRCROOT: buildDir,
+        // HOME is overridden inside the build script itself (buildkit.ts)
+        // Keep real HOME here so the script can access REAL_HOME for toolchains
       },
       stdio: 'inherit',
       shell: '/bin/bash',
