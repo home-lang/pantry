@@ -49,6 +49,7 @@ export function buildTokens(
   prefix: string,
   buildDir: string,
   depPaths: Record<string, string>,
+  versionTag?: string,
 ): Token[] {
   const [os, arch] = platform.split('-')
   const osName = os === 'darwin' ? 'darwin' : 'linux'
@@ -66,7 +67,7 @@ export function buildTokens(
     { from: 'version.minor', to: minor },
     { from: 'version.patch', to: patch },
     { from: 'version.marketing', to: `${major}.${minor}` },
-    { from: 'version.tag', to: `v${version}` },
+    { from: 'version.tag', to: versionTag ?? `v${version}` },
 
     // Path tokens
     { from: 'prefix', to: prefix },
@@ -436,8 +437,9 @@ export function generateBuildScript(
   prefix: string,
   buildDir: string,
   depPaths: Record<string, string>,
+  versionTag?: string,
 ): string {
-  const tokens = buildTokens(pkg, version, platform, prefix, buildDir, depPaths)
+  const tokens = buildTokens(pkg, version, platform, prefix, buildDir, depPaths, versionTag)
   const [os, arch] = platform.split('-')
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'

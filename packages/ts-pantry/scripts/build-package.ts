@@ -171,6 +171,7 @@ interface PackageRecipe {
   distributable: {
     url: string
     'strip-components'?: number
+    ref?: string
   }
   dependencies?: Record<string, any>
   build?: {
@@ -204,6 +205,32 @@ function interpolate(template: string | any, vars: Record<string, string>): stri
     })
 }
 
+/**
+ * Determine version.tag from the YAML versions.strip pattern
+ * In pkgx, version.tag = the original git tag before strip was applied.
+ * Default github strip is /^v/ (removes v prefix from tags like v1.0.0)
+ * But if tag doesn't have v prefix, version = tag (strip is no-op)
+ */
+function determineVersionTag(yamlContent: string, version: string): string {
+  // Look for explicit strip pattern in the YAML
+  const stripMatch = yamlContent.match(/strip:\s*\/\^?([^/]+)\//)
+  if (stripMatch) {
+    const prefix = stripMatch[1]
+    // /^v/ -> tag = v + version
+    if (prefix === 'v') return `v${version}`
+    // /^hdf5_/ -> tag = hdf5_ + version
+    return prefix + version
+  }
+
+  // No explicit strip — check if this is a github source (default strip is /^v/)
+  // But we need to handle cases where tags don't have v prefix
+  // Heuristic: date-based versions (YYYYMMDD...) rarely have v prefix
+  if (/^\d{6,}/.test(version)) return version
+
+  // Default: assume v prefix (most common for github releases)
+  return `v${version}`
+}
+
 // Load build overrides from src/pantry/{domain}/build-overrides.json
 function getBuildOverrides(pkgName: string): { description?: string; extraConfigureArgs?: string[] } | null {
   const overridesPath = join(process.cwd(), 'src', 'pantry', pkgName, 'build-overrides.json')
@@ -218,8 +245,33 @@ function getBuildOverrides(pkgName: string): { description?: string; extraConfig
   }
 }
 
-async function downloadSource(url: string, destDir: string, stripComponents: number = 1): Promise<void> {
+async function downloadSource(url: string, destDir: string, stripComponents: number = 1, ref?: string): Promise<void> {
   console.log(`📥 Downloading source from ${url}`)
+
+  // Handle git+https:// URLs — clone the repo
+  if (url.startsWith('git+https://') || url.startsWith('git+http://')) {
+    const gitUrl = url.replace(/^git\+/, '')
+    console.log(`📦 Cloning git repository...`)
+    // Clone with specific ref/tag if provided, shallow for speed
+    const refArg = ref ? `--branch "${ref}" --single-branch` : ''
+    try {
+      execSync(`git clone --depth 1 ${refArg} "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
+    } catch {
+      // If shallow clone with ref fails, try full clone + checkout
+      execSync(`git clone "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
+      if (ref) {
+        try {
+          execSync(`cd "${destDir}/_git_clone" && git checkout "${ref}"`, { stdio: 'inherit' })
+        } catch {
+          console.log(`Warning: Could not checkout ref ${ref}, using default branch`)
+        }
+      }
+    }
+    // Move cloned content to build dir
+    execSync(`cp -a "${destDir}/_git_clone/." "${destDir}/"`, { stdio: 'pipe' })
+    execSync(`rm -rf "${destDir}/_git_clone"`, { stdio: 'pipe' })
+    return
+  }
 
   // Determine file extension from URL
   const isZip = url.endsWith('.zip')
@@ -462,6 +514,11 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   mkdirSync(buildDir, { recursive: true })
   mkdirSync(prefix, { recursive: true })
 
+  // Determine version.tag from the versions.strip pattern in YAML
+  // In pkgx, version.tag is the original git tag before strip was applied
+  // Default strip for github: sources is /^v/ — but only if tag actually has v prefix
+  const versionTag = determineVersionTag(yamlContent, version)
+
   // Setup template variables
   const cpuCount = (await import('node:os')).cpus().length
   const vMajor = version.split('.')[0]
@@ -469,7 +526,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   const templateVars: Record<string, string> = {
     'version': version,
     'version.raw': version,
-    'version.tag': `v${version}`,
+    'version.tag': versionTag,
     'version.major': vMajor,
     'version.minor': vMinor,
     'version.patch': version.split('.')[2] || '0',
@@ -487,9 +544,33 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Download source
   if (recipe.distributable?.url) {
-    const sourceUrl = interpolate(recipe.distributable.url, templateVars)
+    const rawUrl = recipe.distributable.url
+    const sourceUrl = interpolate(rawUrl, templateVars)
     const stripComponents = recipe.distributable['strip-components'] ?? 1
-    await downloadSource(sourceUrl, buildDir, stripComponents)
+    const ref = recipe.distributable.ref ? interpolate(recipe.distributable.ref, templateVars) : undefined
+
+    try {
+      await downloadSource(sourceUrl, buildDir, stripComponents, ref)
+    } catch (firstError: any) {
+      // If URL used version.tag and download failed, try alternate tag format
+      if (rawUrl.includes('version.tag') && versionTag.startsWith('v')) {
+        console.log(`⚠️  Download failed with tag ${versionTag}, retrying without v prefix...`)
+        const altTag = version // without v prefix
+        const altVars = { ...templateVars, 'version.tag': altTag }
+        const altUrl = interpolate(rawUrl, altVars)
+        const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
+        try {
+          await downloadSource(altUrl, buildDir, stripComponents, altRef)
+          // Update templateVars for the rest of the build
+          templateVars['version.tag'] = altTag
+        } catch {
+          // Both formats failed, throw original error
+          throw firstError
+        }
+      } else {
+        throw firstError
+      }
+    }
   } else {
     throw new Error('No distributable URL found in package.yml')
   }
@@ -572,6 +653,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     prefix,
     buildDir,
     depPaths,
+    templateVars['version.tag'],
   )
 
   const scriptPath = join(buildDir, '_build.sh')

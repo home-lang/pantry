@@ -487,7 +487,7 @@ Options:
 
   // Summary
   console.log('\n' + '═'.repeat(60))
-  console.log('📊 Build Summary')
+  console.log('Build Summary')
   console.log('═'.repeat(60))
 
   const uploaded = Object.entries(results).filter(([_, r]) => r.status === 'uploaded')
@@ -495,21 +495,30 @@ Options:
   const failed = Object.entries(results).filter(([_, r]) => r.status === 'failed')
 
   if (uploaded.length > 0) {
-    console.log(`\n✅ Built & Uploaded (${uploaded.length}):`)
+    console.log(`\nBuilt & Uploaded (${uploaded.length}):`)
     uploaded.forEach(([domain, r]) => console.log(`   - ${domain}@${r.version}`))
   }
 
   if (skipped.length > 0) {
-    console.log(`\n⏭️  Skipped (${skipped.length}):`)
+    console.log(`\nSkipped — already in S3 (${skipped.length}):`)
     skipped.forEach(([domain, r]) => console.log(`   - ${domain}@${r.version}`))
   }
 
   if (failed.length > 0) {
-    console.log(`\n❌ Failed (${failed.length}):`)
-    failed.forEach(([domain, r]) => console.log(`   - ${domain}: ${r.error}`))
+    console.log(`\nFailed (${failed.length}):`)
+    failed.forEach(([domain, r]) => console.log(`   - ${domain}@${r.version}: ${r.error}`))
   }
 
+  const attempted = uploaded.length + failed.length
   console.log(`\nTotal: ${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed`)
+
+  // Exit non-zero if there were failures (so CI reports the batch properly)
+  if (failed.length > 0) {
+    const failRate = attempted > 0 ? (failed.length / attempted * 100).toFixed(0) : 0
+    console.log(`\nFailure rate: ${failRate}% (${failed.length}/${attempted} attempted)`)
+    // Always exit 1 if any packages failed — CI should know about it
+    process.exit(1)
+  }
 }
 
 main().catch((error) => {
