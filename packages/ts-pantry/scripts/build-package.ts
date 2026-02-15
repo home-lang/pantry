@@ -203,7 +203,29 @@ function parseYaml(content: string): Record<string, any> {
           }
           currentObj.push(itemObj)
         } else {
-          currentObj.push(value)
+          // Plain string item — check for continuation lines (multi-line plain scalar)
+          // e.g. - ./configure
+          //          --prefix="..."
+          //          --disable-debug
+          let fullValue = value
+          const contIndent = indent + 4 // continuation lines must be indented more than `- `
+          while (i + 1 < lines.length) {
+            const nextLine = lines[i + 1]
+            const nextTrimmed = nextLine.trim()
+            if (!nextTrimmed) { i++; continue } // skip blank lines
+            if (nextTrimmed.startsWith('#')) { i++; continue } // skip comments in continuation
+            const nextIndent = nextLine.search(/\S/)
+            if (nextIndent >= contIndent && !nextTrimmed.startsWith('- ')) {
+              // Strip inline comments (# ...) from continuation lines
+              const commentIdx = nextTrimmed.indexOf('  #')
+              const cleanLine = commentIdx >= 0 ? nextTrimmed.slice(0, commentIdx).trim() : nextTrimmed
+              fullValue += ' ' + cleanLine
+              i++
+            } else {
+              break
+            }
+          }
+          currentObj.push(fullValue)
         }
       }
       continue
