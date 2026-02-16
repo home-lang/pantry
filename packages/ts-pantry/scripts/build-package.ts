@@ -844,22 +844,65 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     try {
       await downloadSource(sourceUrl, buildDir, stripComponents, ref)
     } catch (firstError: any) {
-      // If URL used version.tag and download failed, try alternate tag format
-      if (rawUrl.includes('version.tag') && versionTag.startsWith('v')) {
+      let recovered = false
+
+      // Retry 1: If URL used version.tag and download failed, try alternate tag format
+      if (!recovered && rawUrl.includes('version.tag') && versionTag.startsWith('v')) {
         console.log(`⚠️  Download failed with tag ${versionTag}, retrying without v prefix...`)
-        const altTag = version // without v prefix
+        const altTag = version
         const altVars = { ...templateVars, 'version.tag': altTag }
         const altUrl = interpolate(rawUrl, altVars)
         const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
         try {
           await downloadSource(altUrl, buildDir, stripComponents, altRef)
-          // Update templateVars for the rest of the build
           templateVars['version.tag'] = altTag
-        } catch {
-          // Both formats failed, throw original error
-          throw firstError
+          recovered = true
+        } catch { /* continue to next retry */ }
+      }
+
+      // Retry 2: If version ends in .0, strip it (GNU FTP uses "4.9" not "4.9.0")
+      if (!recovered && version.endsWith('.0') && version.split('.').length >= 3) {
+        const shortVersion = version.replace(/\.0$/, '')
+        console.log(`⚠️  Download failed, retrying with shortened version ${shortVersion}...`)
+        const altVars = {
+          ...templateVars,
+          'version': shortVersion,
+          'version.raw': shortVersion,
+          'version.marketing': shortVersion.split('.').slice(0, 2).join('.'),
+          'version.patch': '0',
         }
-      } else {
+        const altUrl = interpolate(rawUrl, altVars)
+        const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
+        try {
+          await downloadSource(altUrl, buildDir, stripComponents, altRef)
+          // Update templateVars with the shortened version for the build
+          Object.assign(templateVars, altVars)
+          recovered = true
+        } catch { /* continue to next retry */ }
+      }
+
+      // Retry 3: If version.tag was used with v prefix and version also ends in .0
+      if (!recovered && rawUrl.includes('version.tag') && versionTag.startsWith('v') && version.endsWith('.0')) {
+        const shortVersion = version.replace(/\.0$/, '')
+        console.log(`⚠️  Download failed, retrying with shortened version v${shortVersion}...`)
+        const altVars = {
+          ...templateVars,
+          'version': shortVersion,
+          'version.raw': shortVersion,
+          'version.tag': `v${shortVersion}`,
+          'version.marketing': shortVersion.split('.').slice(0, 2).join('.'),
+          'version.patch': '0',
+        }
+        const altUrl = interpolate(rawUrl, altVars)
+        const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
+        try {
+          await downloadSource(altUrl, buildDir, stripComponents, altRef)
+          Object.assign(templateVars, altVars)
+          recovered = true
+        } catch { /* all retries exhausted */ }
+      }
+
+      if (!recovered) {
         throw firstError
       }
     }
