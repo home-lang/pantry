@@ -521,7 +521,12 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
 
   // Handle non-archive single files (.jar, .bin, etc.) — save directly, don't extract
   const nonArchiveExts = ['.jar', '.bin', '.exe', '.AppImage', '.whl', '.gem']
-  const urlPath = new URL(url).pathname
+  let urlPath: string
+  try {
+    urlPath = new URL(url.replace(/ /g, '%20')).pathname
+  } catch {
+    urlPath = url.split('?')[0] // fallback for malformed URLs
+  }
   const matchedExt = nonArchiveExts.find(ext => urlPath.endsWith(ext))
   if (matchedExt) {
     const encodedUrl = url.replace(/ /g, '%20')

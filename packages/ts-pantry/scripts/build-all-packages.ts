@@ -637,6 +637,7 @@ Options:
     'chiark.greenend.org.uk/puzzles', // Needs GTK
     'gnu.org/source-highlight', // Needs boost.org built from source
     'crates.io/bpb', // Uses deprecated Rust features (E0557), incompatible with modern rustc
+    'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
   ])
 
   let platformSkipped = 0
