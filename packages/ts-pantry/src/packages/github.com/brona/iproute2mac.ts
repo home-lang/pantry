@@ -3,7 +3,7 @@
  *
  * @domain `github.com/brona/iproute2mac`
  * @programs `bridge`, `ip`, `iproute2mac.py`
- * @version `1.7.0` (8 versions available)
+ * @version `1.7.2` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/brona/iproute2mac`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "iproute2mac"
  * console.log(pkg.description) // "CLI wrapper for basic network utilites on Mac O..."
  * console.log(pkg.programs)    // ["bridge", "ip", ...]
- * console.log(pkg.versions[0]) // "1.7.0" (latest)
+ * console.log(pkg.versions[0]) // "1.7.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/brona/iproute2mac.md
@@ -69,6 +69,7 @@ export const iproute2macPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.7.2',
     '1.7.0',
     '1.6.0',
     '1.5.4',
