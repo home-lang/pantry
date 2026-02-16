@@ -194,7 +194,7 @@ function generateAliases(): Record<string, string> {
     }
 
     // First word of the domain (before the dot)
-    const domainFirstPart = domain.split('.')[0]
+    const [domainFirstPart] = domain.split('.')
     if (!PACKAGE_ALIASES[domainFirstPart] && domainFirstPart !== domain) {
       generatedAliases[domainFirstPart] = domain
     }

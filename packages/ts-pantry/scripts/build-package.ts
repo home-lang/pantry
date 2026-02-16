@@ -12,6 +12,7 @@ import { generateBuildScript, getSkips } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
+// eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
 // Parse a YAML value that follows a key: — handles block scalars (|), arrays (- item), or plain strings

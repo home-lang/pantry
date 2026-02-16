@@ -132,7 +132,8 @@ export function extractText(html: string): string {
  */
 export function extractLinks(html: string, baseUrl?: string): string[] {
   const links: string[] = []
-  const linkRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>/gi
+  // eslint-disable-next-line no-super-linear-backtracking
+  const linkRegex = /<a[^>]*?\shref=["']([^"']+)["'][^>]*>/gi
 
   let match = linkRegex.exec(html)
   while (match !== null) {
@@ -576,7 +577,8 @@ export function extractStructuredData(html: string): {
   }
 
   // Extract Open Graph
-  const ogRegex = /<meta[^>]+property=["']og:([^"']+)["'][^>]+content=["']([^"']+)["'][^>]*>/gi
+  // eslint-disable-next-line no-super-linear-backtracking
+  const ogRegex = /<meta[^>]*?\sproperty=["']og:([^"']+)["'][^>]*?\scontent=["']([^"']+)["'][^>]*>/gi
   let ogMatch = ogRegex.exec(html)
   while (ogMatch !== null) {
     openGraph[ogMatch[1]] = ogMatch[2]
@@ -584,7 +586,8 @@ export function extractStructuredData(html: string): {
   }
 
   // Extract Twitter Card
-  const twitterRegex = /<meta[^>]+name=["']twitter:([^"']+)["'][^>]+content=["']([^"']+)["'][^>]*>/gi
+  // eslint-disable-next-line no-super-linear-backtracking
+  const twitterRegex = /<meta[^>]*?\sname=["']twitter:([^"']+)["'][^>]*?\scontent=["']([^"']+)["'][^>]*>/gi
   let twitterMatch = twitterRegex.exec(html)
   while (twitterMatch !== null) {
     twitter[twitterMatch[1]] = twitterMatch[2]

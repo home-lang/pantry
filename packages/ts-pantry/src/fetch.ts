@@ -434,7 +434,7 @@ function generateTypeScriptContent(packageInfo: PkgxPackage, domainName: string)
     }
 
     // Filter out version strings
-    if (/^\d+(?:\.\d+)*/.test(alias)) {
+    if (/^[\d.]+$/.test(alias) && /^\d/.test(alias)) {
       return false
     }
 
@@ -1976,7 +1976,7 @@ export async function readPantryPackageInfo(packageName: string, pantryDir = 'sr
             if (version && version !== '*') {
               // Include version constraint - add @ for specific versions, ^ for ranges
               const hasVersionOperator = /^[~^>=<@]/.test(version)
-              const isSpecificVersion = /^\d+(?:\.\d+)*$/.test(version)
+              const isSpecificVersion = /^[\d.]+$/.test(version) && /^\d/.test(version)
               const operator = hasVersionOperator ? '' : (isSpecificVersion ? '@' : '^')
               const depString = `${osPrefix}${pkg}${operator}${version}`
               if (inBuildDepsSection) {
@@ -2017,7 +2017,7 @@ export async function readPantryPackageInfo(packageName: string, pantryDir = 'sr
             if (version && version !== '*') {
               // Include version constraint - add @ for specific versions, ^ for ranges
               const hasVersionOperator = /^[~^>=<@]/.test(version)
-              const isSpecificVersion = /^\d+(?:\.\d+)*$/.test(version)
+              const isSpecificVersion = /^[\d.]+$/.test(version) && /^\d/.test(version)
               const operator = hasVersionOperator ? '' : (isSpecificVersion ? '@' : '^')
               const depString = `${pkg}${operator}${version}`
               if (inBuildDepsSection) {
@@ -2080,7 +2080,7 @@ export async function readPantryPackageInfo(packageName: string, pantryDir = 'sr
           if (version && version !== '*') {
             // Include version constraint - add @ for specific versions, ^ for ranges
             const hasVersionOperator = /^[~^>=<@]/.test(version)
-            const isSpecificVersion = /^\d+(?:\.\d+)*$/.test(version)
+            const isSpecificVersion = /^[\d.]+$/.test(version) && /^\d/.test(version)
             const operator = hasVersionOperator ? '' : (isSpecificVersion ? '@' : '^')
             companions.push(`${pkg}${operator}${version}`)
           }

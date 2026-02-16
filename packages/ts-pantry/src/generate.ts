@@ -175,16 +175,18 @@ function extractPackageDataFromFile(content: string, fallbackDomain: string): Pk
 
     // Helper function to extract string values
     const extractString = (key: string): string => {
-      // Try with 'as const' first - handle escaped quotes properly
-      let regex = new RegExp(`${key}:\\s*'((?:[^'\\\\]|\\\\.)*)'\\s*as const`)
+      // Match single-quoted string values, handling escaped characters
+      const quotedValuePattern = `'([^']*)'`
+
+      // Try with 'as const' first
+      let regex = new RegExp(`${key}:\\s*${quotedValuePattern}\\s*as const`)
       let match = content.match(regex)
       if (match) {
-        // Unescape the string - convert \' back to '
         return match[1].replace(/\\'/g, '\'').replace(/\\\\/g, '\\')
       }
 
-      // Try without 'as const' - handle escaped quotes properly
-      regex = new RegExp(`${key}:\\s*'((?:[^'\\\\]|\\\\.)*)'`)
+      // Try without 'as const'
+      regex = new RegExp(`${key}:\\s*${quotedValuePattern}`)
       match = content.match(regex)
       if (match) {
         // Unescape the string - convert \' back to '
@@ -289,7 +291,7 @@ function isValidAlias(alias: string, targetDomain: string): boolean {
   }
 
   // Don't create aliases that are just numbers or version-like strings
-  if (/^\d+(?:\.\d+)*$/.test(alias)) {
+  if (/^[\d.]+$/.test(alias) && /^\d/.test(alias)) {
     return false
   }
 

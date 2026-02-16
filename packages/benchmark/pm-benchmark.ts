@@ -258,6 +258,7 @@ for (const fixture of fixtures) {
 
 // ── Run ────────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line ts/no-top-level-await
 await run()
 
 // ── Cleanup ────────────────────────────────────────────────────────────────

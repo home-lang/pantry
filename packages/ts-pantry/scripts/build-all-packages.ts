@@ -33,6 +33,7 @@ import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
+// eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
 // Simple YAML parser (reused from build-package.ts)
